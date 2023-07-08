@@ -23,7 +23,8 @@ jobs:
   build-musl:
     runs-on: ubuntu-latest
     container:
-      image: tstack/lnav-build:1
+      image: tstack/lnav-build:latest
+      options: --platform linux/amd64
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
       LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-x86_64-linux-musl.zip
