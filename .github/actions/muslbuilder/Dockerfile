@@ -1,5 +1,4 @@
-ARG ARCH=amd64
-FROM $ARCH/alpine:3.16
+FROM --platform=$BUILDPLATFORM alpine:3.16
 
 LABEL com.github.actions.name="C++ MUSL Builder Slim"
 LABEL com.github.actions.description="Provides a C++ MUSL environment"
