@@ -10,7 +10,6 @@ RUN apk update && apk add --no-cache \
     binutils \
     m4 \
     git \
-    cmake \
     make \
     libgcc \
     musl-dev \
@@ -38,7 +37,6 @@ RUN apk update && apk add --no-cache \
     linux-headers
 
 ADD https://www.libarchive.org/downloads/libarchive-3.6.2.tar.gz /
-ADD https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz /
 ADD https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz /
 ADD https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.gz /
 ADD https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz /
@@ -108,7 +106,6 @@ RUN cd /extract/libarchive-* && \
  make -j2 && \
  make install && make clean
 
-RUN cd /extract/make-4.2.1 && ./configure --prefix=/fake.root && make -j2 && make install && make clean
 RUN cd /extract/readline-* && ./configure --prefix=/fake.root && make -j2 && make install && make clean
 
 RUN cd /extract/sqlite-* && \
