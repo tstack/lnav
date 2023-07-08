@@ -62,22 +62,24 @@ jobs:
 
   build-musl-armv7l:
     runs-on: ubuntu-latest
-    container:
-      image: tstack/lnav-build:latest
-      options: --platform linux/arm/v7
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
       LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-armv7l-linux-musl.zip
     steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
       - name: checkout
         uses: actions/checkout@v3
-      - name: make
-        run: /entrypoint.sh
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Run the armv7l Docker builder
+        uses: addnab/docker-run-action@v3
+        with:
+          image: tstack/lnav-build:latest
+          options: -v ${{ github.workspace }}:/lnav -e GITHUB_WORKSPACE=/lnav --platform linux/arm/v7
+          run: /entrypoint.sh
       - name: Build musl package
         if: ${{ inputs.lnav_version_number != '' }}
         run: >-
+          cd ${{ github.workspace }}
           mkdir ${{ env.LNAV_BASENAME }} &&
           cd ${{ env.LNAV_BASENAME }} &&
           cp ../NEWS.md ../README . &&
@@ -90,7 +92,7 @@ jobs:
           # Artifact name
           name: lnav-linux-musl-armv7l.zip
           # A file, directory or wildcard pattern that describes what to upload
-          path: lbuild/src/lnav
+          path: ${{ github.workspace }}/lbuild/src/lnav
       - name: Upload musl-binary archive
         uses: actions/upload-release-asset@v1.0.2
         if: ${{ inputs.upload_url != '' }}
@@ -98,7 +100,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ inputs.upload_url }}
-          asset_path: ${{ env.LNAV_ZIPNAME }}
+          asset_path: ${{ github.workspace }}/${{ env.LNAV_ZIPNAME }}
           asset_name: ${{ env.LNAV_ZIPNAME }}
           asset_content_type: application/octet-stream
 
