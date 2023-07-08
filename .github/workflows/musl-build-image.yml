@@ -1,0 +1,28 @@
+name: musl-build-image
+
+on:
+  push:
+    branches: master
+    paths:
+      - .github/actions/muslbuilder/Dockerfile
+      - .github/actions/muslbuilder/entrypoint.sh
+      - .github/workflows/musl-build-image.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: install buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+      - name: login to docker hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: build the image
+        run: |
+          docker buildx build --push \
+            --tag tstack/lnav-build:latest \
+            --platform linux/amd64,linux/arm/v7,linux/arm64 .
