@@ -226,6 +226,19 @@ json_ptr::encode(char* dst, size_t dst_len, const char* src, size_t src_len)
     return retval;
 }
 
+std::string
+json_ptr::encode_str(const char* src, size_t src_len)
+{
+    if (src_len == (size_t) -1) {
+        src_len = strlen(src);
+    }
+
+    char retval[src_len + 1];
+    auto rc = encode(retval, sizeof(retval), src, src_len);
+
+    return std::string(retval, rc);
+}
+
 size_t
 json_ptr::decode(char* dst, const char* src, ssize_t src_len)
 {

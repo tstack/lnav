@@ -81,6 +81,9 @@ lnav_config_listener* lnav_config_listener::LISTENER_LIST;
 static auto a = injector::bind<archive_manager::config>::to_instance(
     +[]() { return &lnav_config.lc_archive_manager; });
 
+static auto ff = injector::bind<lnav::file_formats::config>::to_instance(
+    +[]() { return &lnav_config.lc_file_formats; });
+
 static auto fvc = injector::bind<file_vtab::config>::to_instance(
     +[]() { return &lnav_config.lc_file_vtab; });
 
@@ -1040,6 +1043,55 @@ static const struct json_path_container ui_handlers = {
         .with_children(keymap_defs_handlers),
 };
 
+static const struct json_path_container header_expr_handlers = {
+    yajlpp::pattern_property_handler("(?<header_expr_name>\\w+)")
+        .with_description("SQLite expression")
+        .for_field(&lnav::file_formats::header_exprs::he_exprs),
+};
+
+static const struct json_path_container header_handlers = {
+    yajlpp::property_handler("expr")
+        .with_description("The expressions used to check if a file header "
+                          "matches this file format")
+        .for_child(&lnav::file_formats::header::h_exprs)
+        .with_children(header_expr_handlers),
+    yajlpp::property_handler("size")
+        .with_description("The minimum size required for this header type")
+        .for_field(&lnav::file_formats::header::h_size),
+};
+
+static const struct json_path_container format_def_handlers = {
+    yajlpp::property_handler("title")
+        .with_description("The display name for this file format")
+        .for_field(&lnav::file_formats::format_def::fd_title),
+    yajlpp::property_handler("header")
+        .with_description("File header detection definitions")
+        .for_child(&lnav::file_formats::format_def::fd_header)
+        .with_children(header_handlers),
+    yajlpp::property_handler("converter")
+        .with_description("The script used to convert the file")
+        .with_pattern(R"([\w\.\-]+)")
+        .for_field(&lnav::file_formats::format_def::fd_converter),
+};
+
+static const struct json_path_container format_defs_handlers = {
+    yajlpp::pattern_property_handler(R"((?<mime_type>\w+~1[\w\.\-]+))")
+        .with_description("File format definitions, keyed by their MIME type")
+        .with_obj_provider<lnav::file_formats::format_def, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto& retval
+                    = root->lc_file_formats.c_defs[ypc.get_substr("mime_type")];
+                return &retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_file_formats.c_defs) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(format_def_handlers),
+};
+
 static const struct json_path_container archive_handlers = {
     yajlpp::property_handler("min-free-space")
         .with_synopsis("<bytes>")
@@ -1267,6 +1319,9 @@ static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("file-vtab")
         .with_description("Settings related to the lnav_file virtual-table")
         .with_children(file_vtab_handlers),
+    yajlpp::property_handler("file-format")
+        .with_description("sdfjdls")
+        .with_children(format_defs_handlers),
     yajlpp::property_handler("logfile")
         .with_description("Settings related to log files")
         .with_children(logfile_handlers),
@@ -1654,28 +1709,31 @@ reload_config(std::vector<lnav::console::user_message>& errors)
             auto cb = [&cfg_value, &errors, &errmsg](
                           const json_path_handler_base& jph,
                           const std::string& path,
-                          void* mem) {
+                          const void* mem) {
                 if (mem != cfg_value) {
                     return;
                 }
 
                 auto loc_iter
                     = lnav_config_locations.find(intern_string::lookup(path));
-                if (loc_iter == lnav_config_locations.end()) {
-                    return;
+                auto has_loc = loc_iter != lnav_config_locations.end();
+                auto um
+                    = lnav::console::user_message::error(
+                          attr_line_t()
+                              .append(has_loc ? "invalid value for property "
+                                              : "missing value for property ")
+                              .append_quoted(lnav::roles::symbol(path)))
+                          .with_reason(errmsg)
+                          .with_help(jph.get_help_text(path));
+
+                if (has_loc) {
+                    um.with_snippet(
+                        lnav::console::snippet::from(loc_iter->second.sl_source,
+                                                     "")
+                            .with_line(loc_iter->second.sl_line_number));
                 }
 
-                errors.emplace_back(
-                    lnav::console::user_message::error(
-                        attr_line_t()
-                            .append("invalid value for property ")
-                            .append_quoted(lnav::roles::symbol(path)))
-                        .with_reason(errmsg)
-                        .with_snippet(
-                            lnav::console::snippet::from(
-                                loc_iter->second.sl_source, "")
-                                .with_line(loc_iter->second.sl_line_number))
-                        .with_help(jph.get_help_text(path)));
+                errors.emplace_back(um);
             };
 
             for (const auto& jph : lnav_config_handlers.jpc_children) {

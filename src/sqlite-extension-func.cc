@@ -62,6 +62,7 @@ sqlite_registration_func_t sqlite_registration_funcs[] = {
 int
 register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 {
+    static bool help_registration_done = false;
     int lpc;
 
     require(db != nullptr);
@@ -94,7 +95,9 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                                     nullptr,
                                     nullptr);
 
-            if (fd.fd_help.ht_context != help_context_t::HC_NONE) {
+            if (!help_registration_done
+                && fd.fd_help.ht_context != help_context_t::HC_NONE)
+            {
                 help_text& ht = fd.fd_help;
 
                 sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
@@ -115,7 +118,9 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                                     agg_funcs[i].xStep,
                                     agg_funcs[i].xFinalize);
 
-            if (fda.fda_help.ht_context != help_context_t::HC_NONE) {
+            if (!help_registration_done
+                && fda.fda_help.ht_context != help_context_t::HC_NONE)
+            {
                 help_text& ht = fda.fda_help;
 
                 sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
@@ -746,9 +751,11 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_example({"To count down from five to 1",
                            "SELECT value FROM generate_series(1, 5, -1)"})};
 
-    for (auto& ht : builtin_funcs) {
-        sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
-        ht.index_tags();
+    if (!help_registration_done) {
+        for (auto& ht : builtin_funcs) {
+            sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
+            ht.index_tags();
+        }
     }
 
     static help_text builtin_win_funcs[] = {
@@ -847,9 +854,11 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_tags({"window"}),
     };
 
-    for (auto& ht : builtin_win_funcs) {
-        sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
-        ht.index_tags();
+    if (!help_registration_done) {
+        for (auto& ht : builtin_win_funcs) {
+            sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
+            ht.index_tags();
+        }
     }
 
     static help_text idents[] = {
@@ -1152,16 +1161,20 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                                 .optional()),
     };
 
-    for (auto& ht : idents) {
-        sqlite_function_help.insert(make_pair(toupper(ht.ht_name), &ht));
-        for (const auto& param : ht.ht_parameters) {
-            if (!param.ht_flag_name) {
-                continue;
+    if (!help_registration_done) {
+        for (auto& ht : idents) {
+            sqlite_function_help.insert(make_pair(toupper(ht.ht_name), &ht));
+            for (const auto& param : ht.ht_parameters) {
+                if (!param.ht_flag_name) {
+                    continue;
+                }
+                sqlite_function_help.insert(
+                    make_pair(toupper(param.ht_flag_name), &ht));
             }
-            sqlite_function_help.insert(
-                make_pair(toupper(param.ht_flag_name), &ht));
         }
     }
+
+    help_registration_done = true;
 
     return 0;
 }

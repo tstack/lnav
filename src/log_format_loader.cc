@@ -282,10 +282,7 @@ read_format_field(yajlpp_parse_context* ypc,
         elf->elf_module_id_field = intern_string::lookup(value);
         elf->elf_container = true;
     } else if (field_name == "mime-types") {
-        auto value_opt = ypc->ypc_current_handler->to_enum_value(value);
-        if (value_opt) {
-            elf->elf_mime_types.insert((file_format_t) *value_opt);
-        }
+        elf->elf_mime_types.insert(mime_type::from_str(value));
     }
 
     return 1;
@@ -820,15 +817,6 @@ static const struct json_path_container search_table_handlers = {
         .with_children(search_table_def_handlers),
 };
 
-static const json_path_handler_base::enum_value_t MIME_TYPE_ENUM[] = {
-    {
-        "application/vnd.tcpdump.pcap",
-        file_format_t::PCAP,
-    },
-
-    json_path_handler_base::ENUM_TERMINATOR,
-};
-
 const struct json_path_container format_handlers = {
     yajlpp::property_handler("regex")
         .with_description(
@@ -858,8 +846,9 @@ const struct json_path_container format_handlers = {
                           "log files with a matching name")
         .for_field(&external_log_format::elf_filename_pcre),
     json_path_handler("mime-types#", read_format_field)
-        .with_description("A list of mime-types this format should be used for")
-        .with_enum_values(MIME_TYPE_ENUM),
+        .with_pattern(R"(^\w/[\w\.]+)")
+        .with_description(
+            "A list of mime-types this format should be used for"),
     json_path_handler("level-field")
         .with_description(
             "The name of the level field in the log message pattern")

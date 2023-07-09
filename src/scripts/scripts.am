@@ -9,4 +9,5 @@ BUILTIN_LNAVSCRIPTS = \
 
 BUILTIN_SHSCRIPTS = \
     $(srcdir)/scripts/dump-pid.sh \
+    $(srcdir)/scripts/pcap-converter.sh \
     $()

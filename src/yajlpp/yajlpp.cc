@@ -213,7 +213,7 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
 
     if (this->jph_children) {
         for (const auto& lpath : local_paths) {
-            std::string full_path = lpath;
+            std::string full_path = json_ptr::encode_str(lpath);
             if (this->jph_path_provider) {
                 full_path += "/";
             }
@@ -455,8 +455,8 @@ json_path_handler_base::gen_schema_type(yajlpp_gen_context& ygc) const
 
 void
 json_path_handler_base::walk(
-    const std::function<
-        void(const json_path_handler_base&, const std::string&, void*)>& cb,
+    const std::function<void(
+        const json_path_handler_base&, const std::string&, const void*)>& cb,
     void* root,
     const std::string& base) const
 {
@@ -465,17 +465,23 @@ json_path_handler_base::walk(
     if (this->jph_path_provider) {
         this->jph_path_provider(root, local_paths);
 
-        for (auto& lpath : local_paths) {
+        for (const auto& lpath : local_paths) {
             cb(*this,
                fmt::format(FMT_STRING("{}{}{}"),
                            base,
-                           lpath,
+                           json_ptr::encode_str(lpath),
                            this->jph_children ? "/" : ""),
                nullptr);
         }
         if (this->jph_obj_deleter) {
             local_paths.clear();
             this->jph_path_provider(root, local_paths);
+        }
+        if (this->jph_field_getter) {
+            const auto* field = this->jph_field_getter(root, nonstd::nullopt);
+            if (field != nullptr) {
+                cb(*this, base, field);
+            }
         }
     } else {
         local_paths.emplace_back(this->jph_property);
@@ -484,6 +490,7 @@ json_path_handler_base::walk(
         if (this->jph_children) {
             full_path += "/";
         }
+
         cb(*this, full_path, nullptr);
     }
 
@@ -493,7 +500,7 @@ json_path_handler_base::walk(
                 static const intern_string_t POSS_SRC
                     = intern_string::lookup("possibilities");
 
-                std::string full_path = base + lpath;
+                std::string full_path = base + json_ptr::encode_str(lpath);
                 if (this->jph_children) {
                     full_path += "/";
                 }
@@ -509,13 +516,18 @@ json_path_handler_base::walk(
                     static thread_local auto md
                         = lnav::pcre2pp::match_data::unitialized();
 
-                    std::string full_path = lpath + "/";
+                    const auto short_path = json_ptr::encode_str(lpath) + "/";
 
-                    if (!this->jph_regex->capture_from(full_path)
+                    if (!this->jph_regex->capture_from(short_path)
                              .into(md)
                              .matches()
                              .ignore_error())
                     {
+                        log_error(
+                            "path-handler regex (%s) does not match path: "
+                            "%s",
+                            this->jph_regex->get_pattern().c_str(),
+                            full_path.c_str());
                         ensure(false);
                     }
                     child_root = this->jph_obj_provider(
@@ -527,7 +539,7 @@ json_path_handler_base::walk(
         }
     } else {
         for (auto& lpath : local_paths) {
-            void* field = nullptr;
+            const void* field = nullptr;
 
             if (this->jph_field_getter) {
                 field = this->jph_field_getter(root, lpath);

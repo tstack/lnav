@@ -81,9 +81,7 @@
                     "type": "array",
                     "items": {
                         "type": "string",
-                        "enum": [
-                            "application/vnd.tcpdump.pcap"
-                        ]
+                        "pattern": "^\\w/[\\w\\.]+"
                     }
                 },
                 "level-field": {

@@ -228,11 +228,11 @@ struct json_path_handler_base {
     yajl_gen_status gen(yajlpp_gen_context& ygc, yajl_gen handle) const;
     yajl_gen_status gen_schema(yajlpp_gen_context& ygc) const;
     yajl_gen_status gen_schema_type(yajlpp_gen_context& ygc) const;
-    void walk(
-        const std::function<
-            void(const json_path_handler_base&, const std::string&, void*)>& cb,
-        void* root = nullptr,
-        const std::string& base = "/") const;
+    void walk(const std::function<void(const json_path_handler_base&,
+                                       const std::string&,
+                                       const void*)>& cb,
+              void* root = nullptr,
+              const std::string& base = "/") const;
 
     enum class schema_type_t : std::uint32_t {
         ANY,
@@ -255,7 +255,7 @@ struct json_path_handler_base {
     std::function<void(yajlpp_parse_context& ypc,
                        const json_path_handler_base& jph)>
         jph_validator;
-    std::function<void*(void* root, nonstd::optional<std::string> name)>
+    std::function<const void*(void* root, nonstd::optional<std::string> name)>
         jph_field_getter;
     std::function<void*(const yajlpp_provider_context& pe, void* root)>
         jph_obj_provider;
@@ -450,6 +450,16 @@ public:
         auto obj = (T*) this->ypc_obj_stack.top();
 
         return obj->*MEM;
+    }
+
+    void fill_in_source()
+    {
+        if (this->ypc_locations != nullptr) {
+            (*this->ypc_locations)[this->get_full_path()] = source_location{
+                this->ypc_source,
+                this->get_line_number(),
+            };
+        }
     }
 
     const intern_string_t ypc_source;

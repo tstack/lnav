@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,31 +25,39 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file pcap_manager.hh
  */
 
-#ifndef lnav_pcap_manager_hh
-#define lnav_pcap_manager_hh
+#ifndef lnav_file_format_cfg_hh
+#define lnav_file_format_cfg_hh
 
+#include <map>
 #include <string>
-#include <vector>
 
-#include "base/auto_fd.hh"
-#include "base/auto_pid.hh"
-#include "base/result.h"
-#include "ghc/filesystem.hpp"
+#include "yajlpp/yajlpp.hh"
 
-namespace pcap_manager {
+namespace lnav {
+namespace file_formats {
 
-struct convert_result {
-    auto_pid<process_state::running> cr_child;
-    ghc::filesystem::path cr_destination;
-    std::shared_ptr<std::vector<std::string>> cr_error_queue;
+struct header_exprs {
+    std::map<std::string, std::string> he_exprs;
 };
 
-Result<convert_result, std::string> convert(const std::string& filename);
+struct header {
+    header_exprs h_exprs;
+    size_t h_size{32};
+};
 
-}  // namespace pcap_manager
+struct format_def {
+    std::string fd_title;
+    header fd_header;
+    positioned_property<std::string> fd_converter;
+};
+
+struct config {
+    std::map<std::string, format_def> c_defs;
+};
+
+}  // namespace file_formats
+}  // namespace lnav
 
 #endif

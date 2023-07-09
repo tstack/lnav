@@ -43,6 +43,7 @@
 #include "base/file_range.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
+#include "file_format.cfg.hh"
 #include "file_vtab.cfg.hh"
 #include "ghc/filesystem.hpp"
 #include "lnav_config_fwd.hh"
@@ -111,6 +112,7 @@ struct _lnav_config {
 
     archive_manager::config lc_archive_manager;
     lnav::piper::config lc_piper;
+    lnav::file_formats::config lc_file_formats;
     file_vtab::config lc_file_vtab;
     lnav::logfile::config lc_logfile;
     tailer::config lc_tailer;

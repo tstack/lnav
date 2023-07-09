@@ -50,7 +50,8 @@ column_namer::existing_name(const string_fragment& in_name) const
             auto upped = toupper(in_name.to_string());
 
             if (std::binary_search(
-                    std::begin(sql_keywords), std::end(sql_keywords), upped)) {
+                    std::begin(sql_keywords), std::end(sql_keywords), upped))
+            {
                 return true;
             }
             break;
@@ -99,10 +100,13 @@ column_namer::add_column(const string_fragment& in_name)
             this->cn_name_counters[counter_name] = num;
         }
 
-        log_debug(
-            "column name already exists: %.*s", retval.length(), retval.data());
         fmt::format_to(
             std::back_inserter(buf), FMT_STRING("{}_{}"), base_name, num);
+        log_debug("column name already exists (%.*s), trying (%.*s)",
+                  retval.length(),
+                  retval.data(),
+                  buf.size(),
+                  buf.data());
         retval = string_fragment::from_memory_buffer(buf);
         num += 1;
     }

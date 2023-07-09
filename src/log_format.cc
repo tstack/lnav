@@ -2950,13 +2950,15 @@ external_log_format::match_name(const std::string& filename)
 }
 
 bool
-external_log_format::match_mime_type(const file_format_t ff) const
+external_log_format::match_mime_type(const mime_type& mt) const
 {
-    if (ff == file_format_t::UNKNOWN && this->elf_mime_types.empty()) {
+    if (mt.mt_type == "text" && mt.mt_subtype == "plain"
+        && this->elf_mime_types.empty())
+    {
         return true;
     }
 
-    return this->elf_mime_types.count(ff) == 1;
+    return this->elf_mime_types.count(mt) == 1;
 }
 
 auto

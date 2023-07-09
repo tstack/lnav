@@ -141,7 +141,7 @@ public:
 
     bool match_name(const std::string& filename) override;
 
-    bool match_mime_type(const file_format_t ff) const override;
+    bool match_mime_type(const mime_type& mt) const override;
 
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
@@ -313,7 +313,7 @@ public:
     std::vector<ghc::filesystem::path> elf_format_source_order;
     std::map<intern_string_t, int> elf_format_sources;
     std::list<intern_string_t> elf_collision;
-    std::set<file_format_t> elf_mime_types;
+    std::set<mime_type> elf_mime_types;
     factory_container<lnav::pcre2pp::code> elf_filename_pcre;
     std::map<std::string, std::shared_ptr<pattern>> elf_patterns;
     std::vector<std::shared_ptr<pattern>> elf_pattern_order;

@@ -25,15 +25,13 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file pcap_manager.cc
  */
 
 #include <memory>
 #include <thread>
 #include <vector>
 
-#include "pcap_manager.hh"
+#include "file_converter_manager.hh"
 
 #include <unistd.h>
 
@@ -42,16 +40,16 @@
 #include "config.h"
 #include "line_buffer.hh"
 
-namespace pcap_manager {
+namespace file_converter_manager {
 
 Result<convert_result, std::string>
-convert(const std::string& filename)
+convert(const external_file_format& eff, const std::string& filename)
 {
-    log_info("attempting to convert pcap file -- %s", filename.c_str());
+    log_info("attempting to convert file -- %s", filename.c_str());
 
     ghc::filesystem::create_directories(lnav::paths::workdir());
     auto outfile = TRY(lnav::filesystem::open_temp_file(lnav::paths::workdir()
-                                                        / "pcap.XXXXXX"));
+                                                        / "conversion.XXXXXX"));
     auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
     auto child = TRY(lnav::pid::from_fork());
 
@@ -62,28 +60,35 @@ convert(const std::string& filename)
         dup2(dev_null, STDIN_FILENO);
         dup2(outfile.second.get(), STDOUT_FILENO);
         outfile.second.reset();
-        setenv("TZ", "UTC", 1);
+
+        auto new_path = lnav::filesystem::build_path({
+            eff.eff_source_path.parent_path(),
+            lnav::paths::dotlnav() / "formats/default",
+        });
+        setenv("PATH", new_path.c_str(), 1);
+        log_info("invoking converter: %s (PATH=%s)",
+                 eff.eff_converter.c_str(),
+                 new_path.c_str());
+        auto mime_str = eff.eff_mime_type.to_string();
 
         const char* args[] = {
-            "tshark",
-            "-T",
-            "ek",
-            "-P",
-            "-V",
-            "-t",
-            "ad",
-            "-r",
+            eff.eff_converter.c_str(),
+            mime_str.c_str(),
             filename.c_str(),
             nullptr,
         };
 
-        execvp("tshark", (char**) args);
+        setenv("TZ", "UTC", 1);
+        execvp(eff.eff_converter.c_str(), (char**) args);
         if (errno == ENOENT) {
             fprintf(stderr,
-                    "pcap support requires 'tshark' v3+ to be installed\n");
+                    "cannot find converter: %s\n",
+                    eff.eff_converter.c_str());
         } else {
-            fprintf(
-                stderr, "failed to execute 'tshark' -- %s\n", strerror(errno));
+            fprintf(stderr,
+                    "failed to execute converter: %s -- %s\n",
+                    eff.eff_converter.c_str(),
+                    strerror(errno));
         }
         _exit(EXIT_FAILURE);
     }
@@ -138,4 +143,4 @@ convert(const std::string& filename)
     });
 }
 
-}  // namespace pcap_manager
+}  // namespace file_converter_manager
