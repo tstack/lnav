@@ -8,6 +8,10 @@ on:
       - 'docs/**'
       - README.md
       - NEWS.md
+      - .github/actions/muslbuilder/Dockerfile
+      - .github/actions/muslbuilder/entrypoint.sh
+      - .github/workflows/musl-build-image.yml
+      - '.github/ISSUE_TEMPLATE/**'
   workflow_call:
     inputs:
       lnav_version_number:
