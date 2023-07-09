@@ -8,6 +8,10 @@ on:
       - .github/actions/muslbuilder/entrypoint.sh
       - .github/workflows/musl-build-image.yml
 
+concurrency:
+  group: musl-build-image
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,6 +36,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ${{ github.workspace }}/.github/actions/muslbuilder/
-          platforms: linux/amd64, linux/arm/v7,linux/arm64
+          platforms: linux/amd64, linux/arm/v7, linux/arm64
           push: true
           tags: tstack/lnav-build:latest
