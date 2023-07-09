@@ -352,9 +352,9 @@ public:
 
     virtual bool match_name(const std::string& filename) { return true; }
 
-    virtual bool match_mime_type(const file_format_t ff) const
+    virtual bool match_mime_type(const mime_type& mt) const
     {
-        if (ff == file_format_t::UNKNOWN) {
+        if (mt.mt_type == "text" && mt.mt_subtype == "plain") {
             return true;
         }
         return false;

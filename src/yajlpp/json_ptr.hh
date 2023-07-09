@@ -64,7 +64,8 @@ public:
     void inc_array_index()
     {
         if (!this->jpw_array_indexes.empty()
-            && this->jpw_array_indexes.back() != -1) {
+            && this->jpw_array_indexes.back() != -1)
+        {
             this->jpw_array_indexes.back() += 1;
         }
     }
@@ -107,6 +108,12 @@ public:
                          size_t dst_len,
                          const char* src,
                          size_t src_len = -1);
+
+    static std::string encode_str(const char* src, size_t src_len = -1);
+    static std::string encode_str(const std::string& src)
+    {
+        return encode_str(src.c_str(), src.size());
+    }
 
     static size_t decode(char* dst, const char* src, ssize_t src_len = -1);
 

@@ -1,0 +1,19 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "tuning": {
+        "file-format": {
+            "application/vnd.example.com": {
+                "title": "example",
+                "header": {
+                    "expr": {
+                        "default": ":header REGEXP 'foobar"
+                    },
+                    "size": 8
+                }
+            },
+            "application/vnd.example2.com": {
+                "title": "example"
+            }
+        }
+    }
+}

@@ -235,6 +235,7 @@ dist_noinst_DATA = \
 	bad-config/formats/invalid-sql/init2.sql \
 	bad-config/formats/no-regexes/format.json \
 	bad-config/formats/no-samples/format.json \
+	bad-config2/configs/invalid-file-format/config.json \
 	bad-config2/formats/invalid-config/config.json \
 	bad-config2/formats/invalid-config/config.bad-schema.json \
 	bad-config2/formats/invalid-config/config.malformed.json \

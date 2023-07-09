@@ -36,7 +36,7 @@
                         "bold": true
                     },
                     "cursor-line": {
-                        "color": "Cyan",
+                        "color": "Cyan1",
                         "background-color": "Red",
                         "bold": true,
                         "underline": true

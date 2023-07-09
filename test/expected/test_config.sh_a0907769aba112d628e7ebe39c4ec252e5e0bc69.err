@@ -36,3 +36,34 @@
 [1m[31m✘ error[0m: invalid JSON
  [1m[31mreason[0m: parse error: premature EOF
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.truncated.json[0m:3
+[1m[31m✘ error[0m: invalid value for property “[1m/tuning/file-format/application~1vnd.example.com/header/expr/default[0m”
+ [1m[31mreason[0m: SQL expression is invalid
+[1m[31m |      [0m  [1m[31mreason[0m: unrecognized token: "'foobar"
+[1m[31m |      [0m [36m --> [0m[1m/tuning/file-formats/application~1vnd.example.com/header/expr/default[0m
+[1m[31m |      [0m [36m | [0m[37m[40m:header[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[1m[7m[31m[40m'[0m[37m[40mfoobar                  [0m
+[36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-file-format/config.json[0m:9
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/tuning/file-format/application~1vnd.example.com/header/expr/default[0m 
+         [1mDescription[0m
+           SQLite expression
+[1m[31m✘ error[0m: missing value for property “[1m/tuning/file-format/application~1vnd.example.com/converter[0m”
+ [1m[31mreason[0m: A converter is required for a file format
+[1m[31m |      [0m  [1m[31mreason[0m: The converter script transforms the file into a format that can be consumed by lnav
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/tuning/file-format/application~1vnd.example.com/converter[0m 
+         [1mDescription[0m
+           The script used to convert the file
+[1m[31m✘ error[0m: missing value for property “[1m/tuning/file-format/application~1vnd.example2.com/header/expr/[0m”
+ [1m[31mreason[0m: At least one header expression is required for a file format
+[1m[31m |      [0m  [1m[31mreason[0m: Header expressions are used to detect a format
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/tuning/file-format/application~1vnd.example2.com/header/expr/[0m 
+         [1mDescription[0m
+           SQLite expression
+[1m[31m✘ error[0m: missing value for property “[1m/tuning/file-format/application~1vnd.example2.com/converter[0m”
+ [1m[31mreason[0m: A converter is required for a file format
+[1m[31m |      [0m  [1m[31mreason[0m: The converter script transforms the file into a format that can be consumed by lnav
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/tuning/file-format/application~1vnd.example2.com/converter[0m 
+         [1mDescription[0m
+           The script used to convert the file

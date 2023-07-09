@@ -11,6 +11,7 @@
 #    include <alloca.h>
 #endif
 
+#include <assert.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -67,7 +68,7 @@ process(struct file_meta* fm, FILE* ofile)
     }
 
     unsigned char* buf = malloc(st.st_size);
-    unsigned char* dest = malloc(st.st_size);
+    unsigned char* dest = malloc(st.st_size + 1024);
 
     int fd = open(fm->fm_name, O_RDONLY);
     if (fd == -1) {
@@ -80,8 +81,9 @@ process(struct file_meta* fm, FILE* ofile)
         fm->fm_size += rc;
     }
 
-    uLongf destLen = st.st_size;
-    compress(dest, &destLen, buf, st.st_size);
+    uLongf destLen = st.st_size + 1024;
+    int cres = compress(dest, &destLen, buf, st.st_size);
+    assert(cres == Z_OK);
     fm->fm_compressed_size = destLen;
 
     int c, col = 1;

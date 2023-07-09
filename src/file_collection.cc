@@ -41,9 +41,9 @@
 #include "base/opt_util.hh"
 #include "base/string_util.hh"
 #include "config.h"
+#include "file_converter_manager.hh"
 #include "lnav_util.hh"
 #include "logfile.hh"
-#include "pcap_manager.hh"
 #include "service_tags.hh"
 #include "tailer/tailer.looper.hh"
 
@@ -134,7 +134,6 @@ file_collection::regenerate_unique_file_names()
         switch (pair.second.ofd_format) {
             case file_format_t::UNKNOWN:
             case file_format_t::ARCHIVE:
-            case file_format_t::PCAP:
             case file_format_t::SQLITE_DB: {
                 auto bn = ghc::filesystem::path(pair.first).filename().string();
                 if (bn.length() > this->fc_largest_path_length) {
@@ -336,63 +335,6 @@ file_collection::watch_logfile(const std::string& filename,
                     retval.fc_other_files[filename].ofd_format = ff;
                     break;
 
-                case file_format_t::PCAP: {
-                    auto res = pcap_manager::convert(filename);
-
-                    if (res.isOk()) {
-                        auto convert_res = res.unwrap();
-                        retval.fc_child_pollers.emplace_back(child_poller{
-                            std::move(convert_res.cr_child),
-                            [filename,
-                             st,
-                             error_queue = convert_res.cr_error_queue](
-                                auto& fc, auto& child) {
-                                if (child.was_normal_exit()
-                                    && child.exit_status() == EXIT_SUCCESS)
-                                {
-                                    log_info("pcap[%d] exited normally",
-                                             child.in());
-                                    return;
-                                }
-                                log_error("pcap[%d] exited with %d",
-                                          child.in(),
-                                          child.status());
-                                fc.fc_name_to_errors.emplace(
-                                    filename,
-                                    file_error_info{
-                                        st.st_mtime,
-                                        fmt::format(
-                                            FMT_STRING("{}"),
-                                            fmt::join(*error_queue, "\n")),
-                                    });
-                            },
-                        });
-                        loo.with_stat_for_temp(st);
-                        auto open_res
-                            = logfile::open(convert_res.cr_destination, loo);
-                        if (open_res.isOk()) {
-                            retval.fc_files.push_back(open_res.unwrap());
-                        } else {
-                            log_error("failed to open: %s -- %s",
-                                      filename.c_str(),
-                                      open_res.unwrapErr().c_str());
-                            retval.fc_name_to_errors.emplace(
-                                filename,
-                                file_error_info{
-                                    st.st_mtime,
-                                    open_res.unwrapErr(),
-                                });
-                        }
-                    } else {
-                        retval.fc_name_to_errors.emplace(filename,
-                                                         file_error_info{
-                                                             st.st_mtime,
-                                                             res.unwrapErr(),
-                                                         });
-                    }
-                    break;
-                }
-
                 case file_format_t::ARCHIVE: {
                     nonstd::optional<
                         std::list<archive_manager::extract_progress>::iterator>
@@ -462,10 +404,64 @@ file_collection::watch_logfile(const std::string& filename,
                     break;
                 }
 
-                default:
+                default: {
+                    auto filename_to_open = filename;
+
+                    if (!loo.loo_temp_file) {
+                        auto eff = detect_mime_type(filename);
+
+                        if (eff) {
+                            auto cr = file_converter_manager::convert(
+                                eff.value(), filename);
+
+                            if (cr.isErr()) {
+                                retval.fc_name_to_errors.emplace(
+                                    filename,
+                                    file_error_info{
+                                        st.st_mtime,
+                                        cr.unwrapErr(),
+                                    });
+                                break;
+                            }
+
+                            auto convert_res = cr.unwrap();
+                            retval.fc_child_pollers.emplace_back(child_poller{
+                                std::move(convert_res.cr_child),
+                                [filename,
+                                 st,
+                                 error_queue = convert_res.cr_error_queue](
+                                    auto& fc, auto& child) {
+                                    if (child.was_normal_exit()
+                                        && child.exit_status() == EXIT_SUCCESS)
+                                    {
+                                        log_info(
+                                            "converter[%d] exited normally",
+                                            child.in());
+                                        return;
+                                    }
+                                    log_error("converter[%d] exited with %d",
+                                              child.in(),
+                                              child.status());
+                                    fc.fc_name_to_errors.emplace(
+                                        filename,
+                                        file_error_info{
+                                            st.st_mtime,
+                                            fmt::format(
+                                                FMT_STRING("{}"),
+                                                fmt::join(*error_queue, "\n")),
+                                        });
+                                },
+                            });
+                            loo.with_filename(filename);
+                            loo.with_stat_for_temp(st);
+                            loo.loo_mime_type = eff->eff_mime_type;
+                            filename_to_open = convert_res.cr_destination;
+                        }
+                    }
+
                     log_info("loading new file: filename=%s", filename.c_str());
 
-                    auto open_res = logfile::open(filename, loo);
+                    auto open_res = logfile::open(filename_to_open, loo);
                     if (open_res.isOk()) {
                         retval.fc_files.push_back(open_res.unwrap());
                     } else {
@@ -477,6 +473,7 @@ file_collection::watch_logfile(const std::string& filename,
                             });
                     }
                     break;
+                }
             }
 
             return retval;

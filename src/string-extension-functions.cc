@@ -549,7 +549,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
 
                     for (int lpc = 0; lpc < text_len; lpc++) {
                         fmt::format_to(std::back_inserter(buf),
-                                       FMT_STRING("{:x}"),
+                                       FMT_STRING("{:02x}"),
                                        text[lpc]);
                     }
 

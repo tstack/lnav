@@ -1,0 +1,2 @@
+Row 0:
+  Column encode('hi' || char(10), 'hex'): 68690a

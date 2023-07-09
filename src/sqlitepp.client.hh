@@ -103,7 +103,10 @@ bind_values(sqlite3_stmt* stmt, Args... args)
 }
 
 struct prepared_stmt {
-    prepared_stmt(auto_mem<sqlite3_stmt> stmt) : ps_stmt(std::move(stmt)) {}
+    explicit prepared_stmt(auto_mem<sqlite3_stmt> stmt)
+        : ps_stmt(std::move(stmt))
+    {
+    }
 
     Result<void, std::string> execute()
     {
@@ -195,10 +198,12 @@ prepare_stmt(sqlite3* db, const char* sql, Args... args)
                         sqlite3_errmsg(db)));
     }
 
-    if (bind_values(retval.in(), args...) != SQLITE_OK) {
-        return Err(
-            fmt::format(FMT_STRING("unable to prepare SQL statement: {}"),
-                        sqlite3_errmsg(db)));
+    if (sizeof...(args) > 0) {
+        if (bind_values(retval.in(), args...) != SQLITE_OK) {
+            return Err(
+                fmt::format(FMT_STRING("unable to prepare SQL statement: {}"),
+                            sqlite3_errmsg(db)));
+        }
     }
 
     return Ok(prepared_stmt{

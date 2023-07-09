@@ -201,7 +201,9 @@ noinst_HEADERS = \
 	environ_vtab.hh \
 	field_overlay_source.hh \
 	file_collection.hh \
+	file_converter_manager.hh \
 	file_format.hh \
+	file_format.cfg.hh \
 	file_vtab.cfg.hh \
 	files_sub_source.hh \
 	filter_observer.hh \
@@ -258,7 +260,6 @@ noinst_HEADERS = \
 	md2attr_line.hh \
 	md4cpp.hh \
 	optional.hpp \
-	pcap_manager.hh \
 	piper.looper.hh \
 	piper.looper.cfg.hh \
 	plain_text_source.hh \
@@ -391,6 +392,7 @@ libdiag_a_SOURCES = \
 	extension-functions.cc \
 	field_overlay_source.cc \
 	file_collection.cc \
+	file_converter_manager.cc \
 	file_format.cc \
 	files_sub_source.cc \
 	filter_observer.cc \
@@ -428,7 +430,6 @@ libdiag_a_SOURCES = \
 	md4cpp.cc \
 	network-extension-functions.cc \
 	data_parser.cc \
-	pcap_manager.cc \
 	piper.looper.cc \
 	plain_text_source.cc \
 	pollable.cc \

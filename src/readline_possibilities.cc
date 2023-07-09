@@ -420,7 +420,7 @@ add_config_possibilities()
     std::set<std::string> visited;
     auto cb = [rc, &visited](const json_path_handler_base& jph,
                              const std::string& path,
-                             void* mem) {
+                             const void* mem) {
         if (jph.jph_children) {
             const auto named_caps = jph.jph_regex->get_named_captures();
 

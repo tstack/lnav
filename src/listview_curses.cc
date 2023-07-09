@@ -348,8 +348,9 @@ listview_curses::do_update()
             }
         }
 
-        if (this->lv_selectable && this->lv_selection >= 0
-            && (row > this->lv_tail_space) && (blank_rows < this->lv_tail_space)
+        if (this->lv_selectable && !this->lv_sync_selection_and_top
+            && this->lv_selection >= 0 && (row > this->lv_tail_space)
+            && (blank_rows < this->lv_tail_space)
             && ((row - this->lv_tail_space) < this->lv_selection))
         {
             this->shift_top(this->lv_selection - row + this->lv_tail_space);

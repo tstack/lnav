@@ -351,6 +351,7 @@ add_library(
         extension-functions.cc
         field_overlay_source.cc
         file_collection.cc
+        file_converter_manager.cc
         file_format.cc
         file_vtab.cc
         files_sub_source.cc
@@ -391,7 +392,7 @@ add_library(
         data_scanner.cc
         data_scanner_re.cc
         data_parser.cc
-        pcap_manager.cc
+        file_converter_manager.cc
         plain_text_source.cc
         pretty_printer.cc
         pugixml/pugixml.cpp
@@ -462,7 +463,9 @@ add_library(
         elem_to_json.hh
         field_overlay_source.hh
         file_collection.hh
+        file_converter_manager.hh
         file_format.hh
+        file_format.cfg.hh
         files_sub_source.hh
         filter_observer.hh
         filter_status_source.hh
@@ -502,7 +505,7 @@ add_library(
         md2attr_line.hh
         md4cpp.hh
         optional.hpp
-        pcap_manager.hh
+        file_converter_manager.hh
         piper.looper.hh
         piper.looper.cfg.hh
         plain_text_source.hh

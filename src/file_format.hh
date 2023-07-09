@@ -34,16 +34,44 @@
 
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
+#include "optional.hpp"
 
 enum class file_format_t : int {
     UNKNOWN,
     SQLITE_DB,
     ARCHIVE,
-    PCAP,
     REMOTE,
 };
 
+struct mime_type {
+    static mime_type from_str(const std::string& str);
+
+    std::string mt_type;
+    std::string mt_subtype;
+
+    bool operator<(const mime_type& other) const
+    {
+        return this->mt_type < other.mt_type
+            && this->mt_subtype < other.mt_subtype;
+    }
+
+    std::string to_string() const
+    {
+        return fmt::format(
+            FMT_STRING("{}/{}"), this->mt_type, this->mt_subtype);
+    }
+};
+
+struct external_file_format {
+    mime_type eff_mime_type;
+    std::string eff_converter;
+    ghc::filesystem::path eff_source_path;
+};
+
 file_format_t detect_file_format(const ghc::filesystem::path& filename);
+
+nonstd::optional<external_file_format> detect_mime_type(
+    const ghc::filesystem::path& filename);
 
 namespace fmt {
 template<>
@@ -58,9 +86,6 @@ struct formatter<file_format_t> : formatter<string_view> {
                 break;
             case file_format_t::ARCHIVE:
                 name = "\U0001F5C4  Archive";
-                break;
-            case file_format_t::PCAP:
-                name = "\U0001F5A5  Pcap";
                 break;
             case file_format_t::REMOTE:
                 name = "\U0001F5A5  Remote";

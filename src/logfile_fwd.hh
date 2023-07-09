@@ -66,6 +66,7 @@ struct logfile_open_options_base {
     ssize_t loo_visible_size_limit{-1};
     bool loo_tail{true};
     file_format_t loo_file_format{file_format_t::UNKNOWN};
+    nonstd::optional<mime_type> loo_mime_type;
     nonstd::optional<lnav::piper::running_handle> loo_piper;
 };
 

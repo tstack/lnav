@@ -2449,6 +2449,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     load_config(lnav_data.ld_config_paths, config_errors);
+
     if (!config_errors.empty()) {
         if (print_user_msgs(config_errors, mode_flags) != EXIT_SUCCESS) {
             return EXIT_FAILURE;
