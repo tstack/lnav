@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths-ignore:
-      - docs
+      - 'docs/**'
       - README.md
       - NEWS.md
   workflow_call:
