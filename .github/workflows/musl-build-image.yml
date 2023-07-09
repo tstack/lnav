@@ -15,6 +15,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CONTAINER_TAG: tstack/lnav-build:latest
     steps:
       -
         name: checkout code
@@ -38,4 +40,6 @@ jobs:
           context: ${{ github.workspace }}/.github/actions/muslbuilder/
           platforms: linux/amd64, linux/arm/v7, linux/arm64
           push: true
-          tags: tstack/lnav-build:latest
+          tags: ${{ env.CONTAINER_TAG }}
+          cache-from: type=registry,ref=${{ env.CONTAINER_TAG }}-buildcache
+          cache-to: type=registry,ref=${{ env.CONTAINER_TAG }}-buildcache,mode=max
