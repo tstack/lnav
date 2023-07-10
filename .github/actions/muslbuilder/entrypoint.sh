@@ -3,7 +3,7 @@
 set -Eeuxo pipefail
 
 if [ -z ${GITHUB_WORKSPACE:-} ]; then
-    git clone https://github.com/tstack/lnav.git
+    git clone --depth 1 https://github.com/tstack/lnav.git
     cd lnav
 else
     cd ${GITHUB_WORKSPACE}
