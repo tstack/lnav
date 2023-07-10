@@ -5,10 +5,11 @@ title: ''
 labels: bug
 assignees: ''
 
+
 ---
 
 **lnav version**
-v0.11.1 is the latest
+v0.11.2 is the latest
 
 **Describe the bug**
 A clear and concise description of what the bug is.
