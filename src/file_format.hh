@@ -43,27 +43,8 @@ enum class file_format_t : int {
     REMOTE,
 };
 
-struct mime_type {
-    static mime_type from_str(const std::string& str);
-
-    std::string mt_type;
-    std::string mt_subtype;
-
-    bool operator<(const mime_type& other) const
-    {
-        return this->mt_type < other.mt_type
-            && this->mt_subtype < other.mt_subtype;
-    }
-
-    std::string to_string() const
-    {
-        return fmt::format(
-            FMT_STRING("{}/{}"), this->mt_type, this->mt_subtype);
-    }
-};
-
 struct external_file_format {
-    mime_type eff_mime_type;
+    std::string eff_format_name;
     std::string eff_converter;
     ghc::filesystem::path eff_source_path;
 };

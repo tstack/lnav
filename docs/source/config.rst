@@ -260,10 +260,6 @@ command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/clipboard
 
-.. _tuning_file_format:
-
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/file-format
-
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/piper
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/definitions/clip-commands

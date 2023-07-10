@@ -26,19 +26,6 @@
                 "transfer-command": "cat > {0:} && chmod ugo+rx ./{0:}"
             }
         },
-        "file-format": {
-            "application/vnd.tcpdump.pcap": {
-                "title": "\ud83d\udda5  Pcap",
-                "header": {
-                    "expr": {
-                        "pcapng": ":header REGEXP '^0a0d0d0a.{8}(?:1a2b3c4d|4d3c2b1a).*'",
-                        "pcap": ":header REGEXP '^(?:a1b2c3d4|d4c3b2a1|a1b23c4d|4d3cb2a1).*'"
-                    },
-                    "size": 24
-                },
-                "converter": "pcap-converter.sh"
-            }
-        },
         "piper": {
             "max-size": 10485760,
             "rotations": 4

@@ -501,7 +501,7 @@ public:
     void reload_config(error_reporter& reporter) override
     {
         if (!view_colors::initialized) {
-            return;
+            view_colors::vc_active_palette = ansi_colors();
         }
 
         auto& vc = view_colors::singleton();
@@ -556,9 +556,8 @@ view_colors::init(bool headless)
     initialized = true;
 
     {
-        auto reporter = [](const void*, const lnav::console::user_message&) {
-
-        };
+        auto reporter
+            = [](const void*, const lnav::console::user_message& um) {};
 
         _COLOR_LISTENER.reload_config(reporter);
     }

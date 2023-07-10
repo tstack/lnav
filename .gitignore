@@ -1,5 +1,6 @@
 .deps
 .lnav
+.DS_Store
 *.dat
 *.diff
 test/*.err

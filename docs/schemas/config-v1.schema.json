@@ -73,59 +73,6 @@
                     },
                     "additionalProperties": false
                 },
-                "file-format": {
-                    "description": "sdfjdls",
-                    "title": "/tuning/file-format",
-                    "type": "object",
-                    "patternProperties": {
-                        "(\\w+~1[\\w\\.\\-]+)": {
-                            "description": "File format definitions, keyed by their MIME type",
-                            "title": "/tuning/file-format/<mime_type>",
-                            "type": "object",
-                            "properties": {
-                                "title": {
-                                    "title": "/tuning/file-format/<mime_type>/title",
-                                    "description": "The display name for this file format",
-                                    "type": "string"
-                                },
-                                "header": {
-                                    "description": "File header detection definitions",
-                                    "title": "/tuning/file-format/<mime_type>/header",
-                                    "type": "object",
-                                    "properties": {
-                                        "expr": {
-                                            "description": "The expressions used to check if a file header matches this file format",
-                                            "title": "/tuning/file-format/<mime_type>/header/expr",
-                                            "type": "object",
-                                            "patternProperties": {
-                                                "(\\w+)": {
-                                                    "title": "/tuning/file-format/<mime_type>/header/expr/<header_expr_name>",
-                                                    "description": "SQLite expression",
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "additionalProperties": false
-                                        },
-                                        "size": {
-                                            "title": "/tuning/file-format/<mime_type>/header/size",
-                                            "description": "The minimum size required for this header type",
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "additionalProperties": false
-                                },
-                                "converter": {
-                                    "title": "/tuning/file-format/<mime_type>/converter",
-                                    "description": "The script used to convert the file",
-                                    "type": "string",
-                                    "pattern": "[\\w\\.\\-]+"
-                                }
-                            },
-                            "additionalProperties": false
-                        }
-                    },
-                    "additionalProperties": false
-                },
                 "logfile": {
                     "description": "Settings related to log files",
                     "title": "/tuning/logfile",

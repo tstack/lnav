@@ -203,7 +203,6 @@ noinst_HEADERS = \
 	file_collection.hh \
 	file_converter_manager.hh \
 	file_format.hh \
-	file_format.cfg.hh \
 	file_vtab.cfg.hh \
 	files_sub_source.hh \
 	filter_observer.hh \

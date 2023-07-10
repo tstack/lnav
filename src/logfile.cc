@@ -259,9 +259,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 this->lf_mismatched_formats.insert(curr->get_name());
                 continue;
             }
-            if (this->lf_options.loo_mime_type
-                && !curr->match_mime_type(
-                    this->lf_options.loo_mime_type.value()))
+            if (this->lf_options.loo_format_name
+                && !(curr->get_name()
+                     == this->lf_options.loo_format_name.value()))
             {
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file format: %s",

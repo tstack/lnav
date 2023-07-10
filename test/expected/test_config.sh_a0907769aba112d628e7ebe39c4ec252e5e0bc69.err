@@ -1,3 +1,11 @@
+[33m⚠ warning[0m: unexpected value for property “[1m/ui/theme-defs/invalid-theme/styles/text/bad-property[0m”
+[36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-theme/config.json[0m:9
+[36m | [0m[37m[40m                        "bad-property": "abc"[0m
+[36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
+           [1mcolor[0m [4m#hex|color_name[0m
+           [1mbackground-color[0m [4m#hex|color_name[0m
+           [1munderline[0m 
+           [1mbold[0m
 [1m[31m✘ error[0m: '[1mbad[0m' is not a supported configuration $schema version
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.bad-schema.json[0m:2
 [36m | [0m[37m[40m    "$schema": "bad"                    [0m
@@ -36,34 +44,15 @@
 [1m[31m✘ error[0m: invalid JSON
  [1m[31mreason[0m: parse error: premature EOF
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.truncated.json[0m:3
-[1m[31m✘ error[0m: invalid value for property “[1m/tuning/file-format/application~1vnd.example.com/header/expr/default[0m”
- [1m[31mreason[0m: SQL expression is invalid
-[1m[31m |      [0m  [1m[31mreason[0m: unrecognized token: "'foobar"
-[1m[31m |      [0m [36m --> [0m[1m/tuning/file-formats/application~1vnd.example.com/header/expr/default[0m
-[1m[31m |      [0m [36m | [0m[37m[40m:header[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[1m[7m[31m[40m'[0m[37m[40mfoobar                  [0m
-[36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-file-format/config.json[0m:9
+[1m[31m✘ error[0m: invalid value for property “[1m/ui/theme-defs/invalid-theme/styles/text/color[0m”
+ [1m[31mreason[0m: invalid color -- “InvalidColor”
+[1m[31m |      [0m  [1m[31mreason[0m: Unknown color: 'InvalidColor'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
+[36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-theme/config.json[0m:8
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
-           [1m/tuning/file-format/application~1vnd.example.com/header/expr/default[0m 
+           [1m/ui/theme-defs/invalid-theme/styles/text/color[0m [4m#hex|color_name[0m
          [1mDescription[0m
-           SQLite expression
-[1m[31m✘ error[0m: missing value for property “[1m/tuning/file-format/application~1vnd.example.com/converter[0m”
- [1m[31mreason[0m: A converter is required for a file format
-[1m[31m |      [0m  [1m[31mreason[0m: The converter script transforms the file into a format that can be consumed by lnav
-[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
-           [1m/tuning/file-format/application~1vnd.example.com/converter[0m 
-         [1mDescription[0m
-           The script used to convert the file
-[1m[31m✘ error[0m: missing value for property “[1m/tuning/file-format/application~1vnd.example2.com/header/expr/[0m”
- [1m[31mreason[0m: At least one header expression is required for a file format
-[1m[31m |      [0m  [1m[31mreason[0m: Header expressions are used to detect a format
-[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
-           [1m/tuning/file-format/application~1vnd.example2.com/header/expr/[0m 
-         [1mDescription[0m
-           SQLite expression
-[1m[31m✘ error[0m: missing value for property “[1m/tuning/file-format/application~1vnd.example2.com/converter[0m”
- [1m[31mreason[0m: A converter is required for a file format
-[1m[31m |      [0m  [1m[31mreason[0m: The converter script transforms the file into a format that can be consumed by lnav
-[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
-           [1m/tuning/file-format/application~1vnd.example2.com/converter[0m 
-         [1mDescription[0m
-           The script used to convert the file
+           The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.
+         [1mExamples[0m
+           #fff
+           Green
+           $black

@@ -454,7 +454,7 @@ file_collection::watch_logfile(const std::string& filename,
                             });
                             loo.with_filename(filename);
                             loo.with_stat_for_temp(st);
-                            loo.loo_mime_type = eff->eff_mime_type;
+                            loo.loo_format_name = eff->eff_format_name;
                             filename_to_open = convert_res.cr_destination;
                         }
                     }

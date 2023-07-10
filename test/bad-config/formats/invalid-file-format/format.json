@@ -1,0 +1,27 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "bad_file_format1": {
+        "title": "bad file format",
+        "regex": {
+            "std": {
+                "pattern": "(?<timestamp>\\d+): (?<body>.*)$"
+            }
+        },
+        "converter": {
+            "header": {
+                "expr": {
+                    "default": ":header REGEXP 'foobar"
+                },
+                "size": 8
+            }
+        },
+        "timestamp-format": [
+            "%i"
+        ],
+        "sample": [
+            {
+                "line": "1234: abcd"
+            }
+        ]
+    }
+}

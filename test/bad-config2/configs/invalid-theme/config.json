@@ -1,0 +1,15 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "ui": {
+        "theme-defs": {
+            "invalid-theme": {
+                "styles": {
+                    "text": {
+                        "color": "InvalidColor",
+                        "bad-property": "abc"
+                    }
+                }
+            }
+        }
+    }
+}

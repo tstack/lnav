@@ -278,10 +278,9 @@ public:
     std::unordered_map<std::string, string_attr_pair> vc_class_to_role;
 
     static bool initialized;
-
-private:
     static term_color_palette* vc_active_palette;
 
+private:
     /** Private constructor that initializes the member fields. */
     view_colors();
 

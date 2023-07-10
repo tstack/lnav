@@ -69,11 +69,11 @@ convert(const external_file_format& eff, const std::string& filename)
         log_info("invoking converter: %s (PATH=%s)",
                  eff.eff_converter.c_str(),
                  new_path.c_str());
-        auto mime_str = eff.eff_mime_type.to_string();
+        auto format_str = eff.eff_format_name;
 
         const char* args[] = {
             eff.eff_converter.c_str(),
-            mime_str.c_str(),
+            format_str.c_str(),
             filename.c_str(),
             nullptr,
         };
@@ -95,6 +95,7 @@ convert(const external_file_format& eff, const std::string& filename)
 
     auto error_queue = std::make_shared<std::vector<std::string>>();
     std::thread err_reader([err = std::move(err_pipe.read_end()),
+                            converter = eff.eff_converter,
                             error_queue,
                             child_pid = child.in()]() mutable {
         line_buffer lb;
@@ -115,7 +116,7 @@ convert(const external_file_format& eff, const std::string& filename)
                     done = true;
                 } else {
                     lb.read_range(li.li_file_range)
-                        .then([error_queue, child_pid](auto sbr) {
+                        .then([converter, error_queue, child_pid](auto sbr) {
                             auto line_str = string_fragment(
                                                 sbr.get_data(), 0, sbr.length())
                                                 .trim("\n");
@@ -123,7 +124,8 @@ convert(const external_file_format& eff, const std::string& filename)
                                 error_queue->emplace_back(line_str.to_string());
                             }
 
-                            log_debug("pcap[%d]: %.*s",
+                            log_debug("%s[%d]: %.*s",
+                                      converter.c_str(),
                                       child_pid,
                                       line_str.length(),
                                       line_str.data());
