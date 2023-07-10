@@ -133,11 +133,29 @@ object with the following fields:
 
 :json: True if each log line is JSON-encoded.
 
-:mime-types: An array of MIME types that this log format should only be
-  used with.  These MIME types refer to file formats that are defined
-  using the `Automatic File Conversion`_ feature.  This property should
-  not be defined for log files that do not require conversion and can be
-  naturally parsed using regexes or are JSON-lines.
+:converter: An object that describes how an input file can be detected and
+  then converted to a form that can be interpreted by **lnav**.  For
+  example, a PCAP file is in a binary format that cannot be handled natively
+  by **lnav**.  However, a PCAP file can be converted by :file:`tshark`
+  into JSON-lines that can be handled by **lnav**.  So, this configuration
+  describes how the input file format can be detected and converted.  See
+  `Automatic File Conversion`_ for more information.
+
+  :header: An object that describes how to match the header of the input
+    file.
+
+    :expr: An object that contains SQLite expressions that can be used to
+      check if the input file's header is of this type.  The property
+      name is the name of the expression and the value is the expression.
+      The expression is evaluated with the following variables:
+
+        :\:header: The hex-encoded version of the header content.
+
+        :\:filepath: The path to the input file.
+
+    :size: The minimum size of header that is needed to do the match.
+
+  :command: The command to execute to convert the input file.
 
 :line-format: An array that specifies the text format for JSON-encoded
   log messages.  Log files that are JSON-encoded will have each message
@@ -571,23 +589,25 @@ Automatic File Conversion
 
 File formats that are not naturally understood by **lnav** can be
 automatically detected and converted to a usable form using the
-:ref:`tuning_file_format` configuration options.  For example,
-PCAP files can be detected and converted to a JSON-lines form
-using :code:`tshark`.  The conversion process works as follows:
+:code:`converter` property.  For example, PCAP files can be
+detected and converted to a JSON-lines form using :code:`tshark`.
+The conversion process works as follows:
 
 #. The first 1024 bytes of the file are read, if available.
 #. This header is converted into a hex string.
-#. For each file-format, every "header expression" is evaluated
-   to see if there is a match.  The header expressions are
-   SQLite expressions where the following variables are defined:
+#. For each log format that has defined a :code:`converter`,
+   every "header expression" is evaluated to see if there is a
+   match.  The header expressions are SQLite expressions where
+   the following variables are defined:
 
    :\:header: A string containing the header as a hex string.
+
    :\:filepath: The path to the file.
+
 #. If a match is found, the converter script defined in the
-   file format will be invoked and passed the format MIME type
-   and path to the file as arguments.  The script should write
+   log format will be invoked and passed the format name and
+   path to the file as arguments.  The script should write
    the converted form of the input file on its standard output.
    Any errors should be written to the standard error.
-#. The MIME type will be associated with the original file and
-   only log formats that have the corresponding type will be
-   used to interpret the file.
+#. The log format will be associated with the original file will
+   be used to interpret the converted file.

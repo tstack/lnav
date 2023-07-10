@@ -4,11 +4,18 @@
         "json": true,
         "title": "Packet Capture",
         "description": "Internal format for pcap files",
-        "mime-types": [
-            "application/vnd.tcpdump.pcap"
-        ],
         "multiline": false,
         "convert-to-local-time": true,
+        "converter": {
+            "header": {
+                "expr": {
+                    "pcapng": ":header REGEXP '^0a0d0d0a.{8}(?:1a2b3c4d|4d3c2b1a).*'",
+                    "pcap": ":header REGEXP '^(?:a1b2c3d4|d4c3b2a1|a1b23c4d|4d3cb2a1).*'"
+                },
+                "size": 24
+            },
+            "command": "pcap_log-converter.sh"
+        },
         "line-format": [
             {
                 "field": "time"

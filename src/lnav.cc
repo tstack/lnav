@@ -1002,7 +1002,13 @@ wait_for_pipers()
             log_debug("all pipers finished");
             break;
         }
-        std::this_thread::sleep_for(sleep_time);
+        // Use usleep() since it is defined to be interruptable by a signal.
+        auto urc = usleep(
+            std::chrono::duration_cast<std::chrono::microseconds>(sleep_time)
+                .count());
+        if (urc == -1 && errno == EINTR) {
+            log_trace("wait_for_pipers(): sleep interrupted");
+        }
         rebuild_indexes();
 
         log_debug("%d pipers and %d children are still active",
@@ -1201,7 +1207,6 @@ looper()
         (void) signal(SIGINT, sigint);
         (void) signal(SIGTERM, sigint);
         (void) signal(SIGWINCH, sigwinch);
-        (void) signal(SIGCHLD, sigchld);
 
         auto create_screen_res = screen_curses::create();
 
@@ -2115,6 +2120,7 @@ main(int argc, char* argv[])
     }
 
     (void) signal(SIGPIPE, SIG_IGN);
+    (void) signal(SIGCHLD, sigchld);
     setlocale(LC_ALL, "");
     try {
         std::locale::global(std::locale(""));

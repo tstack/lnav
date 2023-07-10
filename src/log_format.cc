@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "base/fs_util.hh"
 #include "base/is_utf8.hh"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
@@ -44,8 +45,10 @@
 #include "log_search_table.hh"
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
+#include "readline_highlighters.hh"
 #include "scn/scn.h"
 #include "sql_util.hh"
+#include "sqlite-extension-func.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -1836,6 +1839,139 @@ external_log_format::get_subline(const logline& ll,
     this->jlf_line_values.lvv_sbr = sbr;
 }
 
+struct compiled_header_expr {
+    auto_mem<sqlite3_stmt> che_stmt{sqlite3_finalize};
+    bool che_enabled{true};
+};
+
+struct format_header_expressions : public lnav_config_listener {
+    auto_sqlite3 e_db;
+    std::map<intern_string_t, std::map<std::string, compiled_header_expr>>
+        e_header_exprs;
+};
+
+using safe_format_header_expressions = safe::Safe<format_header_expressions>;
+
+static safe_format_header_expressions format_header_exprs;
+
+nonstd::optional<external_file_format>
+detect_mime_type(const ghc::filesystem::path& filename)
+{
+    uint8_t buffer[1024];
+    size_t buffer_size = 0;
+
+    {
+        auto_fd fd;
+
+        if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) == -1) {
+            return nonstd::nullopt;
+        }
+
+        ssize_t rc;
+
+        if ((rc = read(fd, buffer, sizeof(buffer))) == -1) {
+            return nonstd::nullopt;
+        }
+        buffer_size = rc;
+    }
+
+    auto hexbuf = auto_buffer::alloc(buffer_size * 2);
+
+    for (int lpc = 0; lpc < buffer_size; lpc++) {
+        fmt::format_to(
+            std::back_inserter(hexbuf), FMT_STRING("{:02x}"), buffer[lpc]);
+    }
+
+    safe::WriteAccess<safe_format_header_expressions> in(format_header_exprs);
+
+    for (const auto& format : log_format::get_root_formats()) {
+        auto elf = std::dynamic_pointer_cast<external_log_format>(format);
+        if (elf == nullptr) {
+            continue;
+        }
+
+        if (buffer_size < elf->elf_converter.c_header.h_size) {
+            log_debug("file content too small (%d) for header detection: %s",
+                      buffer_size,
+                      elf->get_name().get());
+            continue;
+        }
+        for (const auto& hpair : elf->elf_converter.c_header.h_exprs.he_exprs) {
+            auto& he = in->e_header_exprs[elf->get_name()][hpair.first];
+
+            if (!he.che_enabled) {
+                continue;
+            }
+
+            auto* stmt = he.che_stmt.in();
+
+            if (stmt == nullptr) {
+                continue;
+            }
+            sqlite3_reset(stmt);
+            auto count = sqlite3_bind_parameter_count(stmt);
+            for (int lpc = 0; lpc < count; lpc++) {
+                const auto* name = sqlite3_bind_parameter_name(stmt, lpc + 1);
+
+                if (name[0] == '$') {
+                    const char* env_value;
+
+                    if ((env_value = getenv(&name[1])) != nullptr) {
+                        sqlite3_bind_text(
+                            stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
+                    }
+                    continue;
+                }
+                if (strcmp(name, ":header") == 0) {
+                    sqlite3_bind_text(stmt,
+                                      lpc + 1,
+                                      hexbuf.in(),
+                                      hexbuf.size(),
+                                      SQLITE_STATIC);
+                    continue;
+                }
+                if (strcmp(name, ":filepath") == 0) {
+                    sqlite3_bind_text(
+                        stmt, lpc + 1, filename.c_str(), -1, SQLITE_STATIC);
+                    continue;
+                }
+            }
+
+            auto step_res = sqlite3_step(stmt);
+
+            switch (step_res) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    continue;
+                case SQLITE_ROW:
+                    break;
+                default: {
+                    log_error(
+                        "failed to execute file-format header expression: "
+                        "%s:%s -- %s",
+                        elf->get_name().get(),
+                        hpair.first.c_str(),
+                        sqlite3_errmsg(in->e_db));
+                    he.che_enabled = false;
+                    continue;
+                }
+            }
+
+            log_info("detected format for: %s -- %s (header-expr: %s)",
+                     filename.c_str(),
+                     elf->get_name().get(),
+                     hpair.first.c_str());
+            return external_file_format{
+                elf->get_name().to_string(),
+                elf->elf_converter.c_command.pp_value,
+                elf->elf_converter.c_command.pp_location.sl_source.to_string(),
+            };
+        }
+    }
+
+    return nonstd::nullopt;
+}
+
 void
 external_log_format::build(std::vector<lnav::console::user_message>& errors)
 {
@@ -2012,6 +2148,70 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     }
 
     stable_sort(this->elf_level_pairs.begin(), this->elf_level_pairs.end());
+
+    {
+        safe::WriteAccess<safe_format_header_expressions> hexprs(
+            format_header_exprs);
+
+        if (hexprs->e_db.in() == nullptr) {
+            if (sqlite3_open(":memory:", hexprs->e_db.out()) != SQLITE_OK) {
+                log_error("unable to open memory DB");
+                return;
+            }
+            register_sqlite_funcs(hexprs->e_db.in(), sqlite_registration_funcs);
+        }
+
+        for (const auto& hpair : this->elf_converter.c_header.h_exprs.he_exprs)
+        {
+            auto stmt_str
+                = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), hpair.second);
+            compiled_header_expr che;
+
+            log_info("preparing file-format header expression: %s",
+                     stmt_str.c_str());
+            auto retcode = sqlite3_prepare_v2(hexprs->e_db.in(),
+                                              stmt_str.c_str(),
+                                              stmt_str.size(),
+                                              che.che_stmt.out(),
+                                              nullptr);
+            if (retcode != SQLITE_OK) {
+                auto sql_al = attr_line_t(hpair.second)
+                                  .with_attr_for_all(SA_PREFORMATTED.value())
+                                  .with_attr_for_all(
+                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                readline_sqlite_highlighter(sql_al, -1);
+                intern_string_t watch_expr_path = intern_string::lookup(
+                    fmt::format(FMT_STRING("/{}/converter/header/expr/{}"),
+                                this->elf_name,
+                                hpair.first));
+                auto snippet = lnav::console::snippet::from(
+                    source_location(watch_expr_path), sql_al);
+
+                auto um = lnav::console::user_message::error(
+                              "SQL expression is invalid")
+                              .with_reason(sqlite3_errmsg(hexprs->e_db.in()))
+                              .with_snippet(snippet);
+
+                errors.emplace_back(um);
+                continue;
+            }
+
+            hexprs->e_header_exprs[this->elf_name][hpair.first]
+                = std::move(che);
+        }
+
+        if (!this->elf_converter.c_header.h_exprs.he_exprs.empty()
+            && this->elf_converter.c_command.pp_value.empty())
+        {
+            auto um = lnav::console::user_message::error(
+                          "A command is required when a converter is defined")
+                          .with_help(
+                              "The converter command transforms the file "
+                              "into a format that can be consumed by lnav")
+                          .with_snippets(this->get_snippets());
+            errors.emplace_back(um);
+        }
+    }
 
     for (auto& vd : this->elf_value_def_order) {
         std::vector<std::string>::iterator act_iter;
@@ -2947,18 +3147,6 @@ external_log_format::match_name(const std::string& filename)
     return this->elf_filename_pcre.pp_value->find_in(filename)
         .ignore_error()
         .has_value();
-}
-
-bool
-external_log_format::match_mime_type(const mime_type& mt) const
-{
-    if (mt.mt_type == "text" && mt.mt_subtype == "plain"
-        && this->elf_mime_types.empty())
-    {
-        return true;
-    }
-
-    return this->elf_mime_types.count(mt) == 1;
 }
 
 auto

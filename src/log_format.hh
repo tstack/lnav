@@ -352,14 +352,6 @@ public:
 
     virtual bool match_name(const std::string& filename) { return true; }
 
-    virtual bool match_mime_type(const mime_type& mt) const
-    {
-        if (mt.mt_type == "text" && mt.mt_subtype == "plain") {
-            return true;
-        }
-        return false;
-    }
-
     struct scan_match {
         uint32_t sm_quality;
     };

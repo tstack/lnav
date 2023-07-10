@@ -204,8 +204,7 @@ add_custom_command(
         DEPENDS bin2c ${BUILTIN_LNAV_SCRIPTS})
 list(APPEND GEN_SRCS builtin-scripts.h builtin-scripts.cc)
 
-set(BUILTIN_SH_SCRIPTS scripts/dhclient-summary.lnav scripts/lnav-pop-view.lnav
-        scripts/partition-by-boot.lnav scripts/search-for.lnav)
+set(BUILTIN_SH_SCRIPTS scripts/dump-pid.sh scripts/pcap_log-converter.sh)
 
 set(BUILTIN_SH_SCRIPT_PATHS ${BUILTIN_SH_SCRIPTS})
 
@@ -465,7 +464,6 @@ add_library(
         file_collection.hh
         file_converter_manager.hh
         file_format.hh
-        file_format.cfg.hh
         files_sub_source.hh
         filter_observer.hh
         filter_status_source.hh

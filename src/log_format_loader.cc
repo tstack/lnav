@@ -281,8 +281,6 @@ read_format_field(yajlpp_parse_context* ypc,
     } else if (field_name == "module-field") {
         elf->elf_module_id_field = intern_string::lookup(value);
         elf->elf_container = true;
-    } else if (field_name == "mime-types") {
-        elf->elf_mime_types.insert(mime_type::from_str(value));
     }
 
     return 1;
@@ -817,6 +815,37 @@ static const struct json_path_container search_table_handlers = {
         .with_children(search_table_def_handlers),
 };
 
+static const struct json_path_container header_expr_handlers = {
+    yajlpp::pattern_property_handler(R"((?<header_expr_name>\w+))")
+        .with_description("SQLite expression")
+        .for_field(&external_log_format::header_exprs::he_exprs),
+};
+
+static const struct json_path_container header_handlers = {
+    yajlpp::property_handler("expr")
+        .with_description("The expressions used to check if a file header "
+                          "matches this file format")
+        .for_child(&external_log_format::header::h_exprs)
+        .with_children(header_expr_handlers),
+    yajlpp::property_handler("size")
+        .with_description("The minimum size required for this header type")
+        .for_field(&external_log_format::header::h_size),
+};
+
+static const struct json_path_container converter_handlers = {
+    yajlpp::property_handler("type")
+        .with_description("The MIME type")
+        .for_field(&external_log_format::converter::c_type),
+    yajlpp::property_handler("header")
+        .with_description("File header detection definitions")
+        .for_child(&external_log_format::converter::c_header)
+        .with_children(header_handlers),
+    yajlpp::property_handler("command")
+        .with_description("The script used to convert the file")
+        .with_pattern(R"([\w\.\-]+)")
+        .for_field(&external_log_format::converter::c_command),
+};
+
 const struct json_path_container format_handlers = {
     yajlpp::property_handler("regex")
         .with_description(
@@ -826,14 +855,16 @@ const struct json_path_container format_handlers = {
     json_path_handler("json", read_format_bool)
         .with_description(
             R"(Indicates that log files are JSON-encoded (deprecated, use "file-type": "json"))"),
-    json_path_handler("convert-to-local-time", read_format_bool)
+    json_path_handler("convert-to-local-time")
         .with_description("Indicates that displayed timestamps should "
-                          "automatically be converted to local time"),
-    json_path_handler("hide-extra", read_format_bool)
+                          "automatically be converted to local time")
+        .for_field(&external_log_format::lf_date_time,
+                   &date_time_scanner::dts_local_time),
+    json_path_handler("hide-extra")
         .with_description(
             "Specifies whether extra values in JSON logs should be displayed")
         .for_field(&external_log_format::jlf_hide_extra),
-    json_path_handler("multiline", read_format_bool)
+    json_path_handler("multiline")
         .with_description("Indicates that log messages can span multiple lines")
         .for_field(&log_format::lf_multiline),
     json_path_handler("timestamp-divisor", read_format_double)
@@ -845,10 +876,11 @@ const struct json_path_container format_handlers = {
         .with_description("A regular expression that restricts this format to "
                           "log files with a matching name")
         .for_field(&external_log_format::elf_filename_pcre),
-    json_path_handler("mime-types#", read_format_field)
-        .with_pattern(R"(^\w/[\w\.]+)")
-        .with_description(
-            "A list of mime-types this format should be used for"),
+    json_path_handler("converter")
+        .with_description("Describes how the file format can be detected and "
+                          "converted to a log that can be understood by lnav")
+        .for_child(&external_log_format::elf_converter)
+        .with_children(converter_handlers),
     json_path_handler("level-field")
         .with_description(
             "The name of the level field in the log message pattern")

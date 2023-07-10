@@ -75,14 +75,50 @@
                     "description": "A regular expression that restricts this format to log files with a matching name",
                     "type": "string"
                 },
-                "mime-types": {
-                    "title": "/<format_name>/mime-types",
-                    "description": "A list of mime-types this format should be used for",
-                    "type": "array",
-                    "items": {
-                        "type": "string",
-                        "pattern": "^\\w/[\\w\\.]+"
-                    }
+                "converter": {
+                    "description": "Describes how the file format can be detected and converted to a log that can be understood by lnav",
+                    "title": "/<format_name>/converter",
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "title": "/<format_name>/converter/type",
+                            "description": "The MIME type",
+                            "type": "string"
+                        },
+                        "header": {
+                            "description": "File header detection definitions",
+                            "title": "/<format_name>/converter/header",
+                            "type": "object",
+                            "properties": {
+                                "expr": {
+                                    "description": "The expressions used to check if a file header matches this file format",
+                                    "title": "/<format_name>/converter/header/expr",
+                                    "type": "object",
+                                    "patternProperties": {
+                                        "(\\w+)": {
+                                            "title": "/<format_name>/converter/header/expr/<header_expr_name>",
+                                            "description": "SQLite expression",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "size": {
+                                    "title": "/<format_name>/converter/header/size",
+                                    "description": "The minimum size required for this header type",
+                                    "type": "integer"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "command": {
+                            "title": "/<format_name>/converter/command",
+                            "description": "The script used to convert the file",
+                            "type": "string",
+                            "pattern": "[\\w\\.\\-]+"
+                        }
+                    },
+                    "additionalProperties": false
                 },
                 "level-field": {
                     "title": "/<format_name>/level-field",

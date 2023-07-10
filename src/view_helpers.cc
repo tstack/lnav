@@ -866,8 +866,8 @@ execute_examples()
 
                     EXAMPLE_RESULTS[ex.he_cmd] = result;
 
-                    log_debug("example: %s", ex.he_cmd);
-                    log_debug("example result: %s",
+                    log_trace("example: %s", ex.he_cmd);
+                    log_trace("example result: %s",
                               result.get_string().c_str());
                     break;
                 }
