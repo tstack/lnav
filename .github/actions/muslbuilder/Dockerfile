@@ -6,36 +6,13 @@ LABEL com.github.actions.icon="settings"
 LABEL com.github.actions.color="orange"
 
 RUN apk update && apk add --no-cache \
-    build-base \
-    binutils \
-    curl \
-    m4 \
-    git \
-    make \
-    libgcc \
-    musl-dev \
-    gcc \
-    g++ \
-    lz4 \
-    lz4-dev \
-    lz4-static \
-    zip \
-    zstd \
-    zstd-dev \
-    zstd-static \
-    perl \
     autoconf \
     automake \
-    elfutils \
-    elfutils-dev \
-    libelf-static \
+    build-base \
+    curl \
+    git \
     libexecinfo-dev \
-    libexecinfo-static \
-    libtool \
-    libunwind \
-    libunwind-dev \
-    libunwind-static \
-    linux-headers
+    libexecinfo-static
 
 
 RUN mkdir -p /fake.root /extract
@@ -75,6 +52,16 @@ xterm-256color\
 
 RUN curl -sSL https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz | tar xvzC /extract/ && \
     cd /extract/bzip* && \
+    make install PREFIX=/fake.root && \
+    cd /extract && rm -rf *
+
+RUN curl -sSL https://github.com/lz4/lz4/archive/refs/tags/v1.9.4.tar.gz | tar xvzC /extract/ && \
+    cd /extract/lz4* && \
+    make install PREFIX=/fake.root && \
+    cd /extract && rm -rf *
+
+RUN curl -sSL https://github.com/facebook/zstd/releases/download/v1.5.5/zstd-1.5.5.tar.gz | tar xvzC /extract/ && \
+    cd /extract/zstd* && \
     make install PREFIX=/fake.root && \
     cd /extract && rm -rf *
 
