@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,52 +27,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef filter_observer_hh
-#define filter_observer_hh
+#ifndef lnav_sql_execute_hh
+#define lnav_sql_execute_hh
 
-#include <sys/types.h>
+#include <vector>
 
-#include "logfile.hh"
-#include "textview_curses.hh"
+#include <sqlite3.h>
 
-class line_filter_observer : public logline_observer {
-public:
-    line_filter_observer(filter_stack& fs, std::shared_ptr<logfile> lf)
-        : lfo_filter_stack(fs), lfo_filter_state(lf)
-    {
-    }
+#include "base/lnav.console.hh"
+#include "shlex.resolver.hh"
 
-    void logline_restart(const logfile& lf, file_size_t rollback_size) override
-    {
-        for (auto& filter : this->lfo_filter_stack) {
-            filter->revert_to_last(this->lfo_filter_state, rollback_size);
-        }
-    }
-
-    void logline_new_lines(const logfile& lf,
-                           logfile::const_iterator ll_baegin,
-                           logfile::const_iterator ll_end,
-                           const shared_buffer_ref& sbr) override;
-
-    void logline_eof(const logfile& lf) override;
-
-    bool excluded(uint32_t filter_in_mask,
-                  uint32_t filter_out_mask,
-                  size_t offset) const
-    {
-        bool filtered_in = (filter_in_mask == 0)
-            || (this->lfo_filter_state.tfs_mask[offset] & filter_in_mask) != 0;
-        bool filtered_out
-            = (this->lfo_filter_state.tfs_mask[offset] & filter_out_mask) != 0;
-        return !filtered_in || filtered_out;
-    }
-
-    size_t get_min_count(size_t max) const;
-
-    void clear_deleted_filter_state();
-
-    filter_stack& lfo_filter_stack;
-    logfile_filter_state lfo_filter_state;
-};
+void sql_execute_script(
+    sqlite3* db,
+    const std::map<std::string, scoped_value_t>& global_vars,
+    const char* src_name,
+    const char* script,
+    std::vector<lnav::console::user_message>& errors);
 
 #endif

@@ -75,6 +75,7 @@
 
 #include "all_logs_vtab.hh"
 #include "base/ansi_scrubber.hh"
+#include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
 #include "base/func_util.hh"
 #include "base/future_util.hh"

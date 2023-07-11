@@ -532,6 +532,7 @@ add_library(
         spectro_impls.hh
         spectro_source.hh
         sqlitepp.hh
+        sql_execute.hh
         sql_help.hh
         sql_util.hh
         static_file_vtab.hh

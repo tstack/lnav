@@ -35,8 +35,7 @@
 #include <sqlite3.h>
 
 #include "base/ansi_scrubber.hh"
-#include "base/humanize.time.hh"
-#include "base/injector.hh"
+#include "base/ansi_vars.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
@@ -139,6 +138,30 @@ logfile_sub_source::find(const char* fn, content_line_t& line_base)
 
     return retval;
 }
+
+struct filtered_logline_cmp {
+    filtered_logline_cmp(const logfile_sub_source& lc) : llss_controller(lc) {}
+
+    bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
+    {
+        content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
+        content_line_t cl_rhs = (content_line_t) llss_controller.lss_index[rhs];
+        logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
+        logline* ll_rhs = this->llss_controller.find_line(cl_rhs);
+
+        return (*ll_lhs) < (*ll_rhs);
+    }
+
+    bool operator()(const uint32_t& lhs, const struct timeval& rhs) const
+    {
+        content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
+        logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
+
+        return (*ll_lhs) < rhs;
+    }
+
+    const logfile_sub_source& llss_controller;
+};
 
 nonstd::optional<vis_line_t>
 logfile_sub_source::find_from_time(const struct timeval& start) const
@@ -595,6 +618,53 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
     }
 }
+
+struct logline_cmp {
+    logline_cmp(logfile_sub_source& lc) : llss_controller(lc) {}
+
+    bool operator()(const content_line_t& lhs, const content_line_t& rhs) const
+    {
+        logline* ll_lhs = this->llss_controller.find_line(lhs);
+        logline* ll_rhs = this->llss_controller.find_line(rhs);
+
+        return (*ll_lhs) < (*ll_rhs);
+    }
+
+    bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
+    {
+        content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
+        content_line_t cl_rhs = (content_line_t) llss_controller.lss_index[rhs];
+        logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
+        logline* ll_rhs = this->llss_controller.find_line(cl_rhs);
+
+        return (*ll_lhs) < (*ll_rhs);
+    }
+#if 0
+        bool operator()(const indexed_content &lhs, const indexed_content &rhs)
+        {
+            logline *ll_lhs = this->llss_controller.find_line(lhs.ic_value);
+            logline *ll_rhs = this->llss_controller.find_line(rhs.ic_value);
+
+            return (*ll_lhs) < (*ll_rhs);
+        }
+#endif
+
+    bool operator()(const content_line_t& lhs, const time_t& rhs) const
+    {
+        logline* ll_lhs = this->llss_controller.find_line(lhs);
+
+        return *ll_lhs < rhs;
+    }
+
+    bool operator()(const content_line_t& lhs, const struct timeval& rhs) const
+    {
+        logline* ll_lhs = this->llss_controller.find_line(lhs);
+
+        return *ll_lhs < rhs;
+    }
+
+    logfile_sub_source& llss_controller;
+};
 
 logfile_sub_source::rebuild_result
 logfile_sub_source::rebuild_index(
@@ -1210,6 +1280,24 @@ logfile_sub_source::get_grepper()
         (grep_proc_source<vis_line_t>*) &this->lss_meta_grepper,
         (grep_proc_sink<vis_line_t>*) &this->lss_meta_grepper);
 }
+
+/**
+ * Functor for comparing the ld_file field of the logfile_data struct.
+ */
+struct logfile_data_eq {
+    explicit logfile_data_eq(std::shared_ptr<logfile> lf)
+        : lde_file(std::move(lf))
+    {
+    }
+
+    bool operator()(
+        const std::unique_ptr<logfile_sub_source::logfile_data>& ld) const
+    {
+        return this->lde_file == ld->get_file();
+    }
+
+    std::shared_ptr<logfile> lde_file;
+};
 
 bool
 logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
@@ -2417,4 +2505,114 @@ logfile_sub_source::clear_bookmark_metadata()
 
         ld->get_file_ptr()->get_bookmark_metadata().clear();
     }
+}
+
+void
+logfile_sub_source::increase_line_context()
+{
+    auto old_flags = this->lss_flags;
+
+    if (this->lss_flags & F_FILENAME) {
+        // Nothing to do
+    } else if (this->lss_flags & F_BASENAME) {
+        this->lss_flags &= ~F_NAME_MASK;
+        this->lss_flags |= F_FILENAME;
+    } else {
+        this->lss_flags |= F_BASENAME;
+    }
+    if (old_flags != this->lss_flags) {
+        this->clear_line_size_cache();
+    }
+}
+
+bool
+logfile_sub_source::decrease_line_context()
+{
+    auto old_flags = this->lss_flags;
+
+    if (this->lss_flags & F_FILENAME) {
+        this->lss_flags &= ~F_NAME_MASK;
+        this->lss_flags |= F_BASENAME;
+    } else if (this->lss_flags & F_BASENAME) {
+        this->lss_flags &= ~F_NAME_MASK;
+    }
+    if (old_flags != this->lss_flags) {
+        this->clear_line_size_cache();
+
+        return true;
+    }
+
+    return false;
+}
+
+size_t
+logfile_sub_source::get_filename_offset() const
+{
+    if (this->lss_flags & F_FILENAME) {
+        return this->lss_filename_width;
+    } else if (this->lss_flags & F_BASENAME) {
+        return this->lss_basename_width;
+    }
+
+    return 0;
+}
+
+void
+logfile_sub_source::clear_min_max_log_times()
+{
+    if (this->lss_min_log_time.tv_sec != 0
+        || this->lss_min_log_time.tv_usec != 0
+        || this->lss_max_log_time.tv_sec != std::numeric_limits<time_t>::max()
+        || this->lss_max_log_time.tv_usec != 0)
+    {
+        memset(&this->lss_min_log_time, 0, sizeof(this->lss_min_log_time));
+        this->lss_max_log_time.tv_sec = std::numeric_limits<time_t>::max();
+        this->lss_max_log_time.tv_usec = 0;
+        this->text_filters_changed();
+    }
+}
+
+size_t
+logfile_sub_source::file_count() const
+{
+    size_t retval = 0;
+    const_iterator iter;
+
+    for (iter = this->cbegin(); iter != this->cend(); ++iter) {
+        if (*iter != nullptr && (*iter)->get_file() != nullptr) {
+            retval += 1;
+        }
+    }
+
+    return retval;
+}
+
+size_t
+logfile_sub_source::text_size_for_line(textview_curses& tc,
+                                       int row,
+                                       text_sub_source::line_flags_t flags)
+{
+    size_t index = row % LINE_SIZE_CACHE_SIZE;
+
+    if (this->lss_line_size_cache[index].first != row) {
+        std::string value;
+
+        this->text_value_for_line(tc, row, value, flags);
+        this->lss_line_size_cache[index].second = value.size();
+        this->lss_line_size_cache[index].first = row;
+    }
+    return this->lss_line_size_cache[index].second;
+}
+
+int
+logfile_sub_source::get_filtered_count_for(size_t filter_index) const
+{
+    int retval = 0;
+
+    for (const auto& ld : this->lss_files) {
+        retval += ld->ld_filter_state.lfo_filter_state
+                      .tfs_filter_hits[filter_index];
+    }
+
+    return retval;
 }

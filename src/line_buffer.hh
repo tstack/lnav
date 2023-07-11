@@ -46,7 +46,6 @@
 #include "base/auto_mem.hh"
 #include "base/file_range.hh"
 #include "base/is_utf8.hh"
-#include "base/lnav_log.hh"
 #include "base/result.h"
 #include "log_level.hh"
 #include "safe/safe.h"

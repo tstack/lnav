@@ -32,6 +32,7 @@
 #include "command_executor.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
@@ -608,7 +609,7 @@ execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
 
     log_info("Executing file: %s", path_and_args.c_str());
 
-    if (!lexer.split(split_args, ec.ec_local_vars.top())) {
+    if (!lexer.split(split_args, scoped_resolver{&ec.ec_local_vars.top()})) {
         return ec.make_error("unable to parse path");
     }
     if (split_args.empty()) {
@@ -1021,7 +1022,7 @@ add_global_vars(exec_context& ec)
         shlex subber(iter.second);
         std::string str;
 
-        if (!subber.eval(str, ec.ec_global_vars)) {
+        if (!subber.eval(str, scoped_resolver{&ec.ec_global_vars})) {
             log_error("Unable to evaluate global variable value: %s",
                       iter.second.c_str());
             continue;

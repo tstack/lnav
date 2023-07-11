@@ -52,12 +52,12 @@ write_timestamp(int fd, log_level_t level, off_t woff)
     struct timeval tv;
 
     gettimeofday(&tv, nullptr);
-    snprintf(time_str,
-             sizeof(time_str),
-             "%ld.%d:%c;",
-             tv.tv_sec,
-             tv.tv_usec,
-             level_names[level][0]);
+    fmt::format_to_n(time_str,
+                     sizeof(time_str),
+                     FMT_STRING("{}.{}:{};"),
+                     tv.tv_sec,
+                     tv.tv_usec,
+                     level_names[level][0]);
 
     return pwrite(fd, time_str, strlen(time_str), woff);
 }

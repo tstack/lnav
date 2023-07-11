@@ -235,10 +235,10 @@ readline_context::completion_generator(const char* text_in, int state)
 
         if (arg_needs_shlex) {
             shlex arg_lexer(text_str);
-            std::map<std::string, std::string> scope;
+            std::map<std::string, scoped_value_t> scope;
             std::string result;
 
-            if (arg_lexer.eval(result, scope)) {
+            if (arg_lexer.eval(result, scoped_resolver{&scope})) {
                 text_str = result;
             }
         }
@@ -381,11 +381,11 @@ readline_context::attempted_completion(const char* text, int start, int end)
             point -= 1;
         }
         shlex lexer(rl_line_buffer, point);
-        std::map<std::string, std::string> scope;
+        std::map<std::string, scoped_value_t> scope;
 
         arg_possibilities = nullptr;
         rl_completion_append_character = 0;
-        if (lexer.split(prefix, scope)) {
+        if (lexer.split(prefix, scoped_resolver{&scope})) {
             auto prefix2
                 = fmt::format(FMT_STRING("{}"), fmt::join(prefix, "\x1f"));
             auto prefix_iter = loaded_context->rc_prefixes.find(prefix2);
@@ -425,7 +425,7 @@ readline_context::attempted_completion(const char* text, int start, int end)
                     shlex fn_lexer(rl_line_buffer, rl_point);
                     std::vector<std::string> fn_list;
 
-                    fn_lexer.split(fn_list, scope);
+                    fn_lexer.split(fn_list, scoped_resolver{&scope});
 
                     const auto& last_fn = fn_list.size() <= 1 ? ""
                                                               : fn_list.back();
@@ -450,7 +450,7 @@ readline_context::attempted_completion(const char* text, int start, int end)
                     std::vector<std::string> fn_list;
                     int found = 0;
 
-                    fn_lexer.split(fn_list, scope);
+                    fn_lexer.split(fn_list, scoped_resolver{&scope});
 
                     const auto& last_fn = fn_list.size() <= 1 ? ""
                                                               : fn_list.back();

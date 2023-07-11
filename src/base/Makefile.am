@@ -22,6 +22,7 @@ noinst_LIBRARIES = libbase.a
 
 noinst_HEADERS = \
     ansi_scrubber.hh \
+    ansi_vars.hh \
     attr_line.hh \
     attr_line.builder.hh \
     auto_fd.hh \
@@ -58,12 +59,14 @@ noinst_HEADERS = \
     string_attr_type.hh \
     string_util.hh \
     strnatcmp.h \
-    time_util.hh
+    time_util.hh \
+    types.hh
 
 libbase_a_SOURCES = \
     ansi_scrubber.cc \
     attr_line.cc \
     attr_line.builder.cc \
+    auto_fd.cc \
     auto_pid.cc \
     date_time_scanner.cc \
     fs_util.cc \

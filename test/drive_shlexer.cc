@@ -80,12 +80,13 @@ main(int argc, char* argv[])
 
     lexer.reset();
     std::string result;
-    if (lexer.eval(result, map<string, string>())) {
+    std::map<std::string, scoped_value_t> vars;
+    if (lexer.eval(result, scoped_resolver{&vars})) {
         printf("eval -- %s\n", result.c_str());
     }
     lexer.reset();
     std::vector<std::string> sresult;
-    if (lexer.split(sresult, map<string, string>())) {
+    if (lexer.split(sresult, scoped_resolver{&vars})) {
         printf("split:\n");
         for (size_t lpc = 0; lpc < sresult.size(); lpc++) {
             printf("  %zu -- %s\n", lpc, sresult[lpc].c_str());
