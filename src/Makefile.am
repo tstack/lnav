@@ -500,10 +500,10 @@ lnav_test_SOURCES = \
 
 if CROSS_COMPILING
 ptimec$(BUILD_EXEEXT): ptimec.c
-	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -g3 -o $@ $?
+	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -g3 -o $@ $? -fPIE
 else
 ptimec$(BUILD_EXEEXT): ptimec.c
-	$(AM_V_CC) $(CC) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $?
+	$(AM_V_CC) $(CC) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $? -fPIE
 endif
 
 if HAVE_RE2C
