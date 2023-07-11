@@ -95,7 +95,7 @@ RUN curl -sSL https://www.libarchive.org/downloads/libarchive-3.6.2.tar.gz | tar
 
 RUN curl -sSL https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz | tar xvzC /extract/ && \
     cd /extract/readline-* && \
-    ./configure --prefix=/fake.root && \
+    ./configure --prefix=/fake.root --disable-shared && \
     make -j2 && \
     make install && \
     cd /extract && rm -rf *
@@ -126,6 +126,7 @@ RUN curl -sSL https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz | tar xvzC /ext
         --enable-widec \
         --enable-termcap \
         --with-fallbacks=$NCURSES_FALLBACKS \
+        --without-shared \
     && \
     make -j2 && \
     make install && \
@@ -135,6 +136,7 @@ RUN curl -sSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.4
     cd /extract/pcre2-* && \
     ./configure --prefix=/fake.root \
         --enable-jit \
+        --disable-shared \
      && \
      make -j2 && \
      make install && \
@@ -154,6 +156,7 @@ RUN curl -sSL https://www.libssh2.org/download/libssh2-1.11.0.tar.gz | tar xvzC 
 RUN curl -sSL https://curl.se/download/curl-8.1.2.tar.gz | tar xvzC /extract/ && \
     cd /extract/curl-* && \
     ./configure --prefix=/fake.root \
+        --disable-shared \
         --with-libssh2=/fake.root \
         --with-ssl=/fake.root \
         --with-zlib=/fake.root \
