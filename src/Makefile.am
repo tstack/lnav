@@ -498,8 +498,13 @@ lnav_test_SOURCES = \
     test_override.c \
     $(PLUGIN_SRCS)
 
+if CROSS_COMPILING
 ptimec$(BUILD_EXEEXT): ptimec.c
 	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -g3 -o $@ $?
+else
+ptimec$(BUILD_EXEEXT): ptimec.c
+	$(AM_V_CC) $(CC) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $?
+endif
 
 if HAVE_RE2C
 RE2C_FILES = data_scanner_re.cc log_level_re.cc
@@ -536,7 +541,7 @@ uncrusty:
 	(cd $(srcdir) && uncrustify -c ../lnav.cfg --replace $(SOURCES) \
 		$(HEADERS))
 
-if !DISABLE_DOCUMENTATION
+if !CROSS_COMPILING
 all-local: $(LNAV_BUILT_FILES) lnav
 	if test -w $(srcdir)/internals; then \
 		env DUMP_INTERNALS_DIR=$(srcdir)/internals DUMP_CRASH=1 ./lnav Makefile; \
