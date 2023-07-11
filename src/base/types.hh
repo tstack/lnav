@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,52 +27,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef filter_observer_hh
-#define filter_observer_hh
+#ifndef lnav_base_types_hh
+#define lnav_base_types_hh
 
-#include <sys/types.h>
-
-#include "logfile.hh"
-#include "textview_curses.hh"
-
-class line_filter_observer : public logline_observer {
-public:
-    line_filter_observer(filter_stack& fs, std::shared_ptr<logfile> lf)
-        : lfo_filter_stack(fs), lfo_filter_state(lf)
-    {
-    }
-
-    void logline_restart(const logfile& lf, file_size_t rollback_size) override
-    {
-        for (auto& filter : this->lfo_filter_stack) {
-            filter->revert_to_last(this->lfo_filter_state, rollback_size);
-        }
-    }
-
-    void logline_new_lines(const logfile& lf,
-                           logfile::const_iterator ll_baegin,
-                           logfile::const_iterator ll_end,
-                           const shared_buffer_ref& sbr) override;
-
-    void logline_eof(const logfile& lf) override;
-
-    bool excluded(uint32_t filter_in_mask,
-                  uint32_t filter_out_mask,
-                  size_t offset) const
-    {
-        bool filtered_in = (filter_in_mask == 0)
-            || (this->lfo_filter_state.tfs_mask[offset] & filter_in_mask) != 0;
-        bool filtered_out
-            = (this->lfo_filter_state.tfs_mask[offset] & filter_out_mask) != 0;
-        return !filtered_in || filtered_out;
-    }
-
-    size_t get_min_count(size_t max) const;
-
-    void clear_deleted_filter_state();
-
-    filter_stack& lfo_filter_stack;
-    logfile_filter_state lfo_filter_state;
-};
+struct null_value_t {};
 
 #endif

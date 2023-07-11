@@ -619,8 +619,12 @@ view_colors::to_attrs(const lnav_theme& lt,
 
     fg1 = sc.sc_color;
     bg1 = sc.sc_background_color;
-    shlex(fg1).eval(fg_color, lt.lt_vars);
-    shlex(bg1).eval(bg_color, lt.lt_vars);
+    std::map<std::string, scoped_value_t> vars;
+    for (const auto& vpair : lt.lt_vars) {
+        vars[vpair.first] = vpair.second;
+    }
+    shlex(fg1).eval(fg_color, scoped_resolver{&vars});
+    shlex(bg1).eval(bg_color, scoped_resolver{&vars});
 
     auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
         [&](const auto& msg) {

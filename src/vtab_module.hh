@@ -41,11 +41,11 @@
 #include "base/lnav.console.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
+#include "base/types.hh"
 #include "fmt/format.h"
 #include "help_text_formatter.hh"
 #include "mapbox/variant.hpp"
 #include "optional.hpp"
-#include "shlex.resolver.hh"
 #include "sqlite-extension-func.hh"
 
 lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
@@ -67,10 +67,7 @@ struct sqlite_func_error : std::exception {
     {
     }
 
-    const char* what() const noexcept override
-    {
-        return this->e_what.c_str();
-    }
+    const char* what() const noexcept override { return this->e_what.c_str(); }
 
     const std::string e_what;
 };
@@ -83,12 +80,10 @@ struct nullable {
 };
 
 template<typename>
-struct is_nullable : std::false_type {
-};
+struct is_nullable : std::false_type {};
 
 template<typename T>
-struct is_nullable<nullable<T>> : std::true_type {
-};
+struct is_nullable<nullable<T>> : std::true_type {};
 
 }  // namespace vtab_types
 
@@ -296,7 +291,7 @@ to_sqlite(sqlite3_context* ctx, double val)
 inline void
 to_sqlite(sqlite3_context* ctx, auto_mem<char> str)
 {
-    auto free_func = str.get_free_func<void(*)(void*)>();
+    auto free_func = str.get_free_func<void (*)(void*)>();
     sqlite3_result_text(ctx, str.release(), -1, free_func);
 }
 
@@ -372,8 +367,7 @@ struct optional_counter<Arg> {
 };
 
 template<typename Arg1, typename... Args>
-struct optional_counter<Arg1, Args...> : optional_counter<Args...> {
-};
+struct optional_counter<Arg1, Args...> : optional_counter<Args...> {};
 
 template<typename... Args>
 struct variadic_counter {
@@ -391,8 +385,7 @@ struct variadic_counter<Arg> {
 };
 
 template<typename Arg1, typename... Args>
-struct variadic_counter<Arg1, Args...> : variadic_counter<Args...> {
-};
+struct variadic_counter<Arg1, Args...> : variadic_counter<Args...> {};
 
 template<typename F, F f>
 struct sqlite_func_adapter;
@@ -821,10 +814,7 @@ struct vtab_module : public vtab_module_base {
         return sqlite3_exec(db, create_stmt.c_str(), nullptr, nullptr, nullptr);
     }
 
-    int create(sqlite3* db) override
-    {
-        return this->create(db, T::NAME);
-    }
+    int create(sqlite3* db) override { return this->create(db, T::NAME); }
 
     sqlite3_module vm_module;
     T vm_impl;

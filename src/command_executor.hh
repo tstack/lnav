@@ -38,7 +38,6 @@
 
 #include "base/auto_fd.hh"
 #include "base/lnav.console.hh"
-#include "bookmarks.hh"
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
 #include "help_text.hh"

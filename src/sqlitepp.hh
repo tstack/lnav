@@ -37,8 +37,9 @@
 #include <sqlite3.h>
 
 #include "base/auto_mem.hh"
+#include "base/intern_string.hh"
+#include "base/types.hh"
 #include "optional.hpp"
-#include "shlex.resolver.hh"
 
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void* mem);

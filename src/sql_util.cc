@@ -36,7 +36,6 @@
 #include "sql_util.hh"
 
 #include <ctype.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "base/auto_mem.hh"
@@ -50,7 +49,7 @@
 #include "pcrepp/pcre2pp.hh"
 #include "readline_context.hh"
 #include "readline_highlighters.hh"
-#include "shlex.resolver.hh"
+#include "sql_execute.hh"
 #include "sql_help.hh"
 #include "sqlite-extension-func.hh"
 

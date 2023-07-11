@@ -194,20 +194,6 @@ public:
     std::vector<shared_buffer_ref*> sb_refs;
 };
 
-struct tmp_shared_buffer {
-    explicit tmp_shared_buffer(const char* str, size_t len = -1)
-    {
-        if (len == (size_t) -1) {
-            len = strlen(str);
-        }
-
-        this->tsb_ref.share(this->tsb_manager, (char*) str, len);
-    };
-
-    shared_buffer tsb_manager;
-    shared_buffer_ref tsb_ref;
-};
-
 inline std::string
 to_string(const shared_buffer_ref& sbr)
 {

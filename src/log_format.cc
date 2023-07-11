@@ -1877,7 +1877,7 @@ detect_mime_type(const ghc::filesystem::path& filename)
 
     auto hexbuf = auto_buffer::alloc(buffer_size * 2);
 
-    for (int lpc = 0; lpc < buffer_size; lpc++) {
+    for (size_t lpc = 0; lpc < buffer_size; lpc++) {
         fmt::format_to(
             std::back_inserter(hexbuf), FMT_STRING("{:02x}"), buffer[lpc]);
     }

@@ -291,6 +291,7 @@ noinst_HEADERS = \
 	spectro_source.hh \
 	sqlitepp.hh \
 	sqlitepp.client.hh \
+	sql_execute.hh \
 	sql_help.hh \
 	sql_util.hh \
 	sqlite-extension-func.hh \

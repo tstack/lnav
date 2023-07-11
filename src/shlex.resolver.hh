@@ -37,10 +37,10 @@
 #include <vector>
 
 #include "base/intern_string.hh"
+#include "base/types.hh"
 #include "fmt/format.h"
 #include "mapbox/variant.hpp"
 
-struct null_value_t {};
 using scoped_value_t = mapbox::util::
     variant<std::string, string_fragment, int64_t, double, null_value_t>;
 
@@ -65,7 +65,7 @@ struct formatter<scoped_value_t> : formatter<std::string> {
 class scoped_resolver {
 public:
     scoped_resolver(
-        std::initializer_list<std::map<std::string, scoped_value_t>*> l)
+        std::initializer_list<const std::map<std::string, scoped_value_t>*> l)
     {
         this->sr_stack.insert(this->sr_stack.end(), l.begin(), l.end());
     }

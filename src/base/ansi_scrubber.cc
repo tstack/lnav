@@ -33,6 +33,7 @@
 
 #include "ansi_scrubber.hh"
 
+#include "ansi_vars.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"

@@ -53,6 +53,7 @@
 #include "fmt/format.h"
 #include "lnav_config.hh"
 #include "log_format_ext.hh"
+#include "sql_execute.hh"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"

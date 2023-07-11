@@ -461,7 +461,8 @@ build_all_help_text()
     std::string sub_help_text;
 
     lexer.with_ignore_quotes(true).eval(
-        sub_help_text, lnav_data.ld_exec_context.ec_global_vars);
+        sub_help_text,
+        scoped_resolver{&lnav_data.ld_exec_context.ec_global_vars});
 
     md2attr_line mdal;
     auto parse_res = md4cpp::parse(sub_help_text, mdal);

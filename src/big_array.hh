@@ -41,11 +41,6 @@ template<typename T>
 struct big_array {
     static const size_t DEFAULT_INCREMENT = 100 * 1000;
 
-    big_array()
-        : ba_ptr(nullptr), ba_size(0), ba_capacity(0){
-
-                                       };
-
     bool reserve(size_t size)
     {
         if (size < this->ba_capacity) {
@@ -71,17 +66,11 @@ struct big_array {
         this->ba_ptr = (T*) result;
 
         return true;
-    };
+    }
 
-    void clear()
-    {
-        this->ba_size = 0;
-    };
+    void clear() { this->ba_size = 0; }
 
-    size_t size() const
-    {
-        return this->ba_size;
-    };
+    size_t size() const { return this->ba_size; }
 
     void shrink_to(size_t new_size)
     {
@@ -90,47 +79,29 @@ struct big_array {
         this->ba_size = new_size;
     }
 
-    bool empty() const
-    {
-        return this->ba_size == 0;
-    };
+    bool empty() const { return this->ba_size == 0; }
 
     void push_back(const T& val)
     {
         this->ba_ptr[this->ba_size] = val;
         this->ba_size += 1;
-    };
-
-    T& operator[](size_t index)
-    {
-        return this->ba_ptr[index];
-    };
-
-    const T& operator[](size_t index) const
-    {
-        return this->ba_ptr[index];
-    };
-
-    T& back()
-    {
-        return this->ba_ptr[this->ba_size - 1];
     }
 
-    typedef T* iterator;
+    T& operator[](size_t index) { return this->ba_ptr[index]; }
 
-    iterator begin()
-    {
-        return this->ba_ptr;
-    };
+    const T& operator[](size_t index) const { return this->ba_ptr[index]; }
 
-    iterator end()
-    {
-        return this->ba_ptr + this->ba_size;
-    };
+    T& back() { return this->ba_ptr[this->ba_size - 1]; }
 
-    T* ba_ptr;
-    size_t ba_size;
-    size_t ba_capacity;
+    using iterator = T*;
+
+    iterator begin() { return this->ba_ptr; }
+
+    iterator end() { return this->ba_ptr + this->ba_size; }
+
+    T* ba_ptr{nullptr};
+    size_t ba_size{0};
+    size_t ba_capacity{0};
 };
 
 #endif

@@ -35,7 +35,6 @@
 #include "md2attr_line.hh"
 #include "md4cpp.hh"
 #include "shlex.hh"
-#include "shlex.resolver.hh"
 #include "sql_util.hh"
 #include "sqlitepp.client.hh"
 #include "top_status_source.cfg.hh"
@@ -99,7 +98,8 @@ top_status_source::update_user_msg()
             std::string user_note;
 
             lexer.with_ignore_quotes(true).eval(
-                user_note, lnav_data.ld_exec_context.ec_global_vars);
+                user_note,
+                scoped_resolver{&lnav_data.ld_exec_context.ec_global_vars});
 
             md2attr_line mdal;
             auto parse_res = md4cpp::parse(user_note, mdal);

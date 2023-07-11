@@ -33,6 +33,7 @@
 #include <string>
 
 #include "auto_fd.hh"
+#include "optional.hpp"
 #include "result.h"
 
 namespace network {
