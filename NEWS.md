@@ -15,14 +15,11 @@ Features:
   are in the commands output.
 * Added a `:cd` command to change **lnav**'s current directory.
 * Added support for automatically converting files that are
-  in a format not natively supported by **lnav**.  The
-  `/tuning/file-format` section allows you to define a format
-  that is detected by examining the file header.  The format
-  must also provide a converter script that can be run to
-  convert the file.  You can then define a log format that
-  matches the MIME type defined by the file format and can
-  consume the converted form of the file.  The built-in PCAP
-  support in **lnav** is implemented using this mechanism.
+  in a format not natively supported by **lnav**.  The new
+  `converter` section in a log format definition allows you
+  to specify how a file type can be detected and converted.
+  The built-in PCAP support in **lnav** is implemented using
+  this mechanism.
 
 Bug Fixes:
 * When piping data into **lnav**'s stdin, the input used to
