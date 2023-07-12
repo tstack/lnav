@@ -18,7 +18,7 @@ cd lbuild
     CXXFLAGS='-static -g1 -gz=zlib -U__unused -no-pie -O2' \
     LDFLAGS="-L/fake.root/lib" \
     CPPFLAGS="-I/fake.root/include" \
-    LIBS="-L/fake.root/lib -lexecinfo -lssh2 -llzma -lssl -lcrypto -lz -llz4" \
+    LIBS="-L/fake.root/lib -lssh2 -llzma -lssl -lcrypto -lz -llz4" \
     --enable-static \
     PATH="/fake.root/bin:${PATH}"
 make -j2

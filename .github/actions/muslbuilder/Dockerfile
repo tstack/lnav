@@ -10,9 +10,7 @@ RUN apk update && apk add --no-cache \
     automake \
     build-base \
     curl \
-    git \
-    libexecinfo-dev \
-    libexecinfo-static
+    git
 
 
 RUN mkdir -p /fake.root /extract
