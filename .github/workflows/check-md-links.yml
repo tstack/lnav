@@ -1,6 +1,15 @@
 name: Check Markdown links
 
-on: push
+on:
+  push:
+    paths:
+      - '**.md'
+      - .github/workflows/check-md-links.yml
+
+  schedule:
+    # The markdown files are not frequently modified. So run the job at least
+    # once every week.
+    - cron: '30 1 * * TUE'
 
 jobs:
   markdown-link-check:
