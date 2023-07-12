@@ -91,7 +91,7 @@ RUN curl -sSL https://www.libarchive.org/downloads/libarchive-3.6.2.tar.gz | tar
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://ftp.gnu.org/gnu/readline/readline-8.2.tar.gz | tar xvzC /extract/ && \
     cd /extract/readline-* && \
     ./configure --prefix=/fake.root --disable-shared && \
     make -j2 && \
