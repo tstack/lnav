@@ -66,7 +66,7 @@ RUN curl -sSL https://github.com/facebook/zstd/releases/download/v1.5.5/zstd-1.5
     cd /extract && rm -rf *
 
 RUN curl -sSL https://zlib.net/zlib-1.2.13.tar.gz | tar xvzC /extract/ && \
-    cd /extract/zlib-* && ./configure --prefix=/fake.root && \
+    cd /extract/zlib-* && ./configure --prefix=/fake.root --static && \
     make -j2 && \
     make install && \
     cd /extract && rm -rf *
@@ -102,7 +102,9 @@ RUN curl -sSL https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz | tar xvzC /e
 
 RUN curl -sSL https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz | tar xvzC /extract/ && \
     cd /extract/sqlite-* && \
-    ./configure --disable-editline --prefix=/fake.root \
+    ./configure --disable-editline \
+        --disable-shared \
+        --prefix=/fake.root \
         CFLAGS="${SQLITE_CFLAGS}" \
     && \
     make -j2 && \
@@ -111,7 +113,7 @@ RUN curl -sSL https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz | tar x
 
 RUN curl -sSL https://www.openssl.org/source/openssl-1.0.2n.tar.gz | tar xvzC /extract/ && \
     cd /extract/openssl-* && \
-    ./config --prefix=/fake.root -fPIC && \
+    ./config --prefix=/fake.root no-shared -fPIC && \
     make -j2 && \
     make install && \
     cd /extract && rm -rf *
@@ -147,6 +149,7 @@ RUN curl -sSL https://www.libssh2.org/download/libssh2-1.11.0.tar.gz | tar xvzC 
     ./configure --prefix=/fake.root \
         --with-libssl-prefix=/fake.root \
         --with-libz-prefix=/fake.root \
+        --disable-shared \
         "CPPFLAGS=-I/fake.root/include" \
         "LDFLAGS=-ldl -L/fake.root/lib" && \
     make -j2 && \
