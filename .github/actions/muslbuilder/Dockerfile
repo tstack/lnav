@@ -121,9 +121,11 @@ RUN curl -sSL https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz | tar xvzC /ext
         --enable-termcap \
         --with-fallbacks=$NCURSES_FALLBACKS \
         --without-shared \
+        --without-progs \
+        --without-manpages \
+        --without-tests \
     && \
-    make -j2 && \
-    make install && \
+    make -j2 install && \
     cd /extract && rm -rf *
 
 RUN curl -sSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.gz | tar xvzC /extract/ && \
