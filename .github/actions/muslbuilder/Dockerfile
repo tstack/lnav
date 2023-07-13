@@ -174,8 +174,7 @@ LABEL com.github.actions.color="orange"
 RUN apk add --no-cache \
     autoconf \
     automake \
-    build-base \
-    git
+    build-base
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

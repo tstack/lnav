@@ -3,8 +3,11 @@
 set -Eeuxo pipefail
 
 if [ -z ${GITHUB_WORKSPACE:-} ]; then
-    git clone --depth 1 https://github.com/tstack/lnav.git
-    cd lnav
+    mkdir -p /lnav
+    cd /lnav
+    /fake.root/bin/curl -sSL \
+        https://github.com/tstack/lnav/archive/refs/heads/master.tar.gz | \
+        tar xvz --strip-components 1
 else
     cd ${GITHUB_WORKSPACE}
 fi
