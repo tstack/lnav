@@ -78,7 +78,6 @@ convert(const external_file_format& eff, const std::string& filename)
             nullptr,
         };
 
-        setenv("TZ", "UTC", 1);
         execvp(eff.eff_converter.c_str(), (char**) args);
         if (errno == ENOENT) {
             fprintf(stderr,

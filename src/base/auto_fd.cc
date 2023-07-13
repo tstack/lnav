@@ -121,6 +121,17 @@ auto_fd::close_on_exec() const
     log_perror(fcntl(this->af_fd, F_SETFD, FD_CLOEXEC));
 }
 
+void
+auto_fd::non_blocking() const
+{
+    auto fl = fcntl(this->af_fd, F_GETFL, 0);
+    if (fl < 0) {
+        return;
+    }
+
+    log_perror(fcntl(this->af_fd, F_SETFL, fl | O_NONBLOCK));
+}
+
 auto_fd&
 auto_fd::operator=(int fd)
 {

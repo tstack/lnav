@@ -3761,6 +3761,20 @@ For support questions, email:
    
 
 
+[1m[4mshell_exec[0m[4m([0m[4mcmd[0m[4m, [[0m[4minput[0m[4m], [[0m[4moptions[0m[4m])[0m
+══════════════════════════════════════════════════════════════════════
+  Executes a shell command and returns its output.
+[4mParameters[0m
+  [4mcmd[0m       The command to execute.
+  [4minput[0m     A blob of data to write to the command's
+            standard input.
+  [4moptions[0m   A JSON object containing options for the
+            execution with the following properties:
+            [4menv[0m - An object containing the environment variables to
+              set or, if NULL, to unset.
+[4mSee Also[0m
+  
+
 [1m[4msign[0m[4m([0m[4mnum[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns the sign of the given number as -1, 0, or 1
@@ -4330,6 +4344,7 @@ For support questions, email:
               comparison in the branches
   [4mcmp-expr[0m    The expression to test if this branch should
               be taken
+              [4mthen-expr[0m - The result for this branch.
   [4melse-expr[0m   The result of this CASE if no branches
               matched.
 
@@ -4424,6 +4439,7 @@ For support questions, email:
 [4mParameters[0m
   [4mtable[0m         The table to update
   [4mcolumn-name[0m   The columns in the table to update.
+                [4mexpr[0m - The values to place into the column.
   [4mcond[0m          The condition used to determine whether
                 a row should be updated.
 

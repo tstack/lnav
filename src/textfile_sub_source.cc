@@ -51,7 +51,9 @@ textfile_sub_source::text_line_count()
         auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = (line_filter_observer*) lf->get_logline_observer();
-            retval = lfo->lfo_filter_state.tfs_index.size();
+            if (lfo != nullptr) {
+                retval = lfo->lfo_filter_state.tfs_index.size();
+            }
         } else {
             retval = rend_iter->second.rf_text_source->text_line_count();
         }
@@ -72,7 +74,9 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
-            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+            if (lfo == nullptr || line < 0
+                || line >= lfo->lfo_filter_state.tfs_index.size())
+            {
                 value_out.clear();
             } else {
                 auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
@@ -119,7 +123,9 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
     } else {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-        if (row >= 0 && row < lfo->lfo_filter_state.tfs_index.size()) {
+        if (lfo != nullptr && row >= 0
+            && row < lfo->lfo_filter_state.tfs_index.size())
+        {
             auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[row];
 
             value_out.emplace_back(lr, SA_LEVEL.value(ll->get_msg_level()));
@@ -171,7 +177,9 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
-            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+            if (lfo == nullptr || line < 0
+                || line >= lfo->lfo_filter_state.tfs_index.size())
+            {
             } else {
                 retval
                     = lf->message_byte_length(

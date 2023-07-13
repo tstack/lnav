@@ -116,6 +116,52 @@ file.
   The binary file is named ``tailer.bin.XXXXXX`` where *XXXXXX* is 6 random digits.
   The file is, under normal circumstancies, deleted immediately.
 
+Command Output
+^^^^^^^^^^^^^^
+
+The output of commands can be captured and displayed in **lnav** using
+the :ref:`:sh<sh>` command or by passing the :option:`-e` option on the
+command-line.   The captured output will be displayed in the TEXT view.
+The lines from stdout and stderr are recorded separately so that the
+lines from stderr can be shown in the theme's "error" highlight.  The
+time that the lines were received are also recorded internally so that
+the "time-offset" display (enabled by pressing :kbd:`Shift` + :kbd:`T`)
+can be shown and the "jump to slow-down" hotkeys (:kbd:`s` /
+:kbd:`Shift` + :kbd:`S`) work.  Since the line-by-line timestamps are
+recorded internally, they will not interfere with timestamps that are
+in the commands output.
+
+Docker Logs
+^^^^^^^^^^^
+
+To make it easier to view
+`docker logs <https://docs.docker.com/engine/reference/commandline/logs/>`_
+within **lnav**, a :code:`docker://` URL scheme is available.  Passing
+the container name in the authority field will run the :code:`docker logs`
+command.  If a path is added to the URL, then **lnav** will execute
+:code:`docker exec <container> tail -F -n +0 /path/to/file` to try and
+tail the file in the container.
+
+Custom URL Schemes
+^^^^^^^^^^^^^^^^^^
+
+Custom URL schemes can be defined using the :ref:`/tuning/url-schemes<url_scheme>`
+configuration.  By adding a scheme name to the tuning configuration along
+with the name of an **lnav** handler script, you can control how the URL is
+interpreted and turned into **lnav** commands.  This feature is how the
+`Docker Logs`_ functionality is implemented.
+
+Custom URLs can be passed on the command-line or to the :ref:`:open<open>`
+command.  When passed on the command-line, an :code:`:open` command with the
+URL is added to the list of initial commands.  When the :code:`:open` command
+detects a custom URL, it checks for the definition in the configuration.
+If found, it will call the associated handler script with the URL as the
+first parameter.  The script can parse the URL using the :ref:`parse_url`
+SQL function, if needed.  The script should then execute whatever commands
+it needs to open the destination for viewing in **lnav**.  For example,
+the docker URL handler uses the :ref:`:sh<sh>` command to run
+:code:`docker logs` with the container.
+
 Searching
 ---------
 

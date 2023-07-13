@@ -190,7 +190,9 @@ add_custom_command(
 list(APPEND GEN_SRCS default-config.h default-config.cc)
 
 set(BUILTIN_LNAV_SCRIPTS
-        scripts/dhclient-summary.lnav scripts/lnav-pop-view.lnav
+        scripts/dhclient-summary.lnav
+        scripts/docker-url-handler.lnav
+        scripts/lnav-pop-view.lnav
         scripts/partition-by-boot.lnav scripts/rename-stdin.lnav
         scripts/search-for.lnav)
 
@@ -550,6 +552,7 @@ add_library(
         time_T.hh
         timer.hh
         top_status_source.hh
+        url_handler.cfg.hh
         url_loader.hh
         view_helpers.hh
         view_helpers.crumbs.hh

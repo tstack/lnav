@@ -80,6 +80,7 @@
 #include "sysclip.hh"
 #include "tailer/tailer.looper.hh"
 #include "text_anonymizer.hh"
+#include "url_handler.cfg.hh"
 #include "url_loader.hh"
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp/json_op.hh"
@@ -2478,6 +2479,12 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     std::vector<std::pair<std::string, file_location_t>> files_to_front;
     std::vector<std::string> closed_files;
+    logfile_open_options loo;
+
+    auto prov = ec.get_provenance<exec_context::file_open>();
+    if (prov) {
+        loo.with_filename(prov->fo_name);
+    }
 
     for (auto fn : split_args) {
         file_location_t file_loc;
@@ -2538,12 +2545,59 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     retval = "";
                 }
 #endif
+            } else if (fn.find("://") != std::string::npos) {
+                const auto& cfg
+                    = injector::get<const lnav::url_handler::config&>();
+
+                auto* cu = curl_url();
+                auto set_rc = curl_url_set(
+                    cu, CURLUPART_URL, fn.c_str(), CURLU_NON_SUPPORT_SCHEME);
+                if (set_rc != CURLUE_OK) {
+                    return Err(lnav::console::user_message::error(
+                                   attr_line_t("invalid URL: ")
+                                       .append(lnav::roles::file(fn)))
+                                   .with_reason(curl_url_strerror(set_rc)));
+                }
+
+                char* scheme_part = nullptr;
+                auto get_rc
+                    = curl_url_get(cu, CURLUPART_SCHEME, &scheme_part, 0);
+                if (get_rc != CURLUE_OK) {
+                    return Err(lnav::console::user_message::error(
+                                   attr_line_t("cannot get scheme from URL: ")
+                                       .append(lnav::roles::file(fn)))
+                                   .with_reason(curl_url_strerror(set_rc)));
+                }
+
+                auto proto_iter = cfg.c_schemes.find(scheme_part);
+                if (proto_iter == cfg.c_schemes.end()) {
+                    return Err(
+                        lnav::console::user_message::error(
+                            attr_line_t("no defined handler for URL scheme: ")
+                                .append(lnav::roles::file(scheme_part)))
+                            .with_reason(curl_url_strerror(set_rc)));
+                }
+
+                auto path_and_args
+                    = fmt::format(FMT_STRING("{} {}"),
+                                  proto_iter->second.p_handler.pp_value,
+                                  fn);
+
+                exec_context::provenance_guard pg(&ec,
+                                                  exec_context::file_open{fn});
+
+                auto exec_res = execute_file(ec, path_and_args);
+                if (exec_res.isErr()) {
+                    return exec_res;
+                }
+
+                retval = "info: watching -- " + fn;
             } else if (is_glob(fn.c_str())) {
-                fc.fc_file_names.emplace(fn, logfile_open_options());
+                fc.fc_file_names.emplace(fn, loo);
                 retval = "info: watching -- " + fn;
             } else if (stat(fn.c_str(), &st) == -1) {
                 if (fn.find(':') != std::string::npos) {
-                    fc.fc_file_names.emplace(fn, logfile_open_options());
+                    fc.fc_file_names.emplace(fn, loo);
                     retval = "info: watching -- " + fn;
                 } else {
                     auto um = lnav::console::user_message::error(
@@ -2573,6 +2627,9 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 } else {
                     auto desc = fmt::format(FMT_STRING("FIFO [{}]"),
                                             lnav_data.ld_fifo_counter++);
+                    if (prov) {
+                        desc = prov->fo_name;
+                    }
                     auto create_piper_res = lnav::piper::create_looper(
                         desc, std::move(fifo_fd), auto_fd{});
                     if (create_piper_res.isErr()) {
@@ -2602,8 +2659,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 if (dir_wild[dir_wild.size() - 1] == '/') {
                     dir_wild.resize(dir_wild.size() - 1);
                 }
-                fc.fc_file_names.emplace(dir_wild + "/*",
-                                         logfile_open_options());
+                fc.fc_file_names.emplace(dir_wild + "/*", loo);
                 retval = "info: watching -- " + dir_wild;
             } else if (!S_ISREG(st.st_mode)) {
                 auto um = lnav::console::user_message::error(
@@ -2627,7 +2683,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 return Err(um);
             } else {
                 fn = abspath.in();
-                fc.fc_file_names.emplace(fn, logfile_open_options());
+                fc.fc_file_names.emplace(fn, loo);
                 retval = "info: opened -- " + fn;
                 files_to_front.emplace_back(fn, file_loc);
 
@@ -4173,12 +4229,34 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 nullptr,
             };
 
+            for (const auto& pair : ec.ec_local_vars.top()) {
+                pair.second.match(
+                    [&pair](const std::string& val) {
+                        setenv(pair.first.c_str(), val.c_str(), 1);
+                    },
+                    [&pair](const string_fragment& sf) {
+                        setenv(pair.first.c_str(), sf.to_string().c_str(), 1);
+                    },
+                    [](null_value_t) {},
+                    [&pair](int64_t val) {
+                        setenv(
+                            pair.first.c_str(), fmt::to_string(val).c_str(), 1);
+                    },
+                    [&pair](double val) {
+                        setenv(
+                            pair.first.c_str(), fmt::to_string(val).c_str(), 1);
+                    });
+            }
+
             execvp(exec_args[0], (char**) exec_args);
             _exit(EXIT_FAILURE);
         }
 
+        auto display_name = ec.get_provenance<exec_context::file_open>()
+                                .value_or(exec_context::file_open{carg})
+                                .fo_name;
         auto create_piper_res
-            = lnav::piper::create_looper(carg,
+            = lnav::piper::create_looper(display_name,
                                          std::move(out_pipe.read_end()),
                                          std::move(err_pipe.read_end()));
 
@@ -4190,11 +4268,12 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             return Err(um);
         }
 
-        lnav_data.ld_active_files.fc_file_names[carg].with_piper(
+        lnav_data.ld_active_files.fc_file_names[display_name].with_piper(
             create_piper_res.unwrap());
         lnav_data.ld_child_pollers.emplace_back(
             child_poller{std::move(child), [](auto& fc, auto& child) {}});
-        lnav_data.ld_files_to_front.emplace_back(carg, file_location_t{});
+        lnav_data.ld_files_to_front.emplace_back(display_name,
+                                                 file_location_t{});
     }
 
     return Ok(std::string());

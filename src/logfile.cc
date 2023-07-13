@@ -118,6 +118,9 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
              (long long) lf->lf_stat.st_size,
              (long long) lf->lf_stat.st_mtime,
              lf->lf_filename.c_str());
+    if (lf->lf_actual_path) {
+        log_info("  actual_path=%s", lf->lf_actual_path->c_str());
+    }
 
     if (!lf->lf_options.loo_filename.empty()) {
         lf->set_filename(lf->lf_options.loo_filename);

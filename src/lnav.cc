@@ -2882,6 +2882,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 .with_filename(file_path);
             isc::to<curl_looper&, services::curl_streamer_t>().send(
                 [ul](auto& clooper) { clooper.add_request(ul); });
+        } else if (file_path.find("://") != std::string::npos) {
+            lnav_data.ld_commands.emplace_back(
+                fmt::format(FMT_STRING(":open {}"), file_path));
         }
 #endif
         else if (is_glob(file_path))

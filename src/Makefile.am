@@ -314,6 +314,7 @@ noinst_HEADERS = \
 	top_status_source.hh \
 	top_status_source.cfg.hh \
 	unique_path.hh \
+	url_handler.cfg.hh \
 	url_loader.hh \
 	view_curses.hh \
 	view_helpers.hh \

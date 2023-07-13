@@ -160,6 +160,8 @@ public:
 
     void close_on_exec() const;
 
+    void non_blocking() const;
+
 private:
     int af_fd; /*< The managed file descriptor. */
 };

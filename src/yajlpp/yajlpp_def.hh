@@ -842,6 +842,14 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
+        this->add_cb(null_field_cb);
+        this->jph_null_cb = [args...](yajlpp_parse_context* ypc) {
+            auto* obj = ypc->ypc_obj_stack.top();
+
+            json_path_handler::get_field(obj, args...) = nonstd::nullopt;
+
+            return 1;
+        };
         this->jph_gen_callback = [args...](yajlpp_gen_context& ygc,
                                            const json_path_handler_base& jph,
                                            yajl_gen handle) {
@@ -1360,7 +1368,9 @@ public:
         const string_fragment& json)
     {
         if (this->yp_parse_context.parse_doc(json)) {
-            return Ok(std::move(this->yp_obj));
+            if (this->yp_errors.empty()) {
+                return Ok(std::move(this->yp_obj));
+            }
         }
 
         return Err(std::move(this->yp_errors));

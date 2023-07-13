@@ -241,6 +241,8 @@ public:
 
     const char* begin() const { return this->ab_buffer; }
 
+    char* next_available() { return &this->ab_buffer[this->ab_size]; }
+
     auto_buffer& push_back(char ch)
     {
         if (this->ab_size == this->ab_capacity) {

@@ -127,6 +127,8 @@ CASE *\[base-expr\]* WHEN *cmp-expr* ELSE *\[else-expr\]* END
   **Parameters**
     * **base-expr** --- The base expression that is used for comparison in the branches
     * **cmp-expr** --- The expression to test if this branch should be taken
+
+      * **then-expr\*** --- The result for this branch.
     * **else-expr** --- The result of this CASE if no branches matched.
 
   **Examples**
@@ -395,6 +397,8 @@ UPDATE *table* SET  *column-name* WHERE *\[cond\]*
   **Parameters**
     * **table\*** --- The table to update
     * **column-name** --- The columns in the table to update.
+
+      * **expr\*** --- The values to place into the column.
     * **cond** --- The condition used to determine whether a row should be updated.
 
   **Examples**
@@ -2475,14 +2479,14 @@ parse_url(*url*)
     .. code-block::  custsqlite
 
       ;SELECT parse_url('https://example.com/search?q=hello%20world')
-      {"scheme":"https","user":null,"password":null,"host":"example.com","port":null,"path":"/search","query":"q=hello%20world","parameters":{"q":"hello world"},"fragment":null}
+      {"scheme":"https","username":null,"password":null,"host":"example.com","port":null,"path":"/search","query":"q=hello%20world","parameters":{"q":"hello world"},"fragment":null}
 
     To parse the URL 'https://alice@[fe80::14ff:4ee5:1215:2fb2]':
 
     .. code-block::  custsqlite
 
       ;SELECT parse_url('https://alice@[fe80::14ff:4ee5:1215:2fb2]')
-      {"scheme":"https","user":"alice","password":null,"host":"[fe80::14ff:4ee5:1215:2fb2]","port":null,"path":"/","query":null,"parameters":null,"fragment":null}
+      {"scheme":"https","username":"alice","password":null,"host":"[fe80::14ff:4ee5:1215:2fb2]","port":null,"path":"/","query":null,"parameters":null,"fragment":null}
 
   **See Also**
     :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`unparse_url`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
@@ -3101,6 +3105,26 @@ rtrim(*str*, *\[chars\]*)
 
   **See Also**
     :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
+
+----
+
+
+.. _shell_exec:
+
+shell_exec(*cmd*, *\[input\]*, *\[options\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Executes a shell command and returns its output.
+
+  **Parameters**
+    * **cmd\*** --- The command to execute.
+    * **input** --- A blob of data to write to the command's standard input.
+    * **options** --- A JSON object containing options for the execution with the following properties:
+
+      * **env** --- An object containing the environment variables to set or, if NULL, to unset.
+
+  **See Also**
+    
 
 ----
 
