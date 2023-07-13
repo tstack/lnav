@@ -440,7 +440,11 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                             "to set or, if NULL, to unset."}
                                             .optional()))
                 .with_tags({"shell"}))
-            .with_flags(SQLITE_DIRECTONLY | SQLITE_UTF8),
+            .with_flags(
+#ifdef SQLITE_DIRECTONLY
+                SQLITE_DIRECTONLY |
+#endif
+                SQLITE_UTF8),
 
         /*
          * TODO: add other functions like normpath, ...
