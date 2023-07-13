@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM alpine:3.16 AS depsbuilder
+FROM --platform=$TARGETPLATFORM alpine:latest AS depsbuilder
 
 RUN apk add --no-cache \
     autoconf \
@@ -160,7 +160,7 @@ RUN curl -sSL https://curl.se/download/curl-8.1.2.tar.gz | tar xvzC /extract/ &&
     make install && \
     cd /extract && rm -rf *
 
-FROM --platform=$TARGETPLATFORM alpine:3.16
+FROM --platform=$TARGETPLATFORM alpine:latest
 
 COPY --from=depsbuilder /fake.root /fake.root
 
