@@ -10,7 +10,9 @@ RUN apk add --no-cache \
     automake \
     build-base \
     curl \
-    git
+    git \
+    ncurses \
+    ncurses-terminfo
 
 
 RUN mkdir -p /fake.root /extract
