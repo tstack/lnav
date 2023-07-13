@@ -1,19 +1,12 @@
-FROM --platform=$TARGETPLATFORM alpine:3.16
-
-LABEL com.github.actions.name="C++ MUSL Builder Slim"
-LABEL com.github.actions.description="Provides a C++ MUSL environment"
-LABEL com.github.actions.icon="settings"
-LABEL com.github.actions.color="orange"
+FROM --platform=$TARGETPLATFORM alpine:3.16 AS depsbuilder
 
 RUN apk add --no-cache \
     autoconf \
     automake \
     build-base \
     curl \
-    git \
     ncurses \
     ncurses-terminfo
-
 
 RUN mkdir -p /fake.root /extract
 
@@ -166,6 +159,21 @@ RUN curl -sSL https://curl.se/download/curl-8.1.2.tar.gz | tar xvzC /extract/ &&
     make -j2 && \
     make install && \
     cd /extract && rm -rf *
+
+FROM --platform=$TARGETPLATFORM alpine:3.16
+
+COPY --from=depsbuilder /fake.root /fake.root
+
+LABEL com.github.actions.name="C++ MUSL Builder Slim"
+LABEL com.github.actions.description="Provides a C++ MUSL environment"
+LABEL com.github.actions.icon="settings"
+LABEL com.github.actions.color="orange"
+
+RUN apk add --no-cache \
+    autoconf \
+    automake \
+    build-base \
+    git
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
