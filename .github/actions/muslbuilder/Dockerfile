@@ -123,7 +123,6 @@ RUN curl -sSL https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz | tar xvzC /ext
     ./configure --prefix=/fake.root \
         --enable-ext-mouse \
         --enable-sigwinch \
-        --with-default-terminfo-dir=/usr/share/terminfo \
         --enable-ext-colors \
         --enable-widec \
         --enable-termcap \
