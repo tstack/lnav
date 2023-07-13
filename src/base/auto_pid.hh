@@ -62,10 +62,7 @@ public:
     {
     }
 
-    ~auto_pid() noexcept
-    {
-        this->reset();
-    }
+    ~auto_pid() noexcept { this->reset(); }
 
     auto_pid& operator=(auto_pid&& other) noexcept
     {
@@ -77,10 +74,7 @@ public:
 
     auto_pid& operator=(const auto_pid& other) = delete;
 
-    pid_t in() const
-    {
-        return this->ap_child;
-    }
+    pid_t in() const { return this->ap_child; }
 
     bool in_child() const
     {
@@ -89,9 +83,7 @@ public:
         return this->ap_child == 0;
     }
 
-    pid_t release() &&
-    {
-        return std::exchange(this->ap_child, -1); }
+    pid_t release() && { return std::exchange(this->ap_child, -1); }
 
     int status() const
     {
@@ -105,6 +97,13 @@ public:
         static_assert(ProcState == process_state::finished,
                       "wait_for_child() must be called first");
         return WIFEXITED(this->ap_status);
+    }
+
+    int term_signal() const
+    {
+        static_assert(ProcState == process_state::finished,
+                      "wait_for_child() must be called first");
+        return WTERMSIG(this->ap_status);
     }
 
     int exit_status() const

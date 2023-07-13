@@ -635,17 +635,18 @@ const char* curl_url_strerror(CURLUcode error);
 #endif
 
 static json_string
-sql_parse_url(string_fragment url_frag)
+sql_parse_url(std::string url)
 {
     static auto* CURL_HANDLE = get_curl_easy();
 
     auto_mem<CURLU> cu(curl_url_cleanup);
     cu = curl_url();
 
-    auto rc = curl_url_set(cu, CURLUPART_URL, url_frag.data(), 0);
+    auto rc = curl_url_set(
+        cu, CURLUPART_URL, url.c_str(), CURLU_NON_SUPPORT_SCHEME);
     if (rc != CURLUE_OK) {
         throw lnav::console::user_message::error(
-            attr_line_t("invalid URL: ").append_quoted(url_frag.to_string()))
+            attr_line_t("invalid URL: ").append(lnav::roles::file(url)))
             .with_reason(curl_url_strerror(rc));
     }
 
@@ -663,7 +664,7 @@ sql_parse_url(string_fragment url_frag)
         } else {
             root.gen();
         }
-        root.gen("user");
+        root.gen("username");
         rc = curl_url_get(cu, CURLUPART_USER, url_part.out(), CURLU_URLDECODE);
         if (rc == CURLUE_OK) {
             root.gen(string_fragment::from_c_str(url_part.in()));
@@ -708,6 +709,11 @@ sql_parse_url(string_fragment url_frag)
             robin_hood::unordered_set<std::string> seen_keys;
             yajlpp_map query_map(gen);
 
+            for (size_t lpc = 0; url_part.in()[lpc]; lpc++) {
+                if (url_part.in()[lpc] == '+') {
+                    url_part.in()[lpc] = ' ';
+                }
+            }
             auto query_frag = string_fragment::from_c_str(url_part.in());
             auto remaining = query_frag;
 
@@ -727,6 +733,7 @@ sql_parse_url(string_fragment url_frag)
                                              kv_pair_encoded.data(),
                                              kv_pair_encoded.length(),
                                              &out_len);
+
                 auto kv_pair_frag
                     = string_fragment::from_bytes(kv_pair.in(), out_len);
                 auto eq_index_opt = kv_pair_frag.find('=');
@@ -788,7 +795,7 @@ struct url_parts {
 };
 
 static const json_path_container url_params_handlers = {
-    yajlpp::pattern_property_handler("(?<param>.+)")
+    yajlpp::pattern_property_handler("(?<param>.*)")
         .for_field(&url_parts::up_parameters),
 };
 
@@ -812,7 +819,7 @@ sql_unparse_url(string_fragment in)
 
     auto parse_res = url_parts_handlers.parser_for(SRC).of(in);
     if (parse_res.isErr()) {
-        throw parse_res.unwrapErr();
+        throw parse_res.unwrapErr()[0];
     }
 
     auto up = parse_res.unwrap();

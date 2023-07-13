@@ -54,6 +54,7 @@
 #include "sysclip.cfg.hh"
 #include "tailer/tailer.looper.cfg.hh"
 #include "top_status_source.cfg.hh"
+#include "url_handler.cfg.hh"
 
 /**
  * Check if an experimental feature should be enabled by
@@ -115,6 +116,7 @@ struct _lnav_config {
     lnav::logfile::config lc_logfile;
     tailer::config lc_tailer;
     sysclip::config lc_sysclip;
+    lnav::url_handler::config lc_url_handlers;
     logfile_sub_source_ns::config lc_log_source;
 };
 

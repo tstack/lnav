@@ -120,6 +120,37 @@ struct exec_context {
 
     void clear_output();
 
+    struct user {};
+    struct file_open {
+        std::string fo_name;
+    };
+
+    using provenance_t = mapbox::util::variant<user, file_open>;
+
+    struct provenance_guard {
+        explicit provenance_guard(exec_context* context, provenance_t prov)
+            : pg_context(context)
+        {
+            this->pg_context->ec_provenance.push_back(prov);
+        }
+
+        provenance_guard(const provenance_guard&) = delete;
+        provenance_guard(provenance_guard&& other)
+            : pg_context(other.pg_context)
+        {
+            other.pg_context = nullptr;
+        }
+
+        ~provenance_guard()
+        {
+            if (this->pg_context != nullptr) {
+                this->pg_context->ec_provenance.pop_back();
+            }
+        }
+
+        exec_context* pg_context;
+    };
+
     struct source_guard {
         source_guard(exec_context* context) : sg_context(context) {}
 
@@ -214,13 +245,25 @@ struct exec_context {
         this->ec_local_vars.pop();
     }
 
+    template<typename T>
+    nonstd::optional<T> get_provenance() const
+    {
+        for (const auto& elem : this->ec_provenance) {
+            if (elem.is<T>()) {
+                return elem.get<T>();
+            }
+        }
+
+        return nonstd::nullopt;
+    }
+
     vis_line_t ec_top_line{0_vl};
     bool ec_dry_run{false};
     perm_t ec_perms{perm_t::READ_WRITE};
 
-    std::map<std::string, std::string> ec_override;
     logline_value_vector* ec_line_values;
     std::stack<std::map<std::string, scoped_value_t>> ec_local_vars;
+    std::vector<provenance_t> ec_provenance;
     std::map<std::string, scoped_value_t> ec_global_vars;
     std::vector<ghc::filesystem::path> ec_path_stack;
     std::vector<lnav::console::snippet> ec_source;

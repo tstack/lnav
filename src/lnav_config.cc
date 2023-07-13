@@ -96,6 +96,9 @@ static auto tc = injector::bind<tailer::config>::to_instance(
 static auto scc = injector::bind<sysclip::config>::to_instance(
     +[]() { return &lnav_config.lc_sysclip; });
 
+static auto uh = injector::bind<lnav::url_handler::config>::to_instance(
+    +[]() { return &lnav_config.lc_url_handlers; });
+
 static auto lsc = injector::bind<logfile_sub_source_ns::config>::to_instance(
     +[]() { return &lnav_config.lc_log_source; });
 
@@ -1257,6 +1260,33 @@ static const struct json_path_container log_source_handlers = {
         .with_children(log_source_watch_handlers),
 };
 
+static const struct json_path_container url_scheme_handlers = {
+    yajlpp::property_handler("handler")
+        .with_description(
+            "The name of the lnav script that can handle URLs "
+            "with of this scheme.  This should not include the '.lnav' suffix.")
+        .with_pattern(R"(^[\w\-]+(?!\.lnav)$)")
+        .for_field(&lnav::url_handler::scheme::p_handler),
+};
+
+static const struct json_path_container url_handlers = {
+    yajlpp::pattern_property_handler(R"((?<url_scheme>\w+))")
+        .with_description("Definition of a custom URL scheme")
+        .with_obj_provider<lnav::url_handler::scheme, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto& retval = root->lc_url_handlers
+                                   .c_schemes[ypc.get_substr("url_scheme")];
+                return &retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_url_handlers.c_schemes) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(url_scheme_handlers),
+};
+
 static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("archive-manager")
         .with_description("Settings related to opening archive files")
@@ -1276,6 +1306,9 @@ static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("clipboard")
         .with_description("Settings related to the clipboard")
         .with_children(sysclip_handlers),
+    yajlpp::property_handler("url-scheme")
+        .with_description("Settings related to custom URL handling")
+        .with_children(url_handlers),
 };
 
 const char* DEFAULT_CONFIG_SCHEMA

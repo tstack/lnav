@@ -20,6 +20,16 @@ Features:
   to specify how a file type can be detected and converted.
   The built-in PCAP support in **lnav** is implemented using
   this mechanism.
+* Added a `shell_exec()` SQLite function that executes a
+  command-line with the user's `$SHELL` and returns the
+  output.
+* Added support for custom URL schemes that are handled by an
+  lnav script.  Schemes can be defined under
+  `/tuning/url-schemes`.  See the main docs for more details.
+* Added a `docker://` URL scheme that can be used to tail
+  the logs for a container (e.g. `docker://my-container`) or
+  files within a container (e.g.
+  `docker://my-serv/var/log/dpkg.log`).
 
 Bug Fixes:
 * When piping data into **lnav**'s stdin, the input used to

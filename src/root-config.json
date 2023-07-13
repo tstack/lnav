@@ -78,6 +78,11 @@
                     }
                 }
             }
+        },
+        "url-scheme": {
+            "docker": {
+                "handler": "docker-url-handler"
+            }
         }
     }
 }

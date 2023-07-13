@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,21 +25,28 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file service_tags.hh
  */
 
-#ifndef lnav_service_tags_hh
-#define lnav_service_tags_hh
+#ifndef lnav_url_handler_cfg_hh
+#define lnav_url_handler_cfg_hh
 
-namespace services {
+#include <map>
+#include <string>
 
-struct main_t {};
-struct ui_t {};
-struct curl_streamer_t {};
-struct remote_tailer_t {};
-struct url_handler_t {};
+#include "yajlpp/yajlpp.hh"
 
-}  // namespace services
+namespace lnav {
+namespace url_handler {
+
+struct scheme {
+    positioned_property<std::string> p_handler;
+};
+
+struct config {
+    std::map<std::string, scheme> c_schemes;
+};
+
+}  // namespace url_handler
+}  // namespace lnav
 
 #endif

@@ -29,24 +29,29 @@
  * @file fs-extension-functions.cc
  */
 
+#include <future>
 #include <string>
 
 #include <errno.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "base/auto_fd.hh"
+#include "base/auto_mem.hh"
+#include "base/auto_pid.hh"
+#include "base/lnav.console.hh"
+#include "base/opt_util.hh"
 #include "config.h"
+#include "lnav.hh"
 #include "sqlite-extension-func.hh"
 #include "sqlite3.h"
 #include "vtab_module.hh"
+#include "yajlpp/yajlpp_def.hh"
 
-using namespace mapbox;
-
-static util::variant<const char*, string_fragment>
+static mapbox::util::variant<const char*, string_fragment>
 sql_basename(const char* path_in)
 {
     int text_end = -1;
@@ -72,7 +77,7 @@ sql_basename(const char* path_in)
     }
 }
 
-static util::variant<const char*, string_fragment>
+static mapbox::util::variant<const char*, string_fragment>
 sql_dirname(const char* path_in)
 {
     ssize_t text_end;
@@ -161,6 +166,175 @@ sql_realpath(const char* path)
     return resolved_path;
 }
 
+struct shell_exec_options {
+    std::map<std::string, nonstd::optional<std::string>> po_env;
+};
+
+static const json_path_container shell_exec_env_handlers = {
+    yajlpp::pattern_property_handler(R"((?<name>[^=]+))")
+        .for_field(&shell_exec_options::po_env),
+};
+
+static const typed_json_path_container<shell_exec_options>
+    shell_exec_option_handlers = {
+        yajlpp::property_handler("env").with_children(shell_exec_env_handlers),
+};
+
+static blob_auto_buffer
+sql_shell_exec(const char* cmd,
+               nonstd::optional<string_fragment> input,
+               nonstd::optional<string_fragment> opts_json)
+{
+    static const intern_string_t SRC = intern_string::lookup("options");
+
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        throw sqlite_func_error("not available in secure mode");
+    }
+
+    shell_exec_options options;
+
+    if (opts_json) {
+        auto parse_res
+            = shell_exec_option_handlers.parser_for(SRC).of(opts_json.value());
+
+        if (parse_res.isErr()) {
+            throw lnav::console::user_message::error(
+                "invalid options parameter")
+                .with_reason(parse_res.unwrapErr()[0]);
+        }
+
+        options = parse_res.unwrap();
+    }
+
+    auto in_pipe_res = auto_pipe::for_child_fd(STDIN_FILENO);
+    if (in_pipe_res.isErr()) {
+        throw lnav::console::user_message::error("cannot open input pipe")
+            .with_reason(in_pipe_res.unwrapErr());
+    }
+    auto in_pipe = in_pipe_res.unwrap();
+    auto out_pipe_res = auto_pipe::for_child_fd(STDOUT_FILENO);
+    if (out_pipe_res.isErr()) {
+        throw lnav::console::user_message::error("cannot open output pipe")
+            .with_reason(out_pipe_res.unwrapErr());
+    }
+    auto out_pipe = out_pipe_res.unwrap();
+    auto err_pipe_res = auto_pipe::for_child_fd(STDERR_FILENO);
+    if (err_pipe_res.isErr()) {
+        throw lnav::console::user_message::error("cannot open error pipe")
+            .with_reason(err_pipe_res.unwrapErr());
+    }
+    auto err_pipe = err_pipe_res.unwrap();
+    auto child_pid_res = lnav::pid::from_fork();
+    if (child_pid_res.isErr()) {
+        throw lnav::console::user_message::error("cannot fork()")
+            .with_reason(child_pid_res.unwrapErr());
+    }
+
+    auto child_pid = child_pid_res.unwrap();
+
+    in_pipe.after_fork(child_pid.in());
+    out_pipe.after_fork(child_pid.in());
+    err_pipe.after_fork(child_pid.in());
+
+    if (child_pid.in_child()) {
+        const char* args[] = {
+            getenv_opt("SHELL").value_or("bash"),
+            "-c",
+            cmd,
+            nullptr,
+        };
+
+        for (const auto& epair : options.po_env) {
+            if (epair.second.has_value()) {
+                setenv(epair.first.c_str(), epair.second->c_str(), 1);
+            } else {
+                unsetenv(epair.first.c_str());
+            }
+        }
+
+        execvp(args[0], (char**) args);
+        _exit(EXIT_FAILURE);
+    }
+
+    auto out_reader = std::async(std::launch::async, [&out_pipe]() {
+        auto buffer = auto_buffer::alloc(4096);
+
+        while (true) {
+            if (buffer.available() < 4096) {
+                buffer.expand_by(4096);
+            }
+
+            auto rc = read(out_pipe.read_end(),
+                           buffer.next_available(),
+                           buffer.available());
+            if (rc < 0) {
+                break;
+            }
+            if (rc == 0) {
+                break;
+            }
+            buffer.resize_by(rc);
+        }
+
+        return buffer;
+    });
+
+    auto err_reader = std::async(std::launch::async, [&err_pipe]() {
+        auto buffer = auto_buffer::alloc(4096);
+
+        while (true) {
+            if (buffer.available() < 4096) {
+                buffer.expand_by(4096);
+            }
+
+            auto rc = read(err_pipe.read_end(),
+                           buffer.next_available(),
+                           buffer.available());
+            if (rc < 0) {
+                break;
+            }
+            if (rc == 0) {
+                break;
+            }
+            buffer.resize_by(rc);
+        }
+
+        return buffer;
+    });
+
+    if (input) {
+        auto sf = input.value();
+
+        while (!sf.empty()) {
+            auto rc = write(in_pipe.write_end(), sf.data(), sf.length());
+            if (rc < 0) {
+                break;
+            }
+            sf = sf.substr(rc);
+        }
+        in_pipe.close();
+    }
+
+    auto retval = blob_auto_buffer{out_reader.get()};
+
+    auto finished_child = std::move(child_pid).wait_for_child();
+
+    if (!finished_child.was_normal_exit()) {
+        throw sqlite_func_error("child failed with signal {}",
+                                finished_child.term_signal());
+    }
+
+    if (finished_child.exit_status() != EXIT_SUCCESS) {
+        throw lnav::console::user_message::error(
+            attr_line_t("child failed with exit code ")
+                .append(lnav::roles::number(
+                    fmt::to_string(finished_child.exit_status()))))
+            .with_reason(err_reader.get().to_string());
+    }
+
+    return retval;
+}
+
 int
 fs_extension_functions(struct FuncDef** basic_funcs,
                        struct FuncDefAgg** agg_funcs)
@@ -245,6 +419,28 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                 .sql_function()
                 .with_parameter({"path", "The path to resolve."})
                 .with_tags({"filename"})),
+
+        sqlite_func_adapter<decltype(&sql_shell_exec), sql_shell_exec>::builder(
+            help_text("shell_exec",
+                      "Executes a shell command and returns its output.")
+                .sql_function()
+                .with_parameter({"cmd", "The command to execute."})
+                .with_parameter(help_text{
+                    "input",
+                    "A blob of data to write to the command's standard input."}
+                                    .optional())
+                .with_parameter(
+                    help_text{"options",
+                              "A JSON object containing options for the "
+                              "execution with the following properties:"}
+                        .optional()
+                        .with_parameter(help_text{
+                            "env",
+                            "An object containing the environment variables "
+                            "to set or, if NULL, to unset."}
+                                            .optional()))
+                .with_tags({"shell"}))
+            .with_flags(SQLITE_DIRECTONLY | SQLITE_UTF8),
 
         /*
          * TODO: add other functions like normpath, ...

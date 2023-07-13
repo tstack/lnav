@@ -269,3 +269,7 @@ command.
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/logfile
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/remote/properties/ssh
+
+.. _url_scheme:
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/tuning/properties/url-scheme

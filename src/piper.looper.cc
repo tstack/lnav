@@ -98,6 +98,8 @@ enum class read_mode_t {
 void
 looper::loop()
 {
+    static const auto FORCE_MTIME_UPDATE_DURATION = 8h;
+
     const auto& cfg = injector::get<const config&>();
     struct pollfd pfd[2];
     struct {
@@ -122,11 +124,14 @@ looper::loop()
              this->l_name.c_str(),
              this->l_stdout.get(),
              this->l_stderr.get());
+    this->l_stdout.non_blocking();
     captured_fds[0].lb.set_fd(this->l_stdout);
     if (this->l_stderr.has_value()) {
+        this->l_stderr.non_blocking();
         captured_fds[1].lb.set_fd(this->l_stderr);
     }
     captured_fds[1].cf_level = LEVEL_ERROR;
+    auto last_write = std::chrono::system_clock::now();
     do {
         static const auto TIMEOUT
             = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
@@ -156,9 +161,16 @@ looper::loop()
             // update the timestamp to keep the file alive from any
             // cleanup processes
             if (outfd.has_value()) {
-                log_perror(futimes(outfd.get(), nullptr));
+                auto now = std::chrono::system_clock::now();
+
+                if ((now - last_write) >= FORCE_MTIME_UPDATE_DURATION) {
+                    last_write = now;
+                    log_perror(futimes(outfd.get(), nullptr));
+                }
             }
             continue;
+        } else {
+            last_write = std::chrono::system_clock::now();
         }
         for (auto& cap : captured_fds) {
             while (this->l_looping) {

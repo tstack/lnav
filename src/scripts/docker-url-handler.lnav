@@ -1,0 +1,17 @@
+#
+# @synopsis: docker-url-handler
+# @description: Internal script to handle opening docker URLs
+#
+
+;SELECT CASE path
+    WHEN '/' THEN
+        'docker logs -f ' || hostname
+    ELSE
+        'docker exec ' || hostname || ' tail -n +0 -F "' || path || '"'
+    END AS cmd
+    FROM (SELECT
+            jget(url, '/host') AS hostname,
+            jget(url, '/path') AS path
+            FROM (SELECT parse_url($1) AS url))
+
+:sh eval $cmd

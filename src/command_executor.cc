@@ -168,14 +168,7 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
             return Err(um);
         }
 
-        ov_iter = ec.ec_override.find(name);
-        if (ov_iter != ec.ec_override.end()) {
-            sqlite3_bind_text(stmt,
-                              lpc,
-                              ov_iter->second.c_str(),
-                              ov_iter->second.length(),
-                              SQLITE_TRANSIENT);
-        } else if (name[0] == '$') {
+        if (name[0] == '$') {
             const auto& lvars = ec.ec_local_vars.top();
             const auto& gvars = ec.ec_global_vars;
             std::map<std::string, scoped_value_t>::const_iterator local_var,

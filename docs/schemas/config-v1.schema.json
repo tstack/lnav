@@ -199,6 +199,28 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "url-scheme": {
+                    "description": "Settings related to custom URL handling",
+                    "title": "/tuning/url-scheme",
+                    "type": "object",
+                    "patternProperties": {
+                        "(\\w+)": {
+                            "description": "Definition of a custom URL scheme",
+                            "title": "/tuning/url-scheme/<url_scheme>",
+                            "type": "object",
+                            "properties": {
+                                "handler": {
+                                    "title": "/tuning/url-scheme/<url_scheme>/handler",
+                                    "description": "The name of the lnav script that can handle URLs with of this scheme.  This should not include the '.lnav' suffix.",
+                                    "type": "string",
+                                    "pattern": "^[\\w\\-]+(?!\\.lnav)$"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false
