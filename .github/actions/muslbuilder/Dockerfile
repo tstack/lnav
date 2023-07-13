@@ -5,7 +5,7 @@ LABEL com.github.actions.description="Provides a C++ MUSL environment"
 LABEL com.github.actions.icon="settings"
 LABEL com.github.actions.color="orange"
 
-RUN apk update && apk add --no-cache \
+RUN apk add --no-cache \
     autoconf \
     automake \
     build-base \
