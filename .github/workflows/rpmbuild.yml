@@ -5,9 +5,9 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
-      - docs
-      - README.md
-      - NEWS.md
+      - 'docs/**'
+      - 'test/**'
+      - '**.md'
     tags:
       - '*'
 
