@@ -2669,8 +2669,11 @@ For support questions, email:
   [4mptr[0m       The JSON-Pointer to lookup in the object.
   [4mdefault[0m   The default value if the value was not found
 [4mSee Also[0m
-  [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, 
-  [1mjson_group_object()[0m, [1myaml_to_json()[0m
+  [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, 
+  [1mjson_valid()[0m, [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To get the root of a JSON value:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjget[0m[37m[40m([0m[35m[40m'1'[0m[37m[40m, [0m[35m[40m''[0m[37m[40m)                              [0m
@@ -2713,6 +2716,62 @@ For support questions, email:
    
 
 
+[1m[4mjson[0m[4m([0m[4mX[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Verifies that its argument is valid JSON and returns a minified
+  version or throws an error.
+[4mParameter[0m
+  [4mX[0m   The string to interpret as JSON.
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, 
+  [1mjson_valid()[0m, [1myaml_to_json()[0m
+
+[1m[4mjson_array[0m[4m([0m[4mX[0m[4m, ...)[0m
+══════════════════════════════════════════════════════════════════════
+  Constructs a JSON array from its arguments.
+[4mParameter[0m
+  [4mX[0m   The values of the JSON array
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, 
+  [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To create an array of all types:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_array[0m[37m[40m([0m[1m[36m[40mNULL[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m2.1[0m[37m[40m, [0m[35m[40m'three'[0m[37m[40m, [0m[1m[37m[40mjson_array[0m[37m[40m([0m[1m[37m[40m4[0m[37m[40m), [0m[1m[37m[40mjson_object[0m[37m[40m([0m[35m[40m'five'[0m[37m[40m, [0m[35m[40m'six'[0m[37m[40m))[0m
+   
+
+#2 To create an empty array:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_array[0m[37m[40m()                               [0m
+   
+
+
+[1m[4mjson_array_length[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+══════════════════════════════════════════════════════════════════════
+  Returns the length of a JSON array.
+[4mParameters[0m
+  [4mX[0m   The JSON object.
+  [4mP[0m   The path to the array in 'X'.
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, 
+  [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To get the length of an array:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_array_length[0m[37m[40m([0m[35m[40m'[1, 2, 3]'[0m[37m[40m)             [0m
+   
+
+#2 To get the length of a nested array:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_array_length[0m[37m[40m([0m[35m[40m'{"arr": [1, 2, 3]}'[0m[37m[40m, [0m[35m[40m'$.arr'[0m[37m[40m)[0m
+   
+
+
 [1m[4mjson_concat[0m[4m([0m[4mjson[0m[4m, [0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Returns an array with the given values concatenated onto the end.
@@ -2725,7 +2784,10 @@ For support questions, email:
   [4mjson[0m    The initial JSON value.
   [4mvalue[0m   The value(s) to add to the end of the array.
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_contains()[0m, 
+  [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
   [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To append the number 4 to null:
@@ -2748,7 +2810,10 @@ For support questions, email:
   [4mjson[0m    The JSON value to query.
   [4mvalue[0m   The value to look for in the first argument
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
   [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To test if a JSON array contains the number 4:
@@ -2760,13 +2825,77 @@ For support questions, email:
    
 
 
+[1m[4mjson_each[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+══════════════════════════════════════════════════════════════════════
+  A table-valued-function that returns the children of the top-level
+  JSON value
+[4mParameters[0m
+  [4mX[0m   The JSON value to query
+  [4mP[0m   The path to the value to query
+[4mResults[0m
+  [4mkey[0m       The array index for elements of an array or
+            property names of the object
+  [4mvalue[0m     The value for the current element
+  [4mtype[0m      The type of the current element
+  [4matom[0m      The SQL value of the element, if it is a
+            primitive type
+  [4mfullkey[0m   The path to the current element
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, 
+  [1mjson_valid()[0m, [1myaml_to_json()[0m
+[4mExample[0m
+#1 To iterate over an array:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
+   
+
+
+[1m[4mjson_extract[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, ...)[0m
+══════════════════════════════════════════════════════════════════════
+  Returns the value(s) from the given JSON at the given path(s).
+[4mParameters[0m
+  [4mX[0m   The JSON value.
+  [4mP[0m   The path to extract.
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_group_array()[0m, [1mjson_group_object()[0m, 
+  [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To get a number:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_extract[0m[37m[40m([0m[35m[40m'{"num": 1}'[0m[37m[40m, [0m[35m[40m'$.num'[0m[37m[40m)        [0m
+   
+
+#2 To get two numbers:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_extract[0m[37m[40m([0m[35m[40m'{"num": 1, "val": 2}'[0m[37m[40m, [0m[35m[40m'$.num'[0m[37m[40m, [0m[35m[40m'$.val'[0m[37m[40m)[0m
+   
+
+#3 To get an object:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_extract[0m[37m[40m([0m[35m[40m'{"obj": {"sub": 1}}'[0m[37m[40m, [0m[35m[40m'$.obj'[0m[37m[40m)[0m
+   
+
+#4 To get a JSON value using the short-hand:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[35m[40m'{"a":"b"}'[0m[37m[40m [0m[1m[37m[40m->[0m[37m[40m [0m[35m[40m'$.a'[0m[37m[40m                       [0m
+   
+
+#5 To get a SQL value using the short-hand:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[35m[40m'{"a":"b"}'[0m[37m[40m [0m[1m[37m[40m->>[0m[37m[40m [0m[35m[40m'$.a'[0m[37m[40m                      [0m
+   
+
+
 [1m[4mjson_group_array[0m[4m([0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
   Collect the given values from a query into a JSON array
 [4mParameter[0m
   [4mvalue[0m   The values to append to the array
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_object()[0m, 
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_object()[0m, 
+  [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
   [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To create an array from arguments:
@@ -2785,7 +2914,10 @@ For support questions, email:
   [4mname[0m    The property name for the value
   [4mvalue[0m   The value to add to the object
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, 
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
   [1myaml_to_json()[0m
 [4mExamples[0m
 #1 To create an object from arguments:
@@ -2794,6 +2926,229 @@ For support questions, email:
 
 #2 To create an object from a pair of columns:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'a'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m), ([0m[35m[40m'b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m))[0m
+   
+
+
+[1m[4mjson_insert[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Inserts values into a JSON object/array at the given locations, if
+  it does not already exist
+[4mParameters[0m
+  [4mX[0m   The JSON value to update
+  [4mP[0m   The path to the insertion point.  A '#' array index means
+      append the value
+  [4mY[0m   The value to insert
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To append to an array:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_insert[0m[37m[40m([0m[35m[40m'[1, 2]'[0m[37m[40m, [0m[35m[40m'$[#]'[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)           [0m
+   
+
+#2 To update an object:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_insert[0m[37m[40m([0m[35m[40m'{"a": 1}'[0m[37m[40m, [0m[35m[40m'$.b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)          [0m
+   
+
+#3 To ensure a value is set:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_insert[0m[37m[40m([0m[35m[40m'{"a": 1}'[0m[37m[40m, [0m[35m[40m'$.a'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)          [0m
+   
+
+#4 To update multiple values:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_insert[0m[37m[40m([0m[35m[40m'{"a": 1}'[0m[37m[40m, [0m[35m[40m'$.b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m, [0m[35m[40m'$.c'[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)[0m
+   
+
+
+[1m[4mjson_object[0m[4m([0m[4mN[0m[4m, [0m[4mV[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Create a JSON object from the given arguments
+[4mParameters[0m
+  [4mN[0m   The property name
+  [4mV[0m   The property value
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_quote()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To create an object:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_object[0m[37m[40m([0m[35m[40m'a'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[35m[40m'b'[0m[37m[40m, [0m[35m[40m'c'[0m[37m[40m)              [0m
+   
+
+#2 To create an empty object:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_object[0m[37m[40m()                              [0m
+   
+
+
+[1m[4mjson_quote[0m[4m([0m[4mX[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Returns the JSON representation of the given value, if it is not
+  already JSON
+[4mParameter[0m
+  [4mX[0m   The value to convert
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_remove()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To convert a string:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_quote[0m[37m[40m([0m[35m[40m'Hello, World!'[0m[37m[40m)                [0m
+   
+
+#2 To pass through an existing JSON value:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_quote[0m[37m[40m([0m[1m[37m[40mjson[0m[37m[40m([0m[35m[40m'"Hello, World!"'[0m[37m[40m))        [0m
+   
+
+
+[1m[4mjson_remove[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, ...)[0m
+══════════════════════════════════════════════════════════════════════
+  Removes paths from a JSON value
+[4mParameters[0m
+  [4mX[0m   The JSON value to update
+  [4mP[0m   The paths to remove
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To remove elements of an array:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_remove[0m[37m[40m([0m[35m[40m'[1,2,3]'[0m[37m[40m, [0m[35m[40m'$[1]'[0m[37m[40m, [0m[35m[40m'$[1]'[0m[37m[40m)     [0m
+   
+
+#2 To remove object properties:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_remove[0m[37m[40m([0m[35m[40m'{"a":1,"b":2}'[0m[37m[40m, [0m[35m[40m'$.b'[0m[37m[40m)        [0m
+   
+
+
+[1m[4mjson_replace[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Replaces existing values in a JSON object/array at the given
+  locations
+[4mParameters[0m
+  [4mX[0m   The JSON value to update
+  [4mP[0m   The path to replace
+  [4mY[0m   The new value for the property
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To replace an existing value:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_replace[0m[37m[40m([0m[35m[40m'{"a": 1}'[0m[37m[40m, [0m[35m[40m'$.a'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)         [0m
+   
+
+#2 To replace a value without creating a new property:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_replace[0m[37m[40m([0m[35m[40m'{"a": 1}'[0m[37m[40m, [0m[35m[40m'$.a'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m, [0m[35m[40m'$.b'[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)[0m
+   
+
+
+[1m[4mjson_set[0m[4m([0m[4mX[0m[4m, [0m[4mP[0m[4m, [0m[4mY[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Inserts or replaces existing values in a JSON object/array at the
+  given locations
+[4mParameters[0m
+  [4mX[0m   The JSON value to update
+  [4mP[0m   The path to the insertion point.  A '#' array index means
+      append the value
+  [4mY[0m   The value to set
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To replace an existing array element:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_set[0m[37m[40m([0m[35m[40m'[1, 2]'[0m[37m[40m, [0m[35m[40m'$[1]'[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)              [0m
+   
+
+#2 To replace a value and create a new property:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_set[0m[37m[40m([0m[35m[40m'{"a": 1}'[0m[37m[40m, [0m[35m[40m'$.a'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m, [0m[35m[40m'$.b'[0m[37m[40m, [0m[1m[37m[40m3[0m[37m[40m)   [0m
+   
+
+
+[1m[4mjson_tree[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+══════════════════════════════════════════════════════════════════════
+  A table-valued-function that recursively descends through a JSON
+  value
+[4mParameters[0m
+  [4mX[0m   The JSON value to query
+  [4mP[0m   The path to the value to query
+[4mResults[0m
+  [4mkey[0m       The array index for elements of an array or
+            property names of the object
+  [4mvalue[0m     The value for the current element
+  [4mtype[0m      The type of the current element
+  [4matom[0m      The SQL value of the element, if it is a
+            primitive type
+  [4mfullkey[0m   The path to the current element
+  [4mpath[0m      The path to the container of this element
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_type()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExample[0m
+#1 To iterate over an array:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,[0m[37m[40mvalue[0m[37m[40m,[0m[37m[40mtype[0m[37m[40m,[0m[37m[40matom[0m[37m[40m,[0m[37m[40mfullkey[0m[37m[40m,[0m[37m[40mpath[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_tree[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
+   
+
+
+[1m[4mjson_type[0m[4m([0m[4mX[0m[4m, [[0m[4mP[0m[4m])[0m
+══════════════════════════════════════════════════════════════════════
+  Returns the type of a JSON value
+[4mParameters[0m
+  [4mX[0m   The JSON value to query
+  [4mP[0m   The path to the value
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_valid()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To get the type of a value:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_type[0m[37m[40m([0m[35m[40m'[null,1,2.1,"three",{"four":5}]'[0m[37m[40m)[0m
+   
+
+#2 To get the type of an array element:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_type[0m[37m[40m([0m[35m[40m'[null,1,2.1,"three",{"four":5}]'[0m[37m[40m, [0m[35m[40m'$[0]'[0m[37m[40m)[0m
+   
+
+#3 To get the type of a string:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_type[0m[37m[40m([0m[35m[40m'[null,1,2.1,"three",{"four":5}]'[0m[37m[40m, [0m[35m[40m'$[3]'[0m[37m[40m)[0m
+   
+
+
+[1m[4mjson_valid[0m[4m([0m[4mX[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Tests if the given value is valid JSON
+[4mParameter[0m
+  [4mX[0m   The value to check
+[4mSee Also[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, 
+  [1myaml_to_json()[0m
+[4mExamples[0m
+#1 To check an empty string:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_valid[0m[37m[40m([0m[35m[40m''[0m[37m[40m)                             [0m
+   
+
+#2 To check a string:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_valid[0m[37m[40m([0m[35m[40m'"a"'[0m[37m[40m)                          [0m
    
 
 
@@ -4306,8 +4661,11 @@ For support questions, email:
 [4mParameter[0m
   [4myaml[0m   The YAML value to convert to JSON.
 [4mSee Also[0m
-  [1mjget()[0m, [1mjson_concat()[0m, [1mjson_contains()[0m, [1mjson_group_array()[0m, 
-  [1mjson_group_object()[0m
+  [1mjget()[0m, [1mjson()[0m, [1mjson_array()[0m, [1mjson_array_length()[0m, [1mjson_concat()[0m, 
+  [1mjson_contains()[0m, [1mjson_each()[0m, [1mjson_extract()[0m, [1mjson_group_array()[0m, 
+  [1mjson_group_object()[0m, [1mjson_insert()[0m, [1mjson_object()[0m, [1mjson_quote()[0m, 
+  [1mjson_remove()[0m, [1mjson_replace()[0m, [1mjson_set()[0m, [1mjson_tree()[0m, [1mjson_type()[0m, 
+  [1mjson_valid()[0m
 [4mExample[0m
 #1 To convert the document "abc: def":
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40myaml_to_json[0m[37m[40m([0m[35m[40m'abc: def'[0m[37m[40m)                   [0m

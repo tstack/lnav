@@ -24,8 +24,7 @@
                     },
                     "alt-text": {
                         "color": "#f6f6f6",
-                        "background-color": "$black",
-                        "bold": true
+                        "background-color": "#1c1c1c"
                     },
                     "ok": {
                         "color": "$green",

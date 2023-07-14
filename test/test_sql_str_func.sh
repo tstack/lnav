@@ -145,6 +145,10 @@ run_cap_test env TEST_COMMENT=parse_url6 ./drive_sql <<'EOF'
 SELECT parse_url('https://example.com/sea%26rch?flag&flag2&=def#frag1%20space')
 EOF
 
+run_cap_test env TEST_COMMENT=parse_url7 ./drive_sql <<'EOF'
+SELECT parse_url('https://example.com/sea%26rch?flag&flag2&=def&flag3=abc+def#frag1%20space')
+EOF
+
 
 run_cap_test env TEST_COMMENT=unparse_url3 ./drive_sql <<'EOF'
 SELECT unparse_url(parse_url('https://example.com/search?flag'))
@@ -160,6 +164,26 @@ EOF
 
 run_cap_test env TEST_COMMENT=unparse_url6 ./drive_sql <<'EOF'
 SELECT unparse_url(parse_url('https://example.com/search?flag&flag2&=def#frag1%20space'))
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url7 ./drive_sql <<'EOF'
+SELECT unparse_url(NULL)
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url8 ./drive_sql <<'EOF'
+SELECT unparse_url(123)
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url9 ./drive_sql <<'EOF'
+SELECT unparse_url('[1, 2, 3]')
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url10 ./drive_sql <<'EOF'
+SELECT unparse_url(json_object('unknown', 'abc'))
+EOF
+
+run_cap_test env TEST_COMMENT=unparse_url11 ./drive_sql <<'EOF'
+SELECT unparse_url('{}')
 EOF
 
 run_cap_test ${lnav_test} -n \

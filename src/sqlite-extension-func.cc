@@ -749,7 +749,209 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 "SELECT value FROM generate_series(10, 14, 2)",
             })
             .with_example({"To count down from five to 1",
-                           "SELECT value FROM generate_series(1, 5, -1)"})};
+                           "SELECT value FROM generate_series(1, 5, -1)"}),
+
+        help_text("json",
+                  "Verifies that its argument is valid JSON and returns a "
+                  "minified version or throws an error.")
+            .sql_function()
+            .with_parameter({"X", "The string to interpret as JSON."})
+            .with_tags({"json"}),
+
+        help_text("json_array", "Constructs a JSON array from its arguments.")
+            .sql_function()
+            .with_parameter(
+                help_text{"X", "The values of the JSON array"}.zero_or_more())
+            .with_tags({"json"})
+            .with_example({"To create an array of all types",
+                           "SELECT json_array(NULL, 1, 2.1, 'three', "
+                           "json_array(4), json_object('five', 'six'))"})
+            .with_example({"To create an empty array", "SELECT json_array()"}),
+
+        help_text("json_array_length", "Returns the length of a JSON array.")
+            .sql_function()
+            .with_parameter({"X", "The JSON object."})
+            .with_parameter(
+                help_text{"P", "The path to the array in 'X'."}.optional())
+            .with_tags({"json"})
+            .with_example({"To get the length of an array",
+                           "SELECT json_array_length('[1, 2, 3]')"})
+            .with_example(
+                {"To get the length of a nested array",
+                 "SELECT json_array_length('{\"arr\": [1, 2, 3]}', '$.arr')"}),
+
+        help_text(
+            "json_extract",
+            "Returns the value(s) from the given JSON at the given path(s).")
+            .sql_function()
+            .with_parameter({"X", "The JSON value."})
+            .with_parameter(
+                help_text{"P", "The path to extract."}.one_or_more())
+            .with_tags({"json"})
+            .with_example({"To get a number",
+                           R"(SELECT json_extract('{"num": 1}', '$.num'))"})
+            .with_example(
+                {"To get two numbers",
+                 R"(SELECT json_extract('{"num": 1, "val": 2}', '$.num', '$.val'))"})
+            .with_example(
+                {"To get an object",
+                 R"(SELECT json_extract('{"obj": {"sub": 1}}', '$.obj'))"})
+#if SQLITE_VERSION_NUMBER >= 3038000
+            .with_example({"To get a JSON value using the short-hand",
+                           R"(SELECT '{"a":"b"}' -> '$.a')"})
+            .with_example({"To get a SQL value using the short-hand",
+                           R"(SELECT '{"a":"b"}' ->> '$.a')"})
+#endif
+            ,
+
+        help_text("json_insert",
+                  "Inserts values into a JSON object/array at the given "
+                  "locations, if it does not already exist")
+            .sql_function()
+            .with_parameter({"X", "The JSON value to update"})
+            .with_parameter({"P",
+                             "The path to the insertion point.  A '#' array "
+                             "index means append the value"})
+            .with_parameter({"Y", "The value to insert"})
+            .with_tags({"json"})
+            .with_example({"To append to an array",
+                           R"(SELECT json_insert('[1, 2]', '$[#]', 3))"})
+            .with_example({"To update an object",
+                           R"(SELECT json_insert('{"a": 1}', '$.b', 2))"})
+            .with_example({"To ensure a value is set",
+                           R"(SELECT json_insert('{"a": 1}', '$.a', 2))"})
+            .with_example(
+                {"To update multiple values",
+                 R"(SELECT json_insert('{"a": 1}', '$.b', 2, '$.c', 3))"}),
+
+        help_text("json_replace",
+                  "Replaces existing values in a JSON object/array at the "
+                  "given locations")
+            .sql_function()
+            .with_parameter({"X", "The JSON value to update"})
+            .with_parameter({"P", "The path to replace"})
+            .with_parameter({"Y", "The new value for the property"})
+            .with_tags({"json"})
+            .with_example({"To replace an existing value",
+                           R"(SELECT json_replace('{"a": 1}', '$.a', 2))"})
+            .with_example(
+                {"To replace a value without creating a new property",
+                 R"(SELECT json_replace('{"a": 1}', '$.a', 2, '$.b', 3))"}),
+
+        help_text("json_set",
+                  "Inserts or replaces existing values in a JSON object/array "
+                  "at the given locations")
+            .sql_function()
+            .with_parameter({"X", "The JSON value to update"})
+            .with_parameter({"P",
+                             "The path to the insertion point.  A '#' array "
+                             "index means append the value"})
+            .with_parameter({"Y", "The value to set"})
+            .with_tags({"json"})
+            .with_example({"To replace an existing array element",
+                           R"(SELECT json_set('[1, 2]', '$[1]', 3))"})
+            .with_example(
+                {"To replace a value and create a new property",
+                 R"(SELECT json_set('{"a": 1}', '$.a', 2, '$.b', 3))"}),
+
+        help_text("json_object",
+                  "Create a JSON object from the given arguments")
+            .sql_function()
+            .with_parameter({"N", "The property name"})
+            .with_parameter({"V", "The property value"})
+            .with_tags({"json"})
+            .with_example(
+                {"To create an object", "SELECT json_object('a', 1, 'b', 'c')"})
+            .with_example(
+                {"To create an empty object", "SELECT json_object()"}),
+
+        help_text("json_remove", "Removes paths from a JSON value")
+            .sql_function()
+            .with_parameter({"X", "The JSON value to update"})
+            .with_parameter(help_text{"P", "The paths to remove"}.one_or_more())
+            .with_tags({"json"})
+            .with_example({"To remove elements of an array",
+                           "SELECT json_remove('[1,2,3]', '$[1]', '$[1]')"})
+            .with_example({"To remove object properties",
+                           R"(SELECT json_remove('{"a":1,"b":2}', '$.b'))"}),
+
+        help_text("json_type", "Returns the type of a JSON value")
+            .sql_function()
+            .with_parameter({"X", "The JSON value to query"})
+            .with_parameter(help_text{"P", "The path to the value"}.optional())
+            .with_tags({"json"})
+            .with_example(
+                {"To get the type of a value",
+                 R"(SELECT json_type('[null,1,2.1,"three",{"four":5}]'))"})
+            .with_example(
+                {"To get the type of an array element",
+                 R"(SELECT json_type('[null,1,2.1,"three",{"four":5}]', '$[0]'))"})
+            .with_example(
+                {"To get the type of a string",
+                 R"(SELECT json_type('[null,1,2.1,"three",{"four":5}]', '$[3]'))"}),
+
+        help_text("json_valid", "Tests if the given value is valid JSON")
+            .sql_function()
+            .with_parameter({"X", "The value to check"})
+            .with_tags({"json"})
+            .with_example({"To check an empty string", "SELECT json_valid('')"})
+            .with_example({"To check a string", R"(SELECT json_valid('"a"'))"}),
+
+        help_text("json_quote",
+                  "Returns the JSON representation of the given value, if it "
+                  "is not already JSON")
+            .sql_function()
+            .with_parameter({"X", "The value to convert"})
+            .with_tags({"json"})
+            .with_example(
+                {"To convert a string", "SELECT json_quote('Hello, World!')"})
+            .with_example({"To pass through an existing JSON value",
+                           R"(SELECT json_quote(json('"Hello, World!"')))"}),
+
+        help_text("json_each",
+                  "A table-valued-function that returns the children of the "
+                  "top-level JSON value")
+            .sql_table_valued_function()
+            .with_parameter({"X", "The JSON value to query"})
+            .with_parameter(
+                help_text{"P", "The path to the value to query"}.optional())
+            .with_result({"key",
+                          "The array index for elements of an array or "
+                          "property names of the object"})
+            .with_result({"value", "The value for the current element"})
+            .with_result({"type", "The type of the current element"})
+            .with_result(
+                {"atom",
+                 "The SQL value of the element, if it is a primitive type"})
+            .with_result({"fullkey", "The path to the current element"})
+            .with_tags({"json"})
+            .with_example(
+                {"To iterate over an array",
+                 R"(SELECT * FROM json_each('[null,1,"two",{"three":4.5}]'))"}),
+
+        help_text("json_tree",
+                  "A table-valued-function that recursively descends through a "
+                  "JSON value")
+            .sql_table_valued_function()
+            .with_parameter({"X", "The JSON value to query"})
+            .with_parameter(
+                help_text{"P", "The path to the value to query"}.optional())
+            .with_result({"key",
+                          "The array index for elements of an array or "
+                          "property names of the object"})
+            .with_result({"value", "The value for the current element"})
+            .with_result({"type", "The type of the current element"})
+            .with_result(
+                {"atom",
+                 "The SQL value of the element, if it is a primitive type"})
+            .with_result({"fullkey", "The path to the current element"})
+            .with_result({"path", "The path to the container of this element"})
+            .with_tags({"json"})
+            .with_example(
+                {"To iterate over an array",
+                 R"(SELECT key,value,type,atom,fullkey,path FROM json_tree('[null,1,"two",{"three":4.5}]'))"})
+
+    };
 
     if (!help_registration_done) {
         for (auto& ht : builtin_funcs) {

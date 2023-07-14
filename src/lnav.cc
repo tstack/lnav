@@ -202,21 +202,23 @@ const std::vector<std::string> lnav_zoom_strings = {
 };
 
 static const std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
-    "match_index",
-    "capture_index",
     "capture_count",
+    "capture_index",
+    "device",
+    "id",
+    "inode",
+    "key",
+    "match_index",
+    "parent",
     "range_start",
     "range_stop",
-    "inode",
-    "device",
-    "inode",
     "rowid",
     "st_dev",
+    "st_gid",
     "st_ino",
     "st_mode",
     "st_rdev",
     "st_uid",
-    "st_gid",
 };
 
 static auto bound_pollable_supervisor

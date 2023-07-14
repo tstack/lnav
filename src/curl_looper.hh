@@ -94,6 +94,10 @@ public:
         }
     }
 
+    curl_request(const curl_request&) = delete;
+    curl_request(curl_request&&) = delete;
+    void operator=(curl_request&&) = delete;
+
     virtual ~curl_request() = default;
 
     const std::string& get_name() const { return this->cr_name; }

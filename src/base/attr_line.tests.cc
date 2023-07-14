@@ -36,6 +36,15 @@
 
 using namespace lnav::roles::literals;
 
+TEST_CASE("line_range")
+{
+    line_range lr1{0, 95};
+    line_range lr2{0, -1};
+
+    CHECK(lr2 < lr1);
+    CHECK(!(lr1 < lr2));
+}
+
 TEST_CASE("attr_line_t::basic-wrapping")
 {
     text_wrap_settings tws = {3, 21};

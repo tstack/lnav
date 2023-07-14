@@ -500,6 +500,8 @@ format_example_text_for_term(const help_text& ht,
 
         ex_line.pad_to(50).with_attr_for_all(
             VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+        auto ex_result
+            = eval(ht, ex).with_attr_for_all(SA_PREFORMATTED.value());
         alb.append("#")
             .append(fmt::to_string(count))
             .append(" ")
@@ -510,7 +512,7 @@ format_example_text_for_term(const help_text& ht,
             .append(ex_line, &tws.with_indent(3).with_padding_indent(3))
             .append("\n")
             .indent(3)
-            .append(eval(ht, ex), &tws.with_indent(3))
+            .append(ex_result, &tws.with_indent(0))
             .append("\n");
 
         count += 1;

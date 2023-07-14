@@ -823,8 +823,10 @@ execute_examples()
     db_overlay_source& dos = lnav_data.ld_db_overlay;
     textview_curses& db_tc = lnav_data.ld_views[LNV_DB];
 
+    auto old_width = dls.dls_max_column_width;
+    dls.dls_max_column_width = 15;
     for (auto& help_iter : sqlite_function_help) {
-        struct help_text& ht = *(help_iter.second);
+        auto& ht = *(help_iter.second);
 
         for (auto& ex : ht.ht_example) {
             std::string alt_msg;
@@ -878,6 +880,7 @@ execute_examples()
             }
         }
     }
+    dls.dls_max_column_width = old_width;
 
     dls.clear();
 }
