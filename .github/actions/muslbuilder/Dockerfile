@@ -165,7 +165,7 @@ RUN curl -sSL https://curl.se/download/curl-8.1.2.tar.gz | tar xvzC /extract/ &&
 
 FROM --platform=$TARGETPLATFORM alpine:latest
 
-COPY --from=depsbuilder /fake.root /fake.root
+COPY --link --from=depsbuilder /fake.root /fake.root
 
 LABEL com.github.actions.name="C++ MUSL Builder Slim"
 LABEL com.github.actions.description="Provides a C++ MUSL environment"
