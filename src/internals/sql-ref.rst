@@ -1916,20 +1916,6 @@ json_extract(*X*, *P*)
       ;SELECT json_extract('{"obj": {"sub": 1}}', '$.obj')
       {"sub":1}
 
-    To get a JSON value using the short-hand:
-
-    .. code-block::  custsqlite
-
-      ;SELECT '{"a":"b"}' -> '$.a'
-      "b"
-
-    To get a SQL value using the short-hand:
-
-    .. code-block::  custsqlite
-
-      ;SELECT '{"a":"b"}' ->> '$.a'
-      b
-
   **See Also**
     :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
 

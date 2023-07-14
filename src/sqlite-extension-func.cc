@@ -796,7 +796,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_example(
                 {"To get an object",
                  R"(SELECT json_extract('{"obj": {"sub": 1}}', '$.obj'))"})
-#if SQLITE_VERSION_NUMBER >= 3038000
+#if 0 && SQLITE_VERSION_NUMBER >= 3038000
             .with_example({"To get a JSON value using the short-hand",
                            R"(SELECT '{"a":"b"}' -> '$.a')"})
             .with_example({"To get a SQL value using the short-hand",
