@@ -349,6 +349,9 @@ println(FILE* file, const attr_line_t& al)
                         case role_t::VCR_TEXT:
                         case role_t::VCR_IDENTIFIER:
                             break;
+                        case role_t::VCR_ALT_ROW:
+                            line_style |= fmt::emphasis::bold;
+                            break;
                         case role_t::VCR_SEARCH:
                             line_style |= fmt::emphasis::reverse;
                             break;

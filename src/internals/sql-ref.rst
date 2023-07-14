@@ -159,8 +159,8 @@ expr COLLATE *collation-name*
     .. code-block::  custsqlite
 
       ;SELECT ('a2' < 'a10'), ('a2' < 'a10' COLLATE naturalnocase)
-      ('a2' < 'a10') ('a2' < 'a10' COLLATE naturalnocase) 
-                   0                                    1 
+      ('a2' < 'a10') ('a2' <⋯nocase) 
+                   0               1 
 
 
 ----
@@ -677,9 +677,9 @@ avg(*X*)
     .. code-block::  custsqlite
 
       ;SELECT ex_procname, avg(ex_duration) FROM lnav_example_log GROUP BY ex_procname
-      ex_procname avg(ex_duration) 
-      gw                         5 
-      hw                         2 
+      ex_procname avg(ex_⋯ration) 
+      gw                        5 
+      hw                        2 
 
   **See Also**
     :ref:`abs`, :ref:`acos`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
@@ -1654,7 +1654,7 @@ jget(*json*, *ptr*, *\[default\]*)
       Hello
 
   **See Also**
-    :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`yaml_to_json`
+    :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
 
 ----
 
@@ -1704,6 +1704,85 @@ joinpath(*path*)
 ----
 
 
+.. _json:
+
+json(*X*)
+^^^^^^^^^
+
+  Verifies that its argument is valid JSON and returns a minified version or throws an error.
+
+  **Parameters**
+    * **X\*** --- The string to interpret as JSON.
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_array:
+
+json_array(*X*)
+^^^^^^^^^^^^^^^
+
+  Constructs a JSON array from its arguments.
+
+  **Parameters**
+    * **X** --- The values of the JSON array
+
+  **Examples**
+    To create an array of all types:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_array(NULL, 1, 2.1, 'three', json_array(4), json_object('five', 'six'))
+      [null,1,2.1,"three",[4],{"five":"six"}]
+
+    To create an empty array:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_array()
+      []
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_array_length:
+
+json_array_length(*X*, *\[P\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Returns the length of a JSON array.
+
+  **Parameters**
+    * **X\*** --- The JSON object.
+    * **P** --- The path to the array in 'X'.
+
+  **Examples**
+    To get the length of an array:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_array_length('[1, 2, 3]')
+      3
+
+    To get the length of a nested array:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_array_length('{"arr": [1, 2, 3]}', '$.arr')
+      3
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
 .. _json_concat:
 
 json_concat(*json*, *value*)
@@ -1738,7 +1817,7 @@ json_concat(*json*, *value*)
       [1,2,3,4,5]
 
   **See Also**
-    :ref:`jget`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`yaml_to_json`
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
 
 ----
 
@@ -1770,7 +1849,89 @@ json_contains(*json*, *value*)
       1
 
   **See Also**
-    :ref:`jget`, :ref:`json_concat`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`yaml_to_json`
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_each:
+
+json_each(*X*, *\[P\]*)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  A table-valued-function that returns the children of the top-level JSON value
+
+  **Parameters**
+    * **X\*** --- The JSON value to query
+    * **P** --- The path to the value to query
+
+  **Examples**
+    To iterate over an array:
+
+    .. code-block::  custsqlite
+
+      ;SELECT * FROM json_each('[null,1,"two",{"three":4.5}]')
+      key     value      type    atom  id parent fullkey path 
+        0 <NULL>        null    <NULL>  1 <NULL> $[0]    $    
+        1 1             integer 1       2 <NULL> $[1]    $    
+        2 two           text    two     3 <NULL> $[2]    $    
+        3 {"three":4.5} object  <NULL>  4 <NULL> $[3]    $    
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_extract:
+
+json_extract(*X*, *P*)
+^^^^^^^^^^^^^^^^^^^^^^
+
+  Returns the value(s) from the given JSON at the given path(s).
+
+  **Parameters**
+    * **X\*** --- The JSON value.
+    * **P** --- The path to extract.
+
+  **Examples**
+    To get a number:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_extract('{"num": 1}', '$.num')
+      1
+
+    To get two numbers:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_extract('{"num": 1, "val": 2}', '$.num', '$.val')
+      [1,2]
+
+    To get an object:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_extract('{"obj": {"sub": 1}}', '$.obj')
+      {"sub":1}
+
+    To get a JSON value using the short-hand:
+
+    .. code-block::  custsqlite
+
+      ;SELECT '{"a":"b"}' -> '$.a'
+      "b"
+
+    To get a SQL value using the short-hand:
+
+    .. code-block::  custsqlite
+
+      ;SELECT '{"a":"b"}' ->> '$.a'
+      b
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
 
 ----
 
@@ -1801,7 +1962,7 @@ json_group_array(*value*)
       [1,2,3]
 
   **See Also**
-    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_object`, :ref:`yaml_to_json`
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
 
 ----
 
@@ -1833,7 +1994,316 @@ json_group_object(*name*, *value*)
       {"a":1,"b":2}
 
   **See Also**
-    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`yaml_to_json`
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_insert:
+
+json_insert(*X*, *P*, *Y*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Inserts values into a JSON object/array at the given locations, if it does not already exist
+
+  **Parameters**
+    * **X\*** --- The JSON value to update
+    * **P\*** --- The path to the insertion point.  A '#' array index means append the value
+    * **Y\*** --- The value to insert
+
+  **Examples**
+    To append to an array:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_insert('[1, 2]', '$[#]', 3)
+      [1,2,3]
+
+    To update an object:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_insert('{"a": 1}', '$.b', 2)
+      {"a":1,"b":2}
+
+    To ensure a value is set:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_insert('{"a": 1}', '$.a', 2)
+      {"a":1}
+
+    To update multiple values:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_insert('{"a": 1}', '$.b', 2, '$.c', 3)
+      {"a":1,"b":2,"c":3}
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_object:
+
+json_object(*N*, *V*)
+^^^^^^^^^^^^^^^^^^^^^
+
+  Create a JSON object from the given arguments
+
+  **Parameters**
+    * **N\*** --- The property name
+    * **V\*** --- The property value
+
+  **Examples**
+    To create an object:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_object('a', 1, 'b', 'c')
+      {"a":1,"b":"c"}
+
+    To create an empty object:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_object()
+      {}
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_quote:
+
+json_quote(*X*)
+^^^^^^^^^^^^^^^
+
+  Returns the JSON representation of the given value, if it is not already JSON
+
+  **Parameters**
+    * **X\*** --- The value to convert
+
+  **Examples**
+    To convert a string:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_quote('Hello, World!')
+      "Hello, World!"
+
+    To pass through an existing JSON value:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_quote(json('"Hello, World!"'))
+      "Hello, World!"
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_remove:
+
+json_remove(*X*, *P*)
+^^^^^^^^^^^^^^^^^^^^^
+
+  Removes paths from a JSON value
+
+  **Parameters**
+    * **X\*** --- The JSON value to update
+    * **P** --- The paths to remove
+
+  **Examples**
+    To remove elements of an array:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_remove('[1,2,3]', '$[1]', '$[1]')
+      [1]
+
+    To remove object properties:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_remove('{"a":1,"b":2}', '$.b')
+      {"a":1}
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_replace:
+
+json_replace(*X*, *P*, *Y*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Replaces existing values in a JSON object/array at the given locations
+
+  **Parameters**
+    * **X\*** --- The JSON value to update
+    * **P\*** --- The path to replace
+    * **Y\*** --- The new value for the property
+
+  **Examples**
+    To replace an existing value:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_replace('{"a": 1}', '$.a', 2)
+      {"a":2}
+
+    To replace a value without creating a new property:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_replace('{"a": 1}', '$.a', 2, '$.b', 3)
+      {"a":2}
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_set:
+
+json_set(*X*, *P*, *Y*)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Inserts or replaces existing values in a JSON object/array at the given locations
+
+  **Parameters**
+    * **X\*** --- The JSON value to update
+    * **P\*** --- The path to the insertion point.  A '#' array index means append the value
+    * **Y\*** --- The value to set
+
+  **Examples**
+    To replace an existing array element:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_set('[1, 2]', '$[1]', 3)
+      [1,3]
+
+    To replace a value and create a new property:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_set('{"a": 1}', '$.a', 2, '$.b', 3)
+      {"a":2,"b":3}
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_tree:
+
+json_tree(*X*, *\[P\]*)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  A table-valued-function that recursively descends through a JSON value
+
+  **Parameters**
+    * **X\*** --- The JSON value to query
+    * **P** --- The path to the value to query
+
+  **Examples**
+    To iterate over an array:
+
+    .. code-block::  custsqlite
+
+      ;SELECT key,value,type,atom,fullkey,path FROM json_tree('[null,1,"two",{"three":4.5}]')
+       key        value       type    atom   fullkey   path 
+      <NULL> [null,1⋯":4.5}] array   <NULL> $          $    
+      0      <NULL>          null    <NULL> $[0]       $    
+      1      1               integer 1      $[1]       $    
+      2      two             text    two    $[2]       $    
+      3      {"three":4.5}   object  <NULL> $[3]       $    
+      three  4.5             real    4.5    $[3].three $[3] 
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_type:
+
+json_type(*X*, *\[P\]*)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Returns the type of a JSON value
+
+  **Parameters**
+    * **X\*** --- The JSON value to query
+    * **P** --- The path to the value
+
+  **Examples**
+    To get the type of a value:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_type('[null,1,2.1,"three",{"four":5}]')
+      array
+
+    To get the type of an array element:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_type('[null,1,2.1,"three",{"four":5}]', '$[0]')
+      null
+
+    To get the type of a string:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_type('[null,1,2.1,"three",{"four":5}]', '$[3]')
+      text
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
+
+----
+
+
+.. _json_valid:
+
+json_valid(*X*)
+^^^^^^^^^^^^^^^
+
+  Tests if the given value is valid JSON
+
+  **Parameters**
+    * **X\*** --- The value to check
+
+  **Examples**
+    To check an empty string:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_valid('')
+      0
+
+    To check a string:
+
+    .. code-block::  custsqlite
+
+      ;SELECT json_valid('"a"')
+      1
+
+  **See Also**
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json`, :ref:`yaml_to_json`
 
 ----
 
@@ -2817,9 +3287,9 @@ regexp_capture_into_json(*string*, *pattern*, *\[options\]*)
     .. code-block::  custsqlite
 
       ;SELECT * FROM regexp_capture_into_json('a=1; b=2', '(\w+)=(\d+)')
-      match_index         content         
-                0 {"col_0":"a","col_1":1} 
-                1 {"col_0":"b","col_1":2} 
+      match_index     content     
+                0 {"col_0⋯l_1":1} 
+                1 {"col_0⋯l_1":2} 
 
   **See Also**
     :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`trim`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
@@ -3590,19 +4060,19 @@ timeslice(*time*, *slice*)
 
       ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(1)
     FROM lnav_example_log GROUP BY slice
-               slice          count(1) 
-      2017-02-03 04:05:00.000        2 
-      2017-02-03 04:25:00.000        1 
-      2017-02-03 04:55:00.000        1 
+           slice      count(1) 
+      2017-02⋯:00.000        2 
+      2017-02⋯:00.000        1 
+      2017-02⋯:00.000        1 
 
     To group log messages by those before 4:30am and after:
 
     .. code-block::  custsqlite
 
       ;SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice
-               slice          count(1) 
-      <NULL>                         1 
-      2017-02-03 00:00:00.000        3 
+           slice      count(1) 
+      <NULL>                 1 
+      2017-02⋯:00.000        3 
 
   **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`
@@ -3809,9 +4279,9 @@ xpath(*xpath*, *xmldoc*)
     .. code-block::  custsqlite
 
       ;SELECT * FROM xpath('/abc/def', '<abc><def a="b">Hello</def><def>Bye</def></abc>')
-              result           node_path  node_attr node_text 
-      <def a="b">Hello</def>␊ /abc/def[1] {"a":"b"} Hello     
-      <def>Bye</def>␊         /abc/def[2] {}        Bye       
+          result       node_path  node_attr node_text 
+      <def a=⋯</def>␊ /abc/def[1] {"a":"b"} Hello     
+      <def>Bye</def>␊ /abc/def[2] {}        Bye       
 
     To select all 'a' attributes on the path '/abc/def':
 
@@ -3854,7 +4324,7 @@ yaml_to_json(*yaml*)
       {"abc": "def"}
 
   **See Also**
-    :ref:`jget`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_group_array`, :ref:`json_group_object`
+    :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`
 
 ----
 

@@ -1,0 +1,9 @@
+                 SELECT json_object('abc', 'def') ->> '$.abc'
+     sql_keyword ------
+        sql_func        ------------------------
+       sql_ident        -----------
+      sql_string                    -----
+       sql_comma                         -
+      sql_string                           -----
+        sql_oper                                  ---
+      sql_string                                      -------

@@ -40,7 +40,6 @@
 
 const char db_label_source::NULL_STR[] = "<NULL>";
 
-constexpr size_t MAX_COLUMN_WIDTH = 120;
 constexpr size_t MAX_JSON_WIDTH = 16 * 1024;
 
 void
@@ -59,11 +58,11 @@ db_label_source::text_value_for_line(textview_curses& tc,
         return;
     }
     for (int lpc = 0; lpc < (int) this->dls_rows[row].size(); lpc++) {
-        auto actual_col_size
-            = std::min(MAX_COLUMN_WIDTH, this->dls_headers[lpc].hm_column_size);
+        auto actual_col_size = std::min(this->dls_max_column_width,
+                                        this->dls_headers[lpc].hm_column_size);
         auto cell_str = scrub_ws(this->dls_rows[row][lpc]);
 
-        truncate_to(cell_str, MAX_COLUMN_WIDTH);
+        truncate_to(cell_str, this->dls_max_column_width);
 
         auto cell_length
             = utf8_string_length(cell_str).unwrapOr(actual_col_size);
@@ -91,9 +90,16 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     if (row >= (int) this->dls_rows.size()) {
         return;
     }
+    auto alt_row_index = row % 4;
+    if (alt_row_index == 2 || alt_row_index == 3) {
+        sa.emplace_back(lr2, VC_ROLE.value(role_t::VCR_ALT_ROW));
+    }
     for (size_t lpc = 0; lpc < this->dls_headers.size() - 1; lpc++) {
-        if (row % 2 == 0) {
-            sa.emplace_back(lr2, VC_STYLE.value(text_attrs{A_BOLD}));
+        const auto& hm = this->dls_headers[lpc];
+
+        if (hm.hm_graphable) {
+            lr.lr_end += this->dls_cell_width[lpc];
+            sa.emplace_back(lr, VC_ROLE.value(role_t::VCR_NUMBER));
         }
         lr.lr_start += this->dls_cell_width[lpc];
         lr.lr_end = lr.lr_start + 1;
@@ -412,11 +418,12 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
 
         for (size_t lpc = 0; lpc < this->dos_labels->dls_headers.size(); lpc++)
         {
-            auto actual_col_size = std::min(
-                MAX_COLUMN_WIDTH, dls->dls_headers[lpc].hm_column_size);
+            auto actual_col_size
+                = std::min(dls->dls_max_column_width,
+                           dls->dls_headers[lpc].hm_column_size);
             std::string cell_title = dls->dls_headers[lpc].hm_name;
 
-            truncate_to(cell_title, MAX_COLUMN_WIDTH);
+            truncate_to(cell_title, dls->dls_max_column_width);
 
             auto cell_length
                 = utf8_string_length(cell_title).unwrapOr(actual_col_size);

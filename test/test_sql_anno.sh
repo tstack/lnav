@@ -48,3 +48,5 @@ run_cap_test ./drive_sql_anno \
    "SELECT * from vmw_log, regexp_capture(log_body, '--> /SessionStats/SessionPool/Session/(?<line>[abc]+)')"
 
 run_cap_test ./drive_sql_anno "SELECT * FROM foo.bar"
+
+run_cap_test ./drive_sql_anno "SELECT json_object('abc', 'def') ->> '$.abc'"

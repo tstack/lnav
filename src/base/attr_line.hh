@@ -133,10 +133,16 @@ struct line_range {
             return false;
         }
 
-        if (this->lr_end < rhs.lr_end) {
+        // When the start is the same, the longer range has a lower priority
+        // than the shorter range.
+        if (rhs.lr_end == -1) {
             return false;
         }
-        return true;
+
+        if ((this->lr_end == -1) || (this->lr_end > rhs.lr_end)) {
+            return true;
+        }
+        return false;
     }
 
     bool operator==(const struct line_range& rhs) const

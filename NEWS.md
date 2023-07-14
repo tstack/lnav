@@ -30,6 +30,7 @@ Features:
   the logs for a container (e.g. `docker://my-container`) or
   files within a container (e.g.
   `docker://my-serv/var/log/dpkg.log`).
+* Added the SQLite JSON functions to the online help.
 
 Bug Fixes:
 * When piping data into **lnav**'s stdin, the input used to
@@ -39,6 +40,13 @@ Bug Fixes:
   new `:sh` command.
 * Binary data piped into stdin should now be treated the same
   as if it was in a file that was passed on the command-line.
+
+Interface changes:
+* The DB view now uses the "alt-text" theme style to draw
+  alternating rows instead of being hard-coded to bold.  The
+  alternation is also now done in groups of two rows instead
+  of only a single row.  Numbers are also rendered using the
+  "number" theme style as well.
 
 Breaking changes:
 * Removed the `-w` command-line option.  This option was
