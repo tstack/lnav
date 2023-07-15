@@ -675,7 +675,7 @@ annotate_sql_with_error(sqlite3* db, const char* sql, const char* tail)
 
     if (erroff != -1) {
         auto line_with_error
-            = string_fragment(retval.get_string())
+            = string_fragment::from_str(retval.get_string())
                   .find_boundaries_around(erroff, string_fragment::tag1{'\n'});
         auto erroff_in_line = erroff - line_with_error.sf_begin;
 

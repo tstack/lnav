@@ -46,6 +46,7 @@
 #include "base/paths.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "hasher.hh"
 #include "lnav.events.hh"
 #include "lnav.hh"
 #include "lnav_util.hh"

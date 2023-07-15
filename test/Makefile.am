@@ -272,6 +272,7 @@ dist_noinst_DATA = \
 	dhcp.pcapng \
 	dhcp-trunc.pcapng \
 	expected_help.txt \
+	invalid-books.xml \
 	listview_output.0 \
 	listview_output.1 \
 	listview_output.2 \

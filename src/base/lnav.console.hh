@@ -42,6 +42,11 @@ namespace console {
 void println(FILE* file, const attr_line_t& al);
 
 struct snippet {
+    static snippet from_content_with_offset(intern_string_t src,
+                                            const attr_line_t& content,
+                                            size_t offset,
+                                            const std::string& errmsg);
+
     static snippet from(intern_string_t src, const attr_line_t& content)
     {
         snippet retval;
@@ -114,6 +119,26 @@ struct user_message {
     }
 
     template<typename C>
+    user_message& with_context_snippets(C snippets)
+    {
+        this->um_snippets.insert(this->um_snippets.begin(),
+                                 std::make_move_iterator(std::begin(snippets)),
+                                 std::make_move_iterator(std::end(snippets)));
+        if (this->um_snippets.size() > 1) {
+            for (auto iter = this->um_snippets.begin();
+                 iter != this->um_snippets.end();)
+            {
+                if (iter->s_content.empty()) {
+                    iter = this->um_snippets.erase(iter);
+                } else {
+                    ++iter;
+                }
+            }
+        }
+        return *this;
+    }
+
+    template<typename C>
     user_message& with_snippets(C snippets)
     {
         this->um_snippets.insert(this->um_snippets.end(),
@@ -121,7 +146,8 @@ struct user_message {
                                  std::make_move_iterator(std::end(snippets)));
         if (this->um_snippets.size() > 1) {
             for (auto iter = this->um_snippets.begin();
-                 iter != this->um_snippets.end();) {
+                 iter != this->um_snippets.end();)
+            {
                 if (iter->s_content.empty()) {
                     iter = this->um_snippets.erase(iter);
                 } else {

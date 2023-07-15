@@ -212,6 +212,7 @@ noinst_HEADERS = \
 	fts_fuzzy_match.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
+	hasher.hh \
 	help.md \
 	help.txt \
 	help_text.hh \

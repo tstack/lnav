@@ -52,12 +52,10 @@
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
-#include "byte_array.hh"
 #include "config.h"
 #include "fmt/format.h"
 #include "optional.hpp"
 #include "ptimec.hh"
-#include "spookyhash/SpookyV2.h"
 
 #if SIZEOF_OFF_T == 8
 #    define FORMAT_OFF_T "%lld"
@@ -66,77 +64,6 @@
 #else
 #    error "off_t has unhandled size..."
 #endif
-
-class hasher {
-public:
-    using array_t = byte_array<2, uint64_t>;
-    static constexpr size_t STRING_SIZE = array_t::STRING_SIZE;
-
-    hasher() { this->h_context.Init(0, 0); }
-
-    hasher& update(const std::string& str)
-    {
-        this->h_context.Update(str.data(), str.length());
-
-        return *this;
-    }
-
-    hasher& update(const string_fragment& str)
-    {
-        this->h_context.Update(str.data(), str.length());
-
-        return *this;
-    }
-
-    hasher& update(const char* bits, size_t len)
-    {
-        this->h_context.Update(bits, len);
-
-        return *this;
-    }
-
-    hasher& update(int64_t value)
-    {
-        value = SPOOKYHASH_LITTLE_ENDIAN_64(value);
-        this->h_context.Update(&value, sizeof(value));
-
-        return *this;
-    }
-
-    array_t to_array()
-    {
-        uint64_t h1;
-        uint64_t h2;
-        array_t retval;
-
-        this->h_context.Final(&h1, &h2);
-        *retval.out(0) = SPOOKYHASH_LITTLE_ENDIAN_64(h1);
-        *retval.out(1) = SPOOKYHASH_LITTLE_ENDIAN_64(h2);
-        return retval;
-    }
-
-    void to_string(auto_buffer& buf)
-    {
-        array_t bits = this->to_array();
-
-        bits.to_string(std::back_inserter(buf));
-    }
-
-    std::string to_string()
-    {
-        array_t bits = this->to_array();
-        return bits.to_string();
-    }
-
-    std::string to_uuid_string()
-    {
-        array_t bits = this->to_array();
-        return bits.to_uuid_string();
-    }
-
-private:
-    SpookyHash h_context;
-};
 
 bool change_to_parent_dir();
 

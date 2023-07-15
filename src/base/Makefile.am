@@ -44,6 +44,7 @@ noinst_HEADERS = \
     is_utf8.hh \
     isc.hh \
     itertools.hh \
+    line_range.hh \
     lnav_log.hh \
     lnav.console.hh \
     lnav.console.into.hh \

@@ -34,6 +34,7 @@
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "config.h"
+#include "hasher.hh"
 #include "lnav_util.hh"
 #include "logfile_sub_source.hh"
 #include "sql_util.hh"

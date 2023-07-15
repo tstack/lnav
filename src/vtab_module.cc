@@ -46,6 +46,13 @@ to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um)
     sqlite3_result_error(ctx, errmsg.c_str(), errmsg.size());
 }
 
+void
+set_vtable_errmsg(sqlite3_vtab* vtab, const lnav::console::user_message& um)
+{
+    vtab->zErrMsg = sqlite3_mprintf(
+        "%s%s", sqlitepp::ERROR_PREFIX, lnav::to_json(um).c_str());
+}
+
 lnav::console::user_message
 sqlite3_error_to_user_message(sqlite3* db)
 {

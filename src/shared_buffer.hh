@@ -39,10 +39,10 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "base/attr_line.hh"
 #include "base/auto_mem.hh"
 #include "base/file_range.hh"
 #include "base/intern_string.hh"
+#include "base/line_range.hh"
 #include "base/lnav_log.hh"
 #include "scn/util/string_view.h"
 

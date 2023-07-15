@@ -33,9 +33,7 @@
                         "background-color": "$base3"
                     },
                     "alt-text": {
-                        "color": "$base00",
-                        "background-color": "$base3",
-                        "bold": true
+                        "background-color": "$base2"
                     },
                     "ok": {
                         "color": "$green",
