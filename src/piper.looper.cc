@@ -39,8 +39,8 @@
 #include "base/paths.hh"
 #include "base/time_util.hh"
 #include "config.h"
+#include "hasher.hh"
 #include "line_buffer.hh"
-#include "lnav_util.hh"
 #include "piper.looper.cfg.hh"
 
 using namespace std::chrono_literals;

@@ -23,7 +23,6 @@
                         "background-color": "$black"
                     },
                     "alt-text": {
-                        "color": "#f6f6f6",
                         "background-color": "#1c1c1c"
                     },
                     "ok": {

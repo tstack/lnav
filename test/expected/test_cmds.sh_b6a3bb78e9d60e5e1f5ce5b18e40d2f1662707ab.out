@@ -844,11 +844,11 @@ For support questions, email:
 [4mExample[0m
 #1 To create a table named 'task_durations' that matches log messages with the pattern
    'duration=(?<duration>\d+)':
-   [37m[40m:[0m[1m[36m[40mcreate-search-table[0m[37m[40m task_durations duration=[0m[1m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mduration[0m[1m[36m[40m>[0m[1m[37m[40m\d[0m[1m[36m[40m+[0m[1m[32m[40m)[0m
+   [37m[40m:[0m[1m[36m[40mcreate-search-table[0m[37m[40m task_durations duration=[0m[1m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mduration>[0m[1m[37m[40m\d[0m[1m[36m[40m+[0m[1m[32m[40m)[0m
    
 
 
-[4m:[0m[1m[4mcurre[0m[1m[4mnt-time[0m
+[4m:[0m[1m[4mcurrent-time[0m
 ══════════════════════════════════════════════════════════════════════
   Print the current time in human-readable form and seconds since the
   epoch

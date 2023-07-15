@@ -57,8 +57,8 @@
 #include "base/math_util.hh"
 #include "base/paths.hh"
 #include "fmtlib/fmt/format.h"
+#include "hasher.hh"
 #include "line_buffer.hh"
-#include "lnav_util.hh"
 #include "scn/scn.h"
 
 using namespace std::chrono_literals;

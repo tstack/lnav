@@ -52,7 +52,6 @@
 #include "shlex.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
-#include "yajlpp/json_ptr.hh"
 
 using namespace lnav::roles::literals;
 
@@ -409,7 +408,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
                     log_error("sqlite3_step error code: %d", retcode);
                     auto um = sqlite3_error_to_user_message(lnav_data.ld_db)
-                                  .with_snippets(ec.ec_source)
+                                  .with_context_snippets(ec.ec_source)
                                   .with_note(bound_note);
 
                     return Err(um);

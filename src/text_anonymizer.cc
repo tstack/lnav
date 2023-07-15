@@ -38,7 +38,7 @@
 #include "data_scanner.hh"
 #include "diseases-json.h"
 #include "ghc/filesystem.hpp"
-#include "lnav_util.hh"
+#include "hasher.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "words-json.h"
 #include "yajlpp/yajlpp_def.hh"

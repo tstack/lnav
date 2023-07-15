@@ -45,6 +45,45 @@ using namespace lnav::roles::literals;
 namespace lnav {
 namespace console {
 
+snippet
+snippet::from_content_with_offset(intern_string_t src,
+                                  const attr_line_t& content,
+                                  size_t offset,
+                                  const std::string& errmsg)
+{
+    auto content_sf = string_fragment::from_str(content.get_string());
+    auto line_with_error = content_sf.find_boundaries_around(
+        offset, string_fragment::tag1{'\n'});
+    auto line_with_context = content_sf.find_boundaries_around(
+        offset, string_fragment::tag1{'\n'}, 3);
+    auto line_number = content_sf.sub_range(0, offset).count('\n');
+    auto erroff_in_line = offset - line_with_error.sf_begin;
+
+    attr_line_t pointer;
+
+    pointer.append(erroff_in_line, ' ')
+        .append("^ "_snippet_border)
+        .append(lnav::roles::error(errmsg))
+        .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+
+    snippet retval;
+    retval.s_content
+        = content.subline(line_with_context.sf_begin,
+                          line_with_error.sf_end - line_with_context.sf_begin);
+    if (line_with_error.sf_end >= retval.s_content.get_string().size()) {
+        retval.s_content.append("\n");
+    }
+    retval.s_content.append(pointer).append(
+        content.subline(line_with_error.sf_end,
+                        line_with_context.sf_end - line_with_error.sf_end));
+    retval.s_location = source_location{
+        src,
+        static_cast<int32_t>(1 + line_number),
+    };
+
+    return retval;
+}
+
 user_message
 user_message::raw(const attr_line_t& al)
 {

@@ -129,6 +129,12 @@ TEST_CASE("find_left_boundary")
         auto world_sf = sf.find_left_boundary(
             in1.length() - 3, [](auto ch) { return ch == '\n'; });
         CHECK(world_sf.to_string() == "World!\n");
+        auto world_sf2 = sf.find_left_boundary(
+            in1.length() - 3, [](auto ch) { return ch == '\n'; }, 2);
+        CHECK(world_sf2.to_string() == "Hello,\nWorld!\n");
+        auto world_sf3 = sf.find_left_boundary(
+            in1.length() - 3, [](auto ch) { return ch == '\n'; }, 3);
+        CHECK(world_sf3.to_string() == "Hello,\nWorld!\n");
         auto full_sf
             = sf.find_left_boundary(3, [](auto ch) { return ch == '\n'; });
         CHECK(full_sf.to_string() == in1);
@@ -137,16 +143,35 @@ TEST_CASE("find_left_boundary")
 
 TEST_CASE("find_right_boundary")
 {
-    std::string in1 = "Hello,\nWorld!\n";
-
     {
-        auto sf = string_fragment{in1};
+        const auto sf = string_fragment::from_const("Hello,\nWorld!\n");
 
-        auto world_sf = sf.find_right_boundary(
-            in1.length() - 3, [](auto ch) { return ch == '\n'; });
+        auto world_sf = sf.find_right_boundary(sf.length() - 3,
+                                               string_fragment::tag1{'\n'});
         CHECK(world_sf.to_string() == "Hello,\nWorld!");
         auto hello_sf
             = sf.find_right_boundary(3, [](auto ch) { return ch == '\n'; });
         CHECK(hello_sf.to_string() == "Hello,");
+        auto hello_sf2
+            = sf.find_right_boundary(3, string_fragment::tag1{'\n'}, 2);
+        CHECK(hello_sf2.to_string() == "Hello,\nWorld!");
+    }
+}
+
+TEST_CASE("find_boundaries_around")
+{
+    {
+        const auto sf = string_fragment::from_const(
+            R"(Hello,
+World!
+Goodbye,
+World!)");
+
+        auto all_sf1
+            = sf.find_boundaries_around(3, string_fragment::tag1{'\n'});
+        CHECK(all_sf1 == "Hello,");
+        auto all_sf2
+            = sf.find_boundaries_around(3, string_fragment::tag1{'\n'}, 2);
+        CHECK(all_sf2 == "Hello,\nWorld!");
     }
 }

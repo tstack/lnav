@@ -35,7 +35,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
 #include <sys/resource.h>
@@ -47,6 +46,7 @@
 #include "base/injector.hh"
 #include "base/string_util.hh"
 #include "config.h"
+#include "hasher.hh"
 #include "lnav_util.hh"
 #include "log.watch.hh"
 #include "log_format.hh"

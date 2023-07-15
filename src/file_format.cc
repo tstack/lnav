@@ -35,6 +35,7 @@
 #include "base/auto_fd.hh"
 #include "base/fs_util.hh"
 #include "base/intern_string.hh"
+#include "base/lnav_log.hh"
 #include "config.h"
 
 file_format_t
@@ -45,13 +46,21 @@ detect_file_format(const ghc::filesystem::path& filename)
     }
 
     file_format_t retval = file_format_t::UNKNOWN;
-    auto_fd fd;
-
-    if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) != -1) {
+    auto open_res = lnav::filesystem::open_file(filename, O_RDONLY);
+    if (open_res.isErr()) {
+        log_error("unable to open file for format detection: %s -- %s",
+                  filename.c_str(),
+                  open_res.unwrapErr().c_str());
+    } else {
+        auto fd = open_res.unwrap();
         uint8_t buffer[32];
-        ssize_t rc;
+        auto rc = read(fd, buffer, sizeof(buffer));
 
-        if ((rc = read(fd, buffer, sizeof(buffer))) > 0) {
+        if (rc < 0) {
+            log_error("unable to read file for format detection: %s -- %s",
+                      filename.c_str(),
+                      strerror(errno));
+        } else {
             static auto SQLITE3_HEADER = "SQLite format 3";
             auto header_frag = string_fragment::from_bytes(buffer, rc);
 

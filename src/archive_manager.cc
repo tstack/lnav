@@ -29,6 +29,8 @@
  * @file archive_manager.cc
  */
 
+#include <future>
+
 #include <unistd.h>
 
 #include "config.h"
@@ -48,7 +50,7 @@
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "fmt/format.h"
-#include "lnav_util.hh"
+#include "hasher.hh"
 
 namespace fs = ghc::filesystem;
 

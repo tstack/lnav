@@ -57,6 +57,7 @@
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
 #include "fmt/printf.h"
+#include "hasher.hh"
 #include "lnav.indexing.hh"
 #include "lnav_commands.hh"
 #include "lnav_config.hh"

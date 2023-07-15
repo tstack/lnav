@@ -535,3 +535,112 @@ line_range::shift(int32_t start, int32_t amount)
 
     return *this;
 }
+
+string_attrs_t::const_iterator
+find_string_attr(const string_attrs_t& sa, size_t near)
+{
+    auto nearest = sa.end();
+    ssize_t last_diff = INT_MAX;
+
+    for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
+        const auto& lr = iter->sa_range;
+
+        if (!lr.is_valid() || !lr.contains(near)) {
+            continue;
+        }
+
+        ssize_t diff = near - lr.lr_start;
+        if (diff < last_diff) {
+            last_diff = diff;
+            nearest = iter;
+        }
+    }
+
+    return nearest;
+}
+
+void
+shift_string_attrs(string_attrs_t& sa, int32_t start, int32_t amount)
+{
+    for (auto& iter : sa) {
+        iter.sa_range.shift(start, amount);
+    }
+}
+
+struct line_range
+find_string_attr_range(const string_attrs_t& sa, string_attr_type_base* type)
+{
+    auto iter = find_string_attr(sa, type);
+
+    if (iter != sa.end()) {
+        return iter->sa_range;
+    }
+
+    return line_range();
+}
+
+void
+remove_string_attr(string_attrs_t& sa, const line_range& lr)
+{
+    string_attrs_t::iterator iter;
+
+    while ((iter = find_string_attr(sa, lr)) != sa.end()) {
+        sa.erase(iter);
+    }
+}
+
+void
+remove_string_attr(string_attrs_t& sa, string_attr_type_base* type)
+{
+    for (auto iter = sa.begin(); iter != sa.end();) {
+        if (iter->sa_type == type) {
+            iter = sa.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+}
+
+string_attrs_t::iterator
+find_string_attr(string_attrs_t& sa, const line_range& lr)
+{
+    string_attrs_t::iterator iter;
+
+    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+        if (lr.contains(iter->sa_range)) {
+            break;
+        }
+    }
+
+    return iter;
+}
+
+string_attrs_t::const_iterator
+find_string_attr(const string_attrs_t& sa,
+                 const string_attr_type_base* type,
+                 int start)
+{
+    string_attrs_t::const_iterator iter;
+
+    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+        if (iter->sa_type == type && iter->sa_range.lr_start >= start) {
+            break;
+        }
+    }
+
+    return iter;
+}
+
+nonstd::optional<const string_attr*>
+get_string_attr(const string_attrs_t& sa,
+                const string_attr_type_base* type,
+                int start)
+{
+    auto iter = find_string_attr(sa, type, start);
+
+    if (iter == sa.end()) {
+        return nonstd::nullopt;
+    }
+
+    return nonstd::make_optional(&(*iter));
+}

@@ -24,8 +24,6 @@
                         "background-color": ""
                     },
                     "alt-text": {
-                        "color": "$white",
-                        "background-color": "",
                         "bold": true
                     },
                     "ok": {

@@ -1014,10 +1014,14 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_46dfa23e2effabf3fa150c4b871fd8d22b1c834d.out \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_4effabf11b59580e5f0727199eb74fba049c0cda.err \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_4effabf11b59580e5f0727199eb74fba049c0cda.out \
+    $(srcdir)/%reldir%/test_sql_xml_func.sh_81ad7678f080870956db37174bcf1054586cfbad.err \
+    $(srcdir)/%reldir%/test_sql_xml_func.sh_81ad7678f080870956db37174bcf1054586cfbad.out \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_8912b59d5b515ab1373a3d9bc635ebabacd01dfd.err \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_8912b59d5b515ab1373a3d9bc635ebabacd01dfd.out \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_b036c73528a446cba46625767517cdac868aba72.err \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_b036c73528a446cba46625767517cdac868aba72.out \
+    $(srcdir)/%reldir%/test_sql_xml_func.sh_bcbd691bb24c4f7bcb9fe0e035b290815f1c8874.err \
+    $(srcdir)/%reldir%/test_sql_xml_func.sh_bcbd691bb24c4f7bcb9fe0e035b290815f1c8874.out \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_fefeb387ae14d4171225ea06cbbff3ec43990cf0.err \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_fefeb387ae14d4171225ea06cbbff3ec43990cf0.out \
     $(srcdir)/%reldir%/test_sql_yaml_func.sh_dc189d02e8979b7ed245d5d750f68b9965984699.err \

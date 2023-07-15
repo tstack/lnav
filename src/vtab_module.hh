@@ -218,6 +218,9 @@ struct from_sqlite<vtab_types::nullable<T>> {
 
 void to_sqlite(sqlite3_context* ctx, const lnav::console::user_message& um);
 
+void set_vtable_errmsg(sqlite3_vtab* vtab,
+                       const lnav::console::user_message& um);
+
 inline void
 to_sqlite(sqlite3_context* ctx, null_value_t)
 {

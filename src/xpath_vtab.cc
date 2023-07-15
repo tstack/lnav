@@ -34,7 +34,6 @@
 #include "config.h"
 #include "pugixml/pugixml.hpp"
 #include "sql_help.hh"
-#include "sql_util.hh"
 #include "vtab_module.hh"
 #include "xml_util.hh"
 #include "yajlpp/yajlpp.hh"
@@ -314,21 +313,38 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     pCur->c_value.assign(blob, byte_count);
     auto parse_res = pCur->c_doc.load_string(pCur->c_value.c_str());
     if (!parse_res) {
-        pVtabCursor->pVtab->zErrMsg
-            = sqlite3_mprintf("Invalid XML document at offset %d: %s",
+        static const intern_string_t ARG1 = intern_string::lookup("xmldoc");
+
+        auto attr_xmldoc
+            = attr_line_t(pCur->c_value)
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+        auto um = lnav::console::user_message::error("Invalid XML document")
+                      .with_reason(parse_res.description())
+                      .with_snippet(
+                          lnav::console::snippet::from_content_with_offset(
+                              ARG1,
+                              attr_xmldoc,
                               parse_res.offset,
-                              parse_res.description());
+                              parse_res.description()));
+        set_vtable_errmsg(pVtabCursor->pVtab, um);
         return SQLITE_ERROR;
     }
 
     pCur->c_xpath = (const char*) sqlite3_value_text(argv[0]);
     pCur->c_query = checkout_query(pCur->c_xpath);
     if (!pCur->c_query) {
-        auto& res = pCur->c_query.result();
-        pVtabCursor->pVtab->zErrMsg
-            = sqlite3_mprintf("Invalid XPATH expression at offset %d: %s",
-                              res.offset,
-                              res.description());
+        static const intern_string_t ARG0 = intern_string::lookup("xpath");
+
+        const auto& res = pCur->c_query.result();
+        auto attr_xpath
+            = attr_line_t(pCur->c_xpath)
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+        auto um = lnav::console::user_message::error("Invalid XPath expression")
+                      .with_reason(res.description())
+                      .with_snippet(
+                          lnav::console::snippet::from_content_with_offset(
+                              ARG0, attr_xpath, res.offset, res.description()));
+        set_vtable_errmsg(pVtabCursor->pVtab, um);
         return SQLITE_ERROR;
     }
 

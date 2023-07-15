@@ -473,6 +473,7 @@ add_library(
         fstat_vtab.hh
         fts_fuzzy_match.hh
         grep_highlighter.hh
+        hasher.hh
         help_text.hh
         help_text_formatter.hh
         highlighter.hh

@@ -40,11 +40,11 @@
 #include <utility>
 
 #include "archive_manager.hh"
+#include "base/auto_pid.hh"
 #include "base/future_util.hh"
 #include "file_format.hh"
 #include "logfile_fwd.hh"
 #include "safe/safe.h"
-#include "tailer/tailer.looper.hh"
 
 struct tailer_progress {
     std::string tp_message;

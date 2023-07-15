@@ -37,6 +37,7 @@
 
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
+#include "ww898/cp_utf8.hpp"
 #include "xxHash/xxhash.h"
 
 const static int TABLE_SIZE = 4095;
@@ -300,4 +301,37 @@ string_fragment::to_string_with_case_style(case_style style) const
     }
 
     return retval;
+}
+
+uint32_t
+string_fragment::front_codepoint() const
+{
+    size_t index = 0;
+    try {
+        return ww898::utf::utf8::read(
+            [this, &index]() { return this->data()[index++]; });
+    } catch (const std::runtime_error& e) {
+        return this->data()[0];
+    }
+}
+
+Result<ssize_t, const char*>
+string_fragment::codepoint_to_byte_index(ssize_t cp_index) const
+{
+    ssize_t retval = 0;
+
+    while (cp_index > 0) {
+        if (retval >= this->length()) {
+            return Err("index is beyond the end of the string");
+        }
+        auto ch_len = TRY(ww898::utf::utf8::char_size([this, retval]() {
+            return std::make_pair(this->data()[retval],
+                                  this->length() - retval - 1);
+        }));
+
+        retval += ch_len;
+        cp_index -= 1;
+    }
+
+    return Ok(retval);
 }
