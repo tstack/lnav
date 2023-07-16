@@ -32,7 +32,7 @@ grep abcd textfile_long_lines.0 | run_cap_test \
 
 export HOME="./piper-config"
 rm -rf ./piper-config
-mkdir -p $HOME/.config
+mkdir -p $HOME/.lnav
 
 ${lnav_test} -Nn -c ':config /tuning/piper/max-size 128'
 
