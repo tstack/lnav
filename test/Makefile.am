@@ -514,6 +514,8 @@ distclean-local:
 	$(RM_V)rm -rf tmp
 	$(RM_V)rm -rf rotmp
 	$(RM_V)rm -rf meta-sessions
+	$(RM_V)rm -rf mgmt-config
+	$(RM_V)rm -rf piper-config
 	$(RM_V)rm -rf nested
 	$(RM_V)rm -rf test-config
 	$(RM_V)rm -rf .lnav
