@@ -36,7 +36,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "archive_manager.cfg.hh"
@@ -103,7 +102,7 @@ struct _lnav_config {
     std::string lc_ui_keymap;
     std::string lc_ui_theme;
     movement_config lc_ui_movement;
-    std::unordered_map<std::string, key_map> lc_ui_keymaps;
+    std::map<std::string, key_map> lc_ui_keymaps;
     std::map<std::string, std::string> lc_ui_key_overrides;
     std::map<std::string, std::string> lc_global_vars;
     std::map<std::string, lnav_theme> lc_ui_theme_defs;
