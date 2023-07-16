@@ -41,7 +41,7 @@ cat ${test_dir}/logfile_haproxy.0 | run_cap_test \
 
 export HOME="./mgmt-config"
 rm -rf ./mgmt-config
-mkdir -p $HOME/.config
+mkdir -p $HOME/.lnav
 run_cap_test ${lnav_test} -m -I ${test_dir} config get
 
 run_cap_test ${lnav_test} -m -I ${test_dir} config blame
