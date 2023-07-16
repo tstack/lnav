@@ -2278,6 +2278,21 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                    lnav_data.ld_debug_log_name,
                    "Write debug messages to the given file.")
         ->type_name("FILE");
+    app.add_option("-I", lnav_data.ld_config_paths, "include paths")
+        ->check(CLI::ExistingDirectory)
+        ->check([&arg_errors](std::string inc_path) -> std::string {
+            if (access(inc_path.c_str(), X_OK) != 0) {
+                arg_errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid configuration directory: ")
+                            .append(lnav::roles::file(inc_path)))
+                        .with_errno_reason());
+                return "unreadable";
+            }
+
+            return std::string();
+        })
+        ->allow_extra_args(false);
     app.add_flag("-q{0},-v{2}", verbosity, "Control the verbosity");
     app.set_version_flag("-V,--version");
     app.footer(fmt::format(FMT_STRING("Version: {}"), VCS_PACKAGE_STRING));
@@ -2286,21 +2301,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     if (argc < 2 || strcmp(argv[1], "-m") != 0) {
         app.add_flag("-H", lnav_data.ld_show_help_view, "show help");
-        app.add_option("-I", lnav_data.ld_config_paths, "include paths")
-            ->check(CLI::ExistingDirectory)
-            ->check([&arg_errors](std::string inc_path) -> std::string {
-                if (access(inc_path.c_str(), X_OK) != 0) {
-                    arg_errors.emplace_back(
-                        lnav::console::user_message::error(
-                            attr_line_t("invalid configuration directory: ")
-                                .append(lnav::roles::file(inc_path)))
-                            .with_errno_reason());
-                    return "unreadable";
-                }
-
-                return std::string();
-            })
-            ->allow_extra_args(false);
         app.add_flag("-C", mode_flags.mf_check_configs, "check");
         auto* install_flag
             = app.add_flag("-i", mode_flags.mf_install, "install");

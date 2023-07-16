@@ -27,8 +27,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <queue>
-
 #include "lnav.management_cli.hh"
 
 #include "base/itertools.hh"
@@ -36,6 +34,8 @@
 #include "base/string_util.hh"
 #include "fmt/format.h"
 #include "itertools.similar.hh"
+#include "lnav.hh"
+#include "lnav_config.hh"
 #include "log_format.hh"
 #include "log_format_ext.hh"
 #include "mapbox/variant.hpp"
@@ -66,6 +66,57 @@ subcmd_reducer(const CLI::App* app, attr_line_t& accum)
         .append(": ")
         .append(app->get_description());
 }
+
+struct subcmd_config_t {
+    using action_t = std::function<perform_result_t(const subcmd_config_t&)>;
+
+    CLI::App* sc_config_app{nullptr};
+    action_t sc_action;
+
+    static perform_result_t default_action(const subcmd_config_t& sc)
+    {
+        auto um = console::user_message::error(
+            "expecting an operation related to the regex101.com integration");
+        um.with_help(
+            sc.sc_config_app->get_subcommands({})
+            | lnav::itertools::fold(
+                subcmd_reducer, attr_line_t{"the available operations are:"}));
+
+        return {um};
+    }
+
+    static perform_result_t get_action(const subcmd_config_t&)
+    {
+        auto config_str = dump_config();
+        auto um = console::user_message::raw(config_str);
+
+        return {um};
+    }
+
+    static perform_result_t blame_action(const subcmd_config_t&)
+    {
+        auto blame = attr_line_t();
+
+        for (const auto& pair : lnav_config_locations) {
+            blame.appendf(FMT_STRING("{} -> {}:{}\n"),
+                          pair.first,
+                          pair.second.sl_source,
+                          pair.second.sl_line_number);
+        }
+
+        auto um = console::user_message::raw(blame.rtrim());
+
+        return {um};
+    }
+
+    subcmd_config_t& set_action(action_t act)
+    {
+        if (!this->sc_action) {
+            this->sc_action = std::move(act);
+        }
+        return *this;
+    }
+};
 
 struct subcmd_format_t {
     using action_t = std::function<perform_result_t(const subcmd_format_t&)>;
@@ -663,18 +714,18 @@ struct subcmd_regex101_t {
             };
         }
 
-        auto entries
-            = get_res.unwrap() | lnav::itertools::map([](const auto& elem) {
+        auto entries = get_res.unwrap()
+            | lnav::itertools::map([](const auto& elem) {
                            return fmt::format(
                                FMT_STRING("   format {} regex {} regex101\n"),
                                elem.re_format_name,
                                elem.re_regex_name);
                        })
             | lnav::itertools::fold(
-                  [](const auto& elem, auto& accum) {
-                      return accum.append(elem);
-                  },
-                  attr_line_t{});
+                           [](const auto& elem, auto& accum) {
+                               return accum.append(elem);
+                           },
+                           attr_line_t{});
 
         auto um = console::user_message::ok(
             entries.add_header("the following regex101 entries were found:\n")
@@ -711,8 +762,8 @@ struct subcmd_regex101_t {
     }
 };
 
-using operations_v
-    = mapbox::util::variant<no_subcmd_t, subcmd_format_t, subcmd_regex101_t>;
+using operations_v = mapbox::util::
+    variant<no_subcmd_t, subcmd_config_t, subcmd_format_t, subcmd_regex101_t>;
 
 class operations {
 public:
@@ -730,8 +781,31 @@ describe_cli(CLI::App& app, int argc, char* argv[])
 
     app.add_flag("-m", "Switch to the management CLI mode.");
 
+    subcmd_config_t config_args;
     subcmd_format_t format_args;
     subcmd_regex101_t regex101_args;
+
+    {
+        auto* subcmd_config
+            = app.add_subcommand("config",
+                                 "perform operations on the lnav configuration")
+                  ->callback([&]() {
+                      config_args.set_action(subcmd_config_t::default_action);
+                      retval->o_ops = config_args;
+                  });
+        config_args.sc_config_app = subcmd_config;
+
+        subcmd_config->add_subcommand("get", "print the current configuration")
+            ->callback(
+                [&]() { config_args.set_action(subcmd_config_t::get_action); });
+
+        subcmd_config
+            ->add_subcommand("blame",
+                             "print the configuration options and their source")
+            ->callback([&]() {
+                config_args.set_action(subcmd_config_t::blame_action);
+            });
+    }
 
     {
         auto* subcmd_format
@@ -902,6 +976,7 @@ perform(std::shared_ptr<operations> opts)
 
             return {um};
         },
+        [](const subcmd_config_t& sc) { return sc.sc_action(sc); },
         [](const subcmd_format_t& sf) { return sf.sf_action(sf); },
         [](const subcmd_regex101_t& sr) { return sr.sr_action(sr); });
 }

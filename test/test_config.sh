@@ -37,3 +37,6 @@ run_cap_test ${lnav_test} -W -n \
 
 run_cap_test ${lnav_test} -nN \
     -c ":reset-config /bad/path"
+
+run_cap_test ${lnav_test} -n -I ${test_dir} \
+    hw://seattle/finn

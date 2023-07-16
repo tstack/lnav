@@ -38,3 +38,10 @@ ${lnav_test} -Nn -c ':config /tuning/piper/max-size 128'
 
 cat ${test_dir}/logfile_haproxy.0 | run_cap_test \
     env TEST_COMMENT="stdin rotation" ${lnav_test} -n
+
+export HOME="./mgmt-config"
+rm -rf ./mgmt-config
+mkdir -p $HOME/.config
+run_cap_test ${lnav_test} -m -I ${test_dir} config get
+
+run_cap_test ${lnav_test} -m -I ${test_dir} config blame

@@ -143,6 +143,8 @@ void reload_config(std::vector<lnav::console::user_message>& errors);
 
 std::string save_config();
 
+std::string dump_config();
+
 extern const char* DEFAULT_FORMAT_SCHEMA;
 extern const std::set<std::string> SUPPORTED_FORMAT_SCHEMAS;
 
