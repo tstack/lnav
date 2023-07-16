@@ -560,7 +560,7 @@ execute_file_contents(exec_context& ec,
                 cmdline = std::string(line);
                 break;
             default:
-                if (multiline) {
+                if (multiline && cmdline) {
                     cmdline = fmt::format(
                         FMT_STRING("{}{}"), cmdline.value(), line.in());
                 } else {

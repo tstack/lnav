@@ -91,6 +91,8 @@ Options
    Do not print the log messages after executing all of the commands.
 
 
+.. _management_cli:
+
 Management Mode (v0.11.0+)
 --------------------------
 
@@ -105,8 +107,21 @@ Options
    Switch to management mode.  This must be the first option passed on the
    command-line.
 
+.. option:: -I <path>
+
+   Add a configuration directory.
+
 Subcommands
 ^^^^^^^^^^^
+
+.. option:: config get
+
+   Print out the current configuration as JSON on the standard output.
+
+.. option:: config blame
+
+   Print out the configuration options as JSON-Pointers and the
+   file/line-number where the configuration is sourced from.
 
 .. option:: regex101 import <regex101-url> <format-name> [<regex-name>]
 

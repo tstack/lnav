@@ -1469,22 +1469,25 @@ static void
 find_format_in_path(const ghc::filesystem::path& path,
                     available_scripts& scripts)
 {
-    auto format_path = path / "formats/*/*.lnav";
-    static_root_mem<glob_t, globfree> gl;
+    for (auto format_path :
+         {path / "formats/*/*.lnav", path / "configs/*/*.lnav"})
+    {
+        static_root_mem<glob_t, globfree> gl;
 
-    log_debug("Searching for script in path: %s", format_path.c_str());
-    if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
-        for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
-            const char* filename = basename(gl->gl_pathv[lpc]);
-            auto script_name = std::string(filename, strlen(filename) - 5);
-            struct script_metadata meta;
+        log_debug("Searching for script in path: %s", format_path.c_str());
+        if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
+            for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
+                const char* filename = basename(gl->gl_pathv[lpc]);
+                auto script_name = std::string(filename, strlen(filename) - 5);
+                struct script_metadata meta;
 
-            meta.sm_path = gl->gl_pathv[lpc];
-            meta.sm_name = script_name;
-            extract_metadata_from_file(meta);
-            scripts.as_scripts[script_name].push_back(meta);
+                meta.sm_path = gl->gl_pathv[lpc];
+                meta.sm_name = script_name;
+                extract_metadata_from_file(meta);
+                scripts.as_scripts[script_name].push_back(meta);
 
-            log_debug("  found script: %s", meta.sm_path.c_str());
+                log_debug("  found script: %s", meta.sm_path.c_str());
+            }
         }
     }
 }

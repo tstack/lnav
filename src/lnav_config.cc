@@ -1593,6 +1593,19 @@ load_config(const std::vector<ghc::filesystem::path>& extra_paths,
     rollback_lnav_config = lnav_config;
 }
 
+std::string
+dump_config()
+{
+    yajlpp_gen gen;
+    yajlpp_gen_context ygc(gen, lnav_config_handlers);
+
+    yajl_gen_config(gen, yajl_gen_beautify, true);
+    ygc.with_obj(lnav_config);
+    ygc.gen();
+
+    return gen.to_string_fragment().to_string();
+}
+
 void
 reset_config(const std::string& path)
 {

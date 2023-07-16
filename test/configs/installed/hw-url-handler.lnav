@@ -1,0 +1,10 @@
+#
+# @synopsis: hw-url-handler
+# @description: Hello, World! URL handler
+#
+
+;SELECT jget(url, '/host') AS hostname,
+        jget(url, '/path') AS upath
+        FROM (SELECT parse_url($1) AS url)
+
+:sh echo "Hello, $upath at $hostname!"

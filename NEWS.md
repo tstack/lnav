@@ -31,6 +31,9 @@ Features:
   files within a container (e.g.
   `docker://my-serv/var/log/dpkg.log`).
 * Added the SQLite JSON functions to the online help.
+* Added `config get` and `config blame` management CLI
+  commands to get the current configuration and the file
+  locations where the configuration options came from.
 
 Bug Fixes:
 * When piping data into **lnav**'s stdin, the input used to
@@ -40,6 +43,8 @@ Bug Fixes:
   new `:sh` command.
 * Binary data piped into stdin should now be treated the same
   as if it was in a file that was passed on the command-line.
+* The `-I` option is now recognized in the management CLI
+  (i.e. when you run **lnav** with the `-m` flag).
 
 Interface changes:
 * The DB view now uses the "alt-text" theme style to draw
