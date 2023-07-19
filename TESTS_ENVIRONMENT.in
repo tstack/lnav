@@ -106,6 +106,7 @@ run_cap_test() {
         -e "s;${builddir};{test_dir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
         -e "s;${top_srcdir_parent};{top_srcdir_parent};g" \
+        -e "s;lnav-user-${UID}-work;lnav-user-{uid}-work;g" \
         ${test_file_base}_${test_hash}.out
     echo
     printf "%s \033[0;35m=============================================================\033[0m\n" $(date -Iseconds)
@@ -133,6 +134,7 @@ run_cap_test() {
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${builddir};{builddir};g" \
         -e "s;${top_srcdir};{top_srcdir};g" \
+        -e "s;lnav-user-${UID}-work;lnav-user-{uid}-work;g" \
         -e 's;"errorId":".+";;g' \
         ${test_file_base}_${test_hash}.err
     printf '\033[0;31mBEGIN\033[0m %s\n' "${test_file_base}_${test_hash}.err"
