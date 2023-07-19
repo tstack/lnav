@@ -34,6 +34,8 @@
 
 #include <string>
 
+#include <sys/time.h>
+
 #include "auto_mem.hh"
 #include "result.h"
 
