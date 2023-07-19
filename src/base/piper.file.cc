@@ -29,6 +29,7 @@
 
 #include "piper.file.hh"
 
+#include <arpa/inet.h>
 #include <unistd.h>
 
 #include "base/lnav_log.hh"
