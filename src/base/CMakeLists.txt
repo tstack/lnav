@@ -19,6 +19,7 @@ add_library(
         lnav_log.cc
         network.tcp.cc
         paths.cc
+        piper.file.cc
         snippet_highlighters.cc
         string_attr_type.cc
         string_util.cc
@@ -55,6 +56,7 @@ add_library(
         math_util.hh
         network.tcp.hh
         paths.hh
+        piper.file.hh
         result.h
         snippet_highlighters.hh
         string_attr_type.hh

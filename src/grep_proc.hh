@@ -148,9 +148,11 @@ public:
                               LineType line,
                               int start,
                               int end,
-                              char* capture){};
+                              const string_fragment& capture)
+    {
+    }
 
-    virtual void grep_match_end(grep_proc<LineType>& gp, LineType line){};
+    virtual void grep_match_end(grep_proc<LineType>& gp, LineType line) {}
 };
 
 /**
@@ -255,7 +257,7 @@ protected:
     /**
      * Dispatch a line received from the child.
      */
-    void dispatch_line(char* line);
+    void dispatch_line(const string_fragment& line);
 
     /**
      * Free any resources used by the object and make sure the child has been

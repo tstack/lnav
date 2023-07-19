@@ -59,6 +59,7 @@
 #include "fmtlib/fmt/format.h"
 #include "hasher.hh"
 #include "line_buffer.hh"
+#include "piper.looper.hh"
 #include "scn/scn.h"
 
 using namespace std::chrono_literals;
@@ -136,7 +137,7 @@ private:
 #define SYNCPOINT_SIZE (1024 * 1024)
 line_buffer::gz_indexed::gz_indexed()
 {
-    if ((this->inbuf = (Bytef*) malloc(Z_BUFSIZE)) == NULL) {
+    if ((this->inbuf = auto_mem<Bytef>::malloc(Z_BUFSIZE)) == NULL) {
         throw std::bad_alloc();
     }
 }
@@ -192,7 +193,7 @@ line_buffer::gz_indexed::continue_stream()
 }
 
 void
-line_buffer::gz_indexed::open(int fd, header_data& hd)
+line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
 {
     this->close();
     this->init_stream();
@@ -239,9 +240,9 @@ line_buffer::gz_indexed::open(int fd, header_data& hd)
                     log_debug("%d: no gzip header data", fd);
                     break;
                 case 1:
-                    hd.hd_mtime.tv_sec = gz_hd.time;
-                    hd.hd_name = std::string((char*) name);
-                    hd.hd_comment = std::string((char*) comment);
+                    hd.h_mtime.tv_sec = gz_hd.time;
+                    hd.h_name = std::string((char*) name);
+                    hd.h_comment = std::string((char*) comment);
                     break;
                 default:
                     log_error("%d: failed to read gzip header data", fd);
@@ -409,11 +410,32 @@ line_buffer::set_fd(auto_fd& fd)
             char gz_id[2 + 1 + 1 + 4];
 
             if (pread(fd, gz_id, sizeof(gz_id), 0) == sizeof(gz_id)) {
-                if (gz_id[0] == 'L' && gz_id[1] == 0 && gz_id[2] == 'N'
-                    && gz_id[3] == 1 && gz_id[4] == 0)
-                {
+                auto piper_hdr_opt = lnav::piper::read_header(fd, gz_id);
+
+                if (piper_hdr_opt) {
+                    static intern_string_t SRC = intern_string::lookup("piper");
+
+                    auto meta_buf = std::move(piper_hdr_opt.value());
+
+                    auto meta_sf = string_fragment::from_bytes(meta_buf.in(),
+                                                               meta_buf.size());
+                    auto meta_parse_res
+                        = lnav::piper::header_handlers.parser_for(SRC).of(
+                            meta_sf);
+                    if (meta_parse_res.isErr()) {
+                        log_error("failed to parse piper header: %s",
+                                  meta_parse_res.unwrapErr()[0]
+                                      .to_attr_line()
+                                      .get_string()
+                                      .c_str());
+                        throw error(EINVAL);
+                    }
+
                     this->lb_line_metadata = true;
-                    this->lb_file_offset = 8;
+                    this->lb_file_offset
+                        = lnav::piper::HEADER_SIZE + meta_buf.size();
+                    this->lb_piper_header_size = this->lb_file_offset;
+                    this->lb_header = meta_parse_res.unwrap();
                 } else if (gz_id[0] == '\037' && gz_id[1] == '\213') {
                     int gzfd = dup(fd);
 
@@ -422,14 +444,19 @@ line_buffer::set_fd(auto_fd& fd)
                         close(gzfd);
                         throw error(errno);
                     }
-                    this->lb_gz_file.writeAccess()->open(gzfd, this->lb_header);
+                    lnav::gzip::header hdr;
+
+                    this->lb_gz_file.writeAccess()->open(gzfd, hdr);
                     this->lb_compressed = true;
-                    this->lb_file_time = this->lb_header.hd_mtime.tv_sec;
+                    this->lb_file_time = hdr.h_mtime.tv_sec;
                     if (this->lb_file_time < 0) {
                         this->lb_file_time = 0;
                     }
                     this->lb_compressed_offset
                         = lseek(this->lb_fd, 0, SEEK_CUR);
+                    if (!hdr.empty()) {
+                        this->lb_header = std::move(hdr);
+                    }
                     this->resize_buffer(INITIAL_COMPRESSED_BUFFER_SIZE);
                 }
 #ifdef HAVE_BZLIB_H
@@ -1035,7 +1062,7 @@ line_buffer::load_next_line(file_range prev_line)
     require(this->lb_fd != -1);
 
     if (this->lb_line_metadata && prev_line.fr_offset == 0) {
-        prev_line.fr_offset = 8;
+        prev_line.fr_offset = this->lb_piper_header_size;
     }
 
     auto offset = prev_line.next_offset();

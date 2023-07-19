@@ -2,10 +2,18 @@
 EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cli.sh_0b3639753916f71254e8c9cce4ebb8bfd9978d3e.err \
     $(srcdir)/%reldir%/test_cli.sh_0b3639753916f71254e8c9cce4ebb8bfd9978d3e.out \
+    $(srcdir)/%reldir%/test_cli.sh_10c33e465ef7681c6b5519d05d557426b26cd43d.err \
+    $(srcdir)/%reldir%/test_cli.sh_10c33e465ef7681c6b5519d05d557426b26cd43d.out \
     $(srcdir)/%reldir%/test_cli.sh_17a68b798354f9a6cdfab372006caeb74038d15c.err \
     $(srcdir)/%reldir%/test_cli.sh_17a68b798354f9a6cdfab372006caeb74038d15c.out \
+    $(srcdir)/%reldir%/test_cli.sh_3114508cf42fb2608ef77f4bc294a84885c97a79.err \
+    $(srcdir)/%reldir%/test_cli.sh_3114508cf42fb2608ef77f4bc294a84885c97a79.out \
+    $(srcdir)/%reldir%/test_cli.sh_4327033cfae0d4c170a38a3c4a570520bfabb493.err \
+    $(srcdir)/%reldir%/test_cli.sh_4327033cfae0d4c170a38a3c4a570520bfabb493.out \
     $(srcdir)/%reldir%/test_cli.sh_5524542b1a6954ff9741155101497270a2f0c557.err \
     $(srcdir)/%reldir%/test_cli.sh_5524542b1a6954ff9741155101497270a2f0c557.out \
+    $(srcdir)/%reldir%/test_cli.sh_76aa57821598962e59063a40c20171040c95a731.err \
+    $(srcdir)/%reldir%/test_cli.sh_76aa57821598962e59063a40c20171040c95a731.out \
     $(srcdir)/%reldir%/test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.err \
     $(srcdir)/%reldir%/test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.out \
     $(srcdir)/%reldir%/test_cli.sh_c69c835a3c43210225cf62564b3e9584c899af20.err \
@@ -146,8 +154,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cmds.sh_95beaabe41d72cf4c6810e79c623da759ac1c71b.out \
     $(srcdir)/%reldir%/test_cmds.sh_968dac54dc80d91a5da2322890c6c26dfa0d8462.err \
     $(srcdir)/%reldir%/test_cmds.sh_968dac54dc80d91a5da2322890c6c26dfa0d8462.out \
-    $(srcdir)/%reldir%/test_cmds.sh_9dfc433f14b811afb3ec4daef0f33e4c9b14a6d7.err \
-    $(srcdir)/%reldir%/test_cmds.sh_9dfc433f14b811afb3ec4daef0f33e4c9b14a6d7.out \
     $(srcdir)/%reldir%/test_cmds.sh_a00943ef715598c7554b85de8502454e41bb9e28.err \
     $(srcdir)/%reldir%/test_cmds.sh_a00943ef715598c7554b85de8502454e41bb9e28.out \
     $(srcdir)/%reldir%/test_cmds.sh_a1123427c31c022433d66d05ee5d5e1c8ab415e4.err \

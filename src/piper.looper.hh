@@ -35,8 +35,10 @@
 #include <string>
 
 #include "base/auto_fd.hh"
+#include "base/piper.file.hh"
 #include "base/result.h"
 #include "ghc/filesystem.hpp"
+#include "yajlpp/yajlpp_def.hh"
 
 namespace lnav {
 namespace piper {
@@ -61,6 +63,12 @@ public:
         return this->l_out_dir / "out.*";
     }
 
+    std::string get_url() const
+    {
+        return fmt::format(FMT_STRING("piper://{}"),
+                           this->l_out_dir.filename().string());
+    }
+
     bool is_finished() const
     {
         return this->l_future.wait_for(std::chrono::seconds(0))
@@ -72,6 +80,8 @@ private:
 
     std::atomic<bool> l_looping{true};
     const std::string l_name;
+    const std::string l_cwd;
+    const std::map<std::string, std::string> l_env;
     ghc::filesystem::path l_out_dir;
     auto_fd l_stdout;
     auto_fd l_stderr;
@@ -98,6 +108,8 @@ public:
         return this->h_looper->get_out_pattern();
     }
 
+    std::string get_url() const { return this->h_looper->get_url(); }
+
     bool is_finished() const { return this->h_looper->is_finished(); }
 
     bool operator==(const handle& other) const
@@ -109,11 +121,15 @@ private:
     std::shared_ptr<looper> h_looper;
 };
 
+extern const typed_json_path_container<lnav::piper::header> header_handlers;
+
 using running_handle = handle<state::running>;
 
 Result<handle<state::running>, std::string> create_looper(std::string name,
                                                           auto_fd stdout_fd,
                                                           auto_fd stderr_fd);
+
+void cleanup();
 
 }  // namespace piper
 }  // namespace lnav

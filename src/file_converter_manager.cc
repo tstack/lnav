@@ -36,20 +36,31 @@
 #include <unistd.h>
 
 #include "base/fs_util.hh"
+#include "base/injector.hh"
 #include "base/paths.hh"
 #include "config.h"
 #include "line_buffer.hh"
+#include "piper.looper.cfg.hh"
 
 namespace file_converter_manager {
+
+static const ghc::filesystem::path&
+cache_dir()
+{
+    static auto INSTANCE = lnav::paths::workdir() / "conversion";
+
+    return INSTANCE;
+}
 
 Result<convert_result, std::string>
 convert(const external_file_format& eff, const std::string& filename)
 {
     log_info("attempting to convert file -- %s", filename.c_str());
 
-    ghc::filesystem::create_directories(lnav::paths::workdir());
-    auto outfile = TRY(lnav::filesystem::open_temp_file(lnav::paths::workdir()
-                                                        / "conversion.XXXXXX"));
+    ghc::filesystem::create_directories(cache_dir());
+    auto outfile = TRY(lnav::filesystem::open_temp_file(
+        cache_dir()
+        / fmt::format(FMT_STRING("{}.XXXXXX"), eff.eff_format_name)));
     auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
     auto child = TRY(lnav::pid::from_fork());
 
@@ -141,6 +152,34 @@ convert(const external_file_format& eff, const std::string& filename)
         std::move(child),
         outfile.first,
         error_queue,
+    });
+}
+
+void
+cleanup()
+{
+    (void) std::async(std::launch::async, []() {
+        const auto& cfg = injector::get<const lnav::piper::config&>();
+        auto now = std::chrono::system_clock::now();
+        auto cache_path = cache_dir();
+        std::vector<ghc::filesystem::path> to_remove;
+
+        for (const auto& entry :
+             ghc::filesystem::directory_iterator(cache_path))
+        {
+            auto mtime = ghc::filesystem::last_write_time(entry.path());
+            auto exp_time = mtime + cfg.c_ttl;
+            if (now < exp_time) {
+                continue;
+            }
+
+            to_remove.emplace_back(entry);
+        }
+
+        for (auto& entry : to_remove) {
+            log_debug("removing conversion: %s", entry.c_str());
+            ghc::filesystem::remove_all(entry);
+        }
     });
 }
 

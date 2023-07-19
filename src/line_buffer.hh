@@ -46,8 +46,11 @@
 #include "base/auto_mem.hh"
 #include "base/file_range.hh"
 #include "base/is_utf8.hh"
+#include "base/lnav.gzip.hh"
+#include "base/piper.file.hh"
 #include "base/result.h"
 #include "log_level.hh"
+#include "mapbox/variant.hpp"
 #include "safe/safe.h"
 #include "shared_buffer.hh"
 
@@ -81,19 +84,6 @@ public:
         int e_err;
     };
 
-    struct header_data {
-        timeval hd_mtime{};
-        auto_buffer hd_extra{auto_buffer::alloc(0)};
-        std::string hd_name;
-        std::string hd_comment;
-
-        bool empty() const
-        {
-            return this->hd_mtime.tv_sec == 0 && this->hd_extra.empty()
-                && this->hd_name.empty() && this->hd_comment.empty();
-        }
-    };
-
 #define GZ_WINSIZE           32768U /*> gzip's max supported dictionary is 15-bits */
 #define GZ_RAW_MODE          (-15) /*> Raw inflate data mode */
 #define GZ_HEADER_MODE       (15 + 32) /*> Automatic zstd or gzip decoding */
@@ -121,7 +111,7 @@ public:
         void close();
         void init_stream();
         void continue_stream();
-        void open(int fd, header_data& hd);
+        void open(int fd, lnav::gzip::header& hd);
         int stream_data(void* buf, size_t size);
         void seek(off_t offset);
 
@@ -263,7 +253,10 @@ public:
 
     size_t get_buffer_size() const { return this->lb_buffer.size(); }
 
-    const header_data& get_header_data() const { return this->lb_header; }
+    using file_header_t
+        = mapbox::util::variant<lnav::gzip::header, lnav::piper::header>;
+
+    const file_header_t& get_header_data() const { return this->lb_header; }
 
     void enable_cache();
 
@@ -340,6 +333,7 @@ private:
     safe_gz_indexed lb_gz_file; /*< File reader for gzipped files. */
     bool lb_bz_file{false}; /*< Flag set for bzip2 compressed files. */
     bool lb_line_metadata{false};
+    size_t lb_piper_header_size{0};
 
     auto_buffer lb_buffer{auto_buffer::alloc(DEFAULT_LINE_BUFFER_SIZE)};
     nonstd::optional<auto_buffer> lb_alt_buffer;
@@ -374,7 +368,7 @@ private:
 
     nonstd::optional<auto_fd> lb_cached_fd;
 
-    header_data lb_header;
+    file_header_t lb_header;
 };
 
 #endif

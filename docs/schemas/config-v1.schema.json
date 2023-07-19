@@ -55,6 +55,15 @@
                             "description": "The number of rotated files to keep",
                             "type": "integer",
                             "minimum": 2
+                        },
+                        "ttl": {
+                            "title": "/tuning/piper/ttl",
+                            "description": "The time-to-live for captured data, expressed as a duration (e.g. '3d' for three days)",
+                            "type": "string",
+                            "examples": [
+                                "3d",
+                                "12h"
+                            ]
                         }
                     },
                     "additionalProperties": false

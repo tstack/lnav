@@ -6,7 +6,8 @@
         },
         "piper": {
             "max-size": 10485760,
-            "rotations": 4
+            "rotations": 4,
+            "ttl": "2d"
         },
         "file-vtab": {
             "max-content-size": 33554432
@@ -106,6 +107,9 @@
             },
             "hw": {
                 "handler": "hw-url-handler"
+            },
+            "piper": {
+                "handler": "piper-url-handler"
             }
         }
     },

@@ -479,6 +479,15 @@ hash are treated as comments.  The following variables are defined in a script:
 
    The arguments passed to the script.
 
+.. envvar:: LNAV_HOME_DIR
+
+   The path to the directory where the user's **lnav** configuration is stored.
+
+.. envvar:: LNAV_WORK_DIR
+
+   The path to the directory where **lnav** caches files, like archives that
+   have been unpacked or piper captures.
+
 Remember that you need to use the :ref:`:eval<eval>` command when referencing
 variables in most **lnav** commands.  Scripts can provide help text to be
 displayed during interactive usage by adding the following tags in a comment

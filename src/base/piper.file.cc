@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,31 +27,54 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_file_converter_manager_hh
-#define lnav_file_converter_manager_hh
+#include "piper.file.hh"
 
-#include <string>
-#include <vector>
+#include <unistd.h>
 
-#include "base/auto_fd.hh"
-#include "base/auto_pid.hh"
-#include "base/result.h"
-#include "file_format.hh"
-#include "ghc/filesystem.hpp"
+#include "base/lnav_log.hh"
+#include "base/paths.hh"
 
-namespace file_converter_manager {
+namespace lnav {
+namespace piper {
 
-struct convert_result {
-    auto_pid<process_state::running> cr_child;
-    ghc::filesystem::path cr_destination;
-    std::shared_ptr<std::vector<std::string>> cr_error_queue;
-};
+const char HEADER_MAGIC[4] = {'L', 0, 'N', 1};
 
-Result<convert_result, std::string> convert(const external_file_format& eff,
-                                            const std::string& filename);
+const ghc::filesystem::path&
+storage_path()
+{
+    static auto INSTANCE = lnav::paths::workdir() / "piper";
 
-void cleanup();
+    return INSTANCE;
+}
 
-}  // namespace file_converter_manager
+nonstd::optional<auto_buffer>
+read_header(int fd, const char* first8)
+{
+    if (memcmp(first8, HEADER_MAGIC, sizeof(HEADER_MAGIC)) != 0) {
+        log_trace("first 4 bytes are not a piper header: %02x%02x%02x%02x",
+                  first8[0],
+                  first8[1],
+                  first8[2],
+                  first8[3]);
+        return nonstd::nullopt;
+    }
 
-#endif
+    uint32_t meta_size = ntohl(*((uint32_t*) &first8[4]));
+
+    auto meta_buf = auto_buffer::alloc(meta_size);
+    if (meta_buf.in() == nullptr) {
+        log_error("failed to alloc %d bytes for header", meta_size);
+        return nonstd::nullopt;
+    }
+    auto meta_prc = pread(fd, meta_buf.in(), meta_size, 8);
+    if (meta_prc != meta_size) {
+        log_error("failed to read piper header: %s", strerror(errno));
+        return nonstd::nullopt;
+    }
+    meta_buf.resize(meta_size);
+
+    return meta_buf;
+}
+
+}  // namespace piper
+}  // namespace lnav

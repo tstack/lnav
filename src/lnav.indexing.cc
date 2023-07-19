@@ -167,8 +167,11 @@ public:
 
     void scanned_file(const std::shared_ptr<logfile>& lf) override
     {
-        if (!lnav_data.ld_files_to_front.empty()
-            && lnav_data.ld_files_to_front.front().first == lf->get_filename())
+        const auto& ftf = lnav_data.ld_files_to_front;
+
+        if (!ftf.empty()
+            && (ftf.front().first == lf->get_filename()
+                || ftf.front().first == lf->get_open_options().loo_filename))
         {
             this->front_file = lf;
             this->front_top = lnav_data.ld_files_to_front.front().second;

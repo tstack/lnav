@@ -34,13 +34,18 @@ Features:
 * Added `config get` and `config blame` management CLI
   commands to get the current configuration and the file
   locations where the configuration options came from.
-
-Bug Fixes:
 * When piping data into **lnav**'s stdin, the input used to
   only be written to a single file without any rotation.
   Now, the input is written to a directory of rotating files.
   The same is true for the command-lines executed through the
-  new `:sh` command.
+  new `:sh` command.  The piped data can be managed using the
+  new `piper` commands in the management CLI.
+* The `$LNAV_HOME_DIR` and `$LNAV_WORK_DIR` environment
+  variables are now defined inside **lnav** and refer to
+  the location of the user's configuration directory and
+  the directory where cached data is stored, respectively.
+
+Bug Fixes:
 * Binary data piped into stdin should now be treated the same
   as if it was in a file that was passed on the command-line.
 * The `-I` option is now recognized in the management CLI
@@ -62,6 +67,9 @@ Breaking changes:
 * Removed the `-t` command-line flag.  Text data fed in
   on stdin and captured from a `:sh` execution is
   automatically timestamped.
+* Data piped into **lnav** is now stored in the work
+  directory instead of the `stdin-captures` dot-lnav
+  directory.
 
 ## lnav v0.11.2
 

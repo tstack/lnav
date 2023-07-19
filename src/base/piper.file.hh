@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,31 +27,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_file_converter_manager_hh
-#define lnav_file_converter_manager_hh
+#ifndef lnav_piper_file_hh
+#define lnav_piper_file_hh
 
+#include <map>
 #include <string>
-#include <vector>
 
-#include "base/auto_fd.hh"
-#include "base/auto_pid.hh"
-#include "base/result.h"
-#include "file_format.hh"
+#include <sys/time.h>
+
+#include "auto_mem.hh"
 #include "ghc/filesystem.hpp"
+#include "optional.hpp"
+#include "time_util.hh"
 
-namespace file_converter_manager {
+namespace lnav {
+namespace piper {
 
-struct convert_result {
-    auto_pid<process_state::running> cr_child;
-    ghc::filesystem::path cr_destination;
-    std::shared_ptr<std::vector<std::string>> cr_error_queue;
+struct header {
+    timeval h_ctime{};
+    std::string h_name;
+    std::string h_cwd;
+    std::map<std::string, std::string> h_env;
+
+    bool operator<(const header& rhs) const
+    {
+        if (this->h_ctime < rhs.h_ctime) {
+            return true;
+        }
+
+        if (this->h_ctime == rhs.h_ctime) {
+            return this->h_name < rhs.h_name;
+        }
+
+        return false;
+    }
 };
 
-Result<convert_result, std::string> convert(const external_file_format& eff,
-                                            const std::string& filename);
+const ghc::filesystem::path& storage_path();
 
-void cleanup();
+constexpr size_t HEADER_SIZE = 8;
+extern const char HEADER_MAGIC[4];
 
-}  // namespace file_converter_manager
+nonstd::optional<auto_buffer> read_header(int fd, const char* first8);
+
+}  // namespace piper
+}  // namespace lnav
 
 #endif

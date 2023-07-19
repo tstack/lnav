@@ -115,8 +115,7 @@ CREATE TABLE lnav_file (
                     sqlite3_result_error(ctx, "file is too large", -1);
                 } else {
                     auto fd = lf->get_fd();
-                    auto_mem<char> buf;
-                    buf = (char*) malloc(lf_stat.st_size);
+                    auto buf = auto_mem<char>::malloc(lf_stat.st_size);
                     auto rc = pread(fd, buf, lf_stat.st_size, 0);
 
                     if (rc == -1) {

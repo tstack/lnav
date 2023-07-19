@@ -194,7 +194,9 @@ set(BUILTIN_LNAV_SCRIPTS
         scripts/docker-url-handler.lnav
         scripts/lnav-pop-view.lnav
         scripts/partition-by-boot.lnav scripts/rename-stdin.lnav
-        scripts/search-for.lnav)
+        scripts/search-for.lnav
+        scripts/workdir-url-handler.lnav
+        )
 
 set(BUILTIN_LNAV_SCRIPT_PATHS ${BUILTIN_LNAV_SCRIPTS})
 

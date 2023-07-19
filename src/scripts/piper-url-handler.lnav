@@ -1,0 +1,8 @@
+#
+# @synopsis: piper-url-handler
+# @description: Internal script to handle opening piper URLs
+#
+
+;SELECT jget(url, '/host') AS uhost FROM (SELECT parse_url($1) AS url)
+
+:open ${LNAV_WORK_DIR}/piper/$uhost/out.*

@@ -66,6 +66,16 @@ public:
         return retval;
     }
 
+    static auto_mem calloc(size_t count)
+    {
+        return auto_mem(static_cast<T*>(::calloc(count, sizeof(T))));
+    }
+
+    static auto_mem malloc(size_t sz)
+    {
+        return auto_mem(static_cast<T*>(::malloc(sz)));
+    }
+
     explicit auto_mem(T* ptr = nullptr)
         : am_ptr(ptr), am_free_func(default_free)
     {

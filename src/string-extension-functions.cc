@@ -365,8 +365,8 @@ sparkline_final(sqlite3_context* context)
         return;
     }
 
-    auto* retval = (char*) malloc(sc->sc_values.size() * 3 + 1);
-    auto* start = retval;
+    auto retval = auto_mem<char>::malloc(sc->sc_values.size() * 3 + 1);
+    auto* start = retval.in();
 
     for (const auto& value : sc->sc_values) {
         auto bar = humanize::sparkline(value, sc->sc_max_value);
@@ -376,7 +376,7 @@ sparkline_final(sqlite3_context* context)
     }
     *start = '\0';
 
-    sqlite3_result_text(context, retval, -1, free);
+    to_sqlite(context, std::move(retval));
 
     sc->~sparkline_context();
 }
@@ -720,13 +720,8 @@ sql_parse_url(std::string url)
             while (true) {
                 auto split_res
                     = remaining.split_when(string_fragment::tag1{'&'});
-
-                if (!split_res) {
-                    break;
-                }
-
                 auto_mem<char> kv_pair(curl_free);
-                auto kv_pair_encoded = split_res->first;
+                auto kv_pair_encoded = split_res.first;
                 int out_len = 0;
 
                 kv_pair = curl_easy_unescape(CURL_HANDLE,
@@ -748,20 +743,20 @@ sql_parse_url(std::string url)
                         query_map.gen(val);
                     }
                 } else {
-                    auto val_str = split_res->first.to_string();
+                    auto val_str = split_res.first.to_string();
 
                     if (seen_keys.count(val_str) == 0) {
                         seen_keys.insert(val_str);
-                        query_map.gen(split_res->first);
+                        query_map.gen(split_res.first);
                         query_map.gen();
                     }
                 }
 
-                if (split_res->second.empty()) {
+                if (split_res.second.empty()) {
                     break;
                 }
 
-                remaining = split_res->second;
+                remaining = split_res.second;
             }
         } else {
             root.gen("query");
