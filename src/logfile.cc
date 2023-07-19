@@ -51,20 +51,20 @@
 #include "log.watch.hh"
 #include "log_format.hh"
 #include "logfile.cfg.hh"
+#include "piper.looper.hh"
 #include "yajlpp/yajlpp_def.hh"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
 static const size_t INDEX_RESERVE_INCREMENT = 1024;
 
-static const typed_json_path_container<line_buffer::header_data>
-    file_header_handlers = {
-        yajlpp::property_handler("name").for_field(
-            &line_buffer::header_data::hd_name),
+static const typed_json_path_container<lnav::gzip::header> file_header_handlers
+    = {
+        yajlpp::property_handler("name").for_field(&lnav::gzip::header::h_name),
         yajlpp::property_handler("mtime").for_field(
-            &line_buffer::header_data::hd_mtime),
+            &lnav::gzip::header::h_mtime),
         yajlpp::property_handler("comment").for_field(
-            &line_buffer::header_data::hd_comment),
+            &lnav::gzip::header::h_comment),
 };
 
 Result<std::shared_ptr<logfile>, std::string>
@@ -134,10 +134,25 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
     lf->lf_indexing = lf->lf_options.loo_is_visible;
 
     const auto& hdr = lf->lf_line_buffer.get_header_data();
-    if (!hdr.empty()) {
-        lf->lf_embedded_metadata["net.zlib.gzip.header"]
-            = {text_format_t::TF_JSON, file_header_handlers.to_string(hdr)};
-    }
+    log_info("%s: has header %d", lf->lf_filename.c_str(), hdr.valid());
+    hdr.match(
+        [&lf](const lnav::gzip::header& gzhdr) {
+            if (!gzhdr.empty()) {
+                lf->lf_embedded_metadata["net.zlib.gzip.header"] = {
+                    text_format_t::TF_JSON,
+                    file_header_handlers.to_string(gzhdr),
+                };
+            }
+        },
+        [&lf](const lnav::piper::header& phdr) {
+            lf->lf_embedded_metadata["org.lnav.piper.header"] = {
+                text_format_t::TF_JSON,
+                lnav::piper::header_handlers.to_string(phdr),
+            };
+            log_debug("setting file name: %s", phdr.h_name.c_str());
+            lf->set_filename(phdr.h_name);
+            lf->lf_valid_filename = false;
+        });
 
     ensure(lf->invariant());
 

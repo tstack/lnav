@@ -29,9 +29,14 @@
 
 #include "lnav.management_cli.hh"
 
+#include "base/fs_util.hh"
+#include "base/humanize.hh"
+#include "base/humanize.time.hh"
 #include "base/itertools.hh"
+#include "base/paths.hh"
 #include "base/result.h"
 #include "base/string_util.hh"
+#include "fmt/chrono.h"
 #include "fmt/format.h"
 #include "itertools.similar.hh"
 #include "lnav.hh"
@@ -39,6 +44,7 @@
 #include "log_format.hh"
 #include "log_format_ext.hh"
 #include "mapbox/variant.hpp"
+#include "piper.looper.hh"
 #include "regex101.import.hh"
 #include "session_data.hh"
 
@@ -61,7 +67,9 @@ symbol_reducer(const std::string& elem, attr_line_t& accum)
 inline attr_line_t&
 subcmd_reducer(const CLI::App* app, attr_line_t& accum)
 {
-    return accum.append("\n \u2022 ")
+    return accum.append("\n ")
+        .append("\u2022"_list_glyph)
+        .append(" ")
         .append(lnav::roles::keyword(app->get_name()))
         .append(": ")
         .append(app->get_description());
@@ -673,6 +681,283 @@ struct subcmd_format_t {
     }
 };
 
+struct subcmd_piper_t {
+    using action_t = std::function<perform_result_t(const subcmd_piper_t&)>;
+
+    CLI::App* sp_app{nullptr};
+    action_t sp_action;
+
+    subcmd_piper_t& set_action(action_t act)
+    {
+        if (!this->sp_action) {
+            this->sp_action = std::move(act);
+        }
+        return *this;
+    }
+
+    static perform_result_t default_action(const subcmd_piper_t& sp)
+    {
+        auto um = console::user_message::error(
+            "expecting an operation related to piper storage");
+        um.with_help(
+            sp.sp_app->get_subcommands({})
+            | lnav::itertools::fold(
+                subcmd_reducer, attr_line_t{"the available operations are:"}));
+
+        return {um};
+    }
+
+    static perform_result_t list_action(const subcmd_piper_t&)
+    {
+        static const intern_string_t SRC = intern_string::lookup("piper");
+        static const auto DOT_HEADER = ghc::filesystem::path(".header");
+
+        struct item {
+            lnav::piper::header i_header;
+            std::string i_url;
+            file_size_t i_total_size{0};
+        };
+
+        file_size_t grand_total{0};
+        std::vector<item> items;
+        std::error_code ec;
+
+        for (const auto& instance_dir : ghc::filesystem::directory_iterator(
+                 lnav::piper::storage_path(), ec))
+        {
+            if (!instance_dir.is_directory()) {
+                log_warning("piper directory entry is not a directory: %s",
+                            instance_dir.path().c_str());
+                continue;
+            }
+
+            nonstd::optional<lnav::piper::header> hdr_opt;
+            auto url = fmt::format(FMT_STRING("piper://{}"),
+                                   instance_dir.path().filename().string());
+            file_size_t total_size{0};
+            auto hdr_path = instance_dir / DOT_HEADER;
+            if (ghc::filesystem::exists(hdr_path)) {
+                auto hdr_read_res = lnav::filesystem::read_file(hdr_path);
+                if (hdr_read_res.isOk()) {
+                    auto parse_res
+                        = lnav::piper::header_handlers.parser_for(SRC).of(
+                            hdr_read_res.unwrap());
+                    if (parse_res.isOk()) {
+                        hdr_opt = parse_res.unwrap();
+                    } else {
+                        log_error("failed to parse header: %s -- %s",
+                                  hdr_path.c_str(),
+                                  parse_res.unwrapErr()[0]
+                                      .to_attr_line()
+                                      .get_string()
+                                      .c_str());
+                    }
+                } else {
+                    log_error("failed to read header file: %s -- %s",
+                              hdr_path.c_str(),
+                              hdr_read_res.unwrapErr().c_str());
+                }
+            }
+
+            for (const auto& entry :
+                 ghc::filesystem::directory_iterator(instance_dir.path()))
+            {
+                if (entry.path().filename() == DOT_HEADER) {
+                    continue;
+                }
+
+                total_size += entry.file_size();
+                char buffer[lnav::piper::HEADER_SIZE];
+
+                auto entry_open_res
+                    = lnav::filesystem::open_file(entry.path(), O_RDONLY);
+                if (entry_open_res.isErr()) {
+                    log_warning("unable to open piper file: %s -- %s",
+                                entry.path().c_str(),
+                                entry_open_res.unwrapErr().c_str());
+                    continue;
+                }
+
+                auto entry_fd = entry_open_res.unwrap();
+                if (read(entry_fd, buffer, sizeof(buffer)) != sizeof(buffer)) {
+                    log_warning("piper file is too small: %s",
+                                entry.path().c_str());
+                    continue;
+                }
+                auto hdr_bits_opt = lnav::piper::read_header(entry_fd, buffer);
+                if (!hdr_bits_opt) {
+                    log_warning("could not read piper header: %s",
+                                entry.path().c_str());
+                    continue;
+                }
+
+                auto hdr_buf = std::move(hdr_bits_opt.value());
+
+                total_size -= hdr_buf.size();
+                auto hdr_sf
+                    = string_fragment::from_bytes(hdr_buf.in(), hdr_buf.size());
+                auto hdr_parse_res
+                    = lnav::piper::header_handlers.parser_for(SRC).of(hdr_sf);
+                if (hdr_parse_res.isErr()) {
+                    log_error("failed to parse piper header: %s",
+                              hdr_parse_res.unwrapErr()[0]
+                                  .to_attr_line()
+                                  .get_string()
+                                  .c_str());
+                    continue;
+                }
+
+                auto hdr = hdr_parse_res.unwrap();
+
+                if (!hdr_opt || hdr < hdr_opt.value()) {
+                    hdr_opt = hdr;
+                }
+            }
+
+            if (hdr_opt) {
+                items.emplace_back(item{hdr_opt.value(), url, total_size});
+            }
+
+            grand_total += total_size;
+        }
+
+        if (ec && ec.value() != ENOENT) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("unable to access piper directory: ")
+                              .append(lnav::roles::file(
+                                  lnav::piper::storage_path().string())))
+                          .with_reason(ec.message());
+            return {um};
+        }
+
+        if (items.empty()) {
+            if (verbosity != verbosity_t::quiet) {
+                auto um
+                    = lnav::console::user_message::info(
+                          attr_line_t("no piper captures were found in:\n\t")
+                              .append(lnav::roles::file(
+                                  lnav::piper::storage_path().string())))
+                          .with_help(
+                              attr_line_t("You can create a capture by "
+                                          "piping data into ")
+                                  .append(lnav::roles::file("lnav"))
+                                  .append(" or using the ")
+                                  .append_quoted(lnav::roles::symbol(":sh"))
+                                  .append(" command"));
+                return {um};
+            }
+
+            return {};
+        }
+
+        auto txt
+            = items
+            | lnav::itertools::sort_with([](const item& lhs, const item& rhs) {
+                  if (lhs.i_header < rhs.i_header) {
+                      return true;
+                  }
+
+                  if (rhs.i_header < lhs.i_header) {
+                      return false;
+                  }
+
+                  return lhs.i_url < rhs.i_url;
+              })
+            | lnav::itertools::map([](const item& it) {
+                  auto ago = humanize::time::point::from_tv(it.i_header.h_ctime)
+                                 .as_time_ago();
+                  auto retval = attr_line_t()
+                                    .append(lnav::roles::list_glyph(
+                                        fmt::format(FMT_STRING("{:>18}"), ago)))
+                                    .append("  ")
+                                    .append(lnav::roles::file(it.i_url))
+                                    .append(" ")
+                                    .append(lnav::roles::number(fmt::format(
+                                        FMT_STRING("{:>8}"),
+                                        humanize::file_size(
+                                            it.i_total_size,
+                                            humanize::alignment::columnar))))
+                                    .append(" ")
+                                    .append_quoted(lnav::roles::comment(
+                                        it.i_header.h_name))
+                                    .append("\n");
+                  if (verbosity == verbosity_t::verbose) {
+                      auto env_al
+                          = it.i_header.h_env
+                          | lnav::itertools::map([](const auto& pair) {
+                                return attr_line_t()
+                                    .append(lnav::roles::identifier(pair.first))
+                                    .append("=")
+                                    .append(pair.second)
+                                    .append("\n");
+                            })
+                          | lnav::itertools::fold(
+                                [](const auto& elem, auto& accum) {
+                                    if (!accum.empty()) {
+                                        accum.append(28, ' ');
+                                    }
+                                    return accum.append(elem);
+                                },
+                                attr_line_t());
+
+                      retval.append(23, ' ')
+                          .append("cwd: ")
+                          .append(lnav::roles::file(it.i_header.h_cwd))
+                          .append("\n")
+                          .append(23, ' ')
+                          .append("env: ")
+                          .append(env_al);
+                  }
+                  return retval;
+              })
+            | lnav::itertools::fold(
+                  [](const auto& elem, auto& accum) {
+                      return accum.append(elem);
+                  },
+                  attr_line_t{});
+        txt.rtrim();
+
+        perform_result_t retval;
+        if (verbosity != verbosity_t::quiet) {
+            auto extra_um
+                = lnav::console::user_message::info(
+                      attr_line_t(
+                          "the following piper captures were found in:\n\t")
+                          .append(lnav::roles::file(
+                              lnav::piper::storage_path().string())))
+                      .with_note(
+                          attr_line_t("The captures currently consume ")
+                              .append(lnav::roles::number(humanize::file_size(
+                                  grand_total, humanize::alignment::none)))
+                              .append(" of disk space.  File sizes include "
+                                      "associated metadata."))
+                      .with_help(
+                          "You can reopen a capture by passing the piper URL "
+                          "to lnav");
+            retval.emplace_back(extra_um);
+        }
+        retval.emplace_back(lnav::console::user_message::raw(txt));
+
+        return retval;
+    }
+
+    static perform_result_t clean_action(const subcmd_piper_t&)
+    {
+        std::error_code ec;
+
+        ghc::filesystem::remove_all(lnav::piper::storage_path(), ec);
+        if (ec) {
+            return {
+                lnav::console::user_message::error(
+                    "unable to remove piper storage directory")
+                    .with_reason(ec.message()),
+            };
+        }
+
+        return {};
+    }
+};
+
 struct subcmd_regex101_t {
     using action_t = std::function<perform_result_t(const subcmd_regex101_t&)>;
 
@@ -762,8 +1047,11 @@ struct subcmd_regex101_t {
     }
 };
 
-using operations_v = mapbox::util::
-    variant<no_subcmd_t, subcmd_config_t, subcmd_format_t, subcmd_regex101_t>;
+using operations_v = mapbox::util::variant<no_subcmd_t,
+                                           subcmd_config_t,
+                                           subcmd_format_t,
+                                           subcmd_piper_t,
+                                           subcmd_regex101_t>;
 
 class operations {
 public:
@@ -783,6 +1071,7 @@ describe_cli(CLI::App& app, int argc, char* argv[])
 
     subcmd_config_t config_args;
     subcmd_format_t format_args;
+    subcmd_piper_t piper_args;
     subcmd_regex101_t regex101_args;
 
     {
@@ -911,6 +1200,25 @@ describe_cli(CLI::App& app, int argc, char* argv[])
     }
 
     {
+        auto* subcmd_piper
+            = app.add_subcommand("piper", "perform operations on piper storage")
+                  ->callback([&]() {
+                      piper_args.set_action(subcmd_piper_t::default_action);
+                      retval->o_ops = piper_args;
+                  });
+        piper_args.sp_app = subcmd_piper;
+
+        subcmd_piper
+            ->add_subcommand("list", "print the available piper captures")
+            ->callback(
+                [&]() { piper_args.set_action(subcmd_piper_t::list_action); });
+
+        subcmd_piper->add_subcommand("clean", "remove all piper captures")
+            ->callback(
+                [&]() { piper_args.set_action(subcmd_piper_t::clean_action); });
+    }
+
+    {
         auto* subcmd_regex101
             = app.add_subcommand("regex101",
                                  "create and edit log message regular "
@@ -978,6 +1286,7 @@ perform(std::shared_ptr<operations> opts)
         },
         [](const subcmd_config_t& sc) { return sc.sc_action(sc); },
         [](const subcmd_format_t& sf) { return sf.sf_action(sf); },
+        [](const subcmd_piper_t& sp) { return sp.sp_action(sp); },
         [](const subcmd_regex101_t& sr) { return sr.sr_action(sr); });
 }
 

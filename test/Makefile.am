@@ -512,6 +512,7 @@ distclean-local:
 	$(RM_V)rm -rf remote remote-tmp not:a:remote:dir
 	$(RM_V)rm -rf sessions
 	$(RM_V)rm -rf tmp
+	$(RM_V)rm -rf piper-tmp
 	$(RM_V)rm -rf rotmp
 	$(RM_V)rm -rf meta-sessions
 	$(RM_V)rm -rf mgmt-config

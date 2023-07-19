@@ -38,6 +38,7 @@ namespace piper {
 struct config {
     uint64_t c_max_size{10ULL * 1024ULL * 1024ULL};
     uint32_t c_rotations{4};
+    std::chrono::seconds c_ttl{std::chrono::hours(48)};
 };
 
 }  // namespace piper

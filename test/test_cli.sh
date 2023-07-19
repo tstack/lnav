@@ -45,3 +45,17 @@ mkdir -p $HOME/.lnav
 run_cap_test ${lnav_test} -m -I ${test_dir} config get
 
 run_cap_test ${lnav_test} -m -I ${test_dir} config blame
+
+export TMPDIR="piper-tmp"
+rm -rf ./piper-tmp
+run_cap_test ${lnav_test} -n -e 'echo hi'
+
+run_cap_test ${lnav_test} -m piper list
+
+PIPER_URL=$(${lnav_test} -m -q piper list | tail -1 | sed -r -e 's;.*(piper://[^ ]+).*;\1;g')
+
+run_cap_test ${lnav_test} -n $PIPER_URL
+
+run_cap_test ${lnav_test} -n $PIPER_URL \
+    -c ";SELECT filepath, descriptor, mimetype, jget(content, '/ctime') as ctime, jget(content, '/cwd') as cwd FROM lnav_file_metadata" \
+    -c ':write-json-to -'

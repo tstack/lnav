@@ -268,7 +268,14 @@ class main_looper
 public:
 };
 
+enum class verbosity_t : int {
+    quiet,
+    standard,
+    verbose,
+};
+
 extern struct lnav_data_t lnav_data;
+extern verbosity_t verbosity;
 
 extern readline_context::command_map_t lnav_commands;
 extern const int ZOOM_LEVELS[];

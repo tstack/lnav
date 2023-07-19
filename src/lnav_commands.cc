@@ -2602,6 +2602,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 retval = "info: watching -- " + fn;
             } else if (is_glob(fn.c_str())) {
                 fc.fc_file_names.emplace(fn, loo);
+                files_to_front.emplace_back(
+                    loo.loo_filename.empty() ? fn : loo.loo_filename, file_loc);
                 retval = "info: watching -- " + fn;
             } else if (stat(fn.c_str(), &st) == -1) {
                 if (fn.find(':') != std::string::npos) {
@@ -4204,6 +4206,8 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
+    static size_t EXEC_COUNT = 0;
+
     if (!ec.ec_dry_run) {
         auto carg = trim(cmdline.substr(args[0].size()));
 
@@ -4261,7 +4265,8 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
 
         auto display_name = ec.get_provenance<exec_context::file_open>()
-                                .value_or(exec_context::file_open{carg})
+                                .value_or(exec_context::file_open{fmt::format(
+                                    FMT_STRING("[{}] {}"), EXEC_COUNT++, carg)})
                                 .fo_name;
         auto create_piper_res
             = lnav::piper::create_looper(display_name,

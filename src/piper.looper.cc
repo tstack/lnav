@@ -32,6 +32,7 @@
 
 #include "piper.looper.hh"
 
+#include <arpa/inet.h>
 #include <poll.h>
 
 #include "base/fs_util.hh"
@@ -41,6 +42,7 @@
 #include "config.h"
 #include "hasher.hh"
 #include "line_buffer.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "piper.looper.cfg.hh"
 
 using namespace std::chrono_literals;
@@ -62,19 +64,60 @@ write_timestamp(int fd, log_level_t level, off_t woff)
     return pwrite(fd, time_str, fmt_res.size, woff);
 }
 
+extern char** environ;
+
 namespace lnav {
 namespace piper {
 
+const json_path_container header_env_handlers = {
+    yajlpp::pattern_property_handler("(?<name>.*)")
+        .with_synopsis("<name>")
+        .for_field(&lnav::piper::header::h_env),
+};
+
+const typed_json_path_container<lnav::piper::header> header_handlers = {
+    yajlpp::property_handler("name").for_field(&lnav::piper::header::h_name),
+    yajlpp::property_handler("ctime").for_field(&lnav::piper::header::h_ctime),
+    yajlpp::property_handler("cwd").for_field(&lnav::piper::header::h_cwd),
+    yajlpp::property_handler("env").with_children(header_env_handlers),
+};
+
+static std::map<std::string, std::string>
+environ_to_map()
+{
+    static const auto SENSITIVE_VARS
+        = lnav::pcre2pp::code::from_const(R"((?i)token|pass)");
+
+    std::map<std::string, std::string> retval;
+
+    for (size_t lpc = 0; environ[lpc]; lpc++) {
+        auto full_sf = string_fragment::from_c_str(environ[lpc]);
+        auto pair_opt = full_sf.split_pair(string_fragment::tag1{'='});
+
+        if (!pair_opt) {
+            continue;
+        }
+        if (SENSITIVE_VARS.find_in(pair_opt->first).ignore_error()) {
+            retval[pair_opt->first.to_string()] = "******";
+        } else {
+            retval[pair_opt->first.to_string()] = pair_opt->second.to_string();
+        }
+    }
+
+    return retval;
+}
+
 looper::looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd)
-    : l_name(std::move(name)), l_stdout(std::move(stdout_fd)),
+    : l_name(std::move(name)), l_cwd(ghc::filesystem::current_path().string()),
+      l_env(environ_to_map()), l_stdout(std::move(stdout_fd)),
       l_stderr(std::move(stderr_fd))
 {
     size_t count = 0;
     do {
         this->l_out_dir
-            = lnav::paths::workdir()
+            = storage_path()
             / fmt::format(
-                  FMT_STRING("piper-{}-{}"),
+                  FMT_STRING("p-{}-{:03}"),
                   hasher().update(getmstime()).update(l_name).to_string(),
                   count);
         count += 1;
@@ -237,6 +280,22 @@ looper::loop()
                         break;
                     }
 
+                    auto hdr_path = this->l_out_dir / ".header";
+                    auto hdr = header{
+                        current_timeval(),
+                        this->l_name,
+                        this->l_cwd,
+                        this->l_env,
+                    };
+                    auto write_hdr_res = lnav::filesystem::write_file(
+                        hdr_path, header_handlers.to_string(hdr));
+                    if (write_hdr_res.isErr()) {
+                        log_error("unable to write header file: %s -- %s",
+                                  hdr_path.c_str(),
+                                  write_hdr_res.unwrapErr().c_str());
+                        break;
+                    }
+
                     outfd = create_res.unwrap();
                     auto header_avail = cap.lb.get_available();
                     auto read_res = cap.lb.read_range(header_avail);
@@ -299,11 +358,41 @@ looper::loop()
                     outfd = create_res.unwrap();
                     rotate_count += 1;
 
-                    static const char lnav_header[]
-                        = {'L', 0, 'N', 1, 0, 0, 0, 0};
-                    auto prc
-                        = write(outfd.get(), lnav_header, sizeof(lnav_header));
-                    woff = prc;
+                    auto hdr = header{
+                        current_timeval(),
+                        this->l_name,
+                        this->l_cwd,
+                        this->l_env,
+                    };
+
+                    woff = 0;
+                    auto hdr_str = header_handlers.to_string(hdr);
+                    uint32_t meta_size = htonl(hdr_str.length());
+                    auto prc = write(
+                        outfd.get(), HEADER_MAGIC, sizeof(HEADER_MAGIC));
+                    if (prc < sizeof(HEADER_MAGIC)) {
+                        log_error("unable to write file header: %s -- %s",
+                                  this->l_name.c_str(),
+                                  strerror(errno));
+                        break;
+                    }
+                    woff += prc;
+                    prc = write(outfd.get(), &meta_size, sizeof(meta_size));
+                    if (prc < sizeof(meta_size)) {
+                        log_error("unable to write file header: %s -- %s",
+                                  this->l_name.c_str(),
+                                  strerror(errno));
+                        break;
+                    }
+                    woff += prc;
+                    prc = write(outfd.get(), hdr_str.c_str(), hdr_str.size());
+                    if (prc < hdr_str.size()) {
+                        log_error("unable to write file header: %s -- %s",
+                                  this->l_name.c_str(),
+                                  strerror(errno));
+                        break;
+                    }
+                    woff += prc;
                 }
 
                 ssize_t wrc;
@@ -350,6 +439,48 @@ create_looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd)
 {
     return Ok(handle<state::running>(std::make_shared<looper>(
         name, std::move(stdout_fd), std::move(stderr_fd))));
+}
+
+void
+cleanup()
+{
+    (void) std::async(std::launch::async, []() {
+        const auto& cfg = injector::get<const config&>();
+        auto now = std::chrono::system_clock::now();
+        auto cache_path = storage_path();
+        std::vector<ghc::filesystem::path> to_remove;
+
+        for (const auto& cache_subdir :
+             ghc::filesystem::directory_iterator(cache_path))
+        {
+            auto mtime = ghc::filesystem::last_write_time(cache_subdir.path());
+            auto exp_time = mtime + cfg.c_ttl;
+            if (now < exp_time) {
+                continue;
+            }
+
+            bool is_recent = false;
+
+            for (const auto& entry :
+                 ghc::filesystem::directory_iterator(cache_subdir))
+            {
+                auto mtime = ghc::filesystem::last_write_time(entry.path());
+                auto exp_time = mtime + cfg.c_ttl;
+                if (now < exp_time) {
+                    is_recent = true;
+                    break;
+                }
+            }
+            if (!is_recent) {
+                to_remove.emplace_back(cache_subdir);
+            }
+        }
+
+        for (auto& entry : to_remove) {
+            log_debug("removing piper directory: %s", entry.c_str());
+            ghc::filesystem::remove_all(entry);
+        }
+    });
 }
 
 }  // namespace piper

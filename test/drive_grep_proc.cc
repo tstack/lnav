@@ -89,7 +89,7 @@ public:
     void grep_match(grep_proc<vis_line_t>& gp,
                     vis_line_t line,
                     int start,
-                    int end)
+                    int end) override
     {
         printf("%d:%d:%d\n", (int) line, start, end);
     }
@@ -98,12 +98,21 @@ public:
                       vis_line_t line,
                       int start,
                       int end,
-                      char* capture)
+                      const string_fragment& capture) override
     {
-        fprintf(stderr, "%d(%d:%d)%s\n", (int) line, start, end, capture);
+        fprintf(stderr,
+                "%d(%d:%d)%.*s\n",
+                (int) line,
+                start,
+                end,
+                capture.length(),
+                capture.data());
     }
 
-    void grep_end(grep_proc<vis_line_t>& gp) { this->ms_finished = true; }
+    void grep_end(grep_proc<vis_line_t>& gp) override
+    {
+        this->ms_finished = true;
+    }
 
     bool ms_finished;
 };

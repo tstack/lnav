@@ -45,6 +45,7 @@
 #include "base/string_util.hh"
 #include "config.h"
 #include "lnav_util.hh"
+#include "scn/scn.h"
 #include "vis_line.hh"
 
 template<typename LineType>
@@ -270,17 +271,18 @@ grep_proc<LineType>::cleanup()
 
 template<typename LineType>
 void
-grep_proc<LineType>::dispatch_line(char* line)
+grep_proc<LineType>::dispatch_line(const string_fragment& line)
 {
-    int start, end, capture_start;
+    int start, end;
 
-    require(line != nullptr);
+    require(line.is_valid());
 
-    if (sscanf(line, "h%d", this->gp_highest_line.out()) == 1) {
-    } else if (sscanf(line, "%d", this->gp_last_line.out()) == 1) {
+    auto sv = line.to_string_view();
+    if (scn::scan(sv, "h{}", this->gp_highest_line.lvalue())) {
+    } else if (scn::scan(sv, "{}", this->gp_last_line.lvalue())) {
         /* Starting a new line with matches. */
         ensure(this->gp_last_line >= 0);
-    } else if (sscanf(line, "[%d:%d]", &start, &end) == 2) {
+    } else if (scn::scan(sv, "[{}:{}]", start, end)) {
         require(start >= 0);
         require(end >= 0);
 
@@ -288,25 +290,30 @@ grep_proc<LineType>::dispatch_line(char* line)
         if (this->gp_sink != nullptr) {
             this->gp_sink->grep_match(*this, this->gp_last_line, start, end);
         }
-    } else if (sscanf(line, "(%d:%d)%n", &start, &end, &capture_start) == 2) {
-        require(start == -1 || start >= 0);
-        require(end >= 0);
-
-        /* Pass the captured strings to the sink delegate. */
-        if (this->gp_sink != nullptr) {
-            this->gp_sink->grep_capture(
-                *this,
-                this->gp_last_line,
-                start,
-                end,
-                start < 0 ? nullptr : &line[capture_start]);
-        }
     } else if (line[0] == '/') {
         if (this->gp_sink != nullptr) {
             this->gp_sink->grep_match_end(*this, this->gp_last_line);
         }
     } else {
-        log_error("bad line from child -- %s", line);
+        auto scan_res = scn::scan(sv, "({}:{})", start, end);
+        if (scan_res) {
+            require(start == -1 || start >= 0);
+            require(end >= 0);
+
+            /* Pass the captured strings to the sink delegate. */
+            if (this->gp_sink != nullptr) {
+                this->gp_sink->grep_capture(
+                    *this,
+                    this->gp_last_line,
+                    start,
+                    end,
+                    start < 0
+                        ? string_fragment{}
+                        : to_string_fragment(scan_res.range_as_string_view()));
+            }
+        } else {
+            log_error("bad line from child -- %s", line);
+        }
     }
 }
 
@@ -369,13 +376,8 @@ grep_proc<LineType>::check_poll_set(const std::vector<struct pollfd>& pollfds)
                 this->gp_pipe_range = li.li_file_range;
                 this->gp_line_buffer.read_range(li.li_file_range)
                     .then([this](auto sbr) {
-                        auto_mem<char> buf;
-
-                        buf = (char*) malloc(sbr.length() + 1);
                         sbr.rtrim(is_line_ending);
-                        memcpy(buf, sbr.get_data(), sbr.length());
-                        buf[sbr.length()] = '\0';
-                        this->dispatch_line(buf);
+                        this->dispatch_line(sbr.to_string_fragment());
                     });
 
                 loop_count += 1;

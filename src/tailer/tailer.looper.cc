@@ -787,9 +787,7 @@ tailer::looper::host_tailer::loop_body()
                 }
 
                 constexpr int64_t BUFFER_SIZE = 4 * 1024 * 1024;
-                auto_mem<unsigned char> buffer;
-
-                buffer = (unsigned char*) malloc(BUFFER_SIZE);
+                auto buffer = auto_mem<unsigned char>::malloc(BUFFER_SIZE);
                 auto remaining = pob.pob_length;
                 auto remaining_offset = pob.pob_offset;
                 tailer::hash_frag thf;

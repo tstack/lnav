@@ -95,6 +95,7 @@
 #include "CLI/CLI.hpp"
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
+#include "file_converter_manager.hh"
 #include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
 #include "grep_proc.hh"
@@ -1914,6 +1915,8 @@ looper()
                         line_buffer::cleanup_cache();
                         archive_manager::cleanup_cache();
                         tailer::cleanup_cache();
+                        lnav::piper::cleanup();
+                        file_converter_manager::cleanup();
                         ran_cleanup = true;
                     }
                 }
@@ -2099,11 +2102,7 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
     return retval;
 }
 
-enum class verbosity_t : int {
-    quiet,
-    standard,
-    verbose,
-};
+verbosity_t verbosity = verbosity_t::standard;
 
 int
 main(int argc, char* argv[])
@@ -2116,7 +2115,6 @@ main(int argc, char* argv[])
     bool exec_stdin = false, load_stdin = false;
     mode_flags_t mode_flags;
     const char* LANG = getenv("LANG");
-    verbosity_t verbosity = verbosity_t::standard;
 
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
         setenv("LANG", "en_US.UTF-8", 1);
@@ -2138,6 +2136,9 @@ main(int argc, char* argv[])
     if (getenv("LNAVSECURE") != nullptr) {
         lnav_data.ld_flags |= LNF_SECURE_MODE;
     }
+
+    setenv("LNAV_HOME_DIR", lnav::paths::dotlnav().c_str(), 1);
+    setenv("LNAV_WORK_DIR", lnav::paths::workdir().c_str(), 1);
 
     lnav_data.ld_exec_context.ec_sql_callback = sql_callback;
     lnav_data.ld_exec_context.ec_pipe_callback = pipe_callback;
@@ -2843,6 +2844,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     for (auto& file_path : file_args) {
+        scrub_ansi_string(file_path, nullptr);
         auto file_path_without_trailer = file_path;
         auto file_loc = file_location_t{mapbox::util::no_init{}};
         auto_mem<char> abspath;
@@ -2885,7 +2887,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             isc::to<curl_looper&, services::curl_streamer_t>().send(
                 [ul](auto& clooper) { clooper.add_request(ul); });
         } else if (file_path.find("://") != std::string::npos) {
-            lnav_data.ld_commands.emplace_back(
+            lnav_data.ld_commands.insert(
+                lnav_data.ld_commands.begin(),
                 fmt::format(FMT_STRING(":open {}"), file_path));
         }
 #endif
@@ -3037,7 +3040,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         retval = EXIT_FAILURE;
     }
 
-    nonstd::optional<ghc::filesystem::path> stdin_pattern;
+    nonstd::optional<std::string> stdin_url;
+    ghc::filesystem::path stdin_dir;
     if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO)
         && !exec_stdin)
     {
@@ -3063,7 +3067,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     STDIN_NAME, auto_fd::dup_of(STDIN_FILENO), auto_fd{});
                 if (stdin_piper_res.isOk()) {
                     auto stdin_piper = stdin_piper_res.unwrap();
-                    stdin_pattern = stdin_piper.get_out_pattern();
+                    stdin_url = stdin_piper.get_url();
+                    stdin_dir = stdin_piper.get_out_dir();
                     lnav_data.ld_active_files
                         .fc_file_names[stdin_piper.get_name()]
                         .with_piper(stdin_piper)
@@ -3216,6 +3221,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 archive_manager::cleanup_cache();
                 tailer::cleanup_cache();
                 line_buffer::cleanup_cache();
+                lnav::piper::cleanup();
+                file_converter_manager::cleanup();
                 wait_for_pipers();
                 rescan_files(true);
                 isc::to<curl_looper&, services::curl_streamer_t>()
@@ -3352,10 +3359,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         // When reading from stdin, tell the user where the capture file is
         // stored so they can look at it later.
-        if (stdin_pattern && !(lnav_data.ld_flags & LNF_HEADLESS)) {
+        if (stdin_url && !(lnav_data.ld_flags & LNF_HEADLESS)) {
             file_size_t stdin_size = 0;
-            for (const auto& ent : ghc::filesystem::directory_iterator(
-                     stdin_pattern.value().parent_path()))
+            for (const auto& ent :
+                 ghc::filesystem::directory_iterator(stdin_dir))
             {
                 stdin_size += ent.file_size();
             }
@@ -3371,7 +3378,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                 "reopen it by running:\n")
                         .appendf(FMT_STRING("   {} "),
                                  lnav_data.ld_program_name)
-                        .append(lnav::roles::file(stdin_pattern.value()))));
+                        .append(lnav::roles::file(stdin_url.value()))));
         }
     }
 

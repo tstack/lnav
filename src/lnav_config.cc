@@ -1074,6 +1074,14 @@ static const struct json_path_container piper_handlers = {
         .with_min_value(2)
         .with_description("The number of rotated files to keep")
         .for_field(&_lnav_config::lc_piper, &lnav::piper::config::c_rotations),
+    yajlpp::property_handler("ttl")
+        .with_synopsis("<duration>")
+        .with_description(
+            "The time-to-live for captured data, expressed as a duration "
+            "(e.g. '3d' for three days)")
+        .with_example("3d")
+        .with_example("12h")
+        .for_field(&_lnav_config::lc_piper, &lnav::piper::config::c_ttl),
 };
 
 static const struct json_path_container file_vtab_handlers = {

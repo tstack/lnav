@@ -55,6 +55,7 @@ noinst_HEADERS = \
     network.tcp.hh \
     opt_util.hh \
     paths.hh \
+    piper.file.hh \
     result.h \
     snippet_highlighters.hh \
     string_attr_type.hh \
@@ -82,6 +83,7 @@ libbase_a_SOURCES = \
     lnav_log.cc \
     network.tcp.cc \
     paths.cc \
+    piper.file.cc \
     snippet_highlighters.cc \
     string_attr_type.cc \
     string_util.cc \

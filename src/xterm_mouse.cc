@@ -42,7 +42,6 @@ void
 xterm_mouse::handle_mouse()
 {
     bool release = false;
-    int ch;
     size_t index = 0;
     int bstate, x, y;
     char buffer[64];
@@ -52,7 +51,7 @@ xterm_mouse::handle_mouse()
         if (index >= sizeof(buffer) - 1) {
             break;
         }
-        ch = getch();
+        auto ch = getch();
         switch (ch) {
             case 'm':
                 release = true;

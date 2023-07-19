@@ -434,8 +434,10 @@ struct string_fragment {
             });
     }
 
+    using split_when_result = std::pair<string_fragment, string_fragment>;
+
     template<typename P>
-    split_result split_when(P&& predicate) const
+    split_when_result split_when(P&& predicate) const
     {
         int consumed = 0;
         while (consumed < this->length()) {
@@ -446,7 +448,33 @@ struct string_fragment {
             consumed += 1;
         }
 
-        if (consumed == 0) {
+        return std::make_pair(
+            string_fragment{
+                this->sf_string,
+                this->sf_begin,
+                this->sf_begin + consumed,
+            },
+            string_fragment{
+                this->sf_string,
+                this->sf_begin + consumed
+                    + ((consumed == this->length()) ? 0 : 1),
+                this->sf_end,
+            });
+    }
+
+    template<typename P>
+    split_result split_pair(P&& predicate) const
+    {
+        int consumed = 0;
+        while (consumed < this->length()) {
+            if (predicate(this->data()[consumed])) {
+                break;
+            }
+
+            consumed += 1;
+        }
+
+        if (consumed == this->length()) {
             return nonstd::nullopt;
         }
 
@@ -841,6 +869,12 @@ inline string_fragment
 to_string_fragment(const std::string& s)
 {
     return string_fragment(s.c_str(), 0, s.length());
+}
+
+inline string_fragment
+to_string_fragment(const scn::string_view& sv)
+{
+    return string_fragment::from_bytes(sv.data(), sv.length());
 }
 
 struct frag_hasher {
