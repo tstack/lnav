@@ -221,6 +221,10 @@ These crumbs are interactive and can be used to navigate to different parts
 of the log view.  For example, selecting a different value in the log format
 crumb will jump to the first message with that format.
 
+The file crumb will show a "↻" icon if the file is from the output of a FIFO,
+:code:`:sh` command, or data that was piped into the standard input.  When
+the pipe is closed, the icon will disappear.
+
 TEXT
 ^^^^
 
@@ -229,6 +233,17 @@ The text view displays files for which lnav could not detect any log messages.
 Press :kbd:`t` to switch to the text view.  While in the text view, you can
 press :kbd:`f` or :kbd:`Shift` + :kbd:`F` to switch to the next / previous
 text file.
+
+The breadcrumb bar will show the name of the file and any structure that was
+discovered in the content.  The file crumb will show a "↻" icon if the file
+is from the output of a FIFO, :code:`:sh` command, or data that was piped
+into the standard input.  When the pipe is closed, the icon will disappear.
+
+If the content is piped into lnav through standard input, a FIFO, or a
+:code:`:sh` command, the time that lines are received are recorded.  You
+can press :kbd:`Shift` + :kbd:`T` to view the elapsed time like in the
+LOG view.  The breadcrumb bar will also show the received time of the
+focused line after the file name crumb.
 
 Markdown
 """"""""

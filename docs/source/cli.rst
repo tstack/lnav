@@ -38,8 +38,8 @@ Options
 
    Execute the given lnav command, SQL query, or lnav script.  The
    argument must be prefixed with the character used to enter the prompt
-   to distinguish between the different types (i.e. ':', ';', '|').
-   This option can be given multiple times.
+   to distinguish between the different types (i.e. :code:`:`, :code:`;`,
+   :code:`|`, :code:`/`).  This option can be given multiple times.
 
 .. option:: -f <path>
 
@@ -85,6 +85,10 @@ Options
 .. option:: -V
 
    Print the version of lnav.
+
+.. option:: -v
+
+   Print extra information during operations.
 
 .. option:: -q
 

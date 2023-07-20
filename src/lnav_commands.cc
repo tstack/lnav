@@ -4199,6 +4199,7 @@ static Result<std::string, lnav::console::user_message>
 com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     if (args.empty()) {
+        args.emplace_back("filename");
         return Ok(std::string());
     }
 
@@ -4283,10 +4284,19 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         lnav_data.ld_active_files.fc_file_names[display_name].with_piper(
             create_piper_res.unwrap());
-        lnav_data.ld_child_pollers.emplace_back(
-            child_poller{std::move(child), [](auto& fc, auto& child) {}});
+        lnav_data.ld_child_pollers.emplace_back(child_poller{
+            display_name,
+            std::move(child),
+            [](auto& fc, auto& child) {},
+        });
         lnav_data.ld_files_to_front.emplace_back(display_name,
                                                  file_location_t{});
+
+        if (lnav_data.ld_rl_view != nullptr) {
+            lnav_data.ld_rl_view->set_alt_value(
+                HELP_MSG_CTRL(C, "to send SIGINT to child process"));
+        }
+        return Ok(fmt::format(FMT_STRING("info: executing -- {}"), carg));
     }
 
     return Ok(std::string());

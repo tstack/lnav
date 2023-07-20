@@ -51,6 +51,8 @@
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
+using namespace lnav::roles::literals;
+
 const bookmark_type_t logfile_sub_source::BM_ERRORS("error");
 const bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
 const bookmark_type_t logfile_sub_source::BM_FILES("file");
@@ -2173,6 +2175,21 @@ timestamp_poss()
     return retval;
 }
 
+static attr_line_t
+to_display(const std::shared_ptr<logfile>& lf)
+{
+    attr_line_t retval;
+
+    if (lf->get_open_options().loo_piper) {
+        if (!lf->get_open_options().loo_piper->is_finished()) {
+            retval.append("\u21bb "_list_glyph);
+        }
+    }
+    retval.append(lf->get_unique_path());
+
+    return retval;
+}
+
 void
 logfile_sub_source::text_crumbs_for_line(int line,
                                          std::vector<breadcrumb::crumb>& crumbs)
@@ -2239,9 +2256,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     auto file_line_number = std::distance(lf->begin(), msg_start_iter);
     crumbs.emplace_back(
         lf->get_unique_path(),
-        attr_line_t()
-            .append(lf->get_unique_path())
-            .appendf(FMT_STRING("[{:L}]"), file_line_number),
+        to_display(lf).appendf(FMT_STRING("[{:L}]"), file_line_number),
         [this]() -> std::vector<breadcrumb::possibility> {
             return this->lss_files
                 | lnav::itertools::filter_in([](const auto& file_data) {
@@ -2250,8 +2265,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 | lnav::itertools::map([](const auto& file_data) {
                        return breadcrumb::possibility{
                            file_data->get_file_ptr()->get_unique_path(),
-                           attr_line_t(
-                               file_data->get_file_ptr()->get_unique_path()),
+                           to_display(file_data->get_file()),
                        };
                    });
         },

@@ -37,6 +37,7 @@
 #include "config.h"
 #include "lnav.events.hh"
 #include "md2attr_line.hh"
+#include "sql_util.hh"
 #include "sqlitepp.hh"
 
 using namespace lnav::roles::literals;
@@ -341,6 +342,21 @@ textfile_sub_source::get_text_format() const
     return this->tss_files.front()->get_text_format();
 }
 
+static attr_line_t
+to_display(const std::shared_ptr<logfile>& lf)
+{
+    attr_line_t retval;
+
+    if (lf->get_open_options().loo_piper) {
+        if (!lf->get_open_options().loo_piper->is_finished()) {
+            retval.append("\u21bb "_list_glyph);
+        }
+    }
+    retval.append(lf->get_unique_path());
+
+    return retval;
+}
+
 void
 textfile_sub_source::text_crumbs_for_line(
     int line, std::vector<breadcrumb::crumb>& crumbs)
@@ -354,12 +370,12 @@ textfile_sub_source::text_crumbs_for_line(
     auto lf = this->current_file();
     crumbs.emplace_back(
         lf->get_unique_path(),
-        attr_line_t().append(lf->get_unique_path()),
+        to_display(lf),
         [this]() {
             return this->tss_files | lnav::itertools::map([](const auto& lf) {
                        return breadcrumb::possibility{
                            lf->get_unique_path(),
-                           attr_line_t(lf->get_unique_path()),
+                           to_display(lf),
                        };
                    });
         },
@@ -388,7 +404,26 @@ textfile_sub_source::text_crumbs_for_line(
     }
 
     auto meta_iter = this->tss_doc_metadata.find(lf->get_filename());
-    if (meta_iter != this->tss_doc_metadata.end()) {
+    if (meta_iter == this->tss_doc_metadata.end()
+        || meta_iter->second.ms_metadata.m_sections_tree.empty())
+    {
+        if (lf->has_line_metadata()) {
+            auto* lfo = dynamic_cast<line_filter_observer*>(
+                lf->get_logline_observer());
+            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+                return;
+            }
+            auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
+            char ts[64];
+
+            sql_strftime(ts, sizeof(ts), ll_iter->get_timeval(), 'T');
+
+            crumbs.emplace_back(
+                std::string(ts),
+                []() -> std::vector<breadcrumb::possibility> { return {}; },
+                [](const auto& key) {});
+        }
+    } else {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
         if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {

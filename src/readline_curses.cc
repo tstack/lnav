@@ -760,7 +760,7 @@ readline_curses::start()
 
         signal(SIGALRM, sigalrm);
         signal(SIGWINCH, sigwinch);
-        signal(SIGINT, sigterm);
+        signal(SIGINT, SIG_IGN);
         signal(SIGTERM, sigterm);
 
         dup2(this->rc_pty[RCF_SLAVE], STDIN_FILENO);
