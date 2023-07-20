@@ -456,10 +456,7 @@ append_default_files()
 static void
 sigint(int sig)
 {
-    static size_t counter = 0;
-
-    lnav_data.ld_looping = false;
-    counter += 1;
+    auto counter = lnav_data.ld_sigint_count.fetch_add(1);
     if (counter >= 3) {
         abort();
     }
@@ -1997,6 +1994,45 @@ looper()
                         == lnav_data.ld_text_source.size()))
             {
                 lnav_data.ld_looping = false;
+            }
+
+            if (lnav_data.ld_sigint_count > 0) {
+                lnav_data.ld_sigint_count = 0;
+                if (lnav_data.ld_view_stack.empty()) {
+                    lnav_data.ld_looping = false;
+                } else {
+                    textview_curses* tc = *lnav_data.ld_view_stack.top();
+                    std::vector<attr_line_t> rows(1);
+
+                    tc->get_data_source()->listview_value_for_rows(
+                        *tc, tc->get_selection(), rows);
+                    string_attrs_t& sa = rows[0].get_attrs();
+                    auto line_attr_opt = get_string_attr(sa, logline::L_FILE);
+                    bool found = false;
+                    if (line_attr_opt) {
+                        auto lf = line_attr_opt.value().get();
+
+                        log_debug("file name when SIGINT: %s",
+                                  lf->get_filename().c_str());
+                        for (auto& cp : lnav_data.ld_child_pollers) {
+                            auto cp_name = cp.get_filename();
+
+                            if (!cp_name) {
+                                log_debug("no child_poller");
+                                continue;
+                            }
+
+                            if (lf->get_filename() == cp_name.value()) {
+                                log_debug("found it, sending signal!");
+                                cp.send_sigint();
+                                found = true;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        lnav_data.ld_looping = false;
+                    }
+                }
             }
         }
     } catch (readline_curses::error& e) {

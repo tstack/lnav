@@ -7,6 +7,23 @@ This reference covers the keys used to control **lnav**.  Consult the `built-in
 help <https://github.com/tstack/lnav/blob/master/src/help.txt>`_ in **lnav** for
 a more detailed explanation of each key.
 
+Global
+------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 6 20
+
+   * - Keypress
+     - Command
+
+   * - :kbd:`Ctrl` + :kbd:`C`
+     - If the focused line is from a file connected to an open pipe (the "↻"
+       icon will be next to the file name), a SIGINT will be sent to the
+       child process.  Otherwise, **lnav** will quickly exit.  If **lnav**
+       seems to be stuck in a loop, pressing :kbd:`Ctrl` + :kbd:`C` three
+       times will trigger an abort exit.
+
 Spatial Navigation
 ------------------
 

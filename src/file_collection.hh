@@ -83,16 +83,18 @@ enum class child_poll_result_t {
 class child_poller {
 public:
     explicit child_poller(
+        nonstd::optional<std::string> filename,
         auto_pid<process_state::running> child,
         std::function<void(file_collection&,
                            auto_pid<process_state::finished>&)> finalizer)
-        : cp_child(std::move(child)), cp_finalizer(std::move(finalizer))
+        : cp_filename(filename), cp_child(std::move(child)),
+          cp_finalizer(std::move(finalizer))
     {
         ensure(this->cp_finalizer);
     }
 
     child_poller(child_poller&& other) noexcept
-        : cp_child(std::move(other.cp_child)),
+        : cp_filename(other.cp_filename), cp_child(std::move(other.cp_child)),
           cp_finalizer(std::move(other.cp_finalizer))
     {
         ensure(this->cp_finalizer);
@@ -102,6 +104,7 @@ public:
     {
         require(other.cp_finalizer);
 
+        this->cp_filename = other.cp_filename;
         this->cp_child = std::move(other.cp_child);
         this->cp_finalizer = std::move(other.cp_finalizer);
 
@@ -114,9 +117,17 @@ public:
 
     child_poller& operator=(const child_poller&) = delete;
 
+    const nonstd::optional<std::string>& get_filename() const
+    {
+        return this->cp_filename;
+    }
+
+    void send_sigint();
+
     child_poll_result_t poll(file_collection& fc);
 
 private:
+    nonstd::optional<std::string> cp_filename;
     nonstd::optional<auto_pid<process_state::running>> cp_child;
     std::function<void(file_collection&, auto_pid<process_state::finished>&)>
         cp_finalizer;

@@ -173,7 +173,8 @@ struct lnav_data_t {
     std::list<child_poller> ld_child_pollers;
     std::list<std::pair<std::string, file_location_t>> ld_files_to_front;
     bool ld_stdout_used;
-    sig_atomic_t ld_looping;
+    std::atomic_uint32_t ld_sigint_count{0};
+    sig_atomic_t ld_looping{true};
     sig_atomic_t ld_winched;
     sig_atomic_t ld_child_terminated;
     unsigned long ld_flags;
@@ -280,6 +281,8 @@ extern verbosity_t verbosity;
 extern readline_context::command_map_t lnav_commands;
 extern const int ZOOM_LEVELS[];
 extern const ssize_t ZOOM_COUNT;
+
+#define HELP_MSG_CTRL(x, msg) "Press '" ANSI_BOLD("CTRL-" #x) "' " msg
 
 #define HELP_MSG_1(x, msg) "Press '" ANSI_BOLD(#x) "' " msg
 
