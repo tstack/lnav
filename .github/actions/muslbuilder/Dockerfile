@@ -124,8 +124,6 @@ RUN curl -sSL https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz | tar xvzC /ext
         --without-progs \
         --without-manpages \
         --without-tests \
-        --without-gpm \
-        --without-dlsym \
     && \
     make -j2 install && \
     cd /extract && rm -rf *
