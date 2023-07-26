@@ -109,11 +109,7 @@ hist_source2::add_value(time_t row,
                         hist_source2::hist_type_t htype,
                         double value)
 {
-    if (row < this->hs_last_row) {
-        log_error("time mismatch %ld %ld", row, this->hs_last_row);
-    }
-
-    require(row >= this->hs_last_row);
+    require_ge(row, this->hs_last_row);
 
     row = rounddown(row, this->hs_time_slice);
     if (row != this->hs_last_row) {
