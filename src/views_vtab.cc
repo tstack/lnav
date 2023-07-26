@@ -45,6 +45,8 @@
 #include "vtab_module_json.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+using namespace lnav::roles::literals;
+
 template<>
 struct from_sqlite<lnav_view_t> {
     inline lnav_view_t operator()(int argc, sqlite3_value** val, int argi)
@@ -406,7 +408,14 @@ CREATE TABLE lnav_views (
                     }
                 }
             } else {
-                tab->zErrMsg = sqlite3_mprintf("Invalid time: %s", top_time);
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("Invalid ")
+                                  .append_quoted("top_time"_symbol)
+                                  .append(" value"))
+                              .with_reason(
+                                  attr_line_t("Unrecognized time value: ")
+                                      .append(lnav::roles::string(top_time)));
+                set_vtable_errmsg(tab, um);
                 return SQLITE_ERROR;
             }
         }
@@ -421,9 +430,8 @@ CREATE TABLE lnav_views (
                 string_fragment::from_c_str(top_meta));
             if (parse_res.isErr()) {
                 auto errmsg = parse_res.unwrapErr();
-                tab->zErrMsg = sqlite3_mprintf(
-                    "Invalid top_meta: %s",
-                    errmsg[0].to_attr_line().get_string().c_str());
+
+                set_vtable_errmsg(tab, errmsg[0]);
                 return SQLITE_ERROR;
             }
 
@@ -431,9 +439,15 @@ CREATE TABLE lnav_views (
 
             if (index == LNV_TEXT && tlm.tlm_file) {
                 if (!lnav_data.ld_text_source.to_front(tlm.tlm_file.value())) {
-                    auto errmsg = parse_res.unwrapErr();
-                    tab->zErrMsg = sqlite3_mprintf("unknown top_meta.file: %s",
-                                                   tlm.tlm_file->c_str());
+                    auto um
+                        = lnav::console::user_message::error(
+                              attr_line_t("Invalid ")
+                                  .append_quoted("top_meta.file"_symbol)
+                                  .append(" value"))
+                              .with_reason(attr_line_t("Unknown text file: ")
+                                               .append(lnav::roles::file(
+                                                   tlm.tlm_file.value())));
+                    set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
                 }
             }
@@ -451,8 +465,15 @@ CREATE TABLE lnav_views (
                         tc.set_selection(req_anchor_top.value());
                     }
                 } else {
-                    tab->zErrMsg = sqlite3_mprintf(
-                        "unknown top_meta.anchor: %s", req_anchor.c_str());
+                    auto um
+                        = lnav::console::user_message::error(
+                              attr_line_t("Invalid ")
+                                  .append_quoted("top_meta.anchor"_symbol)
+                                  .append(" value"))
+                              .with_reason(
+                                  attr_line_t("Unknown anchor: ")
+                                      .append(lnav::roles::symbol(req_anchor)));
+                    set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
                 }
             }
@@ -570,15 +591,15 @@ struct lnav_view_filter_base {
         iterator& operator++()
         {
             while (this->i_view_index < LNV__MAX) {
-                textview_curses& tc = lnav_data.ld_views[this->i_view_index];
-                text_sub_source* tss = tc.get_sub_source();
+                const auto& tc = lnav_data.ld_views[this->i_view_index];
+                auto* tss = tc.get_sub_source();
 
                 if (tss == nullptr) {
                     this->i_view_index = lnav_view_t(this->i_view_index + 1);
                     continue;
                 }
 
-                filter_stack& fs = tss->get_filters();
+                const auto& fs = tss->get_filters();
 
                 this->i_filter_index += 1;
                 if (this->i_filter_index >= (ssize_t) fs.size()) {
@@ -802,10 +823,7 @@ CREATE TABLE lnav_view_filters (
                 auto set_res = lnav_data.ld_log_source.set_sql_filter(
                     clause, stmt.release());
                 if (set_res.isErr()) {
-                    tab->zErrMsg = sqlite3_mprintf(
-                        "%s%s",
-                        sqlitepp::ERROR_PREFIX,
-                        lnav::to_json(set_res.unwrapErr()).c_str());
+                    set_vtable_errmsg(tab, set_res.unwrapErr());
                     return SQLITE_ERROR;
                 }
                 tf = lnav_data.ld_log_source.get_sql_filter().value();
@@ -903,10 +921,7 @@ CREATE TABLE lnav_view_filters (
             auto set_res = lnav_data.ld_log_source.set_sql_filter(
                 clause, stmt.release());
             if (set_res.isErr()) {
-                tab->zErrMsg = sqlite3_mprintf(
-                    "%s%s",
-                    sqlitepp::ERROR_PREFIX,
-                    lnav::to_json(set_res.unwrapErr()).c_str());
+                set_vtable_errmsg(tab, set_res.unwrapErr());
                 return SQLITE_ERROR;
             }
             *iter = lnav_data.ld_log_source.get_sql_filter().value();

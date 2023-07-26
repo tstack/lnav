@@ -1918,7 +1918,8 @@ vt_update(sqlite3_vtab* tab,
         const auto* part_name = sqlite3_value_text(argv[2 + VT_COL_PARTITION]);
         const auto* log_comment
             = sqlite3_value_text(argv[2 + VT_COL_LOG_COMMENT]);
-        const auto* log_tags = sqlite3_value_text(argv[2 + VT_COL_LOG_TAGS]);
+        const auto log_tags = from_sqlite<nonstd::optional<string_fragment>>()(
+            argc, argv, 2 + VT_COL_LOG_TAGS);
         bookmark_metadata tmp_bm;
 
         if (log_tags) {
@@ -1937,7 +1938,7 @@ vt_update(sqlite3_vtab* tab,
                     errors.emplace_back(msg);
                 })
                 .with_obj(tmp_bm);
-            ypc.parse_doc(string_fragment{log_tags});
+            ypc.parse_doc(log_tags.value());
             if (!errors.empty()) {
                 auto top_error = lnav::console::user_message::error(
                                      attr_line_t("invalid value for ")
@@ -1946,16 +1947,14 @@ vt_update(sqlite3_vtab* tab,
                                          .append_quoted(lnav::roles::symbol(
                                              vt->vi->get_name().to_string())))
                                      .with_reason(errors[0].to_attr_line({}));
-                auto json_error = lnav::to_json(top_error);
-                tab->zErrMsg
-                    = sqlite3_mprintf("lnav-error:%s", json_error.c_str());
+                set_vtable_errmsg(tab, top_error);
                 return SQLITE_ERROR;
             }
         }
 
         auto& bv = vt->tc->get_bookmarks()[&textview_curses::BM_META];
         bool has_meta = part_name != nullptr || log_comment != nullptr
-            || log_tags != nullptr;
+            || log_tags.has_value();
 
         if (binary_search(bv.begin(), bv.end(), vrowid) && !has_meta) {
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);

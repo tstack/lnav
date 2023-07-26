@@ -29,4 +29,10 @@ run_cap_test ${lnav_test} -nN \
    -c ";SELECT * from regexp_capture('abc=def;ghi=jkl;', '^(\w+)=([^;]+);')"
 
 run_cap_test ${lnav_test} -nN \
+   -c ";SELECT * from regexp_capture('abc=def;ghi=jkl;', '^(')"
+
+run_cap_test ${lnav_test} -nN \
    -c ";SELECT * from regexp_capture_into_json('abc=def;ghi=jkl;', '^(\w+)=([^;]+);')"
+
+run_cap_test ${lnav_test} -nN \
+   -c ";SELECT * from regexp_capture_into_json('abc=def;ghi=jkl;', '^(')"

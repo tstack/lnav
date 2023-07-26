@@ -29,6 +29,8 @@
  * @file text_format.cc
  */
 
+#include <set>
+
 #include "text_format.hh"
 
 #include "config.h"
@@ -39,8 +41,13 @@ text_format_t
 detect_text_format(string_fragment sf,
                    nonstd::optional<ghc::filesystem::path> path)
 {
-    static const auto GZ_EXT = ghc::filesystem::path(".gz");
-    static const auto BZ2_EXT = ghc::filesystem::path(".bz2");
+    static const std::set<ghc::filesystem::path> FILTER_EXTS = {
+        ".bz2",
+        ".gz",
+        ".lzma",
+        ".xz",
+        ".zst",
+    };
     static const auto MD_EXT = ghc::filesystem::path(".md");
     static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
 
@@ -99,10 +106,7 @@ detect_text_format(string_fragment sf,
     text_format_t retval = text_format_t::TF_UNKNOWN;
 
     if (path) {
-        if (path->extension() == GZ_EXT) {
-            path = path->stem();
-        }
-        if (path->extension() == BZ2_EXT) {
+        while (FILTER_EXTS.count(path->extension()) > 0) {
             path = path->stem();
         }
 

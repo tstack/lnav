@@ -41,13 +41,14 @@
 #include "config.h"
 #include "formats/logfmt/logfmt.parser.hh"
 #include "log_vtab_impl.hh"
+#include "scn/scn.h"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
 class generic_log_format : public log_format {
-    static pcre_format* get_pcre_log_formats()
+    static const pcre_format* get_pcre_log_formats()
     {
-        static pcre_format log_fmt[] = {
+        static const pcre_format log_fmt[] = {
             pcre_format(
                 "^(?:\\*\\*\\*\\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24})(.*)"),
             pcre_format(
@@ -88,7 +89,10 @@ class generic_log_format : public log_format {
 
     const intern_string_t get_name() const override
     {
-        return intern_string::lookup("generic_log");
+        static const intern_string_t RETVAL
+            = intern_string::lookup("generic_log");
+
+        return RETVAL;
     }
 
     scan_result_t scan(logfile& lf,
@@ -140,7 +144,7 @@ class generic_log_format : public log_format {
     {
         auto& line = values.lvv_sbr;
         int pat_index = this->pattern_index_for_line(line_number);
-        auto& fmt = get_pcre_log_formats()[pat_index];
+        const auto& fmt = get_pcre_log_formats()[pat_index];
         int prefix_len = 0;
         auto md = fmt.pcre->create_match_data();
         auto match_res = fmt.pcre->capture_from(line.to_string_fragment())
@@ -324,13 +328,15 @@ class bro_log_format : public log_format {
 public:
     struct field_def {
         logline_value_meta fd_meta;
+        logline_value_meta* fd_root_meta;
         std::string fd_collator;
         nonstd::optional<size_t> fd_numeric_index;
 
         explicit field_def(const intern_string_t name,
                            int col,
                            log_format* format)
-            : fd_meta(name, value_kind_t::VALUE_TEXT, col, format)
+            : fd_meta(name, value_kind_t::VALUE_TEXT, col, format),
+              fd_root_meta(&FIELD_META.find(name)->second)
         {
         }
 
@@ -350,6 +356,9 @@ public:
             return *this;
         }
     };
+
+    static std::unordered_map<const intern_string_t, logline_value_meta>
+        FIELD_META;
 
     bro_log_format()
     {
@@ -410,13 +419,13 @@ public:
                     found_ts = true;
                 }
             } else if (STATUS_CODE == fd.fd_meta.lvm_name) {
-                string_fragment sf = *iter;
+                const auto sf = *iter;
 
                 if (!sf.empty() && sf[0] >= '4') {
                     level = LEVEL_ERROR;
                 }
             } else if (UID == fd.fd_meta.lvm_name) {
-                string_fragment sf = *iter;
+                const auto sf = *iter;
 
                 opid = hash_str(sf.data(), sf.length());
             }
@@ -425,14 +434,11 @@ public:
                 switch (fd.fd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER:
                     case value_kind_t::VALUE_FLOAT: {
-                        string_fragment sf = *iter;
-                        char field_copy[sf.length() + 1];
-                        double val;
-
-                        if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1)
-                        {
+                        const auto sv = (*iter).to_string_view();
+                        auto scan_float_res = scn::scan_value<double>(sv);
+                        if (scan_float_res) {
                             this->lf_value_stats[fd.fd_numeric_index.value()]
-                                .add_value(val);
+                                .add_value(scan_float_res.value());
                         }
                         break;
                     }
@@ -531,10 +537,18 @@ public:
                 this->blf_format_name = intern_string::lookup(full_name);
             } else if (directive == "#fields" && this->blf_field_defs.empty()) {
                 do {
+                    auto field_name
+                        = intern_string::lookup("bro_" + sql_safe_ident(*iter));
+                    auto common_iter = FIELD_META.find(field_name);
+                    if (common_iter == FIELD_META.end()) {
+                        FIELD_META.emplace(field_name,
+                                           logline_value_meta{
+                                               field_name,
+                                               value_kind_t::VALUE_TEXT,
+                                           });
+                    }
                     this->blf_field_defs.emplace_back(
-                        intern_string::lookup("bro_" + sql_safe_ident(*iter)),
-                        this->blf_field_defs.size(),
-                        this);
+                        field_name, this->blf_field_defs.size(), this);
                     ++iter;
                 } while (iter != ss.end());
             } else if (directive == "#types") {
@@ -651,6 +665,8 @@ public:
             } else {
                 values.lvv_values.emplace_back(fd.fd_meta);
             }
+            values.lvv_values.back().lv_meta.lvm_user_hidden
+                = fd.fd_root_meta->lvm_user_hidden;
         }
     }
 
@@ -675,18 +691,25 @@ public:
 
     bool hide_field(const intern_string_t field_name, bool val) override
     {
-        auto fd_iter
-            = std::find_if(this->blf_field_defs.begin(),
-                           this->blf_field_defs.end(),
-                           [field_name](const field_def& elem) {
-                               return elem.fd_meta.lvm_name == field_name;
-                           });
-        if (fd_iter == this->blf_field_defs.end()) {
+        auto fd_iter = FIELD_META.find(field_name);
+        if (fd_iter == FIELD_META.end()) {
             return false;
         }
 
-        fd_iter->fd_meta.lvm_user_hidden = val;
+        fd_iter->second.lvm_user_hidden = val;
+
         return true;
+    }
+
+    std::map<intern_string_t, logline_value_meta> get_field_states() override
+    {
+        std::map<intern_string_t, logline_value_meta> retval;
+
+        for (const auto& fd : FIELD_META) {
+            retval.emplace(fd.first, fd.second);
+        }
+
+        return retval;
     }
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
@@ -707,9 +730,8 @@ public:
         void get_columns(std::vector<vtab_column>& cols) const override
         {
             for (const auto& fd : this->blt_format.blf_field_defs) {
-                std::pair<int, unsigned int> type_pair
-                    = log_vtab_impl::logline_value_to_sqlite_type(
-                        fd.fd_meta.lvm_kind);
+                auto type_pair = log_vtab_impl::logline_value_to_sqlite_type(
+                    fd.fd_meta.lvm_kind);
 
                 cols.emplace_back(fd.fd_meta.lvm_name.to_string(),
                                   type_pair.first,
@@ -774,6 +796,9 @@ public:
     intern_string_t blf_unset_field;
     std::vector<field_def> blf_field_defs;
 };
+
+std::unordered_map<const intern_string_t, logline_value_meta>
+    bro_log_format::FIELD_META;
 
 struct ws_separated_string {
     const char* ss_str;
@@ -877,6 +902,7 @@ public:
     struct field_def {
         const intern_string_t fd_name;
         logline_value_meta fd_meta;
+        logline_value_meta* fd_root_meta{nullptr};
         std::string fd_collator;
         nonstd::optional<size_t> fd_numeric_index;
 
@@ -923,6 +949,9 @@ public:
             return *this;
         }
     };
+
+    static std::unordered_map<const intern_string_t, logline_value_meta>
+        FIELD_META;
 
     struct field_to_struct_t {
         field_to_struct_t(const char* prefix, const char* struct_name)
@@ -990,7 +1019,7 @@ public:
                 break;
             }
 
-            const field_def& fd = this->wlf_field_defs[iter.index()];
+            const auto& fd = this->wlf_field_defs[iter.index()];
             string_fragment sf = *iter;
 
             if (sf.startswith("#")) {
@@ -1051,13 +1080,12 @@ public:
                 switch (fd.fd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER:
                     case value_kind_t::VALUE_FLOAT: {
-                        char field_copy[sf.length() + 1];
-                        double val;
+                        auto scan_float_res
+                            = scn::scan_value<double>(sf.to_string_view());
 
-                        if (sscanf(sf.to_string(field_copy), "%lf", &val) == 1)
-                        {
+                        if (scan_float_res) {
                             this->lf_value_stats[fd.fd_numeric_index.value()]
-                                .add_value(val);
+                                .add_value(scan_float_res.value());
                         }
                         break;
                     }
@@ -1131,8 +1159,7 @@ public:
             auto line = next_read_result.unwrap();
             ws_separated_string ss(line.get_data(), line.length());
             auto iter = ss.begin();
-
-            string_fragment directive = *iter;
+            const auto directive = *iter;
 
             if (directive.empty() || directive[0] != '#') {
                 continue;
@@ -1170,9 +1197,25 @@ public:
                         [&sf](auto elem) { return sf == elem.fd_name; });
                     if (field_iter != end(KNOWN_FIELDS)) {
                         this->wlf_field_defs.emplace_back(*field_iter);
+                        auto& fd = this->wlf_field_defs.back();
+                        auto common_iter = FIELD_META.find(fd.fd_meta.lvm_name);
+                        if (common_iter == FIELD_META.end()) {
+                            auto emp_res = FIELD_META.emplace(
+                                fd.fd_meta.lvm_name, fd.fd_meta);
+                            common_iter = emp_res.first;
+                        }
+                        fd.fd_root_meta = &common_iter->second;
                     } else if (sf == "date" || sf == "time") {
                         this->wlf_field_defs.emplace_back(
                             intern_string::lookup(sf));
+                        auto& fd = this->wlf_field_defs.back();
+                        auto common_iter = FIELD_META.find(fd.fd_meta.lvm_name);
+                        if (common_iter == FIELD_META.end()) {
+                            auto emp_res = FIELD_META.emplace(
+                                fd.fd_meta.lvm_name, fd.fd_meta);
+                            common_iter = emp_res.first;
+                        }
+                        fd.fd_root_meta = &common_iter->second;
                     } else {
                         const auto fs_iter = std::find_if(
                             begin(KNOWN_STRUCT_FIELDS),
@@ -1181,7 +1224,7 @@ public:
                                 return sf.startswith(elem.fs_prefix);
                             });
                         if (fs_iter != end(KNOWN_STRUCT_FIELDS)) {
-                            auto field_name
+                            const intern_string_t field_name
                                 = intern_string::lookup(sf.substr(3));
                             this->wlf_field_defs.emplace_back(
                                 field_name,
@@ -1195,7 +1238,8 @@ public:
                                     this)
                                     .with_struct_name(fs_iter->fs_struct_name));
                         } else {
-                            auto field_name = intern_string::lookup(sf);
+                            const intern_string_t field_name
+                                = intern_string::lookup(sf);
                             this->wlf_field_defs.emplace_back(
                                 field_name,
                                 logline_value_meta(
@@ -1253,7 +1297,7 @@ public:
                 return;
             }
 
-            const field_def& fd = this->wlf_field_defs[iter.index()];
+            const auto& fd = this->wlf_field_defs[iter.index()];
 
             if (sf == "-") {
                 sf.invalidate();
@@ -1274,6 +1318,10 @@ public:
                 }
             } else {
                 values.lvv_values.emplace_back(fd.fd_meta);
+            }
+            if (fd.fd_root_meta != nullptr) {
+                values.lvv_values.back().lv_meta.lvm_user_hidden
+                    = fd.fd_root_meta->lvm_user_hidden;
             }
         }
     }
@@ -1299,18 +1347,25 @@ public:
 
     bool hide_field(const intern_string_t field_name, bool val) override
     {
-        auto fd_iter
-            = std::find_if(this->wlf_field_defs.begin(),
-                           this->wlf_field_defs.end(),
-                           [field_name](const field_def& elem) {
-                               return elem.fd_meta.lvm_name == field_name;
-                           });
-        if (fd_iter == this->wlf_field_defs.end()) {
+        auto fd_iter = FIELD_META.find(field_name);
+        if (fd_iter == FIELD_META.end()) {
             return false;
         }
 
-        fd_iter->fd_meta.lvm_user_hidden = val;
+        fd_iter->second.lvm_user_hidden = val;
+
         return true;
+    }
+
+    std::map<intern_string_t, logline_value_meta> get_field_states() override
+    {
+        std::map<intern_string_t, logline_value_meta> retval;
+
+        for (const auto& fd : FIELD_META) {
+            retval.emplace(fd.first, fd.second);
+        }
+
+        return retval;
     }
 
     std::shared_ptr<log_format> specialized(int fmt_lock = -1) override
@@ -1401,6 +1456,9 @@ public:
     intern_string_t wlf_format_name;
     std::vector<field_def> wlf_field_defs;
 };
+
+std::unordered_map<const intern_string_t, logline_value_meta>
+    w3c_log_format::FIELD_META;
 
 static int KNOWN_FIELD_INDEX = 0;
 const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
@@ -1551,7 +1609,7 @@ class logfmt_format : public log_format {
 public:
     const intern_string_t get_name() const override
     {
-        const static auto NAME = intern_string::lookup("logfmt_log");
+        const static intern_string_t NAME = intern_string::lookup("logfmt_log");
 
         return NAME;
     }

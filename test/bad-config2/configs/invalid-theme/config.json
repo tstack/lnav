@@ -8,6 +8,11 @@
                         "color": "InvalidColor",
                         "bad-property": "abc"
                     }
+                },
+                "highlights": {
+                    "foobar": {
+                        "pattern": "abc("
+                    }
                 }
             }
         }

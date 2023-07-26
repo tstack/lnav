@@ -256,7 +256,8 @@ struct json_path_handler : public json_path_handler_base {
                              size_t len)
     {
         ypc->fill_in_source();
-        return ypc->ypc_current_handler->jph_str_cb(ypc, str, len);
+        return ypc->ypc_current_handler->jph_str_cb(
+            ypc, string_fragment::from_bytes(str, len));
     }
 
     static int int_field_cb(yajlpp_parse_context* ypc, long long val)
@@ -439,15 +440,13 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto value_str = std::string((const char*) str, len);
-            auto jph = ypc->ypc_current_handler;
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* jph = ypc->ypc_current_handler;
 
             jph->validate_string(*ypc, value_str);
             json_path_handler::get_field(obj, args...)
-                .emplace_back(std::move(value_str));
+                .emplace_back(value_str.to_string());
 
             return 1;
         };
@@ -520,13 +519,12 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
             auto key = ypc->get_path_fragment(-1);
 
             json_path_handler::get_field(obj, args...)[key]
-                = std::string((const char*) str, len);
+                = value_str.to_string();
 
             return 1;
         };
@@ -591,13 +589,12 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
+                                     const string_fragment& value_str) {
             auto obj = ypc->ypc_obj_stack.top();
             auto key = ypc->get_path_fragment(-1);
 
             json_path_handler::get_field(obj, args...)[key]
-                = std::string((const char*) str, len);
+                = value_str.to_string();
 
             return 1;
         };
@@ -669,13 +666,12 @@ struct json_path_handler : public json_path_handler_base {
               };
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
+                                     const string_fragment& value_str) {
             auto* obj = ypc->ypc_obj_stack.top();
             auto key = ypc->get_path_fragment(-1);
 
             json_path_handler::get_field(obj, args...)[key]
-                = std::string((const char*) str, len);
+                = value_str.to_string();
 
             return 1;
         };
@@ -718,14 +714,12 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto value_str = std::string((const char*) str, len);
-            auto jph = ypc->ypc_current_handler;
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* jph = ypc->ypc_current_handler;
 
             jph->validate_string(*ypc, value_str);
-            json_path_handler::get_field(obj, args...) = std::move(value_str);
+            json_path_handler::get_field(obj, args...) = value_str.to_string();
 
             return 1;
         };
@@ -765,23 +759,22 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto jph = ypc->ypc_current_handler;
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* jph = ypc->ypc_current_handler;
 
             date_time_scanner dts;
             timeval tv{};
             exttm tm;
 
-            if (dts.scan((char*) str, len, nullptr, &tm, tv) == nullptr) {
-                ypc->report_error(
-                    lnav::console::user_message::error(
-                        attr_line_t("unrecognized timestamp ")
-                            .append_quoted(
-                                string_fragment::from_bytes(str, len)))
-                        .with_snippet(ypc->get_snippet())
-                        .with_help(jph->get_help_text(ypc)));
+            if (dts.scan(value_str.data(), value_str.length(), nullptr, &tm, tv)
+                == nullptr)
+            {
+                ypc->report_error(lnav::console::user_message::error(
+                                      attr_line_t("unrecognized timestamp ")
+                                          .append_quoted(value_str))
+                                      .with_snippet(ypc->get_snippet())
+                                      .with_help(jph->get_help_text(ypc)));
             } else {
                 json_path_handler::get_field(obj, args...) = tv;
             }
@@ -831,14 +824,12 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto value_str = std::string((const char*) str, len);
-            auto jph = ypc->ypc_current_handler;
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* jph = ypc->ypc_current_handler;
 
             jph->validate_string(*ypc, value_str);
-            json_path_handler::get_field(obj, args...) = std::move(value_str);
+            json_path_handler::get_field(obj, args...) = value_str.to_string();
 
             return 1;
         };
@@ -893,11 +884,9 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto value_str = std::string((const char*) str, len);
-            auto jph = ypc->ypc_current_handler;
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* jph = ypc->ypc_current_handler;
 
             jph->validate_string(*ypc, value_str);
             auto& field = json_path_handler::get_field(obj, args...);
@@ -905,7 +894,7 @@ struct json_path_handler : public json_path_handler_base {
             field.pp_path = ypc->get_full_path();
             field.pp_location.sl_source = ypc->ypc_source;
             field.pp_location.sl_line_number = ypc->get_line_number();
-            field.pp_value = std::move(value_str);
+            field.pp_value = value_str.to_string();
 
             return 1;
         };
@@ -946,11 +935,9 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto value_str = std::string((const char*) str, len);
-            auto jph = ypc->ypc_current_handler;
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* jph = ypc->ypc_current_handler;
 
             jph->validate_string(*ypc, value_str);
             json_path_handler::get_field(obj, args...)
@@ -993,11 +980,9 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto value_str = std::string((const char*) str, len);
-            auto jph = ypc->ypc_current_handler;
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* jph = ypc->ypc_current_handler;
 
             jph->validate_string(*ypc, value_str);
             auto& field = json_path_handler::get_field(obj, args...);
@@ -1036,7 +1021,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename>
     struct int_ {
-        typedef int type;
+        using type = int;
     };
     template<
         typename C,
@@ -1048,11 +1033,10 @@ struct json_path_handler : public json_path_handler_base {
     json_path_handler& for_field(Args... args, T C::*ptr_arg)
     {
         this->add_cb(str_field_cb2);
-        this->jph_str_cb = [args..., ptr_arg](yajlpp_parse_context* ypc,
-                                              const unsigned char* str,
-                                              size_t len) {
+        this->jph_str_cb = [args..., ptr_arg](
+                               yajlpp_parse_context* ypc,
+                               const string_fragment& value_frag) {
             auto* obj = ypc->ypc_obj_stack.top();
-            auto value_frag = string_fragment::from_bytes(str, len);
             const auto* jph = ypc->ypc_current_handler;
             auto loc = source_location{ypc->ypc_source, ypc->get_line_number()};
 
@@ -1067,6 +1051,30 @@ struct json_path_handler : public json_path_handler_base {
 
             return 1;
         };
+        this->jph_gen_callback
+            = [args..., ptr_arg](yajlpp_gen_context& ygc,
+                                 const json_path_handler_base& jph,
+                                 yajl_gen handle) {
+                  const auto& field = json_path_handler::get_field(
+                      ygc.ygc_obj_stack.top(), args..., ptr_arg);
+
+                  if (!ygc.ygc_default_stack.empty()) {
+                      const auto& field_def = json_path_handler::get_field(
+                          ygc.ygc_default_stack.top(), args..., ptr_arg);
+
+                      if (field.pp_value == field_def.pp_value) {
+                          return yajl_gen_status_ok;
+                      }
+                  }
+
+                  if (ygc.ygc_depth) {
+                      yajl_gen_string(handle, jph.jph_property);
+                  }
+
+                  yajlpp_generator gen(handle);
+
+                  return gen(field.to_string());
+              };
         return *this;
     }
 
@@ -1077,7 +1085,7 @@ struct json_path_handler : public json_path_handler_base {
         this->add_cb(int_field_cb);
         this->jph_integer_cb
             = [args...](yajlpp_parse_context* ypc, long long val) {
-                  auto jph = ypc->ypc_current_handler;
+                  const auto* jph = ypc->ypc_current_handler;
                   auto* obj = ypc->ypc_obj_stack.top();
 
                   if (val < jph->jph_min_value) {
@@ -1130,7 +1138,7 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(dbl_field_cb);
         this->jph_double_cb = [args...](yajlpp_parse_context* ypc, double val) {
-            auto jph = ypc->ypc_current_handler;
+            const auto* jph = ypc->ypc_current_handler;
             auto* obj = ypc->ypc_obj_stack.top();
 
             if (val < jph->jph_min_value) {
@@ -1185,18 +1193,16 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto handler = ypc->ypc_current_handler;
-            auto parse_res = relative_time::from_str(
-                string_fragment::from_bytes(str, len));
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* handler = ypc->ypc_current_handler;
+            auto parse_res = relative_time::from_str(value_str);
 
             if (parse_res.isErr()) {
                 auto parse_error = parse_res.unwrapErr();
-                auto value_str = std::string((const char*) str, len);
 
-                handler->report_duration_error(ypc, value_str, parse_error);
+                handler->report_duration_error(
+                    ypc, value_str.to_string(), parse_error);
                 return 1;
             }
 
@@ -1243,18 +1249,16 @@ struct json_path_handler : public json_path_handler_base {
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const unsigned char* str,
-                                     size_t len) {
-            auto obj = ypc->ypc_obj_stack.top();
-            auto handler = ypc->ypc_current_handler;
-            auto res = handler->to_enum_value(string_fragment(str, 0, len));
+                                     const string_fragment& value_str) {
+            auto* obj = ypc->ypc_obj_stack.top();
+            const auto* handler = ypc->ypc_current_handler;
+            auto res = handler->to_enum_value(value_str);
 
             if (res) {
                 json_path_handler::get_field(obj, args...)
                     = (typename LastIsEnum<Args...>::value_type) res.value();
             } else {
-                handler->report_enum_error(ypc,
-                                           std::string((const char*) str, len));
+                handler->report_enum_error(ypc, value_str.to_string());
             }
 
             return 1;
@@ -1362,6 +1366,27 @@ public:
         this->yp_parse_context.with_ignore_unused(value);
 
         return *this;
+    }
+
+    Result<void, std::vector<lnav::console::user_message>> consume(
+        const string_fragment& json)
+    {
+        if (this->yp_parse_context.parse(json) == yajl_status_ok) {
+            if (this->yp_errors.empty()) {
+                return Ok();
+            }
+        }
+
+        return Err(std::move(this->yp_errors));
+    }
+
+    Result<T, std::vector<lnav::console::user_message>> complete()
+    {
+        if (this->yp_parse_context.complete_parse() == yajl_status_ok) {
+            return Ok(std::move(this->yp_obj));
+        }
+
+        return Err(std::move(this->yp_errors));
     }
 
     Result<T, std::vector<lnav::console::user_message>> of(

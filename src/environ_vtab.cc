@@ -71,7 +71,7 @@ vt_create(sqlite3* db,
     /* Allocate the sqlite3_vtab/vtab structure itself */
     p_vt = (env_vtab*) sqlite3_malloc(sizeof(*p_vt));
 
-    if (p_vt == NULL) {
+    if (p_vt == nullptr) {
         return SQLITE_NOMEM;
     }
 
@@ -126,11 +126,11 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 {
     env_vtab* p_vt = (env_vtab*) p_svt;
 
-    p_vt->base.zErrMsg = NULL;
+    p_vt->base.zErrMsg = nullptr;
 
     env_vtab_cursor* p_cur = (env_vtab_cursor*) new env_vtab_cursor();
 
-    if (p_cur == NULL) {
+    if (p_cur == nullptr) {
         return SQLITE_NOMEM;
     } else {
         *pp_cursor = (sqlite3_vtab_cursor*) p_cur;
@@ -158,7 +158,7 @@ vt_eof(sqlite3_vtab_cursor* cur)
 {
     env_vtab_cursor* vc = (env_vtab_cursor*) cur;
 
-    return vc->env_cursor[0] == NULL;
+    return vc->env_cursor[0] == nullptr;
 }
 
 static int
@@ -166,7 +166,7 @@ vt_next(sqlite3_vtab_cursor* cur)
 {
     env_vtab_cursor* vc = (env_vtab_cursor*) cur;
 
-    if (vc->env_cursor[0] != NULL) {
+    if (vc->env_cursor[0] != nullptr) {
         vc->env_cursor += 1;
     }
 
@@ -309,11 +309,11 @@ static sqlite3_module vtab_module = {
     vt_column, /* xColumn       - read data */
     vt_rowid, /* xRowid        - read data */
     vt_update, /* xUpdate       - write data */
-    NULL, /* xBegin        - begin transaction */
-    NULL, /* xSync         - sync transaction */
-    NULL, /* xCommit       - commit transaction */
-    NULL, /* xRollback     - rollback transaction */
-    NULL, /* xFindFunction - function overloading */
+    nullptr, /* xBegin        - begin transaction */
+    nullptr, /* xSync         - sync transaction */
+    nullptr, /* xCommit       - commit transaction */
+    nullptr, /* xRollback     - rollback transaction */
+    nullptr, /* xFindFunction - function overloading */
 };
 
 int
@@ -322,13 +322,13 @@ register_environ_vtab(sqlite3* db)
     auto_mem<char, sqlite3_free> errmsg;
     int rc;
 
-    rc = sqlite3_create_module(db, "environ_vtab_impl", &vtab_module, NULL);
+    rc = sqlite3_create_module(db, "environ_vtab_impl", &vtab_module, nullptr);
     ensure(rc == SQLITE_OK);
     if ((rc = sqlite3_exec(
              db,
              "CREATE VIRTUAL TABLE environ USING environ_vtab_impl()",
-             NULL,
-             NULL,
+             nullptr,
+             nullptr,
              errmsg.out()))
         != SQLITE_OK)
     {

@@ -1348,10 +1348,10 @@ read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         }
         ypc->report_error(
             lnav::console::user_message::error(
-                attr_line_t("'")
-                    .append(lnav::roles::symbol(file_id))
+                attr_line_t()
+                    .append_quoted(lnav::roles::symbol(file_id))
                     .append(
-                        "' is not a supported configuration $schema version"))
+                        " is not a supported configuration $schema version"))
                 .with_snippet(ypc->get_snippet())
                 .with_note(notes)
                 .with_help(handler->get_help_text(ypc)));
@@ -1458,11 +1458,10 @@ load_config_from(_lnav_config& lconfig,
                     .with_errno_reason());
         }
     } else {
-        auto_mem<yajl_handle_t> handle(yajl_free);
         char buffer[2048];
         ssize_t rc = -1;
 
-        handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
+        auto handle = yajlpp::alloc_handle(&ypc.ypc_callbacks, &ypc);
         yajl_config(handle, yajl_allow_comments, 1);
         yajl_config(handle, yajl_allow_multiple_values, 1);
         ypc.ypc_handle = handle;
@@ -1498,10 +1497,10 @@ load_default_config(struct _lnav_config& config_obj,
 {
     yajlpp_parse_context ypc_builtin(intern_string::lookup(bsf.get_name()),
                                      &lnav_config_handlers);
-    auto_mem<yajl_handle_t> handle(yajl_free);
     struct config_userdata ud(errors);
 
-    handle = yajl_alloc(&ypc_builtin.ypc_callbacks, nullptr, &ypc_builtin);
+    auto handle
+        = yajlpp::alloc_handle(&ypc_builtin.ypc_callbacks, &ypc_builtin);
     ypc_builtin.ypc_locations = &lnav_config_locations;
     ypc_builtin.with_handle(handle);
     ypc_builtin.with_obj(config_obj);
@@ -1515,9 +1514,7 @@ load_default_config(struct _lnav_config& config_obj,
 
     yajl_config(handle, yajl_allow_comments, 1);
     yajl_config(handle, yajl_allow_multiple_values, 1);
-    if (ypc_builtin.parse(bsf.to_string_fragment()) == yajl_status_ok) {
-        ypc_builtin.complete_parse();
-    }
+    ypc_builtin.parse_doc(bsf.to_string_fragment());
 
     return path == "*" || ypc_builtin.ypc_active_paths.empty();
 }

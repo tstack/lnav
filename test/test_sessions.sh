@@ -117,3 +117,19 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     -c ":load-session" \
     -c ":test-comment restore hidden lines" \
     ${test_dir}/logfile_access_log.0
+
+# hiding fields failed
+rm -rf ./sessions
+mkdir -p $HOME
+run_cap_test ${lnav_test} -n \
+    -c ":hide-fields bro_uid" \
+    -c ":goto -10" \
+    -c ":save-session" \
+    ${test_dir}/logfile_bro_http.log.0
+
+# restoring hidden fields failed
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ":goto -10" \
+    -c ":test-comment restoring hidden fields" \
+    ${test_dir}/logfile_bro_http.log.0

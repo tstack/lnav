@@ -259,6 +259,8 @@ public:
 
     const std::string& get_pattern() const { return this->p_pattern; }
 
+    std::string to_string() const { return this->p_pattern; }
+
     named_captures get_named_captures() const;
 
     const char* get_name_for_capture(size_t index) const;

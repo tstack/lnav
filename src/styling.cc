@@ -53,17 +53,18 @@ static const struct json_path_container term_color_handler = {
         .with_children(term_color_rgb_handler),
 };
 
-static const struct json_path_container root_color_handler = {
-    yajlpp::property_handler("#")
-        .with_obj_provider<term_color, std::vector<term_color>>(
-            [](const yajlpp_provider_context& ypc,
-               std::vector<term_color>* palette) {
-                if (ypc.ypc_index >= palette->size()) {
-                    palette->resize(ypc.ypc_index + 1);
-                }
-                return &((*palette)[ypc.ypc_index]);
-            })
-        .with_children(term_color_handler),
+static const typed_json_path_container<std::vector<term_color>>
+    root_color_handler = {
+        yajlpp::property_handler("#")
+            .with_obj_provider<term_color, std::vector<term_color>>(
+                [](const yajlpp_provider_context& ypc,
+                   std::vector<term_color>* palette) {
+                    if (ypc.ypc_index >= palette->size()) {
+                        palette->resize(ypc.ypc_index + 1);
+                    }
+                    return &((*palette)[ypc.ypc_index]);
+                })
+            .with_children(term_color_handler),
 };
 
 term_color_palette*
@@ -186,20 +187,19 @@ rgb_color::operator!=(const rgb_color& rhs) const
 term_color_palette::term_color_palette(const char* name,
                                        const string_fragment& json)
 {
-    yajlpp_parse_context ypc_xterm(intern_string::lookup(name),
-                                   &root_color_handler);
-    yajl_handle handle;
+    intern_string_t iname = intern_string::lookup(name);
+    auto parse_res
+        = root_color_handler.parser_for(iname).with_ignore_unused(true).of(
+            json);
 
-    handle = yajl_alloc(&ypc_xterm.ypc_callbacks, nullptr, &ypc_xterm);
-    ypc_xterm.with_ignore_unused(true)
-        .with_obj(this->tc_palette)
-        .with_handle(handle);
-    yajl_status st = ypc_xterm.parse(json);
-    ensure(st == yajl_status_ok);
-    st = ypc_xterm.complete_parse();
-    ensure(st == yajl_status_ok);
-    yajl_free(handle);
+    if (parse_res.isErr()) {
+        log_error("failed to parse palette: %s -- %s",
+                  name,
+                  parse_res.unwrapErr()[0].to_attr_line().get_string().c_str());
+    }
+    require(parse_res.isOk());
 
+    this->tc_palette = parse_res.unwrap();
     for (auto& xc : this->tc_palette) {
         xc.xc_lab_color = lab_color(xc.xc_color);
     }

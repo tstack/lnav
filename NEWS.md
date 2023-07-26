@@ -50,6 +50,8 @@ Bug Fixes:
   as if it was in a file that was passed on the command-line.
 * The `-I` option is now recognized in the management CLI
   (i.e. when you run **lnav** with the `-m` flag).
+* Fields in the bro and w3c log formats that were hidden are
+  now saved in the session and restored.
 
 Interface changes:
 * The DB view now uses the "alt-text" theme style to draw

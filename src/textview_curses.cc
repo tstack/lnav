@@ -226,19 +226,7 @@ textview_curses::reload_config(error_reporter& reporter)
         }
 
         for (const auto& hl_pair : theme_iter->second.lt_highlights) {
-            if (hl_pair.second.hc_regex.empty()) {
-                continue;
-            }
-
-            auto regex = lnav::pcre2pp::code::from(hl_pair.second.hc_regex);
-
-            if (regex.isErr()) {
-                const static intern_string_t PATTERN_SRC
-                    = intern_string::lookup("pattern");
-
-                auto ce = regex.unwrapErr();
-                reporter(&hl_pair.second.hc_regex,
-                         lnav::console::to_user_message(PATTERN_SRC, ce));
+            if (hl_pair.second.hc_regex.pp_value == nullptr) {
                 continue;
             }
 
@@ -283,7 +271,7 @@ textview_curses::reload_config(error_reporter& reporter)
                 attrs.ta_attrs |= A_UNDERLINE;
             }
             this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
-                = highlighter(regex.unwrap().to_shared())
+                = highlighter(hl_pair.second.hc_regex.pp_value)
                       .with_attrs(attrs)
                       .with_color(fg, bg)
                       .with_nestable(false);

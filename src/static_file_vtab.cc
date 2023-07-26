@@ -163,7 +163,7 @@ sfvt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 {
     static_file_vtab* p_vt = (static_file_vtab*) p_svt;
 
-    p_vt->base.zErrMsg = NULL;
+    p_vt->base.zErrMsg = nullptr;
 
     sf_vtab_cursor* p_cur = (sf_vtab_cursor*) new sf_vtab_cursor();
 
