@@ -805,8 +805,11 @@ logfile_sub_source::rebuild_index(
     }
 
     if (this->lss_index.reserve(total_lines)) {
+        // The index array was reallocated, just do a full sort/rebuild since
+        // its been cleared out.
         force = true;
         retval = rebuild_result::rr_full_rebuild;
+        full_sort = true;
     }
 
     auto& vis_bm = this->tss_view->get_bookmarks();
@@ -1033,7 +1036,7 @@ logfile_sub_source::rebuild_index(
              index_index < this->lss_index.size();
              index_index++)
         {
-            content_line_t cl = (content_line_t) this->lss_index[index_index];
+            const auto cl = (content_line_t) this->lss_index[index_index];
             uint64_t line_number;
             auto ld = this->find_data(cl, line_number);
 
