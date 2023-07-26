@@ -119,6 +119,7 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     ${test_dir}/logfile_access_log.0
 
 # hiding fields failed
+export TZ="UTC"
 rm -rf ./sessions
 mkdir -p $HOME
 run_cap_test ${lnav_test} -n \
