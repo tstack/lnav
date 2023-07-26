@@ -918,7 +918,7 @@ const struct json_path_container format_handlers = {
         .with_description("A URL with more information about this log format"),
     json_path_handler("title", read_format_field)
         .with_description("The human-readable name for this log format"),
-    json_path_handler("description", read_format_field)
+    json_path_handler("description")
         .with_description("A longer description of this log format")
         .for_field(&external_log_format::lf_description),
     json_path_handler("timestamp-format#", read_format_field)
@@ -926,7 +926,7 @@ const struct json_path_container format_handlers = {
     json_path_handler("module-field", read_format_field)
         .with_description(
             "The name of the module field in the log message pattern"),
-    json_path_handler("opid-field", read_format_field)
+    json_path_handler("opid-field")
         .with_description(
             "The name of the operation-id field in the log message pattern")
         .for_field(&external_log_format::elf_opid_field),

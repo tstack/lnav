@@ -1,4 +1,1 @@
-error: sqlite3_exec failed -- parse error: premature EOF
-                                       [123, true
-                     (right here) ------^
-
+error: sqlite3_exec failed -- lnav-error:{"level":"error","message":{"str":"invalid JSON","attrs":[]},"reason":{"str":"parse error: premature EOF\n                                       [123, true\n                     (right here) ------^","attrs":[]},"snippets":[],"help":{"str":"","attrs":[]}}

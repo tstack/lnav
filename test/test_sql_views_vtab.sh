@@ -177,3 +177,7 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT top_meta FROM lnav_top_view" \
     -c ":write-json-to -" \
     ${test_dir}/logfile_xml_msg.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET top_meta = json_object('file', 'bad') WHERE name = 'text'" \
+    ${test_dir}/textfile_ansi.0

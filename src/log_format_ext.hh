@@ -169,6 +169,17 @@ public:
 
     bool hide_field(const intern_string_t field_name, bool val) override;
 
+    std::map<intern_string_t, logline_value_meta> get_field_states() override
+    {
+        std::map<intern_string_t, logline_value_meta> retval;
+
+        for (const auto& vd : this->elf_value_defs) {
+            retval.emplace(vd.first, vd.second->vd_meta);
+        }
+
+        return retval;
+    }
+
     std::shared_ptr<log_format> specialized(int fmt_lock) override;
 
     const logline_value_stats* stats_for_value(

@@ -638,9 +638,9 @@ textfile_sub_source::rescan_files(
                     } else if (content_sf.startswith("{")) {
                         yajlpp_parse_context ypc(
                             intern_string::lookup(lf->get_filename()));
-                        auto_mem<yajl_handle_t> handle(yajl_free);
+                        auto handle
+                            = yajlpp::alloc_handle(&ypc.ypc_callbacks, &ypc);
 
-                        handle = yajl_alloc(&ypc.ypc_callbacks, nullptr, &ypc);
                         yajl_config(
                             handle.in(), yajl_allow_trailing_garbage, 1);
                         ypc.with_ignore_unused(true)

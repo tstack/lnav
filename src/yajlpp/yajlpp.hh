@@ -112,6 +112,14 @@ struct factory_container : public positioned_property<std::shared_ptr<T>> {
             return Err(
                 lnav::console::to_user_message(src, from_res.unwrapErr()));
         }
+
+        std::string to_string() const
+        {
+            if (this->pp_value != nullptr) {
+                return this->pp_value->to_string();
+            }
+            return "";
+        }
     };
 
     template<typename... Args>
@@ -130,6 +138,14 @@ struct factory_container : public positioned_property<std::shared_ptr<T>> {
         }
 
         return Err(lnav::console::to_user_message(src, from_res.unwrapErr()));
+    }
+
+    std::string to_string() const
+    {
+        if (this->pp_value != nullptr) {
+            return this->pp_value->to_string();
+        }
+        return "";
     }
 };
 
@@ -283,8 +299,7 @@ struct json_path_handler_base {
     std::function<int(yajlpp_parse_context*, int)> jph_bool_cb;
     std::function<int(yajlpp_parse_context*, long long)> jph_integer_cb;
     std::function<int(yajlpp_parse_context*, double)> jph_double_cb;
-    std::function<int(
-        yajlpp_parse_context*, const unsigned char* str, size_t len)>
+    std::function<int(yajlpp_parse_context*, const string_fragment& sf)>
         jph_str_cb;
 
     void validate_string(yajlpp_parse_context& ypc, string_fragment sf) const;
@@ -688,5 +703,11 @@ struct json_string {
 };
 
 void dump_schema_to(const json_path_container& jpc, const char* internals_dir);
+
+namespace yajlpp {
+
+auto_mem<yajl_handle_t> alloc_handle(const yajl_callbacks* cb, void* cu);
+
+}  // namespace yajlpp
 
 #endif

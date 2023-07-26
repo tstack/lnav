@@ -141,7 +141,7 @@ CREATE TABLE xpath (
     {
         switch (col) {
             case XP_COL_RESULT: {
-                auto& xpath_node = vc.c_results[vc.c_rowid];
+                const auto& xpath_node = vc.c_results[vc.c_rowid];
 
                 if (xpath_node.node()) {
                     std::ostringstream oss;

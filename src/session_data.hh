@@ -48,17 +48,25 @@ struct file_state {
 struct view_state {
     int64_t vs_top{0};
     nonstd::optional<int64_t> vs_selection;
+    std::string vs_search;
+    bool vs_word_wrap{false};
+    bool vs_filtering{true};
+    std::vector<std::string> vs_commands;
 };
 
 struct session_data_t {
     uint64_t sd_save_time{0};
     bool sd_time_offset{false};
     std::map<std::string, file_state> sd_file_states;
-    std::set<std::string> sd_recent_netlocs;
     view_state sd_view_states[LNV__MAX];
 };
 
+struct recent_refs_t {
+    std::set<std::string> rr_netlocs;
+};
+
 extern struct session_data_t session_data;
+extern struct recent_refs_t recent_refs;
 
 void init_session();
 void load_session();
@@ -68,6 +76,9 @@ void reset_session();
 
 namespace lnav {
 namespace session {
+
+void restore_view_states();
+
 namespace regex101 {
 
 struct entry {

@@ -504,7 +504,7 @@ add_recent_netlocs_possibilities()
 
     isc::to<tailer::looper&, services::remote_tailer_t>().send_and_wait(
         [&netlocs](auto& tlooper) { netlocs = tlooper.active_netlocs(); });
-    netlocs.insert(session_data.sd_recent_netlocs.begin(),
-                   session_data.sd_recent_netlocs.end());
+    netlocs.insert(recent_refs.rr_netlocs.begin(),
+                   recent_refs.rr_netlocs.end());
     rc->add_possibility(ln_mode_t::COMMAND, "recent-netlocs", netlocs);
 }

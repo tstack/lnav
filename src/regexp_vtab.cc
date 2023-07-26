@@ -31,6 +31,7 @@
 #    include <alloca.h>
 #endif
 
+#include "base/lnav.console.into.hh"
 #include "base/lnav_log.hh"
 #include "column_namer.hh"
 #include "config.h"
@@ -238,9 +239,12 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     auto pattern = from_sqlite<string_fragment>()(argc, argv, 1);
     auto compile_res = lnav::pcre2pp::code::from(pattern);
     if (compile_res.isErr()) {
-        pVtabCursor->pVtab->zErrMsg
-            = sqlite3_mprintf("Invalid regular expression: %s",
-                              compile_res.unwrapErr().get_message().c_str());
+        static const intern_string_t PATTERN_SRC
+            = intern_string::lookup("pattern");
+
+        set_vtable_errmsg(pVtabCursor->pVtab,
+                          lnav::console::to_user_message(
+                              PATTERN_SRC, compile_res.unwrapErr()));
         return SQLITE_ERROR;
     }
 
@@ -486,9 +490,12 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
     auto pattern = from_sqlite<string_fragment>()(argc, argv, 1);
     auto compile_res = lnav::pcre2pp::code::from(pattern);
     if (compile_res.isErr()) {
-        pVtabCursor->pVtab->zErrMsg
-            = sqlite3_mprintf("Invalid regular expression: %s",
-                              compile_res.unwrapErr().get_message().c_str());
+        static const intern_string_t PATTERN_SRC
+            = intern_string::lookup("pattern");
+
+        set_vtable_errmsg(pVtabCursor->pVtab,
+                          lnav::console::to_user_message(
+                              PATTERN_SRC, compile_res.unwrapErr()));
         return SQLITE_ERROR;
     }
 
@@ -508,8 +515,7 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
                               "unable to parse flags")
                               .with_reason(parse_res.unwrapErr()[0]);
 
-                pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
-                    "%s%s", sqlitepp::ERROR_PREFIX, lnav::to_json(um).c_str());
+                set_vtable_errmsg(pVtabCursor->pVtab, um);
                 return SQLITE_ERROR;
             }
 

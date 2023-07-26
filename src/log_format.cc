@@ -280,7 +280,7 @@ next_format(
 }
 
 bool
-log_format::next_format(pcre_format* fmt, int& index, int& locked_index)
+log_format::next_format(const pcre_format* fmt, int& index, int& locked_index)
 {
     bool retval = true;
 
@@ -301,7 +301,7 @@ log_format::next_format(pcre_format* fmt, int& index, int& locked_index)
 const char*
 log_format::log_scanf(uint32_t line_number,
                       string_fragment line,
-                      pcre_format* fmt,
+                      const pcre_format* fmt,
                       const char* time_fmt[],
                       struct exttm* tm_out,
                       struct timeval* tv_out,

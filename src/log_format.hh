@@ -450,6 +450,11 @@ public:
         return false;
     }
 
+    virtual std::map<intern_string_t, logline_value_meta> get_field_states()
+    {
+        return {};
+    }
+
     const char* const* get_timestamp_formats() const
     {
         if (this->lf_timestamp_format.empty()) {
@@ -555,11 +560,13 @@ protected:
         int pf_timestamp_index{-1};
     };
 
-    static bool next_format(pcre_format* fmt, int& index, int& locked_index);
+    static bool next_format(const pcre_format* fmt,
+                            int& index,
+                            int& locked_index);
 
     const char* log_scanf(uint32_t line_number,
                           string_fragment line,
-                          pcre_format* fmt,
+                          const pcre_format* fmt,
                           const char* time_fmt[],
                           struct exttm* tm_out,
                           struct timeval* tv_out,
