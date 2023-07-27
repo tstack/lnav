@@ -243,7 +243,19 @@ If the content is piped into lnav through standard input, a FIFO, or a
 :code:`:sh` command, the time that lines are received are recorded.  You
 can press :kbd:`Shift` + :kbd:`T` to view the elapsed time like in the
 LOG view.  The breadcrumb bar will also show the received time of the
-focused line after the file name crumb.
+focused line after the file name crumb.  If the output being shown is from
+a :code:`:sh` command, you can press :kbd:`Ctrl` + :kbd:`C` to send a
+SIGINT to the child process without killing **lnav** itself.
+
+.. figure:: lnav-make-check-log.png
+   :align: center
+   :figwidth: 90%
+
+   Screenshot of the TEXT view showing the output of :code:`sh make check`.
+   Each line is timestamped internally when it was received so it's
+   possible to view how long each test is taking to run.  The "↻" icon
+   next to the file name in the breadcrumb bar means that the make is
+   still running.
 
 Markdown
 """"""""
