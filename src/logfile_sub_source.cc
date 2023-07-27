@@ -807,6 +807,7 @@ logfile_sub_source::rebuild_index(
     if (this->lss_index.reserve(total_lines)) {
         // The index array was reallocated, just do a full sort/rebuild since
         // its been cleared out.
+        log_debug("expanding index capacity %zu", this->lss_index.ba_capacity);
         force = true;
         retval = rebuild_result::rr_full_rebuild;
         full_sort = true;
