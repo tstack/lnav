@@ -488,6 +488,94 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
     return Ok();
 }
 
+enum class border_side {
+    left,
+    right,
+};
+
+enum class border_line_width {
+    thin,
+    medium,
+    thick,
+};
+
+static const char*
+left_border_string(border_line_width width)
+{
+    switch (width) {
+        case border_line_width::thin:
+            return "\u258F";
+        case border_line_width::medium:
+            return "\u258E";
+        case border_line_width::thick:
+            return "\u258C";
+    }
+}
+
+static const char*
+right_border_string(border_line_width width)
+{
+    switch (width) {
+        case border_line_width::thin:
+            return "\u2595";
+        case border_line_width::medium:
+            return "\u2595";
+        case border_line_width::thick:
+            return "\u2590";
+    }
+}
+
+static attr_line_t
+span_style_border(border_side side, const string_fragment& value)
+{
+    static const auto NAME_THIN = string_fragment::from_const("thin");
+    static const auto NAME_MEDIUM = string_fragment::from_const("medium");
+    static const auto NAME_THICK = string_fragment::from_const("thick");
+    static const auto NAME_SOLID = string_fragment::from_const("solid");
+    static const auto NAME_DASHED = string_fragment::from_const("dashed");
+    static const auto NAME_DOTTED = string_fragment::from_const("dotted");
+    static const auto& vc = view_colors::singleton();
+
+    text_attrs border_attrs;
+    auto border_sf = value;
+    auto width = border_line_width::thick;
+    auto ch = side == border_side::left ? left_border_string(width)
+                                        : right_border_string(width);
+
+    while (!border_sf.empty()) {
+        auto border_split_res
+            = border_sf.split_when(string_fragment::tag1{' '});
+        auto bval = border_split_res.first;
+
+        if (bval == NAME_THIN) {
+            width = border_line_width::thin;
+        } else if (bval == NAME_MEDIUM) {
+            width = border_line_width::medium;
+        } else if (bval == NAME_THICK) {
+            width = border_line_width::thick;
+        } else if (bval == NAME_DOTTED) {
+            ch = "\u250A";
+        } else if (bval == NAME_DASHED) {
+            ch = "\u254F";
+        } else if (bval == NAME_SOLID) {
+            ch = side == border_side::left ? left_border_string(width)
+                                           : right_border_string(width);
+        } else {
+            auto color_res = styling::color_unit::from_str(bval);
+            if (color_res.isErr()) {
+                log_error("invalid border color: %.*s -- %s",
+                          bval.length(),
+                          bval.data(),
+                          color_res.unwrapErr().c_str());
+            } else {
+                border_attrs.ta_fg_color = vc.match_color(color_res.unwrap());
+            }
+        }
+        border_sf = border_split_res.second;
+    }
+    return attr_line_t(ch).with_attr_for_all(VC_STYLE.value(border_attrs));
+}
+
 static attr_line_t
 to_attr_line(const pugi::xml_node& doc)
 {
@@ -499,6 +587,10 @@ to_attr_line(const pugi::xml_node& doc)
         = string_fragment::from_const("font-weight");
     static const auto NAME_TEXT_DECO
         = string_fragment::from_const("text-decoration");
+    static const auto NAME_BORDER_LEFT
+        = string_fragment::from_const("border-left");
+    static const auto NAME_BORDER_RIGHT
+        = string_fragment::from_const("border-right");
     static const auto& vc = view_colors::singleton();
 
     attr_line_t retval;
@@ -507,6 +599,8 @@ to_attr_line(const pugi::xml_node& doc)
     }
     for (const auto& child : doc.children()) {
         if (child.name() == NAME_SPAN) {
+            nonstd::optional<attr_line_t> left_border;
+            nonstd::optional<attr_line_t> right_border;
             auto styled_span = attr_line_t(child.text().get());
 
             auto span_class = child.attribute("class");
@@ -578,6 +672,12 @@ to_attr_line(const pugi::xml_node& doc)
 
                                 deco_sf = deco_split_res.second;
                             }
+                        } else if (key == NAME_BORDER_LEFT) {
+                            left_border
+                                = span_style_border(border_side::left, value);
+                        } else if (key == NAME_BORDER_RIGHT) {
+                            right_border
+                                = span_style_border(border_side::right, value);
                         }
                     }
                     style_sf = split_res.second;
@@ -586,7 +686,13 @@ to_attr_line(const pugi::xml_node& doc)
                     styled_span.with_attr_for_all(VC_STYLE.value(ta));
                 }
             }
+            if (left_border) {
+                retval.append(left_border.value());
+            }
             retval.append(styled_span);
+            if (right_border) {
+                retval.append(right_border.value());
+            }
         } else if (child.name() == NAME_PRE) {
             auto pre_al = attr_line_t();
 
@@ -643,7 +749,8 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                 std::string ct_name;
             };
 
-            mapbox::util::variant<open_tag, close_tag> tag;
+            mapbox::util::variant<open_tag, close_tag> tag{
+                mapbox::util::no_init{}};
 
             if (sf.startswith("</")) {
                 tag = close_tag{

@@ -134,25 +134,27 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
     lf->lf_indexing = lf->lf_options.loo_is_visible;
 
     const auto& hdr = lf->lf_line_buffer.get_header_data();
-    log_info("%s: has header %d", lf->lf_filename.c_str(), hdr.valid());
-    hdr.match(
-        [&lf](const lnav::gzip::header& gzhdr) {
-            if (!gzhdr.empty()) {
-                lf->lf_embedded_metadata["net.zlib.gzip.header"] = {
+    if (hdr.valid()) {
+        log_info("%s: has header %d", lf->lf_filename.c_str(), hdr.valid());
+        hdr.match(
+            [&lf](const lnav::gzip::header& gzhdr) {
+                if (!gzhdr.empty()) {
+                    lf->lf_embedded_metadata["net.zlib.gzip.header"] = {
+                        text_format_t::TF_JSON,
+                        file_header_handlers.to_string(gzhdr),
+                    };
+                }
+            },
+            [&lf](const lnav::piper::header& phdr) {
+                lf->lf_embedded_metadata["org.lnav.piper.header"] = {
                     text_format_t::TF_JSON,
-                    file_header_handlers.to_string(gzhdr),
+                    lnav::piper::header_handlers.to_string(phdr),
                 };
-            }
-        },
-        [&lf](const lnav::piper::header& phdr) {
-            lf->lf_embedded_metadata["org.lnav.piper.header"] = {
-                text_format_t::TF_JSON,
-                lnav::piper::header_handlers.to_string(phdr),
-            };
-            log_debug("setting file name: %s", phdr.h_name.c_str());
-            lf->set_filename(phdr.h_name);
-            lf->lf_valid_filename = false;
-        });
+                log_debug("setting file name: %s", phdr.h_name.c_str());
+                lf->set_filename(phdr.h_name);
+                lf->lf_valid_filename = false;
+            });
+    }
 
     ensure(lf->invariant());
 
