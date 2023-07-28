@@ -46,9 +46,12 @@ Features:
   the directory where cached data is stored, respectively.
 * The `<pre>` tag is now recognized in Markdown files.
 * The `style` attribute in `<span>` tags is now supported.
-  Basic properties like `color`, `background-color`,
-  `font-weight`, and `text-decoration` can be used. CSS
-  color names should work as well.
+  The following CSS properties and values are supported:
+  * `color` and `background-color` with CSS color names
+  * `font-weight` with a value of `bold` or `bolder`
+  * `text-decoration` with `underline`
+  * `border-left` and `border-right` with the `solid`,
+    `dashed` and `dotted` line styles and colors.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

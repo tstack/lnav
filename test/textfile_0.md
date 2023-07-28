@@ -16,3 +16,5 @@
   Hello,
   <span class="name">World</span>!
 </pre>
+
+Goodbye, <span style="border-left: solid cyan; border-right: dashed green">World</span>!

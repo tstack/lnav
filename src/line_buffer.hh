@@ -368,7 +368,7 @@ private:
 
     nonstd::optional<auto_fd> lb_cached_fd;
 
-    file_header_t lb_header;
+    file_header_t lb_header{mapbox::util::no_init{}};
 };
 
 #endif
