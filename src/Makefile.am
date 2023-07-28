@@ -95,6 +95,7 @@ LNAV_BUILT_FILES = \
     ansi-palette-json.cc \
     builtin-scripts.cc \
     builtin-sh-scripts.cc \
+    css-color-names-json.cc \
     default-config.cc \
     default-formats.cc \
     diseases-json.cc \
@@ -158,11 +159,13 @@ LDADD = \
 
 # emojis.json is from https://gist.github.com/oliveratgithub/0bf11a9aff0d6da7b46f1490f86a71eb/
 # xml-entities.json is from https://html.spec.whatwg.org/entities.json
+# css-color-names.json is from https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json
 
 dist_noinst_DATA = \
 	alpha-release.sh \
 	animals.json \
 	ansi-palette.json \
+	css-color-names.json \
 	diseases.json \
 	emojis.json \
 	$(BUILTIN_LNAVSCRIPTS) \
@@ -524,6 +527,7 @@ DISTCLEANFILES = \
     ansi-palette-json.h \
     builtin-scripts.h \
     builtin-sh-scripts.h \
+    css-color-names-json.h \
     default-config.h \
     default-formats.h \
     diseases-json.h \

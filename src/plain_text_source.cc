@@ -81,7 +81,11 @@ plain_text_source::replace_with(const attr_line_t& text_lines)
     this->tds_doc_sections = lnav::document::discover_metadata(text_lines);
 
     file_off_t off = 0;
-    for (auto& line : text_lines.split_lines()) {
+    auto lines = text_lines.split_lines();
+    while (!lines.empty() && lines.back().empty()) {
+        lines.pop_back();
+    }
+    for (auto& line : lines) {
         auto line_len = line.length() + 1;
         this->tds_lines.emplace_back(off, std::move(line));
         off += line_len;

@@ -2086,7 +2086,7 @@ For support questions, email:
   [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get a string with the code points 0x48 and 0x49:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m([0m[1m[37m[40m0[0m[37m[40mx48[0m[37m[40m, [0m[1m[37m[40m0[0m[37m[40mx49[0m[37m[40m)                           [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mchar[0m[37m[40m([0m[1m[37m[40m0x48[0m[37m[40m, [0m[1m[37m[40m0x49[0m[37m[40m)                           [0m
    
 
 
@@ -4807,4 +4807,3 @@ For support questions, email:
   [4mcte-table-name[0m   The name for the temporary table.
   [4mselect-stmt[0m      The SELECT statement used to
                    populate the temporary table.
-

@@ -34,3 +34,6 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_ansi_expanding.0
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/textfile_0.md
