@@ -474,6 +474,9 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
         }
 
         auto comment_lines = al.rtrim().split_lines();
+        if (comment_lines.back().empty()) {
+            comment_lines.pop_back();
+        }
         for (size_t lpc = 0; lpc < comment_lines.size(); lpc++) {
             auto& comment_line = comment_lines[lpc];
 

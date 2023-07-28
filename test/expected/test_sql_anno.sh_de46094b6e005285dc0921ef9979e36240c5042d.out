@@ -1,0 +1,7 @@
+                 SELECT 0x77, 123, 123e4
+     sql_keyword ------
+      sql_number        ----
+       sql_comma            -
+      sql_number              ---
+       sql_comma                 -
+      sql_number                   -----

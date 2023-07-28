@@ -242,8 +242,8 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
         auto seq = md[1].value();
         auto terminator = md[2].value();
         struct line_range lr;
-        bool has_attrs = false;
         text_attrs attrs;
+        bool has_attrs = false;
         nonstd::optional<role_t> role;
         size_t lpc;
 
@@ -349,7 +349,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 }
                 lr.lr_start = sf.sf_begin;
                 lr.lr_end = -1;
-                if (attrs.ta_attrs || attrs.ta_fg_color || attrs.ta_bg_color) {
+                if (!attrs.empty()) {
                     sa->emplace_back(lr, VC_STYLE.value(attrs));
                 }
                 role | [&lr, &sa](role_t r) {

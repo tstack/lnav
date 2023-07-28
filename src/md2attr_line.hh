@@ -83,7 +83,7 @@ private:
     std::vector<list_block_t> ml_list_stack;
     std::vector<table_t> ml_tables;
     std::vector<size_t> ml_span_starts;
-    std::vector<size_t> ml_html_span_starts;
+    std::vector<std::pair<std::string, size_t>> ml_html_starts;
     std::vector<attr_line_t> ml_footnotes;
     int32_t ml_code_depth{0};
 };

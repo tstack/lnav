@@ -33,6 +33,7 @@
 
 #include "ansi-palette-json.h"
 #include "config.h"
+#include "css-color-names-json.h"
 #include "fmt/format.h"
 #include "xterm-palette-json.h"
 #include "yajlpp/yajlpp.hh"
@@ -67,6 +68,29 @@ static const typed_json_path_container<std::vector<term_color>>
             .with_children(term_color_handler),
 };
 
+struct css_color_names {
+    std::map<std::string, std::string> ccn_name_to_color;
+};
+
+static const typed_json_path_container<css_color_names> css_color_names_handlers
+    = {
+        yajlpp::pattern_property_handler("(?<css_color_name>.*)")
+            .for_field(&css_color_names::ccn_name_to_color),
+};
+
+static const css_color_names&
+get_css_color_names()
+{
+    static const intern_string_t iname
+        = intern_string::lookup(css_color_names_json.get_name());
+    static const auto INSTANCE
+        = css_color_names_handlers.parser_for(iname)
+              .of(css_color_names_json.to_string_fragment())
+              .unwrap();
+
+    return INSTANCE;
+}
+
 term_color_palette*
 xterm_colors()
 {
@@ -86,10 +110,19 @@ ansi_colors()
 }
 
 Result<rgb_color, std::string>
-rgb_color::from_str(const string_fragment& sf)
+rgb_color::from_str(string_fragment sf)
 {
     if (sf.empty()) {
         return Ok(rgb_color());
+    }
+
+    if (sf[0] != '#') {
+        const auto& css_colors = get_css_color_names();
+        const auto& iter = css_colors.ccn_name_to_color.find(sf.to_string());
+
+        if (iter != css_colors.ccn_name_to_color.end()) {
+            sf = string_fragment::from_str(iter->second);
+        }
     }
 
     rgb_color rgb_out;

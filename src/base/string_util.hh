@@ -115,6 +115,16 @@ trim(const std::string& str)
     return str.substr(start, end - start);
 }
 
+inline const char*
+ltrim(const char* str)
+{
+    while (isspace(*str)) {
+        str += 1;
+    }
+
+    return str;
+}
+
 inline std::string
 rtrim(const std::string& str)
 {

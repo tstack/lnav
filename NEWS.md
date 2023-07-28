@@ -44,6 +44,11 @@ Features:
   variables are now defined inside **lnav** and refer to
   the location of the user's configuration directory and
   the directory where cached data is stored, respectively.
+* The `<pre>` tag is now recognized in Markdown files.
+* The `style` attribute in `<span>` tags is now supported.
+  Basic properties like `color`, `background-color`,
+  `font-weight`, and `text-decoration` can be used. CSS
+  color names should work as well.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

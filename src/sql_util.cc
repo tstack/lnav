@@ -1024,8 +1024,12 @@ annotate_sql_statement(attr_line_t& al)
             &SQL_STRING_ATTR,
         },
         {
+            lnav::pcre2pp::code::from_const(R"(\A0x[0-9a-fA-F]+)"),
+            &SQL_NUMBER_ATTR,
+        },
+        {
             lnav::pcre2pp::code::from_const(
-                R"(\A-?\d+(?:\.\d*(?:[eE][\-\+]?\d+)?)?|0x[0-9a-fA-F]+$)"),
+                R"(\A-?\d+(?:\.\d+)?(?:[eE][\-\+]?\d+)?)"),
             &SQL_NUMBER_ATTR,
         },
         {
