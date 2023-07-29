@@ -375,7 +375,7 @@ log_format::check_for_new_year(std::vector<logline>& dst,
         off_month = 1;
     } else if (!(etm.et_flags & ETF_DAY_SET) && (diff >= (60 * 60))) {
         off_day = 1;
-    } else if (!(etm.et_flags & ETF_DAY_SET)) {
+    } else if (!(etm.et_flags & ETF_HOUR_SET) && (diff >= 60)) {
         off_hour = 1;
     } else {
         do_change = false;
