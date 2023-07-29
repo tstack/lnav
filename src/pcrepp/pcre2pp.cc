@@ -321,7 +321,7 @@ code::replace(string_fragment str, const char* repl) const
         }
     }
     if (remaining.is_valid()) {
-        retval.append(str.data(), remaining.sf_begin, std::string::npos);
+        retval.append(remaining.data(), 0, remaining.length());
     }
 
     return retval;
