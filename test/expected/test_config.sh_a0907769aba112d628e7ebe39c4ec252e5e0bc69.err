@@ -55,18 +55,6 @@
 [1m[31m✘ error[0m: invalid JSON
  [1m[31mreason[0m: parse error: premature EOF
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.truncated.json[0m:3
-[1m[31m✘ error[0m: invalid value for property “[1m/ui/theme-defs/invalid-theme/styles/text/color[0m”
- [1m[31mreason[0m: invalid color -- “InvalidColor”
-[1m[31m |      [0m  [1m[31mreason[0m: Unknown color: 'InvalidColor'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
-[36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-theme/config.json[0m:8
-[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
-           [1m/ui/theme-defs/invalid-theme/styles/text/color[0m [4m#hex|color_name[0m
-         [1mDescription[0m
-           The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.
-         [1mExamples[0m
-           #fff
-           Green
-           $black
 [1m[31m✘ error[0m: missing value for property “[1m/log/annotations/org.lnav.test.no-condition/condition[0m”
  [1m[31mreason[0m: SQL expression is invalid
 [1m[31m |      [0m  [1m[31mreason[0m: incomplete input
@@ -82,3 +70,15 @@
            [1m/log/annotations/org.lnav.test.no-handler/handler[0m [4m<script>[0m
          [1mDescription[0m
            The script to execute to generate the annotation content. A JSON object with the log message content will be sent to the script on the standard input
+[1m[31m✘ error[0m: invalid value for property “[1m/ui/theme-defs/invalid-theme/styles/text/color[0m”
+ [1m[31mreason[0m: invalid color -- “InvalidColor”
+[1m[31m |      [0m  [1m[31mreason[0m: Unknown color: 'InvalidColor'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
+[36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-theme/config.json[0m:8
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/ui/theme-defs/invalid-theme/styles/text/color[0m [4m#hex|color_name[0m
+         [1mDescription[0m
+           The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.
+         [1mExamples[0m
+           #fff
+           Green
+           $black
