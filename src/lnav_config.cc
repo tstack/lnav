@@ -1430,6 +1430,8 @@ const json_path_container lnav_config_handlers = json_path_container {
 
 class active_key_map_listener : public lnav_config_listener {
 public:
+    active_key_map_listener() : lnav_config_listener(__FILE__) {}
+
     void reload_config(error_reporter& reporter) override
     {
         lnav_config.lc_active_keymap = lnav_config.lc_ui_keymaps["default"];

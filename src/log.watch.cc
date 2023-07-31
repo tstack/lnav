@@ -50,6 +50,8 @@ struct compiled_watch_expr {
 };
 
 struct expressions : public lnav_config_listener {
+    expressions() : lnav_config_listener(__FILE__) {}
+
     void reload_config(error_reporter& reporter) override
     {
         auto& lnav_db = injector::get<auto_sqlite3&>();
@@ -98,9 +100,7 @@ struct expressions : public lnav_config_listener {
         }
     }
 
-    void unload_config() override {
-        this->e_watch_exprs.clear();
-    }
+    void unload_config() override { this->e_watch_exprs.clear(); }
 
     std::map<std::string, compiled_watch_expr> e_watch_exprs;
 };

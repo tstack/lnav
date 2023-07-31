@@ -1845,6 +1845,8 @@ struct compiled_header_expr {
 };
 
 struct format_header_expressions : public lnav_config_listener {
+    format_header_expressions() : lnav_config_listener(__FILE__) {}
+
     auto_sqlite3 e_db;
     std::map<intern_string_t, std::map<std::string, compiled_header_expr>>
         e_header_exprs;

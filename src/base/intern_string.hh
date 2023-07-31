@@ -202,6 +202,12 @@ struct string_fragment {
         return memcmp(this->data(), sf.data(), sf.length()) == 0;
     }
 
+    int operator<(const string_fragment& rhs) const
+    {
+        return strncmp(
+            this->data(), rhs.data(), std::min(this->length(), rhs.length()));
+    }
+
     bool iequal(const string_fragment& sf) const
     {
         if (this->length() != sf.length()) {
