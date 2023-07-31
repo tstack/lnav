@@ -185,6 +185,7 @@ noinst_HEADERS = \
 	big_array.hh \
 	bin2c.hh \
 	bookmarks.hh \
+	bookmarks.json.hh \
 	bottom_status_source.hh \
 	bound_tags.hh \
 	breadcrumb.hh \

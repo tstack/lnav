@@ -454,6 +454,8 @@ add_library(
         archive_manager.cfg.hh
         document.sections.hh
         big_array.hh
+        bookmarks.hh
+        bookmarks.json.hh
         bottom_status_source.hh
         bound_tags.hh
         breadcrumb.hh
