@@ -236,6 +236,7 @@ dist_noinst_DATA = \
 	bad-config/formats/invalid-sql/init2.sql \
 	bad-config/formats/no-regexes/format.json \
 	bad-config/formats/no-samples/format.json \
+	bad-config2/configs/invalid-annotation/config.json \
 	bad-config2/configs/invalid-theme/config.json \
 	bad-config2/formats/invalid-config/config.json \
 	bad-config2/formats/invalid-config/config.bad-schema.json \
@@ -378,7 +379,8 @@ dist_noinst_DATA = \
 	vt52_curses_output.0 \
 	vt52_curses_output.1 \
 	xpath_tui.0 \
-	configs/installed/hw-url-handler.json \
+	configs/installed/anno-test.json \
+	configs/installed/anno-test.sh \
 	configs/installed/hw-url-handler.json \
 	configs/installed/hw-url-handler.lnav \
 	formats/collision/format.json \
