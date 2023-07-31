@@ -63,6 +63,7 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
     }
     this->ldh_line = ll;
     if (!ll->is_message()) {
+        log_warning("failed to parse line %d", line);
         this->ldh_parser.reset();
         this->ldh_scanner.reset();
         this->ldh_namer.reset();

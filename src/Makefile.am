@@ -237,6 +237,8 @@ noinst_HEADERS = \
 	lnav_config.hh \
 	lnav_config_fwd.hh \
 	lnav_util.hh \
+	log.annotate.hh \
+	log.annotate.cfg.hh \
 	log.watch.hh \
 	log_accel.hh \
 	log_actions.hh \
@@ -419,6 +421,7 @@ libdiag_a_SOURCES = \
 	lnav_commands.cc \
 	lnav_config.cc \
 	lnav_util.cc \
+	log.annotate.cc \
 	log.watch.cc \
 	log_accel.cc \
 	log_actions.cc \

@@ -49,6 +49,19 @@
 ----
 
 
+.. _annotate:
+
+:annotate
+^^^^^^^^^
+
+  Analyze the focused log message and attach annotations
+
+  **See Also**
+    :ref:`comment`, :ref:`tag`
+
+----
+
+
 .. _append_to:
 
 :append-to *path*
@@ -96,7 +109,7 @@
   Clear the comment attached to the top log line
 
   **See Also**
-    :ref:`comment`, :ref:`tag`
+    :ref:`annotate`, :ref:`comment`, :ref:`tag`
 
 ----
 
@@ -190,7 +203,7 @@
       :comment This is where it all went wrong
 
   **See Also**
-    :ref:`clear_comment`, :ref:`tag`
+    :ref:`annotate`, :ref:`clear_comment`, :ref:`tag`
 
 ----
 
@@ -370,7 +383,7 @@
       :delete-tags #BUG123 #needs-review
 
   **See Also**
-    :ref:`comment`, :ref:`tag`
+    :ref:`annotate`, :ref:`comment`, :ref:`tag`
 
 ----
 
@@ -1362,7 +1375,7 @@
       :tag #BUG123 #needs-review
 
   **See Also**
-    :ref:`comment`, :ref:`delete_tags`, :ref:`untag`
+    :ref:`annotate`, :ref:`comment`, :ref:`delete_tags`, :ref:`untag`
 
 ----
 
@@ -1440,7 +1453,7 @@
       :untag #BUG123 #needs-review
 
   **See Also**
-    :ref:`comment`, :ref:`tag`
+    :ref:`annotate`, :ref:`comment`, :ref:`tag`
 
 ----
 

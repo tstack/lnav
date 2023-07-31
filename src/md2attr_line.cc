@@ -791,8 +791,16 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 
                         auto load_res = doc.load_string(html_span.c_str());
                         if (!load_res) {
-                            log_error("failed to parse: %s",
+                            log_error("XML parsing failure at %d: %s",
+                                      load_res.offset,
                                       load_res.description());
+
+                            auto sf = string_fragment::from_str(html_span);
+                            auto error_line = sf.find_boundaries_around(
+                                load_res.offset, string_fragment::tag1{'\n'});
+                            log_error("  %.*s",
+                                      error_line.length(),
+                                      error_line.data());
                         } else {
                             last_block.erase(
                                 this->ml_html_starts.back().second);

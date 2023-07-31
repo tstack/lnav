@@ -711,6 +711,12 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mannotate[0m
+══════════════════════════════════════════════════════════════════════
+  Analyze the focused log message and attach annotations
+[4mSee Also[0m
+  [1m:comment[0m, [1m:tag[0m
+
 [4m:[0m[1m[4mappend-to[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Append marked lines in the current view to the given file
@@ -740,7 +746,7 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Clear the comment attached to the top log line
 [4mSee Also[0m
-  [1m:comment[0m, [1m:tag[0m
+  [1m:annotate[0m, [1m:comment[0m, [1m:tag[0m
 
 [4m:[0m[1m[4mclear-filter-expr[0m
 ══════════════════════════════════════════════════════════════════════
@@ -787,7 +793,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtext[0m   The comment text
 [4mSee Also[0m
-  [1m:clear-comment[0m, [1m:tag[0m
+  [1m:annotate[0m, [1m:clear-comment[0m, [1m:tag[0m
 [4mExample[0m
 #1 To add the comment 'This is where it all went wrong' to the top line:
    [37m[40m:[0m[1m[36m[40mcomment[0m[37m[40m This is where it all went wrong          [0m
@@ -906,7 +912,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtag[0m   The tags to delete
 [4mSee Also[0m
-  [1m:comment[0m, [1m:tag[0m
+  [1m:annotate[0m, [1m:comment[0m, [1m:tag[0m
 [4mExample[0m
 #1 To remove the tags '#BUG123' and '#needs-review' from all log lines:
    [37m[40m:[0m[1m[36m[40mdelete-tags[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                [0m
@@ -1538,7 +1544,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtag[0m   The tags to attach
 [4mSee Also[0m
-  [1m:comment[0m, [1m:delete-tags[0m, [1m:untag[0m
+  [1m:annotate[0m, [1m:comment[0m, [1m:delete-tags[0m, [1m:untag[0m
 [4mExample[0m
 #1 To add the tags '#BUG123' and '#needs-review' to the top line:
    [37m[40m:[0m[1m[36m[40mtag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                        [0m
@@ -1585,7 +1591,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtag[0m   The tags to detach
 [4mSee Also[0m
-  [1m:comment[0m, [1m:tag[0m
+  [1m:annotate[0m, [1m:comment[0m, [1m:tag[0m
 [4mExample[0m
 #1 To remove the tags '#BUG123' and '#needs-review' from the top line:
    [37m[40m:[0m[1m[36m[40muntag[0m[37m[40m [0m[37m[40m#BUG123[0m[37m[40m [0m[37m[40m#needs-review[0m[37m[40m                      [0m

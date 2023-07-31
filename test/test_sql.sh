@@ -35,10 +35,10 @@ run_test ${lnav_test} -n \
     logfile_syslog_test.2
 
 check_output "all_logs does not work?" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_msg_format,log_msg_schema
-0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
-1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
-2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,# is down,506560b3c73dee057732e69a3c666718
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,log_msg_format,log_msg_schema
+0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
+1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
+2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is down,506560b3c73dee057732e69a3c666718
 EOF
 
 
@@ -342,12 +342,12 @@ run_test env TZ=UTC ${lnav_test} -n \
     ${test_dir}/logfile_bro_http.log.0
 
 check_output "bro logs are not recognized?" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,bro_ts,bro_uid,bro_id_orig_h,bro_id_orig_p,bro_id_resp_h,bro_id_resp_p,bro_trans_depth,bro_method,bro_host,bro_uri,bro_referrer,bro_version,bro_user_agent,bro_request_body_len,bro_response_body_len,bro_status_code,bro_status_msg,bro_info_code,bro_info_msg,bro_tags,bro_username,bro_password,bro_proxied,bro_orig_fuids,bro_orig_filenames,bro_orig_mime_types,bro_resp_fuids,bro_resp_filenames,bro_resp_mime_types
-0,<NULL>,2011-11-03 00:19:26.452,0,info,0,<NULL>,<NULL>,<NULL>,1320279566.452687,CwFs1P2UcUdlSxD2La,192.168.2.76,52026,132.235.215.119,80,1,GET,www.reddit.com,/,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,109978,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,Ftw3fJ2JJF3ntMTL2,<NULL>,text/html
-1,<NULL>,2011-11-03 00:19:26.831,379,info,0,<NULL>,<NULL>,<NULL>,1320279566.831619,CJxSUgkInyKSHiju1,192.168.2.76,52030,72.21.211.173,80,1,GET,e.thumbs.redditmedia.com,/E-pbDbmiBclPkDaX.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2300,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,FFTf9Zdgk3YkfCKo3,<NULL>,image/jpeg
-2,<NULL>,2011-11-03 00:19:26.831,0,info,0,<NULL>,<NULL>,<NULL>,1320279566.831563,CJwUi9bdB9c1lLW44,192.168.2.76,52029,72.21.211.173,80,1,GET,f.thumbs.redditmedia.com,/BP5bQfy4o-C7cF6A.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2272,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,FfXtOj3o7aub4vbs2j,<NULL>,image/jpeg
-3,<NULL>,2011-11-03 00:19:26.831,0,info,0,<NULL>,<NULL>,<NULL>,1320279566.831473,CoX7zA3OJKGUOSCBY2,192.168.2.76,52027,72.21.211.173,80,1,GET,e.thumbs.redditmedia.com,/SVUtep3Rhg5FTRn4.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2562,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F21Ybs3PTqS6O4Q2Zh,<NULL>,image/jpeg
-4,<NULL>,2011-11-03 00:19:26.831,0,info,0,<NULL>,<NULL>,<NULL>,1320279566.831643,CT0JIh479jXIGt0Po1,192.168.2.76,52031,72.21.211.173,80,1,GET,f.thumbs.redditmedia.com,/uuy31444rLSyKdHS.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,1595,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,Fdk0MZ1wQmKWAJ4WH4,<NULL>,image/jpeg
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,bro_ts,bro_uid,bro_id_orig_h,bro_id_orig_p,bro_id_resp_h,bro_id_resp_p,bro_trans_depth,bro_method,bro_host,bro_uri,bro_referrer,bro_version,bro_user_agent,bro_request_body_len,bro_response_body_len,bro_status_code,bro_status_msg,bro_info_code,bro_info_msg,bro_tags,bro_username,bro_password,bro_proxied,bro_orig_fuids,bro_orig_filenames,bro_orig_mime_types,bro_resp_fuids,bro_resp_filenames,bro_resp_mime_types
+0,<NULL>,2011-11-03 00:19:26.452,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,1320279566.452687,CwFs1P2UcUdlSxD2La,192.168.2.76,52026,132.235.215.119,80,1,GET,www.reddit.com,/,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,109978,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,Ftw3fJ2JJF3ntMTL2,<NULL>,text/html
+1,<NULL>,2011-11-03 00:19:26.831,379,info,0,<NULL>,<NULL>,<NULL>,<NULL>,1320279566.831619,CJxSUgkInyKSHiju1,192.168.2.76,52030,72.21.211.173,80,1,GET,e.thumbs.redditmedia.com,/E-pbDbmiBclPkDaX.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2300,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,FFTf9Zdgk3YkfCKo3,<NULL>,image/jpeg
+2,<NULL>,2011-11-03 00:19:26.831,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,1320279566.831563,CJwUi9bdB9c1lLW44,192.168.2.76,52029,72.21.211.173,80,1,GET,f.thumbs.redditmedia.com,/BP5bQfy4o-C7cF6A.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2272,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,FfXtOj3o7aub4vbs2j,<NULL>,image/jpeg
+3,<NULL>,2011-11-03 00:19:26.831,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,1320279566.831473,CoX7zA3OJKGUOSCBY2,192.168.2.76,52027,72.21.211.173,80,1,GET,e.thumbs.redditmedia.com,/SVUtep3Rhg5FTRn4.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,2562,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F21Ybs3PTqS6O4Q2Zh,<NULL>,image/jpeg
+4,<NULL>,2011-11-03 00:19:26.831,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,1320279566.831643,CT0JIh479jXIGt0Po1,192.168.2.76,52031,72.21.211.173,80,1,GET,f.thumbs.redditmedia.com,/uuy31444rLSyKdHS.jpg,http://www.reddit.com/,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,1595,200,OK,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,Fdk0MZ1wQmKWAJ4WH4,<NULL>,image/jpeg
 EOF
 
 run_test env TZ=UTC ${lnav_test} -n \
@@ -356,8 +356,8 @@ run_test env TZ=UTC ${lnav_test} -n \
     ${test_dir}/logfile_bro_http.log.0
 
 check_output "bro logs are not recognized?" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,bro_ts,bro_uid,bro_id_orig_h,bro_id_orig_p,bro_id_resp_h,bro_id_resp_p,bro_trans_depth,bro_method,bro_host,bro_uri,bro_referrer,bro_version,bro_user_agent,bro_request_body_len,bro_response_body_len,bro_status_code,bro_status_msg,bro_info_code,bro_info_msg,bro_tags,bro_username,bro_password,bro_proxied,bro_orig_fuids,bro_orig_filenames,bro_orig_mime_types,bro_resp_fuids,bro_resp_filenames,bro_resp_mime_types
-118,<NULL>,2011-11-03 00:19:49.337,18,error,0,<NULL>,<NULL>,<NULL>,1320279589.337053,CBHHuR1xFnm5C5CQBc,192.168.2.76,52074,74.125.225.76,80,1,GET,i4.ytimg.com,/vi/gDbg_GeuiSY/hqdefault.jpg,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,893,404,Not Found,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F2GiAw3j1m22R2yIg2,<NULL>,image/jpeg
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,bro_ts,bro_uid,bro_id_orig_h,bro_id_orig_p,bro_id_resp_h,bro_id_resp_p,bro_trans_depth,bro_method,bro_host,bro_uri,bro_referrer,bro_version,bro_user_agent,bro_request_body_len,bro_response_body_len,bro_status_code,bro_status_msg,bro_info_code,bro_info_msg,bro_tags,bro_username,bro_password,bro_proxied,bro_orig_fuids,bro_orig_filenames,bro_orig_mime_types,bro_resp_fuids,bro_resp_filenames,bro_resp_mime_types
+118,<NULL>,2011-11-03 00:19:49.337,18,error,0,<NULL>,<NULL>,<NULL>,<NULL>,1320279589.337053,CBHHuR1xFnm5C5CQBc,192.168.2.76,52074,74.125.225.76,80,1,GET,i4.ytimg.com,/vi/gDbg_GeuiSY/hqdefault.jpg,<NULL>,1.1,Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:7.0.1) Gecko/20100101 Firefox/7.0.1,0,893,404,Not Found,<NULL>,<NULL>,,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,F2GiAw3j1m22R2yIg2,<NULL>,image/jpeg
 EOF
 
 run_test ${lnav_test} -n \
@@ -512,10 +512,10 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "access_log table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
-0,<NULL>,2009-07-20 22:59:26.000,0,info,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200,<NULL>
-1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>
-2,<NULL>,2009-07-20 22:59:29.000,0,info,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
+0,<NULL>,2009-07-20 22:59:26.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200,<NULL>
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>
+2,<NULL>,2009-07-20 22:59:29.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200,<NULL>
 EOF
 
 
@@ -525,8 +525,8 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "loglevel collator is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
-1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
+1,<NULL>,2009-07-20 22:59:29.000,3000,error,0,<NULL>,<NULL>,<NULL>,<NULL>,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>
 EOF
 
 
@@ -538,11 +538,11 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "syslog_log table is not working" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version
-0,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7998,<NULL>,automount,<NULL>,automount[7998],<NULL>
-1,<NULL>,2007-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,16442,<NULL>,automount,<NULL>,automount[16442],<NULL>
-2,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7999,<NULL>,automount,<NULL>,automount[7999],<NULL>
-3,<NULL>,2007-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,sudo,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version
+0,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7998,<NULL>,automount,<NULL>,automount[7998],<NULL>
+1,<NULL>,2007-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,veridian,<NULL>,16442,<NULL>,automount,<NULL>,automount[16442],<NULL>
+2,<NULL>,2007-11-03 09:23:38.000,0,error,0,<NULL>,<NULL>,<NULL>,<NULL>,veridian,<NULL>,7999,<NULL>,automount,<NULL>,automount[7999],<NULL>
+3,<NULL>,2007-11-03 09:47:02.000,1404000,info,0,<NULL>,<NULL>,<NULL>,<NULL>,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,sudo,<NULL>
 EOF
 
 
@@ -833,6 +833,7 @@ check_output "write-json-to isn't working?" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_annotations": null,
         "log_filters": null,
         "contextid": "82e87195d704585501",
         "data": "http://localhost:8086|/|<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" ID=\"s2daac0735bf476f4560aab81104b623bedfb0cbc0\" InResponseTo=\"84cbf2be33f6410bbe55877545a93f02\" Version=\"2.0\" IssueInstant=\"2014-06-15T01:04:52Z\" Destination=\"http://localhost:8086/api/1/rest/admin/org/530e42ccd6f45fd16d0d0717/saml/consume\"><saml:Issuer xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">http://openam.vagrant.dev/openam</saml:Issuer><samlp:Status xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\">\\\\n<samlp:StatusCode  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"\\\\nValue=\"urn:oasis:names:tc:SAML:2.0:status:Success\">\\\\n</samlp:StatusCode>\\\\n</samlp:Status><saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"s2a0bee0da937e236167e99b209802056033816ac2\" IssueInstant=\"2014-06-15T01:04:52Z\" Version=\"2.0\">\\\\n<saml:Issuer>http://openam.vagrant.dev/openam</saml:Issuer><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\\\\n<ds:SignedInfo>\\\\n<ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\\\\n<ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/>\\\\n<ds:Reference URI=\"#s2a0bee0da937e236167e99b209802056033816ac2\">\\\\n<ds:Transforms>\\\\n<ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/>\\\\n<ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>\\\\n</ds:Transforms>\\\\n<ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>\\\\n<ds:DigestValue>4uSmVzjovUdQd3px/RcnoxQBsqE=</ds:DigestValue>\\\\n</ds:Reference>\\\\n</ds:SignedInfo>\\\\n<ds:SignatureValue>\\\\nhm/grge36uA6j1OWif2bTcvVTwESjmuJa27NxepW0AiV5YlcsHDl7RAIk6k/CjsSero3bxGbm56m\\\\nYncOEi9F1Tu7dS0bfx+vhm/kKTPgwZctf4GWn4qQwP+KeoZywbNj9ShsYJ+zPKzXwN4xBSuPjMxP\\\\nNf5szzjEWpOndQO/uDs=\\\\n</ds:SignatureValue>\\\\n<ds:KeyInfo>\\\\n<ds:X509Data>\\\\n<ds:X509Certificate>\\\\nMIICQDCCAakCBEeNB0swDQYJKoZIhvcNAQEEBQAwZzELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNh\\\\nbGlmb3JuaWExFDASBgNVBAcTC1NhbnRhIENsYXJhMQwwCgYDVQQKEwNTdW4xEDAOBgNVBAsTB09w\\\\nZW5TU08xDTALBgNVBAMTBHRlc3QwHhcNMDgwMTE1MTkxOTM5WhcNMTgwMTEyMTkxOTM5WjBnMQsw\\\\nCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTEUMBIGA1UEBxMLU2FudGEgQ2xhcmExDDAK\\\\nBgNVBAoTA1N1bjEQMA4GA1UECxMHT3BlblNTTzENMAsGA1UEAxMEdGVzdDCBnzANBgkqhkiG9w0B\\\\nAQEFAAOBjQAwgYkCgYEArSQc/U75GB2AtKhbGS5piiLkmJzqEsp64rDxbMJ+xDrye0EN/q1U5Of+\\\\nRkDsaN/igkAvV1cuXEgTL6RlafFPcUX7QxDhZBhsYF9pbwtMzi4A4su9hnxIhURebGEmxKW9qJNY\\\\nJs0Vo5+IgjxuEWnjnnVgHTs1+mq5QYTA7E6ZyL8CAwEAATANBgkqhkiG9w0BAQQFAAOBgQB3Pw/U\\\\nQzPKTPTYi9upbFXlrAKMwtFf2OW4yvGWWvlcwcNSZJmTJ8ARvVYOMEVNbsT4OFcfu2/PeYoAdiDA\\\\ncGy/F2Zuj8XJJpuQRSE6PtQqBuDEHjjmOQJ0rV/r8mO1ZCtHRhpZ5zYRjhRC9eCbjx9VrFax0JDC\\\\n/FfwWigmrW0Y0Q==\\\\n</ds:X509Certificate>\\\\n</ds:X509Data>\\\\n</ds:KeyInfo>\\\\n</ds:Signature><saml:Subject>\\\\n<saml:NameID Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress\" NameQualifier=\"http://openam.vagrant.dev/openam\">user@example.com</saml:NameID><saml:SubjectConfirmation Method=\"urn:oasis:names:tc:SAML:2.0:cm:bearer\">\\\\n<saml:SubjectConfirmationData InResponseTo=\"84cbf2be33f6410bbe55877545a93f02\" NotOnOrAfter=\"2014-06-15T01:14:52Z\" Recipient=\"http://localhost:8086/api/1/rest/admin/org/530e42ccd6f45fd16d0d0717/saml/consume\"/></saml:SubjectConfirmation>\\\\n</saml:Subject><saml:Conditions NotBefore=\"2014-06-15T00:54:52Z\" NotOnOrAfter=\"2014-06-15T01:14:52Z\">\\\\n<saml:AudienceRestriction>\\\\n<saml:Audience>http://localhost:8086</saml:Audience>\\\\n</saml:AudienceRestriction>\\\\n</saml:Conditions>\\\\n<saml:AuthnStatement AuthnInstant=\"2014-06-15T01:00:25Z\" SessionIndex=\"s2f9b4d4b453d12b40ef3905cc959cdb40579c2301\"><saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement></saml:Assertion></samlp:Response>",
@@ -854,6 +855,7 @@ check_output "write-json-to isn't working?" <<EOF
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
+        "log_annotations": null,
         "log_filters": null,
         "contextid": "ec5708a7f199678a01",
         "data": "vagrant|/",
@@ -958,9 +960,9 @@ run_test ${lnav_test} -n -d /tmp/lnav.err \
     ${test_dir}/logfile_syslog_with_access_log.0
 
 check_output "access_log not found within syslog file" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
-1,<NULL>,2015-03-24 14:02:50.000,6927348000,info,0,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200,<NULL>
-2,<NULL>,2015-03-24 14:02:50.000,0,error,0,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/bad.foo,<NULL>,-,HTTP/1.1,65508,404,<NULL>
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host
+1,<NULL>,2015-03-24 14:02:50.000,6927348000,info,0,<NULL>,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200,<NULL>
+2,<NULL>,2015-03-24 14:02:50.000,0,error,0,<NULL>,<NULL>,<NULL>,<NULL>,127.0.0.1,GET,<NULL>,<NULL>,/bad.foo,<NULL>,-,HTTP/1.1,65508,404,<NULL>
 EOF
 
 

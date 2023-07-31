@@ -379,6 +379,7 @@ dist_noinst_DATA = \
 	vt52_curses_output.1 \
 	xpath_tui.0 \
 	configs/installed/hw-url-handler.json \
+	configs/installed/hw-url-handler.json \
 	configs/installed/hw-url-handler.lnav \
 	formats/collision/format.json \
 	formats/customlevel/format.json \

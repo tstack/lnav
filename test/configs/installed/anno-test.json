@@ -1,0 +1,12 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "log": {
+        "annotations": {
+            "org.lnav.test": {
+                "description": "test annotation",
+                "condition": ":c_ip IS NOT NULL AND $TEST_ANNO = '1'",
+                "handler": "anno-test.sh"
+            }
+        }
+    }
+}

@@ -139,6 +139,23 @@ const xml_entity_map& get_xml_entity_map();
 
 const emoji_map& get_emoji_map();
 
+std::string escape_html(const std::string& content);
+
+namespace literals {
+
+inline std::string operator"" _emoji(const char* str, std::size_t len)
+{
+    const auto& em = get_emoji_map();
+    const auto key = std::string(str, len);
+
+    auto iter = em.em_shortname2emoji.find(key);
+    assert(iter != em.em_shortname2emoji.end());
+
+    return iter->second.get().e_value;
+}
+
+}  // namespace literals
+
 }  // namespace md4cpp
 
 #endif

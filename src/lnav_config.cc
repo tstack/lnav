@@ -102,6 +102,9 @@ static auto uh = injector::bind<lnav::url_handler::config>::to_instance(
 static auto lsc = injector::bind<logfile_sub_source_ns::config>::to_instance(
     +[]() { return &lnav_config.lc_log_source; });
 
+static auto annoc = injector::bind<lnav::log::annotate::config>::to_instance(
+    +[]() { return &lnav_config.lc_log_annotations; });
+
 static auto tssc = injector::bind<top_status_source_cfg>::to_instance(
     +[]() { return &lnav_config.lc_top_status_cfg; });
 
@@ -1238,7 +1241,7 @@ static const struct json_path_container log_source_watch_expr_handlers = {
 };
 
 static const struct json_path_container log_source_watch_handlers = {
-    yajlpp::pattern_property_handler("(?<watch_name>[\\w\\-]+)")
+    yajlpp::pattern_property_handler("(?<watch_name>[\\w\\.\\-]+)")
         .with_synopsis("<name>")
         .with_description("A log message watch expression")
         .with_obj_provider<logfile_sub_source_ns::watch_expression,
@@ -1262,10 +1265,51 @@ static const struct json_path_container log_source_watch_handlers = {
         .with_children(log_source_watch_expr_handlers),
 };
 
+static const struct json_path_container annotation_handlers = {
+    yajlpp::property_handler("description")
+        .with_synopsis("<text>")
+        .with_description("A description of this annotation")
+        .for_field(&lnav::log::annotate::annotation_def::a_description),
+    yajlpp::property_handler("condition")
+        .with_synopsis("<SQL-expression>")
+        .with_description(
+            "The SQLite expression to execute for a log message that "
+            "determines whether or not this annotation is applicable.  The "
+            "expression is evaluated the same way as a filter expression")
+        .with_min_length(1)
+        .for_field(&lnav::log::annotate::annotation_def::a_condition),
+    yajlpp::property_handler("handler")
+        .with_synopsis("<script>")
+        .with_description("The script to execute to generate the annotation "
+                          "content. A JSON object with the log message content "
+                          "will be sent to the script on the standard input")
+        .with_min_length(1)
+        .for_field(&lnav::log::annotate::annotation_def::a_handler),
+};
+
+static const struct json_path_container annotations_handlers = {
+    yajlpp::pattern_property_handler(R"((?<annotation_name>[\w\.\-]+))")
+        .with_obj_provider<lnav::log::annotate::annotation_def, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto* retval = &(root->lc_log_annotations
+                                     .a_definitions[ypc.get_substr_i(0)]);
+
+                return retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_log_annotations.a_definitions) {
+                    paths_out.emplace_back(iter.first.to_string());
+                }
+            })
+        .with_children(annotation_handlers),
+};
+
 static const struct json_path_container log_source_handlers = {
     yajlpp::property_handler("watch-expressions")
         .with_description("Log message watch expressions")
         .with_children(log_source_watch_handlers),
+    yajlpp::property_handler("annotations").with_children(annotations_handlers),
 };
 
 static const struct json_path_container url_scheme_handlers = {

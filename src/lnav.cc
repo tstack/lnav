@@ -116,6 +116,7 @@
 #include "log_vtab_impl.hh"
 #include "logfile.hh"
 #include "logfile_sub_source.hh"
+#include "md4cpp.hh"
 #include "piper.looper.hh"
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"
@@ -170,6 +171,7 @@
 
 using namespace std::literals::chrono_literals;
 using namespace lnav::roles::literals;
+using namespace md4cpp::literals;
 
 static std::vector<std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
@@ -707,28 +709,40 @@ make it easier to navigate through files quickly.
         .append("\n ")
         .append("\u2022"_list_glyph)
         .append(" Format files are read from:")
-        .append("\n    \U0001F4C2 ")
+        .append("\n    ")
+        .append(":open_file_folder:"_emoji)
+        .append(" ")
         .append(lnav::roles::file("/etc/lnav"))
-        .append("\n    \U0001F4C2 ")
+        .append("\n    ")
+        .append(":open_file_folder:"_emoji)
+        .append(" ")
         .append(lnav::roles::file(SYSCONFDIR "/lnav"))
         .append("\n ")
         .append("\u2022"_list_glyph)
         .append(" Configuration, session, and format files are stored in:\n")
-        .append("    \U0001F4C2 ")
+        .append("    ")
+        .append(":open_file_folder:"_emoji)
+        .append(" ")
         .append(lnav::roles::file(lnav::paths::dotlnav().string()))
         .append("\n\n ")
         .append("\u2022"_list_glyph)
         .append(" Local copies of remote files, files extracted from\n")
         .append("   archives, execution output, and so on are stored in:\n")
-        .append("    \U0001F4C2 ")
+        .append("    ")
+        .append(":open_file_folder:"_emoji)
+        .append(" ")
         .append(lnav::roles::file(lnav::paths::workdir().string()))
         .append("\n\n")
         .append("Documentation"_h1)
         .append(": https://docs.lnav.org\n")
         .append("Contact"_h1)
         .append("\n")
-        .append("  \U0001F4AC https://github.com/tstack/lnav/discussions\n")
-        .appendf(FMT_STRING("  \U0001F4EB {}\n"), PACKAGE_BUGREPORT)
+        .append("  ")
+        .append(":speech_balloon:"_emoji)
+        .append(" https://github.com/tstack/lnav/discussions\n")
+        .append("  ")
+        .append(":mailbox:"_emoji)
+        .appendf(FMT_STRING(" {}\n"), PACKAGE_BUGREPORT)
         .append("Version"_h1)
         .appendf(FMT_STRING(": {}"), VCS_PACKAGE_STRING);
 

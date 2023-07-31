@@ -10,6 +10,15 @@
             "mode": "top"
         }
     },
+    "log": {
+        "annotations": {
+            "com.vmware.vmacore.backtrace": {
+                "description": "Convert a vmacore backtrace into human-readable text",
+                "condition": ":log_body LIKE '%[context]%[/context]%'",
+                "handler": "com.vmware.btresolver.py"
+            }
+        }
+    },
     "tuning": {
         "archive-manager": {
             "min-free-space": 33554432,

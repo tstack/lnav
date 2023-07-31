@@ -427,6 +427,24 @@ public:
         return *this;
     }
 
+    template<typename S>
+    attr_line_t& insert(size_t index,
+                        const std::pair<S, string_attr_pair>& value)
+    {
+        size_t start_len = this->al_string.length();
+
+        this->insert(index, std::move(value.first));
+
+        line_range lr{
+            (int) index,
+            (int) (index + (this->al_string.length() - start_len)),
+        };
+
+        this->al_attrs.emplace_back(lr, value.second);
+
+        return *this;
+    }
+
     template<typename... Args>
     attr_line_t& add_header(Args... args)
     {

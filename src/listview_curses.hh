@@ -105,6 +105,8 @@ class list_overlay_source {
 public:
     virtual ~list_overlay_source() = default;
 
+    virtual void reset() {}
+
     virtual bool list_value_for_overlay(const listview_curses& lv,
                                         int y,
                                         int bottom,

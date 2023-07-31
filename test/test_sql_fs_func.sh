@@ -51,3 +51,5 @@ run_cap_test ./drive_sql "select joinpath('foo')"
 run_cap_test ./drive_sql "select joinpath('foo', 'bar', 'baz')"
 
 run_cap_test ./drive_sql "select joinpath('foo', 'bar', 'baz', '/root')"
+
+run_cap_test ${lnav_test} -n -c ";SELECT shell_exec('echo hi')"

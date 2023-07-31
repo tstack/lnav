@@ -62,6 +62,7 @@
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
+#include "log.annotate.hh"
 #include "log_data_helper.hh"
 #include "log_data_table.hh"
 #include "log_search_table.hh"
@@ -594,6 +595,40 @@ com_relative_goto(exec_context& ec,
         }
     } else {
         return ec.make_error("expecting line number/percentage");
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_annotate(exec_context& ec,
+             std::string cmdline,
+             std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+    } else if (!ec.ec_dry_run) {
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+
+        if (lss != nullptr) {
+            auto sel = tc->get_selection();
+            auto applicable_annos = lnav::log::annotate::applicable(sel);
+
+            if (applicable_annos.empty()) {
+                return ec.make_error(
+                    "no annotations available for this log message");
+            }
+
+            auto apply_res = lnav::log::annotate::apply(sel, applicable_annos);
+            if (apply_res.isErr()) {
+                return Err(apply_res.unwrapErr());
+            }
+        } else {
+            return ec.make_error(
+                ":annotate is only supported for the LOG view");
+        }
     }
 
     return Ok(retval);
@@ -1419,24 +1454,42 @@ com_save_to(exec_context& ec,
         tc->set_word_wrap(wrapped);
     } else {
         auto* los = tc->get_overlay_source();
+        auto* fos = dynamic_cast<field_overlay_source*>(los);
         std::vector<attr_line_t> rows(1);
         attr_line_t ov_al;
         size_t count = 0;
 
+        if (fos != nullptr) {
+            fos->fos_contexts.push(field_overlay_source::context{
+                "",
+                false,
+                false,
+            });
+        }
+
+        los->reset();
         for (auto iter = all_user_marks.begin(); iter != all_user_marks.end();
              iter++, count++)
         {
             if (ec.ec_dry_run && count > 10) {
                 break;
             }
+            auto y = 0_vl;
+            while (los != nullptr
+                   && los->list_value_for_overlay(
+                       *tc, y, tc->get_inner_height(), *iter, ov_al))
+            {
+                write_line_to(outfile, ov_al);
+                ++y;
+            }
             tc->listview_value_for_rows(*tc, *iter, rows);
+            ++y;
             if (anonymize) {
                 rows[0].al_attrs.clear();
                 rows[0].al_string = ta.next(rows[0].al_string);
             }
             write_line_to(outfile, rows[0]);
 
-            auto y = 1_vl;
             while (los != nullptr
                    && los->list_value_for_overlay(
                        *tc, y, tc->get_inner_height(), *iter, ov_al))
@@ -1446,6 +1499,10 @@ com_save_to(exec_context& ec,
             }
 
             line_count += 1;
+        }
+
+        if (fos != nullptr) {
+            fos->fos_contexts.pop();
         }
     }
 
@@ -4214,8 +4271,15 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         log_info("executing: %s", carg.c_str());
 
-        auto out_pipe_res = auto_pipe::for_child_fd(STDOUT_FILENO);
-        auto err_pipe_res = auto_pipe::for_child_fd(STDERR_FILENO);
+        auto child_fds_res
+            = auto_pipe::for_child_fds(STDOUT_FILENO, STDERR_FILENO);
+        if (child_fds_res.isErr()) {
+            auto um = lnav::console::user_message::error(
+                          "unable to create child pipes")
+                          .with_reason(child_fds_res.unwrapErr());
+            ec.add_error_context(um);
+            return Err(um);
+        }
         auto child_res = lnav::pid::from_fork();
         if (child_res.isErr()) {
             auto um
@@ -4225,12 +4289,11 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             return Err(um);
         }
 
-        auto out_pipe = out_pipe_res.unwrap();
-        auto err_pipe = err_pipe_res.unwrap();
-
+        auto child_fds = child_fds_res.unwrap();
         auto child = child_res.unwrap();
-        out_pipe.after_fork(child.in());
-        err_pipe.after_fork(child.in());
+        for (auto& child_fd : child_fds) {
+            child_fd.after_fork(child.in());
+        }
         if (child.in_child()) {
             auto dev_null = open("/dev/null", O_RDONLY | O_CLOEXEC);
 
@@ -4271,8 +4334,8 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                 .fo_name;
         auto create_piper_res
             = lnav::piper::create_looper(display_name,
-                                         std::move(out_pipe.read_end()),
-                                         std::move(err_pipe.read_end()));
+                                         std::move(child_fds[0].read_end()),
+                                         std::move(child_fds[1].read_end()));
 
         if (create_piper_res.isErr()) {
             auto um
@@ -5179,6 +5242,17 @@ readline_context::command_t STD_COMMANDS[] = {
              {"To move 10 percent back in the view", "-10%"},
          })
          .with_tags({"navigation"})},
+
+    {
+        "annotate",
+        com_annotate,
+
+        help_text(":annotate")
+            .with_summary(
+                "Analyze the focused log message and attach annotations")
+            .with_tags({"metadata"}),
+    },
+
     {"mark",
      com_mark,
 
