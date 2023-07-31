@@ -498,6 +498,8 @@ static std::string COLOR_NAMES[] = {
 
 class color_listener : public lnav_config_listener {
 public:
+    color_listener() : lnav_config_listener(__FILE__) {}
+
     void reload_config(error_reporter& reporter) override
     {
         if (!view_colors::initialized) {

@@ -182,7 +182,8 @@ const bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
 const bookmark_type_t textview_curses::BM_SEARCH("search");
 const bookmark_type_t textview_curses::BM_META("meta");
 
-textview_curses::textview_curses() : tc_search_action(noop_func{})
+textview_curses::textview_curses()
+    : lnav_config_listener(__FILE__), tc_search_action(noop_func{})
 {
     this->set_data_source(this);
 }

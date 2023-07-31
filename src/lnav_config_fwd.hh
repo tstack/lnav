@@ -42,10 +42,17 @@ public:
     using error_reporter = const std::function<void(
         const void*, const lnav::console::user_message& msg)>;
 
-    lnav_config_listener()
+    template<typename T, std::size_t N>
+    lnav_config_listener(const T (&src_file)[N])
+        : lcl_name(string_fragment::from_const(src_file))
     {
-        this->lcl_next = LISTENER_LIST;
-        LISTENER_LIST = this;
+        auto** curr = &LISTENER_LIST;
+
+        while (*curr != nullptr && (*curr)->lcl_name < this->lcl_name) {
+            curr = &(*curr)->lcl_next;
+        }
+        this->lcl_next = *curr;
+        *curr = this;
     }
 
     virtual ~lnav_config_listener() = default;
@@ -54,7 +61,8 @@ public:
 
     virtual void unload_config() {}
 
-    static void unload_all() {
+    static void unload_all()
+    {
         auto* lcl = LISTENER_LIST;
         while (lcl != nullptr) {
             lcl->unload_config();
@@ -65,6 +73,7 @@ public:
     static lnav_config_listener* LISTENER_LIST;
 
     lnav_config_listener* lcl_next;
+    string_fragment lcl_name;
 };
 
 #endif

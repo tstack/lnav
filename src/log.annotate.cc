@@ -52,6 +52,8 @@ struct compiled_cond_expr {
 };
 
 struct expressions : public lnav_config_listener {
+    expressions() : lnav_config_listener(__FILE__) {}
+
     void reload_config(error_reporter& reporter) override
     {
         auto& lnav_db = injector::get<auto_sqlite3&>();
