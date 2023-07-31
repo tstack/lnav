@@ -1,0 +1,14 @@
+{
+    "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+    "log": {
+        "annotations": {
+            "org.lnav.test.no-handler": {
+                "description": "annotation without a handler"
+            },
+            "org.lnav.test.no-condition": {
+                "description": "annotation without a condition",
+                "handler": "my-handler"
+            }
+        }
+    }
+}

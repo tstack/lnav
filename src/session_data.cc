@@ -44,6 +44,7 @@
 #include "base/isc.hh"
 #include "base/opt_util.hh"
 #include "base/paths.hh"
+#include "bookmarks.json.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "hasher.hh"
@@ -74,6 +75,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     access_time datetime DEFAULT CURRENT_TIMESTAMP,
     comment text DEFAULT '',
     tags text DEFAULT '',
+    annotations text DEFAULT NULL,
 
     PRIMARY KEY (log_time, log_format, log_hash, session_time)
 );
@@ -126,6 +128,7 @@ static const char* NETLOC_LRU_STMT
 static const char* UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN comment text DEFAULT '';)",
     R"(ALTER TABLE bookmarks ADD COLUMN tags text DEFAULT '';)",
+    R"(ALTER TABLE bookmarks ADD COLUMN annotations text DEFAULT NULL;)",
 };
 
 static const size_t MAX_SESSIONS = 8;
@@ -372,6 +375,24 @@ scan_sessions()
 void
 load_time_bookmarks()
 {
+    static const char* BOOKMARK_STMT = R"(
+       SELECT
+         log_time,
+         log_format,
+         log_hash,
+         session_time,
+         part_name,
+         access_time,
+         comment,
+         tags,
+         annotations,
+         session_time=? AS same_session
+       FROM bookmarks WHERE
+         log_time BETWEEN ? AND ? AND
+         log_format = ?
+       ORDER BY same_session DESC, session_time DESC
+)";
+
     logfile_sub_source& lss = lnav_data.ld_log_source;
     auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
@@ -425,16 +446,7 @@ load_time_bookmarks()
         }
     }
 
-    if (sqlite3_prepare_v2(
-            db.in(),
-            "SELECT log_time, log_format, log_hash, session_time, part_name, "
-            "access_time, comment,"
-            " tags, session_time=? as same_session FROM bookmarks WHERE "
-            " log_time between ? and ? and log_format = ? "
-            " ORDER BY same_session DESC, session_time DESC",
-            -1,
-            stmt.out(),
-            nullptr)
+    if (sqlite3_prepare_v2(db.in(), BOOKMARK_STMT, -1, stmt.out(), nullptr)
         != SQLITE_OK)
     {
         log_error("could not prepare bookmark select statement -- %s",
@@ -494,6 +506,7 @@ load_time_bookmarks()
                         = (const char*) sqlite3_column_text(stmt.in(), 6);
                     const char* tags
                         = (const char*) sqlite3_column_text(stmt.in(), 7);
+                    const auto annotations = sqlite3_column_text(stmt.in(), 8);
                     int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
                     struct timeval log_tv;
                     struct exttm log_tm;
@@ -594,6 +607,33 @@ load_time_bookmarks()
                                     }
                                 }
                                 meta = true;
+                            }
+                            if (annotations != nullptr
+                                && annotations[0] != '\0')
+                            {
+                                static const intern_string_t SRC
+                                    = intern_string::lookup("annotations");
+
+                                const auto anno_sf
+                                    = string_fragment::from_c_str(annotations);
+                                auto parse_res = logmsg_annotations_handlers
+                                                     .parser_for(SRC)
+                                                     .of(anno_sf);
+                                if (parse_res.isErr()) {
+                                    log_error(
+                                        "unable to parse annotations JSON -- "
+                                        "%s",
+                                        parse_res.unwrapErr()[0]
+                                            .to_attr_line()
+                                            .get_string()
+                                            .c_str());
+                                } else {
+                                    lss.set_user_mark(&textview_curses::BM_META,
+                                                      line_cl);
+                                    bm_meta[line_number].bm_annotations
+                                        = parse_res.unwrap();
+                                    meta = true;
+                                }
                             }
                             if (!meta) {
                                 marked_session_lines.push_back(line_cl);
@@ -937,7 +977,7 @@ save_user_bookmarks(sqlite3* db,
                 return;
             }
         } else {
-            bookmark_metadata& line_meta = *(line_meta_opt.value());
+            const auto& line_meta = *(line_meta_opt.value());
             if (line_meta.empty()) {
                 continue;
             }
@@ -988,6 +1028,25 @@ save_user_bookmarks(sqlite3* db,
             {
                 log_error("could not bind tags -- %s", sqlite3_errmsg(db));
                 return;
+            }
+
+            if (!line_meta.bm_annotations.la_pairs.empty()) {
+                auto anno_str = logmsg_annotations_handlers.to_string(
+                    line_meta.bm_annotations);
+
+                if (sqlite3_bind_text(stmt,
+                                      8,
+                                      anno_str.c_str(),
+                                      anno_str.length(),
+                                      SQLITE_TRANSIENT)
+                    != SQLITE_OK)
+                {
+                    log_error("could not bind annotations -- %s",
+                              sqlite3_errmsg(db));
+                    return;
+                }
+            } else {
+                sqlite3_bind_null(stmt, 8);
             }
         }
 
@@ -1103,8 +1162,8 @@ save_time_bookmarks()
     if (sqlite3_prepare_v2(db.in(),
                            "REPLACE INTO bookmarks"
                            " (log_time, log_format, log_hash, session_time, "
-                           "part_name, comment, tags)"
-                           " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           "part_name, comment, tags, annotations)"
+                           " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                            -1,
                            stmt.out(),
                            nullptr)

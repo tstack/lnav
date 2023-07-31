@@ -108,3 +108,8 @@ run_cap_test ${lnav_test} -n -f- \
 
 This is `markdown` now!
 EOF
+
+export TEST_ANNO=1
+run_cap_test ${lnav_test} -d /tmp/lnav.err -I ${test_dir} -n \
+    -c ':annotate' \
+    ${test_dir}/logfile_access_log.0

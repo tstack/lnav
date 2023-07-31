@@ -36,6 +36,7 @@
 
 #include <fcntl.h>
 
+#include "base/intern_string.hh"
 #include "base/result.h"
 
 /**
@@ -158,6 +159,8 @@ public:
      */
     void reset(int fd = -1);
 
+    Result<void, std::string> write_fully(string_fragment sf);
+
     void close_on_exec() const;
 
     void non_blocking() const;
@@ -169,6 +172,25 @@ private:
 class auto_pipe {
 public:
     static Result<auto_pipe, std::string> for_child_fd(int child_fd);
+
+    template<typename... ARGS>
+    static Result<std::array<auto_pipe, sizeof...(ARGS)>, std::string>
+    for_child_fds(ARGS... args)
+    {
+        std::array<auto_pipe, sizeof...(ARGS)> retval;
+
+        size_t index = 0;
+        for (const auto child_fd : {args...}) {
+            auto open_res = for_child_fd(child_fd);
+            if (open_res.isErr()) {
+                return Err(open_res.unwrapErr());
+            }
+
+            retval[index++] = open_res.unwrap();
+        }
+
+        return Ok(std::move(retval));
+    }
 
     explicit auto_pipe(int child_fd = -1, int child_flags = O_RDONLY);
 

@@ -206,35 +206,24 @@ sql_shell_exec(const char* cmd,
         options = parse_res.unwrap();
     }
 
-    auto in_pipe_res = auto_pipe::for_child_fd(STDIN_FILENO);
-    if (in_pipe_res.isErr()) {
-        throw lnav::console::user_message::error("cannot open input pipe")
-            .with_reason(in_pipe_res.unwrapErr());
+    auto child_fds_res
+        = auto_pipe::for_child_fds(STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+    if (child_fds_res.isErr()) {
+        throw lnav::console::user_message::error("cannot open child pipes")
+            .with_reason(child_fds_res.unwrapErr());
     }
-    auto in_pipe = in_pipe_res.unwrap();
-    auto out_pipe_res = auto_pipe::for_child_fd(STDOUT_FILENO);
-    if (out_pipe_res.isErr()) {
-        throw lnav::console::user_message::error("cannot open output pipe")
-            .with_reason(out_pipe_res.unwrapErr());
-    }
-    auto out_pipe = out_pipe_res.unwrap();
-    auto err_pipe_res = auto_pipe::for_child_fd(STDERR_FILENO);
-    if (err_pipe_res.isErr()) {
-        throw lnav::console::user_message::error("cannot open error pipe")
-            .with_reason(err_pipe_res.unwrapErr());
-    }
-    auto err_pipe = err_pipe_res.unwrap();
     auto child_pid_res = lnav::pid::from_fork();
     if (child_pid_res.isErr()) {
         throw lnav::console::user_message::error("cannot fork()")
             .with_reason(child_pid_res.unwrapErr());
     }
 
+    auto child_fds = child_fds_res.unwrap();
     auto child_pid = child_pid_res.unwrap();
 
-    in_pipe.after_fork(child_pid.in());
-    out_pipe.after_fork(child_pid.in());
-    err_pipe.after_fork(child_pid.in());
+    for (auto& child_fd : child_fds) {
+        child_fd.after_fork(child_pid.in());
+    }
 
     if (child_pid.in_child()) {
         const char* args[] = {
@@ -256,64 +245,56 @@ sql_shell_exec(const char* cmd,
         _exit(EXIT_FAILURE);
     }
 
-    auto out_reader = std::async(std::launch::async, [&out_pipe]() {
-        auto buffer = auto_buffer::alloc(4096);
+    auto out_reader = std::async(
+        std::launch::async, [out_fd = std::move(child_fds[1].read_end())]() {
+            auto buffer = auto_buffer::alloc(4096);
 
-        while (true) {
-            if (buffer.available() < 4096) {
-                buffer.expand_by(4096);
+            while (true) {
+                if (buffer.available() < 4096) {
+                    buffer.expand_by(4096);
+                }
+
+                auto rc
+                    = read(out_fd, buffer.next_available(), buffer.available());
+                if (rc < 0) {
+                    break;
+                }
+                if (rc == 0) {
+                    break;
+                }
+                buffer.resize_by(rc);
             }
 
-            auto rc = read(out_pipe.read_end(),
-                           buffer.next_available(),
-                           buffer.available());
-            if (rc < 0) {
-                break;
-            }
-            if (rc == 0) {
-                break;
-            }
-            buffer.resize_by(rc);
-        }
+            return buffer;
+        });
 
-        return buffer;
-    });
+    auto err_reader = std::async(
+        std::launch::async, [err_fd = std::move(child_fds[2].read_end())]() {
+            auto buffer = auto_buffer::alloc(4096);
 
-    auto err_reader = std::async(std::launch::async, [&err_pipe]() {
-        auto buffer = auto_buffer::alloc(4096);
+            while (true) {
+                if (buffer.available() < 4096) {
+                    buffer.expand_by(4096);
+                }
 
-        while (true) {
-            if (buffer.available() < 4096) {
-                buffer.expand_by(4096);
+                auto rc
+                    = read(err_fd, buffer.next_available(), buffer.available());
+                if (rc < 0) {
+                    break;
+                }
+                if (rc == 0) {
+                    break;
+                }
+                buffer.resize_by(rc);
             }
 
-            auto rc = read(err_pipe.read_end(),
-                           buffer.next_available(),
-                           buffer.available());
-            if (rc < 0) {
-                break;
-            }
-            if (rc == 0) {
-                break;
-            }
-            buffer.resize_by(rc);
-        }
-
-        return buffer;
-    });
+            return buffer;
+        });
 
     if (input) {
-        auto sf = input.value();
-
-        while (!sf.empty()) {
-            auto rc = write(in_pipe.write_end(), sf.data(), sf.length());
-            if (rc < 0) {
-                break;
-            }
-            sf = sf.substr(rc);
-        }
-        in_pipe.close();
+        child_fds[0].write_end().write_fully(input.value());
     }
+    child_fds[0].close();
 
     auto retval = blob_auto_buffer{out_reader.get()};
 

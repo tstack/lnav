@@ -749,7 +749,7 @@
                     "title": "/log/watch-expressions",
                     "type": "object",
                     "patternProperties": {
-                        "([\\w\\-]+)": {
+                        "([\\w\\.\\-]+)": {
                             "description": "A log message watch expression",
                             "title": "/log/watch-expressions/<watch_name>",
                             "type": "object",
@@ -763,6 +763,37 @@
                                     "title": "/log/watch-expressions/<watch_name>/enabled",
                                     "description": "Indicates whether or not this expression should be evaluated during log processing.",
                                     "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "annotations": {
+                    "title": "/log/annotations",
+                    "type": "object",
+                    "patternProperties": {
+                        "([\\w\\.\\-]+)": {
+                            "title": "/log/annotations/<annotation_name>",
+                            "type": "object",
+                            "properties": {
+                                "description": {
+                                    "title": "/log/annotations/<annotation_name>/description",
+                                    "description": "A description of this annotation",
+                                    "type": "string"
+                                },
+                                "condition": {
+                                    "title": "/log/annotations/<annotation_name>/condition",
+                                    "description": "The SQLite expression to execute for a log message that determines whether or not this annotation is applicable.  The expression is evaluated the same way as a filter expression",
+                                    "type": "string",
+                                    "minLength": 1
+                                },
+                                "handler": {
+                                    "title": "/log/annotations/<annotation_name>/handler",
+                                    "description": "The script to execute to generate the annotation content. A JSON object with the log message content will be sent to the script on the standard input",
+                                    "type": "string",
+                                    "minLength": 1
                                 }
                             },
                             "additionalProperties": false

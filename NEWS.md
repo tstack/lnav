@@ -30,6 +30,12 @@ Features:
   the logs for a container (e.g. `docker://my-container`) or
   files within a container (e.g.
   `docker://my-serv/var/log/dpkg.log`).
+* Added an `:annotate` command that can trigger a call-out
+  to a script to analyze a log message and generate an
+  annotation that is attached to the message.  The script
+  is executed asynchronously, so it will not block input
+  and the result is saved in the session.  Annotations are
+  defined in the `/log/annotations` configuration property.
 * Added the SQLite JSON functions to the online help.
 * Added `config get` and `config blame` management CLI
   commands to get the current configuration and the file

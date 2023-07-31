@@ -4011,6 +4011,18 @@
     "log": {
         "watch-expressions": {
 
+        },
+        "annotations": {
+            "com.vmware.vmacore.backtrace": {
+                "description": "Convert a vmacore backtrace into human-readable text",
+                "condition": ":log_body LIKE '%[context]%[/context]%'",
+                "handler": "com.vmware.btresolver.py"
+            },
+            "org.lnav.test": {
+                "description": "test annotation",
+                "condition": ":c_ip IS NOT NULL AND $TEST_ANNO = '1'",
+                "handler": "anno-test.sh"
+            }
         }
     },
     "global": {

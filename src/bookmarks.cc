@@ -32,9 +32,15 @@
 #include "bookmarks.hh"
 
 #include "base/itertools.hh"
+#include "bookmarks.json.hh"
 #include "config.h"
 
 std::unordered_set<std::string> bookmark_metadata::KNOWN_TAGS;
+
+typed_json_path_container<logmsg_annotations> logmsg_annotations_handlers = {
+    yajlpp::pattern_property_handler("(?<annotation_id>.*)")
+        .for_field(&logmsg_annotations::la_pairs),
+};
 
 void
 bookmark_metadata::add_tag(const std::string& tag)
@@ -61,7 +67,7 @@ bool
 bookmark_metadata::empty() const
 {
     return this->bm_name.empty() && this->bm_comment.empty()
-        && this->bm_tags.empty();
+        && this->bm_tags.empty() && this->bm_annotations.la_pairs.empty();
 }
 
 void
@@ -69,6 +75,7 @@ bookmark_metadata::clear()
 {
     this->bm_comment.clear();
     this->bm_tags.clear();
+    this->bm_annotations.la_pairs.clear();
 }
 
 nonstd::optional<bookmark_type_t*>

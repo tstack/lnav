@@ -33,6 +33,7 @@
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
+#include "bookmarks.json.hh"
 #include "config.h"
 #include "hasher.hh"
 #include "lnav_util.hh"
@@ -63,6 +64,7 @@ static const char* LOG_COLUMNS = R"(  (
   log_mark        BOOLEAN,                         -- True if the log message was marked
   log_comment     TEXT,                            -- The comment for this message
   log_tags        TEXT,                            -- A JSON list of tags for this message
+  log_annotations TEXT,                            -- A JSON object of annotations for this messages
   log_filters     TEXT,                            -- A JSON list of filter IDs that matched this message
   -- BEGIN Format-specific fields:
 )";
@@ -769,6 +771,22 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                 }
 
                 to_sqlite(ctx, json_string(gen));
+            }
+            break;
+        }
+
+        case VT_COL_LOG_ANNOTATIONS: {
+            auto line_meta_opt
+                = vt->lss->find_bookmark_metadata(vc->log_cursor.lc_curr_line);
+            if (!line_meta_opt
+                || line_meta_opt.value()->bm_annotations.la_pairs.empty())
+            {
+                sqlite3_result_null(ctx);
+            } else {
+                const auto& meta = *(line_meta_opt.value());
+                to_sqlite(ctx,
+                          logmsg_annotations_handlers.to_json_string(
+                              meta.bm_annotations));
             }
             break;
         }

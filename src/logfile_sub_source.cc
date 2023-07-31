@@ -38,6 +38,7 @@
 #include "base/ansi_vars.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
+#include "bookmarks.json.hh"
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
@@ -1530,6 +1531,26 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             }
             continue;
         }
+        if (strcmp(name, ":log_annotations") == 0) {
+            const auto& bm = lf->get_bookmark_metadata();
+            auto line_number
+                = static_cast<uint32_t>(std::distance(lf->cbegin(), ll));
+            auto bm_iter = bm.find(line_number);
+            if (bm_iter != bm.end()
+                && !bm_iter->second.bm_annotations.la_pairs.empty())
+            {
+                const auto& meta = bm_iter->second;
+                auto anno_str = logmsg_annotations_handlers.to_string(
+                    meta.bm_annotations);
+
+                sqlite3_bind_text(stmt,
+                                  lpc + 1,
+                                  anno_str.c_str(),
+                                  anno_str.length(),
+                                  SQLITE_TRANSIENT);
+            }
+            continue;
+        }
         if (strcmp(name, ":log_tags") == 0) {
             const auto& bm = lf->get_bookmark_metadata();
             auto line_number
@@ -1994,6 +2015,21 @@ logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
         value_out.append("\x1c");
         for (const auto& tag : bm.bm_tags) {
             value_out.append(tag);
+            value_out.append("\x1c");
+        }
+        value_out.append("\x1c");
+        for (const auto& pair : bm.bm_annotations.la_pairs) {
+            value_out.append(pair.first);
+            value_out.append("\x1c");
+
+            md2attr_line mdal;
+
+            auto parse_res = md4cpp::parse(pair.second, mdal);
+            if (parse_res.isOk()) {
+                value_out.append(parse_res.unwrap().get_string());
+            } else {
+                value_out.append(pair.second);
+            }
             value_out.append("\x1c");
         }
     }

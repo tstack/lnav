@@ -120,6 +120,38 @@ get_emoji_map()
     return retval;
 }
 
+std::string
+escape_html(const std::string& content)
+{
+    std::string retval;
+
+    retval.reserve(content.size());
+    for (auto ch : content) {
+        switch (ch) {
+            case '"':
+                retval.append("&quot;");
+                break;
+            case '\'':
+                retval.append("&apos;");
+                break;
+            case '<':
+                retval.append("&lt;");
+                break;
+            case '>':
+                retval.append("&gt;");
+                break;
+            case '&':
+                retval.append("&amp;");
+                break;
+            default:
+                retval.push_back(ch);
+                break;
+        }
+    }
+
+    return retval;
+}
+
 struct parse_userdata {
     event_handler& pu_handler;
     std::string pu_error_msg;

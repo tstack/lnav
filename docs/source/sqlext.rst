@@ -105,6 +105,8 @@ The following columns are builtin and included in a :code:`SELECT *`:
     an :code:`UPDATE` or the :ref:`:comment<comment>` command.
   :log_tags: A JSON list of tags for the message.  This column can be changed
     by an :code:`UPDATE` or the :ref:`:tag<tag>` command.
+  :log_annotations: A JSON object of annotations for this message.
+    This column is populated by the :ref:`:annotate<annotate>` command.
   :log_filters: A JSON list of filter IDs that matched this message
 
 The following columns are builtin and are hidden, so they will *not* be

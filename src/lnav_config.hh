@@ -45,6 +45,7 @@
 #include "file_vtab.cfg.hh"
 #include "ghc/filesystem.hpp"
 #include "lnav_config_fwd.hh"
+#include "log.annotate.cfg.hh"
 #include "log_level.hh"
 #include "logfile.cfg.hh"
 #include "logfile_sub_source.cfg.hh"
@@ -117,6 +118,7 @@ struct _lnav_config {
     sysclip::config lc_sysclip;
     lnav::url_handler::config lc_url_handlers;
     logfile_sub_source_ns::config lc_log_source;
+    lnav::log::annotate::config lc_log_annotations;
 };
 
 extern struct _lnav_config lnav_config;

@@ -34,17 +34,22 @@
 
 #include <algorithm>
 #include <map>
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "base/lnav_log.hh"
+
+struct logmsg_annotations {
+    std::map<std::string, std::string> la_pairs;
+};
 
 struct bookmark_metadata {
     static std::unordered_set<std::string> KNOWN_TAGS;
 
     std::string bm_name;
     std::string bm_comment;
+    logmsg_annotations bm_annotations;
     std::vector<std::string> bm_tags;
 
     void add_tag(const std::string& tag);

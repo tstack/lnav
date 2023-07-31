@@ -141,6 +141,25 @@ auto_fd::operator=(int fd)
     return *this;
 }
 
+Result<void, std::string>
+auto_fd::write_fully(string_fragment sf)
+{
+    while (!sf.empty()) {
+        auto rc = write(this->af_fd, sf.data(), sf.length());
+
+        if (rc < 0) {
+            return Err(
+                fmt::format(FMT_STRING("failed to write {} bytes to FD {}"),
+                            sf.length(),
+                            this->af_fd));
+        }
+
+        sf = sf.substr(rc);
+    }
+
+    return Ok();
+}
+
 Result<auto_pipe, std::string>
 auto_pipe::for_child_fd(int child_fd)
 {

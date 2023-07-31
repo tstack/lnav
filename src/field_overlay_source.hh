@@ -48,13 +48,20 @@ public:
 
     void add_key_line_attrs(int key_size, bool last_line = false);
 
+    void reset() override
+    {
+        this->fos_lines.clear();
+        this->fos_meta_lines.clear();
+        this->fos_meta_lines_row = -1_vl;
+    }
+
     bool list_value_for_overlay(const listview_curses& lv,
                                 int y,
                                 int bottom,
                                 vis_line_t row,
                                 attr_line_t& value_out) override;
 
-    void build_field_lines(const listview_curses& lv);
+    void build_field_lines(const listview_curses& lv, vis_line_t row);
     void build_meta_line(const listview_curses& lv,
                          std::vector<attr_line_t>& dst,
                          vis_line_t row);
