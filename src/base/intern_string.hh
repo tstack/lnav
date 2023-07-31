@@ -204,8 +204,10 @@ struct string_fragment {
 
     int operator<(const string_fragment& rhs) const
     {
-        return strncmp(
-            this->data(), rhs.data(), std::min(this->length(), rhs.length()));
+        return strncmp(this->data(),
+                       rhs.data(),
+                       std::min(this->length(), rhs.length()))
+            < 0;
     }
 
     bool iequal(const string_fragment& sf) const
