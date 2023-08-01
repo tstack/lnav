@@ -850,7 +850,7 @@ execute_examples()
                         result.append(dls.dls_rows[0][0]);
                     } else {
                         attr_line_t al;
-                        dos.list_value_for_overlay(db_tc, 0, 1, 0_vl, al);
+                        dos.list_static_overlay(db_tc, 0, 1, al);
                         result.append(al);
                         for (int lpc = 0; lpc < (int) dls.text_line_count();
                              lpc++)

@@ -130,11 +130,14 @@ public:
 
     bool list_input_handle_key(listview_curses& lv, int ch) override;
 
-    bool list_value_for_overlay(const listview_curses& lv,
-                                int y,
-                                int bottom,
+    bool list_static_overlay(const listview_curses& lv,
+                             int y,
+                             int bottom,
+                             attr_line_t& value_out) override;
+
+    void list_value_for_overlay(const listview_curses& lv,
                                 vis_line_t row,
-                                attr_line_t& value_out) override;
+                                std::vector<attr_line_t>& value_out) override;
 
     size_t text_line_count() override;
 

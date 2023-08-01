@@ -278,19 +278,23 @@ breadcrumb_curses::handle_key(int ch)
             retval = true;
             break;
         case KEY_NPAGE:
-            this->bc_match_view.shift_selection(3);
+            this->bc_match_view.shift_selection(
+                listview_curses::shift_amount_t::down_page);
             retval = true;
             break;
         case KEY_PPAGE:
-            this->bc_match_view.shift_selection(-3);
+            this->bc_match_view.shift_selection(
+                listview_curses::shift_amount_t::up_page);
             retval = true;
             break;
         case KEY_UP:
-            this->bc_match_view.shift_selection(-1);
+            this->bc_match_view.shift_selection(
+                listview_curses::shift_amount_t::up_line);
             retval = true;
             break;
         case KEY_DOWN:
-            this->bc_match_view.shift_selection(1);
+            this->bc_match_view.shift_selection(
+                listview_curses::shift_amount_t::down_line);
             retval = true;
             break;
         case 0x7f:
@@ -371,40 +375,55 @@ breadcrumb_curses::perform_selection(
 }
 
 bool
-breadcrumb_curses::search_overlay_source::list_value_for_overlay(
-    const listview_curses& lv,
-    int y,
-    int bottom,
-    vis_line_t line,
-    attr_line_t& value_out)
+breadcrumb_curses::search_overlay_source::list_static_overlay(
+    const listview_curses& lv, int y, int bottom, attr_line_t& value_out)
 {
-    if (y == 0) {
-        auto* parent = this->sos_parent;
-        auto sel_opt = parent->bc_focused_crumbs
-            | lnav::itertools::nth(parent->bc_selected_crumb);
-        auto exp_input = sel_opt
-            | lnav::itertools::map(&breadcrumb::crumb::c_expected_input)
-            | lnav::itertools::unwrap_or(
-                             breadcrumb::crumb::expected_input_t::exact);
+    if (y != 0) {
+        return false;
+    }
+    auto* parent = this->sos_parent;
+    auto sel_opt = parent->bc_focused_crumbs
+        | lnav::itertools::nth(parent->bc_selected_crumb);
+    auto exp_input = sel_opt
+        | lnav::itertools::map(&breadcrumb::crumb::c_expected_input)
+        | lnav::itertools::unwrap_or(
+                         breadcrumb::crumb::expected_input_t::exact);
 
-        value_out.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
+    value_out.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
 
-        if (!parent->bc_current_search.empty()) {
-            value_out = parent->bc_current_search;
+    if (!parent->bc_current_search.empty()) {
+        value_out = parent->bc_current_search;
 
-            role_t combobox_role = role_t::VCR_STATUS;
-            switch (exp_input) {
-                case breadcrumb::crumb::expected_input_t::exact:
-                    if (parent->bc_similar_values.empty()) {
-                        combobox_role = role_t::VCR_ALERT_STATUS;
-                    }
-                    break;
-                case breadcrumb::crumb::expected_input_t::index: {
-                    size_t index;
+        role_t combobox_role = role_t::VCR_STATUS;
+        switch (exp_input) {
+            case breadcrumb::crumb::expected_input_t::exact:
+                if (parent->bc_similar_values.empty()) {
+                    combobox_role = role_t::VCR_ALERT_STATUS;
+                }
+                break;
+            case breadcrumb::crumb::expected_input_t::index: {
+                size_t index;
 
-                    if (sscanf(parent->bc_current_search.c_str(), "%zu", &index)
-                            != 1
-                        || index < 0
+                if (sscanf(parent->bc_current_search.c_str(), "%zu", &index)
+                        != 1
+                    || index < 0
+                    || (index
+                        >= (sel_opt | lnav::itertools::map([](const auto& cr) {
+                                return cr->c_possible_range.value_or(0);
+                            })
+                            | lnav::itertools::unwrap_or(size_t{0}))))
+                {
+                    combobox_role = role_t::VCR_ALERT_STATUS;
+                }
+                break;
+            }
+            case breadcrumb::crumb::expected_input_t::index_or_exact: {
+                size_t index;
+
+                if (sscanf(parent->bc_current_search.c_str(), "%zu", &index)
+                    == 1)
+                {
+                    if (index < 0
                         || (index
                             >= (sel_opt
                                 | lnav::itertools::map([](const auto& cr) {
@@ -414,46 +433,26 @@ breadcrumb_curses::search_overlay_source::list_value_for_overlay(
                     {
                         combobox_role = role_t::VCR_ALERT_STATUS;
                     }
-                    break;
+                } else if (parent->bc_similar_values.empty()) {
+                    combobox_role = role_t::VCR_ALERT_STATUS;
                 }
-                case breadcrumb::crumb::expected_input_t::index_or_exact: {
-                    size_t index;
-
-                    if (sscanf(parent->bc_current_search.c_str(), "%zu", &index)
-                        == 1)
-                    {
-                        if (index < 0
-                            || (index
-                                >= (sel_opt
-                                    | lnav::itertools::map([](const auto& cr) {
-                                          return cr->c_possible_range.value_or(
-                                              0);
-                                      })
-                                    | lnav::itertools::unwrap_or(size_t{0}))))
-                        {
-                            combobox_role = role_t::VCR_ALERT_STATUS;
-                        }
-                    } else if (parent->bc_similar_values.empty()) {
-                        combobox_role = role_t::VCR_ALERT_STATUS;
-                    }
-                    break;
-                }
-                case breadcrumb::crumb::expected_input_t::anything:
-                    break;
+                break;
             }
-            value_out.with_attr_for_all(VC_ROLE.value(combobox_role));
-            return true;
+            case breadcrumb::crumb::expected_input_t::anything:
+                break;
         }
-        if (parent->bc_selected_crumb) {
-            auto& selected_crumb_ref
-                = parent->bc_focused_crumbs[parent->bc_selected_crumb.value()];
+        value_out.with_attr_for_all(VC_ROLE.value(combobox_role));
+        return true;
+    }
+    if (parent->bc_selected_crumb) {
+        auto& selected_crumb_ref
+            = parent->bc_focused_crumbs[parent->bc_selected_crumb.value()];
 
-            if (!selected_crumb_ref.c_search_placeholder.empty()) {
-                value_out = selected_crumb_ref.c_search_placeholder;
-                value_out.with_attr_for_all(
-                    VC_ROLE.value(role_t::VCR_INACTIVE_STATUS));
-                return true;
-            }
+        if (!selected_crumb_ref.c_search_placeholder.empty()) {
+            value_out = selected_crumb_ref.c_search_placeholder;
+            value_out.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_INACTIVE_STATUS));
+            return true;
         }
     }
 

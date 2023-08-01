@@ -1318,15 +1318,15 @@ com_save_to(exec_context& ec,
         attr_line_t ov_al;
 
         auto* los = tc->get_overlay_source();
+        while (
+            los != nullptr
+            && los->list_static_overlay(*tc, y, tc->get_inner_height(), ov_al))
+        {
+            write_line_to(outfile, ov_al);
+            ++y;
+        }
         tc->listview_value_for_rows(*tc, top, rows);
         for (auto& al : rows) {
-            while (los != nullptr
-                   && los->list_value_for_overlay(
-                       *tc, y, tc->get_inner_height(), top, ov_al))
-            {
-                write_line_to(outfile, ov_al);
-                ++y;
-            }
             wrapped_count += vis_line_t((al.length() - 1) / (dim.second - 2));
             if (anonymize) {
                 al.al_attrs.clear();
@@ -1334,17 +1334,18 @@ com_save_to(exec_context& ec,
             }
             write_line_to(outfile, al);
 
+            ++y;
+            std::vector<attr_line_t> row_overlay_content;
+            if (los != nullptr) {
+                los->list_value_for_overlay(*tc, top, row_overlay_content);
+                for (const auto& ov_row : row_overlay_content) {
+                    write_line_to(outfile, ov_row);
+                    line_count += 1;
+                    ++y;
+                }
+            }
             line_count += 1;
             ++top;
-            ++y;
-        }
-        while (los != nullptr
-               && los->list_value_for_overlay(
-                   *tc, y, tc->get_inner_height(), top, ov_al)
-               && !ov_al.empty())
-        {
-            write_line_to(outfile, ov_al);
-            ++y;
         }
 
         tc->set_word_wrap(wrapped);
@@ -1467,37 +1468,37 @@ com_save_to(exec_context& ec,
             });
         }
 
-        los->reset();
+        auto y = 0_vl;
+        while (
+            los != nullptr
+            && los->list_static_overlay(*tc, y, tc->get_inner_height(), ov_al))
+        {
+            write_line_to(outfile, ov_al);
+            ++y;
+        }
         for (auto iter = all_user_marks.begin(); iter != all_user_marks.end();
              iter++, count++)
         {
             if (ec.ec_dry_run && count > 10) {
                 break;
             }
-            auto y = 0_vl;
-            while (los != nullptr
-                   && los->list_value_for_overlay(
-                       *tc, y, tc->get_inner_height(), *iter, ov_al))
-            {
-                write_line_to(outfile, ov_al);
-                ++y;
-            }
             tc->listview_value_for_rows(*tc, *iter, rows);
-            ++y;
             if (anonymize) {
                 rows[0].al_attrs.clear();
                 rows[0].al_string = ta.next(rows[0].al_string);
             }
             write_line_to(outfile, rows[0]);
 
-            while (los != nullptr
-                   && los->list_value_for_overlay(
-                       *tc, y, tc->get_inner_height(), *iter, ov_al))
-            {
-                write_line_to(outfile, ov_al);
-                ++y;
+            y = 0_vl;
+            std::vector<attr_line_t> row_overlay_content;
+            if (los != nullptr) {
+                los->list_value_for_overlay(*tc, (*iter), row_overlay_content);
+                for (const auto& ov_row : row_overlay_content) {
+                    write_line_to(outfile, ov_row);
+                    line_count += 1;
+                    ++y;
+                }
             }
-
             line_count += 1;
         }
 

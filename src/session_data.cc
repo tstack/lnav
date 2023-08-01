@@ -518,10 +518,6 @@ load_time_bookmarks()
                         continue;
                     }
 
-                    if (part_name == nullptr) {
-                        continue;
-                    }
-
                     if (!dts.scan(log_time,
                                   strlen(log_time),
                                   nullptr,
@@ -532,13 +528,11 @@ load_time_bookmarks()
                     }
 
                     auto line_iter
-                        = lower_bound(lf->begin(), lf->end(), log_tv);
+                        = std::lower_bound(lf->begin(), lf->end(), log_tv);
                     while (line_iter != lf->end()) {
                         struct timeval line_tv = line_iter->get_timeval();
 
-                        if ((line_tv.tv_sec != log_tv.tv_sec)
-                            || (line_tv.tv_usec != log_tv.tv_usec))
-                        {
+                        if (line_tv != log_tv) {
                             break;
                         }
 

@@ -130,16 +130,16 @@ public:
 
 class db_overlay_source : public list_overlay_source {
 public:
-    size_t list_overlay_count(const listview_curses& lv);
+    bool list_static_overlay(const listview_curses& lv,
+                             int y,
+                             int bottom,
+                             attr_line_t& value_out) override;
 
-    bool list_value_for_overlay(const listview_curses& lv,
-                                int y,
-                                int bottom,
-                                vis_line_t row,
-                                attr_line_t& value_out) override;
+    void list_value_for_overlay(const listview_curses& lv,
+                                vis_line_t line,
+                                std::vector<attr_line_t>& value_out) override;
 
     bool dos_active{false};
     db_label_source* dos_labels{nullptr};
-    std::vector<attr_line_t> dos_lines;
 };
 #endif

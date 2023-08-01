@@ -176,12 +176,10 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
     }
 }
 
-bool
+void
 spectrogram_source::list_value_for_overlay(const listview_curses& lv,
-                                           int y,
-                                           int bottom,
                                            vis_line_t row,
-                                           attr_line_t& value_out)
+                                           std::vector<attr_line_t>& value_out)
 {
     vis_line_t height;
     unsigned long width;
@@ -189,140 +187,81 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
     lv.get_dimensions(height, width);
     width -= 2;
 
-    if (y > 0) {
-        auto sel = lv.get_selection();
-        auto selected_y = sel - lv.get_top() + 2;
+    auto sel = lv.get_selection();
 
-        if (y == selected_y && this->ss_cursor_column) {
-            const auto& s_row = this->load_row(lv, sel);
-            const auto& bucket
-                = s_row.sr_values[this->ss_cursor_column.value()];
-            auto& sb = this->ss_cached_bounds;
-            spectrogram_request sr(sb);
+    if (row == sel && this->ss_cursor_column) {
+        const auto& s_row = this->load_row(lv, sel);
+        const auto& bucket = s_row.sr_values[this->ss_cursor_column.value()];
+        auto& sb = this->ss_cached_bounds;
+        spectrogram_request sr(sb);
+        attr_line_t retval;
 
-            auto sel_time = rounddown(sb.sb_begin_time, this->ss_granularity)
-                + sel * this->ss_granularity;
-            sr.sr_width = width;
-            sr.sr_begin_time = sel_time;
-            sr.sr_end_time = sel_time + this->ss_granularity;
-            sr.sr_column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
-                / (double) (width - 1);
-            auto range_min = sb.sb_min_value_out
-                + this->ss_cursor_column.value() * sr.sr_column_size;
-            auto range_max = range_min + sr.sr_column_size;
+        auto sel_time = rounddown(sb.sb_begin_time, this->ss_granularity)
+            + sel * this->ss_granularity;
+        sr.sr_width = width;
+        sr.sr_begin_time = sel_time;
+        sr.sr_end_time = sel_time + this->ss_granularity;
+        sr.sr_column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
+            / (double) (width - 1);
+        auto range_min = sb.sb_min_value_out
+            + this->ss_cursor_column.value() * sr.sr_column_size;
+        auto range_max = range_min + sr.sr_column_size;
 
-            auto desc
-                = attr_line_t()
-                      .append(lnav::roles::number(
-                          fmt::to_string(bucket.rb_counter)))
-                      .append(fmt::format(FMT_STRING(" value{} in the range "),
-                                          bucket.rb_counter == 1 ? "" : "s"))
-                      .append(lnav::roles::number(
-                          fmt::format(FMT_STRING("{:.2Lf}"), range_min)))
-                      .append("-")
-                      .append(lnav::roles::number(
-                          fmt::format(FMT_STRING("{:.2Lf}"), range_max)))
-                      .append(" ");
-            auto mark_offset = this->ss_cursor_column.value();
-            auto mark_is_before = true;
+        auto desc
+            = attr_line_t()
+                  .append(
+                      lnav::roles::number(fmt::to_string(bucket.rb_counter)))
+                  .append(fmt::format(FMT_STRING(" value{} in the range "),
+                                      bucket.rb_counter == 1 ? "" : "s"))
+                  .append(lnav::roles::number(
+                      fmt::format(FMT_STRING("{:.2Lf}"), range_min)))
+                  .append("-")
+                  .append(lnav::roles::number(
+                      fmt::format(FMT_STRING("{:.2Lf}"), range_max)))
+                  .append(" ");
+        auto mark_offset = this->ss_cursor_column.value();
+        auto mark_is_before = true;
 
-            value_out.al_attrs.emplace_back(
-                line_range{0, -1}, VC_ROLE.value(role_t::VCR_STATUS_INFO));
-            if (desc.length() + 8 > width) {
-                desc.clear();
-            }
-
-            if (this->ss_cursor_column.value() + desc.length() + 1 > width) {
-                mark_offset -= desc.length();
-                mark_is_before = false;
-            }
-            value_out.append(mark_offset, ' ');
-            if (mark_is_before) {
-                value_out.append("\u25b2 ");
-            }
-            value_out.append(desc);
-            if (!mark_is_before) {
-                value_out.append("\u25b2 ");
-            }
-
-            if (this->ss_details_view != nullptr) {
-                if (s_row.sr_details_source_provider) {
-                    auto row_details_source = s_row.sr_details_source_provider(
-                        sr, range_min, range_max);
-
-                    this->ss_details_view->set_sub_source(
-                        row_details_source.get());
-                    this->ss_details_source = std::move(row_details_source);
-                    auto* overlay_source = dynamic_cast<list_overlay_source*>(
-                        this->ss_details_source.get());
-                    if (overlay_source != nullptr) {
-                        this->ss_details_view->set_overlay_source(
-                            overlay_source);
-                    }
-                } else {
-                    this->ss_details_view->set_sub_source(
-                        this->ss_no_details_source);
-                    this->ss_details_view->set_overlay_source(nullptr);
-                }
-            }
-            return true;
+        retval.al_attrs.emplace_back(line_range{0, -1},
+                                     VC_ROLE.value(role_t::VCR_STATUS_INFO));
+        if (desc.length() + 8 > width) {
+            desc.clear();
         }
 
-        return false;
+        if (this->ss_cursor_column.value() + desc.length() + 1 > width) {
+            mark_offset -= desc.length();
+            mark_is_before = false;
+        }
+        retval.append(mark_offset, ' ');
+        if (mark_is_before) {
+            retval.append("\u25b2 ");
+        }
+        retval.append(desc);
+        if (!mark_is_before) {
+            retval.append("\u25b2 ");
+        }
+
+        if (this->ss_details_view != nullptr) {
+            if (s_row.sr_details_source_provider) {
+                auto row_details_source = s_row.sr_details_source_provider(
+                    sr, range_min, range_max);
+
+                this->ss_details_view->set_sub_source(row_details_source.get());
+                this->ss_details_source = std::move(row_details_source);
+                auto* overlay_source = dynamic_cast<list_overlay_source*>(
+                    this->ss_details_source.get());
+                if (overlay_source != nullptr) {
+                    this->ss_details_view->set_overlay_source(overlay_source);
+                }
+            } else {
+                this->ss_details_view->set_sub_source(
+                    this->ss_no_details_source);
+                this->ss_details_view->set_overlay_source(nullptr);
+            }
+        }
+
+        value_out.emplace_back(retval);
     }
-
-    auto& line = value_out.get_string();
-    char buf[128];
-
-    this->cache_bounds();
-
-    if (this->ss_cached_line_count == 0) {
-        value_out
-            .append(lnav::roles::error("error: no data available, use the "))
-            .append_quoted(lnav::roles::keyword(":spectrogram"))
-            .append(lnav::roles::error(" command to visualize numeric data"));
-        return true;
-    }
-
-    auto& sb = this->ss_cached_bounds;
-    auto& st = this->ss_cached_thresholds;
-
-    snprintf(buf, sizeof(buf), "Min: %'.10lg", sb.sb_min_value_out);
-    line = buf;
-
-    snprintf(buf,
-             sizeof(buf),
-             ANSI_ROLE("  ") " 1-%'d " ANSI_ROLE("  ") " %'d-%'d " ANSI_ROLE(
-                 "  ") " %'d+",
-             role_t::VCR_LOW_THRESHOLD,
-             st.st_green_threshold - 1,
-             role_t::VCR_MED_THRESHOLD,
-             st.st_green_threshold,
-             st.st_yellow_threshold - 1,
-             role_t::VCR_HIGH_THRESHOLD,
-             st.st_yellow_threshold);
-    auto buflen = strlen(buf);
-    if (line.length() + buflen + 20 < width) {
-        line.append(width / 2 - buflen / 3 - line.length(), ' ');
-    } else {
-        line.append(" ");
-    }
-    line.append(buf);
-    scrub_ansi_string(line, &value_out.get_attrs());
-
-    snprintf(buf, sizeof(buf), "Max: %'.10lg", sb.sb_max_value_out);
-    buflen = strlen(buf);
-    if (line.length() + buflen + 4 < width) {
-        line.append(width - buflen - line.length() - 2, ' ');
-    } else {
-        line.append(" ");
-    }
-    line.append(buf);
-
-    value_out.with_attr(string_attr(line_range(0, -1),
-                                    VC_STYLE.value(text_attrs{A_UNDERLINE})));
-
-    return true;
 }
 
 size_t
@@ -588,6 +527,75 @@ spectrogram_source::text_selection_changed(textview_curses& tc)
     const auto& s_row = this->load_row(tc, tc.get_selection());
     this->ss_cursor_column
         = s_row.nearest_column(this->ss_cursor_column.value_or(0));
+}
+
+bool
+spectrogram_source::list_static_overlay(const listview_curses& lv,
+                                        int y,
+                                        int bottom,
+                                        attr_line_t& value_out)
+{
+    if (y != 0) {
+        return false;
+    }
+
+    auto& line = value_out.get_string();
+    vis_line_t height;
+    unsigned long width;
+    char buf[128];
+
+    lv.get_dimensions(height, width);
+    width -= 2;
+
+    this->cache_bounds();
+
+    if (this->ss_cached_line_count == 0) {
+        value_out
+            .append(lnav::roles::error("error: no data available, use the "))
+            .append_quoted(lnav::roles::keyword(":spectrogram"))
+            .append(lnav::roles::error(" command to visualize numeric data"));
+        return true;
+    }
+
+    auto& sb = this->ss_cached_bounds;
+    auto& st = this->ss_cached_thresholds;
+
+    snprintf(buf, sizeof(buf), "Min: %'.10lg", sb.sb_min_value_out);
+    line = buf;
+
+    snprintf(buf,
+             sizeof(buf),
+             ANSI_ROLE("  ") " 1-%'d " ANSI_ROLE("  ") " %'d-%'d " ANSI_ROLE(
+                 "  ") " %'d+",
+             role_t::VCR_LOW_THRESHOLD,
+             st.st_green_threshold - 1,
+             role_t::VCR_MED_THRESHOLD,
+             st.st_green_threshold,
+             st.st_yellow_threshold - 1,
+             role_t::VCR_HIGH_THRESHOLD,
+             st.st_yellow_threshold);
+    auto buflen = strlen(buf);
+    if (line.length() + buflen + 20 < width) {
+        line.append(width / 2 - buflen / 3 - line.length(), ' ');
+    } else {
+        line.append(" ");
+    }
+    line.append(buf);
+    scrub_ansi_string(line, &value_out.get_attrs());
+
+    snprintf(buf, sizeof(buf), "Max: %'.10lg", sb.sb_max_value_out);
+    buflen = strlen(buf);
+    if (line.length() + buflen + 4 < width) {
+        line.append(width - buflen - line.length() - 2, ' ');
+    } else {
+        line.append(" ");
+    }
+    line.append(buf);
+
+    value_out.with_attr(string_attr(line_range(0, -1),
+                                    VC_STYLE.value(text_attrs{A_UNDERLINE})));
+
+    return true;
 }
 
 spectro_status_source::spectro_status_source()

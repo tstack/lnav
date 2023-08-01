@@ -1993,36 +1993,40 @@ looper()
                 if (lnav_data.ld_view_stack.empty()) {
                     lnav_data.ld_looping = false;
                 } else {
-                    textview_curses* tc = *lnav_data.ld_view_stack.top();
-                    std::vector<attr_line_t> rows(1);
+                    auto* tc = *lnav_data.ld_view_stack.top();
 
-                    tc->get_data_source()->listview_value_for_rows(
-                        *tc, tc->get_selection(), rows);
-                    string_attrs_t& sa = rows[0].get_attrs();
-                    auto line_attr_opt = get_string_attr(sa, logline::L_FILE);
-                    bool found = false;
-                    if (line_attr_opt) {
-                        auto lf = line_attr_opt.value().get();
+                    if (tc->get_inner_height() > 0_vl) {
+                        std::vector<attr_line_t> rows(1);
 
-                        log_debug("file name when SIGINT: %s",
-                                  lf->get_filename().c_str());
-                        for (auto& cp : lnav_data.ld_child_pollers) {
-                            auto cp_name = cp.get_filename();
+                        tc->get_data_source()->listview_value_for_rows(
+                            *tc, tc->get_selection(), rows);
+                        auto& sa = rows[0].get_attrs();
+                        auto line_attr_opt
+                            = get_string_attr(sa, logline::L_FILE);
+                        bool found = false;
+                        if (line_attr_opt) {
+                            auto lf = line_attr_opt.value().get();
 
-                            if (!cp_name) {
-                                log_debug("no child_poller");
-                                continue;
-                            }
+                            log_debug("file name when SIGINT: %s",
+                                      lf->get_filename().c_str());
+                            for (auto& cp : lnav_data.ld_child_pollers) {
+                                auto cp_name = cp.get_filename();
 
-                            if (lf->get_filename() == cp_name.value()) {
-                                log_debug("found it, sending signal!");
-                                cp.send_sigint();
-                                found = true;
+                                if (!cp_name) {
+                                    log_debug("no child_poller");
+                                    continue;
+                                }
+
+                                if (lf->get_filename() == cp_name.value()) {
+                                    log_debug("found it, sending signal!");
+                                    cp.send_sigint();
+                                    found = true;
+                                }
                             }
                         }
-                    }
-                    if (!found) {
-                        lnav_data.ld_looping = false;
+                        if (!found) {
+                            lnav_data.ld_looping = false;
+                        }
                     }
                 }
             }
@@ -3325,21 +3329,19 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     }
 
                     auto* los = tc->get_overlay_source();
+                    attr_line_t ov_al;
+                    while (los != nullptr && tc->get_inner_height() > 0_vl
+                           && los->list_static_overlay(
+                               *tc, y, tc->get_inner_height(), ov_al))
+                    {
+                        write_line_to(stdout, ov_al);
+                        ++y;
+                    }
 
                     vis_line_t vl;
                     for (vl = tc->get_top(); vl < tc->get_inner_height();
                          ++vl, ++y)
                     {
-                        attr_line_t al;
-
-                        while (los != nullptr
-                               && los->list_value_for_overlay(
-                                   *tc, y, tc->get_inner_height(), vl, al))
-                        {
-                            write_line_to(stdout, al);
-                            ++y;
-                        }
-
                         std::vector<attr_line_t> rows(1);
                         tc->listview_value_for_rows(*tc, vl, rows);
                         if (suppress_empty_lines && rows[0].empty()) {
@@ -3347,17 +3349,15 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         }
 
                         write_line_to(stdout, rows[0]);
-                    }
-                    {
-                        attr_line_t al;
 
-                        while (los != nullptr
-                               && los->list_value_for_overlay(
-                                   *tc, y, tc->get_inner_height(), vl, al)
-                               && !al.empty())
-                        {
-                            write_line_to(stdout, al);
-                            ++y;
+                        std::vector<attr_line_t> row_overlay_content;
+                        if (los != nullptr) {
+                            los->list_value_for_overlay(
+                                *tc, vl, row_overlay_content);
+                            for (const auto& ov_row : row_overlay_content) {
+                                write_line_to(stdout, ov_row);
+                                ++y;
+                            }
                         }
                     }
                 }

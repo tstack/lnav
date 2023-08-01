@@ -107,12 +107,25 @@ public:
 
     virtual void reset() {}
 
-    virtual bool list_value_for_overlay(const listview_curses& lv,
-                                        int y,
-                                        int bottom,
+    virtual bool list_static_overlay(const listview_curses& lv,
+                                     int y,
+                                     int bottom,
+                                     attr_line_t& value_out)
+    {
+        return false;
+    }
+
+    virtual nonstd::optional<attr_line_t> list_header_for_overlay(
+        const listview_curses& lv, vis_line_t line)
+    {
+        return nonstd::nullopt;
+    }
+
+    virtual void list_value_for_overlay(const listview_curses& lv,
                                         vis_line_t line,
-                                        attr_line_t& value_out)
-        = 0;
+                                        std::vector<attr_line_t>& value_out)
+    {
+    }
 };
 
 class list_input_delegate {
@@ -209,7 +222,14 @@ public:
 
     void set_selection(vis_line_t sel);
 
-    void shift_selection(int offset);
+    enum class shift_amount_t {
+        up_line,
+        up_page,
+        down_line,
+        down_page,
+    };
+
+    void shift_selection(shift_amount_t sa);
 
     vis_line_t get_selection() const
     {
@@ -332,20 +352,7 @@ public:
      * @param suppress_flash Don't call flash() if the offset is out-of-bounds.
      * @return The final value of top.
      */
-    vis_line_t shift_top(vis_line_t offset, bool suppress_flash = false)
-    {
-        if (offset < 0 && this->lv_top == 0) {
-            if (suppress_flash == false) {
-                alerter::singleton().chime(
-                    "the top of the view has been reached");
-            }
-        } else {
-            this->set_top(std::max(0_vl, this->lv_top + offset),
-                          suppress_flash);
-        }
-
-        return this->lv_top;
-    }
+    vis_line_t shift_top(vis_line_t offset, bool suppress_flash = false);
 
     /**
      * Set the column number to be displayed at the left of the view.  If the
@@ -529,6 +536,9 @@ protected:
 
     void update_top_from_selection();
 
+    vis_line_t get_overlay_top(vis_line_t row, size_t count, size_t total);
+    size_t get_overlay_height(size_t total, vis_line_t view_height);
+
     enum class lv_mode_t {
         NONE,
         DOWN,
@@ -549,6 +559,7 @@ protected:
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
     unsigned int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
+    vis_line_t lv_focused_overlay_top{0};
     int lv_history_position{0};
     bool lv_overlay_needs_update{true};
     bool lv_show_scrollbar{true}; /*< Draw the scrollbar in the view. */

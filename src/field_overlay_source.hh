@@ -55,11 +55,12 @@ public:
         this->fos_meta_lines_row = -1_vl;
     }
 
-    bool list_value_for_overlay(const listview_curses& lv,
-                                int y,
-                                int bottom,
+    nonstd::optional<attr_line_t> list_header_for_overlay(
+        const listview_curses& lv, vis_line_t vl) override;
+
+    void list_value_for_overlay(const listview_curses& lv,
                                 vis_line_t row,
-                                attr_line_t& value_out) override;
+                                std::vector<attr_line_t>& value_out) override;
 
     void build_field_lines(const listview_curses& lv, vis_line_t row);
     void build_meta_line(const listview_curses& lv,
