@@ -288,15 +288,15 @@ db_label_source::row_for_time(struct timeval time_bucket)
     return nonstd::nullopt;
 }
 
-size_t
-db_overlay_source::list_overlay_count(const listview_curses& lv)
+void
+db_overlay_source::list_value_for_overlay(const listview_curses& lv,
+                                          vis_line_t row,
+                                          std::vector<attr_line_t>& value_out)
 {
     size_t retval = 1;
 
     if (!this->dos_active || lv.get_inner_height() == 0) {
-        this->dos_lines.clear();
-
-        return retval;
+        return;
     }
 
     auto& vc = view_colors::singleton();
@@ -307,7 +307,6 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
 
     lv.get_dimensions(height, width);
 
-    this->dos_lines.clear();
     for (size_t col = 0; col < cols.size(); col++) {
         const char* col_value = cols[col];
         size_t col_len = strlen(col_value);
@@ -327,21 +326,21 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
             {
                 const std::string& header
                     = this->dos_labels->dls_headers[col].hm_name;
-                this->dos_lines.emplace_back(" JSON Column: " + header);
+                value_out.emplace_back(" JSON Column: " + header);
 
                 retval += 1;
             }
 
             stacked_bar_chart<std::string> chart;
-            int start_line = this->dos_lines.size();
+            int start_line = value_out.size();
 
             chart.with_stacking_enabled(false).with_margins(3, 0);
 
             for (auto& jpw_value : jpw.jpw_values) {
-                this->dos_lines.emplace_back("   " + jpw_value.wt_ptr + " = "
-                                             + jpw_value.wt_value);
+                value_out.emplace_back("   " + jpw_value.wt_ptr + " = "
+                                       + jpw_value.wt_value);
 
-                string_attrs_t& sa = this->dos_lines.back().get_attrs();
+                string_attrs_t& sa = value_out.back().get_attrs();
                 struct line_range lr(1, 2);
 
                 sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LTEE));
@@ -376,7 +375,7 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
                 auto num_scan_res = scn::scan_value<double>(iter->wt_value);
 
                 if (num_scan_res) {
-                    auto& sa = this->dos_lines[curr_line].get_attrs();
+                    auto& sa = value_out[curr_line].get_attrs();
                     int left = 3;
 
                     chart.chart_attrs_for_value(
@@ -387,9 +386,9 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
     }
 
     if (retval > 1) {
-        this->dos_lines.emplace_back("");
+        value_out.emplace_back("");
 
-        string_attrs_t& sa = this->dos_lines.back().get_attrs();
+        string_attrs_t& sa = value_out.back().get_attrs();
         struct line_range lr(1, 2);
 
         sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LLCORNER));
@@ -399,66 +398,55 @@ db_overlay_source::list_overlay_count(const listview_curses& lv)
 
         retval += 1;
     }
-
-    return retval;
 }
 
 bool
-db_overlay_source::list_value_for_overlay(const listview_curses& lv,
-                                          int y,
-                                          int bottom,
-                                          vis_line_t row,
-                                          attr_line_t& value_out)
+db_overlay_source::list_static_overlay(const listview_curses& lv,
+                                       int y,
+                                       int bottom,
+                                       attr_line_t& value_out)
 {
-    if (y == 0) {
-        this->list_overlay_count(lv);
-        std::string& line = value_out.get_string();
-        db_label_source* dls = this->dos_labels;
-        string_attrs_t& sa = value_out.get_attrs();
-
-        for (size_t lpc = 0; lpc < this->dos_labels->dls_headers.size(); lpc++)
-        {
-            auto actual_col_size
-                = std::min(dls->dls_max_column_width,
-                           dls->dls_headers[lpc].hm_column_size);
-            std::string cell_title = dls->dls_headers[lpc].hm_name;
-
-            truncate_to(cell_title, dls->dls_max_column_width);
-
-            auto cell_length
-                = utf8_string_length(cell_title).unwrapOr(actual_col_size);
-            int before, total_fill = actual_col_size - cell_length;
-            auto line_len_before = line.length();
-
-            before = total_fill / 2;
-            total_fill -= before;
-            line.append(before, ' ');
-            line.append(cell_title);
-            line.append(total_fill, ' ');
-            line.append(1, ' ');
-
-            struct line_range header_range(line_len_before, line.length());
-
-            text_attrs attrs;
-            if (this->dos_labels->dls_headers[lpc].hm_graphable) {
-                attrs = dls->dls_headers[lpc].hm_title_attrs
-                    | text_attrs{A_REVERSE};
-            } else {
-                attrs.ta_attrs = A_UNDERLINE;
-            }
-            sa.emplace_back(header_range, VC_STYLE.value(text_attrs{attrs}));
-        }
-
-        struct line_range lr(0);
-
-        sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD | A_UNDERLINE}));
-        return true;
-    } else if (this->dos_active && y >= 2
-               && ((size_t) y) < (this->dos_lines.size() + 2))
-    {
-        value_out = this->dos_lines[y - 2];
-        return true;
+    if (y != 0) {
+        return false;
     }
 
-    return false;
+    auto& line = value_out.get_string();
+    auto* dls = this->dos_labels;
+    auto& sa = value_out.get_attrs();
+
+    for (size_t lpc = 0; lpc < this->dos_labels->dls_headers.size(); lpc++) {
+        auto actual_col_size = std::min(dls->dls_max_column_width,
+                                        dls->dls_headers[lpc].hm_column_size);
+        std::string cell_title = dls->dls_headers[lpc].hm_name;
+
+        truncate_to(cell_title, dls->dls_max_column_width);
+
+        auto cell_length
+            = utf8_string_length(cell_title).unwrapOr(actual_col_size);
+        int before, total_fill = actual_col_size - cell_length;
+        auto line_len_before = line.length();
+
+        before = total_fill / 2;
+        total_fill -= before;
+        line.append(before, ' ');
+        line.append(cell_title);
+        line.append(total_fill, ' ');
+        line.append(1, ' ');
+
+        struct line_range header_range(line_len_before, line.length());
+
+        text_attrs attrs;
+        if (this->dos_labels->dls_headers[lpc].hm_graphable) {
+            attrs
+                = dls->dls_headers[lpc].hm_title_attrs | text_attrs{A_REVERSE};
+        } else {
+            attrs.ta_attrs = A_UNDERLINE;
+        }
+        sa.emplace_back(header_range, VC_STYLE.value(text_attrs{attrs}));
+    }
+
+    struct line_range lr(0);
+
+    sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD | A_UNDERLINE}));
+    return true;
 }

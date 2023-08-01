@@ -64,17 +64,15 @@ public:
 };
 
 struct files_overlay_source : public list_overlay_source {
-    bool list_value_for_overlay(const listview_curses& lv,
-                                int y,
-                                int bottom,
-                                vis_line_t line,
-                                attr_line_t& value_out) override;
+    bool list_static_overlay(const listview_curses& lv,
+                             int y,
+                             int bottom,
+                             attr_line_t& value_out) override;
 };
 
 namespace files_model {
 
-struct no_selection {
-};
+struct no_selection {};
 
 template<typename C, typename T>
 struct selection_base {
@@ -99,13 +97,11 @@ struct error_selection
 struct other_selection
     : public selection_base<
           other_selection,
-          std::map<std::string, other_file_descriptor>::iterator> {
-};
+          std::map<std::string, other_file_descriptor>::iterator> {};
 
 struct file_selection
     : public selection_base<file_selection,
-                            std::vector<std::shared_ptr<logfile>>::iterator> {
-};
+                            std::vector<std::shared_ptr<logfile>>::iterator> {};
 
 using files_list_selection = mapbox::util::
     variant<no_selection, error_selection, other_selection, file_selection>;

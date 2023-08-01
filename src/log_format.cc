@@ -3353,6 +3353,10 @@ external_log_format::get_pattern_name(uint64_t line_number) const
 int
 log_format::pattern_index_for_line(uint64_t line_number) const
 {
+    if (this->lf_pattern_locks.empty()) {
+        return -1;
+    }
+
     auto iter = lower_bound(this->lf_pattern_locks.cbegin(),
                             this->lf_pattern_locks.cend(),
                             line_number,
@@ -3380,7 +3384,9 @@ log_format::get_pattern_name(uint64_t line_number) const
     char pat_str[128];
 
     int pat_index = this->pattern_index_for_line(line_number);
-    snprintf(pat_str, sizeof(pat_str), "builtin (%d)", pat_index);
+    auto to_n_res = fmt::format_to_n(
+        pat_str, sizeof(pat_str) - 1, FMT_STRING("builtin ({})"), pat_index);
+    pat_str[to_n_res.size] = '\0';
     return intern_string::lookup(pat_str);
 }
 

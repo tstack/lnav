@@ -94,11 +94,13 @@ listview_curses::reload_data()
 {
     if (this->lv_source == nullptr) {
         this->lv_top = 0_vl;
+        this->lv_focused_overlay_top = 0_vl;
         this->lv_left = 0;
     } else {
         if (this->lv_top >= this->get_inner_height()) {
             this->lv_top
                 = std::max(0_vl, vis_line_t(this->get_inner_height() - 1));
+            this->lv_focused_overlay_top = 0_vl;
         }
         if (this->lv_selectable) {
             if (this->get_inner_height() == 0) {
@@ -156,25 +158,22 @@ listview_curses::handle_key(int ch)
         case '\r':
         case 'j':
         case KEY_DOWN:
-            if (this->is_selectable()) {
-                this->shift_selection(1);
-            } else {
-                this->shift_top(1_vl);
-            }
+            this->shift_selection(shift_amount_t::down_line);
             break;
 
         case 'k':
         case KEY_UP:
-            if (this->is_selectable()) {
-                this->shift_selection(-1);
-            } else {
-                this->shift_top(-1_vl);
-            }
+            this->shift_selection(shift_amount_t::up_line);
             break;
 
         case 'b':
         case KEY_BACKSPACE:
         case KEY_PPAGE:
+            if (this->lv_focused_overlay_top != 0_vl) {
+                this->shift_selection(shift_amount_t::up_page);
+                break;
+            }
+
             if (this->lv_top == 0_vl && this->lv_selectable
                 && this->lv_selection != 0_vl)
             {
@@ -187,6 +186,16 @@ listview_curses::handle_key(int ch)
 
         case ' ':
         case KEY_NPAGE: {
+            if (this->lv_overlay_source != nullptr) {
+                std::vector<attr_line_t> overlay_content;
+                this->lv_overlay_source->list_value_for_overlay(
+                    *this, this->get_selection(), overlay_content);
+                if (!overlay_content.empty()) {
+                    this->shift_selection(shift_amount_t::down_page);
+                    break;
+                }
+            }
+
             auto rows_avail
                 = this->rows_available(this->lv_top, RD_DOWN) - 1_vl;
             auto top_for_last = this->get_top_for_last_row();
@@ -257,6 +266,20 @@ listview_curses::handle_key(int ch)
     return retval;
 }
 
+vis_line_t
+listview_curses::get_overlay_top(vis_line_t row, size_t count, size_t total)
+{
+    if (row == this->get_selection()) {
+        return this->lv_focused_overlay_top;
+    }
+
+    if (this->get_selection() > row && count < total) {
+        return vis_line_t{static_cast<int>(total - count)};
+    }
+
+    return 0_vl;
+}
+
 void
 listview_curses::do_update()
 {
@@ -265,6 +288,7 @@ listview_curses::do_update()
         return;
     }
 
+    std::vector<attr_line_t> row_overlay_content;
     vis_line_t height;
     unsigned long width;
 
@@ -303,12 +327,8 @@ listview_curses::do_update()
             lr.lr_start = this->lv_left;
             lr.lr_end = this->lv_left + wrap_width;
             if (this->lv_overlay_source != nullptr
-                && this->lv_overlay_source->list_value_for_overlay(
-                    *this,
-                    y - this->lv_y,
-                    bottom - this->lv_y,
-                    row,
-                    overlay_line))
+                && this->lv_overlay_source->list_static_overlay(
+                    *this, y - this->lv_y, bottom - this->lv_y, overlay_line))
             {
                 mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
                 overlay_line.clear();
@@ -335,6 +355,103 @@ listview_curses::do_update()
                     lr.lr_end += wrap_width;
                     ++y;
                 } while (this->lv_word_wrap && y < bottom && remaining > 0);
+
+                if (this->lv_overlay_source != nullptr) {
+                    row_overlay_content.clear();
+
+                    lr.lr_start = this->lv_left;
+                    lr.lr_end = this->lv_left + wrap_width;
+                    this->lv_overlay_source->list_value_for_overlay(
+                        *this, row, row_overlay_content);
+                    auto overlay_height = this->get_overlay_height(
+                        row_overlay_content.size(), height);
+                    auto ov_height_remaining = overlay_height;
+                    auto overlay_top = this->get_overlay_top(
+                        row, overlay_height, row_overlay_content.size());
+                    auto overlay_row = overlay_top;
+                    if (row_overlay_content.size() > 1) {
+                        auto hdr
+                            = this->lv_overlay_source->list_header_for_overlay(
+                                *this, row);
+                        if (hdr) {
+                            auto ov_hdr_attrs = text_attrs{};
+                            ov_hdr_attrs.ta_attrs |= A_UNDERLINE;
+                            auto ov_hdr = hdr.value().with_attr_for_all(
+                                VC_STYLE.value(ov_hdr_attrs));
+                            mvwattrline(this->lv_window,
+                                        y,
+                                        this->lv_x,
+                                        ov_hdr,
+                                        lr,
+                                        role_t::VCR_STATUS_INFO);
+                            ++y;
+                        }
+                    }
+                    auto overlay_y = y;
+                    while (ov_height_remaining > 0 && y < bottom) {
+                        mvwattrline(this->lv_window,
+                                    y,
+                                    this->lv_x,
+                                    row_overlay_content[overlay_row],
+                                    lr,
+                                    role_t::VCR_ALT_ROW);
+                        ov_height_remaining -= 1;
+                        ++overlay_row;
+                        ++y;
+                    }
+
+                    if (overlay_height != row_overlay_content.size()) {
+                        double progress = 1.0;
+                        double coverage = 1.0;
+                        vis_line_t lines;
+
+                        if (!row_overlay_content.empty()) {
+                            progress = (double) overlay_top
+                                / (double) row_overlay_content.size();
+                            coverage = (double) overlay_height
+                                / (double) row_overlay_content.size();
+                        }
+
+                        auto scroll_y = overlay_y
+                            + (int) (progress * (double) overlay_height);
+                        lines = vis_line_t(
+                            scroll_y
+                            + std::min(
+                                (int) overlay_height,
+                                (int) (coverage * (double) overlay_height)));
+
+                        for (unsigned int gutter_y = overlay_y;
+                             gutter_y < (overlay_y + overlay_height);
+                             gutter_y++)
+                        {
+                            auto role = this->vc_default_role;
+                            auto bar_role = role_t::VCR_SCROLLBAR;
+                            text_attrs attrs;
+                            chtype ch = gutter_y == overlay_y
+                                ? ACS_URCORNER
+                                : (gutter_y == (overlay_y + overlay_height - 1)
+                                       ? ACS_LRCORNER
+                                       : ACS_VLINE);
+
+                            if (gutter_y >= (unsigned int) scroll_y
+                                && gutter_y <= (unsigned int) lines)
+                            {
+                                role = bar_role;
+                            }
+                            attrs = vc.attrs_for_role(role);
+                            wattr_set(this->lv_window,
+                                      attrs.ta_attrs,
+                                      vc.ensure_color_pair(attrs.ta_fg_color,
+                                                           attrs.ta_bg_color),
+                                      nullptr);
+                            mvwaddch(this->lv_window,
+                                     gutter_y,
+                                     this->lv_x + width - 2,
+                                     ch);
+                        }
+                    }
+                }
+
                 ++row;
             } else {
                 wattr_set(this->lv_window,
@@ -421,43 +538,127 @@ listview_curses::do_update()
     }
 
     view_curses::do_update();
-
-#if 0
-    else if (this->lv_overlay_needs_update && this->lv_overlay_source != NULL) {
-        vis_line_t y(this->lv_y), height, bottom;
-        attr_line_t overlay_line;
-        unsigned long width, wrap_width;
-        struct line_range lr;
-
-        this->lv_overlay_source->list_overlay_count(*this);
-        this->get_dimensions(height, width);
-        wrap_width = width - (this->lv_word_wrap ? 1 : this->lv_show_scrollbar ? 1 : 0);
-
-        lr.lr_start = this->lv_left;
-        lr.lr_end   = this->lv_left + wrap_width;
-
-        bottom = y + height;
-        while (y < bottom) {
-            if (this->lv_overlay_source->list_value_for_overlay(
-                    *this,
-                    y - vis_line_t(this->lv_y),
-                overlay_line)) {
-                this->mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
-                overlay_line.clear();
-            }
-            ++y;
-        }
-    }
-#endif
 }
 
 void
-listview_curses::shift_selection(int offset)
+listview_curses::shift_selection(shift_amount_t sa)
 {
-    vis_line_t new_selection = this->lv_selection + vis_line_t(offset);
+    vis_line_t height;
+    unsigned long width;
 
-    if (new_selection >= 0_vl && new_selection < this->get_inner_height()) {
-        this->set_selection(new_selection);
+    this->get_dimensions(height, width);
+    if (this->lv_focused_overlay_top > 0
+        && (sa == shift_amount_t::up_line || sa == shift_amount_t::up_page))
+    {
+        switch (sa) {
+            case shift_amount_t::up_line:
+                this->lv_focused_overlay_top -= 1_vl;
+                break;
+            case shift_amount_t::up_page: {
+                std::vector<attr_line_t> overlay_content;
+
+                this->lv_overlay_source->list_value_for_overlay(
+                    *this, this->get_selection(), overlay_content);
+                auto overlay_height
+                    = this->get_overlay_height(overlay_content.size(), height);
+                if (this->lv_focused_overlay_top > overlay_height) {
+                    this->lv_focused_overlay_top
+                        -= vis_line_t{static_cast<int>(overlay_height - 1)};
+                } else {
+                    this->lv_focused_overlay_top = 0_vl;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        this->set_needs_update();
+        return;
+    }
+
+    if (this->get_selection() > 0 && this->lv_overlay_source != nullptr) {
+        vis_line_t focused = this->get_selection();
+        std::vector<attr_line_t> overlay_content;
+        bool is_up = false;
+
+        switch (sa) {
+            case shift_amount_t::up_line:
+            case shift_amount_t::up_page:
+                focused -= 1_vl;
+                is_up = true;
+                break;
+            default:
+                break;
+        }
+        this->lv_overlay_source->list_value_for_overlay(
+            *this, focused, overlay_content);
+        if (!overlay_content.empty()) {
+            auto overlay_height
+                = this->get_overlay_height(overlay_content.size(), height);
+            auto ov_top_for_last = vis_line_t{
+                static_cast<int>(overlay_content.size() - overlay_height)};
+
+            if (is_up) {
+                this->set_selection(focused);
+                this->lv_focused_overlay_top = ov_top_for_last;
+                this->set_needs_update();
+                return;
+            }
+            if (this->lv_focused_overlay_top + 1 + overlay_height
+                <= overlay_content.size())
+            {
+                switch (sa) {
+                    case shift_amount_t::down_line:
+                        this->lv_focused_overlay_top += 1_vl;
+                        break;
+                    case shift_amount_t::down_page: {
+                        if (this->lv_focused_overlay_top + overlay_height - 1
+                            >= ov_top_for_last)
+                        {
+                            this->lv_focused_overlay_top = ov_top_for_last;
+                        } else {
+                            this->lv_focused_overlay_top += vis_line_t{
+                                static_cast<int>(overlay_height - 1)};
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                this->set_needs_update();
+                return;
+            }
+
+            if (overlay_height < overlay_content.size()) {
+                sa = shift_amount_t::down_line;
+            }
+        }
+        this->lv_focused_overlay_top = 0_vl;
+    }
+
+    auto offset = 0_vl;
+    switch (sa) {
+        case shift_amount_t::up_line:
+            offset = -1_vl;
+            break;
+        case shift_amount_t::up_page:
+            offset = -(height - 1_vl);
+            break;
+        case shift_amount_t::down_line:
+            offset = 1_vl;
+            break;
+        case shift_amount_t::down_page:
+            offset = height - 1_vl;
+            break;
+    }
+    if (this->is_selectable()) {
+        auto new_selection = this->lv_selection + vis_line_t(offset);
+
+        if (new_selection >= 0_vl && new_selection < this->get_inner_height()) {
+            this->set_selection(new_selection);
+        }
+    } else {
+        this->shift_top(vis_line_t{offset});
     }
 }
 
@@ -577,6 +778,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
     } else if (this->lv_top != top) {
         auto old_top = this->lv_top;
         this->lv_top = top;
+        this->lv_focused_overlay_top = 0_vl;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
             } else if (this->lv_selection < top) {
@@ -665,6 +867,7 @@ listview_curses::set_selection(vis_line_t sel)
         }
         if (sel == -1_vl) {
             this->lv_selection = sel;
+            this->lv_focused_overlay_top = 0_vl;
             this->lv_source->listview_selection_changed(*this);
             this->set_needs_update();
             this->invoke_scroll();
@@ -700,6 +903,7 @@ listview_curses::set_selection(vis_line_t sel)
                 if (this->lv_sync_selection_and_top) {
                     this->lv_top = sel;
                 }
+                this->lv_focused_overlay_top = 0_vl;
                 this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
                 this->invoke_scroll();
@@ -731,4 +935,24 @@ listview_curses::get_top_for_last_row()
     }
 
     return retval;
+}
+
+vis_line_t
+listview_curses::shift_top(vis_line_t offset, bool suppress_flash)
+{
+    if (offset < 0 && this->lv_top == 0) {
+        if (suppress_flash == false) {
+            alerter::singleton().chime("the top of the view has been reached");
+        }
+    } else {
+        this->set_top(std::max(0_vl, this->lv_top + offset), suppress_flash);
+    }
+
+    return this->lv_top;
+}
+
+size_t
+listview_curses::get_overlay_height(size_t total, vis_line_t view_height)
+{
+    return std::min(total, static_cast<size_t>(2 * (view_height / 3)));
 }

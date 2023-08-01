@@ -90,17 +90,14 @@ public:
                });
     }
 
-    bool list_value_for_overlay(const listview_curses& lv,
-                                int y,
-                                int bottom,
+    void list_value_for_overlay(const listview_curses& lv,
                                 vis_line_t line,
-                                attr_line_t& value_out) override
+                                std::vector<attr_line_t>& value_out) override
     {
         if (this->fss_overlay_delegate != nullptr) {
-            return this->fss_overlay_delegate->list_value_for_overlay(
-                lv, y, bottom, line, value_out);
+            this->fss_overlay_delegate->list_value_for_overlay(
+                lv, line, value_out);
         }
-        return false;
     }
 
     text_sub_source* fss_delegate;

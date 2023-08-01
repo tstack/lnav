@@ -73,11 +73,10 @@ public:
 private:
     class search_overlay_source : public list_overlay_source {
     public:
-        bool list_value_for_overlay(const listview_curses& lv,
-                                    int y,
-                                    int bottom,
-                                    vis_line_t line,
-                                    attr_line_t& value_out) override;
+        bool list_static_overlay(const listview_curses& lv,
+                                 int y,
+                                 int bottom,
+                                 attr_line_t& value_out) override;
 
         breadcrumb_curses* sos_parent{nullptr};
     };

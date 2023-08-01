@@ -77,8 +77,6 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         display = display || this->fos_contexts.top().c_show;
     }
 
-    this->build_meta_line(lv, this->fos_lines, row);
-
     if (!display) {
         return;
     }
@@ -218,7 +216,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     if ((!this->fos_contexts.empty() && this->fos_contexts.top().c_show)
-        || diff_tv.tv_sec > 0)
+        || diff_tv.tv_sec > 0 || ll->is_time_skewed())
     {
         this->fos_lines.emplace_back(time_line);
     }
@@ -462,11 +460,13 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             && (!line_meta_opt
                 || line_meta_opt.value()->bm_annotations.la_pairs.empty()))
         {
-            auto anno_msg = attr_line_t(" ")
-                                .append(":memo:"_emoji)
-                                .append(" Annotations available, use ")
-                                .append(":annotate"_quoted_code)
-                                .append(" to apply them to this line");
+            auto anno_msg
+                = attr_line_t(" ")
+                      .append(":memo:"_emoji)
+                      .append(" Annotations available, use ")
+                      .append(":annotate"_quoted_code)
+                      .append(" to apply them to this line")
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
 
             dst.emplace_back(anno_msg);
         }
@@ -600,10 +600,6 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             }
         }
     }
-
-    if (dst.size() > 30) {
-        dst.resize(30);
-    }
 }
 
 void
@@ -619,38 +615,36 @@ field_overlay_source::add_key_line_attrs(int key_size, bool last_line)
     sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD}));
 }
 
-bool
-field_overlay_source::list_value_for_overlay(const listview_curses& lv,
-                                             int y,
-                                             int bottom,
-                                             vis_line_t row,
-                                             attr_line_t& value_out)
+void
+field_overlay_source::list_value_for_overlay(
+    const listview_curses& lv,
+    vis_line_t row,
+    std::vector<attr_line_t>& value_out)
 {
-    if (y == 0) {
-        this->fos_meta_lines.clear();
-        this->fos_meta_lines_row = -1_vl;
+    if (row == lv.get_selection()) {
         this->build_field_lines(lv, row);
-        return false;
+        value_out = this->fos_lines;
+    }
+    this->build_meta_line(lv, value_out, row);
+}
+
+nonstd::optional<attr_line_t>
+field_overlay_source::list_header_for_overlay(const listview_curses& lv,
+                                              vis_line_t vl)
+{
+    attr_line_t retval;
+
+    retval.append(this->fos_lss.get_filename_offset(), ' ');
+    if (this->fos_contexts.top().c_show) {
+        return retval
+            .appendf(FMT_STRING("\u258C Line {:L} parser details.  "
+                                "(Press '"),
+                     (int) vl)
+            .append("p"_hotkey)
+            .append("' to toggle this view)");
     }
 
-    if (1 <= y && y <= (int) this->fos_lines.size()) {
-        value_out = this->fos_lines[y - 1];
-        return true;
-    }
-
-    if (!this->fos_meta_lines.empty() && this->fos_meta_lines_row == row - 1_vl)
-    {
-        value_out = this->fos_meta_lines.front();
-        this->fos_meta_lines.erase(this->fos_meta_lines.begin());
-
-        return true;
-    }
-
-    if (row < lv.get_inner_height()) {
-        this->fos_meta_lines.clear();
-        this->build_meta_line(lv, this->fos_meta_lines, row);
-        this->fos_meta_lines_row = row;
-    }
-
-    return false;
+    return retval.append("\u258C Line ")
+        .append(lnav::roles::number(fmt::format(FMT_STRING("{:L}"), (int) vl)))
+        .append(" metadata");
 }

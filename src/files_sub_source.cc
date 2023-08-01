@@ -388,45 +388,44 @@ spinner_index()
 }
 
 bool
-files_overlay_source::list_value_for_overlay(const listview_curses& lv,
-                                             int y,
-                                             int bottom,
-                                             vis_line_t line,
-                                             attr_line_t& value_out)
+files_overlay_source::list_static_overlay(const listview_curses& lv,
+                                          int y,
+                                          int bottom,
+                                          attr_line_t& value_out)
 {
-    if (y == 0) {
-        static const char PROG[] = "-\\|/";
-        constexpr size_t PROG_SIZE = sizeof(PROG) - 1;
-
-        auto& fc = lnav_data.ld_active_files;
-        auto fc_prog = fc.fc_progress;
-        safe::WriteAccess<safe_scan_progress> sp(*fc_prog);
-
-        if (!sp->sp_extractions.empty()) {
-            const auto& prog = sp->sp_extractions.front();
-
-            value_out.with_ansi_string(fmt::format(
-                "{} Extracting " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
-                                                        "... {:>8}/{}",
-                PROG[spinner_index() % PROG_SIZE],
-                prog.ep_path.filename().string(),
-                humanize::file_size(prog.ep_out_size,
-                                    humanize::alignment::none),
-                humanize::file_size(prog.ep_total_size,
-                                    humanize::alignment::none)));
-            return true;
-        }
-        if (!sp->sp_tailers.empty()) {
-            auto first_iter = sp->sp_tailers.begin();
-
-            value_out.with_ansi_string(fmt::format(
-                "{} Connecting to " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
-                                                           ": {}",
-                PROG[spinner_index() % PROG_SIZE],
-                first_iter->first,
-                first_iter->second.tp_message));
-            return true;
-        }
+    if (y != 0) {
+        return false;
     }
+    static const char PROG[] = "-\\|/";
+    constexpr size_t PROG_SIZE = sizeof(PROG) - 1;
+
+    auto& fc = lnav_data.ld_active_files;
+    auto fc_prog = fc.fc_progress;
+    safe::WriteAccess<safe_scan_progress> sp(*fc_prog);
+
+    if (!sp->sp_extractions.empty()) {
+        const auto& prog = sp->sp_extractions.front();
+
+        value_out.with_ansi_string(fmt::format(
+            "{} Extracting " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM
+                                                    "... {:>8}/{}",
+            PROG[spinner_index() % PROG_SIZE],
+            prog.ep_path.filename().string(),
+            humanize::file_size(prog.ep_out_size, humanize::alignment::none),
+            humanize::file_size(prog.ep_total_size,
+                                humanize::alignment::none)));
+        return true;
+    }
+    if (!sp->sp_tailers.empty()) {
+        auto first_iter = sp->sp_tailers.begin();
+
+        value_out.with_ansi_string(fmt::format(
+            "{} Connecting to " ANSI_COLOR(COLOR_CYAN) "{}" ANSI_NORM ": {}",
+            PROG[spinner_index() % PROG_SIZE],
+            first_iter->first,
+            first_iter->second.tp_message));
+        return true;
+    }
+
     return false;
 }
