@@ -51,6 +51,14 @@ class log_format;
 struct opid_time_range {
     struct timeval otr_begin;
     struct timeval otr_end;
+    std::array<size_t, log_level_t::LEVEL__MAX> otr_level_counts;
+    nonstd::optional<intern_string_t> otr_description_id;
+    std::vector<std::pair<size_t, std::string>> otr_description;
+
+    size_t get_total_msgs() const;
+    size_t get_error_count() const;
+
+    opid_time_range& operator|=(const opid_time_range& rhs);
 };
 
 using log_opid_map = robin_hood::unordered_map<string_fragment,
@@ -229,6 +237,17 @@ public:
     void set_opid(uint8_t opid) { this->ll_opid = opid; }
 
     uint8_t get_opid() const { return this->ll_opid; }
+
+    bool match_opid_hash(unsigned long hash) const
+    {
+        struct {
+            unsigned int value : 6;
+        } reduced = {
+            (unsigned int) hash,
+        };
+
+        return this->ll_opid == reduced.value;
+    }
 
     /**
      * @return  True if there is a schema value set for this log line.

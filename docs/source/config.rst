@@ -272,7 +272,7 @@ or interrupting the viewing experience.  An annotation is defined by a
 condition and a handler in the **lnav** configuration. The condition is
 tested against a log message to determine if the annotation is applicable.
 If it is, the handler script will be executed for that log message when
-the user runs the :ref:`:annotation<annotation>` command.
+the user runs the :ref:`:annotate<annotate>` command.
 
 Conditions are SQLite expressions like the ones passed to
 :ref:`:filter-expr<filter_expr>` where the expression is appended to

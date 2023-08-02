@@ -234,7 +234,8 @@ CREATE TABLE lnav_views (
                     = dynamic_cast<text_time_translator*>(tc.get_sub_source());
 
                 if (time_source != nullptr && tc.get_inner_height() > 0) {
-                    auto top_time_opt = time_source->time_for_row(tc.get_top());
+                    auto top_time_opt
+                        = time_source->time_for_row(tc.get_selection());
 
                     if (top_time_opt) {
                         char timestamp[64];
@@ -303,7 +304,7 @@ CREATE TABLE lnav_views (
                     top_line_meta tlm;
                     if (time_source != nullptr) {
                         auto top_time_opt
-                            = time_source->time_for_row(tc.get_top());
+                            = time_source->time_for_row(tc.get_selection());
 
                         if (top_time_opt) {
                             char timestamp[64];
@@ -386,6 +387,8 @@ CREATE TABLE lnav_views (
             = dynamic_cast<text_time_translator*>(tc.get_sub_source());
 
         if (tc.get_top() != top_row) {
+            log_debug(
+                "setting top for %s to %d", tc.get_title().c_str(), top_row);
             tc.set_top(vis_line_t(top_row));
             if (!tc.is_selectable()) {
                 selection = top_row;
@@ -394,18 +397,31 @@ CREATE TABLE lnav_views (
             date_time_scanner dts;
             struct timeval tv;
 
+            log_debug("setting top time for %s to %s",
+                      tc.get_title().c_str(),
+                      top_time);
             if (dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
-                auto last_time_opt = time_source->time_for_row(tc.get_top());
+                auto last_time_opt
+                    = time_source->time_for_row(tc.get_selection());
 
                 if (last_time_opt) {
                     auto last_time = last_time_opt.value();
                     if (tv != last_time) {
                         time_source->row_for_time(tv) |
-                            [&tc](auto row) { tc.set_top(row); };
+                            [&tc, &selection](auto row) {
+                                log_debug("setting top for %s to %d from time",
+                                          tc.get_title().c_str(),
+                                          row);
+                                selection = row;
+                                tc.set_selection(row);
+                            };
                         if (!tc.is_selectable()) {
                             selection = tc.get_top();
                         }
                     }
+                } else {
+                    log_warning("  could not get for time top row of %s",
+                                tc.get_title().c_str());
                 }
             } else {
                 auto um = lnav::console::user_message::error(
@@ -549,6 +565,9 @@ CREATE TABLE lnav_view_stack (
 
         lnav_data.ld_last_view = *lnav_data.ld_view_stack.top();
         lnav_data.ld_view_stack.pop_back();
+        lnav_data.ld_preview_source.clear();
+        lnav_data.ld_preview_status_source.get_description().clear();
+
         return SQLITE_OK;
     }
 

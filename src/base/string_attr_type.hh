@@ -518,6 +518,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _error(
                           VC_ROLE.template value(role_t::VCR_ERROR));
 }
 
+inline std::pair<std::string, string_attr_pair> operator"" _warning(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_WARNING));
+}
+
 inline std::pair<std::string, string_attr_pair> operator"" _info(
     const char* str, std::size_t len)
 {

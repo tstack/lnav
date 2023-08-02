@@ -199,6 +199,53 @@
                     "description": "The name of the operation-id field in the log message pattern",
                     "type": "string"
                 },
+                "opid": {
+                    "title": "/<format_name>/opid",
+                    "type": "object",
+                    "properties": {
+                        "description": {
+                            "title": "/<format_name>/opid/description",
+                            "type": "object",
+                            "patternProperties": {
+                                "([\\w\\.\\-]+)": {
+                                    "title": "/<format_name>/opid/description/<opid_descriptor>",
+                                    "type": "object",
+                                    "properties": {
+                                        "format": {
+                                            "title": "/<format_name>/opid/description/<opid_descriptor>/format",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "field": {
+                                                        "title": "/<format_name>/opid/description/<opid_descriptor>/format/field",
+                                                        "type": "string"
+                                                    },
+                                                    "extractor": {
+                                                        "title": "/<format_name>/opid/description/<opid_descriptor>/format/extractor",
+                                                        "type": "string"
+                                                    },
+                                                    "prefix": {
+                                                        "title": "/<format_name>/opid/description/<opid_descriptor>/format/prefix",
+                                                        "type": "string"
+                                                    },
+                                                    "suffix": {
+                                                        "title": "/<format_name>/opid/description/<opid_descriptor>/format/suffix",
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "ordered-by-time": {
                     "title": "/<format_name>/ordered-by-time",
                     "description": "Indicates that the order of messages in the file is time-based.",

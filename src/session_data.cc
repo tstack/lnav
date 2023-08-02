@@ -1682,7 +1682,7 @@ lnav::session::restore_view_states()
             log_info("restoring %s view top: %d",
                      lnav_view_strings[view_index],
                      vs.vs_top);
-            lnav_data.ld_views[view_index].set_top(vis_line_t(vs.vs_top));
+            lnav_data.ld_views[view_index].set_top(vis_line_t(vs.vs_top), true);
         }
         if (vs.vs_selection) {
             log_info("restoring %s view selection: %d",

@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <memory>
 
 #include <fnmatch.h>
@@ -67,6 +68,47 @@ string_attr_type<bookmark_metadata*> logline::L_META("meta");
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<std::shared_ptr<external_log_format>>
     external_log_format::GRAPH_ORDERED_FORMATS;
+
+size_t
+opid_time_range::get_total_msgs() const
+{
+    return std::accumulate(this->otr_level_counts.begin(),
+                           this->otr_level_counts.end(),
+                           size_t{0});
+}
+
+size_t
+opid_time_range::get_error_count() const
+{
+    size_t retval = 0;
+
+    for (const auto level : {
+             log_level_t::LEVEL_ERROR,
+             log_level_t::LEVEL_CRITICAL,
+             log_level_t::LEVEL_FATAL,
+         })
+    {
+        retval += this->otr_level_counts[level];
+    }
+
+    return retval;
+}
+
+opid_time_range&
+opid_time_range::operator|=(const opid_time_range& rhs)
+{
+    if (rhs.otr_begin < this->otr_begin) {
+        this->otr_begin = rhs.otr_begin;
+    }
+    if (this->otr_end < rhs.otr_end) {
+        this->otr_end = rhs.otr_end;
+    }
+    if (this->otr_description.size() < rhs.otr_description.size()) {
+        this->otr_description = rhs.otr_description;
+    }
+
+    return *this;
+}
 
 struct line_range
 logline_value::origin_in_full_msg(const char* msg, ssize_t len) const
@@ -451,6 +493,7 @@ struct json_log_userdata {
     uint32_t jlu_quality{0};
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
+    nonstd::optional<string_fragment> jlu_opid_frag;
 };
 
 static int read_json_field(yajlpp_parse_context* ypc,
@@ -780,6 +823,21 @@ external_log_format::scan(logfile& lf,
                     "JSON message does not have expected timestamp property"};
             }
 
+            if (jlu.jlu_opid_frag) {
+                auto opid_iter = sbc.sbc_opids.find(jlu.jlu_opid_frag.value());
+                if (opid_iter == sbc.sbc_opids.end()) {
+                    auto otr
+                        = opid_time_range{ll.get_timeval(), ll.get_timeval()};
+                    auto emplace_res
+                        = sbc.sbc_opids.emplace(jlu.jlu_opid_frag.value(), otr);
+                    opid_iter = emplace_res.first;
+                } else {
+                    opid_iter->second.otr_end = ll.get_timeval();
+                }
+
+                opid_iter->second.otr_level_counts[ll.get_msg_level()] += 1;
+            }
+
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
             for (int lpc = 0; lpc < jlu.jlu_sub_line_count; lpc++) {
                 ll.set_sub_offset(lpc);
@@ -905,17 +963,127 @@ external_log_format::scan(logfile& lf,
         }
 
         if (opid_cap && !opid_cap->empty()) {
-            {
-                auto opid_iter = sbc.sbc_opids.find(opid_cap.value());
+            auto opid_iter = sbc.sbc_opids.find(opid_cap.value());
 
-                if (opid_iter == sbc.sbc_opids.end()) {
-                    auto opid_copy = opid_cap->to_owned(sbc.sbc_allocator);
-                    auto otr = opid_time_range{log_tv, log_tv};
-                    sbc.sbc_opids.emplace(opid_copy, otr);
-                } else {
-                    opid_iter->second.otr_end = log_tv;
+            if (opid_iter == sbc.sbc_opids.end()) {
+                auto opid_copy = opid_cap->to_owned(sbc.sbc_allocator);
+                auto otr = opid_time_range{log_tv, log_tv};
+                auto emplace_res = sbc.sbc_opids.emplace(opid_copy, otr);
+                opid_iter = emplace_res.first;
+            } else {
+                opid_iter->second.otr_end = log_tv;
+            }
+
+            opid_iter->second.otr_level_counts[level] += 1;
+
+            auto& otr = opid_iter->second;
+            if (!otr.otr_description_id) {
+                for (const auto& desc_def_pair : *this->lf_opid_description_def)
+                {
+                    if (otr.otr_description_id) {
+                        break;
+                    }
+                    for (const auto& desc_def :
+                         desc_def_pair.second.od_descriptors)
+                    {
+                        auto desc_field_index_iter
+                            = fpat->p_value_name_to_index.find(
+                                desc_def.od_field.pp_value);
+
+                        if (desc_field_index_iter
+                            != fpat->p_value_name_to_index.end())
+                        {
+                            auto desc_cap_opt
+                                = md[desc_field_index_iter->second];
+
+                            if (desc_cap_opt) {
+                                if (desc_def.od_extractor.pp_value) {
+                                    static thread_local auto desc_md = lnav::
+                                        pcre2pp::match_data::unitialized();
+
+                                    auto desc_match_res
+                                        = desc_def.od_extractor.pp_value
+                                              ->capture_from(
+                                                  desc_cap_opt.value())
+                                              .into(desc_md)
+                                              .matches(PCRE2_NO_UTF_CHECK)
+                                              .ignore_error();
+                                    if (desc_match_res) {
+                                        otr.otr_description_id
+                                            = desc_def_pair.first;
+                                    }
+                                } else {
+                                    otr.otr_description_id
+                                        = desc_def_pair.first;
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
+            if (otr.otr_description_id) {
+                const auto& desc_def_v
+                    = this->lf_opid_description_def
+                          ->find(opid_iter->second.otr_description_id.value())
+                          ->second.od_descriptors;
+                auto& desc_v = opid_iter->second.otr_description;
+
+                if (desc_def_v.size() != desc_v.size()) {
+                    for (size_t desc_def_index = 0;
+                         desc_def_index < desc_def_v.size();
+                         desc_def_index++)
+                    {
+                        const auto& desc_def = desc_def_v[desc_def_index];
+                        auto found_desc = false;
+
+                        for (const auto& desc_pair : desc_v) {
+                            if (desc_pair.first == desc_def_index) {
+                                found_desc = true;
+                                break;
+                            }
+                        }
+                        if (!found_desc) {
+                            auto desc_field_index_iter
+                                = fpat->p_value_name_to_index.find(
+                                    desc_def.od_field.pp_value);
+
+                            if (desc_field_index_iter
+                                != fpat->p_value_name_to_index.end())
+                            {
+                                auto desc_cap_opt
+                                    = md[desc_field_index_iter->second];
+
+                                if (desc_cap_opt) {
+                                    if (desc_def.od_extractor.pp_value) {
+                                        static thread_local auto desc_md
+                                            = lnav::pcre2pp::match_data::
+                                                unitialized();
+
+                                        auto match_res
+                                            = desc_def.od_extractor.pp_value
+                                                  ->capture_from(
+                                                      desc_cap_opt.value())
+                                                  .into(desc_md)
+                                                  .matches(PCRE2_NO_UTF_CHECK)
+                                                  .ignore_error();
+                                        if (match_res) {
+                                            desc_v.emplace_back(
+                                                desc_def_index,
+                                                desc_md.to_string());
+                                        }
+                                    } else {
+                                        desc_v.emplace_back(
+                                            desc_def_index,
+                                            desc_cap_opt->to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             opid = hash_str(opid_cap->data(), opid_cap->length());
         }
 
@@ -1326,6 +1494,7 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     const intern_string_t field_name = ypc->get_path();
     struct exttm tm_out;
     struct timeval tv_out;
+    auto frag = string_fragment::from_bytes(str, len);
 
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         jlu->jlu_format->lf_date_time.scan(
@@ -1344,17 +1513,25 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
                 .ignore_error()
                 .has_value())
         {
-            jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
-                string_fragment::from_bytes(str, len), jlu->jlu_batch_context));
+            jlu->jlu_base_line->set_level(
+                jlu->jlu_format->convert_level(frag, jlu->jlu_batch_context));
         }
     }
     if (jlu->jlu_format->elf_level_field == field_name) {
-        jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
-            string_fragment::from_bytes(str, len), jlu->jlu_batch_context));
+        jlu->jlu_base_line->set_level(
+            jlu->jlu_format->convert_level(frag, jlu->jlu_batch_context));
     }
     if (jlu->jlu_format->elf_opid_field == field_name) {
         uint8_t opid = hash_str((const char*) str, len);
         jlu->jlu_base_line->set_opid(opid);
+
+        auto& sbc = *jlu->jlu_batch_context;
+        auto opid_iter = sbc.sbc_opids.find(frag);
+        if (opid_iter == sbc.sbc_opids.end()) {
+            jlu->jlu_opid_frag = frag.to_owned(sbc.sbc_allocator);
+        } else {
+            jlu->jlu_opid_frag = opid_iter->first;
+        }
     }
 
     jlu->add_sub_lines_for(
@@ -1789,6 +1966,11 @@ external_log_format::get_subline(const logline& ll,
                         break;
                     }
                 }
+                lv.lv_origin.lr_end = this->jlf_cached_line.size() - 1;
+                if (lv.lv_meta.lvm_name == this->elf_opid_field) {
+                    this->jlf_line_attrs.emplace_back(lv.lv_origin,
+                                                      logline::L_OPID.value());
+                }
             }
         }
 
@@ -2073,6 +2255,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 ivd.ivd_value_def = vd;
                 pat.p_value_by_index.push_back(ivd);
             }
+            pat.p_value_name_to_index[name] = named_cap.get_index();
         }
 
         stable_sort(pat.p_value_by_index.begin(), pat.p_value_by_index.end());
@@ -2307,6 +2490,23 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .with_reason(
                         "tag definitions must have a non-empty pattern")
                     .with_snippets(this->get_snippets()));
+        }
+    }
+
+    for (const auto& opid_desc_pair : *this->lf_opid_description_def) {
+        for (const auto& opid_desc : opid_desc_pair.second.od_descriptors) {
+            auto iter = this->elf_value_defs.find(opid_desc.od_field.pp_value);
+            if (iter == this->elf_value_defs.end()) {
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid opid description field ")
+                            .append_quoted(lnav::roles::symbol(
+                                opid_desc.od_field.pp_path.to_string())))
+                        .with_reason(
+                            attr_line_t("unknown value name ")
+                                .append_quoted(opid_desc.od_field.pp_value))
+                        .with_snippets(this->get_snippets()));
+            }
         }
     }
 

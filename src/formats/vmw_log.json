@@ -53,6 +53,31 @@
             "fatal": "^(?i)(?:alert|fatal|panic|Al|Em)$"
         },
         "opid-field": "opid",
+        "opid": {
+            "description": {
+                "vum": {
+                    "format": [
+                        {
+                            "field": "sub",
+                            "extractor": "^(com\\..*)$"
+                        }
+                    ]
+                },
+                "hostd": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "target='([^']+)'"
+                        },
+                        {
+                            "prefix": ".",
+                            "field": "body",
+                            "extractor": "method='([^']+)'"
+                        }
+                    ]
+                }
+            }
+        },
         "value": {
             "prc": {
                 "kind": "string",

@@ -104,6 +104,7 @@ public:
                           int>::with_default_args<PCRE2_DOTALL>
             p_pcre;
         std::vector<indexed_value_def> p_value_by_index;
+        std::map<intern_string_t, int> p_value_name_to_index;
         std::vector<int> p_numeric_value_indexes;
         int p_timestamp_field_index{-1};
         int p_time_field_index{-1};

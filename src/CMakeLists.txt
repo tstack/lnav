@@ -364,6 +364,7 @@ add_library(
         fs-extension-functions.cc
         fstat_vtab.cc
         fts_fuzzy_match.cc
+        gantt_source.cc
         help_text.cc
         help_text_formatter.cc
         highlighter.cc
@@ -477,6 +478,7 @@ add_library(
         filter_sub_source.hh
         fstat_vtab.hh
         fts_fuzzy_match.hh
+        gantt_source.hh
         grep_highlighter.hh
         hasher.hh
         help_text.hh
