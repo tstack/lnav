@@ -53,5 +53,8 @@ while not done:
             print("<pre>\n%s</pre>" % html.escape(get_content['returnValue']['exception']))
             done = True
     elif get_content['returnValue']['state'] == 'COMPLETED':
-        print("<pre>\n%s</pre>" % html.escape(get_content['returnValue']['output']))
+        if get_content['returnValue'].get('output') is not None:
+            print("<pre>\n%s</pre>" % html.escape(get_content['returnValue']['output']))
+        elif get_content['returnValue'].get('exception') is not None:
+            print("<pre>\n%s</pre>" % html.escape(get_content['returnValue']['exception']))
         done = True
