@@ -139,6 +139,13 @@ operator<(const struct timeval& left, const struct timeval& right)
 }
 
 inline bool
+operator<=(const struct timeval& left, const struct timeval& right)
+{
+    return left.tv_sec <= right.tv_sec
+        || ((left.tv_sec == right.tv_sec) && (left.tv_usec <= right.tv_usec));
+}
+
+inline bool
 operator!=(const struct timeval& left, const struct timeval& right)
 {
     return left.tv_sec != right.tv_sec || left.tv_usec != right.tv_usec;

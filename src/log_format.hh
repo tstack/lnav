@@ -541,6 +541,21 @@ public:
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;
 
+    struct opid_descriptor {
+        positioned_property<intern_string_t> od_field;
+        factory_container<lnav::pcre2pp::code> od_extractor;
+        std::string od_prefix{" "};
+        std::string od_suffix;
+    };
+
+    struct opid_descriptors {
+        std::vector<opid_descriptor> od_descriptors;
+    };
+
+    std::shared_ptr<std::map<intern_string_t, opid_descriptors>>
+        lf_opid_description_def{
+            std::make_shared<std::map<intern_string_t, opid_descriptors>>()};
+
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;
 

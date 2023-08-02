@@ -51,6 +51,7 @@ typedef enum {
     LNV_SCHEMA,
     LNV_PRETTY,
     LNV_SPECTRO,
+    LNV_GANTT,
 
     LNV__MAX
 } lnav_view_t;

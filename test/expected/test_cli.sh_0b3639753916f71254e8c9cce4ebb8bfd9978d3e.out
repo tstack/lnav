@@ -1686,8 +1686,8 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "$red",
-                        "underline": true,
+                        "background-color": "#d7005f",
+                        "underline": false,
                         "bold": true
                     },
                     "adjusted-time": {

@@ -55,6 +55,29 @@ quote(const char* unquoted)
     return retval;
 }
 
+std::string
+match_data::to_string() const
+{
+    std::string retval;
+
+    if (this->get_count() == 1) {
+        auto cap = (*this)[0];
+        retval.append(cap->data(), cap->length());
+    } else {
+        for (size_t lpc = 1; lpc < this->get_count(); lpc++) {
+            auto cap = (*this)[lpc];
+
+            if (!cap) {
+                continue;
+            }
+
+            retval.append(cap->data(), cap->length());
+        }
+    }
+
+    return retval;
+}
+
 matcher
 capture_builder::into(lnav::pcre2pp::match_data& md) &&
 {

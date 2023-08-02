@@ -1,0 +1,116 @@
+/**
+ * Copyright (c) 2023, Timothy Stack
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * * Neither the name of Timothy Stack nor the names of its contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef lnav_gantt_source_hh
+#define lnav_gantt_source_hh
+
+#include "logfile_sub_source.hh"
+#include "plain_text_source.hh"
+#include "preview_status_source.hh"
+#include "textview_curses.hh"
+
+class gantt_source
+    : public text_sub_source
+    , public text_time_translator {
+public:
+    explicit gantt_source(textview_curses& log_view,
+                          logfile_sub_source& lss,
+                          plain_text_source& preview_source,
+                          preview_status_source& preview_status_source);
+
+    size_t text_line_count() override;
+
+    size_t text_line_width(textview_curses& curses) override;
+
+    void text_value_for_line(textview_curses& tc,
+                             int line,
+                             std::string& value_out,
+                             line_flags_t flags) override;
+
+    void text_attrs_for_line(textview_curses& tc,
+                             int line,
+                             string_attrs_t& value_out) override;
+
+    size_t text_size_for_line(textview_curses& tc,
+                              int line,
+                              line_flags_t raw) override;
+
+    void text_selection_changed(textview_curses& tc) override;
+
+    nonstd::optional<vis_line_t> row_for_time(
+        struct timeval time_bucket) override;
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
+
+    void rebuild_indexes();
+
+    std::pair<timeval, timeval> get_time_bounds_for(int line);
+
+    textview_curses& gs_log_view;
+    logfile_sub_source& gs_lss;
+    plain_text_source& gs_preview_source;
+    preview_status_source& gs_preview_status_source;
+    ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
+
+    struct opid_description_defs {};
+
+    using gantt_opid_map
+        = robin_hood::unordered_map<string_fragment,
+                                    opid_description_defs,
+                                    frag_hasher,
+                                    std::equal_to<string_fragment>>;
+
+    gantt_opid_map gs_opid_map;
+
+    struct opid_row {
+        string_fragment or_name;
+        opid_time_range or_value;
+    };
+
+    attr_line_t gs_rendered_line;
+    size_t gs_opid_width{0};
+    size_t gs_total_width{0};
+    std::vector<opid_row> gs_time_order;
+    struct timeval gs_lower_bound {};
+    struct timeval gs_upper_bound {};
+};
+
+class gantt_header_overlay : public list_overlay_source {
+public:
+    gantt_header_overlay(std::shared_ptr<gantt_source> src);
+
+    bool list_static_overlay(const listview_curses& lv,
+                             int y,
+                             int bottom,
+                             attr_line_t& value_out) override;
+
+private:
+    std::shared_ptr<gantt_source> gho_src;
+};
+
+#endif

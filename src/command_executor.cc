@@ -370,9 +370,13 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
             switch (retcode) {
                 case SQLITE_OK:
-                case SQLITE_DONE:
+                case SQLITE_DONE: {
+                    auto changes = sqlite3_changes(lnav_data.ld_db.in());
+
+                    log_info("sqlite3_changes() -> %d", changes);
                     done = true;
                     break;
+                }
 
                 case SQLITE_ROW:
                     ec.ec_sql_callback(ec, stmt.in());

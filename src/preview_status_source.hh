@@ -60,22 +60,19 @@ public:
         this->tss_fields[TSF_TOGGLE].set_width(strlen(TOGGLE_MSG) + 1);
         this->tss_fields[TSF_TOGGLE].set_value(TOGGLE_MSG);
         this->tss_fields[TSF_TOGGLE].right_justify(true);
-    };
+    }
 
-    size_t statusview_fields() override
-    {
-        return TSF__MAX;
-    };
+    size_t statusview_fields() override { return TSF__MAX; }
 
     status_field& statusview_value_for_field(int field) override
     {
         return this->tss_fields[field];
-    };
+    }
 
     status_field& get_description()
     {
         return this->tss_fields[TSF_DESCRIPTION];
-    };
+    }
 
 private:
     status_field tss_fields[TSF__MAX];

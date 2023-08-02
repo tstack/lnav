@@ -35,6 +35,7 @@
 #include "document.sections.hh"
 #include "environ_vtab.hh"
 #include "filter_sub_source.hh"
+#include "gantt_source.hh"
 #include "help-md.h"
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
@@ -63,6 +64,7 @@ const char* lnav_view_strings[LNV__MAX + 1] = {
     "schema",
     "pretty",
     "spectro",
+    "gantt",
 
     nullptr,
 };
@@ -76,6 +78,7 @@ const char* lnav_view_titles[LNV__MAX] = {
     "SCHEMA",
     "PRETTY",
     "SPECTRO",
+    "GANTT",
 };
 
 nonstd::optional<lnav_view_t>
@@ -122,6 +125,17 @@ open_schema_view()
 
     schema_tc->set_sub_source(pts);
     schema_tc->redo_search();
+}
+
+static void
+open_gantt_view()
+{
+    auto* gantt_tc = &lnav_data.ld_views[LNV_GANTT];
+    auto* gantt_src = dynamic_cast<gantt_source*>(gantt_tc->get_sub_source());
+
+    gantt_src->rebuild_indexes();
+    gantt_tc->reload_data();
+    gantt_tc->redo_search();
 }
 
 class pretty_sub_source : public plain_text_source {
@@ -907,6 +921,9 @@ toggle_view(textview_curses* toggle_tc)
     require(toggle_tc >= &lnav_data.ld_views[0]);
     require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
 
+    lnav_data.ld_preview_source.clear();
+    lnav_data.ld_preview_status_source.get_description().clear();
+
     if (tc == toggle_tc) {
         if (lnav_data.ld_view_stack.size() == 1) {
             return false;
@@ -923,6 +940,8 @@ toggle_view(textview_curses* toggle_tc)
             open_schema_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
+        } else if (toggle_tc == &lnav_data.ld_views[LNV_GANTT]) {
+            open_gantt_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
             // Rebuild to reflect changes in marks.
             rebuild_hist();

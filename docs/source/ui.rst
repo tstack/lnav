@@ -296,6 +296,34 @@ can also press :kbd:`Shift` + :kbd:`i` to toggle the histogram view
 while synchronizing the top time.  While in the histogram view,
 pressing :kbd:`z` / :kbd:`Shift` + :kbd:`z` will zoom in/out.
 
+GANTT
+^^^^^
+
+.. note:: This feature is available in v0.12.0+.
+
+The Gantt Chart view visualizes operations over time.  The operations
+are identified by the "opid" field defined in the log format.  In the
+view, there is a header that shows the overall time span, the
+narrowed time span around the focused line, and the column headers.
+Each row in the view shows the following:
+
+* The duration of the operation
+* Sparklines showing the number of errors and warnings relative to the
+  total number of messages associated with the OPID.
+* The OPID itself.
+* A description of the operation as captured from the log messages.
+
+The rows are sorted by the start time of each operation.
+
+If an operation row is in the focused time span, a reverse-video
+bar will show when the operation started and finished (unless it
+extends outside the time span).  As you move the focused line, the
+focused time span will be adjusted to keep the preceding and following
+five operations within the span.
+
+The preview panel at the bottom of the display will show the
+messages associated with the operation.
+
 PRETTY
 ^^^^^^
 

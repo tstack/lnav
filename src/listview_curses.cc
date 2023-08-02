@@ -654,9 +654,32 @@ listview_curses::shift_selection(shift_amount_t sa)
     if (this->is_selectable()) {
         auto new_selection = this->lv_selection + vis_line_t(offset);
 
-        if (new_selection >= 0_vl && new_selection < this->get_inner_height()) {
-            this->set_selection(new_selection);
+        if (new_selection < 0_vl) {
+            new_selection = 0_vl;
+        } else if (new_selection >= this->get_inner_height()) {
+            auto rows_avail
+                = this->rows_available(this->lv_top, RD_DOWN) - 1_vl;
+            auto top_for_last = this->get_top_for_last_row();
+
+            if ((this->lv_top < top_for_last)
+                && (this->lv_top + rows_avail > top_for_last))
+            {
+                this->set_top(top_for_last);
+                if (this->lv_selection <= top_for_last) {
+                    this->set_selection(top_for_last + 1_vl);
+                }
+            } else {
+                this->shift_top(rows_avail);
+
+                auto inner_height = this->get_inner_height();
+                if (this->lv_selectable && this->lv_top >= top_for_last
+                    && inner_height > 0_vl)
+                {
+                    this->set_selection(inner_height - 1_vl);
+                }
+            }
         }
+        this->set_selection(new_selection);
     } else {
         this->shift_top(vis_line_t{offset});
     }

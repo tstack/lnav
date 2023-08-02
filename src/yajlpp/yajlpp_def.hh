@@ -273,6 +273,12 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename T, typename U>
+    static inline U& get_field(T& input, std::shared_ptr<U>(T::*field))
+    {
+        return *(input.*field);
+    }
+
+    template<typename T, typename U>
     static inline U& get_field(T& input, U(T::*field))
     {
         return input.*field;
@@ -372,7 +378,31 @@ struct json_path_handler : public json_path_handler_base {
     };
 
     template<typename T, typename U>
+    struct LastIsVector<std::shared_ptr<std::vector<U>> T::*> {
+        using value_type = U;
+        static constexpr bool value = true;
+    };
+
+    template<typename T, typename U>
     struct LastIsVector<U T::*> {
+        using value_type = void;
+        static constexpr bool value = false;
+    };
+
+    template<typename T, typename... Args>
+    struct LastIsMap {
+        using value_type = typename LastIsMap<Args...>::value_type;
+        static constexpr bool value = LastIsMap<Args...>::value;
+    };
+
+    template<typename T, typename K, typename U>
+    struct LastIsMap<std::shared_ptr<std::map<K, U>> T::*> {
+        using value_type = U;
+        static constexpr bool value = true;
+    };
+
+    template<typename T, typename U>
+    struct LastIsMap<U T::*> {
         using value_type = void;
         static constexpr bool value = false;
     };
@@ -576,6 +606,27 @@ struct json_path_handler : public json_path_handler_base {
 
             return yajl_gen_status_ok;
         };
+        return *this;
+    }
+
+    template<typename... Args,
+             std::enable_if_t<LastIsMap<Args...>::value, bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->jph_path_provider =
+            [args...](void* root, std::vector<std::string>& paths_out) {
+                const auto& field = json_path_handler::get_field(root, args...);
+
+                for (const auto& pair : field) {
+                    paths_out.emplace_back(std::to_string(pair.first));
+                }
+            };
+        this->jph_obj_provider
+            = [args...](const yajlpp_provider_context& ypc, void* root) {
+                  auto& field = json_path_handler::get_field(root, args...);
+
+                  return &(field[ypc.get_substr_i(0)]);
+              };
         return *this;
     }
 

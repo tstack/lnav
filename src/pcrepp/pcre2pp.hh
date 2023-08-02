@@ -108,6 +108,8 @@ public:
 
     uint32_t get_capacity() const { return this->md_ovector_count; }
 
+    std::string to_string() const;
+
 private:
     friend matcher;
     friend code;

@@ -847,6 +847,34 @@ static const struct json_path_container converter_handlers = {
         .for_field(&external_log_format::converter::c_command),
 };
 
+static const struct json_path_container opid_descriptor_handlers = {
+    yajlpp::property_handler("field").for_field(
+        &log_format::opid_descriptor::od_field),
+    yajlpp::property_handler("extractor")
+        .for_field(&log_format::opid_descriptor::od_extractor),
+    yajlpp::property_handler("prefix").for_field(
+        &log_format::opid_descriptor::od_prefix),
+    yajlpp::property_handler("suffix").for_field(
+        &log_format::opid_descriptor::od_suffix),
+};
+
+static const struct json_path_container opid_description_format_handlers = {
+    yajlpp::property_handler("format#")
+        .for_field(&log_format::opid_descriptors::od_descriptors)
+        .with_children(opid_descriptor_handlers),
+};
+
+static const struct json_path_container opid_description_handlers = {
+    yajlpp::pattern_property_handler(R"((?<opid_descriptor>[\w\.\-]+))")
+        .for_field(&log_format::lf_opid_description_def)
+        .with_children(opid_description_format_handlers),
+};
+
+static const struct json_path_container opid_handlers = {
+    yajlpp::property_handler("description")
+        .with_children(opid_description_handlers),
+};
+
 const struct json_path_container format_handlers = {
     yajlpp::property_handler("regex")
         .with_description(
@@ -930,6 +958,7 @@ const struct json_path_container format_handlers = {
         .with_description(
             "The name of the operation-id field in the log message pattern")
         .for_field(&external_log_format::elf_opid_field),
+    yajlpp::property_handler("opid").with_children(opid_handlers),
     yajlpp::property_handler("ordered-by-time")
         .with_synopsis("<bool>")
         .with_description(

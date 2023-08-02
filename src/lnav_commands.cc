@@ -1323,6 +1323,7 @@ com_save_to(exec_context& ec,
             && los->list_static_overlay(*tc, y, tc->get_inner_height(), ov_al))
         {
             write_line_to(outfile, ov_al);
+            ov_al.clear();
             ++y;
         }
         tc->listview_value_for_rows(*tc, top, rows);
@@ -1335,8 +1336,8 @@ com_save_to(exec_context& ec,
             write_line_to(outfile, al);
 
             ++y;
-            std::vector<attr_line_t> row_overlay_content;
             if (los != nullptr) {
+                std::vector<attr_line_t> row_overlay_content;
                 los->list_value_for_overlay(*tc, top, row_overlay_content);
                 for (const auto& ov_row : row_overlay_content) {
                     write_line_to(outfile, ov_row);
@@ -1474,6 +1475,7 @@ com_save_to(exec_context& ec,
             && los->list_static_overlay(*tc, y, tc->get_inner_height(), ov_al))
         {
             write_line_to(outfile, ov_al);
+            ov_al.clear();
             ++y;
         }
         for (auto iter = all_user_marks.begin(); iter != all_user_marks.end();
@@ -1490,8 +1492,8 @@ com_save_to(exec_context& ec,
             write_line_to(outfile, rows[0]);
 
             y = 0_vl;
-            std::vector<attr_line_t> row_overlay_content;
             if (los != nullptr) {
+                std::vector<attr_line_t> row_overlay_content;
                 los->list_value_for_overlay(*tc, (*iter), row_overlay_content);
                 for (const auto& ov_row : row_overlay_content) {
                     write_line_to(outfile, ov_row);

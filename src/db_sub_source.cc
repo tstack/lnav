@@ -442,7 +442,7 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         } else {
             attrs.ta_attrs = A_UNDERLINE;
         }
-        sa.emplace_back(header_range, VC_STYLE.value(text_attrs{attrs}));
+        sa.emplace_back(header_range, VC_STYLE.value(attrs));
     }
 
     struct line_range lr(0);

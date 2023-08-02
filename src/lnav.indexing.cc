@@ -194,7 +194,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     bool scroll_downs[LNV__MAX];
     size_t retval = 0;
 
-    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+    for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& view = lnav_data.ld_views[lpc];
 
         if (view.is_selectable()) {
@@ -333,7 +333,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
         retval += 1;
     }
 
-    for (int lpc = 0; lpc < LNV__MAX; lpc++) {
+    for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& scroll_view = lnav_data.ld_views[lpc];
 
         if (scroll_downs[lpc]) {

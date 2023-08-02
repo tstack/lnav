@@ -98,6 +98,7 @@
 #include "file_converter_manager.hh"
 #include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
+#include "gantt_source.hh"
 #include "grep_proc.hh"
 #include "hist_source.hh"
 #include "init-sql.h"
@@ -2744,6 +2745,23 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .add_input_delegate(*lnav_data.ld_spectro_source)
         .set_tail_space(4_vl);
     lnav_data.ld_views[LNV_SPECTRO].set_selectable(true);
+    auto gantt_view_source
+        = std::make_shared<gantt_source>(lnav_data.ld_views[LNV_LOG],
+                                         lnav_data.ld_log_source,
+                                         lnav_data.ld_preview_source,
+                                         lnav_data.ld_preview_status_source);
+    auto gantt_header_source
+        = std::make_shared<gantt_header_overlay>(gantt_view_source);
+    lnav_data.ld_views[LNV_GANTT]
+        .set_sub_source(gantt_view_source.get())
+        .set_overlay_source(gantt_header_source.get())
+        .set_tail_space(4_vl);
+    lnav_data.ld_views[LNV_GANTT].set_selectable(true);
+
+    auto _gantt_cleanup = finally([] {
+        lnav_data.ld_views[LNV_GANTT].set_sub_source(nullptr);
+        lnav_data.ld_views[LNV_GANTT].set_overlay_source(nullptr);
+    });
 
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
@@ -3335,6 +3353,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                *tc, y, tc->get_inner_height(), ov_al))
                     {
                         write_line_to(stdout, ov_al);
+                        ov_al.clear();
                         ++y;
                     }
 

@@ -1,6 +1,11 @@
 ## lnav v0.12.0
 
 Features:
+* Added a Gantt Chart view to visualize operations over time
+  based on the "opid" in log messages.  The view shows
+  the operation IDs, a description of the operation captured
+  from log messages, and a bar representing the period of
+  time that the operation was running.
 * Added the `:sh` command and `-e` option to execute a shell
   command-line and display its output within **lnav**.   The
   captured output will be displayed in the TEXT view.  The

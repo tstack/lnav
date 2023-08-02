@@ -214,6 +214,7 @@ noinst_HEADERS = \
 	filter_sub_source.hh \
 	fstat_vtab.hh \
 	fts_fuzzy_match.hh \
+	gantt_source.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
 	hasher.hh \
@@ -409,6 +410,7 @@ libdiag_a_SOURCES = \
 	fstat_vtab.cc \
     fs-extension-functions.cc \
     fts_fuzzy_match.cc \
+    gantt_source.cc \
 	grep_proc.cc \
 	help_text.cc \
 	help_text_formatter.cc \
