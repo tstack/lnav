@@ -6,7 +6,7 @@
         "url": "https://kb.vmware.com/kb/2004201",
         "regex": {
             "6.0+": {
-                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>\\w+@\\d+)(?:\\s+sub=(?<sub>.*?(?!\\w+=)))?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: req=(?<req>[^ \\]]+))?(?: opI(?:D|d)=(?<opid>(?:req=)?[\\w@ \\-\\.:]+?(?!\\w+=)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]<]+(?:<[^>]+>)?))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s+(?<body>.*)$"
+                "pattern": "^(?:\\[#\\d+\\] )?(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? (?:\\w+ -\\[\\d+\\] )?\\[(?<src>[\\w:]+(?:@\\d+)?)(?:\\s+sub=(?<sub>.*?(?!\\w+=)))?(?:\\s+item=(?<item>[\\w\\.\\-@/:]+))?(?: req=(?<req>[^ \\]]+))?(?: opI(?:D|d)=(?<opid>(?:req=)?[\\w@ \\-\\.:]+?(?!\\w+=)))?(?: sid=(?<sid>[^ \\]]+))?(?: user=(?<user>[^ \\]<]+(?:<[^>]+>)?))?(?: update=(?<vpxa_update>\\d+))?(?:\\s+reason=(?<reason>[^\\]]+))?\\]\\s+(?<body>.*)$"
             },
             "6.0+-nosrc": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)$"
@@ -73,6 +73,19 @@
                             "prefix": ".",
                             "field": "body",
                             "extractor": "method='([^']+)'"
+                        }
+                    ]
+                },
+                "vsan": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "Invoking '[^']+' on '([^']+)'"
+                        },
+                        {
+                            "prefix": ".",
+                            "field": "body",
+                            "extractor": "Invoking '([^']+)' on '[^']+'"
                         }
                     ]
                 }
@@ -260,6 +273,9 @@
             },
             {
                 "line": "2022-06-02T03:20:05.107Z Db(167) Hostd[1001392035]: [Originator@6876 sub=AdapterServer opID=531c52d7-9d8a sid=52806149 user=vpxuser:<no user>] New request: target='vim.HostSystem:ha-host', method='retrieveInternalCapability', session='52806149-fe15-f6ff-7685-353ae5d93dcc'"
+            },
+            {
+                "line": "2022-06-02T11:49:41.274Z INFO vsan-mgmt[51740] [VsanVcObjectHelper::wrapper opID=SWI-2230eb26-8c37] Ready to get single executor result for the key ['_QuerySpaceUsage', 'vsan-cluster-space-report-system', 'domain-c115', '', 'False'] in timeout 600\n2022-06-02T12:23:46.807Z [pool-2-thread-18] INFO  opId= com.vmware.vim.storage.common.task.CustomThreadPoolExecutor - [VLSI-client] Request took 4 millis to execute.\n2022-06-02T12:26:24.319Z INFO vsan-mgmt[16622] [VsanVcPerformanceManagerImpl::QueryClusterHealth opID=21fcddd1] CMMDS primary exists but no stats primary, check node information again.\n2022-06-02T12:26:27.109Z info vsanvcmgmtd[38723] [vSAN@6876 sub=CnsSync] Sync ds:///vmfs/volumes/5f65bf61-0e36b15d-fbd6-005056a00b50/: startVClock = 0, fullSync = true"
             }
         ]
     }
