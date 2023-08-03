@@ -167,6 +167,10 @@
    [33mreason[0m: pattern does not match any samples
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:7
 [36m =[0m   [36mhelp[0m: every pattern should have at least one sample that it matches
+[1m[31m✘ error[0m: invalid pattern: “[1m/invalid_props_log/regex/std[0m”
+ [1m[31mreason[0m: no timestamp capture found in the pattern
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m =[0m [36mhelp[0m: all log messages need a timestamp
 [33m⚠ warning[0m: invalid value “[1m/invalid_props_log/value/non-existent[0m”
    [33mreason[0m: no patterns have a capture named “non-existent”
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4

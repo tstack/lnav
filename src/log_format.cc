@@ -931,12 +931,18 @@ external_log_format::scan(logfile& lf,
             ts = string_fragment::from_bytes(combined_datetime_buf, ts_str_len);
         }
 
-        if ((last = this->lf_date_time.scan(ts->data(),
-                                            ts->length(),
-                                            this->get_timestamp_formats(),
-                                            &log_time_tm,
-                                            log_tv))
-            == nullptr)
+        auto level = this->convert_level(
+            level_cap.value_or(string_fragment::invalid()), &sbc);
+
+        if (!ts) {
+            level = log_level_t::LEVEL_INVALID;
+        } else if ((last
+                    = this->lf_date_time.scan(ts->data(),
+                                              ts->length(),
+                                              this->get_timestamp_formats(),
+                                              &log_time_tm,
+                                              log_tv))
+                   == nullptr)
         {
             this->lf_date_time.unlock();
             if ((last = this->lf_date_time.scan(ts->data(),
@@ -949,9 +955,6 @@ external_log_format::scan(logfile& lf,
                 continue;
             }
         }
-
-        auto level = this->convert_level(
-            level_cap.value_or(string_fragment::invalid()), &sbc);
 
         this->lf_timestamp_flags = log_time_tm.et_flags;
 
@@ -2274,6 +2277,16 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         break;
                 }
             }
+        }
+
+        if (!pat.p_module_format && pat.p_timestamp_field_index == -1) {
+            errors.emplace_back(
+                lnav::console::user_message::error(
+                    attr_line_t("invalid pattern: ")
+                        .append_quoted(lnav::roles::symbol(pat.p_config_path)))
+                    .with_reason("no timestamp capture found in the pattern")
+                    .with_snippets(this->get_snippets())
+                    .with_help("all log messages need a timestamp"));
         }
 
         if (!this->elf_level_field.empty() && pat.p_level_field_index == -1) {
