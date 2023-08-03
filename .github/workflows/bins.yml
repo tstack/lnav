@@ -152,7 +152,7 @@ jobs:
           cp ../src/lnav . &&
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
-      - name: Upload config.log artifact
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
