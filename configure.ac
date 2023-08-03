@@ -297,14 +297,14 @@ AS_CASE(["$host_os"],
 
 saved_location=$(pwd)
 cd $srcdir
-version=$(expr $(git describe --abbrev=7 --dirty --always --tags 2>/dev/null) : 'v\([[0-9]]*\.[[0-9]]*\.[[0-9]]*.*\)' 2>/dev/null)
-cd $saved_location
+version=$(echo $(git describe --abbrev=7 --dirty --always --tags 2>/dev/null) | sed -e 's/^v//' 2>/dev/null)
 AS_IF([test $? -eq 0],
     [version=$(echo $version | tr -d '\n')
      version=${version:-${PACKAGE_VERSION}}
      AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_NAME $version"],
          [VCS package string])],
     AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_STRING"], [VCS package string]))
+cd $saved_location
 
 AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
 AM_CONDITIONAL(HAVE_LIBCURL, test x"$LIBCURL" != x"")
