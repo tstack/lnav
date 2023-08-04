@@ -926,13 +926,30 @@ logfile_sub_source::rebuild_index(
                 for (size_t line_index = 0; line_index < lf->size();
                      line_index++)
                 {
-                    if ((*lf)[line_index].is_ignored()) {
+                    const auto lf_iter
+                        = ld->get_file_ptr()->begin() + line_index;
+                    if (lf_iter->is_ignored()) {
                         continue;
                     }
 
                     content_line_t con_line(
                         ld->ld_file_index * MAX_LINES_PER_FILE + line_index);
 
+                    if (lf_iter->is_marked()) {
+                        auto start_iter = lf_iter;
+                        while (start_iter->is_continued()) {
+                            --start_iter;
+                        }
+                        int start_index
+                            = start_iter - ld->get_file_ptr()->begin();
+                        content_line_t start_con_line(ld->ld_file_index
+                                                          * MAX_LINES_PER_FILE
+                                                      + start_index);
+
+                        this->lss_user_marks[&textview_curses::BM_META]
+                            .insert_once(start_con_line);
+                        lf_iter->set_mark(false);
+                    }
                     this->lss_index.push_back(con_line);
                 }
             }
