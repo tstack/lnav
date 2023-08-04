@@ -283,7 +283,8 @@ listview_curses::get_overlay_top(vis_line_t row, size_t count, size_t total)
 void
 listview_curses::do_update()
 {
-    if (this->lv_window == nullptr || this->lv_height == 0) {
+    if (this->lv_window == nullptr || this->lv_height == 0 || !this->vc_visible)
+    {
         view_curses::do_update();
         return;
     }

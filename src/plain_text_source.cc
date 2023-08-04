@@ -91,6 +91,9 @@ plain_text_source::replace_with(const attr_line_t& text_lines)
         off += line_len;
     }
     this->tds_longest_line = this->compute_longest_line();
+    if (this->tss_view != nullptr) {
+        this->tss_view->set_needs_update();
+    }
     return *this;
 }
 
@@ -103,6 +106,9 @@ plain_text_source::replace_with(const std::vector<std::string>& text_lines)
         off += str.length() + 1;
     }
     this->tds_longest_line = this->compute_longest_line();
+    if (this->tss_view != nullptr) {
+        this->tss_view->set_needs_update();
+    }
     return *this;
 }
 
@@ -112,6 +118,9 @@ plain_text_source::clear()
     this->tds_lines.clear();
     this->tds_longest_line = 0;
     this->tds_text_format = text_format_t::TF_UNKNOWN;
+    if (this->tss_view != nullptr) {
+        this->tss_view->set_needs_update();
+    }
 }
 
 plain_text_source&
@@ -119,6 +128,9 @@ plain_text_source::truncate_to(size_t max_lines)
 {
     while (this->tds_lines.size() > max_lines) {
         this->tds_lines.pop_back();
+    }
+    if (this->tss_view != nullptr) {
+        this->tss_view->set_needs_update();
     }
     return *this;
 }

@@ -82,7 +82,7 @@ text_filter::add_line(logfile_filter_state& lfs,
                       logfile::const_iterator ll,
                       const shared_buffer_ref& line)
 {
-    bool match_state = this->matches(*lfs.tfs_logfile, ll, line);
+    bool match_state = this->matches(line_source{*lfs.tfs_logfile, ll}, line);
 
     if (ll->is_message()) {
         this->end_of_message(lfs);
@@ -904,8 +904,7 @@ text_time_translator::data_reloaded(textview_curses* tc)
 template class bookmark_vector<vis_line_t>;
 
 bool
-empty_filter::matches(const logfile& lf,
-                      logfile::const_iterator ll,
+empty_filter::matches(nonstd::optional<line_source> ls,
                       const shared_buffer_ref& line)
 {
     return false;

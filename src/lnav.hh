@@ -55,6 +55,7 @@
 #include "file_collection.hh"
 #include "files_sub_source.hh"
 #include "filter_status_source.hh"
+#include "gantt_status_source.hh"
 #include "grep_highlighter.hh"
 #include "hist_source.hh"
 #include "input_dispatcher.hh"
@@ -86,6 +87,7 @@ typedef enum {
     LNS_DOC,
     LNS_PREVIEW,
     LNS_SPECTRO,
+    LNS_GANTT,
 
     LNS__MAX
 } lnav_status_t;
@@ -189,6 +191,7 @@ struct lnav_data_t {
     doc_status_source ld_doc_status_source;
     preview_status_source ld_preview_status_source;
     std::unique_ptr<spectro_status_source> ld_spectro_status_source;
+    gantt_status_source ld_gantt_status_source;
     bool ld_preview_hidden;
     int64_t ld_preview_generation{0};
     action_broadcaster<listview_curses> ld_scroll_broadcaster;
@@ -214,6 +217,8 @@ struct lnav_data_t {
         ld_user_message_expiration;
     textview_curses ld_spectro_details_view;
     plain_text_source ld_spectro_no_details_source;
+    textview_curses ld_gantt_details_view;
+    plain_text_source ld_gantt_details_source;
 
     view_stack<textview_curses> ld_view_stack;
     textview_curses* ld_last_view;

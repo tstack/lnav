@@ -145,10 +145,11 @@ gantt_header_overlay::list_static_overlay(const listview_curses& lv,
 gantt_source::gantt_source(textview_curses& log_view,
                            logfile_sub_source& lss,
                            plain_text_source& preview_source,
-                           preview_status_source& preview_status_source)
+                           gantt_status_source& preview_status_source)
     : gs_log_view(log_view), gs_lss(lss), gs_preview_source(preview_source),
       gs_preview_status_source(preview_status_source)
 {
+    this->tss_supports_filtering = true;
 }
 
 std::pair<timeval, timeval>
@@ -312,12 +313,18 @@ gantt_source::rebuild_indexes()
     this->gs_upper_bound = {};
     this->gs_opid_width = 0;
     this->gs_total_width = 0;
+    this->gs_filtered_count = 0;
+    this->gs_preview_source.clear();
+    this->gs_preview_status_source.get_description().clear();
 
     auto max_desc_width = size_t{0};
 
     log_opid_map active_opids;
     for (const auto& ld : this->gs_lss) {
         if (ld->get_file_ptr() == nullptr) {
+            continue;
+        }
+        if (!ld->is_visible()) {
             continue;
         }
 
@@ -361,7 +368,56 @@ gantt_source::rebuild_indexes()
                                opid_row{pair.first, pair.second});
     }
     this->gs_time_order.clear();
+    size_t filtered_in_count = 0;
+    for (const auto& filt : this->tss_filters) {
+        if (!filt->is_enabled()) {
+            continue;
+        }
+        if (filt->get_type() == text_filter::INCLUDE) {
+            filtered_in_count += 1;
+        }
+    }
+    this->gs_filter_hits = {};
     for (const auto& pair : time_order_map) {
+        std::string full_desc;
+        for (const auto& desc : pair.second.or_value.otr_description) {
+            full_desc.append(" ");
+            full_desc.append(desc.second);
+        }
+
+        shared_buffer sb;
+        shared_buffer_ref sbr;
+        sbr.share(sb, full_desc.c_str(), full_desc.length());
+        if (this->tss_apply_filters) {
+            auto filtered_in = false;
+            auto filtered_out = false;
+            for (const auto& filt : this->tss_filters) {
+                if (!filt->is_enabled()) {
+                    continue;
+                }
+                if (filt->matches(nonstd::nullopt, sbr)) {
+                    this->gs_filter_hits[filt->get_index()] += 1;
+                    switch (filt->get_type()) {
+                        case text_filter::INCLUDE:
+                            filtered_in = true;
+                            break;
+                        case text_filter::EXCLUDE:
+                            filtered_out = true;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            if ((filtered_in_count > 0 && !filtered_in) || filtered_out) {
+                this->gs_filtered_count += 1;
+                continue;
+            }
+        }
+
+        if (full_desc.size() > max_desc_width) {
+            max_desc_width = full_desc.size();
+        }
         if (pair.second.or_value.get_error_count() > 0) {
             bm_errs.insert_once(vis_line_t(this->gs_time_order.size()));
         } else if (pair.second.or_value
@@ -370,16 +426,11 @@ gantt_source::rebuild_indexes()
         {
             bm_warns.insert_once(vis_line_t(this->gs_time_order.size()));
         }
-        auto total_desc_width = size_t{0};
-        for (const auto& desc : pair.second.or_value.otr_description) {
-            total_desc_width += 1 + desc.second.length();
-        }
-        if (total_desc_width > max_desc_width) {
-            max_desc_width = total_desc_width;
-        }
         this->gs_time_order.emplace_back(pair.second);
     }
-    this->gs_total_width = 8 + this->gs_opid_width + max_desc_width;
+    this->gs_total_width = 22 + this->gs_opid_width + max_desc_width;
+
+    this->tss_view->set_needs_update();
 }
 
 nonstd::optional<vis_line_t>
@@ -475,5 +526,40 @@ gantt_source::text_selection_changed(textview_curses& tc)
 
     this->gs_preview_source.replace_with(preview_content);
     this->gs_preview_status_source.get_description().set_value(
-        "Messages with opid: %.*s", row.or_name.length(), row.or_name.data());
+        " OPID %.*s", row.or_name.length(), row.or_name.data());
+    auto err_count = row.or_value.get_error_count();
+    if (err_count == 0) {
+        this->gs_preview_status_source
+            .statusview_value_for_field(gantt_status_source::TSF_ERRORS)
+            .set_value("");
+    } else if (err_count > 1) {
+        this->gs_preview_status_source
+            .statusview_value_for_field(gantt_status_source::TSF_ERRORS)
+            .set_value("%'d errors", err_count);
+    } else {
+        this->gs_preview_status_source
+            .statusview_value_for_field(gantt_status_source::TSF_ERRORS)
+            .set_value("%'d error", err_count);
+    }
+    this->gs_preview_status_source
+        .statusview_value_for_field(gantt_status_source::TSF_TOTAL)
+        .set_value("%'d messages ", row.or_value.get_total_msgs());
+}
+
+void
+gantt_source::text_filters_changed()
+{
+    this->rebuild_indexes();
+}
+
+int
+gantt_source::get_filtered_count() const
+{
+    return this->gs_filtered_count;
+}
+
+int
+gantt_source::get_filtered_count_for(size_t filter_index) const
+{
+    return this->gs_filter_hits[filter_index];
 }

@@ -49,12 +49,7 @@ not have to manually specify the log file format. The currently
 supported formats are: syslog, apache, strace, tcsh history, and
 generic log files with timestamps.
 
-Lnav will also display data piped in on the standard input. The
-following options are available when doing so:
-
-* `-t` Prepend timestamps to the lines of data being read in
-  on the standard input.
-* `-w file` Write the contents of the standard input to this file.
+Lnav will also display data piped in on the standard input.
 
 To automatically execute queries or lnav commands after the files
 have been loaded, you can use the following options:

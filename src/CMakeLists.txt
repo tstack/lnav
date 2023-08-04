@@ -479,6 +479,7 @@ add_library(
         fstat_vtab.hh
         fts_fuzzy_match.hh
         gantt_source.hh
+        gantt_status_source.hh
         grep_highlighter.hh
         hasher.hh
         help_text.hh

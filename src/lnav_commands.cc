@@ -586,7 +586,8 @@ com_relative_goto(exec_context& ec,
                 retval = "info: shifting top by " + std::to_string(line_offset)
                     + " lines";
             } else {
-                tc->shift_top(vis_line_t(line_offset), true);
+                tc->set_selection(tc->get_selection()
+                                  + vis_line_t(line_offset));
 
                 retval = "";
             }

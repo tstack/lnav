@@ -106,6 +106,9 @@ opid_time_range::operator|=(const opid_time_range& rhs)
     if (this->otr_description.size() < rhs.otr_description.size()) {
         this->otr_description = rhs.otr_description;
     }
+    for (size_t lpc = 0; lpc < this->otr_level_counts.size(); lpc++) {
+        this->otr_level_counts[lpc] += rhs.otr_level_counts[lpc];
+    }
 
     return *this;
 }
