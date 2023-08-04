@@ -307,6 +307,11 @@ open_pretty_view()
     auto* pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
     auto* log_tc = &lnav_data.ld_views[LNV_LOG];
     auto* text_tc = &lnav_data.ld_views[LNV_TEXT];
+
+    if (top_tc != log_tc && top_tc != text_tc) {
+        return;
+    }
+
     attr_line_t full_text;
 
     delete pretty_tc->get_sub_source();
@@ -571,6 +576,7 @@ handle_winch()
     lnav_data.ld_filter_view.set_needs_update();
     lnav_data.ld_files_view.set_needs_update();
     lnav_data.ld_spectro_details_view.set_needs_update();
+    lnav_data.ld_gantt_details_view.set_needs_update();
     lnav_data.ld_user_message_view.set_needs_update();
 
     return true;
@@ -579,27 +585,29 @@ handle_winch()
 void
 layout_views()
 {
-    unsigned long width, height;
-
+    int width, height;
     getmaxyx(lnav_data.ld_window, height, width);
+
     int doc_height;
     bool doc_side_by_side = width > (90 + 60);
-    bool preview_status_open
+    bool preview_open
         = !lnav_data.ld_preview_status_source.get_description().empty();
-    bool filter_status_open = false;
+    bool filters_supported = false;
     auto is_spectro = false;
+    auto is_gantt = false;
 
     lnav_data.ld_view_stack.top() | [&](auto tc) {
         is_spectro = (tc == &lnav_data.ld_views[LNV_SPECTRO]);
+        is_gantt = (tc == &lnav_data.ld_views[LNV_GANTT]);
 
-        text_sub_source* tss = tc->get_sub_source();
+        auto* tss = tc->get_sub_source();
 
         if (tss == nullptr) {
             return;
         }
 
         if (tss->tss_supports_filtering) {
-            filter_status_open = true;
+            filters_supported = true;
         }
     };
 
@@ -614,9 +622,9 @@ layout_views()
     int preview_height = lnav_data.ld_preview_hidden
         ? 0
         : lnav_data.ld_preview_source.text_line_count();
-    int match_rows = lnav_data.ld_match_source.text_line_count();
-    int match_height = std::min((unsigned long) match_rows, (height - 4) / 2);
 
+    int match_rows = lnav_data.ld_match_source.text_line_count();
+    int match_height = std::min(match_rows, (height - 4) / 2);
     lnav_data.ld_match_view.set_height(vis_line_t(match_height));
 
     int um_rows = lnav_data.ld_user_message_source.text_line_count();
@@ -627,105 +635,127 @@ layout_views()
         lnav_data.ld_user_message_source.clear();
         um_rows = 0;
     }
-    int um_height = std::min((unsigned long) um_rows, (height - 4) / 2);
-
+    auto um_height = std::min(um_rows, (height - 4) / 2);
     lnav_data.ld_user_message_view.set_height(vis_line_t(um_height));
 
-    if (doc_height + 14
-        > ((int) height - match_height - um_height - preview_height - 2))
-    {
-        preview_height = 0;
-        preview_status_open = false;
-    }
-
-    if (doc_height + 14 > ((int) height - match_height - um_height - 2)) {
-        doc_height = lnav_data.ld_doc_source.text_line_count();
-        if (doc_height + 14 > ((int) height - match_height - um_height - 2)) {
-            doc_height = 0;
-        }
-    }
-
-    bool doc_open = doc_height > 0;
-    bool filters_open = (lnav_data.ld_mode == ln_mode_t::FILTER
+    auto filters_open = (lnav_data.ld_mode == ln_mode_t::FILTER
                          || lnav_data.ld_mode == ln_mode_t::FILES
                          || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS
-                         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES)
-        && !preview_status_open && !doc_open;
-    bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
+                         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
     int filter_height = filters_open ? 5 : 0;
 
-    int bottom_height = (doc_open ? 1 : 0) + doc_height
-        + (preview_status_open ? 1 : 0) + preview_height + 1  // bottom status
-        + match_height + um_height + lnav_data.ld_rl_view->get_height()
-        + (is_spectro && !doc_open ? 5 : 0);
+    bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
-    for (auto& tc : lnav_data.ld_views) {
-        tc.set_height(vis_line_t(-(bottom_height + (filter_status_open ? 1 : 0)
-                                   + (filters_open ? 1 : 0) + filter_height)));
-    }
-    lnav_data.ld_status[LNS_FILTER].set_visible(filter_status_open);
-    lnav_data.ld_status[LNS_FILTER].set_enabled(filters_open);
-    lnav_data.ld_status[LNS_FILTER].set_top(
-        -(bottom_height + filter_height + 1 + (filters_open ? 1 : 0)));
-    lnav_data.ld_status[LNS_FILTER_HELP].set_visible(filters_open);
-    lnav_data.ld_status[LNS_FILTER_HELP].set_top(
-        -(bottom_height + filter_height + 1));
-    lnav_data.ld_status[LNS_BOTTOM].set_top(-(match_height + um_height + 2));
+    auto bottom_min = std::min(2 + 3, height);
+    auto bottom = clamped<int>::from(height, bottom_min, height);
+
+    bottom -= lnav_data.ld_rl_view->get_height();
+    lnav_data.ld_rl_view->set_width(width);
+
+    bool vis;
+    vis = bottom.try_consume(lnav_data.ld_match_view.get_height());
+    lnav_data.ld_match_view.set_y(bottom);
+    lnav_data.ld_match_view.set_visible(vis);
+
+    vis = bottom.try_consume(um_height);
+    lnav_data.ld_user_message_view.set_y(bottom);
+    lnav_data.ld_user_message_view.set_visible(vis);
+
+    bottom -= 1;
+    lnav_data.ld_status[LNS_BOTTOM].set_top(bottom);
     lnav_data.ld_status[LNS_BOTTOM].set_enabled(!filters_open
                                                 && !breadcrumb_open);
-    lnav_data.ld_status[LNS_DOC].set_top(height - bottom_height);
-    lnav_data.ld_status[LNS_DOC].set_visible(doc_open);
-    lnav_data.ld_status[LNS_PREVIEW].set_top(height - bottom_height
-                                             + (doc_open ? 1 : 0) + doc_height);
-    lnav_data.ld_status[LNS_PREVIEW].set_visible(preview_status_open);
-    lnav_data.ld_status[LNS_SPECTRO].set_top(height - bottom_height - 1);
-    lnav_data.ld_status[LNS_SPECTRO].set_visible(is_spectro);
+
+    vis = preview_open && bottom.try_consume(preview_height + 1);
+    lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
+    lnav_data.ld_preview_view.set_y(bottom + 1);
+    lnav_data.ld_preview_view.set_visible(vis);
+
+    lnav_data.ld_status[LNS_PREVIEW].set_top(bottom);
+    lnav_data.ld_status[LNS_PREVIEW].set_visible(vis);
+
+    if (doc_side_by_side && doc_height > 0) {
+        vis = bottom.try_consume(doc_height + 1);
+        lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
+        lnav_data.ld_example_view.set_x(90);
+        lnav_data.ld_example_view.set_y(bottom + 1);
+    } else if (doc_height > 0 && bottom.available_to_consume(doc_height + 1)) {
+        lnav_data.ld_example_view.set_height(
+            vis_line_t(lnav_data.ld_example_source.text_line_count()));
+        vis = bottom.try_consume(lnav_data.ld_example_view.get_height());
+        lnav_data.ld_example_view.set_x(0);
+        lnav_data.ld_example_view.set_y(bottom);
+    } else {
+        vis = false;
+        lnav_data.ld_example_view.set_height(0_vl);
+    }
+    lnav_data.ld_example_view.set_visible(vis);
+
+    if (doc_side_by_side) {
+        lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
+        lnav_data.ld_doc_view.set_y(bottom + 1);
+    } else if (doc_height > 0) {
+        lnav_data.ld_doc_view.set_height(
+            vis_line_t(lnav_data.ld_doc_source.text_line_count()));
+        vis = bottom.try_consume(lnav_data.ld_doc_view.get_height() + 1);
+        lnav_data.ld_doc_view.set_y(bottom + 1);
+    } else {
+        vis = false;
+    }
+    lnav_data.ld_doc_view.set_visible(vis);
+
+    auto has_doc = lnav_data.ld_example_view.get_height() > 0_vl
+        || lnav_data.ld_doc_view.get_height() > 0_vl;
+    lnav_data.ld_status[LNS_DOC].set_top(bottom);
+    lnav_data.ld_status[LNS_DOC].set_visible(has_doc && vis);
+
+    if (is_gantt) {
+        vis = bottom.try_consume(lnav_data.ld_gantt_details_view.get_height()
+                                 + 1);
+    } else {
+        vis = false;
+    }
+    lnav_data.ld_gantt_details_view.set_y(bottom + 1);
+    lnav_data.ld_gantt_details_view.set_width(width);
+    lnav_data.ld_gantt_details_view.set_visible(vis);
+
+    lnav_data.ld_status[LNS_GANTT].set_top(bottom);
+    lnav_data.ld_status[LNS_GANTT].set_visible(vis);
+
+    vis = bottom.try_consume(filter_height + (filters_open ? 1 : 0)
+                             + (filters_supported ? 1 : 0));
+    lnav_data.ld_filter_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_filter_view.set_y(bottom + 2);
+    lnav_data.ld_filter_view.set_width(width);
+    lnav_data.ld_filter_view.set_visible(filters_open && vis);
+
+    lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_files_view.set_y(bottom + 2);
+    lnav_data.ld_files_view.set_width(width);
+    lnav_data.ld_files_view.set_visible(filters_open && vis);
+
+    lnav_data.ld_status[LNS_FILTER_HELP].set_visible(filters_open && vis);
+    lnav_data.ld_status[LNS_FILTER_HELP].set_top(bottom + 1);
+
+    lnav_data.ld_status[LNS_FILTER].set_visible(vis);
+    lnav_data.ld_status[LNS_FILTER].set_enabled(filters_open);
+    lnav_data.ld_status[LNS_FILTER].set_top(bottom);
+
+    vis = is_spectro && bottom.try_consume(5 + 1);
+    lnav_data.ld_spectro_details_view.set_y(bottom + 1);
+    lnav_data.ld_spectro_details_view.set_height(5_vl);
+    lnav_data.ld_spectro_details_view.set_width(width);
+    lnav_data.ld_spectro_details_view.set_visible(vis);
+
+    lnav_data.ld_status[LNS_SPECTRO].set_top(bottom);
+    lnav_data.ld_status[LNS_SPECTRO].set_visible(vis);
     lnav_data.ld_status[LNS_SPECTRO].set_enabled(lnav_data.ld_mode
                                                  == ln_mode_t::SPECTRO_DETAILS);
 
-    if (!doc_open || doc_side_by_side) {
-        lnav_data.ld_doc_view.set_height(vis_line_t(doc_height));
-    } else {
-        lnav_data.ld_doc_view.set_height(
-            vis_line_t(lnav_data.ld_doc_source.text_line_count()));
+    auto bottom_used = bottom - height;
+    for (auto& tc : lnav_data.ld_views) {
+        tc.set_height(vis_line_t(bottom_used));
     }
-    lnav_data.ld_doc_view.set_y(height - bottom_height + 1);
-
-    if (!doc_open || doc_side_by_side) {
-        lnav_data.ld_example_view.set_height(vis_line_t(doc_height));
-        lnav_data.ld_example_view.set_x(doc_open ? 90 : 0);
-        lnav_data.ld_example_view.set_y(height - bottom_height + 1);
-    } else {
-        lnav_data.ld_example_view.set_height(
-            vis_line_t(lnav_data.ld_example_source.text_line_count()));
-        lnav_data.ld_example_view.set_x(0);
-        lnav_data.ld_example_view.set_y(
-            height - bottom_height + lnav_data.ld_doc_view.get_height() + 1);
-    }
-
-    lnav_data.ld_filter_view.set_height(vis_line_t(filter_height));
-    lnav_data.ld_filter_view.set_y(height - bottom_height - filter_height);
-    lnav_data.ld_filter_view.set_width(width);
-
-    lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
-    lnav_data.ld_files_view.set_y(height - bottom_height - filter_height);
-    lnav_data.ld_files_view.set_width(width);
-
-    lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
-    lnav_data.ld_preview_view.set_y(height - bottom_height + 1
-                                    + (doc_open ? 1 : 0) + doc_height);
-    lnav_data.ld_user_message_view.set_y(
-        height - lnav_data.ld_rl_view->get_height() - match_height - um_height);
-
-    lnav_data.ld_spectro_details_view.set_y(height - bottom_height);
-    lnav_data.ld_spectro_details_view.set_height(
-        is_spectro && !doc_open ? 5_vl : 0_vl);
-    lnav_data.ld_spectro_details_view.set_width(width);
-    lnav_data.ld_spectro_details_view.set_title("spectro-details");
-
-    lnav_data.ld_match_view.set_y(height - lnav_data.ld_rl_view->get_height()
-                                  - match_height);
-    lnav_data.ld_rl_view->set_width(width);
 }
 
 void
@@ -969,7 +999,7 @@ toggle_view(textview_curses* toggle_tc)
 bool
 ensure_view(textview_curses* expected_tc)
 {
-    textview_curses* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
+    auto* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
     bool retval = true;
 
     if (tc != expected_tc) {

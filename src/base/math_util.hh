@@ -70,4 +70,70 @@ abs_diff(T a, T b)
     return a > b ? a - b : b - a;
 }
 
+template<typename T>
+class clamped {
+public:
+    static clamped from(T value, T min, T max) { return {value, min, max}; }
+
+    clamped& operator+=(T rhs)
+    {
+        if (rhs < 0) {
+            return this->operator-=(-rhs);
+        }
+
+        if (this->c_value + rhs < this->c_max) {
+            this->c_value += rhs;
+        } else {
+            this->c_value = this->c_max;
+        }
+
+        return *this;
+    }
+
+    clamped& operator-=(T rhs)
+    {
+        if (rhs < 0) {
+            return this->operator+=(-rhs);
+        }
+
+        if (this->c_value - rhs > this->c_min) {
+            this->c_value -= rhs;
+        } else {
+            this->c_value = this->c_min;
+        }
+
+        return *this;
+    }
+
+    bool available_to_consume(T rhs) const
+    {
+        return (this->c_value - rhs > this->c_min);
+    }
+
+    bool try_consume(T rhs)
+    {
+        if (this->c_value - rhs > this->c_min) {
+            this->c_value -= rhs;
+            return true;
+        }
+
+        return false;
+    }
+
+    operator T() const { return this->c_value; }
+
+    bool is_min() const { return this->c_value == this->c_min; }
+
+    T get_min() const { return this->c_min; }
+
+    T get_max() const { return this->c_max; }
+
+private:
+    clamped(T value, T min, T max) : c_value(value), c_min(min), c_max(max) {}
+
+    T c_value;
+    T c_min;
+    T c_max;
+};
+
 #endif

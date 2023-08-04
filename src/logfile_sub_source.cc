@@ -1959,25 +1959,30 @@ log_location_history::loc_history_forward(vis_line_t current_top)
 }
 
 bool
-sql_filter::matches(const logfile& lf,
-                    logfile::const_iterator ll,
+sql_filter::matches(nonstd::optional<line_source> ls_opt,
                     const shared_buffer_ref& line)
 {
-    if (!ll->is_message()) {
+    if (!ls_opt) {
+        return false;
+    }
+
+    auto ls = ls_opt;
+
+    if (!ls->ls_line->is_message()) {
         return false;
     }
     if (this->sf_filter_stmt == nullptr) {
         return false;
     }
 
-    auto lfp = lf.shared_from_this();
+    auto lfp = ls->ls_file.shared_from_this();
     auto ld = this->sf_log_source.find_data_i(lfp);
     if (ld == this->sf_log_source.end()) {
         return false;
     }
 
-    auto eval_res
-        = this->sf_log_source.eval_sql_filter(this->sf_filter_stmt, ld, ll);
+    auto eval_res = this->sf_log_source.eval_sql_filter(
+        this->sf_filter_stmt, ld, ls->ls_line);
     if (eval_res.unwrapOr(true)) {
         return false;
     }
@@ -2041,8 +2046,8 @@ vis_line_t
 logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start,
                                                     vis_line_t highest)
 {
-    vis_bookmarks& bm = this->lmg_source.tss_view->get_bookmarks();
-    bookmark_vector<vis_line_t>& bv = bm[&textview_curses::BM_META];
+    auto& bm = this->lmg_source.tss_view->get_bookmarks();
+    auto& bv = bm[&textview_curses::BM_META];
 
     if (bv.empty()) {
         return -1_vl;
@@ -2053,8 +2058,8 @@ logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start,
 void
 logfile_sub_source::meta_grepper::grep_next_line(vis_line_t& line)
 {
-    vis_bookmarks& bm = this->lmg_source.tss_view->get_bookmarks();
-    bookmark_vector<vis_line_t>& bv = bm[&textview_curses::BM_META];
+    auto& bm = this->lmg_source.tss_view->get_bookmarks();
+    auto& bv = bm[&textview_curses::BM_META];
 
     auto line_opt = bv.next(vis_line_t(line));
     if (!line_opt) {

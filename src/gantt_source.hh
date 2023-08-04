@@ -30,9 +30,9 @@
 #ifndef lnav_gantt_source_hh
 #define lnav_gantt_source_hh
 
+#include "gantt_status_source.hh"
 #include "logfile_sub_source.hh"
 #include "plain_text_source.hh"
-#include "preview_status_source.hh"
 #include "textview_curses.hh"
 
 class gantt_source
@@ -42,7 +42,7 @@ public:
     explicit gantt_source(textview_curses& log_view,
                           logfile_sub_source& lss,
                           plain_text_source& preview_source,
-                          preview_status_source& preview_status_source);
+                          gantt_status_source& preview_status_source);
 
     size_t text_line_count() override;
 
@@ -63,6 +63,10 @@ public:
 
     void text_selection_changed(textview_curses& tc) override;
 
+    void text_filters_changed() override;
+    int get_filtered_count() const override;
+    int get_filtered_count_for(size_t filter_index) const override;
+
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
@@ -74,7 +78,7 @@ public:
     textview_curses& gs_log_view;
     logfile_sub_source& gs_lss;
     plain_text_source& gs_preview_source;
-    preview_status_source& gs_preview_status_source;
+    gantt_status_source& gs_preview_status_source;
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
 
     struct opid_description_defs {};
@@ -90,6 +94,7 @@ public:
     struct opid_row {
         string_fragment or_name;
         opid_time_range or_value;
+        std::string or_description;
     };
 
     attr_line_t gs_rendered_line;
@@ -98,6 +103,8 @@ public:
     std::vector<opid_row> gs_time_order;
     struct timeval gs_lower_bound {};
     struct timeval gs_upper_bound {};
+    size_t gs_filtered_count{0};
+    std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
 };
 
 class gantt_header_overlay : public list_overlay_source {

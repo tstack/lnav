@@ -778,10 +778,10 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                                 .ignore_error()
                                 .has_value())
                         {
-                            curr_ll->set_mark(true);
                             while (curr_ll->is_continued()) {
                                 --curr_ll;
                             }
+                            curr_ll->set_mark(true);
                             auto line_number = static_cast<uint32_t>(
                                 std::distance(this->begin(), curr_ll));
 

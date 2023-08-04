@@ -215,6 +215,7 @@ noinst_HEADERS = \
 	fstat_vtab.hh \
 	fts_fuzzy_match.hh \
 	gantt_source.hh \
+	gantt_status_source.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
 	hasher.hh \

@@ -80,39 +80,6 @@ public:
     virtual void index_complete(logfile_sub_source& lss) {}
 };
 
-class pcre_filter : public text_filter {
-public:
-    pcre_filter(type_t type,
-                const std::string& id,
-                size_t index,
-                std::shared_ptr<lnav::pcre2pp::code> code)
-        : text_filter(type, filter_lang_t::REGEX, id, index),
-          pf_pcre(std::move(code))
-    {
-    }
-
-    ~pcre_filter() override = default;
-
-    bool matches(const logfile& lf,
-                 logfile::const_iterator ll,
-                 const shared_buffer_ref& line) override
-    {
-        return this->pf_pcre->find_in(line.to_string_fragment())
-            .ignore_error()
-            .has_value();
-    }
-
-    std::string to_command() const override
-    {
-        return (this->lf_type == text_filter::INCLUDE ? "filter-in "
-                                                      : "filter-out ")
-            + this->lf_id;
-    }
-
-protected:
-    std::shared_ptr<lnav::pcre2pp::code> pf_pcre;
-};
-
 class sql_filter : public text_filter {
 public:
     sql_filter(logfile_sub_source& lss,
@@ -124,8 +91,7 @@ public:
         this->sf_filter_stmt = stmt;
     }
 
-    bool matches(const logfile& lf,
-                 logfile::const_iterator ll,
+    bool matches(nonstd::optional<line_source> ls,
                  const shared_buffer_ref& line) override;
 
     std::string to_command() const override;

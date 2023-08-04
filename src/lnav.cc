@@ -1399,6 +1399,7 @@ looper()
 
         lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
 
+        lnav_data.ld_spectro_details_view.set_title("spectro-details");
         lnav_data.ld_spectro_details_view.set_window(lnav_data.ld_window);
         lnav_data.ld_spectro_details_view.set_show_scrollbar(true);
         lnav_data.ld_spectro_details_view.set_height(5_vl);
@@ -1416,6 +1417,13 @@ looper()
             = &lnav_data.ld_spectro_no_details_source;
         lnav_data.ld_spectro_source->ss_exec_context
             = &lnav_data.ld_exec_context;
+
+        lnav_data.ld_gantt_details_view.set_title("gantt-details");
+        lnav_data.ld_gantt_details_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_gantt_details_view.set_show_scrollbar(false);
+        lnav_data.ld_gantt_details_view.set_height(5_vl);
+        lnav_data.ld_gantt_details_view.set_sub_source(
+            &lnav_data.ld_gantt_details_source);
 
         auto top_status_lifetime
             = injector::bind<top_status_source>::to_scoped_singleton();
@@ -1444,6 +1452,8 @@ looper()
             = std::make_unique<spectro_status_source>();
         lnav_data.ld_status[LNS_SPECTRO].set_data_source(
             lnav_data.ld_spectro_status_source.get());
+        lnav_data.ld_status[LNS_GANTT].set_data_source(
+            &lnav_data.ld_gantt_status_source);
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
         lnav_data.ld_user_message_view.set_show_bottom_border(true);
@@ -1649,6 +1659,7 @@ looper()
             lnav_data.ld_match_view.do_update();
             lnav_data.ld_preview_view.do_update();
             lnav_data.ld_spectro_details_view.do_update();
+            lnav_data.ld_gantt_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
                 echo_views_stmt.execute();
@@ -2748,8 +2759,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     auto gantt_view_source
         = std::make_shared<gantt_source>(lnav_data.ld_views[LNV_LOG],
                                          lnav_data.ld_log_source,
-                                         lnav_data.ld_preview_source,
-                                         lnav_data.ld_preview_status_source);
+                                         lnav_data.ld_gantt_details_source,
+                                         lnav_data.ld_gantt_status_source);
     auto gantt_header_source
         = std::make_shared<gantt_header_overlay>(gantt_view_source);
     lnav_data.ld_views[LNV_GANTT]

@@ -138,6 +138,10 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                           auto tss = top_view->get_sub_source();
 
                           if (tss != nullptr) {
+                              if (tss != &lss) {
+                                  lss.text_filters_changed();
+                                  lnav_data.ld_views[LNV_LOG].reload_data();
+                              }
                               tss->text_filters_changed();
                               top_view->reload_data();
                           }
