@@ -2618,7 +2618,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 const auto& cfg
                     = injector::get<const lnav::url_handler::config&>();
 
-                auto* cu = curl_url();
+                auto_mem<CURLU> cu(curl_url_cleanup);
+                cu = curl_url();
                 auto set_rc = curl_url_set(
                     cu, CURLUPART_URL, fn.c_str(), CURLU_NON_SUPPORT_SCHEME);
                 if (set_rc != CURLUE_OK) {
