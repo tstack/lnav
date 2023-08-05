@@ -29,8 +29,6 @@
  * @file ptimec_rt.cc
  */
 
-#include <algorithm>
-
 #include "ptimec.hh"
 
 #include <string.h>
