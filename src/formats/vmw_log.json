@@ -12,7 +12,7 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+)? (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]:? \\[(?:opI(?:D|d)=(?<opid>[^\\]]+))\\]\\s*(?<body>.*)$"
             },
             "section": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|(?:- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z)?, )?Section for (?:[^,]+), pid=(?<tid>\\w+).*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|(?:- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?, )?Section for (?:[^,]+), pid=(?<tid>\\w+).*)"
             },
             "esx-section": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2})) (?<level>\\w+)(?:\\(\\d+\\)+) (?<prc>[\\w\\-]+)\\[(?<tid>\\w+)\\]: (?:Logs rotated. \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?(?:- last log rotation time, \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[-+]\\d{2}:\\d{2}))?\\s*(ESX KMX Agent started.|(?:- time the service was last started(?: \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z)?, )?Section for (?:[^,]+), pid=(?:\\w+).*)"
@@ -276,6 +276,9 @@
             },
             {
                 "line": "2022-06-02T11:49:41.274Z INFO vsan-mgmt[51740] [VsanVcObjectHelper::wrapper opID=SWI-2230eb26-8c37] Ready to get single executor result for the key ['_QuerySpaceUsage', 'vsan-cluster-space-report-system', 'domain-c115', '', 'False'] in timeout 600\n2022-06-02T12:23:46.807Z [pool-2-thread-18] INFO  opId= com.vmware.vim.storage.common.task.CustomThreadPoolExecutor - [VLSI-client] Request took 4 millis to execute.\n2022-06-02T12:26:24.319Z INFO vsan-mgmt[16622] [VsanVcPerformanceManagerImpl::QueryClusterHealth opID=21fcddd1] CMMDS primary exists but no stats primary, check node information again.\n2022-06-02T12:26:27.109Z info vsanvcmgmtd[38723] [vSAN@6876 sub=CnsSync] Sync ds:///vmfs/volumes/5f65bf61-0e36b15d-fbd6-005056a00b50/: startVClock = 0, fullSync = true"
+            },
+            {
+                "line": "2023-08-04T11:01:42.873-07:00 info vmware-vum-server[192680] [Originator@6876 sub=Libs] lib/ssl: OpenSSL using FIPS provider"
             }
         ]
     }

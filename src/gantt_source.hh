@@ -81,7 +81,13 @@ public:
     gantt_status_source& gs_preview_status_source;
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
 
-    struct opid_description_defs {};
+    struct opid_description_defs {
+        std::map<
+            intern_string_t,
+            std::map<intern_string_t,
+                     std::shared_ptr<std::vector<log_format::opid_descriptor>>>>
+            odd_format_to_desc;
+    };
 
     using gantt_opid_map
         = robin_hood::unordered_map<string_fragment,
@@ -94,6 +100,9 @@ public:
     struct opid_row {
         string_fragment or_name;
         opid_time_range or_value;
+        std::map<intern_string_t,
+                 std::map<intern_string_t, std::map<size_t, std::string>>>
+            or_descriptions;
         std::string or_description;
     };
 
