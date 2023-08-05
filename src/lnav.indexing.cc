@@ -29,10 +29,12 @@
 
 #include "lnav.indexing.hh"
 
+#include "bound_tags.hh"
 #include "lnav.events.hh"
 #include "lnav.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
+#include "sql_util.hh"
 
 using namespace std::chrono_literals;
 

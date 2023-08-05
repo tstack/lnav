@@ -65,6 +65,7 @@
 #include "log.annotate.hh"
 #include "log_data_helper.hh"
 #include "log_data_table.hh"
+#include "log_format_loader.hh"
 #include "log_search_table.hh"
 #include "log_search_table_fwd.hh"
 #include "readline_callbacks.hh"

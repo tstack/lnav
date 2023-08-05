@@ -37,6 +37,7 @@
 #include "config.h"
 #include "lnav.hh"
 #include "mapbox/variant.hpp"
+#include "sql_util.hh"
 
 namespace files_model {
 files_list_selection
