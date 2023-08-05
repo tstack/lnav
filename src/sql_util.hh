@@ -41,10 +41,9 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include "base/attr_line.hh"
 #include "base/intern_string.hh"
-#include "base/lnav.console.hh"
 #include "base/time_util.hh"
-#include "sqlitepp.hh"
 
 extern const char* sql_keywords[145];
 extern const char* sql_function_names[];

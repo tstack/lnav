@@ -29,13 +29,11 @@
 
 #include "top_status_source.hh"
 
-#include "base/injector.hh"
 #include "config.h"
 #include "lnav.hh"
 #include "md2attr_line.hh"
 #include "md4cpp.hh"
 #include "shlex.hh"
-#include "sql_util.hh"
 #include "sqlitepp.client.hh"
 #include "top_status_source.cfg.hh"
 

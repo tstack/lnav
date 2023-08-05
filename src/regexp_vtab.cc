@@ -40,6 +40,7 @@
 #include "scn/scn.h"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "sqlitepp.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
