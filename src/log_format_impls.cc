@@ -360,10 +360,22 @@ public:
     static std::unordered_map<const intern_string_t, logline_value_meta>
         FIELD_META;
 
+    static const intern_string_t get_opid_desc()
+    {
+        static const intern_string_t RETVAL = intern_string::lookup("std");
+
+        return RETVAL;
+    }
+
     bro_log_format()
     {
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
+
+        auto desc_v = std::make_shared<std::vector<opid_descriptor>>();
+        desc_v->emplace({});
+        this->lf_opid_description_def->emplace(get_opid_desc(),
+                                               opid_descriptors{desc_v});
     }
 
     const intern_string_t get_name() const override
@@ -382,12 +394,15 @@ public:
 
     scan_result_t scan_int(std::vector<logline>& dst,
                            const line_info& li,
-                           shared_buffer_ref& sbr)
+                           shared_buffer_ref& sbr,
+                           scan_batch_context& sbc)
     {
         static const intern_string_t STATUS_CODE
             = intern_string::lookup("bro_status_code");
         static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
+        static const intern_string_t ID_ORIG_H
+            = intern_string::lookup("bro_id_orig_h");
 
         separated_string ss(sbr.get_data(), sbr.length());
         struct timeval tv;
@@ -395,6 +410,8 @@ public:
         bool found_ts = false;
         log_level_t level = LEVEL_INFO;
         uint8_t opid = 0;
+        auto opid_cap = string_fragment::invalid();
+        auto host_cap = string_fragment::invalid();
 
         ss.with_separator(this->blf_separator.get());
 
@@ -425,9 +442,11 @@ public:
                     level = LEVEL_ERROR;
                 }
             } else if (UID == fd.fd_meta.lvm_name) {
-                const auto sf = *iter;
+                opid_cap = *iter;
 
-                opid = hash_str(sf.data(), sf.length());
+                opid = hash_str(opid_cap.data(), opid_cap.length());
+            } else if (ID_ORIG_H == fd.fd_meta.lvm_name) {
+                host_cap = *iter;
             }
 
             if (fd.fd_numeric_index) {
@@ -454,6 +473,29 @@ public:
                     ll.set_ignore(true);
                 }
             }
+
+            if (opid_cap.is_valid()) {
+                auto opid_iter = sbc.sbc_opids.find(opid_cap);
+
+                if (opid_iter == sbc.sbc_opids.end()) {
+                    auto opid_copy = opid_cap.to_owned(sbc.sbc_allocator);
+                    auto otr = opid_time_range{tv, tv};
+                    auto emplace_res = sbc.sbc_opids.emplace(opid_copy, otr);
+                    opid_iter = emplace_res.first;
+                } else {
+                    opid_iter->second.otr_end = tv;
+                }
+
+                opid_iter->second.otr_level_counts[level] += 1;
+
+                auto& otr = opid_iter->second;
+                if (!otr.otr_description_id && host_cap.is_valid()
+                    && otr.otr_description.empty())
+                {
+                    otr.otr_description_id = get_opid_desc();
+                    otr.otr_description.emplace_back(0, host_cap.to_string());
+                }
+            }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
             return scan_match{0};
         }
@@ -470,7 +512,7 @@ public:
             = lnav::pcre2pp::code::from_const(R"(^#separator\s+(.+))");
 
         if (!this->blf_format_name.empty()) {
-            return this->scan_int(dst, li, sbr);
+            return this->scan_int(dst, li, sbr, sbc);
         }
 
         if (dst.empty() || dst.size() > 20 || sbr.empty()
@@ -616,7 +658,7 @@ public:
             && !this->blf_field_defs.empty())
         {
             dst.clear();
-            return this->scan_int(dst, li, sbr);
+            return this->scan_int(dst, li, sbr, sbc);
         }
 
         this->blf_format_name.clear();
