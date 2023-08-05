@@ -31,19 +31,16 @@
 #define pretty_printer_hh
 
 #include <deque>
-#include <map>
 #include <sstream>
 #include <stack>
-#include <utility>
+#include <string>
 #include <vector>
-
-#include <sys/types.h>
 
 #include "base/attr_line.hh"
 #include "base/file_range.hh"
-#include "base/opt_util.hh"
 #include "data_scanner.hh"
 #include "document.sections.hh"
+#include "optional.hpp"
 
 class pretty_printer {
 public:
