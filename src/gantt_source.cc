@@ -473,7 +473,9 @@ gantt_source::rebuild_indexes()
         this->gs_time_order.emplace_back(std::move(pair.second));
     }
     this->gs_opid_width = std::min(this->gs_opid_width, MAX_OPID_WIDTH);
-    this->gs_total_width = 22 + this->gs_opid_width + max_desc_width;
+    this->gs_total_width
+        = std::max<size_t>(22 + this->gs_opid_width + max_desc_width,
+                           1 + 23 + 10 + 23 + 1 /* header */);
 
     this->tss_view->set_needs_update();
 }
@@ -527,15 +529,16 @@ gantt_source::text_selection_changed(textview_curses& tc)
     auto low_vl = this->gs_lss.row_for_time(row.or_value.otr_begin);
     auto high_tv = row.or_value.otr_end;
     high_tv.tv_sec += 1;
-    auto high_vl = this->gs_lss.row_for_time(high_tv);
+    auto high_vl = this->gs_lss.row_for_time(high_tv).value_or(
+        this->gs_lss.text_line_count());
 
-    if (!low_vl || !high_vl) {
+    if (!low_vl) {
         return;
     }
 
     auto preview_content = attr_line_t();
     auto msgs_remaining = size_t{MAX_PREVIEW_LINES};
-    auto win = this->gs_lss.window_at(low_vl.value(), high_vl.value());
+    auto win = this->gs_lss.window_at(low_vl.value(), high_vl);
     auto id_hash = hash_str(row.or_name.data(), row.or_name.length());
     for (const auto& msg_line : win) {
         if (!msg_line.get_logline().match_opid_hash(id_hash)) {
@@ -545,21 +548,22 @@ gantt_source::text_selection_changed(textview_curses& tc)
         const auto& sa = msg_line.get_attrs();
         auto opid_opt = get_string_attr(sa, logline::L_OPID);
 
-        if (opid_opt) {
-            auto opid_range = opid_opt.value().saw_string_attr->sa_range;
-            auto opid_sf = msg_line.to_string(opid_range);
+        if (!opid_opt) {
+            continue;
+        }
+        auto opid_range = opid_opt.value().saw_string_attr->sa_range;
+        auto opid_sf = msg_line.to_string(opid_range);
 
-            if (opid_sf == row.or_name) {
-                std::vector<attr_line_t> rows_al(1);
+        if (opid_sf == row.or_name) {
+            std::vector<attr_line_t> rows_al(1);
 
-                this->gs_log_view.listview_value_for_rows(
-                    this->gs_log_view, msg_line.get_vis_line(), rows_al);
+            this->gs_log_view.listview_value_for_rows(
+                this->gs_log_view, msg_line.get_vis_line(), rows_al);
 
-                preview_content.append(rows_al[0]).append("\n");
-                msgs_remaining -= 1;
-                if (msgs_remaining == 0) {
-                    break;
-                }
+            preview_content.append(rows_al[0]).append("\n");
+            msgs_remaining -= 1;
+            if (msgs_remaining == 0) {
+                break;
             }
         }
     }
