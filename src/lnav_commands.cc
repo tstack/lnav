@@ -2629,9 +2629,9 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                    .with_reason(curl_url_strerror(set_rc)));
                 }
 
-                char* scheme_part = nullptr;
+                auto_mem<char> scheme_part(curl_free);
                 auto get_rc
-                    = curl_url_get(cu, CURLUPART_SCHEME, &scheme_part, 0);
+                    = curl_url_get(cu, CURLUPART_SCHEME, scheme_part.out(), 0);
                 if (get_rc != CURLUE_OK) {
                     return Err(lnav::console::user_message::error(
                                    attr_line_t("cannot get scheme from URL: ")
@@ -2639,12 +2639,12 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                    .with_reason(curl_url_strerror(set_rc)));
                 }
 
-                auto proto_iter = cfg.c_schemes.find(scheme_part);
+                auto proto_iter = cfg.c_schemes.find(scheme_part.in());
                 if (proto_iter == cfg.c_schemes.end()) {
                     return Err(
                         lnav::console::user_message::error(
                             attr_line_t("no defined handler for URL scheme: ")
-                                .append(lnav::roles::file(scheme_part)))
+                                .append(lnav::roles::file(scheme_part.in())))
                             .with_reason(curl_url_strerror(set_rc)));
                 }
 
