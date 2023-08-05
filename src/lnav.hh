@@ -34,20 +34,14 @@
 
 #include <list>
 #include <map>
-#include <memory>
-#include <set>
-#include <stack>
 #include <unordered_map>
 
 #include <signal.h>
 #include <sys/time.h>
 
-#include "archive_manager.hh"
 #include "base/ansi_scrubber.hh"
-#include "base/future_util.hh"
 #include "base/isc.hh"
 #include "bottom_status_source.hh"
-#include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "db_sub_source.hh"
@@ -56,19 +50,13 @@
 #include "files_sub_source.hh"
 #include "filter_status_source.hh"
 #include "gantt_status_source.hh"
-#include "grep_highlighter.hh"
 #include "hist_source.hh"
 #include "input_dispatcher.hh"
-#include "listview_curses.hh"
-#include "log_format_loader.hh"
 #include "log_vtab_impl.hh"
-#include "logfile.hh"
 #include "plain_text_source.hh"
 #include "preview_status_source.hh"
 #include "readline_curses.hh"
-#include "relative_time.hh"
-#include "safe/safe.h"
-#include "sql_util.hh"
+#include "sqlitepp.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
 #include "view_helpers.hh"

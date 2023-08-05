@@ -45,6 +45,7 @@
 #include "base/opt_util.hh"
 #include "base/paths.hh"
 #include "bookmarks.json.hh"
+#include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "hasher.hh"

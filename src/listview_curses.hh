@@ -39,7 +39,6 @@
 
 #include <sys/types.h>
 
-#include "base/func_util.hh"
 #include "view_curses.hh"
 #include "vis_line.hh"
 

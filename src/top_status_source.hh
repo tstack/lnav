@@ -30,15 +30,8 @@
 #ifndef lnav_top_status_source_hh
 #define lnav_top_status_source_hh
 
-#include <string>
-
-#include <sqlite3.h>
-
-#include "base/injector.hh"
-#include "bound_tags.hh"
-#include "listview_curses.hh"
-#include "sql_util.hh"
 #include "sqlitepp.client.hh"
+#include "sqlitepp.hh"
 #include "statusview_curses.hh"
 #include "top_status_source.cfg.hh"
 

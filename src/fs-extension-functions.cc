@@ -44,6 +44,7 @@
 #include "base/auto_pid.hh"
 #include "base/lnav.console.hh"
 #include "base/opt_util.hh"
+#include "bound_tags.hh"
 #include "config.h"
 #include "lnav.hh"
 #include "sqlite-extension-func.hh"

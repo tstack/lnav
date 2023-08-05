@@ -32,10 +32,12 @@
 #include "base/enum_util.hh"
 #include "base/func_util.hh"
 #include "base/opt_util.hh"
+#include "bound_tags.hh"
 #include "config.h"
 #include "lnav.hh"
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
+#include "sql_util.hh"
 
 using namespace lnav::roles::literals;
 

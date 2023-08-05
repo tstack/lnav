@@ -36,6 +36,7 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include "base/func_util.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 

@@ -36,21 +36,14 @@
 #    include <alloca.h>
 #endif
 
-#include <errno.h>
-#include <fcntl.h>
-#include <glob.h>
 #include <locale.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <termios.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -60,7 +53,6 @@
 #    define _WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
 #endif
 #include <algorithm>
-#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -78,7 +70,6 @@
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
 #include "base/func_util.hh"
-#include "base/future_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.bind.hh"
@@ -88,7 +79,6 @@
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
-#include "bookmarks.hh"
 #include "bottom_status_source.hh"
 #include "bound_tags.hh"
 #include "breadcrumb_curses.hh"
@@ -99,7 +89,6 @@
 #include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
 #include "gantt_source.hh"
-#include "grep_proc.hh"
 #include "hist_source.hh"
 #include "init-sql.h"
 #include "listview_curses.hh"
@@ -141,7 +130,6 @@
 #include "view_helpers.examples.hh"
 #include "view_helpers.hist.hh"
 #include "views_vtab.hh"
-#include "vt52_curses.hh"
 #include "xpath_vtab.hh"
 #include "xterm_mouse.hh"
 
@@ -159,12 +147,10 @@
 #include "command_executor.hh"
 #include "field_overlay_source.hh"
 #include "hotkeys.hh"
-#include "log_actions.hh"
 #include "readline_callbacks.hh"
 #include "readline_possibilities.hh"
-#include "shlex.hh"
 #include "url_loader.hh"
-#include "yajlpp/yajlpp.hh"
+#include "yajlpp/json_ptr.hh"
 
 #ifndef SYSCONFDIR
 #    define SYSCONFDIR "/usr/etc"
