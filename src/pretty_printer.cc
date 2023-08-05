@@ -29,6 +29,10 @@
 
 #include "pretty_printer.hh"
 
+#include <sys/types.h>
+
+#include "base/auto_mem.hh"
+#include "base/intern_string.hh"
 #include "base/string_util.hh"
 #include "config.h"
 

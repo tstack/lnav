@@ -27,8 +27,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <regex>
-
 #include "db_sub_source.hh"
 
 #include "base/date_time_scanner.hh"
