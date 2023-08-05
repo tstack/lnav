@@ -29,7 +29,6 @@
  * @file sql_util.cc
  */
 
-#include <algorithm>
 #include <regex>
 #include <vector>
 
@@ -42,7 +41,6 @@
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
-#include "base/time_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "lnav_util.hh"
@@ -51,7 +49,7 @@
 #include "readline_highlighters.hh"
 #include "sql_execute.hh"
 #include "sql_help.hh"
-#include "sqlite-extension-func.hh"
+#include "sqlitepp.hh"
 
 using namespace lnav::roles::literals;
 

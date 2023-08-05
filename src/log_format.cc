@@ -50,6 +50,7 @@
 #include "scn/scn.h"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
+#include "sqlitepp.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 

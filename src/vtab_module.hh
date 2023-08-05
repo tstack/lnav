@@ -31,7 +31,6 @@
 #define vtab_module_hh
 
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <sqlite3.h>

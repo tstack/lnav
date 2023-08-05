@@ -39,6 +39,7 @@
 #include "logfile_sub_source.cfg.hh"
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
+#include "sqlitepp.hh"
 
 namespace lnav {
 namespace log {
