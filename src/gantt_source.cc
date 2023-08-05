@@ -52,6 +52,8 @@ static const std::vector<std::chrono::seconds> TIME_SPANS = {
     365 * 24h,
 };
 
+static constexpr size_t MAX_OPID_WIDTH = 60;
+
 gantt_header_overlay::gantt_header_overlay(std::shared_ptr<gantt_source> src)
     : gho_src(src)
 {
@@ -209,6 +211,8 @@ gantt_source::text_value_for_line(textview_curses& tc,
         this->gs_rendered_line.clear();
 
         auto total_msgs = row.or_value.get_total_msgs();
+        auto truncated_name = row.or_name.to_string();
+        truncate_to(truncated_name, MAX_OPID_WIDTH);
         this->gs_rendered_line
             .append(duration_str, VC_ROLE.value(role_t::VCR_OFFSET_TIME))
             .append("  ")
@@ -218,12 +222,12 @@ gantt_source::text_value_for_line(textview_curses& tc,
                 row.or_value.otr_level_counts[log_level_t::LEVEL_WARNING],
                 total_msgs)))
             .append("  ")
-            .append(lnav::roles::identifier(row.or_name.to_string()))
-            .append(this->gs_opid_width - row.or_name.length(), ' ');
-        for (const auto& desc_pair : row.or_value.otr_description) {
-            this->gs_rendered_line.append(" ");
-            this->gs_rendered_line.append(desc_pair.second);
-        }
+            .append(lnav::roles::identifier(truncated_name))
+            .append(this->gs_opid_width
+                        - utf8_string_length(truncated_name)
+                              .unwrapOr(this->gs_opid_width),
+                    ' ')
+            .append(row.or_description);
         this->gs_rendered_line.with_attr_for_all(
             VC_ROLE.value(role_t::VCR_COMMENT));
 
@@ -319,7 +323,7 @@ gantt_source::rebuild_indexes()
 
     auto max_desc_width = size_t{0};
 
-    log_opid_map active_opids;
+    std::map<string_fragment, opid_row> active_opids;
     for (const auto& ld : this->gs_lss) {
         if (ld->get_file_ptr() == nullptr) {
             continue;
@@ -328,6 +332,7 @@ gantt_source::rebuild_indexes()
             continue;
         }
 
+        auto format = ld->get_file_ptr()->get_format();
         safe::ReadAccess<logfile::safe_opid_map> r_opid_map(
             ld->get_file_ptr()->get_opids());
 
@@ -342,9 +347,32 @@ gantt_source::rebuild_indexes()
 
             auto active_iter = active_opids.find(pair.first);
             if (active_iter == active_opids.end()) {
-                active_opids.emplace(iter->first, pair.second);
+                auto active_emp_res = active_opids.emplace(
+                    iter->first, opid_row{pair.first, pair.second});
+                active_iter = active_emp_res.first;
             } else {
-                active_iter->second |= pair.second;
+                active_iter->second.or_value |= pair.second;
+            }
+
+            if (pair.second.otr_description_id) {
+                auto desc_id = pair.second.otr_description_id.value();
+                auto desc_def_iter
+                    = format->lf_opid_description_def->find(desc_id);
+
+                if (desc_def_iter != format->lf_opid_description_def->end()) {
+                    auto& format_descs
+                        = iter->second.odd_format_to_desc[format->get_name()];
+                    format_descs[desc_id]
+                        = desc_def_iter->second.od_descriptors;
+
+                    auto& all_descs = active_iter->second.or_descriptions;
+                    auto& curr_desc_m = all_descs[format->get_name()][desc_id];
+                    auto& new_desc_v = pair.second.otr_description;
+
+                    for (const auto& desc_pair : new_desc_v) {
+                        curr_desc_m[desc_pair.first] = desc_pair.second;
+                    }
+                }
             }
         }
     }
@@ -352,20 +380,16 @@ gantt_source::rebuild_indexes()
     std::multimap<struct timeval, opid_row> time_order_map;
     for (const auto& pair : active_opids) {
         if (this->gs_lower_bound.tv_sec == 0
-            || pair.second.otr_begin < this->gs_lower_bound)
+            || pair.second.or_value.otr_begin < this->gs_lower_bound)
         {
-            this->gs_lower_bound = pair.second.otr_begin;
+            this->gs_lower_bound = pair.second.or_value.otr_begin;
         }
         if (this->gs_upper_bound.tv_sec == 0
-            || this->gs_upper_bound < pair.second.otr_end)
+            || this->gs_upper_bound < pair.second.or_value.otr_end)
         {
-            this->gs_upper_bound = pair.second.otr_end;
+            this->gs_upper_bound = pair.second.or_value.otr_end;
         }
-        if (pair.first.length() > this->gs_opid_width) {
-            this->gs_opid_width = pair.first.length();
-        }
-        time_order_map.emplace(pair.second.otr_begin,
-                               opid_row{pair.first, pair.second});
+        time_order_map.emplace(pair.second.or_value.otr_begin, pair.second);
     }
     this->gs_time_order.clear();
     size_t filtered_in_count = 0;
@@ -378,16 +402,31 @@ gantt_source::rebuild_indexes()
         }
     }
     this->gs_filter_hits = {};
-    for (const auto& pair : time_order_map) {
-        std::string full_desc;
-        for (const auto& desc : pair.second.or_value.otr_description) {
-            full_desc.append(" ");
-            full_desc.append(desc.second);
+    for (auto& pair : time_order_map) {
+        auto& full_desc = pair.second.or_description;
+        for (auto& desc : pair.second.or_descriptions) {
+            const auto& format_desc_defs
+                = this->gs_opid_map[pair.second.or_name]
+                      .odd_format_to_desc[desc.first];
+
+            for (auto& desc_format_pairs : desc.second) {
+                const auto& desc_def_v
+                    = *format_desc_defs.find(desc_format_pairs.first)->second;
+                for (size_t lpc = 0; lpc < desc_def_v.size(); lpc++) {
+                    full_desc.append(desc_def_v[lpc].od_prefix);
+                    full_desc.append(desc_format_pairs.second[lpc]);
+                    full_desc.append(desc_def_v[lpc].od_suffix);
+                }
+            }
         }
 
-        shared_buffer sb;
-        shared_buffer_ref sbr;
-        sbr.share(sb, full_desc.c_str(), full_desc.length());
+        shared_buffer sb_opid;
+        shared_buffer_ref sbr_opid;
+        sbr_opid.share(
+            sb_opid, pair.second.or_name.data(), pair.second.or_name.length());
+        shared_buffer sb_desc;
+        shared_buffer_ref sbr_desc;
+        sbr_desc.share(sb_desc, full_desc.c_str(), full_desc.length());
         if (this->tss_apply_filters) {
             auto filtered_in = false;
             auto filtered_out = false;
@@ -395,17 +434,19 @@ gantt_source::rebuild_indexes()
                 if (!filt->is_enabled()) {
                     continue;
                 }
-                if (filt->matches(nonstd::nullopt, sbr)) {
-                    this->gs_filter_hits[filt->get_index()] += 1;
-                    switch (filt->get_type()) {
-                        case text_filter::INCLUDE:
-                            filtered_in = true;
-                            break;
-                        case text_filter::EXCLUDE:
-                            filtered_out = true;
-                            break;
-                        default:
-                            break;
+                for (const auto& sbr : {sbr_opid, sbr_desc}) {
+                    if (filt->matches(nonstd::nullopt, sbr)) {
+                        this->gs_filter_hits[filt->get_index()] += 1;
+                        switch (filt->get_type()) {
+                            case text_filter::INCLUDE:
+                                filtered_in = true;
+                                break;
+                            case text_filter::EXCLUDE:
+                                filtered_out = true;
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
             }
@@ -415,6 +456,9 @@ gantt_source::rebuild_indexes()
             }
         }
 
+        if (pair.second.or_name.length() > this->gs_opid_width) {
+            this->gs_opid_width = pair.second.or_name.length();
+        }
         if (full_desc.size() > max_desc_width) {
             max_desc_width = full_desc.size();
         }
@@ -426,8 +470,9 @@ gantt_source::rebuild_indexes()
         {
             bm_warns.insert_once(vis_line_t(this->gs_time_order.size()));
         }
-        this->gs_time_order.emplace_back(pair.second);
+        this->gs_time_order.emplace_back(std::move(pair.second));
     }
+    this->gs_opid_width = std::min(this->gs_opid_width, MAX_OPID_WIDTH);
     this->gs_total_width = 22 + this->gs_opid_width + max_desc_width;
 
     this->tss_view->set_needs_update();

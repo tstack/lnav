@@ -275,7 +275,13 @@ struct json_path_handler : public json_path_handler_base {
     template<typename T, typename U>
     static inline U& get_field(T& input, std::shared_ptr<U>(T::*field))
     {
-        return *(input.*field);
+        auto& ptr = input.*field;
+
+        if (ptr.get() == nullptr) {
+            ptr = std::make_shared<U>();
+        }
+
+        return *ptr;
     }
 
     template<typename T, typename U>

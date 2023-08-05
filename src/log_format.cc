@@ -799,6 +799,9 @@ external_log_format::scan(logfile& lf,
 
         const auto* line_data = (const unsigned char*) sbr.get_data();
 
+        this->lf_desc_captures.clear();
+        this->lf_desc_allocator.reset();
+
         yajl_reset(handle);
         ypc.set_static_handler(json_log_handlers.jpc_children[0]);
         ypc.ypc_userdata = &jlu;
@@ -839,6 +842,102 @@ external_log_format::scan(logfile& lf,
                 }
 
                 opid_iter->second.otr_level_counts[ll.get_msg_level()] += 1;
+
+                auto& otr = opid_iter->second;
+                if (!otr.otr_description_id) {
+                    for (const auto& desc_def_pair :
+                         *this->lf_opid_description_def)
+                    {
+                        if (otr.otr_description_id) {
+                            break;
+                        }
+                        for (const auto& desc_def :
+                             *desc_def_pair.second.od_descriptors)
+                        {
+                            auto desc_cap_iter = this->lf_desc_captures.find(
+                                desc_def.od_field.pp_value);
+
+                            if (desc_cap_iter == this->lf_desc_captures.end()) {
+                                continue;
+                            }
+
+                            if (desc_def.od_extractor.pp_value) {
+                                static thread_local auto desc_md
+                                    = lnav::pcre2pp::match_data::unitialized();
+
+                                auto desc_match_res
+                                    = desc_def.od_extractor.pp_value
+                                          ->capture_from(desc_cap_iter->second)
+                                          .into(desc_md)
+                                          .matches(PCRE2_NO_UTF_CHECK)
+                                          .ignore_error();
+                                if (desc_match_res) {
+                                    otr.otr_description_id
+                                        = desc_def_pair.first;
+                                }
+                            } else {
+                                otr.otr_description_id = desc_def_pair.first;
+                            }
+                        }
+                    }
+                }
+
+                if (otr.otr_description_id) {
+                    const auto& desc_def_v
+                        = *this->lf_opid_description_def
+                               ->find(
+                                   opid_iter->second.otr_description_id.value())
+                               ->second.od_descriptors;
+                    auto& desc_v = opid_iter->second.otr_description;
+
+                    if (desc_def_v.size() != desc_v.size()) {
+                        for (size_t desc_def_index = 0;
+                             desc_def_index < desc_def_v.size();
+                             desc_def_index++)
+                        {
+                            const auto& desc_def = desc_def_v[desc_def_index];
+                            auto found_desc = false;
+
+                            for (const auto& desc_pair : desc_v) {
+                                if (desc_pair.first == desc_def_index) {
+                                    found_desc = true;
+                                    break;
+                                }
+                            }
+                            if (!found_desc) {
+                                auto desc_cap_iter
+                                    = this->lf_desc_captures.find(
+                                        desc_def.od_field.pp_value);
+                                if (desc_cap_iter
+                                    == this->lf_desc_captures.end())
+                                {
+                                    continue;
+                                }
+                                if (desc_def.od_extractor.pp_value) {
+                                    static thread_local auto desc_md = lnav::
+                                        pcre2pp::match_data::unitialized();
+
+                                    auto match_res
+                                        = desc_def.od_extractor.pp_value
+                                              ->capture_from(
+                                                  desc_cap_iter->second)
+                                              .into(desc_md)
+                                              .matches(PCRE2_NO_UTF_CHECK)
+                                              .ignore_error();
+                                    if (match_res) {
+                                        desc_v.emplace_back(
+                                            desc_def_index,
+                                            desc_md.to_string());
+                                    }
+                                } else {
+                                    desc_v.emplace_back(
+                                        desc_def_index,
+                                        desc_cap_iter->second.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -990,7 +1089,7 @@ external_log_format::scan(logfile& lf,
                         break;
                     }
                     for (const auto& desc_def :
-                         desc_def_pair.second.od_descriptors)
+                         *desc_def_pair.second.od_descriptors)
                     {
                         auto desc_field_index_iter
                             = fpat->p_value_name_to_index.find(
@@ -1030,9 +1129,9 @@ external_log_format::scan(logfile& lf,
 
             if (otr.otr_description_id) {
                 const auto& desc_def_v
-                    = this->lf_opid_description_def
-                          ->find(opid_iter->second.otr_description_id.value())
-                          ->second.od_descriptors;
+                    = *this->lf_opid_description_def
+                           ->find(opid_iter->second.otr_description_id.value())
+                           ->second.od_descriptors;
                 auto& desc_v = opid_iter->second.otr_description;
 
                 if (desc_def_v.size() != desc_v.size()) {
@@ -1538,6 +1637,12 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         } else {
             jlu->jlu_opid_frag = opid_iter->first;
         }
+    }
+
+    if (jlu->jlu_format->lf_desc_fields.contains(field_name)) {
+        auto frag_copy = frag.to_owned(jlu->jlu_format->lf_desc_allocator);
+
+        jlu->jlu_format->lf_desc_captures.emplace(field_name, frag_copy);
     }
 
     jlu->add_sub_lines_for(
@@ -2510,7 +2615,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     }
 
     for (const auto& opid_desc_pair : *this->lf_opid_description_def) {
-        for (const auto& opid_desc : opid_desc_pair.second.od_descriptors) {
+        for (const auto& opid_desc : *opid_desc_pair.second.od_descriptors) {
             auto iter = this->elf_value_defs.find(opid_desc.od_field.pp_value);
             if (iter == this->elf_value_defs.end()) {
                 errors.emplace_back(
@@ -2522,6 +2627,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                             attr_line_t("unknown value name ")
                                 .append_quoted(opid_desc.od_field.pp_value))
                         .with_snippets(this->get_snippets()));
+            } else {
+                this->lf_desc_fields.insert(iter->first);
             }
         }
     }

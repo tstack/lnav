@@ -892,4 +892,11 @@ struct frag_hasher {
     }
 };
 
+struct intern_hasher {
+    size_t operator()(const intern_string_t& is) const
+    {
+        return hash_str(is.c_str(), is.size());
+    }
+};
+
 #endif

@@ -549,12 +549,28 @@ public:
     };
 
     struct opid_descriptors {
-        std::vector<opid_descriptor> od_descriptors;
+        std::shared_ptr<std::vector<opid_descriptor>> od_descriptors;
     };
 
     std::shared_ptr<std::map<intern_string_t, opid_descriptors>>
         lf_opid_description_def{
             std::make_shared<std::map<intern_string_t, opid_descriptors>>()};
+
+    ArenaAlloc::Alloc<char> lf_desc_allocator{2 * 1024};
+
+    using desc_field_set
+        = robin_hood::unordered_set<intern_string_t,
+                                    intern_hasher,
+                                    std::equal_to<intern_string_t>>;
+
+    desc_field_set lf_desc_fields;
+
+    using desc_cap_map
+        = robin_hood::unordered_map<intern_string_t,
+                                    string_fragment,
+                                    intern_hasher,
+                                    std::equal_to<intern_string_t>>;
+    desc_cap_map lf_desc_captures;
 
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;
