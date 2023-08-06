@@ -280,11 +280,6 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     }
     if (!closed_files.empty()) {
         lnav_data.ld_active_files.close_files(closed_files);
-
-        auto* gantt_source = lnav_data.ld_views[LNV_GANTT].get_sub_source();
-        if (gantt_source != nullptr) {
-            gantt_source->text_filters_changed();
-        }
     }
 
     auto result = lss.rebuild_index(deadline);
@@ -358,7 +353,14 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
         }
     }
 
-    lnav_data.ld_view_stack.top() | [](auto tc) {
+    lnav_data.ld_view_stack.top() | [&closed_files](auto tc) {
+        if (!closed_files.empty() && tc == &lnav_data.ld_views[LNV_GANTT]) {
+            auto* gantt_source = lnav_data.ld_views[LNV_GANTT].get_sub_source();
+            if (gantt_source != nullptr) {
+                gantt_source->text_filters_changed();
+            }
+        }
+
         auto* tss = tc->get_sub_source();
         lnav_data.ld_filter_status_source.update_filtered(tss);
         lnav_data.ld_scroll_broadcaster(tc);

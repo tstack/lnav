@@ -62,6 +62,8 @@ listview_curses::update_top_from_selection()
         this->set_top(this->lv_selection);
     } else if (this->lv_selection == this->get_inner_height() - 1_vl) {
         this->set_top(this->get_top_for_last_row());
+    } else if (height <= this->lv_tail_space) {
+        this->set_top(this->lv_selection);
     } else if (this->lv_selection
                >= (this->lv_top + height - this->lv_tail_space - 1_vl))
     {
