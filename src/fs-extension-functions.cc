@@ -42,11 +42,11 @@
 #include "base/auto_fd.hh"
 #include "base/auto_mem.hh"
 #include "base/auto_pid.hh"
+#include "base/injector.hh"
 #include "base/lnav.console.hh"
 #include "base/opt_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
-#include "lnav.hh"
 #include "sqlite-extension-func.hh"
 #include "sqlite3.h"
 #include "vtab_module.hh"
@@ -188,7 +188,9 @@ sql_shell_exec(const char* cmd,
 {
     static const intern_string_t SRC = intern_string::lookup("options");
 
-    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+    static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
+
+    if (lnav_flags & LNF_SECURE_MODE) {
         throw sqlite_func_error("not available in secure mode");
     }
 

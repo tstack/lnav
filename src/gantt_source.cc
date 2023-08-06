@@ -599,6 +599,11 @@ void
 gantt_source::text_filters_changed()
 {
     this->rebuild_indexes();
+
+    if (this->tss_view != nullptr) {
+        this->tss_view->reload_data();
+        this->tss_view->redo_search();
+    }
 }
 
 int

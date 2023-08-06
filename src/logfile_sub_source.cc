@@ -148,6 +148,12 @@ struct filtered_logline_cmp {
         logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
         logline* ll_rhs = this->llss_controller.find_line(cl_rhs);
 
+        if (ll_lhs == nullptr) {
+            return true;
+        }
+        if (ll_rhs == nullptr) {
+            return false;
+        }
         return (*ll_lhs) < (*ll_rhs);
     }
 
@@ -156,6 +162,9 @@ struct filtered_logline_cmp {
         content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
         logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
 
+        if (ll_lhs == nullptr) {
+            return true;
+        }
         return (*ll_lhs) < rhs;
     }
 

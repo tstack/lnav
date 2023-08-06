@@ -3355,8 +3355,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     }
 
                     vis_line_t vl;
-                    for (vl = tc->get_top(); vl < tc->get_inner_height();
-                         ++vl, ++y)
+                    for (vl = tc->get_top(); vl < tc->get_inner_height(); ++vl)
                     {
                         std::vector<attr_line_t> rows(1);
                         tc->listview_value_for_rows(*tc, vl, rows);
@@ -3372,7 +3371,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                 *tc, vl, row_overlay_content);
                             for (const auto& ov_row : row_overlay_content) {
                                 write_line_to(stdout, ov_row);
-                                ++y;
                             }
                         }
                     }
