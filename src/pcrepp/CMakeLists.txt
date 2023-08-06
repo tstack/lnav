@@ -1,6 +1,7 @@
 add_library(pcrepp STATIC
         ../config.h.in
         pcre2pp.hh
+        pcre2pp_fwd.hh
         pcre2pp.cc)
 
 target_include_directories(pcrepp PUBLIC . .. ../third-party/scnlib/include

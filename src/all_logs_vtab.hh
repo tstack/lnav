@@ -32,7 +32,6 @@
 
 #include <array>
 
-#include "data_parser.hh"
 #include "log_vtab_impl.hh"
 
 /**

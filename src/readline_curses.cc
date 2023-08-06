@@ -61,7 +61,6 @@
 #include "base/string_util.hh"
 #include "fmt/format.h"
 #include "fts_fuzzy_match.hh"
-#include "lnav_util.hh"
 #include "readline_curses.hh"
 #include "shlex.hh"
 #include "spookyhash/SpookyV2.h"

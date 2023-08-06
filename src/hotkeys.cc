@@ -38,18 +38,11 @@
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
-#include "environ_vtab.hh"
 #include "field_overlay_source.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
-#include "lnav_util.hh"
-#include "log_data_helper.hh"
-#include "plain_text_source.hh"
-#include "readline_highlighters.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
-#include "sysclip.hh"
-#include "termios_guard.hh"
 #include "xterm_mouse.hh"
 
 using namespace lnav::roles::literals;

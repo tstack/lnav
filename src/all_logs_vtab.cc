@@ -31,6 +31,7 @@
 
 #include "base/attr_line.hh"
 #include "config.h"
+#include "data_parser.hh"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 

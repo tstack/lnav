@@ -29,6 +29,7 @@
 
 #include "log_data_table.hh"
 
+#include "column_namer.hh"
 #include "config.h"
 #include "scn/scn.h"
 

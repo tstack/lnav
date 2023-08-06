@@ -34,14 +34,11 @@
 #include <unistd.h>
 
 #include "base/injector.bind.hh"
-#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "lnav.hh"
-#include "lnav_util.hh"
 #include "sql_util.hh"
-#include "view_curses.hh"
 #include "vtab_module_json.hh"
 #include "yajlpp/yajlpp_def.hh"
 

@@ -29,7 +29,6 @@
 
 #include "field_overlay_source.hh"
 
-#include "base/ansi_scrubber.hh"
 #include "base/humanize.time.hh"
 #include "base/snippet_highlighters.hh"
 #include "config.h"
@@ -38,7 +37,6 @@
 #include "log_vtab_impl.hh"
 #include "md2attr_line.hh"
 #include "readline_highlighters.hh"
-#include "relative_time.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 

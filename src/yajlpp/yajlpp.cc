@@ -34,8 +34,6 @@
 
 #include "yajlpp.hh"
 
-#include "base/fs_util.hh"
-#include "base/snippet_highlighters.hh"
 #include "config.h"
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"

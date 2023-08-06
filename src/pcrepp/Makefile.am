@@ -16,7 +16,8 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 noinst_LIBRARIES = libpcrepp.a
 
 noinst_HEADERS = \
-	pcre2pp.hh
+	pcre2pp.hh \
+	pcre2pp_fwd.hh
 
 libpcrepp_a_SOURCES = \
 	pcre2pp.cc

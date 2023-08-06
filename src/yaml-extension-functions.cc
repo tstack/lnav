@@ -36,7 +36,6 @@
 #include "ryml_all.hpp"
 #include "sqlite-extension-func.hh"
 #include "vtab_module.hh"
-#include "yajlpp/yajlpp.hh"
 
 using namespace lnav::roles::literals;
 
