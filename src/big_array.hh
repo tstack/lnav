@@ -35,6 +35,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "base/lnav_log.hh"
 #include "base/math_util.hh"
 
 template<typename T>
