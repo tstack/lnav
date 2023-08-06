@@ -33,7 +33,6 @@
 #define intern_string_hh
 
 #include <ostream>
-#include <string>
 #include <vector>
 
 #include <assert.h>

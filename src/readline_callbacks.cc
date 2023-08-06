@@ -37,7 +37,6 @@
 #include "help_text_formatter.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
-#include "lnav_util.hh"
 #include "log_format_loader.hh"
 #include "plain_text_source.hh"
 #include "readline_curses.hh"
