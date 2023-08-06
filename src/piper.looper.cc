@@ -28,7 +28,6 @@
  */
 
 #include <chrono>
-#include <thread>
 
 #include "piper.looper.hh"
 
@@ -37,7 +36,6 @@
 
 #include "base/fs_util.hh"
 #include "base/injector.hh"
-#include "base/paths.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "hasher.hh"

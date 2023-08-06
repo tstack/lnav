@@ -31,13 +31,11 @@
 
 #include "static_file_vtab.hh"
 
-#include <stdlib.h>
 #include <string.h>
 
 #include "base/auto_mem.hh"
 #include "base/fs_util.hh"
 #include "base/lnav_log.hh"
-#include "base/paths.hh"
 #include "config.h"
 #include "ghc/filesystem.hpp"
 #include "lnav.hh"

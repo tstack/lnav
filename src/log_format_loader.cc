@@ -34,8 +34,6 @@
 
 #include "log_format_loader.hh"
 
-#include <errno.h>
-#include <fcntl.h>
 #include <glob.h>
 #include <libgen.h>
 #include <sys/stat.h>

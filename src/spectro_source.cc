@@ -33,7 +33,6 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/math_util.hh"
-#include "command_executor.hh"
 #include "config.h"
 
 nonstd::optional<size_t>

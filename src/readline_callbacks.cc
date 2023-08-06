@@ -44,7 +44,6 @@
 #include "readline_highlighters.hh"
 #include "service_tags.hh"
 #include "sql_help.hh"
-#include "sqlite-extension-func.hh"
 #include "tailer/tailer.looper.hh"
 #include "view_helpers.examples.hh"
 #include "vtab_module.hh"

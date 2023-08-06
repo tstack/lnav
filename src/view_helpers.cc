@@ -29,7 +29,6 @@
 
 #include "view_helpers.hh"
 
-#include "base/humanize.hh"
 #include "base/itertools.hh"
 #include "config.h"
 #include "document.sections.hh"

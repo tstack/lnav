@@ -35,10 +35,10 @@
 #include <set>
 #include <utility>
 
-#include "optional.hpp"
-#include "pcrepp/pcre2pp.hh"
+#include "base/attr_line.hh"
+#include "pcrepp/pcre2pp_fwd.hh"
+#include "styling.hh"
 #include "text_format.hh"
-#include "view_curses.hh"
 
 struct highlighter {
     highlighter() = default;

@@ -30,6 +30,8 @@
 #include "highlighter.hh"
 
 #include "config.h"
+#include "pcrepp/pcre2pp.hh"
+#include "view_curses.hh"
 
 highlighter&
 highlighter::operator=(const highlighter& other)
