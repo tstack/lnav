@@ -33,23 +33,16 @@
 #define logfile_sub_source_hh
 
 #include <array>
-#include <list>
-#include <map>
-#include <sstream>
 #include <utility>
 #include <vector>
 
 #include <limits.h>
 
-#include "base/lnav.console.hh"
-#include "base/lnav_log.hh"
 #include "base/time_util.hh"
 #include "big_array.hh"
 #include "bookmarks.hh"
 #include "document.sections.hh"
 #include "filter_observer.hh"
-#include "lnav_config_fwd.hh"
-#include "log_accel.hh"
 #include "log_format.hh"
 #include "logfile.hh"
 #include "strong_int.hh"
