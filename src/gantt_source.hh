@@ -67,6 +67,9 @@ public:
     int get_filtered_count() const override;
     int get_filtered_count_for(size_t filter_index) const override;
 
+    void text_crumbs_for_line(int line,
+                              std::vector<breadcrumb::crumb>& crumbs) override;
+
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
     nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
@@ -114,6 +117,7 @@ public:
     struct timeval gs_upper_bound {};
     size_t gs_filtered_count{0};
     std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
+    exec_context* gs_exec_context;
 };
 
 class gantt_header_overlay : public list_overlay_source {
