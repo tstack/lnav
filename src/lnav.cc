@@ -2747,6 +2747,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                          lnav_data.ld_log_source,
                                          lnav_data.ld_gantt_details_source,
                                          lnav_data.ld_gantt_status_source);
+    gantt_view_source->gs_exec_context = &lnav_data.ld_exec_context;
     auto gantt_header_source
         = std::make_shared<gantt_header_overlay>(gantt_view_source);
     lnav_data.ld_views[LNV_GANTT]

@@ -34,6 +34,7 @@
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/math_util.hh"
+#include "command_executor.hh"
 #include "md4cpp.hh"
 #include "sql_util.hh"
 
@@ -628,4 +629,52 @@ int
 gantt_source::get_filtered_count_for(size_t filter_index) const
 {
     return this->gs_filter_hits[filter_index];
+}
+
+static std::vector<breadcrumb::possibility>
+timestamp_poss()
+{
+    const static std::vector<breadcrumb::possibility> retval = {
+        breadcrumb::possibility{"-1 day"},
+        breadcrumb::possibility{"-1h"},
+        breadcrumb::possibility{"-30m"},
+        breadcrumb::possibility{"-15m"},
+        breadcrumb::possibility{"-5m"},
+        breadcrumb::possibility{"-1m"},
+        breadcrumb::possibility{"+1m"},
+        breadcrumb::possibility{"+5m"},
+        breadcrumb::possibility{"+15m"},
+        breadcrumb::possibility{"+30m"},
+        breadcrumb::possibility{"+1h"},
+        breadcrumb::possibility{"+1 day"},
+    };
+
+    return retval;
+}
+
+void
+gantt_source::text_crumbs_for_line(int line,
+                                   std::vector<breadcrumb::crumb>& crumbs)
+{
+    text_sub_source::text_crumbs_for_line(line, crumbs);
+
+    if (line >= this->gs_time_order.size()) {
+        return;
+    }
+
+    const auto& row = this->gs_time_order[line];
+    char ts[64];
+
+    sql_strftime(ts, sizeof(ts), row.or_value.otr_begin, 'T');
+
+    crumbs.emplace_back(
+        std::string(ts),
+        timestamp_poss,
+        [ec = this->gs_exec_context](const auto& ts) {
+            ec->execute(fmt::format(FMT_STRING(":goto {}"),
+                                    ts.template get<std::string>()));
+        });
+    crumbs.back().c_expected_input
+        = breadcrumb::crumb::expected_input_t::anything;
+    crumbs.back().c_search_placeholder = "(Enter an absolute or relative time)";
 }
