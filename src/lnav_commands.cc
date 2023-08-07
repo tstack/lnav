@@ -2867,47 +2867,80 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     std::string retval;
 
     if (args.empty()) {
-    } else {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
-        nonstd::optional<ghc::filesystem::path> actual_path;
-        std::string fn;
+        args.emplace_back("loaded-files");
+        return Ok(retval);
+    }
 
-        if (tc == &lnav_data.ld_views[LNV_TEXT]) {
-            textfile_sub_source& tss = lnav_data.ld_text_source;
+    auto* tc = *lnav_data.ld_view_stack.top();
+    std::vector<nonstd::optional<ghc::filesystem::path>> actual_path_v;
+    std::vector<std::string> fn_v;
 
-            if (tss.empty()) {
-                return ec.make_error("no text files are opened");
-            } else {
-                fn = tss.current_file()->get_filename();
-                lnav_data.ld_active_files.request_close(tss.current_file());
+    if (args.size() > 1) {
+        auto lexer = shlex(cmdline);
 
-                if (tss.size() == 1) {
-                    lnav_data.ld_view_stack.pop_back();
-                }
+        lexer.split(args, ec.create_resolver());
+        args.erase(args.begin());
+
+        for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+            if (lf.get() == nullptr) {
+                continue;
             }
-        } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
-            if (tc->get_inner_height() == 0) {
-                return ec.make_error("no log files loaded");
-            } else {
-                logfile_sub_source& lss = lnav_data.ld_log_source;
-                vis_line_t vl = tc->get_selection();
-                content_line_t cl = lss.at(vl);
-                std::shared_ptr<logfile> lf = lss.find(cl);
 
-                actual_path = lf->get_actual_path();
-                fn = lf->get_filename();
-                if (!ec.ec_dry_run) {
-                    lnav_data.ld_active_files.request_close(lf);
-                }
+            auto find_iter
+                = find_if(args.begin(), args.end(), [&lf](const auto& arg) {
+                      return fnmatch(arg.c_str(), lf->get_filename().c_str(), 0)
+                          == 0;
+                  });
+
+            if (find_iter == args.end()) {
+                continue;
             }
-        } else {
-            return ec.make_error(
-                "close must be run in the log or text file views");
+
+            actual_path_v.push_back(lf->get_actual_path());
+            fn_v.emplace_back(lf->get_filename());
+            if (!ec.ec_dry_run) {
+                lnav_data.ld_active_files.request_close(lf);
+            }
         }
-        if (!fn.empty()) {
-            if (ec.ec_dry_run) {
-                retval = "";
-            } else {
+    } else if (tc == &lnav_data.ld_views[LNV_TEXT]) {
+        auto& tss = lnav_data.ld_text_source;
+
+        if (tss.empty()) {
+            return ec.make_error("no text files are opened");
+        } else {
+            fn_v.emplace_back(tss.current_file()->get_filename());
+            lnav_data.ld_active_files.request_close(tss.current_file());
+
+            if (tss.size() == 1) {
+                lnav_data.ld_view_stack.pop_back();
+            }
+        }
+    } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
+        if (tc->get_inner_height() == 0) {
+            return ec.make_error("no log files loaded");
+        } else {
+            auto& lss = lnav_data.ld_log_source;
+            auto vl = tc->get_selection();
+            auto cl = lss.at(vl);
+            auto lf = lss.find(cl);
+
+            actual_path_v.push_back(lf->get_actual_path());
+            fn_v.emplace_back(lf->get_filename());
+            if (!ec.ec_dry_run) {
+                lnav_data.ld_active_files.request_close(lf);
+            }
+        }
+    } else {
+        return ec.make_error("close must be run in the log or text file views");
+    }
+    if (!fn_v.empty()) {
+        if (ec.ec_dry_run) {
+            retval = "";
+        } else {
+            for (size_t lpc = 0; lpc < actual_path_v.size(); lpc++) {
+                const auto& fn = fn_v[lpc];
+                const auto& actual_path = actual_path_v[lpc];
+
                 if (is_url(fn.c_str())) {
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [fn](auto& clooper) { clooper.close_request(fn); });
@@ -2917,8 +2950,9 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         actual_path.value().string());
                 }
                 lnav_data.ld_active_files.fc_closed_files.insert(fn);
-                retval = "info: closed -- " + fn;
             }
+            retval = fmt::format(FMT_STRING("info: closed -- {}"),
+                                 fmt::join(fn_v, ", "));
         }
     }
 
@@ -2944,11 +2978,11 @@ com_file_visibility(exec_context& ec,
     }
 
     if (args.size() == 1 || only_this_file) {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+        auto* tc = *lnav_data.ld_view_stack.top();
         std::shared_ptr<logfile> lf;
 
         if (tc == &lnav_data.ld_views[LNV_TEXT]) {
-            textfile_sub_source& tss = lnav_data.ld_text_source;
+            const auto& tss = lnav_data.ld_text_source;
 
             if (tss.empty()) {
                 return ec.make_error("no text files are opened");
@@ -2981,6 +3015,7 @@ com_file_visibility(exec_context& ec,
                              make_visible ? "showing" : "hiding",
                              lf->get_filename());
     } else {
+        auto* top_tc = *lnav_data.ld_view_stack.top();
         int text_file_count = 0, log_file_count = 0;
         auto lexer = shlex(cmdline);
 
@@ -3023,6 +3058,11 @@ com_file_visibility(exec_context& ec,
             lnav_data.ld_views[LNV_LOG]
                 .get_sub_source()
                 ->text_filters_changed();
+            if (top_tc == &lnav_data.ld_views[LNV_GANTT]) {
+                lnav_data.ld_views[LNV_GANTT]
+                    .get_sub_source()
+                    ->text_filters_changed();
+            }
         }
         if (!ec.ec_dry_run && text_file_count > 0) {
             lnav_data.ld_views[LNV_TEXT]
@@ -3879,10 +3919,10 @@ com_export_session_to(exec_context& ec,
                 tcsetattr(1, TCSANOW, &curr_termios);
                 setvbuf(stdout, nullptr, _IONBF, 0);
                 to_term = true;
-                fprintf(
-                    outfile,
-                    "\n---------------- Press any key to exit lo-fi display "
-                    "----------------\n\n");
+                fprintf(outfile,
+                        "\n---------------- Press any key to exit lo-fi "
+                        "display "
+                        "----------------\n\n");
             } else {
                 outfile = auto_mem<FILE>::leak(ec_out.value());
             }
@@ -4039,30 +4079,31 @@ com_hide_line(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("move-time");
     } else if (args.size() == 1) {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
-        logfile_sub_source& lss = lnav_data.ld_log_source;
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto& lss = lnav_data.ld_log_source;
 
         if (tc == &lnav_data.ld_views[LNV_LOG]) {
-            struct timeval min_time, max_time;
-            bool have_min_time = lss.get_min_log_time(min_time);
-            bool have_max_time = lss.get_max_log_time(max_time);
+            auto min_time_opt = lss.get_min_log_time();
+            auto max_time_opt = lss.get_max_log_time();
             char min_time_str[32], max_time_str[32];
 
-            if (have_min_time) {
-                sql_strftime(min_time_str, sizeof(min_time_str), min_time);
+            if (min_time_opt) {
+                sql_strftime(
+                    min_time_str, sizeof(min_time_str), min_time_opt.value());
             }
-            if (have_max_time) {
-                sql_strftime(max_time_str, sizeof(max_time_str), max_time);
+            if (max_time_opt) {
+                sql_strftime(
+                    max_time_str, sizeof(max_time_str), max_time_opt.value());
             }
-            if (have_min_time && have_max_time) {
+            if (min_time_opt && max_time_opt) {
                 retval = fmt::format(
                     FMT_STRING("info: hiding lines before {} and after {}"),
                     min_time_str,
                     max_time_str);
-            } else if (have_min_time) {
+            } else if (min_time_opt) {
                 retval = fmt::format(FMT_STRING("info: hiding lines before {}"),
                                      min_time_str);
-            } else if (have_max_time) {
+            } else if (max_time_opt) {
                 retval = fmt::format(FMT_STRING("info: hiding lines after {}"),
                                      max_time_str);
             } else {
@@ -4076,55 +4117,54 @@ com_hide_line(exec_context& ec,
         }
     } else if (args.size() >= 2) {
         std::string all_args = remaining_args(cmdline, args);
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
-        logfile_sub_source& lss = lnav_data.ld_log_source;
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
+        auto& lss = lnav_data.ld_log_source;
         date_time_scanner dts;
-        struct timeval tv;
-        bool tv_set = false;
+        struct timeval tv_abs;
+        nonstd::optional<timeval> tv_opt;
         auto parse_res = relative_time::from_str(all_args);
 
         if (parse_res.isOk()) {
-            if (tc == &lnav_data.ld_views[LNV_LOG]) {
+            if (ttt != nullptr) {
                 if (tc->get_inner_height() > 0) {
-                    content_line_t cl;
                     struct exttm tm;
-                    vis_line_t vl;
-                    logline* ll;
 
-                    vl = tc->get_selection();
-                    cl = lnav_data.ld_log_source.at(vl);
-                    ll = lnav_data.ld_log_source.find_line(cl);
-                    ll->to_exttm(tm);
-                    tv = parse_res.unwrap().adjust(tm).to_timeval();
-
-                    tv_set = true;
+                    auto vl = tc->get_selection();
+                    auto log_tv = ttt->time_for_row(vl);
+                    if (log_tv) {
+                        tm = exttm::from_tv(log_tv.value());
+                        tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
+                    }
                 }
             } else {
                 return ec.make_error(
-                    "relative time values only work in the log view");
+                    "relative time values only work in a time-based view");
             }
-        } else if (dts.convert_to_timeval(all_args, tv)) {
-            if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                tv_set = true;
-            } else {
-                return ec.make_error("time values only work in the log view");
-            }
+        } else if (dts.convert_to_timeval(all_args, tv_abs)) {
+            tv_opt = tv_abs;
         }
 
-        if (tv_set && !ec.ec_dry_run) {
+        if (tv_opt && !ec.ec_dry_run) {
             char time_text[256];
             std::string relation;
 
-            sql_strftime(time_text, sizeof(time_text), tv);
+            sql_strftime(time_text, sizeof(time_text), tv_opt.value());
             if (args[0] == "hide-lines-before") {
-                lss.set_min_log_time(tv);
+                lss.set_min_log_time(tv_opt.value());
                 relation = "before";
             } else {
-                lss.set_max_log_time(tv);
+                lss.set_max_log_time(tv_opt.value());
                 relation = "after";
             }
 
-            retval = "info: hiding lines " + relation + " " + time_text;
+            if (ttt != nullptr && tc != &lnav_data.ld_views[LNV_LOG]) {
+                tc->get_sub_source()->text_filters_changed();
+                tc->reload_data();
+            }
+
+            retval = fmt::format(
+                FMT_STRING("info: hiding lines {} {}"), relation, time_text);
         }
     }
 
@@ -5185,7 +5225,8 @@ readline_context::command_t STD_COMMANDS[] = {
                        "The initial value to fill in for the prompt")
                  .optional())
          .with_example({
-             "To open the command prompt with 'filter-in' already filled in",
+             "To open the command prompt with 'filter-in' already filled "
+             "in",
              "command : 'filter-in '",
          })
          .with_example({
@@ -5263,8 +5304,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_mark,
 
      help_text(":mark")
-         .with_summary(
-             "Toggle the bookmark state for the top line in the current view")
+         .with_summary("Toggle the bookmark state for the top line in the "
+                       "current view")
          .with_tags({"bookmarks"})},
     {
         "mark-expr",
@@ -5296,8 +5337,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_goto_mark,
 
      help_text(":next-mark")
-         .with_summary(
-             "Move to the next bookmark of the given type in the current view")
+         .with_summary("Move to the next bookmark of the given type in the "
+                       "current view")
          .with_parameter(help_text("type",
                                    "The type of bookmark -- error, warning, "
                                    "search, user, file, meta")
@@ -5464,9 +5505,9 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("pattern", "The regular expression to match"))
          .with_opposites({"filter-in", "filter-out"})
          .with_tags({"filtering"})
-         .with_example(
-             {"To delete the filter with the pattern 'last message repeated'",
-              "last message repeated"})},
+         .with_example({"To delete the filter with the pattern 'last "
+                        "message repeated'",
+                        "last message repeated"})},
     {
         "filter-expr",
         com_filter_expr,
@@ -5484,8 +5525,10 @@ readline_context::command_t STD_COMMANDS[] = {
                            "messages from 'syslogd'",
                            ":log_procname = 'syslogd'"})
             .with_example(
-                {"To set a filter expression that matches log messages where "
-                 "'id' is followed by a number and contains the string 'foo'",
+                {"To set a filter expression that matches log messages "
+                 "where "
+                 "'id' is followed by a number and contains the string "
+                 "'foo'",
                  ":log_body REGEXP 'id\\d+' AND :log_body REGEXP 'foo'"}),
 
         com_filter_expr_prompt,
@@ -5505,9 +5548,9 @@ readline_context::command_t STD_COMMANDS[] = {
              "Append marked lines in the current view to the given file")
          .with_parameter(help_text("path", "The path to the file to append to"))
          .with_tags({"io"})
-         .with_example(
-             {"To append marked lines to the file /tmp/interesting-lines.txt",
-              "/tmp/interesting-lines.txt"})},
+         .with_example({"To append marked lines to the file "
+                        "/tmp/interesting-lines.txt",
+                        "/tmp/interesting-lines.txt"})},
     {"write-to",
      com_save_to,
 
@@ -5518,9 +5561,9 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting"})
-         .with_example(
-             {"To write marked lines to the file /tmp/interesting-lines.txt",
-              "/tmp/interesting-lines.txt"})},
+         .with_example({"To write marked lines to the file "
+                        "/tmp/interesting-lines.txt",
+                        "/tmp/interesting-lines.txt"})},
     {"write-csv-to",
      com_save_to,
 
@@ -5667,9 +5710,9 @@ readline_context::command_t STD_COMMANDS[] = {
              "pattern", "The regular expression used in the filter command"))
          .with_tags({"filtering"})
          .with_opposites({"filter-out", "filter-in"})
-         .with_example(
-             {"To disable the filter with the pattern 'last message repeated'",
-              "last message repeated"})},
+         .with_example({"To disable the filter with the pattern 'last "
+                        "message repeated'",
+                        "last message repeated"})},
     {"enable-word-wrap",
      com_enable_word_wrap,
 
@@ -5714,10 +5757,10 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_parameter(
              help_text("table-name", "The name of the table to create"))
          .with_parameter(
-             help_text(
-                 "pattern",
-                 "The regular expression used to capture the table columns.  "
-                 "If not given, the current search pattern is used.")
+             help_text("pattern",
+                       "The regular expression used to capture the table "
+                       "columns.  "
+                       "If not given, the current search pattern is used.")
                  .optional())
          .with_tags({"vtables", "sql"})
          .with_example(
@@ -5779,18 +5822,23 @@ readline_context::command_t STD_COMMANDS[] = {
      com_close,
 
      help_text(":close")
-         .with_summary("Close the top file in the view")
+         .with_summary("Close the given file(s) or the top file in the view")
+         .with_parameter(help_text{
+             "path", "A path or glob pattern that specifies the files to close"}
+                             .zero_or_more())
          .with_opposites({"open"})},
     {
         "comment",
         com_comment,
 
         help_text(":comment")
-            .with_summary(
-                "Attach a comment to the top log line.  The comment will be "
-                "displayed right below the log message it is associated with. "
-                "The comment can be formatted using markdown and you can add "
-                "new-lines with '\\n'.")
+            .with_summary("Attach a comment to the top log line.  The "
+                          "comment will be "
+                          "displayed right below the log message it is "
+                          "associated with. "
+                          "The comment can be formatted using markdown and "
+                          "you can add "
+                          "new-lines with '\\n'.")
             .with_parameter(help_text("text", "The comment text"))
             .with_example({"To add the comment 'This is where it all went "
                            "wrong' to the top line",
@@ -5875,9 +5923,9 @@ readline_context::command_t STD_COMMANDS[] = {
                        "of the values in the given column")
          .with_parameter(
              help_text("column-name", "The name of the column to analyze."))
-         .with_example(
-             {"To get a summary of the sc_bytes column in the access_log table",
-              "sc_bytes"})},
+         .with_example({"To get a summary of the sc_bytes column in the "
+                        "access_log table",
+                        "sc_bytes"})},
     {"switch-to-view",
      com_switch_to_view,
 

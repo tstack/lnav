@@ -774,9 +774,12 @@ For support questions, email:
   Clear the partition the top line is a part of
 
 
-[4m:[0m[1m[4mclose[0m
+[4m:[0m[1m[4mclose[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
-  Close the top file in the view
+  Close the given file(s) or the top file in the view
+[4mParameter[0m
+  [4mpath[0m   A path or glob pattern that specifies the files to
+         close
 
 
 [4m:[0m[1m[4mcomment[0m[4m [0m[4mtext[0m

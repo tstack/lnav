@@ -1,6 +1,6 @@
 [1m[31m✘ error[0m: no log files loaded
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:close                                  [0m
-[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mclose[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mclose[0m[4m [0m[4mpath[0m
          ══════════════════════════════════════════════════════════════════════
-           Close the top file in the view
+           Close the given file(s) or the top file in the view

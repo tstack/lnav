@@ -176,10 +176,13 @@
 
 .. _close:
 
-:close
-^^^^^^
+:close *path*
+^^^^^^^^^^^^^
 
-  Close the top file in the view
+  Close the given file(s) or the top file in the view
+
+  **Parameters**
+    * **path** --- A path or glob pattern that specifies the files to close
 
 
 ----

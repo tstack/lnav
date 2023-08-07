@@ -377,15 +377,18 @@ add_file_possibilities()
 
     rc->clear_possibilities(ln_mode_t::COMMAND, "visible-files");
     rc->clear_possibilities(ln_mode_t::COMMAND, "hidden-files");
+    rc->clear_possibilities(ln_mode_t::COMMAND, "loaded-files");
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
         if (lf.get() == nullptr) {
             continue;
         }
 
-        lnav_data.ld_log_source.find_data(lf) | [&lf, rc](auto ld) {
-            auto escaped_fn
-                = std::regex_replace(lf->get_filename(), sh_escape, R"(\\\1)");
+        auto escaped_fn
+            = std::regex_replace(lf->get_filename(), sh_escape, R"(\\\1)");
 
+        rc->add_possibility(ln_mode_t::COMMAND, "loaded-files", escaped_fn);
+
+        lnav_data.ld_log_source.find_data(lf) | [&escaped_fn, rc](auto ld) {
             rc->add_possibility(
                 ln_mode_t::COMMAND,
                 ld->is_visible() ? "visible-files" : "hidden-files",

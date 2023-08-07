@@ -276,12 +276,20 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_format_loader.sh_fca6c1fb9f3aaa69b3ffb2d1a8a86434b2f4a247.out \
     $(srcdir)/%reldir%/test_gantt.sh_3af11588ee36bab7e2caea0f7a24d3c9cafd2310.err \
     $(srcdir)/%reldir%/test_gantt.sh_3af11588ee36bab7e2caea0f7a24d3c9cafd2310.out \
+    $(srcdir)/%reldir%/test_gantt.sh_63500be50fc6743d8312133e2030cbbc39ca15ff.err \
+    $(srcdir)/%reldir%/test_gantt.sh_63500be50fc6743d8312133e2030cbbc39ca15ff.out \
+    $(srcdir)/%reldir%/test_gantt.sh_74a94ee9103eac5e8e78ca57bccf49efa3827a9d.err \
+    $(srcdir)/%reldir%/test_gantt.sh_74a94ee9103eac5e8e78ca57bccf49efa3827a9d.out \
     $(srcdir)/%reldir%/test_gantt.sh_83db753dd2669f801810f311e2d7d74397e10f26.err \
     $(srcdir)/%reldir%/test_gantt.sh_83db753dd2669f801810f311e2d7d74397e10f26.out \
     $(srcdir)/%reldir%/test_gantt.sh_8fed8a7400042814ba13e50be5e3bd1741d82119.err \
     $(srcdir)/%reldir%/test_gantt.sh_8fed8a7400042814ba13e50be5e3bd1741d82119.out \
+    $(srcdir)/%reldir%/test_gantt.sh_b013ab41c3cca76cf05a01ca1ba65888be247ada.err \
+    $(srcdir)/%reldir%/test_gantt.sh_b013ab41c3cca76cf05a01ca1ba65888be247ada.out \
     $(srcdir)/%reldir%/test_gantt.sh_cde7947f361e5f3d4cd1bbc3f7458f426b6a8eb4.err \
     $(srcdir)/%reldir%/test_gantt.sh_cde7947f361e5f3d4cd1bbc3f7458f426b6a8eb4.out \
+    $(srcdir)/%reldir%/test_gantt.sh_e6a4681a5a671c84c020dc91d7ce03c9d17fde07.err \
+    $(srcdir)/%reldir%/test_gantt.sh_e6a4681a5a671c84c020dc91d7ce03c9d17fde07.out \
     $(srcdir)/%reldir%/test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.err \
     $(srcdir)/%reldir%/test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.out \
     $(srcdir)/%reldir%/test_json_format.sh_1bb0fd243e916546aea22029245ac590dae17a86.err \
