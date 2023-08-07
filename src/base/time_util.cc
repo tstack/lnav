@@ -75,7 +75,7 @@ strftime_rfc3339(
     return index;
 }
 
-}
+}  // namespace lnav
 
 static time_t BAD_DATE = -1;
 
@@ -223,6 +223,17 @@ secs2tm(lnav::time64_t tim, struct tm* res)
     res->tm_isdst = 0;
 
     return (res);
+}
+
+exttm
+exttm::from_tv(const timeval& tv)
+{
+    auto retval = exttm{};
+
+    retval.et_tm = *gmtime(&tv.tv_sec);
+    retval.et_nsec = tv.tv_usec * 1000;
+
+    return retval;
 }
 
 struct timeval

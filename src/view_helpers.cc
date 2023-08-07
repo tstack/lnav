@@ -959,6 +959,14 @@ toggle_view(textview_curses* toggle_tc)
         }
         lnav_data.ld_last_view = tc;
         lnav_data.ld_view_stack.pop_back();
+        lnav_data.ld_view_stack.top() | [](auto* tc) {
+            // XXX
+            if (tc == &lnav_data.ld_views[LNV_GANTT]) {
+                auto tss = tc->get_sub_source();
+                tss->text_filters_changed();
+                tc->reload_data();
+            }
+        };
     } else {
         if (toggle_tc == &lnav_data.ld_views[LNV_LOG]
             || toggle_tc == &lnav_data.ld_views[LNV_TEXT])

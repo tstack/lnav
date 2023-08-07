@@ -240,11 +240,15 @@ public:
         }
     }
 
-    bool get_min_log_time(struct timeval& tv_out) const
+    nonstd::optional<timeval> get_min_log_time() const
     {
-        tv_out = this->lss_min_log_time;
-        return (this->lss_min_log_time.tv_sec != 0
-                || this->lss_min_log_time.tv_usec != 0);
+        if (this->lss_min_log_time.tv_sec == 0
+            && this->lss_min_log_time.tv_usec == 0)
+        {
+            return nonstd::nullopt;
+        }
+
+        return this->lss_min_log_time;
     }
 
     void set_min_log_time(const struct timeval& tv)
@@ -255,12 +259,15 @@ public:
         }
     }
 
-    bool get_max_log_time(struct timeval& tv_out) const
+    nonstd::optional<timeval> get_max_log_time() const
     {
-        tv_out = this->lss_max_log_time;
-        return (this->lss_max_log_time.tv_sec
-                    != std::numeric_limits<time_t>::max()
-                || this->lss_max_log_time.tv_usec != 0);
+        if (this->lss_max_log_time.tv_sec == std::numeric_limits<time_t>::max()
+            && this->lss_max_log_time.tv_usec == 0)
+        {
+            return nonstd::nullopt;
+        }
+
+        return this->lss_max_log_time;
     }
 
     void set_max_log_time(struct timeval& tv)

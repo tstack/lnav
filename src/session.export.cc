@@ -431,14 +431,15 @@ SELECT content_id, format, time_offset FROM lnav_file
                            level_names[min_level]);
             }
 
-            struct timeval min_time, max_time;
             char tsbuf[128];
-            if (lss->get_min_log_time(min_time)) {
-                sql_strftime(tsbuf, sizeof(tsbuf), min_time, 'T');
+            auto min_time_opt = lss->get_min_log_time();
+            if (min_time_opt) {
+                sql_strftime(tsbuf, sizeof(tsbuf), min_time_opt.value(), 'T');
                 fmt::print(file, FMT_STRING(":hide-lines-before {}\n"), tsbuf);
             }
-            if (lss->get_max_log_time(max_time)) {
-                sql_strftime(tsbuf, sizeof(tsbuf), max_time, 'T');
+            auto max_time_opt = lss->get_max_log_time();
+            if (max_time_opt) {
+                sql_strftime(tsbuf, sizeof(tsbuf), max_time_opt.value(), 'T');
                 fmt::print(file, FMT_STRING(":hide-lines-after {}\n"), tsbuf);
             }
             for (const auto& ld : *lss) {

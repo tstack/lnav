@@ -321,6 +321,9 @@ gantt_source::rebuild_indexes()
     this->gs_preview_source.clear();
     this->gs_preview_status_source.get_description().clear();
 
+    auto min_log_time_opt = this->gs_lss.get_min_log_time();
+    auto max_log_time_opt = this->gs_lss.get_max_log_time();
+
     auto max_desc_width = size_t{0};
 
     std::map<string_fragment, opid_row> active_opids;
@@ -403,6 +406,7 @@ gantt_source::rebuild_indexes()
     }
     this->gs_filter_hits = {};
     for (auto& pair : time_order_map) {
+        auto& otr = pair.second.or_value;
         auto& full_desc = pair.second.or_description;
         for (auto& desc : pair.second.or_descriptions) {
             const auto& format_desc_defs
@@ -450,6 +454,14 @@ gantt_source::rebuild_indexes()
                     }
                 }
             }
+
+            if (min_log_time_opt && otr.otr_end < min_log_time_opt.value()) {
+                filtered_out = true;
+            }
+            if (max_log_time_opt && max_log_time_opt.value() < otr.otr_begin) {
+                filtered_out = true;
+            }
+
             if ((filtered_in_count > 0 && !filtered_in) || filtered_out) {
                 this->gs_filtered_count += 1;
                 continue;

@@ -1535,20 +1535,21 @@ save_session_with_id(const std::string& session_id)
 
                         auto& lss = lnav_data.ld_log_source;
 
-                        struct timeval min_time, max_time;
-                        bool have_min_time = lss.get_min_log_time(min_time);
-                        bool have_max_time = lss.get_max_log_time(max_time);
+                        auto min_time_opt = lss.get_min_log_time();
+                        auto max_time_opt = lss.get_max_log_time();
                         char min_time_str[32], max_time_str[32];
 
-                        sql_strftime(
-                            min_time_str, sizeof(min_time_str), min_time);
-                        if (have_min_time) {
+                        if (min_time_opt) {
+                            sql_strftime(min_time_str,
+                                         sizeof(min_time_str),
+                                         min_time_opt.value());
                             cmd_array.gen("hide-lines-before "
                                           + std::string(min_time_str));
                         }
-                        if (have_max_time) {
-                            sql_strftime(
-                                max_time_str, sizeof(max_time_str), max_time);
+                        if (max_time_opt) {
+                            sql_strftime(max_time_str,
+                                         sizeof(max_time_str),
+                                         max_time_opt.value());
                             cmd_array.gen("hide-lines-after "
                                           + std::string(max_time_str));
                         }
@@ -1703,9 +1704,27 @@ lnav::session::restore_view_states()
         }
         for (const auto& cmdline : vs.vs_commands) {
             auto active = ensure_view(&tview);
-            execute_command(lnav_data.ld_exec_context, cmdline);
+            auto exec_cmd_res
+                = execute_command(lnav_data.ld_exec_context, cmdline);
+            if (exec_cmd_res.isOk()) {
+                log_info("Result: %s", exec_cmd_res.unwrap().c_str());
+            } else {
+                log_error("Result: %s",
+                          exec_cmd_res.unwrapErr()
+                              .to_attr_line()
+                              .get_string()
+                              .c_str());
+            }
             if (!active) {
                 lnav_data.ld_view_stack.pop_back();
+                lnav_data.ld_view_stack.top() | [](auto* tc) {
+                    // XXX
+                    if (tc == &lnav_data.ld_views[LNV_GANTT]) {
+                        auto tss = tc->get_sub_source();
+                        tss->text_filters_changed();
+                        tc->reload_data();
+                    }
+                };
             }
         }
     }

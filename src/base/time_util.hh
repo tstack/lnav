@@ -104,6 +104,8 @@ enum exttm_flags_t {
 };
 
 struct exttm {
+    static exttm from_tv(const timeval& tv);
+
     struct tm et_tm {};
     int32_t et_nsec{0};
     unsigned int et_flags{0};
