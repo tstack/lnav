@@ -1,0 +1,2 @@
+localhost:443 178.20.184.42 1j0vhgd jsmith [26/Jul/2023:00:01:26 -0700] "GET /secure/RapidBoard.jspa?rapidView=1295&selectedIssue=AA-409111&quickFilter=385508&quickFilter=387097 HTTP/2.0" 200 17163 "-" "Mozilla/5.0" 116075
+localhost:443 154.57.4.229 cger1e khenry [26/Jul/2023:00:02:12 -0700] "GET /secure/RapidBoard.jspa?rapidView=1839&view=planning.nodetail&issueLimit=100 HTTP/2.0" 200 16517 "https://localhost/secure/RapidBoard.jspa?rapidView=1843&view=planning.nodetail&issueLimit=100" "Mozilla/5.0" 156302

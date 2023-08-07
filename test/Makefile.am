@@ -333,6 +333,7 @@ dist_noinst_DATA = \
 	logfile_plain.0 \
 	logfile_pretty.0 \
 	logfile_procstate.0 \
+	logfile_regexp_access_log.0 \
 	logfile_rollover.0 \
 	logfile_rollover.1 \
 	logfile_strace_log.0 \

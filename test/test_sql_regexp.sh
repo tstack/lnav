@@ -36,3 +36,7 @@ run_cap_test ${lnav_test} -nN \
 
 run_cap_test ${lnav_test} -nN \
    -c ";SELECT * from regexp_capture_into_json('abc=def;ghi=jkl;', '^(')"
+
+run_cap_test ${lnav_test} -n \
+    -c ";select regexp_replace(cs_uri_query, '.*rapidView=(\d+).*', '\1') from access_log;" \
+    ${test_dir}/logfile_regexp_access_log.0
