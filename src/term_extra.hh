@@ -41,7 +41,7 @@
 #include <unistd.h>
 
 #include "listview_curses.hh"
-#include "log_format.hh"
+#include "log_format_fwd.hh"
 #include "logfile.hh"
 
 class term_extra {

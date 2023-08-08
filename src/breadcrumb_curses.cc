@@ -31,8 +31,6 @@
 
 #include "base/itertools.hh"
 #include "itertools.similar.hh"
-#include "log_format_fwd.hh"
-#include "logfile.hh"
 
 using namespace lnav::roles::literals;
 
