@@ -201,12 +201,15 @@ struct string_fragment {
         return memcmp(this->data(), sf.data(), sf.length()) == 0;
     }
 
-    int operator<(const string_fragment& rhs) const
+    bool operator<(const string_fragment& rhs) const
     {
-        return strncmp(this->data(),
-                       rhs.data(),
-                       std::min(this->length(), rhs.length()))
-            < 0;
+        auto rc = strncmp(
+            this->data(), rhs.data(), std::min(this->length(), rhs.length()));
+        if (rc < 0 || (rc == 0 && this->length() < rhs.length())) {
+            return true;
+        }
+
+        return false;
     }
 
     bool iequal(const string_fragment& sf) const

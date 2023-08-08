@@ -58,8 +58,24 @@
                 "vum": {
                     "format": [
                         {
-                            "field": "sub",
-                            "extractor": "^(com\\..*)$"
+                            "field": "body",
+                            "extractor": "RequireAdminUserAuthz::Invoke Method is (.*)",
+                            "suffix": "("
+                        },
+                        {
+                            "prefix": "",
+                            "field": "body",
+                            "extractor": "PrivCheck: Resource:((?!com)[^,]+)"
+                        },
+                        {
+                            "prefix": ") - ",
+                            "field": "body",
+                            "extractor": "PrivCheck: Resource:(?:com[^,]+), User:([^,]+)"
+                        },
+                        {
+                            "prefix": "",
+                            "field": "body",
+                            "extractor": "()Invoking method com\\..*"
                         }
                     ]
                 },
@@ -73,6 +89,21 @@
                             "prefix": ".",
                             "field": "body",
                             "extractor": "method='([^']+)'"
+                        }
+                    ]
+                },
+                "vpxd-lro": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "\\[VpxLRO\\] -- BEGIN (?:[^ ]+) -- (?:[^ ]*) -- ([^ ]+)"
+                        }
+                    ]
+                },
+                "vpxd-item": {
+                    "format": [
+                        {
+                            "field": "item"
                         }
                     ]
                 },
@@ -102,7 +133,8 @@
             },
             "src": {
                 "kind": "string",
-                "identifier": true
+                "identifier": true,
+                "hidden": true
             },
             "comp": {
                 "kind": "string",

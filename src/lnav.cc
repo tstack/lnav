@@ -1438,6 +1438,7 @@ looper()
             = std::make_unique<spectro_status_source>();
         lnav_data.ld_status[LNS_SPECTRO].set_data_source(
             lnav_data.ld_spectro_status_source.get());
+        lnav_data.ld_status[LNS_GANTT].set_enabled(false);
         lnav_data.ld_status[LNS_GANTT].set_data_source(
             &lnav_data.ld_gantt_status_source);
 

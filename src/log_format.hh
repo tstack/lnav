@@ -546,6 +546,7 @@ public:
         factory_container<lnav::pcre2pp::code> od_extractor;
         std::string od_prefix{" "};
         std::string od_suffix;
+        std::string od_joiner{", "};
     };
 
     struct opid_descriptors {
