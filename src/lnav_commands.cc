@@ -1304,18 +1304,19 @@ com_save_to(exec_context& ec,
     } else if (args[0] == "write-screen-to") {
         bool wrapped = tc->get_word_wrap();
         vis_line_t orig_top = tc->get_top();
+        auto inner_height = tc->get_inner_height();
 
         tc->set_word_wrap(to_term);
 
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
-        if (lnav_data.ld_flags & LNF_HEADLESS && tc->get_inner_height() > 0_vl)
-        {
+        if (lnav_data.ld_flags & LNF_HEADLESS && inner_height > 0_vl) {
             bottom = tc->get_inner_height() - 1_vl;
         }
+        auto screen_height = inner_height == 0 ? 0 : bottom - top + 1;
         auto y = 0_vl;
         auto wrapped_count = 0_vl;
-        std::vector<attr_line_t> rows(bottom - top + 1);
+        std::vector<attr_line_t> rows(screen_height);
         auto dim = tc->get_dimensions();
         attr_line_t ov_al;
 
@@ -1574,16 +1575,20 @@ com_pipe_to(exec_context& ec,
     bool pipe_line_to = (args[0] == "pipe-line-to");
 
     std::string cmd = trim(remaining_args(cmdline, args));
-    auto_pipe in_pipe(STDIN_FILENO);
-    auto_pipe out_pipe(STDOUT_FILENO);
+    auto for_child_res = auto_pipe::for_child_fds(STDIN_FILENO, STDOUT_FILENO);
 
-    in_pipe.open();
-    out_pipe.open();
+    if (for_child_res.isErr()) {
+        return ec.make_error(FMT_STRING("unable to open pipe to child: {}"),
+                             for_child_res.unwrapErr());
+    }
+
+    auto child_fds = for_child_res.unwrap();
 
     pid_t child_pid = fork();
 
-    in_pipe.after_fork(child_pid);
-    out_pipe.after_fork(child_pid);
+    for (auto& child_fd : child_fds) {
+        child_fd.after_fork(child_pid);
+    }
 
     switch (child_pid) {
         case -1:
@@ -1648,15 +1653,13 @@ com_pipe_to(exec_context& ec,
             bookmark_vector<vis_line_t>::iterator iter;
             std::string line;
 
-            in_pipe.read_end().close_on_exec();
-            in_pipe.write_end().close_on_exec();
-
             lnav_data.ld_children.push_back(child_pid);
 
             std::future<std::string> reader;
 
-            if (out_pipe.read_end() != -1) {
-                reader = ec.ec_pipe_callback(ec, cmdline, out_pipe.read_end());
+            if (child_fds[1].read_end() != -1) {
+                reader
+                    = ec.ec_pipe_callback(ec, cmdline, child_fds[1].read_end());
             }
 
             if (pipe_line_to) {
@@ -1669,37 +1672,41 @@ com_pipe_to(exec_context& ec,
                     shared_buffer_ref sbr;
                     lf->read_full_message(lf->message_start(lf->begin() + cl),
                                           sbr);
-                    if (write(in_pipe.write_end(), sbr.get_data(), sbr.length())
+                    if (write(child_fds[0].write_end(),
+                              sbr.get_data(),
+                              sbr.length())
                         == -1)
                     {
                         return ec.make_error("Unable to write to pipe -- {}",
                                              strerror(errno));
                     }
-                    log_perror(write(in_pipe.write_end(), "\n", 1));
+                    log_perror(write(child_fds[0].write_end(), "\n", 1));
                 } else {
                     tc->grep_value_for_line(tc->get_top(), line);
-                    if (write(in_pipe.write_end(), line.c_str(), line.size())
+                    if (write(
+                            child_fds[0].write_end(), line.c_str(), line.size())
                         == -1)
                     {
                         return ec.make_error("Unable to write to pipe -- {}",
                                              strerror(errno));
                     }
-                    log_perror(write(in_pipe.write_end(), "\n", 1));
+                    log_perror(write(child_fds[0].write_end(), "\n", 1));
                 }
             } else {
                 for (iter = bv.begin(); iter != bv.end(); iter++) {
                     tc->grep_value_for_line(*iter, line);
-                    if (write(in_pipe.write_end(), line.c_str(), line.size())
+                    if (write(
+                            child_fds[0].write_end(), line.c_str(), line.size())
                         == -1)
                     {
                         return ec.make_error("Unable to write to pipe -- {}",
                                              strerror(errno));
                     }
-                    log_perror(write(in_pipe.write_end(), "\n", 1));
+                    log_perror(write(child_fds[0].write_end(), "\n", 1));
                 }
             }
 
-            in_pipe.write_end().reset();
+            child_fds[0].write_end().reset();
 
             if (reader.valid()) {
                 retval = reader.get();

@@ -971,7 +971,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
     if (out) {
         FILE* file = *out;
 
-        return std::async(std::launch::async, [&fd, file]() {
+        return std::async(std::launch::async, [fd = std::move(fd), file]() {
             char buffer[1024];
             ssize_t rc;
 
@@ -995,6 +995,17 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
     }
 
     auto tmp_pair = open_temp_res.unwrap();
+
+    auto reader = std::thread(
+        [in_fd = std::move(fd), out_fd = std::move(tmp_pair.second)]() {
+            char buffer[1024];
+            ssize_t rc;
+
+            while ((rc = read(in_fd, buffer, sizeof(buffer))) > 0) {
+                write(out_fd, buffer, rc);
+            }
+        });
+    reader.detach();
 
     static int exec_count = 0;
     auto desc
