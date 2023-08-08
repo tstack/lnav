@@ -34,7 +34,6 @@
 
 #include "session_data.hh"
 
-#include <fcntl.h>
 #include <glob.h>
 #include <stdio.h>
 #include <sys/types.h>

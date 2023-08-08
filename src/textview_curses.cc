@@ -39,7 +39,7 @@
 #include "config.h"
 #include "fmt/format.h"
 #include "lnav_config.hh"
-#include "log_format.hh"
+#include "log_format_fwd.hh"
 #include "logfile.hh"
 #include "shlex.hh"
 #include "view_curses.hh"
