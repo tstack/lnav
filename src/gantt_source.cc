@@ -31,6 +31,8 @@
 
 #include "gantt_source.hh"
 
+#include <time.h>
+
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/math_util.hh"
@@ -54,6 +56,60 @@ static const std::vector<std::chrono::seconds> TIME_SPANS = {
 };
 
 static constexpr size_t MAX_OPID_WIDTH = 60;
+
+size_t
+abbrev_ftime(char* datebuf,
+             size_t db_size,
+             const struct tm& lb_tm,
+             const struct tm& dt)
+{
+    char lb_fmt[32] = " ";
+    bool same = true;
+
+    if (lb_tm.tm_year == dt.tm_year) {
+        strcat(lb_fmt, "    ");
+    } else {
+        same = false;
+        strcat(lb_fmt, "%Y");
+    }
+    if (same && lb_tm.tm_mon == dt.tm_mon) {
+        strcat(lb_fmt, "   ");
+    } else {
+        if (!same) {
+            strcat(lb_fmt, "-");
+        }
+        same = false;
+        strcat(lb_fmt, "%m");
+    }
+    if (same && lb_tm.tm_mday == dt.tm_mday) {
+        strcat(lb_fmt, "   ");
+    } else {
+        if (!same) {
+            strcat(lb_fmt, "-");
+        }
+        same = false;
+        strcat(lb_fmt, "%d");
+    }
+    if (same && lb_tm.tm_hour == dt.tm_hour) {
+        strcat(lb_fmt, "   ");
+    } else {
+        if (!same) {
+            strcat(lb_fmt, "T");
+        }
+        same = false;
+        strcat(lb_fmt, "%H");
+    }
+    if (same && lb_tm.tm_min == dt.tm_min) {
+        strcat(lb_fmt, "   ");
+    } else {
+        if (!same) {
+            strcat(lb_fmt, ":");
+        }
+        same = false;
+        strcat(lb_fmt, "%M");
+    }
+    return strftime(datebuf, db_size, lb_fmt, &dt);
+}
 
 gantt_header_overlay::gantt_header_overlay(std::shared_ptr<gantt_source> src)
     : gho_src(src)
@@ -79,21 +135,39 @@ gantt_header_overlay::list_static_overlay(const listview_curses& lv,
         return false;
     }
 
+    auto lb = this->gho_src->gs_lower_bound;
+    struct tm lb_tm;
+    auto ub = this->gho_src->gs_upper_bound;
+    struct tm ub_tm;
     auto bounds = this->gho_src->get_time_bounds_for(lv.get_selection());
+
+    if (bounds.first.tv_sec < lb.tv_sec) {
+        lb.tv_sec = bounds.first.tv_sec;
+    }
+    if (ub.tv_sec < bounds.second.tv_sec) {
+        ub.tv_sec = bounds.second.tv_sec;
+    }
+
+    secs2tm(lb.tv_sec, &lb_tm);
+    secs2tm(ub.tv_sec, &ub_tm);
+
+    struct tm sel_lb_tm;
+    secs2tm(bounds.first.tv_sec, &sel_lb_tm);
+    struct tm sel_ub_tm;
+    secs2tm(bounds.second.tv_sec, &sel_ub_tm);
+
     auto width = lv.get_dimensions().second - 1;
 
     char datebuf[64];
 
     if (y == 0) {
-        auto lb = this->gho_src->gs_lower_bound;
-        auto ub = this->gho_src->gs_upper_bound;
-
         double span = ub.tv_sec - lb.tv_sec;
         double per_ch = span / (double) width;
-        sql_strftime(datebuf, sizeof(datebuf), lb, 'T');
-        value_out.appendf(FMT_STRING(" {}"), datebuf);
+        strftime(datebuf, sizeof(datebuf), " %Y-%m-%dT%H:%M", &lb_tm);
+        value_out.append(datebuf);
 
-        auto upper_size = sql_strftime(datebuf, sizeof(datebuf), ub, 'T');
+        auto upper_size
+            = strftime(datebuf, sizeof(datebuf), "%Y-%m-%dT%H:%M", &ub_tm);
         value_out.append(width - value_out.length() - upper_size - 1, ' ')
             .append(datebuf);
 
@@ -118,12 +192,12 @@ gantt_header_overlay::list_static_overlay(const listview_curses& lv,
             lr, VC_ROLE.value(role_t::VCR_CURSOR_LINE));
         value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));
     } else if (y == 1) {
-        sql_strftime(datebuf, sizeof(datebuf), bounds.first, 'T');
-        value_out.appendf(FMT_STRING("     {}"), datebuf);
+        abbrev_ftime(datebuf, sizeof(datebuf), lb_tm, sel_lb_tm);
+        value_out.appendf(FMT_STRING(" {}"), datebuf);
 
         auto upper_size
-            = sql_strftime(datebuf, sizeof(datebuf), bounds.second, 'T');
-        value_out.append(width - value_out.length() - upper_size - 5, ' ')
+            = abbrev_ftime(datebuf, sizeof(datebuf), ub_tm, sel_ub_tm);
+        value_out.append(width - value_out.length() - upper_size - 1, ' ')
             .append(datebuf);
         value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_CURSOR_LINE));
     } else {
@@ -319,6 +393,8 @@ gantt_source::rebuild_indexes()
     this->gs_opid_width = 0;
     this->gs_total_width = 0;
     this->gs_filtered_count = 0;
+    this->gs_opid_map.clear();
+    this->gs_allocator.reset();
     this->gs_preview_source.clear();
     this->gs_preview_status_source.get_description().clear();
 
@@ -352,7 +428,7 @@ gantt_source::rebuild_indexes()
             auto active_iter = active_opids.find(pair.first);
             if (active_iter == active_opids.end()) {
                 auto active_emp_res = active_opids.emplace(
-                    iter->first, opid_row{pair.first, pair.second});
+                    iter->first, opid_row{iter->first, pair.second});
                 active_iter = active_emp_res.first;
             } else {
                 active_iter->second.or_value |= pair.second;
@@ -363,7 +439,10 @@ gantt_source::rebuild_indexes()
                 auto desc_def_iter
                     = format->lf_opid_description_def->find(desc_id);
 
-                if (desc_def_iter != format->lf_opid_description_def->end()) {
+                if (desc_def_iter == format->lf_opid_description_def->end()) {
+                    log_error("cannot find description: %s",
+                              iter->first.data());
+                } else {
                     auto& format_descs
                         = iter->second.odd_format_to_desc[format->get_name()];
                     format_descs[desc_id]
@@ -377,6 +456,8 @@ gantt_source::rebuild_indexes()
                         curr_desc_m[desc_pair.first] = desc_pair.second;
                     }
                 }
+            } else {
+                ensure(pair.second.otr_description.empty());
             }
         }
     }
@@ -414,6 +495,7 @@ gantt_source::rebuild_indexes()
                 = this->gs_opid_map[pair.second.or_name]
                       .odd_format_to_desc[desc.first];
 
+            require(!format_desc_defs.empty());
             for (auto& desc_format_pairs : desc.second) {
                 const auto& desc_def_v
                     = *format_desc_defs.find(desc_format_pairs.first)->second;

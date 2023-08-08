@@ -200,18 +200,22 @@
                     "type": "string"
                 },
                 "opid": {
+                    "description": "Definitions related to operations found in logs",
                     "title": "/<format_name>/opid",
                     "type": "object",
                     "properties": {
                         "description": {
+                            "description": "Define how to construct a description of an operation",
                             "title": "/<format_name>/opid/description",
                             "type": "object",
                             "patternProperties": {
                                 "([\\w\\.\\-]+)": {
+                                    "description": "A type of description for this operation",
                                     "title": "/<format_name>/opid/description/<opid_descriptor>",
                                     "type": "object",
                                     "properties": {
                                         "format": {
+                                            "description": "Defines the elements of this operation description",
                                             "title": "/<format_name>/opid/description/<opid_descriptor>/format",
                                             "type": "array",
                                             "items": {
@@ -219,18 +223,27 @@
                                                 "properties": {
                                                     "field": {
                                                         "title": "/<format_name>/opid/description/<opid_descriptor>/format/field",
+                                                        "description": "The field to include in the operation description",
                                                         "type": "string"
                                                     },
                                                     "extractor": {
                                                         "title": "/<format_name>/opid/description/<opid_descriptor>/format/extractor",
+                                                        "description": "The regex used to extract content for the operation description",
                                                         "type": "string"
                                                     },
                                                     "prefix": {
                                                         "title": "/<format_name>/opid/description/<opid_descriptor>/format/prefix",
+                                                        "description": "A string to prepend to this field in the description",
                                                         "type": "string"
                                                     },
                                                     "suffix": {
                                                         "title": "/<format_name>/opid/description/<opid_descriptor>/format/suffix",
+                                                        "description": "A string to append to this field in the description",
+                                                        "type": "string"
+                                                    },
+                                                    "joiner": {
+                                                        "title": "/<format_name>/opid/description/<opid_descriptor>/format/joiner",
+                                                        "description": "A string to insert between instances of this field when the field is found more than once",
                                                         "type": "string"
                                                     }
                                                 },

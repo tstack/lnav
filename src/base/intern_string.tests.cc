@@ -43,6 +43,15 @@ TEST_CASE("string_fragment::startswith")
     CHECK_FALSE(sf.startswith("abc"));
 }
 
+TEST_CASE("string_fragment::lt")
+{
+    auto sf1 = string_fragment::from_const("abc");
+    auto sf2 = string_fragment::from_const("abcdef");
+
+    CHECK(sf1 < sf2);
+    CHECK_FALSE(sf2 < sf1);
+}
+
 TEST_CASE("split_lines")
 {
     std::string in1 = "Hello, World!";

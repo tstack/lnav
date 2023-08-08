@@ -897,43 +897,44 @@ external_log_format::scan(logfile& lf,
                              desc_def_index++)
                         {
                             const auto& desc_def = desc_def_v[desc_def_index];
-                            auto found_desc = false;
+                            auto found_desc = desc_v.begin();
 
-                            for (const auto& desc_pair : desc_v) {
-                                if (desc_pair.first == desc_def_index) {
-                                    found_desc = true;
+                            for (; found_desc != desc_v.end(); ++found_desc) {
+                                if (found_desc->first == desc_def_index) {
                                     break;
                                 }
                             }
-                            if (!found_desc) {
-                                auto desc_cap_iter
-                                    = this->lf_desc_captures.find(
-                                        desc_def.od_field.pp_value);
-                                if (desc_cap_iter
-                                    == this->lf_desc_captures.end())
-                                {
-                                    continue;
-                                }
-                                if (desc_def.od_extractor.pp_value) {
-                                    static thread_local auto desc_md = lnav::
-                                        pcre2pp::match_data::unitialized();
+                            auto desc_cap_iter = this->lf_desc_captures.find(
+                                desc_def.od_field.pp_value);
+                            if (desc_cap_iter == this->lf_desc_captures.end()) {
+                                continue;
+                            }
+                            nonstd::optional<std::string> desc_str;
+                            if (desc_def.od_extractor.pp_value) {
+                                static thread_local auto desc_md
+                                    = lnav::pcre2pp::match_data::unitialized();
 
-                                    auto match_res
-                                        = desc_def.od_extractor.pp_value
-                                              ->capture_from(
-                                                  desc_cap_iter->second)
-                                              .into(desc_md)
-                                              .matches(PCRE2_NO_UTF_CHECK)
-                                              .ignore_error();
-                                    if (match_res) {
-                                        desc_v.emplace_back(
-                                            desc_def_index,
-                                            desc_md.to_string());
-                                    }
+                                auto match_res
+                                    = desc_def.od_extractor.pp_value
+                                          ->capture_from(desc_cap_iter->second)
+                                          .into(desc_md)
+                                          .matches(PCRE2_NO_UTF_CHECK)
+                                          .ignore_error();
+                                if (match_res) {
+                                    desc_str = desc_md.to_string();
+                                }
+                            } else {
+                                desc_str = desc_cap_iter->second.to_string();
+                            }
+
+                            if (desc_str) {
+                                if (found_desc == desc_v.end()) {
+                                    desc_v.emplace_back(desc_def_index,
+                                                        desc_str.value());
                                 } else {
-                                    desc_v.emplace_back(
-                                        desc_def_index,
-                                        desc_cap_iter->second.to_string());
+                                    found_desc->second.append(
+                                        desc_def.od_joiner);
+                                    found_desc->second.append(desc_str.value());
                                 }
                             }
                         }
