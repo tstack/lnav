@@ -5,7 +5,7 @@
         "description": "Periodic dumps of process state",
         "regex": {
             "std": {
-                "pattern": "========== Start of system state dump at (?<timestamp>[^=]+)==========(?<body>.*)"
+                "pattern": "========== Start of system state dump at (?<timestamp>.+) ==========(?<body>.*)"
             }
         },
         "sample": [
@@ -15,7 +15,7 @@
         ],
         "search-table": {
             "procstate_procs": {
-                "pattern": "^(?<user>\\S+)\\s+(?<pid>\\d+)\\s+(?<cpu_pct>\\d+(?:\\.\\d+)?)\\s+(?<mem_pct>\\d+(?:\\.\\d+)?)\\s+(?<vsz>\\d+)\\s+(?<rss>\\d+)\\s(?<tty>\\S+)\\s+(?<stat>\\S+)\\s+(?<start_time>\\S+)\\s+(?<cpu_time>\\S+)\\s+(?<cmd>(?<cmd_name>[^ \\n]+)(?: (?<cmd_args>[^\\n]+))?)$"
+                "pattern": "^(?<user>\\S+)\\s+(?:(?<ppid>\\d+)\\s+)?(?<pid>\\d+)\\s+(?<cpu_pct>\\d+(?:\\.\\d+)?)\\s+(?<mem_pct>\\d+(?:\\.\\d+)?)\\s+(?<vsz>\\d+)\\s+(?<rss>\\d+)\\s(?<tty>\\S+)\\s+(?<stat>\\S+)\\s+(?<start_time>\\S+)\\s+(?<cpu_time>\\S+)\\s+(?<cmd>(?<cmd_name>[^ \\n]+)(?: (?<cmd_args>[^\\n]+))?)$"
             }
         }
     }

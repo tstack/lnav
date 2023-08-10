@@ -38,7 +38,7 @@
                 "line": "2022-06-01T13:23:25.515 [2376]DEBUG:vmware.vherd.base.detwist:method = com.vmware.appliance.version1.networking.interfaces.list, args = ()"
             },
             {
-                "line": "2022-06-01T13:23:25.31 [2376]DEBUG:com.vmware.vherd.base.detwist:method = com.vmware.appliance.version1.system.version.get, args = ()"
+                "line": "2022-06-01T13:23:25.310 [2376]DEBUG:com.vmware.vherd.base.detwist:method = com.vmware.appliance.version1.system.version.get, args = ()"
             }
         ]
     }

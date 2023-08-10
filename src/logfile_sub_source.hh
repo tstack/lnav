@@ -783,6 +783,8 @@ private:
 
     bool lss_in_value_for_line{false};
     bool lss_line_meta_changed{false};
+
+    bool lss_indexing_in_progress{false};
 };
 
 #endif

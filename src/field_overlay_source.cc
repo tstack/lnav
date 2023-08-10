@@ -461,9 +461,13 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             auto anno_msg
                 = attr_line_t(" ")
                       .append(":memo:"_emoji)
-                      .append(" Annotations available, use ")
+                      .append(" Annotations available, ")
+                      .append(lv.get_selection() == row
+                                  ? "use "
+                                  : "focus on this line and use ")
                       .append(":annotate"_quoted_code)
-                      .append(" to apply them to this line")
+                      .append(" to apply them")
+                      .append(lv.get_selection() == row ? " to this line" : "")
                       .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
 
             dst.emplace_back(anno_msg);

@@ -143,7 +143,11 @@ ensure_dotlnav()
     for (const auto* sub_path : subdirs) {
         auto full_path = path / sub_path;
 
-        log_perror(mkdir(full_path.c_str(), 0755));
+        if (mkdir(full_path.c_str(), 0755) == -1 && errno != EEXIST) {
+            log_error("unable to make directory: %s -- %s",
+                      full_path.c_str(),
+                      strerror(errno));
+        }
     }
 
     auto crash_dir_path = path / "crash";

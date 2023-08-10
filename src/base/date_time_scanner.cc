@@ -105,8 +105,8 @@ date_time_scanner::scan(const char* time_dest,
         tm_out->et_flags = 0;
         if (time_len > 1 && time_dest[0] == '+' && isdigit(time_dest[1])) {
             retval = nullptr;
-            auto epoch_scan_res = scn::scan_value<int64_t>(
-                scn::string_view{time_dest, time_len});
+            auto sv = scn::string_view{time_dest, time_len};
+            auto epoch_scan_res = scn::scan_value<int64_t>(sv);
             if (epoch_scan_res) {
                 time_t gmt = epoch_scan_res.value();
 
@@ -124,8 +124,7 @@ date_time_scanner::scan(const char* time_dest,
                     | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
 
                 this->dts_fmt_lock = curr_time_fmt;
-                this->dts_fmt_len = std::distance(epoch_scan_res.begin(),
-                                                  epoch_scan_res.end());
+                this->dts_fmt_len = sv.length() - epoch_scan_res.range().size();
                 retval = time_dest + this->dts_fmt_len;
                 found = true;
                 break;

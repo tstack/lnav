@@ -7,12 +7,20 @@
         "regex": {
             "std": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z) cpu(?<cpu>\\d+):(?<world_id>\\d+)(?: opID=(?<opid>[^\\)]+))?\\)((?:(?<level>WARNING|ALERT)|(?<subsystem>[^:]+)): )?(?<body>.*)"
+            },
+            "syslog": {
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)? (?:vmkernel|vmkwarning):\\s* (?:cpu(?<cpu>\\d+):(?<world_id>\\d+)(?: opID=(?<opid>[^\\)]+))?\\))?((?:(?:WARNING|ALERT)|(?<subsystem>[^:]+)): )?(?<body>.*)"
             }
         },
         "level-field": "level",
         "level": {
-            "error": "ALERT",
-            "warning": "WARNING"
+            "debug": "^Db$",
+            "info": "^In$",
+            "notice": "^No$",
+            "warning": "^(?:Wa|WARNING)$",
+            "error": "^(?:Er|ALERT)$",
+            "critical": "^Cr$",
+            "fatal": "^(?:Al|Em)$"
         },
         "max-unrecognized-lines": 15000,
         "opid-field": "opid",
@@ -45,6 +53,12 @@
             },
             {
                 "line": "2022-06-02T02:16:57.414Z cpu31:1001392590 opID=827cfaf)<unk>: UWVMKSyscall: ForkExec:2408: hostd-worker: Found params <group=hostd-tmp,mem=10>"
+            },
+            {
+                "line": "2023-08-08T15:08:36.834Z Wa(180) vmkwarning: cpu0:263421 opID=a03fc439)WARNING: Sched: vm 265285: 6404: could not create container group, status: Admission check failed for memory resource"
+            },
+            {
+                "line": "2023-08-08T14:13:55Z In(182) vmkernel: VMB: 65: Reserved 4 MPNs starting @ 0x4c1"
             }
         ]
     }

@@ -2745,14 +2745,36 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             if (ts_cap && ts_cap->sf_begin == 0) {
                 pat.p_timestamp_end = ts_cap->sf_end;
             }
-            if (ts_cap
-                && dts.scan(ts_cap->data(),
-                            ts_cap->length(),
-                            custom_formats,
-                            &tm,
-                            tv)
-                    == nullptr)
-            {
+            const char* dts_scan_res = nullptr;
+
+            if (ts_cap) {
+                dts_scan_res = dts.scan(
+                    ts_cap->data(), ts_cap->length(), custom_formats, &tm, tv);
+            }
+            if (dts_scan_res != nullptr) {
+                if (dts_scan_res != ts_cap->data() + ts_cap->length()) {
+                    auto match_len = dts_scan_res - ts_cap->data();
+                    auto notes = attr_line_t("the used timestamp format: ");
+                    if (custom_formats == nullptr) {
+                        notes.append(PTIMEC_FORMATS[dts.dts_fmt_lock].pf_fmt);
+                    } else {
+                        notes.append(custom_formats[dts.dts_fmt_lock]);
+                    }
+                    notes.append("\n  ")
+                        .append(ts_cap.value())
+                        .append("\n")
+                        .append(2 + match_len, ' ')
+                        .append("^ matched up to here"_snippet_border);
+                    auto um
+                        = lnav::console::user_message::warning(
+                              attr_line_t("timestamp was not fully matched: ")
+                                  .append_quoted(ts_cap.value()))
+                              .with_snippet(elf_sample.s_line.to_snippet())
+                              .with_note(notes);
+
+                    errors.emplace_back(um);
+                }
+            } else {
                 attr_line_t notes;
 
                 if (custom_formats == nullptr) {
