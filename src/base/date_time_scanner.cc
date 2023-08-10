@@ -47,15 +47,17 @@ date_time_scanner::ftime(char* dst,
 
     if (time_fmt == nullptr) {
         PTIMEC_FORMATS[this->dts_fmt_lock].pf_ffunc(dst, off, len, tm);
-        if (tm.et_flags & ETF_MILLIS_SET) {
-            dst[off++] = '.';
-            ftime_L(dst, off, len, tm);
-        } else if (tm.et_flags & ETF_MICROS_SET) {
-            dst[off++] = '.';
-            ftime_f(dst, off, len, tm);
-        } else if (tm.et_flags & ETF_NANOS_SET) {
-            dst[off++] = '.';
-            ftime_N(dst, off, len, tm);
+        if (tm.et_flags & ETF_SUB_NOT_IN_FORMAT) {
+            if (tm.et_flags & ETF_MILLIS_SET) {
+                dst[off++] = '.';
+                ftime_L(dst, off, len, tm);
+            } else if (tm.et_flags & ETF_MICROS_SET) {
+                dst[off++] = '.';
+                ftime_f(dst, off, len, tm);
+            } else if (tm.et_flags & ETF_NANOS_SET) {
+                dst[off++] = '.';
+                ftime_N(dst, off, len, tm);
+            }
         }
         dst[off] = '\0';
     } else {
@@ -116,7 +118,7 @@ date_time_scanner::scan(const char* time_dest,
                     tm_out->et_tm.tm_zone = nullptr;
 #endif
                     tm_out->et_tm.tm_isdst = 0;
-                    gmt = tm2sec(&tm_out->et_tm);
+                    gmt = tm_out->to_timeval().tv_sec;
                 }
                 tv_out.tv_sec = gmt;
                 tv_out.tv_usec = 0;
@@ -148,7 +150,7 @@ date_time_scanner::scan(const char* time_dest,
                     && (this->dts_local_time
                         || tm_out->et_flags & ETF_EPOCH_TIME))
                 {
-                    time_t gmt = tm2sec(&tm_out->et_tm);
+                    time_t gmt = tm_out->to_timeval().tv_sec;
 
                     this->to_localtime(gmt, *tm_out);
                 }
@@ -167,7 +169,7 @@ date_time_scanner::scan(const char* time_dest,
                     tm_out->et_tm.tm_wday = last_tm.tm_wday;
                 } else {
                     // log_debug("doing tm2sec");
-                    tv_out.tv_sec = tm2sec(&tm_out->et_tm);
+                    tv_out = tm_out->to_timeval();
                     secs2wday(tv_out, &tm_out->et_tm);
                 }
                 tv_out.tv_usec = tm_out->et_nsec / 1000;
@@ -199,7 +201,7 @@ date_time_scanner::scan(const char* time_dest,
                     && (this->dts_local_time
                         || tm_out->et_flags & ETF_EPOCH_TIME))
                 {
-                    time_t gmt = tm2sec(&tm_out->et_tm);
+                    time_t gmt = tm_out->to_timeval().tv_sec;
 
                     this->to_localtime(gmt, *tm_out);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
@@ -208,8 +210,7 @@ date_time_scanner::scan(const char* time_dest,
                     tm_out->et_tm.tm_isdst = 0;
                 }
 
-                tv_out.tv_sec = tm2sec(&tm_out->et_tm);
-                tv_out.tv_usec = tm_out->et_nsec / 1000;
+                tv_out = tm_out->to_timeval();
                 secs2wday(tv_out, &tm_out->et_tm);
 
                 this->dts_fmt_lock = curr_time_fmt;
@@ -233,7 +234,10 @@ date_time_scanner::scan(const char* time_dest,
     if (retval != nullptr && static_cast<size_t>(retval - time_dest) < time_len)
     {
         /* Try to pull out the milli/micro-second value. */
-        if (retval[0] == '.' || retval[0] == ',') {
+        if (!(tm_out->et_flags
+              & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
+            && (retval[0] == '.' || retval[0] == ','))
+        {
             off_t off = (retval - time_dest) + 1;
 
             if (ptime_N(tm_out, time_dest, off, time_len)) {
@@ -242,7 +246,7 @@ date_time_scanner::scan(const char* time_dest,
                           std::chrono::nanoseconds{tm_out->et_nsec})
                           .count();
                 this->dts_fmt_len += 10;
-                tm_out->et_flags |= ETF_NANOS_SET;
+                tm_out->et_flags |= ETF_NANOS_SET | ETF_SUB_NOT_IN_FORMAT;
                 retval += 10;
             } else if (ptime_f(tm_out, time_dest, off, time_len)) {
                 tv_out.tv_usec
@@ -250,7 +254,7 @@ date_time_scanner::scan(const char* time_dest,
                           std::chrono::nanoseconds{tm_out->et_nsec})
                           .count();
                 this->dts_fmt_len += 7;
-                tm_out->et_flags |= ETF_MICROS_SET;
+                tm_out->et_flags |= ETF_MICROS_SET | ETF_SUB_NOT_IN_FORMAT;
                 retval += 7;
             } else if (ptime_L(tm_out, time_dest, off, time_len)) {
                 tv_out.tv_usec
@@ -258,7 +262,7 @@ date_time_scanner::scan(const char* time_dest,
                           std::chrono::nanoseconds{tm_out->et_nsec})
                           .count();
                 this->dts_fmt_len += 4;
-                tm_out->et_flags |= ETF_MILLIS_SET;
+                tm_out->et_flags |= ETF_MILLIS_SET | ETF_SUB_NOT_IN_FORMAT;
                 retval += 4;
             }
         }

@@ -59,13 +59,27 @@ struct date_time_scanner {
         this->dts_last_tm = exttm{};
     }
 
+    struct lock_state {
+        int ls_fmt_index{-1};
+        int ls_fmt_len{-1};
+    };
+
     /**
      * Unlock this scanner so that the format is rediscovered.
      */
-    void unlock()
+    lock_state unlock()
     {
+        auto retval = lock_state{this->dts_fmt_lock, this->dts_fmt_len};
+
         this->dts_fmt_lock = -1;
         this->dts_fmt_len = -1;
+        return retval;
+    }
+
+    void relock(const lock_state& ls)
+    {
+        this->dts_fmt_lock = ls.ls_fmt_index;
+        this->dts_fmt_len = ls.ls_fmt_len;
     }
 
     void set_base_time(time_t base_time, const tm& local_tm);

@@ -31,6 +31,7 @@
 
 #include "relative_time.hh"
 
+#include "base/lnav_log.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
@@ -294,7 +295,8 @@ relative_time::from_str(string_fragment str)
 
         bool found = false;
         for (int lpc = 0; lpc < RTT__MAX && !found; lpc++) {
-            static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+            static thread_local auto md
+                = lnav::pcre2pp::match_data::unitialized();
 
             token_t token = (token_t) lpc;
             auto match_res = MATCHERS[lpc]
@@ -1115,7 +1117,7 @@ relative_time::to_microseconds() const
         etm.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
         etm.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
 
-        auto epoch_secs = std::chrono::seconds(tm2sec(&etm.et_tm));
+        auto epoch_secs = std::chrono::seconds(etm.to_timeval().tv_sec);
         retval
             = std::chrono::duration_cast<std::chrono::microseconds>(epoch_secs)
                   .count();

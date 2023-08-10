@@ -157,7 +157,7 @@ log_vtab_impl::get_table_statement()
 
     oss << ");\n";
 
-    log_debug("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
+    log_trace("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
 
     return oss.str();
 }

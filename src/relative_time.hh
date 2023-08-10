@@ -42,7 +42,7 @@
 
 #include "base/intern_string.hh"
 #include "base/result.h"
-#include "ptimec.hh"
+#include "base/time_util.hh"
 
 class relative_time {
 public:

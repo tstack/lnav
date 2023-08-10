@@ -514,13 +514,16 @@ public:
     void log_state()
     {
         log_debug("listview_curses=%p", this);
-        log_debug("  lv_title=%s", this->lv_title.c_str());
-        log_debug("  lv_y=%u", this->lv_y);
-        log_debug("  lv_top=%d", (int) this->lv_top);
-        log_debug("  lv_left=%d", (int) this->lv_left);
-        log_debug("  lv_height=%d", this->lv_height);
-        log_debug("  lv_selection=%d", (int) this->lv_selection);
-        log_debug("  inner_height=%d", (int) this->get_inner_height());
+        log_debug(
+            "  lv_title=%s; lv_y=%u; lv_top=%d; lv_left=%d; lv_height=%d; "
+            "lv_selection=%d; inner_height=%d",
+            this->lv_title.c_str(),
+            this->lv_y,
+            (int) this->lv_top,
+            (int) this->lv_left,
+            this->lv_height,
+            (int) this->lv_selection,
+            (int) this->get_inner_height());
     }
 
     virtual void invoke_scroll() { this->lv_scroll(this); }
