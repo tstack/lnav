@@ -84,9 +84,13 @@ enum exttm_bits_t {
     ETB_SECOND_SET,
     ETB_MACHINE_ORIENTED,
     ETB_EPOCH_TIME,
+    ETB_SUB_NOT_IN_FORMAT,
     ETB_MILLIS_SET,
     ETB_MICROS_SET,
     ETB_NANOS_SET,
+    ETB_ZONE_SET,
+    ETB_Z_FOR_UTC,
+    ETB_Z_COLON,
 };
 
 enum exttm_flags_t {
@@ -98,9 +102,13 @@ enum exttm_flags_t {
     ETF_SECOND_SET = (1UL << ETB_SECOND_SET),
     ETF_MACHINE_ORIENTED = (1UL << ETB_MACHINE_ORIENTED),
     ETF_EPOCH_TIME = (1UL << ETB_EPOCH_TIME),
+    ETF_SUB_NOT_IN_FORMAT = (1UL << ETB_SUB_NOT_IN_FORMAT),
     ETF_MILLIS_SET = (1UL << ETB_MILLIS_SET),
     ETF_MICROS_SET = (1UL << ETB_MICROS_SET),
     ETF_NANOS_SET = (1UL << ETB_NANOS_SET),
+    ETF_ZONE_SET = (1UL << ETB_ZONE_SET),
+    ETF_Z_FOR_UTC = (1UL << ETB_Z_FOR_UTC),
+    ETF_Z_COLON = (1UL << ETB_Z_COLON),
 };
 
 struct exttm {

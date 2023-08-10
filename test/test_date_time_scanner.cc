@@ -30,11 +30,19 @@
 #include <assert.h>
 #include <locale.h>
 
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../src/lnav_util.hh"
 #include "base/date_time_scanner.hh"
 #include "config.h"
+#include "doctest/doctest.h"
+#include "ptimec.hh"
 
 static const char* GOOD_TIMES[] = {
+    "2022-08-27T17:22:01.694554+03:00",
+    "2022-08-27T17:22:01.694554+0300",
+    "2022-08-27T17:22:01.694554+00:00",
+    "2022-08-27T17:22:01.694554+0000",
+    "2022-08-27T17:22:01.694554Z",
     "2017 May 08 Mon 18:57:57.578",
     "May 01 00:00:01",
     "May 10 12:00:01",
@@ -53,8 +61,7 @@ static const char* BAD_TIMES[] = {
     "@4000000043",
 };
 
-int
-main(int argc, char* argv[])
+TEST_CASE("date_time_scanner")
 {
     setenv("TZ", "UTC", 1);
 
@@ -70,11 +77,27 @@ main(int argc, char* argv[])
 
         char ts[64];
 
-        gmtime_r(&tv.tv_sec, &tm.et_tm);
         dts.ftime(ts, sizeof(ts), nullptr, tm);
+        printf("fmt %s\n", PTIMEC_FORMATS[dts.dts_fmt_lock].pf_fmt);
         printf("orig %s\n", good_time);
         printf("loop %s\n", ts);
-        assert(strcmp(ts, good_time) == 0);
+        CHECK(std::string(ts) == std::string(good_time));
+    }
+
+    {
+        const auto sf
+            = string_fragment::from_const("2014-02-11 16:12:34.123.456");
+        struct timeval tv;
+        struct exttm tm;
+        date_time_scanner dts;
+        const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
+        CHECK((tm.et_flags & ETF_MILLIS_SET));
+        CHECK(std::string(rc) == sf.substr(23).to_string());
+
+        char ts[64];
+        dts.ftime(ts, sizeof(ts), nullptr, tm);
+
+        CHECK(std::string(ts) == std::string("2014-02-11 16:12:34.123"));
     }
 
     {

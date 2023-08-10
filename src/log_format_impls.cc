@@ -1149,9 +1149,7 @@ public:
                 tm.et_tm.tm_yday = date_tm.et_tm.tm_yday;
             }
 
-            tv.tv_sec = tm2sec(&tm.et_tm);
-            tv.tv_usec = tm.et_nsec / 1000;
-
+            tv = tm.to_timeval();
             if (!this->lf_specialized) {
                 for (auto& ll : dst) {
                     ll.set_ignore(true);

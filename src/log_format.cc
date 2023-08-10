@@ -376,6 +376,15 @@ log_format::log_scanf(uint32_t line_number,
             retval = this->lf_date_time.scan(
                 ts->data(), ts->length(), nullptr, tm_out, *tv_out);
 
+            if (retval == nullptr) {
+                auto ls = this->lf_date_time.unlock();
+                retval = this->lf_date_time.scan(
+                    ts->data(), ts->length(), nullptr, tm_out, *tv_out);
+                if (retval == nullptr) {
+                    this->lf_date_time.relock(ls);
+                }
+            }
+
             if (retval) {
                 *ts_out = ts.value();
                 *level_out = md[2];
@@ -1048,7 +1057,7 @@ external_log_format::scan(logfile& lf,
                                               log_tv))
                    == nullptr)
         {
-            this->lf_date_time.unlock();
+            auto ls = this->lf_date_time.unlock();
             if ((last = this->lf_date_time.scan(ts->data(),
                                                 ts->length(),
                                                 this->get_timestamp_formats(),
@@ -1056,6 +1065,7 @@ external_log_format::scan(logfile& lf,
                                                 log_tv))
                 == nullptr)
             {
+                this->lf_date_time.relock(ls);
                 continue;
             }
         }

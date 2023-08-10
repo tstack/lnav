@@ -35,6 +35,7 @@
 #include "doctest/doctest.h"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
+#include "ptimec.hh"
 #include "relative_time.hh"
 #include "unique_path.hh"
 

@@ -36,7 +36,7 @@ for fname in $(ls -t ${builddir}/*.cmd); do
     fi
   else
     if ! cmp "${exp_stem}.out" "${stem}.out"; then
-      diff -u "${exp_stem}.out" "${stem}.out"
+      diff --color=always -u "${exp_stem}.out" "${stem}.out"
       if test x"${AUTO_APPROVE}" = x""; then
         echo "Expected stdout is different, update with the above?"
         select yn in "Yes" "No"; do
@@ -68,7 +68,7 @@ for fname in $(ls -t ${builddir}/*.cmd); do
     fi
   else
     if ! cmp "${exp_stem}.err" "${stem}.err"; then
-      diff -u "${exp_stem}.err" "${stem}.err"
+      diff --color=always -u "${exp_stem}.err" "${stem}.err"
       if test x"${AUTO_APPROVE}" = x""; then
         echo "Expected stderr is different, update with the above?"
         select yn in "Yes" "No"; do

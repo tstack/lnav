@@ -24,6 +24,18 @@
             "fatal": "^(?:Al|Em)$"
         },
         "opid-field": "opid",
+        "opid": {
+            "description": {
+                "settingsd": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "^Authz::Invoke method: (.+)"
+                        }
+                    ]
+                }
+            }
+        },
         "time-field": "new_time",
         "multiline": false,
         "value": {

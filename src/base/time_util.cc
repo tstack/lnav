@@ -242,6 +242,7 @@ exttm::to_timeval() const
     struct timeval retval;
 
     retval.tv_sec = tm2sec(&this->et_tm);
+    retval.tv_sec -= this->et_gmtoff;
     retval.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(
                          std::chrono::nanoseconds(this->et_nsec))
                          .count();

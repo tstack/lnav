@@ -71,6 +71,9 @@ Bug Fixes:
   (i.e. when you run **lnav** with the `-m` flag).
 * Fields in the bro and w3c log formats that were hidden are
   now saved in the session and restored.
+* A warning will now be issued if a timestamp in a log format's
+  sample message does not match completely.  Warnings in the
+  configuration can be viewed by passing the `-W` flag.
 
 Interface changes:
 * The DB view now uses the "alt-text" theme style to draw

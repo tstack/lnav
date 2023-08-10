@@ -520,8 +520,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             {
                 tm.et_nsec = 0;
             }
-            tv.tv_sec = tm2sec(&tm.et_tm);
-            tv.tv_usec = tm.et_nsec / 1000;
+            tv = tm.to_timeval();
             dst_vl = ttt->row_for_time(tv);
         } else if (sscanf(args[1].c_str(), "%f%n", &value, &consumed) == 1) {
             if (args[1][consumed] == '%') {

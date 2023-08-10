@@ -55,7 +55,6 @@
 #include "config.h"
 #include "fmt/format.h"
 #include "optional.hpp"
-#include "ptimec.hh"
 
 #if SIZEOF_OFF_T == 8
 #    define FORMAT_OFF_T "%lld"

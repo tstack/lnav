@@ -545,6 +545,8 @@ error 0x0
 error 0x0
 EOF
 
+run_cap_test ./drive_logfile -t -f generic_log ${test_dir}/logfile_with_zones.0
+
 touch -t 200711030923 ${srcdir}/logfile_glog.0
 run_test ./drive_logfile -t -f glog_log ${srcdir}/logfile_glog.0
 
