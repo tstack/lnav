@@ -5,7 +5,7 @@
         "description": "Format specific to the ESXi syslog",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?:\\w+ \\[(?<logger>[^ ]+)(?: op[iI][dD]=(?<opid>[^ \\]]+))?\\]\\s*)?(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             },
             "host": {
                 "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?:host-(?<log_pid>\\d+))?)\\s+(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
@@ -23,7 +23,7 @@
             "critical": "^Cr$",
             "fatal": "^(?:Al|Em)$"
         },
-        "opid-field": "log_syslog_tag",
+        "opid-field": "opid",
         "time-field": "new_time",
         "multiline": false,
         "value": {
@@ -40,6 +40,10 @@
             },
             "log_syslog_tag": {
                 "kind": "string"
+            },
+            "opid": {
+                "kind": "string",
+                "identifier": true
             },
             "syslog_pri": {
                 "kind": "string"
@@ -60,6 +64,9 @@
             },
             {
                 "line": "2022-06-01T13:42:40.681Z In(05) host-16250 <analytics> Skip service health check. State STOPPED, Curr request 0"
+            },
+            {
+                "line": "2023-08-09T14:42:43.094Z In(14) settingsd[263657]: debug [ConfigStore:c5f9ac2700 opId=cabbdb94-0afb-4d23-9203-e901779b9b04] [RunCommand] About to run command /usr/bin/python /usr/lib/vmware/lifecycle/bin/imagemanagerctl.py VIB --list-all"
             }
         ]
     }

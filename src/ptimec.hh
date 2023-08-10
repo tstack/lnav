@@ -882,6 +882,15 @@ ftime_y(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_z(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    if (off_inout + 1 <= len && str[off_inout] == 'Z') {
+        off_inout += 1;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+        dst->et_tm.tm_gmtoff = 0;
+#endif
+        dst->et_gmtoff = 0;
+        return true;
+    }
+
     int consume_amount = 5;
 
     if ((off_inout + 6) <= len && str[off_inout + 3] == ':') {

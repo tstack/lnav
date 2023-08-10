@@ -42,6 +42,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "k_merge_tree.h"
+#include "lnav_util.hh"
 #include "log_accel.hh"
 #include "md2attr_line.hh"
 #include "sql_util.hh"
@@ -191,6 +192,11 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                                         std::string& value_out,
                                         line_flags_t flags)
 {
+    if (this->lss_indexing_in_progress) {
+        value_out = "";
+        return;
+    }
+
     content_line_t line(0);
 
     require_ge(row, 0);
@@ -368,6 +374,10 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                         int row,
                                         string_attrs_t& value_out)
 {
+    if (this->lss_indexing_in_progress) {
+        return;
+    }
+
     view_colors& vc = view_colors::singleton();
     logline* next_line = nullptr;
     struct line_range lr;
@@ -681,6 +691,9 @@ logfile_sub_source::rebuild_index(
     if (this->tss_view == nullptr) {
         return rebuild_result::rr_no_change;
     }
+
+    this->lss_indexing_in_progress = true;
+    auto fin = finally([this]() { this->lss_indexing_in_progress = false; });
 
     iterator iter;
     size_t total_lines = 0;
@@ -1102,6 +1115,8 @@ logfile_sub_source::rebuild_index(
                 }
             }
         }
+
+        this->lss_indexing_in_progress = false;
 
         if (this->lss_index_delegate != nullptr) {
             this->lss_index_delegate->index_complete(*this);

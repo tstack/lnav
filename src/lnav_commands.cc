@@ -1311,7 +1311,7 @@ com_save_to(exec_context& ec,
         vis_line_t top = tc->get_top();
         vis_line_t bottom = tc->get_bottom();
         if (lnav_data.ld_flags & LNF_HEADLESS && inner_height > 0_vl) {
-            bottom = tc->get_inner_height() - 1_vl;
+            bottom = inner_height - 1_vl;
         }
         auto screen_height = inner_height == 0 ? 0 : bottom - top + 1;
         auto y = 0_vl;

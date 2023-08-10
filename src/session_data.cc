@@ -518,6 +518,10 @@ load_time_bookmarks()
                         continue;
                     }
 
+                    if (part_name == nullptr) {
+                        continue;
+                    }
+
                     if (!dts.scan(log_time,
                                   strlen(log_time),
                                   nullptr,
