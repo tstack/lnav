@@ -2,6 +2,7 @@
 
 export YES_COLOR=1
 
+export TZ=UTC
 export HOME="./meta-sessions"
 export XDG_CONFIG_HOME="./meta-sessions/.config"
 rm -rf "./meta-sessions"

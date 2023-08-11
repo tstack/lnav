@@ -1,5 +1,6 @@
 #! /bin/bash
 
+export TZ=UTC
 echo ${top_srcdir}
 echo ${top_builddir}
 
@@ -379,8 +380,6 @@ TCF 2014-04-06 11:01:11.475557: 0: <--- R 2  ["P1"] <eom>
 EOF
 
 
-# The TCSH format converts to local time, so we need to specify a TZ
-export TZ="UTC"
 run_test ./drive_logfile -t -f tcsh_history ${srcdir}/logfile_tcsh_history.0
 
 check_output "TCSH timestamp interpreted incorrectly?" <<EOF
@@ -397,6 +396,8 @@ Jul 20 22:59:26 2009 -- 000
 Jul 20 22:59:29 2009 -- 000
 Jul 20 22:59:29 2009 -- 000
 EOF
+
+run_cap_test env TZ=America/Los_Angeles ./drive_logfile -t -f access_log ${srcdir}/logfile_access_log.0
 
 run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_tai64n.0
 

@@ -329,6 +329,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                     = std::chrono::duration_cast<std::chrono::nanoseconds>(
                           std::chrono::microseconds{adjusted_time.tv_usec})
                           .count();
+                adjusted_tm.et_flags = format->lf_timestamp_flags;
                 len = format->lf_date_time.ftime(
                     buffer,
                     sizeof(buffer),
