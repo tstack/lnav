@@ -4,6 +4,7 @@ rm -rf events-home
 mkdir -p events-home
 export HOME=events-home
 export YES_COLOR=1
+export TZ=UTC
 
 run_cap_test ${lnav_test} -n \
    -c ';SELECT json(content) as content FROM lnav_events' \

@@ -1,5 +1,6 @@
 #! /bin/bash
 
+export TZ=UTC
 export YES_COLOR=1
 
 lnav_test="${top_builddir}/src/lnav-test"

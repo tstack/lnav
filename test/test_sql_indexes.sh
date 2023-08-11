@@ -1,5 +1,6 @@
 #! /bin/bash
 
+export TZ=UTC
 export YES_COLOR=1
 
 # XXX sqlite reports different results for the "detail" column, so we

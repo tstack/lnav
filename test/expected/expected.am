@@ -362,6 +362,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_logfile.sh_6602faf7817c494c33e32da7ee95f13aa9210d01.out \
     $(srcdir)/%reldir%/test_logfile.sh_7c2e11488bccc59458b5775db4b90de964858259.err \
     $(srcdir)/%reldir%/test_logfile.sh_7c2e11488bccc59458b5775db4b90de964858259.out \
+    $(srcdir)/%reldir%/test_logfile.sh_8a5e754cd471e5fdcdaede49c9290903acd7aad6.err \
+    $(srcdir)/%reldir%/test_logfile.sh_8a5e754cd471e5fdcdaede49c9290903acd7aad6.out \
     $(srcdir)/%reldir%/test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.err \
     $(srcdir)/%reldir%/test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.out \
     $(srcdir)/%reldir%/test_logfile.sh_c18e14a26d8261c9f72747118a469266121d5459.err \

@@ -34,7 +34,6 @@ TIME_FORMATS = \
     "%a %b %d %H:%M:%S.%L " \
     "%a %b %d %H:%M " \
     "%a %b %e %H:%M:%S %Z %Y" \
-    "%d/%b/%Y:%H:%M:%S +0000" \
     "%d/%b/%Y:%H:%M:%S %z" \
     "%d-%b-%Y %H:%M:%S %z" \
     "%d-%b-%Y %H:%M:%S %Z" \

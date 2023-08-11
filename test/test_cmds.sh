@@ -1,5 +1,6 @@
 #! /bin/bash
 
+export TZ=UTC
 export YES_COLOR=1
 export DUMP_CRASH=1
 

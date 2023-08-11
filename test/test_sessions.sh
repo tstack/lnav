@@ -1,5 +1,6 @@
 #! /bin/bash
 
+export TZ=UTC
 export HOME="./sessions"
 unset XDG_CONFIG_HOME
 rm -rf "./sessions"
