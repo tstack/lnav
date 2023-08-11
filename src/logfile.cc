@@ -42,6 +42,7 @@
 #include <time.h>
 
 #include "base/ansi_scrubber.hh"
+#include "base/date_time_scanner.cfg.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/string_util.hh"
@@ -477,6 +478,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 logfile::rebuild_result_t
 logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
 {
+    static const auto& dts_cfg
+        = injector::get<const date_time_scanner_ns::config&>();
+
     if (!this->lf_indexing) {
         if (this->lf_sort_needed) {
             this->lf_sort_needed = false;
@@ -485,7 +489,10 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         return rebuild_result_t::NO_NEW_LINES;
     }
 
-    if (this->lf_format != nullptr && this->lf_format->format_changed()) {
+    if (this->lf_format != nullptr
+        && (this->lf_zoned_to_local_state != dts_cfg.c_zoned_to_local
+            || this->lf_format->format_changed()))
+    {
         log_info("%s: format has changed, rebuilding",
                  this->lf_filename.c_str());
         this->lf_index.clear();
@@ -494,6 +501,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         this->lf_longest_line = 0;
         this->lf_sort_needed = true;
     }
+    this->lf_zoned_to_local_state = dts_cfg.c_zoned_to_local;
 
     auto retval = rebuild_result_t::NO_NEW_LINES;
     struct stat st;

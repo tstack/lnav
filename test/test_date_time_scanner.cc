@@ -35,6 +35,7 @@
 #include "base/date_time_scanner.hh"
 #include "config.h"
 #include "doctest/doctest.h"
+#include "lnav_config.hh"
 #include "ptimec.hh"
 
 static const char* GOOD_TIMES[] = {
@@ -65,6 +66,7 @@ TEST_CASE("date_time_scanner")
 {
     setenv("TZ", "UTC", 1);
 
+    lnav_config.lc_log_date_time.c_zoned_to_local = false;
     for (const auto* good_time : GOOD_TIMES) {
         date_time_scanner dts;
         struct timeval tv;
@@ -72,6 +74,7 @@ TEST_CASE("date_time_scanner")
         const char* rc;
 
         rc = dts.scan(good_time, strlen(good_time), nullptr, &tm, tv);
+        CHECK(dts.dts_zoned_to_local == false);
         printf("ret %s %p\n", good_time, rc);
         assert(rc != nullptr);
 

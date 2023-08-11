@@ -34,6 +34,7 @@ add_library(
         auto_mem.hh
         auto_pid.hh
         bus.hh
+        date_time_scanner.cfg.hh
         date_time_scanner.hh
         enum_util.hh
         fs_util.hh

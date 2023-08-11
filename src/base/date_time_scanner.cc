@@ -34,6 +34,8 @@
 #include "date_time_scanner.hh"
 
 #include "config.h"
+#include "date_time_scanner.cfg.hh"
+#include "injector.hh"
 #include "ptimec.hh"
 #include "scn/scn.h"
 
@@ -94,6 +96,9 @@ date_time_scanner::scan(const char* time_dest,
                         struct timeval& tv_out,
                         bool convert_local)
 {
+    static const auto& cfg
+        = injector::get<const date_time_scanner_ns::config&>();
+
     int curr_time_fmt = -1;
     bool found = false;
     const char* retval = nullptr;
@@ -102,6 +107,7 @@ date_time_scanner::scan(const char* time_dest,
         time_fmt = PTIMEC_FORMAT_STR;
     }
 
+    this->dts_zoned_to_local = cfg.c_zoned_to_local;
     while (next_format(time_fmt, curr_time_fmt, this->dts_fmt_lock)) {
         *tm_out = this->dts_base_tm;
         tm_out->et_flags = 0;
@@ -112,7 +118,9 @@ date_time_scanner::scan(const char* time_dest,
             if (epoch_scan_res) {
                 time_t gmt = epoch_scan_res.value();
 
-                if (convert_local && this->dts_local_time) {
+                if (convert_local
+                    && (this->dts_local_time || this->dts_zoned_to_local))
+                {
                     localtime_r(&gmt, &tm_out->et_tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
                     tm_out->et_tm.tm_zone = nullptr;
@@ -123,7 +131,7 @@ date_time_scanner::scan(const char* time_dest,
                 tv_out.tv_sec = gmt;
                 tv_out.tv_usec = 0;
                 tm_out->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET
-                    | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME;
+                    | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len = sv.length() - epoch_scan_res.range().size();
@@ -148,7 +156,9 @@ date_time_scanner::scan(const char* time_dest,
                 }
                 if (convert_local
                     && (this->dts_local_time
-                        || tm_out->et_flags & ETF_EPOCH_TIME))
+                        || tm_out->et_flags & ETF_EPOCH_TIME
+                        || (tm_out->et_flags & ETF_ZONE_SET
+                            && this->dts_zoned_to_local)))
                 {
                     time_t gmt = tm_out->to_timeval().tv_sec;
 
@@ -168,7 +178,6 @@ date_time_scanner::scan(const char* time_dest,
                     tv_out.tv_sec += sec_diff;
                     tm_out->et_tm.tm_wday = last_tm.tm_wday;
                 } else {
-                    // log_debug("doing tm2sec");
                     tv_out = tm_out->to_timeval();
                     secs2wday(tv_out, &tm_out->et_tm);
                 }
@@ -199,7 +208,9 @@ date_time_scanner::scan(const char* time_dest,
                 }
                 if (convert_local
                     && (this->dts_local_time
-                        || tm_out->et_flags & ETF_EPOCH_TIME))
+                        || tm_out->et_flags & ETF_EPOCH_TIME
+                        || (tm_out->et_flags & ETF_ZONE_SET
+                            && this->dts_zoned_to_local)))
                 {
                     time_t gmt = tm_out->to_timeval().tv_sec;
 
@@ -293,7 +304,10 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
         time_t new_gmt;
 
         localtime_r(&t, &tm_out.et_tm);
+        // Clear the gmtoff set by localtime_r() otherwise tm2sec() will
+        // convert the time back again.
 #ifdef HAVE_STRUCT_TM_TM_ZONE
+        tm_out.et_tm.tm_gmtoff = 0;
         tm_out.et_tm.tm_zone = nullptr;
 #endif
         tm_out.et_tm.tm_isdst = 0;
@@ -308,4 +322,9 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
         time_t adjust_gmt = t - this->dts_local_offset_cache;
         gmtime_r(&adjust_gmt, &tm_out.et_tm);
     }
+    tm_out.et_gmtoff = 0;
+#ifdef HAVE_STRUCT_TM_TM_ZONE
+    tm_out.et_tm.tm_gmtoff = 0;
+    tm_out.et_tm.tm_zone = nullptr;
+#endif
 }

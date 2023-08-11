@@ -41,6 +41,14 @@ Features:
   is executed asynchronously, so it will not block input
   and the result is saved in the session.  Annotations are
   defined in the `/log/annotations` configuration property.
+* Timestamps with numeric timezone offsets (or `Z`) are now
+  automatically converted to the local time zone.  For
+  example, a timestamp ending in `-03:00` will be treated
+  as three hours behind UTC and then adjusted to the local
+  timezone.  This feature can be disabled by setting the
+  `/log/date-time/convert-zoned-to-local` configuration
+  property to `false`. Timestamps without a zone or have
+  a symbolic zone name (e.g. `PDT`) are not converted.
 * Added the SQLite JSON functions to the online help.
 * Added `config get` and `config blame` management CLI
   commands to get the current configuration and the file

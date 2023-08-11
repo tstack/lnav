@@ -180,8 +180,8 @@ Environment Variables
 
 .. envvar:: TZ
 
-   The timezone setting is used in some log formats to convert UTC timestamps
-   to the local timezone.
+   The timezone setting is used in some log formats to convert timestamps
+   with a timezone to the local timezone.
 
 
 Examples

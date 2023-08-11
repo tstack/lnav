@@ -1,5 +1,6 @@
 #! /bin/bash
 
+export TZ=UTC
 export YES_COLOR=1
 
 # journald json log format is not working"

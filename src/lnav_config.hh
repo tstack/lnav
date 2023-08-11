@@ -39,6 +39,7 @@
 #include <vector>
 
 #include "archive_manager.cfg.hh"
+#include "base/date_time_scanner.cfg.hh"
 #include "base/file_range.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
@@ -111,6 +112,7 @@ struct _lnav_config {
     key_map lc_active_keymap;
 
     archive_manager::config lc_archive_manager;
+    date_time_scanner_ns::config lc_log_date_time;
     lnav::piper::config lc_piper;
     file_vtab::config lc_file_vtab;
     lnav::logfile::config lc_logfile;

@@ -81,6 +81,9 @@ lnav_config_listener* lnav_config_listener::LISTENER_LIST;
 static auto a = injector::bind<archive_manager::config>::to_instance(
     +[]() { return &lnav_config.lc_archive_manager; });
 
+static auto dtc = injector::bind<date_time_scanner_ns::config>::to_instance(
+    +[]() { return &lnav_config.lc_log_date_time; });
+
 static auto fvc = injector::bind<file_vtab::config>::to_instance(
     +[]() { return &lnav_config.lc_file_vtab; });
 
@@ -1309,7 +1312,18 @@ static const struct json_path_container annotations_handlers = {
         .with_children(annotation_handlers),
 };
 
+static const struct json_path_container log_date_time_handlers = {
+    yajlpp::property_handler("convert-zoned-to-local")
+        .with_description("Convert timestamps with ")
+        .with_pattern(R"(^[\w\-]+(?!\.lnav)$)")
+        .for_field(&_lnav_config::lc_log_date_time,
+                   &date_time_scanner_ns::config::c_zoned_to_local),
+};
+
 static const struct json_path_container log_source_handlers = {
+    yajlpp::property_handler("date-time")
+        .with_description("Settings related to log message dates and times")
+        .with_children(log_date_time_handlers),
     yajlpp::property_handler("watch-expressions")
         .with_description("Log message watch expressions")
         .with_children(log_source_watch_handlers),

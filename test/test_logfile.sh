@@ -547,6 +547,10 @@ EOF
 
 run_cap_test ./drive_logfile -t -f generic_log ${test_dir}/logfile_with_zones.0
 
+run_cap_test env TZ=America/Los_Angeles ./drive_logfile -t -f generic_log ${test_dir}/logfile_with_zones.0
+
+run_cap_test env TZ=America/New_York ./drive_logfile -t -f generic_log ${test_dir}/logfile_with_zones.0
+
 touch -t 200711030923 ${srcdir}/logfile_glog.0
 run_test ./drive_logfile -t -f glog_log ${srcdir}/logfile_glog.0
 
@@ -630,8 +634,8 @@ EOF
 run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_epoch.0
 
 check_output "rewriting machine-oriented timestamp didn't work?" <<EOF
-2015-04-10 02:58:07.123000 Hello, World!
-2015-04-10 02:58:07.456000 Goodbye, World!
+2015-04-10 02:58:07.123 Hello, World!
+2015-04-10 02:58:07.456 Goodbye, World!
 EOF
 
 run_test ${lnav_test} -n -I ${test_dir} ${srcdir}/logfile_crlf.0

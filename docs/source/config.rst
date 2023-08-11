@@ -227,6 +227,18 @@ The handling of logs is largely determined by the
 :ref:`log file formats<log_formats>`, this section covers options that are not
 specific to a particular format.
 
+Timezone Conversion (v0.12.0+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Log messages that have a numeric timezone, like :code:`-03:00` or :code:`Z`
+for UTC, will be converted to the local timezone as given by the :envvar:`TZ`
+environment variable. For example, a timestamp ending in `-03:00` will be treated
+as three hours behind UTC and then adjusted to the local timezone.
+
+This behavior can be disabled by setting the
+:code:`/log/date-time/convert-zoned-to-local` configuration property to
+:code:`false`.
+
 Watch Expressions (v0.11.0+)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
