@@ -102,6 +102,11 @@ hist_source2::text_attrs_for_line(textview_curses& tc,
                                              bucket.b_values[lpc].hv_value,
                                              value_out);
     }
+    auto alt_row_index = row % 4;
+    if (alt_row_index == 2 || alt_row_index == 3) {
+        value_out.emplace_back(line_range{0, -1},
+                               VC_ROLE.value(role_t::VCR_ALT_ROW));
+    }
 }
 
 void

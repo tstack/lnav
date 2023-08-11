@@ -744,6 +744,19 @@
             "title": "/log",
             "type": "object",
             "properties": {
+                "date-time": {
+                    "description": "Settings related to log message dates and times",
+                    "title": "/log/date-time",
+                    "type": "object",
+                    "properties": {
+                        "convert-zoned-to-local": {
+                            "title": "/log/date-time/convert-zoned-to-local",
+                            "description": "Convert timestamps with ",
+                            "type": "boolean"
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "watch-expressions": {
                     "description": "Log message watch expressions",
                     "title": "/log/watch-expressions",

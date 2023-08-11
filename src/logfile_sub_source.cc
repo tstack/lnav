@@ -273,6 +273,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     if ((this->lss_token_file->is_time_adjusted()
+         || (format->lf_timestamp_flags & ETF_ZONE_SET
+             && format->lf_date_time.dts_zoned_to_local)
          || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
          || !(format->lf_timestamp_flags & ETF_DAY_SET)
          || !(format->lf_timestamp_flags & ETF_MONTH_SET))
@@ -293,8 +295,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 || !(format->lf_timestamp_flags & ETF_MONTH_SET))
             {
                 adjusted_time = this->lss_token_line->get_timeval();
-                fmt = "%Y-%m-%d %H:%M:%S.%f";
-                if (format->lf_timestamp_flags & ETF_MICROS_SET) {
+                if (format->lf_timestamp_flags
+                    & (ETF_MICROS_SET | ETF_NANOS_SET))
+                {
+                    fmt = "%Y-%m-%d %H:%M:%S.%f";
                     struct timeval actual_tv;
                     struct exttm tm;
                     if (format->lf_date_time.scan(
@@ -307,6 +311,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                     {
                         adjusted_time.tv_usec = actual_tv.tv_usec;
                     }
+                } else if (format->lf_timestamp_flags & ETF_MILLIS_SET) {
+                    fmt = "%Y-%m-%d %H:%M:%S.%L";
+                } else {
+                    fmt = "%Y-%m-%d %H:%M:%S";
                 }
                 gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
                 adjusted_tm.et_nsec

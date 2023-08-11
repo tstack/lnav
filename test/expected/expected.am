@@ -366,8 +366,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.out \
     $(srcdir)/%reldir%/test_logfile.sh_c18e14a26d8261c9f72747118a469266121d5459.err \
     $(srcdir)/%reldir%/test_logfile.sh_c18e14a26d8261c9f72747118a469266121d5459.out \
+    $(srcdir)/%reldir%/test_logfile.sh_ccb0d31813367c8d9dc5b5df383fac5b780711c1.err \
+    $(srcdir)/%reldir%/test_logfile.sh_ccb0d31813367c8d9dc5b5df383fac5b780711c1.out \
     $(srcdir)/%reldir%/test_logfile.sh_e840b674cd65936a72bd64b1dac1524d16fe44c3.err \
     $(srcdir)/%reldir%/test_logfile.sh_e840b674cd65936a72bd64b1dac1524d16fe44c3.out \
+    $(srcdir)/%reldir%/test_logfile.sh_f171f265d8d45a2707e8b9f53e938f574c614d25.err \
+    $(srcdir)/%reldir%/test_logfile.sh_f171f265d8d45a2707e8b9f53e938f574c614d25.out \
     $(srcdir)/%reldir%/test_meta.sh_039c1f127c087ec2c6a23a0ecec4df7992cbc8b4.err \
     $(srcdir)/%reldir%/test_meta.sh_039c1f127c087ec2c6a23a0ecec4df7992cbc8b4.out \
     $(srcdir)/%reldir%/test_meta.sh_154047fb52e4831aabf7d36512247bad6a6a2cf7.err \

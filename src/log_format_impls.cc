@@ -155,10 +155,11 @@ class generic_log_format : public log_format {
             return;
         }
 
-        auto lr = to_line_range(md[fmt.pf_timestamp_index].value());
+        auto ts_cap = md[fmt.pf_timestamp_index].value();
+        auto lr = to_line_range(ts_cap.trim());
         sa.emplace_back(lr, logline::L_TIMESTAMP.value());
 
-        prefix_len = lr.lr_end;
+        prefix_len = ts_cap.sf_end;
         auto level_cap = md[2];
         if (level_cap) {
             if (string2level(level_cap->data(), level_cap->length(), true)

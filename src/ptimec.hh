@@ -494,8 +494,8 @@ ptime_i(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
     secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
-        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
-        | ETF_EPOCH_TIME | ETF_ZONE_SET;
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MILLIS_SET
+        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
     return (epoch_ms > 0);
 }
@@ -531,8 +531,8 @@ ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
     secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
-        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
-        | ETF_EPOCH_TIME | ETF_ZONE_SET;
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MICROS_SET
+        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
     return (epoch_us > 0);
 }
@@ -1111,7 +1111,7 @@ ptime_at(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     }
 
     dst->et_flags |= ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
-        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MACHINE_ORIENTED
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_NANOS_SET | ETF_MACHINE_ORIENTED
         | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
     return true;

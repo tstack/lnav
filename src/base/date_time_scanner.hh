@@ -95,6 +95,7 @@ struct date_time_scanner {
 
     bool dts_keep_base_tz{false};
     bool dts_local_time{false};
+    bool dts_zoned_to_local{true};
     time_t dts_base_time{0};
     struct exttm dts_base_tm;
     int dts_fmt_lock{-1};

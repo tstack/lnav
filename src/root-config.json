@@ -11,6 +11,9 @@
         }
     },
     "log": {
+        "date-time": {
+            "convert-zoned-to-local": true
+        },
         "annotations": {
             "com.vmware.vmacore.backtrace": {
                 "description": "Convert a vmacore backtrace into human-readable text",

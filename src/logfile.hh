@@ -435,6 +435,7 @@ private:
     bool lf_is_closed{false};
     bool lf_indexing{true};
     bool lf_partial_line{false};
+    bool lf_zoned_to_local_state{true};
     logline_observer* lf_logline_observer{nullptr};
     logfile_observer* lf_logfile_observer{nullptr};
     size_t lf_longest_line{0};
