@@ -1,0 +1,41 @@
+#!lnav -Nf
+# This file is an export of an lnav session.  You can type
+# '|/path/to/this/file' in lnav to execute this file and
+# restore the state of the session.
+
+;SELECT raise_error('This session export was made with a newer version of lnav, please upgrade to ' || '0.11.2' || ' or later')
+   WHERE lnav_version() < '0.11.2' COLLATE naturalcase
+
+# The files loaded into the session were:
+
+
+# Set this environment variable to override this value or edit this script.
+;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{top_srcdir_parent}')
+:open $LOG_DIR_0/lnav/test/logfile_access_log.0
+
+:rebuild
+
+
+# The following SQL statements will restore the bookmarks,
+# comments, and tags that were added in the session.
+
+;SELECT total_changes() AS before_mark_changes
+;UPDATE all_logs SET log_mark = 0, log_comment = NULL, log_tags = NULL, log_annotations = '{"org.lnav.test":"Hello, <span style=\"color: #f00\">World</span>!\n"}' WHERE log_time_msecs = 1248130766000 AND log_format = 'access_log' AND log_line_hash = 'v1:3f7e0f10f2473f83b2b4eacccfc9b4e2'
+;UPDATE all_logs SET log_mark = 0, log_comment = NULL, log_tags = '["#foo"]', log_annotations = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'v1:7ad4831dd06e0d6b0ffd965c7d65285f'
+
+;SELECT 2 - (total_changes() - $before_mark_changes) AS failed_mark_changes
+;SELECT echoln(printf('%sERROR%s: failed to restore %d bookmarks',
+                      $ansi_red, $ansi_norm, $failed_mark_changes))
+    WHERE $failed_mark_changes != 0
+
+
+# The following SQL statements will restore the filters that
+# were added in the session.
+
+;REPLACE INTO lnav_view_filters (view_name, enabled, type, language, pattern) VALUES ('log', 0, 'in', 'regex', 'credential status')
+
+
+# The following commands will restore the state of the LOG view.
+
+:switch-to-view log
+:goto 0

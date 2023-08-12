@@ -991,7 +991,7 @@ gather_pipers()
     }
 }
 
-static void
+void
 wait_for_pipers()
 {
     static const auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
