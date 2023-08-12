@@ -68,6 +68,7 @@
 #include "log_format_loader.hh"
 #include "log_search_table.hh"
 #include "log_search_table_fwd.hh"
+#include "ptimec.hh"
 #include "readline_callbacks.hh"
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"

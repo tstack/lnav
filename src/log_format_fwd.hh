@@ -42,7 +42,6 @@
 #include "byte_array.hh"
 #include "log_level.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "ptimec.hh"
 #include "robin_hood/robin_hood.h"
 #include "yajlpp/yajlpp.hh"
 

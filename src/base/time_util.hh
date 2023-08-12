@@ -91,6 +91,7 @@ enum exttm_bits_t {
     ETB_ZONE_SET,
     ETB_Z_FOR_UTC,
     ETB_Z_COLON,
+    ETB_Z_IS_UTC,
 };
 
 enum exttm_flags_t {
@@ -109,6 +110,7 @@ enum exttm_flags_t {
     ETF_ZONE_SET = (1UL << ETB_ZONE_SET),
     ETF_Z_FOR_UTC = (1UL << ETB_Z_FOR_UTC),
     ETF_Z_COLON = (1UL << ETB_Z_COLON),
+    ETF_Z_IS_UTC = (1UL << ETB_Z_IS_UTC),
 };
 
 struct exttm {

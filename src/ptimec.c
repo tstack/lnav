@@ -21,8 +21,8 @@
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -30,17 +30,19 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-const char *PRELUDE = "\
+const char* PRELUDE
+    = "\
 #include <time.h>\n\
 #include <sys/types.h>\n\
 #include \"ptimec.hh\"\n\
 \n\
 ";
 
-char *escape_char(char ch)
+char*
+escape_char(char ch)
 {
     static char charstr[4];
 
@@ -54,7 +56,8 @@ char *escape_char(char ch)
     return charstr;
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
     int retval = EXIT_SUCCESS;
 
@@ -78,12 +81,14 @@ int main(int argc, char *argv[])
                     case 'Z':
                         if (arg[index + 2]) {
                             printf(
-                                "    if (!ptime_upto('%s', str, off, len)) "
+                                "    if (!ptime_Z_upto(dst, str, off, len, "
+                                "'%s')) "
                                 "return false;\n",
                                 escape_char(arg[index + 2]));
                         } else {
                             printf(
-                                "    if (!ptime_upto_end(str, off, len)) "
+                                "    if (!ptime_Z_upto_end(dst, str, off, "
+                                "len)) "
                                 "return false;\n");
                         }
                         arg += 1;
@@ -99,11 +104,12 @@ int main(int argc, char *argv[])
                             "    if (!ptime_%c(dst, str, off, len)) return "
                             "false;\n",
                             arg[index + 1]);
-                    arg += 1;
-                    break;
+                        arg += 1;
+                        break;
                 }
             } else {
-                printf("    if (!ptime_char('%s', str, off, len)) return false;\n",
+                printf(
+                    "    if (!ptime_char('%s', str, off, len)) return false;\n",
                     escape_char(arg[index]));
             }
         }
@@ -111,10 +117,12 @@ int main(int argc, char *argv[])
         printf("}\n\n");
     }
     for (int lpc = 1; lpc < argc; lpc++) {
-        const char *arg = argv[lpc];
+        const char* arg = argv[lpc];
 
-        printf("void ftime_f%d(char *dst, off_t &off_inout, size_t len, const struct exttm &tm) {\n",
-               lpc);
+        printf(
+            "void ftime_f%d(char *dst, off_t &off_inout, size_t len, const "
+            "struct exttm &tm) {\n",
+            lpc);
         for (int index = 0; arg[index]; arg++) {
             if (arg[index] == '%') {
                 switch (arg[index + 1]) {
