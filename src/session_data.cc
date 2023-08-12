@@ -459,6 +459,7 @@ load_time_bookmarks()
          ++file_iter)
     {
         auto lf = (*file_iter)->get_file();
+        const auto* format = lf->get_format_ptr();
         content_line_t base_content_line;
 
         if (lf == nullptr) {
@@ -522,22 +523,29 @@ load_time_bookmarks()
                         continue;
                     }
 
-                    if (!dts.scan(log_time,
-                                  strlen(log_time),
-                                  nullptr,
-                                  &log_tm,
-                                  log_tv))
+                    if (dts.scan(log_time,
+                                 strlen(log_time),
+                                 nullptr,
+                                 &log_tm,
+                                 log_tv)
+                        == nullptr)
                     {
+                        log_warning("bad log time: %s", log_time);
                         continue;
                     }
 
-                    auto line_iter
-                        = std::lower_bound(lf->begin(), lf->end(), log_tv);
+                    auto line_iter = format->lf_time_ordered
+                        ? std::lower_bound(lf->begin(), lf->end(), log_tv)
+                        : lf->begin();
                     while (line_iter != lf->end()) {
-                        struct timeval line_tv = line_iter->get_timeval();
+                        const auto line_tv = line_iter->get_timeval();
 
                         if (line_tv != log_tv) {
-                            break;
+                            if (format->lf_time_ordered) {
+                                break;
+                            }
+                            ++line_iter;
+                            continue;
                         }
 
                         auto cl = content_line_t(
@@ -556,92 +564,90 @@ load_time_bookmarks()
                                   .update(cl)
                                   .to_string();
 
-                        if (line_hash == log_hash) {
-                            auto& bm_meta = lf->get_bookmark_metadata();
-                            auto line_number = static_cast<uint32_t>(
-                                std::distance(lf->begin(), line_iter));
-                            content_line_t line_cl = content_line_t(
-                                base_content_line + line_number);
-                            bool meta = false;
-
-                            if (part_name != nullptr && part_name[0] != '\0') {
-                                lss.set_user_mark(&textview_curses::BM_META,
-                                                  line_cl);
-                                bm_meta[line_number].bm_name = part_name;
-                                meta = true;
-                            }
-                            if (comment != nullptr && comment[0] != '\0') {
-                                lss.set_user_mark(&textview_curses::BM_META,
-                                                  line_cl);
-                                bm_meta[line_number].bm_comment = comment;
-                                meta = true;
-                            }
-                            if (tags != nullptr && tags[0] != '\0') {
-                                auto_mem<yajl_val_s> tag_list(yajl_tree_free);
-                                char error_buffer[1024];
-
-                                tag_list = yajl_tree_parse(
-                                    tags, error_buffer, sizeof(error_buffer));
-                                if (!YAJL_IS_ARRAY(tag_list.in())) {
-                                    log_error("invalid tags column: %s", tags);
-                                } else {
-                                    lss.set_user_mark(&textview_curses::BM_META,
-                                                      line_cl);
-                                    for (size_t lpc = 0;
-                                         lpc < tag_list.in()->u.array.len;
-                                         lpc++)
-                                    {
-                                        yajl_val elem
-                                            = tag_list.in()
-                                                  ->u.array.values[lpc];
-
-                                        if (!YAJL_IS_STRING(elem)) {
-                                            continue;
-                                        }
-                                        bookmark_metadata::KNOWN_TAGS.insert(
-                                            elem->u.string);
-                                        bm_meta[line_number].add_tag(
-                                            elem->u.string);
-                                    }
-                                }
-                                meta = true;
-                            }
-                            if (annotations != nullptr
-                                && annotations[0] != '\0')
-                            {
-                                static const intern_string_t SRC
-                                    = intern_string::lookup("annotations");
-
-                                const auto anno_sf
-                                    = string_fragment::from_c_str(annotations);
-                                auto parse_res = logmsg_annotations_handlers
-                                                     .parser_for(SRC)
-                                                     .of(anno_sf);
-                                if (parse_res.isErr()) {
-                                    log_error(
-                                        "unable to parse annotations JSON -- "
-                                        "%s",
-                                        parse_res.unwrapErr()[0]
-                                            .to_attr_line()
-                                            .get_string()
-                                            .c_str());
-                                } else {
-                                    lss.set_user_mark(&textview_curses::BM_META,
-                                                      line_cl);
-                                    bm_meta[line_number].bm_annotations
-                                        = parse_res.unwrap();
-                                    meta = true;
-                                }
-                            }
-                            if (!meta) {
-                                marked_session_lines.push_back(line_cl);
-                                lss.set_user_mark(&textview_curses::BM_USER,
-                                                  line_cl);
-                            }
-                            reload_needed = true;
+                        if (line_hash != log_hash) {
+                            ++line_iter;
+                            continue;
                         }
+                        auto& bm_meta = lf->get_bookmark_metadata();
+                        auto line_number = static_cast<uint32_t>(
+                            std::distance(lf->begin(), line_iter));
+                        content_line_t line_cl
+                            = content_line_t(base_content_line + line_number);
+                        bool meta = false;
 
-                        ++line_iter;
+                        if (part_name != nullptr && part_name[0] != '\0') {
+                            lss.set_user_mark(&textview_curses::BM_META,
+                                              line_cl);
+                            bm_meta[line_number].bm_name = part_name;
+                            meta = true;
+                        }
+                        if (comment != nullptr && comment[0] != '\0') {
+                            lss.set_user_mark(&textview_curses::BM_META,
+                                              line_cl);
+                            bm_meta[line_number].bm_comment = comment;
+                            meta = true;
+                        }
+                        if (tags != nullptr && tags[0] != '\0') {
+                            auto_mem<yajl_val_s> tag_list(yajl_tree_free);
+                            char error_buffer[1024];
+
+                            tag_list = yajl_tree_parse(
+                                tags, error_buffer, sizeof(error_buffer));
+                            if (!YAJL_IS_ARRAY(tag_list.in())) {
+                                log_error("invalid tags column: %s", tags);
+                            } else {
+                                lss.set_user_mark(&textview_curses::BM_META,
+                                                  line_cl);
+                                for (size_t lpc = 0;
+                                     lpc < tag_list.in()->u.array.len;
+                                     lpc++)
+                                {
+                                    yajl_val elem
+                                        = tag_list.in()->u.array.values[lpc];
+
+                                    if (!YAJL_IS_STRING(elem)) {
+                                        continue;
+                                    }
+                                    bookmark_metadata::KNOWN_TAGS.insert(
+                                        elem->u.string);
+                                    bm_meta[line_number].add_tag(
+                                        elem->u.string);
+                                }
+                            }
+                            meta = true;
+                        }
+                        if (annotations != nullptr && annotations[0] != '\0') {
+                            static const intern_string_t SRC
+                                = intern_string::lookup("annotations");
+
+                            const auto anno_sf
+                                = string_fragment::from_c_str(annotations);
+                            auto parse_res
+                                = logmsg_annotations_handlers.parser_for(SRC)
+                                      .of(anno_sf);
+                            if (parse_res.isErr()) {
+                                log_error(
+                                    "unable to parse annotations JSON -- "
+                                    "%s",
+                                    parse_res.unwrapErr()[0]
+                                        .to_attr_line()
+                                        .get_string()
+                                        .c_str());
+                            } else {
+                                lss.set_user_mark(&textview_curses::BM_META,
+                                                  line_cl);
+                                bm_meta[line_number].bm_annotations
+                                    = parse_res.unwrap();
+                                meta = true;
+                            }
+                        }
+                        if (!meta) {
+                            marked_session_lines.push_back(line_cl);
+                            lss.set_user_mark(&textview_curses::BM_USER,
+                                              line_cl);
+                        }
+                        reload_needed = true;
+                        break;
                     }
                     break;
                 }
