@@ -204,6 +204,11 @@ ftime_a(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline void
 ftime_Z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
+    if (tm.et_flags & ETF_Z_IS_UTC) {
+        PTIME_APPEND('U');
+        PTIME_APPEND('T');
+        PTIME_APPEND('C');
+    }
 }
 
 inline void
@@ -881,6 +886,44 @@ ftime_y(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 }
 
 inline bool
+ptime_Z_upto(struct exttm* dst,
+             const char* str,
+             off_t& off_inout,
+             ssize_t len,
+             char term)
+{
+    auto avail = len - off_inout;
+
+    if (avail >= 3 && str[off_inout + 0] == 'U' && str[off_inout + 1] == 'T'
+        && str[off_inout + 2] == 'C')
+    {
+        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_UTC; });
+        return true;
+    }
+
+    return ptime_upto(term, str, off_inout, len);
+}
+
+inline bool
+ptime_Z_upto_end(struct exttm* dst,
+                 const char* str,
+                 off_t& off_inout,
+                 ssize_t len)
+{
+    auto avail = len - off_inout;
+
+    if (avail == 3 && str[off_inout + 0] == 'U' && str[off_inout + 1] == 'T'
+        && str[off_inout + 2] == 'C')
+    {
+        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_UTC; });
+
+        return true;
+    }
+
+    return ptime_upto_end(str, off_inout, len);
+}
+
+inline bool
 ptime_z(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     if (off_inout + 1 <= len && str[off_inout] == 'Z') {
@@ -966,21 +1009,56 @@ ftime_z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_f(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(6, {
-        for (int lpc = 0; lpc < 6; lpc++) {
-            if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
-                return false;
+    auto avail = len - off_inout;
+
+    if (avail >= 6 && isdigit(str[off_inout + 4])
+        && isdigit(str[off_inout + 5]))
+    {
+        PTIME_CONSUME(6, {
+            for (int lpc = 0; lpc < 6; lpc++) {
+                if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
+                    return false;
+                }
             }
-        }
-        dst->et_flags |= ETF_MICROS_SET;
-        dst->et_nsec = ((str[off_inout + 0] - '0') * 100000
-                        + (str[off_inout + 1] - '0') * 10000
-                        + (str[off_inout + 2] - '0') * 1000
-                        + (str[off_inout + 3] - '0') * 100
-                        + (str[off_inout + 4] - '0') * 10
-                        + (str[off_inout + 5] - '0') * 1)
-            * 1000;
-    });
+            dst->et_flags |= ETF_MICROS_SET;
+            dst->et_nsec = ((str[off_inout + 0] - '0') * 100000
+                            + (str[off_inout + 1] - '0') * 10000
+                            + (str[off_inout + 2] - '0') * 1000
+                            + (str[off_inout + 3] - '0') * 100
+                            + (str[off_inout + 4] - '0') * 10
+                            + (str[off_inout + 5] - '0') * 1)
+                * 1000;
+        });
+    } else if (avail >= 5 && isdigit(str[off_inout + 4])) {
+        PTIME_CONSUME(5, {
+            for (int lpc = 0; lpc < 5; lpc++) {
+                if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
+                    return false;
+                }
+            }
+            dst->et_flags |= ETF_MICROS_SET;
+            dst->et_nsec = ((str[off_inout + 0] - '0') * 100000
+                            + (str[off_inout + 1] - '0') * 10000
+                            + (str[off_inout + 2] - '0') * 1000
+                            + (str[off_inout + 3] - '0') * 100
+                            + (str[off_inout + 4] - '0') * 10)
+                * 1000;
+        });
+    } else {
+        PTIME_CONSUME(4, {
+            for (int lpc = 0; lpc < 4; lpc++) {
+                if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
+                    return false;
+                }
+            }
+            dst->et_flags |= ETF_MICROS_SET;
+            dst->et_nsec = ((str[off_inout + 0] - '0') * 100000
+                            + (str[off_inout + 1] - '0') * 10000
+                            + (str[off_inout + 2] - '0') * 1000
+                            + (str[off_inout + 3] - '0') * 100)
+                * 1000;
+        });
+    }
 
     return true;
 }

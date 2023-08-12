@@ -36,6 +36,7 @@
 #include "log_format_ext.hh"
 #include "log_vtab_impl.hh"
 #include "md2attr_line.hh"
+#include "ptimec.hh"
 #include "readline_highlighters.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"

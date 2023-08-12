@@ -45,6 +45,7 @@
 #include "lnav_util.hh"
 #include "log_accel.hh"
 #include "md2attr_line.hh"
+#include "ptimec.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
@@ -330,6 +331,11 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                           std::chrono::microseconds{adjusted_time.tv_usec})
                           .count();
                 adjusted_tm.et_flags = format->lf_timestamp_flags;
+                if (format->lf_timestamp_flags & ETF_ZONE_SET
+                    && format->lf_date_time.dts_zoned_to_local)
+                {
+                    adjusted_tm.et_flags &= ~ETF_Z_IS_UTC;
+                }
                 len = format->lf_date_time.ftime(
                     buffer,
                     sizeof(buffer),

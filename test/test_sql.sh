@@ -264,10 +264,10 @@ run_test ${lnav_test} -n \
 check_output "time_offset in lnav_file table is not reordering?" <<EOF
 Wed May 19 12:00:01  2021 line 1
 /abc/def
-Wed May 19 12:00:02 UTC 2021 line 2
+Wed May 19 12:00:02  2021 line 2
 Wed May 19 12:00:03  2021 line 3
 /ghi/jkl
-Wed May 19 12:00:04 UTC 2021 line 4
+Wed May 19 12:00:04  2021 line 4
 EOF
 
 

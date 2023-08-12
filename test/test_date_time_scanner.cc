@@ -106,6 +106,44 @@ TEST_CASE("date_time_scanner")
     }
 
     {
+        const auto sf
+            = string_fragment::from_const("2014-02-11 16:12:34.12345Z");
+        struct timeval tv;
+        struct exttm tm;
+        date_time_scanner dts;
+        const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
+        printf("fmt %s\n", PTIMEC_FORMAT_STR[dts.dts_fmt_lock]);
+        CHECK(rc != nullptr);
+        CHECK((tm.et_flags & ETF_MICROS_SET));
+        CHECK(*rc == '\0');
+
+        char ts[64];
+        dts.ftime(ts, sizeof(ts), nullptr, tm);
+
+        CHECK(std::string(ts) == std::string("2014-02-11 16:12:34.123450Z"));
+    }
+
+    {
+        const auto sf
+            = string_fragment::from_const("Tue Jul 25 12:01:01 AM UTC 2023");
+        struct timeval tv;
+        struct exttm tm;
+        date_time_scanner dts;
+        const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
+        printf("fmt %s\n", PTIMEC_FORMAT_STR[dts.dts_fmt_lock]);
+        CHECK(rc != nullptr);
+        CHECK((tm.et_flags & ETF_ZONE_SET));
+        CHECK((tm.et_flags & ETF_Z_IS_UTC));
+        CHECK(*rc == '\0');
+
+        char ts[64];
+        dts.ftime(ts, sizeof(ts), nullptr, tm);
+
+        CHECK(std::string(ts)
+              == std::string("Tue Jul 25 12:01:01 AM UTC 2023"));
+    }
+
+    {
         static const char* OLD_TIME = "05/18/1960 12:00:53 AM";
         date_time_scanner dts;
         struct timeval tv;
