@@ -736,6 +736,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
             (lnav_data.ld_flags & LNF_HEADLESS || ec.ec_path_stack.size() > 1))
         {
             rescan_files();
+            wait_for_pipers();
             rebuild_indexes_repeatedly();
         }
     });
@@ -832,6 +833,7 @@ execute_init_commands(
                 }
 
                 rescan_files();
+                wait_for_pipers();
                 rebuild_indexes_repeatedly();
             }
             if (dls.dls_rows.size() > 1) {

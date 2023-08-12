@@ -69,6 +69,11 @@ rebuild_indexes_repeatedly()
 {
 }
 
+void
+wait_for_pipers()
+{
+}
+
 readline_context::command_map_t lnav_commands;
 
 namespace injector {

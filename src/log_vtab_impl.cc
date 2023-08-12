@@ -1938,6 +1938,8 @@ vt_update(sqlite3_vtab* tab,
             = sqlite3_value_text(argv[2 + VT_COL_LOG_COMMENT]);
         const auto log_tags = from_sqlite<nonstd::optional<string_fragment>>()(
             argc, argv, 2 + VT_COL_LOG_TAGS);
+        const auto log_annos = from_sqlite<nonstd::optional<string_fragment>>()(
+            argc, argv, 2 + VT_COL_LOG_ANNOTATIONS);
         bookmark_metadata tmp_bm;
 
         if (log_tags) {
@@ -1969,10 +1971,23 @@ vt_update(sqlite3_vtab* tab,
                 return SQLITE_ERROR;
             }
         }
+        if (log_annos) {
+            static const intern_string_t SRC
+                = intern_string::lookup("log_annotations");
+
+            auto parse_res = logmsg_annotations_handlers.parser_for(SRC).of(
+                log_annos.value());
+            if (parse_res.isErr()) {
+                set_vtable_errmsg(tab, parse_res.unwrapErr()[0]);
+                return SQLITE_ERROR;
+            }
+
+            tmp_bm.bm_annotations = parse_res.unwrap();
+        }
 
         auto& bv = vt->tc->get_bookmarks()[&textview_curses::BM_META];
         bool has_meta = part_name != nullptr || log_comment != nullptr
-            || log_tags.has_value();
+            || log_tags.has_value() || log_annos.has_value();
 
         if (binary_search(bv.begin(), bv.end(), vrowid) && !has_meta) {
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);
@@ -2005,6 +2020,11 @@ vt_update(sqlite3_vtab* tab,
                 }
             } else {
                 line_meta.bm_tags.clear();
+            }
+            if (log_annos) {
+                line_meta.bm_annotations = std::move(tmp_bm.bm_annotations);
+            } else {
+                line_meta.bm_annotations.la_pairs.clear();
             }
 
             vt->lss->set_line_meta_changed();
