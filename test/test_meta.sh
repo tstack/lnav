@@ -110,6 +110,18 @@ run_cap_test ${lnav_test} -n -f- \
 This is `markdown` now!
 EOF
 
+run_cap_test ${lnav_test} -n \
+    -c ":goto 46" \
+    -c ":tag bro-test" \
+    -c ":save-session" \
+    -c ";SELECT log_line, log_tags FROM bro_http_log WHERE log_tags IS NOT NULL" \
+    ${test_dir}/logfile_bro_http.log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ";SELECT log_line, log_tags FROM bro_http_log WHERE log_tags IS NOT NULL" \
+    ${test_dir}/logfile_bro_http.log.0
+
 export TEST_ANNO=1
 run_cap_test ${lnav_test} -d /tmp/lnav.err -I ${test_dir} -n \
     -c ':annotate' \
