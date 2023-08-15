@@ -31,6 +31,7 @@
 
 #include <curl/curl.h>
 
+#include "base/itertools.hh"
 #include "config.h"
 #include "curl_looper.hh"
 #include "ghc/filesystem.hpp"
@@ -58,6 +59,7 @@ static const json_path_container UNIT_TEST_HANDLERS = {
 };
 
 static const typed_json_path_container<entry> ENTRY_HANDLERS = {
+    yajlpp::property_handler("dateCreated").for_field(&entry::e_date_created),
     yajlpp::property_handler("regex").for_field(&entry::e_regex),
     yajlpp::property_handler("testString").for_field(&entry::e_test_string),
     yajlpp::property_handler("flags").for_field(&entry::e_flags),
@@ -124,6 +126,7 @@ upsert(entry& en)
 
     auto parse_res
         = RESPONSE_HANDLERS.parser_for(intern_string::lookup(cr.get_name()))
+              .with_ignore_unused(true)
               .of(response);
     if (parse_res.isOk()) {
         return Ok(parse_res.unwrap());
@@ -137,14 +140,14 @@ upsert(entry& en)
 
 struct retrieve_entity {
     std::string re_permalink_fragment;
-    int32_t re_versions{1};
+    std::vector<int32_t> re_versions;
 };
 
 static const typed_json_path_container<retrieve_entity> RETRIEVE_ENTITY_HANDLERS
     = {
         yajlpp::property_handler("permalinkFragment")
             .for_field(&retrieve_entity::re_permalink_fragment),
-        yajlpp::property_handler("versions")
+        yajlpp::property_handler("versions#")
             .for_field(&retrieve_entity::re_versions),
 };
 
@@ -187,6 +190,7 @@ retrieve(const std::string& permalink)
     auto parse_res
         = RETRIEVE_ENTITY_HANDLERS
               .parser_for(intern_string::lookup(entry_req.get_name()))
+              .with_ignore_unused(true)
               .of(response);
 
     if (parse_res.isErr()) {
@@ -201,11 +205,12 @@ retrieve(const std::string& permalink)
 
     auto entry_value = parse_res.unwrap();
 
-    if (entry_value.re_versions == 0) {
+    auto latest_version = entry_value.re_versions | lnav::itertools::max();
+    if (!latest_version) {
         return no_entry{};
     }
 
-    auto version_url = entry_url / fmt::to_string(entry_value.re_versions);
+    auto version_url = entry_url / fmt::to_string(latest_version.value());
     curl_request version_req(version_url.string());
 
     curl_easy_setopt(version_req, CURLOPT_URL, version_req.get_name().c_str());
@@ -224,6 +229,7 @@ retrieve(const std::string& permalink)
     auto version_parse_res
         = ENTRY_HANDLERS
               .parser_for(intern_string::lookup(version_req.get_name()))
+              .with_ignore_unused(true)
               .of(version_response);
 
     if (version_parse_res.isErr()) {

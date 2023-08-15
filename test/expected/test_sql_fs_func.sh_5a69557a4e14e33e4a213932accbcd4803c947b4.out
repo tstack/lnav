@@ -1,2 +1,0 @@
-shell_exec('echo hi') 
-                  hi␊ 

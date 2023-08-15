@@ -396,6 +396,25 @@ struct json_path_handler : public json_path_handler_base {
     };
 
     template<typename T, typename... Args>
+    struct LastIsIntegerVector {
+        using value_type = typename LastIsIntegerVector<Args...>::value_type;
+        static constexpr bool value = LastIsIntegerVector<Args...>::value;
+    };
+
+    template<typename T, typename U>
+    struct LastIsIntegerVector<std::vector<U> T::*> {
+        using value_type = U;
+        static constexpr bool value
+            = std::is_integral<U>::value && !std::is_same<U, bool>::value;
+    };
+
+    template<typename T, typename U>
+    struct LastIsIntegerVector<U T::*> {
+        using value_type = void;
+        static constexpr bool value = false;
+    };
+
+    template<typename T, typename... Args>
     struct LastIsMap {
         using value_type = typename LastIsMap<Args...>::value_type;
         static constexpr bool value = LastIsMap<Args...>::value;
@@ -490,10 +509,33 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename... Args,
+             std::enable_if_t<LastIsIntegerVector<Args...>::value, bool> = true>
+    json_path_handler& for_field(Args... args)
+    {
+        this->add_cb(int_field_cb);
+        this->jph_integer_cb
+            = [args...](yajlpp_parse_context* ypc, long long val) {
+                  const auto* jph = ypc->ypc_current_handler;
+                  auto* obj = ypc->ypc_obj_stack.top();
+
+                  if (val < jph->jph_min_value) {
+                      jph->report_min_value_error(ypc, val);
+                      return 1;
+                  }
+
+                  json_path_handler::get_field(obj, args...).emplace_back(val);
+
+                  return 1;
+              };
+        return *this;
+    }
+
+    template<typename... Args,
              std::enable_if_t<LastIsVector<Args...>::value, bool> = true,
              std::enable_if_t<
                  !std::is_same<typename LastIsVector<Args...>::value_type,
-                               std::string>::value,
+                               std::string>::value
+                     && !LastIsIntegerVector<Args...>::value,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)

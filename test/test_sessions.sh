@@ -135,3 +135,14 @@ run_cap_test ${lnav_test} -n \
     -c ":goto -10" \
     -c ":test-comment restoring hidden fields" \
     ${test_dir}/logfile_bro_http.log.0
+
+export TEST_ANNO=1
+run_cap_test ${lnav_test} -d /tmp/lnav.err -I ${test_dir} -n \
+    -c ':annotate' \
+    -c ':save-session' \
+    support-dump/logfile_access_log.0
+
+run_cap_test ${lnav_test} -d /tmp/lnav.err -I ${test_dir} -n \
+    -c ':load-session' \
+    -c ':export-session-to -' \
+    support-dump/logfile_access_log.0
