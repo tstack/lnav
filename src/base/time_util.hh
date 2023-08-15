@@ -30,6 +30,8 @@
 #ifndef lnav_time_util_hh
 #define lnav_time_util_hh
 
+#include <chrono>
+
 #include <inttypes.h>
 #include <string.h>
 #include <sys/time.h>
