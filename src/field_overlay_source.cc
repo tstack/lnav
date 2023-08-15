@@ -639,15 +639,28 @@ field_overlay_source::list_header_for_overlay(const listview_curses& lv,
 
     retval.append(this->fos_lss.get_filename_offset(), ' ');
     if (this->fos_contexts.top().c_show) {
-        return retval
+        retval
             .appendf(FMT_STRING("\u258C Line {:L} parser details.  "
-                                "(Press '"),
+                                "Press "),
                      (int) vl)
             .append("p"_hotkey)
-            .append("' to toggle this view)");
+            .append(" to hide this panel.");
+    } else {
+        retval.append("\u258C Line ")
+            .append(
+                lnav::roles::number(fmt::format(FMT_STRING("{:L}"), (int) vl)))
+            .append(" metadata");
     }
 
-    return retval.append("\u258C Line ")
-        .append(lnav::roles::number(fmt::format(FMT_STRING("{:L}"), (int) vl)))
-        .append(" metadata");
+    if (lv.get_overlay_selection()) {
+        retval.append("  Press ")
+            .append("Esc"_hotkey)
+            .append(" to exit this panel.");
+    } else {
+        retval.append("  Press ")
+            .append("CTRL-]"_hotkey)
+            .append(" to focus on this panel");
+    }
+
+    return retval;
 }

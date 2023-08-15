@@ -155,7 +155,7 @@ operator<(const struct timeval& left, const struct timeval& right)
 inline bool
 operator<=(const struct timeval& left, const struct timeval& right)
 {
-    return left.tv_sec <= right.tv_sec
+    return left.tv_sec < right.tv_sec
         || ((left.tv_sec == right.tv_sec) && (left.tv_usec <= right.tv_usec));
 }
 
@@ -240,6 +240,9 @@ struct time_range {
     }
 
     time_range& operator|=(const time_range& rhs);
+
+    bool contains_inclusive(const timeval& tv) const;
+
     void extend_to(const timeval& tv);
     std::chrono::milliseconds duration() const;
 };

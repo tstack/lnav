@@ -61,6 +61,7 @@
 
 #include "base/attr_line.hh"
 #include "base/enum_util.hh"
+#include "base/keycodes.hh"
 #include "base/lnav_log.hh"
 #include "base/lrucache.hpp"
 #include "base/opt_util.hh"
@@ -68,14 +69,6 @@
 #include "log_level.hh"
 #include "optional.hpp"
 #include "styling.hh"
-
-#define KEY_CTRL_A 0x01
-#define KEY_CTRL_E 0x05
-#define KEY_CTRL_G 7
-#define KEY_CTRL_L 12
-#define KEY_CTRL_P 16
-#define KEY_CTRL_R 18
-#define KEY_CTRL_W 23
 
 class view_curses;
 
@@ -405,7 +398,7 @@ protected:
     bool vc_visible{true};
     /** Flag to indicate if a display update is needed. */
     bool vc_needs_update{true};
-    long vc_width;
+    long vc_width{0};
     std::vector<view_curses*> vc_children;
     role_t vc_default_role{role_t::VCR_TEXT};
 };

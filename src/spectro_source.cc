@@ -102,7 +102,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             return true;
         }
 
-        case KEY_CTRL_A: {
+        case KEY_CTRL('a'): {
             if (this->ss_value_source != nullptr) {
                 this->ss_cursor_column = 0;
                 this->text_selection_changed((textview_curses&) lv);
@@ -111,7 +111,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             return true;
         }
 
-        case KEY_CTRL_E: {
+        case KEY_CTRL('e'): {
             if (this->ss_value_source != nullptr) {
                 this->ss_cursor_column = INT_MAX;
                 this->text_selection_changed((textview_curses&) lv);

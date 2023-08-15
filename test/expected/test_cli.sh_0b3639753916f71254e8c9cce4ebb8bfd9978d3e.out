@@ -179,6 +179,12 @@
                         "underline": true,
                         "bold": true
                     },
+                    "disabled-cursor-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "adjusted-time": {
                         "color": "Maroon",
                         "background-color": "",
@@ -706,6 +712,12 @@
                         "underline": true,
                         "bold": true
                     },
+                    "disabled-cursor-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "adjusted-time": {
                         "color": "$magenta",
                         "background-color": "",
@@ -1198,6 +1210,12 @@
                         "underline": true,
                         "bold": true
                     },
+                    "disabled-cursor-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "adjusted-time": {
                         "color": "$magenta",
                         "background-color": "",
@@ -1686,9 +1704,15 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "#d7005f",
+                        "background-color": "#7f005f",
                         "underline": false,
                         "bold": true
+                    },
+                    "disabled-cursor-line": {
+                        "color": "$cyan",
+                        "background-color": "#5f005f",
+                        "underline": false,
+                        "bold": false
                     },
                     "adjusted-time": {
                         "color": "$magenta",
@@ -2181,6 +2205,12 @@
                         "background-color": "$red",
                         "underline": true,
                         "bold": true
+                    },
+                    "disabled-cursor-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     },
                     "adjusted-time": {
                         "color": "$magenta",
@@ -2683,6 +2713,12 @@
                         "underline": true,
                         "bold": true
                     },
+                    "disabled-cursor-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "adjusted-time": {
                         "color": "$magenta",
                         "background-color": "",
@@ -3183,6 +3219,12 @@
                         "background-color": "$red",
                         "underline": true,
                         "bold": true
+                    },
+                    "disabled-cursor-line": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     },
                     "adjusted-time": {
                         "color": "$magenta",

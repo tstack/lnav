@@ -238,6 +238,15 @@ public:
         return this->lv_top;
     }
 
+    nonstd::optional<vis_line_t> get_overlay_selection() const
+    {
+        if (this->lv_overlay_focused) {
+            return this->lv_focused_overlay_selection;
+        }
+
+        return nonstd::nullopt;
+    }
+
     void set_sync_selection_and_top(bool value)
     {
         this->lv_sync_selection_and_top = value;
@@ -561,7 +570,9 @@ protected:
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
     unsigned int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
-    vis_line_t lv_focused_overlay_top{0};
+    bool lv_overlay_focused{false};
+    vis_line_t lv_focused_overlay_top{0_vl};
+    vis_line_t lv_focused_overlay_selection{0_vl};
     int lv_history_position{0};
     bool lv_overlay_needs_update{true};
     bool lv_show_scrollbar{true}; /*< Draw the scrollbar in the view. */

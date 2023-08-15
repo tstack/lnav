@@ -49,6 +49,7 @@ add_library(
         is_utf8.hh
         isc.hh
         itertools.hh
+        keycodes.hh
         line_range.hh
         lnav.console.hh
         lnav.console.into.hh

@@ -175,6 +175,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_scrollbar;
     positioned_property<style_config> lt_style_hidden;
     positioned_property<style_config> lt_style_cursor_line;
+    positioned_property<style_config> lt_style_disabled_cursor_line;
     positioned_property<style_config> lt_style_adjusted_time;
     positioned_property<style_config> lt_style_skewed_time;
     positioned_property<style_config> lt_style_offset_time;

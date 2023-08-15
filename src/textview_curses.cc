@@ -505,10 +505,14 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     }
 
     if (this->is_selectable() && row == this->get_selection()
-        && this->tc_cursor_role)
+        && this->tc_cursor_role && this->tc_disabled_cursor_role)
     {
+        auto role = this->get_overlay_selection()
+            ? this->tc_disabled_cursor_role.value()
+            : this->tc_cursor_role.value();
+
         sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        VC_ROLE.value(this->tc_cursor_role.value()));
+                        VC_ROLE.value(role));
     }
 
     for (auto& tc_highlight : this->tc_highlights) {

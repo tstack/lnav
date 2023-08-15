@@ -639,6 +639,10 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for the cursor line in the main view")
         .for_child(&lnav_theme::lt_style_cursor_line)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("disabled-cursor-line")
+        .with_description("Styling for the cursor line when it is disabled")
+        .for_child(&lnav_theme::lt_style_disabled_cursor_line)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("adjusted-time")
         .with_description("Styling for timestamps that have been adjusted")
         .for_child(&lnav_theme::lt_style_adjusted_time)

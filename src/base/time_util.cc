@@ -284,3 +284,9 @@ time_range::duration() const
         + std::chrono::duration_cast<std::chrono::milliseconds>(
                std::chrono::microseconds(diff.tv_usec));
 }
+
+bool
+time_range::contains_inclusive(const timeval& tv) const
+{
+    return (this->tr_begin <= tv) && (tv <= this->tr_end);
+}

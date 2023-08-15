@@ -318,7 +318,14 @@ nonstd::optional<attr_line_t>
 gantt_header_overlay::list_header_for_overlay(const listview_curses& lv,
                                               vis_line_t line)
 {
-    return attr_line_t("\u258C Sub-operations:");
+    if (lv.get_overlay_selection()) {
+        return attr_line_t("\u258C Sub-operations: Press ")
+            .append("Esc"_hotkey)
+            .append(" to exit this panel");
+    }
+    return attr_line_t("\u258C Sub-operations: Press ")
+        .append("CTRL-]"_hotkey)
+        .append(" to focus on this panel");
 }
 
 gantt_source::gantt_source(textview_curses& log_view,
@@ -695,18 +702,48 @@ gantt_source::rebuild_indexes()
 nonstd::optional<vis_line_t>
 gantt_source::row_for_time(struct timeval time_bucket)
 {
-    auto iter
-        = std::lower_bound(this->gs_time_order.begin(),
-                           this->gs_time_order.end(),
-                           time_bucket,
-                           [](const opid_row& lhs, const timeval& rhs) {
-                               return lhs.or_value.otr_range.tr_begin < rhs;
-                           });
-    if (iter == this->gs_time_order.end()) {
-        return nonstd::nullopt;
+    auto iter = this->gs_time_order.begin();
+    while (true) {
+        if (iter == this->gs_time_order.end()) {
+            return nonstd::nullopt;
+        }
+
+        if (iter->or_value.otr_range.contains_inclusive(time_bucket)) {
+            break;
+        }
+        ++iter;
     }
 
-    return vis_line_t(std::distance(this->gs_time_order.begin(), iter));
+    auto closest_iter = iter;
+    auto closest_diff = time_bucket - iter->or_value.otr_range.tr_begin;
+    for (; iter != this->gs_time_order.end(); ++iter) {
+        if (time_bucket < iter->or_value.otr_range.tr_begin) {
+            break;
+        }
+        if (!iter->or_value.otr_range.contains_inclusive(time_bucket)) {
+            continue;
+        }
+
+        auto diff = time_bucket - iter->or_value.otr_range.tr_begin;
+        if (diff < closest_diff) {
+            closest_iter = iter;
+            closest_diff = diff;
+        }
+
+        for (const auto& sub : iter->or_value.otr_sub_ops) {
+            if (!sub.ostr_range.contains_inclusive(time_bucket)) {
+                continue;
+            }
+
+            diff = time_bucket - sub.ostr_range.tr_begin;
+            if (diff < closest_diff) {
+                closest_iter = iter;
+                closest_diff = diff;
+            }
+        }
+    }
+
+    return vis_line_t(std::distance(this->gs_time_order.begin(), closest_iter));
 }
 
 nonstd::optional<struct timeval>
@@ -716,7 +753,17 @@ gantt_source::time_for_row(vis_line_t row)
         return nonstd::nullopt;
     }
 
-    return this->gs_time_order[row].or_value.otr_range.tr_begin;
+    const auto& otr = this->gs_time_order[row].or_value;
+
+    if (this->tss_view->get_selection() == row) {
+        auto ov_sel = this->tss_view->get_overlay_selection();
+
+        if (ov_sel && ov_sel.value() < otr.otr_sub_ops.size()) {
+            return otr.otr_sub_ops[ov_sel.value()].ostr_range.tr_begin;
+        }
+    }
+
+    return otr.otr_range.tr_begin;
 }
 
 size_t
@@ -738,9 +785,16 @@ gantt_source::text_selection_changed(textview_curses& tc)
     }
 
     const auto& row = this->gs_time_order[sel];
-    auto low_vl = this->gs_lss.row_for_time(row.or_value.otr_range.tr_begin);
+    auto low_tv = row.or_value.otr_range.tr_begin;
     auto high_tv = row.or_value.otr_range.tr_end;
+    auto ov_sel = tc.get_overlay_selection();
+    if (ov_sel) {
+        const auto& sub = row.or_value.otr_sub_ops[ov_sel.value()];
+        low_tv = sub.ostr_range.tr_begin;
+        high_tv = sub.ostr_range.tr_end;
+    }
     high_tv.tv_sec += 1;
+    auto low_vl = this->gs_lss.row_for_time(low_tv);
     auto high_vl = this->gs_lss.row_for_time(high_tv).value_or(
         this->gs_lss.text_line_count());
 

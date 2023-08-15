@@ -753,6 +753,9 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_hidden, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_CURSOR_LINE)]
         = this->to_attrs(lt, lt.lt_style_cursor_line, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(
+        role_t::VCR_DISABLED_CURSOR_LINE)]
+        = this->to_attrs(lt, lt.lt_style_disabled_cursor_line, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ADJUSTED_TIME)]
         = this->to_attrs(lt, lt.lt_style_adjusted_time, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SKEWED_TIME)]
