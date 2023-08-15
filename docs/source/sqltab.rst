@@ -169,6 +169,7 @@ available in this table:
 :top_meta: A JSON object that contains metadata related to the top line
   in the view.
 :selection: The number of the line that is focused for selection.
+:options: A JSON object that contains optional settings for this view.
 
 lnav_views_echo
 ---------------

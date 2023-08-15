@@ -297,9 +297,12 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
         return;
     }
 
+    if (row != lv.get_selection()) {
+        return;
+    }
+
     auto& vc = view_colors::singleton();
-    auto top = lv.get_top();
-    const auto& cols = this->dos_labels->dls_rows[top];
+    const auto& cols = this->dos_labels->dls_rows[row];
     unsigned long width;
     vis_line_t height;
 

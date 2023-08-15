@@ -1044,5 +1044,6 @@ listview_curses::set_overlay_selection(nonstd::optional<vis_line_t> sel)
         this->lv_focused_overlay_top = 0_vl;
         this->lv_focused_overlay_selection = 0_vl;
     }
+    this->lv_source->listview_selection_changed(*this);
     this->set_needs_update();
 }

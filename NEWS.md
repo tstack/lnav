@@ -71,6 +71,8 @@ Features:
   * `text-decoration` with `underline`
   * `border-left` and `border-right` with the `solid`,
     `dashed` and `dotted` line styles and colors.
+* Added an `options` column to the `lnav_views` table
+  to allow more control over overlays.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

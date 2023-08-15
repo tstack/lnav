@@ -3867,6 +3867,10 @@
                     "command": ":next-mark search",
                     "alt-msg": "${keymap_def_scroll_horiz}"
                 },
+                "x70": {
+                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.show-details', CASE jget(options, '/show-details', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "alt-msg": ""
+                },
                 "x71": {
                     "command": "|lnav-pop-view ${keyseq}",
                     "alt-msg": ""
