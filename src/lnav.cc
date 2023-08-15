@@ -473,7 +473,6 @@ handle_rl_key(int ch)
             handle_paging_key(ch);
             break;
 
-        case KEY_ESCAPE:
         case KEY_CTRL(']'):
             lnav_data.ld_rl_view->abort();
             break;
@@ -2700,9 +2699,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_word_wrap(false);
     auto log_fos = new field_overlay_source(lnav_data.ld_log_source,
                                             lnav_data.ld_text_source);
-    if (lnav_data.ld_flags & LNF_HEADLESS) {
-        log_fos->fos_show_status = false;
-    }
     log_fos->fos_contexts.emplace("", false, true);
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)

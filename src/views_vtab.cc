@@ -173,6 +173,37 @@ static const typed_json_path_container<top_line_meta> top_line_meta_handlers = {
         .with_children(breadcrumb_crumb_handlers),
 };
 
+enum class row_details_t {
+    hide,
+    show,
+};
+
+struct view_options {
+    nonstd::optional<row_details_t> vo_row_details;
+    nonstd::optional<int32_t> vo_overlay_focus;
+
+    bool empty() const
+    {
+        return !this->vo_row_details.has_value()
+            && !this->vo_overlay_focus.has_value();
+    }
+};
+
+static const json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
+    {"hide", row_details_t::hide},
+    {"show", row_details_t::show},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
+static const typed_json_path_container<view_options> view_options_handlers = {
+    yajlpp::property_handler("show-details")
+        .with_enum_values(ROW_DETAILS_ENUM)
+        .for_field(&view_options::vo_row_details),
+    yajlpp::property_handler("overlay-focused-line")
+        .for_field(&view_options::vo_overlay_focus),
+};
+
 struct lnav_views : public tvt_iterator_cursor<lnav_views> {
     static constexpr const char* NAME = "lnav_views";
     static constexpr const char* CREATE_STMT = R"(
@@ -190,7 +221,8 @@ CREATE TABLE lnav_views (
     filtering INTEGER,      -- Indicates if the view is applying filters.
     movement TEXT,          -- The movement mode, either 'top' or 'cursor'.
     top_meta TEXT,          -- A JSON object that contains metadata related to the top line in the view.
-    selection INTEGER       -- The number of the line that is focused for selection.
+    selection INTEGER,      -- The number of the line that is focused for selection.
+    options TEXT            -- A JSON object that contains optional settings for this view.
 );
 )";
 
@@ -204,7 +236,7 @@ CREATE TABLE lnav_views (
     {
         lnav_view_t view_index = (lnav_view_t) std::distance(
             std::begin(lnav_data.ld_views), vc.iter);
-        textview_curses& tc = *vc.iter;
+        const auto& tc = *vc.iter;
         unsigned long width;
         vis_line_t height;
 
@@ -344,6 +376,28 @@ CREATE TABLE lnav_views (
             case 12:
                 sqlite3_result_int(ctx, (int) tc.get_selection());
                 break;
+            case 13: {
+                auto vo = view_options{};
+
+                if (tc.get_overlay_source()) {
+                    auto ov_sel = tc.get_overlay_selection();
+
+                    vo.vo_row_details
+                        = tc.get_overlay_source()->get_show_details_in_overlay()
+                        ? row_details_t::show
+                        : row_details_t::hide;
+                    if (ov_sel) {
+                        vo.vo_overlay_focus = ov_sel.value();
+                    }
+                }
+
+                if (vo.empty()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, view_options_handlers.to_json_string(vo));
+                }
+                break;
+            }
         }
 
         return SQLITE_OK;
@@ -377,11 +431,29 @@ CREATE TABLE lnav_views (
                    bool do_filtering,
                    string_fragment movement,
                    const char* top_meta,
-                   int64_t selection)
+                   int64_t selection,
+                   nonstd::optional<string_fragment> options)
     {
         auto& tc = lnav_data.ld_views[index];
         auto* time_source
             = dynamic_cast<text_time_translator*>(tc.get_sub_source());
+        view_options vo;
+
+        if (options) {
+            static const intern_string_t OPTIONS_SRC
+                = intern_string::lookup("options");
+
+            auto parse_res = view_options_handlers.parser_for(OPTIONS_SRC)
+                                 .of(options.value());
+            if (parse_res.isErr()) {
+                auto errmsg = parse_res.unwrapErr();
+
+                set_vtable_errmsg(tab, errmsg[0]);
+                return SQLITE_ERROR;
+            }
+
+            vo = parse_res.unwrap();
+        }
 
         if (tc.get_top() != top_row) {
             log_debug(
@@ -506,6 +578,14 @@ CREATE TABLE lnav_views (
             } else if (cur_sel > cur_bot) {
                 tc.set_selection(cur_bot);
             }
+        }
+        if (vo.vo_row_details && tc.get_overlay_source()) {
+            tc.get_overlay_source()->set_show_details_in_overlay(
+                vo.vo_row_details.value() == row_details_t::show);
+            tc.set_needs_update();
+        }
+        if (vo.vo_overlay_focus && tc.get_overlay_source()) {
+            tc.set_overlay_selection(vis_line_t(vo.vo_overlay_focus.value()));
         }
         tc.set_left(left);
         tc.set_paused(is_paused);

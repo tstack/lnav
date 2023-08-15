@@ -202,6 +202,12 @@ handle_paging_key(int ch)
     text_sub_source* tc_tss = tc->get_sub_source();
     bookmarks<vis_line_t>::type& bm = tc->get_bookmarks();
 
+    if (tc->get_overlay_selection()) {
+        if (tc->handle_key(ch)) {
+            return true;
+        }
+    }
+
     auto keyseq = fmt::format(FMT_STRING("x{:02x}"), ch);
     if (handle_keyseq(keyseq.c_str())) {
         return true;
@@ -698,27 +704,6 @@ handle_paging_key(int ch)
                             "no more messages found with opid");
                     }
                 }
-            }
-            break;
-
-        case 'p':
-            if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                auto* fos = dynamic_cast<field_overlay_source*>(
-                    tc->get_overlay_source());
-                auto& top_context = fos->fos_contexts.top();
-                top_context.c_show = !top_context.c_show;
-                if (!top_context.c_show) {
-                    tc->set_overlay_selection(nonstd::nullopt);
-                }
-                tc->set_sync_selection_and_top(top_context.c_show);
-                tc->set_needs_update();
-            } else if (tc == &lnav_data.ld_views[LNV_DB]) {
-                auto* dos = dynamic_cast<db_overlay_source*>(
-                    tc->get_overlay_source());
-
-                dos->dos_active = !dos->dos_active;
-                tc->set_sync_selection_and_top(dos->dos_active);
-                tc->set_needs_update();
             }
             break;
 

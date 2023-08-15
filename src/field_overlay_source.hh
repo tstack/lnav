@@ -42,7 +42,7 @@ class field_overlay_source : public list_overlay_source {
 public:
     explicit field_overlay_source(logfile_sub_source& lss,
                                   textfile_sub_source& tss)
-        : fos_lss(lss), fos_tss(tss), fos_log_helper(lss)
+        : fos_lss(lss), fos_log_helper(lss)
     {
     }
 
@@ -67,6 +67,16 @@ public:
                          std::vector<attr_line_t>& dst,
                          vis_line_t row);
 
+    void set_show_details_in_overlay(bool val) override
+    {
+        this->fos_contexts.top().c_show = val;
+    }
+
+    bool get_show_details_in_overlay() const override
+    {
+        return this->fos_contexts.top().c_show;
+    }
+
     struct context {
         context(std::string prefix, bool show, bool show_discovered)
             : c_prefix(std::move(prefix)), c_show(show),
@@ -79,10 +89,8 @@ public:
         bool c_show_discovered{true};
     };
 
-    bool fos_show_status{true};
     std::stack<context> fos_contexts;
     logfile_sub_source& fos_lss;
-    textfile_sub_source& fos_tss;
     log_data_helper fos_log_helper;
     int fos_known_key_size{0};
     int fos_unknown_key_size{0};

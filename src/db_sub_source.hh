@@ -139,6 +139,16 @@ public:
                                 vis_line_t line,
                                 std::vector<attr_line_t>& value_out) override;
 
+    void set_show_details_in_overlay(bool val) override
+    {
+        this->dos_active = val;
+    }
+
+    bool get_show_details_in_overlay() const override
+    {
+        return this->dos_active;
+    }
+
     bool dos_active{false};
     db_label_source* dos_labels{nullptr};
 };

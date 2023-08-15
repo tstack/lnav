@@ -125,6 +125,10 @@ public:
                                         std::vector<attr_line_t>& value_out)
     {
     }
+
+    virtual void set_show_details_in_overlay(bool val) {}
+
+    virtual bool get_show_details_in_overlay() const { return false; }
 };
 
 class list_input_delegate {
@@ -180,7 +184,7 @@ public:
     }
 
     /** @return The overlay source delegate. */
-    list_overlay_source* get_overlay_source()
+    list_overlay_source* get_overlay_source() const
     {
         return this->lv_overlay_source;
     }
@@ -283,7 +287,7 @@ public:
     vis_line_t rows_available(vis_line_t line, row_direction_t dir) const;
 
     template<typename F>
-    auto map_top_row(F func) ->
+    auto map_top_row(F func) const ->
         typename std::result_of<F(const attr_line_t&)>::type
     {
         if (this->lv_top >= this->get_inner_height()) {
