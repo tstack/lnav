@@ -787,11 +787,15 @@ gantt_source::text_selection_changed(textview_curses& tc)
     const auto& row = this->gs_time_order[sel];
     auto low_tv = row.or_value.otr_range.tr_begin;
     auto high_tv = row.or_value.otr_range.tr_end;
+    auto id_sf = row.or_name;
+    auto level_stats = row.or_value.otr_level_stats;
     auto ov_sel = tc.get_overlay_selection();
     if (ov_sel) {
         const auto& sub = row.or_value.otr_sub_ops[ov_sel.value()];
+        id_sf = sub.ostr_subid;
         low_tv = sub.ostr_range.tr_begin;
         high_tv = sub.ostr_range.tr_end;
+        level_stats = sub.ostr_level_stats;
     }
     high_tv.tv_sec += 1;
     auto low_vl = this->gs_lss.row_for_time(low_tv);
@@ -841,8 +845,8 @@ gantt_source::text_selection_changed(textview_curses& tc)
 
     this->gs_preview_source.replace_with(preview_content);
     this->gs_preview_status_source.get_description().set_value(
-        " OPID %.*s", row.or_name.length(), row.or_name.data());
-    auto err_count = row.or_value.otr_level_stats.lls_error_count;
+        " ID %.*s", id_sf.length(), id_sf.data());
+    auto err_count = level_stats.lls_error_count;
     if (err_count == 0) {
         this->gs_preview_status_source
             .statusview_value_for_field(gantt_status_source::TSF_ERRORS)
@@ -858,8 +862,7 @@ gantt_source::text_selection_changed(textview_curses& tc)
     }
     this->gs_preview_status_source
         .statusview_value_for_field(gantt_status_source::TSF_TOTAL)
-        .set_value("%'d messages ",
-                   row.or_value.otr_level_stats.lls_total_count);
+        .set_value("%'d messages ", level_stats.lls_total_count);
 }
 
 void

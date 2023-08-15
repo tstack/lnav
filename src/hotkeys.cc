@@ -707,6 +707,9 @@ handle_paging_key(int ch)
                     tc->get_overlay_source());
                 auto& top_context = fos->fos_contexts.top();
                 top_context.c_show = !top_context.c_show;
+                if (!top_context.c_show) {
+                    tc->set_overlay_selection(nonstd::nullopt);
+                }
                 tc->set_sync_selection_and_top(top_context.c_show);
                 tc->set_needs_update();
             } else if (tc == &lnav_data.ld_views[LNV_DB]) {
