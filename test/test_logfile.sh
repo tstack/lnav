@@ -399,6 +399,8 @@ EOF
 
 run_cap_test env TZ=America/Los_Angeles ./drive_logfile -t -f access_log ${srcdir}/logfile_access_log.0
 
+run_cap_test env TZ=America/Los_Angeles ${lnav_test} -n ${srcdir}/logfile_access_log.0
+
 run_test ./drive_logfile -t -f generic_log ${srcdir}/logfile_tai64n.0
 
 check_output "tai64n timestamps interpreted incorrectly?" <<EOF

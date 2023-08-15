@@ -981,7 +981,7 @@ ftime_z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
         return;
     }
 
-    if (tm.et_flags & ETF_Z_FOR_UTC) {
+    if (tm.et_gmtoff == 0 && tm.et_flags & ETF_Z_FOR_UTC) {
         PTIME_APPEND('Z');
         return;
     }
