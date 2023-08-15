@@ -56,6 +56,7 @@ struct unit_test {
 };
 
 struct entry {
+    std::string e_date_created;
     std::string e_regex;
     std::string e_test_string;
     std::string e_flags{"gs"};

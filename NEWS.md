@@ -82,6 +82,8 @@ Bug Fixes:
 * A warning will now be issued if a timestamp in a log format's
   sample message does not match completely.  Warnings in the
   configuration can be viewed by passing the `-W` flag.
+* Importing from regex101.com broke due to some changes in the
+  API.
 
 Interface changes:
 * The breadcrumb bar hotkey is moving to backtick `` ` ``
