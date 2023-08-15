@@ -476,25 +476,27 @@ public:
             }
 
             if (opid_cap.is_valid()) {
-                auto opid_iter = sbc.sbc_opids.find(opid_cap);
+                auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_cap);
 
-                if (opid_iter == sbc.sbc_opids.end()) {
+                if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
                     auto opid_copy = opid_cap.to_owned(sbc.sbc_allocator);
-                    auto otr = opid_time_range{tv, tv};
-                    auto emplace_res = sbc.sbc_opids.emplace(opid_copy, otr);
+                    auto otr = opid_time_range{time_range{tv, tv}};
+                    auto emplace_res
+                        = sbc.sbc_opids.los_opid_ranges.emplace(opid_copy, otr);
                     opid_iter = emplace_res.first;
                 } else {
-                    opid_iter->second.otr_end = tv;
+                    opid_iter->second.otr_range.extend_to(tv);
                 }
 
-                opid_iter->second.otr_level_counts[level] += 1;
+                opid_iter->second.otr_level_stats.update_msg_count(level);
 
                 auto& otr = opid_iter->second;
-                if (!otr.otr_description_id && host_cap.is_valid()
-                    && otr.otr_description.empty())
+                if (!otr.otr_description.lod_id && host_cap.is_valid()
+                    && otr.otr_description.lod_elements.empty())
                 {
-                    otr.otr_description_id = get_opid_desc();
-                    otr.otr_description.emplace_back(0, host_cap.to_string());
+                    otr.otr_description.lod_id = get_opid_desc();
+                    otr.otr_description.lod_elements.emplace_back(
+                        0, host_cap.to_string());
                 }
             }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);

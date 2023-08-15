@@ -36,6 +36,8 @@
 
 #include "base/fs_util.hh"
 #include "base/is_utf8.hh"
+#include "base/map_util.hh"
+#include "base/opt_util.hh"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
 #include "command_executor.hh"
@@ -70,48 +72,163 @@ external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<std::shared_ptr<external_log_format>>
     external_log_format::GRAPH_ORDERED_FORMATS;
 
-size_t
-opid_time_range::get_total_msgs() const
+log_level_stats&
+log_level_stats::operator|=(const log_level_stats& rhs)
 {
-    return std::accumulate(this->otr_level_counts.begin(),
-                           this->otr_level_counts.end(),
-                           size_t{0});
+    this->lls_error_count += rhs.lls_error_count;
+    this->lls_warning_count += rhs.lls_warning_count;
+    this->lls_total_count += rhs.lls_total_count;
+
+    return *this;
 }
 
-size_t
-opid_time_range::get_error_count() const
+log_op_description&
+log_op_description::operator|=(const log_op_description& rhs)
 {
-    size_t retval = 0;
-
-    for (const auto level : {
-             log_level_t::LEVEL_ERROR,
-             log_level_t::LEVEL_CRITICAL,
-             log_level_t::LEVEL_FATAL,
-         })
-    {
-        retval += this->otr_level_counts[level];
+    if (!this->lod_id && rhs.lod_id) {
+        this->lod_id = rhs.lod_id;
+    }
+    if (this->lod_elements.size() < rhs.lod_elements.size()) {
+        this->lod_elements = rhs.lod_elements;
     }
 
-    return retval;
+    return *this;
 }
 
 opid_time_range&
 opid_time_range::operator|=(const opid_time_range& rhs)
 {
-    if (rhs.otr_begin < this->otr_begin) {
-        this->otr_begin = rhs.otr_begin;
+    this->otr_range |= rhs.otr_range;
+    this->otr_description |= rhs.otr_description;
+    this->otr_level_stats |= rhs.otr_level_stats;
+    for (const auto& rhs_sub : rhs.otr_sub_ops) {
+        bool found = false;
+
+        for (auto& sub : this->otr_sub_ops) {
+            if (sub.ostr_subid == rhs_sub.ostr_subid) {
+                sub.ostr_range |= rhs_sub.ostr_range;
+                found = true;
+            }
+        }
+        if (!found) {
+            this->otr_sub_ops.emplace_back(rhs_sub);
+        }
     }
-    if (this->otr_end < rhs.otr_end) {
-        this->otr_end = rhs.otr_end;
-    }
-    if (this->otr_description.size() < rhs.otr_description.size()) {
-        this->otr_description = rhs.otr_description;
-    }
-    for (size_t lpc = 0; lpc < this->otr_level_counts.size(); lpc++) {
-        this->otr_level_counts[lpc] += rhs.otr_level_counts[lpc];
-    }
+    std::stable_sort(this->otr_sub_ops.begin(), this->otr_sub_ops.end());
 
     return *this;
+}
+
+void
+log_level_stats::update_msg_count(log_level_t lvl)
+{
+    switch (lvl) {
+        case LEVEL_FATAL:
+        case LEVEL_CRITICAL:
+        case LEVEL_ERROR:
+            this->lls_error_count += 1;
+            break;
+        case LEVEL_WARNING:
+            this->lls_warning_count += 1;
+            break;
+        default:
+            break;
+    }
+    this->lls_total_count += 1;
+}
+
+void
+opid_time_range::close_sub_ops(const string_fragment& subid)
+{
+    for (auto& other_sub : this->otr_sub_ops) {
+        if (other_sub.ostr_subid == subid) {
+            other_sub.ostr_open = false;
+        }
+    }
+}
+
+opid_sub_time_range*
+log_opid_state::sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
+                              log_opid_map::iterator& op_iter,
+                              const string_fragment& subid,
+                              const timeval& tv,
+                              log_level_t level)
+{
+    const auto& opid = op_iter->first;
+    auto sub_iter = this->los_sub_in_use.find(subid);
+    if (sub_iter == this->los_sub_in_use.end()) {
+        auto emp_res
+            = this->los_sub_in_use.emplace(subid.to_owned(alloc), opid);
+
+        sub_iter = emp_res.first;
+    }
+
+    auto retval = sub_iter->first;
+    if (sub_iter->second != opid) {
+        auto other_otr
+            = lnav::map::find(this->los_opid_ranges, sub_iter->second);
+        if (other_otr) {
+            other_otr->get().close_sub_ops(retval);
+        }
+    }
+    sub_iter->second = opid;
+
+    auto& otr = op_iter->second;
+    auto sub_op_iter = otr.otr_sub_ops.rbegin();
+    for (; sub_op_iter != otr.otr_sub_ops.rend(); ++sub_op_iter) {
+        if (sub_op_iter->ostr_open && sub_op_iter->ostr_subid == retval) {
+            break;
+        }
+    }
+    if (sub_op_iter == otr.otr_sub_ops.rend()) {
+        otr.otr_sub_ops.emplace_back(opid_sub_time_range{
+            retval,
+            time_range{tv, tv},
+        });
+        otr.otr_sub_ops.back().ostr_level_stats.update_msg_count(level);
+
+        return &otr.otr_sub_ops.back();
+    } else {
+        sub_op_iter->ostr_range.extend_to(tv);
+        sub_op_iter->ostr_level_stats.update_msg_count(level);
+        return &(*sub_op_iter);
+    }
+}
+
+nonstd::optional<std::string>
+log_format::opid_descriptor::matches(const string_fragment& sf) const
+{
+    if (this->od_extractor.pp_value) {
+        static thread_local auto desc_md
+            = lnav::pcre2pp::match_data::unitialized();
+
+        auto desc_match_res = this->od_extractor.pp_value->capture_from(sf)
+                                  .into(desc_md)
+                                  .matches(PCRE2_NO_UTF_CHECK)
+                                  .ignore_error();
+        if (desc_match_res) {
+            return desc_md.to_string();
+        }
+
+        return nonstd::nullopt;
+    }
+    return sf.to_string();
+}
+
+std::string
+log_format::opid_descriptors::to_string(
+    const std::map<size_t, std::string>& lod) const
+{
+    std::string retval;
+
+    for (size_t lpc = 0; lpc < this->od_descriptors->size(); lpc++) {
+        retval.append(this->od_descriptors->at(lpc).od_prefix);
+        lnav::map::find(lod, lpc) |
+            [&retval](const auto str) { retval.append(str); };
+        retval.append(this->od_descriptors->at(lpc).od_suffix);
+    }
+
+    return retval;
 }
 
 struct line_range
@@ -301,6 +418,152 @@ std::vector<std::shared_ptr<log_format>>&
 log_format::get_root_formats()
 {
     return lf_root_formats;
+}
+
+void
+external_log_format::update_op_description(
+    const std::map<intern_string_t, opid_descriptors>& desc_defs,
+    log_op_description& lod,
+    const pattern* fpat,
+    const lnav::pcre2pp::match_data& md)
+{
+    nonstd::optional<std::string> desc_elem_str;
+    if (!lod.lod_id) {
+        for (const auto& desc_def_pair : desc_defs) {
+            if (lod.lod_id) {
+                break;
+            }
+            for (const auto& desc_def : *desc_def_pair.second.od_descriptors) {
+                auto desc_field_index_iter = fpat->p_value_name_to_index.find(
+                    desc_def.od_field.pp_value);
+
+                if (desc_field_index_iter == fpat->p_value_name_to_index.end())
+                {
+                    continue;
+                }
+                auto desc_cap_opt = md[desc_field_index_iter->second];
+
+                if (!desc_cap_opt) {
+                    continue;
+                }
+
+                desc_elem_str = desc_def.matches(desc_cap_opt.value());
+                if (desc_elem_str) {
+                    lod.lod_id = desc_def_pair.first;
+                }
+            }
+        }
+    }
+    if (lod.lod_id) {
+        const auto& desc_def_v
+            = *desc_defs.find(lod.lod_id.value())->second.od_descriptors;
+        auto& desc_v = lod.lod_elements;
+
+        if (desc_def_v.size() == desc_v.size()) {
+            return;
+        }
+        for (size_t desc_def_index = 0; desc_def_index < desc_def_v.size();
+             desc_def_index++)
+        {
+            const auto& desc_def = desc_def_v[desc_def_index];
+            auto found_desc = desc_v.begin();
+
+            for (; found_desc != desc_v.end(); ++found_desc) {
+                if (found_desc->first == desc_def_index) {
+                    break;
+                }
+            }
+            auto desc_field_index_iter
+                = fpat->p_value_name_to_index.find(desc_def.od_field.pp_value);
+
+            if (desc_field_index_iter == fpat->p_value_name_to_index.end()) {
+                continue;
+            }
+            auto desc_cap_opt = md[desc_field_index_iter->second];
+            if (!desc_cap_opt) {
+                continue;
+            }
+
+            if (!desc_elem_str) {
+                desc_elem_str = desc_def.matches(desc_cap_opt.value());
+            }
+            if (desc_elem_str) {
+                if (found_desc == desc_v.end()) {
+                    desc_v.emplace_back(desc_def_index, desc_elem_str.value());
+                } else if (!desc_elem_str->empty()) {
+                    found_desc->second.append(desc_def.od_joiner);
+                    found_desc->second.append(desc_elem_str.value());
+                }
+            }
+            desc_elem_str = nonstd::nullopt;
+        }
+    }
+}
+
+void
+external_log_format::update_op_description(
+    const std::map<intern_string_t, opid_descriptors>& desc_defs,
+    log_op_description& lod)
+{
+    nonstd::optional<std::string> desc_elem_str;
+    if (!lod.lod_id) {
+        for (const auto& desc_def_pair : desc_defs) {
+            if (lod.lod_id) {
+                break;
+            }
+            for (const auto& desc_def : *desc_def_pair.second.od_descriptors) {
+                auto desc_cap_iter
+                    = this->lf_desc_captures.find(desc_def.od_field.pp_value);
+
+                if (desc_cap_iter == this->lf_desc_captures.end()) {
+                    continue;
+                }
+                desc_elem_str = desc_def.matches(desc_cap_iter->second);
+                if (desc_elem_str) {
+                    lod.lod_id = desc_def_pair.first;
+                }
+            }
+        }
+    }
+    if (lod.lod_id) {
+        const auto& desc_def_v
+            = *desc_defs.find(lod.lod_id.value())->second.od_descriptors;
+        auto& desc_v = lod.lod_elements;
+
+        if (desc_def_v.size() != desc_v.size()) {
+            for (size_t desc_def_index = 0; desc_def_index < desc_def_v.size();
+                 desc_def_index++)
+            {
+                const auto& desc_def = desc_def_v[desc_def_index];
+                auto found_desc = desc_v.begin();
+
+                for (; found_desc != desc_v.end(); ++found_desc) {
+                    if (found_desc->first == desc_def_index) {
+                        break;
+                    }
+                }
+                auto desc_cap_iter
+                    = this->lf_desc_captures.find(desc_def.od_field.pp_value);
+                if (desc_cap_iter == this->lf_desc_captures.end()) {
+                    continue;
+                }
+
+                if (!desc_elem_str) {
+                    desc_elem_str = desc_def.matches(desc_cap_iter->second);
+                }
+                if (desc_elem_str) {
+                    if (found_desc == desc_v.end()) {
+                        desc_v.emplace_back(desc_def_index,
+                                            desc_elem_str.value());
+                    } else if (!desc_elem_str->empty()) {
+                        found_desc->second.append(desc_def.od_joiner);
+                        found_desc->second.append(desc_elem_str.value());
+                    }
+                }
+                desc_elem_str = nonstd::nullopt;
+            }
+        }
+    }
 }
 
 static bool
@@ -507,6 +770,7 @@ struct json_log_userdata {
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
     nonstd::optional<string_fragment> jlu_opid_frag;
+    nonstd::optional<std::string> jlu_subid;
 };
 
 static int read_json_field(yajlpp_parse_context* ypc,
@@ -840,115 +1104,49 @@ external_log_format::scan(logfile& lf,
             }
 
             if (jlu.jlu_opid_frag) {
-                auto opid_iter = sbc.sbc_opids.find(jlu.jlu_opid_frag.value());
-                if (opid_iter == sbc.sbc_opids.end()) {
-                    auto otr
-                        = opid_time_range{ll.get_timeval(), ll.get_timeval()};
-                    auto emplace_res
-                        = sbc.sbc_opids.emplace(jlu.jlu_opid_frag.value(), otr);
+                auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(
+                    jlu.jlu_opid_frag.value());
+                if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
+                    auto otr = opid_time_range{
+                        time_range{ll.get_timeval(), ll.get_timeval()},
+                    };
+                    auto emplace_res = sbc.sbc_opids.los_opid_ranges.emplace(
+                        jlu.jlu_opid_frag.value(), otr);
                     opid_iter = emplace_res.first;
                 } else {
-                    opid_iter->second.otr_end = ll.get_timeval();
+                    opid_iter->second.otr_range.extend_to(ll.get_timeval());
                 }
 
-                opid_iter->second.otr_level_counts[ll.get_msg_level()] += 1;
+                opid_iter->second.otr_level_stats.update_msg_count(
+                    ll.get_msg_level());
+
+                if (jlu.jlu_subid) {
+                    auto subid_frag
+                        = string_fragment::from_str(jlu.jlu_subid.value());
+
+                    auto* ostr
+                        = sbc.sbc_opids.sub_op_in_use(sbc.sbc_allocator,
+                                                      opid_iter,
+                                                      subid_frag,
+                                                      ll.get_timeval(),
+                                                      ll.get_msg_level());
+                    if (ostr != nullptr && ostr->ostr_description.empty()) {
+                        log_op_description sub_desc;
+                        this->update_op_description(
+                            *this->lf_subid_description_def, sub_desc);
+                        if (!sub_desc.lod_elements.empty()) {
+                            auto& sub_desc_def
+                                = this->lf_subid_description_def->at(
+                                    sub_desc.lod_id.value());
+                            ostr->ostr_description = sub_desc_def.to_string(
+                                lnav::map::from_vec(sub_desc.lod_elements));
+                        }
+                    }
+                }
 
                 auto& otr = opid_iter->second;
-                if (!otr.otr_description_id) {
-                    for (const auto& desc_def_pair :
-                         *this->lf_opid_description_def)
-                    {
-                        if (otr.otr_description_id) {
-                            break;
-                        }
-                        for (const auto& desc_def :
-                             *desc_def_pair.second.od_descriptors)
-                        {
-                            auto desc_cap_iter = this->lf_desc_captures.find(
-                                desc_def.od_field.pp_value);
-
-                            if (desc_cap_iter == this->lf_desc_captures.end()) {
-                                continue;
-                            }
-
-                            if (desc_def.od_extractor.pp_value) {
-                                static thread_local auto desc_md
-                                    = lnav::pcre2pp::match_data::unitialized();
-
-                                auto desc_match_res
-                                    = desc_def.od_extractor.pp_value
-                                          ->capture_from(desc_cap_iter->second)
-                                          .into(desc_md)
-                                          .matches(PCRE2_NO_UTF_CHECK)
-                                          .ignore_error();
-                                if (desc_match_res) {
-                                    otr.otr_description_id
-                                        = desc_def_pair.first;
-                                }
-                            } else {
-                                otr.otr_description_id = desc_def_pair.first;
-                            }
-                        }
-                    }
-                }
-
-                if (otr.otr_description_id) {
-                    const auto& desc_def_v
-                        = *this->lf_opid_description_def
-                               ->find(
-                                   opid_iter->second.otr_description_id.value())
-                               ->second.od_descriptors;
-                    auto& desc_v = opid_iter->second.otr_description;
-
-                    if (desc_def_v.size() != desc_v.size()) {
-                        for (size_t desc_def_index = 0;
-                             desc_def_index < desc_def_v.size();
-                             desc_def_index++)
-                        {
-                            const auto& desc_def = desc_def_v[desc_def_index];
-                            auto found_desc = desc_v.begin();
-
-                            for (; found_desc != desc_v.end(); ++found_desc) {
-                                if (found_desc->first == desc_def_index) {
-                                    break;
-                                }
-                            }
-                            auto desc_cap_iter = this->lf_desc_captures.find(
-                                desc_def.od_field.pp_value);
-                            if (desc_cap_iter == this->lf_desc_captures.end()) {
-                                continue;
-                            }
-                            nonstd::optional<std::string> desc_str;
-                            if (desc_def.od_extractor.pp_value) {
-                                static thread_local auto desc_md
-                                    = lnav::pcre2pp::match_data::unitialized();
-
-                                auto match_res
-                                    = desc_def.od_extractor.pp_value
-                                          ->capture_from(desc_cap_iter->second)
-                                          .into(desc_md)
-                                          .matches(PCRE2_NO_UTF_CHECK)
-                                          .ignore_error();
-                                if (match_res) {
-                                    desc_str = desc_md.to_string();
-                                }
-                            } else {
-                                desc_str = desc_cap_iter->second.to_string();
-                            }
-
-                            if (desc_str) {
-                                if (found_desc == desc_v.end()) {
-                                    desc_v.emplace_back(desc_def_index,
-                                                        desc_str.value());
-                                } else {
-                                    found_desc->second.append(
-                                        desc_def.od_joiner);
-                                    found_desc->second.append(desc_str.value());
-                                }
-                            }
-                        }
-                    }
-                }
+                this->update_op_description(*this->lf_opid_description_def,
+                                            otr.otr_description);
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -1026,6 +1224,7 @@ external_log_format::scan(logfile& lf,
         auto level_cap = md[fpat->p_level_field_index];
         auto mod_cap = md[fpat->p_module_field_index];
         auto opid_cap = md[fpat->p_opid_field_index];
+        auto subid_cap = md[fpat->p_subid_field_index];
         auto body_cap = md[fpat->p_body_field_index];
         const char* last;
         struct exttm log_time_tm;
@@ -1080,127 +1279,43 @@ external_log_format::scan(logfile& lf,
         }
 
         if (opid_cap && !opid_cap->empty()) {
-            auto opid_iter = sbc.sbc_opids.find(opid_cap.value());
+            auto opid_iter
+                = sbc.sbc_opids.los_opid_ranges.find(opid_cap.value());
 
-            if (opid_iter == sbc.sbc_opids.end()) {
+            if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
                 auto opid_copy = opid_cap->to_owned(sbc.sbc_allocator);
-                auto otr = opid_time_range{log_tv, log_tv};
-                auto emplace_res = sbc.sbc_opids.emplace(opid_copy, otr);
+                auto otr = opid_time_range{time_range{log_tv, log_tv}};
+                auto emplace_res
+                    = sbc.sbc_opids.los_opid_ranges.emplace(opid_copy, otr);
                 opid_iter = emplace_res.first;
             } else {
-                opid_iter->second.otr_end = log_tv;
+                opid_iter->second.otr_range.extend_to(log_tv);
             }
-
-            opid_iter->second.otr_level_counts[level] += 1;
 
             auto& otr = opid_iter->second;
-            if (!otr.otr_description_id) {
-                for (const auto& desc_def_pair : *this->lf_opid_description_def)
-                {
-                    if (otr.otr_description_id) {
-                        break;
-                    }
-                    for (const auto& desc_def :
-                         *desc_def_pair.second.od_descriptors)
-                    {
-                        auto desc_field_index_iter
-                            = fpat->p_value_name_to_index.find(
-                                desc_def.od_field.pp_value);
 
-                        if (desc_field_index_iter
-                            != fpat->p_value_name_to_index.end())
-                        {
-                            auto desc_cap_opt
-                                = md[desc_field_index_iter->second];
+            otr.otr_level_stats.update_msg_count(level);
 
-                            if (desc_cap_opt) {
-                                if (desc_def.od_extractor.pp_value) {
-                                    static thread_local auto desc_md = lnav::
-                                        pcre2pp::match_data::unitialized();
-
-                                    auto desc_match_res
-                                        = desc_def.od_extractor.pp_value
-                                              ->capture_from(
-                                                  desc_cap_opt.value())
-                                              .into(desc_md)
-                                              .matches(PCRE2_NO_UTF_CHECK)
-                                              .ignore_error();
-                                    if (desc_match_res) {
-                                        otr.otr_description_id
-                                            = desc_def_pair.first;
-                                    }
-                                } else {
-                                    otr.otr_description_id
-                                        = desc_def_pair.first;
-                                }
-                            }
-                        }
+            if (subid_cap && !subid_cap->empty()) {
+                auto* ostr = sbc.sbc_opids.sub_op_in_use(sbc.sbc_allocator,
+                                                         opid_iter,
+                                                         subid_cap.value(),
+                                                         log_tv,
+                                                         level);
+                if (ostr != nullptr && ostr->ostr_description.empty()) {
+                    log_op_description sub_desc;
+                    this->update_op_description(
+                        *this->lf_subid_description_def, sub_desc, fpat, md);
+                    if (!sub_desc.lod_elements.empty()) {
+                        auto& sub_desc_def = this->lf_subid_description_def->at(
+                            sub_desc.lod_id.value());
+                        ostr->ostr_description = sub_desc_def.to_string(
+                            lnav::map::from_vec(sub_desc.lod_elements));
                     }
                 }
             }
-
-            if (otr.otr_description_id) {
-                const auto& desc_def_v
-                    = *this->lf_opid_description_def
-                           ->find(opid_iter->second.otr_description_id.value())
-                           ->second.od_descriptors;
-                auto& desc_v = opid_iter->second.otr_description;
-
-                if (desc_def_v.size() != desc_v.size()) {
-                    for (size_t desc_def_index = 0;
-                         desc_def_index < desc_def_v.size();
-                         desc_def_index++)
-                    {
-                        const auto& desc_def = desc_def_v[desc_def_index];
-                        auto found_desc = false;
-
-                        for (const auto& desc_pair : desc_v) {
-                            if (desc_pair.first == desc_def_index) {
-                                found_desc = true;
-                                break;
-                            }
-                        }
-                        if (!found_desc) {
-                            auto desc_field_index_iter
-                                = fpat->p_value_name_to_index.find(
-                                    desc_def.od_field.pp_value);
-
-                            if (desc_field_index_iter
-                                != fpat->p_value_name_to_index.end())
-                            {
-                                auto desc_cap_opt
-                                    = md[desc_field_index_iter->second];
-
-                                if (desc_cap_opt) {
-                                    if (desc_def.od_extractor.pp_value) {
-                                        static thread_local auto desc_md
-                                            = lnav::pcre2pp::match_data::
-                                                unitialized();
-
-                                        auto match_res
-                                            = desc_def.od_extractor.pp_value
-                                                  ->capture_from(
-                                                      desc_cap_opt.value())
-                                                  .into(desc_md)
-                                                  .matches(PCRE2_NO_UTF_CHECK)
-                                                  .ignore_error();
-                                        if (match_res) {
-                                            desc_v.emplace_back(
-                                                desc_def_index,
-                                                desc_md.to_string());
-                                        }
-                                    } else {
-                                        desc_v.emplace_back(
-                                            desc_def_index,
-                                            desc_cap_opt->to_string());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
+            this->update_op_description(
+                *this->lf_opid_description_def, otr.otr_description, fpat, md);
             opid = hash_str(opid_cap->data(), opid_cap->length());
         }
 
@@ -1644,12 +1759,15 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
         jlu->jlu_base_line->set_opid(opid);
 
         auto& sbc = *jlu->jlu_batch_context;
-        auto opid_iter = sbc.sbc_opids.find(frag);
-        if (opid_iter == sbc.sbc_opids.end()) {
+        auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(frag);
+        if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
             jlu->jlu_opid_frag = frag.to_owned(sbc.sbc_allocator);
         } else {
             jlu->jlu_opid_frag = opid_iter->first;
         }
+    }
+    if (jlu->jlu_format->elf_subid_field == field_name) {
+        jlu->jlu_subid = frag.to_string();
     }
 
     if (jlu->jlu_format->lf_desc_fields.contains(field_name)) {
@@ -2357,6 +2475,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             if (name == this->elf_opid_field) {
                 pat.p_opid_field_index = named_cap.get_index();
             }
+            if (name == this->elf_subid_field) {
+                pat.p_subid_field_index = named_cap.get_index();
+            }
             if (name == this->elf_body_field) {
                 pat.p_body_field_index = named_cap.get_index();
             }
@@ -2639,6 +2760,25 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                         .with_reason(
                             attr_line_t("unknown value name ")
                                 .append_quoted(opid_desc.od_field.pp_value))
+                        .with_snippets(this->get_snippets()));
+            } else {
+                this->lf_desc_fields.insert(iter->first);
+            }
+        }
+    }
+
+    for (const auto& subid_desc_pair : *this->lf_subid_description_def) {
+        for (const auto& subid_desc : *subid_desc_pair.second.od_descriptors) {
+            auto iter = this->elf_value_defs.find(subid_desc.od_field.pp_value);
+            if (iter == this->elf_value_defs.end()) {
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid subid description field ")
+                            .append_quoted(lnav::roles::symbol(
+                                subid_desc.od_field.pp_path.to_string())))
+                        .with_reason(
+                            attr_line_t("unknown value name ")
+                                .append_quoted(subid_desc.od_field.pp_value))
                         .with_snippets(this->get_snippets()));
             } else {
                 this->lf_desc_fields.insert(iter->first);

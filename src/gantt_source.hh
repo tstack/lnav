@@ -85,10 +85,8 @@ public:
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
 
     struct opid_description_defs {
-        std::map<
-            intern_string_t,
-            std::map<intern_string_t,
-                     std::shared_ptr<std::vector<log_format::opid_descriptor>>>>
+        std::map<intern_string_t,
+                 std::map<intern_string_t, log_format::opid_descriptors>>
             odd_format_to_desc;
     };
 
@@ -98,7 +96,14 @@ public:
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
 
+    using gantt_subid_map
+        = robin_hood::unordered_map<string_fragment,
+                                    bool,
+                                    frag_hasher,
+                                    std::equal_to<string_fragment>>;
+
     gantt_opid_map gs_opid_map;
+    gantt_subid_map gs_subid_map;
 
     struct opid_row {
         string_fragment or_name;
@@ -128,6 +133,13 @@ public:
                              int y,
                              int bottom,
                              attr_line_t& value_out) override;
+
+    nonstd::optional<attr_line_t> list_header_for_overlay(
+        const listview_curses& lv, vis_line_t line) override;
+
+    void list_value_for_overlay(const listview_curses& lv,
+                                vis_line_t line,
+                                std::vector<attr_line_t>& value_out) override;
 
 private:
     std::shared_ptr<gantt_source> gho_src;

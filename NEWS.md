@@ -84,6 +84,8 @@ Bug Fixes:
   configuration can be viewed by passing the `-W` flag.
 
 Interface changes:
+* The breadcrumb bar hotkey is moving to backtick `` ` ``
+  instead of `ENTER`.
 * The DB view now uses the "alt-text" theme style to draw
   alternating rows instead of being hard-coded to bold.  The
   alternation is also now done in groups of two rows instead

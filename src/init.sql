@@ -69,9 +69,9 @@ INSERT INTO http_status_codes VALUES (511, 'Network Authentication Required');
 CREATE TABLE lnav_example_log
 (
     log_line        INTEGER PRIMARY KEY,
-    log_part        TEXT collate naturalnocase,
-    log_time        datetime,
-    log_actual_time datetime hidden,
+    log_part        TEXT COLLATE naturalnocase,
+    log_time        DATETIME,
+    log_actual_time DATETIME hidden,
     log_idle_msecs  int,
     log_level       TEXT collate loglevel,
     log_mark        boolean,
@@ -94,17 +94,17 @@ FROM lnav_views
 WHERE name = (SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
 
 INSERT INTO lnav_example_log
-VALUES (0, null, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0,
-        'info', 0, null, null, null, 'hw', 2, 1486094706000, '/tmp/log',
+VALUES (0, NULL, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0,
+        'info', 0, NULL, NULL, NULL, 'hw', 2, 1486094706000, '/tmp/log',
         '2017-02-03T04:05:06.100 hw(2): Hello, World!', 'Hello, World!'),
-       (1, null, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100,
-        'error', 0, null, null, null, 'gw', 4, 1486094706000, '/tmp/log',
+       (1, NULL, '2017-02-03T04:05:06.200', '2017-02-03T04:05:06.200', 100,
+        'error', 0, NULL, NULL, NULL, 'gw', 4, 1486094706000, '/tmp/log',
         '2017-02-03T04:05:06.200 gw(4): Goodbye, World!', 'Goodbye, World!'),
        (2, 'new', '2017-02-03T04:25:06.200', '2017-02-03T04:25:06.200', 1200000,
-        'warn', 0, null, null, null, 'gw', 1, 1486095906000, '/tmp/log',
+        'warn', 0, NULL, NULL, NULL, 'gw', 1, 1486095906000, '/tmp/log',
         '2017-02-03T04:25:06.200 gw(1): Goodbye, World!', 'Goodbye, World!'),
        (3, 'new', '2017-02-03T04:55:06.200', '2017-02-03T04:55:06.200', 1800000,
-        'debug', 0, null, null, null, 'gw', 10, 1486097706000, '/tmp/log',
+        'debug', 0, NULL, NULL, NULL, 'gw', 10, 1486097706000, '/tmp/log',
         '2017-02-03T04:55:06.200 gw(10): Goodbye, World!', 'Goodbye, World!');
 
 CREATE TABLE lnav_user_notifications
@@ -128,8 +128,8 @@ CREATE TABLE lnav_user_notifications
 );
 
 INSERT INTO lnav_user_notifications (id, priority, expiration, message)
-VALUES ('org.lnav.breadcrumb.focus', -1, datetime('now', '+1 minute'),
-        'Press ENTER to focus on the breadcrumb bar');
+VALUES ('org.lnav.breadcrumb.focus', -1, DATETIME('now', '+1 minute'),
+        'Press <span class="-lnav_status-styles_hotkey">`</span> to focus on the breadcrumb bar');
 
 CREATE TABLE lnav_views_echo AS
 SELECT name, top, "left", height, inner_height, top_time, search

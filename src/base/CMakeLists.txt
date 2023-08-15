@@ -54,6 +54,7 @@ add_library(
         lnav.console.into.hh
         log_level_enum.hh
         lrucache.hpp
+        map_util.hh
         math_util.hh
         network.tcp.hh
         paths.hh

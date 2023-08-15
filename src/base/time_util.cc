@@ -249,3 +249,38 @@ exttm::to_timeval() const
 
     return retval;
 }
+
+time_range&
+time_range::operator|=(const time_range& rhs)
+{
+    if (rhs.tr_begin < this->tr_begin) {
+        this->tr_begin = rhs.tr_begin;
+    }
+    if (this->tr_end < rhs.tr_end) {
+        this->tr_end = rhs.tr_end;
+    }
+
+    return *this;
+}
+
+void
+time_range::extend_to(const timeval& tv)
+{
+    if (tv < this->tr_begin) {
+        // logs aren't always in time-order
+        this->tr_begin = tv;
+    } else if (this->tr_end < tv) {
+        this->tr_end = tv;
+    }
+}
+
+std::chrono::milliseconds
+time_range::duration() const
+{
+    auto diff = this->tr_end - this->tr_begin;
+
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::seconds(diff.tv_sec))
+        + std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::microseconds(diff.tv_usec));
+}

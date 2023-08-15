@@ -547,14 +547,22 @@ public:
         std::string od_prefix{" "};
         std::string od_suffix;
         std::string od_joiner{", "};
+
+        nonstd::optional<std::string> matches(const string_fragment& sf) const;
     };
 
     struct opid_descriptors {
         std::shared_ptr<std::vector<opid_descriptor>> od_descriptors;
+
+        std::string to_string(const std::map<size_t, std::string>& lod) const;
     };
 
     std::shared_ptr<std::map<intern_string_t, opid_descriptors>>
         lf_opid_description_def{
+            std::make_shared<std::map<intern_string_t, opid_descriptors>>()};
+
+    std::shared_ptr<std::map<intern_string_t, opid_descriptors>>
+        lf_subid_description_def{
             std::make_shared<std::map<intern_string_t, opid_descriptors>>()};
 
     ArenaAlloc::Alloc<char> lf_desc_allocator{2 * 1024};

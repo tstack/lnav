@@ -33,6 +33,7 @@
 #include <sys/types.h>
 
 #undef rounddown
+#undef roundup
 
 /**
  * Round down a number based on a given granularity.
@@ -45,6 +46,17 @@ inline int
 rounddown(Size size, Step step)
 {
     return size - (size % step);
+}
+
+template<typename Size, typename Step>
+inline auto
+roundup(Size size, Step step)
+{
+    auto retval = size + (step - 1);
+
+    retval -= (retval % step);
+
+    return retval;
 }
 
 inline int

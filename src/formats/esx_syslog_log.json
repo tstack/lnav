@@ -25,6 +25,7 @@
         },
         "opid-field": "opid",
         "opid": {
+            "subid": "log_syslog_tag",
             "description": {
                 "settingsd": {
                     "format": [

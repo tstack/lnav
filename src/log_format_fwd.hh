@@ -47,15 +47,42 @@
 
 class log_format;
 
-struct opid_time_range {
-    struct timeval otr_begin;
-    struct timeval otr_end;
-    std::array<size_t, log_level_t::LEVEL__MAX> otr_level_counts;
-    nonstd::optional<intern_string_t> otr_description_id;
-    std::vector<std::pair<size_t, std::string>> otr_description;
+struct log_level_stats {
+    uint32_t lls_error_count{0};
+    uint32_t lls_warning_count{0};
+    uint32_t lls_total_count{0};
 
-    size_t get_total_msgs() const;
-    size_t get_error_count() const;
+    log_level_stats& operator|=(const log_level_stats& rhs);
+    void update_msg_count(log_level_t lvl);
+};
+
+struct log_op_description {
+    nonstd::optional<intern_string_t> lod_id;
+    std::vector<std::pair<size_t, std::string>> lod_elements;
+
+    log_op_description& operator|=(const log_op_description& rhs);
+};
+
+struct opid_sub_time_range {
+    string_fragment ostr_subid;
+    time_range ostr_range;
+    bool ostr_open{true};
+    log_level_stats ostr_level_stats;
+    std::string ostr_description;
+
+    bool operator<(const opid_sub_time_range& rhs) const
+    {
+        return this->ostr_range < rhs.ostr_range;
+    }
+};
+
+struct opid_time_range {
+    time_range otr_range;
+    log_level_stats otr_level_stats;
+    log_op_description otr_description;
+    std::vector<opid_sub_time_range> otr_sub_ops;
+
+    void close_sub_ops(const string_fragment& subid);
 
     opid_time_range& operator|=(const opid_time_range& rhs);
 };
@@ -65,9 +92,25 @@ using log_opid_map = robin_hood::unordered_map<string_fragment,
                                                frag_hasher,
                                                std::equal_to<string_fragment>>;
 
+using sub_opid_map = robin_hood::unordered_map<string_fragment,
+                                               string_fragment,
+                                               frag_hasher,
+                                               std::equal_to<string_fragment>>;
+
+struct log_opid_state {
+    log_opid_map los_opid_ranges;
+    sub_opid_map los_sub_in_use;
+
+    opid_sub_time_range* sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
+                                       log_opid_map::iterator& op_iter,
+                                       const string_fragment& subid,
+                                       const timeval& tv,
+                                       log_level_t level);
+};
+
 struct scan_batch_context {
     ArenaAlloc::Alloc<char>& sbc_allocator;
-    log_opid_map sbc_opids;
+    log_opid_state sbc_opids;
     std::string sbc_cached_level_strings[4];
     log_level_t sbc_cached_level_values[4];
     size_t sbc_cached_level_count{0};

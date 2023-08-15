@@ -165,7 +165,7 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
 logfile::logfile(std::string filename, const logfile_open_options& loo)
     : lf_filename(std::move(filename)), lf_options(loo)
 {
-    this->lf_opids.writeAccess()->reserve(64);
+    this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
 }
 
 logfile::~logfile() {}
@@ -500,6 +500,14 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         this->lf_partial_line = false;
         this->lf_longest_line = 0;
         this->lf_sort_needed = true;
+        {
+            safe::WriteAccess<logfile::safe_opid_state> writable_opid_map(
+                this->lf_opids);
+
+            writable_opid_map->los_opid_ranges.clear();
+            writable_opid_map->los_sub_in_use.clear();
+        }
+        this->lf_allocator.reset();
     }
     this->lf_zoned_to_local_state = dts_cfg.c_zoned_to_local;
 
@@ -626,7 +634,7 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                 "loading file... %s:%d", this->lf_filename.c_str(), begin_size);
         }
         scan_batch_context sbc{this->lf_allocator};
-        sbc.sbc_opids.reserve(32);
+        sbc.sbc_opids.los_opid_ranges.reserve(32);
         auto prev_range = file_range{off};
         while (limit > 0) {
             auto load_result = this->lf_line_buffer.load_next_line(prev_range);
@@ -861,26 +869,25 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         this->lf_stat = st;
 
         {
-            safe::WriteAccess<logfile::safe_opid_map> writable_opid_map(
+            safe::WriteAccess<logfile::safe_opid_state> writable_opid_map(
                 this->lf_opids);
 
-            for (const auto& opid_pair : sbc.sbc_opids) {
-                auto opid_iter = writable_opid_map->find(opid_pair.first);
+            for (const auto& opid_pair : sbc.sbc_opids.los_opid_ranges) {
+                auto opid_iter
+                    = writable_opid_map->los_opid_ranges.find(opid_pair.first);
 
-                if (opid_iter == writable_opid_map->end()) {
-                    writable_opid_map->emplace(opid_pair);
+                if (opid_iter == writable_opid_map->los_opid_ranges.end()) {
+                    writable_opid_map->los_opid_ranges.emplace(opid_pair);
                 } else {
-                    if (opid_pair.second.otr_begin
-                        < opid_iter->second.otr_begin)
-                    {
-                        opid_iter->second.otr_begin
-                            = opid_pair.second.otr_begin;
-                    }
-                    if (opid_iter->second.otr_end < opid_pair.second.otr_end) {
-                        opid_iter->second.otr_end = opid_pair.second.otr_end;
-                    }
+                    opid_iter->second |= opid_pair.second;
                 }
             }
+            log_debug(
+                "%s: opid_map size: count=%zu; sizeof(otr)=%zu; alloc=%zu",
+                this->lf_filename.c_str(),
+                writable_opid_map->los_opid_ranges.size(),
+                sizeof(opid_time_range),
+                this->lf_allocator.getNumBytesAllocated());
         }
 
         if (sort_needed) {

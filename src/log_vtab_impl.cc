@@ -1269,19 +1269,19 @@ log_cursor::string_constraint::matches(const std::string& sf) const
     }
 }
 
-struct time_range {
-    nonstd::optional<timeval> tr_begin;
-    nonstd::optional<timeval> tr_end;
+struct vtab_time_range {
+    nonstd::optional<timeval> vtr_begin;
+    nonstd::optional<timeval> vtr_end;
 
-    bool empty() const { return !this->tr_begin && !this->tr_end; }
+    bool empty() const { return !this->vtr_begin && !this->vtr_end; }
 
     void add(const timeval& tv)
     {
-        if (!this->tr_begin || tv < this->tr_begin) {
-            this->tr_begin = tv;
+        if (!this->vtr_begin || tv < this->vtr_begin) {
+            this->vtr_begin = tv;
         }
-        if (!this->tr_end || this->tr_end < tv) {
-            this->tr_end = tv;
+        if (!this->vtr_end || this->vtr_end < tv) {
+            this->vtr_end = tv;
         }
     }
 };
@@ -1329,7 +1329,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_curr_line = 0_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
 
-    nonstd::optional<time_range> log_time_range;
+    nonstd::optional<vtab_time_range> log_time_range;
     nonstd::optional<log_cursor::opid_hash> opid_val;
     std::vector<log_cursor::string_constraint> log_path_constraints;
     std::vector<log_cursor::string_constraint> log_unique_path_constraints;
@@ -1382,23 +1382,23 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             case SQLITE_INDEX_CONSTRAINT_EQ:
                             case SQLITE_INDEX_CONSTRAINT_IS:
                                 if (!log_time_range) {
-                                    log_time_range = time_range{};
+                                    log_time_range = vtab_time_range{};
                                 }
                                 log_time_range->add(tv);
                                 break;
                             case SQLITE_INDEX_CONSTRAINT_GT:
                             case SQLITE_INDEX_CONSTRAINT_GE:
                                 if (!log_time_range) {
-                                    log_time_range = time_range{};
+                                    log_time_range = vtab_time_range{};
                                 }
-                                log_time_range->tr_begin = tv;
+                                log_time_range->vtr_begin = tv;
                                 break;
                             case SQLITE_INDEX_CONSTRAINT_LT:
                             case SQLITE_INDEX_CONSTRAINT_LE:
                                 if (!log_time_range) {
-                                    log_time_range = time_range{};
+                                    log_time_range = vtab_time_range{};
                                 }
-                                log_time_range->tr_end = tv;
+                                log_time_range->vtr_end = tv;
                                 break;
                         }
                     }
@@ -1426,23 +1426,23 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                 case SQLITE_INDEX_CONSTRAINT_EQ:
                                 case SQLITE_INDEX_CONSTRAINT_IS:
                                     if (!log_time_range) {
-                                        log_time_range = time_range{};
+                                        log_time_range = vtab_time_range{};
                                     }
                                     log_time_range->add(tv);
                                     break;
                                 case SQLITE_INDEX_CONSTRAINT_GT:
                                 case SQLITE_INDEX_CONSTRAINT_GE:
                                     if (!log_time_range) {
-                                        log_time_range = time_range{};
+                                        log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->tr_begin = tv;
+                                    log_time_range->vtr_begin = tv;
                                     break;
                                 case SQLITE_INDEX_CONSTRAINT_LT:
                                 case SQLITE_INDEX_CONSTRAINT_LE:
                                     if (!log_time_range) {
-                                        log_time_range = time_range{};
+                                        log_time_range = vtab_time_range{};
                                     }
-                                    log_time_range->tr_end = tv;
+                                    log_time_range->vtr_end = tv;
                                     break;
                             }
                             break;
@@ -1474,21 +1474,24 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             auto opid = from_sqlite<string_fragment>()(
                                 argc, argv, lpc);
                             if (!log_time_range) {
-                                log_time_range = time_range{};
+                                log_time_range = vtab_time_range{};
                             }
                             for (const auto& file_data : *vt->lss) {
                                 if (file_data->get_file_ptr() == nullptr) {
                                     continue;
                                 }
-                                safe::ReadAccess<logfile::safe_opid_map>
+                                safe::ReadAccess<logfile::safe_opid_state>
                                     r_opid_map(
                                         file_data->get_file_ptr()->get_opids());
-                                const auto& iter = r_opid_map->find(opid);
-                                if (iter == r_opid_map->end()) {
+                                const auto& iter
+                                    = r_opid_map->los_opid_ranges.find(opid);
+                                if (iter == r_opid_map->los_opid_ranges.end()) {
                                     continue;
                                 }
-                                log_time_range->add(iter->second.otr_begin);
-                                log_time_range->add(iter->second.otr_end);
+                                log_time_range->add(
+                                    iter->second.otr_range.tr_begin);
+                                log_time_range->add(
+                                    iter->second.otr_range.tr_end);
                             }
 
                             opid_val = log_cursor::opid_hash{
@@ -1508,7 +1511,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             auto found = false;
 
                             if (!log_time_range) {
-                                log_time_range = time_range{};
+                                log_time_range = vtab_time_range{};
                             }
                             for (const auto& file_data : *vt->lss) {
                                 auto* lf = file_data->get_file_ptr();
@@ -1541,7 +1544,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             auto found = false;
 
                             if (!log_time_range) {
-                                log_time_range = time_range{};
+                                log_time_range = vtab_time_range{};
                             }
                             for (const auto& file_data : *vt->lss) {
                                 auto* lf = file_data->get_file_ptr();
@@ -1673,25 +1676,25 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     } else if (log_time_range->empty()) {
         p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
     } else {
-        if (log_time_range->tr_begin) {
+        if (log_time_range->vtr_begin) {
             auto vl_opt
-                = vt->lss->row_for_time(log_time_range->tr_begin.value());
+                = vt->lss->row_for_time(log_time_range->vtr_begin.value());
             if (!vl_opt) {
                 p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
             } else {
                 p_cur->log_cursor.lc_curr_line = vl_opt.value();
             }
         }
-        if (log_time_range->tr_end) {
+        if (log_time_range->vtr_end) {
             auto vl_max_opt
-                = vt->lss->row_for_time(log_time_range->tr_end.value());
+                = vt->lss->row_for_time(log_time_range->vtr_end.value());
             if (vl_max_opt) {
                 p_cur->log_cursor.lc_end_line = vl_max_opt.value();
                 for (const auto& msg_info :
                      vt->lss->window_at(vl_max_opt.value(),
                                         vis_line_t(vt->lss->text_line_count())))
                 {
-                    if (log_time_range->tr_end.value()
+                    if (log_time_range->vtr_end.value()
                         < msg_info.get_logline().get_timeval())
                     {
                         break;

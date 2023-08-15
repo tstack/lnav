@@ -111,6 +111,7 @@ public:
         int p_level_field_index{-1};
         int p_module_field_index{-1};
         int p_opid_field_index{-1};
+        int p_subid_field_index{-1};
         int p_body_field_index{-1};
         int p_timestamp_end{-1};
         bool p_module_format{false};
@@ -347,6 +348,7 @@ public:
     intern_string_t elf_body_field;
     intern_string_t elf_module_id_field;
     intern_string_t elf_opid_field;
+    intern_string_t elf_subid_field;
     std::map<log_level_t, level_pattern> elf_level_patterns;
     std::vector<std::pair<int64_t, log_level_t>> elf_level_pairs;
     bool elf_container{false};
@@ -390,6 +392,16 @@ public:
     };
 
     elf_type_t elf_type{elf_type_t::ELF_TYPE_TEXT};
+
+    void update_op_description(
+        const std::map<intern_string_t, opid_descriptors>& desc_def,
+        log_op_description& lod,
+        const pattern* fpat,
+        const lnav::pcre2pp::match_data& md);
+
+    void update_op_description(
+        const std::map<intern_string_t, opid_descriptors>& desc_def,
+        log_op_description& lod);
 
     void json_append_to_cache(const char* value, ssize_t len)
     {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,72 +27,48 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_humanize_time_hh
-#define lnav_humanize_time_hh
+#ifndef lnav_map_util_hh
+#define lnav_map_util_hh
 
-#include <string>
-
-#include <sys/time.h>
+#include <functional>
+#include <map>
+#include <type_traits>
+#include <vector>
 
 #include "optional.hpp"
 
-namespace humanize {
-namespace time {
+namespace lnav {
+namespace map {
 
-class point {
-public:
-    static point from_tv(const struct timeval& tv);
-
-    point& with_recent_point(const struct timeval& tv)
-    {
-        this->p_recent_point = tv;
-        return *this;
+template<typename C>
+nonstd::optional<
+    std::reference_wrapper<std::conditional_t<std::is_const<C>::value,
+                                              const typename C::mapped_type,
+                                              typename C::mapped_type>>>
+find(C& container, typename C::key_type& key)
+{
+    auto iter = container.find(key);
+    if (iter != container.end()) {
+        return nonstd::make_optional(std::ref(iter->second));
     }
 
-    point& with_convert_to_local(bool convert_to_local)
-    {
-        this->p_convert_to_local = convert_to_local;
-        return *this;
+    return nonstd::nullopt;
+}
+
+template<typename K, typename V, typename M = std::map<K, V>>
+M
+from_vec(const std::vector<std::pair<K, V>>& container)
+{
+    M retval;
+
+    for (const auto& elem : container) {
+        retval[elem.first] = elem.second;
     }
 
-    std::string as_time_ago() const;
+    return retval;
+}
 
-    std::string as_precise_time_ago() const;
-
-private:
-    explicit point(const struct timeval& tv)
-        : p_past_point{tv.tv_sec, tv.tv_usec}
-    {
-    }
-
-    struct timeval p_past_point;
-    nonstd::optional<struct timeval> p_recent_point;
-    bool p_convert_to_local{false};
-};
-
-class duration {
-public:
-    static duration from_tv(const struct timeval& tv);
-
-    template<class Rep, class Period>
-    duration& with_resolution(const std::chrono::duration<Rep, Period>& res)
-    {
-        this->d_msecs_resolution
-            = std::chrono::duration_cast<std::chrono::milliseconds>(res)
-                  .count();
-        return *this;
-    }
-
-    std::string to_string() const;
-
-private:
-    explicit duration(const struct timeval& tv) : d_timeval(tv) {}
-
-    struct timeval d_timeval;
-    uint64_t d_msecs_resolution{1};
-};
-
-}  // namespace time
-}  // namespace humanize
+}  // namespace map
+}  // namespace lnav
 
 #endif
