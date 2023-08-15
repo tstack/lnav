@@ -469,11 +469,12 @@ handle_rl_key(int ch)
     switch (ch) {
         case KEY_PPAGE:
         case KEY_NPAGE:
-        case KEY_CTRL_P:
+        case KEY_CTRL('p'):
             handle_paging_key(ch);
             break;
 
-        case KEY_CTRL_RBRACKET:
+        case KEY_ESCAPE:
+        case KEY_CTRL(']'):
             lnav_data.ld_rl_view->abort();
             break;
 
@@ -932,7 +933,8 @@ handle_key(int ch)
 
                 case ln_mode_t::BUSY:
                     switch (ch) {
-                        case KEY_CTRL_RBRACKET:
+                        case KEY_ESCAPE:
+                        case KEY_CTRL(']'):
                             log_vtab_data.lvd_looping = false;
                             break;
                     }
@@ -1360,6 +1362,8 @@ looper()
             lnav_data.ld_views[lpc].set_scroll_action(sb);
             lnav_data.ld_views[lpc].set_search_action(update_hits);
             lnav_data.ld_views[lpc].tc_cursor_role = role_t::VCR_CURSOR_LINE;
+            lnav_data.ld_views[lpc].tc_disabled_cursor_role
+                = role_t::VCR_DISABLED_CURSOR_LINE;
             lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
         }
 

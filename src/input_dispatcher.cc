@@ -100,7 +100,8 @@ input_dispatcher::new_input(const struct timeval& current_time, int ch)
                     switch (this->id_escape_matcher(keyseq.data())) {
                         case escape_match_t::NONE: {
                             for (int lpc = 0; this->id_escape_buffer[lpc];
-                                 lpc++) {
+                                 lpc++)
+                            {
                                 handled = this->id_key_handler(
                                     this->id_escape_buffer[lpc]);
                             }
@@ -149,7 +150,7 @@ input_dispatcher::poll(const struct timeval& current_time)
 
         timersub(&current_time, &this->id_escape_start_time, &diff);
         if (escape_threshold < diff) {
-            this->id_key_handler(KEY_CTRL_RBRACKET);
+            this->id_key_handler(KEY_ESCAPE);
             this->id_escape_index = 0;
         }
     }

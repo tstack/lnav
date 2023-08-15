@@ -340,6 +340,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/cursor-line",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "disabled-cursor-line": {
+                                            "description": "Styling for the cursor line when it is disabled",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/disabled-cursor-line",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "adjusted-time": {
                                             "description": "Styling for timestamps that have been adjusted",
                                             "title": "/ui/theme-defs/<theme_name>/styles/adjusted-time",

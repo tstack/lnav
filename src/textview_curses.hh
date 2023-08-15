@@ -781,6 +781,7 @@ public:
     std::function<void(textview_curses&)> tc_state_event_handler;
 
     nonstd::optional<role_t> tc_cursor_role;
+    nonstd::optional<role_t> tc_disabled_cursor_role;
 
 protected:
     class grep_highlighter {

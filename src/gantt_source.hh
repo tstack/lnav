@@ -127,7 +127,7 @@ public:
 
 class gantt_header_overlay : public list_overlay_source {
 public:
-    gantt_header_overlay(std::shared_ptr<gantt_source> src);
+    explicit gantt_header_overlay(std::shared_ptr<gantt_source> src);
 
     bool list_static_overlay(const listview_curses& lv,
                              int y,

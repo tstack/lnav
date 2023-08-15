@@ -981,14 +981,14 @@ handle_paging_key(int ch)
             }
             break;
 
-        case KEY_CTRL_W:
+        case KEY_CTRL('w'):
             execute_command(ec,
                             lnav_data.ld_views[LNV_LOG].get_word_wrap()
                                 ? "disable-word-wrap"
                                 : "enable-word-wrap");
             break;
 
-        case KEY_CTRL_P:
+        case KEY_CTRL('p'):
             lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
             break;
 

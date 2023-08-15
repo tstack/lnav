@@ -47,8 +47,12 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "#d7005f",
+                        "background-color": "#7f005f",
                         "bold": true
+                    },
+                    "disabled-cursor-line": {
+                        "color": "$cyan",
+                        "background-color": "#5f005f"
                     },
                     "adjusted-time": {
                         "color": "$magenta"

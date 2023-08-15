@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Timothy Stack
+ * Copyright (c) 2023, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,51 +25,18 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file input_dispatcher.hh
  */
 
-#ifndef INPUT_DISPATCHER_HH
-#define INPUT_DISPATCHER_HH
+#ifndef lnav_keycodes_hh
+#define lnav_keycodes_hh
 
-#include <functional>
+inline constexpr int
+KEY_CTRL(char k)
+{
+    return k & 0x1f;
+}
 
-#include <sys/types.h>
-
-#include "base/keycodes.hh"
-
-class input_dispatcher {
-public:
-    void new_input(const struct timeval& current_time, int ch);
-
-    void poll(const struct timeval& current_time);
-
-    bool in_escape() const { return this->id_escape_index > 0; }
-
-    enum class escape_match_t {
-        NONE,
-        PARTIAL,
-        FULL,
-    };
-
-    std::function<escape_match_t(const char*)> id_escape_matcher;
-    std::function<bool(int)> id_key_handler;
-    std::function<void(const char*)> id_escape_handler;
-    std::function<void()> id_mouse_handler;
-    std::function<void(const char*)> id_unhandled_handler;
-
-private:
-    void reset_escape_buffer(int ch,
-                             const struct timeval& current_time,
-                             ssize_t expected_size = -1);
-    void append_to_escape_buffer(int ch);
-
-    char id_escape_buffer[32];
-    ssize_t id_escape_index{0};
-    ssize_t id_escape_expected_size{-1};
-    struct timeval id_escape_start_time {
-        0, 0
-    };
-};
+#define KEY_ESCAPE 0x1b
+#define KEY_DELETE 0x7f
 
 #endif

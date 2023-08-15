@@ -55,6 +55,7 @@ enum class role_t : int32_t {
     VCR_ALT_ROW, /*< Highlight for alternating rows in a list */
     VCR_HIDDEN,
     VCR_CURSOR_LINE,
+    VCR_DISABLED_CURSOR_LINE,
     VCR_ADJUSTED_TIME,
     VCR_SKEWED_TIME,
     VCR_OFFSET_TIME,

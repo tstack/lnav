@@ -215,7 +215,7 @@ breadcrumb_curses::handle_key(int ch)
     bool retval = false;
 
     switch (ch) {
-        case KEY_CTRL_A:
+        case KEY_CTRL('a'):
             if (this->bc_selected_crumb) {
                 this->bc_selected_crumb = 0;
                 this->bc_current_search.clear();
@@ -223,7 +223,7 @@ breadcrumb_curses::handle_key(int ch)
             }
             retval = true;
             break;
-        case KEY_CTRL_E:
+        case KEY_CTRL('e'):
             if (this->bc_selected_crumb) {
                 this->bc_selected_crumb = this->bc_focused_crumbs.size() - 1;
                 this->bc_current_search.clear();
@@ -295,7 +295,7 @@ breadcrumb_curses::handle_key(int ch)
                 listview_curses::shift_amount_t::down_line);
             retval = true;
             break;
-        case 0x7f:
+        case KEY_DELETE:
         case KEY_BACKSPACE:
             if (!this->bc_current_search.empty()) {
                 this->bc_current_search.pop_back();
