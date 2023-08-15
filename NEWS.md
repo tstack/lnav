@@ -92,10 +92,11 @@ Interface changes:
   of only a single row.  Numbers are also rendered using the
   "number" theme style as well.
 * The log message overlay in the LOG view is now limited
-  2/3rds of the height and supports scrolling.  The "alt-text"
-  theme style is also used to draw the overlay contents now
-  as well. (The overlay is used to display the parser
-  details, comments, and annotations.)
+  2/3rds of the height.  You can focus on the overlay panel
+  by pressing `CTRL-]`.  The "alt-text" theme style is also
+  used to draw the overlay contents now as well. (The
+  overlay is used to display the parser details, comments,
+  and annotations.)
 
 Breaking changes:
 * Removed the `-w` command-line option.  This option was

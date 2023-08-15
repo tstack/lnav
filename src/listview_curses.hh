@@ -247,6 +247,8 @@ public:
         return nonstd::nullopt;
     }
 
+    void set_overlay_selection(nonstd::optional<vis_line_t> sel);
+
     void set_sync_selection_and_top(bool value)
     {
         this->lv_sync_selection_and_top = value;

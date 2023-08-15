@@ -175,6 +175,7 @@ listview_curses::handle_key(int ch)
         case KEY_ESCAPE:
             if (this->lv_overlay_focused) {
                 this->lv_overlay_focused = false;
+                this->lv_source->listview_selection_changed(*this);
                 this->set_needs_update();
             } else {
                 retval = false;
@@ -189,6 +190,7 @@ listview_curses::handle_key(int ch)
                     *this, this->get_selection(), overlay_content);
                 if (!overlay_content.empty()) {
                     this->lv_overlay_focused = !this->lv_overlay_focused;
+                    this->lv_source->listview_selection_changed(*this);
                     this->set_needs_update();
                 }
             } else {
@@ -615,50 +617,57 @@ listview_curses::shift_selection(shift_amount_t sa)
 
         this->lv_overlay_source->list_value_for_overlay(
             *this, focused, overlay_content);
-        auto overlay_height
-            = this->get_overlay_height(overlay_content.size(), height);
-        auto ov_top_for_last = vis_line_t{
-            static_cast<int>(overlay_content.size() - overlay_height)};
-        switch (sa) {
-            case shift_amount_t::up_line:
-                if (this->lv_focused_overlay_selection > 0_vl) {
-                    this->lv_focused_overlay_selection -= 1_vl;
+        if (overlay_content.empty()) {
+            this->lv_overlay_focused = false;
+            this->lv_focused_overlay_top = 0_vl;
+            this->lv_focused_overlay_selection = 0_vl;
+            this->lv_source->listview_selection_changed(*this);
+        } else {
+            auto overlay_height
+                = this->get_overlay_height(overlay_content.size(), height);
+            auto ov_top_for_last = vis_line_t{
+                static_cast<int>(overlay_content.size() - overlay_height)};
+            switch (sa) {
+                case shift_amount_t::up_line:
+                    if (this->lv_focused_overlay_selection > 0_vl) {
+                        this->lv_focused_overlay_selection -= 1_vl;
+                    }
+                    break;
+                case shift_amount_t::up_page: {
+                    if (this->lv_focused_overlay_selection > overlay_height) {
+                        this->lv_focused_overlay_selection
+                            -= vis_line_t{static_cast<int>(overlay_height - 1)};
+                    } else {
+                        this->lv_focused_overlay_selection = 0_vl;
+                    }
+                    break;
                 }
-                break;
-            case shift_amount_t::up_page: {
-                if (this->lv_focused_overlay_selection > overlay_height) {
-                    this->lv_focused_overlay_selection
-                        -= vis_line_t{static_cast<int>(overlay_height - 1)};
-                } else {
-                    this->lv_focused_overlay_selection = 0_vl;
+                case shift_amount_t::down_line:
+                    if (this->lv_focused_overlay_selection + 1
+                        < overlay_content.size())
+                    {
+                        this->lv_focused_overlay_selection += 1_vl;
+                    }
+                    break;
+                case shift_amount_t::down_page: {
+                    if (this->lv_focused_overlay_selection + overlay_height - 1
+                        >= ov_top_for_last)
+                    {
+                        this->lv_focused_overlay_selection
+                            = vis_line_t(overlay_content.size() - 1);
+                    } else {
+                        this->lv_focused_overlay_selection
+                            += vis_line_t{static_cast<int>(overlay_height - 1)};
+                    }
+                    break;
                 }
-                break;
+                default:
+                    break;
             }
-            case shift_amount_t::down_line:
-                if (this->lv_focused_overlay_selection + 1
-                    < overlay_content.size())
-                {
-                    this->lv_focused_overlay_selection += 1_vl;
-                }
-                break;
-            case shift_amount_t::down_page: {
-                if (this->lv_focused_overlay_selection + overlay_height - 1
-                    >= ov_top_for_last)
-                {
-                    this->lv_focused_overlay_selection
-                        = vis_line_t(overlay_content.size() - 1);
-                } else {
-                    this->lv_focused_overlay_selection
-                        += vis_line_t{static_cast<int>(overlay_height - 1)};
-                }
-                break;
-            }
-            default:
-                break;
+            this->lv_source->listview_selection_changed(*this);
+            this->set_needs_update();
+            return;
         }
-        this->lv_source->listview_selection_changed(*this);
-        this->set_needs_update();
-        return;
     }
 
     auto offset = 0_vl;
@@ -1008,4 +1017,32 @@ size_t
 listview_curses::get_overlay_height(size_t total, vis_line_t view_height)
 {
     return std::min(total, static_cast<size_t>(2 * (view_height / 3)));
+}
+
+void
+listview_curses::set_overlay_selection(nonstd::optional<vis_line_t> sel)
+{
+    if (sel) {
+        if (sel.value() == this->lv_focused_overlay_selection) {
+            return;
+        }
+
+        std::vector<attr_line_t> overlay_content;
+        this->lv_overlay_source->list_value_for_overlay(
+            *this, this->get_selection(), overlay_content);
+        if (!overlay_content.empty()) {
+            if (sel.value() >= 0 && sel.value() < overlay_content.size()) {
+                this->lv_overlay_focused = true;
+                this->lv_focused_overlay_selection = sel.value();
+            } else {
+                this->lv_overlay_focused = true;
+                this->lv_focused_overlay_selection = 0_vl;
+            }
+        }
+    } else {
+        this->lv_overlay_focused = false;
+        this->lv_focused_overlay_top = 0_vl;
+        this->lv_focused_overlay_selection = 0_vl;
+    }
+    this->set_needs_update();
 }
