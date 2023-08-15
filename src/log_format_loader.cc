@@ -882,11 +882,25 @@ static const struct json_path_container opid_description_handlers = {
         .with_children(opid_description_format_handlers),
 };
 
+static const struct json_path_container subid_description_handlers = {
+    yajlpp::pattern_property_handler(R"((?<subid_descriptor>[\w\.\-]+))")
+        .with_description("A type of description for this sub-operation")
+        .for_field(&log_format::lf_subid_description_def)
+        .with_children(opid_description_format_handlers),
+};
+
 static const struct json_path_container opid_handlers = {
+    yajlpp::property_handler("subid")
+        .with_description("The field that holds the ID for a sub-operation")
+        .for_field(&external_log_format::elf_subid_field),
     yajlpp::property_handler("description")
         .with_description(
             "Define how to construct a description of an operation")
         .with_children(opid_description_handlers),
+    yajlpp::property_handler("sub-description")
+        .with_description(
+            "Define how to construct a description of a sub-operation")
+        .with_children(subid_description_handlers),
 };
 
 const struct json_path_container format_handlers = {

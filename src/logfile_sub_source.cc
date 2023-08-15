@@ -2406,10 +2406,10 @@ logfile_sub_source::text_crumbs_for_line(int line,
                     if (file_data->get_file_ptr() == nullptr) {
                         continue;
                     }
-                    safe::ReadAccess<logfile::safe_opid_map> r_opid_map(
+                    safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
                         file_data->get_file_ptr()->get_opids());
 
-                    for (const auto& pair : *r_opid_map) {
+                    for (const auto& pair : r_opid_map->los_opid_ranges) {
                         retval.emplace_back(pair.first.to_string());
                     }
                 }

@@ -868,7 +868,9 @@ handle_key(int ch)
         default: {
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::PAGING:
-                    if (ch == KEY_ENTER || ch == '\n' || ch == '\r') {
+                    if (ch == KEY_ENTER || ch == '\n' || ch == '\r'
+                        || ch == '`')
+                    {
                         breadcrumb_view.focus();
                         lnav_data.ld_mode = ln_mode_t::BREADCRUMBS;
                         return true;

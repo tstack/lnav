@@ -54,6 +54,17 @@
         },
         "opid-field": "opid",
         "opid": {
+            "subid": "tid",
+            "sub-description": {
+                "vum": {
+                    "format": [
+                        {
+                            "field": "sub",
+                            "extractor": "^(?!VumVapi::Utils).*$"
+                        }
+                    ]
+                }
+            },
             "description": {
                 "vum": {
                     "format": [
@@ -65,7 +76,7 @@
                         {
                             "prefix": "",
                             "field": "body",
-                            "extractor": "PrivCheck: Resource:((?!com)[^,]+)"
+                            "extractor": "PrivCheck: Resource:((?!com)[^,]+)|Entity Priv Result:()"
                         },
                         {
                             "prefix": ") - ",

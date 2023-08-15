@@ -370,9 +370,9 @@ public:
 
     note_map get_notes() const { return *this->lf_notes.readAccess(); }
 
-    using safe_opid_map = safe::Safe<log_opid_map>;
+    using safe_opid_state = safe::Safe<log_opid_state>;
 
-    safe_opid_map& get_opids() { return this->lf_opids; }
+    safe_opid_state& get_opids() { return this->lf_opids; }
 
     void quiesce() { this->lf_line_buffer.quiesce(); }
 
@@ -442,7 +442,7 @@ private:
     text_format_t lf_text_format{text_format_t::TF_UNKNOWN};
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
-    safe_opid_map lf_opids;
+    safe_opid_state lf_opids;
     size_t lf_watch_count{0};
     ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
     nonstd::optional<time_t> lf_cached_base_time;

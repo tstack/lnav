@@ -181,13 +181,19 @@ operator-(const struct timeval& lhs, const struct timeval& rhs)
 typedef int64_t mstime_t;
 
 inline mstime_t
+to_mstime(const timeval& tv)
+{
+    return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
+}
+
+inline mstime_t
 getmstime()
 {
     struct timeval tv;
 
     gettimeofday(&tv, nullptr);
 
-    return tv.tv_sec * 1000ULL + tv.tv_usec / 1000ULL;
+    return to_mstime(tv);
 }
 
 inline struct timeval
@@ -221,5 +227,19 @@ hour_num(time_t ti)
 {
     return ti / (60 * 60);
 }
+
+struct time_range {
+    struct timeval tr_begin;
+    struct timeval tr_end;
+
+    bool operator<(const time_range& rhs) const
+    {
+        return this->tr_begin < rhs.tr_begin;
+    }
+
+    time_range& operator|=(const time_range& rhs);
+    void extend_to(const timeval& tv);
+    std::chrono::milliseconds duration() const;
+};
 
 #endif

@@ -33,6 +33,7 @@
 
 #include "config.h"
 #include "fmt/format.h"
+#include "math_util.hh"
 #include "time_util.hh"
 
 namespace humanize {
@@ -161,18 +162,21 @@ duration::to_string() const
         millis = -millis;
     }
 
-    uint64_t remaining;
+    uint64_t remaining = millis.count();
+    uint64_t scale = 1;
+    if (this->d_msecs_resolution > 0) {
+        remaining = roundup(remaining, this->d_msecs_resolution);
+    }
     if (millis >= 10min) {
-        remaining
-            = std::chrono::duration_cast<std::chrono::seconds>(millis).count();
+        remaining /= curr_interval->length;
+        scale *= curr_interval->length;
         curr_interval += 1;
-    } else {
-        remaining = millis.count();
     }
 
     for (; curr_interval != std::end(intervals); curr_interval++) {
         uint64_t amount;
         char segment[32];
+        auto skip = scale < this->d_msecs_resolution;
 
         if (curr_interval->length) {
             amount = remaining % curr_interval->length;
@@ -181,9 +185,14 @@ duration::to_string() const
             amount = remaining;
             remaining = 0;
         }
+        scale *= curr_interval->length;
 
-        if (!amount && !remaining) {
+        if (amount == 0 && remaining == 0) {
             break;
+        }
+
+        if (skip) {
+            continue;
         }
 
         snprintf(segment,

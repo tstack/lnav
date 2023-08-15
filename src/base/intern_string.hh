@@ -201,6 +201,11 @@ struct string_fragment {
         return memcmp(this->data(), sf.data(), sf.length()) == 0;
     }
 
+    bool operator!=(const string_fragment& rhs) const
+    {
+        return !(*this == rhs);
+    }
+
     bool operator<(const string_fragment& rhs) const
     {
         auto rc = strncmp(
