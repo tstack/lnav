@@ -141,7 +141,18 @@ public:
                                 vis_line_t line,
                                 std::vector<attr_line_t>& value_out) override;
 
+    void set_show_details_in_overlay(bool val) override
+    {
+        this->gho_show_details = val;
+    }
+
+    bool get_show_details_in_overlay() const override
+    {
+        return this->gho_show_details;
+    }
+
 private:
+    bool gho_show_details{true};
     std::shared_ptr<gantt_source> gho_src;
 };
 

@@ -103,6 +103,14 @@
                         }
                     ]
                 },
+                "vpxd-invoking": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "Invoking; <<[^,]+, <[^>]+>, <[^>]+>>, [^,]+, ([^,]+),"
+                        }
+                    ]
+                },
                 "vpxd-lro": {
                     "format": [
                         {
