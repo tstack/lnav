@@ -240,6 +240,10 @@ gantt_header_overlay::list_value_for_overlay(
     vis_line_t line,
     std::vector<attr_line_t>& value_out)
 {
+    if (!this->gho_show_details) {
+        return;
+    }
+
     if (lv.get_selection() != line) {
         return;
     }
