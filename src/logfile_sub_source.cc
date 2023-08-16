@@ -273,12 +273,13 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         value_out = this->lss_token_value;
     }
 
-    if ((this->lss_token_file->is_time_adjusted()
-         || (format->lf_timestamp_flags & ETF_ZONE_SET
-             && format->lf_date_time.dts_zoned_to_local)
-         || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
-         || !(format->lf_timestamp_flags & ETF_DAY_SET)
-         || !(format->lf_timestamp_flags & ETF_MONTH_SET))
+    if (!this->lss_token_line->is_continued()
+        && (this->lss_token_file->is_time_adjusted()
+            || (format->lf_timestamp_flags & ETF_ZONE_SET
+                && format->lf_date_time.dts_zoned_to_local)
+            || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
+            || !(format->lf_timestamp_flags & ETF_DAY_SET)
+            || !(format->lf_timestamp_flags & ETF_MONTH_SET))
         && format->lf_date_time.dts_fmt_lock != -1)
     {
         auto time_attr

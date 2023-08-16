@@ -72,6 +72,9 @@ external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<std::shared_ptr<external_log_format>>
     external_log_format::GRAPH_ORDERED_FORMATS;
 
+static const uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
+    | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_SECOND_SET;
+
 log_level_stats&
 log_level_stats::operator|=(const log_level_stats& rhs)
 {
@@ -643,8 +646,26 @@ log_format::log_scanf(uint32_t line_number,
                 auto ls = this->lf_date_time.unlock();
                 retval = this->lf_date_time.scan(
                     ts->data(), ts->length(), nullptr, tm_out, *tv_out);
+                if (retval != nullptr) {
+                    auto old_flags
+                        = this->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
+                    auto new_flags = tm_out->et_flags & DATE_TIME_SET_FLAGS;
+
+                    // It is unlikely a valid timestamp would lose much
+                    // precision.
+                    if (new_flags != old_flags) {
+                        retval = nullptr;
+                    }
+                }
                 if (retval == nullptr) {
                     this->lf_date_time.relock(ls);
+                } else {
+                    log_debug(
+                        "%d: changed time format to '%s' due to %.*s",
+                        line_number,
+                        PTIMEC_FORMAT_STR[this->lf_date_time.dts_fmt_lock],
+                        ts->length(),
+                        ts->data());
                 }
             }
 
