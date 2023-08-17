@@ -2,16 +2,19 @@
     "$schema": "https://lnav.org/schemas/config-v1.schema.json",
     "ui": {
         "theme-defs": {
-            "monocai": {
+            "dracula": {
                 "vars": {
-                    "black": "#2d2a2e",
-                    "red": "#f92772",
-                    "green": "#a7e22e",
-                    "yellow": "#fe9720",
-                    "blue": "#5394ec",
-                    "magenta": "#ae81ff",
-                    "cyan": "#66d9ee",
-                    "white": "#808080",
+                    "black": "#282A36",
+                    "red": "#FF5555",
+                    "green": "#50FA7B",
+                    "yellow": "#F1FA8C",
+                    "blue": "#BD93F9",
+                    "magenta": "#FF79C6",
+                    "cyan": "#8BE9FD",
+                    "white": "#F8F8F2",
+                    "orange": "#FFB86C",
+                    "purple": "#BD93F9",
+                    "pink": "#FF79C6",
                     "semantic_highlight_color": "semantic()"
                 },
                 "styles": {
@@ -47,12 +50,12 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "#7f005f",
+                        "background-color": "#44475A",
                         "bold": true
                     },
                     "disabled-cursor-line": {
                         "color": "$cyan",
-                        "background-color": "#5f005f"
+                        "background-color": "#2a2c38"
                     },
                     "adjusted-time": {
                         "color": "$magenta"
@@ -75,7 +78,7 @@
                         "background-color": "#333"
                     },
                     "popup": {
-                        "color": "$white",
+                        "color": "$black",
                         "background-color": "$cyan"
                     },
                     "scrollbar": {
@@ -83,15 +86,15 @@
                         "background-color": "#888"
                     },
                     "h1": {
-                        "color": "$magenta",
+                        "color": "$purple",
                         "bold": true
                     },
                     "h2": {
-                        "color": "$magenta",
+                        "color": "$purple",
                         "underline": true
                     },
                     "h3": {
-                        "color": "$magenta"
+                        "color": "$purple"
                     },
                     "h4": {
                         "underline": true
@@ -103,13 +106,13 @@
                         "underline": true
                     },
                     "hr": {
-                        "color": "#444"
+                        "color": "#6272A4"
                     },
                     "hyperlink": {
                         "underline": true
                     },
                     "list-glyph": {
-                        "color": "$yellow"
+                        "color": "$cyan"
                     },
                     "breadcrumb": {
                         "color": "#99a"
@@ -125,6 +128,7 @@
                         "background-color": "#444"
                     },
                     "quoted-text": {
+                        "color": "$yellow",
                         "background-color": "#444"
                     },
                     "footnote-border": {
@@ -132,7 +136,7 @@
                         "background-color": "#444"
                     },
                     "footnote-text": {
-                        "color": "#eee",
+                        "color": "$cyan",
                         "background-color": "#444"
                     },
                     "snippet-border": {
@@ -141,11 +145,11 @@
                 },
                 "syntax-styles": {
                     "inline-code": {
-                        "color": "$red",
+                        "color": "$green",
                         "background-color": "#121212"
                     },
                     "quoted-code": {
-                        "color": "#eee",
+                        "color": "$orange",
                         "background-color": "#121212"
                     },
                     "code-border": {
@@ -153,21 +157,21 @@
                         "background-color": "#121212"
                     },
                     "keyword": {
-                        "color": "#ff6188",
+                        "color": "$pink",
                         "bold": true
                     },
                     "string": {
-                        "color": "#ffd866",
+                        "color": "$yellow",
                         "bold": true
                     },
                     "comment": {
-                        "color": "#949194"
+                        "color": "#6272A4"
                     },
                     "doc-directive": {
-                        "color": "#a9dc76"
+                        "color": "$pink"
                     },
                     "variable": {
-                        "color": "#a9dc76"
+                        "color": "$orange"
                     },
                     "symbol": {
                         "color": "#78dce8"
@@ -185,7 +189,7 @@
                         "color": "#0f0"
                     },
                     "diff-section": {
-                        "color": "#656e76"
+                        "color": "#6272A4"
                     },
                     "spectrogram-low": {
                         "background-color": "$green"
@@ -203,13 +207,13 @@
                         "bold": true
                     },
                     "function": {
-                        "color": "$cyan"
+                        "color": "$green"
                     },
                     "separators-references-accessors": {
-                        "color": "$red"
+                        "color": "$pink"
                     },
                     "type": {
-                        "color": "$blue"
+                        "color": "$cyan"
                     }
                 },
                 "status-styles": {

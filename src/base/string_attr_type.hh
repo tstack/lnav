@@ -126,6 +126,10 @@ enum class role_t : int32_t {
     VCR_FOOTNOTE_BORDER,
     VCR_FOOTNOTE_TEXT,
     VCR_SNIPPET_BORDER,
+    VCR_INLINE_CODE,
+    VCR_FUNCTION,
+    VCR_TYPE,
+    VCR_SEP_REF_ACC,
 
     VCR__MAX
 };

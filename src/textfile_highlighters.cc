@@ -93,6 +93,7 @@ setup_highlights(highlight_map_t& hm)
                                     "\\bconst\\b|"
                                     "\\bcontinue\\b|"
                                     "\\bcrate\\b|"
+                                    "\\bdyn\\b|"
                                     "\\belse\\b|"
                                     "\\bif\\b|"
                                     "\\bif let\\b|"
@@ -397,6 +398,14 @@ setup_highlights(highlight_map_t& hm)
     hm[{highlight_source_t::INTERNAL, "1.strings"}]
         = highlighter(xpcre_compile(R"((?<![A-WY-Za-qstv-z])'(?:\\.|[^'])*')"))
               .with_nestable(false)
+              .with_text_format(text_format_t::TF_C_LIKE)
+              .with_text_format(text_format_t::TF_JAVA)
+              .with_text_format(text_format_t::TF_MARKDOWN)
+              .with_text_format(text_format_t::TF_PYTHON)
+              .with_text_format(text_format_t::TF_SQL)
+              .with_text_format(text_format_t::TF_XML)
+              .with_text_format(text_format_t::TF_YAML)
+              .with_text_format(text_format_t::TF_TOML)
               .with_role(role_t::VCR_STRING);
     hm[{highlight_source_t::INTERNAL, "1.stringb"}]
         = highlighter(xpcre_compile("`(?:\\\\.|[^`])*`"))
@@ -461,4 +470,33 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
               .with_role(role_t::VCR_NUMBER);
+    hm[{highlight_source_t::INTERNAL, "fun"}]
+        = highlighter(xpcre_compile(R"((\w+)\()"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_C_LIKE)
+              .with_text_format(text_format_t::TF_JAVA)
+              .with_text_format(text_format_t::TF_PYTHON)
+              .with_text_format(text_format_t::TF_RUST)
+              .with_text_format(text_format_t::TF_SQL)
+              .with_role(role_t::VCR_FUNCTION);
+    hm[{highlight_source_t::INTERNAL, "sep"}]
+        = highlighter(xpcre_compile(R"(\.|\s+&(?=\w)|(?<=\w)&\s+|::|\%\b)"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_C_LIKE)
+              .with_text_format(text_format_t::TF_JAVA)
+              .with_text_format(text_format_t::TF_PYTHON)
+              .with_text_format(text_format_t::TF_RUST)
+              .with_text_format(text_format_t::TF_SQL)
+              .with_role(role_t::VCR_SEP_REF_ACC);
+    hm[{highlight_source_t::INTERNAL, "type"}]
+        = highlighter(
+              xpcre_compile(
+                  R"(\b(class|struct|enum(?:\s+class)?)\s+(\w+)\b|\b(\w+_t)\b)"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_C_LIKE)
+              .with_text_format(text_format_t::TF_JAVA)
+              .with_text_format(text_format_t::TF_PYTHON)
+              .with_text_format(text_format_t::TF_RUST)
+              .with_text_format(text_format_t::TF_SQL)
+              .with_role(role_t::VCR_TYPE);
 }

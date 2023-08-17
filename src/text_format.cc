@@ -48,6 +48,22 @@ detect_text_format(string_fragment sf,
         ".xz",
         ".zst",
     };
+    static const auto C_EXTS = std::set<ghc::filesystem::path>{
+        ".h",
+        ".hh",
+        ".hpp",
+        ".c",
+        ".cc",
+        ".cpp",
+        ".tpp",
+    };
+    static const auto PY_EXT = ghc::filesystem::path(".py");
+    static const auto RS_EXT = ghc::filesystem::path(".rs");
+    static const auto JAVA_EXT = ghc::filesystem::path(".java");
+    static const auto TOML_EXT = ghc::filesystem::path(".toml");
+    static const auto XML_EXT = ghc::filesystem::path(".xml");
+    static const auto YAML_EXT = ghc::filesystem::path(".yaml");
+    static const auto YML_EXT = ghc::filesystem::path(".yml");
     static const auto MD_EXT = ghc::filesystem::path(".md");
     static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
 
@@ -66,7 +82,7 @@ detect_text_format(string_fragment sf,
         = lnav::pcre2pp::code::from_const(R"(
 (?:
 ^\s*use\s+[\w+:\{\}]+;$|
-^\s*(?:pub)?\s+(?:const|enum|fn)\s+\w+.*$|
+^\s*(?:pub enum|pub const|(?:pub )?fn)\s+\w+.*$|
 ^\s*impl\s+\w+.*$
 )
 )",
@@ -103,15 +119,42 @@ detect_text_format(string_fragment sf,
         ")",
         PCRE2_MULTILINE | PCRE2_CASELESS);
 
-    text_format_t retval = text_format_t::TF_UNKNOWN;
-
     if (path) {
         while (FILTER_EXTS.count(path->extension()) > 0) {
             path = path->stem();
         }
 
-        if (path->extension() == MD_EXT || path->extension() == MARKDOWN_EXT) {
+        auto ext = path->extension();
+        if (ext == MD_EXT || ext == MARKDOWN_EXT) {
             return text_format_t::TF_MARKDOWN;
+        }
+
+        if (C_EXTS.count(ext) > 0) {
+            return text_format_t::TF_C_LIKE;
+        }
+
+        if (ext == PY_EXT) {
+            return text_format_t::TF_PYTHON;
+        }
+
+        if (ext == RS_EXT) {
+            return text_format_t::TF_RUST;
+        }
+
+        if (ext == TOML_EXT) {
+            return text_format_t::TF_TOML;
+        }
+
+        if (ext == JAVA_EXT) {
+            return text_format_t::TF_JAVA;
+        }
+
+        if (ext == YAML_EXT || ext == YML_EXT) {
+            return text_format_t::TF_YAML;
+        }
+
+        if (ext == XML_EXT) {
+            return text_format_t::TF_XML;
         }
     }
 
@@ -152,5 +195,5 @@ detect_text_format(string_fragment sf,
         return text_format_t::TF_XML;
     }
 
-    return retval;
+    return text_format_t::TF_UNKNOWN;
 }

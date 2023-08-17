@@ -3,7 +3,7 @@
 Lnav follows the usual GNU style for configuring and installing
 software:
 
-Run [37m[40m ./autogen.sh [0m if compiling from a cloned repository.
+Run  ./autogen.sh  if compiling from a cloned repository.
 
  ▌[33m[40m$ [0m[37m[40m./configure                           [0m
  ▌[33m[40m$ [0m[37m[40mmake                                  [0m

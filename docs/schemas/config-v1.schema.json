@@ -478,6 +478,11 @@
                                     "title": "/ui/theme-defs/<theme_name>/syntax-styles",
                                     "type": "object",
                                     "properties": {
+                                        "inline-code": {
+                                            "description": "Styling for inline code blocks",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/inline-code",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "quoted-code": {
                                             "description": "Styling for quoted code blocks",
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/quoted-code",
@@ -521,6 +526,21 @@
                                         "number": {
                                             "description": "Styling for numbers in source files",
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/number",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "type": {
+                                            "description": "Styling for types in source files",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/type",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "function": {
+                                            "description": "Styling for functions in source files",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/function",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "separators-references-accessors": {
+                                            "description": "Styling for sigils in source files",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/separators-references-accessors",
                                             "$ref": "#/definitions/style"
                                         },
                                         "re-special": {

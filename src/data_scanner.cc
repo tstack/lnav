@@ -48,6 +48,9 @@ static struct {
         "quot",
     },
     {
+        "comm",
+    },
+    {
         "url",
     },
     {

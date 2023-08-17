@@ -366,8 +366,9 @@ dist_noinst_DATA = \
 	logfile_with_zones.0 \
 	logfile_xml_msg.0 \
 	multiline.lnav \
-	nested.lnav \
 	mvwattrline_output.0 \
+	nested.lnav \
+	pyfile_0.py \
 	textfile_0.md \
 	textfile_ansi.0 \
 	textfile_ansi_expanding.0 \

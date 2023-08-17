@@ -765,6 +765,10 @@ static const struct json_path_container theme_styles_handlers = {
 };
 
 static const struct json_path_container theme_syntax_styles_handlers = {
+    yajlpp::property_handler("inline-code")
+        .with_description("Styling for inline code blocks")
+        .for_child(&lnav_theme::lt_style_inline_code)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("quoted-code")
         .with_description("Styling for quoted code blocks")
         .for_child(&lnav_theme::lt_style_quoted_code)
@@ -801,6 +805,18 @@ static const struct json_path_container theme_syntax_styles_handlers = {
     yajlpp::property_handler("number")
         .with_description("Styling for numbers in source files")
         .for_child(&lnav_theme::lt_style_number)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("type")
+        .with_description("Styling for types in source files")
+        .for_child(&lnav_theme::lt_style_type)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("function")
+        .with_description("Styling for functions in source files")
+        .for_child(&lnav_theme::lt_style_function)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("separators-references-accessors")
+        .with_description("Styling for sigils in source files")
+        .for_child(&lnav_theme::lt_style_sep_ref_acc)
         .with_children(style_config_handlers),
     yajlpp::property_handler("re-special")
         .with_description(

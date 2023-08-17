@@ -944,6 +944,8 @@ view_colors::init_roles(const lnav_theme& lt,
             = this->to_attrs(lt, bar_sc, reporter);
     }
 
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_INLINE_CODE)]
+        = this->to_attrs(lt, lt.lt_style_inline_code, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_QUOTED_CODE)]
         = this->to_attrs(lt, lt.lt_style_quoted_code, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_CODE_BORDER)]
@@ -962,6 +964,12 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_symbol, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_NUMBER)]
         = this->to_attrs(lt, lt.lt_style_number, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_FUNCTION)]
+        = this->to_attrs(lt, lt.lt_style_function, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_TYPE)]
+        = this->to_attrs(lt, lt.lt_style_type, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SEP_REF_ACC)]
+        = this->to_attrs(lt, lt.lt_style_sep_ref_acc, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_RE_SPECIAL)]
         = this->to_attrs(lt, lt.lt_style_re_special, reporter);
