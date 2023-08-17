@@ -37,3 +37,6 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_0.md
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/pyfile_0.py

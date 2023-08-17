@@ -40,6 +40,7 @@
 #include "intervaltree/IntervalTree.h"
 #include "mapbox/variant.hpp"
 #include "optional.hpp"
+#include "text_format.hh"
 
 namespace lnav {
 namespace document {
@@ -47,6 +48,16 @@ namespace document {
 using section_key_t = mapbox::util::variant<std::string, size_t>;
 using section_interval_t = interval_tree::Interval<file_off_t, section_key_t>;
 using sections_tree_t = interval_tree::IntervalTree<file_off_t, section_key_t>;
+
+enum class section_types_t {
+    comment,
+    multiline_string,
+};
+
+using section_type_interval_t
+    = interval_tree::Interval<file_off_t, section_types_t>;
+using section_types_tree_t
+    = interval_tree::IntervalTree<file_off_t, section_types_t>;
 
 struct hier_node {
     hier_node* hn_parent{nullptr};
@@ -101,6 +112,7 @@ struct hier_node {
 struct metadata {
     sections_tree_t m_sections_tree;
     std::unique_ptr<hier_node> m_sections_root;
+    section_types_tree_t m_section_types_tree;
 
     std::vector<breadcrumb::possibility> possibility_provider(
         const std::vector<section_key_t>& path);
@@ -108,7 +120,9 @@ struct metadata {
 
 metadata discover_metadata(const attr_line_t& al);
 
-metadata discover_structure(attr_line_t& al, struct line_range lr);
+metadata discover_structure(attr_line_t& al,
+                            struct line_range lr,
+                            text_format_t tf = text_format_t::TF_UNKNOWN);
 
 }  // namespace document
 }  // namespace lnav

@@ -337,6 +337,12 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "quoted-code": {
                         "color": "",
                         "background-color": "",
@@ -390,6 +396,24 @@
                         "background-color": "",
                         "underline": false,
                         "bold": true
+                    },
+                    "type": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     },
                     "re-special": {
                         "color": "Teal",
@@ -645,6 +669,531 @@
                     }
                 }
             },
+            "dracula": {
+                "vars": {
+                    "black": "#282A36",
+                    "blue": "#BD93F9",
+                    "cyan": "#8BE9FD",
+                    "green": "#50FA7B",
+                    "magenta": "#FF79C6",
+                    "orange": "#FFB86C",
+                    "pink": "#FF79C6",
+                    "purple": "#BD93F9",
+                    "red": "#FF5555",
+                    "semantic_highlight_color": "semantic()",
+                    "white": "#F8F8F2",
+                    "yellow": "#F1FA8C"
+                },
+                "styles": {
+                    "identifier": {
+                        "color": "semantic()",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "text": {
+                        "color": "#f6f6f6",
+                        "background-color": "$black",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "alt-text": {
+                        "color": "",
+                        "background-color": "#1c1c1c",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "error": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "ok": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "info": {
+                        "color": "$magenta",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "warning": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "hidden": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "cursor-line": {
+                        "color": "$cyan",
+                        "background-color": "#44475A",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "disabled-cursor-line": {
+                        "color": "$cyan",
+                        "background-color": "#2a2c38",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "adjusted-time": {
+                        "color": "$magenta",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "skewed-time": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "offset-time": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "invalid-msg": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "popup": {
+                        "color": "$black",
+                        "background-color": "$cyan",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "focused": {
+                        "color": "$black",
+                        "background-color": "$white",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "disabled-focused": {
+                        "color": "$white",
+                        "background-color": "#333",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "scrollbar": {
+                        "color": "$black",
+                        "background-color": "#888",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "h1": {
+                        "color": "$purple",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "h2": {
+                        "color": "$purple",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false
+                    },
+                    "h3": {
+                        "color": "$purple",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "h4": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false
+                    },
+                    "h5": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false
+                    },
+                    "h6": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false
+                    },
+                    "hr": {
+                        "color": "#6272A4",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "hyperlink": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false
+                    },
+                    "list-glyph": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "breadcrumb": {
+                        "color": "#99a",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "table-border": {
+                        "color": "#444",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "table-header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "quote-border": {
+                        "color": "#666",
+                        "background-color": "#444",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "quoted-text": {
+                        "color": "$yellow",
+                        "background-color": "#444",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "footnote-border": {
+                        "color": "$blue",
+                        "background-color": "#444",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "footnote-text": {
+                        "color": "$cyan",
+                        "background-color": "#444",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "snippet-border": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    }
+                },
+                "syntax-styles": {
+                    "inline-code": {
+                        "color": "$green",
+                        "background-color": "#121212",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "quoted-code": {
+                        "color": "$orange",
+                        "background-color": "#121212",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "code-border": {
+                        "color": "#444",
+                        "background-color": "#121212",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "keyword": {
+                        "color": "$pink",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "string": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "comment": {
+                        "color": "#6272A4",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "doc-directive": {
+                        "color": "$pink",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "variable": {
+                        "color": "$orange",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "symbol": {
+                        "color": "#78dce8",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "number": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "type": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
+                        "color": "$pink",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "re-special": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "re-repeat": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "diff-delete": {
+                        "color": "#f00",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "diff-add": {
+                        "color": "#0f0",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "diff-section": {
+                        "color": "#6272A4",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "spectrogram-low": {
+                        "color": "",
+                        "background-color": "$green",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "spectrogram-medium": {
+                        "color": "",
+                        "background-color": "$yellow",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "spectrogram-high": {
+                        "color": "",
+                        "background-color": "$red",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "file": {
+                        "color": "$blue",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    }
+                },
+                "status-styles": {
+                    "text": {
+                        "color": "#f6f6f6",
+                        "background-color": "#353535",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "warn": {
+                        "color": "$yellow",
+                        "background-color": "#353535",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "alert": {
+                        "color": "$red",
+                        "background-color": "#353535",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "active": {
+                        "color": "$green",
+                        "background-color": "#353535",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "inactive-alert": {
+                        "color": "$red",
+                        "background-color": "#2f2f2f",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "inactive": {
+                        "color": "#555",
+                        "background-color": "#2f2f2f",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "title-hotkey": {
+                        "color": "$black",
+                        "background-color": "#5394ec",
+                        "underline": true,
+                        "bold": false
+                    },
+                    "title": {
+                        "color": "#f6f6f6",
+                        "background-color": "#5394ec",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "disabled-title": {
+                        "color": "#5394ec",
+                        "background-color": "#353535",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "subtitle": {
+                        "color": "#555",
+                        "background-color": "#66d9ee",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "info": {
+                        "color": "#aaa",
+                        "background-color": "#2f2f2f",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "hotkey": {
+                        "color": "#fff",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false
+                    }
+                },
+                "log-level-styles": {
+                    "trace": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "debug5": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "debug4": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "debug3": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "debug2": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "debug": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "info": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "stats": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "notice": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "warning": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "error": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "critical": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "fatal": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "invalid": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    }
+                },
+                "highlights": {
+
+                }
+            },
             "eldar": {
                 "vars": {
                     "black": "#000000",
@@ -870,6 +1419,12 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "quoted-code": {
                         "color": "",
                         "background-color": "",
@@ -920,6 +1475,24 @@
                     },
                     "number": {
                         "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "type": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1368,6 +1941,12 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "quoted-code": {
                         "color": "",
                         "background-color": "",
@@ -1417,6 +1996,24 @@
                         "bold": false
                     },
                     "number": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "type": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
                         "color": "",
                         "background-color": "",
                         "underline": false,
@@ -1866,6 +2463,12 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "$red",
+                        "background-color": "#121212",
+                        "underline": false,
+                        "bold": false
+                    },
                     "quoted-code": {
                         "color": "#eee",
                         "background-color": "#121212",
@@ -1919,6 +2522,24 @@
                         "background-color": "",
                         "underline": false,
                         "bold": true
+                    },
+                    "type": {
+                        "color": "$blue",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     },
                     "re-special": {
                         "color": "$cyan",
@@ -2364,6 +2985,12 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "quoted-code": {
                         "color": "",
                         "background-color": "",
@@ -2414,6 +3041,24 @@
                     },
                     "number": {
                         "color": "#f78c6c",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "type": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -2871,6 +3516,12 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "quoted-code": {
                         "color": "",
                         "background-color": "",
@@ -2920,6 +3571,24 @@
                         "bold": false
                     },
                     "number": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "type": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
                         "color": "",
                         "background-color": "",
                         "underline": false,
@@ -3378,6 +4047,12 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "quoted-code": {
                         "color": "",
                         "background-color": "",
@@ -3427,6 +4102,24 @@
                         "bold": false
                     },
                     "number": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "type": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "function": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "separators-references-accessors": {
                         "color": "",
                         "background-color": "",
                         "underline": false,

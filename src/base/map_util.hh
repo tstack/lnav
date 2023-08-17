@@ -45,7 +45,7 @@ nonstd::optional<
     std::reference_wrapper<std::conditional_t<std::is_const<C>::value,
                                               const typename C::mapped_type,
                                               typename C::mapped_type>>>
-find(C& container, typename C::key_type& key)
+find(C& container, const typename C::key_type& key)
 {
     auto iter = container.find(key);
     if (iter != container.end()) {

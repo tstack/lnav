@@ -35,7 +35,7 @@
 #include "config.h"
 #include "data_scanner.hh"
 
-nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
+nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_format_t tf)
 {
     data_token_t token_out = DT_INVALID;
     capture_t cap_all;
@@ -152,11 +152,34 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2()
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
+       ("u"|"r")?'"""'[^\x00\x1b]*'"""' {
+           CAPTURE(DT_QUOTED_STRING);
+           switch (this->ds_input[cap_inner.c_begin]) {
+           case 'u':
+           case 'r':
+               cap_inner.c_begin += 1;
+               break;
+           }
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+       "/" "*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {
+           RET(DT_COMMENT);
+       }
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
        ("u"|"r")?"'"('\\'.|"''"|[^\x00\x1b'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
+           if (tf == text_format_t::TF_RUST) {
+               auto sf = this->to_string_fragment(cap_all);
+               auto split_res = sf.split_when([](char ch) { return ch != '\'' && !isalnum(ch); });
+               cap_all.c_end = split_res.first.sf_end;
+               cap_inner.c_end = split_res.first.sf_end;
+               this->ds_next_offset = cap_all.c_end;
+               return tokenize_result{DT_SYMBOL, cap_all, cap_inner, this->ds_input.data()};
+           }
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'u':
            case 'r':

@@ -186,6 +186,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_status_subtitle;
     positioned_property<style_config> lt_style_status_info;
     positioned_property<style_config> lt_style_status_hotkey;
+    positioned_property<style_config> lt_style_inline_code;
     positioned_property<style_config> lt_style_quoted_code;
     positioned_property<style_config> lt_style_code_border;
     positioned_property<style_config> lt_style_keyword;
@@ -195,6 +196,9 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_variable;
     positioned_property<style_config> lt_style_symbol;
     positioned_property<style_config> lt_style_number;
+    positioned_property<style_config> lt_style_function;
+    positioned_property<style_config> lt_style_type;
+    positioned_property<style_config> lt_style_sep_ref_acc;
     positioned_property<style_config> lt_style_re_special;
     positioned_property<style_config> lt_style_re_repeat;
     positioned_property<style_config> lt_style_diff_delete;

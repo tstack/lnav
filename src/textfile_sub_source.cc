@@ -33,6 +33,7 @@
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
+#include "base/map_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "lnav.events.hh"
@@ -70,7 +71,7 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
                                          text_sub_source::line_flags_t flags)
 {
     if (!this->tss_files.empty()) {
-        std::shared_ptr<logfile> lf = this->current_file();
+        const auto lf = this->current_file();
         auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
         if (rend_iter == this->tss_rendered_files.end()) {
             auto* lfo = dynamic_cast<line_filter_observer*>(
@@ -158,6 +159,41 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
                     value_out.emplace_back(line_range(12, 13),
                                            VC_ROLE.value(bar_role));
                 }
+            }
+
+            auto meta_opt
+                = lnav::map::find(this->tss_doc_metadata, lf->get_filename());
+            if (meta_opt) {
+                auto ll_next_iter = ll + 1;
+                auto end_offset = (ll_next_iter == lf->end())
+                    ? lf->get_index_size() - 1
+                    : ll_next_iter->get_offset() - 1;
+                meta_opt->get()
+                    .ms_metadata.m_section_types_tree.visit_overlapping(
+                        ll->get_offset(),
+                        end_offset,
+                        [&value_out, &ll, end_offset](const auto& iv) {
+                            auto lr = line_range{0, -1};
+                            if (iv.start > ll->get_offset()) {
+                                lr.lr_start = iv.start - ll->get_offset();
+                            }
+                            if (iv.stop < end_offset) {
+                                lr.lr_end = iv.stop - ll->get_offset();
+                            } else {
+                                lr.lr_end = end_offset - ll->get_offset();
+                            }
+                            auto role = role_t::VCR_NONE;
+                            switch (iv.value) {
+                                case lnav::document::section_types_t::comment:
+                                    role = role_t::VCR_COMMENT;
+                                    break;
+                                case lnav::document::section_types_t::
+                                    multiline_string:
+                                    role = role_t::VCR_STRING;
+                                    break;
+                            }
+                            value_out.emplace_back(lr, VC_ROLE.value(role));
+                        });
             }
         }
     }
@@ -742,7 +778,9 @@ textfile_sub_source::rescan_files(
                                 st.st_mtime,
                                 static_cast<file_ssize_t>(st.st_size),
                                 lnav::document::discover_structure(
-                                    content, line_range{0, -1}),
+                                    content,
+                                    line_range{0, -1},
+                                    lf->get_text_format()),
                             };
                     } else {
                         log_error(

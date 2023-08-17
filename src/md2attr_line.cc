@@ -438,7 +438,7 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
         };
         last_block.with_attr({
             lr,
-            VC_ROLE.value(role_t::VCR_QUOTED_CODE),
+            VC_ROLE.value(role_t::VCR_INLINE_CODE),
         });
         last_block.with_attr({
             lr,

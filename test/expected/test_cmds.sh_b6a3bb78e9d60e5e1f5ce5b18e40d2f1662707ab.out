@@ -32,10 +32,10 @@ Lnav takes a list of files to view and/or you can use the flag
 arguments to load well-known log files, such as the syslog log files.
 The flag arguments are:
 
- [33m•[0m [37m[40m -a [0m Load all of the most recent log file types.
- [33m•[0m [37m[40m -r [0m Recursively load files from the given directory
+ [33m•[0m  -a  Load all of the most recent log file types.
+ [33m•[0m  -r  Recursively load files from the given directory
    hierarchies.
- [33m•[0m [37m[40m -R [0m Load older rotated log files as well.
+ [33m•[0m  -R  Load older rotated log files as well.
 
 When using the flag arguments, lnav will look for the files relative
 to the current directory and its parent directories. In other words,
@@ -43,7 +43,7 @@ if you are working within a directory that has the well-known log
 files, those will be preferred over any others.
 
 If you do not want the default syslog file to be loaded when no files
-are specified, you can pass the [37m[40m -N [0m flag.
+are specified, you can pass the  -N  flag.
 
 Any files given on the command-line are scanned to determine their log
 file format and to create an index for each line in the file. You do
@@ -56,10 +56,10 @@ Lnav will also display data piped in on the standard input.
 To automatically execute queries or lnav commands after the files have
 been loaded, you can use the following options:
 
- [33m•[0m [37m[40m -c cmd [0m A command, query, or file to execute. The
+ [33m•[0m  -c cmd  A command, query, or file to execute. The
    first character determines the type of operation: a colon
-   ([37m[40m : [0m) is used for the built-in commands; a semi-colon ([37m[40m ;[0m
-   ) for SQL queries; and a pipe symbol ([37m[40m | [0m) for executing
+   ( : ) is used for the built-in commands; a semi-colon ( ;
+   ) for SQL queries; and a pipe symbol ( | ) for executing
    a file containing other commands. For example, to open
    the file "foo.log" and go to the tenth line in the file,
    you can do:
@@ -68,13 +68,13 @@ been loaded, you can use the following options:
    
    This option can be given multiple times to execute
    multiple operations in sequence.
- [33m•[0m [37m[40m -f file [0m A file that contains commands, queries, or
-   files to execute. This option is a shortcut for [37m[40m -c '|file'[0m
-   . You can use a dash ([37m[40m - [0m) to execute commands from the
+ [33m•[0m  -f file  A file that contains commands, queries, or
+   files to execute. This option is a shortcut for  -c '|file'
+   . You can use a dash ( - ) to execute commands from the
    standard input.
 
 To execute commands/queries without opening the interactive text UI,
-you can pass the [37m[40m -n [0m option. This combination of options allows you
+you can pass the  -n  option. This combination of options allows you
 to write scripts for processing logs with lnav. For example, to get a
 list of IP addresses that dhclient has bound to in CSV format:
 
@@ -99,7 +99,7 @@ The main part of the display shows the log lines from the files
 interleaved based on time-of-day. New lines are automatically loaded
 as they are appended to the files and, if you are viewing the bottom
 of the files, lnav will scroll down to display the new lines, much
-like [37m[40m tail -f [0m.
+like  tail -f .
 
 On color displays, the lines will be highlighted as follows:
 
@@ -120,22 +120,22 @@ and right-hand side of the bar, for search hits and bookmarks.
 The bar on the left side indicates the file the log message is from. A
 break in the bar means that the next log message comes from a
 different file. The color of the bar is derived from the file name.
-Pressing the left-arrow or [37m[40m h [0m will reveal the source file names for
+Pressing the left-arrow or  h  will reveal the source file names for
 each message and pressing again will show the full paths.
 
 Above and below the main body are status lines that display a variety
 of information. The top line displays:
 
- [33m•[0m The current time, configurable by the [37m[40m /ui/clock-format [0m   
+ [33m•[0m The current time, configurable by the  /ui/clock-format    
    property.
- [33m•[0m The highest priority message from the [37m[40m lnav_user_notifications [0m   
+ [33m•[0m The highest priority message from the  lnav_user_notifications    
    table. You can insert rows into this table to display
    your own status messages. The default message displayed
    on startup explains how to focus on the next status line
    at the top, which is an interactive breadcrumb bar.
 
 The second status line at the top display breadcrumbs for the top line
-in the main view. Pressing [37m[40m ENTER [0m will focus input on the breadcrumb
+in the main view. Pressing  ENTER  will focus input on the breadcrumb
 bar, the cursor keys can be used to select a breadcrumb. The common
 breadcrumbs are:
 
@@ -150,7 +150,7 @@ breadcrumbs are:
 
 Notes:
 
- [33m1.[0m Pressing [37m[40m CTRL-A [0m/[37m[40m CTRL-E [0m will select the first/last
+ [33m1.[0m Pressing  CTRL-A / CTRL-E  will select the first/last
     breadcrumb.
  [33m2.[0m Typing text while a breadcrumb is selected will
     perform a fuzzy search on the possibilities.
@@ -188,7 +188,7 @@ results. The views are organized into a stack so that any time you
 activate a new view with a key press or command, the new view is
 pushed onto the stack. Pressing the same key again will pop the view
 off of the stack and return you to the previous view. Note that you
-can always use [37m[40m q [0m to pop the top view off of the stack.
+can always use  q  to pop the top view off of the stack.
 
 [1mDefault Key Bindings[0m
 
@@ -199,16 +199,16 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  [1m?[0m       View/leave this help message.
  [1mq[0m       Leave the current view or quit the program when in
          the log file view.
- Q       Similar to [37m[40m q [0m, except it will try to sync the top
+ Q       Similar to  q , except it will try to sync the top
          time between the current and former views. For
-         example, when leaving the spectrogram view with [37m[40m Q[0m
+         example, when leaving the spectrogram view with  Q
          , the top time in that view will be matched to the
          top time in the log view.
  TAB     Toggle focusing on the filter editor or the main
          view.
  ENTER   Focus on the breadcrumb bar.
- a/A     Restore the view that was previously popped with [37m[40m q[0m
-         /[37m[40m Q [0m. The [37m[40m A [0m hotkey will try to match the top
+ a/A     Restore the view that was previously popped with  q
+         / Q . The  A  hotkey will try to match the top
          times between the two views.
  X       Close the current text file or log file.
 
@@ -291,13 +291,13 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  m       Mark/unmark the line at the top of the display.
          The line will be highlighted with reverse video to
          indicate that it is a user bookmark. You can use
-         the [37m[40m u [0m hotkey to iterate through marks you have
+         the  u  hotkey to iterate through marks you have
          added.
  M       Mark/unmark all the lines between the top of the
          display and the last line marked/unmarked.
  J       Mark/unmark the next line after the previously
          marked line.
- K       Like [37m[40m J [0m except it toggles the mark on the
+ K       Like  J  except it toggles the mark on the
          previous line.
  c       Copy the marked text to the X11 selection buffer
          or OS X clipboard.
@@ -334,12 +334,12 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
                 log lines for each bucket of time. The bars are
                 layed out horizontally with colored segments
                 representing the different log levels. You can use
-                the [37m[40m z [0m hotkey to change the size of the time
+                the  z  hotkey to change the size of the time
                 buckets (e.g. ten minutes, one hour, one day).
  I              Switch between the log and histogram views while
                 keeping the time displayed at the top of each view
                 in sync. For example, if the top line in the log
-                view is "11:40", hitting [37m[40m I [0m will switch to the
+                view is "11:40", hitting  I  will switch to the
                 histogram view and scrolled to display "11:00" at
                 the top (if the zoom level is hours).
  z/Shift Z      Zoom in or out one step in the histogram view.
@@ -415,14 +415,14 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
                       below for more information.
  [1m|[0m<script> [arg1...]  Execute an lnav script contained in a format
                       directory (e.g. ~/.lnav/formats/default). The
-                      script can contain lines starting with [37m[40m : [0m, [37m[40m ; [0m,
-                      or [37m[40m | [0m to execute commands, SQL queries or execute
+                      script can contain lines starting with  : ,  ; ,
+                      or  |  to execute commands, SQL queries or execute
                       other files in lnav. Any values after the script
                       name are treated as arguments can be referenced in
-                      the script using [37m[40m $1 [0m, [37m[40m $2 [0m, and so on, like in a
+                      the script using  $1 ,  $2 , and so on, like in a
                       shell script.
- CTRL+], ESCAPE       Abort command-line entry started with [37m[40m / [0m, [37m[40m : [0m, [37m[40m ;[0m
-                      , or [37m[40m | [0m.
+ CTRL+], ESCAPE       Abort command-line entry started with  / ,  : ,  ;
+                      , or  | .
 
  ▌[1mNote[0m: The regular expression format used by lnav is [4mPCRE[1][0m  
  ▌(Perl-Compatible Regular Expressions).                       
@@ -499,10 +499,10 @@ Some commonly used format tables are:
               leading timestamp followed by the message.
 
 NOTE: You can get a dump of the schema for the internal tables, and
-any attached databases, by running the [37m[40m .schema [0m SQL command.
+any attached databases, by running the  .schema  SQL command.
 
 The columns available for the top log line in the view will
-automatically be displayed after pressing the semicolon ([37m[40m ; [0m) key. All
+automatically be displayed after pressing the semicolon ( ; ) key. All
 log tables contain at least the following columns:
 
  Column          Description                                       
@@ -528,7 +528,7 @@ The following tables include the basic columns as listed above and
 include a few more columns since the log file format is more
 structured.
 
- [33m•[0m [37m[40m syslog_log [0m
+ [33m•[0m  syslog_log 
    
     Column        Description                                       
    ═════════════════════════════════════════════════════════════════
@@ -536,7 +536,7 @@ structured.
     log_procname  The name of the process that sent the message.
     log_pid       The process ID of the process that sent the
                   message.
- [33m•[0m [37m[40m access_log [0m (The column names are the same as those in
+ [33m•[0m  access_log  (The column names are the same as those in
    the Microsoft LogParser tool.)
    
     Column         Description                               
@@ -551,8 +551,8 @@ structured.
     sc_bytes       The number of bytes sent to the client.
     cs_referrer    The URL of the referring page.
     cs_user_agent  The user agent string.
- [33m•[0m [37m[40m strace_log [0m (Currently, you need to run strace with
-   the [37m[40m -tt -T [0moptions so there are timestamps for each
+ [33m•[0m  strace_log  (Currently, you need to run strace with
+   the  -tt -T options so there are timestamps for each
    function call.)
    
     Column       Description                              
@@ -580,7 +580,7 @@ use with care.)
 
 For log formats that lack message structure, lnav can parse the log
 message and attempt to extract any data fields that it finds. This
-feature is available through the [37m[40m logline [0m log table. This table is
+feature is available through the  logline  log table. This table is
 dynamically created and defined based on the message at the top of the
 log view. For example, given the following log message from "sudo",
 lnav will create the "logline" table with columns for "TTY", "PWD",
@@ -625,12 +625,12 @@ view as a template.
 
 Environment variables can be used in SQL statements by prefixing the
 variable name with a dollar-sign ($). For example, to read the value
-of the [37m[40m HOME [0m variable, you can do:
+of the  HOME  variable, you can do:
 
  ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40m$HOME[0m[37m[40m;                          [0m
 
 To select the syslog messages that have a hostname field that is equal
-to the [37m[40m HOSTNAME [0m variable:
+to the  HOSTNAME  variable:
 
  ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_hostname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m$HOSTNAME[0m[37m[40m;    [0m
 

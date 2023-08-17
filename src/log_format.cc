@@ -1601,7 +1601,7 @@ external_log_format::annotate(uint64_t line_number,
         }
 
         auto opid_cap = md[pat.p_opid_field_index];
-        if (opid_cap) {
+        if (opid_cap && !opid_cap->empty()) {
             sa.emplace_back(to_line_range(opid_cap.value()),
                             logline::L_OPID.value());
         }
@@ -2070,7 +2070,8 @@ external_log_format::get_subline(const logline& ll,
                                 this->jlf_line_attrs.emplace_back(
                                     lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
-                                       == this->elf_opid_field)
+                                           == this->elf_opid_field
+                                       && !lr.empty())
                             {
                                 this->jlf_line_attrs.emplace_back(
                                     lr, logline::L_OPID.value());
@@ -2230,7 +2231,9 @@ external_log_format::get_subline(const logline& ll,
                     }
                 }
                 lv.lv_origin.lr_end = this->jlf_cached_line.size() - 1;
-                if (lv.lv_meta.lvm_name == this->elf_opid_field) {
+                if (lv.lv_meta.lvm_name == this->elf_opid_field
+                    && !lv.lv_origin.empty())
+                {
                     this->jlf_line_attrs.emplace_back(lv.lv_origin,
                                                       logline::L_OPID.value());
                 }

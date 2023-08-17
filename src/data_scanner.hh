@@ -34,11 +34,13 @@
 
 #include "pcrepp/pcre2pp.hh"
 #include "shared_buffer.hh"
+#include "text_format.hh"
 
 enum data_token_t {
     DT_INVALID = -1,
 
     DT_QUOTED_STRING = 0,
+    DT_COMMENT,
     DT_URL,
     DT_PATH,
     DT_MAC_ADDRESS,
@@ -178,6 +180,13 @@ public:
         capture_t tr_inner_capture;
         const char* tr_data{nullptr};
 
+        string_fragment to_string_fragment() const
+        {
+            return string_fragment::from_byte_range(this->tr_data,
+                                                    this->tr_capture.c_begin,
+                                                    this->tr_capture.c_end);
+        }
+
         std::string to_string() const
         {
             return {&this->tr_data[this->tr_capture.c_begin],
@@ -185,7 +194,8 @@ public:
         }
     };
 
-    nonstd::optional<tokenize_result> tokenize2();
+    nonstd::optional<tokenize_result> tokenize2(text_format_t tf
+                                                = text_format_t::TF_UNKNOWN);
 
     void reset() { this->ds_next_offset = this->ds_init_offset; }
 

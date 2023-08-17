@@ -83,6 +83,7 @@ hier_node::lookup_path(const hier_node* root,
 
 struct metadata_builder {
     std::vector<section_interval_t> mb_intervals;
+    std::vector<section_type_interval_t> mb_type_intervals;
     std::unique_ptr<hier_node> mb_root_node;
 
     metadata to_metadata() &&
@@ -90,6 +91,7 @@ struct metadata_builder {
         return {
             std::move(this->mb_intervals),
             std::move(this->mb_root_node),
+            std::move(this->mb_type_intervals),
         };
     }
 };
@@ -239,8 +241,8 @@ discover_metadata(const attr_line_t& al)
 
 class structure_walker {
 public:
-    explicit structure_walker(attr_line_t& al, line_range lr)
-        : sw_line(al), sw_range(lr),
+    explicit structure_walker(attr_line_t& al, line_range lr, text_format_t tf)
+        : sw_line(al), sw_range(lr), sw_text_format(tf),
           sw_scanner(string_fragment::from_str_range(
               al.get_string(), lr.lr_start, lr.lr_end))
     {
@@ -254,7 +256,8 @@ public:
         size_t garbage_count = 0;
 
         while (garbage_count < 1000) {
-            auto tokenize_res = this->sw_scanner.tokenize2();
+            auto tokenize_res
+                = this->sw_scanner.tokenize2(this->sw_text_format);
             if (!tokenize_res) {
                 break;
             }
@@ -262,10 +265,21 @@ public:
             auto dt = tokenize_res->tr_token;
             element el(tokenize_res->tr_token, tokenize_res->tr_capture);
 
+#if 0
+            log_debug("tok %s %s",
+                      data_scanner::token2name(dt),
+                      tokenize_res->to_string().c_str());
+#endif
             switch (dt) {
                 case DT_XML_DECL_TAG:
                 case DT_XML_EMPTY_TAG:
                     this->sw_values.emplace_back(el);
+                    break;
+                case DT_COMMENT:
+                    this->sw_type_intervals.emplace_back(
+                        el.e_capture.c_begin,
+                        el.e_capture.c_end,
+                        section_types_t::comment);
                     break;
                 case DT_XML_OPEN_TAG:
                     this->flush_values();
@@ -373,6 +387,16 @@ public:
                     if (dt == DT_GARBAGE) {
                         garbage_count += 1;
                     }
+                    if (dt == DT_QUOTED_STRING) {
+                        auto quoted_sf = tokenize_res->to_string_fragment();
+
+                        if (quoted_sf.find('\n')) {
+                            this->sw_type_intervals.emplace_back(
+                                el.e_capture.c_begin,
+                                el.e_capture.c_end,
+                                section_types_t::multiline_string);
+                        }
+                    }
                     this->sw_values.emplace_back(el);
                     break;
             }
@@ -396,6 +420,7 @@ public:
 
         mb.mb_root_node = std::move(this->sw_hier_stage);
         mb.mb_intervals = std::move(this->sw_intervals);
+        mb.mb_type_intervals = std::move(this->sw_type_intervals);
 
         discover_metadata_int(this->sw_line, mb);
 
@@ -506,20 +531,22 @@ private:
 
     attr_line_t& sw_line;
     line_range sw_range;
+    text_format_t sw_text_format;
     data_scanner sw_scanner;
     int sw_depth{0};
     size_t sw_line_number{0};
     std::vector<element> sw_values{};
     std::vector<interval_state> sw_interval_state;
     std::vector<lnav::document::section_interval_t> sw_intervals;
+    std::vector<lnav::document::section_type_interval_t> sw_type_intervals;
     std::vector<std::unique_ptr<lnav::document::hier_node>> sw_hier_nodes;
     std::unique_ptr<lnav::document::hier_node> sw_hier_stage;
 };
 
 metadata
-discover_structure(attr_line_t& al, struct line_range lr)
+discover_structure(attr_line_t& al, struct line_range lr, text_format_t tf)
 {
-    return structure_walker(al, lr).walk();
+    return structure_walker(al, lr, tf).walk();
 }
 
 std::vector<breadcrumb::possibility>

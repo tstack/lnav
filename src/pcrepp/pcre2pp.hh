@@ -256,7 +256,14 @@ public:
     template<typename T, std::size_t N>
     static code from_const(const T (&str)[N], int options = 0)
     {
-        return from(string_fragment::from_const(str), options).unwrap();
+        auto res = from(string_fragment::from_const(str), options);
+
+        if (res.isErr()) {
+            fprintf(stderr, "failed to compile constant regex: %s\n", str);
+            fprintf(stderr, "  %s\n", res.unwrapErr().get_message().c_str());
+        }
+
+        return res.unwrap();
     }
 
     const std::string& get_pattern() const { return this->p_pattern; }

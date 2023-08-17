@@ -73,6 +73,15 @@ Features:
     `dashed` and `dotted` line styles and colors.
 * Added an `options` column to the `lnav_views` table
   to allow more control over overlays.
+* Added a "Dracula" theme as described at:
+  https://draculatheme.com
+* Added the following styles for themes:
+  - `/ui/theme-defs/<theme_name>/syntax-styles/inline-code`
+  - `/ui/theme-defs/<theme_name>/syntax-styles/type`
+  - `/ui/theme-defs/<theme_name>/syntax-styles/function`
+  - `/ui/theme-defs/<theme_name>/syntax-styles/separators-references-accessors`
+* Multi-line block comments (i.e. `/* ... */`) and strings
+  are now recognized and styled as appropriate.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same
