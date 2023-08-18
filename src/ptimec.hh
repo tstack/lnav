@@ -202,16 +202,6 @@ ftime_a(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 }
 
 inline void
-ftime_Z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
-{
-    if (tm.et_flags & ETF_Z_IS_UTC) {
-        PTIME_APPEND('U');
-        PTIME_APPEND('T');
-        PTIME_APPEND('C');
-    }
-}
-
-inline void
 ftime_b(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
     switch (tm.et_tm.tm_mon) {
@@ -898,6 +888,14 @@ ptime_Z_upto(struct exttm* dst,
         && str[off_inout + 2] == 'C')
     {
         PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_UTC; });
+        dst->et_gmtoff = 0;
+        return true;
+    }
+    if (avail >= 3 && str[off_inout + 0] == 'G' && str[off_inout + 1] == 'M'
+        && str[off_inout + 2] == 'T')
+    {
+        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_GMT; });
+        dst->et_gmtoff = 0;
         return true;
     }
 
@@ -912,11 +910,18 @@ ptime_Z_upto_end(struct exttm* dst,
 {
     auto avail = len - off_inout;
 
-    if (avail == 3 && str[off_inout + 0] == 'U' && str[off_inout + 1] == 'T'
+    if (avail >= 3 && str[off_inout + 0] == 'U' && str[off_inout + 1] == 'T'
         && str[off_inout + 2] == 'C')
     {
         PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_UTC; });
-
+        dst->et_gmtoff = 0;
+        return true;
+    }
+    if (avail >= 3 && str[off_inout + 0] == 'G' && str[off_inout + 1] == 'M'
+        && str[off_inout + 2] == 'T')
+    {
+        PTIME_CONSUME(3, { dst->et_flags |= ETF_ZONE_SET | ETF_Z_IS_GMT; });
+        dst->et_gmtoff = 0;
         return true;
     }
 
@@ -1004,6 +1009,22 @@ ftime_z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     }
     PTIME_APPEND('0' + ((mins / 10) % 10));
     PTIME_APPEND('0' + ((mins / 1) % 10));
+}
+
+inline void
+ftime_Z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
+{
+    if (tm.et_flags & ETF_Z_IS_UTC) {
+        PTIME_APPEND('U');
+        PTIME_APPEND('T');
+        PTIME_APPEND('C');
+    } else if (tm.et_flags & ETF_Z_IS_GMT) {
+        PTIME_APPEND('G');
+        PTIME_APPEND('M');
+        PTIME_APPEND('T');
+    } else if (tm.et_flags & ETF_ZONE_SET) {
+        ftime_z(dst, off_inout, len, tm);
+    }
 }
 
 inline bool

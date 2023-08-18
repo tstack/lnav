@@ -14,3 +14,31 @@
 
 
 Goodbye, [36m▌[0mWorld[32m╏[0m!
+
+ ▌[37m[40mfoo bar bar                             [0m
+ ▌[37m[40mbaz "xyz"                               [0m
+
+ ▌[32m[40m/*                                        [0m
+ ▌[32m[40m * This program prints "Hello, World!"    [0m
+ ▌[32m[40m */                                       [0m
+ ▌[37m[40m                                          [0m
+ ▌[1m[36m[40m#include[0m[37m[40m <stdio[0m[37m[40m.[0m[37m[40mh>                        [0m
+ ▌[37m[40m                                          [0m
+ ▌[1m[36m[40mint[0m[37m[40m [0m[37m[40mmain[0m[37m[40m() {                              [0m
+ ▌[37m[40m    [0m[37m[40mprintf[0m[37m[40m([0m[35m[40m"Hello, World!\n"[0m[37m[40m);            [0m
+ ▌[37m[40m}                                         [0m
+
+ ▌[1m[36m[40mdef[0m[37m[40m [0m[37m[40mhw[0m[37m[40m(name):                                  [0m
+ ▌[37m[40m    [0m[35m[40m"""[0m[37m[40m                                        [0m
+ ▌[35m[40m    This function prints "Hello, <name>!"      [0m
+ ▌[35m[40m    """                                        [0m
+ ▌[37m[40m                                               [0m
+ ▌[37m[40m    [0m[37m[40mprint[0m[37m[40m(f[0m[35m[40m"Hello, {name}!"[0m[37m[40m)[0m[32m[40m # test comment[0m[37m[40m    [0m
+
+ ▌[37m[40m<?xml [0m[4m[37m[40mversion[0m[37m[40m=[0m[35m[40m"1.0"[0m[37m[40m [0m[4m[37m[40mencoding[0m[37m[40m=[0m[35m[40m"utf-8"[0m[37m[40m ?>    [0m
+ ▌[37m[40m<books>                                    [0m
+ ▌[37m[40m   [0m[32m[40m<!-- Line comment -->[0m[37m[40m                   [0m
+ ▌[37m[40m   <book [0m[4m[37m[40mid[0m[37m[40m=[0m[35m[40m"100"[0m[37m[40m>                         [0m
+ ▌[37m[40m      <author>Finnegan</author>            [0m
+ ▌[37m[40m   </book>                                 [0m
+ ▌[37m[40m</books>                                   [0m

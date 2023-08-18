@@ -18,3 +18,39 @@
 </pre>
 
 Goodbye, <span style="border-left: solid cyan; border-right: dashed green">World</span>!
+
+```foolang
+foo bar bar
+baz "xyz"
+```
+
+```c
+/*
+ * This program prints "Hello, World!"
+ */
+
+#include <stdio.h>
+
+int main() {
+    printf("Hello, World!\n");
+}
+```
+
+```python
+def hw(name):
+    """
+    This function prints "Hello, <name>!"
+    """
+
+    print(f"Hello, {name}!") # test comment
+```
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<books>
+   <!-- Line comment -->
+   <book id="100">
+      <author>Finnegan</author>
+   </book>
+</books>
+```
