@@ -1,6 +1,7 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "vpostgres_log": {
+        "title": "VMWare PostgreSQL",
         "description": "Format for vpostgresql log files with format '%m %c %x %d %u %r %p %l'",
         "url": [
             "https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-LOG-LINE-PREFIX"
