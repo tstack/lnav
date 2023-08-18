@@ -140,9 +140,10 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
 
        EOF { return nonstd::nullopt; }
 
-       ("u"|"r")?'"'('\\'.|[^\x00\x1b"\\]|'""')*'"' {
+       ("f"|"u"|"r")?'"'('\\'.|[^\x00\x1b"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
+           case 'f':
            case 'u':
            case 'r':
                cap_inner.c_begin += 1;
@@ -152,9 +153,10 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       ("u"|"r")?'"""'[^\x00\x1b]*'"""' {
+       ("f"|"u"|"r")?'"""'[^\x00\x1b]*'"""' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
+           case 'f':
            case 'u':
            case 'r':
                cap_inner.c_begin += 1;
@@ -164,13 +166,16 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       "/" "*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {
+       "/*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {
+           RET(DT_COMMENT);
+       }
+       "<!--" ([^\x00*]|"-"+[^\x00>])* "-"{2,} ">" {
            RET(DT_COMMENT);
        }
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("u"|"r")?"'"('\\'.|"''"|[^\x00\x1b'\\])*"'"/[^sS] {
+       ("f"|"u"|"r")?"'"('\\'.|"''"|[^\x00\x1b'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            if (tf == text_format_t::TF_RUST) {
                auto sf = this->to_string_fragment(cap_all);
@@ -181,6 +186,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
                return tokenize_result{DT_SYMBOL, cap_all, cap_inner, this->ds_input.data()};
            }
            switch (this->ds_input[cap_inner.c_begin]) {
+           case 'f':
            case 'u':
            case 'r':
                cap_inner.c_begin += 1;

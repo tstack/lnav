@@ -32,12 +32,37 @@
 #include "base/attr_line.builder.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
+#include "base/map_util.hh"
+#include "document.sections.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "pugixml/pugixml.hpp"
 #include "readline_highlighters.hh"
+#include "text_format.hh"
+#include "textfile_highlighters.hh"
 #include "view_curses.hh"
 
 using namespace lnav::roles::literals;
+
+static const std::map<string_fragment, text_format_t> CODE_NAME_TO_TEXT_FORMAT
+    = {
+        {"c"_frag, text_format_t::TF_C_LIKE},
+        {"c++"_frag, text_format_t::TF_C_LIKE},
+        {"java"_frag, text_format_t::TF_JAVA},
+        {"python"_frag, text_format_t::TF_PYTHON},
+        {"rust"_frag, text_format_t::TF_RUST},
+        {"toml"_frag, text_format_t::TF_TOML},
+        {"yaml"_frag, text_format_t::TF_YAML},
+        {"xml"_frag, text_format_t::TF_XML},
+};
+
+static highlight_map_t
+get_highlight_map()
+{
+    highlight_map_t retval;
+
+    setup_highlights(retval);
+    return retval;
+}
 
 void
 md2attr_line::flush_footnotes()
@@ -191,7 +216,23 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
         auto lang_sf = string_fragment::from_bytes(code_detail->lang.text,
                                                    code_detail->lang.size);
-        if (lang_sf == "lnav") {
+        auto tf_opt = lnav::map::find(CODE_NAME_TO_TEXT_FORMAT, lang_sf);
+        if (tf_opt) {
+            static const auto highlighters = get_highlight_map();
+
+            lnav::document::discover_structure(
+                block_text, line_range{0, -1}, tf_opt.value());
+            for (const auto& hl_pair : highlighters) {
+                const auto& hl = hl_pair.second;
+
+                if (!hl.h_text_formats.empty()
+                    && hl.h_text_formats.count(tf_opt.value()) == 0)
+                {
+                    continue;
+                }
+                hl.annotate(block_text, 0);
+            }
+        } else if (lang_sf == "lnav") {
             readline_lnav_highlighter(block_text, block_text.length());
         } else if (lang_sf == "sql" || lang_sf == "sqlite") {
             readline_sqlite_highlighter(block_text, block_text.length());

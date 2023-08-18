@@ -37,7 +37,8 @@ template<typename T, std::size_t N>
 static std::shared_ptr<lnav::pcre2pp::code>
 xpcre_compile(const T (&pattern)[N], int options = 0)
 {
-    return lnav::pcre2pp::code::from_const(pattern, options).to_shared();
+    return lnav::pcre2pp::code::from_const(pattern, options | PCRE2_MULTILINE)
+        .to_shared();
 }
 
 void
@@ -422,7 +423,11 @@ setup_highlights(highlight_map_t& hm)
     hm[{highlight_source_t::INTERNAL, "0.comment"}]
         = highlighter(
               xpcre_compile(
-                  R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#\s*(?!include|if|ifndef|elif|else|endif|error|pragma|define|undef).*|\s+#.*|dnl.*)"))
+                  R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#\s*(?!include|if|ifndef|elif|else|endif|error|pragma|define|undef).*|dnl.*)"))
+              .with_nestable(false)
+              .with_role(role_t::VCR_COMMENT);
+    hm[{highlight_source_t::INTERNAL, "z.comment"}]
+        = highlighter(xpcre_compile(R"(\s+#.*)"))
               .with_nestable(false)
               .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}]

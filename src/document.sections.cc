@@ -280,6 +280,12 @@ public:
                         el.e_capture.c_begin,
                         el.e_capture.c_end,
                         section_types_t::comment);
+                    this->sw_line.get_attrs().emplace_back(
+                        line_range{
+                            this->sw_range.lr_start + el.e_capture.c_begin,
+                            this->sw_range.lr_start + el.e_capture.c_end,
+                        },
+                        VC_ROLE.value(role_t::VCR_COMMENT));
                     break;
                 case DT_XML_OPEN_TAG:
                     this->flush_values();
@@ -395,6 +401,14 @@ public:
                                 el.e_capture.c_begin,
                                 el.e_capture.c_end,
                                 section_types_t::multiline_string);
+                            this->sw_line.get_attrs().emplace_back(
+                                line_range{
+                                    this->sw_range.lr_start
+                                        + el.e_capture.c_begin,
+                                    this->sw_range.lr_start
+                                        + el.e_capture.c_end,
+                                },
+                                VC_ROLE.value(role_t::VCR_STRING));
                         }
                     }
                     this->sw_values.emplace_back(el);
