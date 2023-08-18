@@ -1,0 +1,50 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "vpostgres_log": {
+        "description": "Format for vpostgresql log files with format '%m %c %x %d %u %r %p %l'",
+        "url": [
+            "https://www.postgresql.org/docs/current/runtime-config-logging.html#GUC-LOG-LINE-PREFIX"
+        ],
+        "regex": {
+            "std": {
+                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3} \\S+) (?<session_id>[^ ]*) (?<transaction_id>[^ ]*) (?<db_name>[^ ]*) (?<user>[^ ]*) (?<remote_pair>[^ ]*) (?<pid>[^ ]+) (?<num_line>\\d+)(?<level>[^:]+):\\s+(?<body>.*)"
+            }
+        },
+        "opid-field": "session_id",
+        "value": {
+            "db_name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "pid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "remote_pair": {
+                "kind": "string",
+                "identifier": true
+            },
+            "session_id": {
+                "kind": "string",
+                "identifier": true
+            },
+            "transaction_id": {
+                "kind": "string",
+                "identifier": true
+            },
+            "user": {
+                "kind": "string",
+                "identifier": true
+            },
+            "num_line": {
+                "kind": "integer",
+                "foreign-key": true
+            }
+        },
+        "sample": [
+            {
+                "line": "2023-07-25 02:14:09.790 UTC 64bf2ff1.21fc1e 0 VCDB vumuser [local] 2227230 5LOG:  disconnection: session time: 0:00:00.012 user=vumuser database=VCDB host=[local]"
+            }
+        ]
+    }
+}
