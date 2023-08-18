@@ -238,8 +238,8 @@ com_adjust_log_time(exec_context& ec,
             snprintf(
                 buffer,
                 sizeof(buffer),
-                "info: log timestamps will be adjusted by %ld.%06ld seconds",
-                time_diff.tv_sec,
+                "info: log timestamps will be adjusted by %lld.%06ld seconds",
+                (long long)time_diff.tv_sec,
                 (long) time_diff.tv_usec);
 
             retval = buffer;
@@ -307,7 +307,7 @@ com_unix_time(exec_context& ec,
                      "%a %b %d %H:%M:%S %Y  %z %Z",
                      localtime(&u_time));
             len = strlen(ftime);
-            snprintf(ftime + len, sizeof(ftime) - len, " -- %ld", u_time);
+            snprintf(ftime + len, sizeof(ftime) - len, " -- %lld", (long long)u_time);
             retval = std::string(ftime);
         } else {
             return ec.make_error("invalid unix time -- {}", args[1]);

@@ -338,7 +338,7 @@ ftime_s(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
     time_t t = tm2sec(&tm.et_tm);
 
-    snprintf(&dst[off_inout], len - off_inout, "%ld", t);
+    snprintf(&dst[off_inout], len - off_inout, "%lld", (long long)t);
     off_inout = strlen(dst);
 }
 
@@ -396,7 +396,7 @@ ftime_q(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
     time_t t = tm2sec(&tm.et_tm);
 
-    snprintf(&dst[off_inout], len - off_inout, "%lx", t);
+    snprintf(&dst[off_inout], len - off_inout, "%llx", (long long)t);
     off_inout = strlen(dst);
 }
 

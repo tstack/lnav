@@ -476,10 +476,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                 snprintf(row_count_buf,
                          sizeof(row_count_buf),
                          ANSI_BOLD("%'d") " row%s matched in " ANSI_BOLD(
-                             "%ld.%03ld") " seconds",
+                             "%lld.%03ld") " seconds",
                          row_count,
                          row_count == 1 ? "" : "s",
-                         diff_tv.tv_sec,
+                         (long long)diff_tv.tv_sec,
                          std::max((long) diff_tv.tv_usec / 1000, 1L));
                 retval = row_count_buf;
                 if (dls.has_log_time_column()) {
@@ -626,7 +626,7 @@ execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
 
     vars["#"] = env_arg_name;
     for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
-        snprintf(env_arg_name, sizeof(env_arg_name), "%lu", lpc);
+        snprintf(env_arg_name, sizeof(env_arg_name), "%lu", (long unsigned int)lpc);
         vars[env_arg_name] = split_args[lpc];
     }
     for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
