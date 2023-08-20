@@ -37,6 +37,7 @@
 #include "base/humanize.time.hh"
 #include "base/math_util.hh"
 #include "command_executor.hh"
+#include "intervaltree/IntervalTree.h"
 #include "md4cpp.hh"
 #include "sql_util.hh"
 
@@ -252,7 +253,7 @@ gantt_header_overlay::list_value_for_overlay(
         return;
     }
 
-    const auto& row = this->gho_src->gs_time_order[line];
+    const auto& row = this->gho_src->gs_time_order[line].get();
 
     if (row.or_value.otr_sub_ops.size() <= 1) {
         return;
@@ -348,10 +349,12 @@ gantt_source::get_time_bounds_for(int line)
     static const int CONTEXT_LINES = 5;
 
     const auto& low_row
-        = this->gs_time_order[std::max(0, line - CONTEXT_LINES)];
-    const auto& sel_row = this->gs_time_order[line];
-    const auto& high_row = this->gs_time_order[std::min(
-        line + CONTEXT_LINES, (int) this->gs_time_order.size() - 1)];
+        = this->gs_time_order[std::max(0, line - CONTEXT_LINES)].get();
+    const auto& sel_row = this->gs_time_order[line].get();
+    const auto& high_row
+        = this->gs_time_order[std::min(line + CONTEXT_LINES,
+                                       (int) this->gs_time_order.size() - 1)]
+              .get();
     auto high_tv_sec = std::max(sel_row.or_value.otr_range.tr_end.tv_sec,
                                 high_row.or_value.otr_range.tr_begin.tv_sec);
 
@@ -393,7 +396,7 @@ gantt_source::text_value_for_line(textview_curses& tc,
                                   text_sub_source::line_flags_t flags)
 {
     if (line < this->gs_time_order.size()) {
-        const auto& row = this->gs_time_order[line];
+        const auto& row = this->gs_time_order[line].get();
         auto duration
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
         auto duration_str = fmt::format(
@@ -432,7 +435,7 @@ gantt_source::text_attrs_for_line(textview_curses& tc,
                                   string_attrs_t& value_out)
 {
     if (line < this->gs_time_order.size()) {
-        const auto& row = this->gs_time_order[line];
+        const auto& row = this->gs_time_order[line].get();
 
         value_out = this->gs_rendered_line.get_attrs();
 
@@ -509,6 +512,7 @@ gantt_source::rebuild_indexes()
     this->gs_opid_width = 0;
     this->gs_total_width = 0;
     this->gs_filtered_count = 0;
+    this->gs_active_opids.clear();
     this->gs_opid_map.clear();
     this->gs_subid_map.clear();
     this->gs_allocator.reset();
@@ -520,7 +524,6 @@ gantt_source::rebuild_indexes()
 
     auto max_desc_width = size_t{0};
 
-    std::map<string_fragment, opid_row> active_opids;
     for (const auto& ld : this->gs_lss) {
         if (ld->get_file_ptr() == nullptr) {
             continue;
@@ -543,9 +546,9 @@ gantt_source::rebuild_indexes()
                 iter = emp_res.first;
             }
 
-            auto active_iter = active_opids.find(pair.first);
-            if (active_iter == active_opids.end()) {
-                auto active_emp_res = active_opids.emplace(
+            auto active_iter = this->gs_active_opids.find(pair.first);
+            if (active_iter == this->gs_active_opids.end()) {
+                auto active_emp_res = this->gs_active_opids.emplace(
                     iter->first, opid_row{iter->first, otr});
                 active_iter = active_emp_res.first;
             } else {
@@ -592,22 +595,6 @@ gantt_source::rebuild_indexes()
         }
     }
 
-    std::multimap<struct timeval, opid_row> time_order_map;
-    for (const auto& pair : active_opids) {
-        if (this->gs_lower_bound.tv_sec == 0
-            || pair.second.or_value.otr_range.tr_begin < this->gs_lower_bound)
-        {
-            this->gs_lower_bound = pair.second.or_value.otr_range.tr_begin;
-        }
-        if (this->gs_upper_bound.tv_sec == 0
-            || this->gs_upper_bound < pair.second.or_value.otr_range.tr_end)
-        {
-            this->gs_upper_bound = pair.second.or_value.otr_range.tr_end;
-        }
-        time_order_map.emplace(pair.second.or_value.otr_range.tr_begin,
-                               pair.second);
-    }
-    this->gs_time_order.clear();
     size_t filtered_in_count = 0;
     for (const auto& filt : this->tss_filters) {
         if (!filt->is_enabled()) {
@@ -618,7 +605,9 @@ gantt_source::rebuild_indexes()
         }
     }
     this->gs_filter_hits = {};
-    for (auto& pair : time_order_map) {
+    this->gs_time_order.clear();
+    this->gs_time_order.reserve(this->gs_active_opids.size());
+    for (auto& pair : this->gs_active_opids) {
         auto& otr = pair.second.or_value;
         auto& full_desc = pair.second.or_description;
         for (auto& desc : pair.second.or_descriptions) {
@@ -688,13 +677,31 @@ gantt_source::rebuild_indexes()
         if (full_desc.size() > max_desc_width) {
             max_desc_width = full_desc.size();
         }
-        if (pair.second.or_value.otr_level_stats.lls_error_count > 0) {
-            bm_errs.insert_once(vis_line_t(this->gs_time_order.size()));
-        } else if (pair.second.or_value.otr_level_stats.lls_warning_count > 0) {
-            bm_warns.insert_once(vis_line_t(this->gs_time_order.size()));
+
+        if (this->gs_lower_bound.tv_sec == 0
+            || pair.second.or_value.otr_range.tr_begin < this->gs_lower_bound)
+        {
+            this->gs_lower_bound = pair.second.or_value.otr_range.tr_begin;
         }
-        this->gs_time_order.emplace_back(std::move(pair.second));
+        if (this->gs_upper_bound.tv_sec == 0
+            || this->gs_upper_bound < pair.second.or_value.otr_range.tr_end)
+        {
+            this->gs_upper_bound = pair.second.or_value.otr_range.tr_end;
+        }
+        this->gs_time_order.emplace_back(pair.second);
     }
+    std::stable_sort(this->gs_time_order.begin(),
+                     this->gs_time_order.end(),
+                     std::less<const opid_row>{});
+    for (size_t lpc = 0; lpc < this->gs_time_order.size(); lpc++) {
+        const auto& row = this->gs_time_order[lpc].get();
+        if (row.or_value.otr_level_stats.lls_error_count > 0) {
+            bm_errs.insert_once(vis_line_t(lpc));
+        } else if (row.or_value.otr_level_stats.lls_warning_count > 0) {
+            bm_warns.insert_once(vis_line_t(lpc));
+        }
+    }
+
     this->gs_opid_width = std::min(this->gs_opid_width, MAX_OPID_WIDTH);
     this->gs_total_width
         = std::max<size_t>(22 + this->gs_opid_width + max_desc_width,
@@ -712,29 +719,29 @@ gantt_source::row_for_time(struct timeval time_bucket)
             return nonstd::nullopt;
         }
 
-        if (iter->or_value.otr_range.contains_inclusive(time_bucket)) {
+        if (iter->get().or_value.otr_range.contains_inclusive(time_bucket)) {
             break;
         }
         ++iter;
     }
 
     auto closest_iter = iter;
-    auto closest_diff = time_bucket - iter->or_value.otr_range.tr_begin;
+    auto closest_diff = time_bucket - iter->get().or_value.otr_range.tr_begin;
     for (; iter != this->gs_time_order.end(); ++iter) {
-        if (time_bucket < iter->or_value.otr_range.tr_begin) {
+        if (time_bucket < iter->get().or_value.otr_range.tr_begin) {
             break;
         }
-        if (!iter->or_value.otr_range.contains_inclusive(time_bucket)) {
+        if (!iter->get().or_value.otr_range.contains_inclusive(time_bucket)) {
             continue;
         }
 
-        auto diff = time_bucket - iter->or_value.otr_range.tr_begin;
+        auto diff = time_bucket - iter->get().or_value.otr_range.tr_begin;
         if (diff < closest_diff) {
             closest_iter = iter;
             closest_diff = diff;
         }
 
-        for (const auto& sub : iter->or_value.otr_sub_ops) {
+        for (const auto& sub : iter->get().or_value.otr_sub_ops) {
             if (!sub.ostr_range.contains_inclusive(time_bucket)) {
                 continue;
             }
@@ -757,7 +764,7 @@ gantt_source::time_for_row(vis_line_t row)
         return nonstd::nullopt;
     }
 
-    const auto& otr = this->gs_time_order[row].or_value;
+    const auto& otr = this->gs_time_order[row].get().or_value;
 
     if (this->tss_view->get_selection() == row) {
         auto ov_sel = this->tss_view->get_overlay_selection();
@@ -788,7 +795,7 @@ gantt_source::text_selection_changed(textview_curses& tc)
         return;
     }
 
-    const auto& row = this->gs_time_order[sel];
+    const auto& row = this->gs_time_order[sel].get();
     auto low_tv = row.or_value.otr_range.tr_begin;
     auto high_tv = row.or_value.otr_range.tr_end;
     auto id_sf = row.or_name;
@@ -923,7 +930,7 @@ gantt_source::text_crumbs_for_line(int line,
         return;
     }
 
-    const auto& row = this->gs_time_order[line];
+    const auto& row = this->gs_time_order[line].get();
     char ts[64];
 
     sql_strftime(ts, sizeof(ts), row.or_value.otr_range.tr_begin, 'T');
