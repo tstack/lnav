@@ -1287,6 +1287,11 @@ external_log_format::scan(logfile& lf,
             {
                 this->lf_date_time.relock(ls);
                 continue;
+            } else {
+                log_debug("%s:%d:date-time re-locked to %d",
+                          lf.get_unique_path().c_str(),
+                          dst.size(),
+                          this->lf_date_time.dts_fmt_lock);
             }
         }
 

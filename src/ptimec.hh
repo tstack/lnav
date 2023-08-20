@@ -393,18 +393,39 @@ ftime_q(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_L(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    auto avail = len - off_inout;
     int ms = 0;
 
-    PTIME_CONSUME(3, {
-        char c0 = str[off_inout];
-        char c1 = str[off_inout + 1];
-        char c2 = str[off_inout + 2];
-        if (!isdigit(c0) || !isdigit(c1) || !isdigit(c2)) {
-            return false;
-        }
-        ms = ((str[off_inout] - '0') * 100 + (str[off_inout + 1] - '0') * 10
-              + (str[off_inout + 2] - '0'));
-    });
+    if (avail >= 3 && isdigit(str[off_inout + 2])) {
+        PTIME_CONSUME(3, {
+            char c0 = str[off_inout];
+            char c1 = str[off_inout + 1];
+            char c2 = str[off_inout + 2];
+            if (!isdigit(c0) || !isdigit(c1) || !isdigit(c2)) {
+                return false;
+            }
+            ms = ((str[off_inout] - '0') * 100 + (str[off_inout + 1] - '0') * 10
+                  + (str[off_inout + 2] - '0'));
+        });
+    } else if (avail >= 2 && isdigit(str[off_inout + 1])) {
+        PTIME_CONSUME(2, {
+            char c0 = str[off_inout];
+            char c1 = str[off_inout + 1];
+            if (!isdigit(c0) || !isdigit(c1)) {
+                return false;
+            }
+            ms = ((str[off_inout] - '0') * 100
+                  + (str[off_inout + 1] - '0') * 10);
+        });
+    } else {
+        PTIME_CONSUME(1, {
+            char c0 = str[off_inout];
+            if (!isdigit(c0)) {
+                return false;
+            }
+            ms = (str[off_inout] - '0') * 100;
+        });
+    }
 
     if ((ms >= 0 && ms <= 999)) {
         dst->et_flags |= ETF_MILLIS_SET;

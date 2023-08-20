@@ -112,12 +112,34 @@ public:
                  std::map<intern_string_t, std::map<size_t, std::string>>>
             or_descriptions;
         std::string or_description;
+
+        bool operator<(const opid_row& rhs) const
+        {
+            if (this->or_value.otr_range < rhs.or_value.otr_range) {
+                return true;
+            }
+            if (this->or_value.otr_range.tr_begin
+                    == rhs.or_value.otr_range.tr_begin
+                && this->or_name < rhs.or_name)
+            {
+                return true;
+            }
+
+            return false;
+        }
     };
+
+    using gantt_opid_row_map
+        = robin_hood::unordered_map<string_fragment,
+                                    opid_row,
+                                    frag_hasher,
+                                    std::equal_to<string_fragment>>;
 
     attr_line_t gs_rendered_line;
     size_t gs_opid_width{0};
     size_t gs_total_width{0};
-    std::vector<opid_row> gs_time_order;
+    gantt_opid_row_map gs_active_opids;
+    std::vector<std::reference_wrapper<opid_row>> gs_time_order;
     struct timeval gs_lower_bound {};
     struct timeval gs_upper_bound {};
     size_t gs_filtered_count{0};
