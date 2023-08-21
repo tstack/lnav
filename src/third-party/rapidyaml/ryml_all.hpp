@@ -342,7 +342,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #elif defined(__linux)
 #   define C4_UNIX
 #   define C4_LINUX
-#elif defined(__unix)
+#elif defined(__unix) || defined(__NetBSD__)
 #   define C4_UNIX
 #elif defined(__arm__) || defined(__aarch64__)
 #   define C4_ARM
@@ -352,7 +352,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #   error "unknown platform"
 #endif
 
-#if defined(__posix) || defined(__unix__) || defined(__linux)
+#if defined(__posix) || defined(__unix__) || defined(__linux) || defined(__NetBSD__)
 #   define C4_POSIX
 #endif
 
