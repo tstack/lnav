@@ -12,11 +12,35 @@
         "opid-field": "opid",
         "opid": {
             "description": {
-                "vlcm-session": {
+                "get-changes": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "(GetChanges for sequence token: \\d+)"
+                        }
+                    ]
+                },
+                "resource-model-query": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "ResourceModel query"
+                        }
+                    ]
+                },
+                "create-session": {
                     "format": [
                         {
                             "field": "body",
                             "extractor": "(Created session for .*)"
+                        }
+                    ]
+                },
+                "delete-session": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "Deleting session for .*"
                         }
                     ]
                 },
