@@ -12,40 +12,53 @@
                 "pattern": "^(?<level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| JVMDUMP\\w+\\s(?<body>.*)$"
             },
             "tasko": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[\\w\\-\\.]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[\\w\\-\\.]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
             },
             "prefix-brackets": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
             },
             "in-brackets": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[\\w\\-\\.]+)(?:\\s+(?:\\[\\]|null))?\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[\\w\\-\\.]+)(?:\\s+(?:\\[\\]|null))?\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
             },
             "nobrackets": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<thread>[\\w\\-\\.]+) (?:operationID=(?<opid>\\S+))?\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
             },
             "vmw1": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<srcfile>[^\\|]+)\\s*\\|\\s*(?<srcline>\\d+)\\s*\\|\\s*(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<srcfile>[^\\|]+)\\s*\\|\\s*(?<srcline>\\d+)\\s*\\|\\s*(?<body>.*)$"
             },
             "vmw2": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\]\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\d+\\[(?<thread>[^\\]]+)\\]\\s+-\\s+(?<class>[^\\(]+)\\.(?<method>\\w+)\\((?<srcfile>[^:]+):(?<srcline>\\d+)\\)\\s+-\\s+(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\]\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\d+\\[(?<thread>[^\\]]+)\\]\\s+-\\s+(?<class>[^\\(]+)\\.(?<method>\\w+)\\((?<srcfile>[^:]+):(?<srcline>\\d+)\\)\\s+-\\s+(?<body>.*)$"
             },
             "vmw3": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<class>[^\\|]+)\\s*\\|\\s+(?!\\d+\\s*\\|)(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<class>[a-zA-Z_\\.][^\\|]+)\\s*\\|\\s+(?!\\d+\\s*\\|)(?<body>.*)$"
             },
             "vmw-sso": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+[\\w\\-]+\\[\\d+:(?<thread>[^\\]]+)\\]\\s+\\[CorId=(?<corid>[^\\s\\]]*)(?:\\s+OpId=(?<opid>[^\\]]*))?\\]\\s+\\[(?<class>[^\\]]+)\\]\\s+(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+[\\w\\-]+\\[\\d+:(?<thread>[^\\]]+)\\]\\s+\\[CorId=(?<corid>[^\\s\\]]*)(?:\\s+OpId=(?<opid>[^\\]]*))?\\]\\s+\\[(?<class>[^\\]]+)\\]\\s+(?<body>.*)$"
             },
             "vmw-sps": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}Z?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+-\\s+(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+-\\s+(?<body>.*)$"
             }
         },
         "level-field": "level",
         "opid-field": "opid",
+        "opid": {
+            "description": {
+                "license": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "Invoking (.+)"
+                        }
+                    ]
+                }
+            }
+        },
         "level": {
             "error": "ERROR",
             "warning": "WARN",
             "debug": "DEBUG",
-            "info": "INFO"
+            "info": "INFO",
+            "trace": "TRACE"
         },
         "value": {
             "function": {
@@ -141,6 +154,12 @@
             },
             {
                 "line": "2022-06-01T13:42:32.742Z INFO sts-default[23:localhost-startStop-1] [CorId= OpId=] [com.vmware.identity.idm.server.provider.PooledLdapConnectionFactory] New connection created in pool PooledLdapConnectionIdentity [tenantName=null, username=vc.vlcm.com@vsphere.local, authType=SRP, useGCPort=false, connectionString=ldap://vc.vlcm.com:389]"
+            },
+            {
+                "line": "2023-07-18T20:10:41.345-0700 | DEBUG    | opId-229b032d-ed17-4675-b01d-4868ea35d1b9 | cls-background-executor-4 | SessionManagerImpl             | Invalidated 0 expired sessions."
+            },
+            {
+                "line": "2023-07-19T03:05:51.879Z invocation-vmomi-executor-1 operationID=4e543097-1a  DEBUG vim.vmomi.server.impl.InvocationTask Invoking com.vmware.vim.binding.vim.LicenseManager.getEvaluation"
             }
         ]
     }
