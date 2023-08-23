@@ -111,6 +111,7 @@ public:
         std::map<intern_string_t,
                  std::map<intern_string_t, std::map<size_t, std::string>>>
             or_descriptions;
+        size_t or_max_subid_width{0};
         std::string or_description;
 
         bool operator<(const opid_row& rhs) const

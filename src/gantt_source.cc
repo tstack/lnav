@@ -288,7 +288,10 @@ gantt_header_overlay::list_value_for_overlay(
                 sub.ostr_level_stats.lls_warning_count, total_msgs)))
             .append(" ")
             .append(lnav::roles::identifier(sub.ostr_subid.to_string()))
-            .append("  ")
+            .append(row.or_max_subid_width
+                        - sub.ostr_subid.utf8_length().unwrapOr(
+                            row.or_max_subid_width),
+                    ' ')
             .append(sub.ostr_description);
         al.with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
 
@@ -566,6 +569,12 @@ gantt_source::rebuild_indexes()
                                      .first;
                 }
                 sub.ostr_subid = subid_iter->first;
+                if (sub.ostr_subid.length()
+                    > active_iter->second.or_max_subid_width)
+                {
+                    active_iter->second.or_max_subid_width
+                        = sub.ostr_subid.length();
+                }
             }
 
             if (otr.otr_description.lod_id) {
