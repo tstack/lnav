@@ -125,7 +125,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                         }
                         found = true;
                     }
-                    if (key_iter != key_comps.end()) {
+                    if (!found && key_iter != key_comps.end()) {
                         switch (key_iter->e_token) {
                             case DT_WORD:
                             case DT_SYMBOL:

@@ -836,7 +836,8 @@ execute_init_commands(
                 wait_for_pipers();
                 rebuild_indexes_repeatedly();
             }
-            if (dls.dls_rows.size() > 1) {
+            if (dls.dls_rows.size() > 1 && lnav_data.ld_view_stack.size() == 1)
+            {
                 ensure_view(LNV_DB);
             }
         }
