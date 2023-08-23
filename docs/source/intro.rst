@@ -11,6 +11,12 @@ navigate through your logs using a variety of :ref:`hotkeys<hotkeys>`.
 for doing things like applying filters, tagging messages, and more.  You can
 then analyze your log messages using the :ref:`sql-ext`.
 
+.. figure:: lnav-intro-screen.png
+   :align: center
+   :alt: Screenshot of lnav showing a mix of syslog and web access_log messages.
+
+   Screenshot of **lnav** viewing syslog and web access_log messages.
+
 Development
 -----------
 

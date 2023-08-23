@@ -132,6 +132,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             this->text_attrs_for_line((textview_curses&) lv, sel, sa);
 
             if (sa.empty()) {
+                this->ss_details_source.reset();
                 this->ss_cursor_column = nonstd::nullopt;
                 return true;
             }
@@ -165,6 +166,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
                 }
             }
             this->ss_cursor_column = current->sa_range.lr_start;
+            this->ss_details_source.reset();
 
             lv.reload_data();
 
@@ -526,12 +528,14 @@ spectrogram_source::text_selection_changed(textview_curses& tc)
 {
     if (this->ss_value_source == nullptr || this->text_line_count() == 0) {
         this->ss_cursor_column = nonstd::nullopt;
+        this->ss_details_source.reset();
         return;
     }
 
     const auto& s_row = this->load_row(tc, tc.get_selection());
     this->ss_cursor_column
         = s_row.nearest_column(this->ss_cursor_column.value_or(0));
+    this->ss_details_source.reset();
 }
 
 bool
