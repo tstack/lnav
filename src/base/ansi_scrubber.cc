@@ -239,6 +239,10 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             continue;
         }
 
+        if (!md[1]) {
+            continue;
+        }
+
         auto seq = md[1].value();
         auto terminator = md[2].value();
         struct line_range lr;

@@ -56,6 +56,13 @@ main(int argc, char* argv[])
     }
 
     {
+        std::string bad_bold = "^_\x8b\b ";
+        string_attrs_t sa;
+
+        scrub_ansi_string(bad_bold, &sa);
+    }
+
+    {
         std::string boldish
             = "\u2022\b\u2022\u2023\b\u2023 h\bhe\bel\blo\bo _\ba_\bb_\bc a\b_ "
               "b";
