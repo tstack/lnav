@@ -131,7 +131,7 @@ TEST_AGENTS = [
     "Roku4640X/DVP-7.70 (297.70E04154A)",
 ]
 
-START_TIME = datetime.datetime.fromtimestamp(1641898727)
+START_TIME = datetime.datetime.fromtimestamp(1692700000)
 ACCESS_LOG_CURR_TIME = START_TIME
 SYSLOG_LOG_CURR_TIME = START_TIME
 
@@ -139,7 +139,7 @@ SYSLOG_LOG_CURR_TIME = START_TIME
 def access_log_msgs():
     global ACCESS_LOG_CURR_TIME
     while True:
-        ACCESS_LOG_CURR_TIME += datetime.timedelta(seconds=random.randrange(1, 3))
+        ACCESS_LOG_CURR_TIME += datetime.timedelta(seconds=random.randrange(1, 5))
         yield '%s - %s [%s +0000] "%s %s %s" %s %s "%s" "%s"\n' % (
             random.choice(TEST_ADDRESSES),
             random.choice(TEST_USERNAMES),
@@ -181,7 +181,7 @@ TEST_MSGS = [
 def syslog_msgs():
     global SYSLOG_LOG_CURR_TIME
     while True:
-        SYSLOG_LOG_CURR_TIME += datetime.timedelta(seconds=random.randrange(1, 3))
+        SYSLOG_LOG_CURR_TIME += datetime.timedelta(seconds=random.randrange(1, 5))
         yield '%s frontend3 %s: %s\n' % (
             SYSLOG_LOG_CURR_TIME.strftime(SYSLOG_DATE_FMT),
             random.choice(TEST_PROCS),

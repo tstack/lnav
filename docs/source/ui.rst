@@ -301,6 +301,13 @@ GANTT
 
 .. note:: This feature is available in v0.12.0+.
 
+.. figure:: lnav-gantt-1.png
+   :align: center
+
+   Screenshot of the Gantt chart view when viewing logs from the
+   VMWare Update Manager.  Most rows show API requests as they
+   are received and processed.
+
 The Gantt Chart view visualizes operations over time.  The operations
 are identified by the "opid" field defined in the log format.  In the
 view, there is a header that shows the overall time span, the
@@ -322,7 +329,27 @@ focused time span will be adjusted to keep the preceding and following
 five operations within the span.
 
 The preview panel at the bottom of the display will show the
-messages associated with the operation.
+messages associated with the focused operation.
+
+The following hotkeys can be useful in this view:
+
+* :kbd:`p` -- If the log format defined sub-operations with the
+  :code:`opid/subid` property, this will toggle an overlay panel
+  that displays the sub-operation descriptions.
+
+  .. figure:: lnav-gantt-2.png
+     :align: center
+
+     Screenshot showing the same log as above after pressing
+     :kbd:`p`.  The overlay panel shows a breakdown of
+     sub-operations performed while processing the main operation.
+
+* :kbd:`Shift` + :kbd:`q` -- Return to the previous view and change
+  its focused line to match the time that was focused in the gantt
+  view.
+* :kbd:`Shift` + :kbd:`a` -- After leaving the gantt view, pressing
+  these keys will return to the Gantt view while keeping the focused
+  time in sync.
 
 PRETTY
 ^^^^^^
