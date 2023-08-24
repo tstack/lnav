@@ -742,7 +742,7 @@ ptime_l(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
     dst->et_tm.tm_hour = 0;
 
-    if ((off_inout + 1) > len) {
+    if ((off_inout + 1) >= len) {
         return false;
     }
 
@@ -751,7 +751,7 @@ ptime_l(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         off_inout += 1;
     }
 
-    if ((off_inout + 1) > len) {
+    if ((off_inout + 1) >= len) {
         off_inout = orig_off;
         return false;
     }
@@ -764,7 +764,13 @@ ptime_l(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     dst->et_tm.tm_hour = str[off_inout] - '0';
     off_inout += 1;
 
+    if (!consumed_space && (off_inout + 1) >= len) {
+        off_inout = orig_off;
+        return false;
+    }
+
     if (consumed_space || str[off_inout] < '0' || str[off_inout] > '9') {
+        dst->et_flags |= ETF_HOUR_SET;
         return true;
     }
 
@@ -773,10 +779,9 @@ ptime_l(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     off_inout += 1;
 
     if (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23) {
+        dst->et_flags |= ETF_HOUR_SET;
         return true;
     }
-
-    dst->et_flags |= ETF_HOUR_SET;
 
     off_inout = orig_off;
     return false;
