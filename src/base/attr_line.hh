@@ -175,6 +175,10 @@ void remove_string_attr(string_attrs_t& sa, string_attr_type_base* type);
 
 void shift_string_attrs(string_attrs_t& sa, int32_t start, int32_t amount);
 
+void shift_string_attrs(string_attrs_t& sa,
+                        const line_range& cover,
+                        int32_t amount);
+
 struct text_wrap_settings {
     text_wrap_settings& with_indent(int indent)
     {

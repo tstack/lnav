@@ -1702,7 +1702,8 @@ external_log_format::rewrite(exec_context& ec,
          ++iter)
     {
         if (!iter->lv_origin.is_valid()) {
-            log_debug("not rewriting value with invalid origin -- %s",
+            log_debug("%d: not rewriting value with invalid origin -- %s",
+                      ec.ec_top_line,
                       iter->lv_meta.lvm_name.get());
             continue;
         }
@@ -1734,14 +1735,15 @@ external_log_format::rewrite(exec_context& ec,
 
         int32_t shift_amount
             = ((int32_t) field_value.length()) - iter->lv_origin.length();
+        auto orig_lr = iter->lv_origin;
         value_out.insert(iter->lv_origin.lr_start, field_value);
         for (shift_iter = values.lvv_values.begin();
              shift_iter != values.lvv_values.end();
              ++shift_iter)
         {
-            shift_iter->lv_origin.shift(iter->lv_origin.lr_start, shift_amount);
+            shift_iter->lv_origin.shift_range(orig_lr, shift_amount);
         }
-        shift_string_attrs(sa, iter->lv_origin.lr_start, shift_amount);
+        shift_string_attrs(sa, orig_lr, shift_amount);
     }
 }
 
@@ -1844,8 +1846,10 @@ rewrite_json_field(yajlpp_parse_context* ypc,
         auto str_offset = (int) ((const char*) str - jlu->jlu_line_value);
         if (field_name == jlu->jlu_format->elf_body_field) {
             jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-                jlu->jlu_format->get_value_meta(body_name,
-                                                value_kind_t::VALUE_TEXT),
+                logline_value_meta(body_name,
+                                   value_kind_t::VALUE_TEXT,
+                                   logline_value_meta::internal_column{},
+                                   jlu->jlu_format),
                 string_fragment::from_byte_range(
                     jlu->jlu_shared_buffer.get_data(),
                     str_offset,
@@ -1864,8 +1868,10 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     } else {
         if (field_name == jlu->jlu_format->elf_body_field) {
             jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-                jlu->jlu_format->get_value_meta(body_name,
-                                                value_kind_t::VALUE_TEXT),
+                logline_value_meta(body_name,
+                                   value_kind_t::VALUE_TEXT,
+                                   logline_value_meta::internal_column{},
+                                   jlu->jlu_format),
                 std::string{(const char*) str, len});
         }
         if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
@@ -2434,10 +2440,14 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         auto& vd = this->elf_value_defs[this->lf_timestamp_field];
         if (vd.get() == nullptr) {
             vd = std::make_shared<external_log_format::value_def>(
-                this->lf_timestamp_field, value_kind_t::VALUE_TEXT, -1, this);
+                this->lf_timestamp_field,
+                value_kind_t::VALUE_TEXT,
+                logline_value_meta::internal_column{},
+                this);
         }
         vd->vd_meta.lvm_name = this->lf_timestamp_field;
         vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
+        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
         vd->vd_internal = true;
     }
     if (startswith(this->elf_level_field.get(), "/")) {
@@ -2451,20 +2461,28 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         auto& vd = this->elf_value_defs[this->elf_level_field];
         if (vd.get() == nullptr) {
             vd = std::make_shared<external_log_format::value_def>(
-                this->elf_level_field, value_kind_t::VALUE_TEXT, -1, this);
+                this->elf_level_field,
+                value_kind_t::VALUE_TEXT,
+                logline_value_meta::internal_column{},
+                this);
         }
         vd->vd_meta.lvm_name = this->elf_level_field;
         vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
+        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
         vd->vd_internal = true;
     }
     if (!this->elf_body_field.empty()) {
         auto& vd = this->elf_value_defs[this->elf_body_field];
         if (vd.get() == nullptr) {
             vd = std::make_shared<external_log_format::value_def>(
-                this->elf_body_field, value_kind_t::VALUE_TEXT, -1, this);
+                this->elf_body_field,
+                value_kind_t::VALUE_TEXT,
+                logline_value_meta::internal_column{},
+                this);
         }
         vd->vd_meta.lvm_name = this->elf_body_field;
         vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
+        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
         vd->vd_internal = true;
     }
 
@@ -2523,8 +2541,12 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 } else {
                     ivd.ivd_unit_field_index = -1;
                 }
-                if (!vd->vd_internal && vd->vd_meta.lvm_column == -1) {
-                    vd->vd_meta.lvm_column = this->elf_column_count++;
+                if (!vd->vd_internal
+                    && !vd->vd_meta.lvm_column
+                            .is<logline_value_meta::table_column>())
+                {
+                    vd->vd_meta.lvm_column = logline_value_meta::table_column{
+                        this->elf_column_count++};
                 }
                 ivd.ivd_value_def = vd;
                 pat.p_value_by_index.push_back(ivd);
@@ -2686,8 +2708,11 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         std::vector<std::string>::iterator act_iter;
 
         vd->vd_meta.lvm_format = this;
-        if (!vd->vd_internal && vd->vd_meta.lvm_column == -1) {
-            vd->vd_meta.lvm_column = this->elf_column_count++;
+        if (!vd->vd_internal
+            && !vd->vd_meta.lvm_column.is<logline_value_meta::table_column>())
+        {
+            vd->vd_meta.lvm_column
+                = logline_value_meta::table_column{this->elf_column_count++};
         }
 
         if (vd->vd_meta.lvm_kind == value_kind_t::VALUE_UNKNOWN) {
@@ -3513,18 +3538,21 @@ public:
             auto type_pair = log_vtab_impl::logline_value_to_sqlite_type(
                 vd->vd_meta.lvm_kind);
 
-            if (vd->vd_meta.lvm_column == -1) {
+            if (!vd->vd_meta.lvm_column.is<logline_value_meta::table_column>())
+            {
                 continue;
             }
 
-            require(0 <= vd->vd_meta.lvm_column
-                    && vd->vd_meta.lvm_column < elf.elf_column_count);
+            auto col
+                = vd->vd_meta.lvm_column.get<logline_value_meta::table_column>()
+                      .value;
+            require(0 <= col && col < elf.elf_column_count);
 
-            cols[vd->vd_meta.lvm_column].vc_name = vd->vd_meta.lvm_name.get();
-            cols[vd->vd_meta.lvm_column].vc_type = type_pair.first;
-            cols[vd->vd_meta.lvm_column].vc_subtype = type_pair.second;
-            cols[vd->vd_meta.lvm_column].vc_collator = vd->vd_collate;
-            cols[vd->vd_meta.lvm_column].vc_comment = vd->vd_description;
+            cols[col].vc_name = vd->vd_meta.lvm_name.get();
+            cols[col].vc_type = type_pair.first;
+            cols[col].vc_subtype = type_pair.second;
+            cols[col].vc_collator = vd->vd_collate;
+            cols[col].vc_comment = vd->vd_description;
         }
     }
 
@@ -3810,7 +3838,8 @@ external_log_format::get_value_meta(intern_string_t field_name,
     auto iter = this->elf_value_defs.find(field_name);
 
     if (iter == this->elf_value_defs.end()) {
-        auto retval = logline_value_meta(field_name, kind, -1, this);
+        auto retval = logline_value_meta(
+            field_name, kind, logline_value_meta::external_column{}, this);
 
         retval.lvm_hidden = this->jlf_hide_extra;
         return retval;

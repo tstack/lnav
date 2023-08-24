@@ -137,6 +137,9 @@
                     },
                     "snippet-border": {
                         "color": "$cyan"
+                    },
+                    "indent-guide": {
+                        "color": "#444"
                     }
                 },
                 "syntax-styles": {

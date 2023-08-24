@@ -85,6 +85,9 @@
                     },
                     "h6": {
                         "underline": true
+                    },
+                    "indent-guide": {
+                        "color": "#444"
                     }
                 },
                 "syntax-styles": {

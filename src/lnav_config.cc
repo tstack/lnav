@@ -762,6 +762,10 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for snippet borders")
         .for_child(&lnav_theme::lt_style_snippet_border)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("indent-guide")
+        .with_description("Styling for indent guide lines")
+        .for_child(&lnav_theme::lt_style_indent_guide)
+        .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_syntax_styles_handlers = {

@@ -461,7 +461,8 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
             vt->vi->extract(lf, line_number, vc->line_values);
         }
 
-        int sub_col = ic.cc_column - VT_COL_MAX;
+        auto sub_col = logline_value_meta::table_column{
+            (size_t) (ic.cc_column - VT_COL_MAX)};
         auto lv_iter = find_if(vc->line_values.lvv_values.begin(),
                                vc->line_values.lvv_values.end(),
                                logline_value_cmp(nullptr, sub_col));
@@ -977,7 +978,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     vt->vi->extract(lf, line_number, vc->line_values);
                 }
 
-                int sub_col = col - VT_COL_MAX;
+                auto sub_col = logline_value_meta::table_column{
+                    (size_t) (col - VT_COL_MAX)};
                 auto lv_iter = find_if(vc->line_values.lvv_values.begin(),
                                        vc->line_values.lvv_values.end(),
                                        logline_value_cmp(nullptr, sub_col));

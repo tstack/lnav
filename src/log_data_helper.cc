@@ -41,6 +41,7 @@ log_data_helper::clear()
     this->ldh_parser.reset();
     this->ldh_scanner.reset();
     this->ldh_namer.reset();
+    this->ldh_extra_json.clear();
     this->ldh_json_pairs.clear();
     this->ldh_xml_pairs.clear();
     this->ldh_line_attrs.clear();
@@ -67,6 +68,7 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_parser.reset();
         this->ldh_scanner.reset();
         this->ldh_namer.reset();
+        this->ldh_extra_json.clear();
         this->ldh_json_pairs.clear();
         this->ldh_xml_pairs.clear();
         this->ldh_line_attrs.clear();
@@ -96,6 +98,7 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_parser->parse();
         this->ldh_namer
             = std::make_unique<column_namer>(column_namer::language::SQL);
+        this->ldh_extra_json.clear();
         this->ldh_json_pairs.clear();
         this->ldh_xml_pairs.clear();
 
@@ -105,8 +108,28 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         }
 
         for (auto& ldh_line_value : this->ldh_line_values.lvv_values) {
+            if (ldh_line_value.lv_meta.lvm_name == format->lf_timestamp_field) {
+                continue;
+            }
+            if (ldh_line_value.lv_meta.lvm_column
+                    .is<logline_value_meta::external_column>())
+            {
+                char buf[ldh_line_value.lv_meta.lvm_name.size() + 2];
+
+                auto rc = fmt::format_to(
+                    buf, FMT_STRING("/{}"), ldh_line_value.lv_meta.lvm_name);
+                *rc = '\0';
+                this->ldh_extra_json[intern_string::lookup(buf, -1)]
+                    = ldh_line_value.to_string();
+                continue;
+            }
+
             switch (ldh_line_value.lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_JSON: {
+                    if (!ldh_line_value.lv_meta.lvm_struct_name.empty()) {
+                        continue;
+                    }
+
                     json_ptr_walk jpw;
 
                     if (jpw.parse(ldh_line_value.text_value(),

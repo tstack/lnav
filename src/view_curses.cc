@@ -838,6 +838,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_footnote_text, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SNIPPET_BORDER)]
         = this->to_attrs(lt, lt.lt_style_snippet_border, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_INDENT_GUIDE)]
+        = this->to_attrs(lt, lt.lt_style_indent_guide, reporter);
 
     {
         positioned_property<style_config> stitch_sc;

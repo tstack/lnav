@@ -109,9 +109,27 @@ enum class value_kind_t : int {
 };
 
 struct logline_value_meta {
+    struct internal_column {
+        bool operator==(const internal_column&) const { return true; }
+    };
+    struct external_column {
+        bool operator==(const external_column&) const { return true; }
+    };
+    struct table_column {
+        size_t value;
+
+        bool operator==(const table_column& rhs) const
+        {
+            return this->value == rhs.value;
+        }
+    };
+
+    using column_t
+        = mapbox::util::variant<internal_column, external_column, table_column>;
+
     logline_value_meta(intern_string_t name,
                        value_kind_t kind,
-                       int col = -1,
+                       column_t col = external_column{},
                        const nonstd::optional<log_format*>& format
                        = nonstd::nullopt)
         : lvm_name(name), lvm_kind(kind), lvm_column(col), lvm_format(format)
@@ -134,7 +152,7 @@ struct logline_value_meta {
 
     intern_string_t lvm_name;
     value_kind_t lvm_kind;
-    int lvm_column{-1};
+    column_t lvm_column{external_column{}};
     nonstd::optional<size_t> lvm_values_index;
     bool lvm_identifier{false};
     bool lvm_hidden{false};
@@ -284,8 +302,9 @@ struct logline_value_stats {
 };
 
 struct logline_value_cmp {
-    explicit logline_value_cmp(const intern_string_t* name = nullptr,
-                               int col = -1)
+    explicit logline_value_cmp(
+        const intern_string_t* name = nullptr,
+        nonstd::optional<logline_value_meta::column_t> col = nonstd::nullopt)
         : lvc_name(name), lvc_column(col)
     {
     }
@@ -297,15 +316,16 @@ struct logline_value_cmp {
         if (this->lvc_name != nullptr) {
             retval = retval && ((*this->lvc_name) == lv.lv_meta.lvm_name);
         }
-        if (this->lvc_column != -1) {
-            retval = retval && (this->lvc_column == lv.lv_meta.lvm_column);
+        if (this->lvc_column) {
+            retval
+                = retval && (this->lvc_column.value() == lv.lv_meta.lvm_column);
         }
 
         return retval;
     }
 
     const intern_string_t* lvc_name;
-    int lvc_column;
+    nonstd::optional<logline_value_meta::column_t> lvc_column;
 };
 
 class log_vtab_impl;

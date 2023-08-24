@@ -95,6 +95,10 @@ Bug Fixes:
   configuration can be viewed by passing the `-W` flag.
 * Importing from regex101.com broke due to some changes in the
   API.
+* The details overlay for a log message no longer shows keys
+  for unknown JSON properties.  These extra fields are now
+  shown with the proper `jget(log_raw_text, '/...')` SQL
+  expression needed to retrieve the value.
 
 Interface changes:
 * The breadcrumb bar hotkey is moving to backtick `` ` ``
@@ -110,6 +114,8 @@ Interface changes:
   used to draw the overlay contents now as well. (The
   overlay is used to display the parser details, comments,
   and annotations.)
+* Added indent guidelines to the data reformatted in the pretty-print
+  view.
 
 Breaking changes:
 * Removed the `-w` command-line option.  This option was
@@ -123,6 +129,8 @@ Breaking changes:
 * Data piped into **lnav** is now stored in the work
   directory instead of the `stdin-captures` dot-lnav
   directory.
+* Changed the "Bunyan" log format name from `bunyan` to
+  `bunyan_log` to be consistent with other format names.
 
 ## lnav v0.11.2
 

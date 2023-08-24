@@ -138,7 +138,10 @@ value_def_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
 
     if (iter == elf->elf_value_defs.end()) {
         retval = std::make_shared<external_log_format::value_def>(
-            value_name, value_kind_t::VALUE_TEXT, -1, elf);
+            value_name,
+            value_kind_t::VALUE_TEXT,
+            logline_value_meta::external_column{},
+            elf);
         elf->elf_value_defs[value_name] = retval;
         elf->elf_value_def_order.emplace_back(retval);
     } else {

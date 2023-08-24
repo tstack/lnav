@@ -197,10 +197,13 @@ static const json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
 };
 
 static const typed_json_path_container<view_options> view_options_handlers = {
-    yajlpp::property_handler("show-details")
+    yajlpp::property_handler("row-details")
         .with_enum_values(ROW_DETAILS_ENUM)
+        .with_description(
+            "Show or hide the details overlay for the focused row")
         .for_field(&view_options::vo_row_details),
     yajlpp::property_handler("overlay-focused-line")
+        .with_description("The focused line in an overlay")
         .for_field(&view_options::vo_overlay_focus),
 };
 
