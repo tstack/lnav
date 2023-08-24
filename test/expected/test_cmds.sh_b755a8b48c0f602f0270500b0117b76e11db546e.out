@@ -18,11 +18,11 @@ Apr  7 05:49:53 Tim-Stacks-iMac.local GoogleSoftwareUpdateDaemon[17212]: -[KSUpd
     body=
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <o:gupdate xmlns:o="http://www.google.com/update2/request" protocol="2.0" version="KeystoneDaemon-1.2.0.7709" ismachine="1" requestid="{0DFDBCD1-5E29-4DFC-BD99-31A2397198FE}">
-    ▏   <o:os platform="mac" version="MacOSX" sp="10.10.2_x86_64h"></o:os>
-    ▏   <o:app appid="com.google.Keystone" version="1.2.0.7709" lang="en-us" installage="180" brand="GGLG">
-    ▏   ▏   <o:ping r="1" a="1"></o:ping>
-    ▏   ▏   <o:updatecheck></o:updatecheck>
-    ▏   </o:app>
+        <o:os platform="mac" version="MacOSX" sp="10.10.2_x86_64h"></o:os>
+        <o:app appid="com.google.Keystone" version="1.2.0.7709" lang="en-us" installage="180" brand="GGLG">
+            <o:ping r="1" a="1"></o:ping>
+            <o:updatecheck></o:updatecheck>
+        </o:app>
     </o:gupdate>
  >
 [33mApr  7 07:31:56[0m[33m [0m[33mTim-Stacks-iMac.local[0m[33m [0m[33mVirtualBox[0m[33m[[0m[33m36403[0m[33m][0m[33m: [0m[33mWARNING: The Gestalt selector gestaltSystemVersion is returning 10.9.2 instead of 10.10.2. Use NSProcessInfo's operatingSystemVersion property to get correct system version number.[0m

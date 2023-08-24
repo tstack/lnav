@@ -245,6 +245,8 @@ pretty_printer::write_element(const pretty_printer::element& el)
 void
 pretty_printer::append_indent()
 {
+    static const auto INDENT_GUIDELINE = block_elem_t{L'\u258f'};
+
     this->pp_stream << std::string(
         this->pp_leading_indent + this->pp_soft_indent, ' ');
     this->pp_soft_indent = 0;
@@ -255,10 +257,13 @@ pretty_printer::append_indent()
         if (lpc > 0) {
             int off = this->pp_stream.tellp();
             this->pp_post_attrs.emplace_back(
-                line_range{off, off + 3},
+                line_range{off, off + 1},
+                VC_BLOCK_ELEM.value(INDENT_GUIDELINE));
+            this->pp_post_attrs.emplace_back(
+                line_range{off, off + 1},
                 VC_ROLE.value(role_t::VCR_INDENT_GUIDE));
         }
-        this->pp_stream << (lpc == 0 ? "    " : "\u258f   ");
+        this->pp_stream << "    ";
     }
 }
 

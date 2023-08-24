@@ -162,6 +162,10 @@ struct text_attrs {
     nonstd::optional<short> ta_bg_color;
 };
 
+struct block_elem_t {
+    wchar_t value;
+};
+
 using string_attr_value = mapbox::util::variant<int64_t,
                                                 role_t,
                                                 text_attrs,
@@ -170,7 +174,8 @@ using string_attr_value = mapbox::util::variant<int64_t,
                                                 std::shared_ptr<logfile>,
                                                 bookmark_metadata*,
                                                 timespec,
-                                                string_fragment>;
+                                                string_fragment,
+                                                block_elem_t>;
 
 class string_attr_type_base {
 public:
@@ -224,6 +229,7 @@ extern string_attr_type<role_t> VC_ROLE;
 extern string_attr_type<role_t> VC_ROLE_FG;
 extern string_attr_type<text_attrs> VC_STYLE;
 extern string_attr_type<int64_t> VC_GRAPHIC;
+extern string_attr_type<block_elem_t> VC_BLOCK_ELEM;
 extern string_attr_type<int64_t> VC_FOREGROUND;
 extern string_attr_type<int64_t> VC_BACKGROUND;
 
