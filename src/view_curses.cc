@@ -260,7 +260,8 @@ view_curses::mvwattrline(WINDOW* window,
         if (!(iter->sa_type == &VC_ROLE || iter->sa_type == &VC_ROLE_FG
               || iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC
               || iter->sa_type == &SA_LEVEL || iter->sa_type == &VC_FOREGROUND
-              || iter->sa_type == &VC_BACKGROUND))
+              || iter->sa_type == &VC_BACKGROUND
+              || iter->sa_type == &VC_BLOCK_ELEM))
         {
             continue;
         }
@@ -335,10 +336,13 @@ view_curses::mvwattrline(WINDOW* window,
         if (attr_range.lr_start < attr_range.lr_end) {
             int awidth = attr_range.length();
             nonstd::optional<char> graphic;
+            nonstd::optional<wchar_t> block_elem;
 
             if (iter->sa_type == &VC_GRAPHIC) {
                 graphic = iter->sa_value.get<int64_t>();
                 attrs = text_attrs{};
+            } else if (iter->sa_type == &VC_BLOCK_ELEM) {
+                block_elem = iter->sa_value.get<block_elem_t>().value;
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
             } else if (iter->sa_type == &SA_LEVEL) {
@@ -353,7 +357,7 @@ view_curses::mvwattrline(WINDOW* window,
                 attrs.ta_fg_color = role_attrs.ta_fg_color;
             }
 
-            if (graphic || !attrs.empty()) {
+            if (graphic || block_elem || !attrs.empty()) {
                 int x_pos = x + attr_range.lr_start;
                 int ch_width = std::min(
                     awidth, (line_width_chars - attr_range.lr_start));
@@ -397,6 +401,9 @@ view_curses::mvwattrline(WINDOW* window,
                     if (graphic) {
                         row_ch[lpc].chars[0] = graphic.value();
                         row_ch[lpc].attr |= A_ALTCHARSET;
+                    }
+                    if (block_elem) {
+                        row_ch[lpc].chars[0] = block_elem.value();
                     }
                     if (row_ch[lpc].attr & A_REVERSE
                         && attrs.ta_attrs & A_REVERSE)
