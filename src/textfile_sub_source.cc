@@ -83,8 +83,20 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
             } else {
                 auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
                 auto read_result = lf->read_line(ll);
+                this->tss_line_indent_size = 0;
                 if (read_result.isOk()) {
                     value_out = to_string(read_result.unwrap());
+                    for (const auto& ch : value_out) {
+                        if (ch == ' ') {
+                            this->tss_line_indent_size += 1;
+                        } else if (ch == '\t') {
+                            do {
+                                this->tss_line_indent_size += 1;
+                            } while (this->tss_line_indent_size % 8);
+                        } else {
+                            break;
+                        }
+                    }
                     if (lf->has_line_metadata()
                         && this->tas_display_time_offset)
                     {
@@ -168,32 +180,45 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
                 auto end_offset = (ll_next_iter == lf->end())
                     ? lf->get_index_size() - 1
                     : ll_next_iter->get_offset() - 1;
-                meta_opt->get()
-                    .ms_metadata.m_section_types_tree.visit_overlapping(
-                        ll->get_offset(),
-                        end_offset,
-                        [&value_out, &ll, end_offset](const auto& iv) {
-                            auto lr = line_range{0, -1};
-                            if (iv.start > ll->get_offset()) {
-                                lr.lr_start = iv.start - ll->get_offset();
-                            }
-                            if (iv.stop < end_offset) {
-                                lr.lr_end = iv.stop - ll->get_offset();
-                            } else {
-                                lr.lr_end = end_offset - ll->get_offset();
-                            }
-                            auto role = role_t::VCR_NONE;
-                            switch (iv.value) {
-                                case lnav::document::section_types_t::comment:
-                                    role = role_t::VCR_COMMENT;
-                                    break;
-                                case lnav::document::section_types_t::
-                                    multiline_string:
-                                    role = role_t::VCR_STRING;
-                                    break;
-                            }
-                            value_out.emplace_back(lr, VC_ROLE.value(role));
-                        });
+                const auto& meta = meta_opt.value().get();
+                meta.ms_metadata.m_section_types_tree.visit_overlapping(
+                    ll->get_offset(),
+                    end_offset,
+                    [&value_out, &ll, end_offset](const auto& iv) {
+                        auto lr = line_range{0, -1};
+                        if (iv.start > ll->get_offset()) {
+                            lr.lr_start = iv.start - ll->get_offset();
+                        }
+                        if (iv.stop < end_offset) {
+                            lr.lr_end = iv.stop - ll->get_offset();
+                        } else {
+                            lr.lr_end = end_offset - ll->get_offset();
+                        }
+                        auto role = role_t::VCR_NONE;
+                        switch (iv.value) {
+                            case lnav::document::section_types_t::comment:
+                                role = role_t::VCR_COMMENT;
+                                break;
+                            case lnav::document::section_types_t::
+                                multiline_string:
+                                role = role_t::VCR_STRING;
+                                break;
+                        }
+                        value_out.emplace_back(lr, VC_ROLE.value(role));
+                    });
+                for (const auto& indent : meta.ms_metadata.m_indents) {
+                    if (indent < this->tss_line_indent_size) {
+                        auto guide_lr = line_range{
+                            (int) indent,
+                            (int) (indent + 1),
+                            line_range::unit::codepoint,
+                        };
+                        value_out.emplace_back(
+                            guide_lr,
+                            VC_BLOCK_ELEM.value(block_elem_t{
+                                L'\u258f', role_t::VCR_INDENT_GUIDE}));
+                    }
+                }
             }
         }
     }

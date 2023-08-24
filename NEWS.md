@@ -114,8 +114,7 @@ Interface changes:
   used to draw the overlay contents now as well. (The
   overlay is used to display the parser details, comments,
   and annotations.)
-* Added indent guidelines to the data reformatted in the pretty-print
-  view.
+* Added indent guidelines when structured data is detected.
 
 Breaking changes:
 * Removed the `-w` command-line option.  This option was

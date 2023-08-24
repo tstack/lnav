@@ -31,6 +31,7 @@
 #define lnav_attr_line_breadcrumbs_hh
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -113,6 +114,7 @@ struct metadata {
     sections_tree_t m_sections_tree;
     std::unique_ptr<hier_node> m_sections_root;
     section_types_tree_t m_section_types_tree;
+    std::set<size_t> m_indents;
 
     std::vector<breadcrumb::possibility> possibility_provider(
         const std::vector<section_key_t>& path);
