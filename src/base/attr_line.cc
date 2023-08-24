@@ -506,6 +506,27 @@ line_range::intersection(const line_range& other) const
 }
 
 line_range&
+line_range::shift_range(const line_range& cover, int32_t amount)
+{
+    if (cover.lr_end <= this->lr_start) {
+        this->lr_start = std::max(0, this->lr_start + amount);
+        if (this->lr_end != -1) {
+            this->lr_end = std::max(0, this->lr_end + amount);
+        }
+    } else if (this->lr_end != -1) {
+        if (cover.lr_start < this->lr_end) {
+            if (amount < 0 && amount < (cover.lr_start - this->lr_end)) {
+                this->lr_end = cover.lr_start;
+            } else {
+                this->lr_end = std::max(this->lr_start, this->lr_end + amount);
+            }
+        }
+    }
+
+    return *this;
+}
+
+line_range&
 line_range::shift(int32_t start, int32_t amount)
 {
     if (start == this->lr_start) {
@@ -564,6 +585,14 @@ shift_string_attrs(string_attrs_t& sa, int32_t start, int32_t amount)
 {
     for (auto& iter : sa) {
         iter.sa_range.shift(start, amount);
+    }
+}
+
+void
+shift_string_attrs(string_attrs_t& sa, const line_range& cover, int32_t amount)
+{
+    for (auto& iter : sa) {
+        iter.sa_range.shift_range(cover, amount);
     }
 }
 

@@ -54,19 +54,23 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
         this->lst_format_column_count = this->lst_column_metas.size();
         cols.resize(this->lst_column_metas.size());
         for (const auto& meta : this->lst_column_metas) {
-            if (meta.lvm_column == -1) {
+            if (!meta.lvm_column.is<logline_value_meta::table_column>()) {
                 continue;
             }
+            auto col
+                = meta.lvm_column.get<logline_value_meta::table_column>().value;
             auto type_pair
                 = log_vtab_impl::logline_value_to_sqlite_type(meta.lvm_kind);
-            cols[meta.lvm_column].vc_name = meta.lvm_name.to_string();
-            cols[meta.lvm_column].vc_type = type_pair.first;
-            cols[meta.lvm_column].vc_subtype = type_pair.second;
+            cols[col].vc_name = meta.lvm_name.to_string();
+            cols[col].vc_type = type_pair.first;
+            cols[col].vc_subtype = type_pair.second;
         }
     }
 
     this->lst_column_metas.emplace_back(
-        match_index_name, value_kind_t::VALUE_INTEGER, cols.size());
+        match_index_name,
+        value_kind_t::VALUE_INTEGER,
+        logline_value_meta::table_column{cols.size()});
     cols.emplace_back(MATCH_INDEX, SQLITE_INTEGER);
     cn.add_column(string_fragment::from_const("__all__"));
     auto captures = this->lst_regex->get_captures();
@@ -86,19 +90,19 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
                     this->lst_column_metas.emplace_back(
                         intern_string::lookup(colname),
                         value_kind_t::VALUE_FLOAT,
-                        cols.size());
+                        logline_value_meta::table_column{cols.size()});
                     break;
                 case SQLITE_INTEGER:
                     this->lst_column_metas.emplace_back(
                         intern_string::lookup(colname),
                         value_kind_t::VALUE_INTEGER,
-                        cols.size());
+                        logline_value_meta::table_column{cols.size()});
                     break;
                 default:
                     this->lst_column_metas.emplace_back(
                         intern_string::lookup(colname),
                         value_kind_t::VALUE_TEXT,
-                        cols.size());
+                        logline_value_meta::table_column{cols.size()});
                     break;
             }
         }

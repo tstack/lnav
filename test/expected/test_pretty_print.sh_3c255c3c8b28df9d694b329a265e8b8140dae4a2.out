@@ -1,6 +1,6 @@
 {
 [35m    "wra[0mpper": [
-            {[35m"message"[0m:[35m""[0m
+    ▏   ▏   {[35m"message"[0m:[35m""[0m
 [35m            select Id from Account where id = $sfid[0m
 [35m                                             ^[0m
 [35m            ERROR at Row:1:Column:34[0m

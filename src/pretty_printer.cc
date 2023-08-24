@@ -141,7 +141,11 @@ pretty_printer::append_to(attr_line_t& al)
 
     attr_line_t combined;
     combined.get_string() = this->pp_stream.str();
-    combined.get_attrs() = this->pp_attrs;
+    auto& attrs = combined.get_attrs();
+    attrs = this->pp_attrs;
+    attrs.insert(
+        attrs.end(), this->pp_post_attrs.begin(), this->pp_post_attrs.end());
+    this->pp_post_attrs.clear();
 
     if (!al.empty()) {
         al.append("\n");
@@ -248,7 +252,13 @@ pretty_printer::append_indent()
         return;
     }
     for (int lpc = 0; lpc < this->pp_depth; lpc++) {
-        this->pp_stream << "    ";
+        if (lpc > 0) {
+            int off = this->pp_stream.tellp();
+            this->pp_post_attrs.emplace_back(
+                line_range{off, off + 3},
+                VC_ROLE.value(role_t::VCR_INDENT_GUIDE));
+        }
+        this->pp_stream << (lpc == 0 ? "    " : "\u258f   ");
     }
 }
 

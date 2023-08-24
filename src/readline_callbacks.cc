@@ -476,7 +476,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                 lnav_data.ld_bottom_source.grep_error("");
             } else if (!sqlite3_complete(term_val.c_str())) {
                 lnav_data.ld_bottom_source.grep_error(
-                    "sql error: incomplete statement");
+                    "SQL error: incomplete statement");
             } else {
                 auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
                 int retcode;
@@ -491,7 +491,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                     const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
                     lnav_data.ld_bottom_source.grep_error(
-                        fmt::format(FMT_STRING("sql error: {}"), errmsg));
+                        fmt::format(FMT_STRING("SQL error: {}"), errmsg));
                 } else {
                     lnav_data.ld_bottom_source.grep_error("");
                 }

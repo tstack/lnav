@@ -334,9 +334,12 @@ public:
         nonstd::optional<size_t> fd_numeric_index;
 
         explicit field_def(const intern_string_t name,
-                           int col,
+                           size_t col,
                            log_format* format)
-            : fd_meta(name, value_kind_t::VALUE_TEXT, col, format),
+            : fd_meta(name,
+                      value_kind_t::VALUE_TEXT,
+                      logline_value_meta::table_column{col},
+                      format),
               fd_root_meta(&FIELD_META.find(name)->second)
         {
         }
@@ -963,7 +966,7 @@ public:
         {
         }
 
-        field_def(int col,
+        field_def(size_t col,
                   const char* name,
                   value_kind_t kind,
                   bool ident = false,
@@ -972,7 +975,7 @@ public:
               fd_meta(
                   intern_string::lookup(sql_safe_ident(string_fragment(name))),
                   kind,
-                  col),
+                  logline_value_meta::table_column{col}),
               fd_collator(std::move(coll))
         {
             this->fd_meta.lvm_identifier = ident;
@@ -1274,10 +1277,11 @@ public:
                                 logline_value_meta(
                                     field_name,
                                     value_kind_t::VALUE_TEXT,
-                                    KNOWN_FIELDS.size() + 1
+                                    logline_value_meta::table_column{
+                                        KNOWN_FIELDS.size() + 1
                                         + std::distance(
                                             begin(KNOWN_STRUCT_FIELDS),
-                                            fs_iter),
+                                            fs_iter)},
                                     this)
                                     .with_struct_name(fs_iter->fs_struct_name));
                         } else {
@@ -1288,7 +1292,8 @@ public:
                                 logline_value_meta(
                                     field_name,
                                     value_kind_t::VALUE_TEXT,
-                                    KNOWN_FIELDS.size() + X_FIELDS_IDX,
+                                    logline_value_meta::table_column{
+                                        KNOWN_FIELDS.size() + X_FIELDS_IDX},
                                     this)
                                     .with_struct_name(X_FIELDS_NAME));
                         }
@@ -1503,7 +1508,7 @@ public:
 std::unordered_map<const intern_string_t, logline_value_meta>
     w3c_log_format::FIELD_META;
 
-static int KNOWN_FIELD_INDEX = 0;
+static size_t KNOWN_FIELD_INDEX = 0;
 const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
     {
         KNOWN_FIELD_INDEX++,
@@ -1786,7 +1791,8 @@ public:
                                                               kvp.first),
                                                           value_kind_t::
                                                               VALUE_INTEGER,
-                                                          0,
+                                                          logline_value_meta::
+                                                              table_column{0},
                                                           (log_format*) this}
                                            .with_struct_name(FIELDS_NAME);
                             values.lvv_values.emplace_back(lvm, bv.bv_value);
@@ -1799,7 +1805,8 @@ public:
                                                               kvp.first),
                                                           value_kind_t::
                                                               VALUE_INTEGER,
-                                                          0,
+                                                          logline_value_meta::
+                                                              table_column{0},
                                                           (log_format*) this}
                                            .with_struct_name(FIELDS_NAME);
                             values.lvv_values.emplace_back(lvm, iv.iv_value);
@@ -1812,7 +1819,8 @@ public:
                                                               kvp.first),
                                                           value_kind_t::
                                                               VALUE_INTEGER,
-                                                          0,
+                                                          logline_value_meta::
+                                                              table_column{0},
                                                           (log_format*) this}
                                            .with_struct_name(FIELDS_NAME);
                             values.lvv_values.emplace_back(lvm, fv.fv_value);
@@ -1833,8 +1841,9 @@ public:
                     } else if (kvp.first == "level") {
                     } else if (kvp.first == "msg") {
                         sa.emplace_back(value_lr, SA_BODY.value());
-                    } else if (!kvp.second.is<logfmt::parser::int_value>()
-                               && !kvp.second.is<logfmt::parser::bool_value>())
+                    } else if (kvp.second.is<logfmt::parser::quoted_value>()
+                               || kvp.second
+                                      .is<logfmt::parser::unquoted_value>())
                     {
                         auto lvm
                             = logline_value_meta{intern_string::lookup(
@@ -1842,7 +1851,8 @@ public:
                                                  value_frag.startswith("\"")
                                                      ? value_kind_t::VALUE_JSON
                                                      : value_kind_t::VALUE_TEXT,
-                                                 0,
+                                                 logline_value_meta::
+                                                     table_column{0},
                                                  (log_format*) this}
                                   .with_struct_name(FIELDS_NAME);
                         values.lvv_values.emplace_back(lvm, value_frag);

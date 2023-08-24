@@ -101,6 +101,8 @@ struct line_range {
 
     line_range& shift(int32_t start, int32_t amount);
 
+    line_range& shift_range(const line_range& cover, int32_t amount);
+
     void ltrim(const char* str)
     {
         while (this->lr_start < this->lr_end && isspace(str[this->lr_start])) {

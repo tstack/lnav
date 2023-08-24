@@ -83,6 +83,7 @@ public:
     std::unique_ptr<column_namer> ldh_namer;
     string_attrs_t ldh_line_attrs;
     logline_value_vector ldh_line_values;
+    std::map<const intern_string_t, std::string> ldh_extra_json;
     std::map<const intern_string_t, json_ptr_walk::walk_list_t> ldh_json_pairs;
     std::map<std::pair<const intern_string_t, std::string>, std::string>
         ldh_xml_pairs;

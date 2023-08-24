@@ -103,8 +103,10 @@ log_data_table::get_columns_int()
                 collator = "naturalnocase";
                 break;
         }
-        metas.emplace_back(
-            intern_string::lookup(colname), kind, cols.size(), format.get());
+        metas.emplace_back(intern_string::lookup(colname),
+                           kind,
+                           logline_value_meta::table_column{cols.size()},
+                           format.get());
         cols.emplace_back(colname, sql_type, collator);
     }
     this->ldt_schema_id = dp.dp_schema_id;

@@ -91,6 +91,12 @@
                     },
                     "breadcrumb": {
                         "color": "Teal"
+                    },
+                    "snippet-border": {
+                        "color": "Teal"
+                    },
+                    "indent-guide": {
+                        "color": "#444"
                     }
                 },
                 "syntax-styles": {

@@ -469,6 +469,11 @@
                                             "description": "Styling for snippet borders",
                                             "title": "/ui/theme-defs/<theme_name>/styles/snippet-border",
                                             "$ref": "#/definitions/style"
+                                        },
+                                        "indent-guide": {
+                                            "description": "Styling for indent guide lines",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/indent-guide",
+                                            "$ref": "#/definitions/style"
                                         }
                                     },
                                     "additionalProperties": false

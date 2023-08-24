@@ -37,10 +37,12 @@ static auto intern_lifetime = intern_string::get_table_lifetime();
 
 all_logs_vtab::all_logs_vtab()
     : log_vtab_impl(intern_string::lookup("all_logs")),
-      alv_msg_meta(
-          intern_string::lookup("log_msg_format"), value_kind_t::VALUE_TEXT, 0),
-      alv_schema_meta(
-          intern_string::lookup("log_msg_schema"), value_kind_t::VALUE_TEXT, 1)
+      alv_msg_meta(intern_string::lookup("log_msg_format"),
+                   value_kind_t::VALUE_TEXT,
+                   logline_value_meta::table_column{0}),
+      alv_schema_meta(intern_string::lookup("log_msg_schema"),
+                      value_kind_t::VALUE_TEXT,
+                      logline_value_meta::table_column{1})
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;

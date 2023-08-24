@@ -52,7 +52,7 @@ public:
     struct value_def {
         value_def(intern_string_t name,
                   value_kind_t kind,
-                  int col,
+                  logline_value_meta::column_t col,
                   log_format* format)
             : vd_meta(name, kind, col, format)
         {
@@ -341,7 +341,7 @@ public:
 
     std::vector<std::shared_ptr<value_def>> elf_value_def_order;
     std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
-    int elf_column_count{0};
+    size_t elf_column_count{0};
     double elf_timestamp_divisor{1.0};
     intern_string_t elf_level_field;
     factory_container<lnav::pcre2pp::code> elf_level_pointer;

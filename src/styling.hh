@@ -226,6 +226,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_footnote_border;
     positioned_property<style_config> lt_style_footnote_text;
     positioned_property<style_config> lt_style_snippet_border;
+    positioned_property<style_config> lt_style_indent_guide;
     std::map<log_level_t, positioned_property<style_config>> lt_level_styles;
     std::map<std::string, highlighter_config> lt_highlights;
 };

@@ -230,10 +230,15 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
     this->fos_unknown_key_size = 0;
 
-    for (auto& ldh_line_value : this->fos_log_helper.ldh_line_values.lvv_values)
+    for (const auto& ldh_line_value :
+         this->fos_log_helper.ldh_line_values.lvv_values)
     {
         auto& meta = ldh_line_value.lv_meta;
         int this_key_size = meta.lvm_name.size();
+
+        if (!meta.lvm_column.is<logline_value_meta::table_column>()) {
+            continue;
+        }
 
         if (!this->fos_contexts.empty()) {
             this_key_size += this->fos_contexts.top().c_prefix.length();
@@ -282,12 +287,17 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
     const log_format* last_format = nullptr;
 
-    for (auto& lv : this->fos_log_helper.ldh_line_values.lvv_values) {
-        if (!lv.lv_meta.lvm_format) {
+    for (const auto& lv : this->fos_log_helper.ldh_line_values.lvv_values) {
+        auto& meta = lv.lv_meta;
+        if (!meta.lvm_format) {
             continue;
         }
 
-        auto* curr_format = lv.lv_meta.lvm_format.value();
+        if (!meta.lvm_column.is<logline_value_meta::table_column>()) {
+            continue;
+        }
+
+        auto* curr_format = meta.lvm_format.value();
         auto* curr_elf = dynamic_cast<external_log_format*>(curr_format);
         const auto format_name = curr_format->get_name().to_string();
         attr_line_t al;
@@ -304,15 +314,15 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
 
         std::string field_name, orig_field_name;
-        if (lv.lv_meta.lvm_struct_name.empty()) {
-            if (curr_elf && curr_elf->elf_body_field == lv.lv_meta.lvm_name) {
+        if (meta.lvm_struct_name.empty()) {
+            if (curr_elf && curr_elf->elf_body_field == meta.lvm_name) {
                 field_name = LOG_BODY;
             } else if (curr_elf
-                       && curr_elf->lf_timestamp_field == lv.lv_meta.lvm_name)
+                       && curr_elf->lf_timestamp_field == meta.lvm_name)
             {
                 field_name = LOG_TIME;
             } else {
-                field_name = lv.lv_meta.lvm_name.to_string();
+                field_name = meta.lvm_name.to_string();
             }
             orig_field_name = field_name;
             if (!this->fos_contexts.empty()) {
@@ -323,39 +333,37 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             auto_mem<char, sqlite3_free> jgetter;
 
             jgetter = sqlite3_mprintf("   jget(%s, '/%q')",
-                                      lv.lv_meta.lvm_struct_name.get(),
-                                      lv.lv_meta.lvm_name.get());
+                                      meta.lvm_struct_name.get(),
+                                      meta.lvm_name.get());
             str = jgetter;
         }
         str.append(this->fos_known_key_size - (str.length() - 3), ' ');
         str += " = " + value_str;
 
         al.with_string(str);
-        if (lv.lv_meta.lvm_struct_name.empty()) {
+        if (meta.lvm_struct_name.empty()) {
             auto prefix_len = field_name.length() - orig_field_name.length();
             al.with_attr(string_attr(
                 line_range(3 + prefix_len, 3 + prefix_len + field_name.size()),
                 VC_STYLE.value(vc.attrs_for_ident(orig_field_name))));
         } else {
             al.with_attr(string_attr(
-                line_range(8, 8 + lv.lv_meta.lvm_struct_name.size()),
-                VC_STYLE.value(
-                    vc.attrs_for_ident(lv.lv_meta.lvm_struct_name))));
+                line_range(8, 8 + meta.lvm_struct_name.size()),
+                VC_STYLE.value(vc.attrs_for_ident(meta.lvm_struct_name))));
         }
 
         this->fos_lines.emplace_back(al);
         this->add_key_line_attrs(this->fos_known_key_size);
 
-        if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_STRUCT) {
+        if (meta.lvm_kind == value_kind_t::VALUE_STRUCT) {
             json_string js = extract(value_str.c_str());
 
             al.clear()
                 .append("   extract(")
-                .append(lv.lv_meta.lvm_name.get(),
-                        VC_STYLE.value(vc.attrs_for_ident(lv.lv_meta.lvm_name)))
+                .append(meta.lvm_name.get(),
+                        VC_STYLE.value(vc.attrs_for_ident(meta.lvm_name)))
                 .append(")")
-                .append(this->fos_known_key_size - lv.lv_meta.lvm_name.size()
-                            - 9 + 3,
+                .append(this->fos_known_key_size - meta.lvm_name.size() - 9 + 3,
                         ' ')
                 .append(" = ")
                 .append(
@@ -365,25 +373,37 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
     }
 
-    std::map<const intern_string_t, json_ptr_walk::walk_list_t>::iterator
-        json_iter;
-
-    if (!this->fos_log_helper.ldh_json_pairs.empty()) {
+    if (!this->fos_log_helper.ldh_extra_json.empty()
+        || !this->fos_log_helper.ldh_json_pairs.empty())
+    {
         this->fos_lines.emplace_back(" JSON fields:");
     }
 
-    for (json_iter = this->fos_log_helper.ldh_json_pairs.begin();
-         json_iter != this->fos_log_helper.ldh_json_pairs.end();
-         ++json_iter)
-    {
-        json_ptr_walk::walk_list_t& jpairs = json_iter->second;
+    for (const auto& extra_pair : this->fos_log_helper.ldh_extra_json) {
+        auto_mem<char, sqlite3_free> qname;
+
+        qname = sqlite3_mprintf("%Q", extra_pair.first.c_str());
+
+        auto key_line = attr_line_t("   jget(log_raw_text, ")
+                            .append(qname.in())
+                            .append(")");
+        auto key_size = key_line.length();
+        key_line.append(" = ").append(extra_pair.second);
+        this->fos_lines.emplace_back(key_line);
+        this->add_key_line_attrs(key_size - 3);
+    }
+
+    for (const auto& jpairs_map : this->fos_log_helper.ldh_json_pairs) {
+        const auto& jpairs = jpairs_map.second;
 
         for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
-            this->fos_lines.emplace_back(
-                "   "
-                + this->fos_log_helper.format_json_getter(json_iter->first, lpc)
-                + " = " + jpairs[lpc].wt_value);
-            this->add_key_line_attrs(0);
+            auto key_line = attr_line_t("   ").append(
+                this->fos_log_helper.format_json_getter(jpairs_map.first, lpc));
+
+            auto key_size = key_line.length();
+            key_line.append(" = ").append(jpairs[lpc].wt_value);
+            this->fos_lines.emplace_back(key_line);
+            this->add_key_line_attrs(key_size - 3);
         }
     }
 
@@ -400,7 +420,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             "xpath(%Q, %s)", xml_pair.first.second.c_str(), qname.in());
         this->fos_lines.emplace_back(fmt::format(
             FMT_STRING("   {} = {}"), xp_call.in(), xml_pair.second));
-        this->add_key_line_attrs(0);
+        this->add_key_line_attrs(strlen(xp_call));
     }
 
     if (!this->fos_contexts.empty()
@@ -608,7 +628,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
 void
 field_overlay_source::add_key_line_attrs(int key_size, bool last_line)
 {
-    string_attrs_t& sa = this->fos_lines.back().get_attrs();
+    auto& sa = this->fos_lines.back().get_attrs();
     struct line_range lr(1, 2);
     int64_t graphic = (int64_t) (last_line ? ACS_LLCORNER : ACS_LTEE);
     sa.emplace_back(lr, VC_GRAPHIC.value(graphic));
