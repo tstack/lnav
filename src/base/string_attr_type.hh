@@ -164,6 +164,7 @@ struct text_attrs {
 
 struct block_elem_t {
     wchar_t value;
+    role_t role;
 };
 
 using string_attr_value = mapbox::util::variant<int64_t,

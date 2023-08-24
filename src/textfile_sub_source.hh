@@ -181,6 +181,7 @@ private:
     std::deque<std::shared_ptr<logfile>> tss_hidden_files;
     std::unordered_map<std::string, rendered_file> tss_rendered_files;
     std::unordered_map<std::string, metadata_state> tss_doc_metadata;
+    size_t tss_line_indent_size{0};
 };
 
 #endif

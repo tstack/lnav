@@ -85,6 +85,7 @@ struct metadata_builder {
     std::vector<section_interval_t> mb_intervals;
     std::vector<section_type_interval_t> mb_type_intervals;
     std::unique_ptr<hier_node> mb_root_node;
+    std::set<size_t> mb_indents;
 
     metadata to_metadata() &&
     {
@@ -92,6 +93,7 @@ struct metadata_builder {
             std::move(this->mb_intervals),
             std::move(this->mb_root_node),
             std::move(this->mb_type_intervals),
+            std::move(this->mb_indents),
         };
     }
 };
@@ -270,6 +272,9 @@ public:
                       data_scanner::token2name(dt),
                       tokenize_res->to_string().c_str());
 #endif
+            if (dt != DT_WHITE) {
+                this->sw_at_start = false;
+            }
             switch (dt) {
                 case DT_XML_DECL_TAG:
                 case DT_XML_EMPTY_TAG:
@@ -386,8 +391,24 @@ public:
                     break;
                 case DT_LINE:
                     this->sw_line_number += 1;
+                    this->sw_at_start = true;
                     break;
                 case DT_WHITE:
+                    if (this->sw_at_start) {
+                        size_t indent_size = 0;
+
+                        for (auto ch : tokenize_res->to_string_fragment()) {
+                            if (ch == '\t') {
+                                do {
+                                    indent_size += 1;
+                                } while (indent_size % 8);
+                            } else {
+                                indent_size += 1;
+                            }
+                        }
+                        this->sw_indents.insert(indent_size);
+                        this->sw_at_start = false;
+                    }
                     break;
                 default:
                     if (dt == DT_GARBAGE) {
@@ -435,6 +456,7 @@ public:
         mb.mb_root_node = std::move(this->sw_hier_stage);
         mb.mb_intervals = std::move(this->sw_intervals);
         mb.mb_type_intervals = std::move(this->sw_type_intervals);
+        mb.mb_indents = std::move(this->sw_indents);
 
         discover_metadata_int(this->sw_line, mb);
 
@@ -549,6 +571,8 @@ private:
     data_scanner sw_scanner;
     int sw_depth{0};
     size_t sw_line_number{0};
+    bool sw_at_start{true};
+    std::set<size_t> sw_indents;
     std::vector<element> sw_values{};
     std::vector<interval_state> sw_interval_state;
     std::vector<lnav::document::section_interval_t> sw_intervals;

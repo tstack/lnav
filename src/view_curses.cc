@@ -342,7 +342,9 @@ view_curses::mvwattrline(WINDOW* window,
                 graphic = iter->sa_value.get<int64_t>();
                 attrs = text_attrs{};
             } else if (iter->sa_type == &VC_BLOCK_ELEM) {
-                block_elem = iter->sa_value.get<block_elem_t>().value;
+                auto be = iter->sa_value.get<block_elem_t>();
+                block_elem = be.value;
+                attrs = vc.attrs_for_role(be.role);
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
             } else if (iter->sa_type == &SA_LEVEL) {
