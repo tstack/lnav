@@ -376,36 +376,43 @@ handle_paging_key(int ch)
             break;
 
         case 'J':
-            if (lnav_data.ld_last_user_mark.find(tc)
-                    == lnav_data.ld_last_user_mark.end()
-                || !tc->is_line_visible(
-                    vis_line_t(lnav_data.ld_last_user_mark[tc])))
-            {
+            if (tc->is_selectable()) {
+                tc->toggle_user_mark(&textview_curses::BM_USER,
+                                     tc->get_selection());
                 lnav_data.ld_select_start[tc] = tc->get_selection();
                 lnav_data.ld_last_user_mark[tc] = tc->get_selection();
+                if (tc->get_selection() + 1_vl < tc->get_inner_height()) {
+                    tc->set_selection(tc->get_selection() + 1_vl);
+                }
             } else {
-                vis_line_t height;
-                unsigned long width;
+                if (lnav_data.ld_last_user_mark.find(tc)
+                        == lnav_data.ld_last_user_mark.end()
+                    || !tc->is_line_visible(
+                        vis_line_t(lnav_data.ld_last_user_mark[tc])))
+                {
+                    lnav_data.ld_select_start[tc] = tc->get_selection();
+                    lnav_data.ld_last_user_mark[tc] = tc->get_selection();
+                } else {
+                    vis_line_t height;
+                    unsigned long width;
 
-                tc->get_dimensions(height, width);
-                if (lnav_data.ld_last_user_mark[tc] > (tc->get_bottom() - 2)
-                    && tc->get_selection() + height < tc->get_inner_height())
-                {
-                    tc->shift_top(1_vl);
+                    tc->get_dimensions(height, width);
+                    if (lnav_data.ld_last_user_mark[tc] > (tc->get_bottom() - 2)
+                        && tc->get_selection() + height
+                            < tc->get_inner_height())
+                    {
+                        tc->shift_top(1_vl);
+                    }
+                    if (lnav_data.ld_last_user_mark[tc] + 1
+                        >= tc->get_inner_height())
+                    {
+                        break;
+                    }
+                    lnav_data.ld_last_user_mark[tc] += 1;
                 }
-                if (lnav_data.ld_last_user_mark[tc] + 1
-                    >= tc->get_inner_height())
-                {
-                    break;
-                }
-                lnav_data.ld_last_user_mark[tc] += 1;
-            }
-            tc->toggle_user_mark(&textview_curses::BM_USER,
-                                 vis_line_t(lnav_data.ld_last_user_mark[tc]));
-            if (tc->is_selectable()
-                && tc->get_selection() + 1_vl < tc->get_inner_height())
-            {
-                tc->set_selection(tc->get_selection() + 1_vl);
+                tc->toggle_user_mark(
+                    &textview_curses::BM_USER,
+                    vis_line_t(lnav_data.ld_last_user_mark[tc]));
             }
             tc->reload_data();
 

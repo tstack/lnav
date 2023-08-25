@@ -42,6 +42,7 @@
 #include "view_curses.hh"
 
 using namespace lnav::roles::literals;
+using namespace md4cpp::literals;
 
 static const std::map<string_fragment, text_format_t> CODE_NAME_TO_TEXT_FORMAT
     = {
@@ -462,6 +463,8 @@ md2attr_line::enter_span(const md4cpp::event_handler::span& sp)
     if (sp.is<span_code>()) {
         last_block.append(" ");
         this->ml_code_depth += 1;
+    } else if (sp.is<MD_SPAN_IMG_DETAIL*>()) {
+        last_block.append(":framed_picture:"_emoji).append("  ");
     }
     return Ok();
 }
@@ -517,7 +520,14 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
     } else if (sp.is<MD_SPAN_A_DETAIL*>()) {
         auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
         auto href_str = std::string(a_detail->href.text, a_detail->href.size);
-
+        line_range lr{
+            static_cast<int>(this->ml_span_starts.back()),
+            static_cast<int>(last_block.length()),
+        };
+        last_block.with_attr({
+            lr,
+            VC_HYPERLINK.value(href_str),
+        });
         this->append_url_footnote(href_str);
     } else if (sp.is<MD_SPAN_IMG_DETAIL*>()) {
         auto* img_detail = sp.get<MD_SPAN_IMG_DETAIL*>();
@@ -617,9 +627,10 @@ span_style_border(border_side side, const string_fragment& value)
     return attr_line_t(ch).with_attr_for_all(VC_STYLE.value(border_attrs));
 }
 
-static attr_line_t
-to_attr_line(const pugi::xml_node& doc)
+attr_line_t
+md2attr_line::to_attr_line(const pugi::xml_node& doc)
 {
+    static const auto NAME_IMG = string_fragment::from_const("img");
     static const auto NAME_SPAN = string_fragment::from_const("span");
     static const auto NAME_PRE = string_fragment::from_const("pre");
     static const auto NAME_FG = string_fragment::from_const("color");
@@ -639,7 +650,62 @@ to_attr_line(const pugi::xml_node& doc)
         retval.append(doc.text().get());
     }
     for (const auto& child : doc.children()) {
-        if (child.name() == NAME_SPAN) {
+        if (child.name() == NAME_IMG) {
+            nonstd::optional<std::string> src_href;
+            std::string link_label;
+            auto img_src = child.attribute("src");
+            auto img_alt = child.attribute("alt");
+            if (img_alt) {
+                link_label = img_alt.value();
+            } else if (img_src) {
+                link_label = ghc::filesystem::path(img_src.value())
+                                 .filename()
+                                 .string();
+            } else {
+                link_label = "img";
+            }
+
+            if (img_src) {
+                auto src_value = std::string(img_src.value());
+                if (is_url(src_value)) {
+                    src_href = src_value;
+                } else {
+                    auto src_path = ghc::filesystem::path(src_value);
+                    std::error_code ec;
+
+                    if (src_path.is_relative() && this->ml_source_path) {
+                        src_path = this->ml_source_path.value().parent_path()
+                            / src_path;
+                    }
+                    auto canon_path = ghc::filesystem::canonical(src_path, ec);
+                    if (!ec) {
+                        src_path = canon_path;
+                    }
+
+                    src_href = fmt::format(FMT_STRING("file://{}"),
+                                           src_path.string());
+                }
+            }
+
+            if (src_href) {
+                retval.append(":framed_picture:"_emoji)
+                    .append("  ")
+                    .append(
+                        lnav::string::attrs::href(link_label, src_href.value()))
+                    .appendf(FMT_STRING("[{}]"), this->ml_footnotes.size() + 1);
+
+                auto href
+                    = attr_line_t()
+                          .append(lnav::roles::hyperlink(src_href.value()))
+                          .append(" ");
+                href.with_attr_for_all(
+                    VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT));
+                href.with_attr_for_all(SA_PREFORMATTED.value());
+                this->ml_footnotes.emplace_back(href);
+            } else {
+                retval.append(link_label);
+            }
+        } else if (child.name() == NAME_SPAN) {
             nonstd::optional<attr_line_t> left_border;
             nonstd::optional<attr_line_t> right_border;
             auto styled_span = attr_line_t(child.text().get());
@@ -738,7 +804,7 @@ to_attr_line(const pugi::xml_node& doc)
             auto pre_al = attr_line_t();
 
             for (const auto& sub : child.children()) {
-                auto child_al = to_attr_line(sub);
+                auto child_al = this->to_attr_line(sub);
                 if (pre_al.empty() && startswith(child_al.get_string(), "\n")) {
                     child_al.erase(0, 1);
                 }
@@ -781,6 +847,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             break;
         }
         case MD_TEXT_HTML: {
+            auto last_block_start_length = last_block.length();
             last_block.append(sf);
 
             struct open_tag {
@@ -789,8 +856,9 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             struct close_tag {
                 std::string ct_name;
             };
+            struct empty_tag {};
 
-            mapbox::util::variant<open_tag, close_tag> tag{
+            mapbox::util::variant<open_tag, close_tag, empty_tag> tag{
                 mapbox::util::no_init{}};
 
             if (sf.startswith("</")) {
@@ -800,22 +868,26 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                         .first.to_string(),
                 };
             } else if (sf.startswith("<")) {
-                tag = open_tag{
-                    sf.substr(1)
-                        .split_when(
-                            [](char ch) { return ch == ' ' || ch == '>'; })
-                        .first.to_string(),
-                };
+                if (sf.endswith("/>")) {
+                    tag = empty_tag{};
+                } else {
+                    tag = open_tag{
+                        sf.substr(1)
+                            .split_when(
+                                [](char ch) { return ch == ' ' || ch == '>'; })
+                            .first.to_string(),
+                    };
+                }
             }
 
             if (tag.valid()) {
                 tag.match(
-                    [this, &sf, &last_block](const open_tag& ot) {
+                    [this, last_block_start_length](const open_tag& ot) {
                         if (!this->ml_html_starts.empty()) {
                             return;
                         }
                         this->ml_html_starts.emplace_back(
-                            ot.ot_name, last_block.length() - sf.length());
+                            ot.ot_name, last_block_start_length);
                     },
                     [this, &last_block](const close_tag& ct) {
                         if (this->ml_html_starts.empty()) {
@@ -845,9 +917,31 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                         } else {
                             last_block.erase(
                                 this->ml_html_starts.back().second);
-                            last_block.append(to_attr_line(doc));
+                            last_block.append(this->to_attr_line(doc));
                         }
                         this->ml_html_starts.pop_back();
+                    },
+                    [this, &sf, &last_block, last_block_start_length](
+                        const empty_tag&) {
+                        const auto html_span = sf.to_string();
+
+                        pugi::xml_document doc;
+
+                        auto load_res = doc.load_string(html_span.c_str());
+                        if (!load_res) {
+                            log_error("XML parsing failure at %d: %s",
+                                      load_res.offset,
+                                      load_res.description());
+
+                            auto error_line = sf.find_boundaries_around(
+                                load_res.offset, string_fragment::tag1{'\n'});
+                            log_error("  %.*s",
+                                      error_line.length(),
+                                      error_line.data());
+                        } else {
+                            last_block.erase(last_block_start_length);
+                            last_block.append(this->to_attr_line(doc));
+                        }
                     });
             }
             break;

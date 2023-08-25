@@ -34,6 +34,7 @@
 #include "ansi_scrubber.hh"
 
 #include "ansi_vars.hh"
+#include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
@@ -44,7 +45,7 @@ static const lnav::pcre2pp::code&
 ansi_regex()
 {
     static const auto retval = lnav::pcre2pp::code::from_const(
-        "\x1b\\[([\\d=;\\?]*)([a-zA-Z])|(?:\\X\x08\\X)+");
+        R"(\x1b\[([\d=;\?]*)([a-zA-Z])|\x1b\](\d+);(.*?)(?:\x07|\x1b\\)|(?:\X\x08\X)+)");
 
     return retval;
 }
@@ -124,6 +125,8 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
     const auto& regex = ansi_regex();
     int64_t origin_offset = 0;
     int last_origin_offset_end = 0;
+    nonstd::optional<std::string> href;
+    size_t href_start = 0;
 
     replace(str.begin(), str.end(), '\0', ' ');
     auto matcher = regex.capture_from(str).into(md);
@@ -239,134 +242,164 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             continue;
         }
 
-        if (!md[1]) {
-            continue;
-        }
-
-        auto seq = md[1].value();
-        auto terminator = md[2].value();
         struct line_range lr;
         text_attrs attrs;
         bool has_attrs = false;
         nonstd::optional<role_t> role;
-        size_t lpc;
 
-        switch (terminator[0]) {
-            case 'm':
-                for (lpc = seq.sf_begin;
-                     lpc != std::string::npos && lpc < (size_t) seq.sf_end;)
-                {
-                    auto ansi_code_res = scn::scan_value<int>(
-                        scn::string_view{&str[lpc], &str[seq.sf_end]});
+        if (md[3]) {
+            auto osc_id = scn::scan_value<int32_t>(md[3]->to_string_view());
 
-                    if (ansi_code_res) {
-                        auto ansi_code = ansi_code_res.value();
-                        if (90 <= ansi_code && ansi_code <= 97) {
-                            ansi_code -= 60;
-                            attrs.ta_attrs |= A_STANDOUT;
+            if (osc_id) {
+                switch (osc_id.value()) {
+                    case 8:
+                        auto split_res
+                            = md[4]->split_pair(string_fragment::tag1{';'});
+                        if (split_res) {
+                            // auto params = split_res->first;
+                            auto uri = split_res->second;
+
+                            if (href) {
+                                if (sa != nullptr) {
+                                    sa->emplace_back(
+                                        line_range{(int) href_start,
+                                                   (int) str.size()},
+                                        VC_HYPERLINK.value(href.value()));
+                                }
+                                href = nonstd::nullopt;
+                            }
+                            if (!uri.empty()) {
+                                href = uri.to_string();
+                                href_start = sf.sf_begin;
+                            }
                         }
-                        if (30 <= ansi_code && ansi_code <= 37) {
-                            attrs.ta_fg_color = ansi_code - 30;
-                        }
-                        if (40 <= ansi_code && ansi_code <= 47) {
-                            attrs.ta_bg_color = ansi_code - 40;
-                        }
-                        switch (ansi_code) {
-                            case 1:
-                                attrs.ta_attrs |= A_BOLD;
-                                break;
-
-                            case 2:
-                                attrs.ta_attrs |= A_DIM;
-                                break;
-
-                            case 4:
-                                attrs.ta_attrs |= A_UNDERLINE;
-                                break;
-
-                            case 7:
-                                attrs.ta_attrs |= A_REVERSE;
-                                break;
-                        }
-                    }
-                    lpc = str.find(';', lpc);
-                    if (lpc != std::string::npos) {
-                        lpc += 1;
-                    }
+                        break;
                 }
-                has_attrs = true;
-                break;
-
-            case 'C': {
-                auto spaces_res
-                    = scn::scan_value<unsigned int>(seq.to_string_view());
-
-                if (spaces_res && spaces_res.value() > 0) {
-                    str.insert((std::string::size_type) sf.sf_end,
-                               spaces_res.value(),
-                               ' ');
-                }
-                break;
             }
+        } else if (md[1]) {
+            auto seq = md[1].value();
+            auto terminator = md[2].value();
 
-            case 'H': {
-                unsigned int row = 0, spaces = 0;
+            switch (terminator[0]) {
+                case 'm':
+                    for (auto lpc = seq.sf_begin;
+                         lpc != std::string::npos && lpc < (size_t) seq.sf_end;)
+                    {
+                        auto ansi_code_res = scn::scan_value<int>(
+                            scn::string_view{&str[lpc], &str[seq.sf_end]});
 
-                if (scn::scan(seq.to_string_view(), "{};{}", row, spaces)
-                    && spaces > 1)
-                {
-                    int ispaces = spaces - 1;
-                    if (ispaces > sf.sf_begin) {
-                        str.insert((unsigned long) sf.sf_end,
-                                   ispaces - sf.sf_begin,
+                        if (ansi_code_res) {
+                            auto ansi_code = ansi_code_res.value();
+                            if (90 <= ansi_code && ansi_code <= 97) {
+                                ansi_code -= 60;
+                                attrs.ta_attrs |= A_STANDOUT;
+                            }
+                            if (30 <= ansi_code && ansi_code <= 37) {
+                                attrs.ta_fg_color = ansi_code - 30;
+                            }
+                            if (40 <= ansi_code && ansi_code <= 47) {
+                                attrs.ta_bg_color = ansi_code - 40;
+                            }
+                            switch (ansi_code) {
+                                case 1:
+                                    attrs.ta_attrs |= A_BOLD;
+                                    break;
+
+                                case 2:
+                                    attrs.ta_attrs |= A_DIM;
+                                    break;
+
+                                case 4:
+                                    attrs.ta_attrs |= A_UNDERLINE;
+                                    break;
+
+                                case 7:
+                                    attrs.ta_attrs |= A_REVERSE;
+                                    break;
+                            }
+                        }
+                        lpc = str.find(';', lpc);
+                        if (lpc != std::string::npos) {
+                            lpc += 1;
+                        }
+                    }
+                    has_attrs = true;
+                    break;
+
+                case 'C': {
+                    auto spaces_res
+                        = scn::scan_value<unsigned int>(seq.to_string_view());
+
+                    if (spaces_res && spaces_res.value() > 0) {
+                        str.insert((std::string::size_type) sf.sf_end,
+                                   spaces_res.value(),
                                    ' ');
                     }
+                    break;
                 }
-                break;
-            }
 
-            case 'O': {
-                auto role_res = scn::scan_value<int>(seq.to_string_view());
+                case 'H': {
+                    unsigned int row = 0, spaces = 0;
 
-                if (role_res) {
-                    role_t role_tmp = (role_t) role_res.value();
-                    if (role_tmp > role_t::VCR_NONE
-                        && role_tmp < role_t::VCR__MAX)
+                    if (scn::scan(seq.to_string_view(), "{};{}", row, spaces)
+                        && spaces > 1)
                     {
-                        role = role_tmp;
-                        has_attrs = true;
+                        int ispaces = spaces - 1;
+                        if (ispaces > sf.sf_begin) {
+                            str.insert((unsigned long) sf.sf_end,
+                                       ispaces - sf.sf_begin,
+                                       ' ');
+                        }
                     }
+                    break;
                 }
-                break;
+
+                case 'O': {
+                    auto role_res = scn::scan_value<int>(seq.to_string_view());
+
+                    if (role_res) {
+                        role_t role_tmp = (role_t) role_res.value();
+                        if (role_tmp > role_t::VCR_NONE
+                            && role_tmp < role_t::VCR__MAX)
+                        {
+                            role = role_tmp;
+                            has_attrs = true;
+                        }
+                    }
+                    break;
+                }
             }
         }
-        str.erase(str.begin() + sf.sf_begin, str.begin() + sf.sf_end);
-        if (sa != nullptr) {
-            shift_string_attrs(*sa, sf.sf_begin, -sf.length());
+        if (md[1] || md[3]) {
+            str.erase(str.begin() + sf.sf_begin, str.begin() + sf.sf_end);
+            if (sa != nullptr) {
+                shift_string_attrs(*sa, sf.sf_begin, -sf.length());
 
-            if (has_attrs) {
-                for (auto rit = sa->rbegin(); rit != sa->rend(); rit++) {
-                    if (rit->sa_range.lr_end != -1) {
-                        continue;
+                if (has_attrs) {
+                    for (auto rit = sa->rbegin(); rit != sa->rend(); rit++) {
+                        if (rit->sa_range.lr_end != -1) {
+                            continue;
+                        }
+                        rit->sa_range.lr_end = sf.sf_begin;
                     }
-                    rit->sa_range.lr_end = sf.sf_begin;
+                    lr.lr_start = sf.sf_begin;
+                    lr.lr_end = -1;
+                    if (!attrs.empty()) {
+                        sa->emplace_back(lr, VC_STYLE.value(attrs));
+                    }
+                    role | [&lr, &sa](role_t r) {
+                        sa->emplace_back(lr, VC_ROLE.value(r));
+                    };
                 }
-                lr.lr_start = sf.sf_begin;
-                lr.lr_end = -1;
-                if (!attrs.empty()) {
-                    sa->emplace_back(lr, VC_STYLE.value(attrs));
-                }
-                role | [&lr, &sa](role_t r) {
-                    sa->emplace_back(lr, VC_ROLE.value(r));
-                };
+                sa->emplace_back(
+                    line_range{last_origin_offset_end, sf.sf_begin},
+                    SA_ORIGIN_OFFSET.value(origin_offset));
+                last_origin_offset_end = sf.sf_begin;
+                origin_offset += sf.length();
             }
-            sa->emplace_back(line_range{last_origin_offset_end, sf.sf_begin},
-                             SA_ORIGIN_OFFSET.value(origin_offset));
-            last_origin_offset_end = sf.sf_begin;
-            origin_offset += sf.length();
-        }
 
-        matcher.reload_input(str, sf.sf_begin);
+            matcher.reload_input(str, sf.sf_begin);
+        }
     }
 
     if (sa != nullptr && last_origin_offset_end > 0) {

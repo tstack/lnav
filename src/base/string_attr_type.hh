@@ -233,6 +233,7 @@ extern string_attr_type<int64_t> VC_GRAPHIC;
 extern string_attr_type<block_elem_t> VC_BLOCK_ELEM;
 extern string_attr_type<int64_t> VC_FOREGROUND;
 extern string_attr_type<int64_t> VC_BACKGROUND;
+extern string_attr_type<std::string> VC_HYPERLINK;
 
 namespace lnav {
 
@@ -244,6 +245,14 @@ inline std::pair<S, string_attr_pair>
 preformatted(S str)
 {
     return std::make_pair(std::move(str), SA_PREFORMATTED.template value());
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
+href(S str, std::string href)
+{
+    return std::make_pair(std::move(str),
+                          VC_HYPERLINK.template value(std::move(href)));
 }
 
 }  // namespace attrs
@@ -697,6 +706,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _snippet_border(
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_SNIPPET_BORDER));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _link(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_HYPERLINK.template value(std::string(str, len)));
 }
 
 }  // namespace literals

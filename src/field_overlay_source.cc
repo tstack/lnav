@@ -134,7 +134,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     time_lr.lr_end = time_str.length();
     time_line.with_attr(
         string_attr(time_lr, VC_STYLE.value(text_attrs{A_BOLD})));
-    time_str.append(" -- ");
+    time_str.append(" \u2014 ");
     time_lr.lr_start = time_str.length();
     time_str.append(humanize::time::point::from_tv(ll->get_timeval())
                         .with_convert_to_local(true)
@@ -157,14 +157,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
         dts.set_base_time(format->lf_date_time.dts_base_time,
                           format->lf_date_time.dts_base_tm.et_tm);
+        dts.dts_zoned_to_local = format->lf_date_time.dts_zoned_to_local;
         if (format->lf_date_time.scan(time_src,
                                       time_range.length(),
                                       format->get_timestamp_formats(),
                                       &tm,
-                                      actual_tv,
-                                      false)
-            || dts.scan(
-                time_src, time_range.length(), nullptr, &tm, actual_tv, false))
+                                      actual_tv)
+            || dts.scan(time_src, time_range.length(), nullptr, &tm, actual_tv))
         {
             sql_strftime(
                 orig_timestamp, sizeof(orig_timestamp), actual_tv, 'T');

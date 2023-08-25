@@ -8,6 +8,10 @@
 * Two
 * Three
 
+<img src="../docs/lnav-tui.png" />
+
+<img src="../docs/lnav-architecture.png" alt="The internal architecture of lnav" />
+
 <span style="color: #f00; font-weight: bold">Bold red</span>
 
 <span style="text-decoration: underline; background-color: darkblue">Underline</span>

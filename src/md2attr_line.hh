@@ -34,6 +34,10 @@
 #include "ghc/filesystem.hpp"
 #include "md4cpp.hh"
 
+namespace pugi {
+class xml_node;
+}
+
 class md2attr_line : public md4cpp::typed_event_handler<attr_line_t> {
 public:
     md2attr_line() { this->ml_blocks.resize(1); }
@@ -77,6 +81,7 @@ private:
 
     void append_url_footnote(std::string href);
     void flush_footnotes();
+    attr_line_t to_attr_line(const pugi::xml_node& doc);
 
     nonstd::optional<ghc::filesystem::path> ml_source_path;
     std::vector<attr_line_t> ml_blocks;

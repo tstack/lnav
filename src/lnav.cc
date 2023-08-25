@@ -721,7 +721,9 @@ make it easier to navigate through files quickly.
         .append(lnav::roles::file(lnav::paths::workdir().string()))
         .append("\n\n")
         .append("Documentation"_h1)
-        .append(": https://docs.lnav.org\n")
+        .append(": ")
+        .append("https://docs.lnav.org"_hyperlink)
+        .append("\n")
         .append("Contact"_h1)
         .append("\n")
         .append("  ")
@@ -739,7 +741,7 @@ make it easier to navigate through files quickly.
 static void
 clear_last_user_mark(listview_curses* lv)
 {
-    textview_curses* tc = (textview_curses*) lv;
+    auto* tc = (textview_curses*) lv;
     if (lnav_data.ld_select_start.find(tc) != lnav_data.ld_select_start.end()
         && !tc->is_line_visible(vis_line_t(lnav_data.ld_last_user_mark[tc])))
     {

@@ -312,6 +312,7 @@ println(FILE* file, const attr_line_t& al)
         auto line_style = fmt::text_style{};
         auto fg_style = fmt::text_style{};
         auto start = last_point.value();
+        nonstd::optional<std::string> href;
 
         for (const auto& attr : al.get_attrs()) {
             if (!attr.sa_range.contains(start)
@@ -321,7 +322,10 @@ println(FILE* file, const attr_line_t& al)
             }
 
             try {
-                if (attr.sa_type == &VC_BACKGROUND) {
+                if (attr.sa_type == &VC_HYPERLINK) {
+                    auto saw = string_attr_wrapper<std::string>(&attr);
+                    href = saw.get();
+                } else if (attr.sa_type == &VC_BACKGROUND) {
                     auto saw = string_attr_wrapper<int64_t>(&attr);
                     auto color_opt = curses_color_to_terminal_color(saw.get());
 
@@ -484,12 +488,18 @@ println(FILE* file, const attr_line_t& al)
             line_style |= default_bg_style;
         }
 
+        if (href) {
+            fmt::print(file, FMT_STRING("\x1b]8;;{}\x1b\\"), href.value());
+        }
         if (start < str.size()) {
             auto actual_end = std::min(str.size(), static_cast<size_t>(point));
             fmt::print(file,
                        line_style,
                        FMT_STRING("{}"),
                        str.substr(start, actual_end - start));
+        }
+        if (href) {
+            fmt::print(file, FMT_STRING("\x1b]8;;\x1b\\"));
         }
         last_point = point;
     }

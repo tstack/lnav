@@ -130,6 +130,24 @@ class generic_log_format : public log_format {
                 this->check_for_new_year(dst, log_time, log_tv);
             }
 
+            if (!(this->lf_timestamp_flags
+                  & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
+                && !dst.empty() && dst.back().get_time() == log_tv.tv_sec
+                && dst.back().get_millis() != 0)
+            {
+                auto log_ms
+                    = std::chrono::milliseconds(dst.back().get_millis());
+
+                log_time.et_nsec
+                    = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                          log_ms)
+                          .count();
+                log_tv.tv_usec
+                    = std::chrono::duration_cast<std::chrono::microseconds>(
+                          log_ms)
+                          .count();
+            }
+
             dst.emplace_back(li.li_file_range.fr_offset, log_tv, level_val);
             return scan_match{0};
         }
