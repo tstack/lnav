@@ -104,7 +104,7 @@ void sql_install_logger();
 
 bool sql_ident_needs_quote(const char* ident);
 
-char* sql_quote_ident(const char* ident);
+auto_mem<char, sqlite3_free> sql_quote_ident(const char* ident);
 
 std::string sql_safe_ident(const string_fragment& ident);
 
@@ -124,5 +124,13 @@ int sqlite_authorizer(void* pUserData,
                       const char* detail2,
                       const char* detail3,
                       const char* detail4);
+
+namespace lnav {
+namespace sql {
+
+auto_mem<char, sqlite3_free> mprintf(const char* fmt, ...);
+
+}
+}  // namespace lnav
 
 #endif

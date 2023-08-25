@@ -329,17 +329,16 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             }
             str = "   " + field_name;
         } else {
-            auto_mem<char, sqlite3_free> jgetter;
-
-            jgetter = sqlite3_mprintf("   jget(%s, '/%q')",
-                                      meta.lvm_struct_name.get(),
-                                      meta.lvm_name.get());
-            str = jgetter;
+            str = lnav::sql::mprintf("   jget(%s, '/%q')",
+                                     meta.lvm_struct_name.get(),
+                                     meta.lvm_name.get());
         }
         str.append(this->fos_known_key_size - (str.length() - 3), ' ');
-        str += " = " + value_str;
 
         al.with_string(str);
+        readline_sqlite_highlighter(al, 0);
+
+        al.append(" = ").append(scrub_ws(value_str.c_str()));
         if (meta.lvm_struct_name.empty()) {
             auto prefix_len = field_name.length() - orig_field_name.length();
             al.with_attr(string_attr(
@@ -365,8 +364,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                 .append(this->fos_known_key_size - meta.lvm_name.size() - 9 + 3,
                         ' ')
                 .append(" = ")
-                .append(
-                    string_fragment::from_bytes(js.js_content.in(), js.js_len));
+                .append(scrub_ws(string_fragment::from_bytes(js.js_content.in(),
+                                                             js.js_len)));
             this->fos_lines.emplace_back(al);
             this->add_key_line_attrs(this->fos_known_key_size);
         }
@@ -379,15 +378,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     for (const auto& extra_pair : this->fos_log_helper.ldh_extra_json) {
-        auto_mem<char, sqlite3_free> qname;
-
-        qname = sqlite3_mprintf("%Q", extra_pair.first.c_str());
-
+        auto qname = lnav::sql::mprintf("%Q", extra_pair.first.c_str());
         auto key_line = attr_line_t("   jget(log_raw_text, ")
                             .append(qname.in())
                             .append(")");
+        readline_sqlite_highlighter(key_line, 0);
         auto key_size = key_line.length();
-        key_line.append(" = ").append(extra_pair.second);
+        key_line.append(" = ").append(scrub_ws(extra_pair.second));
         this->fos_lines.emplace_back(key_line);
         this->add_key_line_attrs(key_size - 3);
     }
@@ -398,9 +395,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
             auto key_line = attr_line_t("   ").append(
                 this->fos_log_helper.format_json_getter(jpairs_map.first, lpc));
-
+            readline_sqlite_highlighter(key_line, 0);
             auto key_size = key_line.length();
-            key_line.append(" = ").append(jpairs[lpc].wt_value);
+            key_line.append(" = ").append(scrub_ws(jpairs[lpc].wt_value));
             this->fos_lines.emplace_back(key_line);
             this->add_key_line_attrs(key_size - 3);
         }
@@ -411,15 +408,18 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     }
 
     for (const auto& xml_pair : this->fos_log_helper.ldh_xml_pairs) {
-        auto_mem<char, sqlite3_free> qname;
-        auto_mem<char, sqlite3_free> xp_call;
-
-        qname = sql_quote_ident(xml_pair.first.first.get());
-        xp_call = sqlite3_mprintf(
-            "xpath(%Q, %s)", xml_pair.first.second.c_str(), qname.in());
-        this->fos_lines.emplace_back(fmt::format(
-            FMT_STRING("   {} = {}"), xp_call.in(), xml_pair.second));
-        this->add_key_line_attrs(strlen(xp_call));
+        auto qname = sql_quote_ident(xml_pair.first.first.get());
+        auto xp_call = lnav::sql::mprintf(
+            "xpath(%Q, %s.%s)",
+            xml_pair.first.second.c_str(),
+            this->fos_log_helper.ldh_file->get_format()->get_name().c_str(),
+            qname.in());
+        auto key_line = attr_line_t("   ").append(xp_call.in());
+        readline_sqlite_highlighter(key_line, 0);
+        auto key_size = key_line.length();
+        key_line.append(" = ").append(scrub_ws(xml_pair.second));
+        this->fos_lines.emplace_back(key_line);
+        this->add_key_line_attrs(key_size - 3);
     }
 
     if (!this->fos_contexts.empty()

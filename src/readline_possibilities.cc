@@ -152,9 +152,8 @@ add_text_possibilities(readline_curses* rlc,
         switch (tq) {
             case text_quoting::sql: {
                 auto token_value = tok_res->to_string();
-                auto_mem<char, sqlite3_free> quoted_token;
-
-                quoted_token = sqlite3_mprintf("%Q", token_value.c_str());
+                auto quoted_token
+                    = lnav::sql::mprintf("%Q", token_value.c_str());
                 rlc->add_possibility(context, type, std::string(quoted_token));
                 break;
             }
@@ -265,9 +264,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
                 continue;
             }
 
-            auto_mem<char> ident(sqlite3_free);
-
-            ident = sql_quote_ident(lv.lv_meta.lvm_name.get());
+            auto ident = sql_quote_ident(lv.lv_meta.lvm_name.get());
             auto bound_name = fmt::format(FMT_STRING(":{}"), ident.in());
             rlc->add_possibility(context, type, bound_name);
             switch (lv.lv_meta.lvm_kind) {

@@ -1094,6 +1094,10 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_28e23f4e98b1acd6478e39844fd9306b444550c3.out \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_32acc1a8bb5028636fdbf08f077f9a835ab51bec.err \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_32acc1a8bb5028636fdbf08f077f9a835ab51bec.out \
+    $(srcdir)/%reldir%/test_sql_views_vtab.sh_4363d60040424a573ed79ee4260a32e3cd72f62c.err \
+    $(srcdir)/%reldir%/test_sql_views_vtab.sh_4363d60040424a573ed79ee4260a32e3cd72f62c.out \
+    $(srcdir)/%reldir%/test_sql_views_vtab.sh_45dbef06572b43cb997682436e753a13e003f792.err \
+    $(srcdir)/%reldir%/test_sql_views_vtab.sh_45dbef06572b43cb997682436e753a13e003f792.out \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_485a6ac7c69bd4b5d34d3399a9c17f6a2dc89ad3.err \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_485a6ac7c69bd4b5d34d3399a9c17f6a2dc89ad3.out \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_62d15cb9d5a9259f198aa01ca8ed200d6da38d68.err \

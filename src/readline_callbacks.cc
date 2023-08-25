@@ -906,6 +906,6 @@ rl_blur(readline_curses* rc)
                    .get_overlay_source();
 
     fos->fos_contexts.pop();
-    tc->set_sync_selection_and_top(fos->fos_contexts.top().c_show);
+    tc->set_sync_selection_and_top(false);
     lnav_data.ld_preview_generation += 1;
 }

@@ -35,6 +35,7 @@
 #include "sql_util.hh"
 
 #include <ctype.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include "base/auto_mem.hh"
@@ -573,12 +574,12 @@ sql_ident_needs_quote(const char* ident)
     return false;
 }
 
-char*
+auto_mem<char, sqlite3_free>
 sql_quote_ident(const char* ident)
 {
     bool needs_quote = false;
     size_t quote_count = 0, alloc_size;
-    char* retval;
+    auto_mem<char, sqlite3_free> retval;
 
     for (int lpc = 0; ident[lpc]; lpc++) {
         if ((lpc == 0 && isdigit(ident[lpc]))
@@ -592,8 +593,8 @@ sql_quote_ident(const char* ident)
     }
 
     alloc_size = strlen(ident) + quote_count * 2 + (needs_quote ? 2 : 0) + 1;
-    if ((retval = (char*) sqlite3_malloc(alloc_size)) == NULL) {
-        retval = NULL;
+    if ((retval = (char*) sqlite3_malloc(alloc_size)) == nullptr) {
+        retval = nullptr;
     } else {
         char* curr = retval;
 
@@ -1221,3 +1222,22 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
 
     return retval;
 }
+
+namespace lnav {
+namespace sql {
+
+auto_mem<char, sqlite3_free>
+mprintf(const char* fmt, ...)
+{
+    auto_mem<char, sqlite3_free> retval;
+    va_list args;
+
+    va_start(args, fmt);
+    retval = sqlite3_vmprintf(fmt, args);
+    va_end(args);
+
+    return retval;
+}
+
+}  // namespace sql
+}  // namespace lnav

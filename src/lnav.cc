@@ -296,7 +296,7 @@ setup_logline_table(exec_context& ec)
         nullptr,
     };
 
-    textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
     bool retval = false;
     bool update_possibilities
         = (lnav_data.ld_rl_view != nullptr && ec.ec_local_vars.size() == 1);
@@ -312,8 +312,8 @@ setup_logline_table(exec_context& ec)
 
     if (log_view.get_inner_height()) {
         static intern_string_t logline = intern_string::lookup("logline");
-        vis_line_t vl = log_view.get_selection();
-        content_line_t cl = lnav_data.ld_log_source.at_base(vl);
+        auto vl = log_view.get_selection();
+        auto cl = lnav_data.ld_log_source.at_base(vl);
 
         lnav_data.ld_vtab_manager->unregister_vtab(logline);
         lnav_data.ld_vtab_manager->register_vtab(
@@ -327,18 +327,26 @@ setup_logline_table(exec_context& ec)
 
             ldh.parse_line(cl);
 
-            std::map<const intern_string_t,
-                     json_ptr_walk::walk_list_t>::const_iterator pair_iter;
-            for (pair_iter = ldh.ldh_json_pairs.begin();
-                 pair_iter != ldh.ldh_json_pairs.end();
-                 ++pair_iter)
-            {
-                for (size_t lpc = 0; lpc < pair_iter->second.size(); lpc++) {
+            for (const auto& jextra : ldh.ldh_extra_json) {
+                lnav_data.ld_rl_view->add_possibility(
+                    ln_mode_t::SQL,
+                    "*",
+                    lnav::sql::mprintf("%Q", jextra.first.c_str()).in());
+            }
+            for (const auto& jpair : ldh.ldh_json_pairs) {
+                for (const auto& wt : jpair.second) {
                     lnav_data.ld_rl_view->add_possibility(
                         ln_mode_t::SQL,
                         "*",
-                        ldh.format_json_getter(pair_iter->first, lpc));
+                        lnav::sql::mprintf("%Q", wt.wt_ptr.c_str()).in());
                 }
+            }
+            for (const auto& xml_pair : ldh.ldh_xml_pairs) {
+                lnav_data.ld_rl_view->add_possibility(
+                    ln_mode_t::SQL,
+                    "*",
+                    lnav::sql::mprintf("%Q", xml_pair.first.second.c_str())
+                        .in());
             }
         }
 

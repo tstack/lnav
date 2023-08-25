@@ -111,8 +111,6 @@ log_vtab_impl::get_table_statement()
         max_name_len = std::max(max_name_len, iter->vc_name.length());
     }
     for (iter = cols.begin(); iter != cols.end(); iter++) {
-        auto_mem<char, sqlite3_free> coldecl;
-        auto_mem<char, sqlite3_free> colname;
         std::string comment;
 
         require(!iter->vc_name.empty());
@@ -121,8 +119,8 @@ log_vtab_impl::get_table_statement()
             comment.append(" -- ").append(iter->vc_comment);
         }
 
-        colname = sql_quote_ident(iter->vc_name.c_str());
-        coldecl = sqlite3_mprintf(
+        auto colname = sql_quote_ident(iter->vc_name.c_str());
+        auto coldecl = lnav::sql::mprintf(
             "  %-*s %-7s %s COLLATE %-15Q,%s\n",
             max_name_len,
             colname.in(),
