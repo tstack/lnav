@@ -224,15 +224,13 @@ log_data_helper::get_line_bounds(size_t& line_index_out,
 std::string
 log_data_helper::format_json_getter(const intern_string_t field, int index)
 {
-    auto_mem<char, sqlite3_free> qname;
-    auto_mem<char, sqlite3_free> jget;
     std::string retval;
 
-    qname = sql_quote_ident(field.get());
-    jget = sqlite3_mprintf("jget(%s,%Q)",
-                           qname.in(),
-                           this->ldh_json_pairs[field][index].wt_ptr.c_str());
-    retval = std::string(jget);
+    auto qname = sql_quote_ident(field.get());
+    retval
+        = lnav::sql::mprintf("jget(%s,%Q)",
+                             qname.in(),
+                             this->ldh_json_pairs[field][index].wt_ptr.c_str());
 
     return retval;
 }

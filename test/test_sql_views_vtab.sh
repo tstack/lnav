@@ -179,6 +179,16 @@ run_cap_test ${lnav_test} -n \
     -c ":write-json-to -" \
     ${test_dir}/logfile_xml_msg.0
 
+run_cap_test ${lnav_test} -n -I ${test_dir} \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    -c ":goto 2" \
+    ${test_dir}/logfile_xml_msg.0
+
+run_cap_test ${lnav_test} -n -I ${test_dir} \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    -c ":goto 9" \
+    ${test_dir}/logfile_bunyan.0
+
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top_meta = json_object('file', 'bad') WHERE name = 'text'" \
     ${test_dir}/textfile_ansi.0
