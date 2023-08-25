@@ -29,19 +29,35 @@ add_executable(ptimec ptimec.hh ptimec.c)
 
 set(TIME_FORMATS
         "@%@"
-        "%Y-%m-%d %H:%M:%S"
+        "%Y-%m-%d %H:%M:%S.%f%z"
+        "%Y-%m-%d %H:%M:%S,%f%z"
+        "%Y-%m-%d %H:%M:%S.%f %Z"
+        "%Y-%m-%d %H:%M:%S,%f %Z"
+        "%Y-%m-%d %H:%M:%S,%L%z"
+        "%Y-%m-%d %H:%M:%S,%L %z"
+        "%Y-%m-%d %H:%M:%S.%L%z"
+        "%Y-%m-%d %H:%M:%S.%L %z"
+        "%Y-%m-%d %H:%M:%S.%L %Z"
+        "%Y-%m-%d %H:%M:%S,%L"
+        "%Y-%m-%d %H:%M:%S.%L"
         "%Y-%m-%d %H:%M:%S%z"
         "%Y-%m-%d %H:%M:%S %z"
+        "%Y-%m-%d %H:%M:%S:%L"
+        "%Y-%m-%d %H:%M:%S"
         "%Y-%m-%d %H:%M"
         "%Y-%m-%dT%H:%M:%S.%f%z"
         "%y-%m-%dT%H:%M:%S.%f%z"
-        "%Y-%m-%dT%H:%M:%SZ"
+        "%Y-%m-%dT%H:%M:%S.%L%z"
+        "%y-%m-%dT%H:%M:%S.%L%z"
         "%Y-%m-%dT%H:%M:%S%z"
         "%Y-%m-%dT%H:%M:%S"
         "%Y-%m-%dT%H:%M:%S%z"
-        "%Y/%m/%d %H:%M:%S"
+        "%Y-%m-%dT%H:%M"
         "%Y/%m/%d %H:%M:%S %z"
         "%Y/%m/%d %H:%M:%S%z"
+        "%Y/%m/%d %H:%M:%S.%f"
+        "%Y/%m/%d %H:%M:%S.%L"
+        "%Y/%m/%d %H:%M:%S"
         "%Y/%m/%d %H:%M"
         "%Y %b %d %a %H:%M:%S.%L"
         "%Y %b %d %H:%M:%S.%L"
@@ -49,27 +65,36 @@ set(TIME_FORMATS
         "%a %b %d %H:%M:%S %Y"
         "%a %b %d %H:%M:%S.%f %Y"
         "%a %b %d %H:%M:%S %Z %Y"
+        "%a %b %d %I:%M:%S %p %Z %Y"
         "%a %b %d %H:%M:%S "
         "%a %b %d %H:%M:%S.%L "
         "%a %b %d %H:%M "
         "%a %b %e %H:%M:%S %Z %Y"
-        "%d/%b/%Y:%H:%M:%S +0000"
         "%d/%b/%Y:%H:%M:%S %z"
         "%d-%b-%Y %H:%M:%S %z"
         "%d-%b-%Y %H:%M:%S %Z"
         "%d %b %Y %H:%M:%S"
+        "%d %b %Y %H:%M:%S.%L%z"
+        "%d %b %Y %H:%M:%S,%L%z"
         "%d %b %Y %H:%M:%S.%L"
         "%d %b %Y %H:%M:%S,%L"
+        "%d %b %Y %H:%M"
         "%b %d %H:%M:%S"
         "%b %d %k:%M:%S"
         "%b %d %l:%M:%S"
+        "%b %d %l:%M"
         "%b %e, %Y %l:%M:%S %p"
-        "%m/%d/%y %H:%M:%S"
+        "%b %d, %Y %l:%M:%S %p"
         "%m/%d/%Y %I:%M:%S:%L %p %Z"
         "%m/%d/%Y %I:%M:%S %p %Z"
         "%m/%d/%Y %l:%M:%S %p %Z"
+        "%m/%d/%Y %I:%M:%S %p%z"
+        "%m/%d/%Y %l:%M:%S %p%z"
+        "%m/%e/%Y %l:%M:%S %p%z"
+        "%m/%e/%Y %l:%M:%S %p %z"
         "%m/%e/%Y %I:%M:%S %p"
-        "%m/%e/%Y %l:%M:%S %p"
+        "%m/%e/%Y %l:%M:%S%p"
+        "%m/%d/%y %H:%M:%S"
         "%m/%d/%Y %H:%M:%S"
         "%d/%b/%y %H:%M:%S"
         "%m%d %H:%M:%S"
@@ -83,7 +108,8 @@ set(TIME_FORMATS
         "%Y-%m"
         "%Y/%m/%d"
         "%Y/%m"
-        "%s.%f")
+        "%s.%f"
+)
 
 set(GEN_SRCS "")
 
@@ -193,9 +219,10 @@ set(BUILTIN_LNAV_SCRIPTS
         scripts/dhclient-summary.lnav
         scripts/docker-url-handler.lnav
         scripts/lnav-pop-view.lnav
-        scripts/partition-by-boot.lnav scripts/rename-stdin.lnav
+        scripts/partition-by-boot.lnav
+        scripts/piper-url-handler.lnav
+        scripts/rename-stdin.lnav
         scripts/search-for.lnav
-        scripts/workdir-url-handler.lnav
 )
 
 set(BUILTIN_LNAV_SCRIPT_PATHS ${BUILTIN_LNAV_SCRIPTS})
@@ -321,16 +348,21 @@ add_library(
 add_library(lnavfileio STATIC
         grep_proc.hh
         line_buffer.hh
+        log_level.hh
+        piper.looper.cfg.hh
+        piper.looper.hh
         pollable.hh
         shared_buffer.hh
 
         grep_proc.cc
         line_buffer.cc
+        log_level.cc
+        piper.looper.cc
         pollable.cc
         shared_buffer.cc
 )
 target_include_directories(lnavfileio PRIVATE . ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(lnavfileio cppfmt spookyhash pcrepp base BZip2::BZip2 ZLIB::ZLIB)
+target_link_libraries(lnavfileio cppfmt spookyhash pcrepp base BZip2::BZip2 ZLIB::ZLIB yajlpp)
 
 add_library(
         diag STATIC
@@ -387,7 +419,6 @@ add_library(
         log_data_table.cc
         log_format.cc
         log_format_loader.cc
-        log_level.cc
         log_search_table.cc
         logfile.cc
         logfile_sub_source.cc
@@ -418,7 +449,6 @@ add_library(
         statusview_curses.cc
         string-extension-functions.cc
         sysclip.cc
-        piper.looper.cc
         spectro_impls.cc
         spectro_source.cc
         sql_commands.cc
@@ -506,7 +536,6 @@ add_library(
         log_format_fwd.hh
         log_format_impls.cc
         log_gutter_source.hh
-        log_level.hh
         log_search_table.hh
         log_search_table_fwd.hh
         logfile_sub_source.cfg.hh
@@ -517,8 +546,6 @@ add_library(
         md4cpp.hh
         optional.hpp
         file_converter_manager.hh
-        piper.looper.hh
-        piper.looper.cfg.hh
         plain_text_source.hh
         pretty_printer.hh
         preview_status_source.hh

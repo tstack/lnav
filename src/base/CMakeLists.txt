@@ -73,7 +73,7 @@ add_library(
 
 target_include_directories(base PUBLIC . .. ../third-party
         ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(base cppfmt cppscnlib pcrepp ncurses::libcurses pthread)
+target_link_libraries(base cppfmt cppscnlib pcrepp ncurses::libcurses pthread lnavdt)
 
 add_executable(
         test_base
