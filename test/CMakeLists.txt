@@ -36,7 +36,7 @@ add_test(NAME test_bookmarks COMMAND test_bookmarks)
 
 add_executable(test_date_time_scanner test_date_time_scanner.cc)
 target_include_directories(test_date_time_scanner PUBLIC ../src/third-party/doctest-root)
-target_link_libraries(test_date_time_scanner base lnavdt)
+target_link_libraries(test_date_time_scanner base lnavdt diag)
 add_test(NAME test_date_time_scanner COMMAND test_date_time_scanner)
 
 add_executable(test_grep_proc2 test_grep_proc2.cc)
