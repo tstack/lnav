@@ -63,7 +63,8 @@ Features:
   variables are now defined inside **lnav** and refer to
   the location of the user's configuration directory and
   the directory where cached data is stored, respectively.
-* The `<pre>` tag is now recognized in Markdown files.
+* The `<pre>` and `<img>` tags are now recognized in
+  Markdown files.
 * The `style` attribute in `<span>` tags is now supported.
   The following CSS properties and values are supported:
   * `color` and `background-color` with CSS color names

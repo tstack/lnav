@@ -12,6 +12,7 @@
                 "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)? (?:vmkernel|vmkwarning):\\s* (?:cpu(?<cpu>\\d+):(?<world_id>\\d+)(?: opID=(?<opid>[^\\)]+))?\\))?((?:(?:WARNING|ALERT)|(?<subsystem>[^:]+)): )?(?<body>.*)"
             }
         },
+        "ordered-by-time": false,
         "level-field": "level",
         "level": {
             "debug": "^Db$",

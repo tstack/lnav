@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?branch=master)](https://coveralls.io/github/tstack/lnav?branch=master)
 [![lnav](https://snapcraft.io/lnav/badge.svg)](https://snapcraft.io/lnav)
 
-[<img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg" height="20"/>](https://discord.gg/erBPnKwz7R)
+[<img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg" height="20" alt="Discord Logo"/>](https://discord.gg/erBPnKwz7R)
 
 _This is the source repository for **lnav**, visit [https://lnav.org](https://lnav.org) for a high level overview._
 

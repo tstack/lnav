@@ -123,9 +123,9 @@ struct utf_to_display_adjustment {
     int uda_offset;
 
     utf_to_display_adjustment(int utf_origin, int offset)
-        : uda_origin(utf_origin), uda_offset(offset){
-
-                                  };
+        : uda_origin(utf_origin), uda_offset(offset)
+    {
+    }
 };
 
 void
@@ -184,6 +184,12 @@ view_curses::mvwattrline(WINDOW* window,
                     lpc, expanded_line.size() - exp_start_index - 1);
                 break;
             }
+
+            case '\x1b':
+                expanded_line.append("\u238b");
+                utf_adjustments.emplace_back(lpc, -1);
+                char_index += 1;
+                break;
 
             case '\r':
             case '\n':

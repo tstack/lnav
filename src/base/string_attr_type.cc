@@ -50,3 +50,4 @@ string_attr_type<int64_t> VC_GRAPHIC("graphic");
 string_attr_type<block_elem_t> VC_BLOCK_ELEM("block-elem");
 string_attr_type<int64_t> VC_FOREGROUND("foreground");
 string_attr_type<int64_t> VC_BACKGROUND("background");
+string_attr_type<std::string> VC_HYPERLINK("hyperlink");

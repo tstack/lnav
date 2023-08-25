@@ -1,4 +1,4 @@
-[4mBuild[1][0m[4m[2][0m [4mDocs[3][0m[4m[4][0m [4mCoverage Status[5][0m[4m[6][0m [4mlnav[7][0m[4m[8][0m
+]8;;https://github.com/tstack/lnav/actions?query=workflow%3Aci-build\[4m🖼  Build[1][0m]8;;\[4m[2][0m ]8;;https://docs.lnav.org\[4m🖼  Docs[3][0m]8;;\[4m[4][0m ]8;;https://coveralls.io/github/tstack/lnav?branch=master\[4m🖼  Coverage Status[5][0m]8;;\[4m[6][0m ]8;;https://snapcraft.io/lnav\[4m🖼  lnav[7][0m]8;;\[4m[8][0m
 
  ▌[1] - https://github.com/tstack/lnav/workflows/ci-build/badge.svg               
  ▌[2] - https://github.com/tstack/lnav/actions?query=workflow%3Aci-build          
@@ -9,13 +9,12 @@
  ▌[7] - https://snapcraft.io/lnav/badge.svg                                       
  ▌[8] - https://snapcraft.io/lnav                                                 
 
-[4m<img[0m
-[4msrc="https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg"[0m
-[4mheight="20"/>[1][0m
+]8;;https://discord.gg/erBPnKwz7R\[4m🖼  [0m]8;;\]8;;https://discord.gg/erBPnKwz7R\[4mDiscord Logo[0m]8;;\]8;;https://discord.gg/erBPnKwz7R\[4m[1][0m]8;;\[4m[2][0m
 
- ▌[1] - https://discord.gg/erBPnKwz7R 
+ ▌[1] - https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg 
+ ▌[2] - https://discord.gg/erBPnKwz7R                                                                                                  
 
-[4mThis is the source repository for [0m[1m[4mlnav[0m[4m, visit [0m[4mhttps://lnav.org[1][0m[4m for[0m
+[4mThis is the source repository for [0m[1m[4mlnav[0m[4m, visit [0m]8;;https://lnav.org\[4mhttps://lnav.org[0m]8;;\[4m[1][0m[4m for[0m
 [4ma high level overview.[0m
 
  ▌[1] - https://lnav.org 
@@ -32,7 +31,7 @@ to no setup.
 The following screenshot shows a syslog file. Log lines are displayed
 with highlights. Errors are red and warnings are yellow.
 
-[4mScreenshot[1][0m[4m[2][0m
+]8;;docs/assets/images/lnav-syslog.png\[4m🖼  Screenshot[1][0m]8;;\[4m[2][0m
 
  ▌[1] - file://{top_srcdir}/docs/assets/images/lnav-syslog-thumb.png 
  ▌[2] - file://{top_srcdir}/docs/assets/images/lnav-syslog.png       
@@ -49,8 +48,8 @@ with highlights. Errors are red and warnings are yellow.
 
 [1mInstallation[0m
 
-[4mDownload a statically-linked binary for Linux/MacOS from the release[0m
-[4mpage[1][0m
+]8;;https://github.com/tstack/lnav/releases/latest#release-artifacts\[4mDownload a statically-linked binary for Linux/MacOS from the release[0m]8;;\
+]8;;https://github.com/tstack/lnav/releases/latest#release-artifacts\[4mpage[0m]8;;\[4m[1][0m
 
  ▌[1] - https://github.com/tstack/lnav/releases/latest#release-artifacts 
 
@@ -111,9 +110,9 @@ log lines fed into  lnav  via  journalctl 's  -b  option.
 Please file issues on this repository or use the discussions section.
 The following alternatives are also available:
 
- [33m•[0m [4msupport@lnav.org[1][0m
- [33m•[0m [4mDiscord[2][0m
- [33m•[0m [4mGoogle Groups[3][0m
+ [33m•[0m ]8;;mailto:support@lnav.org\[4msupport@lnav.org[0m]8;;\[4m[1][0m
+ [33m•[0m ]8;;https://discord.gg/erBPnKwz7R\[4mDiscord[0m]8;;\[4m[2][0m
+ [33m•[0m ]8;;https://groups.google.com/g/lnav\[4mGoogle Groups[0m]8;;\[4m[3][0m
 
  ▌[1] - mailto:support@lnav.org          
  ▌[2] - https://discord.gg/erBPnKwz7R    
@@ -121,9 +120,9 @@ The following alternatives are also available:
 
 [1mLinks[0m
 
- [33m•[0m [4mMain Site[1][0m
- [33m•[0m [1m[4mDocumentation[0m[4m[2][0m on Read the Docs
- [33m•[0m [4mInternal Architecture[3][0m
+ [33m•[0m ]8;;https://lnav.org\[4mMain Site[0m]8;;\[4m[1][0m
+ [33m•[0m ]8;;https://docs.lnav.org\[1m[4mDocumentation[0m]8;;\[4m[2][0m on Read the Docs
+ [33m•[0m ]8;;ARCHITECTURE.md\[4mInternal Architecture[0m]8;;\[4m[3][0m
 
  ▌[1] - https://lnav.org                                 
  ▌[2] - https://docs.lnav.org                            
@@ -131,7 +130,7 @@ The following alternatives are also available:
 
 [1mContributing[0m
 
- [33m•[0m [4mBecome a Sponsor on GitHub[1][0m
+ [33m•[0m ]8;;https://github.com/sponsors/tstack\[4mBecome a Sponsor on GitHub[0m]8;;\[4m[1][0m
 
  ▌[1] - https://github.com/sponsors/tstack 
 
@@ -170,7 +169,7 @@ Run  ./autogen.sh  if compiling from a cloned repository.
 
 [1mSee Also[0m
 
-[4mAngle-grinder[1][0m is a tool to slice and dice log files on the
+]8;;https://github.com/rcoh/angle-grinder\[4mAngle-grinder[0m]8;;\[4m[1][0m is a tool to slice and dice log files on the
 command-line. If you're familiar with the SumoLogic query language,
 you might find this tool more comfortable to work with.
 

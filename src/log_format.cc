@@ -1287,15 +1287,40 @@ external_log_format::scan(logfile& lf,
             {
                 this->lf_date_time.relock(ls);
                 continue;
-            } else {
-                log_debug("%s:%d:date-time re-locked to %d",
-                          lf.get_unique_path().c_str(),
-                          dst.size(),
-                          this->lf_date_time.dts_fmt_lock);
             }
+            if (last != nullptr) {
+                auto old_flags = this->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
+                auto new_flags = log_time_tm.et_flags & DATE_TIME_SET_FLAGS;
+
+                // It is unlikely a valid timestamp would lose much
+                // precision.
+                if (new_flags != old_flags) {
+                    continue;
+                }
+            }
+
+            log_debug("%s:%d:date-time re-locked to %d",
+                      lf.get_unique_path().c_str(),
+                      dst.size(),
+                      this->lf_date_time.dts_fmt_lock);
         }
 
         this->lf_timestamp_flags = log_time_tm.et_flags;
+
+        if (!(this->lf_timestamp_flags
+              & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
+            && !dst.empty() && dst.back().get_time() == log_tv.tv_sec
+            && dst.back().get_millis() != 0)
+        {
+            auto log_ms = std::chrono::milliseconds(dst.back().get_millis());
+
+            log_time_tm.et_nsec
+                = std::chrono::duration_cast<std::chrono::nanoseconds>(log_ms)
+                      .count();
+            log_tv.tv_usec
+                = std::chrono::duration_cast<std::chrono::microseconds>(log_ms)
+                      .count();
+        }
 
         if (!((log_time_tm.et_flags & ETF_DAY_SET)
               && (log_time_tm.et_flags & ETF_MONTH_SET)

@@ -90,6 +90,27 @@ main(int argc, char* argv[])
         }
     }
 
+    {
+        auto hlink = std::string(
+            "\033]8;;http://example.com\033\\This is a "
+            "link\033]8;;\033\\\n");
+        string_attrs_t sa;
+        scrub_ansi_string(hlink, &sa);
+
+        printf("hlink %d %d %s", hlink.size(), sa.size(), hlink.c_str());
+        assert(sa.size() == 4);
+        for (const auto& attr : sa) {
+            printf("attr %d:%d %s\n",
+                   attr.sa_range.lr_start,
+                   attr.sa_range.lr_end,
+                   attr.sa_type->sat_name);
+            if (attr.sa_type == &VC_HYPERLINK) {
+                printf("  value: %s\n",
+                       attr.sa_value.get<std::string>().c_str());
+            }
+        }
+    }
+
     string_attrs_t sa;
     string str_cp;
 
