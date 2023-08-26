@@ -355,12 +355,18 @@ walk_archive_files(
         return result;
     }
 
-    for (const auto& entry : fs::recursive_directory_iterator(tmp_path)) {
+    std::error_code ec;
+    for (const auto& entry : fs::recursive_directory_iterator(tmp_path, ec)) {
         if (!entry.is_regular_file()) {
             continue;
         }
 
         callback(tmp_path, entry);
+    }
+    if (ec) {
+        return Err(fmt::format(FMT_STRING("failed to walk temp dir: {} -- {}"),
+                               tmp_path.string(),
+                               ec.message()));
     }
 
     return Ok();

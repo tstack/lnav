@@ -79,7 +79,6 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
     char resolved_path[PATH_MAX] = "";
 
     if (!fd.has_value()) {
-        errno = 0;
         if (realpath(lf->lf_filename.c_str(), resolved_path) == nullptr) {
             return Err(fmt::format(FMT_STRING("realpath({}) failed with: {}"),
                                    lf->lf_filename,
@@ -168,7 +167,10 @@ logfile::logfile(std::string filename, const logfile_open_options& loo)
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
 }
 
-logfile::~logfile() {}
+logfile::~logfile()
+{
+    log_info("destructing logfile: %s", this->lf_filename.c_str());
+}
 
 bool
 logfile::exists() const

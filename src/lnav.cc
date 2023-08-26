@@ -1523,15 +1523,13 @@ looper()
 
         timer.start_fade(index_counter, 1);
 
-        file_collection active_copy;
-        log_debug("rescan started %p", &active_copy);
-        active_copy.merge(lnav_data.ld_active_files);
-        active_copy.fc_progress = lnav_data.ld_active_files.fc_progress;
-        std::future<file_collection> rescan_future
-            = std::async(std::launch::async,
-                         &file_collection::rescan_files,
-                         std::move(active_copy),
-                         false);
+        std::future<file_collection> rescan_future;
+
+        log_debug("rescan started");
+        rescan_future = std::async(std::launch::async,
+                                   &file_collection::rescan_files,
+                                   lnav_data.ld_active_files.copy(),
+                                   false);
         bool initial_rescan_completed = false;
         int session_stage = 0;
 
@@ -1604,20 +1602,18 @@ looper()
                     }
                 }
 
-                active_copy.clear();
                 rescan_future = std::future<file_collection>{};
                 next_rescan_time = ui_clock::now() + 333ms;
             }
 
             if (!rescan_future.valid()
-                && (session_stage < 2 || ui_clock::now() >= next_rescan_time))
+                && (session_stage < 2
+                    || (lnav_data.ld_active_files.is_below_open_file_limit()
+                        && ui_clock::now() >= next_rescan_time)))
             {
-                active_copy.clear();
-                active_copy.merge(lnav_data.ld_active_files);
-                active_copy.fc_progress = lnav_data.ld_active_files.fc_progress;
                 rescan_future = std::async(std::launch::async,
                                            &file_collection::rescan_files,
-                                           std::move(active_copy),
+                                           lnav_data.ld_active_files.copy(),
                                            false);
             }
 
@@ -1954,7 +1950,9 @@ looper()
                 {
                     lnav::session::restore_view_states();
                     if (lnav_data.ld_mode == ln_mode_t::FILES) {
-                        if (lnav_data.ld_active_files.fc_name_to_errors.empty())
+                        if (lnav_data.ld_active_files.fc_name_to_errors
+                                ->readAccess()
+                                ->empty())
                         {
                             log_info("switching to paging!");
                             lnav_data.ld_mode = ln_mode_t::PAGING;
@@ -3240,19 +3238,21 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 wait_for_pipers();
                 rescan_files(true);
                 rebuild_indexes_repeatedly();
-                if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
-                    for (const auto& pair :
-                         lnav_data.ld_active_files.fc_name_to_errors)
-                    {
-                        lnav::console::print(
-                            stderr,
-                            lnav::console::user_message::error(
-                                attr_line_t("unable to open file: ")
-                                    .append(lnav::roles::file(pair.first)))
-                                .with_reason(pair.second.fei_description));
-                    }
+                {
+                    safe::WriteAccess<safe_name_to_errors> errs(
+                        *lnav_data.ld_active_files.fc_name_to_errors);
+                    if (!errs->empty()) {
+                        for (const auto& pair : *errs) {
+                            lnav::console::print(
+                                stderr,
+                                lnav::console::user_message::error(
+                                    attr_line_t("unable to open file: ")
+                                        .append(lnav::roles::file(pair.first)))
+                                    .with_reason(pair.second.fei_description));
+                        }
 
-                    return EXIT_FAILURE;
+                        return EXIT_FAILURE;
+                    }
                 }
                 init_session();
                 lnav_data.ld_exec_context.set_output("stdout", stdout, nullptr);
@@ -3291,17 +3291,21 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         [](auto& clooper) { clooper.process_all(); });
                 rebuild_indexes_repeatedly();
                 wait_for_children();
-                if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
-                    for (const auto& pair :
-                         lnav_data.ld_active_files.fc_name_to_errors)
-                    {
-                        fprintf(stderr,
-                                "error: unable to open file: %s -- %s\n",
-                                pair.first.c_str(),
-                                pair.second.fei_description.c_str());
-                    }
+                {
+                    safe::WriteAccess<safe_name_to_errors> errs(
+                        *lnav_data.ld_active_files.fc_name_to_errors);
+                    if (!errs->empty()) {
+                        for (const auto& pair : *errs) {
+                            lnav::console::print(
+                                stderr,
+                                lnav::console::user_message::error(
+                                    attr_line_t("unable to open file: ")
+                                        .append(lnav::roles::file(pair.first)))
+                                    .with_reason(pair.second.fei_description));
+                        }
 
-                    return EXIT_FAILURE;
+                        return EXIT_FAILURE;
+                    }
                 }
 
                 for (const auto& lf : lnav_data.ld_active_files.fc_files) {

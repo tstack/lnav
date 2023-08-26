@@ -46,14 +46,18 @@ from_selection(vis_line_t sel_vis)
     auto& fc = lnav_data.ld_active_files;
     int sel = (int) sel_vis;
 
-    if (sel < fc.fc_name_to_errors.size()) {
-        auto iter = fc.fc_name_to_errors.begin();
+    {
+        safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
 
-        std::advance(iter, sel);
-        return error_selection::build(sel, iter);
+        if (sel < errs->size()) {
+            auto iter = errs->begin();
+
+            std::advance(iter, sel);
+            return error_selection::build(sel, iter->first);
+        }
+
+        sel -= errs->size();
     }
-
-    sel -= fc.fc_name_to_errors.size();
 
     if (sel < fc.fc_other_files.size()) {
         auto iter = fc.fc_other_files.begin();
@@ -171,11 +175,11 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 [&](files_model::error_selection& es) {
                     auto& fc = lnav_data.ld_active_files;
 
-                    fc.fc_file_names.erase(es.sb_iter->first);
+                    fc.fc_file_names.erase(es.sb_iter);
 
                     auto name_iter = fc.fc_file_names.begin();
                     while (name_iter != fc.fc_file_names.end()) {
-                        if (name_iter->first == es.sb_iter->first) {
+                        if (name_iter->first == es.sb_iter) {
                             name_iter = fc.fc_file_names.erase(name_iter);
                             continue;
                         }
@@ -186,8 +190,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                         if (rp_opt) {
                             auto rp = *rp_opt;
 
-                            if (fmt::to_string(rp.home()) == es.sb_iter->first)
-                            {
+                            if (fmt::to_string(rp.home()) == es.sb_iter) {
                                 fc.fc_other_files.erase(name_iter->first);
                                 name_iter = fc.fc_file_names.erase(name_iter);
                                 continue;
@@ -196,7 +199,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                         ++name_iter;
                     }
 
-                    fc.fc_name_to_errors.erase(es.sb_iter);
+                    fc.fc_name_to_errors->writeAccess()->erase(es.sb_iter);
                     fc.fc_invalidate_merge = true;
                     lv.reload_data();
                 },
@@ -220,7 +223,7 @@ files_sub_source::text_line_count()
 {
     const auto& fc = lnav_data.ld_active_files;
 
-    return fc.fc_name_to_errors.size() + fc.fc_other_files.size()
+    return fc.fc_name_to_errors->readAccess()->size() + fc.fc_other_files.size()
         + fc.fc_files.size();
 }
 
@@ -242,21 +245,25 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         = std::min(fc.fc_largest_path_length,
                    std::max((size_t) 40, (size_t) dim.second - 30));
 
-    if (line < fc.fc_name_to_errors.size()) {
-        auto iter = fc.fc_name_to_errors.begin();
-        std::advance(iter, line);
-        auto path = ghc::filesystem::path(iter->first);
-        auto fn = path.filename().string();
+    {
+        safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
 
-        truncate_to(fn, filename_width);
-        value_out = fmt::format(FMT_STRING("    {:<{}}   {}"),
-                                fn,
-                                filename_width,
-                                iter->second.fei_description);
-        return;
+        if (line < errs->size()) {
+            auto iter = errs->begin();
+            std::advance(iter, line);
+            auto path = ghc::filesystem::path(iter->first);
+            auto fn = path.filename().string();
+
+            truncate_to(fn, filename_width);
+            value_out = fmt::format(FMT_STRING("    {:<{}}   {}"),
+                                    fn,
+                                    filename_width,
+                                    iter->second.fei_description);
+            return;
+        }
+
+        line -= errs->size();
     }
-
-    line -= fc.fc_name_to_errors.size();
 
     if (line < fc.fc_other_files.size()) {
         auto iter = fc.fc_other_files.begin();
@@ -317,17 +324,22 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
         value_out.emplace_back(line_range{0, 1}, VC_GRAPHIC.value(ACS_RARROW));
     }
 
-    if (line < fc.fc_name_to_errors.size()) {
-        if (selected) {
-            value_out.emplace_back(line_range{0, -1},
-                                   VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
-        }
+    {
+        safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
 
-        value_out.emplace_back(line_range{4 + (int) filename_width, -1},
-                               VC_ROLE_FG.value(role_t::VCR_ERROR));
-        return;
+        if (line < errs->size()) {
+            if (selected) {
+                value_out.emplace_back(
+                    line_range{0, -1},
+                    VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
+            }
+
+            value_out.emplace_back(line_range{4 + (int) filename_width, -1},
+                                   VC_ROLE_FG.value(role_t::VCR_ERROR));
+            return;
+        }
+        line -= errs->size();
     }
-    line -= fc.fc_name_to_errors.size();
 
     if (line < fc.fc_other_files.size()) {
         if (selected) {

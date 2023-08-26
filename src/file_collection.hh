@@ -73,6 +73,8 @@ struct file_error_info {
     const std::string fei_description;
 };
 
+using safe_name_to_errors = safe::Safe<std::map<std::string, file_error_info>>;
+
 struct file_collection;
 
 enum class child_poll_result_t {
@@ -139,7 +141,8 @@ struct file_collection {
     bool fc_recursive{false};
     bool fc_rotated{false};
 
-    std::map<std::string, file_error_info> fc_name_to_errors;
+    std::shared_ptr<safe_name_to_errors> fc_name_to_errors{
+        std::make_shared<safe_name_to_errors>()};
     std::map<std::string, logfile_open_options> fc_file_names;
     std::vector<std::shared_ptr<logfile>> fc_files;
     int fc_files_generation{0};
@@ -148,24 +151,41 @@ struct file_collection {
     std::set<std::string> fc_closed_files;
     std::map<std::string, other_file_descriptor> fc_other_files;
     std::set<std::string> fc_synced_files;
-    std::shared_ptr<safe_scan_progress> fc_progress;
+    std::shared_ptr<safe_scan_progress> fc_progress{
+        std::make_shared<safe_scan_progress>()};
     std::vector<struct stat> fc_new_stats;
     std::list<child_poller> fc_child_pollers;
     size_t fc_largest_path_length{0};
 
-    file_collection()
-        : fc_progress(std::make_shared<safe::Safe<scan_progress>>())
-    {
-    }
+    struct limits_t {
+        limits_t();
+
+        rlim_t l_fds;
+        rlim_t l_open_files;
+    };
+
+    static const limits_t& get_limits();
+
+    file_collection() = default;
+    file_collection(const file_collection&) = delete;
+    file_collection& operator=(const file_collection&) = delete;
+    file_collection(file_collection&&) = default;
+
+    file_collection copy();
 
     void clear()
     {
-        this->fc_name_to_errors.clear();
+        this->fc_name_to_errors->writeAccess()->clear();
         this->fc_file_names.clear();
         this->fc_files.clear();
         this->fc_closed_files.clear();
         this->fc_other_files.clear();
         this->fc_new_stats.clear();
+    }
+
+    bool is_below_open_file_limit() const
+    {
+        return this->fc_files.size() < get_limits().l_open_files;
     }
 
     file_collection rescan_files(bool required = false);

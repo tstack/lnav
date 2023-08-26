@@ -175,7 +175,7 @@ public:
     }
 
 private:
-    bool gho_show_details{true};
+    bool gho_show_details{false};
     std::shared_ptr<gantt_source> gho_src;
 };
 

@@ -37,6 +37,7 @@
 #include "sql_util.hh"
 
 using namespace std::chrono_literals;
+using namespace lnav::roles::literals;
 
 /**
  * Observer for loading progress that updates the bottom status bar.
@@ -390,6 +391,9 @@ update_active_files(file_collection& new_files)
         return true;
     }
 
+    bool was_below_open_file_limit
+        = lnav_data.ld_active_files.is_below_open_file_limit();
+
     for (const auto& lf : new_files.fc_files) {
         lf->set_logfile_observer(&obs);
         lnav_data.ld_text_source.push_back(lf);
@@ -405,7 +409,7 @@ update_active_files(file_collection& new_files)
     }
     lnav_data.ld_active_files.merge(new_files);
     if (!new_files.fc_files.empty() || !new_files.fc_other_files.empty()
-        || !new_files.fc_name_to_errors.empty())
+        || !new_files.fc_name_to_errors->readAccess()->empty())
     {
         lnav_data.ld_active_files.regenerate_unique_file_names();
     }
@@ -423,6 +427,25 @@ update_active_files(file_collection& new_files)
                 lf->get_filename(),
             };
         });
+
+    if (was_below_open_file_limit
+        && !lnav_data.ld_active_files.is_below_open_file_limit())
+    {
+        auto um
+            = lnav::console::user_message::error("Unable to open more files")
+                  .with_reason(
+                      attr_line_t("The file-descriptor limit of ")
+                          .append(lnav::roles::number(fmt::to_string(
+                              file_collection::get_limits().l_fds)))
+                          .append(" is too low to support opening more files"))
+                  .with_help(
+                      attr_line_t("Use ")
+                          .append("ulimit -n"_quoted_code)
+                          .append(
+                              " to increase the limit before running lnav"));
+
+        lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
+    }
 
     return true;
 }
@@ -445,7 +468,9 @@ rescan_files(bool req)
                 continue;
             }
 
-            if (lnav_data.ld_active_files.fc_name_to_errors.count(pair.first)) {
+            if (lnav_data.ld_active_files.fc_name_to_errors->readAccess()
+                    ->count(pair.first))
+            {
                 continue;
             }
 
@@ -455,7 +480,8 @@ rescan_files(bool req)
                 all_synced = false;
             }
         }
-        if (!lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+        if (!lnav_data.ld_active_files.fc_name_to_errors->readAccess()->empty())
+        {
             return false;
         }
         if (!all_synced) {
