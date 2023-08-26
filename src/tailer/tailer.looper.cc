@@ -132,7 +132,7 @@ update_tailer_description(
 
                 iter->second.ofd_description = remote_uname;
             }
-            fc.fc_name_to_errors.erase(netloc);
+            fc.fc_name_to_errors->writeAccess()->erase(netloc);
         });
 }
 
@@ -1149,11 +1149,11 @@ tailer::looper::report_error(std::string path, std::string msg)
     isc::to<main_looper&, services::main_t>().send([=](auto& mlooper) {
         file_collection fc;
 
-        fc.fc_name_to_errors.emplace(path,
-                                     file_error_info{
-                                         {},
-                                         msg,
-                                     });
+        fc.fc_name_to_errors->writeAccess()->emplace(path,
+                                                     file_error_info{
+                                                         {},
+                                                         msg,
+                                                     });
         update_active_files(fc);
         lnav_data.ld_active_files.fc_progress->writeAccess()->sp_tailers.erase(
             path);

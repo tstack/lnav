@@ -89,10 +89,7 @@ struct selection_base {
     }
 };
 
-struct error_selection
-    : public selection_base<error_selection,
-                            std::map<std::string, file_error_info>::iterator> {
-};
+struct error_selection : public selection_base<error_selection, std::string> {};
 
 struct other_selection
     : public selection_base<

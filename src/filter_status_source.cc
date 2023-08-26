@@ -122,7 +122,8 @@ filter_status_source::statusview_fields()
     } else {
         this->tss_fields[TSF_FILES_TITLE].set_value(" " ANSI_ROLE("F") "iles ",
                                                     role_t::VCR_STATUS_HOTKEY);
-        if (lnav_data.ld_active_files.fc_name_to_errors.empty()) {
+        if (lnav_data.ld_active_files.fc_name_to_errors->readAccess()->empty())
+        {
             this->tss_fields[TSF_FILES_TITLE].set_role(
                 role_t::VCR_STATUS_DISABLED_TITLE);
         } else {
@@ -130,12 +131,13 @@ filter_status_source::statusview_fields()
                 role_t::VCR_ALERT_STATUS);
 
             auto& fc = lnav_data.ld_active_files;
-            if (fc.fc_name_to_errors.size() == 1) {
+            if (fc.fc_name_to_errors->readAccess()->size() == 1) {
                 this->tss_error.set_value(" error: a file cannot be opened ");
             } else {
                 this->tss_error.set_value(
                     " error: %u files cannot be opened ",
-                    lnav_data.ld_active_files.fc_name_to_errors.size());
+                    lnav_data.ld_active_files.fc_name_to_errors->readAccess()
+                        ->size());
             }
         }
         this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(
@@ -181,7 +183,7 @@ status_field&
 filter_status_source::statusview_value_for_field(int field)
 {
     if (field == TSF_FILTERED
-        && !lnav_data.ld_active_files.fc_name_to_errors.empty())
+        && !lnav_data.ld_active_files.fc_name_to_errors->readAccess()->empty())
     {
         return this->tss_error;
     }

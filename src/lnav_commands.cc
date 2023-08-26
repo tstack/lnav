@@ -2914,13 +2914,18 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         if (tss.empty()) {
             return ec.make_error("no text files are opened");
-        } else {
-            fn_v.emplace_back(tss.current_file()->get_filename());
-            lnav_data.ld_active_files.request_close(tss.current_file());
+        } else if (!ec.ec_dry_run) {
+            auto lf = tss.current_file();
+            actual_path_v.emplace_back(lf->get_actual_path());
+            fn_v.emplace_back(lf->get_filename());
+            lnav_data.ld_active_files.request_close(lf);
 
             if (tss.size() == 1) {
                 lnav_data.ld_view_stack.pop_back();
             }
+        } else {
+            retval = fmt::format(FMT_STRING("closing -- {}"),
+                                 tss.current_file()->get_filename());
         }
     } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
         if (tc->get_inner_height() == 0) {

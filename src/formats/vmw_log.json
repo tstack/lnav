@@ -90,6 +90,14 @@
                         }
                     ]
                 },
+                "esxtokend": {
+                    "format": [
+                        {
+                            "field": "body",
+                            "extractor": "Invoke-MethodId: (.*)"
+                        }
+                    ]
+                },
                 "hostd": {
                     "format": [
                         {

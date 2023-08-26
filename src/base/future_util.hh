@@ -57,21 +57,31 @@ make_ready_future(T&& t)
  * A queue used to limit the number of futures that are running concurrently.
  *
  * @tparam T The result of the futures.
- * @tparam MAX_QUEUE_SIZE The maximum number of futures that can be in flight.
  */
-template<typename T, int MAX_QUEUE_SIZE = 8>
+template<typename T>
 class future_queue {
 public:
+    enum class processor_result_t {
+        ok,
+        interrupt,
+    };
+
     /**
      * @param processor The function to execute with the result of a future.
+     * @param max_queue_size The maximum number of futures that can be in
+     * flight.
      */
-    explicit future_queue(std::function<void(T&)> processor)
-        : fq_processor(processor){};
-
-    ~future_queue()
+    explicit future_queue(
+        std::function<processor_result_t(std::future<T>&)> processor,
+        size_t max_queue_size = 8)
+        : fq_processor(processor), fq_max_queue_size(max_queue_size)
     {
-        this->pop_to();
     }
+
+    future_queue(const future_queue&) = delete;
+    future_queue& operator=(const future_queue&) = delete;
+
+    ~future_queue() { this->pop_to(); }
 
     /**
      * Add a future to the queue.  If the size of the queue is greater than the
@@ -80,10 +90,10 @@ public:
      *
      * @param f The future to add to the queue.
      */
-    void push_back(std::future<T>&& f)
+    processor_result_t push_back(std::future<T>&& f)
     {
         this->fq_deque.emplace_back(std::move(f));
-        this->pop_to(MAX_QUEUE_SIZE);
+        return this->pop_to(this->fq_max_queue_size);
     }
 
     /**
@@ -92,17 +102,24 @@ public:
      *
      * @param size The new desired size of the queue.
      */
-    void pop_to(size_t size = 0)
+    processor_result_t pop_to(size_t size = 0)
     {
+        processor_result_t retval = processor_result_t::ok;
+
         while (this->fq_deque.size() > size) {
-            auto v = this->fq_deque.front().get();
-            this->fq_processor(v);
+            if (this->fq_processor(this->fq_deque.front())
+                == processor_result_t::interrupt)
+            {
+                retval = processor_result_t::interrupt;
+            }
             this->fq_deque.pop_front();
         }
+        return retval;
     }
 
-    std::function<void(T&)> fq_processor;
+    std::function<processor_result_t(std::future<T>&)> fq_processor;
     std::deque<std::future<T>> fq_deque;
+    size_t fq_max_queue_size;
 };
 
 }  // namespace futures

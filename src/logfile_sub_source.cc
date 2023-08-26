@@ -820,6 +820,11 @@ logfile_sub_source::rebuild_index(
                                     {
                                         lowest_tv = new_file_line.get_timeval();
                                     }
+                                } else {
+                                    log_debug(
+                                        "already doing full rebuild, doing "
+                                        "full_sort as well");
+                                    full_sort = true;
                                 }
                             }
                         }

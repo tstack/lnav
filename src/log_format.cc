@@ -2376,10 +2376,16 @@ detect_mime_type(const ghc::filesystem::path& filename)
             continue;
         }
 
+        if (elf->elf_converter.c_header.h_exprs.he_exprs.empty()) {
+            continue;
+        }
+
         if (buffer_size < elf->elf_converter.c_header.h_size) {
-            log_debug("file content too small (%d) for header detection: %s",
-                      buffer_size,
-                      elf->get_name().get());
+            log_debug(
+                "%s: file content too small (%d) for header detection: %s",
+                filename.c_str(),
+                buffer_size,
+                elf->get_name().get());
             continue;
         }
         for (const auto& hpair : elf->elf_converter.c_header.h_exprs.he_exprs) {

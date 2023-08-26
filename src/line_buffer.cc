@@ -1461,12 +1461,13 @@ line_buffer::cleanup_cache()
         auto now = std::chrono::system_clock::now();
         auto cache_path = line_buffer_cache_path();
         std::vector<ghc::filesystem::path> to_remove;
+        std::error_code ec;
 
         for (const auto& cache_subdir :
-             ghc::filesystem::directory_iterator(cache_path))
+             ghc::filesystem::directory_iterator(cache_path, ec))
         {
             for (const auto& entry :
-                 ghc::filesystem::directory_iterator(cache_subdir))
+                 ghc::filesystem::directory_iterator(cache_subdir, ec))
             {
                 auto mtime = ghc::filesystem::last_write_time(entry.path());
                 auto exp_time = mtime + 1h;
@@ -1480,7 +1481,7 @@ line_buffer::cleanup_cache()
 
         for (auto& entry : to_remove) {
             log_debug("removing compressed file cache: %s", entry.c_str());
-            ghc::filesystem::remove_all(entry);
+            ghc::filesystem::remove_all(entry, ec);
         }
     });
 }
