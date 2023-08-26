@@ -39,6 +39,8 @@
 #include <string>
 #include <utility>
 
+#include <sys/resource.h>
+
 #include "archive_manager.hh"
 #include "base/auto_pid.hh"
 #include "base/future_util.hh"
