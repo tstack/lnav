@@ -47,6 +47,7 @@ enum class text_format_t {
     TF_JAVA,
     TF_JSON,
     TF_LOG,
+    TF_MAKEFILE,
     TF_MAN,
     TF_MARKDOWN,
     TF_PYTHON,
@@ -94,6 +95,9 @@ struct formatter<text_format_t> : formatter<string_view> {
                 break;
             case text_format_t::TF_JSON:
                 name = "application/json";
+                break;
+            case text_format_t::TF_MAKEFILE:
+                name = "text/x-makefile";
                 break;
             case text_format_t::TF_MAN:
                 name = "text/man";
