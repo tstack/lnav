@@ -453,6 +453,27 @@ public:
             this->sw_hier_stage->hn_parent = nullptr;
         }
 
+        if (!this->sw_indents.empty()) {
+            auto low_indent_iter = this->sw_indents.begin();
+
+            if (*low_indent_iter == 1) {
+                // adding guides for small indents is noisy, drop for now
+                this->sw_indents.clear();
+            } else {
+                auto lcm = *low_indent_iter;
+
+                for (auto indent_iter = this->sw_indents.begin();
+                     indent_iter != this->sw_indents.end();)
+                {
+                    if ((*indent_iter % lcm) == 0) {
+                        ++indent_iter;
+                    } else {
+                        indent_iter = this->sw_indents.erase(indent_iter);
+                    }
+                }
+            }
+        }
+
         mb.mb_root_node = std::move(this->sw_hier_stage);
         mb.mb_intervals = std::move(this->sw_intervals);
         mb.mb_type_intervals = std::move(this->sw_type_intervals);

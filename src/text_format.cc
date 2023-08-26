@@ -64,6 +64,7 @@ detect_text_format(string_fragment sf,
     static const auto XML_EXT = ghc::filesystem::path(".xml");
     static const auto YAML_EXT = ghc::filesystem::path(".yaml");
     static const auto YML_EXT = ghc::filesystem::path(".yml");
+    static const auto MAKEFILE_STEM = ghc::filesystem::path("Makefile");
     static const auto MD_EXT = ghc::filesystem::path(".md");
     static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
 
@@ -124,6 +125,7 @@ detect_text_format(string_fragment sf,
             path = path->stem();
         }
 
+        auto stem = path->stem();
         auto ext = path->extension();
         if (ext == MD_EXT || ext == MARKDOWN_EXT) {
             return text_format_t::TF_MARKDOWN;
@@ -155,6 +157,10 @@ detect_text_format(string_fragment sf,
 
         if (ext == XML_EXT) {
             return text_format_t::TF_XML;
+        }
+
+        if (stem == MAKEFILE_STEM) {
+            return text_format_t::TF_MAKEFILE;
         }
     }
 
