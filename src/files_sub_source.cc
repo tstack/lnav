@@ -222,9 +222,10 @@ size_t
 files_sub_source::text_line_count()
 {
     const auto& fc = lnav_data.ld_active_files;
+    auto retval = fc.fc_name_to_errors->readAccess()->size()
+        + fc.fc_other_files.size() + fc.fc_files.size();
 
-    return fc.fc_name_to_errors->readAccess()->size() + fc.fc_other_files.size()
-        + fc.fc_files.size();
+    return retval;
 }
 
 size_t

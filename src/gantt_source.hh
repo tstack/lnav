@@ -30,6 +30,7 @@
 #ifndef lnav_gantt_source_hh
 #define lnav_gantt_source_hh
 
+#include "base/map_util.hh"
 #include "gantt_status_source.hh"
 #include "logfile_sub_source.hh"
 #include "plain_text_source.hh"
@@ -84,17 +85,27 @@ public:
     gantt_status_source& gs_preview_status_source;
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
 
-    struct opid_description_defs {
-        std::map<intern_string_t,
-                 std::map<intern_string_t, log_format::opid_descriptors>>
-            odd_format_to_desc;
+    struct opid_description_def_key {
+        intern_string_t oddk_format_name;
+        intern_string_t oddk_desc_name;
+
+        bool operator<(const opid_description_def_key& rhs) const
+        {
+            if (this->oddk_format_name < rhs.oddk_format_name) {
+                return true;
+            }
+            if (this->oddk_format_name == rhs.oddk_format_name) {
+                return this->oddk_desc_name < rhs.oddk_desc_name;
+            }
+
+            return false;
+        }
     };
 
-    using gantt_opid_map
-        = robin_hood::unordered_map<string_fragment,
-                                    opid_description_defs,
-                                    frag_hasher,
-                                    std::equal_to<string_fragment>>;
+    struct opid_description_defs {
+        lnav::map::small<opid_description_def_key, log_format::opid_descriptors>
+            odd_defs;
+    };
 
     using gantt_subid_map
         = robin_hood::unordered_map<string_fragment,
@@ -102,17 +113,17 @@ public:
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
 
-    gantt_opid_map gs_opid_map;
     gantt_subid_map gs_subid_map;
 
     struct opid_row {
         string_fragment or_name;
         opid_time_range or_value;
-        std::map<intern_string_t,
-                 std::map<intern_string_t, std::map<size_t, std::string>>>
+        string_fragment or_description;
+        opid_description_defs or_description_defs;
+        lnav::map::small<opid_description_def_key,
+                         lnav::map::small<size_t, std::string>>
             or_descriptions;
         size_t or_max_subid_width{0};
-        std::string or_description;
 
         bool operator<(const opid_row& rhs) const
         {
@@ -135,11 +146,16 @@ public:
                                     opid_row,
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
+    using gantt_desc_map
+        = robin_hood::unordered_set<string_fragment,
+                                    frag_hasher,
+                                    std::equal_to<string_fragment>>;
 
     attr_line_t gs_rendered_line;
     size_t gs_opid_width{0};
     size_t gs_total_width{0};
     gantt_opid_row_map gs_active_opids;
+    gantt_desc_map gs_descriptions;
     std::vector<std::reference_wrapper<opid_row>> gs_time_order;
     struct timeval gs_lower_bound {};
     struct timeval gs_upper_bound {};

@@ -255,9 +255,9 @@ public:
 
     void set_sync_selection_and_top(bool value)
     {
-        this->lv_sync_selection_and_top = value;
-        if (value) {
-            this->set_top(this->get_selection());
+        if (this->lv_sync_selection_and_top != value) {
+            this->lv_sync_selection_and_top = value;
+            this->set_needs_update();
         }
     }
 

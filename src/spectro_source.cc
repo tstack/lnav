@@ -532,6 +532,9 @@ spectrogram_source::text_selection_changed(textview_curses& tc)
         return;
     }
 
+    if (tc.get_selection() == -1_vl) {
+        tc.set_selection(0_vl);
+    }
     const auto& s_row = this->load_row(tc, tc.get_selection());
     this->ss_cursor_column
         = s_row.nearest_column(this->ss_cursor_column.value_or(0));

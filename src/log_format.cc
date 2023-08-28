@@ -220,14 +220,16 @@ log_format::opid_descriptor::matches(const string_fragment& sf) const
 
 std::string
 log_format::opid_descriptors::to_string(
-    const std::map<size_t, std::string>& lod) const
+    const lnav::map::small<size_t, std::string>& lod) const
 {
     std::string retval;
 
     for (size_t lpc = 0; lpc < this->od_descriptors->size(); lpc++) {
         retval.append(this->od_descriptors->at(lpc).od_prefix);
-        lnav::map::find(lod, lpc) |
-            [&retval](const auto str) { retval.append(str); };
+        auto iter = lod.find(lpc);
+        if (iter != lod.end()) {
+            retval.append(iter->second);
+        }
         retval.append(this->od_descriptors->at(lpc).od_suffix);
     }
 
@@ -1159,8 +1161,8 @@ external_log_format::scan(logfile& lf,
                             auto& sub_desc_def
                                 = this->lf_subid_description_def->at(
                                     sub_desc.lod_id.value());
-                            ostr->ostr_description = sub_desc_def.to_string(
-                                lnav::map::from_vec(sub_desc.lod_elements));
+                            ostr->ostr_description
+                                = sub_desc_def.to_string(sub_desc.lod_elements);
                         }
                     }
                 }
@@ -1360,8 +1362,8 @@ external_log_format::scan(logfile& lf,
                     if (!sub_desc.lod_elements.empty()) {
                         auto& sub_desc_def = this->lf_subid_description_def->at(
                             sub_desc.lod_id.value());
-                        ostr->ostr_description = sub_desc_def.to_string(
-                            lnav::map::from_vec(sub_desc.lod_elements));
+                        ostr->ostr_description
+                            = sub_desc_def.to_string(sub_desc.lod_elements);
                     }
                 }
             }

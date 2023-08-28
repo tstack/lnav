@@ -35,9 +35,11 @@
 
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
+#include "base/itertools.hh"
 #include "base/math_util.hh"
 #include "command_executor.hh"
 #include "intervaltree/IntervalTree.h"
+#include "lnav_util.hh"
 #include "md4cpp.hh"
 #include "sql_util.hh"
 
@@ -516,7 +518,7 @@ gantt_source::rebuild_indexes()
     this->gs_total_width = 0;
     this->gs_filtered_count = 0;
     this->gs_active_opids.clear();
-    this->gs_opid_map.clear();
+    this->gs_descriptions.clear();
     this->gs_subid_map.clear();
     this->gs_allocator.reset();
     this->gs_preview_source.clear();
@@ -524,7 +526,6 @@ gantt_source::rebuild_indexes()
 
     auto min_log_time_opt = this->gs_lss.get_min_log_time();
     auto max_log_time_opt = this->gs_lss.get_max_log_time();
-
     auto max_desc_width = size_t{0};
 
     for (const auto& ld : this->gs_lss) {
@@ -538,26 +539,24 @@ gantt_source::rebuild_indexes()
         auto format = ld->get_file_ptr()->get_format();
         safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
             ld->get_file_ptr()->get_opids());
-
         for (const auto& pair : r_opid_map->los_opid_ranges) {
             auto& otr = pair.second;
-            auto iter = this->gs_opid_map.find(pair.first);
-            if (iter == this->gs_opid_map.end()) {
-                auto opid = pair.first.to_owned(this->gs_allocator);
-                auto emp_res
-                    = this->gs_opid_map.emplace(opid, opid_description_defs{});
-                iter = emp_res.first;
-            }
-
             auto active_iter = this->gs_active_opids.find(pair.first);
             if (active_iter == this->gs_active_opids.end()) {
+                auto opid = pair.first.to_owned(this->gs_allocator);
                 auto active_emp_res = this->gs_active_opids.emplace(
-                    iter->first, opid_row{iter->first, otr});
+                    opid,
+                    opid_row{
+                        opid,
+                        otr,
+                        string_fragment::invalid(),
+                    });
                 active_iter = active_emp_res.first;
             } else {
                 active_iter->second.or_value |= otr;
             }
 
+            auto& row = active_iter->second;
             for (auto& sub : active_iter->second.or_value.otr_sub_ops) {
                 auto subid_iter = this->gs_subid_map.find(sub.ostr_subid);
 
@@ -584,14 +583,21 @@ gantt_source::rebuild_indexes()
 
                 if (desc_def_iter == format->lf_opid_description_def->end()) {
                     log_error("cannot find description: %s",
-                              iter->first.data());
+                              active_iter->first.data());
                 } else {
-                    auto& format_descs
-                        = iter->second.odd_format_to_desc[format->get_name()];
-                    format_descs[desc_id] = desc_def_iter->second;
+                    auto desc_key
+                        = opid_description_def_key{format->get_name(), desc_id};
+                    auto desc_defs_iter
+                        = row.or_description_defs.odd_defs.find(desc_key);
+                    if (desc_defs_iter
+                        == row.or_description_defs.odd_defs.end())
+                    {
+                        row.or_description_defs.odd_defs.insert(
+                            desc_key, desc_def_iter->second);
+                    }
 
                     auto& all_descs = active_iter->second.or_descriptions;
-                    auto& curr_desc_m = all_descs[format->get_name()][desc_id];
+                    auto& curr_desc_m = all_descs[desc_key];
                     const auto& new_desc_v = otr.otr_description.lod_elements;
 
                     for (const auto& desc_pair : new_desc_v) {
@@ -601,6 +607,7 @@ gantt_source::rebuild_indexes()
             } else {
                 ensure(otr.otr_description.lod_elements.empty());
             }
+            active_iter->second.or_value.otr_description.lod_elements.clear();
         }
     }
 
@@ -618,19 +625,24 @@ gantt_source::rebuild_indexes()
     this->gs_time_order.reserve(this->gs_active_opids.size());
     for (auto& pair : this->gs_active_opids) {
         auto& otr = pair.second.or_value;
-        auto& full_desc = pair.second.or_description;
+        std::string full_desc;
+        const auto& desc_defs = pair.second.or_description_defs.odd_defs;
         for (auto& desc : pair.second.or_descriptions) {
-            const auto& format_desc_defs
-                = this->gs_opid_map[pair.second.or_name]
-                      .odd_format_to_desc[desc.first];
-
-            require(!format_desc_defs.empty());
-            for (auto& desc_format_pairs : desc.second) {
-                const auto& desc_def
-                    = format_desc_defs.find(desc_format_pairs.first)->second;
-                full_desc = desc_def.to_string(desc_format_pairs.second);
+            auto desc_def_iter = desc_defs.find(desc.first);
+            if (desc_def_iter == desc_defs.end()) {
+                continue;
             }
+            const auto& desc_def = desc_def_iter->second;
+            full_desc = desc_def.to_string(desc.second);
         }
+        pair.second.or_descriptions.clear();
+        auto full_desc_sf = string_fragment::from_str(full_desc);
+        auto desc_sf_iter = this->gs_descriptions.find(full_desc_sf);
+        if (desc_sf_iter == this->gs_descriptions.end()) {
+            full_desc_sf = string_fragment::from_str(full_desc).to_owned(
+                this->gs_allocator);
+        }
+        pair.second.or_description = full_desc_sf;
 
         shared_buffer sb_opid;
         shared_buffer_ref sbr_opid;
