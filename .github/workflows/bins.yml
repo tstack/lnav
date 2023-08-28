@@ -67,6 +67,7 @@ jobs:
 
   build-arm:
     runs-on: ubuntu-latest
+    if: ${{ inputs.lnav_version_number != '' }}
     strategy:
       matrix:
         include:

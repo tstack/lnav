@@ -832,7 +832,9 @@ text_time_translator::data_reloaded(textview_curses* tc)
     if (tc->get_inner_height() == 0) {
         return;
     }
-    if (tc->get_selection() > tc->get_inner_height()) {
+    if (tc->get_selection() < 0_vl
+        || tc->get_selection() > tc->get_inner_height())
+    {
         if (this->ttt_top_time.tv_sec != 0) {
             this->row_for_time(this->ttt_top_time) |
                 [tc](auto new_top) { tc->set_selection(new_top); };
