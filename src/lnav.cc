@@ -1005,7 +1005,7 @@ gather_pipers()
 }
 
 void
-wait_for_pipers()
+wait_for_pipers(nonstd::optional<timeval> deadline)
 {
     static const auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
     auto sleep_time = std::chrono::milliseconds(10);
@@ -1015,6 +1015,9 @@ wait_for_pipers()
         auto piper_count = lnav_data.ld_active_files.active_pipers();
         if (piper_count == 0 && lnav_data.ld_child_pollers.empty()) {
             log_debug("all pipers finished");
+            break;
+        }
+        if (deadline && (deadline.value() < current_timeval())) {
             break;
         }
         // Use usleep() since it is defined to be interruptable by a signal.
