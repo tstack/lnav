@@ -408,11 +408,6 @@ update_active_files(file_collection& new_files)
         }
     }
     lnav_data.ld_active_files.merge(new_files);
-    if (!new_files.fc_files.empty() || !new_files.fc_other_files.empty()
-        || !new_files.fc_name_to_errors->readAccess()->empty())
-    {
-        lnav_data.ld_active_files.regenerate_unique_file_names();
-    }
     lnav_data.ld_child_pollers.insert(
         lnav_data.ld_child_pollers.begin(),
         std::make_move_iterator(

@@ -68,6 +68,58 @@ from_vec(const std::vector<std::pair<K, V>>& container)
     return retval;
 }
 
+template<typename K, typename V>
+class small : public std::vector<std::pair<K, V>> {
+public:
+    auto insert(const K& key, const V& value)
+    {
+        auto pos = this->begin();
+
+        while (pos != this->end() && pos->first < key) {
+            ++pos;
+        }
+        return this->emplace(pos, std::make_pair(key, value));
+    }
+
+    auto find(const K& key)
+    {
+        auto retval = this->begin();
+
+        while (retval != this->end()
+               && (retval->first < key || key < retval->first))
+        {
+            ++retval;
+        }
+
+        return retval;
+    }
+
+    auto find(const K& key) const
+    {
+        auto retval = this->begin();
+
+        while (retval != this->end()
+               && (retval->first < key || key < retval->first))
+        {
+            ++retval;
+        }
+
+        return retval;
+    }
+
+    V& operator[](const K& key)
+    {
+        auto iter = this->find(key);
+        if (iter != this->end()) {
+            return iter->second;
+        }
+
+        this->emplace_back(key, V{});
+
+        return this->back().second;
+    }
+};
+
 }  // namespace map
 }  // namespace lnav
 

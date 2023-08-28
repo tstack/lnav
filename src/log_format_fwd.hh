@@ -38,6 +38,7 @@
 
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/file_range.hh"
+#include "base/map_util.hh"
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
 #include "log_level.hh"
@@ -58,7 +59,7 @@ struct log_level_stats {
 
 struct log_op_description {
     nonstd::optional<intern_string_t> lod_id;
-    std::vector<std::pair<size_t, std::string>> lod_elements;
+    lnav::map::small<size_t, std::string> lod_elements;
 
     log_op_description& operator|=(const log_op_description& rhs);
 };

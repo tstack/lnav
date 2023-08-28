@@ -574,7 +574,8 @@ public:
     struct opid_descriptors {
         std::shared_ptr<std::vector<opid_descriptor>> od_descriptors;
 
-        std::string to_string(const std::map<size_t, std::string>& lod) const;
+        std::string to_string(
+            const lnav::map::small<size_t, std::string>& lod) const;
     };
 
     std::shared_ptr<std::map<intern_string_t, opid_descriptors>>

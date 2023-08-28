@@ -197,6 +197,9 @@ file_collection::regenerate_unique_file_names()
 void
 file_collection::merge(file_collection& other)
 {
+    bool do_regen = !other.fc_files.empty() || !other.fc_other_files.empty()
+        || !other.fc_name_to_errors->readAccess()->empty();
+
     this->fc_recursive = this->fc_recursive || other.fc_recursive;
     this->fc_rotated = this->fc_rotated || other.fc_rotated;
 
@@ -205,9 +208,9 @@ file_collection::merge(file_collection& other)
 
     std::map<std::string, file_error_info> new_errors;
     {
-        safe::WriteAccess<safe_name_to_errors> errs(*other.fc_name_to_errors);
+        safe::ReadAccess<safe_name_to_errors> errs(*other.fc_name_to_errors);
 
-        new_errors = std::move(*errs);
+        new_errors.insert(errs->cbegin(), errs->cend());
     }
     {
         safe::WriteAccess<safe_name_to_errors> errs(*this->fc_name_to_errors);
@@ -237,6 +240,10 @@ file_collection::merge(file_collection& other)
             std::make_move_iterator(other.fc_child_pollers.begin()),
             std::make_move_iterator(other.fc_child_pollers.end()));
         other.fc_child_pollers.clear();
+    }
+
+    if (do_regen) {
+        this->regenerate_unique_file_names();
     }
 }
 
@@ -663,7 +670,7 @@ file_collection::expand_filename(
 
                         if (gl->gl_pathc == 1) {
                             log_error("failed to find path: %s -- %s",
-                                      path.c_str(),
+                                      filename_key.c_str(),
                                       errmsg);
                             retval.fc_name_to_errors->writeAccess()->emplace(
                                 filename_key,

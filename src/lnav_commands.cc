@@ -4870,6 +4870,7 @@ com_spectrogram(exec_context& ec,
         }
 
         if (found) {
+            lnav_data.ld_views[LNV_SPECTRO].reload_data();
             ss.text_selection_changed(lnav_data.ld_views[LNV_SPECTRO]);
             ensure_view(&lnav_data.ld_views[LNV_SPECTRO]);
 
