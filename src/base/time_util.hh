@@ -182,6 +182,15 @@ operator-(const struct timeval& lhs, const struct timeval& rhs)
     return diff;
 }
 
+inline struct timeval
+operator+(const struct timeval& lhs, const struct timeval& rhs)
+{
+    struct timeval retval;
+
+    timeradd(&lhs, &rhs, &retval);
+    return retval;
+}
+
 typedef int64_t mstime_t;
 
 inline mstime_t

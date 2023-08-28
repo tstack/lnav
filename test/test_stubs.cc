@@ -70,7 +70,7 @@ rebuild_indexes_repeatedly()
 }
 
 void
-wait_for_pipers()
+wait_for_pipers(nonstd::optional<timeval>)
 {
 }
 

@@ -736,7 +736,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
             (lnav_data.ld_flags & LNF_HEADLESS || ec.ec_path_stack.size() > 1))
         {
             rescan_files();
-            wait_for_pipers();
+            wait_for_pipers(nonstd::nullopt);
             rebuild_indexes_repeatedly();
         }
     });
@@ -833,7 +833,11 @@ execute_init_commands(
                 }
 
                 rescan_files();
-                wait_for_pipers();
+                auto deadline = current_timeval()
+                    + ((lnav_data.ld_flags & LNF_HEADLESS)
+                           ? timeval{5, 0}
+                           : timeval{0, 500000});
+                wait_for_pipers(deadline);
                 rebuild_indexes_repeatedly();
             }
             if (dls.dls_rows.size() > 1 && lnav_data.ld_view_stack.size() == 1)
