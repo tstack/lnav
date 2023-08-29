@@ -1564,15 +1564,12 @@ looper()
                     == std::future_status::ready)
             {
                 auto new_files = rescan_future.get();
-                if (!initial_rescan_completed && new_files.fc_file_names.empty()
-                    && new_files.fc_files.empty()
-                    && lnav_data.ld_active_files.fc_progress->readAccess()
-                           ->sp_tailers.empty())
-                {
+                if (!initial_rescan_completed && new_files.empty()) {
                     initial_rescan_completed = true;
 
                     log_debug("initial rescan rebuild");
-                    changes += rebuild_indexes(loop_deadline);
+                    auto rebuild_res = rebuild_indexes(loop_deadline);
+                    changes += rebuild_res.rir_changes;
                     load_session();
                     if (session_data.sd_save_time) {
                         std::string ago;
@@ -1630,7 +1627,8 @@ looper()
             if (initial_rescan_completed) {
                 if (ui_now >= next_rebuild_time) {
                     auto text_file_count = lnav_data.ld_text_source.size();
-                    changes += rebuild_indexes(loop_deadline);
+                    auto rebuild_res = rebuild_indexes(loop_deadline);
+                    changes += rebuild_res.rir_changes;
                     if (!changes && ui_clock::now() < loop_deadline) {
                         next_rebuild_time = ui_clock::now() + 333ms;
                     }
@@ -1861,15 +1859,8 @@ looper()
                     timer.start_fade(index_counter, 3);
                 }
                 // log_debug("initial build rebuild");
-                changes += rebuild_indexes(loop_deadline);
-                if (!lnav_data.ld_initial_build
-                    && lnav_data.ld_log_source.text_line_count() == 0
-                    && lnav_data.ld_text_source.text_line_count() > 0)
-                {
-                    ensure_view(&lnav_data.ld_views[LNV_TEXT]);
-                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                        f, F, "to switch to the next/previous file"));
-                }
+                auto rebuild_res = rebuild_indexes(loop_deadline);
+                changes += rebuild_res.rir_changes;
                 if (lnav_data.ld_view_stack.top().value_or(nullptr)
                         == &lnav_data.ld_views[LNV_TEXT]
                     && lnav_data.ld_text_source.empty()
@@ -1905,9 +1896,10 @@ looper()
                 {
                     lnav_data.ld_initial_build = true;
                 }
-                if (lnav_data.ld_log_source.text_line_count() > 0
-                    || lnav_data.ld_text_source.text_line_count() > 0
-                    || !lnav_data.ld_active_files.fc_other_files.empty())
+                if (rebuild_res.rir_completed
+                    && (lnav_data.ld_log_source.text_line_count() > 0
+                        || lnav_data.ld_text_source.text_line_count() > 0
+                        || !lnav_data.ld_active_files.fc_other_files.empty()))
                 {
                     lnav_data.ld_initial_build = true;
                 }
@@ -1945,7 +1937,7 @@ looper()
                     }
                 }
 
-                if (session_stage == 1
+                if (session_stage == 1 && lnav_data.ld_initial_build
                     && (lnav_data.ld_active_files.fc_file_names.empty()
                         || lnav_data.ld_log_source.text_line_count() > 0
                         || lnav_data.ld_text_source.text_line_count() > 0
@@ -1953,6 +1945,14 @@ looper()
                 {
                     lnav::session::restore_view_states();
                     if (lnav_data.ld_mode == ln_mode_t::FILES) {
+                        if (lnav_data.ld_log_source.text_line_count() == 0
+                            && lnav_data.ld_text_source.text_line_count() > 0)
+                        {
+                            log_debug("no logs, just text...");
+                            ensure_view(&lnav_data.ld_views[LNV_TEXT]);
+                            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
+                                f, F, "to switch to the next/previous file"));
+                        }
                         if (lnav_data.ld_active_files.fc_name_to_errors
                                 ->readAccess()
                                 ->empty())
@@ -2004,10 +2004,10 @@ looper()
             }
 
             if (lnav_data.ld_sigint_count > 0) {
+                bool found_piper = false;
+
                 lnav_data.ld_sigint_count = 0;
-                if (lnav_data.ld_view_stack.empty()) {
-                    lnav_data.ld_looping = false;
-                } else {
+                if (!lnav_data.ld_view_stack.empty()) {
                     auto* tc = *lnav_data.ld_view_stack.top();
 
                     if (tc->get_inner_height() > 0_vl) {
@@ -2018,7 +2018,6 @@ looper()
                         auto& sa = rows[0].get_attrs();
                         auto line_attr_opt
                             = get_string_attr(sa, logline::L_FILE);
-                        bool found = false;
                         if (line_attr_opt) {
                             auto lf = line_attr_opt.value().get();
 
@@ -2035,14 +2034,14 @@ looper()
                                 if (lf->get_filename() == cp_name.value()) {
                                     log_debug("found it, sending signal!");
                                     cp.send_sigint();
-                                    found = true;
+                                    found_piper = true;
                                 }
                             }
                         }
-                        if (!found) {
-                            lnav_data.ld_looping = false;
-                        }
                     }
+                }
+                if (!found_piper) {
+                    lnav_data.ld_looping = false;
                 }
             }
         }

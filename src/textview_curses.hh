@@ -721,6 +721,14 @@ public:
 
     bool get_hide_fields() const { return this->tc_hide_fields; }
 
+    void set_hide_fields(bool val)
+    {
+        if (this->tc_hide_fields != val) {
+            this->tc_hide_fields = val;
+            this->set_needs_update();
+        }
+    }
+
     void execute_search(const std::string& regex_orig);
 
     void redo_search();

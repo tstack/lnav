@@ -603,7 +603,7 @@ textfile_sub_source::text_crumbs_for_line(
     }
 }
 
-bool
+textfile_sub_source::rescan_result_t
 textfile_sub_source::rescan_files(
     textfile_sub_source::scan_callback& callback,
     nonstd::optional<ui_clock::time_point> deadline)
@@ -611,7 +611,7 @@ textfile_sub_source::rescan_files(
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     file_iterator iter;
-    bool retval = false;
+    rescan_result_t retval;
 
     if (this->tss_view == nullptr || this->tss_view->is_paused()) {
         return retval;
@@ -619,6 +619,12 @@ textfile_sub_source::rescan_files(
 
     std::vector<std::shared_ptr<logfile>> closed_files;
     for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
+        if (deadline && ui_clock::now() > deadline.value()) {
+            log_info("rescan_files() deadline reached, breaking...");
+            retval.rr_scan_completed = false;
+            break;
+        }
+
         std::shared_ptr<logfile> lf = (*iter);
 
         if (lf->is_closed()) {
@@ -644,10 +650,17 @@ textfile_sub_source::rescan_files(
                 continue;
             }
 
+            if (!this->tss_completed_last_scan && lf->size() > 0) {
+                ++iter;
+                continue;
+            }
+
+            bool new_data = false;
             switch (new_text_data) {
                 case logfile::rebuild_result_t::NEW_LINES:
                 case logfile::rebuild_result_t::NEW_ORDER:
-                    retval = true;
+                    new_data = true;
+                    retval.rr_new_data += 1;
                     break;
                 default:
                     break;
@@ -774,7 +787,7 @@ textfile_sub_source::rescan_files(
                 continue;
             }
 
-            if (!retval && lf->is_indexing()
+            if (!new_data && lf->is_indexing()
                 && lf->get_text_format() != text_format_t::TF_BINARY)
             {
                 auto ms_iter = this->tss_doc_metadata.find(lf->get_filename());
@@ -851,9 +864,10 @@ textfile_sub_source::rescan_files(
         callback.closed_files(closed_files);
     }
 
-    if (retval) {
+    if (retval.rr_new_data) {
         this->tss_view->search_new_data();
     }
+    this->tss_completed_last_scan = retval.rr_scan_completed;
 
     return retval;
 }

@@ -302,7 +302,8 @@ handle_paging_key(int ch)
             } else {
                 alerter::singleton().chime("no more search hits to the right");
             }
-        } break;
+            break;
+        }
 
         case '<':
             if (tc->get_left() == 0) {
@@ -726,19 +727,6 @@ handle_paging_key(int ch)
             }
             break;
 
-        case 'T':
-            if (text_accel_p != nullptr
-                && text_accel_p->is_time_offset_supported())
-            {
-                text_accel_p->toggle_time_offset();
-                if (text_accel_p->is_time_offset_enabled()) {
-                    lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                        s, S, "to move forward/backward through slow downs"));
-                }
-                tc->reload_data();
-            }
-            break;
-
         case 'I': {
             auto& hist_tc = lnav_data.ld_views[LNV_HISTOGRAM];
 
@@ -916,15 +904,6 @@ handle_paging_key(int ch)
             }
             break;
 
-        case 'x':
-            if (tc->toggle_hide_fields()) {
-                lnav_data.ld_rl_view->set_value("Showing hidden fields");
-            } else {
-                lnav_data.ld_rl_view->set_value("Hiding hidden fields");
-            }
-            tc->set_needs_update();
-            break;
-
         case 'r':
         case 'R':
             if (lss != nullptr) {
@@ -974,13 +953,6 @@ handle_paging_key(int ch)
                     lnav_data.ld_rl_view->set_value(" " + rt.to_string());
                 }
             }
-            break;
-
-        case KEY_CTRL('w'):
-            execute_command(ec,
-                            lnav_data.ld_views[LNV_LOG].get_word_wrap()
-                                ? "disable-word-wrap"
-                                : "enable-word-wrap");
             break;
 
         case KEY_CTRL('p'):

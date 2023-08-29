@@ -55,6 +55,11 @@ struct tailer_progress {
 struct scan_progress {
     std::list<archive_manager::extract_progress> sp_extractions;
     std::map<std::string, tailer_progress> sp_tailers;
+
+    bool empty() const
+    {
+        return this->sp_extractions.empty() && this->sp_tailers.empty();
+    }
 };
 
 using safe_scan_progress = safe::Safe<scan_progress>;
@@ -175,6 +180,14 @@ struct file_collection {
 
     file_collection copy();
 
+    bool empty() const
+    {
+        return this->fc_name_to_errors->readAccess()->empty()
+            && this->fc_file_names.empty() && this->fc_files.empty()
+            && this->fc_progress->readAccess()->empty()
+            && this->fc_other_files.empty();
+    }
+
     void clear()
     {
         this->fc_name_to_errors->writeAccess()->clear();
@@ -197,9 +210,8 @@ struct file_collection {
                          logfile_open_options& loo,
                          bool required);
 
-    std::future<file_collection> watch_logfile(const std::string& filename,
-                                               logfile_open_options& loo,
-                                               bool required);
+    nonstd::optional<std::future<file_collection>> watch_logfile(
+        const std::string& filename, logfile_open_options& loo, bool required);
 
     void merge(file_collection& other);
 

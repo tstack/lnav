@@ -165,9 +165,10 @@ status bar.
 
    * - Keypress
      - Description
+   * - :kbd:`\``
+     - Focus on the breadcrumb bar.
    * - :kbd:`ENTER`
-     - Focus on the breadcrumb bar.  Or, if the bar is currently focused,
-       accept the selected value and drop focus.
+     - If the bar is currently focused, accept the selected value and drop focus.
    * - :kbd:`Escape`
      - Drop focus on the breadcrumb bar.
    * - :kbd:`←`
