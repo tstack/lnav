@@ -117,9 +117,14 @@ public:
         virtual void scanned_file(const std::shared_ptr<logfile>& lf) = 0;
     };
 
-    bool rescan_files(scan_callback& callback,
-                      nonstd::optional<ui_clock::time_point> deadline
-                      = nonstd::nullopt);
+    struct rescan_result_t {
+        size_t rr_new_data{0};
+        bool rr_scan_completed{true};
+    };
+
+    rescan_result_t rescan_files(scan_callback& callback,
+                                 nonstd::optional<ui_clock::time_point> deadline
+                                 = nonstd::nullopt);
 
     void text_filters_changed() override;
 
@@ -182,6 +187,7 @@ private:
     std::unordered_map<std::string, rendered_file> tss_rendered_files;
     std::unordered_map<std::string, metadata_state> tss_doc_metadata;
     size_t tss_line_indent_size{0};
+    bool tss_completed_last_scan{true};
 };
 
 #endif

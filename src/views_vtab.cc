@@ -178,14 +178,25 @@ enum class row_details_t {
     show,
 };
 
+enum class word_wrap_t {
+    none,
+    normal,
+};
+
 struct view_options {
     nonstd::optional<row_details_t> vo_row_details;
+    nonstd::optional<row_details_t> vo_row_time_offset;
     nonstd::optional<int32_t> vo_overlay_focus;
+    nonstd::optional<word_wrap_t> vo_word_wrap;
+    nonstd::optional<row_details_t> vo_hidden_fields;
 
     bool empty() const
     {
         return !this->vo_row_details.has_value()
-            && !this->vo_overlay_focus.has_value();
+            && !this->vo_row_time_offset.has_value()
+            && !this->vo_overlay_focus.has_value()
+            && !this->vo_word_wrap.has_value()
+            && !this->vo_hidden_fields.has_value();
     }
 };
 
@@ -196,15 +207,36 @@ static const json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
     json_path_handler_base::ENUM_TERMINATOR,
 };
 
+static const json_path_handler_base::enum_value_t WORD_WRAP_ENUM[] = {
+    {"none", word_wrap_t::none},
+    {"normal", word_wrap_t::normal},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 static const typed_json_path_container<view_options> view_options_handlers = {
     yajlpp::property_handler("row-details")
         .with_enum_values(ROW_DETAILS_ENUM)
         .with_description(
             "Show or hide the details overlay for the focused row")
         .for_field(&view_options::vo_row_details),
+    yajlpp::property_handler("row-time-offset")
+        .with_enum_values(ROW_DETAILS_ENUM)
+        .with_description(
+            "Show or hide the time-offset from a row to the previous mark")
+        .for_field(&view_options::vo_row_time_offset),
+    yajlpp::property_handler("hidden-fields")
+        .with_enum_values(ROW_DETAILS_ENUM)
+        .with_description(
+            "Show or hide fields that have been hidden by the user")
+        .for_field(&view_options::vo_hidden_fields),
     yajlpp::property_handler("overlay-focused-line")
         .with_description("The focused line in an overlay")
         .for_field(&view_options::vo_overlay_focus),
+    yajlpp::property_handler("word-wrap")
+        .with_enum_values(WORD_WRAP_ENUM)
+        .with_description("How to break long lines")
+        .for_field(&view_options::vo_word_wrap),
 };
 
 struct lnav_views : public tvt_iterator_cursor<lnav_views> {
@@ -380,8 +412,15 @@ CREATE TABLE lnav_views (
                 sqlite3_result_int(ctx, (int) tc.get_selection());
                 break;
             case 13: {
+                auto* text_accel_p
+                    = dynamic_cast<text_accel_source*>(tc.get_sub_source());
                 auto vo = view_options{};
 
+                vo.vo_word_wrap = tc.get_word_wrap() ? word_wrap_t::normal
+                                                     : word_wrap_t::none;
+                vo.vo_hidden_fields = tc.get_hide_fields()
+                    ? row_details_t::hide
+                    : row_details_t::show;
                 if (tc.get_overlay_source()) {
                     auto ov_sel = tc.get_overlay_selection();
 
@@ -392,6 +431,12 @@ CREATE TABLE lnav_views (
                     if (ov_sel) {
                         vo.vo_overlay_focus = ov_sel.value();
                     }
+                }
+                if (text_accel_p != nullptr) {
+                    vo.vo_row_time_offset
+                        = text_accel_p->is_time_offset_enabled()
+                        ? row_details_t::show
+                        : row_details_t::hide;
                 }
 
                 if (vo.empty()) {
@@ -440,6 +485,8 @@ CREATE TABLE lnav_views (
         auto& tc = lnav_data.ld_views[index];
         auto* time_source
             = dynamic_cast<text_time_translator*>(tc.get_sub_source());
+        auto* text_accel_p
+            = dynamic_cast<text_accel_source*>(tc.get_sub_source());
         view_options vo;
 
         if (options) {
@@ -589,6 +636,23 @@ CREATE TABLE lnav_views (
         }
         if (vo.vo_overlay_focus && tc.get_overlay_source()) {
             tc.set_overlay_selection(vis_line_t(vo.vo_overlay_focus.value()));
+        }
+        if (vo.vo_word_wrap) {
+            tc.set_word_wrap(vo.vo_word_wrap.value() == word_wrap_t::normal);
+        }
+        if (vo.vo_hidden_fields) {
+            tc.set_hide_fields(vo.vo_hidden_fields.value()
+                               == row_details_t::hide);
+        }
+        if (text_accel_p != nullptr && vo.vo_row_time_offset) {
+            switch (vo.vo_row_time_offset.value()) {
+                case row_details_t::show:
+                    text_accel_p->set_time_offset(true);
+                    break;
+                case row_details_t::hide:
+                    text_accel_p->set_time_offset(false);
+                    break;
+            }
         }
         tc.set_left(left);
         tc.set_paused(is_paused);

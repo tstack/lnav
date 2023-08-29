@@ -290,18 +290,17 @@ struct same_file {
  * @param fd       An already-opened descriptor for 'filename'.
  * @param required Specifies whether or not the file must exist and be valid.
  */
-std::future<file_collection>
+nonstd::optional<std::future<file_collection>>
 file_collection::watch_logfile(const std::string& filename,
                                logfile_open_options& loo,
                                bool required)
 {
-    file_collection retval;
     struct stat st;
     int rc;
 
     auto filename_key = loo.loo_filename.empty() ? filename : loo.loo_filename;
     if (this->fc_closed_files.count(filename)) {
-        return lnav::futures::make_ready_future(std::move(retval));
+        return nonstd::nullopt;
     }
 
     if (loo.loo_temp_file) {
@@ -320,20 +319,23 @@ file_collection::watch_logfile(const std::string& filename,
 
             if (this->fc_file_names.find(wilddir) == this->fc_file_names.end())
             {
+                file_collection retval;
+
                 retval.fc_file_names.emplace(
                     wilddir,
                     logfile_open_options()
                         .with_non_utf_visibility(false)
                         .with_visible_size_limit(256 * 1024));
+                return lnav::futures::make_ready_future(std::move(retval));
             }
-            return lnav::futures::make_ready_future(std::move(retval));
+            return nonstd::nullopt;
         }
         if (!S_ISREG(st.st_mode)) {
             if (required) {
                 rc = -1;
                 errno = EINVAL;
             } else {
-                return lnav::futures::make_ready_future(std::move(retval));
+                return nonstd::nullopt;
             }
         }
         {
@@ -353,14 +355,16 @@ file_collection::watch_logfile(const std::string& filename,
             log_error("failed to open required file: %s -- %s",
                       filename.c_str(),
                       strerror(errno));
+            file_collection retval;
             retval.fc_name_to_errors->writeAccess()->emplace(
                 filename,
                 file_error_info{
                     time(nullptr),
                     std::string(strerror(errno)),
                 });
+            return lnav::futures::make_ready_future(std::move(retval));
         }
-        return lnav::futures::make_ready_future(std::move(retval));
+        return nonstd::nullopt;
     }
 
     if (this->fc_new_stats | lnav::itertools::find_if([&st](const auto& elem) {
@@ -369,7 +373,7 @@ file_collection::watch_logfile(const std::string& filename,
     {
         // this file is probably a link that we have already scanned in this
         // pass.
-        return lnav::futures::make_ready_future(std::move(retval));
+        return nonstd::nullopt;
     }
 
     this->fc_new_stats.emplace_back(st);
@@ -379,7 +383,7 @@ file_collection::watch_logfile(const std::string& filename,
 
     if (file_iter == this->fc_files.end()) {
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
-            return lnav::futures::make_ready_future(std::move(retval));
+            return nonstd::nullopt;
         }
 
         require(this->fc_progress.get() != nullptr);
@@ -566,10 +570,13 @@ file_collection::watch_logfile(const std::string& filename,
         /* The file is already loaded, but has been found under a different
          * name.  We just need to update the stored file name.
          */
+        file_collection retval;
+
         retval.fc_renamed_files.emplace_back(lf, filename);
+        return lnav::futures::make_ready_future(std::move(retval));
     }
 
-    return lnav::futures::make_ready_future(std::move(retval));
+    return nonstd::nullopt;
 }
 
 /**
@@ -701,11 +708,15 @@ file_collection::expand_filename(
             }
 
             if (required || access(iter->second.c_str(), R_OK) == 0) {
-                if (fq.push_back(watch_logfile(iter->second, loo, required))
-                    == lnav::futures::future_queue<
-                        file_collection>::processor_result_t::interrupt)
-                {
-                    break;
+                auto future_opt = watch_logfile(iter->second, loo, required);
+                if (future_opt) {
+                    auto fut = std::move(future_opt.value());
+                    if (fq.push_back(std::move(fut))
+                        == lnav::futures::future_queue<
+                            file_collection>::processor_result_t::interrupt)
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -727,8 +738,9 @@ file_collection::rescan_files(bool required)
                 log_error("unknown exception thrown by rescan future");
             }
 
-            if (this->fc_files.size() + retval.fc_files.size()
-                < get_limits().l_open_files)
+            if (retval.fc_files.size() < 100
+                && this->fc_files.size() + retval.fc_files.size()
+                    < get_limits().l_open_files)
             {
                 return lnav::futures::future_queue<
                     file_collection>::processor_result_t::ok;

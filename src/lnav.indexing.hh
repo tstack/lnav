@@ -35,8 +35,14 @@
 #include "optional.hpp"
 
 void rebuild_hist();
-size_t rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline
-                       = nonstd::nullopt);
+
+struct rebuild_indexes_result_t {
+    size_t rir_changes{0};
+    bool rir_completed{true};
+};
+
+rebuild_indexes_result_t rebuild_indexes(
+    nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
 void rebuild_indexes_repeatedly();
 bool rescan_files(bool required = false);
 bool update_active_files(file_collection& new_files);

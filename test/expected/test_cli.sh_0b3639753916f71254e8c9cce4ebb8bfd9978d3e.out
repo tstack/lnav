@@ -4476,6 +4476,10 @@
                     "command": ";UPDATE lnav_views SET top = top - (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top - (height / 2) + (selection - top) END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
                 },
+                "x17": {
+                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.word-wrap', CASE jget(options, '/word-wrap', 'none') WHEN 'none' THEN 'normal' ELSE 'none' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "alt-msg": ""
+                },
                 "x18": {
                     "command": ";UPDATE lnav_views SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
@@ -4568,6 +4572,10 @@
                     "command": "|lnav-pop-view ${keyseq}",
                     "alt-msg": ""
                 },
+                "x54": {
+                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.row-time-offset', CASE jget(options, '/row-time-offset', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "alt-msg": "${keymap_def_time_offset}"
+                },
                 "x55": {
                     "command": ":prev-mark",
                     "alt-msg": ""
@@ -4627,6 +4635,10 @@
                 "x77": {
                     "command": ":next-mark warning",
                     "alt-msg": "${keymap_def_alt_hour_boundary}"
+                },
+                "x78": {
+                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.hidden-fields', CASE jget(options, '/hidden-fields', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "alt-msg": ""
                 },
                 "x7b": {
                     "command": ":prev-location",
@@ -4828,6 +4840,7 @@
         "keymap_def_prev_location": "Press ${ansi_bold}{${ansi_norm} to move to the previous location in history",
         "keymap_def_scroll_horiz": "Press \\'${ansi_bold}>${ansi_norm}\\' or \\'${ansi_bold}<${ansi_norm}\\' to scroll horizontally to a search result",
         "keymap_def_text_view": "Press ${ansi_bold}t${ansi_norm} to switch to the text view",
+        "keymap_def_time_offset": "Press ${ansi_bold}s${ansi_norm}/${ansi_bold}S${ansi_norm} to move forward/backward through slow downs",
         "keymap_def_zoom": "Press ${ansi_bold}z${ansi_norm}/${ansi_bold}Z${ansi_norm} to zoom in/out"
     }
 }

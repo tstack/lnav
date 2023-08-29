@@ -188,14 +188,14 @@ public:
     bool did_promotion{false};
 };
 
-size_t
+rebuild_indexes_result_t
 rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 {
     logfile_sub_source& lss = lnav_data.ld_log_source;
     textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
     textview_curses& text_view = lnav_data.ld_views[LNV_TEXT];
     bool scroll_downs[LNV__MAX];
-    size_t retval = 0;
+    rebuild_indexes_result_t retval;
 
     for (auto lpc : {LNV_LOG, LNV_TEXT}) {
         auto& view = lnav_data.ld_views[lpc];
@@ -220,9 +220,13 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
         auto* tss = &lnav_data.ld_text_source;
         textfile_callback cb;
 
-        if (tss->rescan_files(cb, deadline)) {
+        auto rescan_res = tss->rescan_files(cb, deadline);
+        if (rescan_res.rr_new_data) {
             text_view.reload_data();
-            retval += 1;
+            retval.rir_changes += rescan_res.rr_new_data;
+        }
+        if (!rescan_res.rr_scan_completed) {
+            retval.rir_completed = false;
         }
 
         if (cb.front_file != nullptr) {
@@ -333,7 +337,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
             }
         }
 
-        retval += 1;
+        retval.rir_changes += 1;
     }
 
     for (auto lpc : {LNV_LOG, LNV_TEXT}) {
@@ -362,7 +366,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
             }
         }
 
-        if (retval > 0) {
+        if (retval.rir_changes > 0) {
             auto* tss = tc->get_sub_source();
             lnav_data.ld_filter_status_source.update_filtered(tss);
             lnav_data.ld_scroll_broadcaster(tc);
@@ -375,7 +379,9 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 void
 rebuild_indexes_repeatedly()
 {
-    for (size_t attempt = 0; attempt < 10 && rebuild_indexes() > 0; attempt++) {
+    for (size_t attempt = 0; attempt < 10 && rebuild_indexes().rir_changes > 0;
+         attempt++)
+    {
         log_info("continuing to rebuild indexes...");
     }
 }
