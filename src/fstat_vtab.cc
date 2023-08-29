@@ -36,10 +36,12 @@
 #include <sys/stat.h>
 
 #include "base/auto_mem.hh"
+#include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "ghc/filesystem.hpp"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
@@ -63,6 +65,7 @@ enum {
     FSTAT_COL_MTIME,
     FSTAT_COL_CTIME,
     FSTAT_COL_PATTERN,
+    FSTAT_COL_DATA,
 };
 
 /**
@@ -90,7 +93,8 @@ CREATE TABLE fstat (
     st_atime DATETIME,
     st_mtime DATETIME,
     st_ctime DATETIME,
-    pattern TEXT HIDDEN
+    pattern TEXT HIDDEN,
+    data BLOB HIDDEN
 );
 )";
 
@@ -253,6 +257,45 @@ CREATE TABLE fstat (
                                     vc.c_pattern.length(),
                                     SQLITE_TRANSIENT);
                 break;
+            case FSTAT_COL_DATA: {
+                auto fs_path = ghc::filesystem::path{path};
+                if (S_ISREG(vc.c_stat.st_mode)) {
+                    auto open_res
+                        = lnav::filesystem::open_file(fs_path, O_RDONLY);
+
+                    if (open_res.isErr()) {
+                        log_error("unable to read file: %s -- %s",
+                                  path,
+                                  open_res.unwrapErr().c_str());
+                        sqlite3_result_null(ctx);
+                    } else {
+                        auto buffer = auto_buffer::alloc(vc.c_stat.st_size);
+                        auto fd = open_res.unwrap();
+
+                        while (true) {
+                            if (buffer.available() == 0) {
+                                buffer.expand_by(4096);
+                            }
+                            auto rc = read(fd,
+                                           buffer.next_available(),
+                                           buffer.available());
+
+                            if (rc <= 0) {
+                                break;
+                            }
+                            buffer.resize_by(rc);
+                        }
+                        to_sqlite(ctx, blob_auto_buffer{std::move(buffer)});
+                    }
+                } else if (S_ISLNK(vc.c_stat.st_mode)) {
+                    auto link_path = ghc::filesystem::read_symlink(fs_path);
+
+                    to_sqlite(ctx, link_path.string());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
         }
 
         return SQLITE_OK;

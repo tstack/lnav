@@ -36,6 +36,7 @@
 #include "ryml_all.hpp"
 #include "sqlite-extension-func.hh"
 #include "vtab_module.hh"
+#include "vtab_module_json.hh"
 
 using namespace lnav::roles::literals;
 
@@ -56,7 +57,7 @@ ryml_error_to_um(const char* msg, size_t len, ryml::Location loc, void* ud)
             source_location{src, (int32_t) loc.line}, ""));
 }
 
-static text_auto_buffer
+static json_string
 yaml_to_json(string_fragment in)
 {
     ryml::Callbacks callbacks(&in, nullptr, nullptr, ryml_error_to_um);
@@ -74,7 +75,7 @@ yaml_to_json(string_fragment in)
                              ryml::substr(buf.in(), buf.size()),
                              /*error_on_excess*/ true);
 
-    return {std::move(buf)};
+    return json_string{std::move(buf)};
 }
 
 int

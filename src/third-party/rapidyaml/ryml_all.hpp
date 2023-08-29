@@ -1,4 +1,6 @@
 #ifndef _RYML_SINGLE_HEADER_AMALGAMATED_HPP_
+#define _RYML_SINGLE_HEADER_AMALGAMATED_HPP_
+
 //
 // Rapid YAML - a library to parse and emit YAML, and do it fast.
 //
@@ -83,6 +85,8 @@
 //********************************************************************************
 
 #ifndef _C4CORE_SINGLE_HEADER_AMALGAMATED_HPP_
+#define _C4CORE_SINGLE_HEADER_AMALGAMATED_HPP_
+
 //
 // c4core - C++ utilities
 //
@@ -339,10 +343,10 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #   else
 #       error "Unknown Apple platform"
 #   endif
-#elif defined(__linux)
+#elif defined(__linux__) || defined(__linux)
 #   define C4_UNIX
 #   define C4_LINUX
-#elif defined(__unix)
+#elif defined(__unix__) || defined(__unix)
 #   define C4_UNIX
 #elif defined(__arm__) || defined(__aarch64__)
 #   define C4_ARM
@@ -352,7 +356,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #   error "unknown platform"
 #endif
 
-#if defined(__posix) || defined(__unix__) || defined(__linux)
+#if defined(__posix) || defined(C4_UNIX) || defined(C4_LINUX)
 #   define C4_POSIX
 #endif
 
@@ -363,7 +367,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 // (end https://github.com/biojppm/c4core/src/c4/platform.hpp)
 
 
-#if 0
+
 //********************************************************************************
 //--------------------------------------------------------------------------------
 // src/c4/cpu.hpp
@@ -416,21 +420,25 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
    #else
        #define C4_CPU_ARM
        #define C4_WORDSIZE 4
-       #if defined(__ARM_ARCH_8__) || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 8)
+       #if defined(__ARM_ARCH_8__) || defined(__ARM_ARCH_8A__)  \
+        || (defined(__ARCH_ARM) && __ARCH_ARM >= 8)
+        || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 8)  \
            #define C4_CPU_ARMV8
        #elif defined(__ARM_ARCH_7__) || defined(_ARM_ARCH_7)    \
         || defined(__ARM_ARCH_7A__) || defined(__ARM_ARCH_7R__) \
         || defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7S__) \
+        || defined(__ARM_ARCH_7EM__) \
         || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 7) \
         || (defined(_M_ARM) && _M_ARM >= 7)
            #define C4_CPU_ARMV7
        #elif defined(__ARM_ARCH_6__) || defined(__ARM_ARCH_6J__) \
         || defined(__ARM_ARCH_6T2__) || defined(__ARM_ARCH_6Z__) \
         || defined(__ARM_ARCH_6K__)  || defined(__ARM_ARCH_6ZK__) \
-        || defined(__ARM_ARCH_6M__) \
+        || defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_6KZ__) \
         || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 6)
            #define C4_CPU_ARMV6
        #elif defined(__ARM_ARCH_5TEJ__) \
+        || defined(__ARM_ARCH_5TE__) \
         || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 5)
            #define C4_CPU_ARMV5
        #elif defined(__ARM_ARCH_4T__) \
@@ -441,7 +449,11 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
        #endif
    #endif
    #if defined(__ARMEL__) || defined(__LITTLE_ENDIAN__) || defined(__AARCH64EL__) \
-       || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__))
+       || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)) \
+       || defined(_MSC_VER) // winarm64 does not provide any of the above macros,
+                            // but advises little-endianess:
+                            // https://docs.microsoft.com/en-us/cpp/build/overview-of-arm-abi-conventions?view=msvc-170
+                            // So if it is visual studio compiling, we'll assume little endian.
        #define C4_BYTE_ORDER _C4EL
    #elif defined(__ARMEB__) || defined(__BIG_ENDIAN__) || defined(__AARCH64EB__) \
        || (defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__))
@@ -505,7 +517,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 
 
 // (end https://github.com/biojppm/c4core/src/c4/cpu.hpp)
-#endif
+
 
 
 //********************************************************************************
@@ -628,9 +640,9 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/gcc-4.8.hpp
 //#               include "c4/gcc-4.8.hpp"
-#if !defined(C4_GCC-4_8_HPP_) && !defined(_C4_GCC-4_8_HPP_)
+#if !defined(C4_GCC_4_8_HPP_) && !defined(_C4_GCC_4_8_HPP_)
 #error "amalgamate: file c4/gcc-4.8.hpp must have been included at this point"
-#endif /* C4_GCC-4_8_HPP_ */
+#endif /* C4_GCC_4_8_HPP_ */
 
 #           else
 // we do not support GCC < 4.8:
@@ -952,6 +964,8 @@ typedef long double max_align_t ;
 #   define C4_RESTRICT_FN __attribute__((restrict))
 #   define C4_NO_INLINE __attribute__((noinline))
 #   define C4_ALWAYS_INLINE inline __attribute__((always_inline))
+#   define C4_CONST __attribute__((const))
+#   define C4_PURE __attribute__((pure))
 /** force inlining of every callee function */
 #   define C4_FLATTEN __atribute__((flatten))
 /** mark a function as hot, ie as having a visible impact in CPU time
@@ -973,6 +987,8 @@ typedef long double max_align_t ;
 #   define C4_NO_INLINE __declspec(noinline)
 #   define C4_ALWAYS_INLINE inline __forceinline
 /** these are not available in VS AFAIK */
+#   define C4_CONST
+#   define C4_PURE
 #   define C4_FLATTEN
 #   define C4_HOT         /** @todo */
 #   define C4_COLD        /** @todo */
@@ -1618,9 +1634,9 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/cpu.hpp
 //#include "c4/cpu.hpp"
-//#if !defined(C4_CPU_HPP_) && !defined(_C4_CPU_HPP_)
-//#error "amalgamate: file c4/cpu.hpp must have been included at this point"
-//#endif /* C4_CPU_HPP_ */
+#if !defined(C4_CPU_HPP_) && !defined(_C4_CPU_HPP_)
+#error "amalgamate: file c4/cpu.hpp must have been included at this point"
+#endif /* C4_CPU_HPP_ */
 
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/compiler.hpp
@@ -1751,7 +1767,7 @@ __inline__ static void trap_instruction(void)
 	 * Same problem and workaround as Thumb mode */
 }
 #elif defined(__aarch64__) && defined(__APPLE__)
-	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_BULTIN_TRAP
+	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_BULTIN_DEBUGTRAP
 #elif defined(__aarch64__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
 __attribute__((always_inline))
@@ -1911,7 +1927,7 @@ struct fail_type__ {};
 #endif // _DOXYGEN_
 
 
-#ifdef NDEBUG
+#if defined(NDEBUG) || defined(C4_NO_DEBUG_BREAK)
 #   define C4_DEBUG_BREAK()
 #else
 #   ifdef __clang__
@@ -2312,9 +2328,45 @@ struct srcloc
 #error "amalgamate: file c4/config.hpp must have been included at this point"
 #endif /* C4_CONFIG_HPP_ */
 
+// amalgamate: removed include of
+// https://github.com/biojppm/c4core/src/c4/error.hpp
+//#include "c4/error.hpp"
+#if !defined(C4_ERROR_HPP_) && !defined(_C4_ERROR_HPP_)
+#error "amalgamate: file c4/error.hpp must have been included at this point"
+#endif /* C4_ERROR_HPP_ */
 
+// amalgamate: removed include of
+// https://github.com/biojppm/c4core/src/c4/compiler.hpp
+//#include "c4/compiler.hpp"
+#if !defined(C4_COMPILER_HPP_) && !defined(_C4_COMPILER_HPP_)
+#error "amalgamate: file c4/compiler.hpp must have been included at this point"
+#endif /* C4_COMPILER_HPP_ */
+
+// amalgamate: removed include of
+// https://github.com/biojppm/c4core/src/c4/cpu.hpp
+//#include "c4/cpu.hpp"
+#if !defined(C4_CPU_HPP_) && !defined(_C4_CPU_HPP_)
+#error "amalgamate: file c4/cpu.hpp must have been included at this point"
+#endif /* C4_CPU_HPP_ */
+
+#ifdef C4_MSVC
+#include <intrin.h>
+#endif
 //included above:
 //#include <string.h>
+
+#if (defined(__GNUC__) && __GNUC__ >= 10) || defined(__has_builtin)
+#define _C4_USE_LSB_INTRINSIC(which) __has_builtin(which)
+#define _C4_USE_MSB_INTRINSIC(which) __has_builtin(which)
+#elif defined(C4_MSVC)
+#define _C4_USE_LSB_INTRINSIC(which) true
+#define _C4_USE_MSB_INTRINSIC(which) true
+#else
+// let's try our luck
+#define _C4_USE_LSB_INTRINSIC(which) true
+#define _C4_USE_MSB_INTRINSIC(which) true
+#endif
+
 
 /** @file memory_util.hpp Some memory utilities. */
 
@@ -2338,7 +2390,11 @@ C4_ALWAYS_INLINE void mem_zero(T* mem)
     memset(mem, 0, sizeof(T));
 }
 
-bool mem_overlaps(void const* a, void const* b, size_t sza, size_t szb);
+C4_ALWAYS_INLINE C4_CONST bool mem_overlaps(void const* a, void const* b, size_t sza, size_t szb)
+{
+    // thanks @timwynants
+    return (((const char*)b + szb) > a && b < ((const char*)a+sza));
+}
 
 void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num_times);
 
@@ -2348,9 +2404,9 @@ void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num
 //-----------------------------------------------------------------------------
 
 template<class T>
-bool is_aligned(T *ptr, size_t alignment=alignof(T))
+C4_ALWAYS_INLINE C4_CONST bool is_aligned(T *ptr, uintptr_t alignment=alignof(T))
 {
-    return (uintptr_t(ptr) & (alignment - 1)) == 0u;
+    return (uintptr_t(ptr) & (alignment - uintptr_t(1))) == uintptr_t(0);
 }
 
 
@@ -2359,38 +2415,165 @@ bool is_aligned(T *ptr, size_t alignment=alignof(T))
 //-----------------------------------------------------------------------------
 // least significant bit
 
-/** least significant bit; this function is constexpr-14 because of the local
- * variable */
+/** @name msb Compute the least significant bit
+ * @note the input value must be nonzero
+ * @note the input type must be unsigned
+ */
+/** @{ */
+
+// https://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightLinear
+#define _c4_lsb_fallback                                                \
+    unsigned c = 0;                                                     \
+    v = (v ^ (v - 1)) >> 1; /* Set v's trailing 0s to 1s and zero rest */ \
+    for(; v; ++c)                                                       \
+        v >>= 1;                                                        \
+    return (unsigned) c
+
+// u8
 template<class I>
-C4_CONSTEXPR14 I lsb(I v)
+C4_CONSTEXPR14
+auto lsb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 1u, unsigned>::type
 {
-    if(!v) return 0;
-    I b = 0;
-    while((v & I(1)) == I(0))
-    {
-        v >>= 1;
-        ++b;
-    }
-    return b;
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_LSB_INTRINSIC(__builtin_ctz)
+        // upcast to use the intrinsic, it's cheaper.
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanForward(&bit, (unsigned long)v);
+                return bit;
+            #else
+                _c4_lsb_fallback;
+            #endif
+        #else
+            return (unsigned)__builtin_ctz((unsigned)v);
+        #endif
+    #else
+        _c4_lsb_fallback;
+    #endif
 }
 
-namespace detail {
-
-template<class I, I val, I num_bits, bool finished>
-struct _lsb11;
-
-template<class I, I val, I num_bits>
-struct _lsb11< I, val, num_bits, false>
+// u16
+template<class I>
+C4_CONSTEXPR14
+auto lsb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 2u, unsigned>::type
 {
-    enum : I { num = _lsb11<I, (val>>1), num_bits+I(1), (((val>>1)&I(1))!=I(0))>::num };
-};
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_LSB_INTRINSIC(__builtin_ctz)
+        // upcast to use the intrinsic, it's cheaper.
+        // Then remember that the upcast makes it to 31bits
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanForward(&bit, (unsigned long)v);
+                return bit;
+            #else
+                _c4_lsb_fallback;
+            #endif
+        #else
+            return (unsigned)__builtin_ctz((unsigned)v);
+        #endif
+    #else
+        _c4_lsb_fallback;
+    #endif
+}
 
-template<class I, I val, I num_bits>
+// u32
+template<class I>
+C4_CONSTEXPR14
+auto lsb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 4u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_LSB_INTRINSIC(__builtin_ctz)
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanForward(&bit, v);
+                return bit;
+            #else
+                _c4_lsb_fallback;
+            #endif
+        #else
+            return (unsigned)__builtin_ctz((unsigned)v);
+        #endif
+    #else
+        _c4_lsb_fallback;
+    #endif
+}
+
+// u64 in 64bits
+template<class I>
+C4_CONSTEXPR14
+auto lsb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 8u && sizeof(unsigned long) == 8u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_LSB_INTRINSIC(__builtin_ctzl)
+        #if defined(C4_MSVC)
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanForward64(&bit, v);
+                return bit;
+            #else
+                _c4_lsb_fallback;
+            #endif
+        #else
+            return (unsigned)__builtin_ctzl((unsigned long)v);
+        #endif
+    #else
+        _c4_lsb_fallback;
+    #endif
+}
+
+// u64 in 32bits
+template<class I>
+C4_CONSTEXPR14
+auto lsb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 8u && sizeof(unsigned long long) == 8u && sizeof(unsigned long) != sizeof(unsigned long long), unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_LSB_INTRINSIC(__builtin_ctzll)
+        #if defined(C4_MSVC)
+            #if !defined(C4_CPU_X86) && !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanForward64(&bit, v);
+                return bit;
+            #else
+                _c4_lsb_fallback;
+            #endif
+        #else
+            return (unsigned)__builtin_ctzll((unsigned long long)v);
+        #endif
+    #else
+        _c4_lsb_fallback;
+    #endif
+}
+
+#undef _c4_lsb_fallback
+
+/** @} */
+
+
+namespace detail {
+template<class I, I val, unsigned num_bits, bool finished> struct _lsb11;
+template<class I, I val, unsigned num_bits>
+struct _lsb11<I, val, num_bits, false>
+{
+    enum : unsigned { num = _lsb11<I, (val>>1), num_bits+I(1), (((val>>1)&I(1))!=I(0))>::num };
+};
+template<class I, I val, unsigned num_bits>
 struct _lsb11<I, val, num_bits, true>
 {
-    enum : I { num = num_bits };
+    enum : unsigned { num = num_bits };
 };
-
 } // namespace detail
 
 
@@ -2402,7 +2585,7 @@ template<class I, I number>
 struct lsb11
 {
     static_assert(number != 0, "lsb: number must be nonzero");
-    enum : I { value = detail::_lsb11<I, number, 0, ((number&I(1))!=I(0))>::num};
+    enum : unsigned { value = detail::_lsb11<I, number, 0, ((number&I(1))!=I(0))>::num};
 };
 
 
@@ -2411,51 +2594,199 @@ struct lsb11
 //-----------------------------------------------------------------------------
 // most significant bit
 
-/** most significant bit; this function is constexpr-14 because of the local
- * variable
- * @todo implement faster version
- * @see https://stackoverflow.com/questions/2589096/find-most-significant-bit-left-most-that-is-set-in-a-bit-array
+
+/** @name msb Compute the most significant bit
+ * @note the input value must be nonzero
+ * @note the input type must be unsigned
  */
+/** @{ */
+
+
+#define _c4_msb8_fallback                       \
+    unsigned n = 0;                             \
+    if(v & I(0xf0)) v >>= 4, n |= I(4);         \
+    if(v & I(0x0c)) v >>= 2, n |= I(2);         \
+    if(v & I(0x02)) v >>= 1, n |= I(1);         \
+    return n
+
+#define _c4_msb16_fallback                      \
+    unsigned n = 0;                             \
+    if(v & I(0xff00)) v >>= 8, n |= I(8);       \
+    if(v & I(0x00f0)) v >>= 4, n |= I(4);       \
+    if(v & I(0x000c)) v >>= 2, n |= I(2);       \
+    if(v & I(0x0002)) v >>= 1, n |= I(1);       \
+    return n
+
+#define _c4_msb32_fallback                      \
+    unsigned n = 0;                             \
+    if(v & I(0xffff0000)) v >>= 16, n |= 16;    \
+    if(v & I(0x0000ff00)) v >>= 8, n |= 8;      \
+    if(v & I(0x000000f0)) v >>= 4, n |= 4;      \
+    if(v & I(0x0000000c)) v >>= 2, n |= 2;      \
+    if(v & I(0x00000002)) v >>= 1, n |= 1;      \
+    return n
+
+#define _c4_msb64_fallback                              \
+    unsigned n = 0;                                     \
+    if(v & I(0xffffffff00000000)) v >>= 32, n |= I(32); \
+    if(v & I(0x00000000ffff0000)) v >>= 16, n |= I(16); \
+    if(v & I(0x000000000000ff00)) v >>= 8, n |= I(8);   \
+    if(v & I(0x00000000000000f0)) v >>= 4, n |= I(4);   \
+    if(v & I(0x000000000000000c)) v >>= 2, n |= I(2);   \
+    if(v & I(0x0000000000000002)) v >>= 1, n |= I(1);   \
+    return n
+
+
+// u8
 template<class I>
-C4_CONSTEXPR14 I msb(I v)
+C4_CONSTEXPR14
+auto msb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 1u, unsigned>::type
 {
-    // TODO:
-    //
-    //int n;
-    //if(input_num & uint64_t(0xffffffff00000000)) input_num >>= 32, n |= 32;
-    //if(input_num & uint64_t(        0xffff0000)) input_num >>= 16, n |= 16;
-    //if(input_num & uint64_t(            0xff00)) input_num >>=  8, n |=  8;
-    //if(input_num & uint64_t(              0xf0)) input_num >>=  4, n |=  4;
-    //if(input_num & uint64_t(               0xc)) input_num >>=  2, n |=  2;
-    //if(input_num & uint64_t(               0x2)) input_num >>=  1, n |=  1;
-    if(!v) return static_cast<I>(-1);
-    I b = 0;
-    while(v != 0)
-    {
-        v >>= 1;
-        ++b;
-    }
-    return b-1;
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_MSB_INTRINSIC(__builtin_clz)
+        // upcast to use the intrinsic, it's cheaper.
+        // Then remember that the upcast makes it to 31bits
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanReverse(&bit, (unsigned long)v);
+                return bit;
+            #else
+                _c4_msb8_fallback;
+            #endif
+        #else
+            return 31u - (unsigned)__builtin_clz((unsigned)v);
+        #endif
+    #else
+        _c4_msb8_fallback;
+    #endif
 }
 
+// u16
+template<class I>
+C4_CONSTEXPR14
+auto msb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 2u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_MSB_INTRINSIC(__builtin_clz)
+        // upcast to use the intrinsic, it's cheaper.
+        // Then remember that the upcast makes it to 31bits
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanReverse(&bit, (unsigned long)v);
+                return bit;
+            #else
+                _c4_msb16_fallback;
+            #endif
+        #else
+            return 31u - (unsigned)__builtin_clz((unsigned)v);
+        #endif
+    #else
+        _c4_msb16_fallback;
+    #endif
+}
+
+// u32
+template<class I>
+C4_CONSTEXPR14
+auto msb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 4u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_MSB_INTRINSIC(__builtin_clz)
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanReverse(&bit, v);
+                return bit;
+            #else
+                _c4_msb32_fallback;
+            #endif
+        #else
+            return 31u - (unsigned)__builtin_clz((unsigned)v);
+        #endif
+    #else
+        _c4_msb32_fallback;
+    #endif
+}
+
+// u64 in 64bits
+template<class I>
+C4_CONSTEXPR14
+auto msb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 8u && sizeof(unsigned long) == 8u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_MSB_INTRINSIC(__builtin_clzl)
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanReverse64(&bit, v);
+                return bit;
+            #else
+                _c4_msb64_fallback;
+            #endif
+        #else
+            return 63u - (unsigned)__builtin_clzl((unsigned long)v);
+        #endif
+    #else
+        _c4_msb64_fallback;
+    #endif
+}
+
+// u64 in 32bits
+template<class I>
+C4_CONSTEXPR14
+auto msb(I v) noexcept
+    -> typename std::enable_if<sizeof(I) == 8u && sizeof(unsigned long long) == 8u && sizeof(unsigned long) != sizeof(unsigned long long), unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_unsigned<I>::value);
+    C4_ASSERT(v != 0);
+    #if _C4_USE_MSB_INTRINSIC(__builtin_clzll)
+        #ifdef C4_MSVC
+            #if !defined(C4_CPU_X86) && !defined(C4_CPU_ARM64) && !defined(C4_CPU_ARM)
+                unsigned long bit;
+                _BitScanReverse64(&bit, v);
+                return bit;
+            #else
+                _c4_msb64_fallback;
+            #endif
+        #else
+            return 63u - (unsigned)__builtin_clzll((unsigned long long)v);
+        #endif
+    #else
+        _c4_msb64_fallback;
+    #endif
+}
+
+#undef _c4_msb8_fallback
+#undef _c4_msb16_fallback
+#undef _c4_msb32_fallback
+#undef _c4_msb64_fallback
+
+/** @} */
+
+
 namespace detail {
-
-template<class I, I val, I num_bits, bool finished>
-struct _msb11;
-
+template<class I, I val, I num_bits, bool finished> struct _msb11;
 template<class I, I val, I num_bits>
 struct _msb11< I, val, num_bits, false>
 {
-    enum : I { num = _msb11<I, (val>>1), num_bits+I(1), ((val>>1)==I(0))>::num };
+    enum : unsigned { num = _msb11<I, (val>>1), num_bits+I(1), ((val>>1)==I(0))>::num };
 };
-
 template<class I, I val, I num_bits>
 struct _msb11<I, val, num_bits, true>
 {
     static_assert(val == 0, "bad implementation");
-    enum : I { num = num_bits-1 };
+    enum : unsigned { num = (unsigned)(num_bits-1) };
 };
-
 } // namespace detail
 
 
@@ -2466,8 +2797,124 @@ struct _msb11<I, val, num_bits, true>
 template<class I, I number>
 struct msb11
 {
-    enum : I { value = detail::_msb11<I, number, 0, (number==I(0))>::num };
+    enum : unsigned { value = detail::_msb11<I, number, 0, (number==I(0))>::num };
 };
+
+
+
+#undef _C4_USE_LSB_INTRINSIC
+#undef _C4_USE_MSB_INTRINSIC
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// there is an implicit conversion below; it happens when E or B are
+// narrower than int, and thus any operation will upcast the result to
+// int, and then downcast to assign
+C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wconversion")
+
+/** integer power; this function is constexpr-14 because of the local
+ * variables */
+template<class B, class E>
+C4_CONSTEXPR14 C4_CONST auto ipow(B base, E exponent) noexcept -> typename std::enable_if<std::is_signed<E>::value, B>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<E>::value);
+    B r = B(1);
+    if(exponent >= 0)
+    {
+        for(E e = 0; e < exponent; ++e)
+            r *= base;
+    }
+    else
+    {
+        exponent *= E(-1);
+        for(E e = 0; e < exponent; ++e)
+            r /= base;
+    }
+    return r;
+}
+
+/** integer power; this function is constexpr-14 because of the local
+ * variables */
+template<class B, B base, class E>
+C4_CONSTEXPR14 C4_CONST auto ipow(E exponent) noexcept -> typename std::enable_if<std::is_signed<E>::value, B>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<E>::value);
+    B r = B(1);
+    if(exponent >= 0)
+    {
+        for(E e = 0; e < exponent; ++e)
+            r *= base;
+    }
+    else
+    {
+        exponent *= E(-1);
+        for(E e = 0; e < exponent; ++e)
+            r /= base;
+    }
+    return r;
+}
+
+/** integer power; this function is constexpr-14 because of the local
+ * variables */
+template<class B, class Base, Base base, class E>
+C4_CONSTEXPR14 C4_CONST auto ipow(E exponent) noexcept -> typename std::enable_if<std::is_signed<E>::value, B>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<E>::value);
+    B r = B(1);
+    B bbase = B(base);
+    if(exponent >= 0)
+    {
+        for(E e = 0; e < exponent; ++e)
+            r *= bbase;
+    }
+    else
+    {
+        exponent *= E(-1);
+        for(E e = 0; e < exponent; ++e)
+            r /= bbase;
+    }
+    return r;
+}
+
+/** integer power; this function is constexpr-14 because of the local
+ * variables */
+template<class B, class E>
+C4_CONSTEXPR14 C4_CONST auto ipow(B base, E exponent) noexcept -> typename std::enable_if<!std::is_signed<E>::value, B>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<E>::value);
+    B r = B(1);
+    for(E e = 0; e < exponent; ++e)
+        r *= base;
+    return r;
+}
+
+/** integer power; this function is constexpr-14 because of the local
+ * variables */
+template<class B, B base, class E>
+C4_CONSTEXPR14 C4_CONST auto ipow(E exponent) noexcept -> typename std::enable_if<!std::is_signed<E>::value, B>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<E>::value);
+    B r = B(1);
+    for(E e = 0; e < exponent; ++e)
+        r *= base;
+    return r;
+}
+/** integer power; this function is constexpr-14 because of the local
+ * variables */
+template<class B, class Base, Base base, class E>
+C4_CONSTEXPR14 C4_CONST auto ipow(E exponent) noexcept -> typename std::enable_if<!std::is_signed<E>::value, B>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<E>::value);
+    B r = B(1);
+    B bbase = B(base);
+    for(E e = 0; e < exponent; ++e)
+        r *= bbase;
+    return r;
+}
+
+C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 
 //-----------------------------------------------------------------------------
@@ -2480,10 +2927,9 @@ template<class I>
 C4_CONSTEXPR14 I contiguous_mask(I first_bit, I last_bit)
 {
     I r = 0;
-    constexpr const I o = 1;
     for(I i = first_bit; i < last_bit; ++i)
     {
-        r |= (o << i);
+        r |= (I(1) << i);
     }
     return r;
 }
@@ -4852,28 +5298,28 @@ public:
     /** @name Standard accessor methods */
     /** @{ */
 
-    bool   has_str()   const { return ! empty() && str[0] != C(0); }
-    bool   empty()     const { return (len == 0 || str == nullptr); }
-    bool   not_empty() const { return (len != 0 && str != nullptr); }
-    size_t size()      const { return len; }
+    C4_ALWAYS_INLINE C4_PURE bool   has_str()   const noexcept { return ! empty() && str[0] != C(0); }
+    C4_ALWAYS_INLINE C4_PURE bool   empty()     const noexcept { return (len == 0 || str == nullptr); }
+    C4_ALWAYS_INLINE C4_PURE bool   not_empty() const noexcept { return (len != 0 && str != nullptr); }
+    C4_ALWAYS_INLINE C4_PURE size_t size()      const noexcept { return len; }
 
-    iterator begin() { return str; }
-    iterator end  () { return str + len; }
+    C4_ALWAYS_INLINE C4_PURE iterator begin() noexcept { return str; }
+    C4_ALWAYS_INLINE C4_PURE iterator end  () noexcept { return str + len; }
 
-    const_iterator begin() const { return str; }
-    const_iterator end  () const { return str + len; }
+    C4_ALWAYS_INLINE C4_PURE const_iterator begin() const noexcept { return str; }
+    C4_ALWAYS_INLINE C4_PURE const_iterator end  () const noexcept { return str + len; }
 
-    C      * data()       { return str; }
-    C const* data() const { return str; }
+    C4_ALWAYS_INLINE C4_PURE C      * data()       noexcept { return str; }
+    C4_ALWAYS_INLINE C4_PURE C const* data() const noexcept { return str; }
 
-    inline C      & operator[] (size_t i)       { C4_ASSERT(i >= 0 && i < len); return str[i]; }
-    inline C const& operator[] (size_t i) const { C4_ASSERT(i >= 0 && i < len); return str[i]; }
+    C4_ALWAYS_INLINE C4_PURE C      & operator[] (size_t i)       noexcept { C4_ASSERT(i >= 0 && i < len); return str[i]; }
+    C4_ALWAYS_INLINE C4_PURE C const& operator[] (size_t i) const noexcept { C4_ASSERT(i >= 0 && i < len); return str[i]; }
 
-    inline C      & front()       { C4_ASSERT(len > 0 && str != nullptr); return *str; }
-    inline C const& front() const { C4_ASSERT(len > 0 && str != nullptr); return *str; }
+    C4_ALWAYS_INLINE C4_PURE C      & front()       noexcept { C4_ASSERT(len > 0 && str != nullptr); return *str; }
+    C4_ALWAYS_INLINE C4_PURE C const& front() const noexcept { C4_ASSERT(len > 0 && str != nullptr); return *str; }
 
-    inline C      & back()       { C4_ASSERT(len > 0 && str != nullptr); return *(str + len - 1); }
-    inline C const& back() const { C4_ASSERT(len > 0 && str != nullptr); return *(str + len - 1); }
+    C4_ALWAYS_INLINE C4_PURE C      & back()       noexcept { C4_ASSERT(len > 0 && str != nullptr); return *(str + len - 1); }
+    C4_ALWAYS_INLINE C4_PURE C const& back() const noexcept { C4_ASSERT(len > 0 && str != nullptr); return *(str + len - 1); }
 
     /** @} */
 
@@ -4882,28 +5328,35 @@ public:
     /** @name Comparison methods */
     /** @{ */
 
-    int compare(C const c) const
+    C4_PURE int compare(C const c) const noexcept
     {
         C4_XASSERT((str != nullptr) || len == 0);
-        if( ! len)
+        if(C4_LIKELY(str != nullptr && len > 0))
+            return (*str != c) ? *str - c : (static_cast<int>(len) - 1);
+        else
             return -1;
-        if(*str == c)
-            return static_cast<int>(len - 1);
-        return *str - c;
     }
 
-    int compare(const char *that, size_t sz) const
+    C4_PURE int compare(const char *C4_RESTRICT that, size_t sz) const noexcept
     {
         C4_XASSERT(that || sz  == 0);
         C4_XASSERT(str  || len == 0);
         if(C4_LIKELY(str && that))
         {
-            int ret = strncmp(str, that, len < sz ? len : sz);
-            if(ret == 0 && len != sz)
-                ret = len < sz ? -1 : 1;
-            return ret;
+            {
+                const size_t min = len < sz ? len : sz;
+                for(size_t i = 0; i < min; ++i)
+                    if(str[i] != that[i])
+                        return str[i] < that[i] ? -1 : 1;
+            }
+            if(len < sz)
+                return -1;
+            else if(len == sz)
+                return 0;
+            else
+                return 1;
         }
-        if((!str && !that) || (len == sz))
+        else if(len == sz)
         {
             C4_XASSERT(len == 0 && sz == 0);
             return 0;
@@ -4911,31 +5364,31 @@ public:
         return len < sz ? -1 : 1;
     }
 
-    C4_ALWAYS_INLINE int compare(ro_substr const that) const { return this->compare(that.str, that.len); }
+    C4_ALWAYS_INLINE C4_PURE int compare(ro_substr const that) const noexcept { return this->compare(that.str, that.len); }
 
-    C4_ALWAYS_INLINE bool operator== (std::nullptr_t) const { return str == nullptr || len == 0; }
-    C4_ALWAYS_INLINE bool operator!= (std::nullptr_t) const { return str != nullptr || len == 0; }
+    C4_ALWAYS_INLINE C4_PURE bool operator== (std::nullptr_t) const noexcept { return str == nullptr; }
+    C4_ALWAYS_INLINE C4_PURE bool operator!= (std::nullptr_t) const noexcept { return str != nullptr; }
 
-    C4_ALWAYS_INLINE bool operator== (C const c) const { return this->compare(c) == 0; }
-    C4_ALWAYS_INLINE bool operator!= (C const c) const { return this->compare(c) != 0; }
-    C4_ALWAYS_INLINE bool operator<  (C const c) const { return this->compare(c) <  0; }
-    C4_ALWAYS_INLINE bool operator>  (C const c) const { return this->compare(c) >  0; }
-    C4_ALWAYS_INLINE bool operator<= (C const c) const { return this->compare(c) <= 0; }
-    C4_ALWAYS_INLINE bool operator>= (C const c) const { return this->compare(c) >= 0; }
+    C4_ALWAYS_INLINE C4_PURE bool operator== (C const c) const noexcept { return this->compare(c) == 0; }
+    C4_ALWAYS_INLINE C4_PURE bool operator!= (C const c) const noexcept { return this->compare(c) != 0; }
+    C4_ALWAYS_INLINE C4_PURE bool operator<  (C const c) const noexcept { return this->compare(c) <  0; }
+    C4_ALWAYS_INLINE C4_PURE bool operator>  (C const c) const noexcept { return this->compare(c) >  0; }
+    C4_ALWAYS_INLINE C4_PURE bool operator<= (C const c) const noexcept { return this->compare(c) <= 0; }
+    C4_ALWAYS_INLINE C4_PURE bool operator>= (C const c) const noexcept { return this->compare(c) >= 0; }
 
-    template<class U> C4_ALWAYS_INLINE bool operator== (basic_substring<U> const that) const { return this->compare(that) == 0; }
-    template<class U> C4_ALWAYS_INLINE bool operator!= (basic_substring<U> const that) const { return this->compare(that) != 0; }
-    template<class U> C4_ALWAYS_INLINE bool operator<  (basic_substring<U> const that) const { return this->compare(that) <  0; }
-    template<class U> C4_ALWAYS_INLINE bool operator>  (basic_substring<U> const that) const { return this->compare(that) >  0; }
-    template<class U> C4_ALWAYS_INLINE bool operator<= (basic_substring<U> const that) const { return this->compare(that) <= 0; }
-    template<class U> C4_ALWAYS_INLINE bool operator>= (basic_substring<U> const that) const { return this->compare(that) >= 0; }
+    template<class U> C4_ALWAYS_INLINE C4_PURE bool operator== (basic_substring<U> const that) const noexcept { return this->compare(that) == 0; }
+    template<class U> C4_ALWAYS_INLINE C4_PURE bool operator!= (basic_substring<U> const that) const noexcept { return this->compare(that) != 0; }
+    template<class U> C4_ALWAYS_INLINE C4_PURE bool operator<  (basic_substring<U> const that) const noexcept { return this->compare(that) <  0; }
+    template<class U> C4_ALWAYS_INLINE C4_PURE bool operator>  (basic_substring<U> const that) const noexcept { return this->compare(that) >  0; }
+    template<class U> C4_ALWAYS_INLINE C4_PURE bool operator<= (basic_substring<U> const that) const noexcept { return this->compare(that) <= 0; }
+    template<class U> C4_ALWAYS_INLINE C4_PURE bool operator>= (basic_substring<U> const that) const noexcept { return this->compare(that) >= 0; }
 
-    template<size_t N> C4_ALWAYS_INLINE bool operator== (const char (&that)[N]) const { return this->compare(that, N-1) == 0; }
-    template<size_t N> C4_ALWAYS_INLINE bool operator!= (const char (&that)[N]) const { return this->compare(that, N-1) != 0; }
-    template<size_t N> C4_ALWAYS_INLINE bool operator<  (const char (&that)[N]) const { return this->compare(that, N-1) <  0; }
-    template<size_t N> C4_ALWAYS_INLINE bool operator>  (const char (&that)[N]) const { return this->compare(that, N-1) >  0; }
-    template<size_t N> C4_ALWAYS_INLINE bool operator<= (const char (&that)[N]) const { return this->compare(that, N-1) <= 0; }
-    template<size_t N> C4_ALWAYS_INLINE bool operator>= (const char (&that)[N]) const { return this->compare(that, N-1) >= 0; }
+    template<size_t N> C4_ALWAYS_INLINE C4_PURE bool operator== (const char (&that)[N]) const noexcept { return this->compare(that, N-1) == 0; }
+    template<size_t N> C4_ALWAYS_INLINE C4_PURE bool operator!= (const char (&that)[N]) const noexcept { return this->compare(that, N-1) != 0; }
+    template<size_t N> C4_ALWAYS_INLINE C4_PURE bool operator<  (const char (&that)[N]) const noexcept { return this->compare(that, N-1) <  0; }
+    template<size_t N> C4_ALWAYS_INLINE C4_PURE bool operator>  (const char (&that)[N]) const noexcept { return this->compare(that, N-1) >  0; }
+    template<size_t N> C4_ALWAYS_INLINE C4_PURE bool operator<= (const char (&that)[N]) const noexcept { return this->compare(that, N-1) <= 0; }
+    template<size_t N> C4_ALWAYS_INLINE C4_PURE bool operator>= (const char (&that)[N]) const noexcept { return this->compare(that, N-1) >= 0; }
 
     /** @} */
 
@@ -4945,39 +5398,38 @@ public:
     /** @{ */
 
     /** true if *this is a substring of that (ie, from the same buffer) */
-    inline bool is_sub(ro_substr const that) const
+    C4_ALWAYS_INLINE C4_PURE bool is_sub(ro_substr const that) const noexcept
     {
         return that.is_super(*this);
     }
 
     /** true if that is a substring of *this (ie, from the same buffer) */
-    inline bool is_super(ro_substr const that) const
+    C4_ALWAYS_INLINE C4_PURE bool is_super(ro_substr const that) const noexcept
     {
-        if(C4_UNLIKELY(len == 0))
-        {
+        if(C4_LIKELY(len > 0))
+            return that.str >= str && that.str+that.len <= str+len;
+        else
             return that.len == 0 && that.str == str && str != nullptr;
-        }
-        return that.begin() >= begin() && that.end() <= end();
     }
 
     /** true if there is overlap of at least one element between that and *this */
-    inline bool overlaps(ro_substr const that) const
+    C4_ALWAYS_INLINE C4_PURE bool overlaps(ro_substr const that) const noexcept
     {
         // thanks @timwynants
-        return (that.end() > begin() && that.begin() < end());
+        return that.str+that.len > str && that.str < str+len;
     }
 
 public:
 
     /** return [first,len[ */
-    basic_substring sub(size_t first) const
+    C4_ALWAYS_INLINE C4_PURE basic_substring sub(size_t first) const noexcept
     {
         C4_ASSERT(first >= 0 && first <= len);
         return basic_substring(str + first, len - first);
     }
 
     /** return [first,first+num[. If num==npos, return [first,len[ */
-    basic_substring sub(size_t first, size_t num) const
+    C4_ALWAYS_INLINE C4_PURE basic_substring sub(size_t first, size_t num) const noexcept
     {
         C4_ASSERT(first >= 0 && first <= len);
         C4_ASSERT((num >= 0 && num <= len) || (num == npos));
@@ -4987,7 +5439,7 @@ public:
     }
 
     /** return [first,last[. If last==npos, return [first,len[ */
-    basic_substring range(size_t first, size_t last=npos) const
+    C4_ALWAYS_INLINE C4_PURE basic_substring range(size_t first, size_t last=npos) const noexcept
     {
         C4_ASSERT(first >= 0 && first <= len);
         last = last != npos ? last : len;
@@ -4996,24 +5448,26 @@ public:
         return basic_substring(str + first, last - first);
     }
 
-    /** return [0,num[*/
-    basic_substring first(size_t num) const
+    /** return the first @p num elements: [0,num[*/
+    C4_ALWAYS_INLINE C4_PURE basic_substring first(size_t num) const noexcept
     {
-        return sub(0, num);
+        C4_ASSERT(num <= len || num == npos);
+        return basic_substring(str, num != npos ? num : len);
     }
 
-    /** return [len-num,len[*/
-    basic_substring last(size_t num) const
+    /** return the last @num elements: [len-num,len[*/
+    C4_ALWAYS_INLINE C4_PURE basic_substring last(size_t num) const noexcept
     {
-        if(num == npos)
-            return *this;
-        return sub(len - num);
+        C4_ASSERT(num <= len || num == npos);
+        return num != npos ?
+            basic_substring(str + len - num, num) :
+            *this;
     }
 
     /** offset from the ends: return [left,len-right[ ; ie, trim a
         number of characters from the left and right. This is
         equivalent to python's negative list indices. */
-    basic_substring offs(size_t left, size_t right) const
+    C4_ALWAYS_INLINE C4_PURE basic_substring offs(size_t left, size_t right) const noexcept
     {
         C4_ASSERT(left  >= 0 && left  <= len);
         C4_ASSERT(right >= 0 && right <= len);
@@ -5021,27 +5475,47 @@ public:
         return basic_substring(str + left, len - right - left);
     }
 
-    /** return [0, pos+include_pos[ */
-    basic_substring left_of(size_t pos, bool include_pos=false) const
+    /** return [0, pos[ . Same as .first(pos), but provided for compatibility with .right_of() */
+    C4_ALWAYS_INLINE C4_PURE basic_substring left_of(size_t pos) const noexcept
     {
-        if(pos == npos)
-            return *this;
-        return first(pos + include_pos);
+        C4_ASSERT(pos <= len || pos == npos);
+        return (pos != npos) ?
+            basic_substring(str, pos) :
+            *this;
+    }
+
+    /** return [0, pos+include_pos[ . Same as .first(pos+1), but provided for compatibility with .right_of() */
+    C4_ALWAYS_INLINE C4_PURE basic_substring left_of(size_t pos, bool include_pos) const noexcept
+    {
+        C4_ASSERT(pos <= len || pos == npos);
+        return (pos != npos) ?
+            basic_substring(str, pos+include_pos) :
+            *this;
+    }
+
+    /** return [pos+1, len[ */
+    C4_ALWAYS_INLINE C4_PURE basic_substring right_of(size_t pos) const noexcept
+    {
+        C4_ASSERT(pos <= len || pos == npos);
+        return (pos != npos) ?
+            basic_substring(str + (pos + 1), len - (pos + 1)) :
+            basic_substring(str + len, size_t(0));
     }
 
     /** return [pos+!include_pos, len[ */
-    basic_substring right_of(size_t pos, bool include_pos=false) const
+    C4_ALWAYS_INLINE C4_PURE basic_substring right_of(size_t pos, bool include_pos) const noexcept
     {
-        if(pos == npos)
-            return sub(len, 0);
-        return sub(pos + !include_pos);
+        C4_ASSERT(pos <= len || pos == npos);
+        return (pos != npos) ?
+            basic_substring(str + (pos + !include_pos), len - (pos + !include_pos)) :
+            basic_substring(str + len, size_t(0));
     }
 
 public:
 
     /** given @p subs a substring of the current string, get the
      * portion of the current string to the left of it */
-    basic_substring left_of(ro_substr const subs) const
+    C4_ALWAYS_INLINE C4_PURE basic_substring left_of(ro_substr const subs) const noexcept
     {
         C4_ASSERT(is_super(subs) || subs.empty());
         auto ssb = subs.begin();
@@ -5055,7 +5529,7 @@ public:
 
     /** given @p subs a substring of the current string, get the
      * portion of the current string to the right of it */
-    basic_substring right_of(ro_substr const subs) const
+    C4_ALWAYS_INLINE C4_PURE basic_substring right_of(ro_substr const subs) const noexcept
     {
         C4_ASSERT(is_super(subs) || subs.empty());
         auto sse = subs.end();
@@ -5717,55 +6191,64 @@ public:
     basic_substring _first_integral_span(size_t skip_start) const
     {
         C4_ASSERT(!empty());
-        if(skip_start == len) {
+        if(skip_start == len)
             return first(0);
-        }
         C4_ASSERT(skip_start < len);
-        if(first_of_any("0x", "0X")) // hexadecimal
+        if(len >= skip_start + 3)
         {
-            skip_start += 2;
-            if(len == skip_start)
-                return first(0);
-            for(size_t i = skip_start; i < len; ++i)
+            if(str[skip_start] != '0')
             {
-                if( ! _is_hex_char(str[i]))
-                    return _is_delim_char(str[i]) ? first(i) : first(0);
+                for(size_t i = skip_start; i < len; ++i)
+                {
+                    char c = str[i];
+                    if(c < '0' || c > '9')
+                        return i > skip_start && _is_delim_char(c) ? first(i) : first(0);
+                }
+            }
+            else
+            {
+                char next = str[skip_start + 1];
+                if(next == 'x' || next == 'X')
+                {
+                    skip_start += 2;
+                    for(size_t i = skip_start; i < len; ++i)
+                    {
+                        const char c = str[i];
+                        if( ! _is_hex_char(c))
+                            return i > skip_start && _is_delim_char(c) ? first(i) : first(0);
+                    }
+                    return *this;
+                }
+                else if(next == 'b' || next == 'B')
+                {
+                    skip_start += 2;
+                    for(size_t i = skip_start; i < len; ++i)
+                    {
+                        const char c = str[i];
+                        if(c != '0' && c != '1')
+                            return i > skip_start && _is_delim_char(c) ? first(i) : first(0);
+                    }
+                    return *this;
+                }
+                else if(next == 'o' || next == 'O')
+                {
+                    skip_start += 2;
+                    for(size_t i = skip_start; i < len; ++i)
+                    {
+                        const char c = str[i];
+                        if(c < '0' || c > '7')
+                            return i > skip_start && _is_delim_char(c) ? first(i) : first(0);
+                    }
+                    return *this;
+                }
             }
         }
-        else if(first_of_any("0o", "0O")) // octal
+        // must be a decimal, or it is not a an number
+        for(size_t i = skip_start; i < len; ++i)
         {
-            skip_start += 2;
-            if(len == skip_start)
-                return first(0);
-            for(size_t i = skip_start; i < len; ++i)
-            {
-                char c = str[i];
-                if(c < '0' || c > '7')
-                    return _is_delim_char(str[i]) ? first(i) : first(0);
-            }
-        }
-        else if(first_of_any("0b", "0B")) // binary
-        {
-            skip_start += 2;
-            if(len == skip_start)
-                return first(0);
-            for(size_t i = skip_start; i < len; ++i)
-            {
-                char c = str[i];
-                if(c != '0' && c != '1')
-                    return _is_delim_char(c) ? first(i) : first(0);
-            }
-        }
-        else // otherwise, decimal
-        {
-            if(len == skip_start)
-                return first(0);
-            for(size_t i = skip_start; i < len; ++i)
-            {
-                char c = str[i];
-                if(c < '0' || c > '9')
-                    return _is_delim_char(c) ? first(i) : first(0);
-            }
+            const char c = str[i];
+            if(c < '0' || c > '9')
+                return i > skip_start && _is_delim_char(c) ? first(i) : first(0);
         }
         return *this;
     }
@@ -5776,125 +6259,436 @@ public:
         basic_substring ne = first_non_empty_span();
         if(ne.empty())
             return ne;
-        size_t skip_start = (ne.str[0] == '+' || ne.str[0] == '-') ? 1 : 0;
-        if(ne.first_of_any("0x", "0X")) // hexadecimal
+        size_t skip_start = (ne.str[0] == '+' || ne.str[0] == '-');
+        C4_ASSERT(skip_start == 0 || skip_start == 1);
+        // if we have at least three digits after the leading sign, it
+        // can be decimal, or hex, or bin or oct. Ex:
+        // non-decimal: 0x0, 0b0, 0o0
+        // decimal: 1.0, 10., 1e1, 100, inf, nan, infinity
+        if(ne.len >= skip_start+3)
         {
-            skip_start += 2;
-            if(ne.len == skip_start)
-                return ne.first(0);
-            for(size_t i = skip_start; i < ne.len; ++i)
+            // if it does not have leading 0, it must be decimal, or it is not a real
+            if(ne.str[skip_start] != '0')
             {
-                char c = ne.str[i];
-                if(( ! _is_hex_char(c)) && c != '.' && c != 'p' && c != 'P')
+                if(ne.str[skip_start] == 'i') // is it infinity or inf?
                 {
-                    if(c == '-' || c == '+')
-                    {
-                        // we can also have a sign for the exponent
-                        if(i > 1 && (ne[i-1] == 'p' || ne[i-1] == 'P'))
-                        {
-                            continue;
-                        }
-                    }
-                    return _is_delim_char(c) ? ne.first(i) : ne.first(0);
+                    basic_substring word = ne._word_follows(skip_start + 1, "nfinity");
+                    if(word.len)
+                        return word;
+                    return ne._word_follows(skip_start + 1, "nf");
+                }
+                else if(ne.str[skip_start] == 'n') // is it nan?
+                {
+                    return ne._word_follows(skip_start + 1, "an");
+                }
+                else // must be a decimal, or it is not a real
+                {
+                    return ne._first_real_span_dec(skip_start);
                 }
             }
-        }
-        else if(ne.first_of_any("0b", "0B")) // binary
-        {
-            skip_start += 2;
-            if(ne.len == skip_start)
-                return ne.first(0);
-            for(size_t i = skip_start; i < ne.len; ++i)
+            else // starts with 0. is it 0x, 0b or 0o?
             {
-                char c = ne.str[i];
-                if(c != '0' && c != '1' && c != '.')
-                {
-                    return _is_delim_char(c) ? ne.first(i) : ne.first(0);
-                }
+                const char next = ne.str[skip_start + 1];
+                // hexadecimal
+                if(next == 'x' || next == 'X')
+                    return ne._first_real_span_hex(skip_start + 2);
+                // binary
+                else if(next == 'b' || next == 'B')
+                    return ne._first_real_span_bin(skip_start + 2);
+                // octal
+                else if(next == 'o' || next == 'O')
+                    return ne._first_real_span_oct(skip_start + 2);
+                // none of the above. may still be a decimal.
+                else
+                    return ne._first_real_span_dec(skip_start); // do not skip the 0.
             }
         }
-        else if(ne.first_of_any("0o", "0O")) // octal
-        {
-            skip_start += 2;
-            if(ne.len == skip_start)
-                return ne.first(0);
-            for(size_t i = skip_start; i < ne.len; ++i)
-            {
-                char c = ne.str[i];
-                if((c < '0' || c > '7') && c != '.')
-                {
-                    return _is_delim_char(c) ? ne.first(i) : ne.first(0);
-                }
-            }
-        }
-        else // assume decimal
-        {
-            if(ne.len == skip_start)
-                return ne.first(0);
-            for(size_t i = skip_start; i < ne.len; ++i)
-            {
-                char c = ne.str[i];
-                if((c < '0' || c > '9') && (c != '.' && c != 'e' && c != 'E'))
-                {
-                    if(c == '-' || c == '+')
-                    {
-                        // we can also have a sign for the exponent
-                        if(i > 1 && (ne[i-1] == 'e' || ne[i-1] == 'E'))
-                        {
-                            continue;
-                        }
-                    }
-                    else if(i == skip_start)
-                    {
-                        if(c == 'i')
-                        {
-                            if(ne.len >= skip_start + 8 && ne.sub(skip_start, 8) == "infinity")
-                                return _is_delim_char(ne.str[skip_start + 8]) ? ne.first(skip_start + 8) : ne.first(0);
-                            else if(ne.len >= skip_start + 3 && ne.sub(skip_start, 3) == "inf")
-                                return _is_delim_char(ne.str[skip_start + 3]) ? ne.first(skip_start + 3) : ne.first(0);
-                            else
-                                return ne.first(0);
-                        }
-                        else if(c == 'n')
-                        {
-                            if(ne.len >= skip_start + 3 && ne.sub(skip_start, 3) == "nan")
-                                return _is_delim_char(ne.str[skip_start + 3]) ? ne.first(skip_start + 3) : ne.first(0);
-                            else
-                                return ne.first(0);
-                        }
-                        else
-                        {
-                            return ne.first(0);
-                        }
-                    }
-                    else
-                    {
-                        return _is_delim_char(c) ? ne.first(i) : ne.first(0);
-                    }
-                }
-            }
-        }
-        return ne;
+        // less than 3 chars after the leading sign. It is either a
+        // decimal or it is not a real. (cannot be any of 0x0, etc).
+        return ne._first_real_span_dec(skip_start);
     }
 
     /** true if the character is a delimiter character *at the end* */
-    static constexpr C4_ALWAYS_INLINE bool _is_delim_char(char c) noexcept
+    static constexpr C4_ALWAYS_INLINE C4_CONST bool _is_delim_char(char c) noexcept
     {
-        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\0'
+        return c == ' ' || c == '\n'
             || c == ']' || c == ')'  || c == '}'
-            || c == ',' || c == ';';
+            || c == ',' || c == ';' || c == '\r' || c == '\t' || c == '\0';
     }
 
     /** true if the character is in [0-9a-fA-F] */
-    static constexpr C4_ALWAYS_INLINE bool _is_hex_char(char c) noexcept
+    static constexpr C4_ALWAYS_INLINE C4_CONST bool _is_hex_char(char c) noexcept
     {
         return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 
-    /** true if the character is in [0-9a-fA-F] */
-    static constexpr C4_ALWAYS_INLINE bool _is_oct_char(char c) noexcept
+    C4_NO_INLINE C4_PURE basic_substring _word_follows(size_t pos, csubstr word) const noexcept
     {
-        return (c >= '0' && c <= '7');
+        size_t posend = pos + word.len;
+        if(len >= posend && sub(pos, word.len) == word)
+            if(len == posend || _is_delim_char(str[posend]))
+                return first(posend);
+        return first(0);
+    }
+
+    // this function is declared inside the class to avoid a VS error with __declspec(dllimport)
+    C4_NO_INLINE C4_PURE basic_substring _first_real_span_dec(size_t pos) const noexcept
+    {
+        bool intchars = false;
+        bool fracchars = false;
+        bool powchars;
+        // integral part
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '9')
+            {
+                intchars = true;
+            }
+            else if(c == '.')
+            {
+                ++pos;
+                goto fractional_part_dec;
+            }
+            else if(c == 'e' || c == 'E')
+            {
+                ++pos;
+                goto power_part_dec;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        // no . or p were found; this is either an integral number
+        // or not a number at all
+        return intchars ?
+            *this :
+            first(0);
+    fractional_part_dec:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == '.');
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '9')
+            {
+                fracchars = true;
+            }
+            else if(c == 'e' || c == 'E')
+            {
+                ++pos;
+                goto power_part_dec;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars || fracchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        return intchars || fracchars ?
+            *this :
+            first(0);
+    power_part_dec:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == 'e' || str[pos - 1] == 'E');
+        // either a + or a - is expected here, followed by more chars.
+        // also, using (pos+1) in this check will cause an early
+        // return when no more chars follow the sign.
+        if(len <= (pos+1) || ((!intchars) && (!fracchars)))
+            return first(0);
+        ++pos; // this was the sign.
+        // ... so the (pos+1) ensures that we enter the loop and
+        // hence that there exist chars in the power part
+        powchars = false;
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '9')
+                powchars = true;
+            else if(powchars && _is_delim_char(c))
+                return first(pos);
+            else
+                return first(0);
+        }
+        return *this;
+    }
+
+    // this function is declared inside the class to avoid a VS error with __declspec(dllimport)
+    C4_NO_INLINE C4_PURE basic_substring _first_real_span_hex(size_t pos) const noexcept
+    {
+        bool intchars = false;
+        bool fracchars = false;
+        bool powchars;
+        // integral part
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(_is_hex_char(c))
+            {
+                intchars = true;
+            }
+            else if(c == '.')
+            {
+                ++pos;
+                goto fractional_part_hex;
+            }
+            else if(c == 'p' || c == 'P')
+            {
+                ++pos;
+                goto power_part_hex;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        // no . or p were found; this is either an integral number
+        // or not a number at all
+        return intchars ?
+            *this :
+            first(0);
+    fractional_part_hex:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == '.');
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(_is_hex_char(c))
+            {
+                fracchars = true;
+            }
+            else if(c == 'p' || c == 'P')
+            {
+                ++pos;
+                goto power_part_hex;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars || fracchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        return intchars || fracchars ?
+            *this :
+            first(0);
+    power_part_hex:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == 'p' || str[pos - 1] == 'P');
+        // either a + or a - is expected here, followed by more chars.
+        // also, using (pos+1) in this check will cause an early
+        // return when no more chars follow the sign.
+        if(len <= (pos+1) || (str[pos] != '+' && str[pos] != '-') || ((!intchars) && (!fracchars)))
+            return first(0);
+        ++pos; // this was the sign.
+        // ... so the (pos+1) ensures that we enter the loop and
+        // hence that there exist chars in the power part
+        powchars = false;
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '9')
+                powchars = true;
+            else if(powchars && _is_delim_char(c))
+                return first(pos);
+            else
+                return first(0);
+        }
+        return *this;
+    }
+
+    // this function is declared inside the class to avoid a VS error with __declspec(dllimport)
+    C4_NO_INLINE C4_PURE basic_substring _first_real_span_bin(size_t pos) const noexcept
+    {
+        bool intchars = false;
+        bool fracchars = false;
+        bool powchars;
+        // integral part
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c == '0' || c == '1')
+            {
+                intchars = true;
+            }
+            else if(c == '.')
+            {
+                ++pos;
+                goto fractional_part_bin;
+            }
+            else if(c == 'p' || c == 'P')
+            {
+                ++pos;
+                goto power_part_bin;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        // no . or p were found; this is either an integral number
+        // or not a number at all
+        return intchars ?
+            *this :
+            first(0);
+    fractional_part_bin:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == '.');
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c == '0' || c == '1')
+            {
+                fracchars = true;
+            }
+            else if(c == 'p' || c == 'P')
+            {
+                ++pos;
+                goto power_part_bin;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars || fracchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        return intchars || fracchars ?
+            *this :
+            first(0);
+    power_part_bin:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == 'p' || str[pos - 1] == 'P');
+        // either a + or a - is expected here, followed by more chars.
+        // also, using (pos+1) in this check will cause an early
+        // return when no more chars follow the sign.
+        if(len <= (pos+1) || (str[pos] != '+' && str[pos] != '-') || ((!intchars) && (!fracchars)))
+            return first(0);
+        ++pos; // this was the sign.
+        // ... so the (pos+1) ensures that we enter the loop and
+        // hence that there exist chars in the power part
+        powchars = false;
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '9')
+                powchars = true;
+            else if(powchars && _is_delim_char(c))
+                return first(pos);
+            else
+                return first(0);
+        }
+        return *this;
+    }
+
+    // this function is declared inside the class to avoid a VS error with __declspec(dllimport)
+    C4_NO_INLINE C4_PURE basic_substring _first_real_span_oct(size_t pos) const noexcept
+    {
+        bool intchars = false;
+        bool fracchars = false;
+        bool powchars;
+        // integral part
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '7')
+            {
+                intchars = true;
+            }
+            else if(c == '.')
+            {
+                ++pos;
+                goto fractional_part_oct;
+            }
+            else if(c == 'p' || c == 'P')
+            {
+                ++pos;
+                goto power_part_oct;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        // no . or p were found; this is either an integral number
+        // or not a number at all
+        return intchars ?
+            *this :
+            first(0);
+    fractional_part_oct:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == '.');
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '7')
+            {
+                fracchars = true;
+            }
+            else if(c == 'p' || c == 'P')
+            {
+                ++pos;
+                goto power_part_oct;
+            }
+            else if(_is_delim_char(c))
+            {
+                return intchars || fracchars ? first(pos) : first(0);
+            }
+            else
+            {
+                return first(0);
+            }
+        }
+        return intchars || fracchars ?
+            *this :
+            first(0);
+    power_part_oct:
+        C4_ASSERT(pos > 0);
+        C4_ASSERT(str[pos - 1] == 'p' || str[pos - 1] == 'P');
+        // either a + or a - is expected here, followed by more chars.
+        // also, using (pos+1) in this check will cause an early
+        // return when no more chars follow the sign.
+        if(len <= (pos+1) || (str[pos] != '+' && str[pos] != '-') || ((!intchars) && (!fracchars)))
+            return first(0);
+        ++pos; // this was the sign.
+        // ... so the (pos+1) ensures that we enter the loop and
+        // hence that there exist chars in the power part
+        powchars = false;
+        for( ; pos < len; ++pos)
+        {
+            const char c = str[pos];
+            if(c >= '0' && c <= '9')
+                powchars = true;
+            else if(powchars && _is_delim_char(c))
+                return first(pos);
+            else
+                return first(0);
+        }
+        return *this;
     }
 
     /** @} */
@@ -6265,7 +7059,11 @@ public:
         num = num != npos ? num : len - ifirst;
         num = num < that.len ? num : that.len;
         C4_ASSERT(ifirst + num >= 0 && ifirst + num <= len);
-        memcpy(str + sizeof(C) * ifirst, that.str, sizeof(C) * num);
+        // calling memcpy with null strings is undefined behavior
+        // and will wreak havoc in calling code's branches.
+        // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+        if(num)
+            memcpy(str + sizeof(C) * ifirst, that.str, sizeof(C) * num);
     }
 
 public:
@@ -6383,7 +7181,7 @@ public:
             {                                                           \
                 C4_ASSERT((last) >= (first));                           \
                 size_t num = static_cast<size_t>((last) - (first));     \
-                if(sz + num <= dst.len)                                 \
+                if(num > 0 && sz + num <= dst.len)                      \
                 {                                                       \
                     memcpy(dst.str + sz, first, num * sizeof(C));       \
                 }                                                       \
@@ -6586,44 +7384,40 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 
 // fast_float by Daniel Lemire
 // fast_float by João Paulo Magalhaes
-//
+
+
 // with contributions from Eugene Golushkov
 // with contributions from Maksim Kita
 // with contributions from Marcin Wojdyr
 // with contributions from Neal Richardson
 // with contributions from Tim Paine
 // with contributions from Fabio Pellacini
-//
-// MIT License Notice
-//
-//    MIT License
-//    
-//    Copyright (c) 2021 The fast_float authors
-//    
-//    Permission is hereby granted, free of charge, to any
-//    person obtaining a copy of this software and associated
-//    documentation files (the "Software"), to deal in the
-//    Software without restriction, including without
-//    limitation the rights to use, copy, modify, merge,
-//    publish, distribute, sublicense, and/or sell copies of
-//    the Software, and to permit persons to whom the Software
-//    is furnished to do so, subject to the following
-//    conditions:
-//    
-//    The above copyright notice and this permission notice
-//    shall be included in all copies or substantial portions
-//    of the Software.
-//    
-//    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-//    ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-//    TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-//    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-//    SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-//    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-//    OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-//    IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-//    DEALINGS IN THE SOFTWARE.
-//
+
+
+// Permission is hereby granted, free of charge, to any
+// person obtaining a copy of this software and associated
+// documentation files (the "Software"), to deal in the
+// Software without restriction, including without
+// limitation the rights to use, copy, modify, merge,
+// publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software
+// is furnished to do so, subject to the following
+// conditions:
+// 
+// The above copyright notice and this permission notice
+// shall be included in all copies or substantial portions
+// of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+// ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+// TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+// PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+// SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+// IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
 
 #ifndef FASTFLOAT_FAST_FLOAT_H
 #define FASTFLOAT_FAST_FLOAT_H
@@ -6688,6 +7482,7 @@ from_chars_result from_chars_advanced(const char *first, const char *last,
 }
 #endif // FASTFLOAT_FAST_FLOAT_H
 
+
 #ifndef FASTFLOAT_FLOAT_COMMON_H
 #define FASTFLOAT_FLOAT_COMMON_H
 
@@ -6697,8 +7492,6 @@ from_chars_result from_chars_advanced(const char *first, const char *last,
 #include <cassert>
 //included above:
 //#include <cstring>
-//included above:
-//#include <type_traits>
 
 #if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)   \
        || defined(__amd64) || defined(__aarch64__) || defined(_M_ARM64) \
@@ -6727,16 +7520,15 @@ from_chars_result from_chars_advanced(const char *first, const char *last,
 #endif
 
 #if ((defined(_WIN32) || defined(_WIN64)) && !defined(__clang__))
-#include <intrin.h>
+//included above:
+//#include <intrin.h>
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #define FASTFLOAT_VISUAL_STUDIO 1
 #endif
 
-#if defined __BYTE_ORDER__ && defined __ORDER_BIG_ENDIAN__
-#define FASTFLOAT_IS_BIG_ENDIAN (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-#elif defined _WIN32
+#ifdef _WIN32
 #define FASTFLOAT_IS_BIG_ENDIAN 0
 #else
 #if defined(__APPLE__) || defined(__FreeBSD__)
@@ -6916,8 +7708,6 @@ constexpr static float powers_of_ten_float[] = {1e0, 1e1, 1e2, 1e3, 1e4, 1e5,
                                                 1e6, 1e7, 1e8, 1e9, 1e10};
 
 template <typename T> struct binary_format {
-  using equiv_uint = typename std::conditional<sizeof(T) == 4, uint32_t, uint64_t>::type;
-
   static inline constexpr int mantissa_explicit_bits();
   static inline constexpr int minimum_exponent();
   static inline constexpr int infinite_power();
@@ -6931,9 +7721,6 @@ template <typename T> struct binary_format {
   static inline constexpr int smallest_power_of_ten();
   static inline constexpr T exact_power_of_ten(int64_t power);
   static inline constexpr size_t max_digits();
-  static inline constexpr equiv_uint exponent_mask();
-  static inline constexpr equiv_uint mantissa_mask();
-  static inline constexpr equiv_uint hidden_bit_mask();
 };
 
 template <> inline constexpr int binary_format<double>::mantissa_explicit_bits() {
@@ -7041,33 +7828,6 @@ template <> inline constexpr size_t binary_format<float>::max_digits() {
   return 114;
 }
 
-template <> inline constexpr binary_format<float>::equiv_uint
-    binary_format<float>::exponent_mask() {
-  return 0x7F800000;
-}
-template <> inline constexpr binary_format<double>::equiv_uint
-    binary_format<double>::exponent_mask() {
-  return 0x7FF0000000000000;
-}
-
-template <> inline constexpr binary_format<float>::equiv_uint
-    binary_format<float>::mantissa_mask() {
-  return 0x007FFFFF;
-}
-template <> inline constexpr binary_format<double>::equiv_uint
-    binary_format<double>::mantissa_mask() {
-  return 0x000FFFFFFFFFFFFF;
-}
-
-template <> inline constexpr binary_format<float>::equiv_uint
-    binary_format<float>::hidden_bit_mask() {
-  return 0x00800000;
-}
-template <> inline constexpr binary_format<double>::equiv_uint
-    binary_format<double>::hidden_bit_mask() {
-  return 0x0010000000000000;
-}
-
 template<typename T>
 fastfloat_really_inline void to_float(bool negative, adjusted_mantissa am, T &value) {
   uint64_t word = am.mantissa;
@@ -7089,6 +7849,7 @@ fastfloat_really_inline void to_float(bool negative, adjusted_mantissa am, T &va
 } // namespace fast_float
 
 #endif
+
 
 #ifndef FASTFLOAT_ASCII_NUMBER_H
 #define FASTFLOAT_ASCII_NUMBER_H
@@ -7323,6 +8084,7 @@ parsed_number_string parse_number_string(const char *p, const char *pend, parse_
 } // namespace fast_float
 
 #endif
+
 
 #ifndef FASTFLOAT_FAST_TABLE_H
 #define FASTFLOAT_FAST_TABLE_H
@@ -8025,6 +8787,7 @@ using powers = powers_template<>;
 
 #endif
 
+
 #ifndef FASTFLOAT_DECIMAL_TO_BINARY_H
 #define FASTFLOAT_DECIMAL_TO_BINARY_H
 
@@ -8220,6 +8983,7 @@ adjusted_mantissa compute_float(int64_t q, uint64_t w)  noexcept  {
 } // namespace fast_float
 
 #endif
+
 
 #ifndef FASTFLOAT_BIGINT_H
 #define FASTFLOAT_BIGINT_H
@@ -8814,6 +9578,7 @@ struct bigint {
 
 #endif
 
+
 #ifndef FASTFLOAT_ASCII_NUMBER_H
 #define FASTFLOAT_ASCII_NUMBER_H
 
@@ -9049,6 +9814,7 @@ parsed_number_string parse_number_string(const char *p, const char *pend, parse_
 
 #endif
 
+
 #ifndef FASTFLOAT_DIGIT_COMPARISON_H
 #define FASTFLOAT_DIGIT_COMPARISON_H
 
@@ -9096,24 +9862,40 @@ fastfloat_really_inline int32_t scientific_exponent(parsed_number_string& num) n
 // this converts a native floating-point number to an extended-precision float.
 template <typename T>
 fastfloat_really_inline adjusted_mantissa to_extended(T value) noexcept {
-  using equiv_uint = typename binary_format<T>::equiv_uint;
-  constexpr equiv_uint exponent_mask = binary_format<T>::exponent_mask();
-  constexpr equiv_uint mantissa_mask = binary_format<T>::mantissa_mask();
-  constexpr equiv_uint hidden_bit_mask = binary_format<T>::hidden_bit_mask();
-
   adjusted_mantissa am;
   int32_t bias = binary_format<T>::mantissa_explicit_bits() - binary_format<T>::minimum_exponent();
-  equiv_uint bits;
-  ::memcpy(&bits, &value, sizeof(T));
-  if ((bits & exponent_mask) == 0) {
-    // denormal
-    am.power2 = 1 - bias;
-    am.mantissa = bits & mantissa_mask;
+  if (std::is_same<T, float>::value) {
+    constexpr uint32_t exponent_mask = 0x7F800000;
+    constexpr uint32_t mantissa_mask = 0x007FFFFF;
+    constexpr uint64_t hidden_bit_mask = 0x00800000;
+    uint32_t bits;
+    ::memcpy(&bits, &value, sizeof(T));
+    if ((bits & exponent_mask) == 0) {
+      // denormal
+      am.power2 = 1 - bias;
+      am.mantissa = bits & mantissa_mask;
+    } else {
+      // normal
+      am.power2 = int32_t((bits & exponent_mask) >> binary_format<T>::mantissa_explicit_bits());
+      am.power2 -= bias;
+      am.mantissa = (bits & mantissa_mask) | hidden_bit_mask;
+    }
   } else {
-    // normal
-    am.power2 = int32_t((bits & exponent_mask) >> binary_format<T>::mantissa_explicit_bits());
-    am.power2 -= bias;
-    am.mantissa = (bits & mantissa_mask) | hidden_bit_mask;
+    constexpr uint64_t exponent_mask = 0x7FF0000000000000;
+    constexpr uint64_t mantissa_mask = 0x000FFFFFFFFFFFFF;
+    constexpr uint64_t hidden_bit_mask = 0x0010000000000000;
+    uint64_t bits;
+    ::memcpy(&bits, &value, sizeof(T));
+    if ((bits & exponent_mask) == 0) {
+      // denormal
+      am.power2 = 1 - bias;
+      am.mantissa = bits & mantissa_mask;
+    } else {
+      // normal
+      am.power2 = int32_t((bits & exponent_mask) >> binary_format<T>::mantissa_explicit_bits());
+      am.power2 -= bias;
+      am.mantissa = (bits & mantissa_mask) | hidden_bit_mask;
+    }
   }
 
   return am;
@@ -9138,7 +9920,7 @@ fastfloat_really_inline void round(adjusted_mantissa& am, callback cb) noexcept 
   if (-am.power2 >= mantissa_shift) {
     // have a denormal float
     int32_t shift = -am.power2 + 1;
-    cb(am, std::min<int32_t>(shift, 64));
+    cb(am, std::min(shift, 64));
     // check for round-up: if rounding-nearest carried us to the hidden bit.
     am.power2 = (am.mantissa < (uint64_t(1) << binary_format<T>::mantissa_explicit_bits())) ? 0 : 1;
     return;
@@ -9458,6 +10240,7 @@ inline adjusted_mantissa digit_comp(parsed_number_string& num, adjusted_mantissa
 
 #endif
 
+
 #ifndef FASTFLOAT_PARSE_NUMBER_H
 #define FASTFLOAT_PARSE_NUMBER_H
 
@@ -9605,10 +10388,17 @@ from_chars_result from_chars_advanced(const char *first, const char *last,
 
 // forward declarations for std::vector
 #if defined(__GLIBCXX__) || defined(__GLIBCPP__) || defined(_MSC_VER)
+#if defined(_MSC_VER)
+__pragma(warning(push))
+__pragma(warning(disable : 4643))
+#endif
 namespace std {
 template<typename> class allocator;
 template<typename T, typename Alloc> class vector;
 } // namespace std
+#if defined(_MSC_VER)
+__pragma(warning(pop))
+#endif
 #elif defined(_LIBCPP_ABI_NAMESPACE)
 namespace std {
 inline namespace _LIBCPP_ABI_NAMESPACE {
@@ -9707,8 +10497,8 @@ using string = basic_string<char, char_traits<char>, allocator<char>>;
 
 namespace c4 {
 
-c4::substr to_substr(std::string &s);
-c4::csubstr to_csubstr(std::string const& s);
+C4_ALWAYS_INLINE c4::substr to_substr(std::string &s) noexcept;
+C4_ALWAYS_INLINE c4::csubstr to_csubstr(std::string const& s) noexcept;
 
 bool operator== (c4::csubstr ss, std::string const& s);
 bool operator!= (c4::csubstr ss, std::string const& s);
@@ -9805,6 +10595,10 @@ bool from_chars(c4::csubstr buf, std::string * s);
  * // Read a value from the string, which must be
  * // trimmed to the value (ie, no leading/trailing whitespace).
  * // return true if the conversion succeeded.
+ * // There is no check for overflow; the value wraps around in a way similar
+ * // to the standard C/C++ overflow behavior. For example,
+ * // from_chars<int8_t>("128", &val) returns true and val will be
+ * // set tot 0.
  * template<class T> bool c4::from_chars(csubstr buf, T * C4_RESTRICT val);
  *
  *
@@ -9870,44 +10664,61 @@ bool from_chars(c4::csubstr buf, std::string * s);
 
 
 #ifndef C4CORE_NO_FAST_FLOAT
-    C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wsign-conversion")
-    C4_SUPPRESS_WARNING_GCC("-Warray-bounds")
-#if __GNUC__ >= 5
-    C4_SUPPRESS_WARNING_GCC("-Wshift-count-overflow")
-#endif
-// amalgamate: removed include of
-// https://github.com/biojppm/c4core/src/c4/ext/fast_float.hpp
-//#   include "c4/ext/fast_float.hpp"
-#if !defined(C4_EXT_FAST_FLOAT_HPP_) && !defined(_C4_EXT_FAST_FLOAT_HPP_)
-#error "amalgamate: file c4/ext/fast_float.hpp must have been included at this point"
-#endif /* C4_EXT_FAST_FLOAT_HPP_ */
-
-    C4_SUPPRESS_WARNING_GCC_POP
-#   define C4CORE_HAVE_FAST_FLOAT 1
-#   define C4CORE_HAVE_STD_FROMCHARS 0
 #   if (C4_CPP >= 17)
 #       if defined(_MSC_VER)
-#           if (C4_MSVC_VERSION >= C4_MSVC_VERSION_2019)
+#           if (C4_MSVC_VERSION >= C4_MSVC_VERSION_2019) // VS2017 and lower do not have these macros
 #               include <charconv>
 #               define C4CORE_HAVE_STD_TOCHARS 1
+#               define C4CORE_HAVE_STD_FROMCHARS 0 // prefer fast_float with MSVC
+#               define C4CORE_HAVE_FAST_FLOAT 1
 #           else
 #               define C4CORE_HAVE_STD_TOCHARS 0
+#               define C4CORE_HAVE_STD_FROMCHARS 0
+#               define C4CORE_HAVE_FAST_FLOAT 1
 #           endif
-#       else  // VS2017 and lower do not have these macros
-#           if __has_include(<charconv>) && __cpp_lib_to_chars
-#               define C4CORE_HAVE_STD_TOCHARS 1
+#       else
+#           if __has_include(<charconv>)
 //included above:
 //#               include <charconv>
+#               if defined(__cpp_lib_to_chars)
+#                   define C4CORE_HAVE_STD_TOCHARS 1
+#                   define C4CORE_HAVE_STD_FROMCHARS 0 // glibc uses fast_float internally
+#                   define C4CORE_HAVE_FAST_FLOAT 1
+#               else
+#                   define C4CORE_HAVE_STD_TOCHARS 0
+#                   define C4CORE_HAVE_STD_FROMCHARS 0
+#                   define C4CORE_HAVE_FAST_FLOAT 1
+#               endif
 #           else
 #               define C4CORE_HAVE_STD_TOCHARS 0
+#               define C4CORE_HAVE_STD_FROMCHARS 0
+#               define C4CORE_HAVE_FAST_FLOAT 1
 #           endif
 #       endif
 #   else
 #       define C4CORE_HAVE_STD_TOCHARS 0
+#       define C4CORE_HAVE_STD_FROMCHARS 0
+#       define C4CORE_HAVE_FAST_FLOAT 1
+#   endif
+#   if C4CORE_HAVE_FAST_FLOAT
+        C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wsign-conversion")
+        C4_SUPPRESS_WARNING_GCC("-Warray-bounds")
+#       if __GNUC__ >= 5
+            C4_SUPPRESS_WARNING_GCC("-Wshift-count-overflow")
+#       endif
+// amalgamate: removed include of
+// https://github.com/biojppm/c4core/src/c4/ext/fast_float.hpp
+//#       include "c4/ext/fast_float.hpp"
+#if !defined(C4_EXT_FAST_FLOAT_HPP_) && !defined(_C4_EXT_FAST_FLOAT_HPP_)
+#error "amalgamate: file c4/ext/fast_float.hpp must have been included at this point"
+#endif /* C4_EXT_FAST_FLOAT_HPP_ */
+
+        C4_SUPPRESS_WARNING_GCC_POP
 #   endif
 #elif (C4_CPP >= 17)
+#   define C4CORE_HAVE_FAST_FLOAT 0
 #   if defined(_MSC_VER)
-#       if (C4_MSVC_VERSION >= C4_MSVC_VERSION_2019)
+#       if (C4_MSVC_VERSION >= C4_MSVC_VERSION_2019) // VS2017 and lower do not have these macros
 //included above:
 //#           include <charconv>
 #           define C4CORE_HAVE_STD_TOCHARS 1
@@ -9916,12 +10727,17 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #           define C4CORE_HAVE_STD_TOCHARS 0
 #           define C4CORE_HAVE_STD_FROMCHARS 0
 #       endif
-#   else  // VS2017 and lower do not have these macros
-#       if __has_include(<charconv>) && __cpp_lib_to_chars
-#           define C4CORE_HAVE_STD_TOCHARS 1
-#           define C4CORE_HAVE_STD_FROMCHARS 1
+#   else
+#       if __has_include(<charconv>)
 //included above:
 //#           include <charconv>
+#           if defined(__cpp_lib_to_chars)
+#               define C4CORE_HAVE_STD_TOCHARS 1
+#               define C4CORE_HAVE_STD_FROMCHARS 1 // glibc uses fast_float internally
+#           else
+#               define C4CORE_HAVE_STD_TOCHARS 0
+#               define C4CORE_HAVE_STD_FROMCHARS 0
+#           endif
 #       else
 #           define C4CORE_HAVE_STD_TOCHARS 0
 #           define C4CORE_HAVE_STD_FROMCHARS 0
@@ -9930,10 +10746,11 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #else
 #   define C4CORE_HAVE_STD_TOCHARS 0
 #   define C4CORE_HAVE_STD_FROMCHARS 0
+#   define C4CORE_HAVE_FAST_FLOAT 0
 #endif
 
 
-#if !C4CORE_HAVE_STD_FROMCHARS && !defined(C4CORE_HAVE_FAST_FLOAT)
+#if !C4CORE_HAVE_STD_FROMCHARS
 #include <cstdio>
 #endif
 
@@ -9959,51 +10776,32 @@ bool from_chars(c4::csubstr buf, std::string * s);
 
 namespace c4 {
 
-typedef enum : uint8_t {
-    /** print the real number in floating point format (like %f) */
-    FTOA_FLOAT = 0,
-    /** print the real number in scientific format (like %e) */
-    FTOA_SCIENT = 1,
-    /** print the real number in flexible format (like %g) */
-    FTOA_FLEX = 2,
-    /** print the real number in hexadecimal format (like %a) */
-    FTOA_HEXA = 3,
-    _FTOA_COUNT
-} RealFormat_e;
-
-
-inline C4_CONSTEXPR14 char to_c_fmt(RealFormat_e f)
-{
-    constexpr const char fmt[] = {
-        'f',  // FTOA_FLOAT
-        'e',  // FTOA_SCIENT
-        'g',  // FTOA_FLEX
-        'a',  // FTOA_HEXA
-    };
-    C4_STATIC_ASSERT(C4_COUNTOF(fmt) == _FTOA_COUNT);
-    #if C4_CPP > 14
-    C4_ASSERT(f < _FTOA_COUNT);
-    #endif
-    return fmt[f];
-}
-
-
 #if C4CORE_HAVE_STD_TOCHARS
-inline C4_CONSTEXPR14 std::chars_format to_std_fmt(RealFormat_e f)
-{
-    constexpr const std::chars_format fmt[] = {
-        std::chars_format::fixed,       // FTOA_FLOAT
-        std::chars_format::scientific,  // FTOA_SCIENT
-        std::chars_format::general,     // FTOA_FLEX
-        std::chars_format::hex,         // FTOA_HEXA
-    };
-    C4_STATIC_ASSERT(C4_COUNTOF(fmt) == _FTOA_COUNT);
-    #if C4_CPP >= 14
-    C4_ASSERT(f < _FTOA_COUNT);
-    #endif
-    return fmt[f];
-}
-#endif // C4CORE_HAVE_STD_TOCHARS
+/** @warning Use only the symbol. Do not rely on the type or naked value of this enum. */
+typedef enum : std::underlying_type<std::chars_format>::type {
+    /** print the real number in floating point format (like %f) */
+    FTOA_FLOAT = static_cast<std::underlying_type<std::chars_format>::type>(std::chars_format::fixed),
+    /** print the real number in scientific format (like %e) */
+    FTOA_SCIENT = static_cast<std::underlying_type<std::chars_format>::type>(std::chars_format::scientific),
+    /** print the real number in flexible format (like %g) */
+    FTOA_FLEX = static_cast<std::underlying_type<std::chars_format>::type>(std::chars_format::general),
+    /** print the real number in hexadecimal format (like %a) */
+    FTOA_HEXA = static_cast<std::underlying_type<std::chars_format>::type>(std::chars_format::hex),
+} RealFormat_e;
+#else
+/** @warning Use only the symbol. Do not rely on the type or naked value of this enum. */
+typedef enum : char {
+    /** print the real number in floating point format (like %f) */
+    FTOA_FLOAT = 'f',
+    /** print the real number in scientific format (like %e) */
+    FTOA_SCIENT = 'e',
+    /** print the real number in flexible format (like %g) */
+    FTOA_FLEX = 'g',
+    /** print the real number in hexadecimal format (like %a) */
+    FTOA_HEXA = 'a',
+} RealFormat_e;
+#endif
+
 
 /** in some platforms, int,unsigned int
  *  are not any of int8_t...int64_t and
@@ -10046,105 +10844,494 @@ struct is_fixed_length
 #   endif
 #endif
 
-// Helper macros, undefined below
+namespace detail {
 
+/* python command to get the values below:
+def dec(v):
+    return str(v)
+for bits in (8, 16, 32, 64):
+    imin, imax, umax = (-(1 << (bits - 1))), (1 << (bits - 1)) - 1, (1 << bits) - 1
+    for vname, v in (("imin", imin), ("imax", imax), ("umax", umax)):
+        for f in (bin, oct, dec, hex):
+            print(f"{bits}b: {vname}={v} {f.__name__}: len={len(f(v)):2d}: {v} {f(v)}")
+*/
+
+// do not use the type as the template argument because in some
+// platforms long!=int32 and long!=int64. Just use the numbytes
+// which is more generic and spares lengthy SFINAE code.
+template<size_t num_bytes, bool is_signed> struct charconv_digits_;
+template<class T> using charconv_digits = charconv_digits_<sizeof(T), std::is_signed<T>::value>;
+
+template<> struct charconv_digits_<1u, true> // int8_t
+{
+    enum : size_t {
+        maxdigits_bin       = 1 + 2 + 8, // -128==-0b10000000
+        maxdigits_oct       = 1 + 2 + 3, // -128==-0o200
+        maxdigits_dec       = 1     + 3, // -128
+        maxdigits_hex       = 1 + 2 + 2, // -128==-0x80
+        maxdigits_bin_nopfx =         8, // -128==-0b10000000
+        maxdigits_oct_nopfx =         3, // -128==-0o200
+        maxdigits_dec_nopfx =         3, // -128
+        maxdigits_hex_nopfx =         2, // -128==-0x80
+    };
+    // min values without sign!
+    static constexpr csubstr min_value_dec() noexcept { return csubstr("128"); }
+    static constexpr csubstr min_value_hex() noexcept { return csubstr("80"); }
+    static constexpr csubstr min_value_oct() noexcept { return csubstr("200"); }
+    static constexpr csubstr min_value_bin() noexcept { return csubstr("10000000"); }
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("127"); }
+    static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 3) || (str.len == 3 && str[0] <= '1')); }
+};
+template<> struct charconv_digits_<1u, false> // uint8_t
+{
+    enum : size_t {
+        maxdigits_bin       = 2 + 8, // 255 0b11111111
+        maxdigits_oct       = 2 + 3, // 255 0o377
+        maxdigits_dec       =     3, // 255
+        maxdigits_hex       = 2 + 2, // 255 0xff
+        maxdigits_bin_nopfx =     8, // 255 0b11111111
+        maxdigits_oct_nopfx =     3, // 255 0o377
+        maxdigits_dec_nopfx =     3, // 255
+        maxdigits_hex_nopfx =     2, // 255 0xff
+    };
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("255"); }
+    static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 3) || (str.len == 3 && str[0] <= '3')); }
+};
+template<> struct charconv_digits_<2u, true> // int16_t
+{
+    enum : size_t {
+        maxdigits_bin       = 1 + 2 + 16, // -32768 -0b1000000000000000
+        maxdigits_oct       = 1 + 2 +  6, // -32768 -0o100000
+        maxdigits_dec       = 1     +  5, // -32768 -32768
+        maxdigits_hex       = 1 + 2 +  4, // -32768 -0x8000
+        maxdigits_bin_nopfx =         16, // -32768 -0b1000000000000000
+        maxdigits_oct_nopfx =          6, // -32768 -0o100000
+        maxdigits_dec_nopfx =          5, // -32768 -32768
+        maxdigits_hex_nopfx =          4, // -32768 -0x8000
+    };
+    // min values without sign!
+    static constexpr csubstr min_value_dec() noexcept { return csubstr("32768"); }
+    static constexpr csubstr min_value_hex() noexcept { return csubstr("8000"); }
+    static constexpr csubstr min_value_oct() noexcept { return csubstr("100000"); }
+    static constexpr csubstr min_value_bin() noexcept { return csubstr("1000000000000000"); }
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("32767"); }
+    static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 6)); }
+};
+template<> struct charconv_digits_<2u, false> // uint16_t
+{
+    enum : size_t {
+        maxdigits_bin       = 2 + 16, // 65535 0b1111111111111111
+        maxdigits_oct       = 2 +  6, // 65535 0o177777
+        maxdigits_dec       =      6, // 65535 65535
+        maxdigits_hex       = 2 +  4, // 65535 0xffff
+        maxdigits_bin_nopfx =     16, // 65535 0b1111111111111111
+        maxdigits_oct_nopfx =      6, // 65535 0o177777
+        maxdigits_dec_nopfx =      6, // 65535 65535
+        maxdigits_hex_nopfx =      4, // 65535 0xffff
+    };
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("65535"); }
+    static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 6) || (str.len == 6 && str[0] <= '1')); }
+};
+template<> struct charconv_digits_<4u, true> // int32_t
+{
+    enum : size_t {
+        maxdigits_bin       = 1 + 2 + 32, // len=35: -2147483648 -0b10000000000000000000000000000000
+        maxdigits_oct       = 1 + 2 + 11, // len=14: -2147483648 -0o20000000000
+        maxdigits_dec       = 1     + 10, // len=11: -2147483648 -2147483648
+        maxdigits_hex       = 1 + 2 +  8, // len=11: -2147483648 -0x80000000
+        maxdigits_bin_nopfx =         32, // len=35: -2147483648 -0b10000000000000000000000000000000
+        maxdigits_oct_nopfx =         11, // len=14: -2147483648 -0o20000000000
+        maxdigits_dec_nopfx =         10, // len=11: -2147483648 -2147483648
+        maxdigits_hex_nopfx =          8, // len=11: -2147483648 -0x80000000
+    };
+    // min values without sign!
+    static constexpr csubstr min_value_dec() noexcept { return csubstr("2147483648"); }
+    static constexpr csubstr min_value_hex() noexcept { return csubstr("80000000"); }
+    static constexpr csubstr min_value_oct() noexcept { return csubstr("20000000000"); }
+    static constexpr csubstr min_value_bin() noexcept { return csubstr("10000000000000000000000000000000"); }
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("2147483647"); }
+    static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 11) || (str.len == 11 && str[0] <= '1')); }
+};
+template<> struct charconv_digits_<4u, false> // uint32_t
+{
+    enum : size_t {
+        maxdigits_bin       = 2 + 32, // len=34: 4294967295 0b11111111111111111111111111111111
+        maxdigits_oct       = 2 + 11, // len=13: 4294967295 0o37777777777
+        maxdigits_dec       =     10, // len=10: 4294967295 4294967295
+        maxdigits_hex       = 2 +  8, // len=10: 4294967295 0xffffffff
+        maxdigits_bin_nopfx =     32, // len=34: 4294967295 0b11111111111111111111111111111111
+        maxdigits_oct_nopfx =     11, // len=13: 4294967295 0o37777777777
+        maxdigits_dec_nopfx =     10, // len=10: 4294967295 4294967295
+        maxdigits_hex_nopfx =      8, // len=10: 4294967295 0xffffffff
+    };
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("4294967295"); }
+    static constexpr bool is_oct_overflow(csubstr str) noexcept { return !((str.len < 11) || (str.len == 11 && str[0] <= '3')); }
+};
+template<> struct charconv_digits_<8u, true> // int32_t
+{
+    enum : size_t {
+        maxdigits_bin       = 1 + 2 + 64, // len=67: -9223372036854775808 -0b1000000000000000000000000000000000000000000000000000000000000000
+        maxdigits_oct       = 1 + 2 + 22, // len=25: -9223372036854775808 -0o1000000000000000000000
+        maxdigits_dec       = 1     + 19, // len=20: -9223372036854775808 -9223372036854775808
+        maxdigits_hex       = 1 + 2 + 16, // len=19: -9223372036854775808 -0x8000000000000000
+        maxdigits_bin_nopfx =         64, // len=67: -9223372036854775808 -0b1000000000000000000000000000000000000000000000000000000000000000
+        maxdigits_oct_nopfx =         22, // len=25: -9223372036854775808 -0o1000000000000000000000
+        maxdigits_dec_nopfx =         19, // len=20: -9223372036854775808 -9223372036854775808
+        maxdigits_hex_nopfx =         16, // len=19: -9223372036854775808 -0x8000000000000000
+    };
+    static constexpr csubstr min_value_dec() noexcept { return csubstr("9223372036854775808"); }
+    static constexpr csubstr min_value_hex() noexcept { return csubstr("8000000000000000"); }
+    static constexpr csubstr min_value_oct() noexcept { return csubstr("1000000000000000000000"); }
+    static constexpr csubstr min_value_bin() noexcept { return csubstr("1000000000000000000000000000000000000000000000000000000000000000"); }
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("9223372036854775807"); }
+    static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 22)); }
+};
+template<> struct charconv_digits_<8u, false>
+{
+    enum : size_t {
+        maxdigits_bin       = 2 + 64, // len=66: 18446744073709551615 0b1111111111111111111111111111111111111111111111111111111111111111
+        maxdigits_oct       = 2 + 22, // len=24: 18446744073709551615 0o1777777777777777777777
+        maxdigits_dec       =     20, // len=20: 18446744073709551615 18446744073709551615
+        maxdigits_hex       = 2 + 16, // len=18: 18446744073709551615 0xffffffffffffffff
+        maxdigits_bin_nopfx =     64, // len=66: 18446744073709551615 0b1111111111111111111111111111111111111111111111111111111111111111
+        maxdigits_oct_nopfx =     22, // len=24: 18446744073709551615 0o1777777777777777777777
+        maxdigits_dec_nopfx =     20, // len=20: 18446744073709551615 18446744073709551615
+        maxdigits_hex_nopfx =     16, // len=18: 18446744073709551615 0xffffffffffffffff
+    };
+    static constexpr csubstr max_value_dec() noexcept { return csubstr("18446744073709551615"); }
+    static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 22) || (str.len == 22 && str[0] <= '1')); }
+};
+} // namespace detail
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// Helper macros, undefined below
 #define _c4append(c) { if(C4_LIKELY(pos < buf.len)) { buf.str[pos++] = static_cast<char>(c); } else { ++pos; } }
 #define _c4appendhex(i) { if(C4_LIKELY(pos < buf.len)) { buf.str[pos++] = hexchars[i]; } else { ++pos; } }
 
+/** @name digits_dec return the number of digits required to encode a
+ * decimal number.
+ *
+ * @note At first sight this code may look heavily branchy and
+ * therefore inefficient. However, measurements revealed this to be
+ * the fastest among the alternatives.
+ *
+ * @see https://github.com/biojppm/c4core/pull/77 */
+/** @{ */
+
+template<class T>
+C4_CONSTEXPR14 C4_ALWAYS_INLINE
+auto digits_dec(T v) noexcept
+    -> typename std::enable_if<sizeof(T) == 1u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    return ((v >= 100) ? 3u : ((v >= 10) ? 2u : 1u));
 }
-#include <iostream>
-namespace c4 {
+
+template<class T>
+C4_CONSTEXPR14 C4_ALWAYS_INLINE
+auto digits_dec(T v) noexcept
+    -> typename std::enable_if<sizeof(T) == 2u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    return ((v >= 10000) ? 5u : (v >= 1000) ? 4u : (v >= 100) ? 3u : (v >= 10) ? 2u : 1u);
+}
+
+template<class T>
+C4_CONSTEXPR14 C4_ALWAYS_INLINE
+auto digits_dec(T v) noexcept
+    -> typename std::enable_if<sizeof(T) == 4u, unsigned>::type
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    return ((v >= 1000000000) ? 10u : (v >= 100000000) ? 9u : (v >= 10000000) ? 8u :
+            (v >= 1000000) ? 7u : (v >= 100000) ? 6u : (v >= 10000) ? 5u :
+            (v >= 1000) ? 4u : (v >= 100) ? 3u : (v >= 10) ? 2u : 1u);
+}
+
+template<class T>
+C4_CONSTEXPR14 C4_ALWAYS_INLINE
+auto digits_dec(T v) noexcept
+    -> typename std::enable_if<sizeof(T) == 8u, unsigned>::type
+{
+    // thanks @fargies!!!
+    // https://github.com/biojppm/c4core/pull/77#issuecomment-1063753568
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    if(v >= 1000000000) // 10
+    {
+        if(v >= 100000000000000) // 15 [15-20] range
+        {
+            if(v >= 100000000000000000) // 18 (15 + (20 - 15) / 2)
+            {
+                if((typename std::make_unsigned<T>::type)v >= 10000000000000000000u) // 20
+                    return 20u;
+                else
+                    return (v >= 1000000000000000000) ? 19u : 18u;
+            }
+            else if(v >= 10000000000000000) // 17
+                return 17u;
+            else
+                return(v >= 1000000000000000) ? 16u : 15u;
+        }
+        else if(v >= 1000000000000) // 13
+            return (v >= 10000000000000) ? 14u : 13u;
+        else if(v >= 100000000000) // 12
+            return 12;
+        else
+            return(v >= 10000000000) ? 11u : 10u;
+    }
+    else if(v >= 10000) // 5 [5-9] range
+    {
+        if(v >= 10000000) // 8
+            return (v >= 100000000) ? 9u : 8u;
+        else if(v >= 1000000) // 7
+            return 7;
+        else
+            return (v >= 100000) ? 6u : 5u;
+    }
+    else if(v >= 100)
+        return (v >= 1000) ? 4u : 3u;
+    else
+        return (v >= 10) ? 2u : 1u;
+}
+
+/** @} */
+
+
+template<class T>
+C4_CONSTEXPR14 C4_ALWAYS_INLINE unsigned digits_hex(T v) noexcept
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    return v ? 1u + (msb((typename std::make_unsigned<T>::type)v) >> 2u) : 1u;
+}
+
+template<class T>
+C4_CONSTEXPR14 C4_ALWAYS_INLINE unsigned digits_bin(T v) noexcept
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    return v ? 1u + msb((typename std::make_unsigned<T>::type)v) : 1u;
+}
+
+template<class T>
+C4_CONSTEXPR14 C4_ALWAYS_INLINE unsigned digits_oct(T v_) noexcept
+{
+    // TODO: is there a better way?
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v_ >= 0);
+    using U = typename
+        std::conditional<sizeof(T) <= sizeof(unsigned),
+                         unsigned,
+                         typename std::make_unsigned<T>::type>::type;
+    U v = (U) v_;  // safe because we require v_ >= 0
+    unsigned __n = 1;
+    const unsigned __b2 = 64u;
+    const unsigned __b3 = __b2 * 8u;
+    const unsigned long __b4 = __b3 * 8u;
+    while(true)
+	{
+        if(v < 8u)
+            return __n;
+        if(v < __b2)
+            return __n + 1;
+        if(v < __b3)
+            return __n + 2;
+        if(v < __b4)
+            return __n + 3;
+        v /= (U) __b4;
+        __n += 4;
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+namespace detail {
 C4_INLINE_CONSTEXPR const char hexchars[] = "0123456789abcdef";
+C4_INLINE_CONSTEXPR const char digits0099[] =
+    "0001020304050607080910111213141516171819"
+    "2021222324252627282930313233343536373839"
+    "4041424344454647484950515253545556575859"
+    "6061626364656667686970717273747576777879"
+    "8081828384858687888990919293949596979899";
+} // namespace detail
+
+C4_SUPPRESS_WARNING_GCC_PUSH
+C4_SUPPRESS_WARNING_GCC("-Warray-bounds")  // gcc has false positives here
+#if (defined(__GNUC__) && (__GNUC__ >= 7))
+C4_SUPPRESS_WARNING_GCC("-Wstringop-overflow")  // gcc has false positives here
+#endif
+
+template<class T>
+C4_HOT C4_ALWAYS_INLINE
+void write_dec_unchecked(substr buf, T v, unsigned digits_v) noexcept
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    C4_ASSERT(buf.len >= digits_v);
+    C4_XASSERT(digits_v == digits_dec(v));
+    // in bm_xtoa: checkoncelog_singlediv_write2
+    while(v >= T(100))
+    {
+        const T quo = v / T(100);
+        const auto num = (v - quo * T(100)) << 1u;
+        v = quo;
+        buf.str[--digits_v] = detail::digits0099[num + 1];
+        buf.str[--digits_v] = detail::digits0099[num];
+    }
+    if(v >= T(10))
+    {
+        C4_ASSERT(digits_v == 2);
+        const auto num = v << 1u;
+        buf.str[1] = detail::digits0099[num + 1];
+        buf.str[0] = detail::digits0099[num];
+    }
+    else
+    {
+        C4_ASSERT(digits_v == 1);
+        buf.str[0] = (char)('0' + v);
+    }
+}
+
+
+template<class T>
+C4_HOT C4_ALWAYS_INLINE
+void write_hex_unchecked(substr buf, T v, unsigned digits_v) noexcept
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    C4_ASSERT(buf.len >= digits_v);
+    C4_XASSERT(digits_v == digits_hex(v));
+    do {
+        buf.str[--digits_v] = detail::hexchars[v & T(15)];
+        v >>= 4;
+    } while(v);
+    C4_ASSERT(digits_v == 0);
+}
+
+
+template<class T>
+C4_HOT C4_ALWAYS_INLINE
+void write_oct_unchecked(substr buf, T v, unsigned digits_v) noexcept
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    C4_ASSERT(buf.len >= digits_v);
+    C4_XASSERT(digits_v == digits_oct(v));
+    do {
+        buf.str[--digits_v] = (char)('0' + (v & T(7)));
+        v >>= 3;
+    } while(v);
+    C4_ASSERT(digits_v == 0);
+}
+
+
+template<class T>
+C4_HOT C4_ALWAYS_INLINE
+void write_bin_unchecked(substr buf, T v, unsigned digits_v) noexcept
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    C4_ASSERT(v >= 0);
+    C4_ASSERT(buf.len >= digits_v);
+    C4_XASSERT(digits_v == digits_bin(v));
+    do {
+        buf.str[--digits_v] = (char)('0' + (v & T(1)));
+        v >>= 1;
+    } while(v);
+    C4_ASSERT(digits_v == 0);
+}
+
 
 /** write an integer to a string in decimal format. This is the
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
- * @return the number of characters required for the string,
- * even if the string is not long enough for the result.
- * No writes are done past the end of the string. */
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the required size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t write_dec(substr buf, T v)
+C4_ALWAYS_INLINE size_t write_dec(substr buf, T v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
     C4_ASSERT(v >= 0);
-    size_t pos = 0;
-    do {
-        _c4append('0' + (v % T(10)));
-        v /= T(10);
-    } while(v);
-    buf.reverse_range(0, pos <= buf.len ? pos : buf.len);
-    return pos;
+    unsigned digits = digits_dec(v);
+    if(C4_LIKELY(buf.len >= digits))
+        write_dec_unchecked(buf, v, digits);
+    return digits;
 }
-
 
 /** write an integer to a string in hexadecimal format. This is the
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
- * @return the number of characters required for the string,
- * even if the string is not long enough for the result.
- * No writes are done past the end of the string. */
+ * @note does not prefix with 0x
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the required size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t write_hex(substr buf, T v)
+C4_ALWAYS_INLINE size_t write_hex(substr buf, T v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
     C4_ASSERT(v >= 0);
-    size_t pos = 0;
-    do {
-        _c4appendhex(v & T(15));
-        v >>= 4;
-    } while(v);
-    buf.reverse_range(0, pos <= buf.len ? pos : buf.len);
-    return pos;
+    unsigned digits = digits_hex(v);
+    if(C4_LIKELY(buf.len >= digits))
+        write_hex_unchecked(buf, v, digits);
+    return digits;
 }
 
 /** write an integer to a string in octal format. This is the
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
  * @note does not prefix with 0o
- * @return the number of characters required for the string,
- * even if the string is not long enough for the result.
- * No writes are done past the end of the string. */
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the required size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t write_oct(substr buf, T v)
+C4_ALWAYS_INLINE size_t write_oct(substr buf, T v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
     C4_ASSERT(v >= 0);
-    size_t pos = 0;
-    do {
-        _c4append('0' + (v & T(7)));
-        v >>= 3;
-    } while(v);
-    buf.reverse_range(0, pos <= buf.len ? pos : buf.len);
-    return pos;
+    unsigned digits = digits_oct(v);
+    if(C4_LIKELY(buf.len >= digits))
+        write_oct_unchecked(buf, v, digits);
+    return digits;
 }
 
 /** write an integer to a string in binary format. This is the
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
  * @note does not prefix with 0b
- * @return the number of characters required for the string,
- * even if the string is not long enough for the result.
- * No writes are done past the end of the string. */
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the required size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t write_bin(substr buf, T v)
+C4_ALWAYS_INLINE size_t write_bin(substr buf, T v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
     C4_ASSERT(v >= 0);
-    size_t pos = 0;
-    do {
-        _c4append('0' + (v & T(1)));
-        v >>= 1;
-    } while(v);
-    buf.reverse_range(0, pos <= buf.len ? pos : buf.len);
-    return pos;
+    unsigned digits = digits_bin(v);
+    C4_ASSERT(digits > 0);
+    if(C4_LIKELY(buf.len >= digits))
+        write_bin_unchecked(buf, v, digits);
+    return digits;
 }
 
 
 namespace detail {
 template<class U> using NumberWriter = size_t (*)(substr, U);
-/** @todo pass the writer as a template parameter */
 template<class T, NumberWriter<T> writer>
-size_t write_num_digits(substr buf, T v, size_t num_digits)
+size_t write_num_digits(substr buf, T v, size_t num_digits) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
     size_t ret = writer(buf, v);
@@ -10163,39 +11350,41 @@ size_t write_num_digits(substr buf, T v, size_t num_digits)
 
 /** same as c4::write_dec(), but pad with zeroes on the left
  * such that the resulting string is @p num_digits wide.
- * If the given number is wider than num_digits, then the number prevails. */
+ * If the given number is requires more than num_digits, then the number prevails. */
 template<class T>
-size_t write_dec(substr buf, T val, size_t num_digits)
+C4_ALWAYS_INLINE size_t write_dec(substr buf, T val, size_t num_digits) noexcept
 {
     return detail::write_num_digits<T, &write_dec<T>>(buf, val, num_digits);
 }
 
 /** same as c4::write_hex(), but pad with zeroes on the left
  * such that the resulting string is @p num_digits wide.
- * If the given number is wider than num_digits, then the number prevails. */
+ * If the given number is requires more than num_digits, then the number prevails. */
 template<class T>
-size_t write_hex(substr buf, T val, size_t num_digits)
+C4_ALWAYS_INLINE size_t write_hex(substr buf, T val, size_t num_digits) noexcept
 {
     return detail::write_num_digits<T, &write_hex<T>>(buf, val, num_digits);
 }
 
 /** same as c4::write_bin(), but pad with zeroes on the left
  * such that the resulting string is @p num_digits wide.
- * If the given number is wider than num_digits, then the number prevails. */
+ * If the given number is requires more than num_digits, then the number prevails. */
 template<class T>
-size_t write_bin(substr buf, T val, size_t num_digits)
+C4_ALWAYS_INLINE size_t write_bin(substr buf, T val, size_t num_digits) noexcept
 {
     return detail::write_num_digits<T, &write_bin<T>>(buf, val, num_digits);
 }
 
 /** same as c4::write_oct(), but pad with zeroes on the left
  * such that the resulting string is @p num_digits wide.
- * If the given number is wider than num_digits, then the number prevails. */
+ * If the given number is requires more than num_digits, then the number prevails. */
 template<class T>
-size_t write_oct(substr buf, T val, size_t num_digits)
+C4_ALWAYS_INLINE size_t write_oct(substr buf, T val, size_t num_digits) noexcept
 {
     return detail::write_num_digits<T, &write_oct<T>>(buf, val, num_digits);
 }
+
+C4_SUPPRESS_WARNING_GCC_POP
 
 
 //-----------------------------------------------------------------------------
@@ -10206,11 +11395,18 @@ size_t write_oct(substr buf, T val, size_t num_digits)
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
  * @note The string must be trimmed. Whitespace is not accepted.
- * @return true if the conversion was successful */
+ * @note the string must not be empty
+ * @note there is no check for overflow; the value wraps around
+ * in a way similar to the standard C/C++ overflow behavior.
+ * For example, `read_dec<int8_t>("128", &val)` returns true
+ * and val will be set to 0 because 127 is the max i8 value.
+ * @see overflows<T>() to find out if a number string overflows a type range
+ * @return true if the conversion was successful (no overflow check) */
 template<class I>
-C4_ALWAYS_INLINE bool read_dec(csubstr s, I *C4_RESTRICT v)
+C4_ALWAYS_INLINE bool read_dec(csubstr s, I *C4_RESTRICT v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<I>::value);
+    C4_ASSERT(!s.empty());
     *v = 0;
     for(char c : s)
     {
@@ -10225,12 +11421,19 @@ C4_ALWAYS_INLINE bool read_dec(csubstr s, I *C4_RESTRICT v)
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
  * @note does not accept leading 0x or 0X
+ * @note the string must not be empty
  * @note the string must be trimmed. Whitespace is not accepted.
- * @return true if the conversion was successful */
+ * @note there is no check for overflow; the value wraps around
+ * in a way similar to the standard C/C++ overflow behavior.
+ * For example, `read_hex<int8_t>("80", &val)` returns true
+ * and val will be set to 0 because 7f is the max i8 value.
+ * @see overflows<T>() to find out if a number string overflows a type range
+ * @return true if the conversion was successful (no overflow check) */
 template<class I>
-C4_ALWAYS_INLINE bool read_hex(csubstr s, I *C4_RESTRICT v)
+C4_ALWAYS_INLINE bool read_hex(csubstr s, I *C4_RESTRICT v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<I>::value);
+    C4_ASSERT(!s.empty());
     *v = 0;
     for(char c : s)
     {
@@ -10252,12 +11455,19 @@ C4_ALWAYS_INLINE bool read_hex(csubstr s, I *C4_RESTRICT v)
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
  * @note does not accept leading 0b or 0B
+ * @note the string must not be empty
  * @note the string must be trimmed. Whitespace is not accepted.
- * @return true if the conversion was successful */
+ * @note there is no check for overflow; the value wraps around
+ * in a way similar to the standard C/C++ overflow behavior.
+ * For example, `read_bin<int8_t>("10000000", &val)` returns true
+ * and val will be set to 0 because 1111111 is the max i8 value.
+ * @see overflows<T>() to find out if a number string overflows a type range
+ * @return true if the conversion was successful (no overflow check) */
 template<class I>
-C4_ALWAYS_INLINE bool read_bin(csubstr s, I *C4_RESTRICT v)
+C4_ALWAYS_INLINE bool read_bin(csubstr s, I *C4_RESTRICT v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<I>::value);
+    C4_ASSERT(!s.empty());
     *v = 0;
     for(char c : s)
     {
@@ -10274,12 +11484,19 @@ C4_ALWAYS_INLINE bool read_bin(csubstr s, I *C4_RESTRICT v)
  * lowest level (and the fastest) function to do this task.
  * @note does not accept negative numbers
  * @note does not accept leading 0o or 0O
+ * @note the string must not be empty
  * @note the string must be trimmed. Whitespace is not accepted.
- * @return true if the conversion was successful */
+ * @note there is no check for overflow; the value wraps around
+ * in a way similar to the standard C/C++ overflow behavior.
+ * For example, `read_oct<int8_t>("200", &val)` returns true
+ * and val will be set to 0 because 177 is the max i8 value.
+ * @see overflows<T>() to find out if a number string overflows a type range
+ * @return true if the conversion was successful (no overflow check) */
 template<class I>
-C4_ALWAYS_INLINE bool read_oct(csubstr s, I *C4_RESTRICT v)
+C4_ALWAYS_INLINE bool read_oct(csubstr s, I *C4_RESTRICT v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<I>::value);
+    C4_ASSERT(!s.empty());
     *v = 0;
     for(char c : s)
     {
@@ -10296,177 +11513,219 @@ C4_ALWAYS_INLINE bool read_oct(csubstr s, I *C4_RESTRICT v)
 //-----------------------------------------------------------------------------
 
 namespace detail {
-// do not use the type as the template argument because in some
-// platforms long!=int32 and long!=int64. Just use the numbytes
-// which is more generic and spares lengthy SFINAE code.
-template<size_t numbytes> struct itoa_min;
-template<> struct itoa_min<1>
+inline size_t _itoa2buf(substr buf, size_t pos, csubstr val) noexcept
 {
-    static csubstr value_dec() { return csubstr("128"); }
-    static csubstr value_hex() { return csubstr("80"); }
-    static csubstr value_oct() { return csubstr("200"); }
-    static csubstr value_bin() { return csubstr("10000000"); }
-};
-template<> struct itoa_min<2>
-{
-    static csubstr value_dec() { return csubstr("32768"); }
-    static csubstr value_hex() { return csubstr("8000"); }
-    static csubstr value_oct() { return csubstr("100000"); }
-    static csubstr value_bin() { return csubstr("1000000000000000"); }
-};
-template<> struct itoa_min<4>
-{
-    static csubstr value_dec() { return csubstr("2147483648"); }
-    static csubstr value_hex() { return csubstr("80000000"); }
-    static csubstr value_oct() { return csubstr("20000000000"); }
-    static csubstr value_bin() { return csubstr("10000000000000000000000000000000"); }
-};
-template<> struct itoa_min<8>
-{
-    static csubstr value_dec() { return csubstr("9223372036854775808"); }
-    static csubstr value_hex() { return csubstr("8000000000000000"); }
-    static csubstr value_oct() { return csubstr("1000000000000000000000"); }
-    static csubstr value_bin() { return csubstr("1000000000000000000000000000000000000000000000000000000000000000"); }
-};
-inline size_t _itoa2buf(substr buf, size_t pos, csubstr val)
-{
-    if(C4_LIKELY(pos + val.len <= buf.len))
-        memcpy(buf.str + pos, val.str, val.len);
+    C4_ASSERT(pos + val.len <= buf.len);
+    memcpy(buf.str + pos, val.str, val.len);
     return pos + val.len;
 }
-inline size_t _itoa2bufwithdigits(substr buf, size_t pos, size_t num_digits, csubstr val)
+inline size_t _itoa2bufwithdigits(substr buf, size_t pos, size_t num_digits, csubstr val) noexcept
 {
     num_digits = num_digits > val.len ? num_digits - val.len : 0;
+    C4_ASSERT(num_digits + val.len <= buf.len);
     for(size_t i = 0; i < num_digits; ++i)
         _c4append('0');
-    return _itoa2buf(buf, pos, val);
+    return detail::_itoa2buf(buf, pos, val);
 }
-template<class T>
-size_t _itoadec2buf(substr buf)
+template<class I>
+C4_NO_INLINE size_t _itoadec2buf(substr buf) noexcept
 {
+    using digits_type = detail::charconv_digits<I>;
+    if(C4_UNLIKELY(buf.len < digits_type::maxdigits_dec))
+        return digits_type::maxdigits_dec;
+    buf.str[0] = '-';
+    return detail::_itoa2buf(buf, 1, digits_type::min_value_dec());
+}
+template<class I>
+C4_NO_INLINE size_t _itoa2buf(substr buf, I radix) noexcept
+{
+    using digits_type = detail::charconv_digits<I>;
+    size_t pos = 0;
     if(C4_LIKELY(buf.len > 0))
-    {
-        buf.str[0] = '-';
-        return detail::_itoa2buf(buf, 1, detail::itoa_min<sizeof(T)>::value_dec());
-    }
-    else
-    {
-        return detail::_itoa2buf({}, 1, detail::itoa_min<sizeof(T)>::value_dec());
-    }
-    C4_UNREACHABLE();
-}
-template<class I>
-size_t _itoa2buf(substr buf, I radix)
-{
-    size_t pos = 0;
-    _c4append('-');
+        buf.str[pos++] = '-';
     switch(radix)
     {
     case I(10):
-        /*...........................*/ return _itoa2buf(buf, pos, itoa_min<sizeof(I)>::value_dec());
+        if(C4_UNLIKELY(buf.len < digits_type::maxdigits_dec))
+            return digits_type::maxdigits_dec;
+        pos =_itoa2buf(buf, pos, digits_type::min_value_dec());
+        break;
     case I(16):
-        _c4append('0'); _c4append('x'); return _itoa2buf(buf, pos, itoa_min<sizeof(I)>::value_hex());
+        if(C4_UNLIKELY(buf.len < digits_type::maxdigits_hex))
+            return digits_type::maxdigits_hex;
+        buf.str[pos++] = '0';
+        buf.str[pos++] = 'x';
+        pos = _itoa2buf(buf, pos, digits_type::min_value_hex());
+        break;
     case I( 2):
-        _c4append('0'); _c4append('b'); return _itoa2buf(buf, pos, itoa_min<sizeof(I)>::value_bin());
+        if(C4_UNLIKELY(buf.len < digits_type::maxdigits_bin))
+            return digits_type::maxdigits_bin;
+        buf.str[pos++] = '0';
+        buf.str[pos++] = 'b';
+        pos = _itoa2buf(buf, pos, digits_type::min_value_bin());
+        break;
     case I( 8):
-        _c4append('0'); _c4append('o'); return _itoa2buf(buf, pos, itoa_min<sizeof(I)>::value_oct());
+        if(C4_UNLIKELY(buf.len < digits_type::maxdigits_oct))
+            return digits_type::maxdigits_oct;
+        buf.str[pos++] = '0';
+        buf.str[pos++] = 'o';
+        pos = _itoa2buf(buf, pos, digits_type::min_value_oct());
+        break;
     }
-    C4_ERROR("unknown radix");
-    return 0;
+    return pos;
 }
 template<class I>
-size_t _itoa2buf(substr buf, I radix, size_t num_digits)
+C4_NO_INLINE size_t _itoa2buf(substr buf, I radix, size_t num_digits) noexcept
 {
+    using digits_type = detail::charconv_digits<I>;
     size_t pos = 0;
-    _c4append('-');
+    size_t needed_digits = 0;
+    if(C4_LIKELY(buf.len > 0))
+        buf.str[pos++] = '-';
     switch(radix)
     {
     case I(10):
-        /*...........................*/ return _itoa2bufwithdigits(buf, pos, num_digits, itoa_min<sizeof(I)>::value_dec());
+        // add 1 to account for -
+        needed_digits = num_digits+1 > digits_type::maxdigits_dec ? num_digits+1 : digits_type::maxdigits_dec;
+        if(C4_UNLIKELY(buf.len < needed_digits))
+            return needed_digits;
+        pos = _itoa2bufwithdigits(buf, pos, num_digits, digits_type::min_value_dec());
+        break;
     case I(16):
-        _c4append('0'); _c4append('x'); return _itoa2bufwithdigits(buf, pos, num_digits, itoa_min<sizeof(I)>::value_hex());
+        // add 3 to account for -0x
+        needed_digits = num_digits+3 > digits_type::maxdigits_hex ? num_digits+3 : digits_type::maxdigits_hex;
+        if(C4_UNLIKELY(buf.len < needed_digits))
+            return needed_digits;
+        buf.str[pos++] = '0';
+        buf.str[pos++] = 'x';
+        pos = _itoa2bufwithdigits(buf, pos, num_digits, digits_type::min_value_hex());
+        break;
     case I( 2):
-        _c4append('0'); _c4append('b'); return _itoa2bufwithdigits(buf, pos, num_digits, itoa_min<sizeof(I)>::value_bin());
+        // add 3 to account for -0b
+        needed_digits = num_digits+3 > digits_type::maxdigits_bin ? num_digits+3 : digits_type::maxdigits_bin;
+        if(C4_UNLIKELY(buf.len < needed_digits))
+            return needed_digits;
+        C4_ASSERT(buf.len >= digits_type::maxdigits_bin);
+        buf.str[pos++] = '0';
+        buf.str[pos++] = 'b';
+        pos = _itoa2bufwithdigits(buf, pos, num_digits, digits_type::min_value_bin());
+        break;
     case I( 8):
-        _c4append('0'); _c4append('o'); return _itoa2bufwithdigits(buf, pos, num_digits, itoa_min<sizeof(I)>::value_oct());
+        // add 3 to account for -0o
+        needed_digits = num_digits+3 > digits_type::maxdigits_oct ? num_digits+3 : digits_type::maxdigits_oct;
+        if(C4_UNLIKELY(buf.len < needed_digits))
+            return needed_digits;
+        C4_ASSERT(buf.len >= digits_type::maxdigits_oct);
+        buf.str[pos++] = '0';
+        buf.str[pos++] = 'o';
+        pos = _itoa2bufwithdigits(buf, pos, num_digits, digits_type::min_value_oct());
+        break;
     }
-    C4_ERROR("unknown radix");
-    return 0;
+    return pos;
 }
 } // namespace detail
 
 
 /** convert an integral signed decimal to a string.
- * The resulting string is NOT zero-terminated.
- * Writing stops at the buffer's end.
- * @return the number of characters needed for the result, even if the buffer size is insufficient */
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the needed size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t itoa(substr buf, T v)
+C4_ALWAYS_INLINE size_t itoa(substr buf, T v) noexcept
 {
     C4_STATIC_ASSERT(std::is_signed<T>::value);
-    if(v >= 0)
+    if(v >= T(0))
     {
+        // write_dec() checks the buffer size, so no need to check here
         return write_dec(buf, v);
     }
-    else
+    // when T is the min value (eg i8: -128), negating it
+    // will overflow, so treat the min as a special case
+    else if(C4_LIKELY(v != std::numeric_limits<T>::min()))
     {
-        if(C4_LIKELY(v != std::numeric_limits<T>::min()))
+        v = -v;
+        unsigned digits = digits_dec(v);
+        if(C4_LIKELY(buf.len >= digits + 1u))
         {
-            if(C4_LIKELY(buf.len > 0))
-            {
-                buf.str[0] = '-';
-                return size_t(1) + write_dec(buf.sub(1), -v);
-            }
-            else
-            {
-                return size_t(1) + write_dec({}, -v);
-            }
-            C4_UNREACHABLE();
+            buf.str[0] = '-';
+            write_dec_unchecked(buf.sub(1), v, digits);
         }
-        else
-        {
-            // when T is the min value (eg i8: -128), negating it
-            // will overflow. so we just use the explicit value
-            return detail::_itoadec2buf<T>(buf);
-        }
-        C4_UNREACHABLE();
+        return digits + 1u;
     }
-    C4_UNREACHABLE();
+    return detail::_itoadec2buf<T>(buf);
 }
 
 /** convert an integral signed integer to a string, using a specific
  * radix. The radix must be 2, 8, 10 or 16.
  *
- * The resulting string is NOT zero-terminated.
- * Writing stops at the buffer's end.
- * @return the number of characters needed for the result, even if the buffer size is insufficient */
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the needed size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t itoa(substr buf, T v, T radix)
+C4_ALWAYS_INLINE size_t itoa(substr buf, T v, T radix) noexcept
 {
     C4_STATIC_ASSERT(std::is_signed<T>::value);
     C4_ASSERT(radix == 2 || radix == 8 || radix == 10 || radix == 16);
+    C4_SUPPRESS_WARNING_GCC_PUSH
+    #if (defined(__GNUC__) && (__GNUC__ >= 7))
+        C4_SUPPRESS_WARNING_GCC("-Wstringop-overflow")  // gcc has a false positive here
+    #endif
     // when T is the min value (eg i8: -128), negating it
-    // will overflow
+    // will overflow, so treat the min as a special case
     if(C4_LIKELY(v != std::numeric_limits<T>::min()))
     {
-        size_t pos = 0;
+        unsigned pos = 0;
         if(v < 0)
         {
             v = -v;
-            _c4append('-');
+            if(C4_LIKELY(buf.len > 0))
+                buf.str[pos] = '-';
+            ++pos;
         }
+        unsigned digits = 0;
         switch(radix)
         {
-        case 10:
-            /*............................*/return pos + write_dec(pos < buf.len ? buf.sub(pos) : substr(), v);
-        case 16:
-            _c4append('0'); _c4append('x'); return pos + write_hex(pos < buf.len ? buf.sub(pos) : substr(), v);
-        case 2:
-            _c4append('0'); _c4append('b'); return pos + write_bin(pos < buf.len ? buf.sub(pos) : substr(), v);
-        case 8:
-            _c4append('0'); _c4append('o'); return pos + write_oct(pos < buf.len ? buf.sub(pos) : substr(), v);
+        case T(10):
+            digits = digits_dec(v);
+            if(C4_LIKELY(buf.len >= pos + digits))
+                write_dec_unchecked(buf.sub(pos), v, digits);
+            break;
+        case T(16):
+            digits = digits_hex(v);
+            if(C4_LIKELY(buf.len >= pos + 2u + digits))
+            {
+                buf.str[pos + 0] = '0';
+                buf.str[pos + 1] = 'x';
+                write_hex_unchecked(buf.sub(pos + 2), v, digits);
+            }
+            digits += 2u;
+            break;
+        case T(2):
+            digits = digits_bin(v);
+            if(C4_LIKELY(buf.len >= pos + 2u + digits))
+            {
+                buf.str[pos + 0] = '0';
+                buf.str[pos + 1] = 'b';
+                write_bin_unchecked(buf.sub(pos + 2), v, digits);
+            }
+            digits += 2u;
+            break;
+        case T(8):
+            digits = digits_oct(v);
+            if(C4_LIKELY(buf.len >= pos + 2u + digits))
+            {
+                buf.str[pos + 0] = '0';
+                buf.str[pos + 1] = 'o';
+                write_oct_unchecked(buf.sub(pos + 2), v, digits);
+            }
+            digits += 2u;
+            break;
         }
+        return pos + digits;
     }
+    C4_SUPPRESS_WARNING_GCC_POP
     // when T is the min value (eg i8: -128), negating it
     // will overflow
     return detail::_itoa2buf<T>(buf, radix);
@@ -10474,37 +11733,77 @@ size_t itoa(substr buf, T v, T radix)
 
 
 /** same as c4::itoa(), but pad with zeroes on the left such that the
- * resulting string is @p num_digits wide. The @p radix must be 2,
- * 8, 10 or 16.  The resulting string is NOT zero-terminated.  Writing
- * stops at the buffer's end.
+ * resulting string is @p num_digits wide, not accounting for radix
+ * prefix (0x,0o,0b). The @p radix must be 2, 8, 10 or 16.
  *
- * @return the number of characters needed for the result, even if
- * the buffer size is insufficient */
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the needed size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t itoa(substr buf, T v, T radix, size_t num_digits)
+C4_ALWAYS_INLINE size_t itoa(substr buf, T v, T radix, size_t num_digits) noexcept
 {
     C4_STATIC_ASSERT(std::is_signed<T>::value);
     C4_ASSERT(radix == 2 || radix == 8 || radix == 10 || radix == 16);
+    C4_SUPPRESS_WARNING_GCC_PUSH
+    #if (defined(__GNUC__) && (__GNUC__ >= 7))
+        C4_SUPPRESS_WARNING_GCC("-Wstringop-overflow")  // gcc has a false positive here
+    #endif
+    // when T is the min value (eg i8: -128), negating it
+    // will overflow, so treat the min as a special case
     if(C4_LIKELY(v != std::numeric_limits<T>::min()))
     {
-        size_t pos = 0;
+        unsigned pos = 0;
         if(v < 0)
         {
             v = -v;
-            _c4append('-');
+            if(C4_LIKELY(buf.len > 0))
+                buf.str[pos] = '-';
+            ++pos;
         }
+        unsigned total_digits = 0;
         switch(radix)
         {
-        case 10:
-            /*............................*/return pos + write_dec(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
-        case 16:
-            _c4append('0'); _c4append('x'); return pos + write_hex(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
-        case 2:
-            _c4append('0'); _c4append('b'); return pos + write_bin(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
-        case 8:
-            _c4append('0'); _c4append('o'); return pos + write_oct(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
+        case T(10):
+            total_digits = digits_dec(v);
+            total_digits = pos + (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+            if(C4_LIKELY(buf.len >= total_digits))
+                write_dec(buf.sub(pos), v, num_digits);
+            break;
+        case T(16):
+            total_digits = digits_hex(v);
+            total_digits = pos + 2u + (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+            if(C4_LIKELY(buf.len >= total_digits))
+            {
+                buf.str[pos + 0] = '0';
+                buf.str[pos + 1] = 'x';
+                write_hex(buf.sub(pos + 2), v, num_digits);
+            }
+            break;
+        case T(2):
+            total_digits = digits_bin(v);
+            total_digits = pos + 2u + (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+            if(C4_LIKELY(buf.len >= total_digits))
+            {
+                buf.str[pos + 0] = '0';
+                buf.str[pos + 1] = 'b';
+                write_bin(buf.sub(pos + 2), v, num_digits);
+            }
+            break;
+        case T(8):
+            total_digits = digits_oct(v);
+            total_digits = pos + 2u + (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+            if(C4_LIKELY(buf.len >= total_digits))
+            {
+                buf.str[pos + 0] = '0';
+                buf.str[pos + 1] = 'o';
+                write_oct(buf.sub(pos + 2), v, num_digits);
+            }
+            break;
         }
+        return total_digits;
     }
+    C4_SUPPRESS_WARNING_GCC_POP
     // when T is the min value (eg i8: -128), negating it
     // will overflow
     return detail::_itoa2buf<T>(buf, radix, num_digits);
@@ -10516,67 +11815,127 @@ size_t itoa(substr buf, T v, T radix, size_t num_digits)
 //-----------------------------------------------------------------------------
 
 /** convert an integral unsigned decimal to a string.
- * The resulting string is NOT zero-terminated.
- * Writing stops at the buffer's end.
- * @return the number of characters needed for the result, even if the buffer size is insufficient */
+ *
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the needed size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t utoa(substr buf, T v)
+C4_ALWAYS_INLINE size_t utoa(substr buf, T v) noexcept
 {
     C4_STATIC_ASSERT(std::is_unsigned<T>::value);
+    // write_dec() does the buffer length check, so no need to check here
     return write_dec(buf, v);
 }
 
-/** convert an integral unsigned integer to a string, using a specific radix. The radix must be 2, 8, 10 or 16.
- * The resulting string is NOT zero-terminated.
- * Writing stops at the buffer's end.
- * @return the number of characters needed for the result, even if the buffer size is insufficient */
+/** convert an integral unsigned integer to a string, using a specific
+ * radix. The radix must be 2, 8, 10 or 16.
+ *
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the needed size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t utoa(substr buf, T v, T radix)
+C4_ALWAYS_INLINE size_t utoa(substr buf, T v, T radix) noexcept
 {
     C4_STATIC_ASSERT(std::is_unsigned<T>::value);
     C4_ASSERT(radix == 10 || radix == 16 || radix == 2 || radix == 8);
-    size_t pos = 0;
+    unsigned digits = 0;
     switch(radix)
     {
-    case 10:
-        /*............................*/return pos + write_dec(pos < buf.len ? buf.sub(pos) : substr(), v);
-    case 16:
-        _c4append('0'); _c4append('x'); return pos + write_hex(pos < buf.len ? buf.sub(pos) : substr(), v);
-    case 2:
-        _c4append('0'); _c4append('b'); return pos + write_bin(pos < buf.len ? buf.sub(pos) : substr(), v);
-    case 8:
-        _c4append('0'); _c4append('o'); return pos + write_oct(pos < buf.len ? buf.sub(pos) : substr(), v);
+    case T(10):
+        digits = digits_dec(v);
+        if(C4_LIKELY(buf.len >= digits))
+            write_dec_unchecked(buf, v, digits);
+        break;
+    case T(16):
+        digits = digits_hex(v);
+        if(C4_LIKELY(buf.len >= digits+2u))
+        {
+            buf.str[0] = '0';
+            buf.str[1] = 'x';
+            write_hex_unchecked(buf.sub(2), v, digits);
+        }
+        digits += 2u;
+        break;
+    case T(2):
+        digits = digits_bin(v);
+        if(C4_LIKELY(buf.len >= digits+2u))
+        {
+            buf.str[0] = '0';
+            buf.str[1] = 'b';
+            write_bin_unchecked(buf.sub(2), v, digits);
+        }
+        digits += 2u;
+        break;
+    case T(8):
+        digits = digits_oct(v);
+        if(C4_LIKELY(buf.len >= digits+2u))
+        {
+            buf.str[0] = '0';
+            buf.str[1] = 'o';
+            write_oct_unchecked(buf.sub(2), v, digits);
+        }
+        digits += 2u;
+        break;
     }
-    C4_UNREACHABLE();
-    return substr::npos;
+    return digits;
 }
 
 /** same as c4::utoa(), but pad with zeroes on the left such that the
  * resulting string is @p num_digits wide. The @p radix must be 2,
- * 8, 10 or 16.  The resulting string is NOT zero-terminated.  Writing
- * stops at the buffer's end.
+ * 8, 10 or 16.
  *
- * @return the number of characters needed for the result, even if
- * the buffer size is insufficient */
+ * @note the resulting string is NOT zero-terminated.
+ * @note it is ok to call this with an empty or too-small buffer;
+ * no writes will occur, and the needed size will be returned
+ * @return the number of characters required for the buffer. */
 template<class T>
-size_t utoa(substr buf, T v, T radix, size_t num_digits)
+C4_ALWAYS_INLINE size_t utoa(substr buf, T v, T radix, size_t num_digits) noexcept
 {
     C4_STATIC_ASSERT(std::is_unsigned<T>::value);
     C4_ASSERT(radix == 10 || radix == 16 || radix == 2 || radix == 8);
-    size_t pos = 0;
+    unsigned total_digits = 0;
     switch(radix)
     {
-    case 10:
-        /*............................*/return pos + write_dec(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
-    case 16:
-        _c4append('0'); _c4append('x'); return pos + write_hex(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
-    case 2:
-        _c4append('0'); _c4append('b'); return pos + write_bin(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
-    case 8:
-        _c4append('0'); _c4append('o'); return pos + write_oct(pos < buf.len ? buf.sub(pos) : substr(), v, num_digits);
+    case T(10):
+        total_digits = digits_dec(v);
+        total_digits = (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+        if(C4_LIKELY(buf.len >= total_digits))
+            write_dec(buf, v, num_digits);
+        break;
+    case T(16):
+        total_digits = digits_hex(v);
+        total_digits = 2u + (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+        if(C4_LIKELY(buf.len >= total_digits))
+        {
+            buf.str[0] = '0';
+            buf.str[1] = 'x';
+            write_hex(buf.sub(2), v, num_digits);
+        }
+        break;
+    case T(2):
+        total_digits = digits_bin(v);
+        total_digits = 2u + (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+        if(C4_LIKELY(buf.len >= total_digits))
+        {
+            buf.str[0] = '0';
+            buf.str[1] = 'b';
+            write_bin(buf.sub(2), v, num_digits);
+        }
+        break;
+    case T(8):
+        total_digits = digits_oct(v);
+        total_digits = 2u + (unsigned)(num_digits > total_digits ? num_digits : total_digits);
+        if(C4_LIKELY(buf.len >= total_digits))
+        {
+            buf.str[0] = '0';
+            buf.str[1] = 'o';
+            write_oct(buf.sub(2), v, num_digits);
+        }
+        break;
     }
-    C4_UNREACHABLE();
-    return substr::npos;
+    return total_digits;
 }
 
 
@@ -10584,12 +11943,13 @@ size_t utoa(substr buf, T v, T radix, size_t num_digits)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-/** Convert a trimmed string to a signed integral value. The string
- * can be formatted as decimal, binary (prefix 0b or 0B), octal
+/** Convert a trimmed string to a signed integral value. The input
+ * string can be formatted as decimal, binary (prefix 0b or 0B), octal
  * (prefix 0o or 0O) or hexadecimal (prefix 0x or 0X). Strings with
- * leading zeroes are considered as decimal. Every character in the
- * input string is read for the conversion; it must not contain any
- * leading or trailing whitespace.
+ * leading zeroes are considered as decimal and not octal (unlike the
+ * C/C++ convention). Every character in the input string is read for
+ * the conversion; the input string must not contain any leading or
+ * trailing whitespace.
  *
  * @return true if the conversion was successful.
  *
@@ -10598,9 +11958,12 @@ size_t utoa(substr buf, T v, T radix, size_t num_digits)
  * which case the result will wrap around the type's range.
  * This is similar to native behavior.
  *
+ * @note a positive sign is not accepted. ie, the string must not
+ * start with '+'
+ *
  * @see atoi_first() if the string is not trimmed to the value to read. */
 template<class T>
-bool atoi(csubstr str, T * C4_RESTRICT v)
+C4_ALWAYS_INLINE bool atoi(csubstr str, T * C4_RESTRICT v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
     C4_STATIC_ASSERT(std::is_signed<T>::value);
@@ -10608,70 +11971,42 @@ bool atoi(csubstr str, T * C4_RESTRICT v)
     if(C4_UNLIKELY(str.len == 0))
         return false;
 
+    C4_ASSERT(str.str[0] != '+');
+
     T sign = 1;
     size_t start = 0;
     if(str.str[0] == '-')
     {
-        if(C4_UNLIKELY(str.len == 1))
+        if(C4_UNLIKELY(str.len == ++start))
             return false;
-        ++start;
         sign = -1;
     }
 
-    if(str.str[start] != '0')
+    bool parsed_ok = true;
+    if(str.str[start] != '0') // this should be the common case, so put it first
     {
-        if(C4_UNLIKELY( ! read_dec(str.sub(start), v)))
-            return false;
+        parsed_ok = read_dec(str.sub(start), v);
+    }
+    else if(str.len > start + 1)
+    {
+        // starts with 0: is it 0x, 0o, 0b?
+        const char pfx = str.str[start + 1];
+        if(pfx == 'x' || pfx == 'X')
+            parsed_ok = str.len > start + 2 && read_hex(str.sub(start + 2), v);
+        else if(pfx == 'b' || pfx == 'B')
+            parsed_ok = str.len > start + 2 && read_bin(str.sub(start + 2), v);
+        else if(pfx == 'o' || pfx == 'O')
+            parsed_ok = str.len > start + 2 && read_oct(str.sub(start + 2), v);
+        else
+            parsed_ok = read_dec(str.sub(start + 1), v);
     }
     else
     {
-        if(str.len == start+1)
-        {
-            *v = 0; // because the first character is 0
-            return true;
-        }
-        else
-        {
-            char pfx = str.str[start+1];
-            if(pfx == 'x' || pfx == 'X') // hexadecimal
-            {
-                if(C4_UNLIKELY(str.len <= start + 2))
-                    return false;
-                if(C4_UNLIKELY( ! read_hex(str.sub(start + 2), v)))
-                    return false;
-            }
-            else if(pfx == 'b' || pfx == 'B') // binary
-            {
-                if(C4_UNLIKELY(str.len <= start + 2))
-                    return false;
-                if(C4_UNLIKELY( ! read_bin(str.sub(start + 2), v)))
-                    return false;
-            }
-            else if(pfx == 'o' || pfx == 'O') // octal
-            {
-                if(C4_UNLIKELY(str.len <= start + 2))
-                    return false;
-                if(C4_UNLIKELY( ! read_oct(str.sub(start + 2), v)))
-                    return false;
-            }
-            else
-            {
-                // we know the first character is 0
-                auto fno = str.first_not_of('0', start + 1);
-                if(fno == csubstr::npos)
-                {
-                    *v = 0;
-                    return true;
-                }
-                if(C4_UNLIKELY( ! read_dec(str.sub(fno), v)))
-                {
-                    return false;
-                }
-            }
-        }
+        parsed_ok = read_dec(str.sub(start), v);
     }
-    *v *= sign;
-    return true;
+    if(C4_LIKELY(parsed_ok))
+        *v *= sign;
+    return parsed_ok;
 }
 
 
@@ -10682,7 +12017,7 @@ bool atoi(csubstr str, T * C4_RESTRICT v)
  * @see atoi() if the string is already trimmed to the value to read.
  * @see csubstr::first_int_span() */
 template<class T>
-inline size_t atoi_first(csubstr str, T * C4_RESTRICT v)
+C4_ALWAYS_INLINE size_t atoi_first(csubstr str, T * C4_RESTRICT v)
 {
     csubstr trimmed = str.first_int_span();
     if(trimmed.len == 0)
@@ -10711,60 +12046,38 @@ inline size_t atoi_first(csubstr str, T * C4_RESTRICT v)
  *
  * @see atou_first() if the string is not trimmed to the value to read. */
 template<class T>
-bool atou(csubstr str, T * C4_RESTRICT v)
+bool atou(csubstr str, T * C4_RESTRICT v) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
 
     if(C4_UNLIKELY(str.len == 0 || str.front() == '-'))
         return false;
 
+    bool parsed_ok = true;
     if(str.str[0] != '0')
     {
-        if(C4_UNLIKELY( ! read_dec(str, v)))
-            return false;
+        parsed_ok = read_dec(str, v);
     }
     else
     {
-        if(str.len == 1)
+        if(str.len > 1)
         {
-            *v = 0; // we know the first character is 0
-            return true;
+            const char pfx = str.str[1];
+            if(pfx == 'x' || pfx == 'X')
+                parsed_ok = str.len > 2 && read_hex(str.sub(2), v);
+            else if(pfx == 'b' || pfx == 'B')
+                parsed_ok = str.len > 2 && read_bin(str.sub(2), v);
+            else if(pfx == 'o' || pfx == 'O')
+                parsed_ok = str.len > 2 && read_oct(str.sub(2), v);
+            else
+                parsed_ok = read_dec(str, v);
         }
         else
         {
-            char pfx = str.str[1];
-            if(pfx == 'x' || pfx == 'X') // hexadecimal
-            {
-                if(C4_UNLIKELY(str.len <= 2))
-                    return false;
-                return read_hex(str.sub(2), v);
-            }
-            else if(pfx == 'b' || pfx == 'B') // binary
-            {
-                if(C4_UNLIKELY(str.len <= 2))
-                    return false;
-                return read_bin(str.sub(2), v);
-            }
-            else if(pfx == 'o' || pfx == 'O') // octal
-            {
-                if(C4_UNLIKELY(str.len <= 2))
-                    return false;
-                return read_oct(str.sub(2), v);
-            }
-            else
-            {
-                // we know the first character is 0
-                auto fno = str.first_not_of('0');
-                if(fno == csubstr::npos)
-                {
-                    *v = 0;
-                    return true;
-                }
-                return read_dec(str.sub(fno), v);
-            }
+            *v = 0; // we know the first character is 0
         }
     }
-    return true;
+    return parsed_ok;
 }
 
 
@@ -10775,7 +12088,7 @@ bool atou(csubstr str, T * C4_RESTRICT v)
  * @see atou() if the string is already trimmed to the value to read.
  * @see csubstr::first_uint_span() */
 template<class T>
-inline size_t atou_first(csubstr str, T *v)
+C4_ALWAYS_INLINE size_t atou_first(csubstr str, T *v)
 {
     csubstr trimmed = str.first_uint_span();
     if(trimmed.len == 0)
@@ -10798,21 +12111,209 @@ inline size_t atou_first(csubstr str, T *v)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+namespace detail {
+inline bool check_overflow(csubstr str, csubstr limit) noexcept
+{
+    if(str.len == limit.len)
+    {
+        for(size_t i = 0; i < limit.len; ++i)
+        {
+            if(str[i] < limit[i])
+                return false;
+            else if(str[i] > limit[i])
+                return true;
+        }
+        return false;
+    }
+    else
+        return str.len > limit.len;
+}
+} // namespace detail
+
+
+/** Test if the following string would overflow when converted to associated
+ * types.
+ * @return true if number will overflow, false if it fits (or doesn't parse)
+ */
+template<class T>
+auto overflows(csubstr str) noexcept
+    -> typename std::enable_if<std::is_unsigned<T>::value, bool>::type 
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+
+    if(C4_UNLIKELY(str.len == 0))
+    {
+        return false;
+    }
+    else if(str.str[0] == '0')
+    {
+        if (str.len == 1)
+            return false;
+        switch (str.str[1])
+        {
+            case 'x':
+            case 'X':
+            {
+                size_t fno = str.first_not_of('0', 2);
+                if (fno == csubstr::npos)
+                    return false;
+                return !(str.len <= fno + (sizeof(T) * 2));
+            }
+            case 'b':
+            case 'B':
+            {
+                size_t fno = str.first_not_of('0', 2);
+                if (fno == csubstr::npos)
+                    return false;
+                return !(str.len <= fno +(sizeof(T) * 8));
+            }
+            case 'o':
+            case 'O':
+            {
+                size_t fno = str.first_not_of('0', 2);
+                if(fno == csubstr::npos)
+                    return false;
+                return detail::charconv_digits<T>::is_oct_overflow(str.sub(fno));
+            }
+            default:
+            {
+                size_t fno = str.first_not_of('0', 1);
+                if(fno == csubstr::npos)
+                    return false;
+                return detail::check_overflow(str.sub(fno), detail::charconv_digits<T>::max_value_dec());
+            }
+        }
+    }
+    else if(C4_UNLIKELY(str[0] == '-'))
+    {
+        return true;
+    }
+    else
+    {
+        return detail::check_overflow(str, detail::charconv_digits<T>::max_value_dec());
+    }
+}
+
+
+/** Test if the following string would overflow when converted to associated
+ * types.
+ * @return true if number will overflow, false if it fits (or doesn't parse)
+ */
+template<class T>
+auto overflows(csubstr str)
+    -> typename std::enable_if<std::is_signed<T>::value, bool>::type 
+{
+    C4_STATIC_ASSERT(std::is_integral<T>::value);
+    if(C4_UNLIKELY(str.len == 0))
+        return false;
+    if(str.str[0] == '-')
+    {
+        if(str.str[1] == '0')
+        {
+            if(str.len == 2)
+                return false;
+            switch(str.str[2])
+            {
+                case 'x':
+                case 'X':
+                {
+                    size_t fno = str.first_not_of('0', 3);
+                    if (fno == csubstr::npos)
+                        return false;
+                    return detail::check_overflow(str.sub(fno), detail::charconv_digits<T>::min_value_hex());
+                }
+                case 'b':
+                case 'B':
+                {
+                    size_t fno = str.first_not_of('0', 3);
+                    if (fno == csubstr::npos)
+                        return false;
+                    return detail::check_overflow(str.sub(fno), detail::charconv_digits<T>::min_value_bin());
+                }
+                case 'o':
+                case 'O':
+                {
+                    size_t fno = str.first_not_of('0', 3);
+                    if(fno == csubstr::npos)
+                        return false;
+                    return detail::check_overflow(str.sub(fno), detail::charconv_digits<T>::min_value_oct());
+                }
+                default:
+                {
+                    size_t fno = str.first_not_of('0', 2);
+                    if(fno == csubstr::npos)
+                        return false;
+                    return detail::check_overflow(str.sub(fno), detail::charconv_digits<T>::min_value_dec());
+                }
+            }
+        }
+        else
+            return detail::check_overflow(str.sub(1), detail::charconv_digits<T>::min_value_dec());
+    }
+    else if(str.str[0] == '0')
+    {
+        if (str.len == 1)
+            return false;
+        switch(str.str[1])
+        {
+            case 'x':
+            case 'X':
+            {
+                size_t fno = str.first_not_of('0', 2);
+                if (fno == csubstr::npos)
+                    return false;
+                const size_t len = str.len - fno;
+                return !((len < sizeof (T) * 2) || (len == sizeof(T) * 2 && str[fno] <= '7'));
+            }
+            case 'b':
+            case 'B':
+            {
+                size_t fno = str.first_not_of('0', 2);
+                if (fno == csubstr::npos)
+                    return false;
+                return !(str.len <= fno + (sizeof(T) * 8 - 1));
+            }
+            case 'o':
+            case 'O':
+            {
+                size_t fno = str.first_not_of('0', 2);
+                if(fno == csubstr::npos)
+                    return false;
+                return detail::charconv_digits<T>::is_oct_overflow(str.sub(fno));
+            }
+            default:
+            {
+                size_t fno = str.first_not_of('0', 1);
+                if(fno == csubstr::npos)
+                    return false;
+                return detail::check_overflow(str.sub(fno), detail::charconv_digits<T>::max_value_dec());
+            }
+        }
+    }
+    else
+        return detail::check_overflow(str, detail::charconv_digits<T>::max_value_dec());
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 namespace detail {
 
 
+#if (!C4CORE_HAVE_STD_FROMCHARS)
 /** @see http://www.exploringbinary.com/ for many good examples on float-str conversion */
 template<size_t N>
 void get_real_format_str(char (& C4_RESTRICT fmt)[N], int precision, RealFormat_e formatting, const char* length_modifier="")
 {
     int iret;
     if(precision == -1)
-        iret = snprintf(fmt, sizeof(fmt), "%%%s%c", length_modifier, to_c_fmt(formatting));
+        iret = snprintf(fmt, sizeof(fmt), "%%%s%c", length_modifier, formatting);
     else if(precision == 0)
-        iret = snprintf(fmt, sizeof(fmt), "%%.%s%c", length_modifier, to_c_fmt(formatting));
+        iret = snprintf(fmt, sizeof(fmt), "%%.%s%c", length_modifier, formatting);
     else
-        iret = snprintf(fmt, sizeof(fmt), "%%.%d%s%c", precision, length_modifier, to_c_fmt(formatting));
+        iret = snprintf(fmt, sizeof(fmt), "%%.%d%s%c", precision, length_modifier, formatting);
     C4_ASSERT(iret >= 2 && size_t(iret) < sizeof(fmt));
     C4_UNUSED(iret);
 }
@@ -10857,8 +12358,10 @@ size_t print_one(substr str, const char* full_fmt, T v)
     return ret;
 #endif
 }
+#endif // (!C4CORE_HAVE_STD_FROMCHARS)
 
-#if !C4CORE_HAVE_STD_FROMCHARS && !defined(C4CORE_HAVE_FAST_FLOAT)
+
+#if (!C4CORE_HAVE_STD_FROMCHARS) && (!C4CORE_HAVE_FAST_FLOAT)
 /** scans a string using the given type format, while at the same time
  * allowing non-null-terminated strings AND guaranteeing that the given
  * string length is strictly respected, so that no buffer overflows
@@ -10895,24 +12398,28 @@ inline size_t scan_one(csubstr str, const char *type_fmt, T *v)
     C4_ASSERT(num_chars >= 0);
     return (size_t)(num_chars);
 }
-#endif
+#endif // (!C4CORE_HAVE_STD_FROMCHARS) && (!C4CORE_HAVE_FAST_FLOAT)
 
 
 #if C4CORE_HAVE_STD_TOCHARS
 template<class T>
-size_t rtoa(substr buf, T v, int precision=-1, RealFormat_e formatting=FTOA_FLEX)
+C4_ALWAYS_INLINE size_t rtoa(substr buf, T v, int precision=-1, RealFormat_e formatting=FTOA_FLEX) noexcept
 {
     std::to_chars_result result;
     size_t pos = 0;
     if(formatting == FTOA_HEXA)
     {
-        _c4append('0');
-        _c4append('x');
+        if(buf.len > size_t(2))
+        {
+            buf.str[0] = '0';
+            buf.str[1] = 'x';
+        }
+        pos += size_t(2);
     }
     if(precision == -1)
-        result = std::to_chars(buf.str + pos, buf.str + buf.len, v, to_std_fmt(formatting));
+        result = std::to_chars(buf.str + pos, buf.str + buf.len, v, (std::chars_format)formatting);
     else
-        result = std::to_chars(buf.str + pos, buf.str + buf.len, v, to_std_fmt(formatting), precision);
+        result = std::to_chars(buf.str + pos, buf.str + buf.len, v, (std::chars_format)formatting, precision);
     if(result.ec == std::errc())
     {
         // all good, no errors.
@@ -10936,6 +12443,85 @@ size_t rtoa(substr buf, T v, int precision=-1, RealFormat_e formatting=FTOA_FLEX
 }
 #endif // C4CORE_HAVE_STD_TOCHARS
 
+
+#if C4CORE_HAVE_FAST_FLOAT
+template<class T>
+C4_ALWAYS_INLINE bool scan_rhex(csubstr s, T *C4_RESTRICT val) noexcept
+{
+    C4_ASSERT(s.len > 0);
+    C4_ASSERT(s.str[0] != '-');
+    C4_ASSERT(s.str[0] != '+');
+    C4_ASSERT(!s.begins_with("0x"));
+    C4_ASSERT(!s.begins_with("0X"));
+    size_t pos = 0;
+    // integer part
+    for( ; pos < s.len; ++pos)
+    {
+        const char c = s.str[pos];
+        if(c >= '0' && c <= '9')
+            *val = *val * T(16) + T(c - '0');
+        else if(c >= 'a' && c <= 'f')
+            *val = *val * T(16) + T(c - 'a');
+        else if(c >= 'A' && c <= 'F')
+            *val = *val * T(16) + T(c - 'A');
+        else if(c == '.')
+        {
+            ++pos;
+            break; // follow on to mantissa
+        }
+        else if(c == 'p' || c == 'P')
+        {
+            ++pos;
+            goto power; // no mantissa given, jump to power
+        }
+        else
+        {
+            return false;
+        }
+    }
+    // mantissa
+    {
+        // 0.0625 == 1/16 == value of first digit after the comma
+        for(T digit = T(0.0625); pos < s.len; ++pos, digit /= T(16))
+        {
+            const char c = s.str[pos];
+            if(c >= '0' && c <= '9')
+                *val += digit * T(c - '0');
+            else if(c >= 'a' && c <= 'f')
+                *val += digit * T(c - 'a');
+            else if(c >= 'A' && c <= 'F')
+                *val += digit * T(c - 'A');
+            else if(c == 'p' || c == 'P')
+            {
+                ++pos;
+                goto power; // mantissa finished, jump to power
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+power:
+    if(C4_LIKELY(pos < s.len))
+    {
+        if(s.str[pos] == '+') // atoi() cannot handle a leading '+'
+            ++pos;
+        if(C4_LIKELY(pos < s.len))
+        {
+            int16_t powval = {};
+            if(C4_LIKELY(atoi(s.sub(pos), &powval)))
+            {
+                *val *= ipow<T, int16_t, 16>(powval);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+#endif
+
 } // namespace detail
 
 
@@ -10943,11 +12529,15 @@ size_t rtoa(substr buf, T v, int precision=-1, RealFormat_e formatting=FTOA_FLEX
 #undef _c4append
 
 
-/** Convert a single-precision real number to string.
- * The string will in general be NOT null-terminated.
- * For FTOA_FLEX, \p precision is the number of significand digits. Otherwise
- * \p precision is the number of decimals. */
-inline size_t ftoa(substr str, float v, int precision=-1, RealFormat_e formatting=FTOA_FLEX)
+/** Convert a single-precision real number to string.  The string will
+ * in general be NOT null-terminated.  For FTOA_FLEX, \p precision is
+ * the number of significand digits. Otherwise \p precision is the
+ * number of decimals. It is safe to call this function with an empty
+ * or too-small buffer.
+ *
+ * @return the size of the buffer needed to write the number
+ */
+C4_ALWAYS_INLINE size_t ftoa(substr str, float v, int precision=-1, RealFormat_e formatting=FTOA_FLEX) noexcept
 {
 #if C4CORE_HAVE_STD_TOCHARS
     return detail::rtoa(str, v, precision, formatting);
@@ -10959,14 +12549,15 @@ inline size_t ftoa(substr str, float v, int precision=-1, RealFormat_e formattin
 }
 
 
-/** Convert a double-precision real number to string.
- * The string will in general be NOT null-terminated.
- * For FTOA_FLEX, \p precision is the number of significand digits. Otherwise
- * \p precision is the number of decimals.
+/** Convert a double-precision real number to string.  The string will
+ * in general be NOT null-terminated.  For FTOA_FLEX, \p precision is
+ * the number of significand digits. Otherwise \p precision is the
+ * number of decimals. It is safe to call this function with an empty
+ * or too-small buffer.
  *
- * @return the number of characters written.
+ * @return the size of the buffer needed to write the number
  */
-inline size_t dtoa(substr str, double v, int precision=-1, RealFormat_e formatting=FTOA_FLEX)
+C4_ALWAYS_INLINE size_t dtoa(substr str, double v, int precision=-1, RealFormat_e formatting=FTOA_FLEX) noexcept
 {
 #if C4CORE_HAVE_STD_TOCHARS
     return detail::rtoa(str, v, precision, formatting);
@@ -10984,20 +12575,36 @@ inline size_t dtoa(substr str, double v, int precision=-1, RealFormat_e formatti
  * @return true iff the conversion succeeded
  * @see atof_first() if the string is not trimmed
  */
-inline bool atof(csubstr str, float * C4_RESTRICT v)
+C4_ALWAYS_INLINE bool atof(csubstr str, float * C4_RESTRICT v) noexcept
 {
+    C4_ASSERT(str.len > 0);
     C4_ASSERT(str.triml(" \r\t\n").len == str.len);
 #if C4CORE_HAVE_FAST_FLOAT
-    fast_float::from_chars_result result;
-    result = fast_float::from_chars(str.str, str.str + str.len, *v);
-    return result.ec == std::errc();
+    // fastfloat cannot parse hexadecimal floats
+    bool isneg = (str.str[0] == '-');
+    csubstr rem = str.sub(isneg || str.str[0] == '+');
+    if(!(rem.len >= 2 && (rem.str[0] == '0' && (rem.str[1] == 'x' || rem.str[1] == 'X'))))
+    {
+        fast_float::from_chars_result result;
+        result = fast_float::from_chars(str.str, str.str + str.len, *v);
+        return result.ec == std::errc();
+    }
+    else if(detail::scan_rhex(rem.sub(2), v))
+    {
+        *v *= isneg ? -1.f : 1.f;
+        return true;
+    }
+    return false;
 #elif C4CORE_HAVE_STD_FROMCHARS
     std::from_chars_result result;
     result = std::from_chars(str.str, str.str + str.len, *v);
     return result.ec == std::errc();
 #else
-    size_t ret = detail::scan_one(str, "f", v);
-    return ret != csubstr::npos;
+    csubstr rem = str.sub(str.str[0] == '-' || str.str[0] == '+');
+    if(!(rem.len >= 2 && (rem.str[0] == '0' && (rem.str[1] == 'x' || rem.str[1] == 'X'))))
+        return detail::scan_one(str, "f", v) != csubstr::npos;
+    else
+        return detail::scan_one(str, "a", v) != csubstr::npos;
 #endif
 }
 
@@ -11008,20 +12615,35 @@ inline bool atof(csubstr str, float * C4_RESTRICT v)
  * @return true iff the conversion succeeded
  * @see atod_first() if the string is not trimmed
  */
-inline bool atod(csubstr str, double * C4_RESTRICT v)
+C4_ALWAYS_INLINE bool atod(csubstr str, double * C4_RESTRICT v) noexcept
 {
     C4_ASSERT(str.triml(" \r\t\n").len == str.len);
 #if C4CORE_HAVE_FAST_FLOAT
-    fast_float::from_chars_result result;
-    result = fast_float::from_chars(str.str, str.str + str.len, *v);
-    return result.ec == std::errc();
+    // fastfloat cannot parse hexadecimal floats
+    bool isneg = (str.str[0] == '-');
+    csubstr rem = str.sub(isneg || str.str[0] == '+');
+    if(!(rem.len >= 2 && (rem.str[0] == '0' && (rem.str[1] == 'x' || rem.str[1] == 'X'))))
+    {
+        fast_float::from_chars_result result;
+        result = fast_float::from_chars(str.str, str.str + str.len, *v);
+        return result.ec == std::errc();
+    }
+    else if(detail::scan_rhex(rem.sub(2), v))
+    {
+        *v *= isneg ? -1. : 1.;
+        return true;
+    }
+    return false;
 #elif C4CORE_HAVE_STD_FROMCHARS
     std::from_chars_result result;
     result = std::from_chars(str.str, str.str + str.len, *v);
     return result.ec == std::errc();
 #else
-    size_t ret = detail::scan_one(str, "lf", v);
-    return ret != csubstr::npos;
+    csubstr rem = str.sub(str.str[0] == '-' || str.str[0] == '+');
+    if(!(rem.len >= 2 && (rem.str[0] == '0' && (rem.str[1] == 'x' || rem.str[1] == 'X'))))
+        return detail::scan_one(str, "lf", v) != csubstr::npos;
+    else
+        return detail::scan_one(str, "la", v) != csubstr::npos;
 #endif
 }
 
@@ -11030,7 +12652,7 @@ inline bool atod(csubstr str, double * C4_RESTRICT v)
  * Leading whitespace is skipped until valid characters are found.
  * @return the number of characters read from the string, or npos if
  * conversion was not successful or if the string was empty */
-inline size_t atof_first(csubstr str, float * C4_RESTRICT v)
+inline size_t atof_first(csubstr str, float * C4_RESTRICT v) noexcept
 {
     csubstr trimmed = str.first_real_span();
     if(trimmed.len == 0)
@@ -11045,7 +12667,7 @@ inline size_t atof_first(csubstr str, float * C4_RESTRICT v)
  * Leading whitespace is skipped until valid characters are found.
  * @return the number of characters read from the string, or npos if
  * conversion was not successful or if the string was empty */
-inline size_t atod_first(csubstr str, double * C4_RESTRICT v)
+inline size_t atod_first(csubstr str, double * C4_RESTRICT v) noexcept
 {
     csubstr trimmed = str.first_real_span();
     if(trimmed.len == 0)
@@ -11061,60 +12683,81 @@ inline size_t atod_first(csubstr str, double * C4_RESTRICT v)
 //-----------------------------------------------------------------------------
 // generic versions
 
-C4_ALWAYS_INLINE size_t xtoa(substr s,  uint8_t v) { return utoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s, uint16_t v) { return utoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s, uint32_t v) { return utoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s, uint64_t v) { return utoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s,   int8_t v) { return itoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s,  int16_t v) { return itoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s,  int32_t v) { return itoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s,  int64_t v) { return itoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s,    float v) { return ftoa(s, v); }
-C4_ALWAYS_INLINE size_t xtoa(substr s,   double v) { return dtoa(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  uint8_t v) noexcept { return write_dec(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint16_t v) noexcept { return write_dec(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint32_t v) noexcept { return write_dec(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint64_t v) noexcept { return write_dec(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,   int8_t v) noexcept { return itoa(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int16_t v) noexcept { return itoa(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int32_t v) noexcept { return itoa(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int64_t v) noexcept { return itoa(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,    float v) noexcept { return ftoa(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,   double v) noexcept { return dtoa(s, v); }
 
-C4_ALWAYS_INLINE bool atox(csubstr s,  uint8_t *C4_RESTRICT v) { return atou(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s, uint16_t *C4_RESTRICT v) { return atou(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s, uint32_t *C4_RESTRICT v) { return atou(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s, uint64_t *C4_RESTRICT v) { return atou(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s,   int8_t *C4_RESTRICT v) { return atoi(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s,  int16_t *C4_RESTRICT v) { return atoi(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s,  int32_t *C4_RESTRICT v) { return atoi(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s,  int64_t *C4_RESTRICT v) { return atoi(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s,    float *C4_RESTRICT v) { return atof(s, v); }
-C4_ALWAYS_INLINE bool atox(csubstr s,   double *C4_RESTRICT v) { return atod(s, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  uint8_t v,  uint8_t radix) noexcept { return utoa(s, v, radix); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint16_t v, uint16_t radix) noexcept { return utoa(s, v, radix); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint32_t v, uint32_t radix) noexcept { return utoa(s, v, radix); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint64_t v, uint64_t radix) noexcept { return utoa(s, v, radix); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,   int8_t v,   int8_t radix) noexcept { return itoa(s, v, radix); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int16_t v,  int16_t radix) noexcept { return itoa(s, v, radix); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int32_t v,  int32_t radix) noexcept { return itoa(s, v, radix); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int64_t v,  int64_t radix) noexcept { return itoa(s, v, radix); }
 
-C4_ALWAYS_INLINE size_t to_chars(substr buf,  uint8_t v) { return utoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf, uint16_t v) { return utoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf, uint32_t v) { return utoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf, uint64_t v) { return utoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf,   int8_t v) { return itoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf,  int16_t v) { return itoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf,  int32_t v) { return itoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf,  int64_t v) { return itoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf,    float v) { return ftoa(buf, v); }
-C4_ALWAYS_INLINE size_t to_chars(substr buf,   double v) { return dtoa(buf, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  uint8_t v,  uint8_t radix, size_t num_digits) noexcept { return utoa(s, v, radix, num_digits); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint16_t v, uint16_t radix, size_t num_digits) noexcept { return utoa(s, v, radix, num_digits); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint32_t v, uint32_t radix, size_t num_digits) noexcept { return utoa(s, v, radix, num_digits); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, uint64_t v, uint64_t radix, size_t num_digits) noexcept { return utoa(s, v, radix, num_digits); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,   int8_t v,   int8_t radix, size_t num_digits) noexcept { return itoa(s, v, radix, num_digits); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int16_t v,  int16_t radix, size_t num_digits) noexcept { return itoa(s, v, radix, num_digits); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int32_t v,  int32_t radix, size_t num_digits) noexcept { return itoa(s, v, radix, num_digits); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  int64_t v,  int64_t radix, size_t num_digits) noexcept { return itoa(s, v, radix, num_digits); }
 
-C4_ALWAYS_INLINE bool from_chars(csubstr buf,  uint8_t *C4_RESTRICT v) { return atou(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf, uint16_t *C4_RESTRICT v) { return atou(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf, uint32_t *C4_RESTRICT v) { return atou(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf, uint64_t *C4_RESTRICT v) { return atou(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf,   int8_t *C4_RESTRICT v) { return atoi(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf,  int16_t *C4_RESTRICT v) { return atoi(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf,  int32_t *C4_RESTRICT v) { return atoi(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf,  int64_t *C4_RESTRICT v) { return atoi(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf,    float *C4_RESTRICT v) { return atof(buf, v); }
-C4_ALWAYS_INLINE bool from_chars(csubstr buf,   double *C4_RESTRICT v) { return atod(buf, v); }
+C4_ALWAYS_INLINE size_t xtoa(substr s,  float v, int precision, RealFormat_e formatting=FTOA_FLEX) noexcept { return ftoa(s, v, precision, formatting); }
+C4_ALWAYS_INLINE size_t xtoa(substr s, double v, int precision, RealFormat_e formatting=FTOA_FLEX) noexcept { return dtoa(s, v, precision, formatting); }
 
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  uint8_t *C4_RESTRICT v) { return atou_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, uint16_t *C4_RESTRICT v) { return atou_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, uint32_t *C4_RESTRICT v) { return atou_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, uint64_t *C4_RESTRICT v) { return atou_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,   int8_t *C4_RESTRICT v) { return atoi_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  int16_t *C4_RESTRICT v) { return atoi_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  int32_t *C4_RESTRICT v) { return atoi_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  int64_t *C4_RESTRICT v) { return atoi_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,    float *C4_RESTRICT v) { return atof_first(buf, v); }
-C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,   double *C4_RESTRICT v) { return atod_first(buf, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s,  uint8_t *C4_RESTRICT v) noexcept { return atou(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s, uint16_t *C4_RESTRICT v) noexcept { return atou(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s, uint32_t *C4_RESTRICT v) noexcept { return atou(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s, uint64_t *C4_RESTRICT v) noexcept { return atou(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s,   int8_t *C4_RESTRICT v) noexcept { return atoi(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s,  int16_t *C4_RESTRICT v) noexcept { return atoi(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s,  int32_t *C4_RESTRICT v) noexcept { return atoi(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s,  int64_t *C4_RESTRICT v) noexcept { return atoi(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s,    float *C4_RESTRICT v) noexcept { return atof(s, v); }
+C4_ALWAYS_INLINE bool atox(csubstr s,   double *C4_RESTRICT v) noexcept { return atod(s, v); }
+
+C4_ALWAYS_INLINE size_t to_chars(substr buf,  uint8_t v) noexcept { return write_dec(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf, uint16_t v) noexcept { return write_dec(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf, uint32_t v) noexcept { return write_dec(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf, uint64_t v) noexcept { return write_dec(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf,   int8_t v) noexcept { return itoa(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf,  int16_t v) noexcept { return itoa(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf,  int32_t v) noexcept { return itoa(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf,  int64_t v) noexcept { return itoa(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf,    float v) noexcept { return ftoa(buf, v); }
+C4_ALWAYS_INLINE size_t to_chars(substr buf,   double v) noexcept { return dtoa(buf, v); }
+
+C4_ALWAYS_INLINE bool from_chars(csubstr buf,  uint8_t *C4_RESTRICT v) noexcept { return atou(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf, uint16_t *C4_RESTRICT v) noexcept { return atou(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf, uint32_t *C4_RESTRICT v) noexcept { return atou(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf, uint64_t *C4_RESTRICT v) noexcept { return atou(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf,   int8_t *C4_RESTRICT v) noexcept { return atoi(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf,  int16_t *C4_RESTRICT v) noexcept { return atoi(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf,  int32_t *C4_RESTRICT v) noexcept { return atoi(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf,  int64_t *C4_RESTRICT v) noexcept { return atoi(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf,    float *C4_RESTRICT v) noexcept { return atof(buf, v); }
+C4_ALWAYS_INLINE bool from_chars(csubstr buf,   double *C4_RESTRICT v) noexcept { return atod(buf, v); }
+
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  uint8_t *C4_RESTRICT v) noexcept { return atou_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, uint16_t *C4_RESTRICT v) noexcept { return atou_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, uint32_t *C4_RESTRICT v) noexcept { return atou_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, uint64_t *C4_RESTRICT v) noexcept { return atou_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,   int8_t *C4_RESTRICT v) noexcept { return atoi_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  int16_t *C4_RESTRICT v) noexcept { return atoi_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  int32_t *C4_RESTRICT v) noexcept { return atoi_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  int64_t *C4_RESTRICT v) noexcept { return atoi_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,    float *C4_RESTRICT v) noexcept { return atof_first(buf, v); }
+C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,   double *C4_RESTRICT v) noexcept { return atod_first(buf, v); }
 
 
 //-----------------------------------------------------------------------------
@@ -11124,20 +12767,20 @@ C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,   double *C4_RESTRICT v) {
 #define _C4_IF_NOT_FIXED_LENGTH_I(T, ty) C4_ALWAYS_INLINE typename std::enable_if<std::  is_signed<T>::value && !is_fixed_length<T>::value_i, ty>
 #define _C4_IF_NOT_FIXED_LENGTH_U(T, ty) C4_ALWAYS_INLINE typename std::enable_if<std::is_unsigned<T>::value && !is_fixed_length<T>::value_u, ty>
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type xtoa(substr buf, T v) { return itoa(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type xtoa(substr buf, T v) { return utoa(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type xtoa(substr buf, T v) noexcept { return itoa(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type xtoa(substr buf, T v) noexcept { return write_dec(buf, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, bool  )::type atox(csubstr buf, T *C4_RESTRICT v) { return atoi(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, bool  )::type atox(csubstr buf, T *C4_RESTRICT v) { return atou(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, bool  )::type atox(csubstr buf, T *C4_RESTRICT v) noexcept { return atoi(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, bool  )::type atox(csubstr buf, T *C4_RESTRICT v) noexcept { return atou(buf, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type to_chars(substr buf, T v) { return itoa(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type to_chars(substr buf, T v) { return utoa(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type to_chars(substr buf, T v) noexcept { return itoa(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type to_chars(substr buf, T v) noexcept { return write_dec(buf, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, bool  )::type from_chars(csubstr buf, T *C4_RESTRICT v) { return atoi(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, bool  )::type from_chars(csubstr buf, T *C4_RESTRICT v) { return atou(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, bool  )::type from_chars(csubstr buf, T *C4_RESTRICT v) noexcept { return atoi(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, bool  )::type from_chars(csubstr buf, T *C4_RESTRICT v) noexcept { return atou(buf, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type from_chars_first(csubstr buf, T *C4_RESTRICT v) { return atoi_first(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type from_chars_first(csubstr buf, T *C4_RESTRICT v) { return atou_first(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type from_chars_first(csubstr buf, T *C4_RESTRICT v) noexcept { return atoi_first(buf, v); }
+template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type from_chars_first(csubstr buf, T *C4_RESTRICT v) noexcept { return atou_first(buf, v); }
 
 #undef _C4_IF_NOT_FIXED_LENGTH_I
 #undef _C4_IF_NOT_FIXED_LENGTH_U
@@ -11146,11 +12789,11 @@ template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type from_chars_first(c
 //-----------------------------------------------------------------------------
 // for pointers
 
-template <class T> C4_ALWAYS_INLINE size_t xtoa(substr s, T *v) { return itoa(s, (intptr_t)v, (intptr_t)16); }
-template <class T> C4_ALWAYS_INLINE bool   atox(csubstr s, T **v) { intptr_t tmp; bool ret = atox(s, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
-template <class T> C4_ALWAYS_INLINE size_t to_chars(substr s, T *v) { return itoa(s, (intptr_t)v, (intptr_t)16); }
-template <class T> C4_ALWAYS_INLINE bool   from_chars(csubstr buf, T **v) { intptr_t tmp; bool ret = from_chars(buf, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
-template <class T> C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, T **v) { intptr_t tmp; bool ret = from_chars_first(buf, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
+template <class T> C4_ALWAYS_INLINE size_t xtoa(substr s, T *v) noexcept { return itoa(s, (intptr_t)v, (intptr_t)16); }
+template <class T> C4_ALWAYS_INLINE bool   atox(csubstr s, T **v) noexcept { intptr_t tmp; bool ret = atox(s, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
+template <class T> C4_ALWAYS_INLINE size_t to_chars(substr s, T *v) noexcept { return itoa(s, (intptr_t)v, (intptr_t)16); }
+template <class T> C4_ALWAYS_INLINE bool   from_chars(csubstr buf, T **v) noexcept { intptr_t tmp; bool ret = from_chars(buf, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
+template <class T> C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, T **v) noexcept { intptr_t tmp; bool ret = from_chars_first(buf, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
 
 
 //-----------------------------------------------------------------------------
@@ -11162,7 +12805,7 @@ template <class T> C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, T **v) 
  *
  * @see to_chars() */
 template<class T>
-inline substr to_chars_sub(substr buf, T const& C4_RESTRICT v)
+C4_ALWAYS_INLINE substr to_chars_sub(substr buf, T const& C4_RESTRICT v) noexcept
 {
     size_t sz = to_chars(buf, v);
     return buf.left_of(sz <= buf.len ? sz : buf.len);
@@ -11173,13 +12816,13 @@ inline substr to_chars_sub(substr buf, T const& C4_RESTRICT v)
 //-----------------------------------------------------------------------------
 // bool implementation
 
-inline size_t to_chars(substr buf, bool v)
+C4_ALWAYS_INLINE size_t to_chars(substr buf, bool v) noexcept
 {
     int val = v;
     return to_chars(buf, val);
 }
 
-inline bool from_chars(csubstr buf, bool * C4_RESTRICT v)
+inline bool from_chars(csubstr buf, bool * C4_RESTRICT v) noexcept
 {
     if(buf == '0')
     {
@@ -11223,7 +12866,7 @@ inline bool from_chars(csubstr buf, bool * C4_RESTRICT v)
     return ret;
 }
 
-inline size_t from_chars_first(csubstr buf, bool * C4_RESTRICT v)
+inline size_t from_chars_first(csubstr buf, bool * C4_RESTRICT v) noexcept
 {
     csubstr trimmed = buf.first_non_empty_span();
     if(trimmed.len == 0 || !from_chars(buf, v))
@@ -11235,7 +12878,7 @@ inline size_t from_chars_first(csubstr buf, bool * C4_RESTRICT v)
 //-----------------------------------------------------------------------------
 // single-char implementation
 
-inline size_t to_chars(substr buf, char v)
+inline size_t to_chars(substr buf, char v) noexcept
 {
     if(buf.len > 0)
         buf[0] = v;
@@ -11244,7 +12887,7 @@ inline size_t to_chars(substr buf, char v)
 
 /** extract a single character from a substring
  * @note to extract a string instead and not just a single character, use the csubstr overload */
-inline bool from_chars(csubstr buf, char * C4_RESTRICT v)
+inline bool from_chars(csubstr buf, char * C4_RESTRICT v) noexcept
 {
     if(buf.len != 1)
         return false;
@@ -11252,7 +12895,7 @@ inline bool from_chars(csubstr buf, char * C4_RESTRICT v)
     return true;
 }
 
-inline size_t from_chars_first(csubstr buf, char * C4_RESTRICT v)
+inline size_t from_chars_first(csubstr buf, char * C4_RESTRICT v) noexcept
 {
     if(buf.len < 1)
         return csubstr::npos;
@@ -11264,21 +12907,29 @@ inline size_t from_chars_first(csubstr buf, char * C4_RESTRICT v)
 //-----------------------------------------------------------------------------
 // csubstr implementation
 
-inline size_t to_chars(substr buf, csubstr v)
+inline size_t to_chars(substr buf, csubstr v) noexcept
 {
     C4_ASSERT(!buf.overlaps(v));
     size_t len = buf.len < v.len ? buf.len : v.len;
-    memcpy(buf.str, v.str, len);
+    // calling memcpy with null strings is undefined behavior
+    // and will wreak havoc in calling code's branches.
+    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+    if(len)
+    {
+        C4_ASSERT(buf.str != nullptr);
+        C4_ASSERT(v.str != nullptr);
+        memcpy(buf.str, v.str, len);
+    }
     return v.len;
 }
 
-inline bool from_chars(csubstr buf, csubstr *C4_RESTRICT v)
+inline bool from_chars(csubstr buf, csubstr *C4_RESTRICT v) noexcept
 {
     *v = buf;
     return true;
 }
 
-inline size_t from_chars_first(substr buf, csubstr * C4_RESTRICT v)
+inline size_t from_chars_first(substr buf, csubstr * C4_RESTRICT v) noexcept
 {
     csubstr trimmed = buf.first_non_empty_span();
     if(trimmed.len == 0)
@@ -11291,35 +12942,59 @@ inline size_t from_chars_first(substr buf, csubstr * C4_RESTRICT v)
 //-----------------------------------------------------------------------------
 // substr
 
-inline size_t to_chars(substr buf, substr v)
+inline size_t to_chars(substr buf, substr v) noexcept
 {
     C4_ASSERT(!buf.overlaps(v));
     size_t len = buf.len < v.len ? buf.len : v.len;
-    memcpy(buf.str, v.str, len);
+    // calling memcpy with null strings is undefined behavior
+    // and will wreak havoc in calling code's branches.
+    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+    if(len)
+    {
+        C4_ASSERT(buf.str != nullptr);
+        C4_ASSERT(v.str != nullptr);
+        memcpy(buf.str, v.str, len);
+    }
     return v.len;
 }
 
-inline bool from_chars(csubstr buf, substr * C4_RESTRICT v)
+inline bool from_chars(csubstr buf, substr * C4_RESTRICT v) noexcept
 {
     C4_ASSERT(!buf.overlaps(*v));
-    if(buf.len <= v->len)
+    // is the destination buffer wide enough?
+    if(v->len >= buf.len)
     {
-        memcpy(v->str, buf.str, buf.len);
+        // calling memcpy with null strings is undefined behavior
+        // and will wreak havoc in calling code's branches.
+        // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+        if(buf.len)
+        {
+            C4_ASSERT(buf.str != nullptr);
+            C4_ASSERT(v->str != nullptr);
+            memcpy(v->str, buf.str, buf.len);
+        }
         v->len = buf.len;
         return true;
     }
-    memcpy(v->str, buf.str, v->len);
     return false;
 }
 
-inline size_t from_chars_first(csubstr buf, substr * C4_RESTRICT v)
+inline size_t from_chars_first(csubstr buf, substr * C4_RESTRICT v) noexcept
 {
     csubstr trimmed = buf.first_non_empty_span();
     C4_ASSERT(!trimmed.overlaps(*v));
     if(C4_UNLIKELY(trimmed.len == 0))
         return csubstr::npos;
     size_t len = trimmed.len > v->len ? v->len : trimmed.len;
-    memcpy(v->str, trimmed.str, len);
+    // calling memcpy with null strings is undefined behavior
+    // and will wreak havoc in calling code's branches.
+    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+    if(len)
+    {
+        C4_ASSERT(buf.str != nullptr);
+        C4_ASSERT(v->str != nullptr);
+        memcpy(v->str, trimmed.str, len);
+    }
     if(C4_UNLIKELY(trimmed.len > v->len))
         return csubstr::npos;
     return static_cast<size_t>(trimmed.end() - buf.begin());
@@ -11329,13 +13004,13 @@ inline size_t from_chars_first(csubstr buf, substr * C4_RESTRICT v)
 //-----------------------------------------------------------------------------
 
 template<size_t N>
-inline size_t to_chars(substr buf, const char (& C4_RESTRICT v)[N])
+inline size_t to_chars(substr buf, const char (& C4_RESTRICT v)[N]) noexcept
 {
     csubstr sp(v);
     return to_chars(buf, sp);
 }
 
-inline size_t to_chars(substr buf, const char * C4_RESTRICT v)
+inline size_t to_chars(substr buf, const char * C4_RESTRICT v) noexcept
 {
     return to_chars(buf, to_csubstr(v));
 }
@@ -11624,15 +13299,28 @@ inline integral_<intptr_t> bin(std::nullptr_t)
     return integral_<intptr_t>(intptr_t(0), intptr_t(2));
 }
 /** format the integral_ argument as a binary 0-1 value
- * @see c4::raw() if you want to use a binary memcpy instead of 0-1 formatting */
+ * @see c4::raw() if you want to use a raw memcpy-based binary dump instead of 0-1 formatting */
 template<class T>
 inline integral_<T> bin(T v)
 {
     return integral_<T>(v, T(2));
 }
 
-} // namespace fmt
 
+template<class T>
+struct overflow_checked_
+{
+    static_assert(std::is_integral<T>::value, "range checking only for integral types");
+    C4_ALWAYS_INLINE overflow_checked_(T &val_) : val(&val_) {}
+    T *val;
+};
+template<class T>
+C4_ALWAYS_INLINE overflow_checked_<T> overflow_checked(T &val)
+{
+   return overflow_checked_<T>(val);
+}
+
+} // namespace fmt
 
 /** format an integral_ signed type */
 template<typename T>
@@ -11666,6 +13354,14 @@ typename std::enable_if<std::is_unsigned<T>::value, size_t>::type
 to_chars(substr buf, fmt::integral_padded_<T> fmt)
 {
     return utoa(buf, fmt.val, fmt.radix, fmt.num_digits);
+}
+
+template<class T>
+C4_ALWAYS_INLINE bool from_chars(csubstr s, fmt::overflow_checked_<T> wrapper)
+{
+    if(C4_LIKELY(!overflows<T>(s)))
+        return atox(s, wrapper.val);
+    return false;
 }
 
 
@@ -14400,18 +16096,32 @@ namespace c4 {
 
 //-----------------------------------------------------------------------------
 
-/** get a writeable view to an existing std::string */
-inline c4::substr to_substr(std::string &s)
+/** get a writeable view to an existing std::string.
+ * When the string is empty, the returned view will be pointing
+ * at the character with value '\0', but the size will be zero.
+ * @see https://en.cppreference.com/w/cpp/string/basic_string/operator_at
+ */
+C4_ALWAYS_INLINE c4::substr to_substr(std::string &s) noexcept
 {
-    char* data = ! s.empty() ? &s[0] : nullptr;
-    return c4::substr(data, s.size());
+    #if C4_CPP < 11
+    #error this function will do undefined behavior
+    #endif
+    // since c++11 it is legal to call s[s.size()].
+    return c4::substr(&s[0], s.size());
 }
 
-/** get a readonly view to an existing std::string */
-inline c4::csubstr to_csubstr(std::string const& s)
+/** get a readonly view to an existing std::string.
+ * When the string is empty, the returned view will be pointing
+ * at the character with value '\0', but the size will be zero.
+ * @see https://en.cppreference.com/w/cpp/string/basic_string/operator_at
+ */
+C4_ALWAYS_INLINE c4::csubstr to_csubstr(std::string const& s) noexcept
 {
-    const char* data = ! s.empty() ? &s[0] : nullptr;
-    return c4::csubstr(data, s.size());
+    #if C4_CPP < 11
+    #error this function will do undefined behavior
+    #endif
+    // since c++11 it is legal to call s[s.size()].
+    return c4::csubstr(&s[0], s.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -14437,7 +16147,15 @@ inline size_t to_chars(c4::substr buf, std::string const& s)
 {
     C4_ASSERT(!buf.overlaps(to_csubstr(s)));
     size_t len = buf.len < s.size() ? buf.len : s.size();
-    memcpy(buf.str, s.data(), len);
+    // calling memcpy with null strings is undefined behavior
+    // and will wreak havoc in calling code's branches.
+    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+    if(len)
+    {
+        C4_ASSERT(s.data() != nullptr);
+        C4_ASSERT(buf.str != nullptr);
+        memcpy(buf.str, s.data(), len);
+    }
     return s.size(); // return the number of needed chars
 }
 
@@ -14446,7 +16164,14 @@ inline bool from_chars(c4::csubstr buf, std::string * s)
 {
     s->resize(buf.len);
     C4_ASSERT(!buf.overlaps(to_csubstr(*s)));
-    memcpy(&(*s)[0], buf.str, buf.len);
+    // calling memcpy with null strings is undefined behavior
+    // and will wreak havoc in calling code's branches.
+    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+    if(buf.len)
+    {
+        C4_ASSERT(buf.str != nullptr);
+        memcpy(&(*s)[0], buf.str, buf.len);
+    }
     return true;
 }
 
@@ -14531,7 +16256,13 @@ inline size_t to_chars(c4::substr buf, std::vector<char, Alloc> const& s)
 {
     C4_ASSERT(!buf.overlaps(to_csubstr(s)));
     size_t len = buf.len < s.size() ? buf.len : s.size();
-    memcpy(buf.str, s.data(), len);
+    // calling memcpy with null strings is undefined behavior
+    // and will wreak havoc in calling code's branches.
+    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+    if(len > 0)
+    {
+        memcpy(buf.str, s.data(), len);
+    }
     return s.size(); // return the number of needed chars
 }
 
@@ -14541,7 +16272,13 @@ inline bool from_chars(c4::csubstr buf, std::vector<char, Alloc> * s)
 {
     s->resize(buf.len);
     C4_ASSERT(!buf.overlaps(to_csubstr(*s)));
-    memcpy(&(*s)[0], buf.str, buf.len);
+    // calling memcpy with null strings is undefined behavior
+    // and will wreak havoc in calling code's branches.
+    // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
+    if(buf.len > 0)
+    {
+        memcpy(&(*s)[0], buf.str, buf.len);
+    }
     return true;
 }
 
@@ -14791,11 +16528,13 @@ public:
     friend bool operator!=(splitmix const &, splitmix const &);
 
     splitmix() : m_seed(1) {}
+    explicit splitmix(uint64_t s) : m_seed(s) {}
     explicit splitmix(std::random_device &rd)
     {
         seed(rd);
     }
 
+    void seed(uint64_t s) { m_seed = s; }
     void seed(std::random_device &rd)
     {
         m_seed = uint64_t(rd()) << 31 | uint64_t(rd());
@@ -14848,6 +16587,7 @@ public:
         seed(rd);
     }
 
+    void seed(uint64_t s) { m_seed = s; }
     void seed(std::random_device &rd)
     {
         m_seed = uint64_t(rd()) << 31 | uint64_t(rd());
@@ -14899,11 +16639,13 @@ public:
         : m_state(0x853c49e6748fea9bULL)
         , m_inc(0xda3e39cb94b95bdbULL)
     {}
+    explicit pcg(uint64_t s) { m_state = s; m_inc = m_state << 1; }
     explicit pcg(std::random_device &rd)
     {
         seed(rd);
     }
 
+    void seed(uint64_t s) { m_state = s; }
     void seed(std::random_device &rd)
     {
         uint64_t s0 = uint64_t(rd()) << 31 | uint64_t(rd());
@@ -15462,27 +17204,6 @@ bool from_chars(csubstr buf, fmt::raw_wrapper *r)
 
 namespace c4 {
 
-/** returns true if the memory overlaps */
-bool mem_overlaps(void const* a, void const* b, size_t sza, size_t szb)
-{
-    if(a < b)
-    {
-        if(size_t(a) + sza > size_t(b))
-            return true;
-    }
-    else if(a > b)
-    {
-        if(size_t(b) + szb > size_t(a))
-            return true;
-    }
-    else if(a == b)
-    {
-        if(sza != 0 && szb != 0)
-            return true;
-    }
-    return false;
-}
-
 /** Fills 'dest' with the first 'pattern_size' bytes at 'pattern', 'num_times'. */
 void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num_times)
 {
@@ -15984,6 +17705,7 @@ substr decode_code_point(substr out, csubstr code_point)
     C4_ASSERT(!code_point.begins_with("\\U"));
     C4_ASSERT(!code_point.begins_with('0'));
     C4_ASSERT(code_point.len <= 8);
+    C4_ASSERT(code_point.len > 0);
     uint32_t code_point_val;
     C4_CHECK(read_hex(code_point, &code_point_val));
     size_t ret = decode_code_point((uint8_t*)out.str, out.len, code_point_val);
@@ -16787,11 +18509,24 @@ bool is_debugger_attached()
 #endif
 
 
+#if defined(NDEBUG) || defined(C4_NO_DEBUG_BREAK)
+#   define RYML_DEBUG_BREAK()
+#else
+#   define RYML_DEBUG_BREAK()                               \
+    {                                                       \
+        if(c4::get_error_flags() & c4::ON_ERROR_DEBUGBREAK) \
+        {                                                   \
+            C4_DEBUG_BREAK();                               \
+        }                                                   \
+    }
+#endif
+
+
 #define RYML_CHECK(cond)                                                \
     do {                                                                \
         if(!(cond))                                                     \
         {                                                               \
-            C4_DEBUG_BREAK();                                           \
+            RYML_DEBUG_BREAK()                                          \
             c4::yml::error("check failed: " #cond, c4::yml::Location(__FILE__, __LINE__, 0)); \
         }                                                               \
     } while(0)
@@ -16801,7 +18536,7 @@ bool is_debugger_attached()
     {                                                                   \
         if(!(cond))                                                     \
         {                                                               \
-            C4_DEBUG_BREAK();                                           \
+            RYML_DEBUG_BREAK()                                          \
             c4::yml::error(msg ": check failed: " #cond, c4::yml::Location(__FILE__, __LINE__, 0)); \
         }                                                               \
     } while(0)
@@ -16811,9 +18546,9 @@ bool is_debugger_attached()
 #   define RYML_DEPRECATED(msg) [[deprecated(msg)]]
 #else
 #   if defined(_MSC_VER)
-#       define RYML_DEPRECATED(msg) __declspec(deprecated)
+#       define RYML_DEPRECATED(msg) __declspec(deprecated(msg))
 #   else // defined(__GNUC__) || defined(__clang__)
-#       define RYML_DEPRECATED(msg) __attribute__((deprecated))
+#       define RYML_DEPRECATED(msg) __attribute__((deprecated(msg)))
 #   endif
 #endif
 
@@ -16875,7 +18610,11 @@ struct RYML_EXPORT Location : public LineCol
 
 /** the type of the function used to report errors. This function must
  * interrupt execution, either by raising an exception or calling
- * std::abort(). */
+ * std::abort().
+ *
+ * @warning the error callback must never return: it must either abort
+ * or throw an exception. Otherwise, the parser will enter into an
+ * infinite loop, or the program may crash. */
 using pfn_error = void (*)(const char* msg, size_t msg_len, Location location, void *user_data);
 /** the type of the function used to allocate memory */
 using pfn_allocate = void* (*)(size_t len, void* hint, void *user_data);
@@ -16904,7 +18643,11 @@ inline void error(const char (&msg)[N])
 
 //-----------------------------------------------------------------------------
 
-/// a c-style callbacks class
+/** a c-style callbacks class
+ *
+ * @warning the error callback must never return: it must either abort
+ * or throw an exception. Otherwise, the parser will enter into an
+ * infinite loop, or the program may crash. */
 struct RYML_EXPORT Callbacks
 {
     void *       m_user_data;
@@ -16925,11 +18668,15 @@ struct RYML_EXPORT Callbacks
     }
 };
 
+/** set the global callbacks.
+ *
+ * @warning the error callback must never return: it must either abort
+ * or throw an exception. Otherwise, the parser will enter into an
+ * infinite loop, or the program may crash. */
+RYML_EXPORT void set_callbacks(Callbacks const& c);
 /// get the global callbacks
 RYML_EXPORT Callbacks const& get_callbacks();
-/// set the global callbacks
-RYML_EXPORT void set_callbacks(Callbacks const& c);
-/// set the global callbacks to their defaults
+/// set the global callbacks back to their defaults
 RYML_EXPORT void reset_callbacks();
 
 /// @cond dev
@@ -16937,7 +18684,7 @@ RYML_EXPORT void reset_callbacks();
 do                                                                      \
 {                                                                       \
     const char msg[] = msg_literal;                                     \
-    C4_DEBUG_BREAK();                                                   \
+    RYML_DEBUG_BREAK()                                                  \
     (cb).m_error(msg, sizeof(msg), c4::yml::Location(__FILE__, 0, __LINE__, 0), (cb).m_user_data); \
 } while(0)
 #define _RYML_CB_CHECK(cb, cond)                                        \
@@ -16946,7 +18693,7 @@ do                                                                      \
         if(!(cond))                                                     \
         {                                                               \
             const char msg[] = "check failed: " #cond;                  \
-            C4_DEBUG_BREAK();                                           \
+            RYML_DEBUG_BREAK()                                          \
             (cb).m_error(msg, sizeof(msg), c4::yml::Location(__FILE__, 0, __LINE__, 0), (cb).m_user_data); \
         }                                                               \
     } while(0)
@@ -17086,6 +18833,7 @@ struct NodeScalar;
 struct NodeInit;
 struct NodeData;
 class NodeRef;
+class ConstNodeRef;
 class Tree;
 
 
@@ -17225,6 +18973,8 @@ typedef enum : type_bits {
     DOCMAP  = DOC|MAP,
     DOCSEQ  = DOC|SEQ,
     DOCVAL  = DOC|VAL,
+    _KEYMASK = KEY | KEYQUO | KEYANCH | KEYREF | KEYTAG,
+    _VALMASK = VAL | VALQUO | VALANCH | VALREF | VALTAG,
     // these flags are from a work in progress and should not be used yet
     _WIP_STYLE_FLOW_SL = c4bit(14), ///< mark container with single-line flow format (seqs as '[val1,val2], maps as '{key: val, key2: val2}')
     _WIP_STYLE_FLOW_ML = c4bit(15), ///< mark container with multi-line flow format (seqs as '[val1,\nval2], maps as '{key: val,\nkey2: val2}')
@@ -17264,9 +19014,6 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE operator NodeType_e      & C4_RESTRICT ()       { return type; }
-    C4_ALWAYS_INLINE operator NodeType_e const& C4_RESTRICT () const { return type; }
-
     C4_ALWAYS_INLINE NodeType() : type(NOTYPE) {}
     C4_ALWAYS_INLINE NodeType(NodeType_e t) : type(t) {}
     C4_ALWAYS_INLINE NodeType(type_bits t) : type((NodeType_e)t) {}
@@ -17287,6 +19034,14 @@ public:
 
 public:
 
+    C4_ALWAYS_INLINE operator NodeType_e      & C4_RESTRICT ()       { return type; }
+    C4_ALWAYS_INLINE operator NodeType_e const& C4_RESTRICT () const { return type; }
+
+    C4_ALWAYS_INLINE bool operator== (NodeType_e t) const { return type == t; }
+    C4_ALWAYS_INLINE bool operator!= (NodeType_e t) const { return type != t; }
+
+public:
+
     #if defined(__clang__)
     #   pragma clang diagnostic push
     #   pragma clang diagnostic ignored "-Wnull-dereference"
@@ -17297,17 +19052,18 @@ public:
     #   endif
     #endif
 
+    C4_ALWAYS_INLINE bool is_notype() const { return type == NOTYPE; }
     C4_ALWAYS_INLINE bool is_stream() const { return ((type & STREAM) == STREAM) != 0; }
     C4_ALWAYS_INLINE bool is_doc() const { return (type & DOC) != 0; }
     C4_ALWAYS_INLINE bool is_container() const { return (type & (MAP|SEQ|STREAM)) != 0; }
     C4_ALWAYS_INLINE bool is_map() const { return (type & MAP) != 0; }
     C4_ALWAYS_INLINE bool is_seq() const { return (type & SEQ) != 0; }
-    C4_ALWAYS_INLINE bool has_val() const { return (type & VAL) != 0; }
     C4_ALWAYS_INLINE bool has_key() const { return (type & KEY) != 0; }
-    C4_ALWAYS_INLINE bool is_val() const { return (type & (KEYVAL)) == VAL; }
+    C4_ALWAYS_INLINE bool has_val() const { return (type & VAL) != 0; }
+    C4_ALWAYS_INLINE bool is_val() const { return (type & KEYVAL) == VAL; }
     C4_ALWAYS_INLINE bool is_keyval() const { return (type & KEYVAL) == KEYVAL; }
     C4_ALWAYS_INLINE bool has_key_tag() const { return (type & (KEY|KEYTAG)) == (KEY|KEYTAG); }
-    C4_ALWAYS_INLINE bool has_val_tag() const { return ((type & (VALTAG)) && (type & (VAL|MAP|SEQ))); }
+    C4_ALWAYS_INLINE bool has_val_tag() const { return ((type & VALTAG) && (type & (VAL|MAP|SEQ))); }
     C4_ALWAYS_INLINE bool has_key_anchor() const { return (type & (KEY|KEYANCH)) == (KEY|KEYANCH); }
     C4_ALWAYS_INLINE bool is_key_anchor() const { return (type & (KEY|KEYANCH)) == (KEY|KEYANCH); }
     C4_ALWAYS_INLINE bool has_val_anchor() const { return (type & VALANCH) != 0 && (type & (VAL|SEQ|MAP)) != 0; }
@@ -17525,13 +19281,9 @@ public:
 
     inline bool   empty() const { return m_size == 0; }
 
-    inline size_t size () const { return m_size; }
+    inline size_t size() const { return m_size; }
     inline size_t capacity() const { return m_cap; }
     inline size_t slack() const { RYML_ASSERT(m_cap >= m_size); return m_cap - m_size; }
-
-    inline size_t arena_size() const { return m_arena_pos; }
-    inline size_t arena_capacity() const { return m_arena.len; }
-    inline size_t arena_slack() const { RYML_ASSERT(m_arena.len >= m_arena_pos); return m_arena.len - m_arena_pos; }
 
     Callbacks const& callbacks() const { return m_callbacks; }
     void callbacks(Callbacks const& cb) { m_callbacks = cb; }
@@ -17587,35 +19339,43 @@ public:
     size_t root_id() const {                                 RYML_ASSERT(m_cap > 0 && m_size > 0); return 0; }
 
     //! Get a NodeRef of a node by id
-    NodeRef       ref(size_t id);
+    NodeRef      ref(size_t id);
     //! Get a NodeRef of a node by id
-    NodeRef const ref(size_t id) const;
+    ConstNodeRef ref(size_t id) const;
+    //! Get a NodeRef of a node by id
+    ConstNodeRef cref(size_t id);
+    //! Get a NodeRef of a node by id
+    ConstNodeRef cref(size_t id) const;
 
     //! Get the root as a NodeRef
-    NodeRef       rootref();
+    NodeRef      rootref();
     //! Get the root as a NodeRef
-    NodeRef const rootref() const;
+    ConstNodeRef rootref() const;
+    //! Get the root as a NodeRef
+    ConstNodeRef crootref();
+    //! Get the root as a NodeRef
+    ConstNodeRef crootref() const;
 
     //! find a root child by name, return it as a NodeRef
     //! @note requires the root to be a map.
-    NodeRef       operator[] (csubstr key);
+    NodeRef      operator[] (csubstr key);
     //! find a root child by name, return it as a NodeRef
     //! @note requires the root to be a map.
-    NodeRef const operator[] (csubstr key) const;
+    ConstNodeRef operator[] (csubstr key) const;
 
     //! find a root child by index: return the root node's @p i-th child as a NodeRef
     //! @note @i is NOT the node id, but the child's position
-    NodeRef       operator[] (size_t i);
+    NodeRef      operator[] (size_t i);
     //! find a root child by index: return the root node's @p i-th child as a NodeRef
     //! @note @i is NOT the node id, but the child's position
-    NodeRef const operator[] (size_t i) const;
+    ConstNodeRef operator[] (size_t i) const;
 
     //! get the i-th document of the stream
     //! @note @i is NOT the node id, but the doc position within the stream
-    NodeRef       docref(size_t i);
+    NodeRef      docref(size_t i);
     //! get the i-th document of the stream
     //! @note @i is NOT the node id, but the doc position within the stream
-    NodeRef const docref(size_t i) const;
+    ConstNodeRef docref(size_t i) const;
 
     /** @} */
 
@@ -17639,14 +19399,11 @@ public:
     csubstr    const& val_anchor(size_t node) const { RYML_ASSERT( ! is_val_ref(node) && has_val_anchor(node)); return _p(node)->m_val.anchor; }
     NodeScalar const& valsc     (size_t node) const { RYML_ASSERT(has_val(node)); return _p(node)->m_val; }
 
-    bool key_is_null(size_t node) const { RYML_ASSERT(has_key(node)); if(is_key_quoted(node)) return false; csubstr s = _p(node)->m_key.scalar; return s == nullptr || s == "~" || s == "null" || s == "Null" || s == "NULL"; }
-    bool val_is_null(size_t node) const { RYML_ASSERT(has_val(node)); if(is_val_quoted(node)) return false; csubstr s = _p(node)->m_val.scalar; return s == nullptr || s == "~" || s == "null" || s == "Null" || s == "NULL"; }
-
     /** @} */
 
 public:
 
-    /** @name node type predicates */
+    /** @name node predicates */
     /** @{ */
 
     C4_ALWAYS_INLINE bool is_stream(size_t node) const { return _p(node)->m_type.is_stream(); }
@@ -17678,9 +19435,20 @@ public:
     C4_ALWAYS_INLINE bool parent_is_map(size_t node) const { RYML_ASSERT(has_parent(node)); return is_map(_p(node)->m_parent); }
 
     /** true when key and val are empty, and has no children */
-    bool empty(size_t node) const { return ! has_children(node) && _p(node)->m_key.empty() && (( ! (_p(node)->m_type & VAL)) || _p(node)->m_val.empty()); }
+    C4_ALWAYS_INLINE bool empty(size_t node) const { return ! has_children(node) && _p(node)->m_key.empty() && (( ! (_p(node)->m_type & VAL)) || _p(node)->m_val.empty()); }
     /** true when the node has an anchor named a */
-    bool has_anchor(size_t node, csubstr a) const { return _p(node)->m_key.anchor == a || _p(node)->m_val.anchor == a; }
+    C4_ALWAYS_INLINE bool has_anchor(size_t node, csubstr a) const { return _p(node)->m_key.anchor == a || _p(node)->m_val.anchor == a; }
+
+    C4_ALWAYS_INLINE bool key_is_null(size_t node) const { RYML_ASSERT(has_key(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_key_quoted() && _is_null(n->m_key.scalar); }
+    C4_ALWAYS_INLINE bool val_is_null(size_t node) const { RYML_ASSERT(has_val(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_val_quoted() && _is_null(n->m_val.scalar); }
+    static bool _is_null(csubstr s) noexcept
+    {
+        return s.str == nullptr ||
+            s == "~" ||
+            s == "null" ||
+            s == "Null" ||
+            s == "NULL";
+    }
 
     /** @} */
 
@@ -17693,16 +19461,30 @@ public:
 
     bool has_parent(size_t node) const { return _p(node)->m_parent != NONE; }
 
+    /** true if @p node has a child with id @p ch */
+    bool has_child(size_t node, size_t ch) const { return _p(ch)->m_parent == node; }
+    /** true if @p node has a child with key @p key */
     bool has_child(size_t node, csubstr key) const { return find_child(node, key) != npos; }
-    bool has_child(size_t node, size_t ch) const { return child_pos(node, ch) != npos; }
+    /** true if @p node has any children key */
     bool has_children(size_t node) const { return _p(node)->m_first_child != NONE; }
 
-    bool has_sibling(size_t node, size_t sib) const { return is_root(node) ? sib==node : child_pos(_p(node)->m_parent, sib) != npos; }
+    /** true if @p node has a sibling with id @p sib */
+    bool has_sibling(size_t node, size_t sib) const { return _p(node)->m_parent == _p(sib)->m_parent; }
+    /** true if one of the node's siblings has the given key */
     bool has_sibling(size_t node, csubstr key) const { return find_sibling(node, key) != npos; }
-    /** counts with *this */
-    bool has_siblings(size_t /*node*/) const { return true; }
-    /** does not count with *this */
-    bool has_other_siblings(size_t node) const { return is_root(node) ? false : (_p(_p(node)->m_parent)->m_first_child != _p(_p(node)->m_parent)->m_last_child); }
+    /** true if node is not a single child */
+    bool has_other_siblings(size_t node) const
+    {
+        NodeData const *n = _p(node);
+        if(C4_LIKELY(n->m_parent != NONE))
+        {
+            n = _p(n->m_parent);
+            return n->m_first_child != n->m_last_child;
+        }
+        return false;
+    }
+
+    RYML_DEPRECATED("use has_other_siblings()") bool has_siblings(size_t /*node*/) const { return true; }
 
     /** @} */
 
@@ -17843,20 +19625,22 @@ public:
     /** @name modifying hierarchy */
     /** @{ */
 
-    /** create and insert a new child of "parent". insert after the (to-be)
-     * sibling "after", which must be a child of "parent". To insert as the
+    /** create and insert a new child of @p parent. insert after the (to-be)
+     * sibling @p after, which must be a child of @p parent. To insert as the
      * first child, set after to NONE */
-    inline size_t insert_child(size_t parent, size_t after)
+    C4_ALWAYS_INLINE size_t insert_child(size_t parent, size_t after)
     {
         RYML_ASSERT(parent != NONE);
         RYML_ASSERT(is_container(parent) || is_root(parent));
-        RYML_ASSERT(after == NONE || has_child(parent, after));
+        RYML_ASSERT(after == NONE || (_p(after)->m_parent == parent));
         size_t child = _claim();
         _set_hierarchy(child, parent, after);
         return child;
     }
-    inline size_t prepend_child(size_t parent) { return insert_child(parent, NONE); }
-    inline size_t  append_child(size_t parent) { return insert_child(parent, last_child(parent)); }
+    /** create and insert a node as the first child of @p parent */
+    C4_ALWAYS_INLINE size_t prepend_child(size_t parent) { return insert_child(parent, NONE); }
+    /** create and insert a node as the last child of @p parent */
+    C4_ALWAYS_INLINE size_t  append_child(size_t parent) { return insert_child(parent, _p(parent)->m_last_child); }
 
 public:
 
@@ -17871,17 +19655,13 @@ public:
     #endif
 
     //! create and insert a new sibling of n. insert after "after"
-    inline size_t insert_sibling(size_t node, size_t after)
+    C4_ALWAYS_INLINE size_t insert_sibling(size_t node, size_t after)
     {
-        RYML_ASSERT(node != NONE);
-        RYML_ASSERT( ! is_root(node));
-        RYML_ASSERT(parent(node) != NONE);
-        RYML_ASSERT(after == NONE || (has_sibling(node, after) && has_sibling(after, node)));
-        RYML_ASSERT(get(node) != nullptr);
-        return insert_child(get(node)->m_parent, after);
+        return insert_child(_p(node)->m_parent, after);
     }
-    inline size_t prepend_sibling(size_t node) { return insert_sibling(node, NONE); }
-    inline size_t  append_sibling(size_t node) { return insert_sibling(node, last_sibling(node)); }
+    /** create and insert a node as the first node of @p parent */
+    C4_ALWAYS_INLINE size_t prepend_sibling(size_t node) { return prepend_child(_p(node)->m_parent); }
+    C4_ALWAYS_INLINE size_t  append_sibling(size_t node) { return append_child(_p(node)->m_parent); }
 
 public:
 
@@ -17994,7 +19774,13 @@ public:
     /** @{ */
 
     /** get the current size of the tree's internal arena */
-    size_t arena_pos() const { return m_arena_pos; }
+    RYML_DEPRECATED("use arena_size() instead") size_t arena_pos() const { return m_arena_pos; }
+    /** get the current size of the tree's internal arena */
+    inline size_t arena_size() const { return m_arena_pos; }
+    /** get the current capacity of the tree's internal arena */
+    inline size_t arena_capacity() const { return m_arena.len; }
+    /** get the current slack of the tree's internal arena */
+    inline size_t arena_slack() const { RYML_ASSERT(m_arena.len >= m_arena_pos); return m_arena.len - m_arena_pos; }
 
     /** get the current arena */
     substr arena() const { return m_arena.first(m_arena_pos); }
@@ -18005,31 +19791,15 @@ public:
         return m_arena.is_super(s);
     }
 
-    /** serialize the given non-floating-point variable to the tree's arena, growing it as
-     * needed to accomodate the serialization.
+    /** serialize the given floating-point variable to the tree's
+     * arena, growing it as needed to accomodate the serialization.
+     *
      * @note Growing the arena may cause relocation of the entire
-     * existing arena, and thus change the contents of individual nodes.
-     * @see alloc_arena() */
-    template<class T>
-    typename std::enable_if<!std::is_floating_point<T>::value, csubstr>::type
-    to_arena(T const& C4_RESTRICT a)
-    {
-        substr rem(m_arena.sub(m_arena_pos));
-        size_t num = to_chars(rem, a);
-        if(num > rem.len)
-        {
-            rem = _grow_arena(num);
-            num = to_chars(rem, a);
-            RYML_ASSERT(num <= rem.len);
-        }
-        rem = _request_span(num);
-        return rem;
-    }
-
-    /** serialize the given floating-point variable to the tree's arena, growing it as
-     * needed to accomodate the serialization.
-     * @note Growing the arena may cause relocation of the entire
-     * existing arena, and thus change the contents of individual nodes.
+     * existing arena, and thus change the contents of individual
+     * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
+     * cost, ensure that the arena is reserved to an appropriate size
+     * using .reserve_arena()
+     *
      * @see alloc_arena() */
     template<class T>
     typename std::enable_if<std::is_floating_point<T>::value, csubstr>::type
@@ -18047,9 +19817,91 @@ public:
         return rem;
     }
 
-    /** copy the given substr to the tree's arena, growing it by the required size
+    /** serialize the given non-floating-point variable to the tree's
+     * arena, growing it as needed to accomodate the serialization.
+     *
      * @note Growing the arena may cause relocation of the entire
-     * existing arena, and thus change the contents of individual nodes.
+     * existing arena, and thus change the contents of individual
+     * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
+     * cost, ensure that the arena is reserved to an appropriate size
+     * using .reserve_arena()
+     *
+     * @see alloc_arena() */
+    template<class T>
+    typename std::enable_if<!std::is_floating_point<T>::value, csubstr>::type
+    to_arena(T const& C4_RESTRICT a)
+    {
+        substr rem(m_arena.sub(m_arena_pos));
+        size_t num = to_chars(rem, a);
+        if(num > rem.len)
+        {
+            rem = _grow_arena(num);
+            num = to_chars(rem, a);
+            RYML_ASSERT(num <= rem.len);
+        }
+        rem = _request_span(num);
+        return rem;
+    }
+
+    /** serialize the given csubstr to the tree's arena, growing the
+     * arena as needed to accomodate the serialization.
+     *
+     * @note Growing the arena may cause relocation of the entire
+     * existing arena, and thus change the contents of individual
+     * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
+     * cost, ensure that the arena is reserved to an appropriate size
+     * using .reserve_arena()
+     *
+     * @see alloc_arena() */
+    csubstr to_arena(csubstr a)
+    {
+        if(a.len > 0)
+        {
+            substr rem(m_arena.sub(m_arena_pos));
+            size_t num = to_chars(rem, a);
+            if(num > rem.len)
+            {
+                rem = _grow_arena(num);
+                num = to_chars(rem, a);
+                RYML_ASSERT(num <= rem.len);
+            }
+            return _request_span(num);
+        }
+        else
+        {
+            if(a.str == nullptr)
+            {
+                return csubstr{};
+            }
+            else if(m_arena.str == nullptr)
+            {
+                // Arena is empty and we want to store a non-null
+                // zero-length string.
+                // Even though the string has zero length, we need
+                // some "memory" to store a non-nullptr string
+                _grow_arena(1);
+            }
+            return _request_span(0);
+        }
+    }
+    C4_ALWAYS_INLINE csubstr to_arena(const char *s)
+    {
+        return to_arena(to_csubstr(s));
+    }
+    C4_ALWAYS_INLINE csubstr to_arena(std::nullptr_t)
+    {
+        return csubstr{};
+    }
+
+    /** copy the given substr to the tree's arena, growing it by the
+     * required size
+     *
+     * @note Growing the arena may cause relocation of the entire
+     * existing arena, and thus change the contents of individual
+     * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
+     * cost, ensure that the arena is reserved to an appropriate size
+     * using .reserve_arena()
+     *
      * @see alloc_arena() */
     substr copy_to_arena(csubstr s)
     {
@@ -18061,7 +19913,8 @@ public:
         C4_SUPPRESS_WARNING_GCC("-Wstringop-overflow=") // no need for terminating \0
         C4_SUPPRESS_WARNING_GCC( "-Wrestrict") // there's an assert to ensure no violation of restrict behavior
         #endif
-        memcpy(cp.str, s.str, s.len);
+        if(s.len)
+            memcpy(cp.str, s.str, s.len);
         #if (!defined(__clang__)) && (defined(__GNUC__) && __GNUC__ >= 10)
         C4_SUPPRESS_WARNING_GCC_POP
         #endif
@@ -18070,8 +19923,14 @@ public:
 
     /** grow the tree's string arena by the given size and return a substr
      * of the added portion
+     *
      * @note Growing the arena may cause relocation of the entire
-     * existing arena, and thus change the contents of individual nodes. */
+     * existing arena, and thus change the contents of individual
+     * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
+     * cost, ensure that the arena is reserved to an appropriate size
+     * using .reserve_arena().
+     *
+     * @see reserve_arena() */
     substr alloc_arena(size_t sz)
     {
         if(sz > arena_slack())
@@ -18081,7 +19940,8 @@ public:
     }
 
     /** ensure the tree's internal string arena is at least the given capacity
-     * @note Growing the arena may cause relocation of the entire
+     * @note This operation has a potential complexity of O(numNodes)+O(arenasize).
+     * Growing the arena may cause relocation of the entire
      * existing arena, and thus change the contents of individual nodes. */
     void reserve_arena(size_t arena_cap)
     {
@@ -18106,7 +19966,7 @@ private:
 
     substr _grow_arena(size_t more)
     {
-        size_t cap = m_arena_pos + more;
+        size_t cap = m_arena.len + more;
         cap = cap < 2 * m_arena.len ? 2 * m_arena.len : cap;
         cap = cap < 64 ? 64 : cap;
         reserve_arena(cap);
@@ -18341,21 +20201,14 @@ public:
     void _swap_hierarchy(size_t n_, size_t m_);
     void _copy_hierarchy(size_t dst_, size_t src_);
 
-    void _copy_props(size_t dst_, size_t src_)
+    inline void _copy_props(size_t dst_, size_t src_)
     {
-        auto      & C4_RESTRICT dst = *_p(dst_);
-        auto const& C4_RESTRICT src = *_p(src_);
-        dst.m_type = src.m_type;
-        dst.m_key  = src.m_key;
-        dst.m_val  = src.m_val;
+        _copy_props(dst_, this, src_);
     }
 
-    void _copy_props_wo_key(size_t dst_, size_t src_)
+    inline void _copy_props_wo_key(size_t dst_, size_t src_)
     {
-        auto      & C4_RESTRICT dst = *_p(dst_);
-        auto const& C4_RESTRICT src = *_p(src_);
-        dst.m_type = src.m_type;
-        dst.m_val  = src.m_val;
+        _copy_props_wo_key(dst_, this, src_);
     }
 
     void _copy_props(size_t dst_, Tree const* that_tree, size_t src_)
@@ -18371,7 +20224,7 @@ public:
     {
         auto      & C4_RESTRICT dst = *_p(dst_);
         auto const& C4_RESTRICT src = *that_tree->_p(src_);
-        dst.m_type = src.m_type;
+        dst.m_type = (src.m_type & ~_KEYMASK) | (dst.m_type & _KEYMASK);
         dst.m_val  = src.m_val;
     }
 
@@ -18399,7 +20252,7 @@ public:
 
     inline void _clear_val(size_t node)
     {
-        _p(node)->m_key.clear();
+        _p(node)->m_val.clear();
         _rem_flags(node, VAL);
     }
 
@@ -18520,14 +20373,611 @@ read(NodeRef const& n, T *v);
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+// forward decls
+class NodeRef;
+class ConstNodeRef;
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+namespace detail {
+
+template<class NodeRefType>
+struct child_iterator
+{
+    using value_type = NodeRefType;
+    using tree_type = typename NodeRefType::tree_type;
+
+    tree_type * C4_RESTRICT m_tree;
+    size_t m_child_id;
+
+    child_iterator(tree_type * t, size_t id) : m_tree(t), m_child_id(id) {}
+
+    child_iterator& operator++ () { RYML_ASSERT(m_child_id != NONE); m_child_id = m_tree->next_sibling(m_child_id); return *this; }
+    child_iterator& operator-- () { RYML_ASSERT(m_child_id != NONE); m_child_id = m_tree->prev_sibling(m_child_id); return *this; }
+
+    NodeRefType operator*  () const { return NodeRefType(m_tree, m_child_id); }
+    NodeRefType operator-> () const { return NodeRefType(m_tree, m_child_id); }
+
+    bool operator!= (child_iterator that) const { RYML_ASSERT(m_tree == that.m_tree); return m_child_id != that.m_child_id; }
+    bool operator== (child_iterator that) const { RYML_ASSERT(m_tree == that.m_tree); return m_child_id == that.m_child_id; }
+};
+
+template<class NodeRefType>
+struct children_view_
+{
+    using n_iterator = child_iterator<NodeRefType>;
+
+    n_iterator b, e;
+
+    inline children_view_(n_iterator const& C4_RESTRICT b_,
+                          n_iterator const& C4_RESTRICT e_) : b(b_), e(e_) {}
+
+    inline n_iterator begin() const { return b; }
+    inline n_iterator end  () const { return e; }
+};
+
+template<class NodeRefType, class Visitor>
+bool _visit(NodeRefType &node, Visitor fn, size_t indentation_level, bool skip_root=false)
+{
+    size_t increment = 0;
+    if( ! (node.is_root() && skip_root))
+    {
+        if(fn(node, indentation_level))
+            return true;
+        ++increment;
+    }
+    if(node.has_children())
+    {
+        for(auto ch : node.children())
+        {
+            if(_visit(ch, fn, indentation_level + increment, false)) // no need to forward skip_root as it won't be root
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+template<class NodeRefType, class Visitor>
+bool _visit_stacked(NodeRefType &node, Visitor fn, size_t indentation_level, bool skip_root=false)
+{
+    size_t increment = 0;
+    if( ! (node.is_root() && skip_root))
+    {
+        if(fn(node, indentation_level))
+        {
+            return true;
+        }
+        ++increment;
+    }
+    if(node.has_children())
+    {
+        fn.push(node, indentation_level);
+        for(auto ch : node.children())
+        {
+            if(_visit_stacked(ch, fn, indentation_level + increment, false)) // no need to forward skip_root as it won't be root
+            {
+                fn.pop(node, indentation_level);
+                return true;
+            }
+        }
+        fn.pop(node, indentation_level);
+    }
+    return false;
+}
+
+
+//-----------------------------------------------------------------------------
+
+/** a CRTP base for read-only node methods */
+template<class Impl, class ConstImpl>
+struct RoNodeMethods
+{
+    C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wcast-align")
+    // helper CRTP macros, undefined at the end
+    #define tree_ ((ConstImpl const* C4_RESTRICT)this)->m_tree
+    #define id_ ((ConstImpl const* C4_RESTRICT)this)->m_id
+    #define tree__ ((Impl const* C4_RESTRICT)this)->m_tree
+    #define id__ ((Impl const* C4_RESTRICT)this)->m_id
+    // require valid
+    #define _C4RV()                                       \
+        RYML_ASSERT(tree_ != nullptr);                    \
+        _RYML_CB_ASSERT(tree_->m_callbacks, id_ != NONE)
+    #define _C4_IF_MUTABLE(ty) typename std::enable_if<!std::is_same<U, ConstImpl>::value, ty>::type
+
+public:
+
+    /** @name node property getters */
+    /** @{ */
+
+    /** returns the data or null when the id is NONE */
+    C4_ALWAYS_INLINE C4_PURE NodeData const* get() const noexcept { RYML_ASSERT(tree_ != nullptr); return tree_->get(id_); }
+    /** returns the data or null when the id is NONE */
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto get() noexcept -> _C4_IF_MUTABLE(NodeData*) { RYML_ASSERT(tree_ != nullptr); return tree__->get(id__); }
+
+    C4_ALWAYS_INLINE C4_PURE NodeType    type() const noexcept { _C4RV(); return tree_->type(id_); }
+    C4_ALWAYS_INLINE C4_PURE const char* type_str() const noexcept { return tree_->type_str(id_); }
+
+    C4_ALWAYS_INLINE C4_PURE csubstr key()        const noexcept { _C4RV(); return tree_->key(id_); }
+    C4_ALWAYS_INLINE C4_PURE csubstr key_tag()    const noexcept { _C4RV(); return tree_->key_tag(id_); }
+    C4_ALWAYS_INLINE C4_PURE csubstr key_ref()    const noexcept { _C4RV(); return tree_->key_ref(id_); }
+    C4_ALWAYS_INLINE C4_PURE csubstr key_anchor() const noexcept { _C4RV(); return tree_->key_anchor(id_); }
+
+    C4_ALWAYS_INLINE C4_PURE csubstr val()        const noexcept { _C4RV(); return tree_->val(id_); }
+    C4_ALWAYS_INLINE C4_PURE csubstr val_tag()    const noexcept { _C4RV(); return tree_->val_tag(id_); }
+    C4_ALWAYS_INLINE C4_PURE csubstr val_ref()    const noexcept { _C4RV(); return tree_->val_ref(id_); }
+    C4_ALWAYS_INLINE C4_PURE csubstr val_anchor() const noexcept { _C4RV(); return tree_->val_anchor(id_); }
+
+    C4_ALWAYS_INLINE C4_PURE NodeScalar const& keysc() const noexcept { _C4RV(); return tree_->keysc(id_); }
+    C4_ALWAYS_INLINE C4_PURE NodeScalar const& valsc() const noexcept { _C4RV(); return tree_->valsc(id_); }
+
+    C4_ALWAYS_INLINE C4_PURE bool key_is_null() const noexcept { _C4RV(); return tree_->key_is_null(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool val_is_null() const noexcept { _C4RV(); return tree_->val_is_null(id_); }
+
+    /** @} */
+
+public:
+
+    /** @name node property predicates */
+    /** @{ */
+
+    C4_ALWAYS_INLINE C4_PURE bool empty()            const noexcept { _C4RV(); return tree_->empty(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_stream()        const noexcept { _C4RV(); return tree_->is_stream(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_doc()           const noexcept { _C4RV(); return tree_->is_doc(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_container()     const noexcept { _C4RV(); return tree_->is_container(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_map()           const noexcept { _C4RV(); return tree_->is_map(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_seq()           const noexcept { _C4RV(); return tree_->is_seq(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_val()          const noexcept { _C4RV(); return tree_->has_val(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_key()          const noexcept { _C4RV(); return tree_->has_key(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_val()           const noexcept { _C4RV(); return tree_->is_val(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_keyval()        const noexcept { _C4RV(); return tree_->is_keyval(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_key_tag()      const noexcept { _C4RV(); return tree_->has_key_tag(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_val_tag()      const noexcept { _C4RV(); return tree_->has_val_tag(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_key_anchor()   const noexcept { _C4RV(); return tree_->has_key_anchor(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_key_anchor()    const noexcept { _C4RV(); return tree_->is_key_anchor(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_val_anchor()   const noexcept { _C4RV(); return tree_->has_val_anchor(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_val_anchor()    const noexcept { _C4RV(); return tree_->is_val_anchor(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_anchor()       const noexcept { _C4RV(); return tree_->has_anchor(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_anchor()        const noexcept { _C4RV(); return tree_->is_anchor(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_key_ref()       const noexcept { _C4RV(); return tree_->is_key_ref(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_val_ref()       const noexcept { _C4RV(); return tree_->is_val_ref(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_ref()           const noexcept { _C4RV(); return tree_->is_ref(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_anchor_or_ref() const noexcept { _C4RV(); return tree_->is_anchor_or_ref(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_key_quoted()    const noexcept { _C4RV(); return tree_->is_key_quoted(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_val_quoted()    const noexcept { _C4RV(); return tree_->is_val_quoted(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool is_quoted()        const noexcept { _C4RV(); return tree_->is_quoted(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool parent_is_seq()    const noexcept { _C4RV(); return tree_->parent_is_seq(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool parent_is_map()    const noexcept { _C4RV(); return tree_->parent_is_map(id_); }
+
+    /** @} */
+
+public:
+
+    /** @name hierarchy predicates */
+    /** @{ */
+
+    C4_ALWAYS_INLINE C4_PURE bool is_root()    const noexcept { _C4RV(); return tree_->is_root(id_); }
+    C4_ALWAYS_INLINE C4_PURE bool has_parent() const noexcept { _C4RV(); return tree_->has_parent(id_); }
+
+    C4_ALWAYS_INLINE C4_PURE bool has_child(ConstImpl const& ch) const noexcept { _C4RV(); return tree_->has_child(id_, ch.m_id); }
+    C4_ALWAYS_INLINE C4_PURE bool has_child(csubstr name) const noexcept { _C4RV(); return tree_->has_child(id_, name); }
+    C4_ALWAYS_INLINE C4_PURE bool has_children() const noexcept { _C4RV(); return tree_->has_children(id_); }
+
+    C4_ALWAYS_INLINE C4_PURE bool has_sibling(ConstImpl const& n) const noexcept { _C4RV(); return tree_->has_sibling(id_, n.m_id); }
+    C4_ALWAYS_INLINE C4_PURE bool has_sibling(csubstr name) const noexcept { _C4RV(); return tree_->has_sibling(id_, name); }
+    /** counts with this */
+    C4_ALWAYS_INLINE C4_PURE bool has_siblings() const noexcept { _C4RV(); return tree_->has_siblings(id_); }
+    /** does not count with this */
+    C4_ALWAYS_INLINE C4_PURE bool has_other_siblings() const noexcept { _C4RV(); return tree_->has_other_siblings(id_); }
+
+    /** @} */
+
+public:
+
+    /** @name hierarchy getters */
+    /** @{ */
+
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto doc(size_t num) noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->doc(num)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl doc(size_t num) const noexcept { _C4RV(); return {tree_, tree_->doc(num)}; }
+
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto parent() noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->parent(id__)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl parent() const noexcept { _C4RV(); return {tree_, tree_->parent(id_)}; }
+
+
+    /** O(#num_children) */
+    C4_ALWAYS_INLINE C4_PURE size_t child_pos(ConstImpl const& n) const noexcept { _C4RV(); return tree_->child_pos(id_, n.m_id); }
+    C4_ALWAYS_INLINE C4_PURE size_t num_children() const noexcept { _C4RV(); return tree_->num_children(id_); }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto first_child() noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->first_child(id__)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl first_child() const noexcept { _C4RV(); return {tree_, tree_->first_child(id_)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto last_child() noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->last_child(id__)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl last_child () const noexcept { _C4RV(); return {tree_, tree_->last_child (id_)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto child(size_t pos) noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->child(id__, pos)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl child(size_t pos) const noexcept { _C4RV(); return {tree_, tree_->child(id_, pos)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto find_child(csubstr name)  noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->find_child(id__, name)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl find_child(csubstr name) const noexcept { _C4RV(); return {tree_, tree_->find_child(id_, name)}; }
+
+
+    /** O(#num_siblings) */
+    C4_ALWAYS_INLINE C4_PURE size_t num_siblings() const noexcept { _C4RV(); return tree_->num_siblings(id_); }
+    C4_ALWAYS_INLINE C4_PURE size_t num_other_siblings() const noexcept { _C4RV(); return tree_->num_other_siblings(id_); }
+    C4_ALWAYS_INLINE C4_PURE size_t sibling_pos(ConstImpl const& n) const noexcept { _C4RV(); return tree_->child_pos(tree_->parent(id_), n.m_id); }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto prev_sibling() noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->prev_sibling(id__)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl prev_sibling() const noexcept { _C4RV(); return {tree_, tree_->prev_sibling(id_)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto next_sibling() noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->next_sibling(id__)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl next_sibling() const noexcept { _C4RV(); return {tree_, tree_->next_sibling(id_)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto first_sibling() noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->first_sibling(id__)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl first_sibling() const noexcept { _C4RV(); return {tree_, tree_->first_sibling(id_)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto last_sibling() noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->last_sibling(id__)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl last_sibling () const noexcept { _C4RV(); return {tree_, tree_->last_sibling(id_)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto sibling(size_t pos) noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->sibling(id__, pos)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl sibling(size_t pos) const noexcept { _C4RV(); return {tree_, tree_->sibling(id_, pos)}; }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto find_sibling(csubstr name) noexcept -> _C4_IF_MUTABLE(Impl) { _C4RV(); return {tree__, tree__->find_sibling(id__, name)}; }
+    C4_ALWAYS_INLINE C4_PURE ConstImpl find_sibling(csubstr name) const noexcept { _C4RV(); return {tree_, tree_->find_sibling(id_, name)}; }
+
+
+    /** O(num_children) */
+    C4_ALWAYS_INLINE C4_PURE ConstImpl operator[] (csubstr k) const noexcept
+    {
+        _C4RV();
+        size_t ch = tree_->find_child(id_, k);
+        _RYML_CB_ASSERT(tree_->m_callbacks, ch != NONE);
+        return {tree_, ch};
+    }
+    /** Find child by key. O(num_children). returns a seed node if no such child is found.  */
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto operator[] (csubstr k) noexcept -> _C4_IF_MUTABLE(Impl)
+    {
+        _C4RV();
+        size_t ch = tree__->find_child(id__, k);
+        return ch != NONE ? Impl(tree__, ch) : NodeRef(tree__, id__, k);
+    }
+
+    /** O(num_children) */
+    C4_ALWAYS_INLINE C4_PURE ConstImpl operator[] (size_t pos) const noexcept
+    {
+        _C4RV();
+        size_t ch = tree_->child(id_, pos);
+        _RYML_CB_ASSERT(tree_->m_callbacks, ch != NONE);
+        return {tree_, ch};
+    }
+
+    /** Find child by position. O(pos). returns a seed node if no such child is found.  */
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto operator[] (size_t pos) noexcept -> _C4_IF_MUTABLE(Impl)
+    {
+        _C4RV();
+        size_t ch = tree__->child(id__, pos);
+        return ch != NONE ? Impl(tree__, ch) : NodeRef(tree__, id__, pos);
+    }
+
+    /** @} */
+
+public:
+
+    /** deserialization */
+    /** @{ */
+
+    template<class T>
+    ConstImpl const& operator>> (T &v) const
+    {
+        _C4RV();
+        if( ! read((ConstImpl const&)*this, &v))
+            _RYML_CB_ERR(tree_->m_callbacks, "could not deserialize value");
+        return *((ConstImpl const*)this);
+    }
+
+    /** deserialize the node's key to the given variable */
+    template<class T>
+    ConstImpl const& operator>> (Key<T> v) const
+    {
+        _C4RV();
+        if( ! from_chars(key(), &v.k))
+            _RYML_CB_ERR(tree_->m_callbacks, "could not deserialize key");
+        return *((ConstImpl const*)this);
+    }
+
+    /** deserialize the node's key as base64 */
+    ConstImpl const& operator>> (Key<fmt::base64_wrapper> w) const
+    {
+        deserialize_key(w.wrapper);
+        return *((ConstImpl const*)this);
+    }
+
+    /** deserialize the node's val as base64 */
+    ConstImpl const& operator>> (fmt::base64_wrapper w) const
+    {
+        deserialize_val(w);
+        return *((ConstImpl const*)this);
+    }
+
+    /** decode the base64-encoded key and assign the
+     * decoded blob to the given buffer/
+     * @return the size of base64-decoded blob */
+    size_t deserialize_key(fmt::base64_wrapper v) const
+    {
+        _C4RV();
+        return from_chars(key(), &v);
+    }
+    /** decode the base64-encoded key and assign the
+     * decoded blob to the given buffer/
+     * @return the size of base64-decoded blob */
+    size_t deserialize_val(fmt::base64_wrapper v) const
+    {
+        _C4RV();
+        return from_chars(val(), &v);
+    };
+
+    template<class T>
+    bool get_if(csubstr name, T *var) const
+    {
+        auto ch = find_child(name);
+        if(!ch.valid())
+            return false;
+        ch >> *var;
+        return true;
+    }
+
+    template<class T>
+    bool get_if(csubstr name, T *var, T const& fallback) const
+    {
+        auto ch = find_child(name);
+        if(ch.valid())
+        {
+            ch >> *var;
+            return true;
+        }
+        else
+        {
+            *var = fallback;
+            return false;
+        }
+    }
+
+    /** @} */
+
+public:
+
+    #if defined(__clang__)
+    #   pragma clang diagnostic push
+    #   pragma clang diagnostic ignored "-Wnull-dereference"
+    #elif defined(__GNUC__)
+    #   pragma GCC diagnostic push
+    #   if __GNUC__ >= 6
+    #       pragma GCC diagnostic ignored "-Wnull-dereference"
+    #   endif
+    #endif
+
+    /** @name iteration */
+    /** @{ */
+
+    using iterator = detail::child_iterator<Impl>;
+    using const_iterator = detail::child_iterator<ConstImpl>;
+    using children_view = detail::children_view_<Impl>;
+    using const_children_view = detail::children_view_<ConstImpl>;
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto begin() noexcept -> _C4_IF_MUTABLE(iterator) { _C4RV(); return iterator(tree__, tree__->first_child(id__)); }
+    C4_ALWAYS_INLINE C4_PURE const_iterator begin() const noexcept { _C4RV(); return const_iterator(tree_, tree_->first_child(id_)); }
+    C4_ALWAYS_INLINE C4_PURE const_iterator cbegin() const noexcept { _C4RV(); return const_iterator(tree_, tree_->first_child(id_)); }
+
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto end() noexcept -> _C4_IF_MUTABLE(iterator) { _C4RV(); return iterator(tree__, NONE); }
+    C4_ALWAYS_INLINE C4_PURE const_iterator end() const noexcept { _C4RV(); return const_iterator(tree_, NONE); }
+    C4_ALWAYS_INLINE C4_PURE const_iterator cend() const noexcept { _C4RV(); return const_iterator(tree_, tree_->first_child(id_)); }
+
+    /** get an iterable view over children */
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto children() noexcept -> _C4_IF_MUTABLE(children_view) { _C4RV(); return children_view(begin(), end()); }
+    /** get an iterable view over children */
+    C4_ALWAYS_INLINE C4_PURE const_children_view children() const noexcept { _C4RV(); return const_children_view(begin(), end()); }
+    /** get an iterable view over children */
+    C4_ALWAYS_INLINE C4_PURE const_children_view cchildren() const noexcept { _C4RV(); return const_children_view(begin(), end()); }
+
+    /** get an iterable view over all siblings (including the calling node) */
+    template<class U=Impl>
+    C4_ALWAYS_INLINE C4_PURE auto siblings() noexcept -> _C4_IF_MUTABLE(children_view)
+    {
+        _C4RV();
+        NodeData const *nd = tree__->get(id__);
+        return (nd->m_parent != NONE) ? // does it have a parent?
+            children_view(iterator(tree__, tree_->get(nd->m_parent)->m_first_child), iterator(tree__, NONE))
+            :
+            children_view(end(), end());
+    }
+    /** get an iterable view over all siblings (including the calling node) */
+    C4_ALWAYS_INLINE C4_PURE const_children_view siblings() const noexcept
+    {
+        _C4RV();
+        NodeData const *nd = tree_->get(id_);
+        return (nd->m_parent != NONE) ? // does it have a parent?
+            const_children_view(const_iterator(tree_, tree_->get(nd->m_parent)->m_first_child), const_iterator(tree_, NONE))
+            :
+            const_children_view(end(), end());
+    }
+    /** get an iterable view over all siblings (including the calling node) */
+    C4_ALWAYS_INLINE C4_PURE const_children_view csiblings() const noexcept { return siblings(); }
+
+    /** visit every child node calling fn(node) */
+    template<class Visitor>
+    C4_ALWAYS_INLINE C4_PURE bool visit(Visitor fn, size_t indentation_level=0, bool skip_root=true) const noexcept
+    {
+        return detail::_visit(*(ConstImpl*)this, fn, indentation_level, skip_root);
+    }
+    /** visit every child node calling fn(node) */
+    template<class Visitor, class U=Impl>
+    auto visit(Visitor fn, size_t indentation_level=0, bool skip_root=true) noexcept
+        -> _C4_IF_MUTABLE(bool)
+    {
+        return detail::_visit(*(Impl*)this, fn, indentation_level, skip_root);
+    }
+
+    /** visit every child node calling fn(node, level) */
+    template<class Visitor>
+    C4_ALWAYS_INLINE C4_PURE bool visit_stacked(Visitor fn, size_t indentation_level=0, bool skip_root=true) const noexcept
+    {
+        return detail::_visit_stacked(*(ConstImpl*)this, fn, indentation_level, skip_root);
+    }
+    /** visit every child node calling fn(node, level) */
+    template<class Visitor, class U=Impl>
+    auto visit_stacked(Visitor fn, size_t indentation_level=0, bool skip_root=true) noexcept
+        -> _C4_IF_MUTABLE(bool)
+    {
+        return detail::_visit_stacked(*(Impl*)this, fn, indentation_level, skip_root);
+    }
+
+    /** @} */
+
+    #if defined(__clang__)
+    #   pragma clang diagnostic pop
+    #elif defined(__GNUC__)
+    #   pragma GCC diagnostic pop
+    #endif
+
+    #undef _C4_IF_MUTABLE
+    #undef _C4RV
+    #undef tree_
+    #undef tree__
+    #undef id_
+    #undef id__
+
+    C4_SUPPRESS_WARNING_GCC_CLANG_POP
+};
+
+} // namespace detail
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+class RYML_EXPORT ConstNodeRef : public detail::RoNodeMethods<ConstNodeRef, ConstNodeRef>
+{
+public:
+
+    using tree_type = Tree const;
+
+public:
+
+    Tree const* C4_RESTRICT m_tree;
+    size_t m_id;
+
+    friend NodeRef;
+    friend struct detail::RoNodeMethods<ConstNodeRef, ConstNodeRef>;
+
+public:
+
+    /** @name construction */
+    /** @{ */
+
+    ConstNodeRef() : m_tree(nullptr), m_id(NONE) {}
+    ConstNodeRef(Tree const &t) : m_tree(&t), m_id(t .root_id()) {}
+    ConstNodeRef(Tree const *t) : m_tree(t ), m_id(t->root_id()) {}
+    ConstNodeRef(Tree const *t, size_t id) : m_tree(t), m_id(id) {}
+    ConstNodeRef(std::nullptr_t) : m_tree(nullptr), m_id(NONE) {}
+
+    ConstNodeRef(ConstNodeRef const&) = default;
+    ConstNodeRef(ConstNodeRef     &&) = default;
+
+    ConstNodeRef(NodeRef const&);
+    ConstNodeRef(NodeRef     &&);
+
+    /** @} */
+
+public:
+
+    /** @name assignment */
+    /** @{ */
+
+    ConstNodeRef& operator= (std::nullptr_t) { m_tree = nullptr; m_id = NONE; return *this; }
+
+    ConstNodeRef& operator= (ConstNodeRef const&) = default;
+    ConstNodeRef& operator= (ConstNodeRef     &&) = default;
+
+    ConstNodeRef& operator= (NodeRef const&);
+    ConstNodeRef& operator= (NodeRef     &&);
+
+
+    /** @} */
+
+public:
+
+    /** @name state queries */
+    /** @{ */
+
+    C4_ALWAYS_INLINE C4_PURE bool valid() const noexcept { return m_tree != nullptr && m_id != NONE; }
+
+    /** @} */
+
+public:
+
+    /** @name member getters */
+    /** @{ */
+
+    C4_ALWAYS_INLINE C4_PURE Tree const* tree() const noexcept { return m_tree; }
+    C4_ALWAYS_INLINE C4_PURE size_t id() const noexcept { return m_id; }
+
+    /** @} */
+
+public:
+
+    /** @name comparisons */
+    /** @{ */
+
+    C4_ALWAYS_INLINE C4_PURE bool operator== (ConstNodeRef const& that) const noexcept { RYML_ASSERT(that.m_tree == m_tree); return m_id == that.m_id; }
+    C4_ALWAYS_INLINE C4_PURE bool operator!= (ConstNodeRef const& that) const noexcept { RYML_ASSERT(that.m_tree == m_tree); return ! this->operator==(that); }
+
+    C4_ALWAYS_INLINE C4_PURE bool operator== (std::nullptr_t) const noexcept { return m_tree == nullptr || m_id == NONE; }
+    C4_ALWAYS_INLINE C4_PURE bool operator!= (std::nullptr_t) const noexcept { return ! this->operator== (nullptr); }
+
+    C4_ALWAYS_INLINE C4_PURE bool operator== (csubstr val) const noexcept { RYML_ASSERT(has_val()); return m_tree->val(m_id) == val; }
+    C4_ALWAYS_INLINE C4_PURE bool operator!= (csubstr val) const noexcept { RYML_ASSERT(has_val()); return m_tree->val(m_id) != val; }
+
+    /** @} */
+
+};
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 /** a reference to a node in an existing yaml tree, offering a more
  * convenient API than the index-based API used in the tree. */
-class RYML_EXPORT NodeRef
+class RYML_EXPORT NodeRef : public detail::RoNodeMethods<NodeRef, ConstNodeRef>
 {
-private:
+public:
 
-    // require valid: a helper macro, undefined at the end
-    #define _C4RV() RYML_ASSERT(valid() && !is_seed())
+    using tree_type = Tree;
+    using base_type = detail::RoNodeMethods<NodeRef, ConstNodeRef>;
+
+private:
 
     Tree *C4_RESTRICT m_tree;
     size_t m_id;
@@ -18544,9 +20994,17 @@ private:
      * the size is NONE. */
     csubstr m_seed;
 
+    friend ConstNodeRef;
+    friend struct detail::RoNodeMethods<NodeRef, ConstNodeRef>;
+
+    // require valid: a helper macro, undefined at the end
+    #define _C4RV()                                                         \
+        RYML_ASSERT(m_tree != nullptr);                                     \
+        _RYML_CB_ASSERT(m_tree->m_callbacks, m_id != NONE && !is_seed())
+
 public:
 
-    /** @name node construction */
+    /** @name construction */
     /** @{ */
 
     NodeRef() : m_tree(nullptr), m_id(NONE), m_seed() { _clear_seed(); }
@@ -18556,6 +21014,13 @@ public:
     NodeRef(Tree *t, size_t id, size_t seed_pos) : m_tree(t), m_id(id), m_seed() { m_seed.str = nullptr; m_seed.len = seed_pos; }
     NodeRef(Tree *t, size_t id, csubstr  seed_key) : m_tree(t), m_id(id), m_seed(seed_key) {}
     NodeRef(std::nullptr_t) : m_tree(nullptr), m_id(NONE), m_seed() {}
+
+    /** @} */
+
+public:
+
+    /** @name assignment */
+    /** @{ */
 
     NodeRef(NodeRef const&) = default;
     NodeRef(NodeRef     &&) = default;
@@ -18567,166 +21032,46 @@ public:
 
 public:
 
-    inline Tree      * tree()       { return m_tree; }
-    inline Tree const* tree() const { return m_tree; }
-
-    inline size_t id() const { return m_id; }
-
-    inline NodeData      * get()       { return m_tree->get(m_id); }
-    inline NodeData const* get() const { return m_tree->get(m_id); }
-
-    inline bool operator== (NodeRef const& that) const { _C4RV(); RYML_ASSERT(that.valid() && !that.is_seed()); RYML_ASSERT(that.m_tree == m_tree); return m_id == that.m_id; }
-    inline bool operator!= (NodeRef const& that) const { return ! this->operator==(that); }
-
-    inline bool operator== (std::nullptr_t) const { return m_tree == nullptr || m_id == NONE || is_seed(); }
-    inline bool operator!= (std::nullptr_t) const { return ! this->operator== (nullptr); }
-
-    inline bool operator== (csubstr val) const { _C4RV(); RYML_ASSERT(has_val()); return m_tree->val(m_id) == val; }
-    inline bool operator!= (csubstr val) const { _C4RV(); RYML_ASSERT(has_val()); return m_tree->val(m_id) != val; }
-
-    //inline operator bool () const { return m_tree == nullptr || m_id == NONE || is_seed(); }
-
-public:
+    /** @name state queries */
+    /** @{ */
 
     inline bool valid() const { return m_tree != nullptr && m_id != NONE; }
     inline bool is_seed() const { return m_seed.str != nullptr || m_seed.len != NONE; }
 
     inline void _clear_seed() { /*do this manually or an assert is triggered*/ m_seed.str = nullptr; m_seed.len = NONE; }
 
+    /** @} */
+
+public:
+
+    /** @name comparisons */
+    /** @{ */
+
+    inline bool operator== (NodeRef const& that) const { _C4RV(); RYML_ASSERT(that.valid() && !that.is_seed()); RYML_ASSERT(that.m_tree == m_tree); return m_id == that.m_id; }
+    inline bool operator!= (NodeRef const& that) const { return ! this->operator==(that); }
+
+    inline bool operator== (ConstNodeRef const& that) const { _C4RV(); RYML_ASSERT(that.valid()); RYML_ASSERT(that.m_tree == m_tree); return m_id == that.m_id; }
+    inline bool operator!= (ConstNodeRef const& that) const { return ! this->operator==(that); }
+
+    inline bool operator== (std::nullptr_t) const { return m_tree == nullptr || m_id == NONE || is_seed(); }
+    inline bool operator!= (std::nullptr_t) const { return m_tree != nullptr && m_id != NONE && !is_seed(); }
+
+    inline bool operator== (csubstr val) const { _C4RV(); RYML_ASSERT(has_val()); return m_tree->val(m_id) == val; }
+    inline bool operator!= (csubstr val) const { _C4RV(); RYML_ASSERT(has_val()); return m_tree->val(m_id) != val; }
+
+    //inline operator bool () const { return m_tree == nullptr || m_id == NONE || is_seed(); }
+
+    /** @} */
+
 public:
 
     /** @name node property getters */
     /** @{ */
 
-    inline NodeType     type() const { _C4RV(); return m_tree->type(m_id); }
-    inline const char*  type_str() const { _C4RV(); RYML_ASSERT(valid() && ! is_seed()); return m_tree->type_str(m_id); }
+    C4_ALWAYS_INLINE C4_PURE Tree * tree() noexcept { return m_tree; }
+    C4_ALWAYS_INLINE C4_PURE Tree const* tree() const noexcept { return m_tree; }
 
-    inline csubstr    key()        const { _C4RV(); return m_tree->key(m_id); }
-    inline csubstr    key_tag()    const { _C4RV(); return m_tree->key_tag(m_id); }
-    inline csubstr    key_ref()    const { _C4RV(); return m_tree->key_ref(m_id); }
-    inline csubstr    key_anchor() const { _C4RV(); return m_tree->key_anchor(m_id); }
-    inline NodeScalar keysc()      const { _C4RV(); return m_tree->keysc(m_id); }
-
-    inline csubstr    val()        const { _C4RV(); return m_tree->val(m_id); }
-    inline csubstr    val_tag()    const { _C4RV(); return m_tree->val_tag(m_id); }
-    inline csubstr    val_ref()    const { _C4RV(); return m_tree->val_ref(m_id); }
-    inline csubstr    val_anchor() const { _C4RV(); return m_tree->val_anchor(m_id); }
-    inline NodeScalar valsc()      const { _C4RV(); return m_tree->valsc(m_id); }
-
-    inline bool key_is_null() const { _C4RV(); return m_tree->key_is_null(m_id); }
-    inline bool val_is_null() const { _C4RV(); return m_tree->val_is_null(m_id); }
-
-    /** decode the base64-encoded key deserialize and assign the
-     * decoded blob to the given buffer/
-     * @return the size of base64-decoded blob */
-    size_t deserialize_key(fmt::base64_wrapper v) const;
-    /** decode the base64-encoded key deserialize and assign the
-     * decoded blob to the given buffer/
-     * @return the size of base64-decoded blob */
-    size_t deserialize_val(fmt::base64_wrapper v) const;
-
-    /** @} */
-
-public:
-
-    /** @name node property predicates */
-    /** @{ */
-
-    C4_ALWAYS_INLINE bool is_stream()        const { _C4RV(); return m_tree->is_stream(m_id); }
-    C4_ALWAYS_INLINE bool is_doc()           const { _C4RV(); return m_tree->is_doc(m_id); }
-    C4_ALWAYS_INLINE bool is_container()     const { _C4RV(); return m_tree->is_container(m_id); }
-    C4_ALWAYS_INLINE bool is_map()           const { _C4RV(); return m_tree->is_map(m_id); }
-    C4_ALWAYS_INLINE bool is_seq()           const { _C4RV(); return m_tree->is_seq(m_id); }
-    C4_ALWAYS_INLINE bool has_val()          const { _C4RV(); return m_tree->has_val(m_id); }
-    C4_ALWAYS_INLINE bool has_key()          const { _C4RV(); return m_tree->has_key(m_id); }
-    C4_ALWAYS_INLINE bool is_val()           const { _C4RV(); return m_tree->is_val(m_id); }
-    C4_ALWAYS_INLINE bool is_keyval()        const { _C4RV(); return m_tree->is_keyval(m_id); }
-    C4_ALWAYS_INLINE bool has_key_tag()      const { _C4RV(); return m_tree->has_key_tag(m_id); }
-    C4_ALWAYS_INLINE bool has_val_tag()      const { _C4RV(); return m_tree->has_val_tag(m_id); }
-    C4_ALWAYS_INLINE bool has_key_anchor()   const { _C4RV(); return m_tree->has_key_anchor(m_id); }
-    C4_ALWAYS_INLINE bool is_key_anchor()    const { _C4RV(); return m_tree->is_key_anchor(m_id); }
-    C4_ALWAYS_INLINE bool has_val_anchor()   const { _C4RV(); return m_tree->has_val_anchor(m_id); }
-    C4_ALWAYS_INLINE bool is_val_anchor()    const { _C4RV(); return m_tree->is_val_anchor(m_id); }
-    C4_ALWAYS_INLINE bool has_anchor()       const { _C4RV(); return m_tree->has_anchor(m_id); }
-    C4_ALWAYS_INLINE bool is_anchor()        const { _C4RV(); return m_tree->is_anchor(m_id); }
-    C4_ALWAYS_INLINE bool is_key_ref()       const { _C4RV(); return m_tree->is_key_ref(m_id); }
-    C4_ALWAYS_INLINE bool is_val_ref()       const { _C4RV(); return m_tree->is_val_ref(m_id); }
-    C4_ALWAYS_INLINE bool is_ref()           const { _C4RV(); return m_tree->is_ref(m_id); }
-    C4_ALWAYS_INLINE bool is_anchor_or_ref() const { _C4RV(); return m_tree->is_anchor_or_ref(m_id); }
-    C4_ALWAYS_INLINE bool is_key_quoted()    const { _C4RV(); return m_tree->is_key_quoted(m_id); }
-    C4_ALWAYS_INLINE bool is_val_quoted()    const { _C4RV(); return m_tree->is_val_quoted(m_id); }
-    C4_ALWAYS_INLINE bool is_quoted()        const { _C4RV(); return m_tree->is_quoted(m_id); }
-
-    C4_ALWAYS_INLINE bool parent_is_seq()    const { _C4RV(); return m_tree->parent_is_seq(m_id); }
-    C4_ALWAYS_INLINE bool parent_is_map()    const { _C4RV(); return m_tree->parent_is_map(m_id); }
-
-    /** true when name and value are empty, and has no children */
-    C4_ALWAYS_INLINE bool empty() const { _C4RV(); return m_tree->empty(m_id); }
-
-    /** @} */
-
-public:
-
-    /** @name hierarchy predicates */
-    /** @{ */
-
-    inline bool is_root()    const { _C4RV(); return m_tree->is_root(m_id); }
-    inline bool has_parent() const { _C4RV(); return m_tree->has_parent(m_id); }
-
-    inline bool has_child(NodeRef const& ch) const { _C4RV(); return m_tree->has_child(m_id, ch.m_id); }
-    inline bool has_child(csubstr name) const { _C4RV();  return m_tree->has_child(m_id, name); }
-    inline bool has_children() const { _C4RV(); return m_tree->has_children(m_id); }
-
-    inline bool has_sibling(NodeRef const& n) const { _C4RV(); return m_tree->has_sibling(m_id, n.m_id); }
-    inline bool has_sibling(csubstr name) const { _C4RV();  return m_tree->has_sibling(m_id, name); }
-    /** counts with this */
-    inline bool has_siblings() const { _C4RV(); return m_tree->has_siblings(m_id); }
-    /** does not count with this */
-    inline bool has_other_siblings() const { _C4RV(); return m_tree->has_other_siblings(m_id); }
-
-    /** @} */
-
-public:
-
-    /** @name hierarchy getters */
-    /** @{ */
-
-    NodeRef       parent()       { _C4RV(); return {m_tree, m_tree->parent(m_id)}; }
-    NodeRef const parent() const { _C4RV(); return {m_tree, m_tree->parent(m_id)}; }
-
-    NodeRef       prev_sibling()       { _C4RV(); return {m_tree, m_tree->prev_sibling(m_id)}; }
-    NodeRef const prev_sibling() const { _C4RV(); return {m_tree, m_tree->prev_sibling(m_id)}; }
-
-    NodeRef       next_sibling()       { _C4RV(); return {m_tree, m_tree->next_sibling(m_id)}; }
-    NodeRef const next_sibling() const { _C4RV(); return {m_tree, m_tree->next_sibling(m_id)}; }
-
-    /** O(#num_children) */
-    size_t  num_children() const { _C4RV(); return m_tree->num_children(m_id); }
-    size_t  child_pos(NodeRef const& n) const { _C4RV(); return m_tree->child_pos(m_id, n.m_id); }
-    NodeRef       first_child()       { _C4RV(); return {m_tree, m_tree->first_child(m_id)}; }
-    NodeRef const first_child() const { _C4RV(); return {m_tree, m_tree->first_child(m_id)}; }
-    NodeRef       last_child ()       { _C4RV(); return {m_tree, m_tree->last_child (m_id)}; }
-    NodeRef const last_child () const { _C4RV(); return {m_tree, m_tree->last_child (m_id)}; }
-    NodeRef       child(size_t pos)       { _C4RV(); return {m_tree, m_tree->child(m_id, pos)}; }
-    NodeRef const child(size_t pos) const { _C4RV(); return {m_tree, m_tree->child(m_id, pos)}; }
-    NodeRef       find_child(csubstr name)       { _C4RV(); return {m_tree, m_tree->find_child(m_id, name)}; }
-    NodeRef const find_child(csubstr name) const { _C4RV(); return {m_tree, m_tree->find_child(m_id, name)}; }
-
-    /** O(#num_siblings) */
-    size_t  num_siblings() const { _C4RV(); return m_tree->num_siblings(m_id); }
-    size_t  num_other_siblings() const { _C4RV(); return m_tree->num_other_siblings(m_id); }
-    size_t  sibling_pos(NodeRef const& n) const { _C4RV(); return m_tree->child_pos(m_tree->parent(m_id), n.m_id); }
-    NodeRef       first_sibling()       { _C4RV(); return {m_tree, m_tree->first_sibling(m_id)}; }
-    NodeRef const first_sibling() const { _C4RV(); return {m_tree, m_tree->first_sibling(m_id)}; }
-    NodeRef       last_sibling ()       { _C4RV(); return {m_tree, m_tree->last_sibling(m_id)}; }
-    NodeRef const last_sibling () const { _C4RV(); return {m_tree, m_tree->last_sibling(m_id)}; }
-    NodeRef       sibling(size_t pos)       { _C4RV(); return {m_tree, m_tree->sibling(m_id, pos)}; }
-    NodeRef const sibling(size_t pos) const { _C4RV(); return {m_tree, m_tree->sibling(m_id, pos)}; }
-    NodeRef       find_sibling(csubstr name)       { _C4RV(); return {m_tree, m_tree->find_sibling(m_id, name)}; }
-    NodeRef const find_sibling(csubstr name) const { _C4RV(); return {m_tree, m_tree->find_sibling(m_id, name)}; }
-
-    NodeRef       doc(size_t num)       { _C4RV(); return {m_tree, m_tree->doc(num)}; }
-    NodeRef const doc(size_t num) const { _C4RV(); return {m_tree, m_tree->doc(num)}; }
+    C4_ALWAYS_INLINE C4_PURE size_t id() const noexcept { return m_id; }
 
     /** @} */
 
@@ -18736,6 +21081,7 @@ public:
     /** @{ */
 
     void change_type(NodeType t) { _C4RV(); m_tree->change_type(m_id, t); }
+
     void set_type(NodeType t) { _C4RV(); m_tree->_set_flags(m_id, t); }
     void set_key(csubstr key) { _C4RV(); m_tree->_set_key(m_id, key); }
     void set_val(csubstr val) { _C4RV(); m_tree->_set_val(m_id, val); }
@@ -18761,6 +21107,12 @@ public:
         csubstr s = m_tree->to_arena(v);
         m_tree->_set_val(m_id, s);
         return s.len;
+    }
+    size_t set_val_serialized(std::nullptr_t)
+    {
+        _C4RV();
+        m_tree->_set_val(m_id, csubstr{});
+        return 0;
     }
 
     /** encode a blob as base64, then assign the result to the node's key
@@ -18801,62 +21153,6 @@ public:
         m_tree->remove_children(m_id);
     }
 
-    /** @} */
-
-public:
-
-    /** hierarchy getters */
-    /** @{ */
-
-    /** O(num_children) */
-    NodeRef operator[] (csubstr k)
-    {
-        RYML_ASSERT( ! is_seed());
-        RYML_ASSERT(valid());
-        size_t ch = m_tree->find_child(m_id, k);
-        NodeRef r = ch != NONE ? NodeRef(m_tree, ch) : NodeRef(m_tree, m_id, k);
-        return r;
-    }
-
-    /** O(num_children) */
-    NodeRef const operator[] (csubstr k) const
-    {
-        RYML_ASSERT( ! is_seed());
-        RYML_ASSERT(valid());
-        size_t ch = m_tree->find_child(m_id, k);
-        RYML_ASSERT(ch != NONE);
-        NodeRef const r(m_tree, ch);
-        return r;
-    }
-
-    /** O(num_children) */
-    NodeRef operator[] (size_t pos)
-    {
-        RYML_ASSERT( ! is_seed());
-        RYML_ASSERT(valid());
-        size_t ch = m_tree->child(m_id, pos);
-        NodeRef r = ch != NONE ? NodeRef(m_tree, ch) : NodeRef(m_tree, m_id, pos);
-        return r;
-    }
-
-    /** O(num_children) */
-    NodeRef const operator[] (size_t pos) const
-    {
-        RYML_ASSERT( ! is_seed());
-        RYML_ASSERT(valid());
-        size_t ch = m_tree->child(m_id, pos);
-        RYML_ASSERT(ch != NONE);
-        NodeRef const r(m_tree, ch);
-        return r;
-    }
-
-    /** @} */
-
-public:
-
-    /** node modification */
-    /** @{ */
-
     void create() { _apply_seed(); }
 
     inline void operator= (NodeType_e t)
@@ -18883,6 +21179,12 @@ public:
         _apply(v);
     }
 
+    inline void operator= (std::nullptr_t)
+    {
+        _apply_seed();
+        _apply(csubstr{});
+    }
+
     inline void operator= (csubstr v)
     {
         _apply_seed();
@@ -18902,9 +21204,12 @@ public:
 
 public:
 
+    /** @name serialization */
+    /** @{ */
+
     /** serialize a variable to the arena */
     template<class T>
-    inline csubstr to_arena(T const& C4_RESTRICT s) const
+    inline csubstr to_arena(T const& C4_RESTRICT s)
     {
         _C4RV();
         return m_tree->to_arena(s);
@@ -18929,21 +21234,6 @@ public:
         return *this;
     }
 
-    template<class T>
-    inline NodeRef const& operator>> (T &v) const
-    {
-        RYML_ASSERT( ! is_seed());
-        RYML_ASSERT(valid());
-        RYML_ASSERT(get() != nullptr);
-        if( ! read(*this, &v))
-        {
-            c4::yml::error("could not deserialize value");
-        }
-        return *this;
-    }
-
-public:
-
     /** serialize a variable, then assign the result to the node's key */
     template<class T>
     inline NodeRef& operator<< (Key<const T> const& C4_RESTRICT v)
@@ -18962,19 +21252,6 @@ public:
         return *this;
     }
 
-    /** deserialize the node's key to the given variable */
-    template<class T>
-    inline NodeRef const& operator>> (Key<T> v) const
-    {
-        RYML_ASSERT( ! is_seed());
-        RYML_ASSERT(valid());
-        RYML_ASSERT(get() != nullptr);
-        from_chars(key(), &v.k);
-        return *this;
-    }
-
-public:
-
     NodeRef& operator<< (Key<fmt::const_base64_wrapper> w)
     {
         set_key_serialized(w.wrapper);
@@ -18987,43 +21264,7 @@ public:
         return *this;
     }
 
-    NodeRef const& operator>> (Key<fmt::base64_wrapper> w) const
-    {
-        deserialize_key(w.wrapper);
-        return *this;
-    }
-
-    NodeRef const& operator>> (fmt::base64_wrapper w) const
-    {
-        deserialize_val(w);
-        return *this;
-    }
-
-public:
-
-    template<class T>
-    void get_if(csubstr name, T *var) const
-    {
-        auto ch = find_child(name);
-        if(ch.valid())
-        {
-            ch >> *var;
-        }
-    }
-
-    template<class T>
-    void get_if(csubstr name, T *var, T fallback) const
-    {
-        auto ch = find_child(name);
-        if(ch.valid())
-        {
-            ch >> *var;
-        }
-        else
-        {
-            *var = fallback;
-        }
-    }
+    /** @} */
 
 private:
 
@@ -19066,6 +21307,9 @@ private:
     }
 
 public:
+
+    /** @name modification of hierarchy */
+    /** @{ */
 
     inline NodeRef insert_child(NodeRef after)
     {
@@ -19116,7 +21360,7 @@ public:
 
 public:
 
-    inline NodeRef insert_sibling(NodeRef const after)
+    inline NodeRef insert_sibling(ConstNodeRef const& after)
     {
         _C4RV();
         RYML_ASSERT(after.m_tree == m_tree);
@@ -19124,7 +21368,7 @@ public:
         return r;
     }
 
-    inline NodeRef insert_sibling(NodeInit const& i, NodeRef const after)
+    inline NodeRef insert_sibling(NodeInit const& i, ConstNodeRef const& after)
     {
         _C4RV();
         RYML_ASSERT(after.m_tree == m_tree);
@@ -19195,20 +21439,23 @@ public:
 
 public:
 
-    /** change the node's position within its parent */
-    inline void move(NodeRef const after)
+    /** change the node's position within its parent, placing it after
+     * @p after. To move to the first position in the parent, simply
+     * pass an empty or default-constructed reference like this:
+     * `n.move({})`. */
+    inline void move(ConstNodeRef const& after)
     {
         _C4RV();
         m_tree->move(m_id, after.m_id);
     }
 
-    /** move the node to a different parent, which may belong to a different
-     * tree. When this is the case, then this node's tree pointer is reset to
-     * the tree of the parent node. */
-    inline void move(NodeRef const parent, NodeRef const after)
+    /** move the node to a different @p parent (which may belong to a
+     * different tree), placing it after @p after. When the
+     * destination parent is in a new tree, then this node's tree
+     * pointer is reset to the tree of the parent node. */
+    inline void move(NodeRef const& parent, ConstNodeRef const& after)
     {
         _C4RV();
-        RYML_ASSERT(parent.m_tree == after.m_tree);
         if(parent.m_tree == m_tree)
         {
             m_tree->move(m_id, parent.m_id, after.m_id);
@@ -19220,10 +21467,28 @@ public:
         }
     }
 
-    inline NodeRef duplicate(NodeRef const parent, NodeRef const after) const
+    /** duplicate the current node somewhere within its parent, and
+     * place it after the node @p after. To place into the first
+     * position of the parent, simply pass an empty or
+     * default-constructed reference like this: `n.move({})`. */
+    inline NodeRef duplicate(ConstNodeRef const& after) const
     {
         _C4RV();
-        RYML_ASSERT(parent.m_tree == after.m_tree);
+        RYML_ASSERT(m_tree == after.m_tree || after.m_id == NONE);
+        size_t dup = m_tree->duplicate(m_id, m_tree->parent(m_id), after.m_id);
+        NodeRef r(m_tree, dup);
+        return r;
+    }
+
+    /** duplicate the current node somewhere into a different @p parent
+     * (possibly from a different tree), and place it after the node
+     * @p after. To place into the first position of the parent,
+     * simply pass an empty or default-constructed reference like
+     * this: `n.move({})`. */
+    inline NodeRef duplicate(NodeRef const& parent, ConstNodeRef const& after) const
+    {
+        _C4RV();
+        RYML_ASSERT(parent.m_tree == after.m_tree || after.m_id == NONE);
         if(parent.m_tree == m_tree)
         {
             size_t dup = m_tree->duplicate(m_id, parent.m_id, after.m_id);
@@ -19238,7 +21503,7 @@ public:
         }
     }
 
-    inline void duplicate_children(NodeRef const parent, NodeRef const after) const
+    inline void duplicate_children(NodeRef const& parent, ConstNodeRef const& after) const
     {
         _C4RV();
         RYML_ASSERT(parent.m_tree == after.m_tree);
@@ -19252,97 +21517,44 @@ public:
         }
     }
 
-private:
-
-    template<class Nd>
-    struct child_iterator
-    {
-        Tree * m_tree;
-        size_t m_child_id;
-
-        using value_type = NodeRef;
-
-        child_iterator(Tree * t, size_t id) : m_tree(t), m_child_id(id) {}
-
-        child_iterator& operator++ () { RYML_ASSERT(m_child_id != NONE); m_child_id = m_tree->next_sibling(m_child_id); return *this; }
-        child_iterator& operator-- () { RYML_ASSERT(m_child_id != NONE); m_child_id = m_tree->prev_sibling(m_child_id); return *this; }
-
-        Nd operator*  () const { return Nd(m_tree, m_child_id); }
-        Nd operator-> () const { return Nd(m_tree, m_child_id); }
-
-        bool operator!= (child_iterator that) const { RYML_ASSERT(m_tree == that.m_tree); return m_child_id != that.m_child_id; }
-        bool operator== (child_iterator that) const { RYML_ASSERT(m_tree == that.m_tree); return m_child_id == that.m_child_id; }
-    };
-
-public:
-
-    using       iterator = child_iterator<      NodeRef>;
-    using const_iterator = child_iterator<const NodeRef>;
-
-    inline iterator begin() { return iterator(m_tree, m_tree->first_child(m_id)); }
-    inline iterator end  () { return iterator(m_tree, NONE); }
-
-    inline const_iterator begin() const { return const_iterator(m_tree, m_tree->first_child(m_id)); }
-    inline const_iterator end  () const { return const_iterator(m_tree, NONE); }
-
-private:
-
-    template<class Nd>
-    struct children_view_
-    {
-        using n_iterator = child_iterator<Nd>;
-
-        n_iterator b, e;
-
-        inline children_view_(n_iterator const& b_, n_iterator const& e_) : b(b_), e(e_) {}
-
-        inline n_iterator begin() const { return b; }
-        inline n_iterator end  () const { return e; }
-    };
-
-public:
-
-    using       children_view = children_view_<      NodeRef>;
-    using const_children_view = children_view_<const NodeRef>;
-
-          children_view children()       { return       children_view(begin(), end()); }
-    const_children_view children() const { return const_children_view(begin(), end()); }
-
-    #if defined(__clang__)
-    #   pragma clang diagnostic push
-    #   pragma clang diagnostic ignored "-Wnull-dereference"
-    #elif defined(__GNUC__)
-    #   pragma GCC diagnostic push
-    #   if __GNUC__ >= 6
-    #       pragma GCC diagnostic ignored "-Wnull-dereference"
-    #   endif
-    #endif
-
-          children_view siblings()       { if(is_root()) { return       children_view(end(), end()); } else { size_t p = get()->m_parent; return       children_view(iterator(m_tree, m_tree->get(p)->m_first_child), iterator(m_tree, NONE)); } }
-    const_children_view siblings() const { if(is_root()) { return const_children_view(end(), end()); } else { size_t p = get()->m_parent; return const_children_view(const_iterator(m_tree, m_tree->get(p)->m_first_child), const_iterator(m_tree, NONE)); } }
-
-    #if defined(__clang__)
-    #   pragma clang diagnostic pop
-    #elif defined(__GNUC__)
-    #   pragma GCC diagnostic pop
-    #endif
-
-public:
-
-    /** visit every child node calling fn(node) */
-    template<class Visitor> bool visit(Visitor fn, size_t indentation_level=0, bool skip_root=true);
-    /** visit every child node calling fn(node) */
-    template<class Visitor> bool visit(Visitor fn, size_t indentation_level=0, bool skip_root=true) const;
-
-    /** visit every child node calling fn(node, level) */
-    template<class Visitor> bool visit_stacked(Visitor fn, size_t indentation_level=0, bool skip_root=true);
-    /** visit every child node calling fn(node, level) */
-    template<class Visitor> bool visit_stacked(Visitor fn, size_t indentation_level=0, bool skip_root=true) const;
+    /** @} */
 
 #undef _C4RV
 };
 
+
 //-----------------------------------------------------------------------------
+
+inline ConstNodeRef::ConstNodeRef(NodeRef const& that)
+    : m_tree(that.m_tree)
+    , m_id(!that.is_seed() ? that.id() : NONE)
+{
+}
+
+inline ConstNodeRef::ConstNodeRef(NodeRef && that)
+    : m_tree(that.m_tree)
+    , m_id(!that.is_seed() ? that.id() : NONE)
+{
+}
+
+
+inline ConstNodeRef& ConstNodeRef::operator= (NodeRef const& that)
+{
+    m_tree = (that.m_tree);
+    m_id = (!that.is_seed() ? that.id() : NONE);
+    return *this;
+}
+
+inline ConstNodeRef& ConstNodeRef::operator= (NodeRef && that)
+{
+    m_tree = (that.m_tree);
+    m_id = (!that.is_seed() ? that.id() : NONE);
+    return *this;
+}
+
+
+//-----------------------------------------------------------------------------
+
 template<class T>
 inline void write(NodeRef *n, T const& v)
 {
@@ -19355,81 +21567,26 @@ inline read(NodeRef const& n, T *v)
 {
     return from_chars(n.val(), v);
 }
+template<class T>
+typename std::enable_if< ! std::is_floating_point<T>::value, bool>::type
+inline read(ConstNodeRef const& n, T *v)
+{
+    return from_chars(n.val(), v);
+}
 
 template<class T>
-typename std::enable_if< std::is_floating_point<T>::value, bool>::type
+typename std::enable_if<std::is_floating_point<T>::value, bool>::type
 inline read(NodeRef const& n, T *v)
 {
     return from_chars_float(n.val(), v);
 }
-
-
-//-----------------------------------------------------------------------------
-template<class Visitor>
-bool NodeRef::visit(Visitor fn, size_t indentation_level, bool skip_root)
+template<class T>
+typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+inline read(ConstNodeRef const& n, T *v)
 {
-    return const_cast<NodeRef const*>(this)->visit(fn, indentation_level, skip_root);
+    return from_chars_float(n.val(), v);
 }
 
-template<class Visitor>
-bool NodeRef::visit(Visitor fn, size_t indentation_level, bool skip_root) const
-{
-    size_t increment = 0;
-    if( ! (is_root() && skip_root))
-    {
-        if(fn(this, indentation_level))
-        {
-            return true;
-        }
-        ++increment;
-    }
-    if(has_children())
-    {
-        for(auto ch : children())
-        {
-            if(ch.visit(fn, indentation_level + increment)) // no need to forward skip_root as it won't be root
-            {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
-template<class Visitor>
-bool NodeRef::visit_stacked(Visitor fn, size_t indentation_level, bool skip_root)
-{
-    return const_cast< NodeRef const* >(this)->visit_stacked(fn, indentation_level, skip_root);
-}
-
-template<class Visitor>
-bool NodeRef::visit_stacked(Visitor fn, size_t indentation_level, bool skip_root) const
-{
-    size_t increment = 0;
-    if( ! (is_root() && skip_root))
-    {
-        if(fn(this, indentation_level))
-        {
-            return true;
-        }
-        ++increment;
-    }
-    if(has_children())
-    {
-        fn.push(this, indentation_level);
-        for(auto ch : children())
-        {
-            if(ch.visit(fn, indentation_level + increment)) // no need to forward skip_root as it won't be root
-            {
-                fn.pop(this, indentation_level);
-                return true;
-            }
-        }
-        fn.pop(this, indentation_level);
-    }
-    return false;
-}
 
 } // namespace yml
 } // namespace c4
@@ -19881,6 +22038,20 @@ inline void __c4presc(const char *s, size_t len)
 #include "./node.hpp"
 #endif
 
+
+#define RYML_DEPRECATE_EMIT                                             \
+    RYML_DEPRECATED("use emit_yaml() instead. See https://github.com/biojppm/rapidyaml/issues/120")
+#ifdef emit
+#error "emit is defined, likely from a Qt include. This will cause a compilation error. See https://github.com/biojppm/rapidyaml/issues/120"
+#endif
+#define RYML_DEPRECATE_EMITRS                                           \
+    RYML_DEPRECATED("use emitrs_yaml() instead. See https://github.com/biojppm/rapidyaml/issues/120")
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 namespace c4 {
 namespace yml {
 
@@ -19904,7 +22075,7 @@ struct as_json
     size_t node;
     as_json(Tree const& t) : tree(&t), node(t.empty() ? NONE : t.root_id()) {}
     as_json(Tree const& t, size_t id) : tree(&t), node(id) {}
-    as_json(NodeRef const& n) : tree(n.tree()), node(n.id()) {}
+    as_json(ConstNodeRef const& n) : tree(n.tree()), node(n.id()) {}
 };
 
 
@@ -19928,11 +22099,11 @@ public:
      *
      * When writing to a file, the returned substr will be null, but its
      * length will be set to the number of bytes written. */
-    substr emit(EmitType_e type, Tree const& t, size_t id, bool error_on_excess);
+    substr emit_as(EmitType_e type, Tree const& t, size_t id, bool error_on_excess);
     /** emit starting at the root node */
-    substr emit(EmitType_e type, Tree const& t, bool error_on_excess=true);
+    substr emit_as(EmitType_e type, Tree const& t, bool error_on_excess=true);
     /** emit the given node */
-    substr emit(EmitType_e type, NodeRef const& n, bool error_on_excess=true);
+    substr emit_as(EmitType_e type, ConstNodeRef const& n, bool error_on_excess=true);
 
 private:
 
@@ -19988,27 +22159,36 @@ private:
 
 /** emit YAML to the given file. A null file defaults to stdout.
  * Return the number of bytes written. */
-inline size_t emit(Tree const& t, size_t id, FILE *f)
+inline size_t emit_yaml(Tree const& t, size_t id, FILE *f)
 {
     EmitterFile em(f);
-    return em.emit(EMIT_YAML, t, id, /*error_on_excess*/true).len;
+    return em.emit_as(EMIT_YAML, t, id, /*error_on_excess*/true).len;
 }
+RYML_DEPRECATE_EMIT inline size_t emit(Tree const& t, size_t id, FILE *f)
+{
+    return emit_yaml(t, id, f);
+}
+
 /** emit JSON to the given file. A null file defaults to stdout.
  * Return the number of bytes written. */
 inline size_t emit_json(Tree const& t, size_t id, FILE *f)
 {
     EmitterFile em(f);
-    return em.emit(EMIT_JSON, t, id, /*error_on_excess*/true).len;
+    return em.emit_as(EMIT_JSON, t, id, /*error_on_excess*/true).len;
 }
 
 
 /** emit YAML to the given file. A null file defaults to stdout.
  * Return the number of bytes written.
  * @overload */
-inline size_t emit(Tree const& t, FILE *f=nullptr)
+inline size_t emit_yaml(Tree const& t, FILE *f=nullptr)
 {
     EmitterFile em(f);
-    return em.emit(EMIT_YAML, t, /*error_on_excess*/true).len;
+    return em.emit_as(EMIT_YAML, t, /*error_on_excess*/true).len;
+}
+RYML_DEPRECATE_EMIT inline size_t emit(Tree const& t, FILE *f=nullptr)
+{
+    return emit_yaml(t, f);
 }
 
 /** emit JSON to the given file. A null file defaults to stdout.
@@ -20017,26 +22197,30 @@ inline size_t emit(Tree const& t, FILE *f=nullptr)
 inline size_t emit_json(Tree const& t, FILE *f=nullptr)
 {
     EmitterFile em(f);
-    return em.emit(EMIT_JSON, t, /*error_on_excess*/true).len;
+    return em.emit_as(EMIT_JSON, t, /*error_on_excess*/true).len;
 }
 
 
 /** emit YAML to the given file. A null file defaults to stdout.
  * Return the number of bytes written.
  * @overload */
-inline size_t emit(NodeRef const& r, FILE *f=nullptr)
+inline size_t emit_yaml(ConstNodeRef const& r, FILE *f=nullptr)
 {
     EmitterFile em(f);
-    return em.emit(EMIT_YAML, r, /*error_on_excess*/true).len;
+    return em.emit_as(EMIT_YAML, r, /*error_on_excess*/true).len;
+}
+RYML_DEPRECATE_EMIT inline size_t emit(ConstNodeRef const& r, FILE *f=nullptr)
+{
+    return emit_yaml(r, f);
 }
 
 /** emit JSON to the given file. A null file defaults to stdout.
  * Return the number of bytes written.
  * @overload */
-inline size_t emit_json(NodeRef const& r, FILE *f=nullptr)
+inline size_t emit_json(ConstNodeRef const& r, FILE *f=nullptr)
 {
     EmitterFile em(f);
-    return em.emit(EMIT_JSON, r, /*error_on_excess*/true).len;
+    return em.emit_as(EMIT_JSON, r, /*error_on_excess*/true).len;
 }
 
 
@@ -20047,17 +22231,17 @@ template<class OStream>
 inline OStream& operator<< (OStream& s, Tree const& t)
 {
     EmitterOStream<OStream> em(s);
-    em.emit(EMIT_YAML, t);
+    em.emit_as(EMIT_YAML, t);
     return s;
 }
 
 /** emit YAML to an STL-like ostream
  * @overload */
 template<class OStream>
-inline OStream& operator<< (OStream& s, NodeRef const& n)
+inline OStream& operator<< (OStream& s, ConstNodeRef const& n)
 {
     EmitterOStream<OStream> em(s);
-    em.emit(EMIT_YAML, n);
+    em.emit_as(EMIT_YAML, n);
     return s;
 }
 
@@ -20066,7 +22250,7 @@ template<class OStream>
 inline OStream& operator<< (OStream& s, as_json const& j)
 {
     EmitterOStream<OStream> em(s);
-    em.emit(EMIT_JSON, *j.tree, j.node, true);
+    em.emit_as(EMIT_JSON, *j.tree, j.node, true);
     return s;
 }
 
@@ -20077,10 +22261,14 @@ inline OStream& operator<< (OStream& s, as_json const& j)
 /** emit YAML to the given buffer. Return a substr trimmed to the emitted YAML.
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @overload */
-inline substr emit(Tree const& t, size_t id, substr buf, bool error_on_excess=true)
+inline substr emit_yaml(Tree const& t, size_t id, substr buf, bool error_on_excess=true)
 {
     EmitterBuf em(buf);
-    return em.emit(EMIT_YAML, t, id, error_on_excess);
+    return em.emit_as(EMIT_YAML, t, id, error_on_excess);
+}
+RYML_DEPRECATE_EMIT inline substr emit(Tree const& t, size_t id, substr buf, bool error_on_excess=true)
+{
+    return emit_yaml(t, id, buf, error_on_excess);
 }
 
 /** emit JSON to the given buffer. Return a substr trimmed to the emitted JSON.
@@ -20089,17 +22277,21 @@ inline substr emit(Tree const& t, size_t id, substr buf, bool error_on_excess=tr
 inline substr emit_json(Tree const& t, size_t id, substr buf, bool error_on_excess=true)
 {
     EmitterBuf em(buf);
-    return em.emit(EMIT_JSON, t, id, error_on_excess);
+    return em.emit_as(EMIT_JSON, t, id, error_on_excess);
 }
 
 
 /** emit YAML to the given buffer. Return a substr trimmed to the emitted YAML.
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @overload */
-inline substr emit(Tree const& t, substr buf, bool error_on_excess=true)
+inline substr emit_yaml(Tree const& t, substr buf, bool error_on_excess=true)
 {
     EmitterBuf em(buf);
-    return em.emit(EMIT_YAML, t, error_on_excess);
+    return em.emit_as(EMIT_YAML, t, error_on_excess);
+}
+RYML_DEPRECATE_EMIT inline substr emit(Tree const& t, substr buf, bool error_on_excess=true)
+{
+    return emit_yaml(t, buf, error_on_excess);
 }
 
 /** emit JSON to the given buffer. Return a substr trimmed to the emitted JSON.
@@ -20108,7 +22300,7 @@ inline substr emit(Tree const& t, substr buf, bool error_on_excess=true)
 inline substr emit_json(Tree const& t, substr buf, bool error_on_excess=true)
 {
     EmitterBuf em(buf);
-    return em.emit(EMIT_JSON, t, error_on_excess);
+    return em.emit_as(EMIT_JSON, t, error_on_excess);
 }
 
 
@@ -20116,20 +22308,24 @@ inline substr emit_json(Tree const& t, substr buf, bool error_on_excess=true)
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @overload
  */
-inline substr emit(NodeRef const& r, substr buf, bool error_on_excess=true)
+inline substr emit_yaml(ConstNodeRef const& r, substr buf, bool error_on_excess=true)
 {
     EmitterBuf em(buf);
-    return em.emit(EMIT_YAML, r, error_on_excess);
+    return em.emit_as(EMIT_YAML, r, error_on_excess);
+}
+RYML_DEPRECATE_EMIT inline substr emit(ConstNodeRef const& r, substr buf, bool error_on_excess=true)
+{
+    return emit_yaml(r, buf, error_on_excess);
 }
 
 /** emit JSON to the given buffer. Return a substr trimmed to the emitted JSON.
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @overload
  */
-inline substr emit_json(NodeRef const& r, substr buf, bool error_on_excess=true)
+inline substr emit_json(ConstNodeRef const& r, substr buf, bool error_on_excess=true)
 {
     EmitterBuf em(buf);
-    return em.emit(EMIT_JSON, r, error_on_excess);
+    return em.emit_as(EMIT_JSON, r, error_on_excess);
 }
 
 
@@ -20138,17 +22334,22 @@ inline substr emit_json(NodeRef const& r, substr buf, bool error_on_excess=true)
 /** emit+resize: emit YAML to the given std::string/std::vector-like
  * container, resizing it as needed to fit the emitted YAML. */
 template<class CharOwningContainer>
-substr emitrs(Tree const& t, size_t id, CharOwningContainer * cont)
+substr emitrs_yaml(Tree const& t, size_t id, CharOwningContainer * cont)
 {
     substr buf = to_substr(*cont);
-    substr ret = emit(t, id, buf, /*error_on_excess*/false);
+    substr ret = emit_yaml(t, id, buf, /*error_on_excess*/false);
     if(ret.str == nullptr && ret.len > 0)
     {
         cont->resize(ret.len);
         buf = to_substr(*cont);
-        ret = emit(t, id, buf, /*error_on_excess*/true);
+        ret = emit_yaml(t, id, buf, /*error_on_excess*/true);
     }
     return ret;
+}
+template<class CharOwningContainer>
+RYML_DEPRECATE_EMITRS substr emitrs(Tree const& t, size_t id, CharOwningContainer * cont)
+{
+    return emitrs_yaml(t, id, cont);
 }
 
 /** emit+resize: emit JSON to the given std::string/std::vector-like
@@ -20171,15 +22372,22 @@ substr emitrs_json(Tree const& t, size_t id, CharOwningContainer * cont)
 /** emit+resize: emit YAML to the given std::string/std::vector-like
  * container, resizing it as needed to fit the emitted YAML. */
 template<class CharOwningContainer>
-CharOwningContainer emitrs(Tree const& t, size_t id)
+CharOwningContainer emitrs_yaml(Tree const& t, size_t id)
 {
     CharOwningContainer c;
-    emitrs(t, id, &c);
+    emitrs_yaml(t, id, &c);
+    return c;
+}
+template<class CharOwningContainer>
+RYML_DEPRECATE_EMITRS CharOwningContainer emitrs(Tree const& t, size_t id)
+{
+    CharOwningContainer c;
+    emitrs_yaml(t, id, &c);
     return c;
 }
 
-/** emit+resize: emit JSON to the given std::string/std::vector-like container,
- * resizing it as needed to fit the emitted JSON. */
+/** emit+resize: emit JSON to the given std::string/std::vector-like
+ * container, resizing it as needed to fit the emitted JSON. */
 template<class CharOwningContainer>
 CharOwningContainer emitrs_json(Tree const& t, size_t id)
 {
@@ -20189,18 +22397,23 @@ CharOwningContainer emitrs_json(Tree const& t, size_t id)
 }
 
 
-/** emit+resize: YAML to the given std::string/std::vector-like container,
- * resizing it as needed to fit the emitted YAML. */
+/** emit+resize: YAML to the given std::string/std::vector-like
+ * container, resizing it as needed to fit the emitted YAML. */
 template<class CharOwningContainer>
-substr emitrs(Tree const& t, CharOwningContainer * cont)
+substr emitrs_yaml(Tree const& t, CharOwningContainer * cont)
 {
     if(t.empty())
         return {};
-    return emitrs(t, t.root_id(), cont);
+    return emitrs_yaml(t, t.root_id(), cont);
+}
+template<class CharOwningContainer>
+RYML_DEPRECATE_EMITRS substr emitrs(Tree const& t, CharOwningContainer * cont)
+{
+    return emitrs_yaml(t, cont);
 }
 
-/** emit+resize: JSON to the given std::string/std::vector-like container,
- * resizing it as needed to fit the emitted JSON. */
+/** emit+resize: JSON to the given std::string/std::vector-like
+ * container, resizing it as needed to fit the emitted JSON. */
 template<class CharOwningContainer>
 substr emitrs_json(Tree const& t, CharOwningContainer * cont)
 {
@@ -20213,13 +22426,18 @@ substr emitrs_json(Tree const& t, CharOwningContainer * cont)
 /** emit+resize: YAML to the given std::string/std::vector-like container,
  * resizing it as needed to fit the emitted YAML. */
 template<class CharOwningContainer>
-CharOwningContainer emitrs(Tree const& t)
+CharOwningContainer emitrs_yaml(Tree const& t)
 {
     CharOwningContainer c;
     if(t.empty())
         return c;
-    emitrs(t, t.root_id(), &c);
+    emitrs_yaml(t, t.root_id(), &c);
     return c;
+}
+template<class CharOwningContainer>
+RYML_DEPRECATE_EMITRS CharOwningContainer emitrs(Tree const& t)
+{
+    return emitrs_yaml<CharOwningContainer>(t);
 }
 
 /** emit+resize: JSON to the given std::string/std::vector-like container,
@@ -20238,16 +22456,21 @@ CharOwningContainer emitrs_json(Tree const& t)
 /** emit+resize: YAML to the given std::string/std::vector-like container,
  * resizing it as needed to fit the emitted YAML. */
 template<class CharOwningContainer>
-substr emitrs(NodeRef const& n, CharOwningContainer * cont)
+substr emitrs_yaml(ConstNodeRef const& n, CharOwningContainer * cont)
 {
     _RYML_CB_CHECK(n.tree()->callbacks(), n.valid());
-    return emitrs(*n.tree(), n.id(), cont);
+    return emitrs_yaml(*n.tree(), n.id(), cont);
+}
+template<class CharOwningContainer>
+RYML_DEPRECATE_EMITRS substr emitrs(ConstNodeRef const& n, CharOwningContainer * cont)
+{
+    return emitrs_yaml(n, cont);
 }
 
 /** emit+resize: JSON to the given std::string/std::vector-like container,
  * resizing it as needed to fit the emitted JSON. */
 template<class CharOwningContainer>
-substr emitrs_json(NodeRef const& n, CharOwningContainer * cont)
+substr emitrs_json(ConstNodeRef const& n, CharOwningContainer * cont)
 {
     _RYML_CB_CHECK(n.tree()->callbacks(), n.valid());
     return emitrs_json(*n.tree(), n.id(), cont);
@@ -20257,18 +22480,23 @@ substr emitrs_json(NodeRef const& n, CharOwningContainer * cont)
 /** emit+resize: YAML to the given std::string/std::vector-like container,
  * resizing it as needed to fit the emitted YAML. */
 template<class CharOwningContainer>
-CharOwningContainer emitrs(NodeRef const& n)
+CharOwningContainer emitrs_yaml(ConstNodeRef const& n)
 {
     _RYML_CB_CHECK(n.tree()->callbacks(), n.valid());
     CharOwningContainer c;
-    emitrs(*n.tree(), n.id(), &c);
+    emitrs_yaml(*n.tree(), n.id(), &c);
     return c;
+}
+template<class CharOwningContainer>
+RYML_DEPRECATE_EMITRS CharOwningContainer emitrs(ConstNodeRef const& n)
+{
+    return emitrs_yaml<CharOwningContainer>(n);
 }
 
 /** emit+resize: JSON to the given std::string/std::vector-like container,
  * resizing it as needed to fit the emitted JSON. */
 template<class CharOwningContainer>
-CharOwningContainer emitrs_json(NodeRef const& n)
+CharOwningContainer emitrs_json(ConstNodeRef const& n)
 {
     _RYML_CB_CHECK(n.tree()->callbacks(), n.valid());
     CharOwningContainer c;
@@ -20278,6 +22506,9 @@ CharOwningContainer emitrs_json(NodeRef const& n)
 
 } // namespace yml
 } // namespace c4
+
+#undef RYML_DEPRECATE_EMIT
+#undef RYML_DEPRECATE_EMITRS
 
 // amalgamate: removed include of
 // https://github.com/biojppm/rapidyaml/src/c4/yml/emit.def.hpp
@@ -20318,7 +22549,7 @@ namespace c4 {
 namespace yml {
 
 template<class Writer>
-substr Emitter<Writer>::emit(EmitType_e type, Tree const& t, size_t id, bool error_on_excess)
+substr Emitter<Writer>::emit_as(EmitType_e type, Tree const& t, size_t id, bool error_on_excess)
 {
     if(t.empty())
     {
@@ -20337,18 +22568,18 @@ substr Emitter<Writer>::emit(EmitType_e type, Tree const& t, size_t id, bool err
 }
 
 template<class Writer>
-substr Emitter<Writer>::emit(EmitType_e type, Tree const& t, bool error_on_excess)
+substr Emitter<Writer>::emit_as(EmitType_e type, Tree const& t, bool error_on_excess)
 {
     if(t.empty())
         return {};
-    return emit(type, t, t.root_id(), error_on_excess);
+    return this->emit_as(type, t, t.root_id(), error_on_excess);
 }
 
 template<class Writer>
-substr Emitter<Writer>::emit(EmitType_e type, NodeRef const& n, bool error_on_excess)
+substr Emitter<Writer>::emit_as(EmitType_e type, ConstNodeRef const& n, bool error_on_excess)
 {
     _RYML_CB_CHECK(n.tree()->callbacks(), n.valid());
-    return emit(type, *n.tree(), n.id(), error_on_excess);
+    return this->emit_as(type, *n.tree(), n.id(), error_on_excess);
 }
 
 
@@ -21076,6 +23307,13 @@ void Emitter<Writer>::_write_scalar_dquo(csubstr s, size_t ilevel)
                 pos = i;
             }
         }
+        else if(C4_UNLIKELY(curr == '\r'))
+        {
+            csubstr sub = s.range(pos, i);
+            this->Writer::_do_write(sub);  // write everything up to (excluding) this char
+            this->Writer::_do_write("\\r"); // write the escaped char
+            pos = i+1;
+        }
     }
     // write missing characters at the end of the string
     if(pos < s.len)
@@ -21121,7 +23359,7 @@ void Emitter<Writer>::_write_scalar(csubstr s, bool was_quoted)
     // was evaluated as true even if s.str was actually a nullptr (!!!)
     if(s.len == size_t(0))
     {
-        if(was_quoted)
+        if(was_quoted || s.str != nullptr)
             this->Writer::_do_write("''");
         return;
     }
@@ -21134,10 +23372,10 @@ void Emitter<Writer>::_write_scalar(csubstr s, bool was_quoted)
             &&
             (
                 // has leading whitespace
-                s.begins_with_any(" \n\t\r")
-                ||
-                // looks like reference or anchor or would be treated as a directive
-                s.begins_with_any("*&%")
+                // looks like reference or anchor
+                // would be treated as a directive
+                // see https://www.yaml.info/learn/quote.html#noplain
+                s.begins_with_any(" \n\t\r*&%@`")
                 ||
                 s.begins_with("<<")
                 ||
@@ -21178,16 +23416,27 @@ void Emitter<Writer>::_write_scalar(csubstr s, bool was_quoted)
     }
 }
 template<class Writer>
-void Emitter<Writer>::_write_scalar_json(csubstr s, bool as_key, bool was_quoted)
+void Emitter<Writer>::_write_scalar_json(csubstr s, bool as_key, bool use_quotes)
 {
-    if(was_quoted)
-    {
-        this->Writer::_do_write('"');
-        this->Writer::_do_write(s);
-        this->Writer::_do_write('"');
-    }
-    // json only allows strings as keys
-    else if(!as_key && (s.is_number() || s == "true" || s == "null" || s == "false"))
+    if((!use_quotes)
+       // json keys require quotes
+       && (!as_key)
+       && (
+           // do not quote special cases
+           (s == "true" || s == "false" || s == "null")
+           || (
+               // do not quote numbers
+               (s.is_number()
+                && (
+                    // quote integral numbers if they have a leading 0
+                    // https://github.com/biojppm/rapidyaml/issues/291
+                    (!(s.len > 1 && s.begins_with('0')))
+                    // do not quote reals with leading 0
+                    // https://github.com/biojppm/rapidyaml/issues/313
+                    || (s.find('.') != csubstr::npos) ))
+               )
+           )
+        )
     {
         this->Writer::_do_write(s);
     }
@@ -21197,26 +23446,43 @@ void Emitter<Writer>::_write_scalar_json(csubstr s, bool as_key, bool was_quoted
         this->Writer::_do_write('"');
         for(size_t i = 0; i < s.len; ++i)
         {
-            switch (s[i])
+            switch(s.str[i])
             {
-                case '"':
-                case '\n': {
-                    if(i > 0)
-                    {
-                        csubstr sub = s.range(pos, i);
-                        this->Writer::_do_write(sub);
-                    }
-                    pos = i + 1;
-                    switch (s[i]) {
-                        case '"':
-                            this->Writer::_do_write("\\\"");
-                            break;
-                        case '\n':
-                            this->Writer::_do_write("\\n");
-                            break;
-                    }
-                    break;
-                }
+            case '"':
+              this->Writer ::_do_write(s.range(pos, i));
+              this->Writer ::_do_write("\\\"");
+              pos = i + 1;
+              break;
+            case '\n':
+              this->Writer ::_do_write(s.range(pos, i));
+              this->Writer ::_do_write("\\n");
+              pos = i + 1;
+              break;
+            case '\t':
+              this->Writer ::_do_write(s.range(pos, i));
+              this->Writer ::_do_write("\\t");
+              pos = i + 1;
+              break;
+            case '\\':
+              this->Writer ::_do_write(s.range(pos, i));
+              this->Writer ::_do_write("\\\\");
+              pos = i + 1;
+              break;
+            case '\r':
+              this->Writer ::_do_write(s.range(pos, i));
+              this->Writer ::_do_write("\\r");
+              pos = i + 1;
+              break;
+            case '\b':
+              this->Writer ::_do_write(s.range(pos, i));
+              this->Writer ::_do_write("\\b");
+              pos = i + 1;
+              break;
+            case '\f':
+              this->Writer ::_do_write(s.range(pos, i));
+              this->Writer ::_do_write("\\f");
+              pos = i + 1;
+              break;
             }
         }
         if(pos < s.len)
@@ -21579,6 +23845,36 @@ void stack<T, N>::_cb(Callbacks const& cb)
 namespace c4 {
 namespace yml {
 
+struct RYML_EXPORT ParserOptions
+{
+private:
+
+    typedef enum : uint32_t {
+        LOCATIONS = (1 << 0),
+        DEFAULTS = 0,
+    } Flags_e;
+
+    uint32_t flags = DEFAULTS;
+public:
+    ParserOptions() = default;
+
+    /** @name source location tracking */
+    /** @{ */
+
+    /** enable/disable source location tracking */
+    ParserOptions& locations(bool enabled)
+    {
+        if(enabled)
+            flags |= LOCATIONS;
+        else
+            flags &= ~LOCATIONS;
+        return *this;
+    }
+    bool locations() const { return (flags & LOCATIONS) != 0u; }
+
+    /** @} */
+};
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -21590,8 +23886,8 @@ public:
     /** @name construction and assignment */
     /** @{ */
 
-    Parser() : Parser(get_callbacks()) {}
-    Parser(Callbacks const& cb);
+    Parser(Callbacks const& cb, ParserOptions opts={});
+    Parser(ParserOptions opts={}) : Parser(get_callbacks(), opts) {}
     ~Parser();
 
     Parser(Parser &&);
@@ -21661,6 +23957,8 @@ public:
     size_t locations_capacity() const { return m_newline_offsets_capacity; }
     size_t filter_arena_capacity() const { return m_filter_arena.len; }
 
+    ParserOptions const& options() const { return m_options; }
+
     /** @} */
 
 public:
@@ -21724,7 +24022,7 @@ public:
     /** @{ */
 
     // READ THE NOTE ABOVE!
-    #define RYML_DONT_PARSE_SUBSTR_IN_ARENA "Do not pass a (mutable) substr to parse_in_arena(); if you have a substr, it should be parsed in place. Consider using parse_in_place() instead, or convert the buffer to csubstr prior to calling. This function is deliberately left undefined and will cause a compiler error."
+    #define RYML_DONT_PARSE_SUBSTR_IN_ARENA "Do not pass a (mutable) substr to parse_in_arena(); if you have a substr, it should be parsed in place. Consider using parse_in_place() instead, or convert the buffer to csubstr prior to calling. This function is deliberately left undefined and will cause a linker error."
     RYML_DEPRECATED(RYML_DONT_PARSE_SUBSTR_IN_ARENA) Tree parse_in_arena(csubstr filename, substr csrc);
     RYML_DEPRECATED(RYML_DONT_PARSE_SUBSTR_IN_ARENA) void parse_in_arena(csubstr filename, substr csrc, Tree *t);
     RYML_DEPRECATED(RYML_DONT_PARSE_SUBSTR_IN_ARENA) void parse_in_arena(csubstr filename, substr csrc, Tree *t, size_t node_id);
@@ -21792,7 +24090,7 @@ public:
     /** Get the location of a node of the last tree to be parsed by this parser. */
     Location location(Tree const& tree, size_t node_id) const;
     /** Get the location of a node of the last tree to be parsed by this parser. */
-    Location location(NodeRef node) const;
+    Location location(ConstNodeRef node) const;
     /** Get the string starting at a particular location, to the end
      * of the parsed source buffer. */
     csubstr location_contents(Location const& loc) const;
@@ -21838,7 +24136,11 @@ private:
      * Will only be written to if this method returns true.
      * Will be set to true if the scanned scalar was quoted, by '', "", > or |.
      */
-    bool    _scan_scalar(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted);
+    bool    _scan_scalar_seq_blck(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted);
+    bool    _scan_scalar_map_blck(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted);
+    bool    _scan_scalar_seq_flow(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted);
+    bool    _scan_scalar_map_flow(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted);
+    bool    _scan_scalar_unk(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted);
 
     csubstr _scan_comment();
     csubstr _scan_squot_scalar();
@@ -21908,9 +24210,9 @@ private:
     csubstr _consume_scalar();
     void  _move_scalar_from_top();
 
-    inline NodeData* _append_val_null(const char *str) { _RYML_CB_ASSERT(m_stack.m_callbacks, str >= m_buf.begin() && str <= m_buf.end()); return _append_val({str, size_t(0)}); }
-    inline NodeData* _append_key_val_null(const char *str) { _RYML_CB_ASSERT(m_stack.m_callbacks, str >= m_buf.begin() && str <= m_buf.end()); return _append_key_val({str, size_t(0)}); }
-    inline void      _store_scalar_null(const char *str) {  _RYML_CB_ASSERT(m_stack.m_callbacks, str >= m_buf.begin() && str <= m_buf.end()); _store_scalar({str, size_t(0)}, false); }
+    inline NodeData* _append_val_null(const char *str) { _RYML_CB_ASSERT(m_stack.m_callbacks, str >= m_buf.begin() && str <= m_buf.end()); return _append_val({nullptr, size_t(0)}); }
+    inline NodeData* _append_key_val_null(const char *str) { _RYML_CB_ASSERT(m_stack.m_callbacks, str >= m_buf.begin() && str <= m_buf.end()); return _append_key_val({nullptr, size_t(0)}); }
+    inline void      _store_scalar_null(const char *str) {  _RYML_CB_ASSERT(m_stack.m_callbacks, str >= m_buf.begin() && str <= m_buf.end()); _store_scalar({nullptr, size_t(0)}, false); }
 
     void  _set_indentation(size_t behind);
     void  _save_indentation(size_t behind=0);
@@ -22068,10 +24370,12 @@ private:
     void _grow_filter_arena(size_t num_characters);
     substr _finish_filter_arena(substr dst, size_t pos);
 
-    void _prepare_locations() const;         // only changes mutable members
-    void _resize_locations(size_t sz) const; // only changes mutable members
-    void _mark_locations_dirty();
+    void _prepare_locations();
+    void _resize_locations(size_t sz);
     bool _locations_dirty() const;
+
+    bool _location_from_cont(Tree const& tree, size_t node, Location *C4_RESTRICT loc) const;
+    bool _location_from_node(Tree const& tree, size_t node, Location *C4_RESTRICT loc, size_t level) const;
 
 private:
 
@@ -22088,6 +24392,8 @@ private:
     static csubstr _prfl(substr buf, flag_t v);
 
 private:
+
+    ParserOptions m_options;
 
     csubstr m_file;
      substr m_buf;
@@ -22113,10 +24419,10 @@ private:
 
     substr m_filter_arena;
 
-    mutable size_t *m_newline_offsets;
-    mutable size_t  m_newline_offsets_size;
-    mutable size_t  m_newline_offsets_capacity;
-    mutable csubstr m_newline_offsets_buf;
+    size_t *m_newline_offsets;
+    size_t  m_newline_offsets_size;
+    size_t  m_newline_offsets_capacity;
+    csubstr m_newline_offsets_buf;
 };
 
 
@@ -22258,7 +24564,7 @@ template<class K, class V, class Less, class Alloc>
 void write(c4::yml::NodeRef *n, std::map<K, V, Less, Alloc> const& m)
 {
     *n |= c4::yml::MAP;
-    for(auto const& p : m)
+    for(auto const& C4_RESTRICT p : m)
     {
         auto ch = n->append_child();
         ch << c4::yml::key(p.first);
@@ -22267,11 +24573,11 @@ void write(c4::yml::NodeRef *n, std::map<K, V, Less, Alloc> const& m)
 }
 
 template<class K, class V, class Less, class Alloc>
-bool read(c4::yml::NodeRef const& n, std::map<K, V, Less, Alloc> * m)
+bool read(c4::yml::ConstNodeRef const& n, std::map<K, V, Less, Alloc> * m)
 {
     K k{};
-    V v;
-    for(auto const ch : n)
+    V v{};
+    for(auto const& C4_RESTRICT ch : n)
     {
         ch >> c4::yml::key(k);
         ch >> v;
@@ -22352,24 +24658,37 @@ namespace yml {
 // in the data tree hierarchy (a SEQ node in ryml parlance).
 // So it should be serialized via write()/read().
 
+
 template<class V, class Alloc>
 void write(c4::yml::NodeRef *n, std::vector<V, Alloc> const& vec)
 {
     *n |= c4::yml::SEQ;
     for(auto const& v : vec)
-    {
         n->append_child() << v;
-    }
 }
 
 template<class V, class Alloc>
-bool read(c4::yml::NodeRef const& n, std::vector<V, Alloc> *vec)
+bool read(c4::yml::ConstNodeRef const& n, std::vector<V, Alloc> *vec)
 {
     vec->resize(n.num_children());
     size_t pos = 0;
     for(auto const ch : n)
-    {
         ch >> (*vec)[pos++];
+    return true;
+}
+
+/** specialization: std::vector<bool> uses std::vector<bool>::reference as
+ * the return value of its operator[]. */
+template<class Alloc>
+bool read(c4::yml::ConstNodeRef const& n, std::vector<bool, Alloc> *vec)
+{
+    vec->resize(n.num_children());
+    size_t pos = 0;
+    bool tmp;
+    for(auto const ch : n)
+    {
+        ch >> tmp;
+        (*vec)[pos++] = tmp;
     }
     return true;
 }
@@ -22450,7 +24769,7 @@ namespace c4 {
 namespace yml {
 
 namespace {
-thread_local Callbacks s_default_callbacks;
+Callbacks s_default_callbacks;
 } // anon namespace
 
 #ifndef RYML_NO_DEFAULT_CALLBACKS
@@ -22838,9 +25157,18 @@ NodeRef Tree::rootref()
 {
     return NodeRef(this, root_id());
 }
-NodeRef const Tree::rootref() const
+ConstNodeRef Tree::rootref() const
 {
-    return NodeRef(const_cast<Tree*>(this), root_id());
+    return ConstNodeRef(this, root_id());
+}
+
+ConstNodeRef Tree::crootref()
+{
+    return ConstNodeRef(this, root_id());
+}
+ConstNodeRef Tree::crootref() const
+{
+    return ConstNodeRef(this, root_id());
 }
 
 NodeRef Tree::ref(size_t id)
@@ -22848,17 +25176,28 @@ NodeRef Tree::ref(size_t id)
     _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_size);
     return NodeRef(this, id);
 }
-NodeRef const Tree::ref(size_t id) const
+ConstNodeRef Tree::ref(size_t id) const
 {
     _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_size);
-    return NodeRef(const_cast<Tree*>(this), id);
+    return ConstNodeRef(this, id);
+}
+
+ConstNodeRef Tree::cref(size_t id)
+{
+    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_size);
+    return ConstNodeRef(this, id);
+}
+ConstNodeRef Tree::cref(size_t id) const
+{
+    _RYML_CB_ASSERT(m_callbacks, id != NONE && id >= 0 && id < m_size);
+    return ConstNodeRef(this, id);
 }
 
 NodeRef Tree::operator[] (csubstr key)
 {
     return rootref()[key];
 }
-NodeRef const Tree::operator[] (csubstr key) const
+ConstNodeRef Tree::operator[] (csubstr key) const
 {
     return rootref()[key];
 }
@@ -22867,7 +25206,7 @@ NodeRef Tree::operator[] (size_t i)
 {
     return rootref()[i];
 }
-NodeRef const Tree::operator[] (size_t i) const
+ConstNodeRef Tree::operator[] (size_t i) const
 {
     return rootref()[i];
 }
@@ -22876,9 +25215,9 @@ NodeRef Tree::docref(size_t i)
 {
     return ref(doc(i));
 }
-NodeRef const Tree::docref(size_t i) const
+ConstNodeRef Tree::docref(size_t i) const
 {
-    return ref(doc(i));
+    return cref(doc(i));
 }
 
 
@@ -23563,8 +25902,9 @@ void Tree::_swap_props(size_t n_, size_t m_)
 void Tree::move(size_t node, size_t after)
 {
     _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, node != after);
     _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
-    _RYML_CB_ASSERT(m_callbacks, has_sibling(node, after) && has_sibling(after, node));
+    _RYML_CB_ASSERT(m_callbacks, (after == NONE) || (has_sibling(node, after) && has_sibling(after, node)));
 
     _rem_hierarchy(node);
     _set_hierarchy(node, parent(node), after);
@@ -23575,7 +25915,10 @@ void Tree::move(size_t node, size_t after)
 void Tree::move(size_t node, size_t new_parent, size_t after)
 {
     _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    _RYML_CB_ASSERT(m_callbacks, node != after);
     _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != node);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
     _RYML_CB_ASSERT(m_callbacks,  ! is_root(node));
 
     _rem_hierarchy(node);
@@ -23584,8 +25927,10 @@ void Tree::move(size_t node, size_t new_parent, size_t after)
 
 size_t Tree::move(Tree *src, size_t node, size_t new_parent, size_t after)
 {
+    _RYML_CB_ASSERT(m_callbacks, src != nullptr);
     _RYML_CB_ASSERT(m_callbacks, node != NONE);
     _RYML_CB_ASSERT(m_callbacks, new_parent != NONE);
+    _RYML_CB_ASSERT(m_callbacks, new_parent != after);
 
     size_t dup = duplicate(src, node, new_parent, after);
     src->remove(node);
@@ -23786,15 +26131,17 @@ size_t Tree::duplicate_children_no_rep(Tree const *src, size_t node, size_t pare
                     remove(rep);
                     prev = duplicate(src, i, parent, prev);
                 }
-                else if(after_pos == NONE || rep_pos >= after_pos)
+                else if(prev == NONE)
+                {
+                    // first iteration with prev = after = NONE and repetition
+                    prev = rep;
+                }
+                else if(rep != prev)
                 {
                     // rep is located after the node which will be inserted
                     // and overrides it. So move the rep into this node's place.
-                    if(rep != prev)
-                    {
-                        move(rep, prev);
-                        prev = rep;
-                    }
+                    move(rep, prev);
+                    prev = rep;
                 }
             } // there's a repetition
         }
@@ -24135,9 +26482,7 @@ size_t Tree::num_children(size_t node) const
 {
     size_t count = 0;
     for(size_t i = first_child(node); i != NONE; i = next_sibling(i))
-    {
         ++count;
-    }
     return count;
 }
 
@@ -24433,7 +26778,7 @@ void Tree::resolve_tags()
         return;
     size_t needed_size = _count_resolved_tags_size(this, root_id());
     if(needed_size)
-        reserve_arena(arena_pos() + needed_size);
+        reserve_arena(arena_size() + needed_size);
     _resolve_tags(this, root_id());
 }
 
@@ -24875,7 +27220,7 @@ void _parse_dump(DumpFn dumpfn, c4::csubstr fmt, Args&& ...args)
 
 bool _is_scalar_next__runk(csubstr s)
 {
-    return !(s.begins_with(": ") || s.begins_with_any("#,:{}[]%&") || s.begins_with("? ") || s == "-" || s.begins_with("- "));
+    return !(s.begins_with(": ") || s.begins_with_any("#,{}[]%&") || s.begins_with("? ") || s == "-" || s.begins_with("- ") || s.begins_with(":\"") || s.begins_with(":'"));
 }
 
 bool _is_scalar_next__rseq_rval(csubstr s)
@@ -24948,8 +27293,9 @@ Parser::~Parser()
     _clr();
 }
 
-Parser::Parser(Callbacks const& cb)
-    : m_file()
+Parser::Parser(Callbacks const& cb, ParserOptions opts)
+    : m_options(opts)
+    , m_file()
     , m_buf()
     , m_root_id(NONE)
     , m_tree()
@@ -24977,7 +27323,8 @@ Parser::Parser(Callbacks const& cb)
 }
 
 Parser::Parser(Parser &&that)
-    : m_file(that.m_file)
+    : m_options(that.m_options)
+    , m_file(that.m_file)
     , m_buf(that.m_buf)
     , m_root_id(that.m_root_id)
     , m_tree(that.m_tree)
@@ -25004,7 +27351,8 @@ Parser::Parser(Parser &&that)
 }
 
 Parser::Parser(Parser const& that)
-    : m_file(that.m_file)
+    : m_options(that.m_options)
+    , m_file(that.m_file)
     , m_buf(that.m_buf)
     , m_root_id(that.m_root_id)
     , m_tree(that.m_tree)
@@ -25043,6 +27391,7 @@ Parser::Parser(Parser const& that)
 Parser& Parser::operator=(Parser &&that)
 {
     _free();
+    m_options = (that.m_options);
     m_file = (that.m_file);
     m_buf = (that.m_buf);
     m_root_id = (that.m_root_id);
@@ -25072,6 +27421,7 @@ Parser& Parser::operator=(Parser &&that)
 Parser& Parser::operator=(Parser const& that)
 {
     _free();
+    m_options = (that.m_options);
     m_file = (that.m_file);
     m_buf = (that.m_buf);
     m_root_id = (that.m_root_id);
@@ -25103,6 +27453,7 @@ Parser& Parser::operator=(Parser const& that)
 
 void Parser::_clr()
 {
+    m_options = {};
     m_file = {};
     m_buf = {};
     m_root_id = {};
@@ -25167,7 +27518,10 @@ void Parser::_reset()
     m_val_anchor_indentation = 0;
     m_val_anchor.clear();
 
-    _mark_locations_dirty();
+    if(m_options.locations())
+    {
+        _prepare_locations();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -25473,7 +27827,7 @@ bool Parser::_handle_unk()
 
         csubstr saved_scalar;
         bool is_quoted;
-        if(_scan_scalar(&saved_scalar, &is_quoted))
+        if(_scan_scalar_unk(&saved_scalar, &is_quoted))
         {
             rem = m_state->line_contents.rem;
             _c4dbgpf("... and there's also a scalar next! '{}'", saved_scalar);
@@ -25590,7 +27944,7 @@ bool Parser::_handle_unk()
         csubstr scalar;
         size_t indentation = m_state->line_contents.indentation; // save
         bool is_quoted;
-        if(_scan_scalar(&scalar, &is_quoted))
+        if(_scan_scalar_unk(&scalar, &is_quoted))
         {
             _c4dbgpf("got a {} scalar", is_quoted ? "quoted" : "");
             rem = m_state->line_contents.rem;
@@ -25714,7 +28068,7 @@ bool Parser::_handle_seq_flow()
     {
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RNXT));
         bool is_quoted;
-        if(_scan_scalar(&rem, &is_quoted))
+        if(_scan_scalar_seq_flow(&rem, &is_quoted))
         {
             _c4dbgp("it's a scalar");
             addrem_flags(RNXT, RVAL);
@@ -25858,7 +28212,6 @@ bool Parser::_handle_seq_blck()
         rem = _scan_comment();
         return true;
     }
-
     if(has_any(RNXT))
     {
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RVAL));
@@ -25912,7 +28265,7 @@ bool Parser::_handle_seq_blck()
 
         csubstr s;
         bool is_quoted;
-        if(_scan_scalar(&s, &is_quoted)) // this also progresses the line
+        if(_scan_scalar_seq_blck(&s, &is_quoted)) // this also progresses the line
         {
             _c4dbgpf("it's a{} scalar", is_quoted ? " quoted" : "");
 
@@ -26171,7 +28524,7 @@ bool Parser::_handle_map_flow()
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RVAL));
 
         bool is_quoted;
-        if(has_none(SSCL) && _scan_scalar(&rem, &is_quoted))
+        if(has_none(SSCL) && _scan_scalar_map_flow(&rem, &is_quoted))
         {
             _c4dbgp("it's a scalar");
             _store_scalar(rem, is_quoted);
@@ -26291,7 +28644,7 @@ bool Parser::_handle_map_flow()
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RKEY));
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_all(SSCL));
         bool is_quoted;
-        if(_scan_scalar(&rem, &is_quoted))
+        if(_scan_scalar_map_flow(&rem, &is_quoted))
         {
             _c4dbgp("it's a scalar");
             addrem_flags(RNXT, RVAL|RKEY);
@@ -26375,7 +28728,7 @@ bool Parser::_handle_map_flow()
 //-----------------------------------------------------------------------------
 bool Parser::_handle_map_blck()
 {
-    _c4dbgpf("handle_map_impl: node_id={}  level={}", m_state->node_id, m_state->level);
+    _c4dbgpf("handle_map_blck: node_id={}  level={}", m_state->node_id, m_state->level);
     csubstr rem = m_state->line_contents.rem;
 
     _RYML_CB_ASSERT(m_stack.m_callbacks, has_all(RMAP));
@@ -26397,16 +28750,19 @@ bool Parser::_handle_map_blck()
     }
 
     if(_handle_indentation())
+    {
+        _c4dbgp("indentation token");
         return true;
+    }
 
     if(has_any(RKEY))
     {
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RNXT));
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RVAL));
 
-        _c4dbgp("read scalar?");
+        _c4dbgp("RMAP|RKEY read scalar?");
         bool is_quoted;
-        if(_scan_scalar(&rem, &is_quoted)) // this also progresses the line
+        if(_scan_scalar_map_blck(&rem, &is_quoted)) // this also progresses the line
         {
             _c4dbgpf("it's a{} scalar", is_quoted ? " quoted" : "");
             if(has_all(QMRK|SSCL))
@@ -26515,9 +28871,10 @@ bool Parser::_handle_map_blck()
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RNXT));
         _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(RKEY));
 
+        _c4dbgp("RMAP|RVAL read scalar?");
         csubstr s;
         bool is_quoted;
-        if(_scan_scalar(&s, &is_quoted)) // this also progresses the line
+        if(_scan_scalar_map_blck(&s, &is_quoted)) // this also progresses the line
         {
             _c4dbgpf("it's a{} scalar", is_quoted ? " quoted" : "");
 
@@ -26623,6 +28980,13 @@ bool Parser::_handle_map_blck()
         else if(rem.begins_with("--- ") || rem == "---" || rem.begins_with("---\t"))
         {
             _start_new_doc(rem);
+            return true;
+        }
+        else if(rem.begins_with("..."))
+        {
+            _c4dbgp("end current document");
+            _end_stream();
+            _line_progressed(3);
             return true;
         }
         else
@@ -27098,9 +29462,16 @@ csubstr Parser::_slurp_doc_scalar()
     return s;
 }
 
+
 //-----------------------------------------------------------------------------
-bool Parser::_scan_scalar(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
+
+bool Parser::_scan_scalar_seq_blck(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
 {
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RSEQ));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RVAL));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  ! has_any(RKEY));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  ! has_any(FLOW));
+
     csubstr s = m_state->line_contents.rem;
     if(s.len == 0)
         return false;
@@ -27127,136 +29498,133 @@ bool Parser::_scan_scalar(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
     else if(s.begins_with('|') || s.begins_with('>'))
     {
         *scalar = _scan_block();
-        *quoted = false;
+        *quoted = true;
         return true;
     }
     else if(has_any(RTOP) && _is_doc_sep(s))
     {
         return false;
     }
-    else if(has_any(RSEQ))
-    {
-        _RYML_CB_ASSERT(m_stack.m_callbacks,  ! has_all(RKEY));
-        if(has_all(RVAL))
-        {
-            _c4dbgp("RSEQ|RVAL");
-            if( ! _is_scalar_next__rseq_rval(s))
-                return false;
-            _RYML_WITH_TAB_TOKENS(else if(s.begins_with("-\t"))
-                return false;
-            )
-            if(s.ends_with(':'))
-            {
-                --s.len;
-            }
-            else
-            {
-                auto first = s.first_of_any(": " _RYML_WITH_TAB_TOKENS( , ":\t"), " #");
-                if(first)
-                    s.len = first.pos;
-            }
-            if(has_all(FLOW))
-            {
-                _c4dbgp("RSEQ|RVAL|EXPL");
-                s = s.left_of(s.first_of(",]"));
-            }
-            s = s.trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
-        }
-        else
-        {
-            _c4err("internal error");
-        }
-    }
-    else if(has_any(RMAP))
-    {
-        if( ! _is_scalar_next__rmap(s))
-            return false;
-        size_t colon_space = s.find(": ");
-        if(colon_space == npos)
-        {
-            _RYML_WITH_OR_WITHOUT_TAB_TOKENS(
-                // with tab tokens
-                colon_space = s.find(":\t");
-                if(colon_space == npos)
-                {
-                    _RYML_CB_ASSERT(m_stack.m_callbacks, s.len > 0);
-                    colon_space = s.find(':');
-                    if(colon_space != s.len-1)
-                        colon_space = npos;
-                }
-                ,
-                // without tab tokens
-                colon_space = s.find(':');
-                _RYML_CB_ASSERT(m_stack.m_callbacks, s.len > 0);
-                if(colon_space != s.len-1)
-                    colon_space = npos;
-            )
-        }
 
-        if(has_all(RKEY))
+    _c4dbgp("RSEQ|RVAL");
+    if( ! _is_scalar_next__rseq_rval(s))
+        return false;
+    _RYML_WITH_TAB_TOKENS(else if(s.begins_with("-\t"))
+        return false;
+    )
+
+    if(s.ends_with(':'))
+    {
+        --s.len;
+    }
+    else
+    {
+        auto first = s.first_of_any(": " _RYML_WITH_TAB_TOKENS( , ":\t"), " #");
+        if(first)
+            s.len = first.pos;
+    }
+    s = s.trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+
+    if(s.empty())
+        return false;
+
+    m_state->scalar_col = m_state->line_contents.current_col(s);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, s.str >= m_state->line_contents.rem.str);
+    _line_progressed(static_cast<size_t>(s.str - m_state->line_contents.rem.str) + s.len);
+
+    if(_at_line_end() && s != '~')
+    {
+        _c4dbgpf("at line end. curr='{}'", s);
+        s = _extend_scanned_scalar(s);
+    }
+
+    _c4dbgpf("scalar was '{}'", s);
+
+    *scalar = s;
+    *quoted = false;
+    return true;
+}
+
+bool Parser::_scan_scalar_map_blck(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
+{
+    _c4dbgp("_scan_scalar_map_blck");
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RMAP));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  ! has_any(FLOW));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RKEY|RVAL));
+
+    csubstr s = m_state->line_contents.rem;
+    #ifdef RYML_NO_COVERAGE__TO_BE_DELETED__OR_REFACTORED
+    if(s.len == 0)
+        return false;
+    #endif
+    s = s.trim(" \t");
+    if(s.len == 0)
+        return false;
+
+    if(s.begins_with('\''))
+    {
+        _c4dbgp("got a ': scanning single-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_squot_scalar();
+        *quoted = true;
+        return true;
+    }
+    else if(s.begins_with('"'))
+    {
+        _c4dbgp("got a \": scanning double-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_dquot_scalar();
+        *quoted = true;
+        return true;
+    }
+    else if(s.begins_with('|') || s.begins_with('>'))
+    {
+        *scalar = _scan_block();
+        *quoted = true;
+        return true;
+    }
+    else if(has_any(RTOP) && _is_doc_sep(s))
+    {
+        return false;
+    }
+
+    if( ! _is_scalar_next__rmap(s))
+        return false;
+
+    size_t colon_token = s.find(": ");
+    if(colon_token == npos)
+    {
+        _RYML_WITH_OR_WITHOUT_TAB_TOKENS(
+            // with tab tokens
+            colon_token = s.find(":\t");
+            if(colon_token == npos)
+            {
+                _RYML_CB_ASSERT(m_stack.m_callbacks, s.len > 0);
+                colon_token = s.find(':');
+                if(colon_token != s.len-1)
+                    colon_token = npos;
+            }
+            ,
+            // without tab tokens
+            colon_token = s.find(':');
+            _RYML_CB_ASSERT(m_stack.m_callbacks, s.len > 0);
+            if(colon_token != s.len-1)
+                colon_token = npos;
+        )
+    }
+
+    if(has_all(RKEY))
+    {
+        _RYML_CB_ASSERT(m_stack.m_callbacks, !s.begins_with(' '));
+        if(has_any(QMRK))
         {
-            _RYML_CB_ASSERT(m_stack.m_callbacks, !s.begins_with(' '));
-            if(has_any(QMRK))
-            {
-                _c4dbgp("RMAP|RKEY|CPLX");
-                _RYML_CB_ASSERT(m_stack.m_callbacks, has_any(RMAP));
-                if(s.begins_with("? ") || s == '?')
-                    return false;
-                s = s.left_of(colon_space);
-                s = s.left_of(s.first_of("#"));
-                if(has_any(FLOW))
-                    s = s.left_of(s.first_of(':'));
-                s = s.trimr(" \t");
-                if(s.begins_with("---"))
-                    return false;
-                else if(s.begins_with("..."))
-                    return false;
-            }
-            else
-            {
-                _c4dbgp("RMAP|RKEY");
-                _RYML_CB_CHECK(m_stack.m_callbacks, !s.begins_with('{'));
-                if(s.begins_with("? ") || s == '?')
-                    return false;
-                s = s.left_of(colon_space);
-                s = s.trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
-                if(has_any(FLOW))
-                {
-                    _c4dbgpf("RMAP|RKEY|EXPL: '{}'", s);
-                    s = s.left_of(s.first_of(",}"));
-                    if(s.ends_with(':'))
-                        s = s.offs(0, 1);
-                }
-                else if(s.begins_with("---"))
-                {
-                    return false;
-                }
-                else if(s.begins_with("..."))
-                {
-                    return false;
-                }
-            }
-        }
-        else if(has_all(RVAL))
-        {
-            _c4dbgp("RMAP|RVAL");
-            _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(QMRK));
-            if( ! _is_scalar_next__rmap_val(s))
+            _c4dbgp("RMAP|RKEY|CPLX");
+            _RYML_CB_ASSERT(m_stack.m_callbacks, has_any(RMAP));
+            if(s.begins_with("? ") || s == '?')
                 return false;
-            _RYML_WITH_TAB_TOKENS(else if(s.begins_with("-\t"))
-                return false;
-            )
-            s = s.left_of(s.find(" #")); // is there a comment?
-            s = s.left_of(s.find("\t#")); // is there a comment?
-            if(has_any(FLOW))
-            {
-                _c4dbgp("RMAP|RVAL|EXPL");
-                if(has_none(RSEQIMAP))
-                    s = s.left_of(s.first_of(",}"));
-                else
-                    s = s.left_of(s.first_of(",]"));
-            }
-            s = s.trim(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+            s = s.left_of(colon_token);
+            s = s.left_of(s.first_of("#"));
+            s = s.trimr(" \t");
             if(s.begins_with("---"))
                 return false;
             else if(s.begins_with("..."))
@@ -27264,35 +29632,42 @@ bool Parser::_scan_scalar(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
         }
         else
         {
-            _c4err("parse error");
+            _c4dbgp("RMAP|RKEY");
+            _RYML_CB_CHECK(m_stack.m_callbacks, !s.begins_with('{'));
+            if(s.begins_with("? ") || s == '?')
+                return false;
+            s = s.left_of(colon_token);
+            s = s.trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+            if(s.begins_with("---"))
+            {
+                return false;
+            }
+            else if(s.begins_with("..."))
+            {
+                return false;
+            }
         }
     }
-    else if(has_all(RUNK))
+    else if(has_all(RVAL))
     {
-        _c4dbgpf("RUNK '[{}]~~~{}~~~", s.len, s);
-        if( ! _is_scalar_next__runk(s))
-        {
-            _c4dbgp("RUNK: no scalar next");
+        _c4dbgp("RMAP|RVAL");
+        _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(QMRK));
+        if( ! _is_scalar_next__rmap_val(s))
             return false;
-        }
-        s = s.left_of(s.find(" #"));
-        size_t pos = s.find(": ");
-        if(pos != npos)
-            s = s.left_of(pos);
-        else if(s.ends_with(':'))
-            s = s.left_of(s.len-1);
         _RYML_WITH_TAB_TOKENS(
-        else if((pos = s.find(":\t")) != npos) // TABS
-            s = s.left_of(pos);
+        else if(s.begins_with("-\t"))
+            return false;
         )
-        else
-            s = s.left_of(s.first_of(','));
-        s = s.trim(" \t");
-        _c4dbgpf("RUNK: scalar='{}'", s);
-    }
-    else
-    {
-        _c4err("not implemented");
+        _c4dbgp("RMAP|RVAL: scalar");
+        s = s.left_of(s.find(" #")); // is there a comment?
+        s = s.left_of(s.find("\t#")); // is there a comment?
+        s = s.trim(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+        if(s.begins_with("---"))
+            return false;
+        #ifdef RYML_NO_COVERAGE__TO_BE_DELETED__OR_REFACTORED
+        else if(s.begins_with("..."))
+            return false;
+        #endif
     }
 
     if(s.empty())
@@ -27314,6 +29689,285 @@ bool Parser::_scan_scalar(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
     *quoted = false;
     return true;
 }
+
+bool Parser::_scan_scalar_seq_flow(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
+{
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RSEQ));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(FLOW));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RVAL));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  ! has_any(RKEY));
+
+    csubstr s = m_state->line_contents.rem;
+    if(s.len == 0)
+        return false;
+    s = s.trim(" \t");
+    if(s.len == 0)
+        return false;
+
+    if(s.begins_with('\''))
+    {
+        _c4dbgp("got a ': scanning single-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_squot_scalar();
+        *quoted = true;
+        return true;
+    }
+    else if(s.begins_with('"'))
+    {
+        _c4dbgp("got a \": scanning double-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_dquot_scalar();
+        *quoted = true;
+        return true;
+    }
+
+    if(has_all(RVAL))
+    {
+        _c4dbgp("RSEQ|RVAL");
+        if( ! _is_scalar_next__rseq_rval(s))
+            return false;
+        _RYML_WITH_TAB_TOKENS(else if(s.begins_with("-\t"))
+            return false;
+        )
+        _c4dbgp("RSEQ|RVAL|FLOW");
+        s = s.left_of(s.first_of(",]"));
+        if(s.ends_with(':'))
+        {
+            --s.len;
+        }
+        else
+        {
+            auto first = s.first_of_any(": " _RYML_WITH_TAB_TOKENS( , ":\t"), " #");
+            if(first)
+                s.len = first.pos;
+        }
+        s = s.trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+    }
+
+    if(s.empty())
+        return false;
+
+    m_state->scalar_col = m_state->line_contents.current_col(s);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, s.str >= m_state->line_contents.rem.str);
+    _line_progressed(static_cast<size_t>(s.str - m_state->line_contents.rem.str) + s.len);
+
+    if(_at_line_end() && s != '~')
+    {
+        _c4dbgpf("at line end. curr='{}'", s);
+        s = _extend_scanned_scalar(s);
+    }
+
+    _c4dbgpf("scalar was '{}'", s);
+
+    *scalar = s;
+    *quoted = false;
+    return true;
+}
+
+bool Parser::_scan_scalar_map_flow(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
+{
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RMAP));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(FLOW));
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RKEY|RVAL));
+
+    csubstr s = m_state->line_contents.rem;
+    if(s.len == 0)
+        return false;
+    s = s.trim(" \t");
+    if(s.len == 0)
+        return false;
+
+    if(s.begins_with('\''))
+    {
+        _c4dbgp("got a ': scanning single-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_squot_scalar();
+        *quoted = true;
+        return true;
+    }
+    else if(s.begins_with('"'))
+    {
+        _c4dbgp("got a \": scanning double-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_dquot_scalar();
+        *quoted = true;
+        return true;
+    }
+
+    if( ! _is_scalar_next__rmap(s))
+        return false;
+
+    if(has_all(RKEY))
+    {
+        _RYML_CB_ASSERT(m_stack.m_callbacks, !s.begins_with(' '));
+        size_t colon_token = s.find(": ");
+        if(colon_token == npos)
+        {
+            _RYML_WITH_OR_WITHOUT_TAB_TOKENS(
+                // with tab tokens
+                colon_token = s.find(":\t");
+                if(colon_token == npos)
+                {
+                    _RYML_CB_ASSERT(m_stack.m_callbacks, s.len > 0);
+                    colon_token = s.find(':');
+                    if(colon_token != s.len-1)
+                        colon_token = npos;
+                }
+                ,
+                // without tab tokens
+                colon_token = s.find(':');
+                _RYML_CB_ASSERT(m_stack.m_callbacks, s.len > 0);
+                if(colon_token != s.len-1)
+                    colon_token = npos;
+            )
+        }
+        if(s.begins_with("? ") || s == '?')
+            return false;
+        if(has_any(QMRK))
+        {
+            _c4dbgp("RMAP|RKEY|CPLX");
+            _RYML_CB_ASSERT(m_stack.m_callbacks, has_any(RMAP));
+            s = s.left_of(colon_token);
+            s = s.left_of(s.first_of("#"));
+            s = s.left_of(s.first_of(':'));
+            s = s.trimr(" \t");
+            if(s.begins_with("---"))
+                return false;
+            else if(s.begins_with("..."))
+                return false;
+        }
+        else
+        {
+            _RYML_CB_CHECK(m_stack.m_callbacks, !s.begins_with('{'));
+            _c4dbgp("RMAP|RKEY");
+            s = s.left_of(colon_token);
+            s = s.trimr(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+            _c4dbgpf("RMAP|RKEY|FLOW: '{}'", s);
+            s = s.left_of(s.first_of(",}"));
+            if(s.ends_with(':'))
+                --s.len;
+        }
+    }
+    else if(has_all(RVAL))
+    {
+        _c4dbgp("RMAP|RVAL");
+        _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(QMRK));
+        if( ! _is_scalar_next__rmap_val(s))
+            return false;
+        _RYML_WITH_TAB_TOKENS(else if(s.begins_with("-\t"))
+            return false;
+        )
+        _c4dbgp("RMAP|RVAL|FLOW");
+        if(has_none(RSEQIMAP))
+            s = s.left_of(s.first_of(",}"));
+        else
+            s = s.left_of(s.first_of(",]"));
+        s = s.left_of(s.find(" #")); // is there a comment?
+        s = s.left_of(s.find("\t#")); // is there a comment?
+        s = s.trim(_RYML_WITH_OR_WITHOUT_TAB_TOKENS(" \t", ' '));
+    }
+
+    if(s.empty())
+        return false;
+
+    m_state->scalar_col = m_state->line_contents.current_col(s);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, s.str >= m_state->line_contents.rem.str);
+    _line_progressed(static_cast<size_t>(s.str - m_state->line_contents.rem.str) + s.len);
+
+    if(_at_line_end() && s != '~')
+    {
+        _c4dbgpf("at line end. curr='{}'", s);
+        s = _extend_scanned_scalar(s);
+    }
+
+    _c4dbgpf("scalar was '{}'", s);
+
+    *scalar = s;
+    *quoted = false;
+    return true;
+}
+
+bool Parser::_scan_scalar_unk(csubstr *C4_RESTRICT scalar, bool *C4_RESTRICT quoted)
+{
+    _RYML_CB_ASSERT(m_stack.m_callbacks,  has_any(RUNK));
+
+    csubstr s = m_state->line_contents.rem;
+    if(s.len == 0)
+        return false;
+    s = s.trim(" \t");
+    if(s.len == 0)
+        return false;
+
+    if(s.begins_with('\''))
+    {
+        _c4dbgp("got a ': scanning single-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_squot_scalar();
+        *quoted = true;
+        return true;
+    }
+    else if(s.begins_with('"'))
+    {
+        _c4dbgp("got a \": scanning double-quoted scalar");
+        m_state->scalar_col = m_state->line_contents.current_col(s);
+        *scalar = _scan_dquot_scalar();
+        *quoted = true;
+        return true;
+    }
+    else if(s.begins_with('|') || s.begins_with('>'))
+    {
+        *scalar = _scan_block();
+        *quoted = true;
+        return true;
+    }
+    else if(has_any(RTOP) && _is_doc_sep(s))
+    {
+        return false;
+    }
+
+    _c4dbgpf("RUNK '[{}]~~~{}~~~", s.len, s);
+    if( ! _is_scalar_next__runk(s))
+    {
+        _c4dbgp("RUNK: no scalar next");
+        return false;
+    }
+    size_t pos = s.find(" #");
+    if(pos != npos)
+        s = s.left_of(pos);
+    pos = s.find(": ");
+    if(pos != npos)
+        s = s.left_of(pos);
+    else if(s.ends_with(':'))
+        s = s.left_of(s.len-1);
+    _RYML_WITH_TAB_TOKENS(
+    else if((pos = s.find(":\t")) != npos) // TABS
+        s = s.left_of(pos);
+    )
+    else
+        s = s.left_of(s.first_of(','));
+    s = s.trim(" \t");
+    _c4dbgpf("RUNK: scalar='{}'", s);
+
+    if(s.empty())
+        return false;
+
+    m_state->scalar_col = m_state->line_contents.current_col(s);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, s.str >= m_state->line_contents.rem.str);
+    _line_progressed(static_cast<size_t>(s.str - m_state->line_contents.rem.str) + s.len);
+
+    if(_at_line_end() && s != '~')
+    {
+        _c4dbgpf("at line end. curr='{}'", s);
+        s = _extend_scanned_scalar(s);
+    }
+
+    _c4dbgpf("scalar was '{}'", s);
+
+    *scalar = s;
+    *quoted = false;
+    return true;
+}
+
 
 //-----------------------------------------------------------------------------
 
@@ -27381,7 +30035,7 @@ substr Parser::_scan_plain_scalar_flow(csubstr currscalar, csubstr peeked_line)
             csubstr tpkl = peeked_line.triml(' ').trimr("\r\n");
             if(tpkl.begins_with(": ") || tpkl == ':')
             {
-                _c4dbgpf("rscalar[EXPL]: map value starts on the peeked line: '{}'", peeked_line);
+                _c4dbgpf("rscalar[FLOW]: map value starts on the peeked line: '{}'", peeked_line);
                 peeked_line = peeked_line.first(0);
                 break;
             }
@@ -27391,7 +30045,7 @@ substr Parser::_scan_plain_scalar_flow(csubstr currscalar, csubstr peeked_line)
                 if(colon_pos && colon_pos.pos < pos)
                 {
                     peeked_line = peeked_line.first(colon_pos.pos);
-                    _c4dbgpf("rscalar[EXPL]: found colon at {}. peeked='{}'", colon_pos.pos, peeked_line);
+                    _c4dbgpf("rscalar[FLOW]: found colon at {}. peeked='{}'", colon_pos.pos, peeked_line);
                     _RYML_CB_ASSERT(m_stack.m_callbacks, peeked_line.end() >= m_state->line_contents.rem.begin());
                     _line_progressed(static_cast<size_t>(peeked_line.end() - m_state->line_contents.rem.begin()));
                     break;
@@ -27400,13 +30054,13 @@ substr Parser::_scan_plain_scalar_flow(csubstr currscalar, csubstr peeked_line)
         }
         if(pos != npos)
         {
-            _c4dbgpf("rscalar[EXPL]: found special character '{}' at {}, stopping: '{}'", peeked_line[pos], pos, peeked_line.left_of(pos).trimr("\r\n"));
+            _c4dbgpf("rscalar[FLOW]: found special character '{}' at {}, stopping: '{}'", peeked_line[pos], pos, peeked_line.left_of(pos).trimr("\r\n"));
             peeked_line = peeked_line.left_of(pos);
             _RYML_CB_ASSERT(m_stack.m_callbacks, peeked_line.end() >= m_state->line_contents.rem.begin());
             _line_progressed(static_cast<size_t>(peeked_line.end() - m_state->line_contents.rem.begin()));
             break;
         }
-        _c4dbgpf("rscalar[EXPL]: append another line, full: '{}'", peeked_line.trimr("\r\n"));
+        _c4dbgpf("rscalar[FLOW]: append another line, full: '{}'", peeked_line.trimr("\r\n"));
         if(!first)
         {
             RYML_CHECK(_advance_to_peeked());
@@ -27728,11 +30382,16 @@ void Parser::_line_ended_undo()
     _RYML_CB_ASSERT(m_stack.m_callbacks, m_state->pos.col == 1u);
     _RYML_CB_ASSERT(m_stack.m_callbacks, m_state->pos.line > 0u);
     _RYML_CB_ASSERT(m_stack.m_callbacks, m_state->pos.offset >= m_state->line_contents.full.len - m_state->line_contents.stripped.len);
-    _c4dbgpf("line[{}] undo ended! line {}-->{}, offset {}-->{}", m_state->pos.line, m_state->pos.line, m_state->pos.line - 1, m_state->pos.offset, m_state->pos.offset - (m_state->line_contents.full.len - m_state->line_contents.stripped.len));
-    m_state->pos.offset -= m_state->line_contents.full.len - m_state->line_contents.stripped.len;
+    size_t delta = m_state->line_contents.full.len - m_state->line_contents.stripped.len;
+    _c4dbgpf("line[{}] undo ended! line {}-->{}, offset {}-->{}", m_state->pos.line, m_state->pos.line, m_state->pos.line - 1, m_state->pos.offset, m_state->pos.offset - delta);
+    m_state->pos.offset -= delta;
     --m_state->pos.line;
     m_state->pos.col = m_state->line_contents.stripped.len + 1u;
+    // don't forget to undo also the changes to the remainder of the line
+    _RYML_CB_ASSERT(m_stack.m_callbacks, m_state->pos.offset >= m_buf.len || m_buf[m_state->pos.offset] == '\n' || m_buf[m_state->pos.offset] == '\r');
+    m_state->line_contents.rem = m_buf.sub(m_state->pos.offset, 0);
 }
+
 
 //-----------------------------------------------------------------------------
 void Parser::_set_indentation(size_t indentation)
@@ -28392,7 +31051,8 @@ void Parser::_move_scalar_from_top()
 }
 
 //-----------------------------------------------------------------------------
-/** @todo this function is a monster and needs love. */
+/** @todo this function is a monster and needs love. Likely, it needs
+ * to be split like _scan_scalar_*() */
 bool Parser::_handle_indentation()
 {
     _RYML_CB_ASSERT(m_stack.m_callbacks, has_none(FLOW));
@@ -28413,37 +31073,39 @@ bool Parser::_handle_indentation()
     _c4dbgpf("indentation? ind={} indref={}", ind, m_state->indref);
     if(ind == m_state->indref)
     {
-        if(has_all(SSCL|RVAL) && ! rem.sub(ind).begins_with('-'))
+        _c4dbgpf("same indentation: {}", ind);
+        if(!rem.sub(ind).begins_with('-'))
         {
-            if(has_all(RMAP))
+            _c4dbgp("does not begin with -");
+            if(has_any(RMAP))
             {
-                _append_key_val_null(rem.str + ind - 1);
-                addrem_flags(RKEY, RVAL);
+                if(has_all(SSCL|RVAL))
+                {
+                    _c4dbgp("add with null val");
+                    _append_key_val_null(rem.str + ind - 1);
+                    addrem_flags(RKEY, RVAL);
+                }
             }
-            #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
-            else if(has_all(RSEQ))
+            else if(has_any(RSEQ))
             {
-                _append_val(_consume_scalar());
-                addrem_flags(RNXT, RVAL);
+                if(m_stack.size() > 2) // do not pop to root level
+                {
+                    if(has_any(RNXT))
+                    {
+                        _c4dbgp("end the indentless seq");
+                        _pop_level();
+                        return true;
+                    }
+                    else if(has_any(RVAL))
+                    {
+                        _c4dbgp("add with null val");
+                        _append_val_null(rem.str);
+                        _c4dbgp("end the indentless seq");
+                        _pop_level();
+                        return true;
+                    }
+                }
             }
-            else
-            {
-                _c4err("internal error");
-            }
-            #endif
-        }
-        else if(has_all(RSEQ|RNXT) && ! rem.sub(ind).begins_with('-'))
-        {
-            if(m_stack.size() > 2) // do not pop to root level
-            {
-                _c4dbgp("end the indentless seq");
-                _pop_level();
-                return true;
-            }
-        }
-        else
-        {
-            _c4dbgpf("same indentation ({}) -- nothing to see here", ind);
         }
         _line_progressed(ind);
         return ind > 0;
@@ -28632,10 +31294,9 @@ csubstr Parser::_scan_squot_scalar()
 
         // leading whitespace also needs filtering
         needs_filter = needs_filter
-            || numlines > 1
+            || (numlines > 1)
             || line_is_blank
-            || (_at_line_begin() && line.begins_with(' '))
-            || (m_state->line_contents.full.last_of('\r') != csubstr::npos);
+            || (_at_line_begin() && line.begins_with(' '));
 
         if(pos == npos)
         {
@@ -28734,10 +31395,9 @@ csubstr Parser::_scan_dquot_scalar()
 
         // leading whitespace also needs filtering
         needs_filter = needs_filter
-            || numlines > 1
+            || (numlines > 1)
             || line_is_blank
-            || (_at_line_begin() && line.begins_with(' '))
-            || (m_state->line_contents.full.last_of('\r') != csubstr::npos);
+            || (_at_line_begin() && line.begins_with(' '));
 
         if(pos == npos)
         {
@@ -28839,8 +31499,7 @@ csubstr Parser::_scan_block()
     _line_ended();
     _scan_line();
 
-    _c4dbgpf("scanning block: style={}  chomp={}  indentation={}", newline==BLOCK_FOLD ? "fold" : "literal",
-        chomp==CHOMP_CLIP ? "clip" : (chomp==CHOMP_STRIP ? "strip" : "keep"), indentation);
+    _c4dbgpf("scanning block: style={}  chomp={}  indentation={}", newline==BLOCK_FOLD ? "fold" : "literal", chomp==CHOMP_CLIP ? "clip" : (chomp==CHOMP_STRIP ? "strip" : "keep"), indentation);
 
     // start with a zero-length block, already pointing at the right place
     substr raw_block(m_buf.data() + m_state->pos.offset, size_t(0));// m_state->line_contents.full.sub(0, 0);
@@ -28887,15 +31546,17 @@ csubstr Parser::_scan_block()
                 _c4dbgpf("scanning block: line not empty. indref={} indprov={} indentation={}", m_state->indref, provisional_indentation, lc.indentation);
                 if(provisional_indentation == npos)
                 {
-                    #ifdef RYML_NO_COVERAGE__TO_BE_DELETED
                     if(lc.indentation < m_state->indref)
                     {
                         _c4dbgpf("scanning block: block terminated indentation={} < indref={}", lc.indentation, m_state->indref);
+                        if(raw_block.len == 0)
+                        {
+                            _c4dbgp("scanning block: was empty, undo next line");
+                            _line_ended_undo();
+                        }
                         break;
                     }
-                    else
-                    #endif
-                    if(lc.indentation == m_state->indref)
+                    else if(lc.indentation == m_state->indref)
                     {
                         if(has_any(RSEQ|RMAP))
                         {
@@ -28959,7 +31620,7 @@ csubstr Parser::_scan_block()
         _line_ended();
         ++num_lines;
     }
-    _RYML_CB_ASSERT(m_stack.m_callbacks, m_state->pos.line == (first + num_lines));
+    _RYML_CB_ASSERT(m_stack.m_callbacks, m_state->pos.line == (first + num_lines) || (raw_block.len == 0));
     C4_UNUSED(num_lines);
     C4_UNUSED(first);
 
@@ -29485,7 +32146,7 @@ csubstr Parser::_filter_block_scalar(substr s, BlockStyle_e style, BlockChomp_e 
 
     _c4dbgfbl(": indentation={} before=[{}]~~~{}~~~", indentation, s.len, s);
 
-    if(chomp != CHOMP_KEEP && s.trim(" \n\r\t").len == 0u)
+    if(chomp != CHOMP_KEEP && s.trim(" \n\r").len == 0u)
     {
         _c4dbgp("filt_block: empty scalar");
         return s.first(0);
@@ -29994,7 +32655,7 @@ csubstr Parser::location_contents(Location const& loc) const
     return m_buf.sub(loc.offset);
 }
 
-Location Parser::location(NodeRef node) const
+Location Parser::location(ConstNodeRef node) const
 {
     _RYML_CB_ASSERT(m_stack.m_callbacks, node.valid());
     return location(*node.tree(), node.id());
@@ -30002,90 +32663,158 @@ Location Parser::location(NodeRef node) const
 
 Location Parser::location(Tree const& tree, size_t node) const
 {
-    _RYML_CB_CHECK(m_stack.m_callbacks, m_buf.str == m_newline_offsets_buf.str);
-    _RYML_CB_CHECK(m_stack.m_callbacks, m_buf.len == m_newline_offsets_buf.len);
-    if(tree.has_key(node))
-    {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, tree.key(node).is_sub(m_buf));
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_buf.is_super(tree.key(node)));
-        return val_location(tree.key(node).str);
-    }
-    else if(tree.has_val(node))
-    {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, tree.val(node).is_sub(m_buf));
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_buf.is_super(tree.val(node)));
-        return val_location(tree.val(node).str);
-    }
-    else if(tree.is_container(node))
-    {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, !tree.has_key(node));
-        if(!tree.is_stream(node))
-        {
-            const char *node_start = tree._p(node)->m_val.scalar.str;  // this was stored in the container
-            if(tree.has_children(node))
-            {
-                size_t child = tree.first_child(node);
-                if(tree.has_key(child))
-                {
-                    // when a map starts, the container was set after the key
-                    csubstr k = tree.key(child);
-                    if(node_start > k.str)
-                        node_start = k.str;
-                }
-            }
-            return val_location(node_start);
-        }
-        else // it's a stream
-        {
-            return val_location(m_buf.str); // just return the front of the buffer
-        }
-    }
-    _RYML_CB_ASSERT(m_stack.m_callbacks, tree.type(node) == NOTYPE);
+    // try hard to avoid getting the location from a null string.
+    Location loc;
+    if(_location_from_node(tree, node, &loc, 0))
+        return loc;
     return val_location(m_buf.str);
 }
 
+bool Parser::_location_from_node(Tree const& tree, size_t node, Location *C4_RESTRICT loc, size_t level) const
+{
+    if(tree.has_key(node))
+    {
+        csubstr k = tree.key(node);
+        if(C4_LIKELY(k.str != nullptr))
+        {
+            _RYML_CB_ASSERT(m_stack.m_callbacks, k.is_sub(m_buf));
+            _RYML_CB_ASSERT(m_stack.m_callbacks, m_buf.is_super(k));
+            *loc = val_location(k.str);
+            return true;
+        }
+    }
+
+    if(tree.has_val(node))
+    {
+        csubstr v = tree.val(node);
+        if(C4_LIKELY(v.str != nullptr))
+        {
+            _RYML_CB_ASSERT(m_stack.m_callbacks, v.is_sub(m_buf));
+            _RYML_CB_ASSERT(m_stack.m_callbacks, m_buf.is_super(v));
+            *loc = val_location(v.str);
+            return true;
+        }
+    }
+
+    if(tree.is_container(node))
+    {
+        if(_location_from_cont(tree, node, loc))
+            return true;
+    }
+
+    if(tree.type(node) != NOTYPE && level == 0)
+    {
+        // try the prev sibling
+        {
+            const size_t prev = tree.prev_sibling(node);
+            if(prev != NONE)
+            {
+                if(_location_from_node(tree, prev, loc, level+1))
+                    return true;
+            }
+        }
+        // try the next sibling
+        {
+            const size_t next = tree.next_sibling(node);
+            if(next != NONE)
+            {
+                if(_location_from_node(tree, next, loc, level+1))
+                    return true;
+            }
+        }
+        // try the parent
+        {
+            const size_t parent = tree.parent(node);
+            if(parent != NONE)
+            {
+                if(_location_from_node(tree, parent, loc, level+1))
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Parser::_location_from_cont(Tree const& tree, size_t node, Location *C4_RESTRICT loc) const
+{
+    _RYML_CB_ASSERT(m_stack.m_callbacks, tree.is_container(node));
+    if(!tree.is_stream(node))
+    {
+        const char *node_start = tree._p(node)->m_val.scalar.str;  // this was stored in the container
+        if(tree.has_children(node))
+        {
+            size_t child = tree.first_child(node);
+            if(tree.has_key(child))
+            {
+                // when a map starts, the container was set after the key
+                csubstr k = tree.key(child);
+                if(k.str && node_start > k.str)
+                    node_start = k.str;
+            }
+        }
+        *loc = val_location(node_start);
+        return true;
+    }
+    else // it's a stream
+    {
+        *loc = val_location(m_buf.str); // just return the front of the buffer
+    }
+    return true;
+}
+
+
 Location Parser::val_location(const char *val) const
 {
-    if(_locations_dirty())
-        _prepare_locations();
-    csubstr src = m_buf;
-    _RYML_CB_CHECK(m_stack.m_callbacks, src.str == m_newline_offsets_buf.str);
-    _RYML_CB_CHECK(m_stack.m_callbacks, src.len == m_newline_offsets_buf.len);
-    _RYML_CB_CHECK(m_stack.m_callbacks, val >= src.begin() && val <= src.end());
+    if(C4_UNLIKELY(val == nullptr))
+        return {m_file, 0, 0, 0};
+
+    _RYML_CB_CHECK(m_stack.m_callbacks, m_options.locations());
+    // NOTE: if any of these checks fails, the parser needs to be
+    // instantiated with locations enabled.
+    _RYML_CB_ASSERT(m_stack.m_callbacks, m_buf.str == m_newline_offsets_buf.str);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, m_buf.len == m_newline_offsets_buf.len);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, m_options.locations());
+    _RYML_CB_ASSERT(m_stack.m_callbacks, !_locations_dirty());
     _RYML_CB_ASSERT(m_stack.m_callbacks, m_newline_offsets != nullptr);
     _RYML_CB_ASSERT(m_stack.m_callbacks, m_newline_offsets_size > 0);
-    using linetype = size_t const* C4_RESTRICT;
-    linetype line = nullptr;
+    // NOTE: the pointer needs to belong to the buffer that was used to parse.
+    csubstr src = m_buf;
+    _RYML_CB_CHECK(m_stack.m_callbacks, val != nullptr || src.str == nullptr);
+    _RYML_CB_CHECK(m_stack.m_callbacks, (val >= src.begin() && val <= src.end()) || (src.str == nullptr && val == nullptr));
+    // ok. search the first stored newline after the given ptr
+    using lineptr_type = size_t const* C4_RESTRICT;
+    lineptr_type lineptr = nullptr;
     size_t offset = (size_t)(val - src.begin());
-    if(m_newline_offsets_size < 30)
+    if(m_newline_offsets_size < 30) // TODO magic number
     {
-        // do a linear search if the size is small.
-        for(linetype curr = m_newline_offsets; curr < m_newline_offsets + m_newline_offsets_size; ++curr)
+        // just do a linear search if the size is small.
+        for(lineptr_type curr = m_newline_offsets, last = m_newline_offsets + m_newline_offsets_size; curr < last; ++curr)
         {
             if(*curr > offset)
             {
-                line = curr;
+                lineptr = curr;
                 break;
             }
         }
     }
     else
     {
-        // Do a bisection search if the size is not small.
+        // do a bisection search if the size is not small.
         //
         // We could use std::lower_bound but this is simple enough and
         // spares the include of <algorithm>.
         size_t count = m_newline_offsets_size;
         size_t step;
-        linetype it;
-        line = m_newline_offsets;
+        lineptr_type it;
+        lineptr = m_newline_offsets;
         while(count)
         {
             step = count >> 1;
-            it = line + step;
+            it = lineptr + step;
             if(*it < offset)
             {
-                line = ++it;
+                lineptr = ++it;
                 count -= step + 1;
             }
             else
@@ -30094,31 +32823,23 @@ Location Parser::val_location(const char *val) const
             }
         }
     }
-    if(line)
-    {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, *line > offset);
-    }
-    else
-    {
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_buf.empty());
-        _RYML_CB_ASSERT(m_stack.m_callbacks, m_newline_offsets_size == 1);
-        line = m_newline_offsets;
-    }
-    _RYML_CB_ASSERT(m_stack.m_callbacks, line >= m_newline_offsets && line < m_newline_offsets + m_newline_offsets_size);;
-    Location loc = {};
+    _RYML_CB_ASSERT(m_stack.m_callbacks, lineptr >= m_newline_offsets);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, lineptr <= m_newline_offsets + m_newline_offsets_size);
+    _RYML_CB_ASSERT(m_stack.m_callbacks, *lineptr > offset);
+    Location loc;
     loc.name = m_file;
     loc.offset = offset;
-    loc.line = (size_t)(line - m_newline_offsets);
-    if(line > m_newline_offsets)
-        loc.col = (offset - *(line-1) - 1u);
+    loc.line = (size_t)(lineptr - m_newline_offsets);
+    if(lineptr > m_newline_offsets)
+        loc.col = (offset - *(lineptr-1) - 1u);
     else
         loc.col = offset;
     return loc;
 }
 
-void Parser::_prepare_locations() const
+void Parser::_prepare_locations()
 {
-    _RYML_CB_ASSERT(m_stack.m_callbacks, !m_file.empty());
+    m_newline_offsets_buf = m_buf;
     size_t numnewlines = 1u + m_buf.count('\n');
     _resize_locations(numnewlines);
     m_newline_offsets_size = 0;
@@ -30129,7 +32850,7 @@ void Parser::_prepare_locations() const
     _RYML_CB_ASSERT(m_stack.m_callbacks, m_newline_offsets_size == numnewlines);
 }
 
-void Parser::_resize_locations(size_t numnewlines) const
+void Parser::_resize_locations(size_t numnewlines)
 {
     if(numnewlines > m_newline_offsets_capacity)
     {
@@ -30138,12 +32859,6 @@ void Parser::_resize_locations(size_t numnewlines) const
         m_newline_offsets = _RYML_CB_ALLOC_HINT(m_stack.m_callbacks, size_t, numnewlines, m_newline_offsets);
         m_newline_offsets_capacity = numnewlines;
     }
-}
-
-void Parser::_mark_locations_dirty()
-{
-    m_newline_offsets_size = 0u;
-    m_newline_offsets_buf = m_buf;
 }
 
 bool Parser::_locations_dirty() const
@@ -30189,6 +32904,13 @@ bool Parser::_locations_dirty() const
 namespace c4 {
 namespace yml {
 
+
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 size_t NodeRef::set_key_serialized(c4::fmt::const_base64_wrapper w)
 {
     _apply_seed();
@@ -30203,22 +32925,6 @@ size_t NodeRef::set_val_serialized(c4::fmt::const_base64_wrapper w)
     csubstr encoded = this->to_arena(w);
     this->set_val(encoded);
     return encoded.len;
-}
-
-size_t NodeRef::deserialize_key(c4::fmt::base64_wrapper w) const
-{
-    RYML_ASSERT( ! is_seed());
-    RYML_ASSERT(valid());
-    RYML_ASSERT(get() != nullptr);
-    return from_chars(key(), &w);
-}
-
-size_t NodeRef::deserialize_val(c4::fmt::base64_wrapper w) const
-{
-    RYML_ASSERT( ! is_seed());
-    RYML_ASSERT(valid());
-    RYML_ASSERT(get() != nullptr);
-    return from_chars(val(), &w);
 }
 
 } // namespace yml
@@ -30823,7 +33529,7 @@ inline size_t print_node(Tree const& p, size_t node, int level, size_t count, bo
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-inline void print_node(NodeRef const& p, int level=0)
+inline void print_node(ConstNodeRef const& p, int level=0)
 {
     print_node(*p.tree(), p.id(), level, 0, true);
 }

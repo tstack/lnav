@@ -698,6 +698,14 @@ struct json_string {
         memcpy((void*) this->js_content.in(), buf, this->js_len);
     }
 
+    explicit json_string(auto_buffer&& buf)
+    {
+        auto buf_pair = buf.release();
+
+        this->js_content = (const unsigned char*) buf_pair.first;
+        this->js_len = buf_pair.second;
+    }
+
     auto_mem<const unsigned char> js_content;
     size_t js_len{0};
 };
