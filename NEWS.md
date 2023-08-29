@@ -83,6 +83,8 @@ Features:
   - `/ui/theme-defs/<theme_name>/syntax-styles/separators-references-accessors`
 * Multi-line block comments (i.e. `/* ... */`) and strings
   are now recognized and styled as appropriate.
+* Added a `data` column to the `fstat()` table-valued-
+  function so the contents of a file can be read.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same
