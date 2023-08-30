@@ -1364,7 +1364,7 @@ static const struct json_path_container url_scheme_handlers = {
 };
 
 static const struct json_path_container url_handlers = {
-    yajlpp::pattern_property_handler(R"((?<url_scheme>\w+))")
+    yajlpp::pattern_property_handler(R"((?<url_scheme>[a-z][\w\-\+\.]+))")
         .with_description("Definition of a custom URL scheme")
         .with_obj_provider<lnav::url_handler::scheme, _lnav_config>(
             [](const yajlpp_provider_context& ypc, _lnav_config* root) {

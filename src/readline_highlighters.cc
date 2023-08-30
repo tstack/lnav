@@ -306,63 +306,77 @@ readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
     attr_line_builder alb(al);
     const auto& str = al.get_string();
-    string_fragment cap;
-    shlex_token_t token;
     nonstd::optional<int> quote_start;
     shlex lexer(string_fragment{al.al_string.data(), sub.lr_start, sub.lr_end});
+    bool done = false;
 
-    while (lexer.tokenize(cap, token)) {
-        switch (token) {
-            case shlex_token_t::ST_ERROR:
-                alb.overlay_attr(line_range(sub.lr_start + cap.sf_begin,
-                                            sub.lr_start + cap.sf_end),
-                                 VC_STYLE.value(text_attrs{A_REVERSE}));
-                alb.overlay_attr(line_range(sub.lr_start + cap.sf_begin,
-                                            sub.lr_start + cap.sf_end),
-                                 VC_ROLE.value(role_t::VCR_ERROR));
+    while (!done) {
+        auto tokenize_res = lexer.tokenize();
+        if (tokenize_res.isErr()) {
+            auto te = tokenize_res.unwrapErr();
+
+            alb.overlay_attr(line_range(sub.lr_start + te.te_source.sf_begin,
+                                        sub.lr_start + te.te_source.sf_end),
+                             VC_STYLE.value(text_attrs{A_REVERSE}));
+            alb.overlay_attr(line_range(sub.lr_start + te.te_source.sf_begin,
+                                        sub.lr_start + te.te_source.sf_end),
+                             VC_ROLE.value(role_t::VCR_ERROR));
+            return;
+        }
+
+        auto token = tokenize_res.unwrap();
+        switch (token.tr_token) {
+            case shlex_token_t::eof:
+                done = true;
                 break;
-            case shlex_token_t::ST_TILDE:
-            case shlex_token_t::ST_ESCAPE:
-                alb.overlay_attr(line_range(sub.lr_start + cap.sf_begin,
-                                            sub.lr_start + cap.sf_end),
-                                 VC_ROLE.value(role_t::VCR_SYMBOL));
-                break;
-            case shlex_token_t::ST_DOUBLE_QUOTE_START:
-            case shlex_token_t::ST_SINGLE_QUOTE_START:
-                quote_start = sub.lr_start + cap.sf_begin;
-                break;
-            case shlex_token_t::ST_DOUBLE_QUOTE_END:
-            case shlex_token_t::ST_SINGLE_QUOTE_END:
+            case shlex_token_t::tilde:
+            case shlex_token_t::escape:
                 alb.overlay_attr(
-                    line_range(quote_start.value(), sub.lr_start + cap.sf_end),
+                    line_range(sub.lr_start + token.tr_frag.sf_begin,
+                               sub.lr_start + token.tr_frag.sf_end),
+                    VC_ROLE.value(role_t::VCR_SYMBOL));
+                break;
+            case shlex_token_t::double_quote_start:
+            case shlex_token_t::single_quote_start:
+                quote_start = sub.lr_start + token.tr_frag.sf_begin;
+                break;
+            case shlex_token_t::double_quote_end:
+            case shlex_token_t::single_quote_end:
+                alb.overlay_attr(
+                    line_range(quote_start.value(),
+                               sub.lr_start + token.tr_frag.sf_end),
                     VC_ROLE.value(role_t::VCR_STRING));
                 quote_start = nonstd::nullopt;
                 break;
-            case shlex_token_t::ST_VARIABLE_REF:
-            case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
-                int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                auto ident = str.substr(sub.lr_start + cap.sf_begin + 1 + extra,
-                                        cap.length() - 1 - extra * 2);
+            case shlex_token_t::variable_ref:
+            case shlex_token_t::quoted_variable_ref: {
+                int extra = token.tr_token == shlex_token_t::variable_ref ? 0
+                                                                          : 1;
+                auto ident = str.substr(
+                    sub.lr_start + token.tr_frag.sf_begin + 1 + extra,
+                    token.tr_frag.length() - 1 - extra * 2);
                 alb.overlay_attr(
-                    line_range(sub.lr_start + cap.sf_begin,
-                               sub.lr_start + cap.sf_begin + 1 + extra),
+                    line_range(
+                        sub.lr_start + token.tr_frag.sf_begin,
+                        sub.lr_start + token.tr_frag.sf_begin + 1 + extra),
                     VC_ROLE.value(role_t::VCR_SYMBOL));
                 alb.overlay_attr(
-                    line_range(sub.lr_start + cap.sf_begin + 1 + extra,
-                               sub.lr_start + cap.sf_end - extra),
-                    VC_ROLE.value(
-                        x == sub.lr_start + cap.sf_end
-                                || (cap.sf_begin <= x && x < cap.sf_end)
-                            ? role_t::VCR_SYMBOL
-                            : role_t::VCR_IDENTIFIER));
+                    line_range(
+                        sub.lr_start + token.tr_frag.sf_begin + 1 + extra,
+                        sub.lr_start + token.tr_frag.sf_end - extra),
+                    VC_ROLE.value(x == sub.lr_start + token.tr_frag.sf_end
+                                          || (token.tr_frag.sf_begin <= x
+                                              && x < token.tr_frag.sf_end)
+                                      ? role_t::VCR_SYMBOL
+                                      : role_t::VCR_IDENTIFIER));
                 if (extra) {
                     alb.overlay_attr_for_char(
-                        sub.lr_start + cap.sf_end - 1,
+                        sub.lr_start + token.tr_frag.sf_end - 1,
                         VC_ROLE.value(role_t::VCR_SYMBOL));
                 }
                 break;
             }
-            case shlex_token_t::ST_WHITESPACE:
+            case shlex_token_t::whitespace:
                 break;
         }
     }

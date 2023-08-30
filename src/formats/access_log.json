@@ -111,6 +111,9 @@
             {
                 "line": "10.112.2.3 - - [16/Sep/2022:00:53:14 +0200] \"POST /api/v4/jobs/request HTTP/1.1\" 204 0 \"\" \"gitlab-runner 15.3.0 (15-3-stable; go1.19; linux/amd64)\" -",
                 "level": "info"
+            },
+            {
+                "line": "172.18.0.1 - - [29/Aug/2023 22:02:58] \"GET / HTTP/1.1\" 200 -"
             }
         ]
     }

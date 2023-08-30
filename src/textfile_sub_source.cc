@@ -636,6 +636,11 @@ textfile_sub_source::rescan_files(
             continue;
         }
 
+        if (!this->tss_completed_last_scan && lf->size() > 0) {
+            ++iter;
+            continue;
+        }
+
         try {
             const auto& st = lf->get_stat();
             uint32_t old_size = lf->size();
@@ -647,11 +652,6 @@ textfile_sub_source::rescan_files(
                 this->tss_doc_metadata.erase(lf->get_filename());
                 this->detach_observer(lf);
                 callback.promote_file(lf);
-                continue;
-            }
-
-            if (!this->tss_completed_last_scan && lf->size() > 0) {
-                ++iter;
                 continue;
             }
 

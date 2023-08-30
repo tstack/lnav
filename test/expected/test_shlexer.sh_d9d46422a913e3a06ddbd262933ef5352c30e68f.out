@@ -2,8 +2,9 @@
 wsp    ^
 ref     ^--^
 wsp         ^^
+eof             ^
 eval -- abc xyz  123
 split:
-  0 -- abc
-  1 -- xyz
-  2 -- 123
+  0 ^-^ -- abc
+  1     ^--^ -- xyz
+  2           ^-^ -- 123

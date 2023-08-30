@@ -1,6 +1,7 @@
     '"'
 sst ^
 sen   ^
+eof   ^
 eval -- '"'
 split:
-  0 -- "
+  0 ^-^ -- "

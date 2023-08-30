@@ -106,7 +106,7 @@ sql_progress_finished()
 
 static Result<std::string, lnav::console::user_message> execute_from_file(
     exec_context& ec,
-    const ghc::filesystem::path& path,
+    const std::string& src,
     int line_number,
     const std::string& cmdline);
 
@@ -499,6 +499,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 if (ec.ec_local_vars.size() == 1) {
+                    lnav_data.ld_views[LNV_DB].reload_data();
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
                 }
             }
@@ -509,13 +510,73 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     return Ok(retval);
 }
 
-static Result<std::string, lnav::console::user_message>
-execute_file_contents(exec_context& ec,
-                      const ghc::filesystem::path& path,
-                      bool multiline)
+Result<void, lnav::console::user_message>
+multiline_executor::push_back(string_fragment line)
 {
-    static ghc::filesystem::path stdin_path("-");
-    static ghc::filesystem::path dev_stdin_path("/dev/stdin");
+    this->me_line_number += 1;
+
+    if (line.trim().empty()) {
+        if (this->me_cmdline) {
+            this->me_cmdline = this->me_cmdline.value() + "\n";
+        }
+        return Ok();
+    }
+    if (line[0] == '#') {
+        return Ok();
+    }
+
+    switch (line[0]) {
+        case ':':
+        case '/':
+        case ';':
+        case '|':
+            if (this->me_cmdline) {
+                this->me_last_result
+                    = TRY(execute_from_file(this->me_exec_context,
+                                            this->me_source,
+                                            this->me_starting_line_number,
+                                            trim(this->me_cmdline.value())));
+            }
+
+            this->me_starting_line_number = this->me_line_number;
+            this->me_cmdline = line.to_string();
+            break;
+        default:
+            if (this->me_cmdline) {
+                this->me_cmdline = fmt::format(
+                    FMT_STRING("{}{}"), this->me_cmdline.value(), line);
+            } else {
+                this->me_last_result = TRY(
+                    execute_from_file(this->me_exec_context,
+                                      this->me_source,
+                                      this->me_line_number,
+                                      fmt::format(FMT_STRING(":{}"), line)));
+            }
+            break;
+    }
+
+    return Ok();
+}
+
+Result<std::string, lnav::console::user_message>
+multiline_executor::final()
+{
+    if (this->me_cmdline) {
+        this->me_last_result
+            = TRY(execute_from_file(this->me_exec_context,
+                                    this->me_source,
+                                    this->me_starting_line_number,
+                                    trim(this->me_cmdline.value())));
+    }
+
+    return Ok(this->me_last_result);
+}
+
+static Result<std::string, lnav::console::user_message>
+execute_file_contents(exec_context& ec, const ghc::filesystem::path& path)
+{
+    static const ghc::filesystem::path stdin_path("-");
+    static const ghc::filesystem::path dev_stdin_path("/dev/stdin");
 
     std::string retval;
     FILE* file;
@@ -529,59 +590,18 @@ execute_file_contents(exec_context& ec,
         return ec.make_error("unable to open file");
     }
 
-    int line_number = 0, starting_line_number = 0;
     auto_mem<char> line;
     size_t line_max_size;
     ssize_t line_size;
-    nonstd::optional<std::string> cmdline;
+    multiline_executor me(ec, path.string());
 
     ec.ec_path_stack.emplace_back(path.parent_path());
     exec_context::output_guard og(ec);
     while ((line_size = getline(line.out(), &line_max_size, file)) != -1) {
-        line_number += 1;
-
-        if (trim(line.in()).empty()) {
-            if (multiline && cmdline) {
-                cmdline = cmdline.value() + "\n";
-            }
-            continue;
-        }
-        if (line[0] == '#') {
-            continue;
-        }
-
-        switch (line[0]) {
-            case ':':
-            case '/':
-            case ';':
-            case '|':
-                if (cmdline) {
-                    retval = TRY(execute_from_file(
-                        ec, path, starting_line_number, trim(cmdline.value())));
-                }
-
-                starting_line_number = line_number;
-                cmdline = std::string(line);
-                break;
-            default:
-                if (multiline && cmdline) {
-                    cmdline = fmt::format(
-                        FMT_STRING("{}{}"), cmdline.value(), line.in());
-                } else {
-                    retval = TRY(execute_from_file(
-                        ec,
-                        path,
-                        line_number,
-                        fmt::format(FMT_STRING(":{}"), line.in())));
-                }
-                break;
-        }
+        TRY(me.push_back(string_fragment::from_bytes(line.in(), line_size)));
     }
 
-    if (cmdline) {
-        retval = TRY(execute_from_file(
-            ec, path, starting_line_number, trim(cmdline.value())));
-    }
+    retval = TRY(me.final());
 
     if (file == stdin) {
         if (isatty(STDOUT_FILENO)) {
@@ -596,25 +616,35 @@ execute_file_contents(exec_context& ec,
 }
 
 Result<std::string, lnav::console::user_message>
-execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
+execute_file(exec_context& ec, const std::string& path_and_args)
 {
+    static const intern_string_t SRC = intern_string::lookup("cmdline");
+
     available_scripts scripts;
-    std::vector<std::string> split_args;
     std::string retval, msg;
     shlex lexer(path_and_args);
 
     log_info("Executing file: %s", path_and_args.c_str());
 
-    if (!lexer.split(split_args, scoped_resolver{&ec.ec_local_vars.top()})) {
-        return ec.make_error("unable to parse path");
+    auto split_args_res = lexer.split(scoped_resolver{&ec.ec_local_vars.top()});
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um = lnav::console::user_message::error(
+                      "unable to parse script command-line")
+                      .with_reason(split_err.te_msg)
+                      .with_snippet(lnav::console::snippet::from(
+                          SRC, lexer.to_attr_line(split_err)));
+
+        return Err(um);
     }
+    auto split_args = split_args_res.unwrap();
     if (split_args.empty()) {
         return ec.make_error("no script specified");
     }
 
     ec.ec_local_vars.push({});
 
-    auto script_name = split_args[0];
+    auto script_name = split_args[0].se_value;
     auto& vars = ec.ec_local_vars.top();
     char env_arg_name[32];
     std::string star, open_error = "file not found";
@@ -627,13 +657,13 @@ execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
     vars["#"] = env_arg_name;
     for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
         snprintf(env_arg_name, sizeof(env_arg_name), "%lu", lpc);
-        vars[env_arg_name] = split_args[lpc];
+        vars[env_arg_name] = split_args[lpc].se_value;
     }
     for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
         if (lpc > 1) {
             star.append(" ");
         }
-        star.append(split_args[lpc]);
+        star.append(split_args[lpc].se_value);
     }
     vars["__all__"] = star;
 
@@ -674,8 +704,7 @@ execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
 
     if (!paths_to_exec.empty()) {
         for (auto& path_iter : paths_to_exec) {
-            retval
-                = TRY(execute_file_contents(ec, path_iter.sm_path, multiline));
+            retval = TRY(execute_file_contents(ec, path_iter.sm_path));
         }
     }
     ec.ec_local_vars.pop();
@@ -690,13 +719,13 @@ execute_file(exec_context& ec, const std::string& path_and_args, bool multiline)
 
 Result<std::string, lnav::console::user_message>
 execute_from_file(exec_context& ec,
-                  const ghc::filesystem::path& path,
+                  const std::string& src,
                   int line_number,
                   const std::string& cmdline)
 {
     std::string retval, alt_msg;
-    auto _sg = ec.enter_source(
-        intern_string::lookup(path.string()), line_number, cmdline);
+    auto _sg
+        = ec.enter_source(intern_string::lookup(src), line_number, cmdline);
 
     switch (cmdline[0]) {
         case ':':
@@ -717,10 +746,8 @@ execute_from_file(exec_context& ec,
             break;
     }
 
-    log_info("%s:%d:execute result -- %s",
-             path.c_str(),
-             line_number,
-             retval.c_str());
+    log_info(
+        "%s:%d:execute result -- %s", src.c_str(), line_number, retval.c_str());
 
     return Ok(retval);
 }
@@ -842,6 +869,7 @@ execute_init_commands(
             }
             if (dls.dls_rows.size() > 1 && lnav_data.ld_view_stack.size() == 1)
             {
+                lnav_data.ld_views[LNV_DB].reload_data();
                 ensure_view(LNV_DB);
             }
         }

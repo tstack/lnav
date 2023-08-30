@@ -30,6 +30,7 @@
 #include "base/auto_mem.hh"
 #include "base/fs_util.hh"
 #include "base/injector.bind.hh"
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "bound_tags.hh"
 #include "command_executor.hh"
@@ -88,6 +89,7 @@ sql_cmd_read(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("cmdline");
     static auto& lnav_db = injector::get<auto_sqlite3&>();
     static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
 
@@ -102,12 +104,22 @@ sql_cmd_read(exec_context& ec,
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
 
-    std::vector<std::string> split_args;
     shlex lexer(cmdline);
 
-    if (!lexer.split(split_args, ec.create_resolver())) {
-        return ec.make_error("unable to parse arguments");
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error("unable to parse file name")
+                  .with_reason(split_err.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err)));
+
+        return Err(um);
     }
+
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
 
     for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
         auto read_res = lnav::filesystem::read_file(split_args[lpc]);

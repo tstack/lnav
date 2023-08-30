@@ -282,10 +282,13 @@ ptime_S(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         }
         dst->et_tm.tm_sec
             = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        if (dst->et_tm.tm_sec < 0 || dst->et_tm.tm_sec >= 60) {
+            return false;
+        }
         dst->et_flags |= ETF_SECOND_SET;
     });
 
-    return (dst->et_tm.tm_sec >= 0 && dst->et_tm.tm_sec <= 59);
+    return true;
 }
 
 inline void

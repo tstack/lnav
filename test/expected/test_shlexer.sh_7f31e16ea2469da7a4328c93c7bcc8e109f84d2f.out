@@ -2,6 +2,7 @@
 dst ^
 qrf      ^----^
 den                ^
+eof                ^
 eval -- "abc xyz 123"
 split:
-  0 -- abc xyz 123
+  0 ^--------------^ -- abc xyz 123

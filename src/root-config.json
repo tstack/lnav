@@ -96,6 +96,9 @@
             "docker": {
                 "handler": "docker-url-handler"
             },
+            "docker-compose": {
+                "handler": "docker-compose-url-handler"
+            },
             "piper": {
                 "handler": "piper-url-handler"
             }

@@ -32,32 +32,34 @@
 #ifndef LNAV_SHLEX_HH_H
 #define LNAV_SHLEX_HH_H
 
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
 
 #include <pwd.h>
 
+#include "base/attr_line.hh"
 #include "base/intern_string.hh"
 #include "base/opt_util.hh"
 #include "shlex.resolver.hh"
 
 enum class shlex_token_t {
-    ST_ERROR,
-    ST_WHITESPACE,
-    ST_ESCAPE,
-    ST_DOUBLE_QUOTE_START,
-    ST_DOUBLE_QUOTE_END,
-    ST_SINGLE_QUOTE_START,
-    ST_SINGLE_QUOTE_END,
-    ST_VARIABLE_REF,
-    ST_QUOTED_VARIABLE_REF,
-    ST_TILDE,
+    eof,
+    whitespace,
+    escape,
+    double_quote_start,
+    double_quote_end,
+    single_quote_start,
+    single_quote_end,
+    variable_ref,
+    quoted_variable_ref,
+    tilde,
 };
 
 class shlex {
 public:
-    shlex(const char* str, size_t len) : s_str(str), s_len(len){};
+    shlex(const char* str, size_t len) : s_str(str), s_len(len) {}
 
     explicit shlex(const string_fragment& sf)
         : s_str(sf.data()), s_len(sf.length())
@@ -65,7 +67,9 @@ public:
     }
 
     explicit shlex(const std::string& str)
-        : s_str(str.c_str()), s_len(str.size()){};
+        : s_str(str.c_str()), s_len(str.size())
+    {
+    }
 
     shlex& with_ignore_quotes(bool val)
     {
@@ -73,11 +77,27 @@ public:
         return *this;
     }
 
-    bool tokenize(string_fragment& cap_out, shlex_token_t& token_out);
+    struct tokenize_result_t {
+        shlex_token_t tr_token;
+        string_fragment tr_frag;
+    };
+
+    struct tokenize_error_t {
+        const char* te_msg{nullptr};
+        string_fragment te_source;
+    };
+
+    Result<tokenize_result_t, tokenize_error_t> tokenize();
 
     bool eval(std::string& result, const scoped_resolver& vars);
 
-    bool split(std::vector<std::string>& result, const scoped_resolver& vars);
+    struct split_element_t {
+        string_fragment se_origin;
+        std::string se_value;
+    };
+
+    Result<std::vector<split_element_t>, tokenize_error_t> split(
+        const scoped_resolver& vars);
 
     void reset()
     {
@@ -85,9 +105,11 @@ public:
         this->s_state = state_t::STATE_NORMAL;
     }
 
-    void scan_variable_ref(string_fragment& cap_out, shlex_token_t& token_out);
+    Result<tokenize_result_t, tokenize_error_t> scan_variable_ref();
 
     void resolve_home_dir(std::string& result, string_fragment cap) const;
+
+    attr_line_t to_attr_line(const tokenize_error_t& te) const;
 
     enum class state_t {
         STATE_NORMAL,

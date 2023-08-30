@@ -389,10 +389,16 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
             for (size_t lpc = 0; lpc < this->lf_index.size() - 1; lpc++) {
                 if (this->lf_format->lf_multiline) {
+                    if (this->lf_format->lf_structured) {
+                        this->lf_index[lpc].set_ignore(true);
+                    } else {
+                        this->lf_index[lpc].set_time(last_line.get_time());
+                        this->lf_index[lpc].set_millis(last_line.get_millis());
+                    }
+                } else {
                     this->lf_index[lpc].set_time(last_line.get_time());
                     this->lf_index[lpc].set_millis(last_line.get_millis());
-                } else {
-                    this->lf_index[lpc].set_ignore(true);
+                    this->lf_index[lpc].set_level(LEVEL_INVALID);
                 }
             }
 
