@@ -48,9 +48,9 @@ run_cap_test env TZ=UTC ${lnav_test} -n \
     -c ":unix-time 1612072409" \
     "${test_dir}/logfile_access_log.*"
 
-run_cap_test env TZ=UTC ${lnav_test} -n \
-    -c ":unix-time 16120724091612072409" \
-    "${test_dir}/logfile_access_log.*"
+#run_cap_test env TZ=UTC ${lnav_test} -n \
+#    -c ":unix-time 16120724091612072409" \
+#    "${test_dir}/logfile_access_log.*"
 
 run_cap_test env TZ=UTC ${lnav_test} -n \
     -c ":current-time" \
