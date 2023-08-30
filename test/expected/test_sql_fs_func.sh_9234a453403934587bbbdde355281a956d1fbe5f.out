@@ -1,0 +1,2 @@
+st_parent   st_name    st_dev st_ino st_type st_mode st_nlink st_uid st_user st_gid st_group st_rdev st_size st_blksize st_blocks st_atime st_mtime st_ctime           error           
+/         non-existent <NULL> <NULL>  <NULL>  <NULL>   <NULL> <NULL>  <NULL> <NULL>   <NULL>  <NULL>  <NULL>     <NULL>    <NULL>   <NULL>   <NULL>   <NULL> No such file or directory 

@@ -3759,11 +3759,12 @@ For support questions, email:
    
 
 
-[1m[4mraise_error[0m[4m([0m[4mmsg[0m[4m)[0m
+[1m[4mraise_error[0m[4m([0m[4mmsg[0m[4m, [[0m[4mreason[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   Raises an error with the given message when executed
-[4mParameter[0m
-  [4mmsg[0m   The error message
+[4mParameters[0m
+  [4mmsg[0m      The error message
+  [4mreason[0m   The reason the error occurred
 
 
 [1m[4mrandom[0m[4m()[0m

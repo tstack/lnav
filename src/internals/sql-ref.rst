@@ -3127,13 +3127,14 @@ radians(*degrees*)
 
 .. _raise_error:
 
-raise_error(*msg*)
-^^^^^^^^^^^^^^^^^^
+raise_error(*msg*, *\[reason\]*)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Raises an error with the given message when executed
 
   **Parameters**
     * **msg\*** --- The error message
+    * **reason** --- The reason the error occurred
 
 
 ----

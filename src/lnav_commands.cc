@@ -2699,7 +2699,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 }
 
                 retval = "info: watching -- " + fn;
-            } else if (is_glob(fn.c_str())) {
+            } else if (lnav::filesystem::is_glob(fn.c_str())) {
                 fc.fc_file_names.emplace(fn, loo);
                 files_to_front.emplace_back(
                     loo.loo_filename.empty() ? fn : loo.loo_filename, file_loc);
@@ -2827,7 +2827,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         }
                     });
                 lnav_data.ld_preview_view.set_needs_update();
-            } else if (is_glob(fn.c_str())) {
+            } else if (lnav::filesystem::is_glob(fn.c_str())) {
                 static_root_mem<glob_t, globfree> gl;
 
                 if (glob(fn.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
