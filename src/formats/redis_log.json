@@ -7,16 +7,20 @@
         ],
         "description": "The Redis database",
         "regex": {
+            "v2.x": {
+                "pattern": "\\[(?<pid>\\d+)\\]\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\-\\*\\#])\\s+(?<body>.*)"
+            },
             "v3.x": {
-                "pattern": "(?<pid>\\d+):(?<role>[XCSM])\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\0\\*\\#])\\s+(?<body>.*)"
+                "pattern": "(?<pid>\\d+):(?<role>[XCSM])\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\*\\#\\-])\\s+(?<body>.*)"
             },
             "sig": {
-                "pattern": "(?<pid>\\d+):signal-handler \\((?<timestamp>\\d+)\\) (?<body>.*)"
+                "pattern": "(?<pid>\\d+):(?<role>signal-handler) \\((?<timestamp>\\d+)\\) (?<body>.*)"
             }
         },
         "timestamp-format": [
             "%s",
-            "%d %b %Y %H:%M:%S.%L"
+            "%d %b %Y %H:%M:%S.%L",
+            "%d %b %H:%M:%S.%L"
         ],
         "level": {
             "debug": "^\\.$",
@@ -45,6 +49,9 @@
             },
             {
                 "line": "1:signal-handler (1693279182) Received SIGTERM scheduling shutdown..."
+            },
+            {
+                "line": "[3574] 13 Apr 12:52:30.731 # Sentinel runid is 2e3b1eed9e95d760e1853e047a33bf4f8ac16c59"
             }
         ]
     }

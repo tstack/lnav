@@ -113,6 +113,9 @@
             },
             "piper": {
                 "handler": "piper-url-handler"
+            },
+            "podman": {
+                "handler": "docker-url-handler"
             }
         }
     },

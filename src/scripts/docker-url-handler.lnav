@@ -1,9 +1,10 @@
 #
 # @synopsis: docker-url-handler
-# @description: Internal script to handle opening docker URLs
+# @description: Internal script to handle opening docker/podman URLs
 #
 
-;SELECT jget(url, '/host') AS docker_hostname,
+;SELECT jget(url, '/scheme') AS docker_scheme,
+        jget(url, '/host') AS docker_hostname,
         jget(url, '/path') AS docker_path
    FROM (SELECT parse_url($1) AS url)
 
@@ -14,8 +15,10 @@
         WHEN 'compose' THEN (
             SELECT group_concat(
                     printf(
-                        ':sh --name=%s docker compose logs --no-log-prefix -f %s',
+                        ':sh --name=%s %s compose -f %s logs --no-log-prefix -f %s',
                         compose_services.key,
+                        $docker_scheme,
+                        $docker_relpath,
                         compose_services.key
                     ),
                     char(10)
@@ -36,8 +39,8 @@
         )
         ELSE CASE
             $docker_path
-            WHEN '/' THEN ':sh docker logs -f ' || $docker_hostname
-            ELSE ':sh docker exec ' || $docker_hostname || ' tail -n +0 -F "' || $docker_path || '"'
+            WHEN '/' THEN printf(':sh %s logs -f %s', $docker_scheme, $docker_hostname)
+            ELSE printf(':sh %s exec %s tail -n +0 -F "%s"', $docker_scheme, $docker_hostname, $docker_path)
         END
     END AS cmds
 
