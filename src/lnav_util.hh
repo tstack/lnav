@@ -81,14 +81,6 @@ to_string(const char* s)
 }
 }  // namespace std
 
-inline bool
-is_glob(const std::string& fn)
-{
-    return (fn.find('*') != std::string::npos
-            || fn.find('?') != std::string::npos
-            || fn.find('[') != std::string::npos);
-}
-
 inline void
 rusagesub(const struct rusage& left,
           const struct rusage& right,

@@ -41,6 +41,14 @@
 namespace lnav {
 namespace filesystem {
 
+inline bool
+is_glob(const std::string& fn)
+{
+    return (fn.find('*') != std::string::npos
+            || fn.find('?') != std::string::npos
+            || fn.find('[') != std::string::npos);
+}
+
 inline int
 statp(const ghc::filesystem::path& path, struct stat* buf)
 {

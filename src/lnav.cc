@@ -2955,7 +2955,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 fmt::format(FMT_STRING(":open {}"), file_path));
         }
 #endif
-        else if (is_glob(file_path))
+        else if (lnav::filesystem::is_glob(file_path))
         {
             lnav_data.ld_active_files.fc_file_names[file_path].with_tail(
                 !(lnav_data.ld_flags & LNF_HEADLESS));

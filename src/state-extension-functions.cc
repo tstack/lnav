@@ -99,9 +99,14 @@ sql_lnav_version()
 }
 
 static int64_t
-sql_error(const char* str)
+sql_error(const char* str, nonstd::optional<string_fragment> reason)
 {
-    throw sqlite_func_error("{}", str);
+    auto um = lnav::console::user_message::error(str);
+
+    if (reason) {
+        um.with_reason(reason->to_string());
+    }
+    throw um;
 }
 
 static nonstd::optional<std::string>
@@ -155,7 +160,10 @@ state_extension_functions(struct FuncDef** basic_funcs,
             help_text("raise_error",
                       "Raises an error with the given message when executed")
                 .sql_function()
-                .with_parameter({"msg", "The error message"}))
+                .with_parameter({"msg", "The error message"})
+                .with_parameter(
+                    help_text("reason", "The reason the error occurred")
+                        .optional()))
             .with_flags(SQLITE_UTF8),
 
         sqlite_func_adapter<decltype(&sql_echoln), sql_echoln>::builder(

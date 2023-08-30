@@ -64,6 +64,7 @@ enum {
     FSTAT_COL_ATIME,
     FSTAT_COL_MTIME,
     FSTAT_COL_CTIME,
+    FSTAT_COL_ERROR,
     FSTAT_COL_PATTERN,
     FSTAT_COL_DATA,
 };
@@ -93,6 +94,7 @@ CREATE TABLE fstat (
     st_atime DATETIME,
     st_mtime DATETIME,
     st_ctime DATETIME,
+    error TEXT,
     pattern TEXT HIDDEN,
     data BLOB HIDDEN
 );
@@ -104,20 +106,20 @@ CREATE TABLE fstat (
         static_root_mem<glob_t, globfree> c_glob;
         size_t c_path_index{0};
         struct stat c_stat;
+        std::string c_error;
 
-        cursor(sqlite3_vtab* vt) : base({vt})
+        explicit cursor(sqlite3_vtab* vt) : base({vt})
         {
             memset(&this->c_stat, 0, sizeof(this->c_stat));
         }
 
         void load_stat()
         {
-            while ((this->c_path_index < this->c_glob->gl_pathc)
-                   && lstat(this->c_glob->gl_pathv[this->c_path_index],
-                            &this->c_stat)
-                       == -1)
-            {
-                this->c_path_index += 1;
+            auto rc = lstat(this->c_glob->gl_pathv[this->c_path_index],
+                            &this->c_stat);
+
+            if (rc == -1) {
+                this->c_error = strerror(errno);
             }
         }
 
@@ -173,13 +175,23 @@ CREATE TABLE fstat (
                 break;
             }
             case FSTAT_COL_DEV:
-                sqlite3_result_int(ctx, vc.c_stat.st_dev);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_dev);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_INO:
-                sqlite3_result_int64(ctx, vc.c_stat.st_ino);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int64(ctx, vc.c_stat.st_ino);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_TYPE:
-                if (S_ISREG(vc.c_stat.st_mode)) {
+                if (!vc.c_error.empty()) {
+                    sqlite3_result_null(ctx);
+                } else if (S_ISREG(vc.c_stat.st_mode)) {
                     sqlite3_result_text(ctx, "reg", 3, SQLITE_STATIC);
                 } else if (S_ISBLK(vc.c_stat.st_mode)) {
                     sqlite3_result_text(ctx, "blk", 3, SQLITE_STATIC);
@@ -196,60 +208,124 @@ CREATE TABLE fstat (
                 }
                 break;
             case FSTAT_COL_MODE:
-                sqlite3_result_int(ctx, vc.c_stat.st_mode & 0777);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_mode & 0777);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_NLINK:
-                sqlite3_result_int(ctx, vc.c_stat.st_nlink);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_nlink);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_UID:
-                sqlite3_result_int(ctx, vc.c_stat.st_uid);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_uid);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_USER: {
-                struct passwd* pw = getpwuid(vc.c_stat.st_uid);
+                if (vc.c_error.empty()) {
+                    struct passwd* pw = getpwuid(vc.c_stat.st_uid);
 
-                if (pw != nullptr) {
-                    sqlite3_result_text(ctx, pw->pw_name, -1, SQLITE_TRANSIENT);
+                    if (pw != nullptr) {
+                        sqlite3_result_text(
+                            ctx, pw->pw_name, -1, SQLITE_TRANSIENT);
+                    } else {
+                        sqlite3_result_int(ctx, vc.c_stat.st_uid);
+                    }
                 } else {
-                    sqlite3_result_int(ctx, vc.c_stat.st_uid);
+                    sqlite3_result_null(ctx);
                 }
                 break;
             }
             case FSTAT_COL_GID:
-                sqlite3_result_int(ctx, vc.c_stat.st_gid);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_gid);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_GROUP: {
-                struct group* gr = getgrgid(vc.c_stat.st_gid);
+                if (vc.c_error.empty()) {
+                    struct group* gr = getgrgid(vc.c_stat.st_gid);
 
-                if (gr != nullptr) {
-                    sqlite3_result_text(ctx, gr->gr_name, -1, SQLITE_TRANSIENT);
+                    if (gr != nullptr) {
+                        sqlite3_result_text(
+                            ctx, gr->gr_name, -1, SQLITE_TRANSIENT);
+                    } else {
+                        sqlite3_result_int(ctx, vc.c_stat.st_gid);
+                    }
                 } else {
-                    sqlite3_result_int(ctx, vc.c_stat.st_gid);
+                    sqlite3_result_null(ctx);
                 }
                 break;
             }
             case FSTAT_COL_RDEV:
-                sqlite3_result_int(ctx, vc.c_stat.st_rdev);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_rdev);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_SIZE:
-                sqlite3_result_int64(ctx, vc.c_stat.st_size);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int64(ctx, vc.c_stat.st_size);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_BLKSIZE:
-                sqlite3_result_int(ctx, vc.c_stat.st_blksize);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_blksize);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_BLOCKS:
-                sqlite3_result_int(ctx, vc.c_stat.st_blocks);
+                if (vc.c_error.empty()) {
+                    sqlite3_result_int(ctx, vc.c_stat.st_blocks);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_ATIME:
-                sql_strftime(time_buf, sizeof(time_buf), vc.c_stat.st_atime, 0);
-                sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
+                if (vc.c_error.empty()) {
+                    sql_strftime(
+                        time_buf, sizeof(time_buf), vc.c_stat.st_atime, 0);
+                    sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_MTIME:
-                sql_strftime(time_buf, sizeof(time_buf), vc.c_stat.st_mtime, 0);
-                sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
+                if (vc.c_error.empty()) {
+                    sql_strftime(
+                        time_buf, sizeof(time_buf), vc.c_stat.st_mtime, 0);
+                    sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
                 break;
             case FSTAT_COL_CTIME:
-                sql_strftime(time_buf, sizeof(time_buf), vc.c_stat.st_ctime, 0);
-                sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
+                if (vc.c_error.empty()) {
+                    sql_strftime(
+                        time_buf, sizeof(time_buf), vc.c_stat.st_ctime, 0);
+                    sqlite3_result_text(ctx, time_buf, -1, SQLITE_TRANSIENT);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            case FSTAT_COL_ERROR:
+                if (vc.c_error.empty()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, vc.c_error);
+                }
                 break;
             case FSTAT_COL_PATTERN:
                 sqlite3_result_text(ctx,
@@ -259,7 +335,9 @@ CREATE TABLE fstat (
                 break;
             case FSTAT_COL_DATA: {
                 auto fs_path = ghc::filesystem::path{path};
-                if (S_ISREG(vc.c_stat.st_mode)) {
+                if (!vc.c_error.empty()) {
+                    sqlite3_result_null(ctx);
+                } else if (S_ISREG(vc.c_stat.st_mode)) {
                     auto open_res
                         = lnav::filesystem::open_file(fs_path, O_RDONLY);
 
@@ -366,14 +444,17 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 
     const char* pattern = (const char*) sqlite3_value_text(argv[0]);
     pCur->c_pattern = pattern;
-    switch (glob(pattern,
+
+    auto glob_flags = GLOB_ERR;
+    if (!lnav::filesystem::is_glob(pCur->c_pattern)) {
+        glob_flags |= GLOB_NOCHECK;
+    }
+
 #ifdef GLOB_TILDE
-                 GLOB_TILDE |
+    glob_flags |= GLOB_TILDE;
 #endif
-                     GLOB_ERR,
-                 nullptr,
-                 pCur->c_glob.inout()))
-    {
+
+    switch (glob(pattern, glob_flags, nullptr, pCur->c_glob.inout())) {
         case GLOB_NOSPACE:
             pVtabCursor->pVtab->zErrMsg
                 = sqlite3_mprintf("No space to perform glob()");

@@ -7,6 +7,8 @@
         jget(url, '/path') AS docker_path
    FROM (SELECT parse_url($1) AS url)
 
+;SELECT substr($docker_path, 2) AS docker_relpath
+
 ;SELECT CASE
         $docker_hostname
         WHEN 'compose' THEN (
@@ -18,8 +20,19 @@
                     ),
                     char(10)
                 ) AS cmds
-            FROM fstat(substr($docker_path, 2)),
-                 json_each(yaml_to_json(data), '$.services') as compose_services
+            FROM fstat($docker_relpath) AS st,
+                json_each(
+                    yaml_to_json(
+                        ifnull(
+                            st.data,
+                            raise_error(
+                                'Cannot read compose configuration: ' || $docker_relpath,
+                                st.error
+                            )
+                        )
+                    ),
+                    '$.services'
+                ) as compose_services
         )
         ELSE CASE
             $docker_path
