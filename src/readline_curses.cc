@@ -56,6 +56,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/auto_mem.hh"
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
@@ -374,7 +375,6 @@ readline_context::attempted_completion(const char* text, int start, int end)
     } else {
         char* space;
         std::string cmd;
-        std::vector<std::string> prefix;
         int point = rl_point;
         while (point > 0 && rl_line_buffer[point] != ' ') {
             point -= 1;
@@ -384,7 +384,11 @@ readline_context::attempted_completion(const char* text, int start, int end)
 
         arg_possibilities = nullptr;
         rl_completion_append_character = 0;
-        if (lexer.split(prefix, scoped_resolver{&scope})) {
+        auto split_res = lexer.split(scoped_resolver{&scope});
+        if (split_res.isOk()) {
+            auto prefix = split_res.unwrap()
+                | lnav::itertools::map(
+                              [](const auto& elem) { return elem.se_value; });
             auto prefix2
                 = fmt::format(FMT_STRING("{}"), fmt::join(prefix, "\x1f"));
             auto prefix_iter = loaded_context->rc_prefixes.find(prefix2);
@@ -422,88 +426,101 @@ readline_context::attempted_completion(const char* text, int start, int end)
                     arg_possibilities = nullptr;
                 } else if (proto[0] == "dirname") {
                     shlex fn_lexer(rl_line_buffer, rl_point);
-                    std::vector<std::string> fn_list;
+                    auto split_res = fn_lexer.split(scoped_resolver{&scope});
+                    if (split_res.isOk()) {
+                        auto fn_list = split_res.unwrap();
+                        const auto& last_fn = fn_list.size() <= 1
+                            ? ""
+                            : fn_list.back().se_value;
 
-                    fn_lexer.split(fn_list, scoped_resolver{&scope});
+                        static std::set<std::string> dir_name_set;
 
-                    const auto& last_fn = fn_list.size() <= 1 ? ""
-                                                              : fn_list.back();
-
-                    static std::set<std::string> dir_name_set;
-
-                    dir_name_set.clear();
-                    auto_mem<char> completed_fn;
-                    int fn_state = 0;
-
-                    while ((completed_fn = rl_filename_completion_function(
-                                last_fn.c_str(), fn_state))
-                           != nullptr)
-                    {
-                        dir_name_set.insert(completed_fn.in());
-                        fn_state += 1;
-                    }
-                    arg_possibilities = &dir_name_set;
-                    arg_needs_shlex = true;
-                } else if (proto[0] == "filename") {
-                    shlex fn_lexer(rl_line_buffer, rl_point);
-                    std::vector<std::string> fn_list;
-                    int found = 0;
-
-                    fn_lexer.split(fn_list, scoped_resolver{&scope});
-
-                    const auto& last_fn = fn_list.size() <= 1 ? ""
-                                                              : fn_list.back();
-
-                    if (last_fn.find(':') != std::string::npos) {
-                        auto rp_iter = loaded_context->rc_possibilities.find(
-                            "remote-path");
-                        if (rp_iter != loaded_context->rc_possibilities.end()) {
-                            for (const auto& poss : rp_iter->second) {
-                                if (startswith(poss, last_fn.c_str())) {
-                                    found += 1;
-                                }
-                            }
-                            if (found) {
-                                arg_possibilities = &rp_iter->second;
-                                arg_needs_shlex = false;
-                            }
-                        }
-                        if (!found || (endswith(last_fn, "/") && found == 1)) {
-                            char msg[2048];
-
-                            snprintf(
-                                msg, sizeof(msg), "\t:%s", last_fn.c_str());
-                            sendstring(child_this->rc_command_pipe[1],
-                                       msg,
-                                       strlen(msg));
-                        }
-                    }
-                    if (!found) {
-                        static std::set<std::string> file_name_set;
-
-                        file_name_set.clear();
+                        dir_name_set.clear();
                         auto_mem<char> completed_fn;
                         int fn_state = 0;
-                        auto recent_netlocs_iter
-                            = loaded_context->rc_possibilities.find(
-                                "recent-netlocs");
 
-                        if (recent_netlocs_iter
-                            != loaded_context->rc_possibilities.end())
-                        {
-                            file_name_set.insert(
-                                recent_netlocs_iter->second.begin(),
-                                recent_netlocs_iter->second.end());
-                        }
                         while ((completed_fn = rl_filename_completion_function(
                                     last_fn.c_str(), fn_state))
                                != nullptr)
                         {
-                            file_name_set.insert(completed_fn.in());
+                            dir_name_set.insert(completed_fn.in());
                             fn_state += 1;
                         }
-                        arg_possibilities = &file_name_set;
+                        arg_possibilities = &dir_name_set;
                         arg_needs_shlex = true;
+                    } else {
+                        arg_possibilities = nullptr;
+                    }
+                } else if (proto[0] == "filename") {
+                    shlex fn_lexer(rl_line_buffer, rl_point);
+                    int found = 0;
+
+                    auto split_res = fn_lexer.split(scoped_resolver{&scope});
+                    if (split_res.isOk()) {
+                        auto fn_list = split_res.unwrap();
+                        const auto& last_fn = fn_list.size() <= 1
+                            ? ""
+                            : fn_list.back().se_value;
+
+                        if (last_fn.find(':') != std::string::npos) {
+                            auto rp_iter
+                                = loaded_context->rc_possibilities.find(
+                                    "remote-path");
+                            if (rp_iter
+                                != loaded_context->rc_possibilities.end())
+                            {
+                                for (const auto& poss : rp_iter->second) {
+                                    if (startswith(poss, last_fn.c_str())) {
+                                        found += 1;
+                                    }
+                                }
+                                if (found) {
+                                    arg_possibilities = &rp_iter->second;
+                                    arg_needs_shlex = false;
+                                }
+                            }
+                            if (!found
+                                || (endswith(last_fn, "/") && found == 1))
+                            {
+                                char msg[2048];
+
+                                snprintf(
+                                    msg, sizeof(msg), "\t:%s", last_fn.c_str());
+                                sendstring(child_this->rc_command_pipe[1],
+                                           msg,
+                                           strlen(msg));
+                            }
+                        }
+                        if (!found) {
+                            static std::set<std::string> file_name_set;
+
+                            file_name_set.clear();
+                            auto_mem<char> completed_fn;
+                            int fn_state = 0;
+                            auto recent_netlocs_iter
+                                = loaded_context->rc_possibilities.find(
+                                    "recent-netlocs");
+
+                            if (recent_netlocs_iter
+                                != loaded_context->rc_possibilities.end())
+                            {
+                                file_name_set.insert(
+                                    recent_netlocs_iter->second.begin(),
+                                    recent_netlocs_iter->second.end());
+                            }
+                            while (
+                                (completed_fn = rl_filename_completion_function(
+                                     last_fn.c_str(), fn_state))
+                                != nullptr)
+                            {
+                                file_name_set.insert(completed_fn.in());
+                                fn_state += 1;
+                            }
+                            arg_possibilities = &file_name_set;
+                            arg_needs_shlex = true;
+                        }
+                    } else {
+                        arg_possibilities = nullptr;
                     }
                 } else {
                     arg_possibilities

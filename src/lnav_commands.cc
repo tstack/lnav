@@ -273,7 +273,10 @@ com_unix_time(exec_context& ec,
         char* rest;
 
         u_time = time(nullptr);
-        log_time = *localtime(&u_time);
+        if (localtime_r(&u_time, &log_time) == nullptr) {
+            return ec.make_error(
+                "invalid epoch time: {} -- {}", u_time, strerror(errno));
+        }
 
         log_time.tm_isdst = -1;
 
@@ -294,7 +297,10 @@ com_unix_time(exec_context& ec,
             u_time = mktime(&log_time);
             parsed = true;
         } else if (sscanf(args[1].c_str(), "%ld", &u_time)) {
-            log_time = *localtime(&u_time);
+            if (localtime_r(&u_time, &log_time) == nullptr) {
+                return ec.make_error(
+                    "invalid epoch time: {} -- {}", args[1], strerror(errno));
+            }
 
             parsed = true;
         }
@@ -305,7 +311,7 @@ com_unix_time(exec_context& ec,
             strftime(ftime,
                      sizeof(ftime),
                      "%a %b %d %H:%M:%S %Y  %z %Z",
-                     localtime(&u_time));
+                     localtime_r(&u_time, &log_time));
             len = strlen(ftime);
             snprintf(ftime + len, sizeof(ftime) - len, " -- %ld", u_time);
             retval = std::string(ftime);
@@ -1026,6 +1032,8 @@ com_save_to(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("path");
+
     FILE *outfile = nullptr, *toclose = nullptr;
     const char* mode = "";
     std::string fn, retval;
@@ -1040,13 +1048,22 @@ com_save_to(exec_context& ec,
 
     fn = trim(remaining_args(cmdline, args));
 
-    std::vector<std::string> split_args;
     shlex lexer(fn);
 
-    if (!lexer.split(split_args, ec.create_resolver())) {
-        return ec.make_error("unable to parse arguments");
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error("unable to parse file name")
+                  .with_reason(split_err.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err)));
+
+        return Err(um);
     }
 
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
     auto anon_iter
         = std::find(split_args.begin(), split_args.end(), "--anonymize");
     if (anon_iter != split_args.end()) {
@@ -1724,6 +1741,8 @@ com_redirect_to(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("path");
+
     if (args.empty()) {
         args.emplace_back("filename");
         return Ok(std::string());
@@ -1739,16 +1758,21 @@ com_redirect_to(exec_context& ec,
     }
 
     std::string fn = trim(remaining_args(cmdline, args));
-    std::vector<std::string> split_args;
     shlex lexer(fn);
-    scoped_resolver scopes = {
-        &ec.ec_local_vars.top(),
-        &ec.ec_global_vars,
-    };
 
-    if (!lexer.split(split_args, scopes)) {
-        return ec.make_error("unable to parse arguments");
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error("unable to parse file name")
+                  .with_reason(split_err.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err)));
+
+        return Err(um);
     }
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
     if (split_args.size() > 1) {
         return ec.make_error("more than one file name was matched");
     }
@@ -2521,6 +2545,7 @@ com_session(exec_context& ec,
 static Result<std::string, lnav::console::user_message>
 com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("path");
     std::string retval;
 
     if (args.empty()) {
@@ -2542,16 +2567,21 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     pat = trim(remaining_args(cmdline, args));
 
-    std::vector<std::string> split_args;
     shlex lexer(pat);
-    scoped_resolver scopes = {
-        &ec.ec_local_vars.top(),
-        &ec.ec_global_vars,
-    };
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error("unable to parse file names")
+                  .with_reason(split_err.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err)));
 
-    if (!lexer.split(split_args, scopes)) {
-        return ec.make_error("unable to parse arguments");
+        return Err(um);
     }
+
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
 
     std::vector<std::pair<std::string, file_location_t>> files_to_front;
     std::vector<std::string> closed_files;
@@ -2871,6 +2901,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 static Result<std::string, lnav::console::user_message>
 com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("path");
     std::string retval;
 
     if (args.empty()) {
@@ -2885,7 +2916,21 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     if (args.size() > 1) {
         auto lexer = shlex(cmdline);
 
-        lexer.split(args, ec.create_resolver());
+        auto split_args_res = lexer.split(ec.create_resolver());
+        if (split_args_res.isErr()) {
+            auto split_err = split_args_res.unwrapErr();
+            auto um = lnav::console::user_message::error(
+                          "unable to parse file name")
+                          .with_reason(split_err.te_msg)
+                          .with_snippet(lnav::console::snippet::from(
+                              SRC, lexer.to_attr_line(split_err)));
+
+            return Err(um);
+        }
+
+        auto args = split_args_res.unwrap()
+            | lnav::itertools::map(
+                        [](const auto& elem) { return elem.se_value; });
         args.erase(args.begin());
 
         for (const auto& lf : lnav_data.ld_active_files.fc_files) {
@@ -2976,6 +3021,7 @@ com_file_visibility(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("path");
     bool only_this_file = false;
     bool make_visible;
     std::string retval;
@@ -3031,7 +3077,21 @@ com_file_visibility(exec_context& ec,
         int text_file_count = 0, log_file_count = 0;
         auto lexer = shlex(cmdline);
 
-        lexer.split(args, ec.create_resolver());
+        auto split_args_res = lexer.split(ec.create_resolver());
+        if (split_args_res.isErr()) {
+            auto split_err = split_args_res.unwrapErr();
+            auto um = lnav::console::user_message::error(
+                          "unable to parse file name")
+                          .with_reason(split_err.te_msg)
+                          .with_snippet(lnav::console::snippet::from(
+                              SRC, lexer.to_attr_line(split_err)));
+
+            return Err(um);
+        }
+
+        auto args = split_args_res.unwrap()
+            | lnav::itertools::map(
+                        [](const auto& elem) { return elem.se_value; });
         args.erase(args.begin());
 
         for (const auto& lf : lnav_data.ld_active_files.fc_files) {
@@ -4263,6 +4323,8 @@ com_rebuild(exec_context& ec,
 static Result<std::string, lnav::console::user_message>
 com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("path");
+
     if (args.empty()) {
         args.emplace_back("dirname");
         return Ok(std::string());
@@ -4277,16 +4339,21 @@ com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     pat = trim(remaining_args(cmdline, args));
 
-    std::vector<std::string> split_args;
     shlex lexer(pat);
-    scoped_resolver scopes = {
-        &ec.ec_local_vars.top(),
-        &ec.ec_global_vars,
-    };
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error("unable to parse file name")
+                  .with_reason(split_err.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err)));
 
-    if (!lexer.split(split_args, scopes)) {
-        return ec.make_error("unable to parse arguments");
+        return Err(um);
     }
+
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
 
     if (split_args.size() != 1) {
         return ec.make_error("expecting a single argument");
@@ -4325,7 +4392,24 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     static size_t EXEC_COUNT = 0;
 
     if (!ec.ec_dry_run) {
-        auto carg = trim(cmdline.substr(args[0].size()));
+        nonstd::optional<std::string> name_flag;
+
+        shlex lexer(cmdline);
+        auto cmd_start = args[0].size();
+        auto split_res = lexer.split(ec.create_resolver());
+        if (split_res.isOk()) {
+            auto flags = split_res.unwrap();
+            if (flags.size() >= 2) {
+                static const char* NAME_FLAG = "--name=";
+
+                if (startswith(flags[1].se_value, NAME_FLAG)) {
+                    name_flag = flags[1].se_value.substr(strlen(NAME_FLAG));
+                    cmd_start = flags[1].se_origin.sf_end;
+                }
+            }
+        }
+
+        auto carg = trim(cmdline.substr(cmd_start));
 
         log_info("executing: %s", carg.c_str());
 
@@ -4386,10 +4470,36 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             _exit(EXIT_FAILURE);
         }
 
-        auto display_name = ec.get_provenance<exec_context::file_open>()
-                                .value_or(exec_context::file_open{fmt::format(
-                                    FMT_STRING("[{}] {}"), EXEC_COUNT++, carg)})
-                                .fo_name;
+        std::string display_name;
+        auto open_prov = ec.get_provenance<exec_context::file_open>();
+        if (open_prov) {
+            if (name_flag) {
+                display_name = fmt::format(
+                    FMT_STRING("{}/{}"), open_prov->fo_name, name_flag.value());
+            } else {
+                display_name = open_prov->fo_name;
+            }
+        } else if (name_flag) {
+            display_name = name_flag.value();
+        } else {
+            display_name
+                = fmt::format(FMT_STRING("[{}] {}"), EXEC_COUNT++, carg);
+        }
+
+        auto name_base = display_name;
+        size_t name_counter = 0;
+
+        while (true) {
+            auto fn_iter
+                = lnav_data.ld_active_files.fc_file_names.find(display_name);
+            if (fn_iter == lnav_data.ld_active_files.fc_file_names.end()) {
+                break;
+            }
+            name_counter += 1;
+            display_name
+                = fmt::format(FMT_STRING("{} [{}]"), name_base, name_counter);
+        }
+
         auto create_piper_res
             = lnav::piper::create_looper(display_name,
                                          std::move(child_fds[0].read_end()),
@@ -4398,7 +4508,7 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (create_piper_res.isErr()) {
             auto um
                 = lnav::console::user_message::error("unable to create piper")
-                      .with_reason(child_res.unwrapErr());
+                      .with_reason(create_piper_res.unwrapErr());
             ec.add_error_context(um);
             return Err(um);
         }
@@ -4591,26 +4701,12 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
 
         auto src_guard = ec.enter_source(EVAL_SRC, 1, expanded_cmd);
-        std::string alt_msg;
-        switch (expanded_cmd[0]) {
-            case ':':
-                return execute_command(ec, expanded_cmd.substr(1));
-            case ';':
-                return execute_sql(ec, expanded_cmd.substr(1), alt_msg);
-            case '|':
-                return execute_file(ec, expanded_cmd.substr(1));
-            case '/': {
-                auto search_cmd = expanded_cmd.substr(1);
-                lnav_data.ld_view_stack.top() |
-                    [&search_cmd](auto tc) { tc->execute_search(search_cmd); };
-                break;
-            }
-            default:
-                return ec.make_error(
-                    "expecting argument to start with ':', ';', '/', "
-                    "or '|' to signify a command, SQL query, or script to "
-                    "execute");
+        auto content = string_fragment::from_str(expanded_cmd);
+        multiline_executor me(ec, ":eval");
+        for (auto line : content.split_lines()) {
+            TRY(me.push_back(line));
         }
+        retval = TRY(me.final());
     } else {
         return ec.make_error("expecting a command or query to evaluate");
     }
@@ -5193,25 +5289,40 @@ com_prompt(exec_context& ec,
 
     if (args.empty()) {
     } else if (!ec.ec_dry_run) {
-        args.clear();
+        static const intern_string_t SRC = intern_string::lookup("flags");
 
         auto lexer = shlex(cmdline);
-        lexer.split(args, ec.create_resolver());
+        auto split_args_res = lexer.split(ec.create_resolver());
+        if (split_args_res.isErr()) {
+            auto split_err = split_args_res.unwrapErr();
+            auto um = lnav::console::user_message::error(
+                          "unable to parse file name")
+                          .with_reason(split_err.te_msg)
+                          .with_snippet(lnav::console::snippet::from(
+                              SRC, lexer.to_attr_line(split_err)));
 
-        auto alt_flag = std::find(args.begin(), args.end(), "--alt");
+            return Err(um);
+        }
+
+        auto split_args = split_args_res.unwrap()
+            | lnav::itertools::map(
+                              [](const auto& elem) { return elem.se_value; });
+
+        auto alt_flag
+            = std::find(split_args.begin(), split_args.end(), "--alt");
         auto is_alt = false;
-        if (alt_flag != args.end()) {
-            args.erase(alt_flag);
+        if (alt_flag != split_args.end()) {
+            split_args.erase(alt_flag);
             is_alt = true;
         }
 
-        auto prompter = PROMPT_TYPES.find(args[1]);
+        auto prompter = PROMPT_TYPES.find(split_args[1]);
 
         if (prompter == PROMPT_TYPES.end()) {
-            return ec.make_error("Unknown prompt type: {}", args[1]);
+            return ec.make_error("Unknown prompt type: {}", split_args[1]);
         }
 
-        prompter->second(args);
+        prompter->second(split_args);
         lnav_data.ld_rl_view->set_alt_focus(is_alt);
     }
     return Ok(std::string());
@@ -6058,6 +6169,8 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":sh")
             .with_summary("Execute the given command-line and display the "
                           "captured output")
+            .with_parameter(help_text(
+                "--name=<name>", "The name to give to the captured output"))
             .with_parameter(
                 help_text("cmdline", "The command-line to execute."))
             .with_tags({"scripting"}),

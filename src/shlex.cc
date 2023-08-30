@@ -36,40 +36,59 @@
 #include "config.h"
 #include "shlex.hh"
 
-bool
-shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
+using namespace lnav::roles::literals;
+
+attr_line_t
+shlex::to_attr_line(const shlex::tokenize_error_t& te) const
 {
+    return attr_line_t()
+        .append(string_fragment::from_bytes(this->s_str, this->s_len))
+        .append("\n")
+        .pad_to(te.te_source.sf_begin)
+        .append("^"_snippet_border);
+}
+
+Result<shlex::tokenize_result_t, shlex::tokenize_error_t>
+shlex::tokenize()
+{
+    tokenize_result_t retval;
+
+    retval.tr_frag.sf_string = this->s_str;
     while (this->s_index < this->s_len) {
         switch (this->s_str[this->s_index]) {
             case '\\':
-                cap_out.sf_begin = this->s_index;
+                retval.tr_frag.sf_begin = this->s_index;
                 if (this->s_index + 1 < this->s_len) {
-                    token_out = shlex_token_t::ST_ESCAPE;
+                    retval.tr_token = shlex_token_t::escape;
                     this->s_index += 2;
-                    cap_out.sf_end = this->s_index;
+                    retval.tr_frag.sf_end = this->s_index;
                 } else {
                     this->s_index += 1;
-                    cap_out.sf_end = this->s_index;
-                    token_out = shlex_token_t::ST_ERROR;
+                    retval.tr_frag.sf_end = this->s_index;
+
+                    return Err(tokenize_error_t{
+                        "invalid escape",
+                        retval.tr_frag,
+                    });
                 }
-                return true;
+                return Ok(retval);
             case '\"':
                 if (!this->s_ignore_quotes) {
                     switch (this->s_state) {
                         case state_t::STATE_NORMAL:
-                            cap_out.sf_begin = this->s_index;
+                            retval.tr_frag.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.sf_end = this->s_index;
-                            token_out = shlex_token_t::ST_DOUBLE_QUOTE_START;
+                            retval.tr_frag.sf_end = this->s_index;
+                            retval.tr_token = shlex_token_t::double_quote_start;
                             this->s_state = state_t::STATE_IN_DOUBLE_QUOTE;
-                            return true;
+                            return Ok(retval);
                         case state_t::STATE_IN_DOUBLE_QUOTE:
-                            cap_out.sf_begin = this->s_index;
+                            retval.tr_frag.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.sf_end = this->s_index;
-                            token_out = shlex_token_t::ST_DOUBLE_QUOTE_END;
+                            retval.tr_frag.sf_end = this->s_index;
+                            retval.tr_token = shlex_token_t::double_quote_end;
                             this->s_state = state_t::STATE_NORMAL;
-                            return true;
+                            return Ok(retval);
                         default:
                             break;
                     }
@@ -79,19 +98,19 @@ shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
                 if (!this->s_ignore_quotes) {
                     switch (this->s_state) {
                         case state_t::STATE_NORMAL:
-                            cap_out.sf_begin = this->s_index;
+                            retval.tr_frag.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.sf_end = this->s_index;
-                            token_out = shlex_token_t::ST_SINGLE_QUOTE_START;
+                            retval.tr_frag.sf_end = this->s_index;
+                            retval.tr_token = shlex_token_t::single_quote_start;
                             this->s_state = state_t::STATE_IN_SINGLE_QUOTE;
-                            return true;
+                            return Ok(retval);
                         case state_t::STATE_IN_SINGLE_QUOTE:
-                            cap_out.sf_begin = this->s_index;
+                            retval.tr_frag.sf_begin = this->s_index;
                             this->s_index += 1;
-                            cap_out.sf_end = this->s_index;
-                            token_out = shlex_token_t::ST_SINGLE_QUOTE_END;
+                            retval.tr_frag.sf_end = this->s_index;
+                            retval.tr_token = shlex_token_t::single_quote_end;
                             this->s_state = state_t::STATE_NORMAL;
-                            return true;
+                            return Ok(retval);
                         default:
                             break;
                     }
@@ -100,9 +119,10 @@ shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
             case '$':
                 switch (this->s_state) {
                     case state_t::STATE_NORMAL:
-                    case state_t::STATE_IN_DOUBLE_QUOTE:
-                        this->scan_variable_ref(cap_out, token_out);
-                        return true;
+                    case state_t::STATE_IN_DOUBLE_QUOTE: {
+                        auto rc = TRY(this->scan_variable_ref());
+                        return Ok(rc);
+                    }
                     default:
                         break;
                 }
@@ -110,7 +130,7 @@ shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
             case '~':
                 switch (this->s_state) {
                     case state_t::STATE_NORMAL:
-                        cap_out.sf_begin = this->s_index;
+                        retval.tr_frag.sf_begin = this->s_index;
                         this->s_index += 1;
                         while (this->s_index < this->s_len
                                && (isalnum(this->s_str[this->s_index])
@@ -119,9 +139,9 @@ shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
                         {
                             this->s_index += 1;
                         }
-                        cap_out.sf_end = this->s_index;
-                        token_out = shlex_token_t::ST_TILDE;
-                        return true;
+                        retval.tr_frag.sf_end = this->s_index;
+                        retval.tr_token = shlex_token_t::tilde;
+                        return Ok(retval);
                     default:
                         break;
                 }
@@ -130,13 +150,13 @@ shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
             case '\t':
                 switch (this->s_state) {
                     case state_t::STATE_NORMAL:
-                        cap_out.sf_begin = this->s_index;
+                        retval.tr_frag.sf_begin = this->s_index;
                         while (isspace(this->s_str[this->s_index])) {
                             this->s_index += 1;
                         }
-                        cap_out.sf_end = this->s_index;
-                        token_out = shlex_token_t::ST_WHITESPACE;
-                        return true;
+                        retval.tr_frag.sf_end = this->s_index;
+                        retval.tr_token = shlex_token_t::whitespace;
+                        return Ok(retval);
                     default:
                         break;
                 }
@@ -148,29 +168,47 @@ shlex::tokenize(string_fragment& cap_out, shlex_token_t& token_out)
         this->s_index += 1;
     }
 
-    return false;
+    if (this->s_state != state_t::STATE_NORMAL) {
+        retval.tr_frag.sf_begin = this->s_index;
+        retval.tr_frag.sf_end = this->s_len;
+        return Err(tokenize_error_t{
+            "non-terminated string",
+            retval.tr_frag,
+        });
+    }
+
+    retval.tr_frag.sf_begin = this->s_len;
+    retval.tr_frag.sf_end = this->s_len;
+    retval.tr_token = shlex_token_t::eof;
+    return Ok(retval);
 }
 
-void
-shlex::scan_variable_ref(string_fragment& cap_out, shlex_token_t& token_out)
+Result<shlex::tokenize_result_t, shlex::tokenize_error_t>
+shlex::scan_variable_ref()
 {
-    cap_out.sf_begin = this->s_index;
+    tokenize_result_t retval;
+
+    retval.tr_frag.sf_string = this->s_str;
+
+    retval.tr_frag.sf_begin = this->s_index;
     this->s_index += 1;
     if (this->s_index >= this->s_len) {
-        cap_out.sf_end = this->s_index;
-        token_out = shlex_token_t::ST_ERROR;
-        return;
+        retval.tr_frag.sf_end = this->s_index;
+        return Err(tokenize_error_t{
+            "invalid variable reference",
+            retval.tr_frag,
+        });
     }
 
     if (this->s_str[this->s_index] == '{') {
-        token_out = shlex_token_t::ST_QUOTED_VARIABLE_REF;
+        retval.tr_token = shlex_token_t::quoted_variable_ref;
         this->s_index += 1;
     } else {
-        token_out = shlex_token_t::ST_VARIABLE_REF;
+        retval.tr_token = shlex_token_t::variable_ref;
     }
 
     while (this->s_index < this->s_len) {
-        if (token_out == shlex_token_t::ST_VARIABLE_REF) {
+        if (retval.tr_token == shlex_token_t::variable_ref) {
             if (isalnum(this->s_str[this->s_index])
                 || this->s_str[this->s_index] == '#'
                 || this->s_str[this->s_index] == '_')
@@ -188,14 +226,19 @@ shlex::scan_variable_ref(string_fragment& cap_out, shlex_token_t& token_out)
         }
     }
 
-    cap_out.sf_end = this->s_index;
-    if (token_out == shlex_token_t::ST_QUOTED_VARIABLE_REF
+    retval.tr_frag.sf_end = this->s_index;
+    if (retval.tr_token == shlex_token_t::quoted_variable_ref
         && this->s_str[this->s_index - 1] != '}')
     {
-        cap_out.sf_begin += 1;
-        cap_out.sf_end = cap_out.sf_begin + 1;
-        token_out = shlex_token_t::ST_ERROR;
+        retval.tr_frag.sf_begin += 1;
+        retval.tr_frag.sf_end = retval.tr_frag.sf_begin + 1;
+        return Err(tokenize_error_t{
+            "missing closing curly-brace in variable reference",
+            retval.tr_frag,
+        });
     }
+
+    return Ok(retval);
 }
 
 void
@@ -222,27 +265,36 @@ shlex::eval(std::string& result, const scoped_resolver& vars)
 {
     result.clear();
 
-    string_fragment cap;
-    shlex_token_t token;
     int last_index = 0;
+    bool done = false;
 
-    while (this->tokenize(cap, token)) {
-        result.append(&this->s_str[last_index], cap.sf_begin - last_index);
-        switch (token) {
-            case shlex_token_t::ST_ERROR:
-                return false;
-            case shlex_token_t::ST_ESCAPE:
-                result.append(1, this->s_str[cap.sf_begin + 1]);
+    while (!done) {
+        auto tokenize_res = this->tokenize();
+        if (tokenize_res.isErr()) {
+            return false;
+        }
+        auto token = tokenize_res.unwrap();
+
+        result.append(&this->s_str[last_index],
+                      token.tr_frag.sf_begin - last_index);
+        switch (token.tr_token) {
+            case shlex_token_t::eof:
+                done = true;
                 break;
-            case shlex_token_t::ST_WHITESPACE:
-                result.append(&this->s_str[cap.sf_begin], cap.length());
+            case shlex_token_t::escape:
+                result.append(1, this->s_str[token.tr_frag.sf_begin + 1]);
                 break;
-            case shlex_token_t::ST_VARIABLE_REF:
-            case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
-                int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
+            case shlex_token_t::whitespace:
+                result.append(&this->s_str[token.tr_frag.sf_begin],
+                              token.tr_frag.length());
+                break;
+            case shlex_token_t::variable_ref:
+            case shlex_token_t::quoted_variable_ref: {
+                int extra = token.tr_token == shlex_token_t::variable_ref ? 0
+                                                                          : 1;
                 const std::string var_name(
-                    &this->s_str[cap.sf_begin + 1 + extra],
-                    cap.length() - 1 - extra * 2);
+                    &this->s_str[token.tr_frag.sf_begin + 1 + extra],
+                    token.tr_frag.length() - 1 - extra * 2);
                 auto local_var = vars.find(var_name);
                 const char* var_value = getenv(var_name.c_str());
 
@@ -253,21 +305,21 @@ shlex::eval(std::string& result, const scoped_resolver& vars)
                 }
                 break;
             }
-            case shlex_token_t::ST_TILDE:
-                this->resolve_home_dir(result, cap);
+            case shlex_token_t::tilde:
+                this->resolve_home_dir(result, token.tr_frag);
                 break;
-            case shlex_token_t::ST_DOUBLE_QUOTE_START:
-            case shlex_token_t::ST_DOUBLE_QUOTE_END:
+            case shlex_token_t::double_quote_start:
+            case shlex_token_t::double_quote_end:
                 result.append("\"");
                 break;
-            case shlex_token_t::ST_SINGLE_QUOTE_START:
-            case shlex_token_t::ST_SINGLE_QUOTE_END:
+            case shlex_token_t::single_quote_start:
+            case shlex_token_t::single_quote_end:
                 result.append("'");
                 break;
             default:
                 break;
         }
-        last_index = cap.sf_end;
+        last_index = token.tr_frag.sf_end;
     }
 
     result.append(&this->s_str[last_index], this->s_len - last_index);
@@ -275,66 +327,89 @@ shlex::eval(std::string& result, const scoped_resolver& vars)
     return true;
 }
 
-bool
-shlex::split(std::vector<std::string>& result, const scoped_resolver& vars)
+Result<std::vector<shlex::split_element_t>, shlex::tokenize_error_t>
+shlex::split(const scoped_resolver& vars)
 {
-    result.clear();
-
-    string_fragment cap;
-    shlex_token_t token;
+    std::vector<split_element_t> retval;
     int last_index = 0;
     bool start_new = true;
+    bool done = false;
 
-    while (isspace(this->s_str[this->s_index])) {
+    while (this->s_index < this->s_len && isspace(this->s_str[this->s_index])) {
         this->s_index += 1;
     }
-    while (this->tokenize(cap, token)) {
+    if (this->s_index == this->s_len) {
+        return Ok(retval);
+    }
+    while (!done) {
+        auto tokenize_res = TRY(this->tokenize());
+
         if (start_new) {
-            result.emplace_back("");
+            retval.emplace_back(split_element_t{
+                string_fragment::from_byte_range(
+                    this->s_str, last_index, tokenize_res.tr_frag.sf_begin),
+                "",
+            });
             start_new = false;
+        } else if (tokenize_res.tr_token != shlex_token_t::whitespace) {
+            retval.back().se_origin.sf_end = tokenize_res.tr_frag.sf_end;
+        } else {
+            retval.back().se_origin.sf_end = tokenize_res.tr_frag.sf_begin;
         }
-        result.back().append(&this->s_str[last_index],
-                             cap.sf_begin - last_index);
-        switch (token) {
-            case shlex_token_t::ST_ERROR:
-                return false;
-            case shlex_token_t::ST_ESCAPE:
-                result.back().append(1, this->s_str[cap.sf_begin + 1]);
+        retval.back().se_value.append(
+            &this->s_str[last_index],
+            tokenize_res.tr_frag.sf_begin - last_index);
+        switch (tokenize_res.tr_token) {
+            case shlex_token_t::eof:
+                done = true;
                 break;
-            case shlex_token_t::ST_WHITESPACE:
+            case shlex_token_t::escape:
+                retval.back().se_value.append(
+                    1, this->s_str[tokenize_res.tr_frag.sf_begin + 1]);
+                break;
+            case shlex_token_t::whitespace:
                 start_new = true;
                 break;
-            case shlex_token_t::ST_VARIABLE_REF:
-            case shlex_token_t::ST_QUOTED_VARIABLE_REF: {
-                int extra = token == shlex_token_t::ST_VARIABLE_REF ? 0 : 1;
-                std::string var_name(&this->s_str[cap.sf_begin + 1 + extra],
-                                     cap.length() - 1 - extra * 2);
+            case shlex_token_t::variable_ref:
+            case shlex_token_t::quoted_variable_ref: {
+                int extra = tokenize_res.tr_token == shlex_token_t::variable_ref
+                    ? 0
+                    : 1;
+                std::string var_name(
+                    &this->s_str[tokenize_res.tr_frag.sf_begin + 1 + extra],
+                    tokenize_res.tr_frag.length() - 1 - extra * 2);
                 auto local_var = vars.find(var_name);
                 const char* var_value = getenv(var_name.c_str());
 
                 if (local_var != vars.end()) {
-                    result.back().append(fmt::to_string(local_var->second));
+                    retval.back().se_value.append(
+                        fmt::to_string(local_var->second));
                 } else if (var_value != nullptr) {
-                    result.back().append(var_value);
+                    retval.back().se_value.append(var_value);
                 }
                 break;
             }
-            case shlex_token_t::ST_TILDE:
-                this->resolve_home_dir(result.back(), cap);
+            case shlex_token_t::tilde:
+                this->resolve_home_dir(retval.back().se_value,
+                                       tokenize_res.tr_frag);
                 break;
             default:
                 break;
         }
-        last_index = cap.sf_end;
+        last_index = tokenize_res.tr_frag.sf_end;
     }
 
     if (last_index < this->s_len) {
-        if (start_new || result.empty()) {
-            result.emplace_back("");
+        if (start_new || retval.empty()) {
+            retval.emplace_back(split_element_t{
+                string_fragment::from_byte_range(
+                    this->s_str, last_index, this->s_len),
+                "",
+            });
         }
-        result.back().append(&this->s_str[last_index],
-                             this->s_len - last_index);
+        retval.back().se_value.append(&this->s_str[last_index],
+                                      this->s_len - last_index);
     }
 
-    return true;
+    return Ok(retval);
 }

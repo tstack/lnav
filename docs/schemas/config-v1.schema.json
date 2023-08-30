@@ -214,7 +214,7 @@
                     "title": "/tuning/url-scheme",
                     "type": "object",
                     "patternProperties": {
-                        "(\\w+)": {
+                        "([a-z][\\w\\-\\+\\.]+)": {
                             "description": "Definition of a custom URL scheme",
                             "title": "/tuning/url-scheme/<url_scheme>",
                             "type": "object",

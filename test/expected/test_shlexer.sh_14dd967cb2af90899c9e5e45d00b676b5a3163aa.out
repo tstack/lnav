@@ -1,7 +1,8 @@
     ~ foo
 til ^
 wsp  ^
+eof     ^
 eval -- ../test foo
 split:
-  0 -- ../test
-  1 -- foo
+  0 ^ -- ../test
+  1   ^-^ -- foo

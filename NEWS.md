@@ -32,9 +32,12 @@ Features:
   lnav script.  Schemes can be defined under
   `/tuning/url-schemes`.  See the main docs for more details.
 * Added a `docker://` URL scheme that can be used to tail
-  the logs for a container (e.g. `docker://my-container`) or
+  the logs for containers (e.g. `docker://my-container`) or
   files within a container (e.g.
-  `docker://my-serv/var/log/dpkg.log`).
+  `docker://my-serv/var/log/dpkg.log`).  Containers mentioned
+  in a "Compose" configuration file can be tailed by using
+  `compose` as the host name with the path to the configuration
+  file (e.g. `docker://compose/compose.yaml`).
 * Added an `:annotate` command that can trigger a call-out
   to a script to analyze a log message and generate an
   annotation that is attached to the message.  The script
@@ -85,6 +88,9 @@ Features:
   are now recognized and styled as appropriate.
 * Added a `data` column to the `fstat()` table-valued-
   function so the contents of a file can be read.
+* Added a log format for Redis.
+* The `:eval` command will now treat its argument(s) as a
+  script, allowing multiple commands to be executed.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

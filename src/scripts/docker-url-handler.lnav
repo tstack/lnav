@@ -3,15 +3,29 @@
 # @description: Internal script to handle opening docker URLs
 #
 
-;SELECT CASE path
-    WHEN '/' THEN
-        'docker logs -f ' || hostname
-    ELSE
-        'docker exec ' || hostname || ' tail -n +0 -F "' || path || '"'
-    END AS cmd
-    FROM (SELECT
-            jget(url, '/host') AS hostname,
-            jget(url, '/path') AS path
-            FROM (SELECT parse_url($1) AS url))
+;SELECT jget(url, '/host') AS docker_hostname,
+        jget(url, '/path') AS docker_path
+   FROM (SELECT parse_url($1) AS url)
 
-:sh eval $cmd
+;SELECT CASE
+        $docker_hostname
+        WHEN 'compose' THEN (
+            SELECT group_concat(
+                    printf(
+                        ':sh --name=%s docker compose logs --no-log-prefix -f %s',
+                        compose_services.key,
+                        compose_services.key
+                    ),
+                    char(10)
+                ) AS cmds
+            FROM fstat(substr($docker_path, 2)),
+                 json_each(yaml_to_json(data), '$.services') as compose_services
+        )
+        ELSE CASE
+            $docker_path
+            WHEN '/' THEN ':sh docker logs -f ' || $docker_hostname
+            ELSE ':sh docker exec ' || $docker_hostname || ' tail -n +0 -F "' || $docker_path || '"'
+        END
+    END AS cmds
+
+:eval ${cmds}

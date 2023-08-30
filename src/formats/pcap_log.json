@@ -4,7 +4,6 @@
         "json": true,
         "title": "Packet Capture",
         "description": "Internal format for pcap files",
-        "multiline": false,
         "convert-to-local-time": true,
         "converter": {
             "header": {

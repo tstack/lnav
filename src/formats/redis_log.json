@@ -1,0 +1,51 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "redis_log": {
+        "url": [
+            "https://redis.com",
+            "https://build47.com/redis-log-format-levels/"
+        ],
+        "description": "The Redis database",
+        "regex": {
+            "v3.x": {
+                "pattern": "(?<pid>\\d+):(?<role>[XCSM])\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\0\\*\\#])\\s+(?<body>.*)"
+            },
+            "sig": {
+                "pattern": "(?<pid>\\d+):signal-handler \\((?<timestamp>\\d+)\\) (?<body>.*)"
+            }
+        },
+        "timestamp-format": [
+            "%s",
+            "%d %b %Y %H:%M:%S.%L"
+        ],
+        "level": {
+            "debug": "^\\.$",
+            "trace": "^-$",
+            "notice": "^\\*$",
+            "warning": "^#$"
+        },
+        "value": {
+            "level": {
+                "kind": "string"
+            },
+            "pid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "role": {
+                "kind": "string"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "1:M 29 Aug 2023 13:47:38.984 * monotonic clock: POSIX clock_gettime"
+            },
+            {
+                "line": "1:signal-handler (1693279182) Received SIGTERM scheduling shutdown..."
+            }
+        ]
+    }
+}

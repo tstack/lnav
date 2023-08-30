@@ -225,7 +225,9 @@ string_fragment::split_lines() const
             start = index + 1;
         }
     }
-    retval.emplace_back(this->sf_string, start, this->sf_end);
+    if (retval.empty() || start < this->sf_end) {
+        retval.emplace_back(this->sf_string, start, this->sf_end);
+    }
 
     return retval;
 }

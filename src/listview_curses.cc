@@ -255,6 +255,14 @@ listview_curses::handle_key(int ch)
 
         case 'g':
         case KEY_HOME:
+            if (this->lv_overlay_focused) {
+                this->lv_focused_overlay_top = 0_vl;
+                this->lv_focused_overlay_selection = 0_vl;
+                this->lv_source->listview_selection_changed(*this);
+                this->set_needs_update();
+                break;
+            }
+
             if (this->is_selectable()) {
                 this->set_selection(0_vl);
             } else {
@@ -264,6 +272,23 @@ listview_curses::handle_key(int ch)
 
         case 'G':
         case KEY_END: {
+            if (this->lv_overlay_focused) {
+                std::vector<attr_line_t> overlay_content;
+                this->lv_overlay_source->list_value_for_overlay(
+                    *this, this->get_selection(), overlay_content);
+                auto overlay_height
+                    = this->get_overlay_height(overlay_content.size(), height);
+                auto ov_top_for_last = vis_line_t{
+                    static_cast<int>(overlay_content.size() - overlay_height)};
+
+                this->lv_focused_overlay_top = ov_top_for_last;
+                this->lv_focused_overlay_selection
+                    = vis_line_t(overlay_content.size() - 1);
+                this->lv_source->listview_selection_changed(*this);
+                this->set_needs_update();
+                break;
+            }
+
             vis_line_t last_line(this->get_inner_height() - 1);
             vis_line_t tail_bottom(this->get_top_for_last_row());
 

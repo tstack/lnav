@@ -7,40 +7,48 @@
         "json": true,
         "hide-extra": false,
         "file-pattern": "\\.clog.*",
-        "multiline": false,
         "line-format": [
-            { "field" : "@timestamp" },
+            {
+                "field": "@timestamp"
+            },
             " ",
-            { "field" : "ipaddress" },
+            {
+                "field": "ipaddress"
+            },
             " ",
-            { "field" : "message" },
+            {
+                "field": "message"
+            },
             " ",
-            { "field" : "stack_trace", "default-value" : "" }
+            {
+                "field": "stack_trace",
+                "default-value": ""
+            }
         ],
-        "timestamp-field" : "@timestamp",
-        "body-field" : "message",        
-        "level-field" : "level",
-        "level" : {
-            "trace" : "TRACE",
-            "debug" : "DEBUG",
-            "info" : "INFO",
-            "error" : "ERROR",
-            "warning" : "WARN"
+        "timestamp-field": "@timestamp",
+        "body-field": "message",
+        "level-field": "level",
+        "level": {
+            "trace": "TRACE",
+            "debug": "DEBUG",
+            "info": "INFO",
+            "error": "ERROR",
+            "warning": "WARN"
         },
-        "value" : {
-            "logger_name" : {
-                "kind" : "string",
-                "identifier" : true
+        "value": {
+            "logger_name": {
+                "kind": "string",
+                "identifier": true
             },
-            "ipaddress" : {
-                "kind" : "string",
-                "identifier" : true
+            "ipaddress": {
+                "kind": "string",
+                "identifier": true
             },
-            "level_value" : {
+            "level_value": {
                 "hidden": true
             },
-            "stack_trace" : {
-                "kind" : "string"
+            "stack_trace": {
+                "kind": "string"
             }
         }
     }

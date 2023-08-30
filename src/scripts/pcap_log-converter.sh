@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check that tshark is installed and return a nice message.
-if ! command -v tshark; then
+if ! command -v tshark > /dev/null; then
   echo "pcap support requires 'tshark' v3+ to be installed" > /dev/stderr
   exit 1
 fi

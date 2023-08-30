@@ -773,13 +773,14 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     }
                 }
 
+                tm current_tm;
                 struct stat st;
 
                 if (fstat(fd_copy, &st) != -1 && st.st_size > 0) {
                     strftime(timestamp,
                              sizeof(timestamp),
                              "%a %b %d %H:%M:%S %Z",
-                             localtime(&current_time));
+                             localtime_r(&current_time, &current_tm));
                     snprintf(desc,
                              sizeof(desc),
                              "Output of %s (%s)",

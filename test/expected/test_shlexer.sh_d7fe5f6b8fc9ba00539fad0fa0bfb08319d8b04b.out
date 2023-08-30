@@ -1,6 +1,7 @@
     'abc'
 sst ^
 sen     ^
+eof     ^
 eval -- 'abc'
 split:
-  0 -- abc
+  0 ^---^ -- abc

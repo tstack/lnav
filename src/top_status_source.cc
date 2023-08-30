@@ -64,12 +64,13 @@ top_status_source::update_time(const timeval& current_time)
 {
     auto& sf = this->tss_fields[TSF_TIME];
     char buffer[32];
+    tm current_tm;
 
     buffer[0] = ' ';
     strftime(&buffer[1],
              sizeof(buffer) - 1,
              this->tss_config.tssc_clock_format.c_str(),
-             localtime(&current_time.tv_sec));
+             localtime_r(&current_time.tv_sec, &current_tm));
     sf.set_value(buffer);
 }
 

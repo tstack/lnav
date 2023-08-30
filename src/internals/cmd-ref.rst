@@ -1209,12 +1209,13 @@
 
 .. _sh:
 
-:sh *cmdline*
-^^^^^^^^^^^^^
+:sh *--name=<name>* *cmdline*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Execute the given command-line and display the captured output
 
   **Parameters**
+    * **--name=<name>\*** --- The name to give to the captured output
     * **cmdline\*** --- The command-line to execute.
 
   **See Also**

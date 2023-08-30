@@ -1301,7 +1301,7 @@ external_log_format::scan(logfile& lf,
                 }
             }
 
-            log_debug("%s:%d:date-time re-locked to %d",
+            log_debug("%s:%d: date-time re-locked to %d",
                       lf.get_unique_path().c_str(),
                       dst.size(),
                       this->lf_date_time.dts_fmt_lock);
@@ -1474,10 +1474,12 @@ external_log_format::scan(logfile& lf,
         if (orig_lock != curr_fmt) {
             uint32_t lock_line;
 
-            log_debug("%zu: changing pattern lock %d -> %d",
+            log_debug("%s:%zu: changing pattern lock %d -> (%d)%s",
+                      lf.get_unique_path().c_str(),
                       dst.size() - 1,
                       orig_lock,
-                      curr_fmt);
+                      curr_fmt,
+                      this->elf_pattern_order[curr_fmt]->p_name.c_str());
             if (this->lf_pattern_locks.empty()) {
                 lock_line = 0;
             } else {
@@ -2648,6 +2650,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     .with_snippets(this->get_snippets()));
         }
         if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+            this->lf_multiline = true;
+            this->lf_structured = true;
             this->jlf_parse_context
                 = std::make_shared<yajlpp_parse_context>(this->elf_name);
             this->jlf_yajl_handle.reset(
@@ -2658,7 +2662,6 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             yajl_config(
                 this->jlf_yajl_handle.get(), yajl_dont_validate_strings, 1);
         }
-
     } else {
         if (this->elf_patterns.empty()) {
             errors.emplace_back(lnav::console::user_message::error(

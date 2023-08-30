@@ -728,6 +728,7 @@ logfile_sub_source::rebuild_index(
     if (force) {
         log_debug("forced to full rebuild");
         retval = rebuild_result::rr_full_rebuild;
+        full_sort = true;
     }
 
     std::vector<size_t> file_order(this->lss_files.size());
@@ -765,6 +766,7 @@ logfile_sub_source::rebuild_index(
                           ld.ld_file_index);
                 force = true;
                 retval = rebuild_result::rr_full_rebuild;
+                full_sort = true;
             }
         } else {
             if (time_left && deadline && ui_clock::now() > deadline.value()) {
@@ -850,7 +852,7 @@ logfile_sub_source::rebuild_index(
 
     if (this->lss_index.reserve(total_lines)) {
         // The index array was reallocated, just do a full sort/rebuild since
-        // its been cleared out.
+        // it's been cleared out.
         log_debug("expanding index capacity %zu", this->lss_index.ba_capacity);
         force = true;
         retval = rebuild_result::rr_full_rebuild;

@@ -124,6 +124,10 @@ public:
 
     bool try_consume(T rhs)
     {
+        if (rhs == 0) {
+            return false;
+        }
+
         if (this->c_value - rhs > this->c_min) {
             this->c_value -= rhs;
             return true;

@@ -284,8 +284,28 @@ Result<std::string, lnav::console::user_message> execute_command(
 
 Result<std::string, lnav::console::user_message> execute_sql(
     exec_context& ec, const std::string& sql, std::string& alt_msg);
+
+class multiline_executor {
+public:
+    exec_context& me_exec_context;
+    std::string me_source;
+    nonstd::optional<std::string> me_cmdline;
+    int me_line_number{0};
+    int me_starting_line_number{0};
+    std::string me_last_result;
+
+    multiline_executor(exec_context& ec, std::string src)
+        : me_exec_context(ec), me_source(src)
+    {
+    }
+
+    Result<void, lnav::console::user_message> push_back(string_fragment line);
+
+    Result<std::string, lnav::console::user_message> final();
+};
+
 Result<std::string, lnav::console::user_message> execute_file(
-    exec_context& ec, const std::string& path_and_args, bool multiline = true);
+    exec_context& ec, const std::string& path_and_args);
 Result<std::string, lnav::console::user_message> execute_any(
     exec_context& ec, const std::string& cmdline);
 void execute_init_commands(

@@ -37,6 +37,7 @@
 #include "lnav_util.hh"
 #include "ptimec.hh"
 #include "relative_time.hh"
+#include "shlex.hh"
 #include "unique_path.hh"
 
 using namespace std;
@@ -60,6 +61,66 @@ TEST_CASE("overwritten-logfile") {
     CHECK(lf.is_closed());
 }
 #endif
+
+TEST_CASE("shlex::eval")
+{
+    std::string cmdline1 = "${semantic_highlight_color}";
+
+    shlex lexer(cmdline1);
+
+    std::map<std::string, scoped_value_t> vars = {
+        {"semantic_highlight_color", "foo"},
+    };
+
+    std::string out;
+    auto rc = lexer.eval(out, scoped_resolver{&vars});
+    CHECK(rc);
+    CHECK(out == "foo");
+}
+
+TEST_CASE("shlex::split")
+{
+    {
+        std::string cmdline1 = "";
+
+        std::map<std::string, scoped_value_t> vars;
+        shlex lexer(cmdline1);
+        auto split_res = lexer.split(scoped_resolver{&vars});
+        CHECK(split_res.isOk());
+        auto args = split_res.unwrap();
+        CHECK(args.empty());
+    }
+    {
+        std::string cmdline1 = ":sh --name=\"foo $BAR\" echo Hello!";
+
+        std::map<std::string, scoped_value_t> vars;
+        shlex lexer(cmdline1);
+        auto split_res = lexer.split(scoped_resolver{&vars});
+        CHECK(split_res.isOk());
+        auto args = split_res.unwrap();
+        for (const auto& se : args) {
+            printf(" range %d:%d -- %s\n",
+                   se.se_origin.sf_begin,
+                   se.se_origin.sf_end,
+                   se.se_value.c_str());
+        }
+    }
+    {
+        std::string cmdline1 = "abc def $FOO ghi";
+
+        std::map<std::string, scoped_value_t> vars;
+        shlex lexer(cmdline1);
+        auto split_res = lexer.split(scoped_resolver{&vars});
+        CHECK(split_res.isOk());
+        auto args = split_res.unwrap();
+        for (const auto& se : args) {
+            printf(" range %d:%d -- %s\n",
+                   se.se_origin.sf_begin,
+                   se.se_origin.sf_end,
+                   se.se_value.c_str());
+        }
+    }
+}
 
 TEST_CASE("byte_array")
 {

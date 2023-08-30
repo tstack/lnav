@@ -2242,6 +2242,8 @@ main(int argc, char* argv[])
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
 
+        lnav_data.ld_child_pollers.clear();
+
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
             lf->close();
         }

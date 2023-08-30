@@ -1,7 +1,8 @@
     ~nonexistent/bar baz
 til ^----------^
 wsp                 ^
+eof                    ^
 eval -- ~nonexistent/bar baz
 split:
-  0 -- ~nonexistent/bar
-  1 -- baz
+  0 ^--------------^ -- ~nonexistent/bar
+  1                  ^-^ -- baz
