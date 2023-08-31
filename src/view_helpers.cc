@@ -202,7 +202,7 @@ public:
                                         sib_iter->second->hn_start)
                                         | [](const auto new_top) {
                                               lnav_data.ld_views[LNV_PRETTY]
-                                                  .set_top(new_top);
+                                                  .set_selection(new_top);
                                           };
                                 }
                             },
@@ -214,8 +214,8 @@ public:
                                     = parent_node->hn_children[index].get();
                                 this->line_for_offset(sib->hn_start) |
                                     [](const auto new_top) {
-                                        lnav_data.ld_views[LNV_PRETTY].set_top(
-                                            new_top);
+                                        lnav_data.ld_views[LNV_PRETTY]
+                                            .set_selection(new_top);
                                     };
                             });
                     };
@@ -266,8 +266,8 @@ public:
                         if (child_iter != curr_node->hn_named_children.end()) {
                             this->line_for_offset(child_iter->second->hn_start)
                                 | [](const auto new_top) {
-                                      lnav_data.ld_views[LNV_PRETTY].set_top(
-                                          new_top);
+                                      lnav_data.ld_views[LNV_PRETTY]
+                                          .set_selection(new_top);
                                   };
                         }
                     },
@@ -275,7 +275,8 @@ public:
                         auto* child = curr_node->hn_children[index].get();
                         this->line_for_offset(child->hn_start) |
                             [](const auto new_top) {
-                                lnav_data.ld_views[LNV_PRETTY].set_top(new_top);
+                                lnav_data.ld_views[LNV_PRETTY].set_selection(
+                                    new_top);
                             };
                     });
             };

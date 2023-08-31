@@ -355,6 +355,10 @@ CREATE TABLE lnav_views (
             case 11: {
                 static const size_t MAX_POSSIBILITIES = 128;
 
+                if (sqlite3_vtab_nochange(ctx)) {
+                    return SQLITE_OK;
+                }
+
                 auto* tss = tc.get_sub_source();
 
                 if (tss != nullptr && tss->text_line_count() > 0) {
@@ -412,6 +416,10 @@ CREATE TABLE lnav_views (
                 sqlite3_result_int(ctx, (int) tc.get_selection());
                 break;
             case 13: {
+                if (sqlite3_vtab_nochange(ctx)) {
+                    return SQLITE_OK;
+                }
+
                 auto* text_accel_p
                     = dynamic_cast<text_accel_source*>(tc.get_sub_source());
                 auto vo = view_options{};

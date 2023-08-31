@@ -263,7 +263,7 @@ plain_text_source::text_crumbs_for_line(int line,
                             }
                             this->line_for_offset(sib_iter->second->hn_start) |
                                 [this](const auto new_top) {
-                                    this->tss_view->set_top(new_top);
+                                    this->tss_view->set_selection(new_top);
                                 };
                         },
                         [this, parent_node](size_t index) {
@@ -300,7 +300,7 @@ plain_text_source::text_crumbs_for_line(int line,
                     if (child_iter != curr_node->hn_named_children.end()) {
                         this->line_for_offset(child_iter->second->hn_start) |
                             [this](const auto new_top) {
-                                this->tss_view->set_top(new_top);
+                                this->tss_view->set_selection(new_top);
                             };
                     }
                 },
@@ -308,7 +308,7 @@ plain_text_source::text_crumbs_for_line(int line,
                     auto* child = curr_node->hn_children[index].get();
                     this->line_for_offset(child->hn_start) |
                         [this](const auto new_top) {
-                            this->tss_view->set_top(new_top);
+                            this->tss_view->set_selection(new_top);
                         };
                 });
         };

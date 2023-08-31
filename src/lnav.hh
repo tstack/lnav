@@ -146,8 +146,6 @@ struct key_repeat_history {
     };
 };
 
-using file_location_t = mapbox::util::variant<vis_line_t, std::string>;
-
 struct lnav_data_t {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
     time_t ld_session_time;

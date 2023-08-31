@@ -260,8 +260,10 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
             if (new_top_opt) {
                 log_info("  setting requested top line: %d",
                          (int) new_top_opt.value());
-                text_view.set_top(new_top_opt.value());
+                text_view.set_selection(new_top_opt.value());
                 log_info("  actual top is now: %d", (int) text_view.get_top());
+                log_info("  actual selection is now: %d",
+                         (int) text_view.get_selection());
                 scroll_downs[LNV_TEXT] = false;
             } else {
                 log_warning("could not jump to requested line");

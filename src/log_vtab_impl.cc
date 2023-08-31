@@ -775,6 +775,10 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
         }
 
         case VT_COL_LOG_ANNOTATIONS: {
+            if (sqlite3_vtab_nochange(ctx)) {
+                return SQLITE_OK;
+            }
+
             auto line_meta_opt
                 = vt->lss->find_bookmark_metadata(vc->log_cursor.lc_curr_line);
             if (!line_meta_opt
@@ -2026,7 +2030,9 @@ vt_update(sqlite3_vtab* tab,
             }
             if (log_annos) {
                 line_meta.bm_annotations = std::move(tmp_bm.bm_annotations);
-            } else {
+            } else if (!sqlite3_value_nochange(
+                           argv[2 + VT_COL_LOG_ANNOTATIONS]))
+            {
                 line_meta.bm_annotations.la_pairs.clear();
             }
 
