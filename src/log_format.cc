@@ -207,7 +207,7 @@ log_format::opid_descriptor::matches(const string_fragment& sf) const
 
         auto desc_match_res = this->od_extractor.pp_value->capture_from(sf)
                                   .into(desc_md)
-                                  .matches(PCRE2_NO_UTF_CHECK)
+                                  .matches(PCRE2_NO_UTF_CHECK | PCRE2_ANCHORED)
                                   .ignore_error();
         if (desc_match_res) {
             return desc_md.to_string();
