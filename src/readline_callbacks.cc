@@ -698,25 +698,21 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             break;
 
         case ln_mode_t::SQL: {
+            auto sql_str = rc->get_value().get_string();
             ec.ec_source.back().s_content
-                = fmt::format(FMT_STRING(";{}"), rc->get_value().get_string());
+                = fmt::format(FMT_STRING(";{}"), sql_str);
             readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 
-            if (lnav_data.ld_rl_view != nullptr) {
-                if (lnav_data.ld_rl_view) {
-                    lnav_data.ld_rl_view->set_attr_value(
-                        lnav::console::user_message::info(
-                            attr_line_t("executing SQL statement, press ")
-                                .append("CTRL+]"_hotkey)
-                                .append(" to cancel"))
-                            .to_attr_line());
-                    lnav_data.ld_rl_view->do_update();
-                }
-            }
-            auto result
-                = execute_sql(ec, rc->get_value().get_string(), alt_msg);
+            rc->set_attr_value(
+                lnav::console::user_message::info(
+                    attr_line_t("executing SQL statement, press ")
+                        .append("CTRL+]"_hotkey)
+                        .append(" to cancel"))
+                    .to_attr_line());
+            rc->set_needs_update();
+            auto result = execute_sql(ec, sql_str, alt_msg);
             auto& dls = lnav_data.ld_db_row_source;
             attr_line_t prompt;
 
