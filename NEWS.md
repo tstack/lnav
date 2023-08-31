@@ -111,6 +111,7 @@ Bug Fixes:
   for unknown JSON properties.  These extra fields are now
   shown with the proper `jget(log_raw_text, '/...')` SQL
   expression needed to retrieve the value.
+* Improved text-wrapping when rendering Markdown.
 
 Interface changes:
 * The breadcrumb bar hotkey is moving to backtick `` ` ``

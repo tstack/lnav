@@ -98,3 +98,18 @@ TEST_CASE("attr_line_t::unicode-wrap")
           "   be wrapped and\n"
           "   indented");
 }
+
+TEST_CASE("attr_line_t::pre-wrap")
+{
+    auto pre_al = attr_line_t(" Hello, World! ")
+                      .with_attr_for_all(SA_PREFORMATTED.value());
+    auto al = attr_line_t("This is a pre-formatted inline -- ")
+                  .append(pre_al)
+                  .append(" -- that should be wrapped");
+
+    text_wrap_settings tws = {0, 36};
+
+    auto body = attr_line_t().append(al, &tws);
+
+    printf("body\n%s\n", body.get_string().c_str());
+}
