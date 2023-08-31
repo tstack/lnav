@@ -108,6 +108,10 @@ CREATE TABLE lnav_file (
                 break;
             }
             case 8: {
+                if (sqlite3_vtab_nochange(ctx)) {
+                    return SQLITE_OK;
+                }
+
                 auto& cfg = injector::get<const file_vtab::config&>();
                 auto lf_stat = lf->get_stat();
 

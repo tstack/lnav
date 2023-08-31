@@ -159,6 +159,8 @@ handle_keyseq(const char* keyseq)
     ec.ec_error_callback_stack
         = lnav_data.ld_exec_context.ec_error_callback_stack;
     var_stack.push(std::map<std::string, scoped_value_t>());
+    // XXX push another so it doesn't look like interactive use
+    var_stack.push(std::map<std::string, scoped_value_t>());
     auto& vars = var_stack.top();
     vars["keyseq"] = keyseq;
     const auto& kc = iter->second;

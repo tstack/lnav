@@ -35,6 +35,7 @@
 
 #include <glob.h>
 
+#include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/isc.hh"
 #include "base/itertools.hh"
@@ -607,7 +608,8 @@ file_collection::expand_filename(
     }
 
     auto filename_key = loo.loo_filename.empty() ? path : loo.loo_filename;
-    if (glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+    auto glob_flags = lnav::filesystem::is_glob(path) ? 0 : GLOB_NOCHECK;
+    if (glob(path.c_str(), glob_flags, nullptr, gl.inout()) == 0) {
         int lpc;
 
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
@@ -676,15 +678,20 @@ file_collection::expand_filename(
                         file_collection retval;
 
                         if (gl->gl_pathc == 1) {
-                            log_error("failed to find path: %s -- %s",
-                                      filename_key.c_str(),
-                                      errmsg);
-                            retval.fc_name_to_errors->writeAccess()->emplace(
-                                filename_key,
-                                file_error_info{
-                                    time(nullptr),
-                                    errmsg,
-                                });
+                            if (this->fc_name_to_errors->readAccess()->count(
+                                    filename_key)
+                                == 0)
+                            {
+                                log_error("failed to find path: %s -- %s",
+                                          filename_key.c_str(),
+                                          errmsg);
+                                retval.fc_name_to_errors->writeAccess()
+                                    ->emplace(filename_key,
+                                              file_error_info{
+                                                  time(nullptr),
+                                                  errmsg,
+                                              });
+                            }
                         } else {
                             log_error("failed to find path: %s -- %s",
                                       path_str.c_str(),

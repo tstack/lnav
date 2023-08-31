@@ -352,18 +352,6 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         bool done = false;
 
         auto bound_values = TRY(bind_sql_parameters(ec, stmt.in()));
-        if (lnav_data.ld_rl_view != nullptr) {
-            if (lnav_data.ld_rl_view) {
-                lnav_data.ld_rl_view->set_attr_value(
-                    lnav::console::user_message::info(
-                        attr_line_t("executing SQL statement, press ")
-                            .append("CTRL+]"_hotkey)
-                            .append(" to cancel"))
-                        .to_attr_line());
-                lnav_data.ld_rl_view->do_update();
-            }
-        }
-
         ec.ec_sql_callback(ec, stmt.in());
         while (!done) {
             retcode = sqlite3_step(stmt.in());
@@ -887,7 +875,8 @@ execute_init_commands(
             lnav_data.ld_active_files.fc_file_names[OUTPUT_NAME]
                 .with_piper(create_piper_res.unwrap())
                 .with_include_in_session(false)
-                .with_detect_format(false);
+                .with_detect_format(false)
+                .with_init_location(0_vl);
             lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
 
             if (lnav_data.ld_rl_view != nullptr) {
@@ -1048,7 +1037,8 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
     lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
         .with_filename(desc)
         .with_include_in_session(false)
-        .with_detect_format(false);
+        .with_detect_format(false)
+        .with_init_location(0_vl);
     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
     if (lnav_data.ld_rl_view != nullptr) {
         lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(X, "to close the file"));

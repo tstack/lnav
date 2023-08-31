@@ -1685,8 +1685,16 @@ lnav::session::restore_view_states()
     for (size_t view_index = 0; view_index < LNV__MAX; view_index++) {
         const auto& vs = session_data.sd_view_states[view_index];
         auto& tview = lnav_data.ld_views[view_index];
+        bool has_loc = false;
 
-        if (vs.vs_top >= 0
+        if (view_index == LNV_TEXT) {
+            auto lf = lnav_data.ld_text_source.current_file();
+            if (lf != nullptr) {
+                has_loc = lf->get_open_options().loo_init_location.valid();
+            }
+        }
+
+        if (!has_loc && vs.vs_top >= 0
             && (view_index == LNV_LOG || tview.get_top() == 0_vl
                 || tview.get_top() == tview.get_top_for_last_row()))
         {
@@ -1695,7 +1703,7 @@ lnav::session::restore_view_states()
                      vs.vs_top);
             lnav_data.ld_views[view_index].set_top(vis_line_t(vs.vs_top), true);
         }
-        if (vs.vs_selection) {
+        if (!has_loc && vs.vs_selection) {
             log_info("restoring %s view selection: %d",
                      lnav_view_strings[view_index],
                      vs.vs_selection.value());

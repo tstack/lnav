@@ -409,7 +409,9 @@ setup_logline_table(exec_context& ec)
         }
     }
 
-    walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
+    if (update_possibilities) {
+        walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
+    }
 
     for (const auto& iter : *lnav_data.ld_vtab_manager) {
         iter.second->get_foreign_keys(db_key_names);
@@ -1901,6 +1903,7 @@ looper()
                         || lnav_data.ld_text_source.text_line_count() > 0
                         || !lnav_data.ld_active_files.fc_other_files.empty()))
                 {
+                    log_debug("initial build completed");
                     lnav_data.ld_initial_build = true;
                 }
 
@@ -3016,7 +3019,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 dir_wild + "/*", logfile_open_options());
         } else {
             lnav_data.ld_active_files.fc_file_names.emplace(
-                abspath.in(), logfile_open_options());
+                abspath.in(),
+                logfile_open_options().with_init_location(file_loc));
             if (file_loc.valid()) {
                 lnav_data.ld_files_to_front.emplace_back(abspath.in(),
                                                          file_loc);

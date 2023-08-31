@@ -38,6 +38,7 @@
 #include "base/auto_fd.hh"
 #include "file_format.hh"
 #include "piper.looper.hh"
+#include "vis_line.hh"
 
 using ui_clock = std::chrono::steady_clock;
 
@@ -52,6 +53,8 @@ enum class logfile_name_source {
     ARCHIVE,
     REMOTE,
 };
+
+using file_location_t = mapbox::util::variant<vis_line_t, std::string>;
 
 struct logfile_open_options_base {
     std::string loo_filename;
@@ -68,6 +71,7 @@ struct logfile_open_options_base {
     file_format_t loo_file_format{file_format_t::UNKNOWN};
     nonstd::optional<std::string> loo_format_name;
     nonstd::optional<lnav::piper::running_handle> loo_piper;
+    file_location_t loo_init_location;
 };
 
 struct logfile_open_options : public logfile_open_options_base {
@@ -153,6 +157,13 @@ struct logfile_open_options : public logfile_open_options_base {
     {
         this->loo_piper = handle;
         this->loo_filename = handle.get_name();
+
+        return *this;
+    }
+
+    logfile_open_options& with_init_location(file_location_t fl)
+    {
+        this->loo_init_location = fl;
 
         return *this;
     }

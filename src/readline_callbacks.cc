@@ -49,6 +49,7 @@
 #include "yajlpp/yajlpp.hh"
 
 using namespace std::chrono_literals;
+using namespace lnav::roles::literals;
 
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
@@ -702,6 +703,18 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+
+            if (lnav_data.ld_rl_view != nullptr) {
+                if (lnav_data.ld_rl_view) {
+                    lnav_data.ld_rl_view->set_attr_value(
+                        lnav::console::user_message::info(
+                            attr_line_t("executing SQL statement, press ")
+                                .append("CTRL+]"_hotkey)
+                                .append(" to cancel"))
+                            .to_attr_line());
+                    lnav_data.ld_rl_view->do_update();
+                }
+            }
             auto result
                 = execute_sql(ec, rc->get_value().get_string(), alt_msg);
             auto& dls = lnav_data.ld_db_row_source;
@@ -789,7 +802,8 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
                         .with_filename(desc)
                         .with_include_in_session(false)
-                        .with_detect_format(false);
+                        .with_detect_format(false)
+                        .with_init_location(0_vl);
                     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
 
                     if (lnav_data.ld_rl_view != nullptr) {

@@ -2611,6 +2611,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 file_loc = fn.substr(hash_index);
                 fn = fn.substr(0, hash_index);
             }
+            loo.with_init_location(file_loc);
         }
 
         auto file_iter = lnav_data.ld_active_files.fc_files.begin();
@@ -2642,7 +2643,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     auto ul = std::make_shared<url_loader>(fn);
 
                     lnav_data.ld_active_files.fc_file_names[ul->get_path()]
-                        .with_filename(fn);
+                        .with_filename(fn)
+                        .with_init_location(file_loc);
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [ul](auto& clooper) { clooper.add_request(ul); });
                     lnav_data.ld_files_to_front.emplace_back(fn, file_loc);
