@@ -453,6 +453,7 @@ println(FILE* file, const attr_line_t& al)
                         case role_t::VCR_LIST_GLYPH:
                             line_style |= fmt::fg(fmt::terminal_color::yellow);
                             break;
+                        case role_t::VCR_INLINE_CODE:
                         case role_t::VCR_QUOTED_CODE:
                             default_fg_style
                                 = fmt::fg(fmt::terminal_color::white);

@@ -32,10 +32,10 @@ Lnav takes a list of files to view and/or you can use the flag
 arguments to load well-known log files, such as the syslog log files.
 The flag arguments are:
 
- [33m•[0m  -a  Load all of the most recent log file types.
- [33m•[0m  -r  Recursively load files from the given directory
+ [33m•[0m [37m[40m -a [0m Load all of the most recent log file types.
+ [33m•[0m [37m[40m -r [0m Recursively load files from the given directory
    hierarchies.
- [33m•[0m  -R  Load older rotated log files as well.
+ [33m•[0m [37m[40m -R [0m Load older rotated log files as well.
 
 When using the flag arguments, lnav will look for the files relative
 to the current directory and its parent directories. In other words,
@@ -43,7 +43,7 @@ if you are working within a directory that has the well-known log
 files, those will be preferred over any others.
 
 If you do not want the default syslog file to be loaded when no files
-are specified, you can pass the  -N  flag.
+are specified, you can pass the [37m[40m -N [0m flag.
 
 Any files given on the command-line are scanned to determine their log
 file format and to create an index for each line in the file. You do
@@ -56,25 +56,25 @@ Lnav will also display data piped in on the standard input.
 To automatically execute queries or lnav commands after the files have
 been loaded, you can use the following options:
 
- [33m•[0m  -c cmd  A command, query, or file to execute. The
+ [33m•[0m [37m[40m -c cmd [0m A command, query, or file to execute. The
    first character determines the type of operation: a colon
-   ( : ) is used for the built-in commands; a semi-colon ( ;
-   ) for SQL queries; and a pipe symbol ( | ) for executing
-   a file containing other commands. For example, to open
-   the file "foo.log" and go to the tenth line in the file,
-   you can do:
+   ([37m[40m : [0m) is used for the built-in commands; a semi-colon (
+   [37m[40m ; [0m) for SQL queries; and a pipe symbol ([37m[40m | [0m) for
+   executing a file containing other commands. For example,
+   to open the file "foo.log" and go to the tenth line in
+   the file, you can do:
    
     ▌[37m[40mlnav -c [0m[35m[40m':goto 10'[0m[37m[40m foo.log              [0m
    
    This option can be given multiple times to execute
    multiple operations in sequence.
- [33m•[0m  -f file  A file that contains commands, queries, or
-   files to execute. This option is a shortcut for  -c '|file'
-   . You can use a dash ( - ) to execute commands from the
-   standard input.
+ [33m•[0m [37m[40m -f file [0m A file that contains commands, queries, or
+   files to execute. This option is a shortcut for
+   [37m[40m -c '|file' [0m. You can use a dash ([37m[40m - [0m) to execute
+   commands from the standard input.
 
 To execute commands/queries without opening the interactive text UI,
-you can pass the  -n  option. This combination of options allows you
+you can pass the [37m[40m -n [0m option. This combination of options allows you
 to write scripts for processing logs with lnav. For example, to get a
 list of IP addresses that dhclient has bound to in CSV format:
 
@@ -99,13 +99,14 @@ The main part of the display shows the log lines from the files
 interleaved based on time-of-day. New lines are automatically loaded
 as they are appended to the files and, if you are viewing the bottom
 of the files, lnav will scroll down to display the new lines, much
-like  tail -f .
+like [37m[40m tail -f [0m.
 
 On color displays, the lines will be highlighted as follows:
 
  [33m•[0m Errors will be colored in [31mred[0m;
  [33m•[0m warnings will be [33myellow[0m;
- [33m•[0m boundaries between days will be [4munderlined[0m; and
+ [33m•[0m boundaries between days will be [4munderlined[0m;
+   and
  [33m•[0m various color highlights will be applied to: IP
    addresses, SQL keywords, XML tags, file and line numbers
    in Java backtraces, and quoted strings.
@@ -120,29 +121,30 @@ and right-hand side of the bar, for search hits and bookmarks.
 The bar on the left side indicates the file the log message is from. A
 break in the bar means that the next log message comes from a
 different file. The color of the bar is derived from the file name.
-Pressing the left-arrow or  h  will reveal the source file names for
+Pressing the left-arrow or [37m[40m h [0m will reveal the source file names for
 each message and pressing again will show the full paths.
 
 Above and below the main body are status lines that display a variety
 of information. The top line displays:
 
- [33m•[0m The current time, configurable by the  /ui/clock-format    
-   property.
- [33m•[0m The highest priority message from the  lnav_user_notifications    
-   table. You can insert rows into this table to display
-   your own status messages. The default message displayed
-   on startup explains how to focus on the next status line
-   at the top, which is an interactive breadcrumb bar.
+ [33m•[0m The current time, configurable by the
+   [37m[40m /ui/clock-format [0m property.
+ [33m•[0m The highest priority message from the
+   [37m[40m lnav_user_notifications [0m table. You can insert rows into
+   this table to display your own status messages. The
+   default message displayed on startup explains how to
+   focus on the next status line at the top, which is an
+   interactive breadcrumb bar.
 
 The second status line at the top display breadcrumbs for the top line
-in the main view. Pressing  ENTER  will focus input on the breadcrumb
+in the main view. Pressing [37m[40m ENTER [0m will focus input on the breadcrumb
 bar, the cursor keys can be used to select a breadcrumb. The common
 breadcrumbs are:
 
  [33m•[0m The name of the current view.
  [33m•[0m In the log view, the timestamp of the top log message.
- [33m•[0m In the log view, the format of the log file the top log
-   message is from.
+ [33m•[0m In the log view, the format of the log file the top
+   log message is from.
  [33m•[0m The name of the file the top line was pulled from.
  [33m•[0m If the top line is within a larger chunk of structured
    data, the path to the value in the top line will be
@@ -150,8 +152,8 @@ breadcrumbs are:
 
 Notes:
 
- [33m1.[0m Pressing  CTRL-A / CTRL-E  will select the first/last
-    breadcrumb.
+ [33m1.[0m Pressing [37m[40m CTRL-A [0m/[37m[40m CTRL-E [0m will select the
+    first/last breadcrumb.
  [33m2.[0m Typing text while a breadcrumb is selected will
     perform a fuzzy search on the possibilities.
 
@@ -166,7 +168,8 @@ the following:
 
  [33m•[0m The number of enabled filters and the total number of
    filters.
- [33m•[0m The number of lines not displayed because of filtering.
+ [33m•[0m The number of lines not displayed because of
+   filtering.
 
 To edit the filters, you can press TAB to change the focus from the
 main view to the filter editor. The editor allows you to create,
@@ -188,7 +191,7 @@ results. The views are organized into a stack so that any time you
 activate a new view with a key press or command, the new view is
 pushed onto the stack. Pressing the same key again will pop the view
 off of the stack and return you to the previous view. Note that you
-can always use  q  to pop the top view off of the stack.
+can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [1mDefault Key Bindings[0m
 
@@ -199,16 +202,16 @@ can always use  q  to pop the top view off of the stack.
  [1m?[0m       View/leave this help message.
  [1mq[0m       Leave the current view or quit the program when in
          the log file view.
- Q       Similar to  q , except it will try to sync the top
+ Q       Similar to [37m[40m q [0m, except it will try to sync the top
          time between the current and former views. For
-         example, when leaving the spectrogram view with  Q
-         , the top time in that view will be matched to the
-         top time in the log view.
+         example, when leaving the spectrogram view with
+         [37m[40m Q [0m, the top time in that view will be matched to
+         the top time in the log view.
  TAB     Toggle focusing on the filter editor or the main
          view.
  ENTER   Focus on the breadcrumb bar.
- a/A     Restore the view that was previously popped with  q
-         / Q . The  A  hotkey will try to match the top
+ a/A     Restore the view that was previously popped with
+         [37m[40m q [0m/[37m[40m Q [0m. The [37m[40m A [0m hotkey will try to match the top
          times between the two views.
  X       Close the current text file or log file.
 
@@ -291,13 +294,13 @@ can always use  q  to pop the top view off of the stack.
  m       Mark/unmark the line at the top of the display.
          The line will be highlighted with reverse video to
          indicate that it is a user bookmark. You can use
-         the  u  hotkey to iterate through marks you have
+         the [37m[40m u [0m hotkey to iterate through marks you have
          added.
  M       Mark/unmark all the lines between the top of the
          display and the last line marked/unmarked.
  J       Mark/unmark the next line after the previously
          marked line.
- K       Like  J  except it toggles the mark on the
+ K       Like [37m[40m J [0m except it toggles the mark on the
          previous line.
  c       Copy the marked text to the X11 selection buffer
          or OS X clipboard.
@@ -334,12 +337,12 @@ can always use  q  to pop the top view off of the stack.
                 log lines for each bucket of time. The bars are
                 layed out horizontally with colored segments
                 representing the different log levels. You can use
-                the  z  hotkey to change the size of the time
+                the [37m[40m z [0m hotkey to change the size of the time
                 buckets (e.g. ten minutes, one hour, one day).
  I              Switch between the log and histogram views while
                 keeping the time displayed at the top of each view
                 in sync. For example, if the top line in the log
-                view is "11:40", hitting  I  will switch to the
+                view is "11:40", hitting [37m[40m I [0m will switch to the
                 histogram view and scrolled to display "11:00" at
                 the top (if the zoom level is hours).
  z/Shift Z      Zoom in or out one step in the histogram view.
@@ -415,14 +418,14 @@ can always use  q  to pop the top view off of the stack.
                       below for more information.
  [1m|[0m<script> [arg1...]  Execute an lnav script contained in a format
                       directory (e.g. ~/.lnav/formats/default). The
-                      script can contain lines starting with  : ,  ; ,
-                      or  |  to execute commands, SQL queries or execute
+                      script can contain lines starting with [37m[40m : [0m, [37m[40m ; [0m,
+                      or [37m[40m | [0m to execute commands, SQL queries or execute
                       other files in lnav. Any values after the script
                       name are treated as arguments can be referenced in
-                      the script using  $1 ,  $2 , and so on, like in a
+                      the script using [37m[40m $1 [0m, [37m[40m $2 [0m, and so on, like in a
                       shell script.
- CTRL+], ESCAPE       Abort command-line entry started with  / ,  : ,  ;
-                      , or  | .
+ CTRL+], ESCAPE       Abort command-line entry started with [37m[40m / [0m, [37m[40m : [0m,
+                      [37m[40m ; [0m, or [37m[40m | [0m.
 
  ▌[1mNote[0m: The regular expression format used by lnav is ]8;;http://perldoc.perl.org/perlre.html\[4mPCRE[0m]8;;\[4m[1][0m  
  ▌(Perl-Compatible Regular Expressions).                       
@@ -499,10 +502,10 @@ Some commonly used format tables are:
               leading timestamp followed by the message.
 
 NOTE: You can get a dump of the schema for the internal tables, and
-any attached databases, by running the  .schema  SQL command.
+any attached databases, by running the [37m[40m .schema [0m SQL command.
 
 The columns available for the top log line in the view will
-automatically be displayed after pressing the semicolon ( ; ) key. All
+automatically be displayed after pressing the semicolon ([37m[40m ; [0m) key. All
 log tables contain at least the following columns:
 
  Column          Description                                       
@@ -528,7 +531,7 @@ The following tables include the basic columns as listed above and
 include a few more columns since the log file format is more
 structured.
 
- [33m•[0m  syslog_log 
+ [33m•[0m [37m[40m syslog_log [0m
    
     Column        Description                                       
    ═════════════════════════════════════════════════════════════════
@@ -536,8 +539,8 @@ structured.
     log_procname  The name of the process that sent the message.
     log_pid       The process ID of the process that sent the
                   message.
- [33m•[0m  access_log  (The column names are the same as those in
-   the Microsoft LogParser tool.)
+ [33m•[0m [37m[40m access_log [0m (The column names are the same as those
+   in the Microsoft LogParser tool.)
    
     Column         Description                               
    ══════════════════════════════════════════════════════════
@@ -551,8 +554,8 @@ structured.
     sc_bytes       The number of bytes sent to the client.
     cs_referrer    The URL of the referring page.
     cs_user_agent  The user agent string.
- [33m•[0m  strace_log  (Currently, you need to run strace with
-   the  -tt -T options so there are timestamps for each
+ [33m•[0m [37m[40m strace_log [0m (Currently, you need to run strace with
+   the [37m[40m -tt -T [0moptions so there are timestamps for each
    function call.)
    
     Column       Description                              
@@ -580,7 +583,7 @@ use with care.)
 
 For log formats that lack message structure, lnav can parse the log
 message and attempt to extract any data fields that it finds. This
-feature is available through the  logline  log table. This table is
+feature is available through the [37m[40m logline [0m log table. This table is
 dynamically created and defined based on the message at the top of the
 log view. For example, given the following log message from "sudo",
 lnav will create the "logline" table with columns for "TTY", "PWD",
@@ -625,12 +628,12 @@ view as a template.
 
 Environment variables can be used in SQL statements by prefixing the
 variable name with a dollar-sign ($). For example, to read the value
-of the  HOME  variable, you can do:
+of the [37m[40m HOME [0m variable, you can do:
 
  ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40m$HOME[0m[37m[40m;                          [0m
 
 To select the syslog messages that have a hostname field that is equal
-to the  HOSTNAME  variable:
+to the [37m[40m HOSTNAME [0m variable:
 
  ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_hostname[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[37m[40m$HOSTNAME[0m[37m[40m;    [0m
 
@@ -784,9 +787,10 @@ For support questions, email:
 
 [4m:[0m[1m[4mcomment[0m[4m [0m[4mtext[0m
 ══════════════════════════════════════════════════════════════════════
-  Attach a comment to the top log line.  The comment will be displayed
-  right below the log message it is associated with. The comment can
-  be formatted using markdown and you can add new-lines with '\n'.
+  Attach a comment to the top log line.  The comment will be
+  displayed right below the log message it is associated with. The
+  comment can be formatted using markdown and you can add new-lines
+  with '\n'.
 [4mParameter[0m
   [4mtext[0m   The comment text
 [4mSee Also[0m
@@ -818,7 +822,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mcreate-logline-table[0m[4m [0m[4mtable-name[0m
 ══════════════════════════════════════════════════════════════════════
-  Create an SQL table using the top line of the log view as a template
+  Create an SQL table using the top line of the log view as a
+  template
 [4mParameter[0m
   [4mtable-name[0m   The name for the new table
 [4mSee Also[0m
@@ -836,8 +841,8 @@ For support questions, email:
   Create an SQL table based on a regex search
 [4mParameters[0m
   [4mtable-name[0m   The name of the table to create
-  [4mpattern[0m      The regular expression used to capture the
-               table columns.  If not given, the current search
+  [4mpattern[0m      The regular expression used to capture
+               the table columns.  If not given, the current search
                pattern is used.
 [4mSee Also[0m
   [1m:create-logline-table[0m, [1m:create-logline-table[0m, [1m:delete-search-table[0m, 
@@ -853,8 +858,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mcurrent-time[0m
 ══════════════════════════════════════════════════════════════════════
-  Print the current time in human-readable form and seconds since the
-  epoch
+  Print the current time in human-readable form and seconds since
+  the epoch
 
 
 [4m:[0m[1m[4mdelete-filter[0m[4m [0m[4mpattern[0m
@@ -986,7 +991,8 @@ For support questions, email:
   Evaluate the given command/query after doing environment variable
   substitution
 [4mParameter[0m
-  [4mcommand[0m   The command or query to perform substitution on.
+  [4mcommand[0m   The command or query to perform substitution
+            on.
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:cd[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
@@ -999,8 +1005,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mexport-session-to[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
-  Export the current lnav state to an executable lnav script file that
-  contains the commands needed to restore the current session
+  Export the current lnav state to an executable lnav script file
+  that contains the commands needed to restore the current session
 [4mParameter[0m
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
@@ -1049,8 +1055,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mfilter-out[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
-  Remove lines that match the given regular expression in the current
-  view
+  Remove lines that match the given regular expression in the
+  current view
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
@@ -1116,7 +1122,7 @@ For support questions, email:
 
 [4m:[0m[1m[4mhide-file[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
-  Hide the given file(s) and skip indexing until it is shown again.
+  Hide the given file(s) and skip indexing until it is shown again.   
   If no path is given, the current file in the view is hidden
 [4mParameter[0m
   [4mpath[0m   A path or glob pattern that specifies the files to
@@ -1168,8 +1174,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mhighlight[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
-  Add coloring to log messages fragments that match the given regular
-  expression
+  Add coloring to log messages fragments that match the given
+  regular expression
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
@@ -1216,8 +1222,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the next bookmark of the given type in the current view
 [4mParameter[0m
-  [4mtype[0m   The type of bookmark -- error, warning, search, user,
-         file, meta
+  [4mtype[0m   The type of bookmark -- error, warning, search,
+         user, file, meta
 [4mSee Also[0m
   [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:prev-location[0m, 
   [1m:prev-mark[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
@@ -1296,10 +1302,11 @@ For support questions, email:
 
 [4m:[0m[1m[4mprev-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
-  Move to the previous bookmark of the given type in the current view
+  Move to the previous bookmark of the given type in the current
+  view
 [4mParameter[0m
-  [4mtype[0m   The type of bookmark -- error, warning, search, user,
-         file, meta
+  [4mtype[0m   The type of bookmark -- error, warning, search,
+         user, file, meta
 [4mSee Also[0m
   [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-mark[0m, 
   [1m:next-mark[0m, [1m:prev-location[0m, [1m:relative-goto[0m
@@ -1318,8 +1325,8 @@ For support questions, email:
   [4m--alt[0m           Perform the alternate action for
                   this prompt by default
   [4mprompt[0m          The prompt to display
-  [4minitial-value[0m   The initial value to fill in for the
-                  prompt
+  [4minitial-value[0m   The initial value to fill in for
+                  the prompt
 
 [4mExamples[0m
 #1 To open the command prompt with 'filter-in' already filled in:
@@ -1359,8 +1366,8 @@ For support questions, email:
   Redirect the output of commands that write to stdout to the given
   file
 [4mParameter[0m
-  [4mpath[0m   The path to the file to write.  If not specified, the
-         current redirect will be cleared
+  [4mpath[0m   The path to the file to write.  If not specified,
+         the current redirect will be cleared
 [4mSee Also[0m
   [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, 
@@ -1514,8 +1521,8 @@ For support questions, email:
 
 [4m:[0m[1m[4msummarize[0m[4m [0m[4mcolumn-name[0m
 ══════════════════════════════════════════════════════════════════════
-  Execute a SQL query that computes the characteristics of the values
-  in the given column
+  Execute a SQL query that computes the characteristics of the
+  values in the given column
 [4mParameter[0m
   [4mcolumn-name[0m   The name of the column to analyze.
 
@@ -1688,8 +1695,8 @@ For support questions, email:
   messages to the file.  In the DB view, the contents of the cells are
   written to the output file.
 [4mParameters[0m
-  [4m--view={log,db}[0m   The view to use as the source of
-                    data
+  [4m--view={log,db}[0m   The view to use as the source
+                    of data
   [4m--anonymize[0m       Anonymize the lines
   [4mpath[0m              The path to the file to write
 [4mSee Also[0m
@@ -2069,8 +2076,8 @@ For support questions, email:
 
 [1m[4mchanges[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
-  The number of database rows that were changed, inserted, or deleted
-  by the most recent statement.
+  The number of database rows that were changed, inserted, or
+  deleted by the most recent statement.
 
 
 [1m[4mchar[0m[4m([0m[4mX[0m[4m, ...)[0m
@@ -2191,7 +2198,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Returns the date and time in this format: YYYY-MM-DD HH:MM:SS.
 [4mParameters[0m
-  [4mtimestring[0m   The string to convert to a date with time.
+  [4mtimestring[0m   The string to convert to a date with
+               time.
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
@@ -2779,7 +2787,7 @@ For support questions, email:
 
 [1m[4mjson_concat[0m[4m([0m[4mjson[0m[4m, [0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns an array with the given values concatenated onto the end.
+  Returns an array with the given values concatenated onto the end.   
   If the initial value is null, the result will be an array with the
   given elements.  If the initial value is an array, the result will
   be an array with the given values at the end.  If the initial value
@@ -3098,7 +3106,8 @@ For support questions, email:
   [1myaml_to_json()[0m
 [4mExample[0m
 #1 To iterate over an array:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,[0m[37m[40mvalue[0m[37m[40m,[0m[37m[40mtype[0m[37m[40m,[0m[37m[40matom[0m[37m[40m,[0m[37m[40mfullkey[0m[37m[40m,[0m[37m[40mpath[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_tree[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,[0m[37m[40mvalue[0m[37m[40m,[0m[37m[40mtype[0m[37m[40m,[0m[37m[40matom[0m[37m[40m,[0m[37m[40mfullkey[0m[37m[40m,[0m[37m[40mpath[0m[37m[40m [0m[1m[36m[40mFROM[0m
+   [37m[40m   [0m[1m[37m[40mjson_tree[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
    
 
 
@@ -3154,7 +3163,8 @@ For support questions, email:
   Returns the number of days since noon in Greenwich on November 24,
   4714 B.C.
 [4mParameters[0m
-  [4mtimestring[0m   The string to convert to a date with time.
+  [4mtimestring[0m   The string to convert to a date with
+               time.
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
@@ -3176,11 +3186,13 @@ For support questions, email:
 
 [1m[4mlag[0m[4m([0m[4mexpr[0m[4m, [[0m[4moffset[0m[4m], [[0m[4mdefault[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the result of evaluating the expression against the previous
-  row in the partition.
+  Returns the result of evaluating the expression against the
+  previous row in the partition.
 [4mParameters[0m
-  [4mexpr[0m      The expression to execute over the previous row
-  [4moffset[0m    The offset from the current row in the partition
+  [4mexpr[0m      The expression to execute over the previous
+            row
+  [4moffset[0m    The offset from the current row in the
+            partition
   [4mdefault[0m   The default value if the previous row does not
             exist instead of NULL
 [4mSee Also[0m
@@ -3195,8 +3207,8 @@ For support questions, email:
 
 [1m[4mlast_value[0m[4m([0m[4mexpr[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the result of evaluating the expression against the last row
-  in the window frame.
+  Returns the result of evaluating the expression against the last
+  row in the window frame.
 [4mParameter[0m
   [4mexpr[0m   The expression to execute over the last row
 [4mSee Also[0m
@@ -3205,13 +3217,14 @@ For support questions, email:
 
 [1m[4mlead[0m[4m([0m[4mexpr[0m[4m, [[0m[4moffset[0m[4m], [[0m[4mdefault[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the result of evaluating the expression against the next row
-  in the partition.
+  Returns the result of evaluating the expression against the next
+  row in the partition.
 [4mParameters[0m
   [4mexpr[0m      The expression to execute over the next row
-  [4moffset[0m    The offset from the current row in the partition
-  [4mdefault[0m   The default value if the next row does not exist
-            instead of NULL
+  [4moffset[0m    The offset from the current row in the
+            partition
+  [4mdefault[0m   The default value if the next row does not
+            exist instead of NULL
 [4mSee Also[0m
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, 
   [1mnth_value()[0m, [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m, [1mrow_number()[0m
@@ -3269,12 +3282,12 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Match a string against a pattern
 [4mParameters[0m
-  [4mpattern[0m   The pattern to match.  A percent symbol (%) will
-            match zero or more characters and an underscore (_) will
-            match a single character.
+  [4mpattern[0m   The pattern to match.  A percent symbol (%)
+            will match zero or more characters and an underscore (_)
+            will match a single character.
   [4mstr[0m       The string to match
-  [4mescape[0m    The escape character that can be used to prefix
-            a literal percent or underscore in the pattern.
+  [4mescape[0m    The escape character that can be used to
+            prefix a literal percent or underscore in the pattern.
 
 [4mExamples[0m
 #1 To test if the string 'aabcc' contains the letter 'b':
@@ -3440,8 +3453,8 @@ For support questions, email:
   Returns the argument with the maximum value, or return NULL if any
   argument is NULL.
 [4mParameter[0m
-  [4mX[0m   The numbers to find the maximum of.  If only one argument is
-      given, this function operates as an aggregate.
+  [4mX[0m   The numbers to find the maximum of.  If only one argument
+      is given, this function operates as an aggregate.
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
@@ -3462,8 +3475,8 @@ For support questions, email:
   Returns the argument with the minimum value, or return NULL if any
   argument is NULL.
 [4mParameter[0m
-  [4mX[0m   The numbers to find the minimum of.  If only one argument is
-      given, this function operates as an aggregate.
+  [4mX[0m   The numbers to find the minimum of.  If only one argument
+      is given, this function operates as an aggregate.
 [4mSee Also[0m
   [1mabs()[0m, [1macos()[0m, [1macosh()[0m, [1masin()[0m, [1masinh()[0m, [1matan()[0m, [1matan2()[0m, [1matanh()[0m, 
   [1matn2()[0m, [1mavg()[0m, [1mceil()[0m, [1mdegrees()[0m, [1mexp()[0m, [1mfloor()[0m, [1mlog()[0m, [1mlog10()[0m, 
@@ -3481,8 +3494,8 @@ For support questions, email:
 
 [1m[4mnth_value[0m[4m([0m[4mexpr[0m[4m, [0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the result of evaluating the expression against the nth row
-  in the window frame.
+  Returns the result of evaluating the expression against the nth
+  row in the window frame.
 [4mParameters[0m
   [4mexpr[0m   The expression to execute over the nth row
   [4mN[0m      The row number
@@ -3600,20 +3613,22 @@ For support questions, email:
 
 [1m[4mparse_url[0m[4m([0m[4murl[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Parse a URL and return the components in a JSON object. Limitations:
-  not all URL schemes are supported and repeated query parameters are
-  not captured.
+  Parse a URL and return the components in a JSON object.
+  Limitations: not all URL schemes are supported and repeated query
+  parameters are not captured.
 [4mParameter[0m
   [4murl[0m   The URL to parse
 [4mResults[0m
   [4mscheme[0m       The URL's scheme
-  [4musername[0m     The name of the user specified in the URL
+  [4musername[0m     The name of the user specified in the
+               URL
   [4mpassword[0m     The password specified in the URL
   [4mhost[0m         The host name / IP specified in the URL
   [4mport[0m         The port specified in the URL
   [4mpath[0m         The path specified in the URL
   [4mquery[0m        The query string in the URL
-  [4mparameters[0m   An object containing the query parameters
+  [4mparameters[0m   An object containing the query
+               parameters
   [4mfragment[0m     The fragment specified in the URL
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
@@ -3675,13 +3690,13 @@ For support questions, email:
 
 [1m[4mprintf[0m[4m([0m[4mformat[0m[4m, [0m[4mX[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns a string with this functions arguments substituted into the
-  given format.  Substitution points are specified using percent (%)
-  options, much like the standard C printf() function.
+  Returns a string with this functions arguments substituted into
+  the given format.  Substitution points are specified using percent
+  (%) options, much like the standard C printf() function.
 [4mParameters[0m
   [4mformat[0m   The format of the string to return.
-  [4mX[0m        The argument to substitute at a given position in
-           the format.
+  [4mX[0m        The argument to substitute at a given position
+           in the format.
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
@@ -3829,13 +3844,14 @@ For support questions, email:
                   regex.
   [4mcapture_name[0m    The name of the capture in the
                   regex.
-  [4mcapture_count[0m   The total number of captures in the
-                  regex.
+  [4mcapture_count[0m   The total number of captures in
+                  the regex.
   [4mrange_start[0m     The start of the capture in the
                   input string.
-  [4mrange_stop[0m      The stop of the capture in the input
+  [4mrange_stop[0m      The stop of the capture in the
+                  input string.
+  [4mcontent[0m         The captured value from the
                   string.
-  [4mcontent[0m         The captured value from the string.
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
@@ -3952,10 +3968,11 @@ For support questions, email:
   Returns a string formed by substituting the replacement string for
   every occurrence of the old string in the given string.
 [4mParameters[0m
-  [4mstr[0m           The string to perform substitutions on.
+  [4mstr[0m           The string to perform substitutions
+                on.
   [4mold[0m           The string to be replaced.
-  [4mreplacement[0m   The string to replace any occurrences of
-                the old string with.
+  [4mreplacement[0m   The string to replace any occurrences
+                of the old string with.
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
@@ -4048,8 +4065,8 @@ For support questions, email:
 
 [1m[4mround[0m[4m([0m[4mnum[0m[4m, [[0m[4mdigits[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns a floating-point value rounded to the given number of digits
-  to the right of the decimal point.
+  Returns a floating-point value rounded to the given number of
+  digits to the right of the decimal point.
 [4mParameters[0m
   [4mnum[0m      The value to round.
   [4mdigits[0m   The number of digits to the right of the decimal
@@ -4075,8 +4092,8 @@ For support questions, email:
 
 [1m[4mrow_number[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the number of the row within the current partition, starting
-  from 1.
+  Returns the number of the row within the current partition,
+  starting from 1.
 [4mSee Also[0m
   [1mcume_dist()[0m, [1mdense_rank()[0m, [1mfirst_value()[0m, [1mlag()[0m, [1mlast_value()[0m, [1mlead()[0m, 
   [1mnth_value()[0m, [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m
@@ -4123,8 +4140,8 @@ For support questions, email:
             standard input.
   [4moptions[0m   A JSON object containing options for the
             execution with the following properties:
-            [4menv[0m - An object containing the environment variables to
-              set or, if NULL, to unset.
+            [4menv[0m - An object containing the environment
+              variables to set or, if NULL, to unset.
 [4mSee Also[0m
   
 
@@ -4154,10 +4171,10 @@ For support questions, email:
 
 [1m[4msparkline[0m[4m([0m[4mvalue[0m[4m, [[0m[4mupper[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
-  Function used to generate a sparkline bar chart.  The non-aggregate
-  version converts a single numeric value on a range to a bar chart
-  character.  The aggregate version returns a string with a bar
-  character for every numeric input
+  Function used to generate a sparkline bar chart.  The
+  non-aggregate version converts a single numeric value on a range to
+  a bar chart character.  The aggregate version returns a string with
+  a bar character for every numeric input
 [4mParameters[0m
   [4mvalue[0m   The numeric value to convert
   [4mupper[0m   The upper bound of the numeric range.  The
@@ -4218,8 +4235,8 @@ For support questions, email:
 
 [1m[4msqlite_compileoption_get[0m[4m([0m[4mN[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the N-th compile-time option used to build SQLite or NULL if
-  N is out of range.
+  Returns the N-th compile-time option used to build SQLite or NULL
+  if N is out of range.
 [4mParameter[0m
   [4mN[0m   The option number to get
 
@@ -4239,8 +4256,8 @@ For support questions, email:
 
 [1m[4msqlite_source_id[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns a string that identifies the specific version of the source
-  code that was used to build the SQLite library.
+  Returns a string that identifies the specific version of the
+  source code that was used to build the SQLite library.
 
 
 [1m[4msqlite_version[0m[4m()[0m
@@ -4315,12 +4332,14 @@ For support questions, email:
 
 [1m[4mstrftime[0m[4m([0m[4mformat[0m[4m, [0m[4mtimestring[0m[4m, [0m[4mmodifier[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the date formatted according to the format string specified
-  as the first argument.
+  Returns the date formatted according to the format string
+  specified as the first argument.
 [4mParameters[0m
-  [4mformat[0m       A format string with substitutions similar
-               to those found in the strftime() standard C library.
-  [4mtimestring[0m   The string to convert to a date with time.
+  [4mformat[0m       A format string with substitutions
+               similar to those found in the strftime() standard C
+               library.
+  [4mtimestring[0m   The string to convert to a date with
+               time.
   [4mmodifier[0m     A transformation that is applied to the
                value to the left.
 [4mSee Also[0m
@@ -4449,8 +4468,8 @@ For support questions, email:
 
 [1m[4mtimeslice[0m[4m([0m[4mtime[0m[4m, [0m[4mslice[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Return the start of the slice of time that the given timestamp falls
-  in.  If the time falls outside of the slice, NULL is returned.
+  Return the start of the slice of time that the given timestamp
+  falls in.  If the time falls outside of the slice, NULL is returned.
 [4mParameters[0m
   [4mtime[0m    The timestamp to get the time slice for.
   [4mslice[0m   The size of the time slices
@@ -4492,8 +4511,8 @@ For support questions, email:
 
 [1m[4mtotal_changes[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns the number of row changes caused by INSERT, UPDATE or DELETE
-  statements since the current database connection was opened.
+  Returns the number of row changes caused by INSERT, UPDATE or
+  DELETE statements since the current database connection was opened.
 
 
 [1m[4mtrim[0m[4m([0m[4mstr[0m[4m, [[0m[4mchars[0m[4m])[0m
@@ -4625,9 +4644,10 @@ For support questions, email:
   [4mxmldoc[0m   The XML document as a string.
 [4mResults[0m
   [4mresult[0m      The result of the XPATH expression.
-  [4mnode_path[0m   The absolute path to the node containing the
-              result.
-  [4mnode_attr[0m   The node's attributes stored in JSON object.
+  [4mnode_path[0m   The absolute path to the node containing
+              the result.
+  [4mnode_attr[0m   The node's attributes stored in JSON
+              object.
   [4mnode_text[0m   The node's text value.
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
@@ -4645,11 +4665,13 @@ For support questions, email:
    
 
 #2 To select all 'a' attributes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/@a'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/@a'[0m[37m[40m, [0m[35m[40m'<abc><def[0m
+   [35m[40m   [0m[35m[40ma="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m
    
 
 #3 To select the text nodes on the path '/abc/def':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/text()'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello &#x2605;</def></abc>'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/text()'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello[0m
+   [35m[40m   [0m[35m[40m&#x2605;</def></abc>'[0m[37m[40m)[0m
    
 
 
@@ -4682,7 +4704,8 @@ For support questions, email:
   Attach a database file to the current connection.
 [4mParameters[0m
   [4mfilename[0m      The path to the database file.
-  [4mschema-name[0m   The prefix for tables in this database.
+  [4mschema-name[0m   The prefix for tables in this
+                database.
 
 [4mExample[0m
 #1 To attach the database file '/tmp/customers.db' with the name customers:
@@ -4698,8 +4721,8 @@ For support questions, email:
 [4mParameters[0m
   [4mbase-expr[0m   The base expression that is used for
               comparison in the branches
-  [4mcmp-expr[0m    The expression to test if this branch should
-              be taken
+  [4mcmp-expr[0m    The expression to test if this branch
+              should be taken
               [4mthen-expr[0m - The result for this branch.
   [4melse-expr[0m   The result of this CASE if no branches
               matched.
@@ -4714,8 +4737,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Assign a name to a SELECT statement
 [4mParameters[0m
-  [4mIF NOT EXISTS[0m   Do not create the view if it already
-                  exists
+  [4mIF NOT EXISTS[0m   Do not create the view if it
+                  already exists
   [4mschema-name.[0m    The database to create the view in
   [4mview-name[0m       The name of the view
   [4mselect-stmt[0m     The SELECT statement the view
@@ -4734,7 +4757,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Detach a database from the current connection.
 [4mParameter[0m
-  [4mschema-name[0m   The prefix for tables in this database.
+  [4mschema-name[0m   The prefix for tables in this
+                database.
 
 [4mExample[0m
 #1 To detach the database named 'customers':
@@ -4776,10 +4800,10 @@ For support questions, email:
   [4mtable[0m           The table(s) to query for data
   [4mcond[0m            The conditions used to select the
                   rows to return.
-  [4mgrouping-expr[0m   The expression to use when grouping
-                  rows.
-  [4mordering-term[0m   The values to use when ordering the
-                  result set.
+  [4mgrouping-expr[0m   The expression to use when
+                  grouping rows.
+  [4mordering-term[0m   The values to use when ordering
+                  the result set.
   [4mlimit-expr[0m      The maximum number of rows to
                   return.
 
@@ -4795,9 +4819,10 @@ For support questions, email:
 [4mParameters[0m
   [4mtable[0m         The table to update
   [4mcolumn-name[0m   The columns in the table to update.
-                [4mexpr[0m - The values to place into the column.
-  [4mcond[0m          The condition used to determine whether
-                a row should be updated.
+                [4mexpr[0m - The values to place into the
+                  column.
+  [4mcond[0m          The condition used to determine
+                whether a row should be updated.
 
 [4mExample[0m
 #1 To mark the syslog message at line 40:
@@ -4810,6 +4835,7 @@ For support questions, email:
   Create a temporary view that exists only for the duration of a SQL
   statement.
 [4mParameters[0m
-  [4mcte-table-name[0m   The name for the temporary table.
+  [4mcte-table-name[0m   The name for the temporary
+                   table.
   [4mselect-stmt[0m      The SELECT statement used to
                    populate the temporary table.

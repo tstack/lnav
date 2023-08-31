@@ -200,7 +200,9 @@ attr_line_t::insert(size_t index,
         this->al_string, starting_line_index, this->al_string.length());
     string_fragment last_word;
     ssize_t line_ch_count = 0;
+    ssize_t line_indent_count = 0;
     auto needs_indent = false;
+    auto last_was_pre = false;
 
     while (!text_to_wrap.empty()) {
         if (needs_indent) {
@@ -214,6 +216,7 @@ attr_line_t::insert(size_t index,
             split_attrs(*this, indent_lr);
             indent_lr.lr_end += tws->tws_padding_indent;
             line_ch_count += tws->tws_padding_indent;
+            line_indent_count += tws->tws_padding_indent;
             if (!indent_lr.empty()) {
                 this->al_attrs.emplace_back(indent_lr, SA_PREFORMATTED.value());
             }
@@ -222,18 +225,34 @@ attr_line_t::insert(size_t index,
                 tws->tws_indent + tws->tws_padding_indent);
             needs_indent = false;
         }
-        auto chunk = text_stream::consume(text_to_wrap);
 
-        text_to_wrap = chunk.match(
+        text_stream::chunk next_chunk(mapbox::util::no_init{});
+        auto pre_iter = find_string_attr_containing(
+            this->al_attrs, &SA_PREFORMATTED, text_to_wrap.sf_begin);
+        if (pre_iter != this->al_attrs.end()) {
+            auto pre_len = pre_iter->sa_range.lr_end - text_to_wrap.sf_begin;
+            auto pre_lf = text_to_wrap.find('\n');
+            if (pre_lf && pre_lf.value() < pre_len) {
+                pre_len = pre_lf.value() + 1;
+            }
+
+            auto pre_pair = text_to_wrap.split_n(pre_len);
+            next_chunk = text_stream::word{
+                pre_pair->first,
+                pre_pair->second,
+            };
+        }
+        if (!next_chunk.valid()) {
+            next_chunk = text_stream::consume(text_to_wrap);
+        }
+
+        text_to_wrap = next_chunk.match(
             [&](text_stream::word word) {
                 auto ch_count
                     = word.w_word.utf8_length().unwrapOr(word.w_word.length());
 
-                if ((line_ch_count + ch_count) > usable_width
-                    && find_string_attr_containing(this->al_attrs,
-                                                   &SA_PREFORMATTED,
-                                                   text_to_wrap.sf_begin)
-                        == this->al_attrs.end())
+                if (line_ch_count > line_indent_count && !last_was_pre
+                    && (line_ch_count + ch_count) > usable_width)
                 {
                     this->insert(word.w_word.sf_begin, 1, '\n');
                     this->insert(word.w_word.sf_begin + 1,
@@ -250,6 +269,7 @@ attr_line_t::insert(size_t index,
                                                     SA_PREFORMATTED.value());
                     }
                     line_ch_count = tws->tws_padding_indent + ch_count;
+                    line_indent_count = tws->tws_padding_indent;
                     auto trailing_space_count = 0;
                     if (!last_word.empty()) {
                         trailing_space_count
@@ -263,12 +283,18 @@ attr_line_t::insert(size_t index,
                                  1 + tws->tws_indent + tws->tws_padding_indent);
                 }
                 line_ch_count += ch_count;
+                if (word.w_word.endswith("\n")) {
+                    line_ch_count = 0;
+                    line_indent_count = 0;
+                    needs_indent = true;
+                }
 
                 return word.w_remaining;
             },
             [&](text_stream::space space) {
                 if (space.s_value == "\n") {
                     line_ch_count = 0;
+                    line_indent_count = 0;
                     needs_indent = true;
                     return space.s_remaining;
                 }
@@ -287,6 +313,7 @@ attr_line_t::insert(size_t index,
                                     space.s_value.length());
                         this->insert(space.s_value.sf_begin, "\n");
                         line_ch_count = 0;
+                        line_indent_count = 0;
                         needs_indent = true;
 
                         auto trailing_space_count = 0;
@@ -318,9 +345,10 @@ attr_line_t::insert(size_t index,
             [](text_stream::corrupt corrupt) { return corrupt.c_remaining; },
             [](text_stream::eof eof) { return eof.e_remaining; });
 
-        if (chunk.is<text_stream::word>()) {
+        if (next_chunk.is<text_stream::word>()) {
             last_word = text_to_wrap;
         }
+        last_was_pre = (pre_iter != this->al_attrs.end());
 
         ensure(this->al_string.data() == text_to_wrap.sf_string);
         ensure(text_to_wrap.sf_begin <= text_to_wrap.sf_end);

@@ -80,14 +80,17 @@ md2attr_line::flush_footnotes()
 
     block_text.append("\n");
     for (auto& foot : this->ml_footnotes) {
-        block_text.append(lnav::string::attrs::preformatted(" "))
-            .append("\u258c"_footnote_border)
-            .append(lnav::roles::footnote_text(
-                index < 10 && this->ml_footnotes.size() >= 10 ? " " : ""))
-            .append(lnav::roles::footnote_text(
-                fmt::format(FMT_STRING("[{}] - "), index)))
-            .append(foot.pad_to(longest_foot))
-            .append("\n");
+        auto footline
+            = attr_line_t(" ")
+                  .append("\u258c"_footnote_border)
+                  .append(lnav::roles::footnote_text(
+                      index < 10 && this->ml_footnotes.size() >= 10 ? " " : ""))
+                  .append(lnav::roles::footnote_text(
+                      fmt::format(FMT_STRING("[{}] - "), index)))
+                  .append(foot.pad_to(longest_foot))
+                  .with_attr_for_all(SA_PREFORMATTED.value());
+
+        block_text.append(footline).append("\n");
         index += 1;
     }
     this->ml_footnotes.clear();
