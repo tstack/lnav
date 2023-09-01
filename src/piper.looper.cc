@@ -54,7 +54,7 @@ write_timestamp(int fd, log_level_t level, off_t woff)
     gettimeofday(&tv, nullptr);
     auto fmt_res = fmt::format_to_n(time_str,
                                     sizeof(time_str),
-                                    FMT_STRING("{}.{}:{};"),
+                                    FMT_STRING("{: 12}.{:06}:{};"),
                                     tv.tv_sec,
                                     tv.tv_usec,
                                     level_names[level][0]);

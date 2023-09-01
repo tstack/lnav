@@ -203,6 +203,9 @@ static struct {
     {
         "gbg",
     },
+    {
+        "zwsp",
+    },
 };
 
 const char* DNT_NAMES[DNT_MAX - DNT_KEY] = {

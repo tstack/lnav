@@ -120,6 +120,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
        NUM = [0-9];
        ALPHANUM = [a-zA-Z0-9_];
        EOF = "\x00";
+       SYN = "\x16";
        IPV4SEG  = ("25"[0-5]|("2"[0-4]|"1"{0,1}[0-9]){0,1}[0-9]);
        IPV4ADDR = (IPV4SEG"."){3,3}IPV4SEG;
        IPV6SEG  = [0-9a-fA-F]{1,4};
@@ -140,7 +141,11 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
 
        EOF { return nonstd::nullopt; }
 
-       ("f"|"u"|"r")?'"'('\\'.|[^\x00\x1b"\\]|'""')*'"' {
+       SYN+ {
+           RET(DT_ZERO_WIDTH_SPACE);
+       }
+
+       ("f"|"u"|"r")?'"'('\\'.|[^\x00\x16\x1b"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'f':
@@ -153,7 +158,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       ("f"|"u"|"r")?'"""'[^\x00\x1b]*'"""' {
+       ("f"|"u"|"r")?'"""'[^\x00\x16\x1b]*'"""' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'f':
@@ -175,7 +180,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("f"|"u"|"r")?"'"('\\'.|"''"|[^\x00\x1b'\\])*"'"/[^sS] {
+       ("f"|"u"|"r")?"'"('\\'.|"''"|[^\x00\x16\x1b'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            if (tf == text_format_t::TF_RUST) {
                auto sf = this->to_string_fragment(cap_all);
@@ -196,7 +201,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       [a-zA-Z0-9]+":/""/"?[^\x00\x1b\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
+       [a-zA-Z0-9]+":/""/"?[^\x00\x16\x1b\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
        ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
        (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
@@ -292,7 +297,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
 
        ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
-       [^\x00\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00\x1b"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
+       [^\x00\x16\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x16\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00\x16\x1b"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
            RET(DT_SYMBOL);
        }
 

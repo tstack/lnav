@@ -40,3 +40,17 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/pyfile_0.py
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/man_echo.txt
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT top_meta FROM lnav_views WHERE name = 'text'" \
+    -c ':write-json-to -' \
+    ${test_dir}/man_echo.txt
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 8' \
+    -c ";SELECT top_meta FROM lnav_views WHERE name = 'text'" \
+    -c ':write-json-to -' \
+    < ${test_dir}/man_echo.txt

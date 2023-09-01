@@ -1,0 +1,42 @@
+[
+    {
+        "top_meta": {
+            "file": "{test_dir}/man_echo.txt",
+            "breadcrumbs": [
+                {
+                    "display_value": "man_echo.txt",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "man_echo.txt"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "⋯",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "DESCRIPTION"
+                        },
+                        {
+                            "display_value": "EXIT STATUS"
+                        },
+                        {
+                            "display_value": "NAME"
+                        },
+                        {
+                            "display_value": "SEE ALSO"
+                        },
+                        {
+                            "display_value": "STANDARDS"
+                        },
+                        {
+                            "display_value": "SYNOPSIS"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

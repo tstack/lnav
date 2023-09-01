@@ -1,0 +1,38 @@
+ECHO(1)                     General Commands Manual                    ECHO(1)
+
+NNAAMMEE
+     eecchhoo – write arguments to the standard output
+
+SSYYNNOOPPSSIISS
+     eecchhoo [--nn] [_s_t_r_i_n_g _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The eecchhoo utility writes any specified operands, separated by single blank
+     (‘ ’) characters and followed by a newline (‘\n’) character, to the
+     standard output.
+
+     The following option is available:
+
+     --nn    Do not print the trailing newline character.  This may also be
+           achieved by appending ‘\c’ to the end of the string, as is done by
+           iBCS2 compatible systems.  Note that this option as well as the
+           effect of ‘\c’ are implementation-defined in IEEE Std 1003.1-2001
+           (“POSIX.1”) as amended by Cor. 1-2002.  Applications aiming for
+           maximum portability are strongly encouraged to use printf(1) to
+           suppress the newline character.
+
+     Some shells may provide a builtin eecchhoo command which is similar or
+     identical to this utility.  Most notably, the builtin eecchhoo in sh(1) does
+     not accept the --nn option.  Consult the builtin(1) manual page.
+
+EEXXIITT SSTTAATTUUSS
+     The eecchhoo utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     builtin(1), csh(1), printf(1), sh(1)
+
+SSTTAANNDDAARRDDSS
+     The eecchhoo utility conforms to IEEE Std 1003.1-2001 (“POSIX.1”) as amended
+     by Cor. 1-2002.
+
+macOS 13.5                      April 12, 2003                      macOS 13.5

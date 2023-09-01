@@ -45,7 +45,7 @@ static const lnav::pcre2pp::code&
 ansi_regex()
 {
     static const auto retval = lnav::pcre2pp::code::from_const(
-        R"(\x1b\[([\d=;\?]*)([a-zA-Z])|\x1b\](\d+);(.*?)(?:\x07|\x1b\\)|(?:\X\x08\X)+)");
+        R"(\x1b\[([\d=;\?]*)([a-zA-Z])|\x1b\](\d+);(.*?)(?:\x07|\x1b\\)|(?:\X\x08\X)+|(\x16+))");
 
     return retval;
 }
@@ -370,7 +370,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 }
             }
         }
-        if (md[1] || md[3]) {
+        if (md[1] || md[3] || md[5]) {
             str.erase(str.begin() + sf.sf_begin, str.begin() + sf.sf_end);
             if (sa != nullptr) {
                 shift_string_attrs(*sa, sf.sf_begin, -sf.length());

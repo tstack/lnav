@@ -1,0 +1,43 @@
+[
+    {
+        "top_meta": {
+            "file": "stdin",
+            "anchor": "#description",
+            "breadcrumbs": [
+                {
+                    "display_value": "stdin",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "stdin"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "DESCRIPTION",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "DESCRIPTION"
+                        },
+                        {
+                            "display_value": "EXIT STATUS"
+                        },
+                        {
+                            "display_value": "NAME"
+                        },
+                        {
+                            "display_value": "SEE ALSO"
+                        },
+                        {
+                            "display_value": "STANDARDS"
+                        },
+                        {
+                            "display_value": "SYNOPSIS"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]
