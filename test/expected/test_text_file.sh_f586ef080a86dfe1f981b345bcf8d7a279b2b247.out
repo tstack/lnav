@@ -1,0 +1,38 @@
+ECHO(1)                     General Commands Manual                    ECHO(1)
+
+[1mNAME[0m
+     [1mecho[0m – write arguments to the standard output
+
+[1mSYNOPSIS[0m
+     [1mecho[0m [[1m-n[0m] [[4mstring[0m [4m...[0m]
+
+[1mDESCRIPTION[0m
+     The [1mecho[0m utility writes any specified operands, separated by single blank
+     (‘ ’) characters and followed by a newline (‘\n’) character, to the
+     standard output.
+
+     The following option is available:
+
+     [1m-n[0m    Do not print the trailing newline character.  This may also be
+           achieved by appending ‘\c’ to the end of the string, as is done by
+           iBCS2 compatible systems.  Note that this option as well as the
+           effect of ‘\c’ are implementation-defined in IEEE Std 1003.1-2001
+           (“POSIX.1”) as amended by Cor. 1-2002.  Applications aiming for
+           maximum portability are strongly encouraged to use printf(1) to
+           suppress the newline character.
+
+     Some shells may provide a builtin [1mecho[0m command which is similar or
+     identical to this utility.  Most notably, the builtin [1mecho[0m in sh(1) does
+     not accept the [1m-n[0m option.  Consult the builtin(1) manual page.
+
+[1mEXIT[0m [1mSTATUS[0m
+     The [1mecho[0m utility exits 0 on success, and >0 if an error occurs.
+
+[1mSEE[0m [1mALSO[0m
+     builtin(1), csh(1), printf(1), sh(1)
+
+[1mSTANDARDS[0m
+     The [1mecho[0m utility conforms to IEEE Std 1003.1-2001 (“POSIX.1”) as amended
+     by Cor. 1-2002.
+
+macOS 13.5                      April 12, 2003                      macOS 13.5

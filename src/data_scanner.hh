@@ -100,8 +100,9 @@ enum data_token_t {
     DT_CSI,
 
     DT_GARBAGE,
+    DT_ZERO_WIDTH_SPACE,
 
-    DT_TERMINAL_MAX = DT_GARBAGE + 1,
+    DT_TERMINAL_MAX = DT_ZERO_WIDTH_SPACE + 1,
 
     DNT_KEY = 50,
     DNT_PAIR,

@@ -954,10 +954,22 @@ logfile::read_file()
         return Err(std::string("file is too large to read"));
     }
 
-    auto retval
-        = TRY(this->lf_line_buffer.read_range({0, this->lf_stat.st_size}));
+    auto retval = std::string();
+    retval.reserve(this->lf_stat.st_size);
 
-    return Ok(to_string(retval));
+    retval.append(this->lf_line_buffer.get_piper_header_size(), '\x16');
+    for (auto iter = this->begin(); iter != this->end(); ++iter) {
+        auto fr = this->get_file_range(iter);
+        auto sbr = TRY(this->lf_line_buffer.read_range(fr));
+
+        if (this->lf_line_buffer.is_piper()) {
+            retval.append(22, '\x16');
+        }
+        retval.append(sbr.get_data(), sbr.length());
+        retval.push_back('\n');
+    }
+
+    return Ok(std::move(retval));
 }
 
 void

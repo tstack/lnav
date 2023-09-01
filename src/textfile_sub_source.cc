@@ -213,6 +213,9 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
                             (int) (indent + 1),
                             line_range::unit::codepoint,
                         };
+                        if (this->tas_display_time_offset) {
+                            guide_lr.shift(0, 13);
+                        }
                         value_out.emplace_back(
                             guide_lr,
                             VC_BLOCK_ELEM.value(block_elem_t{

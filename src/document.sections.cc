@@ -265,7 +265,8 @@ public:
             }
 
             auto dt = tokenize_res->tr_token;
-            element el(tokenize_res->tr_token, tokenize_res->tr_capture);
+
+            element el(dt, tokenize_res->tr_capture);
 
 #if 0
             log_debug("tok %s %s",
@@ -409,6 +410,8 @@ public:
                         this->sw_indents.insert(indent_size);
                         this->sw_at_start = false;
                     }
+                    break;
+                case DT_ZERO_WIDTH_SPACE:
                     break;
                 default:
                     if (dt == DT_GARBAGE) {
