@@ -114,8 +114,11 @@ listview_curses::reload_data()
             } else if (this->lv_selection >= this->get_inner_height()) {
                 this->set_selection(this->get_inner_height() - 1_vl);
             } else {
-                auto curr_sel = this->lv_selection;
+                auto curr_sel = this->get_selection();
 
+                if (curr_sel == -1_vl) {
+                    curr_sel = 0_vl;
+                }
                 this->lv_selection = -1_vl;
                 this->set_selection(curr_sel);
             }

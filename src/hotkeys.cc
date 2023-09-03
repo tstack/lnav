@@ -380,12 +380,14 @@ handle_paging_key(int ch)
 
         case 'J':
             if (tc->is_selectable()) {
-                tc->toggle_user_mark(&textview_curses::BM_USER,
-                                     tc->get_selection());
-                lnav_data.ld_select_start[tc] = tc->get_selection();
-                lnav_data.ld_last_user_mark[tc] = tc->get_selection();
-                if (tc->get_selection() + 1_vl < tc->get_inner_height()) {
-                    tc->set_selection(tc->get_selection() + 1_vl);
+                if (tc->get_selection() >= 0_vl) {
+                    tc->toggle_user_mark(&textview_curses::BM_USER,
+                                         tc->get_selection());
+                    lnav_data.ld_select_start[tc] = tc->get_selection();
+                    lnav_data.ld_last_user_mark[tc] = tc->get_selection();
+                    if (tc->get_selection() + 1_vl < tc->get_inner_height()) {
+                        tc->set_selection(tc->get_selection() + 1_vl);
+                    }
                 }
             } else {
                 if (lnav_data.ld_last_user_mark.find(tc)

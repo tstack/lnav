@@ -236,7 +236,7 @@ public:
 
     vis_line_t get_selection() const
     {
-        if (this->lv_selectable) {
+        if (this->lv_selectable && this->lv_selection != -1_vl) {
             return this->lv_selection;
         }
         return this->lv_top;

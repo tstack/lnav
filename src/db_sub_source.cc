@@ -52,7 +52,7 @@ db_label_source::text_value_for_line(textview_curses& tc,
      */
 
     label_out.clear();
-    if (row >= (int) this->dls_rows.size()) {
+    if (row < 0_vl || row >= (int) this->dls_rows.size()) {
         return;
     }
     for (int lpc = 0; lpc < (int) this->dls_rows[row].size(); lpc++) {
@@ -85,7 +85,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     struct line_range lr(0, 0);
     const struct line_range lr2(0, -1);
 
-    if (row >= (int) this->dls_rows.size()) {
+    if (row < 0_vl || row >= (int) this->dls_rows.size()) {
         return;
     }
     auto alt_row_index = row % 4;
