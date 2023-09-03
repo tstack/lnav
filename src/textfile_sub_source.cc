@@ -182,17 +182,18 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
                     : ll_next_iter->get_offset() - 1;
                 const auto& meta = meta_opt.value().get();
                 meta.ms_metadata.m_section_types_tree.visit_overlapping(
-                    ll->get_offset(),
+                    lf->get_line_content_offset(ll),
                     end_offset,
-                    [&value_out, &ll, end_offset](const auto& iv) {
+                    [&value_out, &ll, &lf, end_offset](const auto& iv) {
+                        auto ll_offset = lf->get_line_content_offset(ll);
                         auto lr = line_range{0, -1};
-                        if (iv.start > ll->get_offset()) {
-                            lr.lr_start = iv.start - ll->get_offset();
+                        if (iv.start > ll_offset) {
+                            lr.lr_start = iv.start - ll_offset;
                         }
                         if (iv.stop < end_offset) {
-                            lr.lr_end = iv.stop - ll->get_offset();
+                            lr.lr_end = iv.stop - ll_offset;
                         } else {
-                            lr.lr_end = end_offset - ll->get_offset();
+                            lr.lr_end = end_offset - ll_offset;
                         }
                         auto role = role_t::VCR_NONE;
                         switch (iv.value) {
@@ -501,7 +502,7 @@ textfile_sub_source::text_crumbs_for_line(
         const auto initial_size = crumbs.size();
 
         meta_iter->second.ms_metadata.m_sections_tree.visit_overlapping(
-            ll_iter->get_offset(),
+            lf->get_line_content_offset(ll_iter),
             end_offset,
             [&crumbs,
              initial_size,
@@ -814,6 +815,14 @@ textfile_sub_source::rescan_files(
                                  lf->get_filename().c_str());
                         scrub_ansi_string(content.get_string(),
                                           &content.get_attrs());
+
+                        auto text_meta = extract_text_meta(
+                            content.get_string(), lf->get_text_format());
+                        if (text_meta) {
+                            lf->set_filename(text_meta->tfm_filename);
+                            callback.renamed_file(lf);
+                        }
+
                         this->tss_doc_metadata[lf->get_filename()]
                             = metadata_state{
                                 st.st_mtime,

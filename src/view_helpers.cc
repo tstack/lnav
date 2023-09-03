@@ -880,6 +880,10 @@ execute_examples()
                 continue;
             }
 
+            if (EXAMPLE_RESULTS.count(ex.he_cmd)) {
+                continue;
+            }
+
             switch (ht.ht_context) {
                 case help_context_t::HC_SQL_KEYWORD:
                 case help_context_t::HC_SQL_INFIX:
@@ -887,9 +891,13 @@ execute_examples()
                 case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
                     exec_context ec;
 
-                    execute_sql(ec, ex.he_cmd, alt_msg);
+                    auto exec_res = execute_sql(ec, ex.he_cmd, alt_msg);
 
-                    if (dls.dls_rows.size() == 1 && dls.dls_rows[0].size() == 1)
+                    if (exec_res.isErr()) {
+                        auto um = exec_res.unwrapErr();
+                        result.append(um.to_attr_line());
+                    } else if (dls.dls_rows.size() == 1
+                               && dls.dls_rows[0].size() == 1)
                     {
                         result.append(dls.dls_rows[0][0]);
                     } else {

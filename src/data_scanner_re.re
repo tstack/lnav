@@ -145,7 +145,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            RET(DT_ZERO_WIDTH_SPACE);
        }
 
-       ("f"|"u"|"r")?'"'('\\'.|[^\x00\x16\x1b"\\]|'""')*'"' {
+       ("f"|"u"|"r")?'"'('\\'.|[^\x00\x16\x1b\n"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'f':
@@ -180,7 +180,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("f"|"u"|"r")?"'"('\\'.|"''"|[^\x00\x16\x1b'\\])*"'"/[^sS] {
+       ("f"|"u"|"r")?"'"('\\'.|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            if (tf == text_format_t::TF_RUST) {
                auto sf = this->to_string_fragment(cap_all);

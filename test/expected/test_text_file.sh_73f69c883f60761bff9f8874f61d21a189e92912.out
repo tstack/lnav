@@ -1,15 +1,15 @@
 [
     {
         "top_meta": {
-            "file": "stdin",
+            "file": "ECHO(1)",
             "anchor": "#description",
             "breadcrumbs": [
                 {
-                    "display_value": "stdin",
+                    "display_value": "ECHO(1)",
                     "search_placeholder": "",
                     "possibilities": [
                         {
-                            "display_value": "stdin"
+                            "display_value": "ECHO(1)"
                         }
                     ]
                 },

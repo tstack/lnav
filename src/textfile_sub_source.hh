@@ -115,6 +115,7 @@ public:
             = 0;
         virtual void promote_file(const std::shared_ptr<logfile>& lf) = 0;
         virtual void scanned_file(const std::shared_ptr<logfile>& lf) = 0;
+        virtual void renamed_file(const std::shared_ptr<logfile>& lf) = 0;
     };
 
     struct rescan_result_t {

@@ -294,6 +294,11 @@ public:
         };
     }
 
+    file_off_t get_line_content_offset(const_iterator ll)
+    {
+        return ll->get_offset() + (this->lf_line_buffer.is_piper() ? 22 : 0);
+    }
+
     void read_full_message(const_iterator ll,
                            shared_buffer_ref& msg_out,
                            int max_lines = 50);

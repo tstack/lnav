@@ -214,6 +214,18 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
             interval.stop += stop_off_iter->sa_value.get<int64_t>();
         }
     }
+    for (auto& interval : mb.mb_type_intervals) {
+        auto start_off_iter = find_string_attr_containing(
+            orig_attrs, &SA_ORIGIN_OFFSET, interval.start);
+        if (start_off_iter != orig_attrs.end()) {
+            interval.start += start_off_iter->sa_value.get<int64_t>();
+        }
+        auto stop_off_iter = find_string_attr_containing(
+            orig_attrs, &SA_ORIGIN_OFFSET, interval.stop - 1);
+        if (stop_off_iter != orig_attrs.end()) {
+            interval.stop += stop_off_iter->sa_value.get<int64_t>();
+        }
+    }
 
     hier_node::depth_first(root_node.get(), [&orig_attrs](hier_node* node) {
         auto off_opt
