@@ -5,6 +5,10 @@ export YES_COLOR=1
 export DUMP_CRASH=1
 
 run_cap_test ${lnav_test} -nN \
+    -c ";SELECT ':echo Hello' || char(10) || ':echo World' AS cmds" \
+    -c ':eval ${cmds}'
+
+run_cap_test ${lnav_test} -nN \
     -c ":cd /bad-dir"
 
 run_cap_test ${lnav_test} -nN \

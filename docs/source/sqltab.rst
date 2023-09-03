@@ -7,6 +7,7 @@ In addition to the tables generated for each log format, **lnav** includes
 the following tables/views:
 
 * `environ`_
+* `fstat(<path|pattern>)`_
 * `lnav_events`_
 * `lnav_file`_
 * `lnav_file_metadata`_
@@ -31,7 +32,7 @@ by executing the '.schema' SQL command, like so::
 environ
 -------
 
-The **environ** table gives you access to the **lnav** process' environment
+The :code:`environ` table gives you access to the **lnav** process' environment
 variables.  You can :code:`SELECT`, :code:`INSERT`, and :code:`UPDATE`
 environment variables, like so:
 
@@ -53,6 +54,19 @@ named "FILENAME" and then open it in **lnav** by referencing it with
 
     ;INSERT INTO environ VALUES ('FILENAME', '/path/to/file')
     :open $FILENAME
+
+
+fstat(<path|pattern>)
+---------------------
+
+The :code:`fstat` table-valued function provides access to the local
+file system.  The function takes a file path or a glob pattern and
+returns the results of :code:`lstat(2)` for the matching files.  If
+the parameter is a pattern that matches nothing, no rows will be
+returned.  If the parameter is a path for a non-existent file, a
+row will be returned with the :code:`error` column set and the
+stat columns as :code:`NULL`.  To read the contents of a file, you
+can :code:`SELECT` the hidden :code:`data` column.
 
 
 .. _table_lnav_events:

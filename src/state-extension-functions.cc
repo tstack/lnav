@@ -163,7 +163,12 @@ state_extension_functions(struct FuncDef** basic_funcs,
                 .with_parameter({"msg", "The error message"})
                 .with_parameter(
                     help_text("reason", "The reason the error occurred")
-                        .optional()))
+                        .optional())
+                .with_example({
+                    "To raise an error if a variable is not set",
+                    "SELECT ifnull($val, raise_error('please set $val', "
+                    "'because'))",
+                }))
             .with_flags(SQLITE_UTF8),
 
         sqlite_func_adapter<decltype(&sql_echoln), sql_echoln>::builder(

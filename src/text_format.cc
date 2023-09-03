@@ -203,3 +203,31 @@ detect_text_format(string_fragment sf,
 
     return text_format_t::TF_UNKNOWN;
 }
+
+nonstd::optional<text_format_meta_t>
+extract_text_meta(string_fragment sf, text_format_t tf)
+{
+    static const auto MAN_NAME = lnav::pcre2pp::code::from_const(
+        R"(^([A-Za-z][A-Za-z\-_\+0-9]+\(\d\))\s+)", PCRE2_MULTILINE);
+
+    switch (tf) {
+        case text_format_t::TF_MAN: {
+            static thread_local auto md
+                = lnav::pcre2pp::match_data::unitialized();
+
+            auto find_res
+                = MAN_NAME.capture_from(sf).into(md).matches().ignore_error();
+
+            if (find_res) {
+                return text_format_meta_t{
+                    md.to_string(),
+                };
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    return nonstd::nullopt;
+}

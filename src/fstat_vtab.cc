@@ -42,6 +42,7 @@
 #include "bound_tags.hh"
 #include "config.h"
 #include "ghc/filesystem.hpp"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
@@ -75,6 +76,7 @@ enum {
 struct fstat_table {
     static constexpr const char* NAME = "fstat";
     static constexpr const char* CREATE_STMT = R"(
+-- The fstat() table-valued function allows you to query the file system.
 CREATE TABLE fstat (
     st_parent TEXT,
     st_name TEXT,
@@ -472,6 +474,51 @@ int
 register_fstat_vtab(sqlite3* db)
 {
     static vtab_module<tvt_no_update<fstat_table>> FSTAT_MODULE;
+    static auto fstat_help
+        = help_text("fstat",
+                    "A table-valued function for getting information about "
+                    "file paths/globs")
+              .sql_table_valued_function()
+              .with_parameter(
+                  {"pattern", "The file path or glob pattern to query."})
+              .with_result(
+                  {"st_parent", "The parent path of the directory entry"})
+              .with_result({"st_name", "The name of the directory entry"})
+              .with_result({"st_dev", "The device number"})
+              .with_result({"st_ino", "The inode number"})
+              .with_result(help_text{"st_type", "The type of the entry"}
+                               .with_enum_values({
+                                   "reg",
+                                   "blk",
+                                   "chr",
+                                   "dir",
+                                   "fifo",
+                                   "lnk",
+                                   "sock",
+                               }))
+              .with_result({"st_mode", "The protection mode"})
+              .with_result(
+                  {"st_nlink", "The number of hard links to the entry"})
+              .with_result({"st_uid", "The ID of the owning user"})
+              .with_result({"st_user", "The user name"})
+              .with_result({"st_gid", "The ID of the owning group"})
+              .with_result({"st_group", "The group name"})
+              .with_result({"st_rdev", "The device type"})
+              .with_result({"st_size", "The size of the entry in bytes"})
+              .with_result({"st_blksize", "The optimal size for I/O"})
+              .with_result({"st_blocks", "Blocks allocated for the file"})
+              .with_result({"st_atime", "The last access time"})
+              .with_result({"st_mtime", "The last modified time"})
+              .with_result({"st_ctime", "The creation time"})
+              .with_result({"error",
+                            "Error message if there was a problem looking up "
+                            "the entry"})
+              .with_result({"data", "The contents of the file"})
+              .with_example(help_example{
+                  "To read a file and raise an error if there is a problem",
+                  "SELECT ifnull(data, raise_error('cannot read: ' || st_name, "
+                  "error)) FROM fstat('/non-existent')",
+              });
 
     int rc;
 
@@ -485,6 +532,8 @@ register_fstat_vtab(sqlite3* db)
     }
 
     rc = FSTAT_MODULE.create(db, "fstat");
+    sqlite_function_help.emplace("fstat", &fstat_help);
+    fstat_help.index_tags();
 
     ensure(rc == SQLITE_OK);
 

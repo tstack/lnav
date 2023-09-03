@@ -183,6 +183,11 @@ public:
         }
     }
 
+    void renamed_file(const std::shared_ptr<logfile>& lf) override
+    {
+        lnav_data.ld_active_files.regenerate_unique_file_names();
+    }
+
     std::shared_ptr<logfile> front_file;
     file_location_t front_top;
     bool did_promotion{false};

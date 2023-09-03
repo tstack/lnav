@@ -92,7 +92,7 @@ Options
 
 .. option:: -q
 
-   Do not print the log messages after executing all of the commands.
+   Do not print informational messages.
 
 
 .. _management_cli:

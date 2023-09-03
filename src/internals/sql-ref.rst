@@ -1277,6 +1277,31 @@ floor(*num*)
 ----
 
 
+.. _fstat:
+
+fstat(*pattern*)
+^^^^^^^^^^^^^^^^
+
+  A table-valued function for getting information about file paths/globs
+
+  **Parameters**
+    * **pattern\*** --- The file path or glob pattern to query.
+
+  **Examples**
+    To read a file and raise an error if there is a problem:
+
+    .. code-block::  custsqlite
+
+      ;SELECT ifnull(data, raise_error('cannot read: ' || st_name, error)) FROM fstat('/non-existent')
+      ✘ error: cannot read: non-existent
+       reason: No such file or directory
+       --> command:1
+      
+
+
+----
+
+
 .. _generate_series:
 
 generate_series(*start*, *stop*, *\[step\]*)
@@ -3135,6 +3160,17 @@ raise_error(*msg*, *\[reason\]*)
   **Parameters**
     * **msg\*** --- The error message
     * **reason** --- The reason the error occurred
+
+  **Examples**
+    To raise an error if a variable is not set:
+
+    .. code-block::  custsqlite
+
+      ;SELECT ifnull($val, raise_error('please set $val', 'because'))
+      ✘ error: please set $val
+       reason: because
+       --> command:1
+      
 
 
 ----

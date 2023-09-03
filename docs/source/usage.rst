@@ -162,6 +162,22 @@ it needs to open the destination for viewing in **lnav**.  For example,
 the docker URL handler uses the :ref:`:sh<sh>` command to run
 :code:`docker logs` with the container.
 
+Using as a PAGER
+^^^^^^^^^^^^^^^^
+
+Setting **lnav** as your :envvar:`PAGER` can have some advantages, like
+basic syntax highlighting and discovering sections in a document.  For
+example, when viewing a man page, the current section is displayed in
+the breadcrumb bar and you can jump to a section with the
+:ref:`:goto<goto>` command.
+
+You will probably want to pass the :option:`-q` option to suppress the
+message showing the path to the captured input.
+
+.. prompt:: bash
+
+   export PAGER="man -q"
+
 Searching
 ---------
 

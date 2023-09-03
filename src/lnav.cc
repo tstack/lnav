@@ -652,10 +652,7 @@ make it easier to navigate through files quickly.
         .append("  ")
         .append("-q"_symbol)
         .append("         ")
-        .append(
-            R"(Do not print the log messages after executing all
-             of the commands.
-)")
+        .append("Do not print informational messages.\n")
         .append("\n")
         .append("Optional arguments"_h2)
         .append("\n")
@@ -2186,6 +2183,10 @@ main(int argc, char* argv[])
         lnav_data.ld_flags |= LNF_SECURE_MODE;
     }
 
+    // Set PAGER so that stuff run from `:sh` will just dump their
+    // output for lnav to display.  One example would be `man`, as
+    // in `:sh man ls`.
+    setenv("PAGER", "cat", 1);
     setenv("LNAV_HOME_DIR", lnav::paths::dotlnav().c_str(), 1);
     setenv("LNAV_WORK_DIR", lnav::paths::workdir().c_str(), 1);
 
@@ -3427,7 +3428,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         // When reading from stdin, tell the user where the capture file is
         // stored so they can look at it later.
-        if (stdin_url && !(lnav_data.ld_flags & LNF_HEADLESS)) {
+        if (stdin_url && !(lnav_data.ld_flags & LNF_HEADLESS)
+            && verbosity != verbosity_t::quiet)
+        {
             file_size_t stdin_size = 0;
             for (const auto& ent :
                  ghc::filesystem::directory_iterator(stdin_dir))

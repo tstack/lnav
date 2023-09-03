@@ -1,6 +1,7 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "redis_log": {
+        "title": "Redis",
         "url": [
             "https://redis.com",
             "https://build47.com/redis-log-format-levels/"

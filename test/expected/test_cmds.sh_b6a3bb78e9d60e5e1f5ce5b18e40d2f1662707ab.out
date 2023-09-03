@@ -2429,6 +2429,42 @@ For support questions, email:
    
 
 
+[1m[4mfstat[0m[4m([0m[4mpattern[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  A table-valued function for getting information about file
+  paths/globs
+[4mParameter[0m
+  [4mpattern[0m   The file path or glob pattern to query.
+[4mResults[0m
+  [4mst_parent[0m    The parent path of the directory entry
+  [4mst_name[0m      The name of the directory entry
+  [4mst_dev[0m       The device number
+  [4mst_ino[0m       The inode number
+  [4mst_type[0m      The type of the entry
+  [4mst_mode[0m      The protection mode
+  [4mst_nlink[0m     The number of hard links to the entry
+  [4mst_uid[0m       The ID of the owning user
+  [4mst_user[0m      The user name
+  [4mst_gid[0m       The ID of the owning group
+  [4mst_group[0m     The group name
+  [4mst_rdev[0m      The device type
+  [4mst_size[0m      The size of the entry in bytes
+  [4mst_blksize[0m   The optimal size for I/O
+  [4mst_blocks[0m    Blocks allocated for the file
+  [4mst_atime[0m     The last access time
+  [4mst_mtime[0m     The last modified time
+  [4mst_ctime[0m     The creation time
+  [4merror[0m        Error message if there was a problem
+               looking up the entry
+  [4mdata[0m         The contents of the file
+
+[4mExample[0m
+#1 To read a file and raise an error if there is a problem:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[37m[40mdata[0m[37m[40m, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'cannot read: '[0m[37m[40m [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40mst_name[0m[37m[40m, [0m[37m[40merror[0m[37m[40m)) [0m[1m[36m[40mFROM[0m
+   [37m[40m   [0m[1m[37m[40mfstat[0m[37m[40m([0m[35m[40m'/non-existent'[0m[37m[40m)[0m
+   
+
+
 [1m[4mgenerate_series[0m[4m([0m[4mstart[0m[4m, [0m[4mstop[0m[4m, [[0m[4mstep[0m[4m])[0m
 ══════════════════════════════════════════════════════════════════════
   A table-valued-function that returns the whole numbers between a
@@ -3780,6 +3816,11 @@ For support questions, email:
 [4mParameters[0m
   [4mmsg[0m      The error message
   [4mreason[0m   The reason the error occurred
+
+[4mExample[0m
+#1 To raise an error if a variable is not set:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[37m[40m$val[0m[37m[40m, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'please set $val'[0m[37m[40m, [0m[35m[40m'because'[0m[37m[40m))[0m
+   
 
 
 [1m[4mrandom[0m[4m()[0m
