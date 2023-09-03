@@ -15,7 +15,7 @@
         WHEN 'compose' THEN (
             SELECT group_concat(
                     printf(
-                        ':sh --name=%s %s compose -f %s logs --no-log-prefix -f %s',
+                        ':sh --name=%s %s-compose -f %s logs --no-log-prefix -f %s',
                         compose_services.key,
                         $docker_scheme,
                         $docker_relpath,
@@ -24,23 +24,38 @@
                     char(10)
                 ) AS cmds
             FROM fstat($docker_relpath) AS st,
+                regexp_capture(
+                    ifnull(
+                        st.data,
+                        raise_error(
+                            'Cannot read compose configuration: ' || $docker_relpath,
+                            st.error
+                        )
+                    ),
+                    '(?m)(?:^---$)?((?:(?:.|\n)(?!^(?:---|\.\.\.)$))+)'
+                ) AS ydoc,
                 json_each(
                     yaml_to_json(
-                        ifnull(
-                            st.data,
-                            raise_error(
-                                'Cannot read compose configuration: ' || $docker_relpath,
-                                st.error
-                            )
-                        )
+                        ydoc.content
                     ),
                     '$.services'
                 ) as compose_services
+            WHERE ydoc.match_index = 0
+                AND ydoc.capture_index = 1
         )
         ELSE CASE
             $docker_path
-            WHEN '/' THEN printf(':sh %s logs -f %s', $docker_scheme, $docker_hostname)
-            ELSE printf(':sh %s exec %s tail -n +0 -F "%s"', $docker_scheme, $docker_hostname, $docker_path)
+            WHEN '/' THEN printf(
+                ':sh %s logs -f %s',
+                $docker_scheme,
+                $docker_hostname
+            )
+            ELSE printf(
+                ':sh %s exec %s tail -n +0 -F "%s"',
+                $docker_scheme,
+                $docker_hostname,
+                $docker_path
+            )
         END
     END AS cmds
 
