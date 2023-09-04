@@ -1,3 +1,4 @@
+furo
 sphinx>=4.3.0
 sphinx-copybutton
 sphinx-jsonschema
