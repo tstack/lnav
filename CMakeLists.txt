@@ -5,7 +5,7 @@ include(cmake/prelude.cmake)
 set(CMAKE_CXX_STANDARD 14)
 project(
         lnav
-        VERSION 0.11.2
+        VERSION 0.12.0
         DESCRIPTION "An advanced log file viewer for the small-scale."
         HOMEPAGE_URL "https://lnav.org/"
         LANGUAGES CXX C
@@ -34,7 +34,7 @@ set(lnav_LIBS
         readline::readline
         LibArchive::LibArchive
         ZLIB::ZLIB
-        )
+)
 
 add_subdirectory(src)
 # add_subdirectory(test)

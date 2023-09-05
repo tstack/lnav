@@ -135,6 +135,7 @@ command can be used to the change the theme:
 
 The builtin themes are:
 `default <https://github.com/tstack/lnav/blob/master/src/themes/default-theme.json>`_,
+`dracula <https://github.com/tstack/lnav/blob/master/src/themes/dracula.json>`_,
 `eldar <https://github.com/tstack/lnav/blob/master/src/themes/eldar.json>`_,
 `grayscale <https://github.com/tstack/lnav/blob/master/src/themes/grayscale.json>`_,
 `monocai <https://github.com/tstack/lnav/blob/master/src/themes/monocai.json>`_,
