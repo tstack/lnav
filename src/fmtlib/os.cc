@@ -18,6 +18,10 @@
 #  include <sys/stat.h>
 #  include <sys/types.h>
 
+#  ifdef _WRS_KERNEL   // VxWorks7 kernel
+#    include <ioLib.h> // getpagesize
+#  endif
+
 #  ifndef _WIN32
 #    include <unistd.h>
 #  else
@@ -110,9 +114,9 @@ class utf8_system_category final : public std::error_category {
  public:
   const char* name() const noexcept override { return "system"; }
   std::string message(int error_code) const override {
-    system_message msg(error_code);
+    auto&& msg = system_message(error_code);
     if (msg) {
-      unicode_to_utf8<wchar_t> utf8_message;
+      auto utf8_message = to_utf8<wchar_t>();
       if (utf8_message.convert(msg)) {
         return utf8_message.str();
       }
@@ -137,12 +141,12 @@ std::system_error vwindows_error(int err_code, string_view format_str,
 void detail::format_windows_error(detail::buffer<char>& out, int error_code,
                                   const char* message) noexcept {
   FMT_TRY {
-    system_message msg(error_code);
+    auto&& msg = system_message(error_code);
     if (msg) {
-      unicode_to_utf8<wchar_t> utf8_message;
+      auto utf8_message = to_utf8<wchar_t>();
       if (utf8_message.convert(msg)) {
-        fmt::format_to(buffer_appender<char>(out), FMT_STRING("{}: {}"),
-                       message, string_view(utf8_message));
+        fmt::format_to(appender(out), FMT_STRING("{}: {}"), message,
+                       string_view(utf8_message));
         return;
       }
     }
@@ -337,9 +341,8 @@ file file::open_windows_file(wcstring_view path, int oflag) {
   int fd = -1;
   auto err = _wsopen_s(&fd, path.c_str(), oflag, _SH_DENYNO, default_open_mode);
   if (fd == -1) {
-    FMT_THROW(
-        system_error(err, FMT_STRING("cannot open file {}"),
-                     detail::unicode_to_utf8<wchar_t>(path.c_str()).c_str()));
+    FMT_THROW(system_error(err, FMT_STRING("cannot open file {}"),
+                           detail::to_utf8<wchar_t>(path.c_str()).c_str()));
   }
   return file(fd);
 }
@@ -352,7 +355,12 @@ long getpagesize() {
   GetSystemInfo(&si);
   return si.dwPageSize;
 #    else
+#      ifdef _WRS_KERNEL
+  long size = FMT_POSIX_CALL(getpagesize());
+#      else
   long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
+#      endif
+
   if (size < 0)
     FMT_THROW(system_error(errno, FMT_STRING("cannot get memory page size")));
   return size;
