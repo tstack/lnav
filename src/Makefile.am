@@ -6,6 +6,7 @@ CXXFLAGS =
 SUBDIRS = \
     fmtlib \
     third-party/base64/lib \
+    third-party/date/src \
     third-party/scnlib/src \
     pcrepp \
     base \
@@ -126,6 +127,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/fmtlib \
 	-I$(srcdir)/third-party \
 	-I$(srcdir)/third-party/base64/include \
+	-I$(srcdir)/third-party/date/include \
 	-I$(srcdir)/third-party/rapidyaml \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	-Wall \
@@ -142,6 +144,7 @@ LDADD = \
 	base/libbase.a \
 	formats/logfmt/liblogfmt.a \
 	fmtlib/libcppfmt.a \
+	third-party/date/src/libdatepp.a \
 	third-party/scnlib/src/libscnlib.a \
 	pcrepp/libpcrepp.a \
 	pugixml/libpugixml.a \

@@ -94,6 +94,8 @@ Features:
 * Added a log format for Redis.
 * The `:eval` command will now treat its argument(s) as a
   script, allowing multiple commands to be executed.
+* Added a `timezone()` SQL function for converting a timestamp
+  to a target timezone.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

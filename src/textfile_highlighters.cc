@@ -423,7 +423,7 @@ setup_highlights(highlight_map_t& hm)
     hm[{highlight_source_t::INTERNAL, "0.comment"}]
         = highlighter(
               xpcre_compile(
-                  R"((?<=[\s;])//.*|/\*.*\*/|\(\*.*\*\)|^#\s*(?!include|if|ifndef|elif|else|endif|error|pragma|define|undef).*|dnl.*)"))
+                  R"((?<=[\s;]|^)//.*|/\*.*\*/|\(\*.*\*\)|^\s*#(?!\s*(?:include|if|ifndef|elif|else|endif|error|pragma|define|undef)\b).*|dnl.*)"))
               .with_nestable(false)
               .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "z.comment"}]
@@ -464,7 +464,7 @@ setup_highlights(highlight_map_t& hm)
     hm[{highlight_source_t::INTERNAL, "cpp"}]
         = highlighter(
               xpcre_compile(
-                  R"(^#\s*(?:include|ifdef|ifndef|if|else|elif|error|endif|define|undef|pragma))"))
+                  R"(^#\s*(?:include|ifdef|ifndef|if|else|elif|error|endif|define|undef|pragma)\b)"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)

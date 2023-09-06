@@ -83,6 +83,7 @@
 #include "bound_tags.hh"
 #include "breadcrumb_curses.hh"
 #include "CLI/CLI.hpp"
+#include "date/tz.h"
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
 #include "file_converter_manager.hh"
@@ -1248,6 +1249,12 @@ looper()
         errpipe[1].reset();
         log_pipe_err(errpipe[0]);
         lnav_behavior lb;
+
+        {
+            log_info("BEGIN loading tzdb");
+            date::get_tzdb();
+            log_info("END loading tzdb");
+        }
 
         ui_periodic_timer::singleton();
 

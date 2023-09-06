@@ -34,9 +34,12 @@
 
 #include <string.h>
 
+#include "base/attr_line.builder.hh"
 #include "base/date_time_scanner.hh"
 #include "base/humanize.time.hh"
 #include "config.h"
+#include "date/tz.h"
+#include "ptimec.hh"
 #include "relative_time.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -185,6 +188,74 @@ sql_humanize_duration(double value)
     return humanize::time::duration::from_tv(tv).to_string();
 }
 
+static nonstd::optional<std::string>
+sql_timezone(std::string tz_str, string_fragment ts_str)
+{
+    thread_local date_time_scanner dts;
+    struct timeval tv;
+    exttm tm1;
+
+    auto scan_end
+        = dts.scan(ts_str.data(), ts_str.length(), nullptr, &tm1, tv, false);
+    if (scan_end == nullptr) {
+        auto um = lnav::console::user_message::error(
+            attr_line_t("unrecognized timestamp: ").append(ts_str));
+        throw um;
+    }
+    size_t matched_size = scan_end - ts_str.data();
+    auto ts_remaining = ts_str.substr(matched_size);
+    if (!ts_remaining.empty()) {
+        auto um
+            = lnav::console::user_message::error(
+                  attr_line_t("invalid timestamp: ").append(ts_str))
+                  .with_reason(attr_line_t("the leading part of the timestamp "
+                                           "was matched, however, the trailing "
+                                           "text ")
+                                   .append_quoted(ts_remaining)
+                                   .append(" was not"))
+                  .with_note(attr_line_t("input matched time format ")
+                                 .append_quoted(
+                                     PTIMEC_FORMATS[dts.dts_fmt_lock].pf_fmt))
+                  .with_help("fix the timestamp or remove the trailing text");
+
+        auto ts_attr = attr_line_t().append(ts_str);
+        attr_line_builder alb(ts_attr);
+
+        alb.append("\n").append(matched_size, ' ');
+        {
+            auto attr_guard = alb.with_attr(VC_ROLE.value(role_t::VCR_COMMENT));
+
+            alb.append("^");
+            if (ts_remaining.length() > 1) {
+                if (ts_remaining.length() > 2) {
+                    alb.append(ts_remaining.length() - 2, '-');
+                }
+                alb.append("^");
+            }
+            alb.append(" unrecognized input");
+        }
+        log_debug("wtf %s", ts_attr.get_string().c_str());
+        um.with_note(ts_attr);
+        throw um;
+    }
+
+    thread_local std::string last_tz;
+    thread_local const date::time_zone* tz;
+
+    if (tz_str != last_tz) {
+        tz = date::locate_zone(tz_str);
+    }
+
+    auto stime = std::chrono::time_point_cast<std::chrono::microseconds>(
+        std::chrono::system_clock::from_time_t(tv.tv_sec));
+    stime += std::chrono::microseconds{tv.tv_usec};
+    auto ztime = date::make_zoned(tz, stime);
+
+    auto retval = date::format("%FT%T%z", ztime);
+
+    return retval;
+}
+
 int
 time_extension_functions(struct FuncDef** basic_funcs,
                          struct FuncDefAgg** agg_funcs)
@@ -254,6 +325,18 @@ time_extension_functions(struct FuncDef** basic_funcs,
                         "To format a sub-second value",
                         "SELECT humanize_duration(1.5)",
                     })),
+
+        sqlite_func_adapter<decltype(&sql_timezone), sql_timezone>::builder(
+            help_text("timezone", "Convert a timestamp to the given timezone")
+                .sql_function()
+                .with_parameter({"tz", "The target timezone"})
+                .with_parameter({"ts", "The source timestamp"})
+                .with_tags({"datetime", "string"})
+                .with_example({
+                    "To convert a time to America/Los_Angeles",
+                    "SELECT timezone('America/Los_Angeles', "
+                    "'2022-03-02T10:00')",
+                })),
 
         {nullptr},
     };

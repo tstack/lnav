@@ -54,6 +54,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
+#include "date/tz.h"
 #include "db_sub_source.hh"
 #include "field_overlay_source.hh"
 #include "fmt/printf.h"
@@ -326,6 +327,54 @@ com_unix_time(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+com_convert_time_to(exec_context& ec,
+                    std::string cmdline,
+                    std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("timezone");
+        return Ok(retval);
+    }
+
+    if (args.size() == 1) {
+        return ec.make_error("expecting a timezone name");
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+
+    if (lss != nullptr) {
+        if (lss->text_line_count() == 0) {
+            return ec.make_error("no log messages to examine");
+        }
+
+        auto ll = lss->find_line(lss->at(tc->get_selection()));
+        try {
+            auto* tz = date::locate_zone(args[1]);
+            auto utime = std::chrono::system_clock::from_time_t(ll->get_time());
+            auto ztime = date::make_zoned(tz, utime);
+            auto etime = std::chrono::duration_cast<std::chrono::seconds>(
+                ztime.get_local_time().time_since_epoch());
+            char ftime[128];
+            sql_strftime(
+                ftime, sizeof(ftime), etime.count(), ll->get_millis(), 'T');
+            retval = ftime;
+        } catch (const std::runtime_error& e) {
+            return ec.make_error(FMT_STRING("Unable to get timezone: {} -- {}"),
+                                 args[1],
+                                 e.what());
+        }
+    } else {
+        return ec.make_error(
+            ":convert-time-to is only supported for the LOG view");
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
 com_current_time(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
@@ -503,7 +552,10 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
                     alb.append("^");
                     if (unmatched_size > 1) {
-                        alb.append(unmatched_size - 2, '-').append("^");
+                        if (unmatched_size > 2) {
+                            alb.append(unmatched_size - 2, '-');
+                        }
+                        alb.append("^");
                     }
                     alb.append(" unrecognized input");
                 }
@@ -5110,6 +5162,7 @@ command_prompt(std::vector<std::string>& args)
     add_tag_possibilities();
     add_file_possibilities();
     add_recent_netlocs_possibilities();
+    add_tz_possibilities(ln_mode_t::COMMAND);
 
     auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
     if (ta != nullptr) {
@@ -5382,6 +5435,13 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_parameter(help_text("seconds", "The epoch timestamp to convert")
                              .with_format(help_parameter_format_t::HPF_INTEGER))
          .with_example({"To convert the epoch time 1490191111", "1490191111"})},
+    {
+        "convert-time",
+        com_convert_time_to,
+        help_text(":convert-time-to")
+            .with_summary("Convert the focused timestamp to the given timezone")
+            .with_parameter(help_text("zone", "The timezone name")),
+    },
     {"current-time",
      com_current_time,
 

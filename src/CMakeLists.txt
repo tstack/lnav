@@ -635,6 +635,17 @@ add_library(
         third-party/CLI/TypeTools.hpp
         third-party/CLI/ConfigFwd.hpp
 
+        third-party/date/include/date/tz_private.h
+        third-party/date/include/date/ios.h
+        third-party/date/include/date/ptz.h
+        third-party/date/include/date/solar_hijri.h
+        third-party/date/include/date/date.h
+        third-party/date/include/date/julian.h
+        third-party/date/include/date/chrono_io.h
+        third-party/date/include/date/iso_week.h
+        third-party/date/include/date/tz.h
+        third-party/date/include/date/islamic.h
+
         third-party/intervaltree/IntervalTree.h
 
         third-party/md4c/md4c.h
@@ -647,6 +658,7 @@ set(lnav_SRCS lnav.cc)
 target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party
         third-party/base64/include
+        third-party/date/include
         third-party/rapidyaml
 )
 

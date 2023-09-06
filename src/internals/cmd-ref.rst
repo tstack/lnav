@@ -241,6 +241,20 @@
 ----
 
 
+.. _convert_time_to:
+
+:convert-time-to *zone*
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Convert the focused timestamp to the given timezone
+
+  **Parameters**
+    * **zone\*** --- The timezone name
+
+
+----
+
+
 .. _create_logline_table:
 
 :create-logline-table *table-name*
