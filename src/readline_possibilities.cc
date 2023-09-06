@@ -36,6 +36,7 @@
 #include "base/opt_util.hh"
 #include "config.h"
 #include "data_parser.hh"
+#include "date/tz.h"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "service_tags.hh"
@@ -507,4 +508,17 @@ add_recent_netlocs_possibilities()
     netlocs.insert(recent_refs.rr_netlocs.begin(),
                    recent_refs.rr_netlocs.end());
     rc->add_possibility(ln_mode_t::COMMAND, "recent-netlocs", netlocs);
+}
+
+void
+add_tz_possibilities(ln_mode_t context)
+{
+    auto* rc = lnav_data.ld_rl_view;
+
+    log_info("BEGIN tz poss");
+    rc->clear_possibilities(context, "timezone");
+    for (const auto& tz : date::get_tzdb().zones) {
+        rc->add_possibility(context, "timezone", tz.name());
+    }
+    log_info("END tz poss");
 }

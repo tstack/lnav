@@ -69,3 +69,17 @@ run_cap_test ./drive_sql "select timediff('today', 'yesterday')"
 
 # timeslice day
 run_cap_test ./drive_sql "select timediff('foo', 'yesterday')"
+
+run_cap_test ./drive_sql "SELECT timezone('America/Los_Angeles', '2022-03-02T10:00')"
+
+run_cap_test ./drive_sql "SELECT timezone('America/Los_Angeles', '2022-03-02T10:20:30.400-0700')"
+
+run_cap_test ./drive_sql "SELECT timezone('America/Los_Angeles', '2022-04-02T10:20:30.400-0700')"
+
+run_cap_test ./drive_sql "SELECT timezone('America/New_York', '2022-03-02T10:20:30.400-0700')"
+
+run_cap_test ./drive_sql "SELECT timezone('UTC', '2022-03-02T10:20:30.400-0700')"
+
+run_cap_test ${lnav_test} -nN -c ";SELECT timezone('bad-zone', '2022-03-02T10:20:30.400-0700')"
+
+run_cap_test ${lnav_test} -nN -c ";SELECT timezone('UTC', '2022-03-02T10:20:30.400bad')"

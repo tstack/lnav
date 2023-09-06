@@ -1,0 +1,4 @@
+✘ error: call to timezone(tz, ts) failed
+ reason: bad-zone not found in timezone database
+ --> command-option:1
+ | ;SELECT timezone('bad-zone', '2022-03-02T10:20:30.400-0700')

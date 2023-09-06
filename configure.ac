@@ -31,7 +31,7 @@ AC_SUBST(abssrcdir)
 
 AC_PROG_CXX
 
-CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS -D_GNU_SOURCE"
+CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS -D_GNU_SOURCE -DUSE_OS_TZDB=1 -DHAS_REMOTE_API=0"
 
 AC_ARG_ENABLE([debug],
               AS_HELP_STRING([--enable-debug],
@@ -327,6 +327,7 @@ AC_CONFIG_FILES([src/tailer/Makefile])
 AC_CONFIG_FILES([src/yajl/Makefile])
 AC_CONFIG_FILES([src/yajlpp/Makefile])
 AC_CONFIG_FILES([src/third-party/base64/lib/Makefile])
+AC_CONFIG_FILES([src/third-party/date/src/Makefile])
 AC_CONFIG_FILES([src/third-party/scnlib/src/Makefile])
 AC_CONFIG_FILES([test/Makefile])
 

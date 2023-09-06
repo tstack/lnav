@@ -216,6 +216,14 @@ to_json(const lnav::console::user_message& um)
                 to_json(gen, snip.s_content);
             }
         }
+        root_map.gen("notes");
+        {
+            yajlpp_array notes_array(gen);
+
+            for (const auto& note : um.um_notes) {
+                to_json(gen, note);
+            }
+        }
         root_map.gen("help");
         to_json(gen, um.um_help);
     }
@@ -318,6 +326,9 @@ static const typed_json_path_container<console::user_message>
         yajlpp::property_handler("snippets#")
             .for_field(&console::user_message::um_snippets)
             .with_children(snippet_handlers),
+        yajlpp::property_handler("notes#")
+            .for_field(&console::user_message::um_notes)
+            .with_children(attr_line_handlers),
         yajlpp::property_handler("help")
             .for_child(&console::user_message::um_help)
             .with_children(attr_line_handlers),

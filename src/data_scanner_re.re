@@ -177,6 +177,11 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
        "<!--" ([^\x00*]|"-"+[^\x00>])* "-"{2,} ">" {
            RET(DT_COMMENT);
        }
+       "#[" "="* "[" ([^\x00\]]|"]" [^=\]])* "]" "="* "]" {
+
+           RET(DT_COMMENT);
+       }
+
        [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
