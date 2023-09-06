@@ -96,6 +96,8 @@ Features:
   script, allowing multiple commands to be executed.
 * Added a `timezone()` SQL function for converting a timestamp
   to a target timezone.
+* Added a `:convert-time-to` command that converts the
+  timestamp of the focused log message to the given timezone.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same
