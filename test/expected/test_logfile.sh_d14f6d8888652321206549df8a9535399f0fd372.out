@@ -1,0 +1,4 @@
+[31mNov 03 16:23:38[0m[31m [0m[31mveridian[0m[31m [0m[31mautomount[0m[31m[[0m[31m7998[0m[31m][0m[31m: [0m[31mlookup(file): lookup for foobar failed[0m
+Nov 03 16:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
+[31mNov 03 16:23:38[0m[31m [0m[31mveridian[0m[31m [0m[31mautomount[0m[31m[[0m[31m7999[0m[31m][0m[31m: [0m[31mlookup(file): lookup for opt failed[0m
+Nov 03 16:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages
