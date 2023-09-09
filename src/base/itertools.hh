@@ -31,6 +31,8 @@
 #define lnav_itertools_hh
 
 #include <algorithm>
+#include <deque>
+#include <map>
 #include <memory>
 #include <set>
 #include <type_traits>
@@ -138,7 +140,15 @@ struct max_with_init {
 
 struct sum {};
 
+struct to_vector {};
+
 }  // namespace details
+
+inline details::to_vector
+to_vector()
+{
+    return details::to_vector{};
+}
 
 template<typename T>
 inline details::unwrap_or<T>
@@ -619,12 +629,70 @@ operator|(nonstd::optional<T> in,
 
 template<typename T, typename F>
 auto
-operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
-    -> std::vector<std::remove_const_t<std::remove_reference_t<
-        decltype(mapper.m_func(std::declval<typename T::value_type>()))>>>
+operator|(const std::set<T>& in,
+          const lnav::itertools::details::mapper<F>& mapper)
+    -> std::set<std::remove_const_t<
+        std::remove_reference_t<decltype(mapper.m_func(std::declval<T>()))>>>
 {
-    using return_type = std::vector<std::remove_const_t<std::remove_reference_t<
-        decltype(mapper.m_func(std::declval<typename T::value_type>()))>>>;
+    using return_type = std::set<std::remove_const_t<
+        std::remove_reference_t<decltype(mapper.m_func(std::declval<T>()))>>>;
+    return_type retval;
+
+    std::transform(in.begin(),
+                   in.end(),
+                   std::inserter(retval, retval.begin()),
+                   mapper.m_func);
+
+    return retval;
+}
+
+template<typename T, typename F>
+auto
+operator|(const std::vector<T>& in,
+          const lnav::itertools::details::mapper<F>& mapper)
+    -> std::vector<std::remove_const_t<
+        std::remove_reference_t<decltype(mapper.m_func(std::declval<T>()))>>>
+{
+    using return_type = std::vector<std::remove_const_t<
+        std::remove_reference_t<decltype(mapper.m_func(std::declval<T>()))>>>;
+    return_type retval;
+
+    retval.reserve(in.size());
+    std::transform(
+        in.begin(), in.end(), std::back_inserter(retval), mapper.m_func);
+
+    return retval;
+}
+
+template<typename T, typename F>
+auto
+operator|(const std::deque<T>& in,
+          const lnav::itertools::details::mapper<F>& mapper)
+    -> std::vector<std::remove_const_t<
+        std::remove_reference_t<decltype(mapper.m_func(std::declval<T>()))>>>
+{
+    using return_type = std::vector<std::remove_const_t<
+        std::remove_reference_t<decltype(mapper.m_func(std::declval<T>()))>>>;
+    return_type retval;
+
+    retval.reserve(in.size());
+    std::transform(
+        in.begin(), in.end(), std::back_inserter(retval), mapper.m_func);
+
+    return retval;
+}
+
+template<typename K, typename V, typename F>
+auto
+operator|(const std::map<K, V>& in,
+          const lnav::itertools::details::mapper<F>& mapper)
+    -> std::vector<
+        std::remove_const_t<std::remove_reference_t<decltype(mapper.m_func(
+            std::declval<typename std::map<K, V>::value_type>()))>>>
+{
+    using return_type = std::vector<
+        std::remove_const_t<std::remove_reference_t<decltype(mapper.m_func(
+            std::declval<typename std::map<K, V>::value_type>()))>>>;
     return_type retval;
 
     retval.reserve(in.size());
@@ -780,6 +848,18 @@ operator|(nonstd::optional<T> in,
           const lnav::itertools::details::unwrap_or<T>& unwrapper)
 {
     return in.value_or(unwrapper.uo_value);
+}
+
+template<typename T>
+std::vector<T>
+operator|(std::set<T>&& in, lnav::itertools::details::to_vector tv)
+{
+    std::vector<T> retval;
+
+    retval.reserve(in.size());
+    std::copy(in.begin(), in.end(), std::back_inserter(retval));
+
+    return retval;
 }
 
 #endif

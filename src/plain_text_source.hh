@@ -77,6 +77,8 @@ public:
 
     plain_text_source& replace_with(const std::vector<std::string>& text_lines);
 
+    plain_text_source& replace_with(const std::vector<attr_line_t>& text_lines);
+
     void clear();
 
     plain_text_source& truncate_to(size_t max_lines);
@@ -131,6 +133,7 @@ protected:
     text_format_t tds_text_format{text_format_t::TF_UNKNOWN};
     size_t tds_longest_line{0};
     bool tds_reverse_selection{false};
+    size_t tds_line_indent_size{0};
     lnav::document::metadata tds_doc_sections;
 };
 

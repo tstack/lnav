@@ -210,6 +210,7 @@ noinst_HEADERS = \
 	file_collection.hh \
 	file_converter_manager.hh \
 	file_format.hh \
+	file_options.hh \
 	file_vtab.cfg.hh \
 	files_sub_source.hh \
 	filter_observer.hh \
@@ -407,6 +408,7 @@ libdiag_a_SOURCES = \
 	file_collection.cc \
 	file_converter_manager.cc \
 	file_format.cc \
+	file_options.cc \
 	files_sub_source.cc \
 	filter_observer.cc \
 	filter_status_source.cc \

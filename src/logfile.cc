@@ -47,6 +47,7 @@
 #include "base/injector.hh"
 #include "base/string_util.hh"
 #include "config.h"
+#include "file_options.hh"
 #include "hasher.hh"
 #include "lnav_util.hh"
 #include "log.watch.hh"
@@ -156,6 +157,8 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
             });
     }
 
+    lf->file_options_have_changed();
+
     ensure(lf->invariant());
 
     return Ok(lf);
@@ -170,6 +173,37 @@ logfile::logfile(std::string filename, const logfile_open_options& loo)
 logfile::~logfile()
 {
     log_info("destructing logfile: %s", this->lf_filename.c_str());
+}
+
+bool
+logfile::file_options_have_changed()
+{
+    static auto& safe_options_hier
+        = injector::get<lnav::safe_file_options_hier&>();
+
+    {
+        safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+            safe_options_hier);
+
+        if (this->lf_file_options_generation == options_hier->foh_generation) {
+            return false;
+        }
+        auto new_options = options_hier->match(this->get_filename());
+        if (this->lf_file_options == new_options) {
+            this->lf_file_options_generation = options_hier->foh_generation;
+            return false;
+        }
+
+        this->lf_file_options = new_options;
+        log_info("%s: file options have changed", this->lf_filename.c_str());
+        if (this->lf_file_options) {
+            log_info("  tz=%s",
+                     this->lf_file_options->fo_default_zone->name().c_str());
+        }
+        this->lf_file_options_generation = options_hier->foh_generation;
+    }
+
+    return true;
 }
 
 bool
@@ -497,9 +531,10 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
         return rebuild_result_t::NO_NEW_LINES;
     }
 
-    if (this->lf_format != nullptr
-        && (this->lf_zoned_to_local_state != dts_cfg.c_zoned_to_local
-            || this->lf_format->format_changed()))
+    if (this->file_options_have_changed()
+        || (this->lf_format != nullptr
+            && (this->lf_zoned_to_local_state != dts_cfg.c_zoned_to_local
+                || this->lf_format->format_changed())))
     {
         log_info("%s: format has changed, rebuilding",
                  this->lf_filename.c_str());

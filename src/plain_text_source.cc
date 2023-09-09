@@ -112,6 +112,21 @@ plain_text_source::replace_with(const std::vector<std::string>& text_lines)
     return *this;
 }
 
+plain_text_source&
+plain_text_source::replace_with(const std::vector<attr_line_t>& text_lines)
+{
+    file_off_t off = 0;
+    for (const auto& al : text_lines) {
+        this->tds_lines.emplace_back(off, al);
+        off += al.length() + 1;
+    }
+    this->tds_longest_line = this->compute_longest_line();
+    if (this->tss_view != nullptr) {
+        this->tss_view->set_needs_update();
+    }
+    return *this;
+}
+
 void
 plain_text_source::clear()
 {
@@ -148,6 +163,18 @@ plain_text_source::text_value_for_line(textview_curses& tc,
                                        text_sub_source::line_flags_t flags)
 {
     value_out = this->tds_lines[row].tl_value.get_string();
+    this->tds_line_indent_size = 0;
+    for (const auto& ch : value_out) {
+        if (ch == ' ') {
+            this->tds_line_indent_size += 1;
+        } else if (ch == '\t') {
+            do {
+                this->tds_line_indent_size += 1;
+            } while (this->tds_line_indent_size % 8);
+        } else {
+            break;
+        }
+    }
 }
 
 void
@@ -161,6 +188,18 @@ plain_text_source::text_attrs_for_line(textview_curses& tc,
     {
         value_out.emplace_back(line_range{0, -1},
                                VC_STYLE.value(text_attrs{A_REVERSE}));
+    }
+    for (const auto& indent : this->tds_doc_sections.m_indents) {
+        if (indent < this->tds_line_indent_size) {
+            auto guide_lr = line_range{
+                (int) indent,
+                (int) (indent + 1),
+                line_range::unit::codepoint,
+            };
+            value_out.emplace_back(guide_lr,
+                                   VC_BLOCK_ELEM.value(block_elem_t{
+                                       L'\u258f', role_t::VCR_INDENT_GUIDE}));
+        }
     }
 }
 

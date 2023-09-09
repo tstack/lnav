@@ -37,6 +37,7 @@
 
 #include <sys/types.h>
 
+#include "date/tz.h"
 #include "time_util.hh"
 
 /**
@@ -105,6 +106,7 @@ struct date_time_scanner {
     time_t dts_local_offset_cache{0};
     time_t dts_local_offset_valid{0};
     time_t dts_local_offset_expiry{0};
+    const date::time_zone* dts_default_zone{nullptr};
 
     static const int EXPIRE_TIME = 15 * 60;
 

@@ -171,11 +171,16 @@ pretty_printer::append_to(attr_line_t& al)
 void
 pretty_printer::write_element(const pretty_printer::element& el)
 {
+    ssize_t start_size = this->pp_stream.tellp();
     if (this->pp_leading_indent == 0 && this->pp_line_length == 0
         && el.e_token == DT_WHITE)
     {
         if (this->pp_depth == 0) {
             this->pp_soft_indent += el.e_capture.length();
+        } else {
+            auto shift_cover = line_range{(int) start_size, (int) start_size};
+            shift_string_attrs(
+                this->pp_attrs, shift_cover, -el.e_capture.length());
         }
         return;
     }
@@ -191,10 +196,10 @@ pretty_printer::write_element(const pretty_printer::element& el)
         }
         return;
     }
+    int indent_size = 0;
     if (this->pp_line_length == 0) {
-        this->append_indent();
+        indent_size = this->append_indent();
     }
-    ssize_t start_size = this->pp_stream.tellp();
     if (el.e_token == DT_QUOTED_STRING) {
         auto unquoted_str = auto_mem<char>::malloc(el.e_capture.length() + 1);
         const char* start
@@ -230,11 +235,9 @@ pretty_printer::write_element(const pretty_printer::element& el)
         }
     } else {
         this->pp_stream << this->pp_scanner->to_string_fragment(el.e_capture);
-        int shift_amount
-            = start_size - el.e_capture.c_begin - this->pp_shift_accum;
-        shift_string_attrs(this->pp_attrs, el.e_capture.c_begin, shift_amount);
-        this->pp_shift_accum = start_size - el.e_capture.c_begin;
     }
+    auto shift_cover = line_range{(int) start_size, (int) start_size};
+    shift_string_attrs(this->pp_attrs, shift_cover, indent_size);
     this->pp_line_length += el.e_capture.length();
     if (el.e_token == DT_LINE) {
         this->pp_line_length = 0;
@@ -242,29 +245,23 @@ pretty_printer::write_element(const pretty_printer::element& el)
     }
 }
 
-void
+int
 pretty_printer::append_indent()
 {
-    static const auto INDENT_GUIDELINE = block_elem_t{
-        L'\u258f',
-        role_t::VCR_INDENT_GUIDE,
-    };
-
+    auto start_size = this->pp_stream.tellp();
     this->pp_stream << std::string(
         this->pp_leading_indent + this->pp_soft_indent, ' ');
     this->pp_soft_indent = 0;
-    if (this->pp_stream.tellp() == this->pp_leading_indent) {
-        return;
-    }
-    for (int lpc = 0; lpc < this->pp_depth; lpc++) {
-        if (lpc > 0) {
-            int off = this->pp_stream.tellp();
-            this->pp_post_attrs.emplace_back(
-                line_range{off, off + 1},
-                VC_BLOCK_ELEM.value(INDENT_GUIDELINE));
+    if (this->pp_stream.tellp() != this->pp_leading_indent) {
+        for (int lpc = 0; lpc < this->pp_depth; lpc++) {
+            this->pp_stream << "    ";
         }
-        this->pp_stream << "    ";
+        if (this->pp_depth > 0) {
+            this->pp_indents.insert(this->pp_leading_indent
+                                    + 4 * this->pp_depth);
+        }
     }
+    return (this->pp_stream.tellp() - start_size);
 }
 
 bool
@@ -305,7 +302,11 @@ pretty_printer::flush_values(bool start_on_depth)
                 && (el.e_token == DT_LSQUARE || el.e_token == DT_LCURLY))
             {
                 if (this->pp_line_length > 0) {
+                    ssize_t start_size = this->pp_stream.tellp();
                     this->pp_stream << std::endl;
+                    auto shift_cover
+                        = line_range{(int) start_size, (int) start_size};
+                    shift_string_attrs(this->pp_attrs, shift_cover, 1);
                 }
                 this->pp_line_length = 0;
             }
@@ -321,13 +322,19 @@ pretty_printer::start_new_line()
 {
     bool has_output;
 
+    ssize_t start_size = this->pp_stream.tellp();
     if (this->pp_line_length > 0) {
         this->pp_stream << std::endl;
+        auto shift_cover = line_range{(int) start_size, (int) start_size};
+        shift_string_attrs(this->pp_attrs, shift_cover, 1);
         this->pp_line_length = 0;
     }
     has_output = this->flush_values();
     if (has_output && this->pp_line_length > 0) {
+        start_size = this->pp_stream.tellp();
         this->pp_stream << std::endl;
+        auto shift_cover = line_range{(int) start_size, (int) start_size};
+        shift_string_attrs(this->pp_attrs, shift_cover, 1);
     }
     this->pp_line_length = 0;
     this->pp_body_lines.top() += 1;

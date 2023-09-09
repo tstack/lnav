@@ -244,6 +244,16 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_JAVA)
               .with_role(role_t::VCR_KEYWORD);
 
+    hm[{highlight_source_t::INTERNAL, "json.keyword"}]
+        = highlighter(xpcre_compile(R"((?:null|true|false))"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_JSON)
+              .with_role(role_t::VCR_KEYWORD);
+    hm[{highlight_source_t::INTERNAL, "json.number"}]
+        = highlighter(xpcre_compile(R"(-?\d+(?:\.\d+(?:[eE][+\-]?\d+)?)?)"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_JSON)
+              .with_role(role_t::VCR_NUMBER);
     hm[{highlight_source_t::INTERNAL, "sql.0.comment"}]
         = highlighter(xpcre_compile("(?:(?<=[\\s;])|^)--.*"))
               .with_text_format(text_format_t::TF_SQL)

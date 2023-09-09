@@ -327,6 +327,70 @@ com_unix_time(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+com_set_file_timezone(exec_context& ec,
+                      std::string cmdline,
+                      std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("timezone");
+        return Ok(retval);
+    }
+
+    if (args.size() == 1) {
+        return ec.make_error("expecting a timezone name");
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+
+    if (lss != nullptr) {
+        if (lss->text_line_count() == 0) {
+            return ec.make_error("no log messages to examine");
+        }
+
+        auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+        if (!line_pair) {
+            return ec.make_error(FMT_STRING("cannot find line: {}"),
+                                 (int) tc->get_selection());
+        }
+        try {
+            auto* tz = date::locate_zone(args[1]);
+
+            if (!ec.ec_dry_run) {
+                static auto& safe_options_hier
+                    = injector::get<lnav::safe_file_options_hier&>();
+
+                safe::WriteAccess<lnav::safe_file_options_hier> options_hier(
+                    safe_options_hier);
+
+                options_hier->foh_generation += 1;
+                auto& coll = options_hier->foh_path_to_collection["/"];
+
+                log_info("setting timezone for %s to %s",
+                         line_pair->first->get_filename().c_str(),
+                         args[1].c_str());
+                coll.foc_pattern_to_options[line_pair->first->get_filename()]
+                    = lnav::file_options{
+                        intern_string::lookup(args[1]),
+                        tz,
+                    };
+            }
+        } catch (const std::runtime_error& e) {
+            return ec.make_error(FMT_STRING("Unable to get timezone: {} -- {}"),
+                                 args[1],
+                                 e.what());
+        }
+    } else {
+        return ec.make_error(
+            ":set-file-timezone is only supported for the LOG view");
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
 com_convert_time_to(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -5441,6 +5505,18 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":convert-time-to")
             .with_summary("Convert the focused timestamp to the given timezone")
             .with_parameter(help_text("zone", "The timezone name")),
+    },
+    {
+        "set-file-timezone",
+        com_set_file_timezone,
+        help_text(":set-file-timezone")
+            .with_summary("Set the timezone to use for log messages that do "
+                          "not include a timezone.  The timezone is applied to "
+                          "the focused file or the given glob pattern.")
+            .with_parameter({"zone", "The timezone name"})
+            .with_parameter(help_text{"pattern",
+                                      "The glob pattern to match against "
+                                      "files that should use this timezone"}),
     },
     {"current-time",
      com_current_time,

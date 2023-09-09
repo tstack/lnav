@@ -270,6 +270,12 @@ add_library(
 target_include_directories(cppfmt PUBLIC fmtlib)
 
 add_library(
+        datepp STATIC
+        third-party/date/src/tz.cpp
+)
+target_include_directories(datepp PUBLIC third-party/date/include)
+
+add_library(
         cppscnlib STATIC
         third-party/scnlib/src/reader_float.cpp
         third-party/scnlib/src/reader_int.cpp
@@ -389,6 +395,7 @@ add_library(
         file_collection.cc
         file_converter_manager.cc
         file_format.cc
+        file_options.cc
         file_vtab.cc
         files_sub_source.cc
         filter_observer.cc
@@ -503,6 +510,7 @@ add_library(
         file_collection.hh
         file_converter_manager.hh
         file_format.hh
+        file_options.hh
         files_sub_source.hh
         filter_observer.hh
         filter_status_source.hh
@@ -665,6 +673,7 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
 target_link_libraries(
         diag
         base
+        datepp
         lnavdt
         lnavfileio
         pcrepp
@@ -676,7 +685,8 @@ target_link_libraries(
         cppfmt
         base64
         spookyhash
-        ${lnav_LIBS})
+        ${lnav_LIBS}
+)
 target_compile_definitions(diag PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 
 check_library_exists(util openpty "" HAVE_LIBUTIL)
