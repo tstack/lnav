@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "base/injector.bind.hh"
 #include "base/injector.hh"
 #include "base/opt_util.hh"
 #include "config.h"
@@ -53,6 +54,9 @@ typedef enum {
     MODE_TIMES,
     MODE_LEVELS,
 } dl_mode_t;
+
+static auto bound_file_options_hier
+    = injector::bind<lnav::safe_file_options_hier>::to_singleton();
 
 time_t
 time(time_t* _unused)

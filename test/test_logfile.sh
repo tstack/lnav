@@ -710,3 +710,11 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ':filter-in Air Mob' \
     ${test_dir}/logfile_ansi.1
+
+run_cap_test ${lnav_test} -n \
+    -c ':set-file-timezone America/Los_Angeles' \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':set-file-timezone America/New_York' \
+    ${test_dir}/logfile_syslog.0

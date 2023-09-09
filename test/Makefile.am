@@ -17,6 +17,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/fmtlib \
 	-I$(top_srcdir)/src/third-party \
+	-I$(top_srcdir)/src/third-party/date/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \

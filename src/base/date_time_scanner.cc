@@ -157,11 +157,24 @@ date_time_scanner::scan(const char* time_dest,
                 if (convert_local
                     && (this->dts_local_time
                         || tm_out->et_flags & ETF_EPOCH_TIME
-                        || (tm_out->et_flags & ETF_ZONE_SET
+                        || ((tm_out->et_flags & ETF_ZONE_SET
+                             || this->dts_default_zone != nullptr)
                             && this->dts_zoned_to_local)))
                 {
                     time_t gmt = tm_out->to_timeval().tv_sec;
 
+                    if (!(tm_out->et_flags & ETF_ZONE_SET)
+                        && !(tm_out->et_flags & ETF_EPOCH_TIME)
+                        && this->dts_default_zone != nullptr)
+                    {
+                        date::local_seconds stime;
+                        stime += std::chrono::seconds{gmt};
+                        auto ztime
+                            = date::make_zoned(this->dts_default_zone, stime);
+                        gmt = std::chrono::duration_cast<std::chrono::seconds>(
+                                  ztime.get_sys_time().time_since_epoch())
+                                  .count();
+                    }
                     this->to_localtime(gmt, *tm_out);
                 }
                 const auto& last_tm = this->dts_last_tm.et_tm;
@@ -301,8 +314,6 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
 
     if (t < this->dts_local_offset_valid || t >= this->dts_local_offset_expiry)
     {
-        time_t new_gmt;
-
         localtime_r(&t, &tm_out.et_tm);
         // Clear the gmtoff set by localtime_r() otherwise tm2sec() will
         // convert the time back again.
@@ -311,8 +322,7 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
         tm_out.et_tm.tm_zone = nullptr;
 #endif
         tm_out.et_tm.tm_isdst = 0;
-
-        new_gmt = tm2sec(&tm_out.et_tm);
+        auto new_gmt = tm2sec(&tm_out.et_tm);
         this->dts_local_offset_cache = new_gmt - t;
         this->dts_local_offset_valid = t;
         this->dts_local_offset_expiry = t + (EXPIRE_TIME - 1);

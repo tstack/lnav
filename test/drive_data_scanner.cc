@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "base/injector.bind.hh"
 #include "base/injector.hh"
 #include "config.h"
 #include "data_parser.hh"
@@ -50,6 +51,9 @@
 #include "view_curses.hh"
 
 const char* TMP_NAME = "scanned.tmp";
+
+static auto bound_file_options_hier
+    = injector::bind<lnav::safe_file_options_hier>::to_singleton();
 
 int
 main(int argc, char* argv[])

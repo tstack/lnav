@@ -107,6 +107,17 @@ class generic_log_format : public log_format {
         nonstd::optional<string_fragment> level;
         const char* last_pos;
 
+        if (dst.empty()) {
+            auto file_options = lf.get_file_options();
+
+            if (file_options) {
+                this->lf_date_time.dts_default_zone
+                    = file_options->fo_default_zone;
+            } else {
+                this->lf_date_time.dts_default_zone = nullptr;
+            }
+        }
+
         if ((last_pos = this->log_scanf(dst.size(),
                                         sbr.to_string_fragment(),
                                         get_pcre_log_formats(),
@@ -534,6 +545,17 @@ public:
     {
         static const auto SEP_RE
             = lnav::pcre2pp::code::from_const(R"(^#separator\s+(.+))");
+
+        if (dst.empty()) {
+            auto file_options = lf.get_file_options();
+
+            if (file_options) {
+                this->lf_date_time.dts_default_zone
+                    = file_options->fo_default_zone;
+            } else {
+                this->lf_date_time.dts_default_zone = nullptr;
+            }
+        }
 
         if (!this->blf_format_name.empty()) {
             return this->scan_int(dst, li, sbr, sbc);
@@ -1200,6 +1222,17 @@ public:
             return scan_incomplete{};
         }
 
+        if (dst.empty()) {
+            auto file_options = lf.get_file_options();
+
+            if (file_options) {
+                this->lf_date_time.dts_default_zone
+                    = file_options->fo_default_zone;
+            } else {
+                this->lf_date_time.dts_default_zone = nullptr;
+            }
+        }
+
         if (!this->wlf_format_name.empty()) {
             return this->scan_int(dst, li, sbr);
         }
@@ -1712,6 +1745,17 @@ public:
         scan_result_t retval = scan_no_match{};
         bool done = false;
         logfmt_pair_handler lph(this->lf_date_time);
+
+        if (dst.empty()) {
+            auto file_options = lf.get_file_options();
+
+            if (file_options) {
+                this->lf_date_time.dts_default_zone
+                    = file_options->fo_default_zone;
+            } else {
+                this->lf_date_time.dts_default_zone = nullptr;
+            }
+        }
 
         while (!done) {
             auto parse_result = p.step();

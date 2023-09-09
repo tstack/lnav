@@ -1061,6 +1061,16 @@ external_log_format::scan(logfile& lf,
                           shared_buffer_ref& sbr,
                           scan_batch_context& sbc)
 {
+    if (dst.empty()) {
+        auto file_options = lf.get_file_options();
+
+        if (file_options) {
+            this->lf_date_time.dts_default_zone = file_options->fo_default_zone;
+        } else {
+            this->lf_date_time.dts_default_zone = nullptr;
+        }
+    }
+
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
         logline ll(li.li_file_range.fr_offset, 0, 0, LEVEL_INFO);
         auto line_frag = sbr.to_string_fragment();

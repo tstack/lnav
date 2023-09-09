@@ -87,6 +87,7 @@
 #include "dump_internals.hh"
 #include "environ_vtab.hh"
 #include "file_converter_manager.hh"
+#include "file_options.hh"
 #include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
 #include "gantt_source.hh"
@@ -247,6 +248,9 @@ static auto bound_tailer
 
 static auto bound_main = injector::bind_multiple<static_service>()
                              .add_singleton<main_looper, services::main_t>();
+
+static auto bound_file_options_hier
+    = injector::bind<lnav::safe_file_options_hier>::to_singleton();
 
 namespace injector {
 template<>
@@ -1834,7 +1838,7 @@ looper()
                         case ln_mode_t::PAGING:
                         case ln_mode_t::FILTER:
                         case ln_mode_t::FILES:
-                            next_rescan_time = next_status_update_time + 1s;
+                            next_rescan_time = next_status_update_time;
                             next_rebuild_time = next_rescan_time;
                             break;
                         default:
@@ -1953,7 +1957,8 @@ looper()
                     lnav::session::restore_view_states();
                     if (lnav_data.ld_mode == ln_mode_t::FILES) {
                         if (lnav_data.ld_log_source.text_line_count() == 0
-                            && lnav_data.ld_text_source.text_line_count() > 0)
+                            && lnav_data.ld_text_source.text_line_count() > 0
+                            && lnav_data.ld_view_stack.size() == 1)
                         {
                             log_debug("no logs, just text...");
                             ensure_view(&lnav_data.ld_views[LNV_TEXT]);
@@ -2196,6 +2201,28 @@ main(int argc, char* argv[])
     setenv("PAGER", "cat", 1);
     setenv("LNAV_HOME_DIR", lnav::paths::dotlnav().c_str(), 1);
     setenv("LNAV_WORK_DIR", lnav::paths::workdir().c_str(), 1);
+
+    {
+        auto& safe_options_hier
+            = injector::get<lnav::safe_file_options_hier&>();
+        safe::WriteAccess<lnav::safe_file_options_hier> options_hier(
+            safe_options_hier);
+
+        options_hier->foh_generation += 1;
+        auto_mem<char> var_path;
+
+        var_path = realpath("/var/log", nullptr);
+        auto curr_tz = date::get_tzdb().current_zone();
+        auto options_coll = lnav::file_options_collection{};
+        options_coll.foc_pattern_to_options[fmt::format(FMT_STRING("{}/*"),
+                                                        var_path.in())]
+            = lnav::file_options{
+                intern_string::lookup(curr_tz->name()),
+                curr_tz,
+            };
+        options_hier->foh_path_to_collection.emplace(ghc::filesystem::path("/"),
+                                                     options_coll);
+    }
 
     lnav_data.ld_exec_context.ec_sql_callback = sql_callback;
     lnav_data.ld_exec_context.ec_pipe_callback = pipe_callback;
@@ -2544,15 +2571,20 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 = attr_line_t("the ")
                       .append("-i"_symbol)
                       .append(
-                          " option expects one or more log format definition "
-                          "files to install in your lnav configuration "
+                          " option expects one or more log format "
+                          "definition "
+                          "files to install in your lnav "
+                          "configuration "
                           "directory");
             const auto install_help
                 = attr_line_t(
-                      "log format definitions are JSON files that tell lnav "
+                      "log format definitions are JSON files that "
+                      "tell lnav "
                       "how to understand log files\n")
                       .append(
-                          "See: https://docs.lnav.org/en/latest/formats.html");
+                          "See: "
+                          "https://docs.lnav.org/en/latest/"
+                          "formats.html");
 
             lnav::console::print(stderr,
                                  lnav::console::user_message::error(
@@ -2675,7 +2707,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                         written = write(out_fd, buffer, rc);
                         if (written == -1) {
                             fprintf(stderr,
-                                    "error: unable to install file -- %s\n",
+                                    "error: unable to install file "
+                                    "-- %s\n",
                                     strerror(errno));
                             exit(EXIT_FAILURE);
                         }
@@ -2704,9 +2737,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    /* If we statically linked against an ncurses library that had a non-
-     * standard path to the terminfo database, we need to set this variable
-     * so that it will try the default path.
+    /* If we statically linked against an ncurses library that had a
+     * non- standard path to the terminfo database, we need to set this
+     * variable so that it will try the default path.
      */
     setenv("TERMINFO_DIRS",
            "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
@@ -2935,7 +2968,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 file_loc = vis_line_t(scan_res.value());
             } else {
                 log_warning(
-                    "failed to parse line number from file path with colon: %s",
+                    "failed to parse line number from file path "
+                    "with colon: %s",
                     file_path.c_str());
             }
         }
@@ -3073,7 +3107,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     std::string partial_line(sbr.get_data(), partial_len);
 
                     fprintf(stderr,
-                            "error:%s:%ld:line did not match format %s\n",
+                            "error:%s:%ld:line did not match format "
+                            "%s\n",
                             lf->get_filename().c_str(),
                             line_number,
                             fmt->get_pattern_path(line_number).c_str());
@@ -3151,8 +3186,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 }
             }
         } else if (S_ISREG(stdin_st.st_mode)) {
-            // The shell connected a file directly, just open it up and add it
-            // in here.
+            // The shell connected a file directly, just open it up
+            // and add it in here.
             auto loo = logfile_open_options{}
                            .with_filename(STDIN_NAME)
                            .with_include_in_session(false);
@@ -3190,11 +3225,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             stderr,
             lnav::console::user_message::error("nothing to do")
                 .with_reason("no files given or default files found")
-                .with_help(
-                    attr_line_t("use the ")
-                        .append_quoted(lnav::roles::keyword("-N"))
-                        .append(
-                            " option to open lnav without loading any files")));
+                .with_help(attr_line_t("use the ")
+                               .append_quoted(lnav::roles::keyword("-N"))
+                               .append(" option to open lnav without "
+                                       "loading any files")));
         retval = EXIT_FAILURE;
     }
 
@@ -3433,8 +3467,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             fprintf(stderr, "error: %s\n", e.what());
         }
 
-        // When reading from stdin, tell the user where the capture file is
-        // stored so they can look at it later.
+        // When reading from stdin, tell the user where the capture
+        // file is stored so they can look at it later.
         if (stdin_url && !(lnav_data.ld_flags & LNF_HEADLESS)
             && verbosity != verbosity_t::quiet)
         {

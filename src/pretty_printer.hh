@@ -94,6 +94,8 @@ public:
         return std::move(this->pp_hier_stage);
     }
 
+    std::set<size_t> take_indents() { return std::move(this->pp_indents); }
+
 private:
     void descend();
 
@@ -103,7 +105,7 @@ private:
 
     bool flush_values(bool start_on_depth = false);
 
-    void append_indent();
+    int append_indent();
 
     void write_element(const element& el);
 
@@ -130,6 +132,7 @@ private:
     std::vector<lnav::document::section_interval_t> pp_intervals;
     std::vector<std::unique_ptr<lnav::document::hier_node>> pp_hier_nodes;
     std::unique_ptr<lnav::document::hier_node> pp_hier_stage;
+    std::set<size_t> pp_indents;
 };
 
 #endif

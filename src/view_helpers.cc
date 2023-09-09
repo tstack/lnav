@@ -139,6 +139,11 @@ open_gantt_view()
 
 class pretty_sub_source : public plain_text_source {
 public:
+    void set_indents(std::set<size_t>&& indents)
+    {
+        this->tds_doc_sections.m_indents = std::move(indents);
+    }
+
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override
     {
@@ -308,11 +313,18 @@ open_pretty_view()
     auto* log_tc = &lnav_data.ld_views[LNV_LOG];
     auto* text_tc = &lnav_data.ld_views[LNV_TEXT];
 
+    if (top_tc == log_tc && log_tc->get_inner_height() == 0
+        && text_tc->get_inner_height() > 0)
+    {
+        lnav_data.ld_view_stack.push_back(text_tc);
+        top_tc = text_tc;
+    }
+
     if (top_tc != log_tc && top_tc != text_tc) {
         return;
     }
 
-    attr_line_t full_text;
+    std::vector<attr_line_t> full_text;
 
     delete pretty_tc->get_sub_source();
     pretty_tc->set_sub_source(nullptr);
@@ -324,9 +336,11 @@ open_pretty_view()
     std::vector<lnav::document::section_interval_t> all_intervals;
     std::vector<std::unique_ptr<lnav::document::hier_node>> hier_nodes;
     std::vector<pretty_sub_source::hier_interval_t> hier_tree_vec;
+    std::set<size_t> pretty_indents;
     if (top_tc == log_tc) {
         auto& lss = lnav_data.ld_log_source;
         bool first_line = true;
+        auto start_off = size_t{0};
 
         for (auto vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             content_line_t cl = lss.at(vl);
@@ -365,7 +379,6 @@ open_pretty_view()
                                 ? body_lr.lr_start - orig_lr.lr_start
                                 : orig_lr.lr_start);
             pretty_printer pp(&ds, orig_al.get_attrs());
-            auto start_off = full_text.length();
 
             if (body_lr.is_valid()) {
                 // TODO: dump more details of the line in the output.
@@ -375,9 +388,14 @@ open_pretty_view()
             }
 
             pretty_al.split_lines(pretty_lines);
+            auto prefix_len = prefix_al.length();
 
             auto curr_intervals = pp.take_intervals();
             auto line_hier_root = pp.take_hier_root();
+            auto curr_indents = pp.take_indents()
+                | lnav::itertools::map([&prefix_len](const auto& elem) {
+                                    return elem + prefix_len;
+                                });
             auto line_off = 0;
             for (auto& pretty_line : pretty_lines) {
                 if (pretty_line.empty() && &pretty_line == &pretty_lines.back())
@@ -385,24 +403,23 @@ open_pretty_view()
                     break;
                 }
                 pretty_line.insert(0, prefix_al);
-                pretty_line.append("\n");
                 for (auto& interval : curr_intervals) {
                     if (line_off <= interval.start) {
-                        interval.start += prefix_al.length();
-                        interval.stop += prefix_al.length();
+                        interval.start += prefix_len;
+                        interval.stop += prefix_len;
                     } else if (line_off < interval.stop) {
-                        interval.stop += prefix_al.length();
+                        interval.stop += prefix_len;
                     }
                 }
                 lnav::document::hier_node::depth_first(
                     line_hier_root.get(),
-                    [line_off, prefix_len = prefix_al.length()](auto* hn) {
+                    [line_off, prefix_len = prefix_len](auto* hn) {
                         if (line_off <= hn->hn_start) {
                             hn->hn_start += prefix_len;
                         }
                     });
-                line_off += pretty_line.length();
-                full_text.append(pretty_line);
+                line_off += pretty_line.get_string().length();
+                full_text.emplace_back(pretty_line);
             }
 
             first_line = false;
@@ -415,15 +432,14 @@ open_pretty_view()
                 [start_off](auto* hn) { hn->hn_start += start_off; });
             hier_nodes.emplace_back(std::move(line_hier_root));
             hier_tree_vec.emplace_back(
-                start_off, full_text.length(), hier_nodes.back().get());
+                start_off, start_off + line_off, hier_nodes.back().get());
             all_intervals.insert(
                 all_intervals.end(),
                 std::make_move_iterator(curr_intervals.begin()),
                 std::make_move_iterator(curr_intervals.end()));
-        }
+            pretty_indents.insert(curr_indents.begin(), curr_indents.end());
 
-        if (!full_text.empty()) {
-            full_text.erase(full_text.length() - 1, 1);
+            start_off += line_off;
         }
     } else if (top_tc == text_tc) {
         if (text_tc->listview_rows(*text_tc)) {
@@ -433,19 +449,36 @@ open_pretty_view()
                 *text_tc, text_tc->get_top(), rows);
             attr_line_t orig_al;
 
-            for (const auto& row : rows) {
+            for (auto& row : rows) {
+                remove_string_attr(row.get_attrs(), &VC_BLOCK_ELEM);
+                for (auto& attr : row.get_attrs()) {
+                    if (attr.sa_type == &VC_ROLE) {
+                        auto role = attr.sa_value.get<role_t>();
+
+                        if (role == text_tc->tc_cursor_role
+                            || role == text_tc->tc_disabled_cursor_role)
+                        {
+                            attr.sa_range.lr_end = attr.sa_range.lr_start;
+                        }
+                    }
+                }
                 orig_al.append(row);
             }
 
             data_scanner ds(orig_al.get_string());
-            string_attrs_t sa;
             pretty_printer pp(&ds, orig_al.get_attrs());
+            attr_line_t pretty_al;
 
-            pp.append_to(full_text);
+            pp.append_to(pretty_al);
+            pretty_al.rtrim();
+
             all_intervals = pp.take_intervals();
             hier_nodes.emplace_back(pp.take_hier_root());
             hier_tree_vec.emplace_back(
-                0, full_text.length(), hier_nodes.back().get());
+                0, pretty_al.length(), hier_nodes.back().get());
+            pretty_indents = pp.take_indents();
+
+            pretty_al.split_lines(full_text);
         }
     }
     auto* pts = new pretty_sub_source();
@@ -454,6 +487,8 @@ open_pretty_view()
     pts->pss_hier_nods = std::move(hier_nodes);
     pts->pss_hier_tree = std::make_shared<pretty_sub_source::hier_tree_t>(
         std::move(hier_tree_vec));
+    pts->set_indents(std::move(pretty_indents));
+
     pts->replace_with(full_text);
     pretty_tc->set_sub_source(pts);
     if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {

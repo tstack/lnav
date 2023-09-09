@@ -48,6 +48,7 @@
 #include "base/result.h"
 #include "bookmarks.hh"
 #include "byte_array.hh"
+#include "file_options.hh"
 #include "ghc/filesystem.hpp"
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
@@ -400,6 +401,11 @@ public:
         return this->lf_embedded_metadata;
     }
 
+    nonstd::optional<lnav::file_options> get_file_options() const
+    {
+        return this->lf_file_options;
+    }
+
 protected:
     /**
      * Process a line from the file.
@@ -416,6 +422,8 @@ protected:
 
 private:
     logfile(std::string filename, const logfile_open_options& loo);
+
+    bool file_options_have_changed();
 
     std::string lf_filename;
     logfile_open_options lf_options;
@@ -458,6 +466,8 @@ private:
 
     std::vector<std::shared_ptr<format_tag_def>> lf_applicable_taggers;
     std::map<std::string, metadata> lf_embedded_metadata;
+    size_t lf_file_options_generation{0};
+    nonstd::optional<lnav::file_options> lf_file_options;
 };
 
 class logline_observer {

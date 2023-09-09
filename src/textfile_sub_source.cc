@@ -616,6 +616,7 @@ textfile_sub_source::rescan_files(
 
     file_iterator iter;
     rescan_result_t retval;
+    size_t files_scanned = 0;
 
     if (this->tss_view == nullptr || this->tss_view->is_paused()) {
         return retval;
@@ -623,7 +624,8 @@ textfile_sub_source::rescan_files(
 
     std::vector<std::shared_ptr<logfile>> closed_files;
     for (iter = this->tss_files.begin(); iter != this->tss_files.end();) {
-        if (deadline && ui_clock::now() > deadline.value()) {
+        if (deadline && files_scanned > 0 && ui_clock::now() > deadline.value())
+        {
             log_info("rescan_files() deadline reached, breaking...");
             retval.rr_scan_completed = false;
             break;
@@ -644,6 +646,7 @@ textfile_sub_source::rescan_files(
             ++iter;
             continue;
         }
+        files_scanned += 1;
 
         try {
             const auto& st = lf->get_stat();

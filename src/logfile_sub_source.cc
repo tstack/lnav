@@ -275,7 +275,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
     if (!this->lss_token_line->is_continued()
         && (this->lss_token_file->is_time_adjusted()
-            || (format->lf_timestamp_flags & ETF_ZONE_SET
+            || ((format->lf_timestamp_flags & ETF_ZONE_SET
+                 || format->lf_date_time.dts_default_zone != nullptr)
                 && format->lf_date_time.dts_zoned_to_local)
             || format->lf_timestamp_flags & ETF_MACHINE_ORIENTED
             || !(format->lf_timestamp_flags & ETF_DAY_SET)
@@ -496,8 +497,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         value_out.emplace_back(lr, VC_GRAPHIC.value(graph));
 
         if (!(this->lss_token_flags & RF_FULL)) {
-            bookmark_vector<vis_line_t>& bv_search
-                = bm[&textview_curses::BM_SEARCH];
+            auto& bv_search = bm[&textview_curses::BM_SEARCH];
 
             if (binary_search(std::begin(bv_search),
                               std::end(bv_search),
@@ -2347,7 +2347,8 @@ logfile_sub_source::text_crumbs_for_line(int line,
                        return breadcrumb::possibility{
                            elem.to_string(),
                        };
-                   });
+                   })
+                | lnav::itertools::to_vector();
         },
         [ec = this->lss_exec_context](const auto& format_name) {
             static const std::string MOVE_STMT = R"(;UPDATE lnav_views
