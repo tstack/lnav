@@ -1386,10 +1386,14 @@ json_path_handler_base::report_tz_error(yajlpp_parse_context* ypc,
                        .append(lnav::roles::h2("Available time zones"))
                        .append("\n");
 
-    for (const auto& tz : date::get_tzdb().zones) {
-        help_al.append("    ")
-            .append(lnav::roles::symbol(tz.name()))
-            .append("\n");
+    try {
+        for (const auto& tz : date::get_tzdb().zones) {
+            help_al.append("    ")
+                .append(lnav::roles::symbol(tz.name()))
+                .append("\n");
+        }
+    } catch (const std::runtime_error& e) {
+        log_error("unable to load timezones: %s", e.what());
     }
 
     ypc->report_error(lnav::console::user_message::error(

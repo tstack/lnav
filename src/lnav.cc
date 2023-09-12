@@ -1254,12 +1254,6 @@ looper()
         log_pipe_err(errpipe[0]);
         lnav_behavior lb;
 
-        {
-            log_info("BEGIN loading tzdb");
-            date::get_tzdb();
-            log_info("END loading tzdb");
-        }
-
         ui_periodic_timer::singleton();
 
         auto mouse_i = injector::get<xterm_mouse&>();
@@ -2202,7 +2196,7 @@ main(int argc, char* argv[])
     setenv("LNAV_HOME_DIR", lnav::paths::dotlnav().c_str(), 1);
     setenv("LNAV_WORK_DIR", lnav::paths::workdir().c_str(), 1);
 
-    {
+    try {
         auto& safe_options_hier
             = injector::get<lnav::safe_file_options_hier&>();
 
@@ -2239,6 +2233,8 @@ main(int argc, char* argv[])
             };
         options_hier->foh_path_to_collection.emplace(ghc::filesystem::path("/"),
                                                      options_coll);
+    } catch (const std::runtime_error& e) {
+        log_error("failed to setup tz: %s", e.what());
     }
 
     lnav_data.ld_exec_context.ec_sql_callback = sql_callback;

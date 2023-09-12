@@ -409,11 +409,17 @@ com_set_file_timezone(exec_context& ec,
                 lnav::filesystem::write_file(opt_path, coll_str);
             }
         } catch (const std::runtime_error& e) {
-            auto note = (date::get_tzdb().zones
-                         | lnav::itertools::map(&date::time_zone::name)
-                         | lnav::itertools::similar_to(split_args[1])
-                         | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                            .add_header("did you mean one of the following?");
+            attr_line_t note;
+
+            try {
+                note = (date::get_tzdb().zones
+                        | lnav::itertools::map(&date::time_zone::name)
+                        | lnav::itertools::similar_to(split_args[1])
+                        | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
+                           .add_header("did you mean one of the following?");
+            } catch (const std::runtime_error& e) {
+                log_error("unable to get timezones: %s", e.what());
+            }
             auto um = lnav::console::user_message::error(
                           attr_line_t()
                               .append_quoted(split_args[1])
@@ -441,24 +447,28 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
     if (lss != nullptr && lss->text_line_count() > 0) {
         auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
         if (line_pair) {
-            static auto& safe_options_hier
-                = injector::get<lnav::safe_file_options_hier&>();
+            try {
+                static auto& safe_options_hier
+                    = injector::get<lnav::safe_file_options_hier&>();
 
-            safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
-                safe_options_hier);
-            auto file_zone = date::get_tzdb().current_zone()->name();
-            auto pattern_arg = line_pair->first->get_filename();
-            auto match_res
-                = options_hier->match(line_pair->first->get_filename());
-            if (match_res) {
-                file_zone = match_res->second.fo_default_zone->name();
-                pattern_arg = match_res->first;
+                safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+                    safe_options_hier);
+                auto file_zone = date::get_tzdb().current_zone()->name();
+                auto pattern_arg = line_pair->first->get_filename();
+                auto match_res
+                    = options_hier->match(line_pair->first->get_filename());
+                if (match_res) {
+                    file_zone = match_res->second.fo_default_zone->name();
+                    pattern_arg = match_res->first;
+                }
+
+                retval = fmt::format(FMT_STRING("{} {} {}"),
+                                     trim(cmdline),
+                                     date::get_tzdb().current_zone()->name(),
+                                     line_pair->first->get_filename());
+            } catch (const std::runtime_error& e) {
+                log_error("cannot get timezones: %s", e.what());
             }
-
-            retval = fmt::format(FMT_STRING("{} {} {}"),
-                                 trim(cmdline),
-                                 date::get_tzdb().current_zone()->name(),
-                                 line_pair->first->get_filename());
         }
     }
 
