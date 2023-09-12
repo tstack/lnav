@@ -711,10 +711,26 @@ run_cap_test ${lnav_test} -n \
     -c ':filter-in Air Mob' \
     ${test_dir}/logfile_ansi.1
 
+export HOME="./file-tz"
+rm -rf "./file-tz"
+mkdir -p $HOME
+
 run_cap_test ${lnav_test} -n \
     -c ':set-file-timezone America/Los_Angeles' \
     ${test_dir}/logfile_syslog.0
 
+# make sure the file options were saved and restored
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT options_path, options FROM lnav_file" \
+    ${test_dir}/logfile_syslog.0
+
 run_cap_test ${lnav_test} -n \
     -c ':set-file-timezone America/New_York' \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':set-file-timezone bad' \
     ${test_dir}/logfile_syslog.0

@@ -59,6 +59,7 @@
 #include "field_overlay_source.hh"
 #include "fmt/printf.h"
 #include "hasher.hh"
+#include "itertools.similar.hh"
 #include "lnav.indexing.hh"
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
@@ -99,6 +100,12 @@ const char* curl_url_strerror(CURLUcode error);
 #endif
 
 using namespace lnav::roles::literals;
+
+inline attr_line_t&
+symbol_reducer(const std::string& elem, attr_line_t& accum)
+{
+    return accum.append("\n   ").append(lnav::roles::symbol(elem));
+}
 
 static std::string
 remaining_args(const std::string& cmdline,
@@ -331,6 +338,7 @@ com_set_file_timezone(exec_context& ec,
                       std::string cmdline,
                       std::vector<std::string>& args)
 {
+    static const intern_string_t SRC = intern_string::lookup("args");
     std::string retval;
 
     if (args.empty()) {
@@ -355,8 +363,29 @@ com_set_file_timezone(exec_context& ec,
             return ec.make_error(FMT_STRING("cannot find line: {}"),
                                  (int) tc->get_selection());
         }
+
+        shlex lexer(cmdline);
+        auto split_res = lexer.split(ec.create_resolver());
+        if (split_res.isErr()) {
+            auto split_err = split_res.unwrapErr();
+            auto um = lnav::console::user_message::error(
+                          "unable to parse arguments")
+                          .with_reason(split_err.te_msg)
+                          .with_snippet(lnav::console::snippet::from(
+                              SRC, lexer.to_attr_line(split_err)));
+
+            return Err(um);
+        }
+
+        auto split_args
+            = split_res.unwrap() | lnav::itertools::map([](const auto& elem) {
+                  return elem.se_value;
+              });
         try {
-            auto* tz = date::locate_zone(args[1]);
+            auto* tz = date::locate_zone(split_args[1]);
+            auto pattern = split_args.size() == 2
+                ? line_pair->first->get_filename()
+                : split_args[2];
 
             if (!ec.ec_dry_run) {
                 static auto& safe_options_hier
@@ -369,22 +398,122 @@ com_set_file_timezone(exec_context& ec,
                 auto& coll = options_hier->foh_path_to_collection["/"];
 
                 log_info("setting timezone for %s to %s",
-                         line_pair->first->get_filename().c_str(),
+                         pattern.c_str(),
                          args[1].c_str());
-                coll.foc_pattern_to_options[line_pair->first->get_filename()]
-                    = lnav::file_options{
-                        intern_string::lookup(args[1]),
-                        tz,
-                    };
+                coll.foc_pattern_to_options[pattern] = lnav::file_options{
+                    tz,
+                };
+
+                auto opt_path = lnav::paths::dotlnav() / "file-options.json";
+                auto coll_str = coll.to_json();
+                lnav::filesystem::write_file(opt_path, coll_str);
             }
         } catch (const std::runtime_error& e) {
-            return ec.make_error(FMT_STRING("Unable to get timezone: {} -- {}"),
-                                 args[1],
-                                 e.what());
+            auto note = (date::get_tzdb().zones
+                         | lnav::itertools::map(&date::time_zone::name)
+                         | lnav::itertools::similar_to(split_args[1])
+                         | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
+                            .add_header("did you mean one of the following?");
+            auto um = lnav::console::user_message::error(
+                          attr_line_t()
+                              .append_quoted(split_args[1])
+                              .append(" is not a valid timezone"))
+                          .with_reason(e.what())
+                          .with_note(note);
+            return Err(um);
         }
     } else {
         return ec.make_error(
             ":set-file-timezone is only supported for the LOG view");
+    }
+
+    return Ok(retval);
+}
+
+static std::string
+com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
+{
+    std::string retval;
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+
+    if (lss != nullptr && lss->text_line_count() > 0) {
+        auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+        if (line_pair) {
+            static auto& safe_options_hier
+                = injector::get<lnav::safe_file_options_hier&>();
+
+            safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+                safe_options_hier);
+            auto file_zone = date::get_tzdb().current_zone()->name();
+            auto pattern_arg = line_pair->first->get_filename();
+            auto match_res
+                = options_hier->match(line_pair->first->get_filename());
+            if (match_res) {
+                file_zone = match_res->second.fo_default_zone->name();
+                pattern_arg = match_res->first;
+            }
+
+            retval = fmt::format(FMT_STRING("{} {} {}"),
+                                 trim(cmdline),
+                                 date::get_tzdb().current_zone()->name(),
+                                 line_pair->first->get_filename());
+        }
+    }
+
+    return retval;
+}
+
+static Result<std::string, lnav::console::user_message>
+com_clear_file_timezone(exec_context& ec,
+                        std::string cmdline,
+                        std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("file-with-zone");
+        return Ok(retval);
+    }
+
+    if (args.size() != 2) {
+        return ec.make_error("expecting a single file path or pattern");
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+
+    if (lss != nullptr) {
+        if (!ec.ec_dry_run) {
+            static auto& safe_options_hier
+                = injector::get<lnav::safe_file_options_hier&>();
+
+            safe::WriteAccess<lnav::safe_file_options_hier> options_hier(
+                safe_options_hier);
+
+            options_hier->foh_generation += 1;
+            auto& coll = options_hier->foh_path_to_collection["/"];
+            const auto iter = coll.foc_pattern_to_options.find(args[1]);
+
+            if (iter == coll.foc_pattern_to_options.end()) {
+                return ec.make_error(FMT_STRING("no timezone set for: {}"),
+                                     args[1]);
+            }
+
+            log_info("clearing timezone for %s", args[1].c_str());
+            iter->second.fo_default_zone = nullptr;
+            if (iter->second.empty()) {
+                coll.foc_pattern_to_options.erase(iter);
+            }
+
+            auto opt_path = lnav::paths::dotlnav() / "file-options.json";
+            auto coll_str = coll.to_json();
+            lnav::filesystem::write_file(opt_path, coll_str);
+        }
+    } else {
+        return ec.make_error(
+            ":clear-file-timezone is only supported for the LOG view");
     }
 
     return Ok(retval);
@@ -5517,6 +5646,18 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text{"pattern",
                                       "The glob pattern to match against "
                                       "files that should use this timezone"}),
+        com_set_file_timezone_prompt,
+    },
+    {
+        "clear-file-timezone",
+        com_clear_file_timezone,
+        help_text(":clear-file-timezone")
+            .with_summary("Clear the timezone setting for the focused file or "
+                          "the given glob pattern.")
+            .with_parameter(
+                help_text{"pattern",
+                          "The glob pattern to match against files that should "
+                          "no longer use this timezone"}),
     },
     {"current-time",
      com_current_time,

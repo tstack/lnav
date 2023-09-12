@@ -211,6 +211,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         time_line.append("  Format: ")
             .append(lnav::roles::symbol(
                 ts_formats[format->lf_date_time.dts_fmt_lock]));
+        if (format->lf_date_time.dts_default_zone != nullptr) {
+            time_line.append("  Default Zone: ")
+                .append(lnav::roles::symbol(
+                    format->lf_date_time.dts_default_zone->name()));
+        }
     }
 
     if ((!this->fos_contexts.empty() && this->fos_contexts.top().c_show)

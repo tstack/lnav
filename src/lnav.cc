@@ -2205,6 +2205,26 @@ main(int argc, char* argv[])
     {
         auto& safe_options_hier
             = injector::get<lnav::safe_file_options_hier&>();
+
+        auto opt_path = lnav::paths::dotlnav() / "file-options.json";
+        auto read_res = lnav::filesystem::read_file(opt_path);
+        auto curr_tz = date::get_tzdb().current_zone();
+        auto options_coll = lnav::file_options_collection{};
+
+        if (read_res.isOk()) {
+            intern_string_t opt_path_src = intern_string::lookup(opt_path);
+            auto parse_res = lnav::file_options_collection::from_json(
+                opt_path_src, read_res.unwrap());
+            if (parse_res.isErr()) {
+                for (const auto& um : parse_res.unwrapErr()) {
+                    lnav::console::print(stderr, um);
+                }
+                return EXIT_FAILURE;
+            }
+
+            options_coll = parse_res.unwrap();
+        }
+
         safe::WriteAccess<lnav::safe_file_options_hier> options_hier(
             safe_options_hier);
 
@@ -2212,12 +2232,9 @@ main(int argc, char* argv[])
         auto_mem<char> var_path;
 
         var_path = realpath("/var/log", nullptr);
-        auto curr_tz = date::get_tzdb().current_zone();
-        auto options_coll = lnav::file_options_collection{};
         options_coll.foc_pattern_to_options[fmt::format(FMT_STRING("{}/*"),
                                                         var_path.in())]
             = lnav::file_options{
-                intern_string::lookup(curr_tz->name()),
                 curr_tz,
             };
         options_hier->foh_path_to_collection.emplace(ghc::filesystem::path("/"),

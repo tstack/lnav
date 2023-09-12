@@ -38,20 +38,31 @@
 #include "ghc/filesystem.hpp"
 #include "mapbox/variant.hpp"
 #include "safe/safe.h"
+#include "yajlpp/yajlpp.hh"
 
 namespace lnav {
 
 struct file_options {
-    intern_string_t fo_default_zone_name;
     const date::time_zone* fo_default_zone{nullptr};
+
+    bool empty() const { return this->fo_default_zone == nullptr; }
+
+    json_string to_json_string() const;
 
     bool operator==(const file_options& rhs) const;
 };
 
 struct file_options_collection {
+    static Result<file_options_collection,
+                  std::vector<lnav::console::user_message>>
+    from_json(intern_string_t src, const string_fragment& frag);
+
     std::map<std::string, file_options> foc_pattern_to_options;
 
-    nonstd::optional<file_options> match(const std::string& path) const;
+    nonstd::optional<std::pair<std::string, file_options>> match(
+        const std::string& path) const;
+
+    std::string to_json() const;
 };
 
 struct file_options_hier {
@@ -59,7 +70,7 @@ struct file_options_hier {
         foh_path_to_collection;
     size_t foh_generation{0};
 
-    nonstd::optional<file_options> match(
+    nonstd::optional<std::pair<std::string, file_options>> match(
         const ghc::filesystem::path& path) const;
 };
 

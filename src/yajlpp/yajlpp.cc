@@ -212,9 +212,6 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
     if (this->jph_children) {
         for (const auto& lpath : local_paths) {
             std::string full_path = json_ptr::encode_str(lpath);
-            if (this->jph_path_provider) {
-                full_path += "/";
-            }
             int start_depth = ygc.ygc_depth;
 
             yajl_gen_string(handle, lpath);
@@ -1378,6 +1375,29 @@ json_path_handler_base::report_pattern_error(yajlpp_parse_context* ypc,
             .with_reason(attr_line_t("value does not match pattern: ")
                              .append(lnav::roles::symbol(this->jph_pattern_re)))
             .with_help(this->get_help_text(ypc)));
+}
+
+void
+json_path_handler_base::report_tz_error(yajlpp_parse_context* ypc,
+                                        const std::string& value_str,
+                                        const char* msg) const
+{
+    auto help_al = attr_line_t()
+                       .append(lnav::roles::h2("Available time zones"))
+                       .append("\n");
+
+    for (const auto& tz : date::get_tzdb().zones) {
+        help_al.append("    ")
+            .append(lnav::roles::symbol(tz.name()))
+            .append("\n");
+    }
+
+    ypc->report_error(lnav::console::user_message::error(
+                          attr_line_t().append_quoted(value_str).append(
+                              " is not a valid timezone"))
+                          .with_snippet(ypc->get_snippet())
+                          .with_reason(msg)
+                          .with_help(help_al));
 }
 
 attr_line_t

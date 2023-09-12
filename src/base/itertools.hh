@@ -705,11 +705,11 @@ operator|(const std::map<K, V>& in,
 template<typename T, typename F>
 auto
 operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
-    -> std::vector<
-        std::remove_const_t<decltype(((*in.begin()).*mapper.m_func)())>>
+    -> std::vector<std::remove_const_t<
+        std::remove_reference_t<decltype(((*in.begin()).*mapper.m_func)())>>>
 {
-    using return_type = std::vector<
-        std::remove_const_t<decltype(((*in.begin()).*mapper.m_func)())>>;
+    using return_type = std::vector<std::remove_const_t<
+        std::remove_reference_t<decltype(((*in.begin()).*mapper.m_func)())>>>;
     return_type retval;
 
     retval.reserve(in.size());

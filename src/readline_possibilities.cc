@@ -515,10 +515,24 @@ add_tz_possibilities(ln_mode_t context)
 {
     auto* rc = lnav_data.ld_rl_view;
 
-    log_info("BEGIN tz poss");
     rc->clear_possibilities(context, "timezone");
     for (const auto& tz : date::get_tzdb().zones) {
         rc->add_possibility(context, "timezone", tz.name());
     }
-    log_info("END tz poss");
+
+    {
+        static auto& safe_options_hier
+            = injector::get<lnav::safe_file_options_hier&>();
+
+        safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+            safe_options_hier);
+        rc->clear_possibilities(context, "file-with-zone");
+        for (const auto& hier_pair : options_hier->foh_path_to_collection) {
+            for (const auto& coll_pair :
+                 hier_pair.second.foc_pattern_to_options)
+            {
+                rc->add_possibility(context, "file-with-zone", coll_pair.first);
+            }
+        }
+    }
 }
