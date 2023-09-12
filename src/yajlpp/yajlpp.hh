@@ -316,6 +316,9 @@ struct json_path_handler_base {
     void report_error(yajlpp_parse_context* ypc,
                       const std::string& value_str,
                       lnav::console::user_message um) const;
+    void report_tz_error(yajlpp_parse_context* ypc,
+                         const std::string& value_str,
+                         const char* msg) const;
 
     attr_line_t get_help_text(const std::string& full_path) const;
     attr_line_t get_help_text(yajlpp_parse_context* ypc) const;

@@ -40,15 +40,26 @@ namespace lnav {
 static const typed_json_path_container<file_options> options_handlers = {
     yajlpp::property_handler("default-zone")
         .with_synopsis("<zone>")
-        .with_description("The default zone")
-        .with_example("America/Los_Angeles"),
+        .with_description("The default zone for log messages if the timestamp "
+                          "does not include a zone.")
+        .with_example("America/Los_Angeles")
+        .for_field(&file_options::fo_default_zone),
+};
+
+static const typed_json_path_container<file_options_collection>
+    pattern_to_options_handlers = {
+        yajlpp::pattern_property_handler("(?<path>[^/]+)")
+            .with_description("Path or glob pattern")
+            .with_children(options_handlers)
+            .for_field(&file_options_collection::foc_pattern_to_options),
 };
 
 static const typed_json_path_container<file_options_collection>
     collection_handlers = {
-        yajlpp::pattern_property_handler("(.*)")
-            .with_description("Path pattern")
-            .with_children(options_handlers),
+        yajlpp::property_handler("paths")
+            .with_description("Mapping of file paths or glob patterns to the "
+                              "associated options")
+            .with_children(pattern_to_options_handlers),
 };
 
 bool
@@ -57,19 +68,40 @@ file_options::operator==(const lnav::file_options& rhs) const
     return this->fo_default_zone == rhs.fo_default_zone;
 }
 
-nonstd::optional<file_options>
+json_string
+file_options::to_json_string() const
+{
+    return options_handlers.to_json_string(*this);
+}
+
+Result<file_options_collection, std::vector<lnav::console::user_message>>
+file_options_collection::from_json(intern_string_t src,
+                                   const string_fragment& frag)
+{
+    return collection_handlers.parser_for(src).of(frag);
+}
+
+std::string
+file_options_collection::to_json() const
+{
+    return collection_handlers.formatter_for(*this)
+        .with_config(yajl_gen_beautify, true)
+        .to_string();
+}
+
+nonstd::optional<std::pair<std::string, file_options>>
 file_options_collection::match(const std::string& path) const
 {
     auto iter = this->foc_pattern_to_options.find(path);
     if (iter != this->foc_pattern_to_options.end()) {
-        return iter->second;
+        return *iter;
     }
 
     for (const auto& pair : this->foc_pattern_to_options) {
         auto rc = fnmatch(pair.first.c_str(), path.c_str(), FNM_PATHNAME);
 
         if (rc == 0) {
-            return pair.second;
+            return pair;
         }
         if (rc != FNM_NOMATCH) {
             log_error("fnmatch('%s', '%s') failed -- %s",
@@ -82,7 +114,7 @@ file_options_collection::match(const std::string& path) const
     return nonstd::nullopt;
 }
 
-nonstd::optional<file_options>
+nonstd::optional<std::pair<std::string, file_options>>
 file_options_hier::match(const ghc::filesystem::path& path) const
 {
     auto lookup_path = path.parent_path();

@@ -233,7 +233,7 @@ json_ptr::encode_str(const char* src, size_t src_len)
         src_len = strlen(src);
     }
 
-    char retval[src_len + 1];
+    char retval[src_len * 2 + 1];
     auto rc = encode(retval, sizeof(retval), src, src_len);
 
     return std::string(retval, rc);

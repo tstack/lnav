@@ -114,6 +114,20 @@
 ----
 
 
+.. _clear_file_timezone:
+
+:clear-file-timezone *pattern*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Clear the timezone setting for the focused file or the given glob pattern.
+
+  **Parameters**
+    * **pattern\*** --- The glob pattern to match against files that should no longer use this timezone
+
+
+----
+
+
 .. _clear_filter_expr:
 
 :clear-filter-expr

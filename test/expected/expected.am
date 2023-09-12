@@ -346,6 +346,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_json_format.sh_f740026626ab554dacb249762d8be7d6539b8c6e.out \
     $(srcdir)/%reldir%/test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.err \
     $(srcdir)/%reldir%/test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.out \
+    $(srcdir)/%reldir%/test_logfile.sh_00877d2e9dadab916a02005a068410dfbd85ec74.err \
+    $(srcdir)/%reldir%/test_logfile.sh_00877d2e9dadab916a02005a068410dfbd85ec74.out \
     $(srcdir)/%reldir%/test_logfile.sh_05d1505168bf34b89fc0d1a39f1409cfe798119e.err \
     $(srcdir)/%reldir%/test_logfile.sh_05d1505168bf34b89fc0d1a39f1409cfe798119e.out \
     $(srcdir)/%reldir%/test_logfile.sh_08d731a04c877a34819b35de185e30a74c9fd497.err \
@@ -358,6 +360,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_logfile.sh_218ecb88b4753010c4264b3ac351260b4811612f.out \
     $(srcdir)/%reldir%/test_logfile.sh_290a3c49e53c2229a7400c107338fa0bb38375e2.err \
     $(srcdir)/%reldir%/test_logfile.sh_290a3c49e53c2229a7400c107338fa0bb38375e2.out \
+    $(srcdir)/%reldir%/test_logfile.sh_2e72d848a51ac1eb476b973c61fe43a65d579ba5.err \
+    $(srcdir)/%reldir%/test_logfile.sh_2e72d848a51ac1eb476b973c61fe43a65d579ba5.out \
     $(srcdir)/%reldir%/test_logfile.sh_341e491abcf8772422bafb8b0eaea6492da230f6.err \
     $(srcdir)/%reldir%/test_logfile.sh_341e491abcf8772422bafb8b0eaea6492da230f6.out \
     $(srcdir)/%reldir%/test_logfile.sh_3fc6bfd8a6160817211f3e14fde957af75b9dbe7.err \
@@ -376,6 +380,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.out \
     $(srcdir)/%reldir%/test_logfile.sh_c18e14a26d8261c9f72747118a469266121d5459.err \
     $(srcdir)/%reldir%/test_logfile.sh_c18e14a26d8261c9f72747118a469266121d5459.out \
+    $(srcdir)/%reldir%/test_logfile.sh_cc368d4b4bb6a9b9c79bd5a70ffa1f2d9d01e286.err \
+    $(srcdir)/%reldir%/test_logfile.sh_cc368d4b4bb6a9b9c79bd5a70ffa1f2d9d01e286.out \
     $(srcdir)/%reldir%/test_logfile.sh_ccb0d31813367c8d9dc5b5df383fac5b780711c1.err \
     $(srcdir)/%reldir%/test_logfile.sh_ccb0d31813367c8d9dc5b5df383fac5b780711c1.out \
     $(srcdir)/%reldir%/test_logfile.sh_d14f6d8888652321206549df8a9535399f0fd372.err \

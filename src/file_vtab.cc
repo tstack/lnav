@@ -40,6 +40,7 @@
 #include "logfile.hh"
 #include "session_data.hh"
 #include "vtab_module.hh"
+#include "vtab_module_json.hh"
 
 struct lnav_file : public tvt_iterator_cursor<lnav_file> {
     using iterator = std::vector<std::shared_ptr<logfile>>::iterator;
@@ -56,6 +57,8 @@ CREATE TABLE lnav_file (
     format text,          -- The log file format for the file.
     lines integer,        -- The number of lines in the file.
     time_offset integer,  -- The millisecond offset for timestamps.
+    options_path TEXT,    -- The matched path for the file options.
+    options TEXT,         -- The effective options for the file.
 
     content BLOB HIDDEN   -- The contents of the file.
 );
@@ -108,6 +111,32 @@ CREATE TABLE lnav_file (
                 break;
             }
             case 8: {
+                if (sqlite3_vtab_nochange(ctx)) {
+                    return SQLITE_OK;
+                }
+
+                auto opts = lf->get_file_options();
+                if (opts) {
+                    to_sqlite(ctx, opts.value().first);
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
+            case 9: {
+                if (sqlite3_vtab_nochange(ctx)) {
+                    return SQLITE_OK;
+                }
+
+                auto opts = lf->get_file_options();
+                if (opts) {
+                    to_sqlite(ctx, opts.value().second.to_json_string());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
+            case 10: {
                 if (sqlite3_vtab_nochange(ctx)) {
                     return SQLITE_OK;
                 }
@@ -186,6 +215,8 @@ CREATE TABLE lnav_file (
                    const char* format,
                    int64_t lines,
                    int64_t time_offset,
+                   const char* options_path,
+                   const char* options,
                    const char* content)
     {
         auto lf = this->lf_collection.fc_files[rowid];

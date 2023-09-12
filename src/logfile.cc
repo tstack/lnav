@@ -181,6 +181,8 @@ logfile::file_options_have_changed()
     static auto& safe_options_hier
         = injector::get<lnav::safe_file_options_hier&>();
 
+    bool tz_changed = false;
+
     {
         safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
             safe_options_hier);
@@ -197,13 +199,25 @@ logfile::file_options_have_changed()
         this->lf_file_options = new_options;
         log_info("%s: file options have changed", this->lf_filename.c_str());
         if (this->lf_file_options) {
-            log_info("  tz=%s",
-                     this->lf_file_options->fo_default_zone->name().c_str());
+            log_info(
+                "  tz=%s",
+                this->lf_file_options->second.fo_default_zone->name().c_str());
+            if (this->lf_file_options->second.fo_default_zone != nullptr
+                && this->lf_format != nullptr
+                && !(this->lf_format->lf_timestamp_flags & ETF_ZONE_SET))
+            {
+                tz_changed = true;
+            }
+        } else if (this->lf_format != nullptr
+                   && !(this->lf_format->lf_timestamp_flags & ETF_ZONE_SET)
+                   && this->lf_format->lf_date_time.dts_default_zone != nullptr)
+        {
+            tz_changed = true;
         }
         this->lf_file_options_generation = options_hier->foh_generation;
     }
 
-    return true;
+    return tz_changed;
 }
 
 bool
