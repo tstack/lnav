@@ -98,6 +98,16 @@ Features:
   to a target timezone.
 * Added a `:convert-time-to` command that converts the
   timestamp of the focused log message to the given timezone.
+* Added the `:set-file-timezone` and `:clear-file-timezone`
+  commands to set the timezone for log messages that don't
+  include a zone in their timestamp.
+* Added the `options_path` and `options` columns to the
+  `lnav_file` table so you can see what options are applied
+  to a file.  Currently, the only option is the default
+  timezone that is set by the `:set-file-timezone` command.
+* Added the `config file-options` management command that
+  can be used to examine the options that will be applied
+  to a given file.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

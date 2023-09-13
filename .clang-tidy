@@ -159,4 +159,6 @@ CheckOptions:
     value: '2'
   - key: 'readability-identifier-length.MinimumParameterNameLength'
     value: '2'
+  - key: 'cppcoreguidelines-avoid-do-while.IgnoreMacros'
+    value: 'true'
 ...

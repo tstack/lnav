@@ -127,6 +127,17 @@ Subcommands
    Print out the configuration options as JSON-Pointers and the
    file/line-number where the configuration is sourced from.
 
+.. option:: config file-options <path>
+
+   Print out the options that will be applied to the given file.  The
+   options are stored in the :file:`file-options.json` file in the
+   **lnav** configuration directory.  The only option available at
+   the moment is the timezone to be used for log message timestamps
+   that do not include a zone.  The timezone for a file can be set
+   using the :ref:`:set-file-timezone<set_file_timezone>` command
+   and cleared with the :ref:`:clear-file-timezone<clear_file_timezone>`
+   command.
+
 .. option:: format <format-name> get
 
    Print information about the given log format.
@@ -187,20 +198,20 @@ Environment Variables
 Examples
 --------
 
-  To load and follow the system syslog file:
+To load and follow the system syslog file:
 
-  .. prompt:: bash
+.. prompt:: bash
 
-    lnav
+   lnav
 
-  To load all of the files in :file:`/var/log`:
+To load all of the files in :file:`/var/log`:
 
-  .. prompt:: bash
+.. prompt:: bash
 
-    lnav /var/log
+   lnav /var/log
 
-  To watch the output of make:
+To watch the output of make:
 
-  .. prompt:: bash
+.. prompt:: bash
 
-    lnav -e 'make -j4'
+   lnav -e 'make -j4'

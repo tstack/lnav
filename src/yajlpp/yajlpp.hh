@@ -709,6 +709,11 @@ struct json_string {
         this->js_len = buf_pair.second;
     }
 
+    string_fragment to_string_fragment() const
+    {
+        return string_fragment::from_bytes(this->js_content, this->js_len);
+    }
+
     auto_mem<const unsigned char> js_content;
     size_t js_len{0};
 };

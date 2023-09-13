@@ -36,6 +36,7 @@
 #include "base/paths.hh"
 #include "base/result.h"
 #include "base/string_util.hh"
+#include "file_options.hh"
 #include "fmt/chrono.h"
 #include "fmt/format.h"
 #include "itertools.similar.hh"
@@ -80,6 +81,7 @@ struct subcmd_config_t {
 
     CLI::App* sc_config_app{nullptr};
     action_t sc_action;
+    std::string sc_path;
 
     static perform_result_t default_action(const subcmd_config_t& sc)
     {
@@ -113,6 +115,57 @@ struct subcmd_config_t {
         }
 
         auto um = console::user_message::raw(blame.rtrim());
+
+        return {um};
+    }
+
+    static perform_result_t file_options_action(const subcmd_config_t& sc)
+    {
+        auto& safe_options_hier
+            = injector::get<lnav::safe_file_options_hier&>();
+
+        if (sc.sc_path.empty()) {
+            auto um = lnav::console::user_message::error(
+                "Expecting a file path to check for options");
+
+            return {um};
+        }
+
+        safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+            safe_options_hier);
+
+        auto realpath_res = lnav::filesystem::realpath(sc.sc_path);
+        if (realpath_res.isErr()) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("Unable to get full path for file: ")
+                              .append(lnav::roles::file(sc.sc_path)))
+                          .with_reason(realpath_res.unwrapErr());
+
+            return {um};
+        }
+        auto full_path = realpath_res.unwrap();
+        auto file_opts = options_hier->match(full_path);
+        if (file_opts) {
+            auto content = attr_line_t().append(
+                file_opts->second.to_json_string().to_string_fragment());
+            auto um = lnav::console::user_message::raw(content);
+            perform_result_t retval;
+
+            retval.emplace_back(um);
+
+            return retval;
+        }
+
+        auto um
+            = lnav::console::user_message::info(
+                  attr_line_t("no options found for file: ")
+                      .append(lnav::roles::file(full_path.string())))
+                  .with_help(
+                      attr_line_t("Use the ")
+                          .append(":set-file-timezone"_symbol)
+                          .append(
+                              " command to set the zone for messages in files "
+                              "that do not include a zone in the timestamp"));
 
         return {um};
     }
@@ -1094,6 +1147,15 @@ describe_cli(CLI::App& app, int argc, char* argv[])
             ->callback([&]() {
                 config_args.set_action(subcmd_config_t::blame_action);
             });
+
+        auto* sub_file_options = subcmd_config->add_subcommand(
+            "file-options", "print the options applied to specific files");
+
+        sub_file_options->add_option(
+            "path", config_args.sc_path, "the path to the file");
+        sub_file_options->callback([&]() {
+            config_args.set_action(subcmd_config_t::file_options_action);
+        });
     }
 
     {

@@ -134,26 +134,26 @@ You can copy the code block, save it to a file in
 definition, see one of the definitions built into **lnav**, like
 `monocai <https://github.com/tstack/lnav/blob/master/src/themes/monocai.json>`_.
 
-  .. code-block:: json
+.. code-block:: json
 
-    {
-        "$schema": "https://lnav.org/schemas/config-v1.schema.json",
-        "ui": {
-            "theme-defs": {
-                "example1": {
-                    "vars": {
-                        "black": "#2d2a2e"
-                    },
-                    "styles": {
-                        "text": {
-                            "color": "#f6f6f6",
-                            "background-color": "$black"
-                        }
-                    }
-                }
-            }
-        }
-    }
+  {
+      "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+      "ui": {
+          "theme-defs": {
+              "example1": {
+                  "vars": {
+                      "black": "#2d2a2e"
+                  },
+                  "styles": {
+                      "text": {
+                          "color": "#f6f6f6",
+                          "background-color": "$black"
+                      }
+                  }
+              }
+          }
+      }
+  }
 
 Reference
 ^^^^^^^^^

@@ -1125,7 +1125,9 @@ struct json_path_handler : public json_path_handler_base {
 
     template<
         typename... Args,
-        std::enable_if_t<LastIs<const date::time_zone*, Args...>::value, bool>
+        std::enable_if_t<
+            LastIs<positioned_property<const date::time_zone*>, Args...>::value,
+            bool>
         = true>
     json_path_handler& for_field(Args... args)
     {
@@ -1138,7 +1140,11 @@ struct json_path_handler : public json_path_handler_base {
             try {
                 const auto* tz
                     = date::get_tzdb().locate_zone(value_str.to_string());
-                json_path_handler::get_field(obj, args...) = tz;
+                auto& field = json_path_handler::get_field(obj, args...);
+                field.pp_path = ypc->get_full_path();
+                field.pp_location.sl_source = ypc->ypc_source;
+                field.pp_location.sl_line_number = ypc->get_line_number();
+                field.pp_value = tz;
             } catch (const std::runtime_error& e) {
                 jph->report_tz_error(ypc, value_str.to_string(), e.what());
             }
@@ -1155,7 +1161,7 @@ struct json_path_handler : public json_path_handler_base {
                 const auto& field_def = json_path_handler::get_field(
                     ygc.ygc_default_stack.top(), args...);
 
-                if (field == field_def) {
+                if (field.pp_value == field_def.pp_value) {
                     return yajl_gen_status_ok;
                 }
             }
@@ -1166,7 +1172,7 @@ struct json_path_handler : public json_path_handler_base {
 
             yajlpp_generator gen(handle);
 
-            return gen(field->name());
+            return gen(field.pp_value->name());
         };
         return *this;
     }

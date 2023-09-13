@@ -1216,14 +1216,14 @@
 
 .. _set_file_timezone:
 
-:set-file-timezone *zone* *pattern*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:set-file-timezone *zone* *\[pattern\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Set the timezone to use for log messages that do not include a timezone.  The timezone is applied to the focused file or the given glob pattern.
 
   **Parameters**
     * **zone\*** --- The timezone name
-    * **pattern\*** --- The glob pattern to match against files that should use this timezone
+    * **pattern** --- The glob pattern to match against files that should use this timezone
 
 
 ----

@@ -67,6 +67,9 @@ openp(const ghc::filesystem::path& path, int flags, mode_t mode)
     return open(path.c_str(), flags, mode);
 }
 
+Result<ghc::filesystem::path, std::string> realpath(
+    const ghc::filesystem::path& path);
+
 Result<auto_fd, std::string> create_file(const ghc::filesystem::path& path,
                                          int flags,
                                          mode_t mode);

@@ -8,7 +8,7 @@ with status bars above and below, and the interactive prompt as the last line.
 
 .. figure:: lnav-ui.png
    :align: center
-   :alt: Screenshot of lnav showing a mix of syslog and web access_log messages.
+   :figwidth: 90%
 
    Screenshot of **lnav** viewing syslog and web access_log messages.
 
@@ -263,10 +263,10 @@ Markdown
 Files with an :code:`.md` (or :code:`.markdown`) extension will be treated as
 Markdown files and rendered separately.
 
-  .. figure:: lnav-markdown-example.png
-     :align: center
+.. figure:: lnav-markdown-example.png
+   :align: center
 
-     Viewing the **lnav** :file:`README.md` file.
+   Viewing the **lnav** :file:`README.md` file.
 
 
 DB
