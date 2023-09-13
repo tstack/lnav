@@ -1066,7 +1066,7 @@ external_log_format::scan(logfile& lf,
 
         if (file_options) {
             this->lf_date_time.dts_default_zone
-                = file_options->second.fo_default_zone;
+                = file_options->second.fo_default_zone.pp_value;
         } else {
             this->lf_date_time.dts_default_zone = nullptr;
         }

@@ -203,6 +203,8 @@ struct file_collection {
         return this->fc_files.size() < get_limits().l_open_files;
     }
 
+    size_t other_file_format_count(file_format_t ff) const;
+
     file_collection rescan_files(bool required = false);
 
     void expand_filename(lnav::futures::future_queue<file_collection>& fq,

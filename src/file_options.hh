@@ -43,9 +43,9 @@
 namespace lnav {
 
 struct file_options {
-    const date::time_zone* fo_default_zone{nullptr};
+    positioned_property<const date::time_zone*> fo_default_zone{nullptr};
 
-    bool empty() const { return this->fo_default_zone == nullptr; }
+    bool empty() const { return this->fo_default_zone.pp_value == nullptr; }
 
     json_string to_json_string() const;
 

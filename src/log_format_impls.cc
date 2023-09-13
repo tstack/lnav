@@ -112,7 +112,7 @@ class generic_log_format : public log_format {
 
             if (file_options) {
                 this->lf_date_time.dts_default_zone
-                    = file_options->second.fo_default_zone;
+                    = file_options->second.fo_default_zone.pp_value;
             } else {
                 this->lf_date_time.dts_default_zone = nullptr;
             }
@@ -551,7 +551,7 @@ public:
 
             if (file_options) {
                 this->lf_date_time.dts_default_zone
-                    = file_options->second.fo_default_zone;
+                    = file_options->second.fo_default_zone.pp_value;
             } else {
                 this->lf_date_time.dts_default_zone = nullptr;
             }
@@ -1227,7 +1227,7 @@ public:
 
             if (file_options) {
                 this->lf_date_time.dts_default_zone
-                    = file_options->second.fo_default_zone;
+                    = file_options->second.fo_default_zone.pp_value;
             } else {
                 this->lf_date_time.dts_default_zone = nullptr;
             }
@@ -1751,7 +1751,7 @@ public:
 
             if (file_options) {
                 this->lf_date_time.dts_default_zone
-                    = file_options->second.fo_default_zone;
+                    = file_options->second.fo_default_zone.pp_value;
             } else {
                 this->lf_date_time.dts_default_zone = nullptr;
             }

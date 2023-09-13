@@ -65,7 +65,7 @@ static const typed_json_path_container<file_options_collection>
 bool
 file_options::operator==(const lnav::file_options& rhs) const
 {
-    return this->fo_default_zone == rhs.fo_default_zone;
+    return this->fo_default_zone.pp_value == rhs.fo_default_zone.pp_value;
 }
 
 json_string
@@ -117,6 +117,8 @@ file_options_collection::match(const std::string& path) const
 nonstd::optional<std::pair<std::string, file_options>>
 file_options_hier::match(const ghc::filesystem::path& path) const
 {
+    static const auto ROOT_PATH = ghc::filesystem::path("/");
+
     auto lookup_path = path.parent_path();
 
     while (true) {
@@ -127,7 +129,12 @@ file_options_hier::match(const ghc::filesystem::path& path) const
 
         auto next_lookup_path = lookup_path.parent_path();
         if (lookup_path == next_lookup_path) {
-            break;
+            if (lookup_path != ROOT_PATH) {
+                // remote paths won't end with root, so try that
+                next_lookup_path = ROOT_PATH;
+            } else {
+                break;
+            }
         }
         lookup_path = next_lookup_path;
     }

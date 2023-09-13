@@ -821,3 +821,17 @@ file_collection::copy()
     retval.fc_progress = this->fc_progress;
     return retval;
 }
+
+size_t
+file_collection::other_file_format_count(file_format_t ff) const
+{
+    size_t retval = 0;
+
+    for (const auto& pair : this->fc_other_files) {
+        if (pair.second.ofd_format == ff) {
+            retval += 1;
+        }
+    }
+
+    return retval;
+}

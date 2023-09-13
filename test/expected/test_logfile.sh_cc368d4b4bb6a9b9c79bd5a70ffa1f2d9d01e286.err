@@ -8,7 +8,7 @@
             [1mBrazil/DeNoronha[0m
             [1mAmerica/Barbados[0m
             [1mAsia/Baghdad[0m
-[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mset-file-timezone[0m[4m [0m[4mzone[0m[4m [0m[4mpattern[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mset-file-timezone[0m[4m [0m[4mzone[0m[4m [[0m[4mpattern[0m[4m][0m
          ══════════════════════════════════════════════════════════════════════
            Set the timezone to use for log messages that do not include a
            timezone.  The timezone is applied to the focused file or the given

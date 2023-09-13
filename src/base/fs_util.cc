@@ -29,6 +29,8 @@
 
 #include "fs_util.hh"
 
+#include <stdlib.h>
+
 #include "config.h"
 #include "fmt/format.h"
 #include "itertools.hh"
@@ -36,6 +38,19 @@
 
 namespace lnav {
 namespace filesystem {
+
+Result<ghc::filesystem::path, std::string>
+realpath(const ghc::filesystem::path& path)
+{
+    char resolved[PATH_MAX];
+    auto rc = ::realpath(path.c_str(), resolved);
+
+    if (rc == nullptr) {
+        return Err(std::string(strerror(errno)));
+    }
+
+    return Ok(ghc::filesystem::path(resolved));
+}
 
 Result<auto_fd, std::string>
 create_file(const ghc::filesystem::path& path, int flags, mode_t mode)

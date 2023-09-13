@@ -201,8 +201,10 @@ logfile::file_options_have_changed()
         if (this->lf_file_options) {
             log_info(
                 "  tz=%s",
-                this->lf_file_options->second.fo_default_zone->name().c_str());
-            if (this->lf_file_options->second.fo_default_zone != nullptr
+                this->lf_file_options->second.fo_default_zone.pp_value->name()
+                    .c_str());
+            if (this->lf_file_options->second.fo_default_zone.pp_value
+                    != nullptr
                 && this->lf_format != nullptr
                 && !(this->lf_format->lf_timestamp_flags & ETF_ZONE_SET))
             {

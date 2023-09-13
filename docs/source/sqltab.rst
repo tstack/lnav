@@ -95,12 +95,22 @@ following columns are available in this table:
   :device: The device the file is stored on.
   :inode: The inode for the file on the device.
   :filepath: If this is a real file, it will be the absolute path.  Otherwise,
-    it is a symbolic name.  If it is a symbolic name, it can be UPDATEd so that
-    this file will be considered when saving and loading session information.
+    it is a symbolic name.  If it is a symbolic name, it can be UPDATEd
+    so that this file will be considered when saving and loading session
+    information.
+  :mimetype: The detected MIME type of the file.
+  :content_id: The hash of some unique content in the file.
   :format: The log file format for the file.
   :lines: The number of lines in the file.
   :time_offset: The millisecond offset for timestamps.  This column can be
     UPDATEd to change the offset of timestamps in the file.
+  :options_path: Options can be applied to files based on a path or glob
+    pattern.  If this file matches a set of options, the matching path/pattern
+    is available in this column and the actual options themselves are in the
+    :code:`options` column.
+  :options: The options that are applicable to this file.  Currently, the
+    only options available are for the timezone set by the
+    :ref:`:set-file-timezone<set_file_timezone>` command.
 
 lnav_file_metadata
 ------------------

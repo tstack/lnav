@@ -382,7 +382,7 @@ com_set_file_timezone(exec_context& ec,
                   return elem.se_value;
               });
         try {
-            auto* tz = date::locate_zone(split_args[1]);
+            const auto* tz = date::locate_zone(split_args[1]);
             auto pattern = split_args.size() == 2
                 ? line_pair->first->get_filename()
                 : split_args[2];
@@ -401,7 +401,7 @@ com_set_file_timezone(exec_context& ec,
                          pattern.c_str(),
                          args[1].c_str());
                 coll.foc_pattern_to_options[pattern] = lnav::file_options{
-                    tz,
+                    {intern_string_t{}, source_location{}, tz},
                 };
 
                 auto opt_path = lnav::paths::dotlnav() / "file-options.json";
@@ -458,7 +458,8 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
                 auto match_res
                     = options_hier->match(line_pair->first->get_filename());
                 if (match_res) {
-                    file_zone = match_res->second.fo_default_zone->name();
+                    file_zone
+                        = match_res->second.fo_default_zone.pp_value->name();
                     pattern_arg = match_res->first;
                 }
 
@@ -512,7 +513,7 @@ com_clear_file_timezone(exec_context& ec,
             }
 
             log_info("clearing timezone for %s", args[1].c_str());
-            iter->second.fo_default_zone = nullptr;
+            iter->second.fo_default_zone.pp_value = nullptr;
             if (iter->second.empty()) {
                 coll.foc_pattern_to_options.erase(iter);
             }
@@ -5655,7 +5656,8 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter({"zone", "The timezone name"})
             .with_parameter(help_text{"pattern",
                                       "The glob pattern to match against "
-                                      "files that should use this timezone"}),
+                                      "files that should use this timezone"}
+                                .optional()),
         com_set_file_timezone_prompt,
     },
     {

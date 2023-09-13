@@ -1092,6 +1092,50 @@ struct refresh_status_bars {
 };
 
 static void
+check_for_file_zones()
+{
+    auto with_tz_count = 0;
+    std::vector<std::string> without_tz_files;
+
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        auto format = lf->get_format_ptr();
+        if (format == nullptr) {
+            continue;
+        }
+
+        if (format->lf_timestamp_flags & ETF_ZONE_SET
+            || format->lf_date_time.dts_default_zone != nullptr)
+        {
+            with_tz_count += 1;
+        } else {
+            without_tz_files.emplace_back(lf->get_unique_path());
+        }
+    }
+    if (with_tz_count > 0 && !without_tz_files.empty()) {
+        auto note
+            = attr_line_t("The file(s) without a zone: ")
+                  .join(
+                      without_tz_files, VC_ROLE.value(role_t::VCR_FILE), ", ");
+        auto um
+            = lnav::console::user_message::warning(
+                  "Some messages may not be sorted by time correctly")
+                  .with_reason(
+                      "There are one or more files whose messages do not have "
+                      "a timezone in their timestamps mixed in with files that "
+                      "do have timezones")
+                  .with_note(note)
+                  .with_help(
+                      attr_line_t("Use the ")
+                          .append(":set-file-timezone"_symbol)
+                          .append(
+                              " command to set the zone for messages in files "
+                              "that do not include a zone in the timestamp"));
+
+        lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
+    }
+}
+
+static void
 looper()
 {
     static auto* ps = injector::get<pollable_supervisor*>();
@@ -1903,7 +1947,9 @@ looper()
                 if (rebuild_res.rir_completed
                     && (lnav_data.ld_log_source.text_line_count() > 0
                         || lnav_data.ld_text_source.text_line_count() > 0
-                        || !lnav_data.ld_active_files.fc_other_files.empty()))
+                        || lnav_data.ld_active_files.other_file_format_count(
+                               file_format_t::SQLITE_DB)
+                            > 0))
                 {
                     log_debug("initial build completed");
                     lnav_data.ld_initial_build = true;
@@ -1968,6 +2014,8 @@ looper()
                             lnav_data.ld_active_files.fc_files
                                 | lnav::itertools::for_each(
                                     &logfile::dump_stats);
+
+                            check_for_file_zones();
                         } else {
                             lnav_data.ld_files_view.set_selection(0_vl);
                         }
@@ -2229,7 +2277,11 @@ main(int argc, char* argv[])
         options_coll.foc_pattern_to_options[fmt::format(FMT_STRING("{}/*"),
                                                         var_path.in())]
             = lnav::file_options{
-                curr_tz,
+                {
+                    intern_string_t{},
+                    source_location{},
+                    curr_tz,
+                },
             };
         options_hier->foh_path_to_collection.emplace(ghc::filesystem::path("/"),
                                                      options_coll);
