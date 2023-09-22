@@ -67,6 +67,18 @@ auto_fd::dup_of(int fd)
     return auto_fd(new_fd);
 }
 
+Result<auto_fd, std::string>
+auto_fd::openpt(int flags)
+{
+    auto rc = posix_openpt(flags);
+    if (rc == -1) {
+        return Err(fmt::format(FMT_STRING("posix_openpt() failed: {}"),
+                               strerror(errno)));
+    }
+
+    return Ok(auto_fd{rc});
+}
+
 auto_fd::auto_fd(int fd) : af_fd(fd)
 {
     require(fd >= -1);

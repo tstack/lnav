@@ -56,6 +56,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/auto_mem.hh"
+#include "base/fs_util.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
@@ -744,16 +745,32 @@ readline_curses::start()
         ws.ws_col -= this->vc_left;
         ws.ws_col += this->vc_width;
     }
-    if (openpty(this->rc_pty[RCF_MASTER].out(),
-                this->rc_pty[RCF_SLAVE].out(),
-                nullptr,
-                nullptr,
-                &ws)
-        < 0)
-    {
-        perror("error: failed to open terminal(openpty)");
+
+    auto openpt_res = auto_fd::openpt(O_NOCTTY | O_RDWR);
+    if (openpt_res.isErr()) {
+        log_error("readline_curses: cannot open pty -- %s",
+                  openpt_res.unwrapErr().c_str());
         throw error(errno);
     }
+
+    this->rc_pty[RCF_MASTER] = openpt_res.unwrap();
+    log_perror(grantpt(this->rc_pty[RCF_MASTER]));
+    log_perror(unlockpt(this->rc_pty[RCF_MASTER]));
+    char slave_path[PATH_MAX];
+    if (ptsname_r(this->rc_pty[RCF_MASTER], slave_path, sizeof(slave_path))
+        == -1)
+    {
+        perror("ptsname_r");
+        throw error(errno);
+    }
+    auto slave_open_res
+        = lnav::filesystem::open_file(slave_path, O_RDWR | O_CLOEXEC);
+    if (slave_open_res.isErr()) {
+        log_error("open pseudo failed -- %s",
+                  slave_open_res.unwrapErr().c_str());
+        throw error(errno);
+    }
+    this->rc_pty[RCF_SLAVE] = slave_open_res.unwrap();
 
     this->rc_pty[RCF_MASTER].close_on_exec();
     this->rc_pty[RCF_SLAVE].close_on_exec();
