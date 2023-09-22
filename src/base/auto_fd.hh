@@ -64,6 +64,8 @@ public:
      */
     static auto_fd dup_of(int fd);
 
+    static Result<auto_fd, std::string> openpt(int flags);
+
     /**
      * Construct an auto_fd to manage the given file descriptor.
      *
