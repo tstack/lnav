@@ -173,7 +173,9 @@ LOG
 ^^^
 
 The log view displays the log messages from any loaded log files in time
-order.  This view will be shown by default if any log messages are available.
+order.  This view will be shown by default if any log files were detected.
+If plain text files were also loaded, they will be available in the TEXT
+view, which you can switch to by pressing :kbd:`t`.
 
 On color displays, the log messages will be highlighted as follows:
 
@@ -194,11 +196,18 @@ On color displays, the log messages will be highlighted as follows:
 
     :config /ui/theme grayscale
 
+Timestamps in log messages will be rewritten to the local timezone (or the
+timezone specified by :envvar:`TZ`) automatically if they include a
+timezone component.  If a file's timestamps do not include a timezone, they
+will be treated as if they are from the local zone.  You can change the zone
+to use for these types of files using the
+:ref:`:set-file-timezone<set_file_timezone>` command.
+
 .. note::
 
   If a log message has a timestamp that is out-of-order with its neighboring
   messages, the timestamp will be highlighted in yellow.  When one of these
-  messages is at the top of the log view, an overlay will display the
+  messages is focused, an overlay will display the
   difference between the "actual time" and the "received time".  The "actual
   time" is the original textual timestamp.  The "received time" is the time
   of an earlier message that is larger than this log message's time.
