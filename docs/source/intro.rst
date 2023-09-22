@@ -17,16 +17,6 @@ then analyze your log messages using the :ref:`sql-ext`.
 
    Screenshot of **lnav** viewing syslog and web access_log messages.
 
-Development
------------
-
-Development of lnav is hosted on `GitHub <https://github.com/tstack/lnav/>`_.
-
-`Issues <https://github.com/tstack/lnav/issues>`_ should be used for bugs
-and feature requests.
-
-`Discussions <https://github.com/tstack/lnav/discussions>`_ should be used
-for asking questions and sharing tips.
 
 Downloads
 ---------
@@ -34,34 +24,7 @@ Downloads
 Binaries and source code for lnav can be downloaded from the
 `releases page <https://github.com/tstack/lnav/releases>`_.
 
-When building from source, follow the steps below.
-
-Dependencies
-^^^^^^^^^^^^
-
-When compiling from source, the following dependencies are required:
-
-* `NCurses <http://www.gnu.org/s/ncurses/>`_
-* `PCRE2 <http://www.pcre.org>`_
-* `SQLite <http://www.sqlite.org>`_
-* `ZLib <http://wwww.zlib.net>`_
-* `Bzip2 <http://www.bzip.org>`_
-* `Readline <http://www.gnu.org/s/readline>`_
-* `libcurl <https://curl.haxx.se>`_
-* `libarchive <https://libarchive.org>`_
-
-Installation
-^^^^^^^^^^^^
-
-Check the `downloads page <http://lnav.org/downloads>`_ to see if there are
-packages for your operating system.  To compile from source, use the following
-commands:
-
-.. prompt:: bash
-
-   ./configure
-   make
-   sudo make install
+When building from source, follow the steps in :ref:`development`.
 
 
 Viewing Logs
@@ -169,3 +132,44 @@ parse the log messages using a log format definition.  There are many log
 formats builtin and **lnav** will automatically determine the best format to
 use.  In case your log file is not recognized, consult the :ref:`log_formats`
 section for information on how to create a format.
+
+.. _development:
+
+Development
+-----------
+
+Development of lnav is hosted on `GitHub <https://github.com/tstack/lnav/>`_.
+
+`Issues <https://github.com/tstack/lnav/issues>`_ should be used for bugs
+and feature requests.
+
+`Discussions <https://github.com/tstack/lnav/discussions>`_ should be used
+for asking questions and sharing tips.
+
+Dependencies
+^^^^^^^^^^^^
+
+When compiling from source, the following dependencies are required:
+
+* `NCurses <http://www.gnu.org/s/ncurses/>`_
+* `PCRE2 <http://www.pcre.org>`_
+* `SQLite <http://www.sqlite.org>`_
+* `ZLib <http://wwww.zlib.net>`_
+* `Bzip2 <http://www.bzip.org>`_
+* `Readline <http://www.gnu.org/s/readline>`_
+* `libcurl <https://curl.haxx.se>`_
+* `libarchive <https://libarchive.org>`_
+
+Installation
+^^^^^^^^^^^^
+
+Check the `downloads page <http://lnav.org/downloads>`_ to see if there are
+packages for your operating system.  To compile from source, use the following
+commands:
+
+.. prompt:: bash
+
+   ./configure
+   make
+   sudo make install
+
