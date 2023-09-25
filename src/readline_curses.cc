@@ -30,9 +30,11 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -756,12 +758,28 @@ readline_curses::start()
     this->rc_pty[RCF_MASTER] = openpt_res.unwrap();
     log_perror(grantpt(this->rc_pty[RCF_MASTER]));
     log_perror(unlockpt(this->rc_pty[RCF_MASTER]));
-    char slave_path[PATH_MAX];
-    if (ptsname_r(this->rc_pty[RCF_MASTER], slave_path, sizeof(slave_path))
+    char slave_path_str[PATH_MAX];
+    if (ptsname_r(
+            this->rc_pty[RCF_MASTER], slave_path_str, sizeof(slave_path_str))
         == -1)
     {
         perror("ptsname_r");
         throw error(errno);
+    }
+
+    auto slave_path = ghc::filesystem::path(slave_path_str);
+    std::error_code ec;
+    if (!ghc::filesystem::exists(slave_path, ec)) {
+        log_warning("ptsname_r() result does not exist -- %s", slave_path_str);
+#ifdef TIOCGPTN
+        int ptn = 0;
+        if (ioctl(this->rc_pty[RCF_MASTER], TIOCGPTN, &ptn) == 0) {
+            snprintf(
+                slave_path_str, sizeof(slave_path_str), "/dev/ttyp%d", ptn);
+            slave_path = ghc::filesystem::path(slave_path_str);
+            log_warning("... trying %s", slave_path.c_str());
+        }
+#endif
     }
     auto slave_open_res
         = lnav::filesystem::open_file(slave_path, O_RDWR | O_CLOEXEC);
