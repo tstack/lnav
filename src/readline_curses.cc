@@ -781,8 +781,8 @@ readline_curses::start()
         }
 #endif
     }
-    auto slave_open_res
-        = lnav::filesystem::open_file(slave_path, O_RDWR | O_CLOEXEC);
+    auto slave_open_res = lnav::filesystem::open_file(
+        slave_path, O_RDWR | O_NOCTTY | O_CLOEXEC);
     if (slave_open_res.isErr()) {
         log_error("open pseudo failed -- %s",
                   slave_open_res.unwrapErr().c_str());
@@ -794,6 +794,7 @@ readline_curses::start()
     this->rc_pty[RCF_SLAVE].close_on_exec();
 
     if ((this->rc_child = fork()) == -1) {
+        log_error("fork() failed -- %s", strerror(errno));
         throw error(errno);
     }
 
@@ -1106,6 +1107,7 @@ readline_curses::start()
             struct winsize new_ws;
 
             if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &new_ws) == -1) {
+                log_error("ioctl() failed -- %s", strerror(errno));
                 throw error(errno);
             }
             got_winch = 0;
@@ -1615,6 +1617,7 @@ readline_curses::window_change()
     struct winsize ws;
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
+        log_error("ioctl() failed -- %s", strerror(errno));
         throw error(errno);
     }
     if (this->vc_width > 0) {
@@ -1624,6 +1627,7 @@ readline_curses::window_change()
         ws.ws_col += this->vc_width;
     }
     if (ioctl(this->rc_pty[RCF_MASTER], TIOCSWINSZ, &ws) == -1) {
+        log_error("ioctl() failed -- %s", strerror(errno));
         throw error(errno);
     }
     kill(this->rc_child, SIGWINCH);
