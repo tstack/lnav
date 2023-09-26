@@ -118,7 +118,7 @@ grep_proc<LineType>::start()
         throw error(errno);
     }
 
-    if ((this->gp_child = lnav::pid::fork()) < 0) {
+    if ((this->gp_child = fork()) < 0) {
         throw error(errno);
     }
 
