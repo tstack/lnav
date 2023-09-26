@@ -167,10 +167,7 @@ namespace pid {
 
 extern bool in_child;
 
-pid_t fork();
-
 Result<auto_pid<process_state::running>, std::string> from_fork();
-
 }  // namespace pid
 }  // namespace lnav
 

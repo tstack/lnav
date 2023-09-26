@@ -1857,7 +1857,7 @@ com_pipe_to(exec_context& ec,
 
     auto child_fds = for_child_res.unwrap();
 
-    pid_t child_pid = lnav::pid::fork();
+    pid_t child_pid = fork();
 
     for (auto& child_fd : child_fds) {
         child_fd.after_fork(child_pid);

@@ -29,7 +29,6 @@
 
 #include "auto_pid.hh"
 
-#include <sys/syscall.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -41,25 +40,10 @@ namespace pid {
 
 bool in_child = false;
 
-pid_t
-fork()
-{
-    auto retval = ::fork();
-
-    if (retval == -1 && errno == ENOSYS) {
-#ifdef SYS_clone
-        log_error("fork() not implemented, trying clone...");
-        retval = syscall(SYS_clone, SIGCHLD, 0);
-#endif
-    }
-
-    return retval;
-}
-
 Result<auto_pid<process_state::running>, std::string>
 from_fork()
 {
-    auto pid = lnav::pid::fork();
+    auto pid = ::fork();
 
     if (pid == -1) {
         return Err(
