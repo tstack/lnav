@@ -58,6 +58,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/auto_mem.hh"
+#include "base/auto_pid.hh"
 #include "base/fs_util.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
@@ -793,7 +794,7 @@ readline_curses::start()
     this->rc_pty[RCF_MASTER].close_on_exec();
     this->rc_pty[RCF_SLAVE].close_on_exec();
 
-    if ((this->rc_child = fork()) == -1) {
+    if ((this->rc_child = lnav::pid::fork()) == -1) {
         log_error("fork() failed -- %s", strerror(errno));
         throw error(errno);
     }
