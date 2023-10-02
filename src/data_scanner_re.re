@@ -100,6 +100,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
     _YYCURSOR yyt2;
     _YYCURSOR yyt3;
     _YYCURSOR yyt4;
+    _YYCURSOR hunk_heading;
     const YYCTYPE *YYLIMIT = (const unsigned char *) this->ds_input.end();
     const YYCTYPE *YYMARKER = YYCURSOR;
 
@@ -112,7 +113,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
 
     /*!re2c
        re2c:yyfill:enable = 0;
-       re2c:flags:tags = 1;
+	   re2c:tags = 1;
 
        SPACE = [ \t\r];
        ALPHA = [a-zA-Z];
@@ -245,7 +246,30 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
        }
 
        "\n"[A-Z][A-Z _\-0-9]+"\n" {
-           RET(DT_H1);
+           CAPTURE(DT_H1);
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       "\ndiff --git "[^\n\x00]+"\n" {
+           CAPTURE(DT_H1);
+           cap_inner.c_begin += 1;
+           cap_inner.c_end = cap_inner.c_begin;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       "--- "[^\n\x00]+"\n+++ "[^\n\x00]+"\n" {
+           CAPTURE(DT_DIFF_FILE_HEADER);
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       "@@ -"[0-9]+","[0-9]+" +"[0-9]+","[0-9]+" @@ " @hunk_heading ([^\n\x00]+)"\n" {
+           CAPTURE(DT_DIFF_HUNK_HEADING);
+           cap_inner.c_begin = hunk_heading.val - this->ds_input.udata();
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 
        ESC"["[0-9=;?]*[a-zA-Z] {

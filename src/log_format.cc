@@ -1091,10 +1091,6 @@ external_log_format::scan(logfile& lf,
         yajl_handle handle = this->jlf_yajl_handle.get();
         json_log_userdata jlu(sbr, &sbc);
 
-        if (!this->lf_specialized && dst.size() >= 3) {
-            return log_format::scan_no_match{"file is not JSON-lines"};
-        }
-
         if (li.li_partial) {
             log_debug("skipping partial line at offset %d",
                       li.li_file_range.fr_offset);

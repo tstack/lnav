@@ -173,16 +173,18 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
                 new_open_intervals.emplace_back(std::move(oi));
             }
         }
-        auto* parent_node = new_open_intervals.empty()
-            ? root_node.get()
-            : new_open_intervals.back().oi_node.get();
-        new_open_intervals.emplace_back(role_num,
-                                        hdr_attr.sa_range.lr_start,
-                                        al.get_substring(hdr_attr.sa_range));
-        new_open_intervals.back().oi_node->hn_parent = parent_node;
-        new_open_intervals.back().oi_node->hn_start
-            = hdr_attr.sa_range.lr_start;
-
+        if (!hdr_attr.sa_range.empty()) {
+            auto* parent_node = new_open_intervals.empty()
+                ? root_node.get()
+                : new_open_intervals.back().oi_node.get();
+            new_open_intervals.emplace_back(
+                role_num,
+                hdr_attr.sa_range.lr_start,
+                al.get_substring(hdr_attr.sa_range));
+            new_open_intervals.back().oi_node->hn_parent = parent_node;
+            new_open_intervals.back().oi_node->hn_start
+                = hdr_attr.sa_range.lr_start;
+        }
         open_intervals = std::move(new_open_intervals);
     }
 
@@ -267,9 +269,8 @@ public:
     metadata walk()
     {
         metadata_builder mb;
-        size_t garbage_count = 0;
 
-        while (garbage_count < 1000) {
+        while (true) {
             auto tokenize_res
                 = this->sw_scanner.tokenize2(this->sw_text_format);
             if (!tokenize_res) {
@@ -279,11 +280,12 @@ public:
             auto dt = tokenize_res->tr_token;
 
             element el(dt, tokenize_res->tr_capture);
+            const auto& inner_cap = tokenize_res->tr_inner_capture;
 
 #if 0
-            log_debug("tok %s %s",
-                      data_scanner::token2name(dt),
-                      tokenize_res->to_string().c_str());
+            printf("tok %s %s\n",
+                   data_scanner::token2name(dt),
+                   tokenize_res->to_string().c_str());
 #endif
             if (dt != DT_WHITE) {
                 this->sw_at_start = false;
@@ -339,11 +341,52 @@ public:
                 case DT_H1: {
                     this->sw_line.get_attrs().emplace_back(
                         line_range{
-                            this->sw_range.lr_start + el.e_capture.c_begin + 1,
-                            this->sw_range.lr_start + el.e_capture.c_end - 1,
+                            this->sw_range.lr_start + inner_cap.c_begin,
+                            this->sw_range.lr_start + inner_cap.c_end,
                         },
                         VC_ROLE.value(role_t::VCR_H1));
                     this->sw_line_number += 2;
+                    break;
+                }
+                case DT_DIFF_FILE_HEADER: {
+                    auto sf = this->sw_scanner.to_string_fragment(inner_cap);
+                    auto split_res = sf.split_pair(string_fragment::tag1{'\n'});
+                    auto file1 = split_res->first.consume_n(4).value();
+                    auto file2 = split_res->second.consume_n(4).value();
+                    if ((file1 == "/dev/null" || file1.startswith("a/"))
+                        && file2.startswith("b/"))
+                    {
+                        if (file1 != "/dev/null") {
+                            file1 = file1.consume_n(2).value();
+                        }
+                        file2 = file2.consume_n(2).value();
+                    }
+                    if (file1 == "/dev/null" || file1 == file2) {
+                        this->sw_line.get_attrs().emplace_back(
+                            line_range{
+                                this->sw_range.lr_start + file2.sf_begin,
+                                this->sw_range.lr_start + file2.sf_end,
+                            },
+                            VC_ROLE.value(role_t::VCR_H1));
+                    } else {
+                        this->sw_line.get_attrs().emplace_back(
+                            line_range{
+                                this->sw_range.lr_start + inner_cap.c_begin,
+                                this->sw_range.lr_start + inner_cap.c_end,
+                            },
+                            VC_ROLE.value(role_t::VCR_H1));
+                    }
+                    this->sw_line_number += 2;
+                    break;
+                }
+                case DT_DIFF_HUNK_HEADING: {
+                    this->sw_line.get_attrs().emplace_back(
+                        line_range{
+                            this->sw_range.lr_start + inner_cap.c_begin,
+                            this->sw_range.lr_start + inner_cap.c_end,
+                        },
+                        VC_ROLE.value(role_t::VCR_H2));
+                    this->sw_line_number += 1;
                     break;
                 }
                 case DT_LCURLY:
@@ -426,9 +469,6 @@ public:
                 case DT_ZERO_WIDTH_SPACE:
                     break;
                 default:
-                    if (dt == DT_GARBAGE) {
-                        garbage_count += 1;
-                    }
                     if (dt == DT_QUOTED_STRING) {
                         auto quoted_sf = tokenize_res->to_string_fragment();
 

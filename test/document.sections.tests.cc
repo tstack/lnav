@@ -141,6 +141,59 @@ DESCRIPTION
         });
 }
 
+TEST_CASE("lnav::document::sections::doc for diff")
+{
+    attr_line_t INPUT = R"(
+[sql] add json_group_object aggregate function
+
+diff --git a/NEWS b/NEWS
+index d239d2f..7a06070 100644
+--- a/NEWS
++++ b/NEWS
+@@ -4,6 +4,8 @@ lnav v0.8.1:
+      * Log formats can now create SQL views and execute other statements
+        by adding '.sql' files to their format directories.  The SQL scripts
+        will be executed on startup.
++     * Added a 'json_group_object' aggregate SQL function that collects values
++       from a GROUP BY query into an JSON object.
+
+      Interface Changes:
+      * The 'o/O' hotkeys have been reassigned to navigate through log
+diff --git a/configure.ac b/configure.ac
+index 718a2d4..10f5580 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -39,8 +39,8 @@ AC_PROG_CXX
+
+ CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS"
+
+-# CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
+-# CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
++CFLAGS=`echo $CFLAGS | sed 's/-O2//g'`
++CXXFLAGS=`echo $CXXFLAGS | sed 's/-O2//g'`
+
+ AC_ARG_VAR(SFTP_TEST_URL)
+)";
+
+    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+
+    meta.m_sections_tree.visit_all([](const auto& intv) {
+        auto ser = intv.value.match(
+            [](const std::string& name) { return name; },
+            [](const size_t index) { return fmt::format("{}", index); });
+        printf("interval %d:%d %s\n", intv.start, intv.stop, ser.c_str());
+    });
+    lnav::document::hier_node::depth_first(
+        meta.m_sections_root.get(), [](const auto* node) {
+            printf("node %p %d\n", node, node->hn_start);
+            for (const auto& pair : node->hn_named_children) {
+                printf("  child: %p %s\n", pair.second, pair.first.c_str());
+            }
+        });
+
+    CHECK(meta.m_sections_root->hn_named_children.size() == 2);
+}
+
 TEST_CASE("lnav::document::sections::sql")
 {
     attr_line_t INPUT
