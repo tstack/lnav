@@ -108,6 +108,12 @@ Features:
 * Added the `config file-options` management command that
   can be used to examine the options that will be applied
   to a given file.
+* When viewing a diff, the sections of the diff for each
+  file is recognized and shown in the breadcrumb bar.  So,
+  you can see the file the focused line is in.  You can
+  also jump to a particular file by focusing on the
+  breadcrumb bar, selecting the crumb, and then selecting
+  the desired file.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

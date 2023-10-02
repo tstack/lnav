@@ -435,7 +435,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
              * written out at the same time as the last one, so we need to
              * go back and update everything.
              */
-            auto& last_line = this->lf_index[this->lf_index.size() - 1];
+            auto& last_line = this->lf_index.back();
 
             for (size_t lpc = 0; lpc < this->lf_index.size() - 1; lpc++) {
                 if (this->lf_format->lf_multiline) {

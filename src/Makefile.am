@@ -87,7 +87,7 @@ time_fmts.cc: ptimec$(BUILD_EXEEXT)
 
 if HAVE_RE2C
 %.cc: %.re
-	$(RE2C_V)$(RE2C_CMD) --bit-vectors -W --tags -8 -o $@ $<
+	$(RE2C_V)$(RE2C_CMD) --bit-vectors -W -8 -o $@ $<
 	$(REC2_V)test $@ -ef $(srcdir)/$*.cc || cp $@ $(srcdir)/$*.cc
 endif
 
