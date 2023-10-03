@@ -1,0 +1,102 @@
+[tests] fix export session test
+
+diff --git a/test/Makefile.am b/test/Makefile.am
+index aad96a87..07afe2d5 100644
+--- a/test/Makefile.am
++++ b/test/Makefile.am
+@@ -483,6 +483,7 @@ distclean-local:
+ 	$(RM_V)rm -rf .lnav
+ 	$(RM_V)rm -rf regex101-home
+ 	$(RM_V)rm -rf events-home
++	$(RM_V)rm -rf support-dump
+ 	$(RM_V)rm -rf ../installer-test-home
+ 
+ expected:
+diff --git a/test/expected/expected.am b/test/expected/expected.am
+index 99823624..2fa3d9fd 100644
+--- a/test/expected/expected.am
++++ b/test/expected/expected.am
+@@ -414,6 +414,8 @@ EXPECTED_FILES = \
+     $(srcdir)/%reldir%/test_sessions.sh_b932b33dd087b94d4306dd179c5d4f9ddd394960.out \
+     $(srcdir)/%reldir%/test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.err \
+     $(srcdir)/%reldir%/test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.out \
++    $(srcdir)/%reldir%/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.err \
++    $(srcdir)/%reldir%/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.out \
+     $(srcdir)/%reldir%/test_shlexer.sh_14dd967cb2af90899c9e5e45d00b676b5a3163aa.err \
+     $(srcdir)/%reldir%/test_shlexer.sh_14dd967cb2af90899c9e5e45d00b676b5a3163aa.out \
+     $(srcdir)/%reldir%/test_shlexer.sh_2781f5dd570580cbe746ad91b58a28b8371283b3.err \
+diff --git a/test/expected/test_sessions.sh_8732dad5481be991ca7f291d9c5451c7b016cea7.out b/test/expected/test_sessions.sh_8732dad5481be991ca7f291d9c5451c7b016cea7.out
+index 7b4c3036..a1e2e6f2 100644
+--- a/test/expected/test_sessions.sh_8732dad5481be991ca7f291d9c5451c7b016cea7.out
++++ b/test/expected/test_sessions.sh_8732dad5481be991ca7f291d9c5451c7b016cea7.out
+@@ -11,6 +11,7 @@
+ 
+ ;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{top_srcdir_parent}')
+ :open $LOG_DIR_0/lnav/test/logfile_access_log.0
++
+ :rebuild
+ 
+ 
+diff --git a/test/expected/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.err b/test/expected/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.err
+new file mode 100644
+index 00000000..e69de29b
+diff --git a/test/expected/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.out b/test/expected/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.out
+new file mode 100644
+index 00000000..6cc4bc8c
+--- /dev/null
++++ b/test/expected/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.out
+@@ -0,0 +1,33 @@
++#!lnav -Nf
++# This file is an export of an lnav session.  You can type
++# '|/path/to/this/file' in lnav to execute this file and
++# restore the state of the session.
++
++;SELECT raise_error('This session export was made with a newer version of lnav, please upgrade to ' || '0.11.0' || ' or later')
++   WHERE lnav_version() < '0.11.0' COLLATE naturalcase
++
++# The files loaded into the session were:
++
++
++;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_0', '{builddir}')
++:open $LOG_DIR_0/support-dump/logfile_access_log.0
++
++:rebuild
++
++
++# The following SQL statements will restore the bookmarks,
++# comments, and tags that were added in the session.
++
++;SELECT total_changes() AS before_mark_changes
++;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'v1:b05c1bdfe75cde41e151c89087e31951'
++
++;SELECT 1 - (total_changes() - $before_mark_changes) AS failed_mark_changes
++;SELECT echoln(printf('%sERROR%s: failed to restore %d bookmarks',
++                      $ansi_red, $ansi_norm, $failed_mark_changes))
++    WHERE $failed_mark_changes != 0
++
++
++# The following commands will restore the state of the LOG view.
++
++:switch-to-view log
++:goto 1
+diff --git a/test/test_sessions.sh b/test/test_sessions.sh
+index a2c59bbe..31d6d376 100644
+--- a/test/test_sessions.sh
++++ b/test/test_sessions.sh
+@@ -26,11 +26,15 @@ run_cap_test ${lnav_test} -nq \
+     -c ":save-session" \
+     ${test_dir}/logfile_access_log.0
+ 
++mkdir -p support-dump
++echo 'Hello' > support-dump/readme
++cp ${test_dir}/logfile_access_log.0 support-dump/
++
+ run_cap_test ${lnav_test} -nq \
+     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \
+     -c ":goto 1" \
+     -c ":export-session-to -" \
+-    ${test_dir}/logfile_access_log.0
++    support-dump/logfile_access_log.0
+ 
+ run_cap_test ${lnav_test} -nq \
+     -c ";update access_log set log_mark = 1 where sc_bytes > 60000" \

@@ -121,13 +121,7 @@ breadcrumb_curses::reload_data()
                                   [](const auto& elem) { return elem.p_key; },
                                   this->bc_current_search,
                                   128)
-        | lnav::itertools::sort_with([](const auto& lhs, const auto& rhs) {
-                                  return strnatcasecmp(lhs.p_key.size(),
-                                                       lhs.p_key.data(),
-                                                       rhs.p_key.size(),
-                                                       rhs.p_key.data())
-                                      < 0;
-                              });
+        | lnav::itertools::sort_with(breadcrumb::possibility::sort_cmp);
     if (selected_crumb_ref.c_key.is<std::string>()
         && selected_crumb_ref.c_expected_input
             != breadcrumb::crumb::expected_input_t::anything)

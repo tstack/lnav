@@ -508,6 +508,10 @@ text_anonymizer::next(string_fragment line)
                 break;
             }
             default: {
+                log_debug("tok_re %d %d:%d",
+                          tok_res->tr_token,
+                          tok_res->tr_capture.c_begin,
+                          tok_res->tr_capture.c_end);
                 retval += tok_res->to_string();
                 break;
             }

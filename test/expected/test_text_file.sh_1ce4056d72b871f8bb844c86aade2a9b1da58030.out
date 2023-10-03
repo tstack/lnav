@@ -1,0 +1,49 @@
+[
+    {
+        "top_meta": {
+            "file": "stdin",
+            "anchor": "#distclean-local-",
+            "breadcrumbs": [
+                {
+                    "display_value": "stdin",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "stdin"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "test/Makefile.am",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "test/Makefile.am"
+                        },
+                        {
+                            "display_value": "test/expected/expected.am"
+                        },
+                        {
+                            "display_value": "test/expected/test_sessions.sh_8732dad5481be991ca7f291d9c5451c7b016cea7.out"
+                        },
+                        {
+                            "display_value": "test/expected/test_sessions.sh_e39648f425c3f291c9d1c0d14595a019abd0cb48.out"
+                        },
+                        {
+                            "display_value": "test/test_sessions.sh"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "distclean-local:",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "distclean-local:"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

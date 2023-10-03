@@ -220,6 +220,7 @@ private:
     string_fragment ds_input;
     int ds_init_offset{0};
     int ds_next_offset{0};
+    bool ds_bol{true};
 };
 
 #endif

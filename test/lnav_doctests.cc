@@ -285,7 +285,7 @@ TEST_CASE("data_scanner CSI")
     CHECK(tok_res->tr_token == DT_CSI);
     CHECK(tok_res->to_string() == "\x1b[32m");
     tok_res = ds.tokenize2();
-    CHECK(tok_res->tr_token == DT_SYMBOL);
+    CHECK(tok_res->tr_token == DT_WORD);
     CHECK(tok_res->to_string() == "Hello");
     tok_res = ds.tokenize2();
     CHECK(tok_res->tr_token == DT_CSI);

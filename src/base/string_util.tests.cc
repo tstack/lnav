@@ -87,4 +87,20 @@ TEST_CASE("strnatcmp")
 
         CHECK(strnatcmp(strlen(n1), n1, strlen(n2), n2) < 0);
     }
+    {
+        constexpr const char* n1 = "servers";
+        constexpr const char* n2 = "servers.alpha";
+
+        CHECK(strnatcasecmp(strlen(n1), n1, strlen(n2), n2) < 0);
+    }
+    {
+        static constexpr const char* TOKENS = "[](){}";
+        const std::string n1 = "[servers]";
+        const std::string n2 = "[servers.alpha]";
+
+        auto lhs = string_fragment::from_str(n1).trim(TOKENS);
+        auto rhs = string_fragment::from_str(n2).trim(TOKENS);
+        CHECK(strnatcasecmp(lhs.length(), lhs.data(), rhs.length(), rhs.data())
+              < 0);
+    }
 }
