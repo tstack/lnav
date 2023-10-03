@@ -54,3 +54,15 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT top_meta FROM lnav_views WHERE name = 'text'" \
     -c ':write-json-to -' \
     < ${test_dir}/man_echo.txt
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 6' \
+    -c ";SELECT top_meta FROM lnav_views WHERE name = 'text'" \
+    -c ':write-json-to -' \
+    < ${test_dir}/example.toml
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 9' \
+    -c ";SELECT top_meta FROM lnav_views WHERE name = 'text'" \
+    -c ':write-json-to -' \
+    < ${test_dir}/example.patch

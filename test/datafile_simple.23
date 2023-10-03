@@ -2,9 +2,6 @@
  key  23:23                        ^                                                                                                                                                                                                                                                            
  sym  23:24                         ^                                                                                                                                                                                                                                                           Z
 pair  23:24                         ^                                                                                                                                                                                                                                                           Z
- key  30:30                               ^                                                                                                                                                                                                                                                     
- sym  30:34                                ^--^                                                                                                                                                                                                                                                 vpxd
-pair  30:34                                ^--^                                                                                                                                                                                                                                                 vpxd
  key  35:35                                    ^                                                                                                                                                                                                                                                
  num  35:40                                     ^---^                                                                                                                                                                                                                                           47413
  val  35:40                                     ^---^                                                                                                                                                                                                                                           47413
@@ -59,30 +56,29 @@ uuid 236:272                                                                    
  grp 236:272                                                                                                                                                                                                                                             ^----------------------------------^   522e0475-8901-e8b8-1eb8-07ec729ac50c
 pair 236:272                                                                                                                                                                                                                                             ^----------------------------------^   522e0475-8901-e8b8-1eb8-07ec729ac50c
 msg         :2022-06-02T12:26:22.072Z info vpxd[47413] [Originator@6876 sub=vpxLro opID=21fa61e9-3e] [VpxLRO] -- BEGIN lro-954041 -- AuthorizationManager -- vim.AuthorizationManager.hasUserPrivilegeOnEntities -- 52768da7-4006-3d4a-4917-ee027373630f(522e0475-8901-e8b8-1eb8-07ec729ac50c)
-format      :2022-06-02T12:26:22.072# info #[#] [#] [#] # # # # # # # # #(#)
+format      :2022-06-02T12:26:22.072# info vpxd[#] [#] [#] # # # # # # # # #(#)
 {
     "col_0": "Z",
-    "col_1": "vpxd",
-    "col_2": [
+    "col_1": [
         47413
     ],
-    "col_3": {
+    "col_2": {
         "Originator@6876 sub": "vpxLro",
         "opID": "21fa61e9-3e"
     },
-    "col_4": [
+    "col_3": [
         "VpxLRO"
     ],
-    "col_5": "--",
-    "col_6": "BEGIN",
-    "col_7": "lro-954041",
-    "col_8": "--",
-    "col_9": "AuthorizationManager",
-    "col_10": "--",
-    "col_11": "vim.AuthorizationManager.hasUserPrivilegeOnEntities",
-    "col_12": "--",
-    "col_13": "52768da7-4006-3d4a-4917-ee027373630f",
-    "col_14": [
+    "col_4": "--",
+    "col_5": "BEGIN",
+    "col_6": "lro-954041",
+    "col_7": "--",
+    "col_8": "AuthorizationManager",
+    "col_9": "--",
+    "col_10": "vim.AuthorizationManager.hasUserPrivilegeOnEntities",
+    "col_11": "--",
+    "col_12": "52768da7-4006-3d4a-4917-ee027373630f",
+    "col_13": [
         "522e0475-8901-e8b8-1eb8-07ec729ac50c"
     ]
 }

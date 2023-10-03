@@ -35,6 +35,8 @@
 #include "config.h"
 #include "data_scanner.hh"
 
+/*!conditions:re2c*/
+
 nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_format_t tf)
 {
     data_token_t token_out = DT_INVALID;
@@ -99,10 +101,26 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
     _YYCURSOR yyt1;
     _YYCURSOR yyt2;
     _YYCURSOR yyt3;
-    _YYCURSOR yyt4;
     _YYCURSOR hunk_heading;
     const YYCTYPE *YYLIMIT = (const unsigned char *) this->ds_input.end();
     const YYCTYPE *YYMARKER = YYCURSOR;
+    class _yycond {
+    public:
+        int operator()() const {
+            return this->val;
+        }
+
+        void operator=(int v) {
+            this->val = v;
+        }
+
+        int val{yycinit};
+    } c;
+
+    if (this->ds_bol) {
+        c = yycbol;
+    }
+    this->ds_bol = false;
 
     YYCURSOR.lim = YYLIMIT;
 
@@ -113,14 +131,18 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
 
     /*!re2c
        re2c:yyfill:enable = 0;
-	   re2c:tags = 1;
+       re2c:sentinel = 0;
+       re2c:define:YYCTYPE        = uint8_t;
+       re2c:define:YYGETCONDITION = "c";
+       re2c:define:YYSETCONDITION = "c = @@;";
+       re2c:tags = 1;
 
        SPACE = [ \t\r];
        ALPHA = [a-zA-Z];
        ESC = "\x1b";
        NUM = [0-9];
        ALPHANUM = [a-zA-Z0-9_];
-       EOF = "\x00";
+       EOF = "";
        SYN = "\x16";
        IPV4SEG  = ("25"[0-5]|("2"[0-4]|"1"{0,1}[0-9]){0,1}[0-9]);
        IPV4ADDR = (IPV4SEG"."){3,3}IPV4SEG;
@@ -140,13 +162,14 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
                   (IPV6SEG":"){1,4}":"IPV4ADDR
                   );
 
-       EOF { return nonstd::nullopt; }
-
-       SYN+ {
+       <init, bol> EOF { return nonstd::nullopt; }
+       <init, bol> [\x00] { return nonstd::nullopt; }
+       <*> * { return nonstd::nullopt; }
+       <init, bol> SYN+ {
            RET(DT_ZERO_WIDTH_SPACE);
        }
 
-       ("f"|"u"|"r")?'"'('\\'.|[^\x00\x16\x1b\n"\\]|'""')*'"' {
+       <init, bol> ("f"|"u"|"r")?'"'('\\'[^\x00]|[^\x00\x16\x1b\n"\\]|'""')*'"' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'f':
@@ -159,7 +182,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       ("f"|"u"|"r")?'"""'[^\x00\x16\x1b]*'"""' {
+       <init, bol> ("f"|"u"|"r")?'"""'[^\x00\x16\x1b]*'"""' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'f':
@@ -172,21 +195,21 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       "/*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {
+       <init, bol> "/*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {
            RET(DT_COMMENT);
        }
-       "<!--" ([^\x00*]|"-"+[^\x00>])* "-"{2,} ">" {
+       <init, bol> "<!--" ([^\x00*]|"-"+[^\x00>])* "-"{2,} ">" {
            RET(DT_COMMENT);
        }
-       "#[" "="* "[" ([^\x00\]]|"]" [^=\]])* "]" "="* "]" {
+       <init, bol> "#[" "="* "[" ([^\x00\]]|"]" [^\x00=\]])* "]" "="* "]" {
 
            RET(DT_COMMENT);
        }
 
-       [a-qstv-zA-QSTV-Z]"'" {
+       <init, bol> [a-qstv-zA-QSTV-Z]"'" {
            CAPTURE(DT_WORD);
        }
-       ("f"|"u"|"r")?"'"('\\'.|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {
+       <init, bol> ("f"|"u"|"r")?"'"('\\'[^\x00]|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            if (tf == text_format_t::TF_RUST) {
                auto sf = this->to_string_fragment(cap_all);
@@ -207,96 +230,105 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       [a-zA-Z0-9]+":/""/"?[^\x00\x16\x1b\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
-       ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
-       (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
-       (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
-       [0-9a-fA-F][0-9a-fA-F]((":"|"-")[0-9a-fA-F][0-9a-fA-F])+ {
+       <init, bol> [a-zA-Z0-9]+":/""/"?[^\x00\x16\x1b\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
+       <init, bol> ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
+       <init, bol> (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
+       <init, bol> (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
+       <init, bol> [0-9a-fA-F][0-9a-fA-F]((":"|"-")[0-9a-fA-F][0-9a-fA-F])+ {
            if ((YYCURSOR.val - (this->ds_input.udata() + this->ds_next_offset)) == 17) {
                RET(DT_MAC_ADDRESS);
            } else {
                RET(DT_HEX_DUMP);
            }
        }
-       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})("T"|" ")NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+       <init, bol> (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})("T"|" ")NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
            RET(DT_DATE_TIME);
        }
-       ALPHA{3}("  "NUM|" "NUM{2})" "NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+       <init, bol> ALPHA{3}("  "NUM|" "NUM{2})" "NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
            RET(DT_DATE_TIME);
        }
-       (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4}) {
+       <init, bol> (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4}) {
            RET(DT_DATE);
        }
-       IPV6ADDR/[^:a-zA-Z0-9] { RET(DT_IPV6_ADDRESS); }
+       <init, bol> IPV6ADDR/[^:a-zA-Z0-9] { RET(DT_IPV6_ADDRESS); }
 
-       "<!"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'.|[^\x00"\\])+)'"'|"'"(('\\'.|[^\x00'\\])+)"'"|[^\x00>]+))?|SPACE*('"'(('\\'.|[^\x00"\\])+)'"'|"'"(('\\'.|[^\x00'\\])+)"'"))*SPACE*">" {
+       <init, bol> "<!"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'[^\x00]|[^\x00"\\])+)'"'|"'"(('\\'[^\x00]|[^\x00'\\])+)"'"|[^\x00>]+))?|SPACE*('"'(('\\'[^\x00]|[^\x00"\\])+)'"'|"'"(('\\'[^\x00]|[^\x00'\\])+)"'"))*SPACE*">" {
            RET(DT_XML_DECL_TAG);
        }
 
-       "<""?"?[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'.|[^\x00"\\])+)'"'|"'"(('\\'.|[^\x00'\\])+)"'"|[^\x00>]+))?)*SPACE*("/"|"?")">" {
+       <init, bol> "<""?"?[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'[^\x00]|[^\x00"\\])+)'"'|"'"(('\\'[^\x00]|[^\x00'\\])+)"'"|[^\x00>]+))?)*SPACE*("/"|"?")">" {
            RET(DT_XML_EMPTY_TAG);
        }
 
-       "<"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*"="SPACE*('"'(('\\'.|[^\x00"\\])+)'"'|"'"(('\\'.|[^\x00'\\])+)"'"|[^\x00>]+))?)*SPACE*">" {
+       <init, bol> "<"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*"="SPACE*('"'(('\\'[^\x00]|[^\x00"\\])+)'"'|"'"(('\\'[^\x00]|[^\x00'\\])+)"'"|[^\x00>]+))?)*SPACE*">" {
            RET(DT_XML_OPEN_TAG);
        }
 
-       "</"[a-zA-Z0-9_:\-]+SPACE*">" {
+       <init, bol> "</"[a-zA-Z0-9_:\-]+SPACE*">" {
            RET(DT_XML_CLOSE_TAG);
        }
 
-       "\n"[A-Z][A-Z _\-0-9]+"\n" {
+       <bol> [A-Z][A-Z _\-0-9]+"\n" {
            CAPTURE(DT_H1);
-           cap_inner.c_begin += 1;
            cap_inner.c_end -= 1;
+           this->ds_bol = true;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 
-       "\ndiff --git "[^\n\x00]+"\n" {
+       <bol> "["[^\x00\n]+"]\n" {
            CAPTURE(DT_H1);
-           cap_inner.c_begin += 1;
-           cap_inner.c_end = cap_inner.c_begin;
+           cap_inner.c_end -= 1;
+           this->ds_bol = true;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 
-       "--- "[^\n\x00]+"\n+++ "[^\n\x00]+"\n" {
+       <bol> "diff --git "[^\x00\n]+"\n" {
+           CAPTURE(DT_H1);
+           cap_inner.c_end = cap_inner.c_begin;
+           this->ds_bol = true;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <bol> "--- "[^\x00\n]+"\n+++ "[^\x00\n]+"\n" {
            CAPTURE(DT_DIFF_FILE_HEADER);
            cap_inner.c_end -= 1;
+           this->ds_bol = true;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 
-       "@@ -"[0-9]+","[0-9]+" +"[0-9]+","[0-9]+" @@ " @hunk_heading ([^\n\x00]+)"\n" {
+       <init, bol> "@@ -"[0-9]+","[0-9]+" +"[0-9]+","[0-9]+" @@ " @hunk_heading ([^\x00\n]+)"\n" {
            CAPTURE(DT_DIFF_HUNK_HEADING);
            cap_inner.c_begin = hunk_heading.val - this->ds_input.udata();
            cap_inner.c_end -= 1;
+           this->ds_bol = true;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 
-       ESC"["[0-9=;?]*[a-zA-Z] {
+       <init, bol> ESC"["[0-9=;?]*[a-zA-Z] {
            RET(DT_CSI);
        }
 
-       ":" { RET(DT_COLON); }
-       "=" { RET(DT_EQUALS); }
-       "," { RET(DT_COMMA); }
-       ";" { RET(DT_SEMI); }
-       "()" | "{}" | "[]" { RET(DT_EMPTY_CONTAINER); }
-       "{" { RET(DT_LCURLY); }
-       "}" { RET(DT_RCURLY); }
-       "[" { RET(DT_LSQUARE); }
-       "]" { RET(DT_RSQUARE); }
-       "(" { RET(DT_LPAREN); }
-       ")" { RET(DT_RPAREN); }
-       "<" { RET(DT_LANGLE); }
-       ">" { RET(DT_RANGLE); }
+       <init, bol> ":" { RET(DT_COLON); }
+       <init, bol> "=" { RET(DT_EQUALS); }
+       <init, bol> "," { RET(DT_COMMA); }
+       <init, bol> ";" { RET(DT_SEMI); }
+       <init, bol> "()" | "{}" | "[]" { RET(DT_EMPTY_CONTAINER); }
+       <init, bol> "{" { RET(DT_LCURLY); }
+       <init, bol> "}" { RET(DT_RCURLY); }
+       <init, bol> "[" { RET(DT_LSQUARE); }
+       <init, bol> "]" { RET(DT_RSQUARE); }
+       <init, bol> "(" { RET(DT_LPAREN); }
+       <init, bol> ")" { RET(DT_RPAREN); }
+       <init, bol> "<" { RET(DT_LANGLE); }
+       <init, bol> ">" { RET(DT_RANGLE); }
 
-       IPV4ADDR/[^0-9] {
+       <init, bol> IPV4ADDR/[^0-9] {
            RET(DT_IPV4_ADDRESS);
        }
 
-       [0-9a-fA-F]{8}("-"[0-9a-fA-F]{4}){3}"-"[0-9a-fA-F]{12} { RET(DT_UUID); }
+       <init, bol> [0-9a-fA-F]{8}("-"[0-9a-fA-F]{4}){3}"-"[0-9a-fA-F]{12} { RET(DT_UUID); }
 
-       (NUM{4}" "NUM{4}" "NUM{4}" "NUM{4}|NUM{16})/[^0-9] {
+       <init, bol> (NUM{4}" "NUM{4}" "NUM{4}" "NUM{4}|NUM{16})/[^0-9] {
            CAPTURE(DT_CREDIT_CARD_NUMBER);
            if (!this->is_credit_card(this->to_string_fragment(cap_all))) {
                if (cap_all.length() > 16) {
@@ -309,32 +341,37 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 
-       [0-9]"."[0-9]+'e'[\-\+][0-9]+ { RET(DT_NUMBER); }
+       <init, bol> [0-9]"."[0-9]+'e'[\-\+][0-9]+ { RET(DT_NUMBER); }
 
-       [0-9]+("."[0-9]+[a-zA-Z0-9_]*){2,}("-"[a-zA-Z0-9_]+)?|[0-9]+("."[0-9]+[a-zA-Z0-9_]*)+"-"[a-zA-Z0-9_]+ {
+       <init, bol> [0-9]+("."[0-9]+[a-zA-Z0-9_]*){2,}("-"[a-zA-Z0-9_]+)?|[0-9]+("."[0-9]+[a-zA-Z0-9_]*)+"-"[a-zA-Z0-9_]+ {
            RET(DT_VERSION_NUMBER);
        }
 
-       "-"?"0"[0-7]+ { RET(DT_OCTAL_NUMBER); }
-       "-"?[0-9]+("."[0-9]+)?[ ]*"%" { RET(DT_PERCENTAGE); }
-       "-"?[0-9]+("."[0-9]+)?([eE][\-+][0-9]+)? { RET(DT_NUMBER); }
-       "-"?("0x"|[0-9])[0-9a-fA-F]+ { RET(DT_HEX_NUMBER); }
+       <init, bol> "-"?"0"[0-7]+ { RET(DT_OCTAL_NUMBER); }
+       <init, bol> "-"?[0-9]+("."[0-9]+)?[ ]*"%" { RET(DT_PERCENTAGE); }
+       <init, bol> "-"?[0-9]+("."[0-9]+)?([eE][\-+][0-9]+)? { RET(DT_NUMBER); }
+       <init, bol> "-"?("0x"|[0-9])[0-9a-fA-F]+ { RET(DT_HEX_NUMBER); }
 
-       [a-zA-Z0-9\._%+-]+"@"[a-zA-Z0-9\.-]+"."[a-zA-Z]+ { RET(DT_EMAIL); }
+       <init, bol> [a-zA-Z0-9\._%+-]+"@"[a-zA-Z0-9\.-]+"."[a-zA-Z]+ { RET(DT_EMAIL); }
 
-       "true"|"True"|"TRUE"|"false"|"False"|"FALSE"|"None"|"null"|"NULL"/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_CONSTANT); }
+       <init, bol> "true"|"True"|"TRUE"|"false"|"False"|"FALSE"|"None"|"null"|"NULL"/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_CONSTANT); }
 
-       ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
+       <init, bol> ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
-       [^\x00\x16\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x16\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00\x16\x1b"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
+       <init, bol> [^\x00\x16\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x16\x1b"; \t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00\x16\x1b"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
            RET(DT_SYMBOL);
        }
 
-       ("\r"?"\n"|"\\n") { RET(DT_LINE); }
-       SPACE+ { RET(DT_WHITE); }
-       "." { RET(DT_DOT); }
-       "\\". { RET(DT_ESCAPED_CHAR); }
-       . { RET(DT_GARBAGE); }
+       <init, bol> ("\r"?"\n"|"\\n") {
+           this->ds_bol = true;
+           RET(DT_LINE);
+       }
+       <init, bol> SPACE+ { RET(DT_WHITE); }
+       <init, bol> "." { RET(DT_DOT); }
+       <init, bol> "\\". { RET(DT_ESCAPED_CHAR); }
+       <init, bol> . { RET(DT_GARBAGE); }
 
      */
+
+    return nonstd::nullopt;
 }

@@ -266,6 +266,20 @@ public:
         this->sw_hier_nodes.push_back(std::make_unique<hier_node>());
     }
 
+    bool is_structured_text() const
+    {
+        switch (this->sw_text_format) {
+            case text_format_t::TF_JSON:
+            case text_format_t::TF_YAML:
+            case text_format_t::TF_TOML:
+            case text_format_t::TF_LOG:
+            case text_format_t::TF_UNKNOWN:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     metadata walk()
     {
         metadata_builder mb;
@@ -345,7 +359,7 @@ public:
                             this->sw_range.lr_start + inner_cap.c_end,
                         },
                         VC_ROLE.value(role_t::VCR_H1));
-                    this->sw_line_number += 2;
+                    this->sw_line_number += 1;
                     break;
                 }
                 case DT_DIFF_FILE_HEADER: {
@@ -392,57 +406,68 @@ public:
                 case DT_LCURLY:
                 case DT_LSQUARE:
                 case DT_LPAREN: {
-                    this->flush_values();
-                    // this->append_child_node(term);
-                    this->sw_depth += 1;
-                    this->sw_interval_state.back().is_start
-                        = el.e_capture.c_begin;
-                    this->sw_interval_state.back().is_line_number
-                        = this->sw_line_number;
-                    this->sw_interval_state.resize(this->sw_depth + 1);
-                    this->sw_hier_nodes.push_back(
-                        std::make_unique<hier_node>());
+                    if (this->is_structured_text()) {
+                        this->flush_values();
+                        // this->append_child_node(term);
+                        this->sw_depth += 1;
+                        this->sw_interval_state.back().is_start
+                            = el.e_capture.c_begin;
+                        this->sw_interval_state.back().is_line_number
+                            = this->sw_line_number;
+                        this->sw_interval_state.resize(this->sw_depth + 1);
+                        this->sw_hier_nodes.push_back(
+                            std::make_unique<hier_node>());
+                    } else {
+                        this->sw_values.emplace_back(el);
+                    }
                     break;
                 }
                 case DT_RCURLY:
                 case DT_RSQUARE:
-                case DT_RPAREN: {
-                    auto term = this->flush_values();
-                    if (this->sw_depth > 0) {
-                        this->append_child_node(term);
-                        this->sw_depth -= 1;
-                        this->sw_interval_state.pop_back();
-                        this->sw_hier_stage
-                            = std::move(this->sw_hier_nodes.back());
-                        this->sw_hier_nodes.pop_back();
-                        if (this->sw_interval_state.back().is_start) {
-                            data_scanner::capture_t obj_cap = {
-                                static_cast<int>(this->sw_interval_state.back()
-                                                     .is_start.value()),
-                                el.e_capture.c_end,
-                            };
+                case DT_RPAREN:
+                    if (this->is_structured_text()) {
+                        auto term = this->flush_values();
+                        if (this->sw_depth > 0) {
+                            this->append_child_node(term);
+                            this->sw_depth -= 1;
+                            this->sw_interval_state.pop_back();
+                            this->sw_hier_stage
+                                = std::move(this->sw_hier_nodes.back());
+                            this->sw_hier_nodes.pop_back();
+                            if (this->sw_interval_state.back().is_start) {
+                                data_scanner::capture_t obj_cap = {
+                                    static_cast<int>(
+                                        this->sw_interval_state.back()
+                                            .is_start.value()),
+                                    el.e_capture.c_end,
+                                };
 
-                            auto sf
-                                = this->sw_scanner.to_string_fragment(obj_cap);
-                            if (!sf.find('\n')) {
-                                this->sw_hier_stage->hn_named_children.clear();
-                                this->sw_hier_stage->hn_children.clear();
-                                while (!this->sw_intervals.empty()
-                                       && this->sw_intervals.back().start
-                                           > obj_cap.c_begin)
-                                {
-                                    this->sw_intervals.pop_back();
+                                auto sf = this->sw_scanner.to_string_fragment(
+                                    obj_cap);
+                                if (!sf.find('\n')) {
+                                    this->sw_hier_stage->hn_named_children
+                                        .clear();
+                                    this->sw_hier_stage->hn_children.clear();
+                                    while (!this->sw_intervals.empty()
+                                           && this->sw_intervals.back().start
+                                               > obj_cap.c_begin)
+                                    {
+                                        this->sw_intervals.pop_back();
+                                    }
                                 }
                             }
                         }
                     }
                     this->sw_values.emplace_back(el);
                     break;
-                }
                 case DT_COMMA:
-                    if (this->sw_depth > 0) {
-                        auto term = this->flush_values();
-                        this->append_child_node(term);
+                    if (this->is_structured_text()) {
+                        if (this->sw_depth > 0) {
+                            auto term = this->flush_values();
+                            this->append_child_node(term);
+                        }
+                    } else {
+                        this->sw_values.emplace_back(el);
                     }
                     break;
                 case DT_LINE:

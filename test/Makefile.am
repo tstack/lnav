@@ -275,6 +275,8 @@ dist_noinst_DATA = \
 	datafile_xml.0 \
 	dhcp.pcapng \
 	dhcp-trunc.pcapng \
+	example.patch \
+	example.toml \
 	expected_help.txt \
 	invalid-books.xml \
 	listview_output.0 \

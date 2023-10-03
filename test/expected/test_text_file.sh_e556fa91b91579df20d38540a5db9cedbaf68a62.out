@@ -1,0 +1,40 @@
+[
+    {
+        "top_meta": {
+            "file": "stdin",
+            "anchor": "#-owner-",
+            "breadcrumbs": [
+                {
+                    "display_value": "stdin",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "stdin"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "[owner]",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "[database]"
+                        },
+                        {
+                            "display_value": "[owner]"
+                        },
+                        {
+                            "display_value": "[servers.alpha]"
+                        },
+                        {
+                            "display_value": "[servers.beta]"
+                        },
+                        {
+                            "display_value": "[servers]"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

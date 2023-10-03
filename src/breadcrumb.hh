@@ -53,6 +53,18 @@ struct possibility {
     bool operator<=(const possibility& rhs) const { return !(rhs < *this); }
     bool operator>=(const possibility& rhs) const { return !(*this < rhs); }
 
+    static bool sort_cmp(const possibility& lhs, const possibility& rhs)
+    {
+        static constexpr const char* TOKENS = "[](){}";
+
+        auto lhsf = string_fragment::from_str(lhs.p_key).trim(TOKENS);
+        auto rhsf = string_fragment::from_str(rhs.p_key).trim(TOKENS);
+
+        return strnatcasecmp(
+                   lhsf.length(), lhsf.data(), rhsf.length(), rhsf.data())
+            < 0;
+    }
+
     std::string p_key;
     attr_line_t p_display_value;
 };
