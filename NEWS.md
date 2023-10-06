@@ -114,6 +114,8 @@ Features:
   also jump to a particular file by focusing on the
   breadcrumb bar, selecting the crumb, and then selecting
   the desired file.
+* Binary files are now displayed as a hex dump with ASCII
+  representation (where applicable).
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

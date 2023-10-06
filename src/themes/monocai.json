@@ -63,6 +63,9 @@
                     "offset-time": {
                         "color": "$cyan"
                     },
+                    "file-offset": {
+                        "color": "#888"
+                    },
                     "invalid-msg": {
                         "color": "$yellow"
                     },
@@ -201,6 +204,15 @@
                     },
                     "file": {
                         "color": "$blue"
+                    },
+                    "null": {
+                        "color": "#888"
+                    },
+                    "ascii-control": {
+                        "color": "$green"
+                    },
+                    "non-ascii": {
+                        "color": "$yellow"
                     },
                     "number": {
                         "bold": true

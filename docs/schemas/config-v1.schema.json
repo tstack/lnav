@@ -355,8 +355,13 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/skewed-time",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "file-offset": {
+                                            "description": "Styling for a file offset",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/file-offset",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "offset-time": {
-                                            "description": "Styling for hidden fields",
+                                            "description": "Styling for the elapsed time column",
                                             "title": "/ui/theme-defs/<theme_name>/styles/offset-time",
                                             "$ref": "#/definitions/style"
                                         },
@@ -526,6 +531,21 @@
                                         "symbol": {
                                             "description": "Styling for symbols in source files",
                                             "title": "/ui/theme-defs/<theme_name>/syntax-styles/symbol",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "null": {
+                                            "description": "Styling for nulls in source files",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/null",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "ascii-control": {
+                                            "description": "Styling for ASCII control characters in source files",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/ascii-control",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "non-ascii": {
+                                            "description": "Styling for non-ASCII characters in source files",
+                                            "title": "/ui/theme-defs/<theme_name>/syntax-styles/non-ascii",
                                             "$ref": "#/definitions/style"
                                         },
                                         "number": {

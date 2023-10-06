@@ -40,6 +40,11 @@ public:
 
     class attr_guard {
     public:
+        explicit attr_guard(attr_line_t& al)
+            : ag_line(al), ag_start(nonstd::nullopt)
+        {
+        }
+
         attr_guard(attr_line_t& al, string_attr_pair sap)
             : ag_line(al), ag_start(al.get_string().length()),
               ag_attr(std::move(sap))
@@ -51,7 +56,7 @@ public:
         attr_guard& operator=(const attr_guard&) = delete;
 
         attr_guard(attr_guard&& other) noexcept
-            : ag_line(other.ag_line), ag_start(other.ag_start),
+            : ag_line(other.ag_line), ag_start(std::move(other.ag_start)),
               ag_attr(std::move(other.ag_attr))
         {
             other.ag_start = nonstd::nullopt;
@@ -74,6 +79,8 @@ public:
         nonstd::optional<int> ag_start;
         string_attr_pair ag_attr;
     };
+
+    attr_guard with_default() { return attr_guard{this->alb_line}; }
 
     attr_guard with_attr(string_attr_pair sap)
     {
@@ -99,6 +106,14 @@ public:
     attr_line_builder& append(Args... args)
     {
         this->alb_line.append(args...);
+
+        return *this;
+    }
+
+    template<typename... Args>
+    attr_line_builder& appendf(Args... args)
+    {
+        this->alb_line.appendf(args...);
 
         return *this;
     }

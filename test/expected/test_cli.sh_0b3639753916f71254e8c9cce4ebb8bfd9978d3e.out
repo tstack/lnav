@@ -162,10 +162,10 @@
                         "bold": true
                     },
                     "info": {
-                        "color": "",
+                        "color": "Maroon",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "warning": {
                         "color": "Yellow",
@@ -186,8 +186,8 @@
                         "bold": true
                     },
                     "disabled-cursor-line": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "Cyan1",
+                        "background-color": "#5f005f",
                         "underline": false,
                         "bold": false
                     },
@@ -199,6 +199,12 @@
                     },
                     "skewed-time": {
                         "color": "Yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "file-offset": {
+                        "color": "Silver",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -276,7 +282,7 @@
                         "bold": false
                     },
                     "hr": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -284,7 +290,7 @@
                     "hyperlink": {
                         "color": "",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     },
                     "list-glyph": {
@@ -300,7 +306,7 @@
                         "bold": false
                     },
                     "table-border": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -309,29 +315,29 @@
                         "color": "",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "quote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#666",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "Blue",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-text": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
@@ -350,25 +356,25 @@
                 },
                 "syntax-styles": {
                     "inline-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "Red",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "Silver",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
                     "code-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#444",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
                     "keyword": {
-                        "color": "Blue",
+                        "color": "#00f",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -403,6 +409,24 @@
                         "underline": false,
                         "bold": false
                     },
+                    "null": {
+                        "color": "Silver",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "ascii-control": {
+                        "color": "Green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "Yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "number": {
                         "color": "",
                         "background-color": "",
@@ -410,19 +434,19 @@
                         "bold": true
                     },
                     "type": {
-                        "color": "",
+                        "color": "Blue",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "function": {
-                        "color": "",
+                        "color": "Cyan1",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "separators-references-accessors": {
-                        "color": "",
+                        "color": "Silver",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -459,19 +483,19 @@
                     },
                     "spectrogram-low": {
                         "color": "",
-                        "background-color": "$green",
+                        "background-color": "Green",
                         "underline": false,
                         "bold": false
                     },
                     "spectrogram-medium": {
                         "color": "",
-                        "background-color": "$yellow",
+                        "background-color": "Yellow",
                         "underline": false,
                         "bold": false
                     },
                     "spectrogram-high": {
                         "color": "",
-                        "background-color": "$red",
+                        "background-color": "Red",
                         "underline": false,
                         "bold": false
                     },
@@ -769,6 +793,12 @@
                         "underline": false,
                         "bold": false
                     },
+                    "file-offset": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "offset-time": {
                         "color": "$cyan",
                         "background-color": "",
@@ -965,6 +995,24 @@
                     },
                     "symbol": {
                         "color": "#78dce8",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "null": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "ascii-control": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "$yellow",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1256,10 +1304,10 @@
                         "bold": true
                     },
                     "info": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "warning": {
                         "color": "$yellow",
@@ -1280,8 +1328,8 @@
                         "bold": true
                     },
                     "disabled-cursor-line": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$cyan",
+                        "background-color": "#5f005f",
                         "underline": false,
                         "bold": false
                     },
@@ -1293,6 +1341,12 @@
                     },
                     "skewed-time": {
                         "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "file-offset": {
+                        "color": "#888",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1316,14 +1370,14 @@
                         "bold": false
                     },
                     "focused": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$black",
+                        "background-color": "$white",
                         "underline": false,
                         "bold": false
                     },
                     "disabled-focused": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$white",
+                        "background-color": "#333",
                         "underline": false,
                         "bold": false
                     },
@@ -1370,7 +1424,7 @@
                         "bold": false
                     },
                     "hr": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1378,23 +1432,23 @@
                     "hyperlink": {
                         "color": "",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     },
                     "list-glyph": {
-                        "color": "",
+                        "color": "$yellow",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "",
+                        "color": "#99a",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "table-border": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1403,34 +1457,34 @@
                         "color": "",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "quote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#666",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$blue",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-text": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "snippet-border": {
-                        "color": "",
+                        "color": "$cyan",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1444,20 +1498,20 @@
                 },
                 "syntax-styles": {
                     "inline-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$red",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
                     "code-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#444",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
@@ -1497,6 +1551,24 @@
                         "underline": false,
                         "bold": false
                     },
+                    "null": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "ascii-control": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "number": {
                         "color": "$red",
                         "background-color": "",
@@ -1504,19 +1576,19 @@
                         "bold": false
                     },
                     "type": {
-                        "color": "",
+                        "color": "$blue",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "function": {
-                        "color": "",
+                        "color": "$cyan",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "separators-references-accessors": {
-                        "color": "",
+                        "color": "$red",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1614,9 +1686,9 @@
                         "bold": false
                     },
                     "title-hotkey": {
-                        "color": "",
-                        "background-color": "",
-                        "underline": false,
+                        "color": "$black",
+                        "background-color": "#5394ec",
+                        "underline": true,
                         "bold": false
                     },
                     "title": {
@@ -1626,10 +1698,10 @@
                         "bold": true
                     },
                     "disabled-title": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#5394ec",
+                        "background-color": "#353535",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "subtitle": {
                         "color": "$black",
@@ -1644,9 +1716,9 @@
                         "bold": false
                     },
                     "hotkey": {
-                        "color": "",
+                        "color": "#fff",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     }
                 },
@@ -1784,10 +1856,10 @@
                         "bold": true
                     },
                     "info": {
-                        "color": "",
+                        "color": "#aaa",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "warning": {
                         "color": "$yellow",
@@ -1802,14 +1874,14 @@
                         "bold": true
                     },
                     "cursor-line": {
-                        "color": "$cyan",
-                        "background-color": "$red",
+                        "color": "#fff",
+                        "background-color": "#555",
                         "underline": true,
                         "bold": true
                     },
                     "disabled-cursor-line": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#888",
+                        "background-color": "#333",
                         "underline": false,
                         "bold": false
                     },
@@ -1821,6 +1893,12 @@
                     },
                     "skewed-time": {
                         "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "file-offset": {
+                        "color": "#888",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1898,7 +1976,7 @@
                         "bold": false
                     },
                     "hr": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1906,23 +1984,23 @@
                     "hyperlink": {
                         "color": "",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     },
                     "list-glyph": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "",
+                        "color": "#999",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "table-border": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -1931,34 +2009,34 @@
                         "color": "",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "quote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#666",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#888",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-text": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "snippet-border": {
-                        "color": "",
+                        "color": "#888",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -2002,13 +2080,13 @@
                         "bold": false
                     },
                     "comment": {
-                        "color": "",
+                        "color": "#888",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "doc-directive": {
-                        "color": "",
+                        "color": "#aaa",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -2025,11 +2103,29 @@
                         "underline": false,
                         "bold": false
                     },
+                    "null": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "ascii-control": {
+                        "color": "#aaa",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "#ccc",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "number": {
                         "color": "",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "type": {
                         "color": "",
@@ -2353,6 +2449,12 @@
                         "underline": false,
                         "bold": false
                     },
+                    "file-offset": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "offset-time": {
                         "color": "$cyan",
                         "background-color": "",
@@ -2549,6 +2651,24 @@
                     },
                     "symbol": {
                         "color": "#78dce8",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "null": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "ascii-control": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "$yellow",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -2840,10 +2960,10 @@
                         "bold": true
                     },
                     "info": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "warning": {
                         "color": "#b39554",
@@ -2864,8 +2984,8 @@
                         "bold": true
                     },
                     "disabled-cursor-line": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$cyan",
+                        "background-color": "#5f005f",
                         "underline": false,
                         "bold": false
                     },
@@ -2877,6 +2997,12 @@
                     },
                     "skewed-time": {
                         "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "file-offset": {
+                        "color": "#888",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -2954,7 +3080,7 @@
                         "bold": false
                     },
                     "hr": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -2962,23 +3088,23 @@
                     "hyperlink": {
                         "color": "",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     },
                     "list-glyph": {
-                        "color": "",
+                        "color": "$yellow",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "",
+                        "color": "#99a",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "table-border": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -2987,34 +3113,34 @@
                         "color": "",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "quote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#666",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$blue",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-text": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "snippet-border": {
-                        "color": "",
+                        "color": "$cyan",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -3028,20 +3154,20 @@
                 },
                 "syntax-styles": {
                     "inline-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$red",
+                        "background-color": "#222",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#222",
                         "underline": false,
                         "bold": false
                     },
                     "code-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#444",
+                        "background-color": "#222",
                         "underline": false,
                         "bold": false
                     },
@@ -3081,6 +3207,24 @@
                         "underline": false,
                         "bold": false
                     },
+                    "null": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "ascii-control": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
                     "number": {
                         "color": "#f78c6c",
                         "background-color": "",
@@ -3088,19 +3232,19 @@
                         "bold": false
                     },
                     "type": {
-                        "color": "",
+                        "color": "$blue",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "function": {
-                        "color": "",
+                        "color": "$cyan",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "separators-references-accessors": {
-                        "color": "",
+                        "color": "$red",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -3377,10 +3521,10 @@
                         "bold": true
                     },
                     "info": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "warning": {
                         "color": "$yellow",
@@ -3401,8 +3545,8 @@
                         "bold": true
                     },
                     "disabled-cursor-line": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$cyan",
+                        "background-color": "#5f005f",
                         "underline": false,
                         "bold": false
                     },
@@ -3414,6 +3558,12 @@
                     },
                     "skewed-time": {
                         "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "file-offset": {
+                        "color": "#888",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -3491,7 +3641,7 @@
                         "bold": false
                     },
                     "hr": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -3499,23 +3649,23 @@
                     "hyperlink": {
                         "color": "",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     },
                     "list-glyph": {
-                        "color": "",
+                        "color": "$yellow",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "",
+                        "color": "#99a",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "table-border": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -3524,34 +3674,34 @@
                         "color": "",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "quote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#666",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$blue",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-text": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "snippet-border": {
-                        "color": "",
+                        "color": "$cyan",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -3565,20 +3715,20 @@
                 },
                 "syntax-styles": {
                     "inline-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$red",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
                     "code-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#444",
+                        "background-color": "#121212",
                         "underline": false,
                         "bold": false
                     },
@@ -3618,26 +3768,44 @@
                         "underline": false,
                         "bold": false
                     },
-                    "number": {
-                        "color": "",
+                    "null": {
+                        "color": "#888",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
-                    "type": {
+                    "ascii-control": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "number": {
                         "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true
+                    },
+                    "type": {
+                        "color": "$blue",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "function": {
-                        "color": "",
+                        "color": "$cyan",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "separators-references-accessors": {
-                        "color": "",
+                        "color": "$red",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -3735,9 +3903,9 @@
                         "bold": false
                     },
                     "title-hotkey": {
-                        "color": "",
-                        "background-color": "",
-                        "underline": false,
+                        "color": "$black",
+                        "background-color": "#5394ec",
+                        "underline": true,
                         "bold": false
                     },
                     "title": {
@@ -3747,10 +3915,10 @@
                         "bold": true
                     },
                     "disabled-title": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$base01",
+                        "background-color": "$base03",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "subtitle": {
                         "color": "$base00",
@@ -3765,9 +3933,9 @@
                         "bold": false
                     },
                     "hotkey": {
-                        "color": "",
+                        "color": "#fff",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     }
                 },
@@ -3951,6 +4119,12 @@
                     },
                     "skewed-time": {
                         "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "file-offset": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -4151,6 +4325,24 @@
                     },
                     "symbol": {
                         "color": "$blue",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "null": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "ascii-control": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "non-ascii": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false

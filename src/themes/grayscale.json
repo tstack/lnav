@@ -31,6 +31,10 @@
                         "color": "$green",
                         "bold": true
                     },
+                    "info": {
+                        "color": "#aaa",
+                        "bold": true
+                    },
                     "error": {
                         "color": "$red",
                         "bold": true
@@ -44,10 +48,14 @@
                         "bold": true
                     },
                     "cursor-line": {
-                        "color": "$cyan",
-                        "background-color": "$red",
+                        "color": "#fff",
+                        "background-color": "#555",
                         "bold": true,
                         "underline": true
+                    },
+                    "disabled-cursor-line": {
+                        "color": "#888",
+                        "background-color": "#333"
                     },
                     "adjusted-time": {
                         "color": "$magenta"
@@ -57,6 +65,9 @@
                     },
                     "offset-time": {
                         "color": "$cyan"
+                    },
+                    "file-offset": {
+                        "color": "#888"
                     },
                     "invalid-msg": {
                         "color": "$yellow"
@@ -95,8 +106,64 @@
                     "h6": {
                         "underline": true
                     },
+                    "hr": {
+                        "color": "#444"
+                    },
+                    "hyperlink": {
+                        "underline": true
+                    },
+                    "list-glyph": {
+                        "color": "#444"
+                    },
+                    "breadcrumb": {
+                        "color": "#999"
+                    },
+                    "table-border": {
+                        "color": "#444"
+                    },
+                    "table-header": {
+                        "bold": true
+                    },
+                    "quote-border": {
+                        "color": "#666",
+                        "background-color": "#444"
+                    },
+                    "quoted-text": {
+                        "background-color": "#444"
+                    },
+                    "footnote-border": {
+                        "color": "#888",
+                        "background-color": "#444"
+                    },
+                    "footnote-text": {
+                        "color": "#eee",
+                        "background-color": "#444"
+                    },
+                    "snippet-border": {
+                        "color": "#888"
+                    },
                     "indent-guide": {
                         "color": "#444"
+                    }
+                },
+                "syntax-styles": {
+                    "comment": {
+                        "color": "#888"
+                    },
+                    "doc-directive": {
+                        "color": "#aaa"
+                    },
+                    "null": {
+                        "color": "#888"
+                    },
+                    "ascii-control": {
+                        "color": "#aaa"
+                    },
+                    "non-ascii": {
+                        "color": "#ccc"
+                    },
+                    "number": {
+                        "bold": true
                     }
                 },
                 "status-styles": {

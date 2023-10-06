@@ -59,6 +59,7 @@ enum class role_t : int32_t {
     VCR_ADJUSTED_TIME,
     VCR_SKEWED_TIME,
     VCR_OFFSET_TIME,
+    VCR_FILE_OFFSET,
     VCR_INVALID_MSG,
     VCR_STATUS, /*< Normal status line text. */
     VCR_WARN_STATUS,
@@ -95,6 +96,9 @@ enum class role_t : int32_t {
     VCR_DOC_DIRECTIVE,
     VCR_VARIABLE,
     VCR_SYMBOL,
+    VCR_NULL,
+    VCR_ASCII_CTRL,
+    VCR_NON_ASCII,
     VCR_NUMBER,
     VCR_RE_SPECIAL,
     VCR_RE_REPEAT,
@@ -306,6 +310,14 @@ ok(S str)
 {
     return std::make_pair(std::move(str),
                           VC_ROLE.template value(role_t::VCR_OK));
+}
+
+template<typename S>
+inline std::pair<S, string_attr_pair>
+hidden(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_HIDDEN));
 }
 
 template<typename S>
@@ -664,6 +676,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _code_border(
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_CODE_BORDER));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _table_header(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_TABLE_HEADER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _table_border(

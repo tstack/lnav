@@ -153,6 +153,12 @@ struct style_config {
     std::string sc_background_color;
     bool sc_underline{false};
     bool sc_bold{false};
+
+    bool empty() const
+    {
+        return this->sc_color.empty() && this->sc_background_color.empty()
+            && !this->sc_underline && !this->sc_bold;
+    }
 };
 
 struct highlighter_config {
@@ -179,6 +185,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_adjusted_time;
     positioned_property<style_config> lt_style_skewed_time;
     positioned_property<style_config> lt_style_offset_time;
+    positioned_property<style_config> lt_style_file_offset;
     positioned_property<style_config> lt_style_invalid_msg;
     positioned_property<style_config> lt_style_status_title;
     positioned_property<style_config> lt_style_status_title_hotkey;
@@ -195,6 +202,9 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_doc_directive;
     positioned_property<style_config> lt_style_variable;
     positioned_property<style_config> lt_style_symbol;
+    positioned_property<style_config> lt_style_null;
+    positioned_property<style_config> lt_style_ascii_ctrl;
+    positioned_property<style_config> lt_style_non_ascii;
     positioned_property<style_config> lt_style_number;
     positioned_property<style_config> lt_style_function;
     positioned_property<style_config> lt_style_type;

@@ -176,7 +176,7 @@ message showing the path to the captured input.
 
 .. prompt:: bash
 
-   export PAGER="man -q"
+   export PAGER="lnav -q"
 
 Searching
 ---------

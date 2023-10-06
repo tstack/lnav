@@ -354,8 +354,9 @@ public:
     template<typename... Args>
     attr_line_t& appendf(fmt::format_string<Args...> fstr, Args&&... args)
     {
-        this->template append(
-            fmt::vformat(fstr, fmt::make_format_args(args...)));
+        fmt::vformat_to(std::back_inserter(this->al_string),
+                        fstr,
+                        fmt::make_format_args(args...));
         return *this;
     }
 

@@ -624,7 +624,12 @@ view_colors::to_attrs(const lnav_theme& lt,
     std::string fg1, bg1, fg_color, bg_color;
     intern_string_t role_class;
 
-    if (!pp_sc.pp_path.empty()) {
+    if (pp_sc.pp_path.empty()) {
+#if 0
+        // too slow to do this now
+        reporter(&sc.sc_color, lnav::console::user_message::warning(""));
+#endif
+    } else {
         auto role_class_path
             = ghc::filesystem::path(pp_sc.pp_path.to_string()).parent_path();
         auto inner = role_class_path.filename().string();
@@ -777,6 +782,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_skewed_time, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_OFFSET_TIME)]
         = this->to_attrs(lt, lt.lt_style_offset_time, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_FILE_OFFSET)]
+        = this->to_attrs(lt, lt.lt_style_file_offset, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_INVALID_MSG)]
         = this->to_attrs(lt, lt.lt_style_invalid_msg, reporter);
 
@@ -979,6 +986,12 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_variable, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SYMBOL)]
         = this->to_attrs(lt, lt.lt_style_symbol, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_NULL)]
+        = this->to_attrs(lt, lt.lt_style_null, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_ASCII_CTRL)]
+        = this->to_attrs(lt, lt.lt_style_ascii_ctrl, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_NON_ASCII)]
+        = this->to_attrs(lt, lt.lt_style_non_ascii, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_NUMBER)]
         = this->to_attrs(lt, lt.lt_style_number, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_FUNCTION)]
