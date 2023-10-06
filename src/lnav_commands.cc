@@ -4985,14 +4985,16 @@ com_config(exec_context& ec,
         static const auto INPUT_SRC = intern_string::lookup("input");
 
         yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
-        std::vector<lnav::console::user_message> errors;
+        std::vector<lnav::console::user_message> errors, errors_ignored;
         std::string option = args[1];
 
         lnav_config = rollback_lnav_config;
         ypc.set_path(option)
             .with_obj(lnav_config)
             .with_error_reporter([&errors](const auto& ypc, auto msg) {
-                errors.push_back(msg);
+                if (msg.um_level == lnav::console::user_message::level::error) {
+                    errors.push_back(msg);
+                }
             });
         ypc.ypc_active_paths.insert(option);
         ypc.update_callbacks();
@@ -5094,8 +5096,18 @@ com_config(exec_context& ec,
                     return ec.make_error("unhandled type");
                 }
 
+                while (!errors.empty()) {
+                    if (errors.back().um_level
+                        == lnav::console::user_message::level::error)
+                    {
+                        break;
+                    } else {
+                        errors.pop_back();
+                    }
+                }
+
                 if (!errors.empty()) {
-                    return Err(errors[0]);
+                    return Err(errors.back());
                 }
 
                 if (changed) {
@@ -5105,10 +5117,20 @@ com_config(exec_context& ec,
                         = ec.ec_source.back().s_location;
                     reload_config(errors);
 
+                    while (!errors.empty()) {
+                        if (errors.back().um_level
+                            == lnav::console::user_message::level::error)
+                        {
+                            break;
+                        } else {
+                            errors.pop_back();
+                        }
+                    }
+
                     if (!errors.empty()) {
                         lnav_config = rollback_lnav_config;
-                        reload_config(errors);
-                        return Err(errors[0]);
+                        reload_config(errors_ignored);
+                        return Err(errors.back());
                     }
                     if (!ec.ec_dry_run) {
                         retval = "info: changed config option -- " + option;

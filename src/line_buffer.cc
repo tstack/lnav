@@ -1251,6 +1251,7 @@ line_buffer::read_range(file_range fr)
     const char* line_start;
     file_ssize_t avail;
 
+#if 0
     if (this->lb_last_line_offset != -1
         && fr.fr_offset > this->lb_last_line_offset)
     {
@@ -1264,6 +1265,7 @@ line_buffer::read_range(file_range fr)
                         fr.fr_offset,
                         this->lb_last_line_offset));
     }
+#endif
 
     if (!(this->in_range(fr.fr_offset)
           && this->in_range(fr.fr_offset + fr.fr_size - 1)))

@@ -652,8 +652,12 @@ static const struct json_path_container theme_styles_handlers = {
             "Styling for timestamps that are different from the received time")
         .for_child(&lnav_theme::lt_style_skewed_time)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("file-offset")
+        .with_description("Styling for a file offset")
+        .for_child(&lnav_theme::lt_style_file_offset)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("offset-time")
-        .with_description("Styling for hidden fields")
+        .with_description("Styling for the elapsed time column")
         .for_child(&lnav_theme::lt_style_offset_time)
         .with_children(style_config_handlers),
     yajlpp::property_handler("invalid-msg")
@@ -680,6 +684,12 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for top-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                if (ypc.ypc_parse_context != nullptr
+                    && root->lt_style_header[0].pp_path.empty())
+                {
+                    root->lt_style_header[0].pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                }
                 return &root->lt_style_header[0].pp_value;
             })
         .with_children(style_config_handlers),
@@ -687,6 +697,12 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for 2nd-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                if (ypc.ypc_parse_context != nullptr
+                    && root->lt_style_header[1].pp_path.empty())
+                {
+                    root->lt_style_header[1].pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                }
                 return &root->lt_style_header[1].pp_value;
             })
         .with_children(style_config_handlers),
@@ -694,6 +710,12 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for 3rd-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                if (ypc.ypc_parse_context != nullptr
+                    && root->lt_style_header[2].pp_path.empty())
+                {
+                    root->lt_style_header[2].pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                }
                 return &root->lt_style_header[2].pp_value;
             })
         .with_children(style_config_handlers),
@@ -701,6 +723,12 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for 4th-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                if (ypc.ypc_parse_context != nullptr
+                    && root->lt_style_header[3].pp_path.empty())
+                {
+                    root->lt_style_header[3].pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                }
                 return &root->lt_style_header[3].pp_value;
             })
         .with_children(style_config_handlers),
@@ -708,6 +736,12 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for 5th-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                if (ypc.ypc_parse_context != nullptr
+                    && root->lt_style_header[4].pp_path.empty())
+                {
+                    root->lt_style_header[4].pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                }
                 return &root->lt_style_header[4].pp_value;
             })
         .with_children(style_config_handlers),
@@ -715,6 +749,12 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for 6th-level headers")
         .with_obj_provider<style_config, lnav_theme>(
             [](const yajlpp_provider_context& ypc, lnav_theme* root) {
+                if (ypc.ypc_parse_context != nullptr
+                    && root->lt_style_header[5].pp_path.empty())
+                {
+                    root->lt_style_header[5].pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                }
                 return &root->lt_style_header[5].pp_value;
             })
         .with_children(style_config_handlers),
@@ -805,6 +845,19 @@ static const struct json_path_container theme_syntax_styles_handlers = {
     yajlpp::property_handler("symbol")
         .with_description("Styling for symbols in source files")
         .for_child(&lnav_theme::lt_style_symbol)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("null")
+        .with_description("Styling for nulls in source files")
+        .for_child(&lnav_theme::lt_style_null)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("ascii-control")
+        .with_description(
+            "Styling for ASCII control characters in source files")
+        .for_child(&lnav_theme::lt_style_ascii_ctrl)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("non-ascii")
+        .with_description("Styling for non-ASCII characters in source files")
+        .for_child(&lnav_theme::lt_style_non_ascii)
         .with_children(style_config_handlers),
     yajlpp::property_handler("number")
         .with_description("Styling for numbers in source files")
@@ -1803,20 +1856,25 @@ reload_config(std::vector<lnav::console::user_message>& errors)
                 auto loc_iter
                     = lnav_config_locations.find(intern_string::lookup(path));
                 auto has_loc = loc_iter != lnav_config_locations.end();
-                auto um
-                    = lnav::console::user_message::error(
+                auto um = has_loc
+                    ? lnav::console::user_message::error(
                           attr_line_t()
-                              .append(has_loc ? "invalid value for property "
-                                              : "missing value for property ")
+                              .append("invalid value for property ")
                               .append_quoted(lnav::roles::symbol(path)))
                           .with_reason(errmsg)
-                          .with_help(jph.get_help_text(path));
+                    : errmsg;
+                um.with_help(jph.get_help_text(path));
 
                 if (has_loc) {
                     um.with_snippet(
                         lnav::console::snippet::from(loc_iter->second.sl_source,
                                                      "")
                             .with_line(loc_iter->second.sl_line_number));
+                } else {
+                    um.um_message
+                        = attr_line_t()
+                              .append("missing value for property ")
+                              .append_quoted(lnav::roles::symbol(path));
                 }
 
                 errors.emplace_back(um);

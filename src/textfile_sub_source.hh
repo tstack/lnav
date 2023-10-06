@@ -189,6 +189,20 @@ private:
     std::unordered_map<std::string, metadata_state> tss_doc_metadata;
     size_t tss_line_indent_size{0};
     bool tss_completed_last_scan{true};
+    attr_line_t tss_hex_line;
+};
+
+class textfile_header_overlay : public list_overlay_source {
+public:
+    explicit textfile_header_overlay(textfile_sub_source* src);
+
+    bool list_static_overlay(const listview_curses& lv,
+                             int y,
+                             int bottom,
+                             attr_line_t& value_out) override;
+
+private:
+    textfile_sub_source* tho_src;
 };
 
 #endif

@@ -30,10 +30,12 @@
 #include "textfile_sub_source.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/attr_line.builder.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
 #include "base/map_util.hh"
+#include "base/math_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "lnav.events.hh"
@@ -49,12 +51,20 @@ textfile_sub_source::text_line_count()
     size_t retval = 0;
 
     if (!this->tss_files.empty()) {
-        std::shared_ptr<logfile> lf = this->current_file();
+        auto lf = this->current_file();
         auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
         if (rend_iter == this->tss_rendered_files.end()) {
-            auto* lfo = (line_filter_observer*) lf->get_logline_observer();
-            if (lfo != nullptr) {
-                retval = lfo->lfo_filter_state.tfs_index.size();
+            if (lf->get_text_format() == text_format_t::TF_BINARY) {
+                auto fsize = lf->get_stat().st_size;
+                retval = fsize / 16;
+                if (fsize % 16) {
+                    retval += 1;
+                }
+            } else {
+                auto* lfo = (line_filter_observer*) lf->get_logline_observer();
+                if (lfo != nullptr) {
+                    retval = lfo->lfo_filter_state.tfs_index.size();
+                }
             }
         } else {
             retval = rend_iter->second.rf_text_source->text_line_count();
@@ -70,49 +80,128 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
                                          std::string& value_out,
                                          text_sub_source::line_flags_t flags)
 {
-    if (!this->tss_files.empty()) {
-        const auto lf = this->current_file();
-        auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
-        if (rend_iter == this->tss_rendered_files.end()) {
-            auto* lfo = dynamic_cast<line_filter_observer*>(
-                lf->get_logline_observer());
-            if (lfo == nullptr || line < 0
-                || line >= lfo->lfo_filter_state.tfs_index.size())
-            {
-                value_out.clear();
-            } else {
-                auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
-                auto read_result = lf->read_line(ll);
-                this->tss_line_indent_size = 0;
-                if (read_result.isOk()) {
-                    value_out = to_string(read_result.unwrap());
-                    for (const auto& ch : value_out) {
-                        if (ch == ' ') {
-                            this->tss_line_indent_size += 1;
-                        } else if (ch == '\t') {
-                            do {
-                                this->tss_line_indent_size += 1;
-                            } while (this->tss_line_indent_size % 8);
-                        } else {
-                            break;
-                        }
-                    }
-                    if (lf->has_line_metadata()
-                        && this->tas_display_time_offset)
-                    {
-                        auto relstr = this->get_time_offset_for_line(
-                            tc, vis_line_t(line));
-                        value_out = fmt::format(
-                            FMT_STRING("{: >12}|{}"), relstr, value_out);
-                    }
-                }
-            }
-        } else {
-            rend_iter->second.rf_text_source->text_value_for_line(
-                tc, line, value_out, flags);
-        }
-    } else {
+    if (this->tss_files.empty() || line < 0) {
         value_out.clear();
+        return;
+    }
+
+    const auto lf = this->current_file();
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        rend_iter->second.rf_text_source->text_value_for_line(
+            tc, line, value_out, flags);
+        return;
+    }
+
+    if (lf->get_text_format() == text_format_t::TF_BINARY) {
+        this->tss_hex_line.clear();
+
+        attr_line_builder alb(this->tss_hex_line);
+
+        auto fsize = lf->get_stat().st_size;
+        auto fr = file_range{line * 16};
+        fr.fr_size = std::min((file_ssize_t) 16, fsize - fr.fr_offset);
+
+        auto read_res = lf->read_range(fr);
+        if (read_res.isErr()) {
+            log_error("%s: failed to read range %lld:%lld -- %s",
+                      lf->get_filename().c_str(),
+                      fr.fr_offset,
+                      fr.fr_size,
+                      read_res.unwrapErr().c_str());
+            return;
+        }
+
+        auto sbr = read_res.unwrap();
+        auto sf = sbr.to_string_fragment();
+        {
+            auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_FILE_OFFSET));
+            alb.appendf(FMT_STRING("{: >16x} "), fr.fr_offset);
+        }
+        auto byte_off = size_t{0};
+        for (auto ch : sf) {
+            if (byte_off == 8) {
+                alb.append(" ");
+            }
+            nonstd::optional<role_t> ro;
+            if (ch == '\0') {
+                ro = role_t::VCR_NULL;
+            } else if (isspace(ch) || iscntrl(ch)) {
+                ro = role_t::VCR_ASCII_CTRL;
+            } else if (!isprint(ch)) {
+                ro = role_t::VCR_NON_ASCII;
+            }
+            auto ag = ro.has_value() ? alb.with_attr(VC_ROLE.value(ro.value()))
+                                     : alb.with_default();
+            alb.appendf(FMT_STRING(" {:0>2x}"), ch);
+            byte_off += 1;
+        }
+        for (; byte_off < 16; byte_off++) {
+            if (byte_off == 8) {
+                alb.append(" ");
+            }
+            alb.append("   ");
+        }
+        alb.append("  ");
+        byte_off = 0;
+        for (auto ch : sf) {
+            if (byte_off == 8) {
+                alb.append(" ");
+            }
+            if (ch == '\0') {
+                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NULL));
+                alb.append("\u22c4");
+            } else if (isspace(ch)) {
+                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
+                alb.append("_");
+            } else if (iscntrl(ch)) {
+                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
+                alb.append("\u2022");
+            } else if (isprint(ch)) {
+                this->tss_hex_line.get_string().push_back(ch);
+            } else {
+                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NON_ASCII));
+                alb.append("\u00d7");
+            }
+            byte_off += 1;
+        }
+        auto alt_row_index = line % 4;
+        if (alt_row_index == 2 || alt_row_index == 3) {
+            this->tss_hex_line.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_ALT_ROW));
+        }
+
+        value_out = this->tss_hex_line.get_string();
+        return;
+    }
+
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (lfo == nullptr || line >= lfo->lfo_filter_state.tfs_index.size()) {
+        value_out.clear();
+        return;
+    }
+
+    auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
+    auto read_result = lf->read_line(ll);
+    this->tss_line_indent_size = 0;
+    if (read_result.isOk()) {
+        value_out = to_string(read_result.unwrap());
+        for (const auto& ch : value_out) {
+            if (ch == ' ') {
+                this->tss_line_indent_size += 1;
+            } else if (ch == '\t') {
+                do {
+                    this->tss_line_indent_size += 1;
+                } while (this->tss_line_indent_size % 8);
+            } else {
+                break;
+            }
+        }
+        if (lf->has_line_metadata() && this->tas_display_time_offset) {
+            auto relstr = this->get_time_offset_for_line(tc, vis_line_t(line));
+            value_out
+                = fmt::format(FMT_STRING("{: >12}|{}"), relstr, value_out);
+        }
     }
 }
 
@@ -134,6 +223,8 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
     if (rend_iter != this->tss_rendered_files.end()) {
         rend_iter->second.rf_text_source->text_attrs_for_line(
             tc, row, value_out);
+    } else if (lf->get_text_format() == text_format_t::TF_BINARY) {
+        value_out = this->tss_hex_line.get_attrs();
     } else {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
@@ -502,7 +593,6 @@ textfile_sub_source::text_crumbs_for_line(
         const auto initial_size = crumbs.size();
 
         meta_iter->second.ms_metadata.m_sections_tree.visit_overlapping(
-            lf->get_line_content_offset(ll_iter),
             end_offset,
             [&crumbs,
              initial_size,
@@ -1064,4 +1154,52 @@ textfile_sub_source::text_accel_get_line(vis_line_t vl)
     auto lf = this->current_file();
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     return (lf->begin() + lfo->lfo_filter_state.tfs_index[vl]).base();
+}
+
+textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src)
+    : tho_src(src)
+{
+}
+
+bool
+textfile_header_overlay::list_static_overlay(const listview_curses& lv,
+                                             int y,
+                                             int bottom,
+                                             attr_line_t& value_out)
+{
+    if (y != 0) {
+        return false;
+    }
+
+    auto lf = this->tho_src->current_file();
+    if (lf == nullptr) {
+        return false;
+    }
+
+    if (lf->get_text_format() != text_format_t::TF_BINARY) {
+        return false;
+    }
+
+    {
+        attr_line_builder alb(value_out);
+        {
+            auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_TABLE_HEADER));
+            alb.appendf(FMT_STRING("{:>16} "), "File Offset");
+        }
+        size_t byte_off = 0;
+        for (size_t lpc = 0; lpc < 16; lpc++) {
+            auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_FILE_OFFSET));
+            if (byte_off == 8) {
+                alb.append(" ");
+            }
+            alb.appendf(FMT_STRING(" {:0>2x}"), lpc);
+            byte_off += 1;
+        }
+        {
+            auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_TABLE_HEADER));
+            alb.appendf(FMT_STRING("  {:^17}"), "ASCII");
+        }
+    }
+    value_out.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
+    return true;
 }

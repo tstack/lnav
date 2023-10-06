@@ -601,6 +601,11 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                  this->lf_stat.st_mtime);
         this->close();
         return rebuild_result_t::NO_NEW_LINES;
+    }
+
+    if (this->lf_text_format == text_format_t::TF_BINARY) {
+        this->lf_index_size = st.st_size;
+        this->lf_stat = st;
     } else if (this->lf_line_buffer.is_data_available(this->lf_index_size,
                                                       st.st_size))
     {
@@ -1021,6 +1026,12 @@ logfile::read_file()
     }
 
     return Ok(std::move(retval));
+}
+
+Result<shared_buffer_ref, std::string>
+logfile::read_range(file_range fr)
+{
+    return this->lf_line_buffer.read_range(fr);
 }
 
 void

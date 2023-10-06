@@ -22,6 +22,10 @@
                         "color": "Green",
                         "bold": true
                     },
+                    "info": {
+                        "color": "Maroon",
+                        "bold": true
+                    },
                     "error": {
                         "color": "Red",
                         "bold": true
@@ -40,6 +44,10 @@
                         "bold": true,
                         "underline": true
                     },
+                    "disabled-cursor-line": {
+                        "color": "Cyan1",
+                        "background-color": "#5f005f"
+                    },
                     "adjusted-time": {
                         "color": "Maroon"
                     },
@@ -48,6 +56,9 @@
                     },
                     "offset-time": {
                         "color": "Teal"
+                    },
+                    "file-offset": {
+                        "color": "Silver"
                     },
                     "invalid-msg": {
                         "color": "Yellow"
@@ -86,11 +97,38 @@
                     "h6": {
                         "underline": true
                     },
+                    "hr": {
+                        "color": "#444"
+                    },
+                    "hyperlink": {
+                        "underline": true
+                    },
                     "list-glyph": {
                         "color": "Yellow"
                     },
                     "breadcrumb": {
                         "color": "Teal"
+                    },
+                    "table-border": {
+                        "color": "#444"
+                    },
+                    "table-header": {
+                        "bold": true
+                    },
+                    "quote-border": {
+                        "color": "#666",
+                        "background-color": "#444"
+                    },
+                    "quoted-text": {
+                        "background-color": "#444"
+                    },
+                    "footnote-border": {
+                        "color": "Blue",
+                        "background-color": "#444"
+                    },
+                    "footnote-text": {
+                        "color": "#eee",
+                        "background-color": "#444"
                     },
                     "snippet-border": {
                         "color": "Teal"
@@ -100,8 +138,20 @@
                     }
                 },
                 "syntax-styles": {
+                    "inline-code": {
+                        "color": "Red",
+                        "background-color": "#121212"
+                    },
+                    "quoted-code": {
+                        "color": "Silver",
+                        "background-color": "#121212"
+                    },
+                    "code-border": {
+                        "color": "#444",
+                        "background-color": "#121212"
+                    },
                     "keyword": {
-                        "color": "Blue"
+                        "color": "#00f"
                     },
                     "string": {
                         "color": "Green",
@@ -135,19 +185,37 @@
                         "color": "Maroon"
                     },
                     "spectrogram-low": {
-                        "background-color": "$green"
+                        "background-color": "Green"
                     },
                     "spectrogram-medium": {
-                        "background-color": "$yellow"
+                        "background-color": "Yellow"
                     },
                     "spectrogram-high": {
-                        "background-color": "$red"
+                        "background-color": "Red"
                     },
                     "file": {
                         "color": "Blue"
                     },
+                    "null": {
+                        "color": "Silver"
+                    },
+                    "ascii-control": {
+                        "color": "Green"
+                    },
+                    "non-ascii": {
+                        "color": "Yellow"
+                    },
                     "number": {
                         "bold": true
+                    },
+                    "function": {
+                        "color": "Cyan1"
+                    },
+                    "separators-references-accessors": {
+                        "color": "Silver"
+                    },
+                    "type": {
+                        "color": "Blue"
                     }
                 },
                 "status-styles": {

@@ -252,6 +252,8 @@ public:
 
     Result<std::string, std::string> read_file();
 
+    Result<shared_buffer_ref, std::string> read_range(file_range fr);
+
     iterator line_base(iterator ll)
     {
         auto retval = ll;
