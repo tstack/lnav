@@ -953,7 +953,7 @@ handle_paging_key(int ch)
                             done = true;
                         }
                     } while (!done);
-                    tc->set_top(vl);
+                    tc->set_selection(vl);
                     lnav_data.ld_rl_view->set_value(" " + rt.to_string());
                 }
             }
