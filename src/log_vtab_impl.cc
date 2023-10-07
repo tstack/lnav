@@ -1202,7 +1202,7 @@ log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
         case SQLITE_INDEX_CONSTRAINT_LE:
             if (vl < 0_vl) {
                 this->lc_curr_line = this->lc_end_line;
-            } else {
+            } else if (vl < this->lc_end_line) {
                 this->lc_end_line
                     = vl + (cons == constraint_t::unique ? 1_vl : 0_vl);
             }
@@ -1210,7 +1210,7 @@ log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
         case SQLITE_INDEX_CONSTRAINT_LT:
             if (vl <= 0_vl) {
                 this->lc_curr_line = this->lc_end_line;
-            } else {
+            } else if (vl < this->lc_end_line) {
                 this->lc_end_line = vl;
             }
             break;
