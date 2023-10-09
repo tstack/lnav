@@ -796,6 +796,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_indexes.sh_026dd9752b6101e0791689d3a2026f7e517e36f5.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_1614ebb5e2e83bab11023354dea8a0885ddf64b4.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_1614ebb5e2e83bab11023354dea8a0885ddf64b4.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_2b4945247332d01b08e6f17340f7d17f3b3649b8.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_2b4945247332d01b08e6f17340f7d17f3b3649b8.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_541a8e35f34a206e340a3880128b6ce137847872.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_541a8e35f34a206e340a3880128b6ce137847872.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_59a1497c13a5e09bc8f95ef02552b2835ebea6e5.err \
