@@ -44,3 +44,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM all_logs WHERE log_level > 'error'" \
     ${test_dir}/logfile_access_log.*
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM all_logs WHERE log_line <= 20" \
+    ${test_dir}/logfile_access_log.*
