@@ -195,7 +195,7 @@ public:
         this->adjust_content_time(-1, tv);
     }
 
-    void mark_as_duplicate(const std::string& name);
+    bool mark_as_duplicate(const std::string& name);
 
     const logfile_open_options& get_open_options() const
     {
@@ -355,6 +355,8 @@ public:
     }
 
     bool is_indexing() const { return this->lf_indexing; }
+
+    void set_indexing(bool val) { this->lf_indexing = val; }
 
     /** Check the invariants for this object. */
     bool invariant()

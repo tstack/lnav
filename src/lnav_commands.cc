@@ -3321,8 +3321,10 @@ com_file_visibility(exec_context& ec,
             if (only_this_file) {
                 for (const auto& ld : lnav_data.ld_log_source) {
                     ld->set_visibility(false);
+                    ld->get_file_ptr()->set_indexing(false);
                 }
             }
+            lf->set_indexing(make_visible);
             lnav_data.ld_log_source.find_data(lf) |
                 [make_visible](auto ld) { ld->set_visibility(make_visible); };
             tc->get_sub_source()->text_filters_changed();
@@ -3375,6 +3377,7 @@ com_file_visibility(exec_context& ec,
 
             if (!ec.ec_dry_run) {
                 ld_opt | [make_visible](auto ld) {
+                    ld->get_file_ptr()->set_indexing(make_visible);
                     ld->set_visibility(make_visible);
                 };
             }

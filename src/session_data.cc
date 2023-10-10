@@ -926,16 +926,15 @@ load_session()
             log_debug("found state for file: %s %d",
                       lf->get_content_id().c_str(),
                       iter->second.fs_is_visible);
-            lnav_data.ld_log_source.find_data(lf) | [iter](auto ld) {
-                ld->set_visibility(iter->second.fs_is_visible);
-            };
-            if (!iter->second.fs_is_visible) {
-                if (lf->get_format() != nullptr) {
-                    log_changes = true;
-                } else {
-                    text_changes = true;
-                }
-            }
+            lnav_data.ld_log_source.find_data(lf) |
+                [iter, &log_changes](auto ld) {
+                    if (ld->ld_visible != iter->second.fs_is_visible) {
+                        ld->get_file_ptr()->set_indexing(
+                            iter->second.fs_is_visible);
+                        ld->set_visibility(iter->second.fs_is_visible);
+                        log_changes = true;
+                    }
+                };
         }
 
         if (log_changes) {

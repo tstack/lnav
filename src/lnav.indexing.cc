@@ -330,11 +330,12 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
                 for_each(pair.second.begin(),
                          pair.second.end(),
                          [&dupe_name](auto& lf) {
-                             log_info("Hiding duplicate file: %s",
-                                      lf->get_filename().c_str());
-                             lf->mark_as_duplicate(dupe_name);
-                             lnav_data.ld_log_source.find_data(lf) |
-                                 [](auto ld) { ld->set_visibility(false); };
+                             if (lf->mark_as_duplicate(dupe_name)) {
+                                 log_info("Hiding duplicate file: %s",
+                                          lf->get_filename().c_str());
+                                 lnav_data.ld_log_source.find_data(lf) |
+                                     [](auto ld) { ld->set_visibility(false); };
+                             }
                          });
                 reload = true;
             }
@@ -373,9 +374,9 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
             }
         }
 
+        auto* tss = tc->get_sub_source();
+        lnav_data.ld_filter_status_source.update_filtered(tss);
         if (retval.rir_changes > 0) {
-            auto* tss = tc->get_sub_source();
-            lnav_data.ld_filter_status_source.update_filtered(tss);
             lnav_data.ld_scroll_broadcaster(tc);
         }
     };
