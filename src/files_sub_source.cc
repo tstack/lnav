@@ -97,6 +97,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                     auto& lss = lnav_data.ld_log_source;
                     auto lf = *fs.sb_iter;
 
+                    lf->set_indexing(true);
                     lss.find_data(lf) | [](auto ld) {
                         ld->set_visibility(true);
                         lnav_data.ld_log_source.text_filters_changed();
@@ -136,6 +137,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                           auto lf = *fs.sb_iter;
 
                           lss.find_data(lf) | [](auto ld) {
+                              ld->get_file_ptr()->set_indexing(!ld->ld_visible);
                               ld->set_visibility(!ld->ld_visible);
                           };
 

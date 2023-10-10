@@ -1265,6 +1265,7 @@ CREATE TABLE lnav_view_files (
 
         auto& ld = *iter;
         if (ld->ld_visible != visible) {
+            ld->get_file_ptr()->set_indexing(visible);
             ld->set_visibility(visible);
             lss.text_filters_changed();
         }

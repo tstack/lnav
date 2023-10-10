@@ -1193,14 +1193,21 @@ logfile::find_from_time(const timeval& tv) const
     return retval;
 }
 
-void
+bool
 logfile::mark_as_duplicate(const std::string& name)
 {
+    safe::WriteAccess<safe_notes> notes(this->lf_notes);
+
+    auto iter = notes->find(note_type::duplicate);
+    if (iter != notes->end()) {
+        return false;
+    }
+
     this->lf_indexing = false;
     this->lf_options.loo_is_visible = false;
-    this->lf_notes.writeAccess()->emplace(
-        note_type::duplicate,
-        fmt::format(FMT_STRING("hiding duplicate of {}"), name));
+    notes->emplace(note_type::duplicate,
+                   fmt::format(FMT_STRING("hiding duplicate of {}"), name));
+    return true;
 }
 
 void
