@@ -5,7 +5,6 @@
     "description": "Nextcloud JSON server logs",
     "url": "https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/logging_configuration.html?highlight=logging#log-field-breakdown",
     "json": true,
-    "file-pattern": "(audit|flow|nextcloud)\\.log",
     "opid-field": "reqId",
     "level-field": "level",
     "body-field": "message",
