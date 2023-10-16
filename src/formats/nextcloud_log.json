@@ -65,12 +65,6 @@
       {
         "field": "message"
       }
-    ],
-    "sample": [
-      {
-        "line": "{\"reqId\":\"ztEUPOtzDmW7nQlsQPdT\",\"level\":2,\"time\":\"2022-04-13T19:15:10+00:00\",\"remoteAddr\":\"10.0.0.1\",\"user\":\"steve\",\"app\":\"OC\\\\Log\\\\Rotate\",\"method\":\"\",\"url\":\"--\",\"message\":\"Log file \\\"/var/www/html/data/nextcloud.log\\\" was over 104857600 bytes, moved to \\\"/var/www/html/data/nextcloud.log.1\\\"\",\"userAgent\":\"--\",\"version\":\"25.0.5.1\",\"data\":{\"app\":\"OC\\\\Log\\\\Rotate\"}}",
-        "level": "info"
-      }
     ]
   }
 }
