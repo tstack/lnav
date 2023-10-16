@@ -1,0 +1,77 @@
+{
+  "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+  "nextcloud": {
+    "title": "Nextcloud server logs",
+    "description": "Nextcloud JSON server logs",
+    "url": "https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/logging_configuration.html?highlight=logging#log-field-breakdown",
+    "json": true,
+    "file-pattern": "(audit|flow|nextcloud)\\.log",
+    "opid-field": "reqId",
+    "level-field": "level",
+    "body-field": "message",
+    "hide-extra": true,
+    "level" : {
+      "debug" : "0",
+      "info": "1",
+      "warning" : "2",
+      "error" : "3",
+      "fatal" : "4"
+    },
+    "timestamp-field": "time",
+    "convert-to-local-time": true,
+    "multiline": false,
+    "value": {
+      "exception": {
+        "kind": "json"
+      },
+      "app": {
+        "kind": "string",
+        "identifier": true
+      },
+      "reqId": {
+        "kind": "string",
+        "identifier": true
+      },
+      "remoteAddr": {
+        "kind": "string",
+        "identifier": true
+      }
+    },
+    "line-format": [
+      {
+        "field": "__timestamp__",
+        "timestamp-format": "%b %e %H:%M:%S"
+      },
+      " ",
+      {
+        "field": "reqId",
+        "max-width": 3,
+        "overflow": "truncate"
+      },
+      " ",
+      {
+        "field": "remoteAddr",
+        "min-width": 15
+      },
+      " ",
+      {
+        "field": "__level__",
+        "text-transform": "uppercase"
+      },
+      " ",
+      {
+        "field": "app"
+      },
+      " ",
+      {
+        "field": "message"
+      }
+    ],
+    "sample": [
+      {
+        "line": "{\"reqId\":\"ztEUPOtzDmW7nQlsQPdT\",\"level\":2,\"time\":\"2022-04-13T19:15:10+00:00\",\"remoteAddr\":\"10.0.0.1\",\"user\":\"steve\",\"app\":\"OC\\\\Log\\\\Rotate\",\"method\":\"\",\"url\":\"--\",\"message\":\"Log file \\\"/var/www/html/data/nextcloud.log\\\" was over 104857600 bytes, moved to \\\"/var/www/html/data/nextcloud.log.1\\\"\",\"userAgent\":\"--\",\"version\":\"25.0.5.1\",\"data\":{\"app\":\"OC\\\\Log\\\\Rotate\"}}",
+        "level": "info"
+      }
+    ]
+  }
+}
