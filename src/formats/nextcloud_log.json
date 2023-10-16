@@ -2,7 +2,7 @@
   "$schema": "https://lnav.org/schemas/format-v1.schema.json",
   "nextcloud": {
     "title": "Nextcloud server logs",
-    "description": "Nextcloud JSON server logs",
+    "description": "Nextcloud JSON server logs audit.log, flow.log, and nextcloud.log",
     "url": "https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/logging_configuration.html?highlight=logging#log-field-breakdown",
     "json": true,
     "opid-field": "reqId",
