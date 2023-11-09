@@ -395,7 +395,7 @@ update_installs_from_git()
     if (!found) {
         printf(
             "No formats from git repositories found, "
-            "use 'lnav -i extra' to install third-party foramts\n");
+            "use 'lnav -i extra' to install third-party formats\n");
     }
 
     return retval;
