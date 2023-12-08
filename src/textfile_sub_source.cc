@@ -884,12 +884,12 @@ textfile_sub_source::rescan_files(
                 continue;
             }
 
-            if (!new_data && lf->is_indexing()
+            if (lf->is_indexing()
                 && lf->get_text_format() != text_format_t::TF_BINARY)
             {
                 auto ms_iter = this->tss_doc_metadata.find(lf->get_filename());
 
-                if (ms_iter != this->tss_doc_metadata.end()) {
+                if (!new_data && ms_iter != this->tss_doc_metadata.end()) {
                     if (st.st_mtime != ms_iter->second.ms_mtime
                         || st.st_size != ms_iter->second.ms_file_size)
                     {
@@ -904,7 +904,7 @@ textfile_sub_source::rescan_files(
                     if (read_res.isOk()) {
                         auto content = attr_line_t(read_res.unwrap());
 
-                        log_info("generating metdata for: %s",
+                        log_info("generating metadata for: %s",
                                  lf->get_filename().c_str());
                         scrub_ansi_string(content.get_string(),
                                           &content.get_attrs());
@@ -913,6 +913,7 @@ textfile_sub_source::rescan_files(
                             content.get_string(), lf->get_text_format());
                         if (text_meta) {
                             lf->set_filename(text_meta->tfm_filename);
+                            lf->set_include_in_session(true);
                             callback.renamed_file(lf);
                         }
 
