@@ -1000,7 +1000,7 @@ listview_curses::set_selection(vis_line_t sel)
                 this->invoke_scroll();
             }
         }
-    } else {
+    } else if (sel >= 0_vl) {
         this->set_top(sel);
     }
 }

@@ -283,6 +283,7 @@ init_session()
 {
     lnav_data.ld_session_time = time(nullptr);
     lnav_data.ld_session_id.clear();
+    session_data.sd_view_states[LNV_LOG].vs_top = -1;
 }
 
 static nonstd::optional<std::string>
@@ -297,6 +298,17 @@ compute_session_id()
         }
         has_files = true;
         h.update(ld_file_name.first);
+    }
+    for (auto& lf : lnav_data.ld_active_files.fc_files) {
+        if (lf->is_valid_filename()) {
+            continue;
+        }
+        if (!lf->get_open_options().loo_include_in_session) {
+            continue;
+        }
+
+        has_files = true;
+        h.update(lf->get_filename());
     }
     if (!has_files) {
         return nonstd::nullopt;
@@ -1690,6 +1702,19 @@ lnav::session::restore_view_states()
             auto lf = lnav_data.ld_text_source.current_file();
             if (lf != nullptr) {
                 has_loc = lf->get_open_options().loo_init_location.valid();
+                if (!has_loc) {
+                    switch (lf->get_text_format()) {
+                        case text_format_t::TF_UNKNOWN:
+                        case text_format_t::TF_LOG:
+                            break;
+                        default:
+                            if (vs.vs_top == 0 && tview.get_top() > 0) {
+                                log_debug("setting to 0");
+                                tview.set_top(0_vl);
+                            }
+                            break;
+                    }
+                }
             }
         }
 
@@ -1701,6 +1726,7 @@ lnav::session::restore_view_states()
                      lnav_view_strings[view_index],
                      vs.vs_top);
             lnav_data.ld_views[view_index].set_top(vis_line_t(vs.vs_top), true);
+            lnav_data.ld_views[view_index].set_selection(-1_vl);
         }
         if (!has_loc && vs.vs_selection) {
             log_info("restoring %s view selection: %d",

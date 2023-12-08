@@ -1638,7 +1638,7 @@ looper()
                     session_stage += 1;
                     loop_deadline = ui_clock::now();
                     log_debug("file count %d",
-                              lnav_data.ld_active_files.fc_files.size())
+                              lnav_data.ld_active_files.fc_files.size());
                 }
                 update_active_files(new_files);
                 if (!initial_rescan_completed) {
@@ -1774,7 +1774,7 @@ looper()
             auto poll_to
                 = (!changes && ui_now < loop_deadline && session_stage >= 1)
                 ? std::chrono::duration_cast<std::chrono::milliseconds>(
-                    loop_deadline - ui_now)
+                      loop_deadline - ui_now)
                 : 0ms;
 
             if (initial_rescan_completed
