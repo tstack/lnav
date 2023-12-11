@@ -141,7 +141,7 @@ jobs:
                     CPPFLAGS="-I../src -I../../lnav/src -I../../lnav/src/fmtlib -O2 -DNCURSES_STATIC" \
                     CXXFLAGS="-fPIC" \
                     CFLAGS="-fPIC" \
-                    LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon" \
+                    LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
                     --sysconfdir=/etc \
                     --prefix=$PREFIX || cat config.log
     - name: '🚧 Make (do not use -j)'
