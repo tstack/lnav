@@ -209,6 +209,10 @@
 [1m[31m✘ error[0m: “[1mno_sample_log[0m” is not a valid log format
  [1m[31mreason[0m: log message samples must be included in a format definition
 [36m --> [0m[1m{test_dir}/bad-config/formats/no-samples/format.json[0m:4
+[1m[31m✘ error[0m: invalid sample log message: "gitea  | 2023/09/24 22:15:55 cmd/web.go:223:runWeb() [I] Starting Gitea on PID: 7"
+ [1m[31mreason[0m: timestamp was not captured
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-no-tscap/format.json[0m:25
+[36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
 [1m[31m✘ error[0m: failed to compile SQL statement
  [1m[31mreason[0m: near "TALE": syntax error
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init.sql[0m:4

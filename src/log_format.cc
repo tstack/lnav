@@ -3022,6 +3022,16 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
                     errors.emplace_back(um);
                 }
+            } else if (!ts_cap) {
+                errors.emplace_back(
+                    lnav::console::user_message::error(
+                        attr_line_t("invalid sample log message: ")
+                            .append(lnav::to_json(elf_sample.s_line.pp_value)))
+                        .with_reason(attr_line_t("timestamp was not captured"))
+                        .with_snippet(elf_sample.s_line.to_snippet())
+                        .with_help(attr_line_t(
+                            "A timestamp needs to be captured in order for a "
+                            "line to be recognized as a log message")));
             } else {
                 attr_line_t notes;
 
