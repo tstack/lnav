@@ -231,6 +231,8 @@ dist_noinst_DATA = \
 	ansi-colors.0.in \
 	bad-config/formats/invalid-file-format/format.json \
 	bad-config/formats/invalid-json-format/format.json \
+	bad-config/formats/invalid-name/format.json \
+	bad-config/formats/invalid-no-tscap/format.json \
 	bad-config/formats/invalid-properties/format.json \
 	bad-config/formats/invalid-regex/format.json \
 	bad-config/formats/invalid-sample/format.json \

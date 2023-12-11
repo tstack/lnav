@@ -1,0 +1,32 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "no_tscap_log": {
+        "title": "Sample with no captured timestamp",
+        "multiline": true,
+        "ordered-by-time": false,
+        "regex": {
+            "std": {
+                "pattern": "^(?<container>[\\w-]+)\\s+\\|( (?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{9}[+-]\\d{2}:\\d{2}))?( (?<body>.*))?$"
+            }
+        },
+        "level-field": "timestamp",
+        "module-field": "container",
+        "value": {
+            "container": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "sample": [
+            {
+                "line": "gitea  | 2023-09-24T22:15:55.346526305+02:00 2023/09/24 22:15:55 cmd/web.go:223:runWeb() [I] Starting Gitea on PID: 7"
+            },
+            {
+                "line": "gitea  | 2023/09/24 22:15:55 cmd/web.go:223:runWeb() [I] Starting Gitea on PID: 7"
+            },
+            {
+                "line": "gitea-db-1  | 2023-09-24T22:15:37.981051393+02:00 [migrations] started"
+            }
+        ]
+    }
+}
