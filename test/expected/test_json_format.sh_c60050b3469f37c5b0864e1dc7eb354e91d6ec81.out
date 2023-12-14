@@ -1,4 +1,4 @@
-[31m2016-08-03T17:06:31.009[0m[31m - [0m[31m;Exception initializing page context;[0m[31m java.lang.NoClassDefFoundError: javax/el/StaticFieldELResolver[0m
+[31m2016-08-03T17:06:31.009+0000[0m[31m - [0m[31m;Exception initializing page context;[0m[31m java.lang.NoClassDefFoundError: javax/el/StaticFieldELResolver[0m
 [31m	at org.apache.jasper.runtime.JspFactoryImpl.internalGetPageContext(JspFactoryImpl.java:172)[0m
 [31m	at org.apache.jasper.runtime.JspFactoryImpl.getPageContext(JspFactoryImpl.java:123)[0m
 [31m	at org.apache.jsp.errors._404_002dnot_002dfound_jsp._jspService(_404_002dnot_002dfound_jsp.java:38)[0m
@@ -41,7 +41,7 @@
 [31m  thread_name: http-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m
 [31m  level: ERROR[0m
 [31m  customer: foobaz[0m
-[31m2016-08-03T17:06:31.009[0m[31m - [0m[31m;Exception initializing page context;[0m[31m [0m
+[31m2016-08-03T17:06:31.009+0000[0m[31m - [0m[31m;Exception initializing page context;[0m[31m [0m
 [31m  @version: 1[0m
 [31m  logger_name: [0m[31morg.apache.jasper.runtime.JspFactoryImpl[0m
 [31m  thread_name: http-bio-[0m[31m0.0.0.0[0m[31m-8081-exec-198[0m

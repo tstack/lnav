@@ -1,4 +1,4 @@
-2023-03-24T14:26:16.243 renovate[7] INFO     Dependency extraction complete
+2023-03-24T14:26:16.243Z renovate[7] INFO     Dependency extraction complete
  Received Time: [1m2023-03-24T14:26:16.243[0m — [1min the future[0m  Format: [1m%Y-%m-%dT%H:%M:%S.%L%z[0m
  Known message fields for table [1mbunyan_log[0m:
    name     = [1mrenovate[0m
@@ -16,30 +16,30 @@
   repository: webgui/custom-icons-transformer
   baseBranch: main
   stats: {"managers":{"gitlabci":{"fileCount":1,"depCount":1},"gitlabci-include":{"fileCount":1,"depCount":1},"npm":{"fileCount":1,"depCount":15}},"total":{"fileCount":3,"depCount":17}}
-2023-03-24T14:26:16.390 renovate[7] DEBUG    Dependency node has unsupported/unversioned value lts-bullseye-slim (versioning=docker)
+2023-03-24T14:26:16.390Z renovate[7] DEBUG    Dependency node has unsupported/unversioned value lts-bullseye-slim (versioning=docker)
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
-2023-03-24T14:26:17.493 renovate[7] DEBUG    Release 2.8.7 is pending status checks
+2023-03-24T14:26:17.493Z renovate[7] DEBUG    Release 2.8.7 is pending status checks
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
   depName: prettier
   check: stabilityDays
-2023-03-24T14:26:17.897 renovate[7] DEBUG    Release 4.4.1 is pending status checks
+2023-03-24T14:26:17.897Z renovate[7] DEBUG    Release 4.4.1 is pending status checks
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
   depName: rimraf
   check: stabilityDays
-2023-03-24T14:26:17.897 renovate[7] DEBUG    All releases are pending - using latest
+2023-03-24T14:26:17.897Z renovate[7] DEBUG    All releases are pending - using latest
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
   depName: rimraf
   bucket: non-major
-2023-03-24T14:26:18.330 renovate[7] DEBUG    Release 2.10.0 is pending status checks
+2023-03-24T14:26:18.330Z renovate[7] DEBUG    Release 2.10.0 is pending status checks
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
   depName: prettier-plugin-svelte
   check: stabilityDays
-2023-03-24T14:26:18.331 renovate[7] DEBUG    All releases are pending - using latest
+2023-03-24T14:26:18.331Z renovate[7] DEBUG    All releases are pending - using latest
   logContext: qjifsaDDI
   repository: webgui/custom-icons-transformer
   depName: prettier-plugin-svelte
