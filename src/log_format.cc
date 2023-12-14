@@ -1799,10 +1799,7 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
             jlu->jlu_format->get_timestamp_formats(),
             &tm_out,
             tv_out);
-        // Leave off the machine oriented flag since we convert it anyhow
-        // in rewrite_json_field()
-        jlu->jlu_format->lf_timestamp_flags
-            = tm_out.et_flags & ~(ETF_MACHINE_ORIENTED | ETF_ZONE_SET);
+        jlu->jlu_format->lf_timestamp_flags = tm_out.et_flags;
         jlu->jlu_base_line->set_time(tv_out);
     } else if (jlu->jlu_format->elf_level_pointer.pp_value != nullptr) {
         if (jlu->jlu_format->elf_level_pointer.pp_value
