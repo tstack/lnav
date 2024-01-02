@@ -475,7 +475,7 @@ listview_curses::do_update()
                     auto overlay_y = y;
                     while (ov_height_remaining > 0 && y < bottom) {
                         if (this->lv_overlay_focused
-                            && row == this->lv_selection
+                            && row == this->get_selection()
                             && overlay_row
                                 == this->lv_focused_overlay_selection)
                         {
