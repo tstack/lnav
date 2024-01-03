@@ -1761,11 +1761,35 @@ external_log_format::rewrite(exec_context& ec,
             vd_iter->second->vd_rewrite_src_name, 1, vd.vd_rewriter);
         std::string field_value;
 
-        auto exec_res = execute_any(ec, vd.vd_rewriter);
-        if (exec_res.isOk()) {
-            field_value = exec_res.unwrap();
-        } else {
-            field_value = exec_res.unwrapErr().to_attr_line().get_string();
+        auto_mem<FILE> tmpout(fclose);
+
+        tmpout = std::tmpfile();
+        if (!tmpout) {
+            log_error("unable to create temporary file");
+            return;
+        }
+        fcntl(fileno(tmpout), F_SETFD, FD_CLOEXEC);
+        auto fd_copy = auto_fd::dup_of(fileno(tmpout));
+        fd_copy.close_on_exec();
+        auto ec_out = std::make_pair(tmpout.release(), fclose);
+        {
+            exec_context::output_guard og(ec, "tmp", ec_out);
+
+            auto exec_res = execute_any(ec, vd.vd_rewriter);
+            if (exec_res.isOk()) {
+                field_value = exec_res.unwrap();
+            } else {
+                field_value = exec_res.unwrapErr().to_attr_line().get_string();
+            }
+        }
+        struct stat st;
+        fstat(fd_copy.get(), &st);
+        if (st.st_size > 0) {
+            auto buf = auto_buffer::alloc(st.st_size);
+
+            buf.resize(st.st_size);
+            pread(fd_copy.get(), buf.in(), st.st_size, 0);
+            field_value = buf.to_string();
         }
         value_out.erase(iter->lv_origin.lr_start, iter->lv_origin.length());
 

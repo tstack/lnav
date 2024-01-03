@@ -63,7 +63,7 @@ pretty_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         return 0;
     }
 
-    int ncols = sqlite3_column_count(stmt);
+    const auto ncols = sqlite3_column_count(stmt);
 
     for (int lpc = 0; lpc < ncols; lpc++) {
         if (!ec.ec_accumulator->empty()) {
@@ -78,6 +78,44 @@ pretty_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         ec.ec_accumulator->append(res);
     }
 
+    for (int lpc = 0; lpc < ncols; lpc++) {
+        const auto* colname = sqlite3_column_name(stmt, lpc);
+        auto* raw_value = sqlite3_column_value(stmt, lpc);
+        auto value_type = sqlite3_value_type(raw_value);
+        scoped_value_t value;
+
+        switch (value_type) {
+            case SQLITE_INTEGER:
+                value = (int64_t) sqlite3_value_int64(raw_value);
+                break;
+            case SQLITE_FLOAT:
+                value = sqlite3_value_double(raw_value);
+                break;
+            case SQLITE_NULL:
+                value = null_value_t{};
+                break;
+            default:
+                value = string_fragment::from_bytes(
+                    sqlite3_value_text(raw_value),
+                    sqlite3_value_bytes(raw_value));
+                break;
+        }
+        if (!ec.ec_local_vars.empty() && !ec.ec_dry_run) {
+            if (sql_ident_needs_quote(colname)) {
+                continue;
+            }
+            auto& vars = ec.ec_local_vars.top();
+
+            if (vars.find(colname) != vars.end()) {
+                continue;
+            }
+
+            if (value.is<string_fragment>()) {
+                value = value.get<string_fragment>().to_string();
+            }
+            vars[colname] = value;
+        }
+    }
     return 0;
 }
 
