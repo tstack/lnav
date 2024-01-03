@@ -1269,14 +1269,14 @@ json_write_row(yajl_gen handle,
                     default:
                         obj_map.gen(anonymize
                                         ? ta.next(string_fragment::from_c_str(
-                                            dls.dls_rows[row][col]))
+                                              dls.dls_rows[row][col]))
                                         : dls.dls_rows[row][col]);
                         break;
                 }
                 break;
             default:
                 obj_map.gen(anonymize ? ta.next(string_fragment::from_c_str(
-                                dls.dls_rows[row][col]))
+                                            dls.dls_rows[row][col]))
                                       : dls.dls_rows[row][col]);
                 break;
         }

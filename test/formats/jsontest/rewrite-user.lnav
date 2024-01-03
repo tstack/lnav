@@ -1,2 +1,3 @@
 
-;SELECT 'mailto:' || :user
+;SELECT 'mailto:' || :user AS mt
+:echo $mt
