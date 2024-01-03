@@ -1817,14 +1817,40 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     auto frag = string_fragment::from_bytes(str, len);
 
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
-        jlu->jlu_format->lf_date_time.scan(
+        const auto* last = jlu->jlu_format->lf_date_time.scan(
             (const char*) str,
             len,
             jlu->jlu_format->get_timestamp_formats(),
             &tm_out,
             tv_out);
-        jlu->jlu_format->lf_timestamp_flags = tm_out.et_flags;
-        jlu->jlu_base_line->set_time(tv_out);
+        if (last == nullptr) {
+            auto ls = jlu->jlu_format->lf_date_time.unlock();
+            if ((last = jlu->jlu_format->lf_date_time.scan(
+                     (const char*) str,
+                     len,
+                     jlu->jlu_format->get_timestamp_formats(),
+                     &tm_out,
+                     tv_out))
+                == nullptr)
+            {
+                jlu->jlu_format->lf_date_time.relock(ls);
+            }
+            if (last != nullptr) {
+                auto old_flags
+                    = jlu->jlu_format->lf_timestamp_flags & DATE_TIME_SET_FLAGS;
+                auto new_flags = tm_out.et_flags & DATE_TIME_SET_FLAGS;
+
+                // It is unlikely a valid timestamp would lose much
+                // precision.
+                if (new_flags != old_flags) {
+                    last = nullptr;
+                }
+            }
+        }
+        if (last != nullptr) {
+            jlu->jlu_format->lf_timestamp_flags = tm_out.et_flags;
+            jlu->jlu_base_line->set_time(tv_out);
+        }
     } else if (jlu->jlu_format->elf_level_pointer.pp_value != nullptr) {
         if (jlu->jlu_format->elf_level_pointer.pp_value
                 ->find_in(field_name.to_string_fragment(), PCRE2_NO_UTF_CHECK)
@@ -1884,12 +1910,25 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             struct timeval tv;
             struct exttm tm;
 
-            jlu->jlu_format->lf_date_time.scan(
+            const auto* last = jlu->jlu_format->lf_date_time.scan(
                 (const char*) str,
                 len,
                 jlu->jlu_format->get_timestamp_formats(),
                 &tm,
                 tv);
+            if (last == nullptr) {
+                auto ls = jlu->jlu_format->lf_date_time.unlock();
+                if ((last = jlu->jlu_format->lf_date_time.scan(
+                         (const char*) str,
+                         len,
+                         jlu->jlu_format->get_timestamp_formats(),
+                         &tm,
+                         tv))
+                    == nullptr)
+                {
+                    jlu->jlu_format->lf_date_time.relock(ls);
+                }
+            }
             sql_strftime(time_buf, sizeof(time_buf), tv, 'T');
         } else {
             sql_strftime(
