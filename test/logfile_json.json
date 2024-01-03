@@ -5,7 +5,7 @@
 {"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG4", "msg": "Details...\n"}
 {"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG3", "msg": "Details...\n"}
 {"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG2", "msg": "Details...\n"}
-{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG", "msg": "Details..."}
+{"ts": "2013-09-06 22:01:00Z", "lvl": "DEBUG", "msg": "Details..."}
 {"ts": "2013-09-06T22:01:49.124817Z", "lvl": "STATS", "msg": "1 beat per second"}
 {"ts": "2013-09-06T22:01:49.124817Z", "lvl": "WARNING", "msg": "not looking good"}
 {"ts": "2013-09-06T22:01:49.124817Z", "lvl": "ERROR", "msg": "looking bad"}
