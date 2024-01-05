@@ -227,7 +227,6 @@ extern string_attr_type<void> SA_PREFORMATTED;
 extern string_attr_type<std::string> SA_INVALID;
 extern string_attr_type<std::string> SA_ERROR;
 extern string_attr_type<int64_t> SA_LEVEL;
-extern string_attr_type<string_fragment> SA_ORIGIN;
 extern string_attr_type<int64_t> SA_ORIGIN_OFFSET;
 
 extern string_attr_type<role_t> VC_ROLE;

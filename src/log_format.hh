@@ -272,10 +272,12 @@ struct logline_value_vector {
     {
         this->lvv_values.clear();
         this->lvv_sbr.disown();
+        this->lvv_opid_value = nonstd::nullopt;
     }
 
     shared_buffer_ref lvv_sbr;
     std::vector<logline_value> lvv_values;
+    nonstd::optional<std::string> lvv_opid_value;
 };
 
 struct logline_value_stats {

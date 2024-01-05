@@ -644,9 +644,9 @@ handle_paging_key(int ch)
                 auto& start_line = start_helper.move_to_msg_start();
                 start_helper.annotate();
 
-                struct line_range opid_range = find_string_attr_range(
-                    start_helper.lh_string_attrs, &logline::L_OPID);
-                if (!opid_range.is_valid()) {
+                const auto& opid_opt
+                    = start_helper.lh_line_values.lvv_opid_value;
+                if (!opid_opt) {
                     alerter::singleton().chime(
                         "Log message does not contain an opid");
                     lnav_data.ld_rl_view->set_attr_value(
@@ -680,19 +680,10 @@ handle_paging_key(int ch)
                             continue;
                         }
                         next_helper.annotate();
-                        struct line_range opid_next_range
-                            = find_string_attr_range(
-                                next_helper.lh_string_attrs, &logline::L_OPID);
-                        const char* start_opid
-                            = start_helper.lh_line_values.lvv_sbr.get_data_at(
-                                opid_range.lr_start);
-                        const char* next_opid
-                            = next_helper.lh_line_values.lvv_sbr.get_data_at(
-                                opid_next_range.lr_start);
-                        if (opid_range.length() != opid_next_range.length()
-                            || memcmp(
-                                   start_opid, next_opid, opid_range.length())
-                                != 0)
+                        const auto& next_opid_opt
+                            = next_helper.lh_line_values.lvv_opid_value;
+                        if (next_opid_opt
+                            && opid_opt.value() != next_opid_opt.value())
                         {
                             continue;
                         }
@@ -703,14 +694,12 @@ handle_paging_key(int ch)
                         lnav_data.ld_rl_view->set_value("");
                         tc->set_selection(next_helper.lh_current_line);
                     } else {
-                        const auto opid_str
-                            = start_helper.to_string(opid_range);
-
                         lnav_data.ld_rl_view->set_attr_value(
                             lnav::console::user_message::error(
                                 attr_line_t(
                                     "No more messages found with opid: ")
-                                    .append(lnav::roles::symbol(opid_str)))
+                                    .append(
+                                        lnav::roles::symbol(opid_opt.value())))
                                 .to_attr_line());
                         alerter::singleton().chime(
                             "no more messages found with opid");

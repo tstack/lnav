@@ -93,6 +93,7 @@ all_logs_vtab::extract(logfile* lf,
     values.lvv_values.emplace_back(this->alv_msg_meta, std::move(str));
     values.lvv_values.emplace_back(this->alv_schema_meta,
                                    dp.dp_schema_id.to_string());
+    values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
 }
 
 bool
