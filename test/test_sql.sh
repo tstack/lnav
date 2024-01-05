@@ -281,13 +281,18 @@ EOF
 
 run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
-    -c ";SELECT log_top_line()" \
+    -c ";SELECT log_top_line(), log_msg_line()" \
     ${test_dir}/logfile_uwsgi.0
 
 run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
-    -c ";SELECT log_top_line()" \
+    -c ";SELECT log_top_line(), log_msg_line()" \
     ${test_dir}/logfile_empty.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ";SELECT log_top_line(), log_msg_line()" \
+    ${test_dir}/logfile_multiline.0
 
 run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
