@@ -1882,7 +1882,7 @@ com_pipe_to(exec_context& ec,
             path_v.emplace_back(lnav::paths::dotlnav() / "formats/default");
 
             if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
-                logfile_sub_source& lss = lnav_data.ld_log_source;
+                auto& lss = lnav_data.ld_log_source;
                 log_data_helper ldh(lss);
                 char tmp_str[64];
 
@@ -1898,6 +1898,17 @@ com_pipe_to(exec_context& ec,
                     tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
                 setenv("log_time", tmp_str, 1);
                 setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
+                setenv("log_level", ldh.ldh_line->get_level_name(), 1);
+                if (ldh.ldh_line_values.lvv_opid_value) {
+                    setenv("log_opid",
+                           ldh.ldh_line_values.lvv_opid_value->c_str(),
+                           1);
+                }
+                auto read_res = ldh.ldh_file->read_raw_message(ldh.ldh_line);
+                if (read_res.isOk()) {
+                    auto raw_text = to_string(read_res.unwrap());
+                    setenv("log_raw_text", raw_text.c_str(), 1);
+                }
                 for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
                     setenv(ldh_line_value.lv_meta.lvm_name.get(),
                            ldh_line_value.to_string().c_str(),
@@ -6107,7 +6118,9 @@ readline_context::command_t STD_COMMANDS[] = {
      com_pipe_to,
 
      help_text(":pipe-line-to")
-         .with_summary("Pipe the top line to the given shell command")
+         .with_summary(
+             "Pipe the focused line to the given shell command.  Any fields "
+             "defined by the format will be set as environment variables.")
          .with_parameter(
              help_text("shell-cmd", "The shell command-line to execute"))
          .with_tags({"io"})

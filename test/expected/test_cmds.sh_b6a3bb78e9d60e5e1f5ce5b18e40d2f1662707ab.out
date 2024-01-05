@@ -1282,7 +1282,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mpipe-line-to[0m[4m [0m[4mshell-cmd[0m
 ══════════════════════════════════════════════════════════════════════
-  Pipe the top line to the given shell command
+  Pipe the focused line to the given shell command.  Any fields
+  defined by the format will be set as environment variables.
 [4mParameter[0m
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m

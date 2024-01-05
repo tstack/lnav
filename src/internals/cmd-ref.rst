@@ -954,7 +954,7 @@
 :pipe-line-to *shell-cmd*
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Pipe the top line to the given shell command
+  Pipe the focused line to the given shell command.  Any fields defined by the format will be set as environment variables.
 
   **Parameters**
     * **shell-cmd\*** --- The shell command-line to execute

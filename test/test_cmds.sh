@@ -401,6 +401,12 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ":goto 5" \
+    -c ":pipe-line-to echo \$log_raw_text \$log_level \$user" \
+    ${test_dir}/logfile_json.json
+
+run_cap_test ${lnav_test} -n \
     -c ":switch-to-view pretty" \
     ${test_dir}/textfile_json_one_line.0
 
