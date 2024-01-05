@@ -847,14 +847,11 @@ gantt_source::text_selection_changed(textview_curses& tc)
             continue;
         }
 
-        const auto& sa = msg_line.get_attrs();
-        auto opid_opt = get_string_attr(sa, logline::L_OPID);
-
-        if (!opid_opt) {
+        const auto& lvv = msg_line.get_values();
+        if (!lvv.lvv_opid_value) {
             continue;
         }
-        auto opid_range = opid_opt.value().saw_string_attr->sa_range;
-        auto opid_sf = msg_line.to_string(opid_range);
+        auto opid_sf = lvv.lvv_opid_value.value();
 
         if (opid_sf == row.or_name) {
             std::vector<attr_line_t> rows_al(1);

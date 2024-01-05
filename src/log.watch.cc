@@ -231,15 +231,11 @@ eval_with(logfile& lf, logfile::iterator ll)
                 continue;
             }
             if (strcmp(name, ":log_opid") == 0) {
-                auto opid_attr_opt = get_string_attr(sa, logline::L_OPID);
-                if (opid_attr_opt) {
-                    const auto& sar
-                        = opid_attr_opt.value().saw_string_attr->sa_range;
-
+                if (values.lvv_opid_value) {
                     sqlite3_bind_text(stmt,
                                       lpc + 1,
-                                      values.lvv_sbr.get_data_at(sar.lr_start),
-                                      sar.length(),
+                                      values.lvv_opid_value->c_str(),
+                                      values.lvv_opid_value->length(),
                                       SQLITE_STATIC);
                 } else {
                     sqlite3_bind_null(stmt, lpc + 1);

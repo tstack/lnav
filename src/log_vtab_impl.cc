@@ -842,16 +842,9 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             vt->vi->extract(lf, line_number, vc->line_values);
                         }
 
-                        auto opid_opt = get_string_attr(vt->vi->vi_attrs,
-                                                        logline::L_OPID);
-                        if (opid_opt) {
-                            auto opid_range
-                                = opid_opt.value().saw_string_attr->sa_range;
-
-                            to_sqlite(
-                                ctx,
-                                vc->line_values.lvv_sbr.to_string_fragment(
-                                    opid_range.lr_start, opid_range.length()));
+                        if (vc->line_values.lvv_opid_value) {
+                            to_sqlite(ctx,
+                                      vc->line_values.lvv_opid_value.value());
                         } else {
                             sqlite3_result_null(ctx);
                         }

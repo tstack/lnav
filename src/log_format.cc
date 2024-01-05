@@ -1134,6 +1134,8 @@ external_log_format::scan(logfile& lf,
             }
 
             if (jlu.jlu_opid_frag) {
+                this->jlf_line_values.lvv_opid_value
+                    = jlu.jlu_opid_frag->to_string();
                 auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(
                     jlu.jlu_opid_frag.value());
                 if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
@@ -1177,6 +1179,8 @@ external_log_format::scan(logfile& lf,
                 auto& otr = opid_iter->second;
                 this->update_op_description(*this->lf_opid_description_def,
                                             otr.otr_description);
+            } else {
+                this->jlf_line_values.lvv_opid_value = nonstd::nullopt;
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -1645,6 +1649,7 @@ external_log_format::annotate(uint64_t line_number,
         if (opid_cap && !opid_cap->empty()) {
             sa.emplace_back(to_line_range(opid_cap.value()),
                             logline::L_OPID.value());
+            values.lvv_opid_value = opid_cap->to_string();
         }
     }
 
@@ -1902,6 +1907,10 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
     const intern_string_t field_name = ypc->get_path();
 
+    if (jlu->jlu_format->elf_opid_field == field_name) {
+        auto frag = string_fragment::from_bytes(str, len);
+        jlu->jlu_format->jlf_line_values.lvv_opid_value = frag.to_string();
+    }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];
 
@@ -2070,12 +2079,15 @@ external_log_format::get_subline(const logline& ll,
             struct line_range lr;
 
             memset(used_values, 0, sizeof(used_values));
-
             for (lv_iter = this->jlf_line_values.lvv_values.begin();
                  lv_iter != this->jlf_line_values.lvv_values.end();
                  ++lv_iter)
             {
                 lv_iter->lv_meta.lvm_format = this;
+            }
+            if (jlu.jlu_opid_frag) {
+                this->jlf_line_values.lvv_opid_value
+                    = jlu.jlu_opid_frag->to_string();
             }
 
             int sub_offset = 1 + this->jlf_line_format_init_count;
