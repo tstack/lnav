@@ -48,7 +48,7 @@ sql_log_top_line()
     if (tc.get_inner_height() == 0_vl) {
         return nonstd::nullopt;
     }
-    return (int64_t) tc.get_top();
+    return (int64_t) tc.get_selection();
 }
 
 static nonstd::optional<int64_t>
@@ -60,7 +60,7 @@ sql_log_msg_line()
         return nonstd::nullopt;
     }
 
-    auto top_line = tc.get_top();
+    auto top_line = tc.get_selection();
     auto line_pair_opt = lnav_data.ld_log_source.find_line_with_file(top_line);
     if (!line_pair_opt) {
         return nonstd::nullopt;
@@ -85,7 +85,7 @@ sql_log_top_datetime()
     }
 
     auto top_time = lnav_data.ld_log_source.time_for_row(
-        lnav_data.ld_views[LNV_LOG].get_top());
+        lnav_data.ld_views[LNV_LOG].get_selection());
     if (!top_time) {
         return nonstd::nullopt;
     }

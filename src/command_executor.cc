@@ -824,6 +824,8 @@ execute_init_commands(
 
             wait_for_children();
 
+            lnav_data.ld_view_stack.top() |
+                [&ec](auto* tc) { ec.ec_top_line = tc->get_selection(); };
             log_debug("init cmd: %s", cmd.c_str());
             {
                 auto _sg

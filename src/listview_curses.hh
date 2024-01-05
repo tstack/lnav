@@ -296,7 +296,8 @@ public:
 
         std::vector<attr_line_t> top_line{1};
 
-        this->lv_source->listview_value_for_rows(*this, this->lv_top, top_line);
+        this->lv_source->listview_value_for_rows(
+            *this, this->get_selection(), top_line);
         return func(top_line[0]);
     }
 
