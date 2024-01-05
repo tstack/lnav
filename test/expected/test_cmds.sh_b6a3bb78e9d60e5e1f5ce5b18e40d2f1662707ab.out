@@ -3434,6 +3434,11 @@ For support questions, email:
    
 
 
+[1m[4mlog_msg_line[0m[4m()[0m
+══════════════════════════════════════════════════════════════════════
+  Return the starting line number of the focused log message.
+
+
 [1m[4mlog_top_datetime[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
   Return the timestamp of the line at the top of the log view.
@@ -3441,7 +3446,7 @@ For support questions, email:
 
 [1m[4mlog_top_line[0m[4m()[0m
 ══════════════════════════════════════════════════════════════════════
-  Return the line number at the top of the log view.
+  Return the number of the focused line of the log view.
 
 
 [1m[4mlogfmt2json[0m[4m([0m[4mstr[0m[4m)[0m

@@ -116,6 +116,9 @@ Features:
   the desired file.
 * Binary files are now displayed as a hex dump with ASCII
   representation (where applicable).
+* Added a `log_msg_line()` function that will return the
+  line number of the start of the currently focused
+  message in the log view.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

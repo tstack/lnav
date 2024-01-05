@@ -2621,6 +2621,17 @@ log10(*x*)
 ----
 
 
+.. _log_msg_line:
+
+log_msg_line()
+^^^^^^^^^^^^^^
+
+  Return the starting line number of the focused log message.
+
+
+----
+
+
 .. _log_top_datetime:
 
 log_top_datetime()
@@ -2637,7 +2648,7 @@ log_top_datetime()
 log_top_line()
 ^^^^^^^^^^^^^^
 
-  Return the line number at the top of the log view.
+  Return the number of the focused line of the log view.
 
 
 ----
