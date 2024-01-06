@@ -39,6 +39,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.hh"
+#include "base/from_trait.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
@@ -705,24 +706,26 @@ view_colors::init_roles(const lnav_theme& lt,
             auto fg_str = fg_iter == lt.lt_vars.end() ? "" : fg_iter->second;
             auto bg_str = bg_iter == lt.lt_vars.end() ? "" : bg_iter->second;
 
-            auto rgb_fg = rgb_color::from_str(fg_str).unwrapOrElse(
-                [&](const auto& msg) {
-                    reporter(&fg_str,
-                             lnav::console::user_message::error(
-                                 attr_line_t("invalid color -- ")
-                                     .append_quoted(fg_str))
-                                 .with_reason(msg));
-                    return rgb_color{};
-                });
-            auto rgb_bg = rgb_color::from_str(bg_str).unwrapOrElse(
-                [&](const auto& msg) {
-                    reporter(&bg_str,
-                             lnav::console::user_message::error(
-                                 attr_line_t("invalid background color -- ")
-                                     .append_quoted(bg_str))
-                                 .with_reason(msg));
-                    return rgb_color{};
-                });
+            auto rgb_fg = from<rgb_color>(string_fragment::from_str(fg_str))
+                              .unwrapOrElse([&](const auto& msg) {
+                                  reporter(&fg_str,
+                                           lnav::console::user_message::error(
+                                               attr_line_t("invalid color -- ")
+                                                   .append_quoted(fg_str))
+                                               .with_reason(msg));
+                                  return rgb_color{};
+                              });
+            auto rgb_bg
+                = from<rgb_color>(string_fragment::from_str(bg_str))
+                      .unwrapOrElse([&](const auto& msg) {
+                          reporter(
+                              &bg_str,
+                              lnav::console::user_message::error(
+                                  attr_line_t("invalid background color -- ")
+                                      .append_quoted(bg_str))
+                                  .with_reason(msg));
+                          return rgb_color{};
+                      });
 
             short fg = vc_active_palette->match_color(lab_color(rgb_fg));
             short bg = vc_active_palette->match_color(lab_color(rgb_bg));
@@ -1177,93 +1180,6 @@ view_colors::attrs_for_ident(const char* str, size_t len) const
     }
 
     return retval;
-}
-
-lab_color::lab_color(const rgb_color& rgb)
-{
-    double r = rgb.rc_r / 255.0, g = rgb.rc_g / 255.0, b = rgb.rc_b / 255.0, x,
-           y, z;
-
-    r = (r > 0.04045) ? pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-    g = (g > 0.04045) ? pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-    b = (b > 0.04045) ? pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-
-    x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
-    y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
-    z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
-
-    x = (x > 0.008856) ? pow(x, 1.0 / 3.0) : (7.787 * x) + 16.0 / 116.0;
-    y = (y > 0.008856) ? pow(y, 1.0 / 3.0) : (7.787 * y) + 16.0 / 116.0;
-    z = (z > 0.008856) ? pow(z, 1.0 / 3.0) : (7.787 * z) + 16.0 / 116.0;
-
-    this->lc_l = (116.0 * y) - 16;
-    this->lc_a = 500.0 * (x - y);
-    this->lc_b = 200.0 * (y - z);
-}
-
-double
-lab_color::deltaE(const lab_color& other) const
-{
-    double deltaL = this->lc_l - other.lc_l;
-    double deltaA = this->lc_a - other.lc_a;
-    double deltaB = this->lc_b - other.lc_b;
-    double c1 = sqrt(this->lc_a * this->lc_a + this->lc_b * this->lc_b);
-    double c2 = sqrt(other.lc_a * other.lc_a + other.lc_b * other.lc_b);
-    double deltaC = c1 - c2;
-    double deltaH = deltaA * deltaA + deltaB * deltaB - deltaC * deltaC;
-    deltaH = deltaH < 0.0 ? 0.0 : sqrt(deltaH);
-    double sc = 1.0 + 0.045 * c1;
-    double sh = 1.0 + 0.015 * c1;
-    double deltaLKlsl = deltaL / (1.0);
-    double deltaCkcsc = deltaC / (sc);
-    double deltaHkhsh = deltaH / (sh);
-    double i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc
-        + deltaHkhsh * deltaHkhsh;
-    return i < 0.0 ? 0.0 : sqrt(i);
-}
-
-bool
-lab_color::operator<(const lab_color& rhs) const
-{
-    if (lc_l < rhs.lc_l)
-        return true;
-    if (rhs.lc_l < lc_l)
-        return false;
-    if (lc_a < rhs.lc_a)
-        return true;
-    if (rhs.lc_a < lc_a)
-        return false;
-    return lc_b < rhs.lc_b;
-}
-
-bool
-lab_color::operator>(const lab_color& rhs) const
-{
-    return rhs < *this;
-}
-
-bool
-lab_color::operator<=(const lab_color& rhs) const
-{
-    return !(rhs < *this);
-}
-
-bool
-lab_color::operator>=(const lab_color& rhs) const
-{
-    return !(*this < rhs);
-}
-
-bool
-lab_color::operator==(const lab_color& rhs) const
-{
-    return lc_l == rhs.lc_l && lc_a == rhs.lc_a && lc_b == rhs.lc_b;
-}
-
-bool
-lab_color::operator!=(const lab_color& rhs) const
-{
-    return !(rhs == *this);
 }
 
 Result<screen_curses, std::string>

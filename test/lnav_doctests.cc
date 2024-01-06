@@ -30,6 +30,7 @@
 #include "config.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "base/from_trait.hh"
 #include "byte_array.hh"
 #include "data_scanner.hh"
 #include "doctest/doctest.h"
@@ -164,8 +165,8 @@ TEST_CASE("ptime_fmt")
 
 TEST_CASE("rgb_color from string")
 {
-    string name = "SkyBlue1";
-    auto color = rgb_color::from_str(name).unwrap();
+    const auto name = string_fragment::from_const("SkyBlue1");
+    auto color = from<rgb_color>(name).unwrap();
     CHECK(color.rc_r == 135);
     CHECK(color.rc_g == 215);
     CHECK(color.rc_b == 255);

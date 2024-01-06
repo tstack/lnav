@@ -32,6 +32,7 @@
 #include "styling.hh"
 
 #include "ansi-palette-json.h"
+#include "base/from_trait.hh"
 #include "config.h"
 #include "css-color-names-json.h"
 #include "fmt/format.h"
@@ -109,8 +110,9 @@ ansi_colors()
     return &retval;
 }
 
+template<>
 Result<rgb_color, std::string>
-rgb_color::from_str(string_fragment sf)
+from(string_fragment sf)
 {
     if (sf.empty()) {
         return Ok(rgb_color());
@@ -173,50 +175,6 @@ rgb_color::from_str(string_fragment sf)
         sf));
 }
 
-bool
-rgb_color::operator<(const rgb_color& rhs) const
-{
-    if (rc_r < rhs.rc_r)
-        return true;
-    if (rhs.rc_r < rc_r)
-        return false;
-    if (rc_g < rhs.rc_g)
-        return true;
-    if (rhs.rc_g < rc_g)
-        return false;
-    return rc_b < rhs.rc_b;
-}
-
-bool
-rgb_color::operator>(const rgb_color& rhs) const
-{
-    return rhs < *this;
-}
-
-bool
-rgb_color::operator<=(const rgb_color& rhs) const
-{
-    return !(rhs < *this);
-}
-
-bool
-rgb_color::operator>=(const rgb_color& rhs) const
-{
-    return !(*this < rhs);
-}
-
-bool
-rgb_color::operator==(const rgb_color& rhs) const
-{
-    return rc_r == rhs.rc_r && rc_g == rhs.rc_g && rc_b == rhs.rc_b;
-}
-
-bool
-rgb_color::operator!=(const rgb_color& rhs) const
-{
-    return !(rhs == *this);
-}
-
 term_color_palette::term_color_palette(const char* name,
                                        const string_fragment& json)
 {
@@ -271,7 +229,7 @@ color_unit::from_str(const string_fragment& sf)
         return Ok(color_unit{semantic{}});
     }
 
-    auto retval = TRY(rgb_color::from_str(sf));
+    auto retval = TRY(from<rgb_color>(sf));
 
     return Ok(color_unit{retval});
 }

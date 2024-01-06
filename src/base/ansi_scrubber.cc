@@ -122,6 +122,8 @@ void
 scrub_ansi_string(std::string& str, string_attrs_t* sa)
 {
     static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+    static const auto semi_pred = string_fragment::tag1{';'};
+
     const auto& regex = ansi_regex();
     int64_t origin_offset = 0;
     int last_origin_offset_end = 0;
@@ -253,8 +255,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             if (osc_id) {
                 switch (osc_id.value()) {
                     case 8:
-                        auto split_res
-                            = md[4]->split_pair(string_fragment::tag1{';'});
+                        auto split_res = md[4]->split_pair(semi_pred);
                         if (split_res) {
                             // auto params = split_res->first;
                             auto uri = split_res->second;
@@ -282,46 +283,73 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
 
             switch (terminator[0]) {
                 case 'm':
-                    for (auto lpc = seq.sf_begin;
-                         lpc != std::string::npos && lpc < (size_t) seq.sf_end;)
-                    {
-                        auto ansi_code_res = scn::scan_value<int>(
-                            scn::string_view{&str[lpc], &str[seq.sf_end]});
+                    while (!seq.empty()) {
+                        auto ansi_code_res
+                            = scn::scan_value<int>(seq.to_string_view());
 
-                        if (ansi_code_res) {
-                            auto ansi_code = ansi_code_res.value();
-                            if (90 <= ansi_code && ansi_code <= 97) {
-                                ansi_code -= 60;
-                                attrs.ta_attrs |= A_STANDOUT;
+                        if (!ansi_code_res) {
+                            break;
+                        }
+                        auto ansi_code = ansi_code_res.value();
+                        if (90 <= ansi_code && ansi_code <= 97) {
+                            ansi_code -= 60;
+                            attrs.ta_attrs |= A_STANDOUT;
+                        }
+                        if (30 <= ansi_code && ansi_code <= 37) {
+                            attrs.ta_fg_color = ansi_code - 30;
+                        }
+                        if (40 <= ansi_code && ansi_code <= 47) {
+                            attrs.ta_bg_color = ansi_code - 40;
+                        }
+                        if (ansi_code == 38 || ansi_code == 48) {
+                            auto color_code_pair
+                                = seq.split_when(semi_pred).second.split_pair(
+                                    semi_pred);
+                            if (!color_code_pair) {
+                                break;
                             }
-                            if (30 <= ansi_code && ansi_code <= 37) {
-                                attrs.ta_fg_color = ansi_code - 30;
+                            auto color_type = scn::scan_value<int>(
+                                color_code_pair->first.to_string_view());
+                            if (!color_type.has_value()) {
+                                break;
                             }
-                            if (40 <= ansi_code && ansi_code <= 47) {
-                                attrs.ta_bg_color = ansi_code - 40;
-                            }
-                            switch (ansi_code) {
-                                case 1:
-                                    attrs.ta_attrs |= A_BOLD;
+                            if (color_type.value() == 2) {
+                            } else if (color_type.value() == 5) {
+                                auto color_index_pair
+                                    = color_code_pair->second.split_when(
+                                        semi_pred);
+                                auto color_index = scn::scan_value<short>(
+                                    color_index_pair.first.to_string_view());
+                                if (!color_index.has_value()) {
                                     break;
-
-                                case 2:
-                                    attrs.ta_attrs |= A_DIM;
-                                    break;
-
-                                case 4:
-                                    attrs.ta_attrs |= A_UNDERLINE;
-                                    break;
-
-                                case 7:
-                                    attrs.ta_attrs |= A_REVERSE;
-                                    break;
+                                }
+                                if (ansi_code == 38) {
+                                    attrs.ta_fg_color = color_index.value();
+                                } else {
+                                    attrs.ta_bg_color = color_index.value();
+                                }
+                                seq = color_index_pair.second;
                             }
                         }
-                        lpc = str.find(';', lpc);
-                        if (lpc != std::string::npos) {
-                            lpc += 1;
+                        switch (ansi_code) {
+                            case 1:
+                                attrs.ta_attrs |= A_BOLD;
+                                break;
+
+                            case 2:
+                                attrs.ta_attrs |= A_DIM;
+                                break;
+
+                            case 4:
+                                attrs.ta_attrs |= A_UNDERLINE;
+                                break;
+
+                            case 7:
+                                attrs.ta_attrs |= A_REVERSE;
+                                break;
                         }
+                        auto split_pair = seq.split_when(semi_pred);
+                        seq = split_pair.second;
                     }
                     has_attrs = true;
                     break;
