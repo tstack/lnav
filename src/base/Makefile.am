@@ -30,10 +30,12 @@ noinst_HEADERS = \
     auto_mem.hh \
     auto_pid.hh \
     bus.hh \
+    color_spaces.hh \
     date_time_scanner.cfg.hh \
     date_time_scanner.hh \
     enum_util.hh \
     file_range.hh \
+    from_trait.hh \
     fs_util.hh \
     func_util.hh \
     future_util.hh \
@@ -74,6 +76,7 @@ libbase_a_SOURCES = \
     attr_line.builder.cc \
     auto_fd.cc \
     auto_pid.cc \
+    color_spaces.cc \
     date_time_scanner.cc \
     fs_util.cc \
 	humanize.cc \

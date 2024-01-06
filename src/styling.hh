@@ -35,75 +35,13 @@
 #include <utility>
 #include <vector>
 
+#include "base/color_spaces.hh"
 #include "base/intern_string.hh"
 #include "base/result.h"
 #include "log_level.hh"
 #include "mapbox/variant.hpp"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
-
-struct rgb_color {
-    static Result<rgb_color, std::string> from_str(string_fragment sf);
-
-    explicit rgb_color(short r = -1, short g = -1, short b = -1)
-        : rc_r(r), rc_g(g), rc_b(b)
-    {
-    }
-
-    bool empty() const
-    {
-        return this->rc_r == -1 && this->rc_g == -1 && this->rc_b == -1;
-    }
-
-    bool operator==(const rgb_color& rhs) const;
-
-    bool operator!=(const rgb_color& rhs) const;
-
-    bool operator<(const rgb_color& rhs) const;
-
-    bool operator>(const rgb_color& rhs) const;
-
-    bool operator<=(const rgb_color& rhs) const;
-
-    bool operator>=(const rgb_color& rhs) const;
-
-    short rc_r;
-    short rc_g;
-    short rc_b;
-};
-
-struct lab_color {
-    lab_color() : lc_l(0), lc_a(0), lc_b(0) {}
-
-    explicit lab_color(const rgb_color& rgb);
-
-    double deltaE(const lab_color& other) const;
-
-    lab_color& operator=(const lab_color& other)
-    {
-        this->lc_l = other.lc_l;
-        this->lc_a = other.lc_a;
-        this->lc_b = other.lc_b;
-
-        return *this;
-    }
-
-    bool operator==(const lab_color& rhs) const;
-
-    bool operator!=(const lab_color& rhs) const;
-
-    bool operator<(const lab_color& rhs) const;
-
-    bool operator>(const lab_color& rhs) const;
-
-    bool operator<=(const lab_color& rhs) const;
-
-    bool operator>=(const lab_color& rhs) const;
-
-    double lc_l;
-    double lc_a;
-    double lc_b;
-};
 
 struct term_color {
     short xc_id;
