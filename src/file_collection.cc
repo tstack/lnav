@@ -812,6 +812,20 @@ file_collection::active_pipers() const
     return retval;
 }
 
+size_t
+file_collection::finished_pipers()
+{
+    size_t retval = 0;
+
+    for (auto& pair : this->fc_file_names) {
+        if (pair.second.loo_piper) {
+            retval += pair.second.loo_piper->consume_finished();
+        }
+    }
+
+    return retval;
+}
+
 file_collection
 file_collection::copy()
 {

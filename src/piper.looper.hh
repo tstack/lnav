@@ -75,6 +75,18 @@ public:
             == std::future_status::ready;
     }
 
+    size_t consume_finished()
+    {
+        if (!this->is_finished()) {
+            return 0;
+        }
+
+        if (this->l_finished.fetch_or(1) == 0) {
+            return 1;
+        }
+        return 0;
+    }
+
 private:
     void loop();
 
@@ -86,6 +98,7 @@ private:
     auto_fd l_stdout;
     auto_fd l_stderr;
     std::future<void> l_future;
+    std::atomic<int> l_finished{0};
 };
 
 template<state LooperState>
@@ -111,6 +124,8 @@ public:
     std::string get_url() const { return this->h_looper->get_url(); }
 
     bool is_finished() const { return this->h_looper->is_finished(); }
+
+    size_t consume_finished() { return this->h_looper->consume_finished(); }
 
     bool operator==(const handle& other) const
     {
