@@ -224,6 +224,8 @@ struct file_collection {
     void regenerate_unique_file_names();
 
     size_t active_pipers() const;
+
+    size_t finished_pipers();
 };
 
 #endif

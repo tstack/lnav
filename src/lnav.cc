@@ -1611,6 +1611,7 @@ looper()
                 && rescan_future.wait_for(scan_timeout)
                     == std::future_status::ready)
             {
+                auto ui_now = ui_clock::now();
                 auto new_files = rescan_future.get();
                 if (!initial_rescan_completed && new_files.empty()) {
                     initial_rescan_completed = true;
@@ -1636,7 +1637,7 @@ looper()
 
                     lnav_data.ld_session_loaded = true;
                     session_stage += 1;
-                    loop_deadline = ui_clock::now();
+                    loop_deadline = ui_now;
                     log_debug("file count %d",
                               lnav_data.ld_active_files.fc_files.size());
                 }
@@ -1651,7 +1652,7 @@ looper()
                 }
 
                 rescan_future = std::future<file_collection>{};
-                next_rescan_time = ui_clock::now() + 333ms;
+                next_rescan_time = ui_now + 333ms;
             }
 
             if (!rescan_future.valid()
@@ -1663,6 +1664,7 @@ looper()
                                            &file_collection::rescan_files,
                                            lnav_data.ld_active_files.copy(),
                                            false);
+                loop_deadline = ui_clock::now() + 10ms;
             }
 
             {
@@ -1884,7 +1886,8 @@ looper()
                     }
                 }
                 if (old_file_names_size
-                    != lnav_data.ld_active_files.fc_file_names.size())
+                        != lnav_data.ld_active_files.fc_file_names.size()
+                    || lnav_data.ld_active_files.finished_pipers() > 0)
                 {
                     next_rescan_time = ui_clock::now();
                     next_rebuild_time = next_rescan_time;
@@ -2046,6 +2049,10 @@ looper()
                 }
 
                 gather_pipers();
+
+                next_rescan_time = ui_clock::now();
+                next_rebuild_time = next_rescan_time;
+                next_status_update_time = next_rescan_time;
             }
 
             if (lnav_data.ld_view_stack.empty()
