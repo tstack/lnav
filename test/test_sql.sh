@@ -877,6 +877,8 @@ check_output "write-json-to isn't working?" <<EOF
 ]
 EOF
 
+touch -t 200711030000 ${srcdir}/logfile_for_join.0
+
 run_cap_test ${lnav_test} -d "/tmp/lnav.err" -n \
     -c ";select log_line, col_0 from logline" \
     ${test_dir}/logfile_for_join.0
