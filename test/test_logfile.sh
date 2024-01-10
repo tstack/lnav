@@ -715,6 +715,8 @@ export HOME="./file-tz"
 rm -rf "./file-tz"
 mkdir -p $HOME
 
+touch -t 200711030000 ${srcdir}/logfile_syslog.0
+
 run_cap_test ${lnav_test} -n \
     -c ':set-file-timezone America/Los_Angeles' \
     ${test_dir}/logfile_syslog.0
