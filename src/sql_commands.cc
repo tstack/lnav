@@ -192,7 +192,7 @@ SELECT count(*) AS total,
     FROM all_logs
     GROUP BY log_msg_format
     HAVING total > 1
-    ORDER BY total DESC
+    ORDER BY total, log_line DESC
 )";
 
     std::string retval;
