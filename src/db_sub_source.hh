@@ -89,14 +89,7 @@ public:
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override
-    {
-        if ((row < 0_vl) || (((size_t) row) >= this->dls_time_column.size())) {
-            return nonstd::nullopt;
-        }
-
-        return this->dls_time_column[row];
-    }
+    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
 
     struct header_meta {
         explicit header_meta(std::string name) : hm_name(std::move(name)) {}
