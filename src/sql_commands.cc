@@ -184,7 +184,8 @@ sql_cmd_msgformats(exec_context& ec,
 {
     static const std::string MSG_FORMAT_STMT = R"(
 SELECT count(*) AS total,
-       min(log_time),
+       min(log_line) AS log_line,
+       min(log_time) AS log_time,
        humanize_duration(timediff(max(log_time), min(log_time))) AS duration,
        group_concat(DISTINCT log_format) AS log_formats,
        log_msg_format

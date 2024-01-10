@@ -162,7 +162,7 @@ db_label_source::push_header(const std::string& colstr,
     hm.hm_column_size = utf8_string_length(colstr).unwrapOr(colstr.length());
     hm.hm_column_type = type;
     hm.hm_graphable = graphable;
-    if (colstr == "log_time") {
+    if (colstr == "log_time" || colstr == "min(log_time)") {
         this->dls_time_column_index = this->dls_headers.size() - 1;
     }
 }
@@ -284,6 +284,16 @@ db_label_source::row_for_time(struct timeval time_bucket)
         return vis_line_t(std::distance(this->dls_time_column.begin(), iter));
     }
     return nonstd::nullopt;
+}
+
+nonstd::optional<struct timeval>
+db_label_source::time_for_row(vis_line_t row)
+{
+    if ((row < 0_vl) || (((size_t) row) >= this->dls_time_column.size())) {
+        return nonstd::nullopt;
+    }
+
+    return this->dls_time_column[row];
 }
 
 void
