@@ -190,9 +190,10 @@ SELECT count(*) AS total,
        group_concat(DISTINCT log_format) AS log_formats,
        log_msg_format
     FROM all_logs
+    WHERE log_msg_format != ''
     GROUP BY log_msg_format
     HAVING total > 1
-    ORDER BY total, log_line DESC
+    ORDER BY total DESC, log_line ASC
 )";
 
     std::string retval;
