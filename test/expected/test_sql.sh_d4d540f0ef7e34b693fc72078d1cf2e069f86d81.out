@@ -1,0 +1,4 @@
+[1m[4m[7mtotal [0m[1m[4m     min(log_time)      [0m[1m[4mduration [0m[1m[4mlog_formats [0m[1m[4m                    log_msg_format                      [0m
+[1m[7m    2[0m[7m [0m[7m2023-04-28 06:53:55.000[0m[7m [0m[7m        [0m[7m [0m[7msyslog_log [0m[7m [0m[7mRegistering new address record for # on #              [0m 
+[1m[7m    2[0m[7m [0m[7m2023-04-28 06:53:55.000[0m[7m [0m[7m        [0m[7m [0m[7msyslog_log [0m[7m [0m[7mNew relevant interface # for #                         [0m 
+[1m[7m    2[0m[1m[7m [0m[1m[7m2023-04-28 06:53:55.000[0m[1m[7m [0m[1m[7m        [0m[1m[7m [0m[1m[7msyslog_log [0m[1m[7m [0m[1m[7mJoining # multicast group on interface # with address #[0m[1m [0m

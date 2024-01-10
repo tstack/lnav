@@ -178,6 +178,34 @@ sql_cmd_schema(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+sql_cmd_msgformats(exec_context& ec,
+                   std::string cmdline,
+                   std::vector<std::string>& args)
+{
+    static const std::string MSG_FORMAT_STMT = R"(
+SELECT count(*) AS total,
+       min(log_time),
+       humanize_duration(timediff(max(log_time), min(log_time))) AS duration,
+       group_concat(DISTINCT log_format) AS log_formats,
+       log_msg_format
+    FROM all_logs
+    GROUP BY log_msg_format
+    HAVING total > 1
+    ORDER BY total DESC
+)";
+
+    std::string retval;
+
+    if (args.empty()) {
+        return Ok(retval);
+    }
+
+    std::string alt;
+
+    return execute_sql(ec, MSG_FORMAT_STMT, alt);
+}
+
+static Result<std::string, lnav::console::user_message>
 sql_cmd_generic(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
@@ -205,8 +233,11 @@ static readline_context::command_t sql_commands[] = {
     },
     {
         ".msgformats",
-        sql_cmd_schema,
-        help_text(".msgformats", "df").sql_command(),
+        sql_cmd_msgformats,
+        help_text(".msgformats",
+                  "Executes a query that will summarize the different message "
+                  "formats found in the logs")
+            .sql_command(),
     },
     {
         ".read",
