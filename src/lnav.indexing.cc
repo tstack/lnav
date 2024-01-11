@@ -134,6 +134,12 @@ public:
 
     void promote_file(const std::shared_ptr<logfile>& lf) override
     {
+        auto& ftf = lnav_data.ld_files_to_front;
+
+        ftf.remove_if([&lf](const auto& elem) {
+            return elem.first == lf->get_filename()
+                || elem.first == lf->get_open_options().loo_filename;
+        });
         if (lnav_data.ld_log_source.insert_file(lf)) {
             this->did_promotion = true;
             log_info("promoting text file to log file: %s (%s)",
