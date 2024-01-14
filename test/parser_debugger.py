@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Copyright (c) 2013, Timothy Stack
 #
@@ -44,6 +44,7 @@ list_depth = {}
 list_format = {}
 breakpoints = set()
 
+
 def completer(text, state):
     options = [x for x in itertools.chain(name_to_addr,
                                           element_lists,
@@ -53,6 +54,7 @@ def completer(text, state):
         return options[state]
     except IndexError:
         return None
+
 
 readline.set_completer(completer)
 
@@ -67,27 +69,30 @@ for line in open("scanned.dpt"):
     if line.startswith("input "):
         input_line = line[6:-1]
     else:
-        ops.append(map(string.strip, line.split()))
+        ops.append([x.strip() for x in line.split()])
+
 
 def getstr(capture):
     start, end = capture.split(':')
     return input_line[int(start):int(end)]
 
+
 def printlist(name_or_addr):
     if name_or_addr in name_to_addr:
         addr = name_to_addr[name_or_addr]
-        print "% 3d (%s:%s) %s" % (list_depth.get(addr, -1), name_or_addr, addr, element_lists[addr])
+        print("% 3d (%s:%s) %s" % (list_depth.get(addr, -1), name_or_addr, addr, element_lists[addr]))
     elif name_or_addr in element_lists:
         addr = name_or_addr
-        print "% 3d (%s:%s) %s" % (list_depth.get(name_or_addr, -1),
-                                addr_to_name.get(name_or_addr, name_or_addr),
-                                name_or_addr,
-                                element_lists[name_or_addr])
+        print("% 3d (%s:%s) %s" % (list_depth.get(name_or_addr, -1),
+                                   addr_to_name.get(name_or_addr, name_or_addr),
+                                   name_or_addr,
+                                   element_lists[name_or_addr]))
     else:
-        print "error: unknown list --", name_or_addr
+        print("error: unknown list --", name_or_addr)
 
     if addr in list_format:
-        print "    format -- appender(%s) term(%s) qual(%s) sep(%s) prefix_term(%s)" % tuple(list_format[addr])
+        print("    format -- appender(%s) term(%s) qual(%s) sep(%s) prefix_term(%s)" % tuple(list_format[addr]))
+
 
 def handleop(fields):
     addr = fields[0]
@@ -122,7 +127,7 @@ def handleop(fields):
     elif method_name == 'splice':
         pos = int(method_args[0])
         other = element_lists[method_args[1]]
-        start, from_end = map(int, method_args[2].split(':'))
+        start, from_end = list(map(int, method_args[2].split(':')))
         end = len(other) - from_end
         sub_list = other[start:end]
         del other[start:end]
@@ -134,7 +139,8 @@ def handleop(fields):
     elif method_name == 'point':
         breakpoints.add(method_args[0])
     else:
-        print "Unhandled method: ", method_name
+        print("Unhandled method: ", method_name)
+
 
 def playupto(length):
     addr_to_name.clear()
@@ -143,6 +149,7 @@ def playupto(length):
     list_depth.clear()
     for index in range(length):
         handleop(ops[index])
+
 
 def find_prev_point(start, name):
     orig_start = start
@@ -155,6 +162,7 @@ def find_prev_point(start, name):
             return start + 1
     return orig_start + 1
 
+
 def find_next_point(start, name):
     orig_start = start
     while start < len(ops):
@@ -166,12 +174,14 @@ def find_next_point(start, name):
             return start + 1
     return orig_start + 1
 
+
 def printall():
-    print input_line
+    print(input_line)
     sorted_lists = [(list_depth.get(addr, -1), addr) for addr in element_lists]
     sorted_lists.sort()
     for _depth, addr in sorted_lists:
         printlist(addr)
+
 
 index = len(ops)
 last_cmd = ['']
@@ -180,20 +190,20 @@ while True:
     playupto(index)
 
     if index == 0:
-        print "init"
+        print("init")
     else:
         op = ops[index - 1]
-        print "#%s %s" % (index -1, op)
+        print("#%s %s" % (index - 1, op))
         if op[2] == 'push_back':
-            print getstr(op[4])
+            print(getstr(op[4]))
 
     for list_name in watch_list:
         printlist(list_name)
 
     try:
-        cmd = raw_input("> ").split()
+        cmd = input("> ").split()
     except EOFError:
-        print
+        print()
         break
 
     if not cmd or cmd[0] == '':
@@ -202,16 +212,16 @@ while True:
     if not cmd or cmd[0] == '':
         pass
     elif cmd[0] == 'h':
-        print 'Help:'
-        print '  q - quit'
-        print '  s - Start over'
-        print '  n - Next step'
-        print '  r - Previous step'
-        print '  b - Previous breakpoint'
-        print '  c - Next breakpoint'
-        print '  p - Print state'
-        print '  w <var> - Add a variable to the watch list'
-        print '  u <var> - Remove a variable from the watch list'
+        print('Help:')
+        print('  q - quit')
+        print('  s - Start over')
+        print('  n - Next step')
+        print('  r - Previous step')
+        print('  b - Previous breakpoint')
+        print('  c - Next breakpoint')
+        print('  p - Print state')
+        print('  w <var> - Add a variable to the watch list')
+        print('  u <var> - Remove a variable from the watch list')
     elif cmd[0] == 'q':
         break
     elif cmd[0] == 's':
@@ -242,7 +252,7 @@ while True:
         if watch_list:
             watch_list.remove(cmd[1])
     else:
-        print "error: unknown command --", cmd
+        print("error: unknown command --", cmd)
 
     printall()
 
