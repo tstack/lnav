@@ -94,7 +94,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
             }
         } else if (iter->e_token == in_list.el_format.df_separator) {
             auto key_iter = key_comps.end();
-            bool found = false, key_is_values = true;
+            bool found = false, key_is_values = true, mixed_values = false;
 
             if (!key_comps.empty()) {
                 do {
@@ -131,13 +131,58 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                             case DT_SYMBOL:
                                 key_is_values = false;
                                 break;
+                            case DT_WHITE:
+                                break;
+                            case DT_QUOTED_STRING:
+                            case DT_URL:
+                            case DT_PATH:
+                            case DT_MAC_ADDRESS:
+                            case DT_DATE:
+                            case DT_TIME:
+                            case DT_DATE_TIME:
+                            case DT_IPV4_ADDRESS:
+                            case DT_IPV6_ADDRESS:
+                            case DT_HEX_DUMP:
+                            case DT_UUID:
+                            case DT_CREDIT_CARD_NUMBER:
+                            case DT_VERSION_NUMBER:
+                            case DT_OCTAL_NUMBER:
+                            case DT_PERCENTAGE:
+                            case DT_NUMBER:
+                            case DT_HEX_NUMBER:
+                            case DT_EMAIL:
+                            case DT_CONSTANT: {
+                                if (in_list.el_format.df_terminator
+                                    == DT_INVALID)
+                                {
+                                    element_list_t ELEMENT_LIST_T(key_value);
+
+                                    mixed_values = true;
+                                    auto value_iter = key_iter;
+                                    ++key_iter;
+                                    key_value.SPLICE(key_value.end(),
+                                                     key_comps,
+                                                     value_iter,
+                                                     key_iter);
+                                    if (key_comps.empty()) {
+                                        key_iter = key_comps.end();
+                                    } else {
+                                        key_iter = key_comps.begin();
+                                    }
+                                    el_stack.PUSH_BACK(
+                                        element(key_value, DNT_VALUE));
+                                }
+                                break;
+                            }
                             default:
                                 break;
                         }
                     }
                 } while (key_iter != key_comps.begin() && !found);
             }
-            if (!found && !el_stack.empty() && !key_comps.empty()) {
+            if (!found && !mixed_values && !el_stack.empty()
+                && !key_comps.empty())
+            {
                 element_list_t::iterator value_iter;
 
                 if (el_stack.size() > 1
@@ -165,6 +210,12 @@ data_parser::pairup(data_parser::schema_id_t* schema,
             }
             strip(key_comps, element_is_space{});
             if (!key_comps.empty()) {
+                if (mixed_values) {
+                    key_is_values = false;
+                    while (key_comps.size() > 1) {
+                        key_comps.POP_FRONT();
+                    }
+                }
                 if (key_is_values) {
                     el_stack.PUSH_BACK(element(key_comps, DNT_VALUE));
                 } else {
@@ -1049,7 +1100,9 @@ data_parser::discover_format_state::finalize()
     if (this->dfs_semi_state != DFS_ERROR && this->dfs_hist[DT_SEMI]) {
         this->dfs_format = FORMAT_SEMI;
     } else if (this->dfs_comma_state != DFS_ERROR) {
-        this->dfs_format = FORMAT_COMMA;
+        if (this->dfs_hist[DT_COMMA] > 0) {
+            this->dfs_format = FORMAT_COMMA;
+        }
         if (separator == DT_COLON && this->dfs_hist[DT_COMMA] > 0) {
             if (!((this->dfs_hist[DT_COLON] == this->dfs_hist[DT_COMMA])
                   || ((this->dfs_hist[DT_COLON] - 1)

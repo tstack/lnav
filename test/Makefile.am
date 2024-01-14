@@ -409,9 +409,33 @@ dist_noinst_DATA = \
 	formats/sqldir/init.sql \
 	formats/timestamp/format.json \
 	formats/xmlmsg/format.json \
-	log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
-	log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
-	log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt \
+    log-samples/sample-057d6c669632ef9d07b6adec605f6bdeae19af27.txt \
+    log-samples/sample-06aaa6f48a801f592558575d886864d6c3ab9ed4.txt \
+    log-samples/sample-1aeb47c0a97d19bb7418f0172480e05e49c6e53e.txt \
+    log-samples/sample-27353a72ba4025448f261dcfa6ea16e474187795.txt \
+    log-samples/sample-3856ad0f551a04fde41a020158d6b33ef97c870a.txt \
+    log-samples/sample-45364b3fd51af92a4ad8a309b5f4fd88.txt \
+    log-samples/sample-500c9e492e04f5f58862c8086ca301de0dd976ce.txt \
+    log-samples/sample-55ac97afae4b0650ccb62e2dbc8d89bb.txt \
+    log-samples/sample-6049d4309f26eefb1a3406d937a9ba8a0df592a7.txt \
+    log-samples/sample-62315d884afdc4155b35f905415c74bfcfd39fc2.txt \
+    log-samples/sample-70c906b3c1a1cf03f15bde92ee78edfa6f9b7960.txt \
+    log-samples/sample-9cf7fbb3546c676c686fac0ed096d026f46c875f.txt \
+    log-samples/sample-a74570613c082c7fe283672031e18e54e8887ffb.txt \
+    log-samples/sample-aca2878a2e50779c6697c0747ab1f60e4b368dcb.txt \
+    log-samples/sample-ad31f12d2adabd07e3ddda3ad5b0dbf6b49c4c99.txt \
+    log-samples/sample-bc6f6cf689fa5455616b4d9fbe121a48d3c9de59.txt \
+    log-samples/sample-c15acd32844669d23d0cbc88ec548129ed2c592e.txt \
+    log-samples/sample-c23f22c1b932b904203e018f78dead95fb89b15d.txt \
+    log-samples/sample-d0d6b3fc6766caac5ac3fac4a3754ceaab785eb8.txt \
+    log-samples/sample-d4a0aedc8350f64b22403eeef4eca71fbf749d2b.txt \
+    log-samples/sample-d714b5e8cd354321f376ed1c0a70ec9a2f58076d.txt \
+    log-samples/sample-dd7d406352ec6a11d966b6f015a9482b060f2b29.txt \
+    log-samples/sample-e779d1771e34f5203ae73e85802e78002be63db6.txt \
+    log-samples/sample-eef32793daf841a576d8a5cd27239d5d.txt \
+    log-samples/sample-f2fba0d0b1e57f9a707ea96a8a4efcdc.txt \
+    log-samples/sample-f5afbee90a8c054061c4e9ffe673293cce7761de.txt \
+    log-samples/sample-fc8923633e57bacd641d80dde3ff878212230552.txt \
 	remote-log-dir/logfile_access_log.0 \
 	remote-log-dir/logfile_access_log.1 \
     tui-captures/tui_echo.0 \

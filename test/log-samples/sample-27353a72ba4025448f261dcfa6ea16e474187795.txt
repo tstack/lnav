@@ -1,4 +1,30 @@
              Jun  3 07:00:23 Tim-Stacks-iMac.local sudo[2326]:    stack : TTY=ttys002 ; PWD=/ ; USER=root ; COMMAND=/bin/ls
-msg         :
-format      :
-null
+ key  53:53                                                      ^                                                           
+word  53:58                                                       ^---^                                                      stack
+ val  53:58                                                       ^---^                                                      stack
+pair  53:58                                                       ^---^                                                      stack
+ key  61:64                                                               ^-^                                                TTY
+ sym  65:72                                                                   ^-----^                                        ttys002
+ val  65:72                                                                   ^-----^                                        ttys002
+pair  61:72                                                               ^---------^                                        TTY=ttys002
+ key  75:78                                                                             ^-^                                  PWD
+path  79:80                                                                                 ^                                /
+ val  79:80                                                                                 ^                                /
+pair  75:80                                                                             ^---^                                PWD=/
+ key  83:87                                                                                     ^--^                         USER
+word  88:92                                                                                          ^--^                    root
+ val  88:92                                                                                          ^--^                    root
+pair  83:92                                                                                     ^-------^                    USER=root
+ key  95:102                                                                                                ^-----^          COMMAND
+path 103:110                                                                                                        ^-----^  /bin/ls
+ val 103:110                                                                                                        ^-----^  /bin/ls
+pair  95:110                                                                                                ^-------------^  COMMAND=/bin/ls
+msg         :stack : TTY=ttys002 ; PWD=/ ; USER=root ; COMMAND=/bin/ls
+format      :# : TTY=# ; PWD=# ; USER=# ; COMMAND=#
+{
+    "col_0": "stack",
+    "TTY": "ttys002",
+    "PWD": "/",
+    "USER": "root",
+    "COMMAND": "/bin/ls"
+}

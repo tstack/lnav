@@ -1,0 +1,15 @@
+             2022-05-17T08:56:54.107Z In(14) settingsd[1001392457]: debug [ConfigStore:66064b9700] File /usr/lib/vmware/configmanager/apply_modules/advanced_options/plugin.json does not support type:3
+ key  91:91                                                                                            ^                                                                                                  
+path  91:163                                                                                            ^----------------------------------------------------------------------^                          /usr/lib/vmware/configmanager/apply_modules/advanced_options/plugin.json
+ val  91:163                                                                                            ^----------------------------------------------------------------------^                          /usr/lib/vmware/configmanager/apply_modules/advanced_options/plugin.json
+pair  91:163                                                                                            ^----------------------------------------------------------------------^                          /usr/lib/vmware/configmanager/apply_modules/advanced_options/plugin.json
+ key 181:185                                                                                                                                                                                      ^--^    type
+ num 186:187                                                                                                                                                                                           ^  3
+ val 186:187                                                                                                                                                                                           ^  3
+pair 181:187                                                                                                                                                                                      ^----^  type:3
+msg         :File /usr/lib/vmware/configmanager/apply_modules/advanced_options/plugin.json does not support type:3
+format      :File # does not support type:#
+{
+    "col_0": "/usr/lib/vmware/configmanager/apply_modules/advanced_options/plugin.json",
+    "type": 3
+}
