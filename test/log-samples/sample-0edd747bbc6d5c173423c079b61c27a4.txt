@@ -1,0 +1,13 @@
+             2024-01-10T14:29:28.998Z info vmware-vum-server[136895] [Originator@6876 sub=VumVapiAuthzFilter opID=4d3bd186-a9bf-40d3-9b88-5570f530048f] [RequireAdminUserAuthz 362] RequireAdminUserAuthz::Invoke Method is com.vmware.esx.settings.clusters.configuration.drafts.apply
+ key 167:167                                                                                                                                                                       ^                                                                                                     
+ sym 167:196                                                                                                                                                                        ^---------------------------^                                                                        RequireAdminUserAuthz::Invoke
+pair 167:196                                                                                                                                                                        ^---------------------------^                                                                        RequireAdminUserAuthz::Invoke
+ key 207:207                                                                                                                                                                                                               ^                                                             
+ sym 207:266                                                                                                                                                                                                                ^---------------------------------------------------------^  com.vmware.esx.settings.clusters.configuration.drafts.apply
+pair 207:266                                                                                                                                                                                                                ^---------------------------------------------------------^  com.vmware.esx.settings.clusters.configuration.drafts.apply
+msg         :RequireAdminUserAuthz::Invoke Method is com.vmware.esx.settings.clusters.configuration.drafts.apply
+format      :# Method is #
+{
+    "col_0": "RequireAdminUserAuthz::Invoke",
+    "col_1": "com.vmware.esx.settings.clusters.configuration.drafts.apply"
+}

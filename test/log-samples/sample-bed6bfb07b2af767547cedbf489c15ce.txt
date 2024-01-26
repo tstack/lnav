@@ -1,0 +1,15 @@
+             2024-01-10T05:22:13.258Z info vmware-vum-server[28092] [Originator@6876 sub=ClusterConfigListener] [clusterConfigListener 60] Got UUID for host: host-24 -> 4c4c4544-0052-4310-8057-b3c04f543532
+ key 126:143                                                                                                                               ^---------------^                                                   Got UUID for host
+  id 145:152                                                                                                                                                  ^-----^                                          host-24
+ val 145:152                                                                                                                                                  ^-----^                                          host-24
+pair 126:152                                                                                                                               ^------------------------^                                          Got UUID for host: host-24
+ key 156:156                                                                                                                                                            ^                                      
+uuid 156:192                                                                                                                                                             ^----------------------------------^  4c4c4544-0052-4310-8057-b3c04f543532
+ val 156:192                                                                                                                                                             ^----------------------------------^  4c4c4544-0052-4310-8057-b3c04f543532
+pair 156:192                                                                                                                                                             ^----------------------------------^  4c4c4544-0052-4310-8057-b3c04f543532
+msg         :Got UUID for host: host-24 -> 4c4c4544-0052-4310-8057-b3c04f543532
+format      :Got UUID for host: # -> #
+{
+    "Got UUID for host": "host-24",
+    "col_0": "4c4c4544-0052-4310-8057-b3c04f543532"
+}

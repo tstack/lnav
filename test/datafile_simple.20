@@ -1,5 +1,5 @@
              list ["abc", "def", "ghi"]
- key   7:7         ^                     
+ key   0:4   ^--^                        list
 quot   7:10         ^-^                  abc
  val   7:10         ^-^                  abc
 quot  14:17                ^-^           def
@@ -7,11 +7,14 @@ quot  14:17                ^-^           def
 quot  21:24                       ^-^    ghi
  val  21:24                       ^-^    ghi
  grp   7:24         ^---------------^    abc", "def", "ghi
-pair   7:24         ^---------------^    abc", "def", "ghi
+ val   7:24         ^---------------^    abc", "def", "ghi
+pair   0:24  ^----------------------^    list ["abc", "def", "ghi
 msg         :list ["abc", "def", "ghi"]
 format      :list [#]
-[
-    "abc",
-    "def",
-    "ghi"
-]
+{
+    "list": [
+        "abc",
+        "def",
+        "ghi"
+    ]
+}

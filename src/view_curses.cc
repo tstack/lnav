@@ -258,7 +258,7 @@ view_curses::mvwattrline(WINDOW* window,
     }
 
     std::stable_sort(sa.begin(), sa.end());
-    for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
+    for (auto iter = sa.cbegin(); iter != sa.cend(); ++iter) {
         auto attr_range = iter->sa_range;
 
         require(attr_range.lr_start >= 0);

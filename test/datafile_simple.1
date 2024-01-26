@@ -1,13 +1,15 @@
              current speed: 38 mph
- key   0:0                          
  key   0:13  ^-----------^          current speed
-pair   0:13  ^-----------^          current speed
- key  15:15                ^        
  num  15:17                 ^^      38
-pair  15:17                 ^^      38
+ val  15:17                 ^^      38
+pair   0:17  ^---------------^      current speed: 38
+ key  18:18                   ^     
+word  18:21                    ^-^  mph
+ val  18:21                    ^-^  mph
+pair  18:21                    ^-^  mph
 msg         :current speed: 38 mph
-format      :#: # mph
+format      :current speed: # #
 {
-    "col_0": "current speed",
-    "col_1": 38
+    "current speed": 38,
+    "col_0": "mph"
 }

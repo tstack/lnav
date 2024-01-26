@@ -1055,9 +1055,13 @@ logfile::read_full_message(logfile::const_iterator ll,
         auto read_result = this->lf_line_buffer.read_range(range_for_line);
 
         if (read_result.isErr()) {
-            log_error("unable to read range %d:%d",
+            auto errmsg = read_result.unwrapErr();
+            log_error("%s:%d:unable to read range %d:%d -- %s",
+                      this->get_unique_path().c_str(),
+                      std::distance(this->cbegin(), ll),
                       range_for_line.fr_offset,
-                      range_for_line.fr_size);
+                      range_for_line.fr_size,
+                      errmsg.c_str());
             return;
         }
         msg_out = read_result.unwrap();

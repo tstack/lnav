@@ -1,0 +1,16 @@
+             2024-01-11T10:46:03.218Z info vmware-vum-server[28274] [Originator@6876 sub=HostLocator opID=eb9d737f-fa4f-421d-9beb-ce31fb27938f] [hostLocator 239] Getting Management IP for host host-556: 10.172.44.70
+word 175:179                                                                                                                                                                                ^--^                         host
+ key 175:179                                                                                                                                                                                ^--^                         host
+  id 180:188                                                                                                                                                                                     ^------^                host-556
+ val 180:188                                                                                                                                                                                     ^------^                host-556
+pair 175:188                                                                                                                                                                                ^-----------^                host host-556
+ key 190:190                                                                                                                                                                                              ^              
+ipv4 190:202                                                                                                                                                                                               ^----------^  10.172.44.70
+ val 190:202                                                                                                                                                                                               ^----------^  10.172.44.70
+pair 190:202                                                                                                                                                                                               ^----------^  10.172.44.70
+msg         :Getting Management IP for host host-556: 10.172.44.70
+format      :Getting Management IP for host #: #
+{
+    "host": "host-556",
+    "col_0": "10.172.44.70"
+}

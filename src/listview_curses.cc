@@ -421,6 +421,10 @@ listview_curses::do_update()
             } else if (row < (int) row_count) {
                 auto& al = rows[row - this->lv_top];
 
+                for (const auto& attr : al.get_attrs()) {
+                    require_ge(attr.sa_range.lr_start, 0);
+                }
+
                 size_t remaining = 0;
                 do {
                     remaining = mvwattrline(this->lv_window,

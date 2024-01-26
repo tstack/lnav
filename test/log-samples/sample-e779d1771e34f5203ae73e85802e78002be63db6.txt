@@ -1,23 +1,22 @@
              Apr 29 22:32:27 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0xd16b79d)
- key  41:41                                          ^                                        
- sym  41:48                                           ^-----^                                 DHCPACK
-pair  41:48                                           ^-----^                                 DHCPACK
- key  54:54                                                       ^                           
+word  49:53                                                   ^--^                            from
+ key  49:53                                                   ^--^                            from
 ipv4  54:63                                                        ^-------^                  10.1.10.1
-pair  54:63                                                        ^-------^                  10.1.10.1
+ val  54:63                                                        ^-------^                  10.1.10.1
+pair  49:63                                                   ^------------^                  from 10.1.10.1
  key  65:65                                                                  ^                
  key  65:68                                                                   ^-^             xid
  hex  69:78                                                                       ^-------^   0xd16b79d
  val  69:78                                                                       ^-------^   0xd16b79d
 pair  65:78                                                                   ^-----------^   xid=0xd16b79d
  grp  65:78                                                                   ^-----------^   xid=0xd16b79d
+ val  65:78                                                                   ^-----------^   xid=0xd16b79d
 pair  65:78                                                                   ^-----------^   xid=0xd16b79d
 msg         :DHCPACK from 10.1.10.1 (xid=0xd16b79d)
-format      :# from # (#)
+format      :DHCPACK from # (#)
 {
-    "col_0": "DHCPACK",
-    "col_1": "10.1.10.1",
-    "col_2": [
+    "from": "10.1.10.1",
+    "col_0": [
         {
             "xid": "0xd16b79d"
         }

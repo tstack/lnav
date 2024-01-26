@@ -1,31 +1,28 @@
              Apr 29 22:32:26 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
- key  41:41                                          ^                                                          
- sym  41:52                                           ^---------^                                               DHCPREQUEST
-pair  41:52                                           ^---------^                                               DHCPREQUEST
- key  56:56                                                         ^                                           
- sym  56:60                                                          ^--^                                       eth0
-pair  56:60                                                          ^--^                                       eth0
- key  64:64                                                                 ^                                   
+word  61:63                                                               ^^                                    to
+ key  61:63                                                               ^^                                    to
 ipv4  64:73                                                                  ^-------^                          10.1.10.1
-pair  64:73                                                                  ^-------^                          10.1.10.1
- key  79:79                                                                                ^                    
+ val  64:73                                                                  ^-------^                          10.1.10.1
+pair  61:73                                                               ^----------^                          to 10.1.10.1
+word  74:78                                                                            ^--^                     port
+ key  74:78                                                                            ^--^                     port
  num  79:81                                                                                 ^^                  67
-pair  79:81                                                                                 ^^                  67
+ val  79:81                                                                                 ^^                  67
+pair  74:81                                                                            ^-----^                  port 67
  key  83:83                                                                                    ^                
  key  83:86                                                                                     ^-^             xid
  hex  87:96                                                                                         ^-------^   0xd16b79d
  val  87:96                                                                                         ^-------^   0xd16b79d
 pair  83:96                                                                                     ^-----------^   xid=0xd16b79d
  grp  83:96                                                                                     ^-----------^   xid=0xd16b79d
+ val  83:96                                                                                     ^-----------^   xid=0xd16b79d
 pair  83:96                                                                                     ^-----------^   xid=0xd16b79d
 msg         :DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
-format      :# on # to # port # (#)
+format      :DHCPREQUEST on eth0 to # port # (#)
 {
-    "col_0": "DHCPREQUEST",
-    "col_1": "eth0",
-    "col_2": "10.1.10.1",
-    "col_3": 67,
-    "col_4": [
+    "to": "10.1.10.1",
+    "port": 67,
+    "col_0": [
         {
             "xid": "0xd16b79d"
         }

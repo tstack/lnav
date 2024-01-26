@@ -484,6 +484,10 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     this->tc_sub_source->text_value_for_line(*this, row, str);
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
 
+    for (const auto& attr : sa) {
+        require_ge(attr.sa_range.lr_start, 0);
+    }
+
     scrub_ansi_string(str, &sa);
     struct line_range body, orig_line;
 

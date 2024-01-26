@@ -32,6 +32,7 @@
 #include "base/attr_line.hh"
 #include "config.h"
 #include "data_parser.hh"
+#include "elem_to_json.hh"
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -42,7 +43,10 @@ all_logs_vtab::all_logs_vtab()
                    logline_value_meta::table_column{0}),
       alv_schema_meta(intern_string::lookup("log_msg_schema"),
                       value_kind_t::VALUE_TEXT,
-                      logline_value_meta::table_column{1})
+                      logline_value_meta::table_column{1}),
+      alv_values_meta(intern_string::lookup("log_msg_values"),
+                      value_kind_t::VALUE_JSON,
+                      logline_value_meta::table_column{2})
 {
     this->alv_msg_meta.lvm_identifier = true;
     this->alv_schema_meta.lvm_identifier = true;
@@ -60,6 +64,11 @@ all_logs_vtab::get_columns(std::vector<vtab_column>& cols) const
                       "",
                       true,
                       "The ID for the message schema");
+    cols.emplace_back(this->alv_values_meta.lvm_name.get(),
+                      SQLITE3_TEXT,
+                      "",
+                      false,
+                      "The values extracted from the message");
 }
 
 void
@@ -90,9 +99,17 @@ all_logs_vtab::extract(logfile* lf,
     dp.dp_msg_format = &str;
     dp.parse();
 
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+    elements_to_json(gen, dp, &dp.dp_pairs);
+
     values.lvv_values.emplace_back(this->alv_msg_meta, std::move(str));
     values.lvv_values.emplace_back(this->alv_schema_meta,
                                    dp.dp_schema_id.to_string());
+    values.lvv_values.emplace_back(
+        this->alv_values_meta,
+        json_string(gen).to_string_fragment().to_string());
     values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
 }
 

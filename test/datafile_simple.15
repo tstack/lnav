@@ -1,5 +1,5 @@
              Worker successfully completed [ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False)]
- key  31:31                                ^                                                                                                                                                                                                  
+ key   0:29  ^---------------------------^                                                                                                                                                                                                    Worker successfully completed
  key  31:46                                 ^-------------^                                                                                                                                                                                   ImmutableChange
  key  47:47                                                ^                                                                                                                                                                                  
  sym  47:63                                                 ^--------------^                                                                                                                                                                  Direction.UPLOAD
@@ -10,15 +10,17 @@ pair  47:63                                                 ^--------------^    
  val  65:78                                                                   ^-----------^                                                                                                                                                   Action.CREATE
 pair  65:78                                                                   ^-----------^                                                                                                                                                   Action.CREATE
  key  80:83                                                                                  ^-^                                                                                                                                              ino
- sym  84:91                                                                                      ^-----^                                                                                                                                      LocalID
+quot  84:84                                                                                     ^                                                                                                                                             
+ val  84:84                                                                                     ^                                                                                                                                             
+pair  80:84                                                                                  ^--^                                                                                                                                             ino=
+ key  84:91                                                                                      ^-----^                                                                                                                                      LocalID
  key  92:97                                                                                              ^---^                                                                                                                                inode
  num  98:105                                                                                                   ^-----^                                                                                                                        5567236
  val  98:105                                                                                                   ^-----^                                                                                                                        5567236
 pair  92:105                                                                                             ^-----------^                                                                                                                        inode=5567236
  grp  92:105                                                                                             ^-----------^                                                                                                                        inode=5567236
+ val  92:105                                                                                             ^-----------^                                                                                                                        inode=5567236
 pair  84:105                                                                                     ^-------------------^                                                                                                                        LocalID(inode=5567236
- val  84:105                                                                                     ^-------------------^                                                                                                                        LocalID(inode=5567236
-pair  80:105                                                                                 ^-----------------------^                                                                                                                        ino=LocalID(inode=5567236
  key 108:112                                                                                                             ^--^                                                                                                                 path
 quot 115:140                                                                                                                    ^-----------------------^                                                                                     /Users/stack/Google Drive
  val 115:140                                                                                                                    ^-----------------------^                                                                                     /Users/stack/Google Drive
@@ -28,15 +30,17 @@ quot 150:167                                                                    
  val 150:167                                                                                                                                                       ^---------------^                                                          pyjsonpath1.patch
 pair 143:167                                                                                                                                                ^----------------------^                                                          name=u'pyjsonpath1.patch
  key 170:180                                                                                                                                                                           ^--------^                                             parent_ino
- sym 181:188                                                                                                                                                                                      ^-----^                                     LocalID
+quot 181:181                                                                                                                                                                                     ^                                            
+ val 181:181                                                                                                                                                                                     ^                                            
+pair 170:181                                                                                                                                                                           ^---------^                                            parent_ino=
+ key 181:188                                                                                                                                                                                      ^-----^                                     LocalID
  key 189:194                                                                                                                                                                                              ^---^                               inode
  num 195:203                                                                                                                                                                                                    ^------^                      46166734
  val 195:203                                                                                                                                                                                                    ^------^                      46166734
 pair 189:203                                                                                                                                                                                              ^------------^                      inode=46166734
  grp 189:203                                                                                                                                                                                              ^------------^                      inode=46166734
+ val 189:203                                                                                                                                                                                              ^------------^                      inode=46166734
 pair 181:203                                                                                                                                                                                      ^--------------------^                      LocalID(inode=46166734
- val 181:203                                                                                                                                                                                      ^--------------------^                      LocalID(inode=46166734
-pair 170:203                                                                                                                                                                           ^-------------------------------^                      parent_ino=LocalID(inode=46166734
  key 206:215                                                                                                                                                                                                               ^-------^          is_folder
 cnst 216:221                                                                                                                                                                                                                         ^---^    False
  val 216:221                                                                                                                                                                                                                         ^---^    False
@@ -45,31 +49,46 @@ pair 206:221                                                                    
  val  47:221                                                ^----------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
 pair  31:221                                ^--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
  grp  31:221                                ^--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
-pair  31:221                                ^--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
+ val  31:221                                ^--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
+pair   0:221 ^---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------^    Worker successfully completed [ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False
 msg         :Worker successfully completed [ImmutableChange(Direction.UPLOAD, Action.CREATE, ino=LocalID(inode=5567236), path=u'/Users/stack/Google Drive', name=u'pyjsonpath1.patch', parent_ino=LocalID(inode=46166734), is_folder=False)]
 format      :Worker successfully completed [#)]
-[
-    {
-        "ImmutableChange": {
-            "col_0": "Direction.UPLOAD",
-            "col_1": "Action.CREATE",
-            "ino": {
-                "LocalID": [
-                    {
-                        "inode": 5567236
-                    }
-                ]
-            },
-            "path": "/Users/stack/Google Drive",
-            "name": "pyjsonpath1.patch",
-            "parent_ino": {
-                "LocalID": [
-                    {
-                        "inode": 46166734
-                    }
-                ]
-            },
-            "is_folder": false
+{
+    "Worker successfully completed": [
+        {
+            "ImmutableChange": [
+                "Direction.UPLOAD",
+                "Action.CREATE",
+                {
+                    "ino": ""
+                },
+                {
+                    "LocalID": [
+                        {
+                            "inode": 5567236
+                        }
+                    ]
+                },
+                {
+                    "path": "/Users/stack/Google Drive"
+                },
+                {
+                    "name": "pyjsonpath1.patch"
+                },
+                {
+                    "parent_ino": ""
+                },
+                {
+                    "LocalID": [
+                        {
+                            "inode": 46166734
+                        }
+                    ]
+                },
+                {
+                    "is_folder": false
+                }
+            ]
         }
-    }
-]
+    ]
+}

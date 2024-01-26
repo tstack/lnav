@@ -34,6 +34,7 @@
 
 data_format data_parser::FORMAT_SEMI("semi", DT_COMMA, DT_SEMI);
 data_format data_parser::FORMAT_COMMA("comma", DT_INVALID, DT_COMMA);
+data_format data_parser::FORMAT_EMDASH("emdash", DT_INVALID, DT_EMDASH);
 data_format data_parser::FORMAT_PLAIN("plain", DT_INVALID, DT_INVALID);
 
 data_parser::data_parser(data_scanner* ds)
@@ -77,12 +78,13 @@ data_parser::pairup(data_parser::schema_id_t* schema,
         if (in_list.el_format.df_prefix_terminator != DT_INVALID) {
             if (iter->e_token == in_list.el_format.df_prefix_terminator) {
                 in_list.el_format.df_prefix_terminator = DT_INVALID;
+                in_list.el_format.df_separator = DT_COLON;
             } else {
                 el_stack.PUSH_BACK(*iter);
             }
         } else if (iter->e_token == in_list.el_format.df_terminator) {
             this->end_of_value(
-                el_stack, key_comps, value, in_list, group_depth);
+                el_stack, key_comps, value, in_list, group_depth, iter);
 
             key_comps.PUSH_BACK(*iter);
         } else if (iter->e_token == in_list.el_format.df_qualifier) {
@@ -92,9 +94,17 @@ data_parser::pairup(data_parser::schema_id_t* schema,
             if (!value.empty()) {
                 el_stack.PUSH_BACK(element(value, DNT_VALUE));
             }
-        } else if (iter->e_token == in_list.el_format.df_separator) {
+            value.CLEAR();
+        } else if (iter->e_token == in_list.el_format.df_separator
+                   || iter->e_token == DNT_GROUP)
+        {
             auto key_iter = key_comps.end();
             bool found = false, key_is_values = true, mixed_values = false;
+            auto last_is_key = !key_comps.empty()
+                && (key_comps.back().e_token == DT_WORD
+                    || key_comps.back().e_token == DT_SYMBOL);
+            element_list_t ELEMENT_LIST_T(mixed_queue),
+                ELEMENT_LIST_T(mixed_tail);
 
             if (!key_comps.empty()) {
                 do {
@@ -105,7 +115,9 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                                      key_comps,
                                      key_comps.begin(),
                                      key_iter);
-                        key_comps.POP_FRONT();
+                        if (!key_comps.empty()) {
+                            key_comps.POP_FRONT();
+                        }
                         found = true;
                     } else if (key_iter->e_token
                                == in_list.el_format.df_terminator)
@@ -133,6 +145,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                                 break;
                             case DT_WHITE:
                                 break;
+                            case DT_ID:
                             case DT_QUOTED_STRING:
                             case DT_URL:
                             case DT_PATH:
@@ -151,26 +164,76 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                             case DT_NUMBER:
                             case DT_HEX_NUMBER:
                             case DT_EMAIL:
-                            case DT_CONSTANT: {
-                                if (in_list.el_format.df_terminator
-                                    == DT_INVALID)
+                            case DT_CONSTANT:
+                            case DNT_MEASUREMENT: {
+                                if (((in_list.el_format.df_terminator
+                                          != DT_INVALID
+                                      && !el_stack.empty())
+                                     || (key_comps.size() == 1
+                                         && mixed_queue.empty()))
+                                    && key_iter->e_token == DT_ID)
                                 {
-                                    element_list_t ELEMENT_LIST_T(key_value);
+                                    key_is_values = false;
+                                } else if (in_list.el_format.df_terminator
+                                               == DT_INVALID
+                                           || el_stack.empty())
+                                {
+                                    element_list_t ELEMENT_LIST_T(mixed_key);
+                                    element_list_t ELEMENT_LIST_T(mixed_value);
 
                                     mixed_values = true;
                                     auto value_iter = key_iter;
-                                    ++key_iter;
-                                    key_value.SPLICE(key_value.end(),
-                                                     key_comps,
-                                                     value_iter,
-                                                     key_iter);
-                                    if (key_comps.empty()) {
-                                        key_iter = key_comps.end();
+                                    if (last_is_key) {
+                                        if (mixed_tail.empty()) {
+                                            mixed_tail.SPLICE(
+                                                mixed_tail.end(),
+                                                key_comps,
+                                                std::next(value_iter),
+                                                key_comps.end());
+                                        }
                                     } else {
-                                        key_iter = key_comps.begin();
+                                        while (std::prev(key_comps.end())
+                                               != value_iter)
+                                        {
+                                            key_comps.POP_BACK();
+                                        }
                                     }
-                                    el_stack.PUSH_BACK(
-                                        element(key_value, DNT_VALUE));
+                                    key_iter = std::next(value_iter);
+                                    mixed_value.SPLICE(mixed_value.end(),
+                                                       key_comps,
+                                                       value_iter,
+                                                       key_iter);
+                                    if (!el_stack.empty()
+                                        && el_stack.back().e_token == DNT_KEY
+                                        && key_comps.empty())
+                                    {
+                                        el_stack.PUSH_BACK(
+                                            element(mixed_value, DNT_VALUE));
+                                    } else {
+                                        mixed_queue.PUSH_FRONT(
+                                            element(mixed_value, DNT_VALUE));
+                                        if (!key_comps.empty()) {
+                                            if (key_comps.back().e_token
+                                                == DT_WORD)
+                                            {
+                                                key_iter = std::prev(
+                                                    key_comps.end());
+                                                mixed_key.SPLICE(
+                                                    mixed_key.end(),
+                                                    key_comps,
+                                                    key_iter,
+                                                    key_comps.end());
+                                                mixed_queue.PUSH_FRONT(element(
+                                                    mixed_key, DNT_KEY));
+                                            }
+                                        }
+                                    }
+                                    while (!key_comps.empty()
+                                           && !key_comps.back().is_value())
+                                    {
+                                        key_comps.POP_BACK();
+                                    }
+                                    key_iter = key_comps.end();
                                 }
                                 break;
                             }
@@ -179,6 +242,24 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                         }
                     }
                 } while (key_iter != key_comps.begin() && !found);
+            }
+            if (!mixed_queue.empty()) {
+                if (el_stack.back().e_token == DNT_KEY
+                    && mixed_queue.front().e_token == DNT_KEY)
+                {
+                    el_stack.POP_BACK();
+                }
+                el_stack.SPLICE(el_stack.end(),
+                                mixed_queue,
+                                mixed_queue.begin(),
+                                mixed_queue.end());
+            }
+            if (!mixed_tail.empty()) {
+                key_comps.CLEAR();
+                key_comps.SPLICE(key_comps.end(),
+                                 mixed_tail,
+                                 std::prev(mixed_tail.end()),
+                                 mixed_tail.end());
             }
             if (!found && !mixed_values && !el_stack.empty()
                 && !key_comps.empty())
@@ -216,15 +297,25 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                         key_comps.POP_FRONT();
                     }
                 }
-                if (key_is_values) {
-                    el_stack.PUSH_BACK(element(key_comps, DNT_VALUE));
-                } else {
-                    el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
+                if (!key_comps.empty()) {
+                    if (key_is_values) {
+                        el_stack.PUSH_BACK(element(key_comps, DNT_VALUE));
+                    } else {
+                        el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
+                    }
                 }
             }
             key_comps.CLEAR();
             value.CLEAR();
-        } else {
+
+            if (iter->e_token == DNT_GROUP) {
+                value.PUSH_BACK(*iter);
+                el_stack.PUSH_BACK(element(value, DNT_VALUE));
+                value.CLEAR();
+            }
+        } else if (iter->e_token != DT_WHITE && iter->e_token != DT_CSI
+                   && iter->e_token != DT_LINE)
+        {
             key_comps.PUSH_BACK(*iter);
         }
 
@@ -241,7 +332,8 @@ data_parser::pairup(data_parser::schema_id_t* schema,
         free_row.SPLICE(
             free_row.begin(), key_comps, key_comps.begin(), key_comps.end());
     } else {
-        this->end_of_value(el_stack, key_comps, value, in_list, group_depth);
+        this->end_of_value(
+            el_stack, key_comps, value, in_list, group_depth, in_list.end());
     }
 
     POINT_TRACE("pairup_stack");
@@ -373,6 +465,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                 case DT_CONSTANT:
                 case DT_NUMBER:
                 case DT_SYMBOL:
+                case DT_ID:
                 case DT_HEX_NUMBER:
                 case DT_OCTAL_NUMBER:
                 case DT_VERSION_NUMBER:
@@ -390,7 +483,8 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                 case DT_PATH:
                 case DT_DATE:
                 case DT_TIME:
-                case DT_PERCENTAGE: {
+                case DT_PERCENTAGE:
+                case DNT_MEASUREMENT: {
                     element_list_t ELEMENT_LIST_T(pair_subs);
                     struct element blank;
 
@@ -414,7 +508,8 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                         = this->get_element_string(free_row.front(), key_len);
 
                     context.Update(key_val, key_len);
-                } break;
+                    break;
+                }
             }
 
             free_row.POP_FRONT();
@@ -431,10 +526,6 @@ data_parser::pairup(data_parser::schema_id_t* schema,
         pair_subs.PUSH_BACK(blank);
         pair_subs.PUSH_BACK(prefix.front());
         pairs_out.PUSH_FRONT(element(pair_subs, DNT_PAIR));
-    }
-
-    if (schema != nullptr) {
-        context.Final(schema->out(0), schema->out(1));
     }
 
     if (schema != nullptr && this->dp_msg_format != nullptr) {
@@ -456,6 +547,12 @@ data_parser::pairup(data_parser::schema_id_t* schema,
             }
             *(this->dp_msg_format) += last.to_string();
         }
+        context.Update(this->dp_msg_format->c_str(),
+                       this->dp_msg_format->length());
+    }
+
+    if (schema != nullptr) {
+        context.Final(schema->out(0), schema->out(1));
     }
 
     if (pairs_out.size() > 1000) {
@@ -544,6 +641,20 @@ data_parser::discover_format()
                 }
                 break;
 
+            case DT_UNIT: {
+                element_list_t measurement_list;
+
+                measurement_list.SPLICE(
+                    measurement_list.end(),
+                    this->dp_group_stack.back(),
+                    std::prev(this->dp_group_stack.back().end()),
+                    this->dp_group_stack.back().end());
+                measurement_list.PUSH_BACK(elem);
+                this->dp_group_stack.back().PUSH_BACK(
+                    element(measurement_list, DNT_MEASUREMENT));
+                break;
+            }
+
             default:
                 this->dp_group_stack.back().PUSH_BACK(elem);
                 break;
@@ -574,67 +685,212 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
                           data_parser::element_list_t& key_comps,
                           data_parser::element_list_t& value,
                           const data_parser::element_list_t& in_list,
-                          int group_depth)
+                          int group_depth,
+                          element_list_t::iterator iter)
 {
-    key_comps.remove_if(element_if(in_list.el_format.df_terminator));
-    key_comps.remove_if(element_if(DT_COMMA));
-    value.remove_if(element_if(in_list.el_format.df_terminator));
-    value.remove_if(element_if(DT_COMMA));
-    strip(key_comps, element_is_space{});
-    strip(value, element_is_space{});
-    if ((el_stack.empty() || el_stack.back().e_token != DNT_KEY)
-        && value.empty() && key_comps.size() > 1
-        && (key_comps.front().e_token == DT_WORD
-            || key_comps.front().e_token == DT_SYMBOL))
-    {
-        element_list_t::iterator key_iter, key_end;
-        bool found_value = false;
-        int word_count = 0;
-        key_iter = key_comps.begin();
-        key_end = key_comps.begin();
-        for (; key_iter != key_comps.end(); ++key_iter) {
-            if (key_iter->e_token == DT_WORD || key_iter->e_token == DT_SYMBOL)
-            {
-                word_count += 1;
-                if (found_value) {
-                    key_end = key_comps.begin();
+    auto key_iter = key_comps.end();
+    bool found = false, key_is_values = true, mixed_values = false;
+    auto last_is_key = !key_comps.empty()
+        && (key_comps.back().e_token == DT_WORD
+            || key_comps.back().e_token == DT_SYMBOL);
+    element_list_t ELEMENT_LIST_T(mixed_queue), ELEMENT_LIST_T(mixed_tail);
+
+    if (!key_comps.empty()) {
+        do {
+            --key_iter;
+            if (key_iter->e_token == in_list.el_format.df_appender) {
+                ++key_iter;
+                value.SPLICE(
+                    value.end(), key_comps, key_comps.begin(), key_iter);
+                if (!key_comps.empty()) {
+                    key_comps.POP_FRONT();
                 }
-            } else if (key_iter->e_token == DT_WHITE
-                       || key_iter->e_token == DT_CSI)
-            {
-            } else {
-                if (!found_value) {
-                    key_end = key_iter;
+                found = true;
+            } else if (key_iter->e_token == in_list.el_format.df_terminator) {
+                value.SPLICE(
+                    value.end(), key_comps, key_comps.begin(), key_iter);
+                key_comps.POP_FRONT();
+                strip(key_comps, element_is_space{});
+                if (key_comps.empty()) {
+                    key_iter = key_comps.end();
+                } else {
+                    key_iter = key_comps.begin();
                 }
-                found_value = true;
+                found = true;
             }
+            if (!found && key_iter != key_comps.end()) {
+                switch (key_iter->e_token) {
+                    case DT_WORD:
+                    case DT_SYMBOL:
+                        key_is_values = false;
+                        break;
+                    case DT_WHITE:
+                        break;
+                    case DT_ID:
+                    case DT_QUOTED_STRING:
+                    case DT_URL:
+                    case DT_PATH:
+                    case DT_MAC_ADDRESS:
+                    case DT_DATE:
+                    case DT_TIME:
+                    case DT_DATE_TIME:
+                    case DT_IPV4_ADDRESS:
+                    case DT_IPV6_ADDRESS:
+                    case DT_HEX_DUMP:
+                    case DT_UUID:
+                    case DT_CREDIT_CARD_NUMBER:
+                    case DT_VERSION_NUMBER:
+                    case DT_OCTAL_NUMBER:
+                    case DT_PERCENTAGE:
+                    case DT_NUMBER:
+                    case DT_HEX_NUMBER:
+                    case DT_EMAIL:
+                    case DT_CONSTANT:
+                    case DNT_MEASUREMENT: {
+                        if (((in_list.el_format.df_terminator != DT_INVALID
+                              && !el_stack.empty())
+                             || (key_comps.size() == 1 && mixed_queue.empty()))
+                            && key_iter->e_token == DT_ID)
+                        {
+                            key_is_values = false;
+                        } else if (in_list.el_format.df_terminator == DT_INVALID
+                                   || el_stack.empty())
+                        {
+                            element_list_t ELEMENT_LIST_T(mixed_key);
+                            element_list_t ELEMENT_LIST_T(mixed_value);
+
+                            mixed_values = true;
+                            auto value_iter = key_iter;
+                            if (last_is_key) {
+                                if (mixed_tail.empty()) {
+                                    mixed_tail.SPLICE(mixed_tail.end(),
+                                                      key_comps,
+                                                      std::next(value_iter),
+                                                      key_comps.end());
+                                }
+                            } else {
+                                while (std::prev(key_comps.end()) != value_iter)
+                                {
+                                    key_comps.POP_BACK();
+                                }
+                            }
+                            key_iter = std::next(value_iter);
+                            mixed_value.SPLICE(mixed_value.end(),
+                                               key_comps,
+                                               value_iter,
+                                               key_iter);
+                            if (!el_stack.empty()
+                                && el_stack.back().e_token == DNT_KEY
+                                && key_comps.empty())
+                            {
+                                el_stack.PUSH_BACK(
+                                    element(mixed_value, DNT_VALUE));
+                            } else {
+                                mixed_queue.PUSH_FRONT(
+                                    element(mixed_value, DNT_VALUE));
+                                if (!key_comps.empty()) {
+                                    if (key_comps.back().e_token == DT_WORD) {
+                                        key_iter = std::prev(key_comps.end());
+                                        mixed_key.SPLICE(mixed_key.end(),
+                                                         key_comps,
+                                                         key_iter,
+                                                         key_comps.end());
+                                        mixed_queue.PUSH_FRONT(
+                                            element(mixed_key, DNT_KEY));
+                                    }
+                                }
+                            }
+                            while (!key_comps.empty()
+                                   && !key_comps.back().is_value())
+                            {
+                                key_comps.POP_BACK();
+                            }
+                            key_iter = key_comps.end();
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        } while (key_iter != key_comps.begin() && !found);
+    }
+    if (!mixed_queue.empty()) {
+        if (el_stack.back().e_token == DNT_KEY
+            && mixed_queue.front().e_token == DNT_KEY)
+        {
+            el_stack.POP_BACK();
         }
-        if (word_count != 1) {
-            key_end = key_comps.begin();
-        }
-        value.SPLICE(value.end(), key_comps, key_end, key_comps.end());
-        strip(key_comps, element_is_space{});
-        if (!key_comps.empty()) {
-            el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
-        }
+        el_stack.SPLICE(el_stack.end(),
+                        mixed_queue,
+                        mixed_queue.begin(),
+                        mixed_queue.end());
+    }
+    if (!mixed_tail.empty()) {
         key_comps.CLEAR();
-    } else {
+        key_comps.SPLICE(key_comps.end(),
+                         mixed_tail,
+                         std::prev(mixed_tail.end()),
+                         mixed_tail.end());
+    }
+    if (!mixed_values && !el_stack.empty() && !key_comps.empty()) {
+        element_list_t::iterator value_iter;
+
+        if (el_stack.size() > 1 && in_list.el_format.df_appender != DT_INVALID
+            && in_list.el_format.df_terminator != DT_INVALID
+            && iter->e_token == in_list.el_format.df_separator)
+        {
+            /* If we're expecting a terminator and haven't found it */
+            /* then this is part of the value. */
+            return;
+        }
+
         value.SPLICE(
             value.end(), key_comps, key_comps.begin(), key_comps.end());
-    }
-    strip(value, element_is_space{});
-    strip(value, element_if(DT_COLON));
-    strip(value, element_is_space{});
-    if (!value.empty()) {
-        if (value.size() == 2 && value.back().e_token == DNT_GROUP) {
-            element_list_t ELEMENT_LIST_T(group_pair);
 
-            group_pair.PUSH_BACK(element(value, DNT_PAIR));
-            el_stack.PUSH_BACK(element(group_pair, DNT_VALUE));
-        } else {
-            el_stack.PUSH_BACK(element(value, DNT_VALUE));
+        if (value.size() == 2
+            && (value.front().e_token == DT_WORD
+                || value.front().e_token == DT_SYMBOL
+                || value.front().e_token == DT_ID)
+            && el_stack.back().e_token != DNT_KEY)
+        {
+            element_list_t ELEMENT_LIST_T(mixed_key);
+
+            mixed_key.SPLICE(mixed_key.end(),
+                             value,
+                             value.begin(),
+                             std::next(value.begin()));
+            el_stack.PUSH_BACK(element(mixed_key, DNT_KEY, false));
         }
     }
+
+    strip(value, element_is_space{});
+    value.remove_if(element_if(DT_COMMA));
+    if (!value.empty()) {
+        el_stack.PUSH_BACK(element(value, DNT_VALUE));
+    }
+    strip(key_comps, element_is_space{});
+    if (!key_comps.empty()) {
+        if (mixed_values) {
+            key_is_values = false;
+            while (key_comps.size() > 1) {
+                key_comps.POP_FRONT();
+            }
+        }
+        if (!key_comps.empty()) {
+            if (iter == in_list.end()
+                || iter->e_token != in_list.el_format.df_separator)
+            {
+                key_is_values = true;
+            }
+            if (key_is_values) {
+                el_stack.PUSH_BACK(element(key_comps, DNT_VALUE));
+            } else {
+                el_stack.PUSH_BACK(element(key_comps, DNT_KEY, false));
+            }
+        }
+    }
+    key_comps.CLEAR();
     value.CLEAR();
 }
 
@@ -728,6 +984,7 @@ dfs_prefix_next(data_format_state_t state, data_token_t next_token)
                 case DT_EMAIL:
                 case DT_WORD:
                 case DT_SYMBOL:
+                case DT_ID:
                 case DT_OCTAL_NUMBER:
                 case DT_HEX_NUMBER:
                 case DT_NUMBER:
@@ -1058,6 +1315,37 @@ data_parser::element::print(FILE* out, data_scanner& ds, int offset) const
     fprintf(out, "  %s\n", sub.c_str());
 }
 
+bool
+data_parser::element::is_value() const
+{
+    switch (this->e_token) {
+        case DNT_MEASUREMENT:
+        case DT_ID:
+        case DT_QUOTED_STRING:
+        case DT_URL:
+        case DT_PATH:
+        case DT_MAC_ADDRESS:
+        case DT_DATE:
+        case DT_TIME:
+        case DT_DATE_TIME:
+        case DT_IPV4_ADDRESS:
+        case DT_IPV6_ADDRESS:
+        case DT_HEX_DUMP:
+        case DT_UUID:
+        case DT_CREDIT_CARD_NUMBER:
+        case DT_VERSION_NUMBER:
+        case DT_OCTAL_NUMBER:
+        case DT_PERCENTAGE:
+        case DT_NUMBER:
+        case DT_HEX_NUMBER:
+        case DT_EMAIL:
+        case DT_CONSTANT:
+            return true;
+        default:
+            return false;
+    }
+}
+
 data_parser::discover_format_state::discover_format_state()
     : dfs_prefix_state(DFS_INIT), dfs_semi_state(DFS_INIT),
       dfs_comma_state(DFS_INIT)
@@ -1102,6 +1390,8 @@ data_parser::discover_format_state::finalize()
     } else if (this->dfs_comma_state != DFS_ERROR) {
         if (this->dfs_hist[DT_COMMA] > 0) {
             this->dfs_format = FORMAT_COMMA;
+        } else if (this->dfs_hist[DT_EMDASH] > 0) {
+            this->dfs_format = FORMAT_EMDASH;
         }
         if (separator == DT_COLON && this->dfs_hist[DT_COMMA] > 0) {
             if (!((this->dfs_hist[DT_COLON] == this->dfs_hist[DT_COMMA])
@@ -1109,7 +1399,7 @@ data_parser::discover_format_state::finalize()
                       == this->dfs_hist[DT_COMMA])))
             {
                 separator = DT_INVALID;
-                if (this->dfs_hist[DT_COLON] == 1) {
+                if (this->dfs_hist[DT_COLON] > 0) {
                     prefix_term = DT_COLON;
                 }
             }
@@ -1119,4 +1409,18 @@ data_parser::discover_format_state::finalize()
     this->dfs_format.df_qualifier = qualifier;
     this->dfs_format.df_separator = separator;
     this->dfs_format.df_prefix_terminator = prefix_term;
+}
+
+void
+data_parser::element_list_t::push_back(const data_parser::element& elem,
+                                       const char* fn,
+                                       int line)
+{
+    ELEMENT_TRACE;
+
+    require(elem.e_capture.c_end >= -1);
+    require(this->empty()
+            || (elem.e_capture.c_begin == -1 && elem.e_capture.c_end == -1)
+            || this->back().e_capture.c_end <= elem.e_capture.c_begin);
+    this->std::list<element>::push_back(elem);
 }

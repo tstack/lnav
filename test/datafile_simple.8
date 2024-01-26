@@ -1,22 +1,30 @@
              Succeeded authorizing right 'system.privilege.taskport.debug' by client '/usr/libexec/taskgated' [76339] for authorization created by '/usr/libexec/taskgated' [77395] (100003,1)
- key  29:29                              ^                                                                                                                                                      
+word  22:27                        ^---^                                                                                                                                                        right
+ key  22:27                        ^---^                                                                                                                                                        right
 quot  29:60                               ^-----------------------------^                                                                                                                       system.privilege.taskport.debug
-pair  29:60                               ^-----------------------------^                                                                                                                       system.privilege.taskport.debug
- key  73:73                                                                          ^                                                                                                          
+ val  29:60                               ^-----------------------------^                                                                                                                       system.privilege.taskport.debug
+pair  22:60                        ^------------------------------------^                                                                                                                       right 'system.privilege.taskport.debug
+word  65:71                                                                   ^----^                                                                                                            client
+ key  65:71                                                                   ^----^                                                                                                            client
 quot  73:95                                                                           ^--------------------^                                                                                    /usr/libexec/taskgated
-pair  73:95                                                                           ^--------------------^                                                                                    /usr/libexec/taskgated
+ val  73:95                                                                           ^--------------------^                                                                                    /usr/libexec/taskgated
+pair  65:95                                                                   ^----------------------------^                                                                                    client '/usr/libexec/taskgated
  key  98:98                                                                                                   ^                                                                                 
  num  98:103                                                                                                   ^---^                                                                            76339
  val  98:103                                                                                                   ^---^                                                                            76339
  grp  98:103                                                                                                   ^---^                                                                            76339
+ val  98:103                                                                                                   ^---^                                                                            76339
 pair  98:103                                                                                                   ^---^                                                                            76339
- key 135:135                                                                                                                                       ^                                            
+word 131:133                                                                                                                                    ^^                                              by
+ key 131:133                                                                                                                                    ^^                                              by
 quot 135:157                                                                                                                                        ^--------------------^                      /usr/libexec/taskgated
-pair 135:157                                                                                                                                        ^--------------------^                      /usr/libexec/taskgated
+ val 135:157                                                                                                                                        ^--------------------^                      /usr/libexec/taskgated
+pair 131:157                                                                                                                                    ^------------------------^                      by '/usr/libexec/taskgated
  key 160:160                                                                                                                                                                ^                   
  num 160:165                                                                                                                                                                 ^---^              77395
  val 160:165                                                                                                                                                                 ^---^              77395
  grp 160:165                                                                                                                                                                 ^---^              77395
+ val 160:165                                                                                                                                                                 ^---^              77395
 pair 160:165                                                                                                                                                                 ^---^              77395
  key 168:168                                                                                                                                                                        ^           
  num 168:174                                                                                                                                                                         ^----^     100003
@@ -24,20 +32,21 @@ pair 160:165                                                                    
  num 175:176                                                                                                                                                                                ^   1
  val 175:176                                                                                                                                                                                ^   1
  grp 168:176                                                                                                                                                                         ^------^   100003,1
+ val 168:176                                                                                                                                                                         ^------^   100003,1
 pair 168:176                                                                                                                                                                         ^------^   100003,1
 msg         :Succeeded authorizing right 'system.privilege.taskport.debug' by client '/usr/libexec/taskgated' [76339] for authorization created by '/usr/libexec/taskgated' [77395] (100003,1)
 format      :Succeeded authorizing right # by client # [#] for authorization created by # [#] (#)
 {
-    "col_0": "system.privilege.taskport.debug",
-    "col_1": "/usr/libexec/taskgated",
-    "col_2": [
+    "right": "system.privilege.taskport.debug",
+    "client": "/usr/libexec/taskgated",
+    "col_0": [
         76339
     ],
-    "col_3": "/usr/libexec/taskgated",
-    "col_4": [
+    "by": "/usr/libexec/taskgated",
+    "col_1": [
         77395
     ],
-    "col_5": [
+    "col_2": [
         100003,
         1
     ]

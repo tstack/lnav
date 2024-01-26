@@ -36,10 +36,10 @@ run_test ${lnav_test} -n \
     logfile_syslog_test.2
 
 check_output "all_logs does not work?" <<EOF
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,log_msg_format,log_msg_schema
-0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
-1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is up,aff2bfc3c61e7b86329b83190f0912b3
-2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is down,506560b3c73dee057732e69a3c666718
+log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,log_msg_format,log_msg_values,log_msg_schema
+0,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is up,"{""col_0"":""eth0""}",ce6143108d22799c9c7a994e21e7302e
+1,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is up,"{""col_0"":""eth1""}",ce6143108d22799c9c7a994e21e7302e
+2,<NULL>,2015-11-03 09:23:38.000,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,# is down,"{""col_0"":""eth0""}",83cd119b5b6f7e79abff4d28946b7a61
 EOF
 
 

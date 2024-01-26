@@ -1,0 +1,26 @@
+             2024-01-10T05:27:07.860Z info vmware-vum-server[27909] [Originator@6876 sub=JobDispatcher] [JobDispatcher 2258]  Removing task 52b9d918-efe7-29a6-6d38-6eee37e76f87 that imposed VMware vSphere Update Manager load:1, new load: 0, task active Load: 0
+word 122:126                                                                                                                           ^--^                                                                                                                           task
+ key 122:126                                                                                                                           ^--^                                                                                                                           task
+uuid 127:163                                                                                                                                ^----------------------------------^                                                                                      52b9d918-efe7-29a6-6d38-6eee37e76f87
+ val 127:163                                                                                                                                ^----------------------------------^                                                                                      52b9d918-efe7-29a6-6d38-6eee37e76f87
+pair 122:163                                                                                                                           ^---------------------------------------^                                                                                      task 52b9d918-efe7-29a6-6d38-6eee37e76f87
+ key 207:211                                                                                                                                                                                                                ^--^                                      load
+ num 212:213                                                                                                                                                                                                                     ^                                    1
+ val 212:213                                                                                                                                                                                                                     ^                                    1
+pair 207:213                                                                                                                                                                                                                ^----^                                    load:1
+ key 215:223                                                                                                                                                                                                                        ^------^                          new load
+ num 225:226                                                                                                                                                                                                                                  ^                       0
+ val 225:226                                                                                                                                                                                                                                  ^                       0
+pair 215:226                                                                                                                                                                                                                        ^---------^                       new load: 0
+ key 228:244                                                                                                                                                                                                                                     ^--------------^     task active Load
+ num 246:247                                                                                                                                                                                                                                                       ^  0
+ val 246:247                                                                                                                                                                                                                                                       ^  0
+pair 228:247                                                                                                                                                                                                                                     ^-----------------^  task active Load: 0
+msg         :Removing task 52b9d918-efe7-29a6-6d38-6eee37e76f87 that imposed VMware vSphere Update Manager load:1, new load: 0, task active Load: 0
+format      :Removing task # that imposed VMware vSphere Update Manager load:#, new load: #, task active Load: #
+{
+    "task": "52b9d918-efe7-29a6-6d38-6eee37e76f87",
+    "load": 1,
+    "new load": 0,
+    "task active Load": 0
+}

@@ -796,7 +796,9 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         this->lb_alt_line_has_ansi.clear();
         this->lb_stats.s_used_preloads += 1;
     }
-    if (this->in_range(start) && this->in_range(start + max_length - 1)) {
+    if (this->in_range(start)
+        && (max_length == 0 || this->in_range(start + max_length - 1)))
+    {
         /* Cache already has the data, nothing to do. */
         retval = true;
         if (!lnav::pid::in_child && this->lb_seekable && this->lb_buffer.full()

@@ -92,7 +92,8 @@ public:
         return *this;
     }
 
-    bool attrs_in_use(const text_attrs& attrs) const {
+    bool attrs_in_use(const text_attrs& attrs) const
+    {
         for (const auto& ident : this->sbc_idents) {
             if (ident.ci_attrs == attrs) {
                 return true;
@@ -205,18 +206,24 @@ public:
         }
 
         if (this->sbc_show_state.template is<show_all>()) {
-            avail_width = width - this->sbc_idents.size();
+            if (width < this->sbc_idents.size()) {
+                avail_width = 0;
+            } else {
+                avail_width = width - this->sbc_idents.size();
+            }
         } else {
             avail_width = width - 1;
         }
-        avail_width -= this->sbc_left + this->sbc_right;
+        if (avail_width > (this->sbc_left + this->sbc_right)) {
+            avail_width -= this->sbc_left + this->sbc_right;
+        }
 
         lr.lr_start = left;
 
         const auto& ci = this->sbc_idents[ident_index];
         int amount;
 
-        if (value == 0.0) {
+        if (value == 0.0 || avail_width < 0) {
             amount = 0;
         } else if ((overall_stats.bs_max_value - 0.01) <= value
                    && value <= (overall_stats.bs_max_value + 0.01))
@@ -228,6 +235,7 @@ public:
             amount = (int) rint(percent * avail_width);
             amount = std::max(1, amount);
         }
+        require_ge(amount, 0);
         lr.lr_end = left = lr.lr_start + amount;
 
         if (!ci.ci_attrs.empty() && !lr.empty()) {

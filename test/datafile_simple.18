@@ -1,5 +1,5 @@
              list [foo(bar=1)]
- key   6:6        ^             
+ key   0:4   ^--^               list
  key   6:9         ^-^          foo
  key  10:13            ^-^      bar
  num  14:15                ^    1
@@ -9,15 +9,18 @@ pair  10:15            ^---^    bar=1
  val  10:15            ^---^    bar=1
 pair   6:15        ^-------^    foo(bar=1
  grp   6:15        ^-------^    foo(bar=1
-pair   6:15        ^-------^    foo(bar=1
+ val   6:15        ^-------^    foo(bar=1
+pair   0:15  ^-------------^    list [foo(bar=1
 msg         :list [foo(bar=1)]
 format      :list [#)]
-[
-    {
-        "foo": [
-            {
-                "bar": 1
-            }
-        ]
-    }
-]
+{
+    "list": [
+        {
+            "foo": [
+                {
+                    "bar": 1
+                }
+            ]
+        }
+    ]
+}

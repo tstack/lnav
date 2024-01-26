@@ -1,23 +1,24 @@
              2013-02-11 06:42:34,311:INFO:com.twisted:Starting factory <twisted.web.server.Site instance at 0x1de9290>
- key  29:29                              ^                                                                              
  key  29:40                               ^---------^                                                                   com.twisted
-pair  29:40                               ^---------^                                                                   com.twisted
- key  59:59                                                            ^                                                
- sym  59:82                                                             ^---------------------^                         twisted.web.server.Site
-wspc  82:83                                                                                    ^                         
-word  83:91                                                                                     ^------^                instance
-wspc  91:92                                                                                             ^                
+word  41:49                                           ^------^                                                          Starting
+ val  41:49                                           ^------^                                                          Starting
+pair  29:49                               ^------------------^                                                          com.twisted:Starting
+ key  50:57                                                    ^-----^                                                  factory
 word  92:94                                                                                              ^^             at
-wspc  94:95                                                                                                ^             
+ key  92:94                                                                                              ^^             at
  hex  95:104                                                                                                ^-------^   0x1de9290
- val  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290
- grp  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290
-pair  59:104                                                            ^-------------------------------------------^   twisted.web.server.Site instance at 0x1de9290
+ val  95:104                                                                                                ^-------^   0x1de9290
+pair  92:104                                                                                             ^----------^   at 0x1de9290
+ grp  92:104                                                                                             ^----------^   at 0x1de9290
+ val  92:104                                                                                             ^----------^   at 0x1de9290
+pair  50:104                                                   ^----------------------------------------------------^   factory <twisted.web.server.Site instance at 0x1de9290
 msg         ::com.twisted:Starting factory <twisted.web.server.Site instance at 0x1de9290>
-format      ::#:Starting factory <#>
+format      ::com.twisted:# factory <twisted.web.server.Site instance #>
 {
-    "col_0": "com.twisted",
-    "col_1": [
-        "twisted.web.server.Site instance at 0x1de9290"
+    "com.twisted": "Starting",
+    "factory": [
+        {
+            "at": "0x1de9290"
+        }
     ]
 }

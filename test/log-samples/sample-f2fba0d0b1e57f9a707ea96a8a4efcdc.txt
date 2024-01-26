@@ -17,7 +17,6 @@ word  99:103                                                                    
 pair  94:103                                                                                               ^-------^                                            USER=root
  key 106:113                                                                                                           ^-----^                                  COMMAND
 path 114:127                                                                                                                   ^-----------^                    /usr/bin/tail
-wspc 127:128                                                                                                                                ^                    
 path 128:145                                                                                                                                 ^---------------^  /var/log/messages
  val 114:145                                                                                                                   ^-----------------------------^  /usr/bin/tail /var/log/messages
 pair 106:145                                                                                                           ^-------------------------------------^  COMMAND=/usr/bin/tail /var/log/messages

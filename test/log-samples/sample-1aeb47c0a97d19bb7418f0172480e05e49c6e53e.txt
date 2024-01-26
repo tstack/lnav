@@ -1,17 +1,19 @@
              Apr 29 22:32:27 tstack-centos5 dhclient: bound to 10.1.10.62 -- renewal in 55327 seconds
- key  50:50                                                   ^                                        
+word  47:49                                                 ^^                                         to
+ key  47:49                                                 ^^                                         to
 ipv4  50:60                                                    ^--------^                              10.1.10.62
-pair  50:60                                                    ^--------^                              10.1.10.62
- key  61:61                                                              ^                             
- sym  61:63                                                               ^^                           --
-pair  61:63                                                               ^^                           --
- key  75:75                                                                            ^               
+ val  50:60                                                    ^--------^                              10.1.10.62
+pair  47:60                                                 ^-----------^                              to 10.1.10.62
+ key  64:64                                                                 ^                          
+word  64:71                                                                  ^-----^                   renewal
+word  72:74                                                                          ^^                in
  num  75:80                                                                             ^---^          55327
-pair  75:80                                                                             ^---^          55327
+word  81:88                                                                                   ^-----^  seconds
+ val  64:88                                                                  ^----------------------^  renewal in 55327 seconds
+pair  64:88                                                                  ^----------------------^  renewal in 55327 seconds
 msg         :bound to 10.1.10.62 -- renewal in 55327 seconds
-format      :bound to # # renewal in # seconds
+format      :bound to # -- #
 {
-    "col_0": "10.1.10.62",
-    "col_1": "--",
-    "col_2": 55327
+    "to": "10.1.10.62",
+    "col_0": "renewal in 55327 seconds"
 }

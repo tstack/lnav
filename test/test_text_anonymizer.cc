@@ -59,7 +59,7 @@ TEST_CASE("url")
     lnav::text_anonymizer ta;
 
     CHECK(ta.next(string_fragment::from_const("retrieving https://bob:abc@example.com/fooooooo22/192.168.1.33/barrrrr44?abcdef=foobar&ghijkl=123456&bazzer&ip=192.168.1.2#heading-2")) ==
-          "aback https://meerkat:67c93775f715ab8ab01178caf86713c6@achondroplasia.example.com/abaft22/10.0.0.1/abashed44?aberrant=abhorrent&abiding=123456&abject&ip=10.0.0.2#able-2");
+          "aback https://meerkat:67c93775f715ab8ab01178caf86713c6@achondroplasia.example.com/abaft22/10.0.0.1/abashed44?aberrant=abhorrent&abiding=123456&abject&ip=10.0.0.2#heading-2");
 }
 
 TEST_CASE("email")
@@ -127,5 +127,5 @@ TEST_CASE("xml")
     lnav::text_anonymizer ta;
 
     CHECK(ta.next(string_fragment::from_const("<o:gupdate xmlns:o=\"http://www.google.com/update2/request\" protocol=\"2.0\" version=\"KeystoneDaemon-1.2.0.7709\" ismachine=\"1\" requestid=\"{0DFDBCD1-5E29-4DFC-BD99-31A2397198FE}\">")) ==
-          "<o:gupdate  xmlns:o=\"http://achondroplasia.example.com/aback2/abandoned\" protocol=\"2.0\" version=\"Abashed-1.2.0.7709\" ismachine=\"1\" requestid=\"{1ca0a968-cbe9-e75b-d00b-4859609878ea}\">");
+          "<o:gupdate  xmlns:o=\"http://achondroplasia.example.com/aback2/abandoned\" protocol=\"2.0\" version=\"KeystoneDaemon-1.2.0.7709\" ismachine=\"1\" requestid=\"{1ca0a968-cbe9-e75b-d00b-4859609878ea}\">");
 }

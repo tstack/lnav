@@ -3,6 +3,7 @@
 path  43:64                                             ^-------------------^                             /sbin/dhclient-script
  val  43:64                                             ^-------------------^                             /sbin/dhclient-script
 pair  43:64                                             ^-------------------^                             /sbin/dhclient-script
+word  67:74                                                                     ^-----^                   updated
  key  67:74                                                                     ^-----^                   updated
 path  75:91                                                                             ^--------------^  /etc/resolv.conf
  val  75:91                                                                             ^--------------^  /etc/resolv.conf

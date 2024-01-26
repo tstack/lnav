@@ -105,6 +105,9 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
         lr.lr_start += 1;
     }
 
+    for (const auto& attr : sa) {
+        require_ge(attr.sa_range.lr_start, 0);
+    }
     int left = 0;
     for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
         auto row_view = scn::string_view{this->dls_rows[row][lpc]};
@@ -116,6 +119,10 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
             if (num_scan_res) {
                 this->dls_chart.chart_attrs_for_value(
                     tc, left, hm.hm_name, num_scan_res.value(), sa);
+
+                for (const auto& attr : sa) {
+                    require_ge(attr.sa_range.lr_start, 0);
+                }
             }
         }
         if (row_view.length() > 2 && row_view.length() < MAX_JSON_WIDTH
@@ -142,10 +149,17 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                             jpw_value.wt_ptr,
                             num_scan_res.value(),
                             sa);
+                        for (const auto& attr : sa) {
+                            require_ge(attr.sa_range.lr_start, 0);
+                        }
                     }
                 }
             }
         }
+    }
+
+    for (const auto& attr : sa) {
+        require_ge(attr.sa_range.lr_start, 0);
     }
 }
 
@@ -445,6 +459,8 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         line.append(1, ' ');
 
         struct line_range header_range(line_len_before, line.length());
+
+        require_ge(header_range.lr_start, 0);
 
         text_attrs attrs;
         if (this->dos_labels->dls_headers[lpc].hm_graphable) {

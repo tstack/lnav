@@ -790,6 +790,10 @@ readline_curses::start()
     }
     this->rc_pty[RCF_SLAVE] = slave_open_res.unwrap();
 
+    if (ioctl(this->rc_pty[RCF_SLAVE], TIOCSWINSZ, &ws) == -1) {
+        throw error(errno);
+    }
+
     this->rc_pty[RCF_MASTER].close_on_exec();
     this->rc_pty[RCF_SLAVE].close_on_exec();
 
