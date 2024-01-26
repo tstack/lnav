@@ -1,23 +1,22 @@
              Apr 29 08:13:42 tstack-centos5 dhclient: DHCPNAK from 10.1.10.1 (xid=0x4e17f141)
- key  41:41                                          ^                                         
- sym  41:48                                           ^-----^                                  DHCPNAK
-pair  41:48                                           ^-----^                                  DHCPNAK
- key  54:54                                                       ^                            
+word  49:53                                                   ^--^                             from
+ key  49:53                                                   ^--^                             from
 ipv4  54:63                                                        ^-------^                   10.1.10.1
-pair  54:63                                                        ^-------^                   10.1.10.1
+ val  54:63                                                        ^-------^                   10.1.10.1
+pair  49:63                                                   ^------------^                   from 10.1.10.1
  key  65:65                                                                  ^                 
  key  65:68                                                                   ^-^              xid
  hex  69:79                                                                       ^--------^   0x4e17f141
  val  69:79                                                                       ^--------^   0x4e17f141
 pair  65:79                                                                   ^------------^   xid=0x4e17f141
  grp  65:79                                                                   ^------------^   xid=0x4e17f141
+ val  65:79                                                                   ^------------^   xid=0x4e17f141
 pair  65:79                                                                   ^------------^   xid=0x4e17f141
 msg         :DHCPNAK from 10.1.10.1 (xid=0x4e17f141)
-format      :# from # (#)
+format      :DHCPNAK from # (#)
 {
-    "col_0": "DHCPNAK",
-    "col_1": "10.1.10.1",
-    "col_2": [
+    "from": "10.1.10.1",
+    "col_0": [
         {
             "xid": "0x4e17f141"
         }

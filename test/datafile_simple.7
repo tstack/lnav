@@ -1,5 +1,5 @@
              func(arg1="a", arg2="b")
- key   5:5       ^                     
+ key   0:4   ^--^                      func
  key   5:9        ^--^                 arg1
 quot  11:12             ^              a
  val  11:12             ^              a
@@ -9,10 +9,13 @@ quot  21:22                       ^    b
  val  21:22                       ^    b
 pair  15:22                 ^-----^    arg2="b
  grp   5:22       ^---------------^    arg1="a", arg2="b
-pair   5:22       ^---------------^    arg1="a", arg2="b
+ val   5:22       ^---------------^    arg1="a", arg2="b
+pair   0:22  ^--------------------^    func(arg1="a", arg2="b
 msg         :func(arg1="a", arg2="b")
 format      :func(#)
 {
-    "arg1": "a",
-    "arg2": "b"
+    "func": {
+        "arg1": "a",
+        "arg2": "b"
+    }
 }

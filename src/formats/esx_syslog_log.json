@@ -80,6 +80,9 @@
             },
             {
                 "line": "2023-08-09T14:42:43.094Z In(14) settingsd[263657]: debug [ConfigStore:c5f9ac2700 opId=cabbdb94-0afb-4d23-9203-e901779b9b04] [RunCommand] About to run command /usr/bin/python /usr/lib/vmware/lifecycle/bin/imagemanagerctl.py VIB --list-all"
+            },
+            {
+                "line": "2022-05-17T07:39:38.357Z In(9) watchdog-vobd[1001390409]: Executing '/usr/lib/vmware/vob/bin/vobd ++securitydom=vobdDom'"
             }
         ]
     }

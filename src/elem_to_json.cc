@@ -41,10 +41,19 @@ element_to_json(yajl_gen gen, data_parser& dp, const data_parser::element& elem)
 
     switch (elem.value_token()) {
         case DT_NUMBER: {
-            yajl_gen_number(gen, value_str, value_len);
+            auto leading_plus = value_str[0] == '+';
+
+            yajl_gen_number(gen,
+                            leading_plus ? value_str + 1 : value_str,
+                            leading_plus ? value_len - 1 : value_len);
             break;
         }
         case DNT_GROUP: {
+            elements_to_json(
+                gen, dp, elem.get_value_elem().e_sub_elements, false);
+            break;
+        }
+        case DNT_MEASUREMENT: {
             elements_to_json(
                 gen, dp, elem.get_value_elem().e_sub_elements, false);
             break;

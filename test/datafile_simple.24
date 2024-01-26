@@ -1,0 +1,52 @@
+             LoadResources path (./locale/) locale (en) removeable (false) resMap (00007f9ee4195fa0) extKeys (0000000000000000)
+ key   0:18  ^----------------^                                                                                                  LoadResources path
+ key  20:20                     ^                                                                                                
+path  20:30                      ^--------^                                                                                      ./locale/)
+ val  20:30                      ^--------^                                                                                      ./locale/)
+pair  20:30                      ^--------^                                                                                      ./locale/)
+ key  31:37                                 ^----^                                                                               locale
+word  39:41                                         ^^                                                                           en
+ val  39:41                                         ^^                                                                           en
+ grp  39:41                                         ^^                                                                           en
+ val  39:41                                         ^^                                                                           en
+pair  31:41                                 ^--------^                                                                           locale (en
+ key  43:53                                             ^--------^                                                               removeable
+cnst  55:60                                                         ^---^                                                        false
+ val  55:60                                                         ^---^                                                        false
+ grp  55:60                                                         ^---^                                                        false
+ val  55:60                                                         ^---^                                                        false
+pair  43:60                                             ^---------------^                                                        removeable (false
+ key  62:68                                                                ^----^                                                resMap
+ hex  70:86                                                                        ^--------------^                              00007f9ee4195fa0
+ val  70:86                                                                        ^--------------^                              00007f9ee4195fa0
+ grp  70:86                                                                        ^--------------^                              00007f9ee4195fa0
+ val  70:86                                                                        ^--------------^                              00007f9ee4195fa0
+pair  62:86                                                                ^----------------------^                              resMap (00007f9ee4195fa0
+ key  88:95                                                                                          ^-----^                     extKeys
+  cc  97:113                                                                                                  ^--------------^   0000000000000000
+ val  97:113                                                                                                  ^--------------^   0000000000000000
+ grp  97:113                                                                                                  ^--------------^   0000000000000000
+ val  97:113                                                                                                  ^--------------^   0000000000000000
+pair  88:113                                                                                         ^-----------------------^   extKeys (0000000000000000
+ grp  20:113                     ^-------------------------------------------------------------------------------------------^   ./locale/) locale (en) removeable (false) resMap (00007f9ee4195fa0) extKeys (0000000000000000
+ val  20:113                     ^-------------------------------------------------------------------------------------------^   ./locale/) locale (en) removeable (false) resMap (00007f9ee4195fa0) extKeys (0000000000000000
+pair   0:113 ^---------------------------------------------------------------------------------------------------------------^   LoadResources path (./locale/) locale (en) removeable (false) resMap (00007f9ee4195fa0) extKeys (0000000000000000
+msg         :LoadResources path (./locale/) locale (en) removeable (false) resMap (00007f9ee4195fa0) extKeys (0000000000000000)
+format      :LoadResources path (#)
+{
+    "LoadResources path": {
+        "col_0": "./locale/)",
+        "locale": [
+            "en"
+        ],
+        "removeable": [
+            false
+        ],
+        "resMap": [
+            "00007f9ee4195fa0"
+        ],
+        "extKeys": [
+            "0000000000000000"
+        ]
+    }
+}

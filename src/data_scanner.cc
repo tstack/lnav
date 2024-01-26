@@ -112,6 +112,9 @@ static struct {
     {
         "semi",
     },
+    {
+        "emda",
+    },
 
     {
         "empt",
@@ -182,7 +185,13 @@ static struct {
         "word",
     },
     {
+        "id",
+    },
+    {
         "sym",
+    },
+    {
+        "unit",
     },
     {
         "line",
@@ -274,4 +283,24 @@ data_scanner::is_credit_card(string_fragment cc) const
     // if yes, it is valid.
 
     return double_even_sum % 10 == 0;
+}
+
+void
+data_scanner::cleanup_end()
+{
+    auto done = false;
+
+    while (!this->ds_input.empty() && !done) {
+        switch (this->ds_input.back()) {
+            case '.':
+            case ' ':
+            case '\r':
+            case '\n':
+                this->ds_input.pop_back();
+                break;
+            default:
+                done = true;
+                break;
+        }
+    }
 }

@@ -1,13 +1,11 @@
              2013-02-11 06:42:34,310:INFO:com.twisted:Site starting on 8099
- key  29:29                              ^                                   
- key  29:40                               ^---------^                        com.twisted
-pair  29:40                               ^---------^                        com.twisted
- key  58:58                                                           ^      
+word  55:57                                                         ^^       on
+ key  55:57                                                         ^^       on
  num  58:62                                                            ^--^  8099
-pair  58:62                                                            ^--^  8099
+ val  58:62                                                            ^--^  8099
+pair  55:62                                                         ^-----^  on 8099
 msg         ::com.twisted:Site starting on 8099
-format      ::#:Site starting on #
+format      ::com.twisted:Site starting on #
 {
-    "col_0": "com.twisted",
-    "col_1": 8099
+    "on": 8099
 }

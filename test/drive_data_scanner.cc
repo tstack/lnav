@@ -199,6 +199,7 @@ main(int argc, char* argv[])
                 }
 
                 data_parser::TRACE_FILE = fopen("scanned.dpt", "w");
+                setvbuf(data_parser::TRACE_FILE, nullptr, _IONBF, 0);
 
                 data_scanner ds(sub_line, body.lr_start);
 

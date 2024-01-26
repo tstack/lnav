@@ -1,0 +1,135 @@
+             2021-09-22T05:54:16.060Z info vsand[1000946217] [opID=Thread-2 VsanPyVmomiProfiler::logProfile]   get-disk-data: 0.00s, consumed: 97792KB (+0KB), consumedPeak: 98644KB (+0KB), effectiveMin: 118228KB (+0KB), effectiveMinPeak: 121336KB (+0KB), requestedMinPeak: 121336KB (+0KB)
+ key  98:111                                                                                                   ^-----------^                                                                                                                                                                      get-disk-data
+ num 113:117                                                                                                                  ^--^                                                                                                                                                                0.00
+unit 117:118                                                                                                                      ^                                                                                                                                                               s
+meas 113:118                                                                                                                  ^---^                                                                                                                                                               0.00s
+ val 113:118                                                                                                                  ^---^                                                                                                                                                               0.00s
+pair  98:118                                                                                                   ^------------------^                                                                                                                                                               get-disk-data: 0.00s
+ key 120:128                                                                                                                         ^------^                                                                                                                                                     consumed
+ num 130:135                                                                                                                                   ^---^                                                                                                                                              97792
+unit 135:137                                                                                                                                        ^^                                                                                                                                            KB
+meas 130:137                                                                                                                                   ^-----^                                                                                                                                            97792KB
+ val 130:137                                                                                                                                   ^-----^                                                                                                                                            97792KB
+pair 120:137                                                                                                                         ^---------------^                                                                                                                                            consumed: 97792KB
+ key 140:140                                                                                                                                            ^                                                                                                                                         
+ num 140:141                                                                                                                                             ^                                                                                                                                        0
+unit 141:143                                                                                                                                              ^^                                                                                                                                      KB
+meas 140:143                                                                                                                                             ^-^                                                                                                                                      0KB
+ val 140:143                                                                                                                                             ^-^                                                                                                                                      0KB
+ grp 140:143                                                                                                                                             ^-^                                                                                                                                      0KB
+ val 140:143                                                                                                                                             ^-^                                                                                                                                      0KB
+pair 140:143                                                                                                                                             ^-^                                                                                                                                      0KB
+ key 146:158                                                                                                                                                   ^----------^                                                                                                                       consumedPeak
+ num 160:165                                                                                                                                                                 ^---^                                                                                                                98644
+unit 165:167                                                                                                                                                                      ^^                                                                                                              KB
+meas 160:167                                                                                                                                                                 ^-----^                                                                                                              98644KB
+ val 160:167                                                                                                                                                                 ^-----^                                                                                                              98644KB
+pair 146:167                                                                                                                                                   ^-------------------^                                                                                                              consumedPeak: 98644KB
+ key 170:170                                                                                                                                                                          ^                                                                                                           
+ num 170:171                                                                                                                                                                           ^                                                                                                          0
+unit 171:173                                                                                                                                                                            ^^                                                                                                        KB
+meas 170:173                                                                                                                                                                           ^-^                                                                                                        0KB
+ val 170:173                                                                                                                                                                           ^-^                                                                                                        0KB
+ grp 170:173                                                                                                                                                                           ^-^                                                                                                        0KB
+ val 170:173                                                                                                                                                                           ^-^                                                                                                        0KB
+pair 170:173                                                                                                                                                                           ^-^                                                                                                        0KB
+ key 176:188                                                                                                                                                                                 ^----------^                                                                                         effectiveMin
+ num 190:196                                                                                                                                                                                               ^----^                                                                                 118228
+unit 196:198                                                                                                                                                                                                     ^^                                                                               KB
+meas 190:198                                                                                                                                                                                               ^------^                                                                               118228KB
+ val 190:198                                                                                                                                                                                               ^------^                                                                               118228KB
+pair 176:198                                                                                                                                                                                 ^--------------------^                                                                               effectiveMin: 118228KB
+ key 201:201                                                                                                                                                                                                         ^                                                                            
+ num 201:202                                                                                                                                                                                                          ^                                                                           0
+unit 202:204                                                                                                                                                                                                           ^^                                                                         KB
+meas 201:204                                                                                                                                                                                                          ^-^                                                                         0KB
+ val 201:204                                                                                                                                                                                                          ^-^                                                                         0KB
+ grp 201:204                                                                                                                                                                                                          ^-^                                                                         0KB
+ val 201:204                                                                                                                                                                                                          ^-^                                                                         0KB
+pair 201:204                                                                                                                                                                                                          ^-^                                                                         0KB
+ key 207:223                                                                                                                                                                                                                ^--------------^                                                      effectiveMinPeak
+ num 225:231                                                                                                                                                                                                                                  ^----^                                              121336
+unit 231:233                                                                                                                                                                                                                                        ^^                                            KB
+meas 225:233                                                                                                                                                                                                                                  ^------^                                            121336KB
+ val 225:233                                                                                                                                                                                                                                  ^------^                                            121336KB
+pair 207:233                                                                                                                                                                                                                ^------------------------^                                            effectiveMinPeak: 121336KB
+ key 236:236                                                                                                                                                                                                                                            ^                                         
+ num 236:237                                                                                                                                                                                                                                             ^                                        0
+unit 237:239                                                                                                                                                                                                                                              ^^                                      KB
+meas 236:239                                                                                                                                                                                                                                             ^-^                                      0KB
+ val 236:239                                                                                                                                                                                                                                             ^-^                                      0KB
+ grp 236:239                                                                                                                                                                                                                                             ^-^                                      0KB
+ val 236:239                                                                                                                                                                                                                                             ^-^                                      0KB
+pair 236:239                                                                                                                                                                                                                                             ^-^                                      0KB
+ key 242:258                                                                                                                                                                                                                                                   ^--------------^                   requestedMinPeak
+ num 260:266                                                                                                                                                                                                                                                                     ^----^           121336
+unit 266:268                                                                                                                                                                                                                                                                           ^^         KB
+meas 260:268                                                                                                                                                                                                                                                                     ^------^         121336KB
+ val 260:268                                                                                                                                                                                                                                                                     ^------^         121336KB
+pair 242:268                                                                                                                                                                                                                                                   ^------------------------^         requestedMinPeak: 121336KB
+ key 271:271                                                                                                                                                                                                                                                                               ^      
+ num 271:272                                                                                                                                                                                                                                                                                ^     0
+unit 272:274                                                                                                                                                                                                                                                                                 ^^   KB
+meas 271:274                                                                                                                                                                                                                                                                                ^-^   0KB
+ val 271:274                                                                                                                                                                                                                                                                                ^-^   0KB
+ grp 271:274                                                                                                                                                                                                                                                                                ^-^   0KB
+ val 271:274                                                                                                                                                                                                                                                                                ^-^   0KB
+pair 271:274                                                                                                                                                                                                                                                                                ^-^   0KB
+msg         :get-disk-data: 0.00s, consumed: 97792KB (+0KB), consumedPeak: 98644KB (+0KB), effectiveMin: 118228KB (+0KB), effectiveMinPeak: 121336KB (+0KB), requestedMinPeak: 121336KB (+0KB)
+format      :get-disk-data: #, consumed: # (+#), consumedPeak: # (+#), effectiveMin: # (+#), effectiveMinPeak: # (+#), requestedMinPeak: # (+#)
+{
+    "get-disk-data": [
+        0.00,
+        "s"
+    ],
+    "consumed": [
+        97792,
+        "KB"
+    ],
+    "col_0": [
+        [
+            0,
+            "KB"
+        ]
+    ],
+    "consumedPeak": [
+        98644,
+        "KB"
+    ],
+    "col_1": [
+        [
+            0,
+            "KB"
+        ]
+    ],
+    "effectiveMin": [
+        118228,
+        "KB"
+    ],
+    "col_2": [
+        [
+            0,
+            "KB"
+        ]
+    ],
+    "effectiveMinPeak": [
+        121336,
+        "KB"
+    ],
+    "col_3": [
+        [
+            0,
+            "KB"
+        ]
+    ],
+    "requestedMinPeak": [
+        121336,
+        "KB"
+    ],
+    "col_4": [
+        [
+            0,
+            "KB"
+        ]
+    ]
+}

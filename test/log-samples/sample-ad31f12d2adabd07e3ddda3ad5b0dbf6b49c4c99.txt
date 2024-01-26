@@ -3,19 +3,14 @@
 quot  49:49                                                  ^                                                          
  val  49:49                                                  ^                                                          
 pair  43:49                                             ^----^                                                          vmnet:
- key  50:67                                                    ^---------------^                                        VNetUserIf_Create
-word  69:76                                                                       ^-----^                               created
-wspc  76:77                                                                              ^                               
- sym  77:83                                                                               ^----^                        userIf
-wspc  83:84                                                                                     ^                        
 word  84:86                                                                                      ^^                     at
-wspc  86:87                                                                                        ^                     
+ key  84:86                                                                                      ^^                     at
  hex  87:105                                                                                        ^----------------^  0xffffff802644f400
- val  69:105                                                                      ^----------------------------------^  created userIf at 0xffffff802644f400
-pair  50:105                                                   ^-----------------------------------------------------^  VNetUserIf_Create: created userIf at 0xffffff802644f400
+ val  87:105                                                                                        ^----------------^  0xffffff802644f400
+pair  84:105                                                                                     ^-------------------^  at 0xffffff802644f400
 msg         :vmnet: VNetUserIf_Create: created userIf at 0xffffff802644f400
-format      :vmnet:# VNetUserIf_Create: #
+format      :vmnet:# VNetUserIf_Create: created userIf at #
 {
     "vmnet": "",
-    "VNetUserIf_Create": "created userIf at 0xffffff802644f400"
+    "at": "0xffffff802644f400"
 }

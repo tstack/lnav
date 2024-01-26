@@ -1,35 +1,34 @@
              Apr 29 08:13:42 tstack-centos5 dhclient: DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0xd16b79d)
- key  41:41                                          ^                                                                            
- sym  41:53                                           ^----------^                                                                DHCPDISCOVER
-pair  41:53                                           ^----------^                                                                DHCPDISCOVER
- key  57:57                                                          ^                                                            
- sym  57:61                                                           ^--^                                                        eth0
-pair  57:61                                                           ^--^                                                        eth0
- key  65:65                                                                  ^                                                    
+word  62:64                                                                ^^                                                     to
+ key  62:64                                                                ^^                                                     to
 ipv4  65:80                                                                   ^-------------^                                     255.255.255.255
-pair  65:80                                                                   ^-------------^                                     255.255.255.255
- key  86:86                                                                                       ^                               
+ val  65:80                                                                   ^-------------^                                     255.255.255.255
+pair  62:80                                                                ^----------------^                                     to 255.255.255.255
+word  81:85                                                                                   ^--^                                port
+ key  81:85                                                                                   ^--^                                port
  num  86:88                                                                                        ^^                             67
-pair  86:88                                                                                        ^^                             67
- key  98:98                                                                                                   ^                   
+ val  86:88                                                                                        ^^                             67
+pair  81:88                                                                                   ^-----^                             port 67
+word  89:97                                                                                           ^------^                    interval
+ key  89:97                                                                                           ^------^                    interval
  num  98:99                                                                                                    ^                  5
-pair  98:99                                                                                                    ^                  5
+ val  98:99                                                                                                    ^                  5
+pair  89:99                                                                                           ^--------^                  interval 5
  key 101:101                                                                                                     ^                
  key 101:104                                                                                                      ^-^             xid
  hex 105:114                                                                                                          ^-------^   0xd16b79d
  val 105:114                                                                                                          ^-------^   0xd16b79d
 pair 101:114                                                                                                      ^-----------^   xid=0xd16b79d
  grp 101:114                                                                                                      ^-----------^   xid=0xd16b79d
+ val 101:114                                                                                                      ^-----------^   xid=0xd16b79d
 pair 101:114                                                                                                      ^-----------^   xid=0xd16b79d
 msg         :DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0xd16b79d)
-format      :# on # to # port # interval # (#)
+format      :DHCPDISCOVER on eth0 to # port # interval # (#)
 {
-    "col_0": "DHCPDISCOVER",
-    "col_1": "eth0",
-    "col_2": "255.255.255.255",
-    "col_3": 67,
-    "col_4": 5,
-    "col_5": [
+    "to": "255.255.255.255",
+    "port": 67,
+    "interval": 5,
+    "col_0": [
         {
             "xid": "0xd16b79d"
         }

@@ -64,6 +64,7 @@ enum data_token_t {
     DT_EQUALS,
     DT_COMMA,
     DT_SEMI,
+    DT_EMDASH,
 
     DT_EMPTY_CONTAINER,
 
@@ -92,7 +93,9 @@ enum data_token_t {
     DT_EMAIL,
     DT_CONSTANT,
     DT_WORD,
+    DT_ID,
     DT_SYMBOL,
+    DT_UNIT,
     DT_LINE,
     DT_WHITE,
     DT_DOT,
@@ -107,7 +110,7 @@ enum data_token_t {
 
     DT_TERMINAL_MAX = DT_DIFF_HUNK_HEADING + 1,
 
-    DNT_KEY = 52,
+    DNT_KEY = 54,
     DNT_PAIR,
     DNT_VALUE,
     DNT_ROW,
@@ -157,25 +160,19 @@ public:
         : ds_line(line), ds_input(this->ds_line), ds_init_offset(off),
           ds_next_offset(off)
     {
-        if (!line.empty() && line.back() == '.') {
-            this->ds_input.sf_end -= 1;
-        }
+        this->cleanup_end();
     }
 
     explicit data_scanner(string_fragment sf) : ds_input(sf)
     {
-        if (!sf.empty() && sf.back() == '.') {
-            this->ds_input.sf_end -= 1;
-        }
+        this->cleanup_end();
     }
 
     explicit data_scanner(shared_buffer_ref& line, size_t off, size_t end)
         : ds_sbr(line), ds_input(line.to_string_fragment().sub_range(0, end)),
           ds_init_offset(off), ds_next_offset(off)
     {
-        if (!this->ds_input.empty() && this->ds_input.back() == '.') {
-            this->ds_input.sf_end -= 1;
-        }
+        this->cleanup_end();
     }
 
     struct tokenize_result {
@@ -213,6 +210,8 @@ public:
     }
 
 private:
+    void cleanup_end();
+
     bool is_credit_card(string_fragment frag) const;
 
     std::string ds_line;
@@ -221,6 +220,7 @@ private:
     int ds_init_offset{0};
     int ds_next_offset{0};
     bool ds_bol{true};
+    bool ds_units{false};
 };
 
 #endif

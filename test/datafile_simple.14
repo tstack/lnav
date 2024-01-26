@@ -1,8 +1,5 @@
              FSChange(Direction.DOWNLOAD, Action.CREATE, name=Fanime 2015, route=[CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names)])
- key   0:0                                                                                                                                                               
- sym   0:8   ^------^                                                                                                                                                    FSChange
-pair   0:8   ^------^                                                                                                                                                    FSChange
- key   9:9           ^                                                                                                                                                   
+ key   0:8   ^------^                                                                                                                                                    FSChange
  key   9:9           ^                                                                                                                                                   
  sym   9:27           ^----------------^                                                                                                                                 Direction.DOWNLOAD
  val   9:27           ^----------------^                                                                                                                                 Direction.DOWNLOAD
@@ -13,19 +10,17 @@ pair   9:27           ^----------------^                                        
 pair  29:42                               ^-----------^                                                                                                                  Action.CREATE
  key  44:48                                              ^--^                                                                                                            name
 word  49:55                                                   ^----^                                                                                                     Fanime
-wspc  55:56                                                         ^                                                                                                     
  num  56:60                                                          ^--^                                                                                                2015
  val  49:60                                                   ^---------^                                                                                                Fanime 2015
 pair  44:60                                              ^--------------^                                                                                                name=Fanime 2015
  key  62:67                                                                ^---^                                                                                         route
  key  69:79                                                                       ^--------^                                                                             CloudEntry
  key  80:86                                                                                  ^----^                                                                      doc_id
- sym  87:131                                                                                        ^------------------------------------------^                         1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg
+  id  87:131                                                                                        ^------------------------------------------^                         1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg
  val  87:131                                                                                        ^------------------------------------------^                         1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg
 pair  80:131                                                                                 ^-------------------------------------------------^                         doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg
  key 132:140                                                                                                                                     ^------^                filename
 word 141:145                                                                                                                                              ^--^           Baby
-wspc 145:146                                                                                                                                                  ^           
 word 146:151                                                                                                                                                   ^---^     Names
  val 141:151                                                                                                                                              ^--------^     Baby Names
 pair 132:151                                                                                                                                     ^-----------------^     filename=Baby Names
@@ -36,12 +31,12 @@ pair  69:151                                                                    
  val  69:151                                                                      ^--------------------------------------------------------------------------------^     CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names
 pair  62:151                                                               ^---------------------------------------------------------------------------------------^     route=[CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names
  grp   9:151          ^--------------------------------------------------------------------------------------------------------------------------------------------^     Direction.DOWNLOAD, Action.CREATE, name=Fanime 2015, route=[CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names
-pair   9:151          ^--------------------------------------------------------------------------------------------------------------------------------------------^     Direction.DOWNLOAD, Action.CREATE, name=Fanime 2015, route=[CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names
+ val   9:151          ^--------------------------------------------------------------------------------------------------------------------------------------------^     Direction.DOWNLOAD, Action.CREATE, name=Fanime 2015, route=[CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names
+pair   0:151 ^-----------------------------------------------------------------------------------------------------------------------------------------------------^     FSChange(Direction.DOWNLOAD, Action.CREATE, name=Fanime 2015, route=[CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names
 msg         :FSChange(Direction.DOWNLOAD, Action.CREATE, name=Fanime 2015, route=[CloudEntry(doc_id=1g5Yho6JmysVGRO-Xmfurra_cQRFb0nTIfZRhGompweg,filename=Baby Names)])
-format      :#(#)])
+format      :FSChange(#)])
 {
-    "col_0": "FSChange",
-    "col_1": {
+    "FSChange": {
         "col_0": "Direction.DOWNLOAD",
         "col_1": "Action.CREATE",
         "name": "Fanime 2015",

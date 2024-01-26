@@ -1,0 +1,43 @@
+             2024-01-11T10:46:05.874Z info vmware-vum-server[1243065] [Originator@6876 sub=EHP opID=eb9d737f-fa4f-421d-9beb-ce31fb27938f] [host-553] [vSphere HA] [com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state] returned status: OK
+ key 126:126                                                                                                                              ^                                                                                                       
+  id 126:134                                                                                                                               ^------^                                                                                               host-553
+ val 126:134                                                                                                                               ^------^                                                                                               host-553
+ grp 126:134                                                                                                                               ^------^                                                                                               host-553
+ val 126:134                                                                                                                               ^------^                                                                                               host-553
+pair 126:134                                                                                                                               ^------^                                                                                               host-553
+ key 137:137                                                                                                                                         ^                                                                                            
+ sym 137:144                                                                                                                                          ^-----^                                                                                     vSphere
+ sym 145:147                                                                                                                                                  ^^                                                                                  HA
+ val 137:147                                                                                                                                          ^--------^                                                                                  vSphere HA
+ grp 137:147                                                                                                                                          ^--------^                                                                                  vSphere HA
+ val 137:147                                                                                                                                          ^--------^                                                                                  vSphere HA
+pair 137:147                                                                                                                                          ^--------^                                                                                  vSphere HA
+ key 150:150                                                                                                                                                      ^                                                                               
+ sym 150:206                                                                                                                                                       ^------------------------------------------------------^                       com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state
+ val 150:206                                                                                                                                                       ^------------------------------------------------------^                       com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state
+ grp 150:206                                                                                                                                                       ^------------------------------------------------------^                       com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state
+ val 150:206                                                                                                                                                       ^------------------------------------------------------^                       com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state
+pair 150:206                                                                                                                                                       ^------------------------------------------------------^                       com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state
+ key 208:208                                                                                                                                                                                                                ^                     
+word 208:216                                                                                                                                                                                                                 ^------^             returned
+ val 208:216                                                                                                                                                                                                                 ^------^             returned
+pair 208:216                                                                                                                                                                                                                 ^------^             returned
+ key 217:223                                                                                                                                                                                                                          ^----^      status
+ sym 225:227                                                                                                                                                                                                                                  ^^  OK
+ val 225:227                                                                                                                                                                                                                                  ^^  OK
+pair 217:227                                                                                                                                                                                                                          ^--------^  status: OK
+msg         :[host-553] [vSphere HA] [com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state] returned status: OK
+format      :[#] [#] [#] # status: #
+{
+    "col_0": [
+        "host-553"
+    ],
+    "col_1": [
+        "vSphere HA"
+    ],
+    "col_2": [
+        "com.vmware.vcIntegrity.lifecycle.health.vc.host_ha_state"
+    ],
+    "col_3": "returned",
+    "status": "OK"
+}

@@ -1,8 +1,21 @@
              Jul 14 14:31:06 linjenkins3 kernel: [31809412.513897] [UFW BLOCK] IN=eth0 OUT= MAC=40:40:2e:9a:ad:92:c4:71:fe:f1:b9:7f:08:00 SRC=69.60.116.202 DST=173.203.237.224 LEN=44 TOS=0x00 PREC=0x00 TTL=29 ID=15852 PROTO=TCP SPT=43998 DPT=3389 WINDOW=3072 RES=0x00 SYN URGP=0
- key  37:68                                       ^-----------------------------^                                                                                                                                                                                                       31809412.513897] [UFW BLOCK] IN
+ key  37:37                                      ^                                                                                                                                                                                                                                      
+ num  37:52                                       ^-------------^                                                                                                                                                                                                                       31809412.513897
+ val  37:52                                       ^-------------^                                                                                                                                                                                                                       31809412.513897
+ grp  37:52                                       ^-------------^                                                                                                                                                                                                                       31809412.513897
+ val  37:52                                       ^-------------^                                                                                                                                                                                                                       31809412.513897
+pair  37:52                                       ^-------------^                                                                                                                                                                                                                       31809412.513897
+ key  55:55                                                        ^                                                                                                                                                                                                                    
+ sym  55:58                                                         ^-^                                                                                                                                                                                                                 UFW
+ sym  59:64                                                             ^---^                                                                                                                                                                                                           BLOCK
+ val  55:64                                                         ^-------^                                                                                                                                                                                                           UFW BLOCK
+ grp  55:64                                                         ^-------^                                                                                                                                                                                                           UFW BLOCK
+ val  55:64                                                         ^-------^                                                                                                                                                                                                           UFW BLOCK
+pair  55:64                                                         ^-------^                                                                                                                                                                                                           UFW BLOCK
+ key  66:68                                                                    ^^                                                                                                                                                                                                       IN
  sym  69:73                                                                       ^--^                                                                                                                                                                                                  eth0
  val  69:73                                                                       ^--^                                                                                                                                                                                                  eth0
-pair  37:73                                       ^----------------------------------^                                                                                                                                                                                                  31809412.513897] [UFW BLOCK] IN=eth0
+pair  66:73                                                                    ^-----^                                                                                                                                                                                                  IN=eth0
  key  74:77                                                                            ^-^                                                                                                                                                                                              OUT
 quot  78:78                                                                               ^                                                                                                                                                                                             
  val  78:78                                                                               ^                                                                                                                                                                                             
@@ -64,9 +77,15 @@ pair 246:254                                                                    
  val 264:265                                                                                                                                                                                                                                                                         ^  0
 pair 259:265                                                                                                                                                                                                                                                                    ^----^  URGP=0
 msg         :[31809412.513897] [UFW BLOCK] IN=eth0 OUT= MAC=40:40:2e:9a:ad:92:c4:71:fe:f1:b9:7f:08:00 SRC=69.60.116.202 DST=173.203.237.224 LEN=44 TOS=0x00 PREC=0x00 TTL=29 ID=15852 PROTO=TCP SPT=43998 DPT=3389 WINDOW=3072 RES=0x00 SYN URGP=0
-format      :[31809412.513897] [UFW BLOCK] IN=# OUT=# MAC=# SRC=# DST=# LEN=# TOS=# PREC=# TTL=# ID=# PROTO=# SPT=# DPT=# WINDOW=# RES=# SYN URGP=#
+format      :[#] [#] IN=# OUT=# MAC=# SRC=# DST=# LEN=# TOS=# PREC=# TTL=# ID=# PROTO=# SPT=# DPT=# WINDOW=# RES=# SYN URGP=#
 {
-    "31809412.513897] [UFW BLOCK] IN": "eth0",
+    "col_0": [
+        31809412.513897
+    ],
+    "col_1": [
+        "UFW BLOCK"
+    ],
+    "IN": "eth0",
     "OUT": "",
     "MAC": "40:40:2e:9a:ad:92:c4:71:fe:f1:b9:7f:08:00",
     "SRC": "69.60.116.202",

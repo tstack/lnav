@@ -118,6 +118,8 @@ def handleop(fields):
         list_depth[addr] = -1
     elif method_name == 'push_back':
         el.append((method_args[0], getstr(method_args[1])))
+    elif method_name == 'push_front':
+        el.insert(0, (method_args[0], getstr(method_args[1])))
     elif method_name == 'pop_front':
         el.pop(0)
     elif method_name == 'pop_back':

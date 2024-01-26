@@ -13,6 +13,7 @@ quot  59:71                                                             ^-------
 quot  74:78                                                                            ^--^    test
  val  74:78                                                                            ^--^    test
  grp   2:78    ^--------------------------------------------------------------------------^    correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test
+ val   2:78    ^--------------------------------------------------------------------------^    correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test
 pair   2:78    ^--------------------------------------------------------------------------^    correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test
 msg         :{"correctProperty":"test", "incorrectProperty": "test\"", "nextProperty":"test"}
 format      :{#}

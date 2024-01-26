@@ -5,16 +5,11 @@
             "col_0": [
                 "VpxLRO"
             ],
-            "col_1": "--",
-            "col_2": "BEGIN",
-            "col_3": "lro-846063",
-            "col_4": "--",
-            "col_5": "SessionManager",
-            "col_6": "--",
-            "col_7": "vim.SessionManager.sessionIsActive",
-            "col_8": "--",
-            "col_9": "528e6e0c-246d-58b5-3234-278c6e0c5d0d",
-            "col_10": [
+            "BEGIN": "lro-846063",
+            "col_1": "SessionManager",
+            "col_2": "vim.SessionManager.sessionIsActive",
+            "col_3": "528e6e0c-246d-58b5-3234-278c6e0c5d0d",
+            "col_4": [
                 "52c289ac-2563-48d5-8a8e-f178da022c0d"
             ]
         }
@@ -25,22 +20,22 @@
             "col_0": [
                 "VpxLRO"
             ],
-            "col_1": "--",
-            "col_2": "FINISH",
-            "col_3": "lro-846063"
+            "FINISH": "lro-846063"
         }
     },
     {
         "log_body": "Exception was thrown when call vsan-performance-manager for cluster [vim.ClusterComputeResource:domain-c109,Cluster-52] perf metrics: N3Vim5Fault8NotFound9ExceptionE(Fault cause: vim.fault.NotFound\n--> )",
         "extract(log_body)": {
-            "Exception was thrown when call vsan-performance-manager for cluster [vim.ClusterComputeResource:domain-c109,Cluster-52] perf metrics": {
-                "N3Vim5Fault8NotFound9ExceptionE": [
-                    "Fault cause",
-                    "vim.fault.NotFound",
-                    "\n",
-                    "--",
-                    ">"
-                ]
+            "call": "vsan-performance-manager",
+            "cluster": {
+                "vim.ClusterComputeResource": "domain-c109",
+                "col_0": "Cluster-52"
+            },
+            "col_0": "perf",
+            "metrics": "",
+            "N3Vim5Fault8NotFound9ExceptionE": {
+                "Fault cause": "vim.fault.NotFound",
+                "col_0": ">"
             }
         }
     }

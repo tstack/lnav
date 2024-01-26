@@ -17,10 +17,8 @@ word  88:92                                                                     
 pair  83:92                                                                                     ^-------^                                     USER=root
  key  95:102                                                                                                ^-----^                           COMMAND
 path 103:115                                                                                                        ^----------^              /usr/bin/env
-wspc 115:116                                                                                                                    ^              
  sym 116:120                                                                                                                     ^--^         VAR1
 word 121:124                                                                                                                          ^-^     foo
-wspc 124:125                                                                                                                             ^     
 word 125:127                                                                                                                              ^^  ls
  val 103:127                                                                                                        ^----------------------^  /usr/bin/env VAR1=foo ls
 pair  95:127                                                                                                ^------------------------------^  COMMAND=/usr/bin/env VAR1=foo ls

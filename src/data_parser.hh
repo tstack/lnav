@@ -209,6 +209,7 @@ class data_parser {
 public:
     static data_format FORMAT_SEMI;
     static data_format FORMAT_COMMA;
+    static data_format FORMAT_EMDASH;
     static data_format FORMAT_PLAIN;
 
     static FILE* TRACE_FILE;
@@ -259,13 +260,7 @@ public:
             this->std::list<element>::push_front(elem);
         }
 
-        void push_back(const element& elem, const char* fn, int line)
-        {
-            ELEMENT_TRACE;
-
-            require(elem.e_capture.c_end >= -1);
-            this->std::list<element>::push_back(elem);
-        }
+        void push_back(const element& elem, const char* fn, int line);
 
         void pop_front(const char* fn, int line)
         {
@@ -335,6 +330,8 @@ public:
 
         const element& get_pair_elem() const;
 
+        bool is_value() const;
+
         void print(FILE* out, data_scanner&, int offset = 0) const;
 
         data_scanner::capture_t e_capture;
@@ -402,7 +399,8 @@ public:
                       element_list_t& key_comps,
                       element_list_t& value,
                       const element_list_t& in_list,
-                      int group_depth);
+                      int group_depth,
+                      element_list_t::iterator iter);
 
     void parse();
 

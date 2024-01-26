@@ -1,0 +1,22 @@
+             2022-05-17T07:40:38.051Z In(30) init[1001390328]: inittab: /usr/lib/vmware/configmanager/bin/applyconfig --bootstrap (11740460 us)
+ key  50:57                                                    ^-----^                                                                           inittab
+path  59:104                                                            ^-------------------------------------------^                            /usr/lib/vmware/configmanager/bin/applyconfig
+ val  59:104                                                            ^-------------------------------------------^                            /usr/lib/vmware/configmanager/bin/applyconfig
+pair  50:104                                                   ^----------------------------------------------------^                            inittab: /usr/lib/vmware/configmanager/bin/applyconfig
+ key 105:116                                                                                                          ^---------^                --bootstrap
+ num 118:126                                                                                                                       ^------^      11740460
+ val 118:126                                                                                                                       ^------^      11740460
+word 127:129                                                                                                                                ^^   us
+ val 127:129                                                                                                                                ^^   us
+ grp 118:129                                                                                                                       ^---------^   11740460 us
+ val 118:129                                                                                                                       ^---------^   11740460 us
+pair 105:129                                                                                                          ^----------------------^   --bootstrap (11740460 us
+msg         :inittab: /usr/lib/vmware/configmanager/bin/applyconfig --bootstrap (11740460 us)
+format      :inittab: # --bootstrap (#)
+{
+    "inittab": "/usr/lib/vmware/configmanager/bin/applyconfig",
+    "--bootstrap": [
+        11740460,
+        "us"
+    ]
+}
