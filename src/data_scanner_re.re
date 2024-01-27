@@ -211,9 +211,6 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            RET(DT_COMMENT);
        }
 
-       <init, bol> [a-qstv-zA-QSTV-Z]"'" {
-           CAPTURE(DT_WORD);
-       }
        <init, bol> ("f"|"u"|"r")?"'"('\\'[^\x00]|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            if (tf == text_format_t::TF_RUST) {
@@ -394,6 +391,8 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
 
        <init, bol> ("re-")?[a-zA-Z][a-z']+/([\r\n\t \(\)!\*:;'\"\?,]|[\.\!,\?]SPACE|EOF) { RET(DT_WORD); }
 
+       <init, bol> [aAI] { RET(DT_WORD); }
+
        <init, bol> ("--"|"++")[a-zA-Z0-9]+("-"[a-zA-Z0-9]+)* {
            RET(DT_SYMBOL);
        }
@@ -402,11 +401,11 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            RET(DT_SYMBOL);
        }
 
-       <init, bol> [^0-9\x00\x16\x1b"; \-\t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x16\x1b"; \-\t\r\n:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]*("::"[^\x00\x16\x1b"; \r\n\t:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
+       <init, bol> [a-zA-Z_][a-zA-Z0-9_]*(("::"|".")[a-zA-Z_0-9\-]+)* {
            RET(DT_SYMBOL);
        }
 
-       <init, bol> [^\x00\x16\x1b"; \t\r\n\-:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\][^\x00\x16\x1b"; \t\r\n\-:=,\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\.\\]*(("::"|"."|"-")[^\x00\x16\x1b"; \r\n\t:=,\.\-\(\)\{\}\[\]\+#!%\^&\*'\?<>\~`\|\\]+)* {
+       <init, bol> [a-zA-Z0-9_]+(("::"|"."|"-"|"@"|"/")[a-zA-Z0-9_]+)* {
            RET(DT_ID);
        }
 

@@ -10,10 +10,14 @@ pair   0:23  ^---------------------^                                            
  val  35:40                                     ^---^                                                                                                                                                                                                                                           47413
 pair  30:40                                ^--------^                                                                                                                                                                                                                                           vpxd[47413
  key  43:43                                            ^                                                                                                                                                                                                                                        
- key  43:62                                             ^-----------------^                                                                                                                                                                                                                     Originator@6876 sub
+ key  43:43                                            ^                                                                                                                                                                                                                                        
+  id  43:58                                             ^-------------^                                                                                                                                                                                                                         Originator@6876
+ val  43:58                                             ^-------------^                                                                                                                                                                                                                         Originator@6876
+pair  43:58                                             ^-------------^                                                                                                                                                                                                                         Originator@6876
+ key  59:62                                                             ^-^                                                                                                                                                                                                                     sub
  sym  63:69                                                                 ^----^                                                                                                                                                                                                              vpxLro
  val  63:69                                                                 ^----^                                                                                                                                                                                                              vpxLro
-pair  43:69                                             ^------------------------^                                                                                                                                                                                                              Originator@6876 sub=vpxLro
+pair  59:69                                                             ^--------^                                                                                                                                                                                                              sub=vpxLro
  key  70:74                                                                        ^--^                                                                                                                                                                                                         opID
   id  75:86                                                                             ^---------^                                                                                                                                                                                             21fa61e9-3e
  val  75:86                                                                             ^---------^                                                                                                                                                                                             21fa61e9-3e
@@ -57,7 +61,8 @@ format      :#Z info vpxd[#] [#] [#] -- BEGIN # -- # -- # -- #(#)
         47413
     ],
     "col_1": {
-        "Originator@6876 sub": "vpxLro",
+        "col_0": "Originator@6876",
+        "sub": "vpxLro",
         "opID": "21fa61e9-3e"
     },
     "col_2": [
