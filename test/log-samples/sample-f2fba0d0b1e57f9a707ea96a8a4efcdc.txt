@@ -4,7 +4,7 @@ word  31:39                                 ^------^                            
  val  31:39                                 ^------^                                                                                                            timstack
 pair  31:39                                 ^------^                                                                                                            timstack
  key  42:45                                            ^-^                                                                                                      TTY
- sym  46:51                                                ^---^                                                                                                pts/6
+  id  46:51                                                ^---^                                                                                                pts/6
  val  46:51                                                ^---^                                                                                                pts/6
 pair  42:51                                            ^-------^                                                                                                TTY=pts/6
  key  54:57                                                        ^-^                                                                                          PWD
