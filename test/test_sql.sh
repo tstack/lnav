@@ -742,8 +742,8 @@ check_output "schema view is not working" <<EOF
 ATTACH DATABASE '' AS 'main';
 CREATE VIRTUAL TABLE environ USING environ_vtab_impl();
 CREATE VIRTUAL TABLE lnav_static_files USING lnav_static_file_vtab_impl();
-CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
 CREATE VIRTUAL TABLE lnav_view_filter_stats USING lnav_view_filter_stats_impl();
+CREATE VIRTUAL TABLE lnav_views USING lnav_views_impl();
 CREATE VIRTUAL TABLE lnav_view_files USING lnav_view_files_impl();
 CREATE VIRTUAL TABLE lnav_view_stack USING lnav_view_stack_impl();
 CREATE VIRTUAL TABLE lnav_view_filters USING lnav_view_filters_impl();

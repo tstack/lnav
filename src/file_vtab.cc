@@ -42,6 +42,8 @@
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 
+namespace {
+
 struct lnav_file : public tvt_iterator_cursor<lnav_file> {
     using iterator = std::vector<std::shared_ptr<logfile>>::iterator;
 
@@ -379,3 +381,5 @@ static auto file_binder
 
 static auto file_meta_binder = injector::bind_multiple<vtab_module_base>()
                                    .add<injectable_lnav_file_metadata>();
+
+}  // namespace

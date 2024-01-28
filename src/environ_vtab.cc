@@ -46,6 +46,8 @@ CREATE TABLE environ (
 );
 )";
 
+namespace {
+
 struct env_vtab {
     sqlite3_vtab base;
     sqlite3* db;
@@ -315,6 +317,8 @@ static sqlite3_module vtab_module = {
     nullptr, /* xRollback     - rollback transaction */
     nullptr, /* xFindFunction - function overloading */
 };
+
+}  // namespace
 
 int
 register_environ_vtab(sqlite3* db)

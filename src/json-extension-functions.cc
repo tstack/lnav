@@ -45,6 +45,8 @@
 
 #define JSON_SUBTYPE 74 /* Ascii for "J" */
 
+namespace {
+
 class sql_json_op : public json_op {
 public:
     explicit sql_json_op(json_ptr& ptr) : json_op(ptr){};
@@ -749,6 +751,8 @@ sql_json_group_array_final(sqlite3_context* context)
         yajl_gen_free(jac->jac_yajl_gen);
     }
 }
+
+}  // namespace
 
 int
 json_extension_functions(struct FuncDef** basic_funcs,

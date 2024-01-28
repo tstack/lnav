@@ -41,14 +41,7 @@
 #include "lnav.hh"
 #include "vtab_module.hh"
 
-const char* const STATIC_FILE_CREATE_STMT = R"(
--- Access static files in the lnav configuration directories
-CREATE TABLE lnav_static_files (
-    name TEXT PRIMARY KEY,
-    filepath TEXT,
-    content BLOB HIDDEN
-);
-)";
+namespace {
 
 struct static_file_vtab {
     sqlite3_vtab base;
@@ -306,6 +299,17 @@ static sqlite3_module static_file_vtab_module = {
     nullptr, /* xRollback     - rollback transaction */
     nullptr, /* xFindFunction - function overloading */
 };
+
+}  // namespace
+
+const char* const STATIC_FILE_CREATE_STMT = R"(
+-- Access static files in the lnav configuration directories
+CREATE TABLE lnav_static_files (
+    name TEXT PRIMARY KEY,
+    filepath TEXT,
+    content BLOB HIDDEN
+);
+)";
 
 int
 register_static_file_vtab(sqlite3* db)

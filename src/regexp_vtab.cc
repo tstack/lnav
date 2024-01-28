@@ -45,6 +45,8 @@
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+namespace {
+
 enum {
     RC_COL_MATCH_INDEX,
     RC_COL_INDEX,
@@ -548,6 +550,8 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
 
     return SQLITE_OK;
 }
+
+}  // namespace
 
 int
 register_regexp_vtab(sqlite3* db)

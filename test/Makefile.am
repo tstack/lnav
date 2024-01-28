@@ -335,6 +335,7 @@ dist_noinst_DATA = \
 	logfile_logfmt.0 \
 	logfile_multiline.0 \
 	logfile_nested_json.json \
+	logfile_nextcloud.0 \
 	logfile_openam.0 \
 	logfile_plain.0 \
 	logfile_pretty.0 \
