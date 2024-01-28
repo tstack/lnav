@@ -122,6 +122,7 @@ Features:
 * Added a `log_msg_values` column to the `all_logs` SQL
   table that contains a JSON object with the top 5 values
   for the fields extracted from the log message.
+* Added Nextcloud log format from Adam Monsen.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

@@ -68,32 +68,38 @@ detect_text_format(string_fragment sf,
     static const auto MD_EXT = ghc::filesystem::path(".md");
     static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
 
+    static const auto DIFF_MATCHERS = lnav::pcre2pp::code::from_const(
+        R"(^--- .*\n\+\+\+ .*\n)", PCRE2_MULTILINE);
+
     static const auto MAN_MATCHERS = lnav::pcre2pp::code::from_const(
         R"(^[A-Za-z][A-Za-z\-_\+0-9]+\(\d\)\s+)", PCRE2_MULTILINE);
 
-    // XXX This is a pretty crude way of detecting format...
+    // XXX This is a pretty crude way of
+    // detecting format...
     static const auto PYTHON_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
-        "^\\s*def\\s+\\w+\\([^)]*\\):[^\\n]*$|"
+        "^\\s*def\\s+\\w+\\([^)]*\\):"
+        "[^\\n]*$|"
         "^\\s*try:[^\\n]*$"
         ")",
         PCRE2_MULTILINE);
 
-    static const auto RUST_MATCHERS
-        = lnav::pcre2pp::code::from_const(R"(
+    static const auto RUST_MATCHERS = lnav::pcre2pp::code::from_const(
+        R"(
 (?:
 ^\s*use\s+[\w+:\{\}]+;$|
 ^\s*(?:pub enum|pub const|(?:pub )?fn)\s+\w+.*$|
 ^\s*impl\s+\w+.*$
 )
 )",
-                                          PCRE2_MULTILINE);
+        PCRE2_MULTILINE);
 
     static const auto JAVA_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         "^package\\s+|"
         "^import\\s+|"
-        "^\\s*(?:public)?\\s*class\\s*(\\w+\\s+)*\\s*{"
+        "^\\s*(?:public)?\\s*"
+        "class\\s*(\\w+\\s+)*\\s*{"
         ")",
         PCRE2_MULTILINE);
 
@@ -101,15 +107,18 @@ detect_text_format(string_fragment sf,
         "(?:"
         "^#\\s*include\\s+|"
         "^#\\s*define\\s+|"
-        "^\\s*if\\s+\\([^)]+\\)[^\\n]*$|"
-        "^\\s*(?:\\w+\\s+)*class \\w+ {"
+        "^\\s*if\\s+\\([^)]+\\)[^\\n]"
+        "*$|"
+        "^\\s*(?:\\w+\\s+)*class "
+        "\\w+ {"
         ")",
         PCRE2_MULTILINE);
 
     static const auto SQL_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
         "select\\s+.+\\s+from\\s+|"
-        "insert\\s+into\\s+.+\\s+values"
+        "insert\\s+into\\s+.+\\s+"
+        "values"
         ")",
         PCRE2_MULTILINE | PCRE2_CASELESS);
 
@@ -171,6 +180,10 @@ detect_text_format(string_fragment sf,
         if (yajl_parse(jhandle, sf.udata(), sf.length()) == yajl_status_ok) {
             return text_format_t::TF_JSON;
         }
+    }
+
+    if (DIFF_MATCHERS.find_in(sf).ignore_error()) {
+        return text_format_t::TF_DIFF;
     }
 
     if (MAN_MATCHERS.find_in(sf).ignore_error()) {

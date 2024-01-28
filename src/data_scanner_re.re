@@ -202,13 +202,37 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
        <init, bol> "/*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {
-           RET(DT_COMMENT);
+           CAPTURE(DT_COMMENT);
+           if (tf == text_format_t::TF_DIFF) {
+               auto sf = this->to_string_fragment(cap_all);
+               auto split_res = sf.split_when(string_fragment::tag1{'\n'});
+               cap_all.c_end = split_res.first.sf_end;
+               cap_inner.c_end = split_res.first.sf_end;
+               this->ds_next_offset = cap_all.c_end;
+           }
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
        <init, bol> "<!--" ([^\x00*]|"-"+[^\x00>])* "-"{2,} ">" {
-           RET(DT_COMMENT);
+           CAPTURE(DT_COMMENT);
+           if (tf == text_format_t::TF_DIFF) {
+               auto sf = this->to_string_fragment(cap_all);
+               auto split_res = sf.split_when(string_fragment::tag1{'\n'});
+               cap_all.c_end = split_res.first.sf_end;
+               cap_inner.c_end = split_res.first.sf_end;
+               this->ds_next_offset = cap_all.c_end;
+           }
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
        <init, bol> "#[" "="* "[" ([^\x00\]]|"]" [^\x00=\]])* "]" "="* "]" {
-           RET(DT_COMMENT);
+           CAPTURE(DT_COMMENT);
+           if (tf == text_format_t::TF_DIFF) {
+               auto sf = this->to_string_fragment(cap_all);
+               auto split_res = sf.split_when(string_fragment::tag1{'\n'});
+               cap_all.c_end = split_res.first.sf_end;
+               cap_inner.c_end = split_res.first.sf_end;
+               this->ds_next_offset = cap_all.c_end;
+           }
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 
        <init, bol> ("f"|"u"|"r")?"'"('\\'[^\x00]|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {

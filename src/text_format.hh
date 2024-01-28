@@ -56,6 +56,7 @@ enum class text_format_t {
     TF_XML,
     TF_YAML,
     TF_TOML,
+    TF_DIFF,
 };
 
 namespace fmt {
@@ -110,6 +111,9 @@ struct formatter<text_format_t> : formatter<string_view> {
                 break;
             case text_format_t::TF_TOML:
                 name = "application/toml";
+                break;
+            case text_format_t::TF_DIFF:
+                name = "text/x-diff";
                 break;
         }
         return formatter<string_view>::format(name, ctx);

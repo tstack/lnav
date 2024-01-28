@@ -122,6 +122,8 @@ struct from_sqlite<std::shared_ptr<lnav::pcre2pp::code>> {
     }
 };
 
+namespace {
+
 static const typed_json_path_container<breadcrumb::possibility>
     breadcrumb_possibility_handlers = {
         yajlpp::property_handler("display_value")
@@ -1274,11 +1276,6 @@ CREATE TABLE lnav_view_files (
     }
 };
 
-static const char* CREATE_FILTER_VIEW = R"(
-CREATE VIEW lnav_view_filters_and_stats AS
-  SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats
-)";
-
 static auto a = injector::bind_multiple<vtab_module_base>()
                     .add<vtab_module<lnav_views>>()
                     .add<vtab_module<lnav_view_stack>>()
@@ -1286,9 +1283,16 @@ static auto a = injector::bind_multiple<vtab_module_base>()
                     .add<vtab_module<tvt_no_update<lnav_view_filter_stats>>>()
                     .add<vtab_module<lnav_view_files>>();
 
+}  // namespace
+
 int
 register_views_vtab(sqlite3* db)
 {
+    static const char* CREATE_FILTER_VIEW = R"(
+CREATE VIEW lnav_view_filters_and_stats AS
+  SELECT * FROM lnav_view_filters LEFT NATURAL JOIN lnav_view_filter_stats
+)";
+
     auto_mem<char> errmsg(sqlite3_free);
     if (sqlite3_exec(db, CREATE_FILTER_VIEW, nullptr, nullptr, errmsg.out())
         != SQLITE_OK)

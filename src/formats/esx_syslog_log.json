@@ -83,6 +83,9 @@
             },
             {
                 "line": "2022-05-17T07:39:38.357Z In(9) watchdog-vobd[1001390409]: Executing '/usr/lib/vmware/vob/bin/vobd ++securitydom=vobdDom'"
+            },
+            {
+                "line": "2023-11-07T19:17:28.030Z In(14) settingsd[2099680]: [Ticket] Deleted ticket /var/run/vmware/tickets/vmtck-31182534-c078-88"
             }
         ]
     }

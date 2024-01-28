@@ -48,6 +48,35 @@
 
 using namespace mapbox;
 
+enum class encode_algo {
+    base64,
+    hex,
+    uri,
+};
+
+template<>
+struct from_sqlite<encode_algo> {
+    inline encode_algo operator()(int argc, sqlite3_value** val, int argi)
+    {
+        const char* algo_name = (const char*) sqlite3_value_text(val[argi]);
+
+        if (strcasecmp(algo_name, "base64") == 0) {
+            return encode_algo::base64;
+        }
+        if (strcasecmp(algo_name, "hex") == 0) {
+            return encode_algo::hex;
+        }
+        if (strcasecmp(algo_name, "uri") == 0) {
+            return encode_algo::uri;
+        }
+
+        throw from_sqlite_conversion_error("value of 'base64', 'hex', or 'uri'",
+                                           argi);
+    }
+};
+
+namespace {
+
 struct cache_entry {
     std::shared_ptr<lnav::pcre2pp::code> re2;
     std::shared_ptr<column_namer> cn{
@@ -176,24 +205,7 @@ regexp_match(string_fragment re, string_fragment str)
 #endif
 }
 
-json_string
-extract(const char* str)
-{
-    data_scanner ds(str);
-    data_parser dp(&ds);
-
-    dp.parse();
-    // dp.print(stderr, dp.dp_pairs);
-
-    yajlpp_gen gen;
-    yajl_gen_config(gen, yajl_gen_beautify, false);
-
-    elements_to_json(gen, dp, &dp.dp_pairs);
-
-    return json_string(gen);
-}
-
-json_string
+static json_string
 logfmt2json(string_fragment line)
 {
     logfmt::parser p(line);
@@ -447,33 +459,6 @@ sql_gzip(sqlite3_value* val)
 
     return nonstd::nullopt;
 }
-
-enum class encode_algo {
-    base64,
-    hex,
-    uri,
-};
-
-template<>
-struct from_sqlite<encode_algo> {
-    inline encode_algo operator()(int argc, sqlite3_value** val, int argi)
-    {
-        const char* algo_name = (const char*) sqlite3_value_text(val[argi]);
-
-        if (strcasecmp(algo_name, "base64") == 0) {
-            return encode_algo::base64;
-        }
-        if (strcasecmp(algo_name, "hex") == 0) {
-            return encode_algo::hex;
-        }
-        if (strcasecmp(algo_name, "uri") == 0) {
-            return encode_algo::uri;
-        }
-
-        throw from_sqlite_conversion_error("value of 'base64', 'hex', or 'uri'",
-                                           argi);
-    }
-};
 
 #if defined(HAVE_LIBCURL)
 static CURL*
@@ -873,6 +858,25 @@ sql_unparse_url(string_fragment in)
 
     curl_url_get(cu, CURLUPART_URL, retval.out(), 0);
     return retval;
+}
+
+}  // namespace
+
+json_string
+extract(const char* str)
+{
+    data_scanner ds(str);
+    data_parser dp(&ds);
+
+    dp.parse();
+    // dp.print(stderr, dp.dp_pairs);
+
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+
+    elements_to_json(gen, dp, &dp.dp_pairs);
+
+    return json_string(gen);
 }
 
 int

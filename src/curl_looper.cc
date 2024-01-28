@@ -108,6 +108,8 @@ curl_url_strerror(CURLUcode error)
 }
 #    endif
 
+namespace {
+
 struct curl_request_eq {
     explicit curl_request_eq(const std::string& name) : cre_name(name){};
 
@@ -124,6 +126,8 @@ struct curl_request_eq {
 
     const std::string& cre_name;
 };
+
+}  // namespace
 
 int
 curl_request::debug_cb(

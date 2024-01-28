@@ -46,6 +46,8 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
+namespace {
+
 enum {
     FSTAT_COL_PARENT,
     FSTAT_COL_NAME,
@@ -469,6 +471,8 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 
     return SQLITE_OK;
 }
+
+}  // namespace
 
 int
 register_fstat_vtab(sqlite3* db)
