@@ -93,7 +93,7 @@ RUN curl -sSL https://ftp.gnu.org/gnu/readline/readline-8.2.tar.gz | tar xvzC /e
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://www.sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xvzC /extract/ && \
     cd /extract/sqlite-* && \
     ./configure --disable-editline \
         --disable-shared \
