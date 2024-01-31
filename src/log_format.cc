@@ -1581,7 +1581,7 @@ external_log_format::annotate(uint64_t line_number,
             values = this->jlf_line_values;
             sa = this->jlf_line_attrs;
         } else {
-            values.lvv_sbr = this->jlf_line_values.lvv_sbr;
+            values.lvv_sbr = this->jlf_line_values.lvv_sbr.clone();
             for (const auto& llv : this->jlf_line_values.lvv_values) {
                 if (this->jlf_cached_sub_range.contains(llv.lv_origin)) {
                     values.lvv_values.emplace_back(llv);
@@ -2025,7 +2025,7 @@ external_log_format::get_subline(const logline& ll,
             sbr.share(this->jlf_share_manager,
                       &this->jlf_cached_line[0],
                       this->jlf_cached_line.size());
-            this->jlf_line_values.lvv_sbr = sbr;
+            this->jlf_line_values.lvv_sbr = sbr.clone();
             this->jlf_line_attrs.emplace_back(
                 line_range{0, -1},
                 SA_INVALID.value(fmt::format(
@@ -2403,7 +2403,7 @@ external_log_format::get_subline(const logline& ll,
     sbr.get_metadata().m_has_ansi = ll.has_ansi();
     this->jlf_cached_sub_range.lr_start = this_off;
     this->jlf_cached_sub_range.lr_end = next_off;
-    this->jlf_line_values.lvv_sbr = sbr;
+    this->jlf_line_values.lvv_sbr = sbr.clone();
 }
 
 struct compiled_header_expr {
@@ -3720,7 +3720,7 @@ public:
                     intern_string_t mod_name;
 
                     this->vi_attrs.clear();
-                    values.lvv_sbr = line;
+                    values.lvv_sbr = line.clone();
                     format->annotate(cl, this->vi_attrs, values, false);
                     this->elt_container_body
                         = find_string_attr_range(this->vi_attrs, &SA_BODY);

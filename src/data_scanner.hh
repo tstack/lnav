@@ -168,8 +168,9 @@ public:
         this->cleanup_end();
     }
 
-    explicit data_scanner(shared_buffer_ref& line, size_t off, size_t end)
-        : ds_sbr(line), ds_input(line.to_string_fragment().sub_range(0, end)),
+    explicit data_scanner(const shared_buffer_ref& line, size_t off, size_t end)
+        : ds_sbr(line.clone()),
+          ds_input(line.to_string_fragment().sub_range(0, end)),
           ds_init_offset(off), ds_next_offset(off)
     {
         this->cleanup_end();

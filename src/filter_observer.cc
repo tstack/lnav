@@ -48,7 +48,7 @@ line_filter_observer::logline_new_lines(const logfile& lf,
     }
 
     for (; ll_begin != ll_end; ++ll_begin) {
-        auto sbr_copy = sbr;
+        auto sbr_copy = sbr.clone();
         if (lf.get_format() != nullptr) {
             lf.get_format()->get_subline(*ll_begin, sbr_copy);
         }
