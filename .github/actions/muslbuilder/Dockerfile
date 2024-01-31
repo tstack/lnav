@@ -6,7 +6,8 @@ RUN apk add --no-cache \
     build-base \
     curl \
     ncurses \
-    ncurses-terminfo
+    ncurses-terminfo \
+    zip
 
 RUN mkdir -p /fake.root /extract
 
