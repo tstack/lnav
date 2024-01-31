@@ -146,6 +146,13 @@ struct key_repeat_history {
     };
 };
 
+enum class lnav_exec_phase : int {
+    INIT,
+    PRELOAD,
+    LOADING,
+    INTERACTIVE,
+};
+
 struct lnav_data_t {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
     time_t ld_session_time;
@@ -246,6 +253,7 @@ struct lnav_data_t {
 
     bool ld_initial_build{false};
     bool ld_show_help_view{false};
+    lnav_exec_phase ld_exec_phase{lnav_exec_phase::INIT};
 
     lnav::func::scoped_cb ld_status_refresher;
 

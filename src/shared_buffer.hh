@@ -48,6 +48,8 @@
 
 class shared_buffer;
 
+#define SHARED_BUFFER_TRACE 0
+
 struct shared_buffer_ref {
 public:
     shared_buffer_ref(char* data = nullptr, size_t len = 0)
@@ -57,27 +59,22 @@ public:
 
     ~shared_buffer_ref() { this->disown(); }
 
-    shared_buffer_ref(const shared_buffer_ref& other)
-    {
-        this->sb_owner = nullptr;
-        this->sb_data = nullptr;
-        this->sb_length = 0;
-        this->sb_metadata = file_range::metadata{};
-
-        this->copy_ref(other);
-    }
+    shared_buffer_ref(const shared_buffer_ref& other) = delete;
 
     shared_buffer_ref(shared_buffer_ref&& other) noexcept;
 
-    shared_buffer_ref& operator=(const shared_buffer_ref& other)
-    {
-        if (this != &other) {
-            this->disown();
-            this->copy_ref(other);
-        }
+    shared_buffer_ref& operator=(const shared_buffer_ref& other) = delete;
 
-        return *this;
+    shared_buffer_ref clone() const
+    {
+        shared_buffer_ref retval;
+
+        retval.copy_ref(*this);
+
+        return retval;
     }
+
+    shared_buffer_ref& operator=(shared_buffer_ref&& other);
 
     bool empty() const
     {
@@ -165,7 +162,9 @@ public:
 private:
     void copy_ref(const shared_buffer_ref& other);
 
+#if SHARED_BUFFER_TRACE
     auto_mem<char*> sb_backtrace;
+#endif
     file_range::metadata sb_metadata;
     shared_buffer* sb_owner;
     const char* sb_data;

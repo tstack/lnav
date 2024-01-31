@@ -658,8 +658,8 @@ gantt_source::rebuild_indexes()
                 if (!filt->is_enabled()) {
                     continue;
                 }
-                for (const auto& sbr : {sbr_opid, sbr_desc}) {
-                    if (filt->matches(nonstd::nullopt, sbr)) {
+                for (const auto sbr : {&sbr_opid, &sbr_desc}) {
+                    if (filt->matches(nonstd::nullopt, *sbr)) {
                         this->gs_filter_hits[filt->get_index()] += 1;
                         switch (filt->get_type()) {
                             case text_filter::INCLUDE:

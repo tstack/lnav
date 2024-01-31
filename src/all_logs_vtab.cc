@@ -82,7 +82,7 @@ all_logs_vtab::extract(logfile* lf,
     logline_value_vector sub_values;
 
     this->vi_attrs.clear();
-    sub_values.lvv_sbr = line;
+    sub_values.lvv_sbr = line.clone();
     format->annotate(line_number, this->vi_attrs, sub_values, false);
 
     auto body = find_string_attr_range(this->vi_attrs, &SA_BODY);

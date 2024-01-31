@@ -267,6 +267,8 @@ public:
 
     bool is_piper() const { return this->lb_piper_header_size > 0; }
 
+    size_t line_count_guess() const { return this->lb_line_starts.size(); }
+
     static void cleanup_cache();
 
 private:

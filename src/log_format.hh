@@ -275,6 +275,23 @@ struct logline_value_vector {
         this->lvv_opid_value = nonstd::nullopt;
     }
 
+    logline_value_vector() {}
+
+    logline_value_vector(const logline_value_vector& other)
+        : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
+          lvv_opid_value(other.lvv_opid_value)
+    {
+    }
+
+    logline_value_vector& operator=(const logline_value_vector& other)
+    {
+        this->lvv_sbr = other.lvv_sbr.clone();
+        this->lvv_values = other.lvv_values;
+        this->lvv_opid_value = other.lvv_opid_value;
+
+        return *this;
+    }
+
     shared_buffer_ref lvv_sbr;
     std::vector<logline_value> lvv_values;
     nonstd::optional<std::string> lvv_opid_value;

@@ -64,7 +64,7 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
 {
     const auto* ustr = str.udata();
     utf8_scan_result retval;
-    ssize_t i = 0;
+    ssize_t i = 0, valid_end = 0;
 
     while (i < str.length()) {
         if (ustr[i] == '\x1b') {
@@ -72,9 +72,6 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
         }
 
         if (terminator && ustr[i] == terminator.value()) {
-            if (retval.usr_message == nullptr) {
-                retval.usr_valid_frag = str.sub_range(0, i);
-            }
             retval.usr_remaining = str.substr(i + 1);
             break;
         }
@@ -84,7 +81,7 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
             continue;
         }
 
-        retval.usr_valid_frag = str.sub_range(0, i);
+        valid_end = i;
         if (ustr[i] <= 0x7F) /* 00..7F */ {
             i += 1;
         } else if (ustr[i] >= 0xC2 && ustr[i] <= 0xDF) /* C2..DF 80..BF */ {
@@ -308,6 +305,8 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
     }
     if (retval.usr_message == nullptr) {
         retval.usr_valid_frag = str.sub_range(0, i);
+    } else {
+        retval.usr_valid_frag = str.sub_range(0, valid_end);
     }
     return retval;
 }

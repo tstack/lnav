@@ -90,7 +90,7 @@ do_observer_update(const std::shared_ptr<logfile>& lf)
     }
     lnav_data.ld_status_refresher();
     if (lf && lnav_data.ld_mode == ln_mode_t::FILES
-        && !lnav_data.ld_initial_build)
+        && lnav_data.ld_exec_phase < lnav_exec_phase::INTERACTIVE)
     {
         auto& fc = lnav_data.ld_active_files;
         auto iter = std::find(fc.fc_files.begin(), fc.fc_files.end(), lf);
