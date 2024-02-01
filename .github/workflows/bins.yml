@@ -93,7 +93,7 @@ jobs:
       - name: Build musl package
         if: ${{ inputs.lnav_version_number != '' }}
         run: >-
-          cd ${{ github.workspace }}
+          cd ${{ github.workspace }} &&
           mkdir ${{ env.LNAV_BASENAME }} &&
           cd ${{ env.LNAV_BASENAME }} &&
           cp ../NEWS.md ../README . &&
