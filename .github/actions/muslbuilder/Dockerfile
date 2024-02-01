@@ -145,6 +145,7 @@ RUN curl -sSL https://curl.se/download/curl-8.6.0.tar.gz | tar xvzC /extract/ &&
     ./configure --prefix=/fake.root \
         --disable-shared \
         --with-libssh2=/fake.root \
+        --without-libpsl \
         --with-ssl=/fake.root \
         --with-zlib=/fake.root && \
     make -j2 && \
