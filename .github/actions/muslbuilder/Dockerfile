@@ -175,7 +175,8 @@ RUN apk add --no-cache \
     autoconf \
     automake \
     build-base \
-    git
+    git \
+    zip
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
