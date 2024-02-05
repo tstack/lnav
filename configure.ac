@@ -29,8 +29,7 @@ AS_CASE([x$srcdir],
 
 AC_SUBST(abssrcdir)
 
-AC_PROG_CXX
-
+CXX=`echo $CXX | sed -e 's/-std=gnu++11//g'`
 CPPFLAGS="$CPPFLAGS -D_ISOC99_SOURCE -D__STDC_LIMIT_MACROS -D_GNU_SOURCE -DUSE_OS_TZDB=1 -DHAS_REMOTE_API=0"
 
 AC_ARG_ENABLE([debug],
