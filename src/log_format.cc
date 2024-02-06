@@ -2209,6 +2209,9 @@ external_log_format::get_subline(const logline& ll,
                             ssize_t ts_len;
                             char ts[64];
 
+                            if (!jfe.jfe_prefix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_prefix);
+                            }
                             if (jfe.jfe_ts_format.empty()) {
                                 ts_len = sql_strftime(
                                     ts, sizeof(ts), ll.get_timeval(), 'T');
@@ -2238,6 +2241,9 @@ external_log_format::get_subline(const logline& ll,
                                     this->jlf_line_values.lvv_values.begin(),
                                     lv_iter)]
                                     = true;
+                            }
+                            if (!jfe.jfe_suffix.empty()) {
+                                this->json_append_to_cache(jfe.jfe_suffix);
                             }
                         } else if (jfe.jfe_value.pp_value == level_field
                                    || jfe.jfe_value.pp_value

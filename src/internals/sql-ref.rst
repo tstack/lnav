@@ -1897,10 +1897,10 @@ json_each(*X*, *\[P\]*)
 
       ;SELECT * FROM json_each('[null,1,"two",{"three":4.5}]')
       key     value      type    atom  id parent fullkey path 
-        0 <NULL>        null    <NULL>  1 <NULL> $[0]    $    
-        1 1             integer 1       2 <NULL> $[1]    $    
-        2 two           text    two     3 <NULL> $[2]    $    
-        3 {"three":4.5} object  <NULL>  4 <NULL> $[3]    $    
+        0 <NULL>        null    <NULL>  2 <NULL> $[0]    $    
+        1 1             integer 1       3 <NULL> $[1]    $    
+        2 two           text    two     5 <NULL> $[2]    $    
+        3 {"three":4.5} object  <NULL>  9 <NULL> $[3]    $    
 
   **See Also**
     :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_tree`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`

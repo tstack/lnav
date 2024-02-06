@@ -4,30 +4,35 @@
         "description": "Format file generated from regex101 entry -- https://regex101.com/r/zpEnjV/2",
         "regex": {
             "std": {
-                "pattern": "\\[(?<timestamp>\\d+\\/\\d+\\/\\d+ \\d+:\\d+:\\d+) (?<jobserver>[\\w.]+) (?<workqueue>[\\w.]+) (?<processid>\\d+)\\] (?<body>.*)$"
+                "pattern": "(?<timestamp>[A-Za-z]+ [A-Za-z]+ +[0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9]+) : (?<level>[A-Z][a-z]+): (?<seq>\\([0-9]+\\) )?(?<body>.*)$"
             }
         },
         "value": {
-            "jobserver": {
+            "level": {
                 "kind": "string"
             },
-            "processid": {
+            "seq": {
                 "kind": "string"
             },
             "timestamp": {
-                "kind": "string"
-            },
-            "workqueue": {
                 "kind": "string"
             }
         },
         "sample": [
             {
-                "line": "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
+                "line": "Fri Jul 15 23:12:58 2016 : Info: Loaded virtual server <default>"
             },
             {
-                "description": "sample 1",
-                "line": "[03/22/2021 02:00:02 job1074.example.com db.db81.example_events 54026] {\"ELAPSED\":\"0.011\",\"LEVEL\":\"info\",\"MESSAGE\":\"finished in 0.011\\n\",\"PREFIX\":\"YFgyWQriCmsAAofJAAAAHg\",\"ROUTINGKEY\":\"EXAMPLE1366.Example.Events._Publish\"}"
+                "line": "Fri Jul 15 23:12:58 2016 : Warning: Ignoring \"sql\" (see raddb/mods-available/README.rst)"
+            },
+            {
+                "line": "Wed Oct 18 22:17:43 2023 : Info: (102211) radutmp: NAS wifi-router rebooted (Accounting-Off packet seen)"
+            },
+            {
+                "line": "Fri Oct 20 18:50:05 2023 : Auth: (105290)   Login OK: [iphonese3] (from client wifi-router port 0 via TLS tunnel)"
+            },
+            {
+                "line": "Fri Oct 20 18:50:05 2023 : Auth: (105291) Login OK: [iphonese3] (from client wifi-router port 197 cli 22-2E-28-D6-F5-CC)"
             }
         ]
     }
