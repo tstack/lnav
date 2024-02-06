@@ -280,6 +280,7 @@ dist_noinst_DATA = \
 	example.patch \
 	example.toml \
 	expected_help.txt \
+	gharchive_log.jsonl \
 	invalid-books.xml \
 	listview_output.0 \
 	listview_output.1 \
