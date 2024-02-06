@@ -5,3 +5,9 @@
  [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
 [1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
  [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
+[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
+ [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
+[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
+ [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
+[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
+ [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m

@@ -158,3 +158,6 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_nextcloud.0
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/gharchive_log.jsonl

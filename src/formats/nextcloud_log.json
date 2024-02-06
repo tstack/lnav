@@ -1,70 +1,70 @@
 {
-  "$schema": "https://lnav.org/schemas/format-v1.schema.json",
-  "nextcloud": {
-    "title": "Nextcloud server logs",
-    "description": "Nextcloud JSON server logs audit.log, flow.log, and nextcloud.log",
-    "url": "https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/logging_configuration.html?highlight=logging#log-field-breakdown",
-    "json": true,
-    "opid-field": "reqId",
-    "level-field": "level",
-    "body-field": "message",
-    "hide-extra": true,
-    "level" : {
-      "debug" : "0",
-      "info": "1",
-      "warning" : "2",
-      "error" : "3",
-      "fatal" : "4"
-    },
-    "timestamp-field": "time",
-    "convert-to-local-time": true,
-    "multiline": false,
-    "value": {
-      "exception": {
-        "kind": "json"
-      },
-      "app": {
-        "kind": "string",
-        "identifier": true
-      },
-      "reqId": {
-        "kind": "string",
-        "identifier": true
-      },
-      "remoteAddr": {
-        "kind": "string",
-        "identifier": true
-      }
-    },
-    "line-format": [
-      {
-        "field": "__timestamp__",
-        "timestamp-format": "%b %e %H:%M:%S"
-      },
-      " ",
-      {
-        "field": "reqId",
-        "max-width": 3,
-        "overflow": "truncate"
-      },
-      " ",
-      {
-        "field": "remoteAddr",
-        "min-width": 15
-      },
-      " ",
-      {
-        "field": "__level__",
-        "text-transform": "uppercase"
-      },
-      " ",
-      {
-        "field": "app"
-      },
-      " ",
-      {
-        "field": "message"
-      }
-    ]
-  }
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "nextcloud": {
+        "title": "Nextcloud server logs",
+        "description": "Nextcloud JSON server logs audit.log, flow.log, and nextcloud.log",
+        "url": "https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/logging_configuration.html?highlight=logging#log-field-breakdown",
+        "json": true,
+        "opid-field": "reqId",
+        "level-field": "level",
+        "body-field": "message",
+        "hide-extra": true,
+        "level": {
+            "debug": 0,
+            "info": 1,
+            "warning": 2,
+            "error": 3,
+            "fatal": 4
+        },
+        "timestamp-field": "time",
+        "convert-to-local-time": true,
+        "multiline": false,
+        "value": {
+            "exception": {
+                "kind": "json"
+            },
+            "app": {
+                "kind": "string",
+                "identifier": true
+            },
+            "reqId": {
+                "kind": "string",
+                "identifier": true
+            },
+            "remoteAddr": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "line-format": [
+            {
+                "field": "__timestamp__",
+                "timestamp-format": "%b %e %H:%M:%S"
+            },
+            " ",
+            {
+                "field": "reqId",
+                "max-width": 3,
+                "overflow": "truncate"
+            },
+            " ",
+            {
+                "field": "remoteAddr",
+                "min-width": 15
+            },
+            " ",
+            {
+                "field": "__level__",
+                "text-transform": "uppercase"
+            },
+            " ",
+            {
+                "field": "app"
+            },
+            " ",
+            {
+                "field": "message"
+            }
+        ]
+    }
 }

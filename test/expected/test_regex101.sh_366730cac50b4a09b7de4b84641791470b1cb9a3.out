@@ -3,7 +3,7 @@
     "unit_test_log": {
         "regex": {
             "std": {
-                "pattern": "\\[(?<timestamp>\\d+\\/\\d+\\/\\d+ \\d+:\\d+:\\d+) (?<jobserver>[\\w.]+) (?<workqueue>[\\w.]+) (?<processid>\\d+)\\] (?<body>.*)$"
+                "pattern": "(?<timestamp>[A-Za-z]+ [A-Za-z]+ +[0-9]+ [0-9]+:[0-9]+:[0-9]+ [0-9]+) : (?<level>[A-Z][a-z]+): (?<seq>\\([0-9]+\\) )?(?<body>.*)$"
             }
         }
     }

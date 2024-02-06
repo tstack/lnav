@@ -188,7 +188,7 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
-       <init, bol> ("f"|"u"|"r")?'"""'[^\x00\x16\x1b]*'"""' {
+       <init, bol> ("f"|"u"|"r")?'"""' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input[cap_inner.c_begin]) {
            case 'f':
@@ -197,10 +197,43 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_for
                cap_inner.c_begin += 1;
                break;
            }
-           cap_inner.c_begin += 1;
-           cap_inner.c_end -= 1;
+           cap_inner.c_begin += 3;
+           goto yyc_dbldocstring;
+       }
+
+       <dbldocstring> ([\x00]|'"""') {
+           CAPTURE(DT_QUOTED_STRING);
+           cap_inner.c_end -= 3;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
+
+       <dbldocstring> * {
+           goto yyc_dbldocstring;
+       }
+
+       <init, bol> ("f"|"u"|"r")?"'''" {
+           CAPTURE(DT_QUOTED_STRING);
+           switch (this->ds_input[cap_inner.c_begin]) {
+           case 'f':
+           case 'u':
+           case 'r':
+               cap_inner.c_begin += 1;
+               break;
+           }
+           cap_inner.c_begin += 3;
+           goto yyc_sdocstring;
+       }
+
+       <sdocstring> ([\x00]|"'''") {
+           CAPTURE(DT_QUOTED_STRING);
+           cap_inner.c_end -= 3;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <sdocstring> * {
+           goto yyc_sdocstring;
+       }
+
        <init, bol> "/*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {
            CAPTURE(DT_COMMENT);
            if (tf == text_format_t::TF_DIFF) {

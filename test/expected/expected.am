@@ -304,6 +304,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_json_format.sh_4315a3d6124c14cbe3c474b6dbf4cc8720a9859f.out \
     $(srcdir)/%reldir%/test_json_format.sh_469f005b0708d629bc95f0c48a5e390f440c1fef.err \
     $(srcdir)/%reldir%/test_json_format.sh_469f005b0708d629bc95f0c48a5e390f440c1fef.out \
+    $(srcdir)/%reldir%/test_json_format.sh_5795c5ffd98ae581b30c6f0983349bf7a6a84501.err \
+    $(srcdir)/%reldir%/test_json_format.sh_5795c5ffd98ae581b30c6f0983349bf7a6a84501.out \
     $(srcdir)/%reldir%/test_json_format.sh_6767b91d715338c24c67e928b59c560c84ddf4be.err \
     $(srcdir)/%reldir%/test_json_format.sh_6767b91d715338c24c67e928b59c560c84ddf4be.out \
     $(srcdir)/%reldir%/test_json_format.sh_6fbe20faa161ab9fa77df7568fff84bf3e47e920.err \
@@ -402,8 +404,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_meta.sh_3c9b5940f7533c5fc3d4956a6efce50a9e7132d4.out \
     $(srcdir)/%reldir%/test_meta.sh_41f643bb4f720130625b042563e9591bee4ae588.err \
     $(srcdir)/%reldir%/test_meta.sh_41f643bb4f720130625b042563e9591bee4ae588.out \
-    $(srcdir)/%reldir%/test_meta.sh_4283bf9128e0396c4ff141faf68279d5a3d8ac63.err \
-    $(srcdir)/%reldir%/test_meta.sh_4283bf9128e0396c4ff141faf68279d5a3d8ac63.out \
     $(srcdir)/%reldir%/test_meta.sh_45ff39a3d0ac0ca0c95aaca14d043450cec1cedd.err \
     $(srcdir)/%reldir%/test_meta.sh_45ff39a3d0ac0ca0c95aaca14d043450cec1cedd.out \
     $(srcdir)/%reldir%/test_meta.sh_48e85ba0c0945a5085fb4ee255771406061a9c17.err \
@@ -422,8 +422,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_meta.sh_a7489c1f0e001adc732b7e2ab31bb30960fda078.out \
     $(srcdir)/%reldir%/test_meta.sh_aae427fe704f131f8466fbfc9e7967c2e874530a.err \
     $(srcdir)/%reldir%/test_meta.sh_aae427fe704f131f8466fbfc9e7967c2e874530a.out \
-    $(srcdir)/%reldir%/test_meta.sh_ad2f396f332d14ed6e95936983bc7e4aeea0bfac.err \
-    $(srcdir)/%reldir%/test_meta.sh_ad2f396f332d14ed6e95936983bc7e4aeea0bfac.out \
     $(srcdir)/%reldir%/test_meta.sh_b622c04c2bede5371bfa6f2627b0474049ecc5e9.err \
     $(srcdir)/%reldir%/test_meta.sh_b622c04c2bede5371bfa6f2627b0474049ecc5e9.out \
     $(srcdir)/%reldir%/test_meta.sh_c063f96398650f130941bbbf4cf63c1244fdbee5.err \

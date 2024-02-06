@@ -1,0 +1,194 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "github_events_log": {
+        "title": "GitHub Events Log",
+        "description": "Format for the public GitHub timeline from gharchive.org",
+        "url": "https://gharchive.org",
+        "file-type": "json",
+        "timestamp-field": "created_at",
+        "opid-field": "actor/display_login",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            {
+                "prefix": " ",
+                "field": "type"
+            },
+            {
+                "prefix": " ",
+                "field": "actor/display_login"
+            },
+            {
+                "prefix": " ",
+                "field": "payload/action",
+                "default-value": ""
+            },
+            {
+                "prefix": " ",
+                "field": "payload/member/login",
+                "suffix": " to",
+                "default-value": ""
+            },
+            {
+                "prefix": " committed \u201c",
+                "field": "payload/commits#/message",
+                "suffix": "\u201d to",
+                "default-value": ""
+            },
+            {
+                "prefix": " forked ",
+                "field": "payload/forkee/full_name",
+                "suffix": " from",
+                "default-value": ""
+            },
+            {
+                "prefix": " review ",
+                "field": "payload/review/id",
+                "suffix": " for",
+                "default-value": ""
+            },
+            {
+                "prefix": " pull-request #",
+                "field": "payload/pull_request/number",
+                "default-value": ""
+            },
+            {
+                "prefix": " \u201c",
+                "field": "payload/pull_request/title",
+                "suffix": "\u201d in",
+                "default-value": ""
+            },
+            {
+                "prefix": " issue #",
+                "field": "payload/issue/number",
+                "default-value": ""
+            },
+            {
+                "prefix": " \u201c",
+                "field": "payload/issue/title",
+                "suffix": "\u201d in",
+                "default-value": ""
+            },
+            {
+                "prefix": " ",
+                "field": "payload/ref_type",
+                "default-value": ""
+            },
+            {
+                "prefix": " off ",
+                "field": "payload/master_branch",
+                "suffix": " in",
+                "default-value": ""
+            },
+            {
+                "prefix": " ",
+                "field": "payload/pages#/action",
+                "default-value": ""
+            },
+            {
+                "prefix": " page ",
+                "field": "payload/pages#/title",
+                "suffix": " in",
+                "default-value": ""
+            },
+            {
+                "prefix": " ",
+                "field": "payload/release/name",
+                "suffix": " in",
+                "default-value": ""
+            },
+            {
+                "prefix": " ",
+                "field": "repo/name",
+                "default-value": ""
+            }
+        ],
+        "value": {
+            "id": {
+                "kind": "string",
+                "identifier": true,
+                "hidden": true
+            },
+            "type": {
+                "kind": "string",
+                "identifier": true
+            },
+            "actor": {
+                "kind": "json",
+                "hidden": true
+            },
+            "actor/display_login": {
+                "kind": "string",
+                "identifier": true
+            },
+            "org": {
+                "kind": "json",
+                "hidden": true
+            },
+            "payload": {
+                "kind": "json",
+                "hidden": true
+            },
+            "payload/action": {
+                "kind": "string"
+            },
+            "payload/commits#/message": {
+                "kind": "string"
+            },
+            "payload/forkee/full_name": {
+                "kind": "string"
+            },
+            "payload/master_branch": {
+                "kind": "string",
+                "identifier": true
+            },
+            "payload/member/login": {
+                "kind": "string",
+                "identifier": true
+            },
+            "payload/pull_request/number": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "payload/pull_request/title": {
+                "kind": "string"
+            },
+            "payload/issue/number": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "payload/issue/title": {
+                "kind": "string"
+            },
+            "payload/pages#/action": {
+                "kind": "string"
+            },
+            "payload/pages#/title": {
+                "kind": "string"
+            },
+            "payload/ref_type": {
+                "kind": "string"
+            },
+            "payload/release/name": {
+                "kind": "string"
+            },
+            "payload/review/id": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "public": {
+                "kind": "boolean",
+                "hidden": true
+            },
+            "repo": {
+                "kind": "json",
+                "hidden": true
+            },
+            "repo/name": {
+                "kind": "string",
+                "identifier": true
+            }
+        }
+    }
+}
