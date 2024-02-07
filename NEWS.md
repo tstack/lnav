@@ -123,6 +123,8 @@ Features:
   table that contains a JSON object with the top 5 values
   for the fields extracted from the log message.
 * Added Nextcloud log format from Adam Monsen.
+* Added GitHub Event Log format for files from gharchive.org.
+  It makes a good example of a JSON-Lines format.
 
 Bug Fixes:
 * Binary data piped into stdin should now be treated the same

@@ -67,6 +67,7 @@ detect_text_format(string_fragment sf,
     static const auto MAKEFILE_STEM = ghc::filesystem::path("Makefile");
     static const auto MD_EXT = ghc::filesystem::path(".md");
     static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
+    static const auto SH_EXT = ghc::filesystem::path(".sh");
 
     static const auto DIFF_MATCHERS = lnav::pcre2pp::code::from_const(
         R"(^--- .*\n\+\+\+ .*\n)", PCRE2_MULTILINE);
@@ -129,6 +130,9 @@ detect_text_format(string_fragment sf,
         ")",
         PCRE2_MULTILINE | PCRE2_CASELESS);
 
+    static const auto SH_MATCHERS
+        = lnav::pcre2pp::code::from_const("^#!.+sh\\b", PCRE2_MULTILINE);
+
     if (path) {
         while (FILTER_EXTS.count(path->extension()) > 0) {
             path = path->stem();
@@ -171,6 +175,10 @@ detect_text_format(string_fragment sf,
         if (stem == MAKEFILE_STEM) {
             return text_format_t::TF_MAKEFILE;
         }
+
+        if (stem == SH_EXT) {
+            return text_format_t::TF_SHELL_SCRIPT;
+        }
     }
 
     {
@@ -184,6 +192,10 @@ detect_text_format(string_fragment sf,
 
     if (DIFF_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_DIFF;
+    }
+
+    if (SH_MATCHERS.find_in(sf).ignore_error()) {
+        return text_format_t::TF_SHELL_SCRIPT;
     }
 
     if (MAN_MATCHERS.find_in(sf).ignore_error()) {

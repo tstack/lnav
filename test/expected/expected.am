@@ -1194,6 +1194,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_xml_func.sh_fefeb387ae14d4171225ea06cbbff3ec43990cf0.out \
     $(srcdir)/%reldir%/test_sql_yaml_func.sh_dc189d02e8979b7ed245d5d750f68b9965984699.err \
     $(srcdir)/%reldir%/test_sql_yaml_func.sh_dc189d02e8979b7ed245d5d750f68b9965984699.out \
+    $(srcdir)/%reldir%/test_text_file.sh_0bba304f34ae07c4fa9e91e0b42f5fe98654a6a8.err \
+    $(srcdir)/%reldir%/test_text_file.sh_0bba304f34ae07c4fa9e91e0b42f5fe98654a6a8.out \
     $(srcdir)/%reldir%/test_text_file.sh_1ce4056d72b871f8bb844c86aade2a9b1da58030.err \
     $(srcdir)/%reldir%/test_text_file.sh_1ce4056d72b871f8bb844c86aade2a9b1da58030.out \
     $(srcdir)/%reldir%/test_text_file.sh_4226123565a53b4e3f80e602c1f294721e8e07bf.err \
