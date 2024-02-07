@@ -455,6 +455,11 @@ setup_highlights(highlight_map_t& hm)
                             ")"))
               .with_nestable(false)
               .with_role(role_t::VCR_VARIABLE);
+    hm[{highlight_source_t::INTERNAL, "yaml.var"}]
+        = highlighter(xpcre_compile("^\\s*(?:- )?[a-zA-Z_\\-]+:(?:\\s+|$)"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_YAML)
+              .with_role(role_t::VCR_VARIABLE);
     hm[{highlight_source_t::INTERNAL, "rust.sym"}]
         = highlighter(xpcre_compile("\\b[A-Z_][A-Z0-9_]+\\b"))
               .with_nestable(false)
@@ -479,11 +484,57 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
               .with_role(role_t::VCR_KEYWORD);
+    hm[{highlight_source_t::INTERNAL, "shell"}]
+        = highlighter(xpcre_compile("(?:"
+                                    "\\bbreak\\b|"
+                                    "\\bcase\\b|"
+                                    "\\bcd\\b|"
+                                    "\\bcontinue\\b|"
+                                    "\\bdeclare\\b|"
+                                    "\\bdefault\\b|"
+                                    "\\bdo\\b|"
+                                    "\\bdone\\b|"
+                                    "\\becho\\b|"
+                                    "\\belif\\b|"
+                                    "\\belse\\b|"
+                                    "\\besac\\b|"
+                                    "\\beval\\b|"
+                                    "\\bexit\\b|"
+                                    "\\bexport\\b|"
+                                    "\\bfalse\\b|"
+                                    "\\bfi\\b|"
+                                    "\\bfor\\b|"
+                                    "\\bfunction\\b|"
+                                    "\\bif\\b|"
+                                    "\\bin\\b|"
+                                    "\\blocal\\b|"
+                                    "\\bprintf\\b|"
+                                    "\\bpwd\\b|"
+                                    "\\bread\\b|"
+                                    "\\breadonly\\b|"
+                                    "\\breturn\\b|"
+                                    "\\bset\\b|"
+                                    "\\bshift\\b|"
+                                    "\\bsource\\b|"
+                                    "\\btest\\b|"
+                                    "\\bthen\\b|"
+                                    "\\btrap\\b|"
+                                    "\\btrue\\b|"
+                                    "\\bunset\\b|"
+                                    "\\bunsetenv\\b|"
+                                    "\\buntil\\b|"
+                                    "\\bwhich\\b|"
+                                    "\\bwhile\\b"
+                                    ")"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_SHELL_SCRIPT)
+              .with_role(role_t::VCR_KEYWORD);
     hm[{highlight_source_t::INTERNAL, "num"}]
         = highlighter(xpcre_compile(R"(\b-?(?:\d+|0x[a-zA-Z0-9]+)\b)"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_C_LIKE)
               .with_text_format(text_format_t::TF_JAVA)
+              .with_text_format(text_format_t::TF_YAML)
               .with_role(role_t::VCR_NUMBER);
     hm[{highlight_source_t::INTERNAL, "fun"}]
         = highlighter(xpcre_compile(R"((\w+)\()"))

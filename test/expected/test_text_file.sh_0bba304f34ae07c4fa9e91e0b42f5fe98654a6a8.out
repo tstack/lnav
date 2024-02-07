@@ -1,0 +1,26 @@
+[32m#! /bin/sh[0m
+
+
+[1m[36mif[0m [1m[36mtest[0m x[35m"${AUTORECONF}"[0m = x[35m""[0m; [1m[36mthen[0m
+    autoreconf -V 1>/dev/null 2>/dev/null
+    [1m[36mif[0m [1m[36mtest[0m $? -eq 0; [1m[36mthen[0m
+        [4mAUTORECONF[0m=autoreconf
+    [1m[36mfi[0m
+[1m[36mfi[0m
+
+[1m[36mif[0m [1m[36mtest[0m x[35m"${AUTORECONF}"[0m != x[35m""[0m; [1m[36mthen[0m
+    ${[4mAUTORECONF[0m} -vfi -I m4
+[1m[36melse[0m
+    [4mAUTOCONF[0m=${AUTOCONF:-autoconf}
+    [4mAUTOMAKE[0m=${AUTOMAKE:-automake}
+    [4mAUTOHEADER[0m=${AUTOHEADER:-autoheader}
+    [4mACLOCAL[0m=${ACLOCAL:-aclocal}
+
+    ${[4mAUTOCONF[0m} --version
+    ${[4mAUTOMAKE[0m} --version
+
+    ${[4mACLOCAL[0m} -I m4 -I .
+    ${[4mAUTOHEADER[0m} -I .
+    ${[4mAUTOMAKE[0m} --add-missing --copy --force-missing --foreign
+    ${[4mAUTOCONF[0m}
+[1m[36mfi[0m
