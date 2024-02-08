@@ -1022,7 +1022,9 @@ logfile::read_file()
             retval.append(22, '\x16');
         }
         retval.append(sbr.get_data(), sbr.length());
-        retval.push_back('\n');
+        if (retval.size() < this->lf_stat.st_size) {
+            retval.push_back('\n');
+        }
     }
 
     return Ok(std::move(retval));

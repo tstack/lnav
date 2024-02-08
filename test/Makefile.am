@@ -52,6 +52,7 @@ DUMMY_OBJS = \
 
 check_PROGRAMS = \
 	drive_data_scanner \
+	drive_doc_discovery \
 	drive_line_buffer \
 	drive_grep_proc \
 	drive_listview \
@@ -163,6 +164,9 @@ drive_shlexer_SOURCES = drive_shlexer.cc
 
 drive_data_scanner_SOURCES = \
 	drive_data_scanner.cc
+
+drive_doc_discovery_SOURCES = \
+	drive_doc_discovery.cc
 
 drive_mvwattrline_SOURCES = drive_mvwattrline.cc
 
@@ -383,6 +387,7 @@ dist_noinst_DATA = \
 	textfile_ansi_expanding.0 \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
+	textfile_nonl.txt \
 	textfile_quoted_json.0 \
 	toplevel.lnav \
 	UTF-8-test.txt \

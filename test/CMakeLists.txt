@@ -85,5 +85,8 @@ target_link_libraries(drive_sql_anno diag)
 add_executable(drive_data_scanner drive_data_scanner.cc test_stubs.cc)
 target_link_libraries(drive_data_scanner diag logfmt)
 
+add_executable(drive_doc_discovery drive_doc_discovery.cc test_stubs.cc)
+target_link_libraries(drive_doc_discovery diag logfmt)
+
 add_executable(scripty scripty.cc test_stubs.cc)
 target_link_libraries(scripty diag)

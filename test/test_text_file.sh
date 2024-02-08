@@ -69,3 +69,7 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     < ${top_srcdir}/autogen.sh
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT content FROM lnav_file' \
+    ${test_dir}/textfile_nonl.txt
