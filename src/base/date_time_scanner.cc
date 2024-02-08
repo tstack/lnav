@@ -330,7 +330,7 @@ date_time_scanner::to_localtime(time_t t, exttm& tm_out)
             -= this->dts_local_offset_expiry % EXPIRE_TIME;
     } else {
         time_t adjust_gmt = t + this->dts_local_offset_cache;
-        gmtime_r(&adjust_gmt, &tm_out.et_tm);
+        secs2tm(adjust_gmt, &tm_out.et_tm);
     }
     tm_out.et_gmtoff = 0;
 #ifdef HAVE_STRUCT_TM_TM_ZONE
