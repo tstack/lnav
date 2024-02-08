@@ -413,7 +413,7 @@ public:
         return retval;
     }
 
-    logfile* find_file_ptr(content_line_t& line)
+    logfile* find_file_ptr(content_line_t& line) const
     {
         auto retval
             = this->lss_files[line / MAX_LINES_PER_FILE]->get_file_ptr();
@@ -425,7 +425,7 @@ public:
     logline* find_line(content_line_t line) const
     {
         logline* retval = nullptr;
-        std::shared_ptr<logfile> lf = this->find(line);
+        auto lf = this->find_file_ptr(line);
 
         if (lf != nullptr) {
             auto ll_iter = lf->begin() + line;

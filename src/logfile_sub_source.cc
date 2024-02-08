@@ -1215,7 +1215,7 @@ logfile_sub_source::rebuild_index(
 void
 logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 {
-    std::shared_ptr<logfile> last_file;
+    logfile* last_file;
     vis_line_t vl;
 
     bm[&BM_WARNINGS].clear();
@@ -1229,7 +1229,7 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
     for (; vl < (int) this->lss_filtered_index.size(); ++vl) {
         const content_line_t orig_cl = this->at(vl);
         content_line_t cl = orig_cl;
-        auto lf = this->find(cl);
+        auto lf = this->find_file_ptr(cl);
 
         for (auto& lss_user_mark : this->lss_user_marks) {
             if (binary_search(lss_user_mark.second.begin(),

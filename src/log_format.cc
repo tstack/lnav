@@ -1466,10 +1466,27 @@ external_log_format::scan(logfile& lf,
                     }
                 }
 
-                auto scan_res
-                    = scn::scan_value<double>(num_cap->to_string_view());
-                if (scan_res) {
-                    auto dvalue = scan_res.value();
+                nonstd::optional<double> dvalue_opt;
+                switch (vd.vd_meta.lvm_kind) {
+                    case value_kind_t::VALUE_INTEGER: {
+                        auto scan_res = scn::scan_value<int64_t>(
+                            num_cap->to_string_view());
+                        if (scan_res) {
+                            dvalue_opt = scan_res.value();
+                        }
+                        break;
+                    }
+                    case value_kind_t::VALUE_FLOAT: {
+                        auto scan_res = scn::scan_value<double>(
+                            num_cap->to_string_view());
+                        if (scan_res) {
+                            dvalue_opt = scan_res.value();
+                        }
+                        break;
+                    }
+                }
+                if (dvalue_opt) {
+                    auto dvalue = dvalue_opt.value();
                     if (scaling != nullptr) {
                         scaling->scale(dvalue);
                     }
@@ -3846,7 +3863,21 @@ external_log_format::value_line_count(const intern_string_t ist,
 {
     const auto iter = this->elf_value_defs.find(ist);
     value_line_count_result retval;
-    if (str != nullptr) {
+
+    if (iter == this->elf_value_defs.end()) {
+        if (this->jlf_hide_extra || !top_level) {
+            retval.vlcr_count = 0;
+        }
+
+        return retval;
+    }
+
+    if (iter->second->vd_meta.is_hidden()) {
+        retval.vlcr_count = 0;
+        return retval;
+    }
+
+    if (str != nullptr && !val) {
         auto frag = string_fragment::from_bytes(str, len);
         while (frag.endswith("\n")) {
             frag.pop_back();
@@ -3863,14 +3894,6 @@ external_log_format::value_line_count(const intern_string_t ist,
             frag = utf_res.usr_remaining.value();
             retval.vlcr_count += 1;
         }
-    }
-
-    if (iter == this->elf_value_defs.end()) {
-        if (this->jlf_hide_extra || !top_level) {
-            retval.vlcr_count = 0;
-        }
-
-        return retval;
     }
 
     if (iter->second->vd_meta.lvm_values_index) {
@@ -3891,10 +3914,6 @@ external_log_format::value_line_count(const intern_string_t ist,
     {
         retval.vlcr_line_format_count += 1;
         retval.vlcr_count -= 1;
-    }
-
-    if (iter->second->vd_meta.is_hidden()) {
-        retval.vlcr_count = 0;
     }
 
     return retval;
