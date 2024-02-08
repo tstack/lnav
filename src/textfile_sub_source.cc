@@ -593,6 +593,7 @@ textfile_sub_source::text_crumbs_for_line(
         const auto initial_size = crumbs.size();
 
         meta_iter->second.ms_metadata.m_sections_tree.visit_overlapping(
+            lf->get_line_content_offset(ll_iter),
             end_offset,
             [&crumbs,
              initial_size,
@@ -893,6 +894,14 @@ textfile_sub_source::rescan_files(
                     if (st.st_mtime != ms_iter->second.ms_mtime
                         || st.st_size != ms_iter->second.ms_file_size)
                     {
+                        log_debug(
+                            "text file has changed, invalidating metadata.  "
+                            "old: {mtime: %d size: %zu}, new: {mtime: %d "
+                            "size: %zu}",
+                            ms_iter->second.ms_mtime,
+                            ms_iter->second.ms_file_size,
+                            st.st_mtime,
+                            st.st_size);
                         this->tss_doc_metadata.erase(ms_iter);
                         ms_iter = this->tss_doc_metadata.end();
                     }
@@ -904,8 +913,9 @@ textfile_sub_source::rescan_files(
                     if (read_res.isOk()) {
                         auto content = attr_line_t(read_res.unwrap());
 
-                        log_info("generating metadata for: %s",
-                                 lf->get_filename().c_str());
+                        log_info("generating metadata for: %s (size=%zu)",
+                                 lf->get_filename().c_str(),
+                                 content.length());
                         scrub_ansi_string(content.get_string(),
                                           &content.get_attrs());
 
@@ -920,7 +930,7 @@ textfile_sub_source::rescan_files(
                         this->tss_doc_metadata[lf->get_filename()]
                             = metadata_state{
                                 st.st_mtime,
-                                static_cast<file_ssize_t>(st.st_size),
+                                static_cast<file_ssize_t>(content.length()),
                                 lnav::document::discover_structure(
                                     content,
                                     line_range{0, -1},
