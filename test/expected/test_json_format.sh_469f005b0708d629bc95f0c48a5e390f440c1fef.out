@@ -1,29 +1,29 @@
 
-[2013-09-06T20:00:48.124] TRACE    trace test
+[2013-09-06T20:00:48.124] ⋮ trace test
 
-[2013-09-06T20:00:49.124] INFO     Starting up [32mservice[0m
+[2013-09-06T20:00:49.124] ⋮ Starting up [32mservice[0m
 
-[2013-09-06T22:00:49.124] INFO     Shutting down service
+[2013-09-06T22:00:49.124] ⋮ Shutting down service
   user: steve@example.com
 
-[2013-09-06T22:00:59.124] DEBUG5   Details...
+[2013-09-06T22:00:59.124] ⋮ Details...
 
-[2013-09-06T22:00:59.124] DEBUG4   Details...
+[2013-09-06T22:00:59.124] ⋮ Details...
 
-[2013-09-06T22:00:59.124] DEBUG3   Details...
+[2013-09-06T22:00:59.124] ⋮ Details...
 
-[2013-09-06T22:00:59.124] DEBUG2   Details...
+[2013-09-06T22:00:59.124] ⋮ Details...
 
-[2013-09-06T22:01:00.000] DEBUG    Details...
+[2013-09-06T22:01:00.000] ⋮ Details...
 
-[2013-09-06T22:01:49.124] STATS    1 beat per second
+[2013-09-06T22:01:49.124] ⋮ 1 beat per second
 
-[33m[2[0m[33m013-09-06T22:01:49.124][0m[33m WARNING  n[0m[33mot looking good[0m
+[33m[2[0m[33m013-09-06T22:01:49.124][0m[33m [0m[33m⋮[0m[33m n[0m[33mot looking good[0m
 
-[31m[2[0m[31m013-09-06T22:01:49.124][0m[31m ERROR    l[0m[31mooking bad[0m
+[31m[2[0m[31m013-09-06T22:01:49.124][0m[31m [0m[31m⋮[0m[31m l[0m[31mooking bad[0m
 
-[31m[2[0m[31m013-09-06T22:01:49.124][0m[31m CRITICAL s[0m[31mooo bad[0m
+[31m[2[0m[31m013-09-06T22:01:49.124][0m[31m [0m[31m⋮[0m[31m s[0m[31mooo bad[0m
 
-[31m[2[0m[31m013-09-06T22:01:49.124][0m[31m FATAL    s[0m[31mhoot[0m
+[31m[2[0m[31m013-09-06T22:01:49.124][0m[31m [0m[31m⋮[0m[31m s[0m[31mhoot[0m
 [31m  obj: { "field1" : "hi", "field2": 2 }[0m
 [31m  arr: ["hi", {"sub1": true}][0m

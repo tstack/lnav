@@ -2,7 +2,7 @@
     {
         "top_meta": {
             "file": "stdin",
-            "anchor": "#distclean-local-",
+            "anchor": "#/test~1Makefile.am/distclean-local:",
             "breadcrumbs": [
                 {
                     "display_value": "stdin",

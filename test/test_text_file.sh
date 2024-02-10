@@ -73,3 +73,9 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ';SELECT content FROM lnav_file' \
     ${test_dir}/textfile_nonl.txt
+
+run_cap_test ${lnav_test} -n \
+    -c ':goto 23' \
+    -c ';SELECT top_meta FROM lnav_top_view' \
+    -c ':write-json-to -' \
+    ${test_dir}/formats/jsontest/format.json

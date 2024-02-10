@@ -1,0 +1,64 @@
+[
+    {
+        "top_meta": {
+            "file": "{test_dir}/formats/jsontest/format.json",
+            "anchor": "#/test_log/timestamp-field",
+            "breadcrumbs": [
+                {
+                    "display_value": "format.json",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "format.json"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "test_log",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "$schema"
+                        },
+                        {
+                            "display_value": "test_log"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "timestamp-field",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "body-field"
+                        },
+                        {
+                            "display_value": "description"
+                        },
+                        {
+                            "display_value": "file-pattern"
+                        },
+                        {
+                            "display_value": "json"
+                        },
+                        {
+                            "display_value": "level-field"
+                        },
+                        {
+                            "display_value": "line-format"
+                        },
+                        {
+                            "display_value": "timestamp-field"
+                        },
+                        {
+                            "display_value": "title"
+                        },
+                        {
+                            "display_value": "value"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

@@ -2107,7 +2107,7 @@ external_log_format::get_subline(const logline& ll,
                     = jlu.jlu_opid_frag->to_string();
             }
 
-            int sub_offset = 1 + this->jlf_line_format_init_count;
+            int sub_offset = this->jlf_line_format_init_count;
             for (const auto& jfe : this->jlf_line_format) {
                 static const intern_string_t ts_field
                     = intern_string::lookup("__timestamp__", -1);
@@ -2213,6 +2213,7 @@ external_log_format::get_subline(const logline& ll,
                                     lr, logline::L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
+                            lv_iter->lv_sub_offset = sub_offset;
                             used_values[std::distance(
                                 this->jlf_line_values.lvv_values.begin(),
                                 lv_iter)]
@@ -2333,6 +2334,7 @@ external_log_format::get_subline(const logline& ll,
                 }
             }
             this->json_append_to_cache("\n", 1);
+            sub_offset += 1;
 
             for (size_t lpc = 0; lpc < this->jlf_line_values.lvv_values.size();
                  lpc++)
@@ -3872,11 +3874,6 @@ external_log_format::value_line_count(const intern_string_t ist,
         return retval;
     }
 
-    if (iter->second->vd_meta.is_hidden()) {
-        retval.vlcr_count = 0;
-        return retval;
-    }
-
     if (str != nullptr && !val) {
         auto frag = string_fragment::from_bytes(str, len);
         while (frag.endswith("\n")) {
@@ -3905,6 +3902,11 @@ external_log_format::value_line_count(const intern_string_t ist,
         if (val) {
             lvs.add_value(val.value());
         }
+    }
+
+    if (iter->second->vd_meta.is_hidden()) {
+        retval.vlcr_count = 0;
+        return retval;
     }
 
     if (std::find_if(this->jlf_line_format.begin(),
