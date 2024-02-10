@@ -305,6 +305,55 @@ string_fragment::to_string_with_case_style(case_style style) const
     return retval;
 }
 
+std::string
+string_fragment::to_unquoted_string() const
+{
+    auto sub_sf = *this;
+
+    if (sub_sf.startswith("r") || sub_sf.startswith("u")) {
+        sub_sf = sub_sf.consume_n(1).value();
+    }
+    if (sub_sf.length() >= 2
+        && ((sub_sf.startswith("\"") && sub_sf.endswith("\""))
+            || (sub_sf.startswith("'") && sub_sf.endswith("'"))))
+    {
+        std::string retval;
+
+        sub_sf.sf_begin += 1;
+        sub_sf.sf_end -= 1;
+        retval.reserve(this->length());
+
+        auto in_escape = false;
+        for (auto ch : sub_sf) {
+            if (in_escape) {
+                switch (ch) {
+                    case 'n':
+                        retval.push_back('\n');
+                        break;
+                    case 't':
+                        retval.push_back('\t');
+                        break;
+                    case 'r':
+                        retval.push_back('\r');
+                        break;
+                    default:
+                        retval.push_back(ch);
+                        break;
+                }
+                in_escape = false;
+            } else if (ch == '\\') {
+                in_escape = true;
+            } else {
+                retval.push_back(ch);
+            }
+        }
+
+        return retval;
+    }
+
+    return this->to_string();
+}
+
 uint32_t
 string_fragment::front_codepoint() const
 {

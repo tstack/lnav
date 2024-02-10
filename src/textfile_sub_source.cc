@@ -40,6 +40,7 @@
 #include "config.h"
 #include "lnav.events.hh"
 #include "md2attr_line.hh"
+#include "scn/scn.h"
 #include "sql_util.hh"
 #include "sqlitepp.hh"
 
@@ -1016,7 +1017,7 @@ nonstd::optional<vis_line_t>
 textfile_sub_source::row_for_anchor(const std::string& id)
 {
     auto lf = this->current_file();
-    if (!lf) {
+    if (!lf || id.empty()) {
         return nonstd::nullopt;
     }
 
@@ -1033,25 +1034,96 @@ textfile_sub_source::row_for_anchor(const std::string& id)
     const auto& meta = iter->second.ms_metadata;
     nonstd::optional<vis_line_t> retval;
 
+    auto is_ptr = startswith(id, "#/");
+    if (is_ptr) {
+        auto hier_sf = string_fragment::from_str(id).consume_n(2).value();
+        std::vector<lnav::document::section_key_t> path;
+
+        while (!hier_sf.empty()) {
+            auto comp_pair = hier_sf.split_when(string_fragment::tag1{'/'});
+            auto scan_res
+                = scn::scan_value<int64_t>(comp_pair.first.to_string_view());
+            if (scan_res && scan_res.empty()) {
+                path.emplace_back(scan_res.value());
+            } else {
+                path.emplace_back(json_ptr::decode(comp_pair.first));
+            }
+            hier_sf = comp_pair.second;
+        }
+
+        auto lookup_res = lnav::document::hier_node::lookup_path(
+            meta.m_sections_root.get(), path);
+        if (lookup_res) {
+            auto ll_opt = lf->line_for_offset(lookup_res.value()->hn_start);
+            if (ll_opt != lf->end()) {
+                retval
+                    = vis_line_t(std::distance(lf->cbegin(), ll_opt.value()));
+            }
+        }
+
+        return retval;
+    }
+
     lnav::document::hier_node::depth_first(
         meta.m_sections_root.get(),
         [lf, &id, &retval](const lnav::document::hier_node* node) {
             for (const auto& child_pair : node->hn_named_children) {
-                auto child_anchor
+                const auto& child_anchor
                     = text_anchors::to_anchor_string(child_pair.first);
 
-                if (child_anchor == id) {
-                    auto ll_opt
-                        = lf->line_for_offset(child_pair.second->hn_start);
-                    if (ll_opt != lf->end()) {
-                        retval = vis_line_t(
-                            std::distance(lf->cbegin(), ll_opt.value()));
-                    }
+                if (child_anchor != id) {
+                    continue;
                 }
+
+                auto ll_opt = lf->line_for_offset(child_pair.second->hn_start);
+                if (ll_opt != lf->end()) {
+                    retval = vis_line_t(
+                        std::distance(lf->cbegin(), ll_opt.value()));
+                }
+                break;
             }
         });
 
     return retval;
+}
+
+static void
+anchor_generator(std::unordered_set<std::string>& retval,
+                 std::vector<std::string>& comps,
+                 size_t& max_depth,
+                 lnav::document::hier_node* hn)
+{
+    if (hn->hn_named_children.empty()) {
+        if (hn->hn_children.empty()) {
+            if (retval.size() >= 250 || comps.empty()) {
+            } else if (comps.size() == 1) {
+                retval.emplace(text_anchors::to_anchor_string(comps.front()));
+            } else {
+                retval.emplace(
+                    fmt::format(FMT_STRING("#/{}"),
+                                fmt::join(comps.begin(), comps.end(), "/")));
+            }
+            max_depth = std::max(max_depth, comps.size());
+        } else {
+            int index = 0;
+            for (const auto& child : hn->hn_children) {
+                comps.emplace_back(fmt::to_string(index));
+                anchor_generator(retval, comps, max_depth, child.get());
+                comps.pop_back();
+            }
+        }
+    } else {
+        for (const auto& child : hn->hn_named_children) {
+            comps.emplace_back(child.first);
+            anchor_generator(retval, comps, max_depth, child.second);
+            comps.pop_back();
+        }
+        if (max_depth > 1) {
+            retval.emplace(
+                fmt::format(FMT_STRING("#/{}"),
+                            fmt::join(comps.begin(), comps.end(), "/")));
+        }
+    }
 }
 
 std::unordered_set<std::string>
@@ -1076,18 +1148,13 @@ textfile_sub_source::get_anchors()
 
     const auto& meta = iter->second.ms_metadata;
 
-    lnav::document::hier_node::depth_first(
-        meta.m_sections_root.get(),
-        [&retval](const lnav::document::hier_node* node) {
-            if (retval.size() > 100) {
-                return;
-            }
+    if (meta.m_sections_root == nullptr) {
+        return retval;
+    }
 
-            for (const auto& child_pair : node->hn_named_children) {
-                retval.emplace(
-                    text_anchors::to_anchor_string(child_pair.first));
-            }
-        });
+    std::vector<std::string> comps;
+    size_t max_depth = 0;
+    anchor_generator(retval, comps, max_depth, meta.m_sections_root.get());
 
     return retval;
 }
@@ -1095,11 +1162,9 @@ textfile_sub_source::get_anchors()
 nonstd::optional<std::string>
 textfile_sub_source::anchor_for_row(vis_line_t vl)
 {
-    nonstd::optional<std::string> retval;
-
     auto lf = this->current_file();
     if (!lf) {
-        return retval;
+        return nonstd::nullopt;
     }
 
     auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
@@ -1109,31 +1174,43 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
 
     auto iter = this->tss_doc_metadata.find(lf->get_filename());
     if (iter == this->tss_doc_metadata.end()) {
-        return retval;
+        return nonstd::nullopt;
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     if (vl >= lfo->lfo_filter_state.tfs_index.size()) {
-        return retval;
+        return nonstd::nullopt;
     }
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
     auto ll_next_iter = ll_iter + 1;
     auto end_offset = (ll_next_iter == lf->end())
         ? lf->get_index_size() - 1
         : ll_next_iter->get_offset() - 1;
+
+    std::vector<std::string> collector;
     iter->second.ms_metadata.m_sections_tree.visit_overlapping(
         ll_iter->get_offset(),
         end_offset,
-        [&retval](const lnav::document::section_interval_t& iv) {
-            retval = iv.value.match(
-                [](const std::string& str) {
-                    return nonstd::make_optional(
-                        text_anchors::to_anchor_string(str));
-                },
-                [](size_t) { return nonstd::nullopt; });
+        [&collector](const lnav::document::section_interval_t& iv) {
+            collector.emplace_back(iv.value.match(
+                [](const std::string& str) { return str; },
+                [](size_t index) { return fmt::to_string(index); }));
         });
 
-    return retval;
+    if (collector.empty()) {
+        return nonstd::nullopt;
+    }
+
+    if (collector.size() == 1) {
+        return text_anchors::to_anchor_string(collector.front());
+    }
+
+    for (auto& elem : collector) {
+        elem = json_ptr::encode_str(elem);
+    }
+
+    return fmt::format(FMT_STRING("#/{}"),
+                       fmt::join(collector.begin(), collector.end(), "/"));
 }
 
 bool

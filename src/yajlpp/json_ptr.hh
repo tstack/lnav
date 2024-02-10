@@ -41,6 +41,7 @@
 #include <sys/types.h>
 
 #include "base/auto_mem.hh"
+#include "base/intern_string.hh"
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_tree.h"
 
@@ -116,6 +117,7 @@ public:
     }
 
     static size_t decode(char* dst, const char* src, ssize_t src_len = -1);
+    static std::string decode(const string_fragment& sf);
 
     json_ptr(const char* value) : jp_value(value), jp_pos(value) {}
 

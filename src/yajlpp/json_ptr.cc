@@ -281,6 +281,39 @@ json_ptr::decode(char* dst, const char* src, ssize_t src_len)
     return retval;
 }
 
+std::string
+json_ptr::decode(const string_fragment& sf)
+{
+    std::string retval;
+    auto in_escape = false;
+
+    retval.reserve(sf.length());
+    for (const auto ch : sf) {
+        if (in_escape) {
+            switch (ch) {
+                case '0':
+                    retval.push_back('~');
+                    break;
+                case '1':
+                    retval.push_back('/');
+                    break;
+                case '2':
+                    retval.push_back('#');
+                    break;
+                default:
+                    break;
+            }
+            in_escape = false;
+        } else if (ch == '~') {
+            in_escape = true;
+        } else {
+            retval.push_back(ch);
+        }
+    }
+
+    return retval;
+}
+
 bool
 json_ptr::expect_map(int32_t& depth, int32_t& index)
 {

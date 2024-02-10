@@ -328,7 +328,8 @@ public:
                     this->sw_interval_state.back().is_line_number
                         = this->sw_line_number;
                     this->sw_interval_state.back().is_name
-                        = tokenize_res->to_string();
+                        = tokenize_res->to_string_fragment()
+                              .to_unquoted_string();
                     this->sw_depth += 1;
                     this->sw_interval_state.resize(this->sw_depth + 1);
                     this->sw_hier_nodes.push_back(
@@ -609,7 +610,7 @@ private:
                         this->sw_interval_state.back().is_name
                             = this->sw_scanner
                                   .to_string_fragment(last_key.value())
-                                  .to_string();
+                                  .to_unquoted_string();
                         if (!this->sw_interval_state.back().is_name.empty()) {
                             this->sw_interval_state.back().is_start
                                 = static_cast<ssize_t>(
