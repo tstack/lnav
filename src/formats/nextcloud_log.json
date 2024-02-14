@@ -44,7 +44,7 @@
             "user": {
               "kind": "string",
               "identifier": "true"
-            },
+            }
         },
         "line-format": [
             {
