@@ -45,7 +45,7 @@
               "kind": "string",
               "identifier": "true"
             },
-        }
+        },
         "line-format": [
             {
                 "field": "__timestamp__",
