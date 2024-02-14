@@ -34,8 +34,18 @@
             "remoteAddr": {
                 "kind": "string",
                 "identifier": true
-            }
-        },
+            },
+            "url": {
+              "kind": "string"
+            },
+            "method": {
+              "kind": "string"
+            },
+            "user": {
+              "kind": "string",
+              "identifier": "true"
+            },
+        }
         "line-format": [
             {
                 "field": "__timestamp__",
