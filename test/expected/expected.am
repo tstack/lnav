@@ -1206,6 +1206,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_text_file.sh_4226123565a53b4e3f80e602c1f294721e8e07bf.out \
     $(srcdir)/%reldir%/test_text_file.sh_4dd174410d702a7b4be794fb6fa2c8889bd768d6.err \
     $(srcdir)/%reldir%/test_text_file.sh_4dd174410d702a7b4be794fb6fa2c8889bd768d6.out \
+    $(srcdir)/%reldir%/test_text_file.sh_596b120fbea638472a27964444e262b4572afacc.err \
+    $(srcdir)/%reldir%/test_text_file.sh_596b120fbea638472a27964444e262b4572afacc.out \
     $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.err \
     $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.out \
     $(srcdir)/%reldir%/test_text_file.sh_5e9320f18d066e6fc930dbbffc357af64312bd4b.err \
@@ -1220,6 +1222,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_text_file.sh_7b00f32a3fff7fc2d78a87045ae842e58be88480.out \
     $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.err \
     $(srcdir)/%reldir%/test_text_file.sh_87943c6be50d701a03e901f16493314c839af1ab.out \
+    $(srcdir)/%reldir%/test_text_file.sh_8a4954af3e536b3789b1fd5b33519e9d444cc933.err \
+    $(srcdir)/%reldir%/test_text_file.sh_8a4954af3e536b3789b1fd5b33519e9d444cc933.out \
     $(srcdir)/%reldir%/test_text_file.sh_8b2cd055e6a1db2ed9b2af2a917f8556395fa653.err \
     $(srcdir)/%reldir%/test_text_file.sh_8b2cd055e6a1db2ed9b2af2a917f8556395fa653.out \
     $(srcdir)/%reldir%/test_text_file.sh_ac486314c4e02e480d829ea2f077b86c49fedcec.err \
