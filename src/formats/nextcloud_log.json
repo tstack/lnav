@@ -36,14 +36,14 @@
                 "identifier": true
             },
             "url": {
-              "kind": "string"
+                "kind": "string"
             },
             "method": {
-              "kind": "string"
+                "kind": "string"
             },
             "user": {
-              "kind": "string",
-              "identifier": "true"
+                "kind": "string",
+                "identifier": true
             }
         },
         "line-format": [
