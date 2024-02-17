@@ -1,5 +1,20 @@
 2023-10-01T02:39:09+00:00 twv 10.0.0.1        INFO files_antivirus Tried to scan non file
+  user: admin
+  method: 
+  url: --
 2023-10-01T02:39:09+00:00 twv                 INFO files_antivirus Tried to scan non file
-[4m2023-10-01T02:50:03+00:00[0m[4m [0m[4mpZp[0m[4m [0m[4m               [0m[4m INFO [0m[4mfulltextsearch_elasticsearch[0m[4m [0m[4mRequest: PUT http://elasticsearch:9200/nextcloud/_doc/files%3A1780281[0m
+  user: --
+  method: 
+  url: --
+2023-10-01T02:50:03+00:00 pZp                 INFO fulltextsearch_elasticsearch Request: PUT http://elasticsearch:9200/nextcloud/_doc/files%3A1780281
+  user: --
+  method: 
+[4m  url: --[0m
 2023-10-16T01:47:44+00:00 WO0 192.168.1.1     INFO memories Memories: Updated item successfully
+  user: jeff
+  method: PATCH
+  url: --
 2023-10-16T01:50:18+00:00 Sbl 192.168.1.1     INFO files_versions Mark to expire /Documents/phat.txt next version should be 1697407738 or smaller. (prevTimestamp: 1697411338; step: 3600
+  user: jeff
+  method: 
+  url: --
