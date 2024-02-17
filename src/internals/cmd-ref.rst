@@ -665,7 +665,7 @@
       :goto #screenshots
 
   **See Also**
-    :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
+    :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -873,7 +873,7 @@
   Move to the next position in the location history
 
   **See Also**
-    :ref:`goto`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
+    :ref:`goto`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -896,7 +896,20 @@
       :next-mark error
 
   **See Also**
-    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_mark`, :ref:`relative_goto`
+    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
+
+----
+
+
+.. _next_section:
+
+:next-section
+^^^^^^^^^^^^^
+
+  Move to the next section in the document
+
+  **See Also**
+    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1003,7 +1016,7 @@
   Move to the previous position in the location history
 
   **See Also**
-    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`relative_goto`
+    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_mark`, :ref:`prev_section`, :ref:`relative_goto`
 
 ----
 
@@ -1026,7 +1039,20 @@
       :prev-mark error
 
   **See Also**
-    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`prev_location`, :ref:`relative_goto`
+    :ref:`goto`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_section`, :ref:`relative_goto`
+
+----
+
+
+.. _prev_section:
+
+:prev-section
+^^^^^^^^^^^^^
+
+  Move to the previous section in the document
+
+  **See Also**
+    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`relative_goto`
 
 ----
 
@@ -1143,7 +1169,7 @@
       :relative-goto -10%
 
   **See Also**
-    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`prev_location`, :ref:`prev_mark`
+    :ref:`goto`, :ref:`next_location`, :ref:`next_mark`, :ref:`next_section`, :ref:`prev_location`, :ref:`prev_mark`, :ref:`prev_section`
 
 ----
 

@@ -33,5 +33,6 @@ Apr  7 07:32:56 Tim-Stacks-iMac.local logger[234]: Bad data {
     abc,
     123,
     456 
-)
-}]
+    )
+}
+]

@@ -1144,6 +1144,62 @@ com_goto_location(exec_context& ec,
     return Ok(retval);
 }
 
+static Result<std::string, lnav::console::user_message>
+com_next_section(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+    } else if (!ec.ec_dry_run) {
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
+
+        if (ta == nullptr) {
+            return ec.make_error("view does not support sections");
+        }
+
+        auto adj_opt = ta->adjacent_anchor(tc->get_selection(),
+                                           text_anchors::direction::next);
+        if (!adj_opt) {
+            return ec.make_error("no next section found");
+        }
+
+        tc->set_selection(adj_opt.value());
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_prev_section(exec_context& ec,
+                 std::string cmdline,
+                 std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+    } else if (!ec.ec_dry_run) {
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
+
+        if (ta == nullptr) {
+            return ec.make_error("view does not support sections");
+        }
+
+        auto adj_opt = ta->adjacent_anchor(tc->get_selection(),
+                                           text_anchors::direction::prev);
+        if (!adj_opt) {
+            return ec.make_error("no previous section found");
+        }
+
+        tc->set_selection(adj_opt.value());
+    }
+
+    return Ok(retval);
+}
+
 static bool
 csv_needs_quoting(const std::string& str)
 {
@@ -1738,11 +1794,8 @@ com_save_to(exec_context& ec,
         size_t count = 0;
 
         if (fos != nullptr) {
-            fos->fos_contexts.push(field_overlay_source::context{
-                "",
-                false,
-                false,
-            });
+            fos->fos_contexts.push(
+                field_overlay_source::context{"", false, false, false});
         }
 
         auto y = 0_vl;
@@ -5820,6 +5873,24 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":prev-location")
          .with_summary("Move to the previous position in the location history")
          .with_tags({"navigation"})},
+
+    {
+        "next-section",
+        com_next_section,
+
+        help_text(":next-section")
+            .with_summary("Move to the next section in the document")
+            .with_tags({"navigation"}),
+    },
+    {
+        "prev-section",
+        com_prev_section,
+
+        help_text(":prev-section")
+            .with_summary("Move to the previous section in the document")
+            .with_tags({"navigation"}),
+    },
+
     {"help",
      com_help,
 

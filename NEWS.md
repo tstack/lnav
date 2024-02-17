@@ -122,6 +122,11 @@ Features:
 * Added a `log_msg_values` column to the `all_logs` SQL
   table that contains a JSON object with the top 5 values
   for the fields extracted from the log message.
+* Added `:next-section` and `:prev-section` commands for
+  moving to the next and previous section of a document.
+  For example, the next section in a man page or JSON
+  array.  The default keymap has been changed to bind
+  the curly brace keys to these commands.
 * Added Nextcloud log format from Adam Monsen.
 * Added GitHub Event Log format for files from gharchive.org.
   It makes a good example of a JSON-Lines format.
@@ -158,6 +163,9 @@ Interface changes:
   used to draw the overlay contents now as well. (The
   overlay is used to display the parser details, comments,
   and annotations.)
+* The `{` and `}` keys have been changed from moving
+  through the "location history" to moving to the previous
+  and next section in a document.
 * Added indent guidelines when structured data is detected.
 
 Breaking changes:

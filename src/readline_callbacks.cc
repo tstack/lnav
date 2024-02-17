@@ -904,7 +904,7 @@ rl_focus(readline_curses* rc)
     auto fos = (field_overlay_source*) lnav_data.ld_views[LNV_LOG]
                    .get_overlay_source();
 
-    fos->fos_contexts.emplace("", false, true);
+    fos->fos_contexts.emplace("", false, true, true);
 
     get_textview_for_mode(lnav_data.ld_mode)->save_current_search();
 }

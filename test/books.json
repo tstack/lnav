@@ -1,0 +1,14 @@
+{
+    "catalog": [
+        {
+            "author": "Gambardella, Matthew",
+            "title": "XML Developer's Guide",
+            "description": "An in-depth look at creating applications with XML."
+        },
+        {
+            "author": "Ralls, Kim",
+            "title": "Midnight Rain",
+            "description": "A former architect battles corporate zombies, an evil sorceress, and her own childhood to become queen of the world."
+        }
+    ]
+}

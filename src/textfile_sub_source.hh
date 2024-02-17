@@ -147,6 +147,9 @@ public:
 
     nonstd::optional<std::string> anchor_for_row(vis_line_t vl) override;
 
+    nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
+                                                 direction dir) override;
+
     std::unordered_set<std::string> get_anchors() override;
 
     void quiesce() override;

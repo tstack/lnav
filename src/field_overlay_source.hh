@@ -78,15 +78,20 @@ public:
     }
 
     struct context {
-        context(std::string prefix, bool show, bool show_discovered)
+        context(std::string prefix,
+                bool show,
+                bool show_discovered,
+                bool show_applicable_annotations)
             : c_prefix(std::move(prefix)), c_show(show),
-              c_show_discovered(show_discovered)
+              c_show_discovered(show_discovered),
+              c_show_applicable_annotations(show_applicable_annotations)
         {
         }
 
         std::string c_prefix;
         bool c_show{false};
         bool c_show_discovered{true};
+        bool c_show_applicable_annotations{true};
     };
 
     std::stack<context> fos_contexts;

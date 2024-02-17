@@ -77,14 +77,14 @@ pretty_printer::append_to(attr_line_t& al)
                         = this->pp_stream.tellp();
                     this->pp_interval_state.back().is_name
                         = tok_res->to_string();
-                    this->descend();
+                    this->descend(DT_XML_CLOSE_TAG);
                 } else {
                     this->pp_values.emplace_back(el);
                 }
                 continue;
             case DT_XML_CLOSE_TAG:
                 this->flush_values();
-                this->ascend();
+                this->ascend(el.e_token);
                 this->append_child_node();
                 this->write_element(el);
                 this->start_new_line();
@@ -94,7 +94,7 @@ pretty_printer::append_to(attr_line_t& al)
             case DT_LPAREN:
                 this->flush_values(true);
                 this->pp_values.emplace_back(el);
-                this->descend();
+                this->descend(to_closer(el.e_token));
                 this->pp_interval_state.back().is_start
                     = this->pp_stream.tellp();
                 continue;
@@ -105,7 +105,7 @@ pretty_printer::append_to(attr_line_t& al)
                 if (this->pp_body_lines.top()) {
                     this->start_new_line();
                 }
-                this->ascend();
+                this->ascend(el.e_token);
                 this->write_element(el);
                 continue;
             case DT_COMMA:
@@ -135,7 +135,7 @@ pretty_printer::append_to(attr_line_t& al)
         this->pp_values.emplace_back(el);
     }
     while (this->pp_depth > 0) {
-        this->ascend();
+        this->ascend(this->pp_container_tokens.back());
     }
     this->flush_values();
 
@@ -341,30 +341,47 @@ pretty_printer::start_new_line()
 }
 
 void
-pretty_printer::ascend()
+pretty_printer::ascend(data_token_t dt)
 {
     if (this->pp_depth > 0) {
-        int lines = this->pp_body_lines.top();
-        this->pp_depth -= 1;
-        this->pp_body_lines.pop();
-        this->pp_body_lines.top() += lines;
-
-        if (!this->pp_is_xml) {
-            this->append_child_node();
+        if (this->pp_container_tokens.back() != dt
+            && std::find(this->pp_container_tokens.begin(),
+                         this->pp_container_tokens.end(),
+                         dt)
+                == this->pp_container_tokens.end())
+        {
+            return;
         }
-        this->pp_interval_state.pop_back();
-        this->pp_hier_stage = std::move(this->pp_hier_nodes.back());
-        this->pp_hier_nodes.pop_back();
+
+        auto found = false;
+        do {
+            if (this->pp_container_tokens.back() == dt) {
+                found = true;
+            }
+            int lines = this->pp_body_lines.top();
+            this->pp_depth -= 1;
+            this->pp_body_lines.pop();
+            this->pp_body_lines.top() += lines;
+
+            if (!this->pp_is_xml) {
+                this->append_child_node();
+            }
+            this->pp_interval_state.pop_back();
+            this->pp_hier_stage = std::move(this->pp_hier_nodes.back());
+            this->pp_hier_nodes.pop_back();
+            this->pp_container_tokens.pop_back();
+        } while (!found);
     } else {
         this->pp_body_lines.top() = 0;
     }
 }
 
 void
-pretty_printer::descend()
+pretty_printer::descend(data_token_t dt)
 {
     this->pp_depth += 1;
     this->pp_body_lines.push(0);
+    this->pp_container_tokens.push_back(dt);
     this->pp_interval_state.resize(this->pp_depth + 1);
     this->pp_hier_nodes.push_back(
         std::make_unique<lnav::document::hier_node>());

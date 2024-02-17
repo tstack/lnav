@@ -311,6 +311,11 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         value_out = this->lss_token_value;
     }
 
+    {
+        auto lr = line_range{0, (int) this->lss_token_value.length()};
+        this->lss_token_attrs.emplace_back(lr, SA_ORIGINAL_LINE.value());
+    }
+
     if (!this->lss_token_line->is_continued()
         && (this->lss_token_file->is_time_adjusted()
             || ((format->lf_timestamp_flags & ETF_ZONE_SET
@@ -425,6 +430,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         auto relstr = this->get_time_offset_for_line(tc, row_vl);
         value_out = fmt::format(FMT_STRING("{: >12}|{}"), relstr, value_out);
     }
+
     this->lss_in_value_for_line = false;
 }
 
@@ -459,8 +465,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     const auto& line_values = this->lss_token_values;
 
     lr.lr_start = 0;
-    lr.lr_end = this->lss_token_value.length();
-    value_out.emplace_back(lr, SA_ORIGINAL_LINE.value());
+    lr.lr_end = -1;
     value_out.emplace_back(
         lr, SA_LEVEL.value(this->lss_token_line->get_msg_level()));
 

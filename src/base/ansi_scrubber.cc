@@ -174,6 +174,8 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
 
                 if (lhs_pair.first == '_' || rhs_pair.first == '_') {
                     if (sa != nullptr && bold_range.is_valid()) {
+                        shift_string_attrs(
+                            *sa, bold_range.lr_start, -bold_range.length() * 2);
                         sa->emplace_back(bold_range,
                                          VC_STYLE.value(text_attrs{A_BOLD}));
                         bold_range.clear();
@@ -191,6 +193,8 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     });
                 } else {
                     if (sa != nullptr && ul_range.is_valid()) {
+                        shift_string_attrs(
+                            *sa, ul_range.lr_start, -ul_range.length() * 2);
                         sa->emplace_back(
                             ul_range, VC_STYLE.value(text_attrs{A_UNDERLINE}));
                         ul_range.clear();
@@ -216,25 +220,24 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             auto output_size = fill_index - sf.sf_begin;
             auto erased_size = sf.length() - output_size;
 
-            if (sa != nullptr) {
-#if 0
-                shift_string_attrs(
-                    *sa, caps->c_begin + sf.length() / 3, -erased_size);
-#endif
-                sa->emplace_back(line_range{last_origin_offset_end,
-                                            sf.sf_begin + (int) output_size},
-                                 SA_ORIGIN_OFFSET.value(origin_offset));
-            }
-
             if (sa != nullptr && ul_range.is_valid()) {
+                shift_string_attrs(
+                    *sa, ul_range.lr_start, -ul_range.length() * 2);
                 sa->emplace_back(ul_range,
                                  VC_STYLE.value(text_attrs{A_UNDERLINE}));
                 ul_range.clear();
             }
             if (sa != nullptr && bold_range.is_valid()) {
+                shift_string_attrs(
+                    *sa, bold_range.lr_start, -bold_range.length() * 2);
                 sa->emplace_back(bold_range,
                                  VC_STYLE.value(text_attrs{A_BOLD}));
                 bold_range.clear();
+            }
+            if (sa != nullptr) {
+                sa->emplace_back(line_range{last_origin_offset_end,
+                                            sf.sf_begin + (int) output_size},
+                                 SA_ORIGIN_OFFSET.value(origin_offset));
             }
 
             str.erase(str.begin() + fill_index, str.begin() + sf.sf_end);

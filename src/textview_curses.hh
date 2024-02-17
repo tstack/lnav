@@ -314,6 +314,17 @@ public:
     virtual nonstd::optional<vis_line_t> row_for_anchor(const std::string& id)
         = 0;
 
+    enum class direction {
+        prev,
+        next,
+    };
+
+    virtual nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
+                                                         direction dir)
+    {
+        return nonstd::nullopt;
+    }
+
     virtual nonstd::optional<std::string> anchor_for_row(vis_line_t vl) = 0;
 
     virtual std::unordered_set<std::string> get_anchors() = 0;

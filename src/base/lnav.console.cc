@@ -277,13 +277,38 @@ curses_color_to_terminal_color(int curses_color)
     }
 }
 
+static bool
+get_no_color()
+{
+    return getenv("NO_COLOR") != nullptr;
+}
+
+static bool
+get_yes_color()
+{
+    return getenv("YES_COLOR") != nullptr;
+}
+
+static bool
+get_fd_tty(int fd)
+{
+    return isatty(fd);
+}
+
 void
 println(FILE* file, const attr_line_t& al)
 {
+    static const auto IS_NO_COLOR = get_no_color();
+    static const auto IS_YES_COLOR = get_yes_color();
+    static const auto IS_STDOUT_TTY = get_fd_tty(STDOUT_FILENO);
+    static const auto IS_STDERR_TTY = get_fd_tty(STDERR_FILENO);
+
     const auto& str = al.get_string();
 
-    if (getenv("NO_COLOR") != nullptr
-        || (!isatty(fileno(file)) && getenv("YES_COLOR") == nullptr))
+    if (IS_NO_COLOR || (file != stdout && file != stderr)
+        || (((file == stdout && !IS_STDOUT_TTY)
+             || (file == stderr && !IS_STDERR_TTY))
+            && !IS_YES_COLOR))
     {
         fmt::print(file, "{}\n", str);
         return;

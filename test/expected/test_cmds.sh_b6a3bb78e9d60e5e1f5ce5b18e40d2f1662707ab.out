@@ -1092,7 +1092,8 @@ For support questions, email:
                                number, percent into the file,
                                timestamp, or an anchor in a text file
 [4mSee Also[0m
-  [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
+  [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m
 [4mExamples[0m
 #1 To go to line 22:
    [37m[40m:[0m[1m[36m[40mgoto[0m[37m[40m 22                                          [0m
@@ -1232,7 +1233,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the next position in the location history
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
+  [1m:goto[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mnext-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1241,13 +1243,20 @@ For support questions, email:
   [4mtype[0m   The type of bookmark -- error, warning, search,
          user, file, meta
 [4mSee Also[0m
-  [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:prev-location[0m, 
-  [1m:prev-mark[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
+  [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-section[0m, 
+  [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
 [4mExample[0m
 #1 To go to the next error:
    [37m[40m:[0m[1m[36m[40mnext-mark[0m[37m[40m error                                  [0m
    
 
+
+[4m:[0m[1m[4mnext-section[0m
+══════════════════════════════════════════════════════════════════════
+  Move to the next section in the document
+[4mSee Also[0m
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mopen[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1315,7 +1324,8 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Move to the previous position in the location history
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:relative-goto[0m
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-mark[0m, 
+  [1m:prev-section[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mprev-mark[0m[4m [0m[4mtype[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtype[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1326,12 +1336,20 @@ For support questions, email:
          user, file, meta
 [4mSee Also[0m
   [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-mark[0m, 
-  [1m:next-mark[0m, [1m:prev-location[0m, [1m:relative-goto[0m
+  [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-section[0m, 
+  [1m:relative-goto[0m
 [4mExample[0m
 #1 To go to the previous error:
    [37m[40m:[0m[1m[36m[40mprev-mark[0m[37m[40m error                                  [0m
    
 
+
+[4m:[0m[1m[4mprev-section[0m
+══════════════════════════════════════════════════════════════════════
+  Move to the previous section in the document
+[4mSee Also[0m
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:relative-goto[0m
 
 [4m:[0m[1m[4mprompt[0m[4m [0m[4mtype[0m[4m [[0m[4m--alt[0m[4m] [[0m[4mprompt[0m[4m] [[0m[4minitial-value[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -1409,7 +1427,8 @@ For support questions, email:
 [4mParameter[0m
   [4mline-count|N%[0m   The amount to move the view by.
 [4mSee Also[0m
-  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:prev-location[0m, [1m:prev-mark[0m
+  [1m:goto[0m, [1m:next-location[0m, [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, 
+  [1m:prev-mark[0m, [1m:prev-section[0m
 [4mExamples[0m
 #1 To move 22 lines down in the view:
    [37m[40m:[0m[1m[36m[40mrelative-goto[0m[37m[40m +22                                [0m

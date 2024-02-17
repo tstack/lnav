@@ -97,9 +97,9 @@ public:
     std::set<size_t> take_indents() { return std::move(this->pp_indents); }
 
 private:
-    void descend();
+    void descend(data_token_t dt);
 
-    void ascend();
+    void ascend(data_token_t dt);
 
     void start_new_line();
 
@@ -120,6 +120,7 @@ private:
     int pp_depth{0};
     int pp_line_length{0};
     int pp_soft_indent{0};
+    std::vector<data_token_t> pp_container_tokens{};
     std::stack<int> pp_body_lines{};
     data_scanner* pp_scanner;
     string_attrs_t pp_attrs;

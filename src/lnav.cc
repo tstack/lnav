@@ -2826,7 +2826,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_word_wrap(false);
     auto log_fos = new field_overlay_source(lnav_data.ld_log_source,
                                             lnav_data.ld_text_source);
-    log_fos->fos_contexts.emplace("", false, true);
+    log_fos->fos_contexts.emplace("", false, true, true);
     lnav_data.ld_views[LNV_LOG]
         .set_sub_source(&lnav_data.ld_log_source)
 #if 0
@@ -3356,6 +3356,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     cmd_results;
                 textview_curses *log_tc, *text_tc, *tc;
                 bool output_view = true;
+
+                log_fos->fos_contexts.top().c_show_applicable_annotations
+                    = false;
 
                 view_colors::init(true);
                 rescan_files(true);

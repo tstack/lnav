@@ -1,8 +1,8 @@
 {"ts": "2013-09-06T20:00:48.124817Z", "lvl": "TRACE", "msg": "trace test"}
 {"ts": "2013-09-06T20:00:49.124817Z", "lvl": "INFO", "msg": "Starting up \u001B[0;32mservice\u001B[0m"}
 {"ts": "2013-09-06T22:00:49.124817Z", "lvl": "INFO", "msg": "Shutting down service", "user": "steve@example.com"}
-{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG5", "msg": "Details...\n"}
-{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG4", "msg": "Details...\n"}
+{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG5", "msg": "D\bDetails...\n"}
+{"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG4", "msg": "D\bDe\betails...\n"}
 {"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG3", "msg": "Details...\n"}
 {"ts": "2013-09-06T22:00:59.124817Z", "lvl": "DEBUG2", "msg": "Details...\n"}
 {"ts": "2013-09-06 22:01:00Z", "lvl": "DEBUG", "msg": "Details..."}

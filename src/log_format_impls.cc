@@ -402,6 +402,7 @@ public:
 
     bro_log_format()
     {
+        this->lf_structured = true;
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
 
@@ -703,7 +704,6 @@ public:
         if (!this->blf_format_name.empty() && !this->blf_separator.empty()
             && !this->blf_field_defs.empty())
         {
-            dst.clear();
             return this->scan_int(dst, li, sbr, sbc);
         }
 
@@ -1059,6 +1059,7 @@ public:
     {
         this->lf_is_self_describing = true;
         this->lf_time_ordered = false;
+        this->lf_structured = true;
     }
 
     const intern_string_t get_name() const override

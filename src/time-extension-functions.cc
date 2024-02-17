@@ -234,7 +234,6 @@ sql_timezone(std::string tz_str, string_fragment ts_str)
             }
             alb.append(" unrecognized input");
         }
-        log_debug("wtf %s", ts_attr.get_string().c_str());
         um.with_note(ts_attr);
         throw um;
     }

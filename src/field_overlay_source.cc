@@ -476,26 +476,33 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
 {
     auto line_meta_opt = this->fos_lss.find_bookmark_metadata(row);
 
-    auto file_and_line = this->fos_lss.find_line_with_file(row);
-    if (file_and_line && !file_and_line->second->is_continued()) {
-        auto applicable_anno = lnav::log::annotate::applicable(row);
-        if (!applicable_anno.empty()
-            && (!line_meta_opt
-                || line_meta_opt.value()->bm_annotations.la_pairs.empty()))
-        {
-            auto anno_msg
-                = attr_line_t(" ")
-                      .append(":memo:"_emoji)
-                      .append(" Annotations available, ")
-                      .append(lv.get_selection() == row
-                                  ? "use "
-                                  : "focus on this line and use ")
-                      .append(":annotate"_quoted_code)
-                      .append(" to apply them")
-                      .append(lv.get_selection() == row ? " to this line" : "")
-                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
+    if (!this->fos_contexts.empty()
+        && this->fos_contexts.top().c_show_applicable_annotations)
+    {
+        auto file_and_line = this->fos_lss.find_line_with_file(row);
 
-            dst.emplace_back(anno_msg);
+        if (file_and_line && !file_and_line->second->is_continued()) {
+            auto applicable_anno = lnav::log::annotate::applicable(row);
+            if (!applicable_anno.empty()
+                && (!line_meta_opt
+                    || line_meta_opt.value()->bm_annotations.la_pairs.empty()))
+            {
+                auto anno_msg
+                    = attr_line_t(" ")
+                          .append(":memo:"_emoji)
+                          .append(" Annotations available, ")
+                          .append(lv.get_selection() == row
+                                      ? "use "
+                                      : "focus on this line and use ")
+                          .append(":annotate"_quoted_code)
+                          .append(" to apply them")
+                          .append(lv.get_selection() == row ? " to this line"
+                                                            : "")
+                          .with_attr_for_all(
+                              VC_ROLE.value(role_t::VCR_COMMENT));
+
+                dst.emplace_back(anno_msg);
+            }
         }
     }
 
