@@ -719,6 +719,9 @@ listview_curses::shift_selection(shift_amount_t sa)
             break;
     }
     if (this->is_selectable()) {
+        if (this->lv_selection == -1_vl) {
+            this->lv_selection = this->lv_top;
+        }
         auto new_selection = this->lv_selection + vis_line_t(offset);
 
         if (new_selection < 0_vl) {

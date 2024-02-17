@@ -73,6 +73,9 @@ public:
         return *this;
     }
 
+    plain_text_source& replace_with_mutable(attr_line_t& text_lines,
+                                            text_format_t tf);
+
     plain_text_source& replace_with(const attr_line_t& text_lines);
 
     plain_text_source& replace_with(const std::vector<std::string>& text_lines);
@@ -123,6 +126,8 @@ public:
     nonstd::optional<vis_line_t> row_for_anchor(const std::string& id) override;
     nonstd::optional<std::string> anchor_for_row(vis_line_t vl) override;
     std::unordered_set<std::string> get_anchors() override;
+    nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
+                                                 direction dir) override;
 
 protected:
     size_t compute_longest_line();

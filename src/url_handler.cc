@@ -86,7 +86,7 @@ looper::handler_looper::loop_body()
                             if (exec_res.isErr()) {
                                 auto um = exec_res.unwrapErr();
                                 log_error(
-                                    "wtf %s",
+                                    "%s",
                                     um.to_attr_line().get_string().c_str());
                             }
                         });

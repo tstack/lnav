@@ -253,6 +253,7 @@ dist_noinst_DATA = \
 	bad-config2/formats/invalid-config/config.truncated.json \
 	bad-config-json/formats/invalid-json/format.json \
 	bad-config-json/formats/invalid-key/format.json \
+	books.json \
 	books.xml \
 	file_for_dot_read.sql \
 	datafile_simple.0 \

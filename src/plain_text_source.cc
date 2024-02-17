@@ -31,6 +31,7 @@
 
 #include "base/itertools.hh"
 #include "config.h"
+#include "scn/scn.h"
 
 static std::vector<plain_text_source::text_line>
 to_text_line(const std::vector<attr_line_t>& lines)
@@ -79,7 +80,30 @@ plain_text_source::replace_with(const attr_line_t& text_lines)
 {
     this->tds_lines.clear();
     this->tds_doc_sections = lnav::document::discover_metadata(text_lines);
+    file_off_t off = 0;
+    auto lines = text_lines.split_lines();
+    while (!lines.empty() && lines.back().empty()) {
+        lines.pop_back();
+    }
+    for (auto& line : lines) {
+        auto line_len = line.length() + 1;
+        this->tds_lines.emplace_back(off, std::move(line));
+        off += line_len;
+    }
+    this->tds_longest_line = this->compute_longest_line();
+    if (this->tss_view != nullptr) {
+        this->tss_view->set_needs_update();
+    }
+    return *this;
+}
 
+plain_text_source&
+plain_text_source::replace_with_mutable(attr_line_t& text_lines,
+                                        text_format_t tf)
+{
+    this->tds_lines.clear();
+    this->tds_doc_sections
+        = lnav::document::discover_structure(text_lines, line_range{0, -1}, tf);
     file_off_t off = 0;
     auto lines = text_lines.split_lines();
     while (!lines.empty() && lines.back().empty()) {
@@ -368,16 +392,47 @@ plain_text_source::row_for_anchor(const std::string& id)
         return retval;
     }
 
+    const auto& meta = this->tds_doc_sections;
+
+    auto is_ptr = startswith(id, "#/");
+    if (is_ptr) {
+        auto hier_sf = string_fragment::from_str(id).consume_n(2).value();
+        std::vector<lnav::document::section_key_t> path;
+
+        while (!hier_sf.empty()) {
+            auto comp_pair = hier_sf.split_when(string_fragment::tag1{'/'});
+            auto scan_res
+                = scn::scan_value<int64_t>(comp_pair.first.to_string_view());
+            if (scan_res && scan_res.empty()) {
+                path.emplace_back(scan_res.value());
+            } else {
+                path.emplace_back(json_ptr::decode(comp_pair.first));
+            }
+            hier_sf = comp_pair.second;
+        }
+
+        auto lookup_res = lnav::document::hier_node::lookup_path(
+            meta.m_sections_root.get(), path);
+        if (lookup_res) {
+            retval = this->line_for_offset(lookup_res.value()->hn_start);
+        }
+
+        return retval;
+    }
+
     lnav::document::hier_node::depth_first(
-        this->tds_doc_sections.m_sections_root.get(),
+        meta.m_sections_root.get(),
         [this, &id, &retval](const lnav::document::hier_node* node) {
             for (const auto& child_pair : node->hn_named_children) {
-                auto child_anchor
+                const auto& child_anchor
                     = text_anchors::to_anchor_string(child_pair.first);
 
-                if (child_anchor == id) {
-                    retval = this->line_for_offset(child_pair.second->hn_start);
+                if (child_anchor != id) {
+                    continue;
                 }
+
+                retval = this->line_for_offset(child_pair.second->hn_start);
+                break;
             }
         });
 
@@ -413,16 +468,127 @@ plain_text_source::anchor_for_row(vis_line_t vl)
     }
 
     const auto& tl = this->tds_lines[vl];
+    auto& md = this->tds_doc_sections;
+    auto path_for_line = md.path_for_range(
+        tl.tl_offset, tl.tl_offset + tl.tl_value.al_string.length());
 
-    this->tds_doc_sections.m_sections_tree.visit_overlapping(
-        tl.tl_offset, [&retval](const lnav::document::section_interval_t& iv) {
-            retval = iv.value.match(
-                [](const std::string& str) {
-                    return nonstd::make_optional(
-                        text_anchors::to_anchor_string(str));
-                },
-                [](size_t) { return nonstd::nullopt; });
-        });
+    if (path_for_line.empty()) {
+        return nonstd::nullopt;
+    }
 
-    return retval;
+    if ((path_for_line.size() == 1
+         || this->tds_text_format == text_format_t::TF_MARKDOWN)
+        && path_for_line.back().is<std::string>())
+    {
+        return text_anchors::to_anchor_string(
+            path_for_line.back().get<std::string>());
+    }
+
+    auto comps = path_for_line | lnav::itertools::map([](const auto& elem) {
+                     return elem.match(
+                         [](const std::string& str) {
+                             return json_ptr::encode_str(str);
+                         },
+                         [](size_t index) { return fmt::to_string(index); });
+                 });
+
+    return fmt::format(FMT_STRING("#/{}"),
+                       fmt::join(comps.begin(), comps.end(), "/"));
+}
+
+nonstd::optional<vis_line_t>
+plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
+{
+    if (vl > this->tds_lines.size()
+        || this->tds_doc_sections.m_sections_root == nullptr)
+    {
+        return nonstd::nullopt;
+    }
+
+    const auto& tl = this->tds_lines[vl];
+    auto path_for_line = this->tds_doc_sections.path_for_range(
+        tl.tl_offset, tl.tl_offset + tl.tl_value.al_string.length());
+
+    auto& md = this->tds_doc_sections;
+    if (path_for_line.empty()) {
+        auto neighbors_res = md.m_sections_root->line_neighbors(vl);
+        if (!neighbors_res) {
+            return nonstd::nullopt;
+        }
+
+        switch (dir) {
+            case text_anchors::direction::prev: {
+                if (neighbors_res->cnr_previous) {
+                    return this->line_for_offset(
+                        neighbors_res->cnr_previous.value()->hn_start);
+                }
+                break;
+            }
+            case text_anchors::direction::next: {
+                if (neighbors_res->cnr_next) {
+                    return this->line_for_offset(
+                        neighbors_res->cnr_next.value()->hn_start);
+                }
+                break;
+            }
+        }
+        return nonstd::nullopt;
+    }
+
+    auto last_key = path_for_line.back();
+    path_for_line.pop_back();
+
+    auto parent_opt = lnav::document::hier_node::lookup_path(
+        md.m_sections_root.get(), path_for_line);
+    if (!parent_opt) {
+        return nonstd::nullopt;
+    }
+    auto parent = parent_opt.value();
+
+    auto child_hn = parent->lookup_child(last_key);
+    if (!child_hn) {
+        // XXX "should not happen"
+        return nonstd::nullopt;
+    }
+
+    auto neighbors_res = parent->child_neighbors(
+        child_hn.value(), tl.tl_offset + tl.tl_value.al_string.length() + 1);
+    if (!neighbors_res) {
+        return nonstd::nullopt;
+    }
+
+    if (neighbors_res->cnr_previous && last_key.is<std::string>()) {
+        auto neighbor_sub
+            = neighbors_res->cnr_previous.value()->lookup_child(last_key);
+        if (neighbor_sub) {
+            neighbors_res->cnr_previous = neighbor_sub;
+        }
+    }
+
+    if (neighbors_res->cnr_next && last_key.is<std::string>()) {
+        auto neighbor_sub
+            = neighbors_res->cnr_next.value()->lookup_child(last_key);
+        if (neighbor_sub) {
+            neighbors_res->cnr_next = neighbor_sub;
+        }
+    }
+
+    switch (dir) {
+        case text_anchors::direction::prev: {
+            if (neighbors_res->cnr_previous) {
+                return this->line_for_offset(
+                    neighbors_res->cnr_previous.value()->hn_start);
+            }
+            break;
+        }
+        case text_anchors::direction::next: {
+            if (neighbors_res->cnr_next) {
+                return this->line_for_offset(
+                    neighbors_res->cnr_next.value()->hn_start);
+            }
+            break;
+        }
+    }
+
+    return nonstd::nullopt;
 }

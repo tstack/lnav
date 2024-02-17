@@ -69,6 +69,18 @@ struct hier_node {
 
     nonstd::optional<hier_node*> lookup_child(section_key_t key) const;
 
+    nonstd::optional<size_t> child_index(const hier_node* hn) const;
+
+    struct child_neighbors_result {
+        nonstd::optional<const hier_node*> cnr_previous;
+        nonstd::optional<const hier_node*> cnr_next;
+    };
+
+    nonstd::optional<child_neighbors_result> child_neighbors(
+        const hier_node* hn, file_off_t offset) const;
+
+    nonstd::optional<child_neighbors_result> line_neighbors(size_t ln) const;
+
     nonstd::optional<size_t> find_line_number(const std::string& str) const
     {
         auto iter = this->hn_named_children.find(str);
@@ -115,6 +127,9 @@ struct metadata {
     std::unique_ptr<hier_node> m_sections_root;
     section_types_tree_t m_section_types_tree;
     std::set<size_t> m_indents;
+    text_format_t m_text_format{text_format_t::TF_UNKNOWN};
+
+    std::vector<section_key_t> path_for_range(size_t start, size_t stop);
 
     std::vector<breadcrumb::possibility> possibility_provider(
         const std::vector<section_key_t>& path);

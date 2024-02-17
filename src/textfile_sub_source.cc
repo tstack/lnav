@@ -560,26 +560,26 @@ textfile_sub_source::text_crumbs_for_line(
         rend_iter->second.rf_text_source->text_crumbs_for_line(line, crumbs);
     }
 
+    if (lf->has_line_metadata()) {
+        auto* lfo
+            = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+        if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+            return;
+        }
+        auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
+        char ts[64];
+
+        sql_strftime(ts, sizeof(ts), ll_iter->get_timeval(), 'T');
+
+        crumbs.emplace_back(
+            std::string(ts),
+            []() -> std::vector<breadcrumb::possibility> { return {}; },
+            [](const auto& key) {});
+    }
     auto meta_iter = this->tss_doc_metadata.find(lf->get_filename());
     if (meta_iter == this->tss_doc_metadata.end()
         || meta_iter->second.ms_metadata.m_sections_tree.empty())
     {
-        if (lf->has_line_metadata()) {
-            auto* lfo = dynamic_cast<line_filter_observer*>(
-                lf->get_logline_observer());
-            if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
-                return;
-            }
-            auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
-            char ts[64];
-
-            sql_strftime(ts, sizeof(ts), ll_iter->get_timeval(), 'T');
-
-            crumbs.emplace_back(
-                std::string(ts),
-                []() -> std::vector<breadcrumb::possibility> { return {}; },
-                [](const auto& key) {});
-        }
     } else {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
@@ -849,6 +849,7 @@ textfile_sub_source::rescan_files(
                     rf.rf_mtime = st.st_mtime;
                     rf.rf_file_size = st.st_size;
                     rf.rf_text_source = std::make_unique<plain_text_source>();
+                    rf.rf_text_source->set_text_format(lf->get_text_format());
                     rf.rf_text_source->register_view(this->tss_view);
                     if (parse_res.isOk()) {
                         auto& lf_meta = lf->get_embedded_metadata();
@@ -931,7 +932,7 @@ textfile_sub_source::rescan_files(
                         this->tss_doc_metadata[lf->get_filename()]
                             = metadata_state{
                                 st.st_mtime,
-                                static_cast<file_ssize_t>(content.length()),
+                                static_cast<file_ssize_t>(lf->get_index_size()),
                                 lnav::document::discover_structure(
                                     content,
                                     line_range{0, -1},
@@ -945,7 +946,7 @@ textfile_sub_source::rescan_files(
                         this->tss_doc_metadata[lf->get_filename()]
                             = metadata_state{
                                 st.st_mtime,
-                                static_cast<file_ssize_t>(st.st_size),
+                                static_cast<file_ssize_t>(lf->get_index_size()),
                                 {},
                             };
                     }
@@ -1159,6 +1160,142 @@ textfile_sub_source::get_anchors()
     return retval;
 }
 
+static nonstd::optional<vis_line_t>
+to_vis_line(const std::shared_ptr<logfile>& lf, file_off_t off)
+{
+    auto ll_opt = lf->line_for_offset(off);
+    if (ll_opt != lf->end()) {
+        return vis_line_t(std::distance(lf->cbegin(), ll_opt.value()));
+    }
+
+    return nonstd::nullopt;
+}
+
+nonstd::optional<vis_line_t>
+textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
+{
+    auto lf = this->current_file();
+    if (!lf) {
+        return nonstd::nullopt;
+    }
+
+    log_debug("adjacent_anchor: %s:L%d:%s",
+              lf->get_filename().c_str(),
+              vl,
+              dir == text_anchors::direction::prev ? "prev" : "next");
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        return rend_iter->second.rf_text_source->adjacent_anchor(vl, dir);
+    }
+
+    auto iter = this->tss_doc_metadata.find(lf->get_filename());
+    if (iter == this->tss_doc_metadata.end()) {
+        log_debug("  no metadata available");
+        return nonstd::nullopt;
+    }
+
+    auto& md = iter->second.ms_metadata;
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (vl >= lfo->lfo_filter_state.tfs_index.size()
+        || md.m_sections_root == nullptr)
+    {
+        return nonstd::nullopt;
+    }
+    auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
+    auto line_offsets = lf->get_file_range(ll_iter, false);
+    log_debug(
+        "  range %d:%d", line_offsets.fr_offset, line_offsets.next_offset());
+    auto path_for_line
+        = md.path_for_range(line_offsets.fr_offset, line_offsets.next_offset());
+
+    if (path_for_line.empty()) {
+        log_debug("  no path found");
+        auto neighbors_res = md.m_sections_root->line_neighbors(vl);
+        if (!neighbors_res) {
+            return nonstd::nullopt;
+        }
+
+        switch (dir) {
+            case text_anchors::direction::prev: {
+                if (neighbors_res->cnr_previous) {
+                    return to_vis_line(
+                        lf, neighbors_res->cnr_previous.value()->hn_start);
+                }
+                break;
+            }
+            case text_anchors::direction::next: {
+                if (neighbors_res->cnr_next) {
+                    return to_vis_line(
+                        lf, neighbors_res->cnr_next.value()->hn_start);
+                }
+                break;
+            }
+        }
+        return nonstd::nullopt;
+    }
+
+    auto last_key = path_for_line.back();
+    path_for_line.pop_back();
+
+    auto parent_opt = lnav::document::hier_node::lookup_path(
+        md.m_sections_root.get(), path_for_line);
+    if (!parent_opt) {
+        return nonstd::nullopt;
+    }
+    auto parent = parent_opt.value();
+
+    auto child_hn = parent->lookup_child(last_key);
+    if (!child_hn) {
+        // XXX "should not happen"
+        return nonstd::nullopt;
+    }
+
+    auto neighbors_res = parent->child_neighbors(
+        child_hn.value(), line_offsets.next_offset() + 1);
+    if (!neighbors_res) {
+        log_debug("  no neighbors found");
+        return nonstd::nullopt;
+    }
+
+    log_debug("  neighbors p:%d n:%d",
+              neighbors_res->cnr_previous.has_value(),
+              neighbors_res->cnr_next.has_value());
+    if (neighbors_res->cnr_previous && last_key.is<std::string>()) {
+        auto neighbor_sub
+            = neighbors_res->cnr_previous.value()->lookup_child(last_key);
+        if (neighbor_sub) {
+            neighbors_res->cnr_previous = neighbor_sub;
+        }
+    }
+
+    if (neighbors_res->cnr_next && last_key.is<std::string>()) {
+        auto neighbor_sub
+            = neighbors_res->cnr_next.value()->lookup_child(last_key);
+        if (neighbor_sub) {
+            neighbors_res->cnr_next = neighbor_sub;
+        }
+    }
+
+    switch (dir) {
+        case text_anchors::direction::prev: {
+            if (neighbors_res->cnr_previous) {
+                return to_vis_line(
+                    lf, neighbors_res->cnr_previous.value()->hn_start);
+            }
+            break;
+        }
+        case text_anchors::direction::next: {
+            if (neighbors_res->cnr_next) {
+                return to_vis_line(lf,
+                                   neighbors_res->cnr_next.value()->hn_start);
+            }
+            break;
+        }
+    }
+
+    return nonstd::nullopt;
+}
+
 nonstd::optional<std::string>
 textfile_sub_source::anchor_for_row(vis_line_t vl)
 {
@@ -1181,36 +1318,34 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
     if (vl >= lfo->lfo_filter_state.tfs_index.size()) {
         return nonstd::nullopt;
     }
+    auto& md = iter->second.ms_metadata;
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
-    auto ll_next_iter = ll_iter + 1;
-    auto end_offset = (ll_next_iter == lf->end())
-        ? lf->get_index_size() - 1
-        : ll_next_iter->get_offset() - 1;
+    auto line_offsets = lf->get_file_range(ll_iter, false);
+    auto path_for_line
+        = md.path_for_range(line_offsets.fr_offset, line_offsets.next_offset());
 
-    std::vector<std::string> collector;
-    iter->second.ms_metadata.m_sections_tree.visit_overlapping(
-        ll_iter->get_offset(),
-        end_offset,
-        [&collector](const lnav::document::section_interval_t& iv) {
-            collector.emplace_back(iv.value.match(
-                [](const std::string& str) { return str; },
-                [](size_t index) { return fmt::to_string(index); }));
-        });
-
-    if (collector.empty()) {
+    if (path_for_line.empty()) {
         return nonstd::nullopt;
     }
 
-    if (collector.size() == 1) {
-        return text_anchors::to_anchor_string(collector.front());
+    if ((path_for_line.size() == 1
+         || md.m_text_format == text_format_t::TF_MARKDOWN)
+        && path_for_line.back().is<std::string>())
+    {
+        return text_anchors::to_anchor_string(
+            path_for_line.back().get<std::string>());
     }
 
-    for (auto& elem : collector) {
-        elem = json_ptr::encode_str(elem);
-    }
+    auto comps = path_for_line | lnav::itertools::map([](const auto& elem) {
+                     return elem.match(
+                         [](const std::string& str) {
+                             return json_ptr::encode_str(str);
+                         },
+                         [](size_t index) { return fmt::to_string(index); });
+                 });
 
     return fmt::format(FMT_STRING("#/{}"),
-                       fmt::join(collector.begin(), collector.end(), "/"));
+                       fmt::join(comps.begin(), comps.end(), "/"));
 }
 
 bool

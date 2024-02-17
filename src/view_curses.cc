@@ -192,6 +192,12 @@ view_curses::mvwattrline(WINDOW* window,
                 char_index += 1;
                 break;
 
+            case '\b':
+                expanded_line.append("\u232b");
+                utf_adjustments.emplace_back(lpc, -1);
+                char_index += 1;
+                break;
+
             case '\r':
             case '\n':
                 expanded_line.push_back(' ');

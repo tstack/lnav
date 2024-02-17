@@ -3,11 +3,11 @@
 /global/keymap_def_clear -> default-keymap.json:13
 /global/keymap_def_db_view -> default-keymap.json:8
 /global/keymap_def_hist_view -> default-keymap.json:9
-/global/keymap_def_next_location -> default-keymap.json:15
 /global/keymap_def_next_mark -> default-keymap.json:16
+/global/keymap_def_next_section -> default-keymap.json:15
 /global/keymap_def_next_user_mark -> default-keymap.json:7
 /global/keymap_def_pop_view -> default-keymap.json:11
-/global/keymap_def_prev_location -> default-keymap.json:14
+/global/keymap_def_prev_section -> default-keymap.json:14
 /global/keymap_def_scroll_horiz -> default-keymap.json:6
 /global/keymap_def_text_view -> default-keymap.json:10
 /global/keymap_def_time_offset -> default-keymap.json:17

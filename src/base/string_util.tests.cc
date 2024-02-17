@@ -103,4 +103,14 @@ TEST_CASE("strnatcmp")
         CHECK(strnatcasecmp(lhs.length(), lhs.data(), rhs.length(), rhs.data())
               < 0);
     }
+
+    {
+        const std::string a = "10.112.81.15";
+        const std::string b = "192.168.202.254";
+
+        int ipcmp = 0;
+        auto rc = ipv4cmp(a.length(), a.c_str(), b.length(), b.c_str(), &ipcmp);
+        CHECK(rc == 1);
+        CHECK(ipcmp == -1);
+    }
 }

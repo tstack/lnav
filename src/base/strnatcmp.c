@@ -275,13 +275,13 @@ int ipv4cmp(int a_len, nat_char const *a,
     }
 
     for (; ai < a_len; ai++) {
-        if (!isdigit((unsigned char)a[ai]) || a[ai] != '.') {
+        if (!isdigit((unsigned char)a[ai]) && a[ai] != '.') {
             return 0;
         }
     }
 
     for (; bi < b_len; bi++) {
-        if (!isdigit((unsigned char)b[bi]) || b[bi] != '.') {
+        if (!isdigit((unsigned char)b[bi]) && b[bi] != '.') {
             return 0;
         }
     }

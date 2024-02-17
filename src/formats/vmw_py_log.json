@@ -39,6 +39,9 @@
             },
             {
                 "line": "2022-06-01T13:23:25.310 [2376]DEBUG:com.vmware.vherd.base.detwist:method = com.vmware.appliance.version1.system.version.get, args = ()"
+            },
+            {
+                "line": "2023-07-19T02:47:11 AM UTC [1670]DEBUG:firewall-reload:Processing system service 'sshd' firewall rules."
             }
         ]
     }

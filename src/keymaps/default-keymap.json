@@ -11,8 +11,8 @@
         "keymap_def_pop_view": "Press ${ansi_bold}q${ansi_norm} to return to the previous view",
         "keymap_def_zoom": "Press ${ansi_bold}z${ansi_norm}/${ansi_bold}Z${ansi_norm} to zoom in/out",
         "keymap_def_clear": "Press ${ansi_bold}C${ansi_norm} to clear marked messages",
-        "keymap_def_prev_location": "Press ${ansi_bold}{${ansi_norm} to move to the previous location in history",
-        "keymap_def_next_location": "Press ${ansi_bold}}${ansi_norm} to move to the next location in history",
+        "keymap_def_prev_section": "Press ${ansi_bold}{${ansi_norm} to move to the previous section in history",
+        "keymap_def_next_section": "Press ${ansi_bold}}${ansi_norm} to move to the next section in history",
         "keymap_def_next_mark": "Press ${ansi_bold}c${ansi_norm} to copy marked lines to the clipboard; press ${ansi_bold}C${ansi_norm} to clear marked lines",
         "keymap_def_time_offset": "Press ${ansi_bold}s${ansi_norm}/${ansi_bold}S${ansi_norm} to move forward/backward through slow downs"
     },
@@ -153,11 +153,11 @@
                     "command": ":prev-mark"
                 },
                 "x7d": {
-                    "command": ":next-location",
+                    "command": ":next-section",
                     "alt-msg": "${keymap_def_prev_location}"
                 },
                 "x7b": {
-                    "command": ":prev-location",
+                    "command": ":prev-section",
                     "alt-msg": "${keymap_def_next_location}"
                 },
                 "x3f": {

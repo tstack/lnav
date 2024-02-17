@@ -224,4 +224,21 @@ private:
     bool ds_units{false};
 };
 
+inline data_token_t
+to_closer(data_token_t dt)
+{
+    switch (dt) {
+        case DT_XML_OPEN_TAG:
+            return DT_XML_CLOSE_TAG;
+        case DT_LCURLY:
+            return DT_RCURLY;
+        case DT_LSQUARE:
+            return DT_RSQUARE;
+        case DT_LPAREN:
+            return DT_RPAREN;
+        default:
+            ensure(0);
+    }
+}
+
 #endif

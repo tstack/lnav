@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -60,6 +61,117 @@ hier_node::lookup_child(section_key_t key) const
         }));
 }
 
+nonstd::optional<size_t>
+hier_node::child_index(const hier_node* hn) const
+{
+    size_t retval = 0;
+
+    for (const auto& child : this->hn_children) {
+        if (child.get() == hn) {
+            return retval;
+        }
+        retval += 1;
+    }
+
+    return nonstd::nullopt;
+}
+
+nonstd::optional<hier_node::child_neighbors_result>
+hier_node::child_neighbors(const lnav::document::hier_node* hn,
+                           file_off_t offset) const
+{
+    auto index_opt = this->child_index(hn);
+    if (!index_opt) {
+        return nonstd::nullopt;
+    }
+
+    hier_node::child_neighbors_result retval;
+
+    if (index_opt.value() == 0) {
+        if (this->hn_parent != nullptr) {
+            auto parent_neighbors_opt
+                = this->hn_parent->child_neighbors(this, offset);
+
+            if (parent_neighbors_opt) {
+                retval.cnr_previous = parent_neighbors_opt->cnr_previous;
+            }
+        } else {
+            retval.cnr_previous = hn;
+        }
+    } else {
+        const auto* prev_hn = this->hn_children[index_opt.value() - 1].get();
+
+        if (hn->hn_line_number == 0
+            || (hn->hn_line_number - prev_hn->hn_line_number) > 1)
+        {
+            retval.cnr_previous = prev_hn;
+        } else if (this->hn_parent != nullptr) {
+            auto parent_neighbors_opt
+                = this->hn_parent->child_neighbors(this, offset);
+
+            if (parent_neighbors_opt) {
+                retval.cnr_previous = parent_neighbors_opt->cnr_previous;
+            }
+        }
+    }
+
+    if (index_opt.value() == this->hn_children.size() - 1) {
+        if (this->hn_parent != nullptr) {
+            auto parent_neighbors_opt
+                = this->hn_parent->child_neighbors(this, offset);
+
+            if (parent_neighbors_opt) {
+                retval.cnr_next = parent_neighbors_opt->cnr_next;
+            }
+        } else if (!hn->hn_children.empty()) {
+            for (const auto& child : hn->hn_children) {
+                if (child->hn_start > offset) {
+                    retval.cnr_next = child.get();
+                    break;
+                }
+            }
+        }
+    } else {
+        const auto* next_hn = this->hn_children[index_opt.value() + 1].get();
+
+        if (next_hn->hn_start > offset
+            && (hn->hn_line_number == 0
+                || (next_hn->hn_line_number - hn->hn_line_number) > 1))
+        {
+            retval.cnr_next = next_hn;
+        } else if (this->hn_parent != nullptr) {
+            auto parent_neighbors_opt
+                = this->hn_parent->child_neighbors(this, offset);
+
+            if (parent_neighbors_opt) {
+                retval.cnr_next = parent_neighbors_opt->cnr_next;
+            }
+        }
+    }
+
+    return retval;
+}
+
+nonstd::optional<hier_node::child_neighbors_result>
+hier_node::line_neighbors(size_t ln) const
+{
+    if (this->hn_children.empty()) {
+        return nonstd::nullopt;
+    }
+
+    hier_node::child_neighbors_result retval;
+
+    for (const auto& child : this->hn_children) {
+        if (child->hn_line_number > ln) {
+            retval.cnr_next = child.get();
+            break;
+        }
+        retval.cnr_previous = child.get();
+    }
+
+    return retval;
+}
+
 nonstd::optional<const hier_node*>
 hier_node::lookup_path(const hier_node* root,
                        const std::vector<section_key_t>& path)
@@ -81,11 +193,24 @@ hier_node::lookup_path(const hier_node* root,
     return retval;
 }
 
+std::vector<section_key_t>
+metadata::path_for_range(size_t start, size_t stop)
+{
+    std::vector<section_key_t> retval;
+
+    this->m_sections_tree.visit_overlapping(
+        start, stop, [&retval](const lnav::document::section_interval_t& iv) {
+            retval.emplace_back(iv.value);
+        });
+    return retval;
+}
+
 struct metadata_builder {
     std::vector<section_interval_t> mb_intervals;
     std::vector<section_type_interval_t> mb_type_intervals;
     std::unique_ptr<hier_node> mb_root_node;
     std::set<size_t> mb_indents;
+    text_format_t mb_text_format{text_format_t::TF_UNKNOWN};
 
     metadata to_metadata() &&
     {
@@ -94,6 +219,7 @@ struct metadata_builder {
             std::move(this->mb_root_node),
             std::move(this->mb_type_intervals),
             std::move(this->mb_indents),
+            this->mb_text_format,
         };
     }
 };
@@ -238,6 +364,16 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
         }
     });
 
+    hier_node::depth_first(
+        mb.mb_root_node.get(), [&orig_attrs](hier_node* node) {
+            auto off_opt = get_string_attr(
+                orig_attrs, &SA_ORIGIN_OFFSET, node->hn_start);
+
+            if (off_opt) {
+                node->hn_start += off_opt.value()->sa_value.get<int64_t>();
+            }
+        });
+
     if (!root_node->hn_children.empty()
         || !root_node->hn_named_children.empty())
     {
@@ -284,6 +420,7 @@ public:
     {
         metadata_builder mb;
 
+        mb.mb_text_format = this->sw_text_format;
         while (true) {
             auto tokenize_res
                 = this->sw_scanner.tokenize2(this->sw_text_format);
@@ -334,17 +471,26 @@ public:
                     this->sw_interval_state.resize(this->sw_depth + 1);
                     this->sw_hier_nodes.push_back(
                         std::make_unique<hier_node>());
+                    this->sw_container_tokens.push_back(to_closer(dt));
                     break;
                 case DT_XML_CLOSE_TAG: {
                     auto term = this->flush_values();
                     if (this->sw_depth > 0) {
-                        if (term) {
-                            this->append_child_node(term);
-                        }
-                        this->sw_interval_state.pop_back();
-                        this->sw_hier_stage
-                            = std::move(this->sw_hier_nodes.back());
-                        this->sw_hier_nodes.pop_back();
+                        auto found = false;
+                        do {
+                            if (this->sw_container_tokens.back() == dt) {
+                                found = true;
+                            }
+                            if (term) {
+                                this->append_child_node(term);
+                                term = nonstd::nullopt;
+                            }
+                            this->sw_interval_state.pop_back();
+                            this->sw_hier_stage
+                                = std::move(this->sw_hier_nodes.back());
+                            this->sw_hier_nodes.pop_back();
+                            this->sw_container_tokens.pop_back();
+                        } while (!found);
                     }
                     this->append_child_node(el.e_capture);
                     if (this->sw_depth > 0) {
@@ -418,6 +564,7 @@ public:
                         this->sw_interval_state.resize(this->sw_depth + 1);
                         this->sw_hier_nodes.push_back(
                             std::make_unique<hier_node>());
+                        this->sw_container_tokens.push_back(to_closer(dt));
                     } else {
                         this->sw_values.emplace_back(el);
                     }
@@ -426,37 +573,54 @@ public:
                 case DT_RCURLY:
                 case DT_RSQUARE:
                 case DT_RPAREN:
-                    if (this->is_structured_text()) {
+                    if (this->is_structured_text()
+                        && !this->sw_container_tokens.empty()
+                        && std::find(this->sw_container_tokens.begin(),
+                                     this->sw_container_tokens.end(),
+                                     dt)
+                            != this->sw_container_tokens.end())
+                    {
                         auto term = this->flush_values();
                         if (this->sw_depth > 0) {
-                            this->append_child_node(term);
-                            this->sw_depth -= 1;
-                            this->sw_interval_state.pop_back();
-                            this->sw_hier_stage
-                                = std::move(this->sw_hier_nodes.back());
-                            this->sw_hier_nodes.pop_back();
-                            if (this->sw_interval_state.back().is_start) {
-                                data_scanner::capture_t obj_cap = {
-                                    static_cast<int>(
-                                        this->sw_interval_state.back()
-                                            .is_start.value()),
-                                    el.e_capture.c_end,
-                                };
+                            auto found = false;
+                            do {
+                                if (this->sw_container_tokens.back() == dt) {
+                                    found = true;
+                                }
+                                this->append_child_node(term);
+                                term = nonstd::nullopt;
+                                this->sw_depth -= 1;
+                                this->sw_interval_state.pop_back();
+                                this->sw_hier_stage
+                                    = std::move(this->sw_hier_nodes.back());
+                                this->sw_hier_nodes.pop_back();
+                                if (this->sw_interval_state.back().is_start) {
+                                    data_scanner::capture_t obj_cap = {
+                                        static_cast<int>(
+                                            this->sw_interval_state.back()
+                                                .is_start.value()),
+                                        el.e_capture.c_end,
+                                    };
 
-                                auto sf = this->sw_scanner.to_string_fragment(
-                                    obj_cap);
-                                if (!sf.find('\n')) {
-                                    this->sw_hier_stage->hn_named_children
-                                        .clear();
-                                    this->sw_hier_stage->hn_children.clear();
-                                    while (!this->sw_intervals.empty()
-                                           && this->sw_intervals.back().start
-                                               > obj_cap.c_begin)
-                                    {
-                                        this->sw_intervals.pop_back();
+                                    auto sf
+                                        = this->sw_scanner.to_string_fragment(
+                                            obj_cap);
+                                    if (!sf.find('\n')) {
+                                        this->sw_hier_stage->hn_named_children
+                                            .clear();
+                                        this->sw_hier_stage->hn_children
+                                            .clear();
+                                        while (
+                                            !this->sw_intervals.empty()
+                                            && this->sw_intervals.back().start
+                                                > obj_cap.c_begin)
+                                        {
+                                            this->sw_intervals.pop_back();
+                                        }
                                     }
                                 }
-                            }
+                                this->sw_container_tokens.pop_back();
+                            } while (!found);
                         }
                     }
                     this->sw_values.emplace_back(el);
@@ -650,18 +814,22 @@ private:
         auto new_key = ivstate.is_name.empty()
             ? lnav::document::section_key_t{top_node->hn_children.size()}
             : lnav::document::section_key_t{ivstate.is_name};
-        this->sw_intervals.emplace_back(iv_start, iv_stop, new_key);
         auto* retval = new_node.get();
         new_node->hn_parent = top_node;
-        new_node->hn_start = this->sw_intervals.back().start;
+        new_node->hn_start = iv_start;
         new_node->hn_line_number = ivstate.is_line_number;
-        if (!ivstate.is_name.empty()) {
-            top_node->hn_named_children.insert({
-                ivstate.is_name,
-                retval,
-            });
+        if (this->sw_depth == 1
+            || new_node->hn_line_number != top_node->hn_line_number)
+        {
+            this->sw_intervals.emplace_back(iv_start, iv_stop, new_key);
+            if (!ivstate.is_name.empty()) {
+                top_node->hn_named_children.insert({
+                    ivstate.is_name,
+                    retval,
+                });
+            }
+            top_node->hn_children.emplace_back(std::move(new_node));
         }
-        top_node->hn_children.emplace_back(std::move(new_node));
         ivstate.is_start = nonstd::nullopt;
         ivstate.is_line_number = 0;
         ivstate.is_name.clear();
@@ -676,6 +844,7 @@ private:
     bool sw_at_start{true};
     std::set<size_t> sw_indents;
     std::vector<element> sw_values{};
+    std::vector<data_token_t> sw_container_tokens;
     std::vector<interval_state> sw_interval_state;
     std::vector<lnav::document::section_interval_t> sw_intervals;
     std::vector<lnav::document::section_type_interval_t> sw_type_intervals;
