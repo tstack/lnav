@@ -752,7 +752,8 @@ For support questions, email:
 [4mParameter[0m
   [4mpattern[0m   The glob pattern to match against files that
             should no longer use this timezone
-
+[4mSee Also[0m
+  [1m:set-file-timezone[0m
 
 [4m:[0m[1m[4mclear-filter-expr[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1484,7 +1485,8 @@ For support questions, email:
   [4mzone[0m      The timezone name
   [4mpattern[0m   The glob pattern to match against files that
             should use this timezone
-
+[4mSee Also[0m
+  [1m:clear-file-timezone[0m
 
 [4m:[0m[1m[4mset-min-log-level[0m[4m [0m[4mlog-level[0m
 ══════════════════════════════════════════════════════════════════════

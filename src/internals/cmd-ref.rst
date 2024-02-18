@@ -124,6 +124,8 @@
   **Parameters**
     * **pattern\*** --- The glob pattern to match against files that should no longer use this timezone
 
+  **See Also**
+    :ref:`set_file_timezone`
 
 ----
 
@@ -1251,6 +1253,8 @@
     * **zone\*** --- The timezone name
     * **pattern** --- The glob pattern to match against files that should use this timezone
 
+  **See Also**
+    :ref:`clear_file_timezone`
 
 ----
 
