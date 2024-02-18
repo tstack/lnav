@@ -5746,7 +5746,8 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(help_text{"pattern",
                                       "The glob pattern to match against "
                                       "files that should use this timezone"}
-                                .optional()),
+                                .optional())
+            .with_tags({"file-options"}),
         com_set_file_timezone_prompt,
     },
     {
@@ -5758,7 +5759,8 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(
                 help_text{"pattern",
                           "The glob pattern to match against files that should "
-                          "no longer use this timezone"}),
+                          "no longer use this timezone"})
+            .with_tags({"file-options"}),
     },
     {"current-time",
      com_current_time,

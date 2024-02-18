@@ -21,10 +21,8 @@
 
 [1m[35mLNAV – The Logfile Navigator[0m
 
-The Log File Navigator, [1mlnav[0m for short, is an advanced log file viewer
-for the small-scale.  It is a terminal application that can understand
-your log files and make it easy for you to find problems with little
-to no setup.
+The Log File Navigator, [1mlnav[0m for short, is a log file viewer for the
+terminal.
 
 [1mScreenshot[0m
 
