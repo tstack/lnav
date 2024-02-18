@@ -11,11 +11,11 @@ layout: top
 style="float: right; max-width: 50%"}
 
 <div id="top-description">
-An advanced log file viewer for the small-scale
+A log file viewer for the terminal
 </div>
 
 <div id="intro">
-<p>Watch and analyze your log files from a terminal.</p>
+<p>Merge, tail, search, filter, and query log files with ease.</p>
 
 <p>No server. No setup. Still featureful.</p>
 
