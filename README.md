@@ -11,10 +11,8 @@ _This is the source repository for **lnav**, visit [https://lnav.org](https://ln
 
 # LNAV -- The Logfile Navigator
 
-The Log File Navigator, **lnav** for short, is an advanced log file viewer
-for the small-scale.  It is a terminal application that can understand
-your log files and make it easy for you to find problems with little to
-no setup.
+The Log File Navigator, **lnav** for short, is a log file viewer for
+the terminal.
 
 ## Screenshot
 
