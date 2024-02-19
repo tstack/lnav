@@ -26,8 +26,8 @@ Then, in the **lnav** TUI, you can:
 - search using regular expressions ([press `/`](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
 - highlight text with a regular expression ([`:highlight`](https://docs.lnav.org/en/latest/commands.html#highlight-pattern) command);
 - filter messages using [regular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions](https://docs.lnav.org/en/latest/usage.html#sqlite-expression);
-- pretty-print structured text ([press `P`](https://docs.lnav.org/en/latest/hotkeys.html#display));
-- view a histogram of messages over time ([press `i`](https://docs.lnav.org/en/latest/hotkeys.html#display));
+- pretty-print structured text ([press `P`](https://docs.lnav.org/en/latest/ui.html#pretty));
+- view a histogram of messages over time ([press `i`](https://docs.lnav.org/en/latest/ui.html#hist));
 - query messages using SQLite ([press `;`](https://docs.lnav.org/en/latest/sqlext.html))
 
 ## Screenshot
