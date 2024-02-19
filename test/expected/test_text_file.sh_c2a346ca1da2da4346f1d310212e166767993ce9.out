@@ -2,7 +2,7 @@
     {
         "top_meta": {
             "file": "{top_srcdir}/README.md",
-            "anchor": "#usage-with-systemd-journald-",
+            "anchor": "#usage",
             "breadcrumbs": [
                 {
                     "display_value": "README.md",
@@ -45,6 +45,9 @@
                             "display_value": "Support"
                         },
                         {
+                            "display_value": "Try online before installing"
+                        },
+                        {
                             "display_value": "Usage"
                         },
                         {
@@ -53,7 +56,7 @@
                     ]
                 },
                 {
-                    "display_value": "Usage with  systemd-journald ",
+                    "display_value": "⋯",
                     "search_placeholder": "",
                     "possibilities": [
                         {
