@@ -91,8 +91,8 @@ usual hotkeys to move around the view (arrow keys or
 See the [Usage section](https://docs.lnav.org/en/latest/usage.html)
 of the online documentation for more information.
 
-[^1] - Files that do not contain log messages can be seen in the 
-       TEXT view (reachable by pressing `t`).
+[^1]: Files that do not contain log messages can be seen in the 
+      TEXT view (reachable by pressing `t`).
 
 ### Usage with `systemd-journald`
 
