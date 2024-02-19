@@ -32,10 +32,11 @@ Then, in the **lnav** TUI, you can:
 
 ## Screenshot
 
-The following screenshot shows a syslog file. Log lines are 
-displayed with highlights. Errors are red and warnings are yellow.
+The following screenshot shows a mix of syslog and web access log
+files.  Failed requests are shown in red.  Identifiers, like IP
+address and PIDs are semantically highlighted.
 
-[![Screenshot](docs/assets/images/lnav-syslog-thumb.png)](docs/assets/images/lnav-syslog.png)
+[![Screenshot](docs/assets/images/lnav-front-page.png)](docs/assets/images/lnav-front-page.png)
 
 ## Why not **just** use `tail`/`grep`/`less`?
 
@@ -46,6 +47,20 @@ time and you can't scroll backwards.  Grep will only find matching
 lines, but won't return a full multi-line log message.  Less can only
 display a single file at a time.  Also, none of these basic tools 
 handle compressed files.
+
+## Try online before installing
+
+You can SSH into a demo node to play with lnav before installing.
+
+The "playground" account starts lnav with a couple of log files as
+an example:
+
+[`$ ssh playground@demo.lnav.org`](ssh://playground@demo.lnav.org)
+
+The "tutorial 1" account is an interactive tutorial that can teach 
+you the basics of operation:
+
+[`$ ssh tutorial1@demo.lnav.org`](ssh://tutorial1@demo.lnav.org)
 
 ## Installation
 
