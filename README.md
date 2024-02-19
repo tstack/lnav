@@ -12,13 +12,14 @@ _This is the source repository for **lnav**, visit [https://lnav.org](https://ln
 # LNAV -- The Logfile Navigator
 
 The Logfile Navigator is a log file viewer for the terminal.  Given a
-set of files, **lnav** will:
+set of files/directories, **lnav** will:
 
 - decompress as needed;
 - detect their format;
 - merge the files together by time into a single view;
-- tail the files and follow renames;
-- build an index of errors and warnings.
+- tail the files, follow renames, find new files in directories;
+- build an index of errors and warnings;
+- [pretty-print JSON-lines](https://docs.lnav.org/en/latest/formats.html#json-lines).
 
 Then, in the **lnav** TUI, you can:
 

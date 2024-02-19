@@ -1,7 +1,11 @@
 .. _log_formats:
 
+***********
 Log Formats
-===========
+***********
+
+Built-in Formats
+================
 
 Log files loaded into **lnav** are parsed based on formats defined in
 configuration files.  Many
@@ -19,6 +23,9 @@ The following log formats are built into **lnav**:
    :widths: 8 5 20
    :file: format-table.csv
 
+XSV Formats
+-----------
+
 In addition to the above formats, the following self-describing formats are
 supported:
 
@@ -33,6 +40,24 @@ supported:
   self-describing, so **lnav** will read the header to determine the shape of
   the file.
 
+JSON-lines
+----------
+
+Logs encoded as `JSON-lines <https://jsonlines.org>`_ can be parsed and
+pretty-printed in lnav by creating a log format file.  The format file
+is a bit simpler to create since it doesn't require a regular expression
+to match plain text.  Instead, the format defines the relevant fields
+and provides a :code:`line-format` array that specifies how the fields
+in the JSON object should be displayed.
+
+See the following formats that are built into lnav as examples:
+
+* `cloudflare_log.json <https://github.com/tstack/lnav/blob/master/src/formats/cloudflare_log.json>`_
+* `github_events_log.json <https://github.com/tstack/lnav/blob/master/src/formats/github_events_log.json>`_
+
+logfmt
+------
+
 There is also basic support for the `logfmt <https://brandur.org/logfmt>`_
 convention for formatting log messages.  Files that use this format must
 have the entire line be key/value pairs and the timestamp contained in a
@@ -41,9 +66,8 @@ quite follow this formatting, but wraps logfmt data with another recognized
 format, you can use the :ref:`logfmt2json` SQL function to convert the data
 into JSON for further analysis.
 
-
 Defining a New Format
----------------------
+=====================
 
 New log formats can be defined by placing JSON configuration files in
 subdirectories of the :file:`/etc/lnav/formats` and :file:`~/.lnav/formats/`
@@ -55,7 +79,7 @@ modify existing ones.  Format directories can also contain '.sql' and '.lnav'
 script files that can be used automate log file analysis.
 
 Creating a Format Using Regex101.com (v0.11.0+)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------------
 
 For plain-text log files, the easiest way to create a log format definition is
 to create the regular expression that recognizes log messages using
@@ -81,7 +105,7 @@ default to :code:`string`, but you'll want to change them to the appropriate
 type.
 
 Format File Reference
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 An **lnav** format file must contain a single JSON object, preferably with a
 :code:`$schema` property that refers to the
@@ -515,7 +539,7 @@ header:
       :eval :filter-out ${pattern}
 
 VSCode Extension
-^^^^^^^^^^^^^^^^
+----------------
 
 The `lnav VSCode Extension <https://marketplace.visualstudio.com/items?itemName=lnav.lnav>`_
 can be installed to add syntax highlighting to lnav scripts.
@@ -566,7 +590,7 @@ Executing the format file should then install it automatically:
 .. _format_order:
 
 Format Order When Scanning a File
----------------------------------
+=================================
 
 When **lnav** loads a file, it tries each log format against the first 15,000
 lines [#]_ of the file trying to find a match.  When a match is found, that log
@@ -594,7 +618,7 @@ will win.
        :ref:`tuning` section for more details.
 
 Automatic File Conversion
--------------------------
+=========================
 
 File formats that are not naturally understood by **lnav** can be
 automatically detected and converted to a usable form using the
