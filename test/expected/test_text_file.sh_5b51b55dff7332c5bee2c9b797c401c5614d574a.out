@@ -38,8 +38,8 @@ Then, in the [1mlnav[0m TUI, you can:
    command);
  [33m•[0m filter messages using ]8;;https://docs.lnav.org/en/latest/usage.html#regular-expression-match\[4mregular expressions[0m]8;;\[4m[4][0m or ]8;;https://docs.lnav.org/en/latest/usage.html#sqlite-expression\[4mSQLite[0m]8;;\
    ]8;;https://docs.lnav.org/en/latest/usage.html#sqlite-expression\[4mexpressions[0m]8;;\[4m[5][0m;
- [33m•[0m pretty-print structured text (]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4m[37m[40m P [0m]8;;\[4m[6][0m);
- [33m•[0m view a histogram of messages over time (]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4m[37m[40m i [0m]8;;\[4m[7][0m);
+ [33m•[0m pretty-print structured text (]8;;https://docs.lnav.org/en/latest/ui.html#pretty\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/ui.html#pretty\[4m[37m[40m P [0m]8;;\[4m[6][0m);
+ [33m•[0m view a histogram of messages over time (]8;;https://docs.lnav.org/en/latest/ui.html#hist\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/ui.html#hist\[4m[37m[40m i [0m]8;;\[4m[7][0m);
  [33m•[0m query messages using SQLite (]8;;https://docs.lnav.org/en/latest/sqlext.html\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/sqlext.html\[4m[37m[40m ; [0m]8;;\[4m[8][0m)
 
  ▌[1] - https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation     
@@ -47,8 +47,8 @@ Then, in the [1mlnav[0m TUI, you can:
  ▌[3] - https://docs.lnav.org/en/latest/commands.html#highlight-pattern     
  ▌[4] - https://docs.lnav.org/en/latest/usage.html#regular-expression-match 
  ▌[5] - https://docs.lnav.org/en/latest/usage.html#sqlite-expression        
- ▌[6] - https://docs.lnav.org/en/latest/hotkeys.html#display                
- ▌[7] - https://docs.lnav.org/en/latest/hotkeys.html#display                
+ ▌[6] - https://docs.lnav.org/en/latest/ui.html#pretty                      
+ ▌[7] - https://docs.lnav.org/en/latest/ui.html#hist                        
  ▌[8] - https://docs.lnav.org/en/latest/sqlext.html                         
 
 [1mScreenshot[0m
