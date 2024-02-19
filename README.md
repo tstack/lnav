@@ -84,15 +84,15 @@ $ lnav /path/to/file1 /path/to/dir ...
 The **lnav** TUI will pop up right away and begin indexing the 
 files. Progress is displayed in the "Files" panel at the 
 bottom. Once the indexing has finished, the LOG view will display 
-the log messages that were recognized[1]. You can then use the 
+the log messages that were recognized[^1]. You can then use the 
 usual hotkeys to move around the view (arrow keys or
 `j`/`k`/`h`/`l` to move down/up/left/right).
 
 See the [Usage section](https://docs.lnav.org/en/latest/usage.html)
 of the online documentation for more information.
 
-[1] - Files that do not contain log messages can be seen in the 
-      TEXT view (reachable by pressing `t`).
+[^1] - Files that do not contain log messages can be seen in the 
+       TEXT view (reachable by pressing `t`).
 
 ### Usage with `systemd-journald`
 

@@ -111,7 +111,7 @@ will figure out the rest:
 The [1mlnav[0m TUI will pop up right away and begin indexing the files.
 Progress is displayed in the [35m"Files"[0m panel at the bottom. Once the
 indexing has finished, the LOG view will display the log messages that
-were recognized[1]. You can then use the usual hotkeys to move around
+were recognized[^1]. You can then use the usual hotkeys to move around
 the view (arrow keys or [37m[40m j [0m/[37m[40m k [0m/[37m[40m h [0m/[37m[40m l [0m to move down/up/left/right).
 
 See the ]8;;https://docs.lnav.org/en/latest/usage.html\[4mUsage section[0m]8;;\[4m[1][0m of the online documentation for more
@@ -119,7 +119,7 @@ information.
 
  ▌[1] - https://docs.lnav.org/en/latest/usage.html 
 
-[1] - Files that do not contain log messages can be seen in the TEXT
+[^1] - Files that do not contain log messages can be seen in the TEXT
 view (reachable by pressing [37m[40m t [0m).
 
 [4mUsage with [0m[4m[37m[40m systemd-journald [0m
