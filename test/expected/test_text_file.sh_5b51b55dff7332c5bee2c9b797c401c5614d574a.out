@@ -119,7 +119,7 @@ information.
 
  ▌[1] - https://docs.lnav.org/en/latest/usage.html 
 
-[^1] - Files that do not contain log messages can be seen in the TEXT
+[^1]: Files that do not contain log messages can be seen in the TEXT
 view (reachable by pressing [37m[40m t [0m).
 
 [4mUsage with [0m[4m[37m[40m systemd-journald [0m
