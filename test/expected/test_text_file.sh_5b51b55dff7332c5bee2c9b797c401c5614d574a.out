@@ -27,7 +27,7 @@ set of files, [1mlnav[0m will:
  [33m•[0m decompress as needed;
  [33m•[0m detect their format;
  [33m•[0m merge the files together by time into a single view;
- [33m•[0m monitor the files for new data or renames;
+ [33m•[0m tail the files and follow renames;
  [33m•[0m build an index of errors and warnings.
 
 Then, in the [1mlnav[0m TUI, you can:
@@ -61,6 +61,16 @@ with highlights. Errors are red and warnings are yellow.
  ▌[1] - file://{top_srcdir}/docs/assets/images/lnav-syslog-thumb.png 
  ▌[2] - file://{top_srcdir}/docs/assets/images/lnav-syslog.png       
 
+[1mWhy not [0m[1mjust[0m[1m use [0m[1m[37m[40m tail [0m[1m/[0m[1m[37m[40m grep [0m[1m/[0m[1m[37m[40m less [0m[1m?[0m
+
+The standard Unix utilities are great for processing raw text lines,
+however, they do not understand log messages.  Tail can watch multiple
+files at a time, but it won't display messages in order by time and
+you can't scroll backwards.  Grep will only find matching lines, but
+won't return a full multi-line log message.  Less can only display a
+single file at a time.  Also, none of these basic tools handle
+compressed files.
+
 [1mInstallation[0m
 
 ]8;;https://github.com/tstack/lnav/releases/latest#release-artifacts\[4mDownload a statically-linked binary for Linux/MacOS from the release[0m]8;;\
@@ -68,18 +78,27 @@ with highlights. Errors are red and warnings are yellow.
 
  ▌[1] - https://github.com/tstack/lnav/releases/latest#release-artifacts 
 
+[4mBrew on MacOS[0m
+
+ ▌[33m[40m$ [0m[37m[40mbrew install lnav                     [0m
+
 [1mUsage[0m
 
 Simply point [1mlnav[0m at the files or directories you want to monitor, it
 will figure out the rest:
 
- ▌[37m[40m$ lnav /path/to/file                    [0m
+ ▌[33m[40m$ [0m[37m[40mlnav /path/to/file1 /path/to/dir ...    [0m
 
 The [1mlnav[0m TUI will pop up right away and begin indexing the files.
 Progress is displayed in the [35m"Files"[0m panel at the bottom. Once the
 indexing has finished, the LOG view will display the log messages that
 were recognized[1]. You can then use the usual hotkeys to move around
 the view (arrow keys or [37m[40m j [0m/[37m[40m k [0m/[37m[40m h [0m/[37m[40m l [0m to move down/up/left/right).
+
+See the ]8;;https://docs.lnav.org/en/latest/usage.html\[4mUsage section[0m]8;;\[4m[1][0m of the online documentation for more
+information.
+
+ ▌[1] - https://docs.lnav.org/en/latest/usage.html 
 
 [1] - Files that do not contain log messages can be seen in the TEXT
 view (reachable by pressing [37m[40m t [0m).

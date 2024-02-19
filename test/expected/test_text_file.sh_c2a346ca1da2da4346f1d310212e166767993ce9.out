@@ -46,6 +46,9 @@
                         },
                         {
                             "display_value": "Usage"
+                        },
+                        {
+                            "display_value": "Why not just use  tail / grep / less ?"
                         }
                     ]
                 },

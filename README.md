@@ -17,7 +17,7 @@ set of files, **lnav** will:
 - decompress as needed;
 - detect their format;
 - merge the files together by time into a single view;
-- monitor the files for new data or renames;
+- tail the files and follow renames;
 - build an index of errors and warnings.
 
 Then, in the **lnav** TUI, you can:
@@ -37,17 +37,33 @@ displayed with highlights. Errors are red and warnings are yellow.
 
 [![Screenshot](docs/assets/images/lnav-syslog-thumb.png)](docs/assets/images/lnav-syslog.png)
 
+## Why not **just** use `tail`/`grep`/`less`?
+
+The standard Unix utilities are great for processing raw text lines,
+however, they do not understand log messages.  Tail can watch
+multiple files at a time, but it won't display messages in order by
+time and you can't scroll backwards.  Grep will only find matching
+lines, but won't return a full multi-line log message.  Less can only
+display a single file at a time.  Also, none of these basic tools 
+handle compressed files.
+
 ## Installation
 
 [Download a statically-linked binary for Linux/MacOS from the release page](https://github.com/tstack/lnav/releases/latest#release-artifacts)
+
+### Brew on MacOS
+
+```console
+$ brew install lnav
+```
 
 ## Usage
 
 Simply point **lnav** at the files or directories you want to
 monitor, it will figure out the rest:
 
-```
-$ lnav /path/to/file
+```console
+$ lnav /path/to/file1 /path/to/dir ...
 ```
 
 The **lnav** TUI will pop up right away and begin indexing the 
@@ -56,6 +72,9 @@ bottom. Once the indexing has finished, the LOG view will display
 the log messages that were recognized[1]. You can then use the 
 usual hotkeys to move around the view (arrow keys or
 `j`/`k`/`h`/`l` to move down/up/left/right).
+
+See the [Usage section](https://docs.lnav.org/en/latest/usage.html)
+of the online documentation for more information.
 
 [1] - Files that do not contain log messages can be seen in the 
       TEXT view (reachable by pressing `t`).
