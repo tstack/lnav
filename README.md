@@ -11,24 +11,31 @@ _This is the source repository for **lnav**, visit [https://lnav.org](https://ln
 
 # LNAV -- The Logfile Navigator
 
-The Log File Navigator, **lnav** for short, is a log file viewer for
-the terminal.
+The Logfile Navigator is a log file viewer for the terminal.  Given a
+set of files, **lnav** will:
+
+- decompress as needed;
+- detect their format;
+- merge the files together by time into a single view;
+- monitor the files for new data or renames;
+- build an index of errors and warnings.
+
+Then, in the **lnav** TUI, you can:
+
+- jump quickly to the previous/next error ([press `e`/`E`](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
+- search using regular expressions ([press `/`](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
+- highlight text with a regular expression ([`:highlight`](https://docs.lnav.org/en/latest/commands.html#highlight-pattern) command);
+- filter messages using [regular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions](https://docs.lnav.org/en/latest/usage.html#sqlite-expression);
+- pretty-print structured text ([press `P`](https://docs.lnav.org/en/latest/hotkeys.html#display));
+- view a histogram of messages over time ([press `i`](https://docs.lnav.org/en/latest/hotkeys.html#display));
+- query messages using SQLite ([press `;`](https://docs.lnav.org/en/latest/sqlext.html))
 
 ## Screenshot
 
-The following screenshot shows a syslog file. Log lines are displayed with
-highlights. Errors are red and warnings are yellow.
+The following screenshot shows a syslog file. Log lines are 
+displayed with highlights. Errors are red and warnings are yellow.
 
 [![Screenshot](docs/assets/images/lnav-syslog-thumb.png)](docs/assets/images/lnav-syslog.png)
-
-## Features
-
-- Log messages from different files are collated together into a single view
-- Automatic detection of log format
-- Automatic decompression of GZip and BZip2 files
-- Filter log messages based on regular expressions
-- Use SQL to analyze your logs
-- And more...
 
 ## Installation
 
@@ -36,18 +43,22 @@ highlights. Errors are red and warnings are yellow.
 
 ## Usage
 
-The only file installed is the executable, `lnav`.  You can execute it
-with no arguments to view the default set of files:
+Simply point **lnav** at the files or directories you want to
+monitor, it will figure out the rest:
 
 ```
-$ lnav
+$ lnav /path/to/file
 ```
 
-You can view all the syslog messages by running:
+The **lnav** TUI will pop up right away and begin indexing the 
+files. Progress is displayed in the "Files" panel at the 
+bottom. Once the indexing has finished, the LOG view will display 
+the log messages that were recognized[1]. You can then use the 
+usual hotkeys to move around the view (arrow keys or
+`j`/`k`/`h`/`l` to move down/up/left/right).
 
-```
-$ lnav /var/log/messages*
-```
+[1] - Files that do not contain log messages can be seen in the 
+      TEXT view (reachable by pressing `t`).
 
 ### Usage with `systemd-journald`
 

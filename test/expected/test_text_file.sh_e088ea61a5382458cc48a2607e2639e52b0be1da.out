@@ -8,16 +8,6 @@ with highlights. Errors are red and warnings are yellow.
  ▌[1] - file://{top_srcdir}/docs/assets/images/lnav-syslog-thumb.png 
  ▌[2] - file://{top_srcdir}/docs/assets/images/lnav-syslog.png       
 
-[1mFeatures[0m
-
- [33m•[0m Log messages from different files are collated
-   together into a single view
- [33m•[0m Automatic detection of log format
- [33m•[0m Automatic decompression of GZip and BZip2 files
- [33m•[0m Filter log messages based on regular expressions
- [33m•[0m Use SQL to analyze your logs
- [33m•[0m And more...
-
 [1mInstallation[0m
 
 ]8;;https://github.com/tstack/lnav/releases/latest#release-artifacts\[4mDownload a statically-linked binary for Linux/MacOS from the release[0m]8;;\
@@ -27,14 +17,19 @@ with highlights. Errors are red and warnings are yellow.
 
 [1mUsage[0m
 
-The only file installed is the executable, [37m[40m lnav [0m.  You can execute it
-with no arguments to view the default set of files:
+Simply point [1mlnav[0m at the files or directories you want to monitor, it
+will figure out the rest:
 
- ▌[37m[40m$ lnav                                  [0m
+ ▌[37m[40m$ lnav /path/to/file                    [0m
 
-You can view all the syslog messages by running:
+The [1mlnav[0m TUI will pop up right away and begin indexing the files.
+Progress is displayed in the [35m"Files"[0m panel at the bottom. Once the
+indexing has finished, the LOG view will display the log messages that
+were recognized[1]. You can then use the usual hotkeys to move around
+the view (arrow keys or [37m[40m j [0m/[37m[40m k [0m/[37m[40m h [0m/[37m[40m l [0m to move down/up/left/right).
 
- ▌[37m[40m$ lnav /var/log/messages*               [0m
+[1] - Files that do not contain log messages can be seen in the TEXT
+view (reachable by pressing [37m[40m t [0m).
 
 [4mUsage with [0m[4m[37m[40m systemd-journald [0m
 

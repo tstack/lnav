@@ -21,8 +21,35 @@
 
 [1m[35mLNAV – The Logfile Navigator[0m
 
-The Log File Navigator, [1mlnav[0m for short, is a log file viewer for the
-terminal.
+The Logfile Navigator is a log file viewer for the terminal.  Given a
+set of files, [1mlnav[0m will:
+
+ [33m•[0m decompress as needed;
+ [33m•[0m detect their format;
+ [33m•[0m merge the files together by time into a single view;
+ [33m•[0m monitor the files for new data or renames;
+ [33m•[0m build an index of errors and warnings.
+
+Then, in the [1mlnav[0m TUI, you can:
+
+ [33m•[0m jump quickly to the previous/next error (]8;;https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation\[4m[37m[40m e [0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation\[4m/[0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation\[4m[37m[40m E [0m]8;;\[4m[1][0m);
+ [33m•[0m search using regular expressions (]8;;https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation\[4m[37m[40m / [0m]8;;\[4m[2][0m);
+ [33m•[0m highlight text with a regular expression (]8;;https://docs.lnav.org/en/latest/commands.html#highlight-pattern\[4m[37m[40m :highlight [0m]8;;\[4m[3][0m
+   command);
+ [33m•[0m filter messages using ]8;;https://docs.lnav.org/en/latest/usage.html#regular-expression-match\[4mregular expressions[0m]8;;\[4m[4][0m or ]8;;https://docs.lnav.org/en/latest/usage.html#sqlite-expression\[4mSQLite[0m]8;;\
+   ]8;;https://docs.lnav.org/en/latest/usage.html#sqlite-expression\[4mexpressions[0m]8;;\[4m[5][0m;
+ [33m•[0m pretty-print structured text (]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4m[37m[40m P [0m]8;;\[4m[6][0m);
+ [33m•[0m view a histogram of messages over time (]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/hotkeys.html#display\[4m[37m[40m i [0m]8;;\[4m[7][0m);
+ [33m•[0m query messages using SQLite (]8;;https://docs.lnav.org/en/latest/sqlext.html\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/sqlext.html\[4m[37m[40m ; [0m]8;;\[4m[8][0m)
+
+ ▌[1] - https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation     
+ ▌[2] - https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation     
+ ▌[3] - https://docs.lnav.org/en/latest/commands.html#highlight-pattern     
+ ▌[4] - https://docs.lnav.org/en/latest/usage.html#regular-expression-match 
+ ▌[5] - https://docs.lnav.org/en/latest/usage.html#sqlite-expression        
+ ▌[6] - https://docs.lnav.org/en/latest/hotkeys.html#display                
+ ▌[7] - https://docs.lnav.org/en/latest/hotkeys.html#display                
+ ▌[8] - https://docs.lnav.org/en/latest/sqlext.html                         
 
 [1mScreenshot[0m
 
@@ -34,16 +61,6 @@ with highlights. Errors are red and warnings are yellow.
  ▌[1] - file://{top_srcdir}/docs/assets/images/lnav-syslog-thumb.png 
  ▌[2] - file://{top_srcdir}/docs/assets/images/lnav-syslog.png       
 
-[1mFeatures[0m
-
- [33m•[0m Log messages from different files are collated
-   together into a single view
- [33m•[0m Automatic detection of log format
- [33m•[0m Automatic decompression of GZip and BZip2 files
- [33m•[0m Filter log messages based on regular expressions
- [33m•[0m Use SQL to analyze your logs
- [33m•[0m And more...
-
 [1mInstallation[0m
 
 ]8;;https://github.com/tstack/lnav/releases/latest#release-artifacts\[4mDownload a statically-linked binary for Linux/MacOS from the release[0m]8;;\
@@ -53,14 +70,19 @@ with highlights. Errors are red and warnings are yellow.
 
 [1mUsage[0m
 
-The only file installed is the executable, [37m[40m lnav [0m.  You can execute it
-with no arguments to view the default set of files:
+Simply point [1mlnav[0m at the files or directories you want to monitor, it
+will figure out the rest:
 
- ▌[37m[40m$ lnav                                  [0m
+ ▌[37m[40m$ lnav /path/to/file                    [0m
 
-You can view all the syslog messages by running:
+The [1mlnav[0m TUI will pop up right away and begin indexing the files.
+Progress is displayed in the [35m"Files"[0m panel at the bottom. Once the
+indexing has finished, the LOG view will display the log messages that
+were recognized[1]. You can then use the usual hotkeys to move around
+the view (arrow keys or [37m[40m j [0m/[37m[40m k [0m/[37m[40m h [0m/[37m[40m l [0m to move down/up/left/right).
 
- ▌[37m[40m$ lnav /var/log/messages*               [0m
+[1] - Files that do not contain log messages can be seen in the TEXT
+view (reachable by pressing [37m[40m t [0m).
 
 [4mUsage with [0m[4m[37m[40m systemd-journald [0m
 
