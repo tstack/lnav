@@ -466,7 +466,46 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
                 retval = fmt::format(FMT_STRING("{} {} {}"),
                                      trim(cmdline),
                                      date::get_tzdb().current_zone()->name(),
-                                     line_pair->first->get_filename());
+                                     pattern_arg);
+            } catch (const std::runtime_error& e) {
+                log_error("cannot get timezones: %s", e.what());
+            }
+        }
+    }
+
+    return retval;
+}
+
+static std::string
+com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
+{
+    std::string retval;
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+
+    if (lss != nullptr && lss->text_line_count() > 0) {
+        auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+        if (line_pair) {
+            try {
+                static auto& safe_options_hier
+                    = injector::get<lnav::safe_file_options_hier&>();
+
+                safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+                    safe_options_hier);
+                auto file_zone = date::get_tzdb().current_zone()->name();
+                auto pattern_arg = line_pair->first->get_filename();
+                auto match_res
+                    = options_hier->match(line_pair->first->get_filename());
+                if (match_res) {
+                    file_zone
+                        = match_res->second.fo_default_zone.pp_value->name();
+                    pattern_arg = match_res->first;
+                }
+
+                retval = fmt::format(FMT_STRING("{} {}"),
+                                     trim(cmdline),
+                                     pattern_arg);
             } catch (const std::runtime_error& e) {
                 log_error("cannot get timezones: %s", e.what());
             }
@@ -546,7 +585,7 @@ com_convert_time_to(exec_context& ec,
         return ec.make_error("expecting a timezone name");
     }
 
-    auto* tc = *lnav_data.ld_view_stack.top();
+    const auto* tc = *lnav_data.ld_view_stack.top();
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
 
     if (lss != nullptr) {
@@ -554,7 +593,7 @@ com_convert_time_to(exec_context& ec,
             return ec.make_error("no log messages to examine");
         }
 
-        auto ll = lss->find_line(lss->at(tc->get_selection()));
+        const auto* ll = lss->find_line(lss->at(tc->get_selection()));
         try {
             auto* tz = date::locate_zone(args[1]);
             auto utime = std::chrono::system_clock::from_time_t(ll->get_time());
@@ -5729,7 +5768,7 @@ readline_context::command_t STD_COMMANDS[] = {
                              .with_format(help_parameter_format_t::HPF_INTEGER))
          .with_example({"To convert the epoch time 1490191111", "1490191111"})},
     {
-        "convert-time",
+        "convert-time-to",
         com_convert_time_to,
         help_text(":convert-time-to")
             .with_summary("Convert the focused timestamp to the given timezone")
@@ -5761,6 +5800,7 @@ readline_context::command_t STD_COMMANDS[] = {
                           "The glob pattern to match against files that should "
                           "no longer use this timezone"})
             .with_tags({"file-options"}),
+        com_clear_file_timezone_prompt,
     },
     {"current-time",
      com_current_time,

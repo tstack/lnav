@@ -1484,6 +1484,8 @@ external_log_format::scan(logfile& lf,
                         }
                         break;
                     }
+                    default:
+                        break;
                 }
                 if (dvalue_opt) {
                     auto dvalue = dvalue_opt.value();
