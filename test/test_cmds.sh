@@ -4,6 +4,16 @@ export TZ=UTC
 export YES_COLOR=1
 export DUMP_CRASH=1
 
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":convert-time-to bad-zone" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 0" \
+    -c ":convert-time-to America/Los_Angeles" \
+    ${test_dir}/logfile_access_log.0
+
 run_cap_test ${lnav_test} -nN \
     -c ";SELECT ':echo Hello' || char(10) || ':echo World' AS cmds" \
     -c ':eval ${cmds}'

@@ -1,0 +1,25 @@
+[
+    {
+        "top_meta": {
+            "file": "stdin",
+            "breadcrumbs": [
+                {
+                    "display_value": "stdin",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "stdin"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "2013-06-06T19:13:20.123",
+                    "search_placeholder": "",
+                    "possibilities": [
+
+                    ]
+                }
+            ]
+        }
+    }
+]

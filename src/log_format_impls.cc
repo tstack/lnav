@@ -45,6 +45,76 @@
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
+class piper_log_format : public log_format {
+public:
+    const intern_string_t get_name() const override
+    {
+        static const intern_string_t RETVAL
+            = intern_string::lookup("lnav_piper_log");
+
+        return RETVAL;
+    }
+
+    scan_result_t scan(logfile& lf,
+                       std::vector<logline>& dst,
+                       const line_info& li,
+                       shared_buffer_ref& sbr,
+                       scan_batch_context& sbc) override
+    {
+        if (lf.has_line_metadata()
+            && lf.get_text_format() == text_format_t::TF_LOG)
+        {
+            dst.emplace_back(
+                li.li_file_range.fr_offset, li.li_timestamp, li.li_level);
+            return scan_match{100};
+        }
+
+        return scan_no_match{""};
+    }
+
+    void annotate(uint64_t line_number,
+                  string_attrs_t& sa,
+                  logline_value_vector& values,
+                  bool annotate_module) const override
+    {
+        auto lr = line_range{0, 0};
+        sa.emplace_back(lr, logline::L_TIMESTAMP.value());
+    }
+
+    void get_subline(const logline& ll,
+                     shared_buffer_ref& sbr,
+                     bool full_message) override
+    {
+        this->plf_cached_line.resize(23);
+        sql_strftime(this->plf_cached_line.data(),
+                     this->plf_cached_line.size(),
+                     ll.get_timeval(),
+                     'T');
+        this->plf_cached_line.push_back(' ');
+        const auto prefix_len = this->plf_cached_line.size();
+        this->plf_cached_line.resize(this->plf_cached_line.size()
+                                     + sbr.length());
+        memcpy(
+            &this->plf_cached_line[prefix_len], sbr.get_data(), sbr.length());
+
+        sbr.share(this->plf_share_manager,
+                  this->plf_cached_line.data(),
+                  this->plf_cached_line.size());
+    }
+
+    std::shared_ptr<log_format> specialized(int fmt_lock) override
+    {
+        auto retval = std::make_shared<piper_log_format>(*this);
+
+        retval->lf_specialized = true;
+        return retval;
+    }
+
+private:
+    shared_buffer plf_share_manager;
+    std::vector<char> plf_cached_line;
+};
+
 class generic_log_format : public log_format {
     static const pcre_format* get_pcre_log_formats()
     {
@@ -1946,4 +2016,5 @@ static auto format_binder = injector::bind_multiple<log_format>()
                                 .add<logfmt_format>()
                                 .add<bro_log_format>()
                                 .add<w3c_log_format>()
-                                .add<generic_log_format>();
+                                .add<generic_log_format>()
+                                .add<piper_log_format>();

@@ -32,6 +32,7 @@
 
 #include <chrono>
 
+#include <date/date.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/time.h>
@@ -49,6 +50,10 @@ ssize_t strftime_rfc3339(char* buffer,
                          lnav::time64_t tim,
                          int millis,
                          char sep = ' ');
+
+date::sys_seconds to_sys_time(date::local_seconds secs);
+
+date::local_seconds to_local_time(date::sys_seconds secs);
 
 }  // namespace lnav
 

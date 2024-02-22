@@ -1239,6 +1239,11 @@ line_buffer::load_next_line(file_range prev_line)
                                   retval.li_timestamp.tv_usec,
                                   level);
         if (scan_res) {
+            retval.li_timestamp.tv_sec
+                = lnav::to_local_time(date::sys_seconds{std::chrono::seconds{
+                                          retval.li_timestamp.tv_sec}})
+                      .time_since_epoch()
+                      .count();
             retval.li_level = abbrev2level(&level, 1);
         }
     }

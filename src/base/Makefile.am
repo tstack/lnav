@@ -116,6 +116,7 @@ test_base_SOURCES = \
 test_base_LDADD = \
     libbase.a \
     ../fmtlib/libcppfmt.a \
+    ../third-party/date/src/libdatepp.a \
     ../third-party/scnlib/src/libscnlib.a \
     ../pcrepp/libpcrepp.a
 
