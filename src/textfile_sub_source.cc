@@ -27,7 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <chrono>
+
 #include "textfile_sub_source.hh"
+
+#include <date/date.h>
 
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.builder.hh"

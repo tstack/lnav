@@ -30,10 +30,15 @@
  */
 
 #include <chrono>
+#include <map>
 
 #include "time_util.hh"
 
+#include <date/ptz.h>
+
 #include "config.h"
+#include "lnav_log.hh"
+#include "optional.hpp"
 
 namespace lnav {
 
@@ -73,6 +78,64 @@ strftime_rfc3339(
     buffer[index] = '\0';
 
     return index;
+}
+
+static nonstd::optional<Posix::time_zone>
+get_posix_zone(const char* name)
+{
+    if (name == nullptr) {
+        return nonstd::nullopt;
+    }
+
+    try {
+        return date::zoned_traits<Posix::time_zone>::locate_zone(name);
+    } catch (const std::runtime_error& e) {
+        log_error("invalid TZ value: %s -- %s", name, e.what());
+        return nonstd::nullopt;
+    }
+}
+
+static const date::time_zone*
+get_date_zone(const char* name)
+{
+    if (name == nullptr) {
+        return date::current_zone();
+    }
+
+    try {
+        return date::locate_zone(name);
+    } catch (const std::runtime_error& e) {
+        log_error("invalid TZ value: %s -- %s", name, e.what());
+        return date::current_zone();
+    }
+}
+
+date::sys_seconds
+to_sys_time(date::local_seconds secs)
+{
+    static const auto* TZ = getenv("TZ");
+    static const auto TZ_POSIX_ZONE = get_posix_zone(TZ);
+    static const auto* TZ_DATE_ZONE = get_date_zone(TZ);
+
+    if (TZ_POSIX_ZONE) {
+        return TZ_POSIX_ZONE.value().to_sys(secs);
+    }
+
+    return TZ_DATE_ZONE->to_sys(secs);
+}
+
+date::local_seconds
+to_local_time(date::sys_seconds secs)
+{
+    static const auto* TZ = getenv("TZ");
+    static const auto TZ_POSIX_ZONE = get_posix_zone(TZ);
+    static const auto* TZ_DATE_ZONE = get_date_zone(TZ);
+
+    if (TZ_POSIX_ZONE) {
+        return TZ_POSIX_ZONE.value().to_local(secs);
+    }
+
+    return TZ_DATE_ZONE->to_local(secs);
 }
 
 }  // namespace lnav

@@ -171,6 +171,8 @@ public:
 
     text_format_t get_text_format() const { return this->lf_text_format; }
 
+    void set_text_format(text_format_t tf) { this->lf_text_format = tf; }
+
     /**
      * @return The last modified time of the file when the file was last
      * indexed.

@@ -503,9 +503,8 @@ com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
                     pattern_arg = match_res->first;
                 }
 
-                retval = fmt::format(FMT_STRING("{} {}"),
-                                     trim(cmdline),
-                                     pattern_arg);
+                retval = fmt::format(
+                    FMT_STRING("{} {}"), trim(cmdline), pattern_arg);
             } catch (const std::runtime_error& e) {
                 log_error("cannot get timezones: %s", e.what());
             }
@@ -595,15 +594,26 @@ com_convert_time_to(exec_context& ec,
 
         const auto* ll = lss->find_line(lss->at(tc->get_selection()));
         try {
-            auto* tz = date::locate_zone(args[1]);
-            auto utime = std::chrono::system_clock::from_time_t(ll->get_time());
-            auto ztime = date::make_zoned(tz, utime);
+            auto* dst_tz = date::locate_zone(args[1]);
+            auto utime = date::local_time<std::chrono::seconds>{
+                std::chrono::seconds{ll->get_time()}};
+            auto cz_time = lnav::to_sys_time(utime);
+            auto dz_time = date::make_zoned(dst_tz, cz_time);
             auto etime = std::chrono::duration_cast<std::chrono::seconds>(
-                ztime.get_local_time().time_since_epoch());
+                dz_time.get_local_time().time_since_epoch());
             char ftime[128];
             sql_strftime(
                 ftime, sizeof(ftime), etime.count(), ll->get_millis(), 'T');
             retval = ftime;
+
+            off_t off = 0;
+            exttm tm;
+            tm.et_flags |= ETF_ZONE_SET;
+            tm.et_gmtoff = dz_time.get_info().offset.count();
+            ftime_Z(ftime, off, sizeof(ftime), tm);
+            ftime[off] = '\0';
+            retval.append(" ");
+            retval.append(ftime);
         } catch (const std::runtime_error& e) {
             return ec.make_error(FMT_STRING("Unable to get timezone: {} -- {}"),
                                  args[1],

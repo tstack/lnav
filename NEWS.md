@@ -174,9 +174,11 @@ Breaking changes:
   the data is now stored (and cleaned up) as well as being
   spread across multiple files, this option doesn't make
   sense anymore.
-* Removed the `-t` command-line flag.  Text data fed in
-  on stdin and captured from a `:sh` execution is
-  automatically timestamped.
+* The `-t` command-line flag behaves a little differently
+  behind the scenes now.  Timestamps will always be
+  recorded for each line piped into lnav.  This flag means
+  that the data should be treated as a log file instead of
+  plain text.
 * Data piped into **lnav** is now stored in the work
   directory instead of the `stdin-captures` dot-lnav
   directory.

@@ -38,6 +38,7 @@
 #include "base/auto_fd.hh"
 #include "file_format.hh"
 #include "piper.looper.hh"
+#include "text_format.hh"
 #include "vis_line.hh"
 
 using ui_clock = std::chrono::steady_clock;
@@ -70,6 +71,7 @@ struct logfile_open_options_base {
     bool loo_tail{true};
     file_format_t loo_file_format{file_format_t::UNKNOWN};
     nonstd::optional<std::string> loo_format_name;
+    nonstd::optional<text_format_t> loo_text_format;
     nonstd::optional<lnav::piper::running_handle> loo_piper;
     file_location_t loo_init_location{mapbox::util::no_init{}};
 };
@@ -164,6 +166,13 @@ struct logfile_open_options : public logfile_open_options_base {
     logfile_open_options& with_init_location(file_location_t fl)
     {
         this->loo_init_location = fl;
+
+        return *this;
+    }
+
+    logfile_open_options& with_text_format(text_format_t tf)
+    {
+        this->loo_text_format = tf;
 
         return *this;
     }

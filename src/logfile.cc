@@ -133,6 +133,8 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
     lf->lf_index.reserve(INDEX_RESERVE_INCREMENT);
 
     lf->lf_indexing = lf->lf_options.loo_is_visible;
+    lf->lf_text_format
+        = lf->lf_options.loo_text_format.value_or(text_format_t::TF_UNKNOWN);
 
     const auto& hdr = lf->lf_line_buffer.get_header_data();
     if (hdr.valid()) {

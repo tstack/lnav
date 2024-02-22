@@ -379,9 +379,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 if (format->lf_timestamp_flags & ETF_ZONE_SET
                     && format->lf_date_time.dts_zoned_to_local)
                 {
-                    if (format->lf_timestamp_flags & ETF_Z_IS_UTC) {
-                        adjusted_tm.et_flags &= ~ETF_Z_IS_UTC;
-                    }
+                    adjusted_tm.et_flags &= ~ETF_Z_IS_UTC;
                 }
                 adjusted_tm.et_gmtoff
                     = format->lf_date_time.dts_local_offset_cache;

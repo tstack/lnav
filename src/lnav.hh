@@ -253,6 +253,7 @@ struct lnav_data_t {
 
     bool ld_initial_build{false};
     bool ld_show_help_view{false};
+    bool ld_treat_stdin_as_log{false};
     lnav_exec_phase ld_exec_phase{lnav_exec_phase::INIT};
 
     lnav::func::scoped_cb ld_status_refresher;

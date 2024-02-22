@@ -76,6 +76,7 @@ tailer_LDADD = libtailercommon.a
 drive_tailer_CPPFLAGS = \
     -I$(srcdir)/.. \
     -I$(srcdir)/../fmtlib \
+	-I$(top_srcdir)/src/third-party/date/include \
     -I$(top_srcdir)/src/third-party/scnlib/include
 
 drive_tailer_SOURCES = \
