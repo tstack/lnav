@@ -477,8 +477,14 @@ ptime_H(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         if (str[off_inout + 1] > '9') {
             return false;
         }
-        dst->et_tm.tm_hour
-            = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        if (isdigit(str[off_inout])) {
+            dst->et_tm.tm_hour = (str[off_inout] - '0') * 10;
+        } else if (str[off_inout] == ' ') {
+            dst->et_tm.tm_hour = 0;
+        } else {
+            return false;
+        }
+        dst->et_tm.tm_hour += (str[off_inout + 1] - '0');
         dst->et_flags |= ETF_HOUR_SET;
     });
 
@@ -573,8 +579,14 @@ ptime_I(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
         if (str[off_inout + 1] > '9') {
             return false;
         }
-        dst->et_tm.tm_hour
-            = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
+        if (isdigit(str[off_inout])) {
+            dst->et_tm.tm_hour = (str[off_inout] - '0') * 10;
+        } else if (str[off_inout] == ' ') {
+            dst->et_tm.tm_hour = 0;
+        } else {
+            return false;
+        }
+        dst->et_tm.tm_hour += (str[off_inout + 1] - '0');
 
         if (dst->et_tm.tm_hour < 1 || dst->et_tm.tm_hour > 12) {
             return false;

@@ -43,6 +43,7 @@ TIME_FORMATS = \
     "%Y %b %d %H:%M:%S" \
     "%a %b %d %H:%M:%S %Y" \
     "%a %b %d %H:%M:%S.%f %Y" \
+    "%a %b %d %H:%M:%S:%f %Y" \
     "%a %b %d %H:%M:%S %Z %Y" \
     "%a %b %d %I:%M:%S %p %Z %Y" \
     "%a %b %d %H:%M:%S " \
