@@ -11,7 +11,7 @@ The following options are available for installing **lnav**:
 ## Linux
 
 <!-- markdown-link-check-disable-next-line -->
-Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}-x86_64-linux-musl.zip).
+Download a [statically linked 64-bit binary](https://github.com/tstack/lnav/releases/download/v{{site.version}}/lnav-{{site.version}}-linux-musl-x86_64.zip).
 
 Install from the [Snap Store](https://snapcraft.io/lnav):
 
