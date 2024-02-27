@@ -37,6 +37,9 @@ plugins:
 
 show_excerpts: true
 
+kramdown:
+  syntax_highlighter: rouge
+
 exclude:
   - source
   - tutorials
