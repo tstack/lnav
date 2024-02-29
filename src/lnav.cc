@@ -854,7 +854,7 @@ handle_config_ui_key(int ch)
         } else {
             new_mode = ln_mode_t::FILES;
         }
-    } else if (ch == 'q') {
+    } else if (ch == 'q' || ch == KEY_ESCAPE) {
         new_mode = ln_mode_t::PAGING;
     }
 

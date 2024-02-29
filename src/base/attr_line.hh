@@ -510,6 +510,11 @@ public:
         return utf8_string_length(this->al_string).unwrapOr(this->length());
     }
 
+    size_t column_width() const
+    {
+        return string_fragment::from_str(this->al_string).column_width();
+    }
+
     std::string get_substring(const line_range& lr) const
     {
         if (!lr.is_valid()) {

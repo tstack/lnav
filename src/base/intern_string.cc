@@ -358,12 +358,12 @@ uint32_t
 string_fragment::front_codepoint() const
 {
     size_t index = 0;
-    try {
-        return ww898::utf::utf8::read(
-            [this, &index]() { return this->data()[index++]; });
-    } catch (const std::runtime_error& e) {
+    auto read_res = ww898::utf::utf8::read(
+        [this, &index]() { return this->data()[index++]; });
+    if (read_res.isErr()) {
         return this->data()[0];
     }
+    return read_res.unwrap();
 }
 
 Result<ssize_t, const char*>
@@ -385,4 +385,23 @@ string_fragment::codepoint_to_byte_index(ssize_t cp_index) const
     }
 
     return Ok(retval);
+}
+
+size_t
+string_fragment::column_width() const
+{
+    auto index = this->sf_begin;
+    size_t retval = 0;
+
+    while (index < this->sf_end) {
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            retval += 1;
+        } else {
+            retval += wcwidth(read_res.unwrap());
+        }
+    }
+
+    return retval;
 }

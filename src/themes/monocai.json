@@ -12,6 +12,7 @@
                     "magenta": "#ae81ff",
                     "cyan": "#66d9ee",
                     "white": "#808080",
+                    "orange": "#fc9867",
                     "semantic_highlight_color": "semantic()"
                 },
                 "styles": {
@@ -115,7 +116,8 @@
                         "color": "$yellow"
                     },
                     "breadcrumb": {
-                        "color": "#99a"
+                        "color": "$orange",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"

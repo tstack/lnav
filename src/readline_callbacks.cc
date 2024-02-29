@@ -53,12 +53,13 @@ using namespace lnav::roles::literals;
 
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
-#define STR_HELPER(x) #x
-#define STR(x)        STR_HELPER(x)
-
-#define ANSI_RE(msg)  ANSI_CSI "1;3" STR(COLOR_CYAN) "m" msg ANSI_NORM
-#define ANSI_CLS(msg) ANSI_CSI "1;3" STR(COLOR_MAGENTA) "m" msg ANSI_NORM
-#define ANSI_KW(msg)  ANSI_CSI "3" STR(COLOR_BLUE) "m" msg ANSI_NORM
+#define ANSI_RE(msg) \
+    ANSI_CSI ANSI_BOLD_PARAM ";" ANSI_COLOR_PARAM(COLOR_CYAN) "m" msg ANSI_NORM
+#define ANSI_CLS(msg) \
+    ANSI_CSI ANSI_BOLD_PARAM \
+        ";" ANSI_COLOR_PARAM(COLOR_MAGENTA) "m" msg ANSI_NORM
+#define ANSI_KW(msg) \
+    ANSI_CSI ANSI_BOLD_PARAM ";" ANSI_COLOR_PARAM(COLOR_BLUE) "m" msg ANSI_NORM
 #define ANSI_REV(msg) ANSI_CSI "7m" msg ANSI_NORM
 #define ANSI_STR(msg) ANSI_CSI "32m" msg ANSI_NORM
 
@@ -97,6 +98,18 @@ const char *RE_EXAMPLE =
     "  " ANSI_RE("(?-i)") "ABC   matches  " ANSI_STR("'ABC'") " and " ANSI_UNDERLINE("not") " " ANSI_STR("'abc'")
 ;
 
+const char* CMD_HELP =
+    " " ANSI_KW(":goto") "              Go to a line #, timestamp, etc...\n"
+    " " ANSI_KW(":filter-out") "        Filter out lines that match a pattern\n"
+    " " ANSI_KW(":hide-lines-before") " Hide lines before a timestamp\n"
+    " " ANSI_KW(":open") "              Open another file/directory\n";
+
+const char* CMD_EXAMPLE =
+    ANSI_UNDERLINE("Examples") "\n"
+    "  " ANSI_KW(":goto") " 123\n"
+    "  " ANSI_KW(":filter-out") " spam\n"
+    "  " ANSI_KW(":hide-lines-before") " here\n";
+
 const char *SQL_HELP =
     " " ANSI_KW("SELECT") "  Select rows from a table      "
     " " ANSI_KW("DELETE") "  Delete rows from a table\n"
@@ -127,7 +140,7 @@ rl_set_help()
             break;
         }
         case ln_mode_t::SQL: {
-            textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
+            auto& log_view = lnav_data.ld_views[LNV_LOG];
             auto* lss = (logfile_sub_source*) log_view.get_sub_source();
             attr_line_t example_al;
 
@@ -143,6 +156,11 @@ rl_set_help()
 
             lnav_data.ld_doc_source.replace_with(SQL_HELP);
             lnav_data.ld_example_source.replace_with(example_al);
+            break;
+        }
+        case ln_mode_t::COMMAND: {
+            lnav_data.ld_doc_source.replace_with(CMD_HELP);
+            lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
             break;
         }
         default:
@@ -309,8 +327,8 @@ rl_change(readline_curses* rc)
                 iter = lnav_commands.find(args[0]);
             }
             if (iter == lnav_commands.end()) {
-                lnav_data.ld_doc_source.clear();
-                lnav_data.ld_example_source.clear();
+                lnav_data.ld_doc_source.replace_with(CMD_HELP);
+                lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
                 lnav_data.ld_preview_source.clear();
                 lnav_data.ld_preview_status_source.get_description()
                     .set_cylon(false)

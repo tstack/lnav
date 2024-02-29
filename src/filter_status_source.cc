@@ -37,7 +37,7 @@
 #include "lnav.hh"
 
 static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
-static auto EXIT_MSG = "Press " ANSI_BOLD("q") " to exit ";
+static auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit ";
 
 static auto CREATE_HELP = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
 static auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";

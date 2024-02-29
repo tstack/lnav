@@ -5490,6 +5490,8 @@ command_prompt(std::vector<std::string>& args)
 
     rollback_lnav_config = lnav_config;
     lnav_data.ld_doc_status_source.set_title("Command Help");
+    lnav_data.ld_doc_status_source.set_description(" See " ANSI_BOLD(
+        "https://docs.lnav.org/en/latest/commands.html") " for more details");
     add_view_text_possibilities(lnav_data.ld_rl_view,
                                 ln_mode_t::COMMAND,
                                 "filter",
@@ -5520,6 +5522,8 @@ command_prompt(std::vector<std::string>& args)
     lnav_data.ld_rl_view->focus(ln_mode_t::COMMAND,
                                 cget(args, 2).value_or(":"),
                                 cget(args, 3).value_or(""));
+
+    rl_set_help();
 }
 
 static void
@@ -5560,6 +5564,7 @@ search_prompt(std::vector<std::string>& args)
                                 cget(args, 2).value_or("/"),
                                 cget(args, 3).value_or(""));
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
+    lnav_data.ld_doc_status_source.set_description("");
     rl_set_help();
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
@@ -5639,6 +5644,8 @@ sql_prompt(std::vector<std::string>& args)
                                 cget(args, 3).value_or(""));
 
     lnav_data.ld_doc_status_source.set_title("Query Help");
+    lnav_data.ld_doc_status_source.set_description("See " ANSI_BOLD(
+        "https://docs.lnav.org/en/latest/sqlext.html") " for more details");
     rl_set_help();
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();

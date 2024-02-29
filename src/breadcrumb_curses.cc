@@ -66,8 +66,7 @@ breadcrumb_curses::do_update()
     }
     attr_line_t crumbs_line;
     for (const auto& crumb : crumbs) {
-        auto accum_width
-            = utf8_string_length(crumbs_line.get_string()).template unwrap();
+        auto accum_width = crumbs_line.column_width();
         auto elem_width = utf8_string_length(crumb.c_display_value.get_string())
                               .template unwrap();
         auto is_selected = this->bc_selected_crumb
@@ -75,7 +74,7 @@ breadcrumb_curses::do_update()
 
         if (is_selected && ((accum_width + elem_width) > width)) {
             crumbs_line.clear();
-            crumbs_line.append("\u22ef\u276d"_breadcrumb);
+            crumbs_line.append("\u22ef\uff1a"_breadcrumb);
             accum_width = 2;
         }
 
@@ -91,7 +90,7 @@ breadcrumb_curses::do_update()
                 VC_STYLE.template value(text_attrs{A_REVERSE}));
         }
         crumb_index += 1;
-        crumbs_line.append("\u276d"_breadcrumb);
+        crumbs_line.append(" \uff1a"_breadcrumb);
     }
 
     line_range lr{0, static_cast<int>(width)};

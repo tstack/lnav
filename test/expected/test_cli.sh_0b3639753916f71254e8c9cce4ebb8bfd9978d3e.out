@@ -2371,6 +2371,7 @@
                     "cyan": "#66d9ee",
                     "green": "#a7e22e",
                     "magenta": "#ae81ff",
+                    "orange": "#fc9867",
                     "red": "#f92772",
                     "semantic_highlight_color": "semantic()",
                     "white": "#808080",
@@ -2546,10 +2547,10 @@
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "#99a",
+                        "color": "$orange",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444",

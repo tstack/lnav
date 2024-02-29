@@ -1,3 +1,13 @@
+## lnav v0.12.1
+
+Interface changes:
+* Changed the breadcrumb bar styling to space things out
+  more and make the divisions between items clearer.
+* The `ESC` key can now be used to exit the files/filters
+  configuration panel instead of `q`.  This should make
+  it easier to avoid accidentally exiting lnav.
+* Added some default help text for the command prompt.
+
 ## lnav v0.12.0
 
 Features:
