@@ -969,6 +969,10 @@ static const struct json_path_container theme_status_styles_handlers = {
         .with_description("Styling for hotkey highlights of status bars")
         .for_child(&lnav_theme::lt_style_status_hotkey)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("suggestion")
+        .with_description("Styling for suggested values")
+        .for_child(&lnav_theme::lt_style_suggestion)
+        .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_log_level_styles_handlers = {

@@ -179,6 +179,10 @@ run_cap_test ${lnav_test} -n \
     -c ":hide-fields access_log.c_ip access_log.cs_uri_stem" \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test ${lnav_test} -n \
+    -c ':hide-fields log_time log_level' \
+    ${test_dir}/logfile_generic.0
+
 run_cap_test ${lnav_test} -f- -n < ${test_dir}/formats/scripts/multiline-echo.lnav
 
 run_cap_test ${lnav_test} -n \

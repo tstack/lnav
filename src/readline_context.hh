@@ -53,10 +53,16 @@ typedef void (*readline_highlighter_t)(attr_line_t& line, int x);
  */
 class readline_context {
 public:
-    typedef Result<std::string, lnav::console::user_message> (*command_func_t)(
+    using command_func_t = Result<std::string, lnav::console::user_message> (*)(
         exec_context& ec, std::string cmdline, std::vector<std::string>& args);
-    typedef std::string (*prompt_func_t)(exec_context& ec,
-                                         const std::string& cmdline);
+
+    struct prompt_result_t {
+        std::string pr_new_prompt;
+        std::string pr_suggestion;
+    };
+
+    using prompt_func_t
+        = prompt_result_t (*)(exec_context& ec, const std::string& cmdline);
     typedef struct _command_t {
         const char* c_name;
         command_func_t c_func;
@@ -113,10 +119,7 @@ public:
         return *this;
     }
 
-    int get_append_character() const
-    {
-        return this->rc_append_character;
-    }
+    int get_append_character() const { return this->rc_append_character; }
 
     readline_context& set_highlighter(readline_highlighter_t hl)
     {

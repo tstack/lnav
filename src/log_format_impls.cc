@@ -116,6 +116,7 @@ private:
 };
 
 class generic_log_format : public log_format {
+public:
     static const pcre_format* get_pcre_log_formats()
     {
         static const pcre_format log_fmt[] = {
@@ -258,6 +259,9 @@ class generic_log_format : public log_format {
         auto lr = to_line_range(ts_cap.trim());
         sa.emplace_back(lr, logline::L_TIMESTAMP.value());
 
+        values.lvv_values.emplace_back(TS_META, line, lr);
+        values.lvv_values.back().lv_meta.lvm_format = (log_format*) this;
+
         prefix_len = ts_cap.sf_end;
         auto level_cap = md[2];
         if (level_cap) {
@@ -265,6 +269,11 @@ class generic_log_format : public log_format {
                 != LEVEL_UNKNOWN)
             {
                 prefix_len = level_cap->sf_end;
+
+                values.lvv_values.emplace_back(
+                    LEVEL_META, line, to_line_range(level_cap->trim()));
+                values.lvv_values.back().lv_meta.lvm_format
+                    = (log_format*) this;
             }
         }
 
@@ -284,6 +293,41 @@ class generic_log_format : public log_format {
         retval->lf_specialized = true;
         return retval;
     }
+
+    bool hide_field(const intern_string_t field_name, bool val) override
+    {
+        if (field_name == TS_META.lvm_name) {
+            TS_META.lvm_user_hidden = val;
+            return true;
+        } else if (field_name == LEVEL_META.lvm_name) {
+            LEVEL_META.lvm_user_hidden = val;
+            return true;
+        }
+        return false;
+    }
+
+    std::map<intern_string_t, logline_value_meta> get_field_states() override
+    {
+        return {
+            {TS_META.lvm_name, TS_META},
+            {LEVEL_META.lvm_name, LEVEL_META},
+        };
+    }
+
+private:
+    static logline_value_meta TS_META;
+    static logline_value_meta LEVEL_META;
+};
+
+logline_value_meta generic_log_format::TS_META{
+    intern_string::lookup("log_time"),
+    value_kind_t::VALUE_TEXT,
+    logline_value_meta::table_column{2},
+};
+logline_value_meta generic_log_format::LEVEL_META{
+    intern_string::lookup("log_level"),
+    value_kind_t::VALUE_TEXT,
+    logline_value_meta::table_column{4},
 };
 
 std::string

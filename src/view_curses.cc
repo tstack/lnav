@@ -977,6 +977,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_type, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SEP_REF_ACC)]
         = this->to_attrs(lt, lt.lt_style_sep_ref_acc, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SUGGESTION)]
+        = this->to_attrs(lt, lt.lt_style_suggestion, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_RE_SPECIAL)]
         = this->to_attrs(lt, lt.lt_style_re_special, reporter);

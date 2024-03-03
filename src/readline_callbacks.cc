@@ -326,7 +326,9 @@ rl_change(readline_curses* rc)
             if (!args.empty()) {
                 iter = lnav_commands.find(args[0]);
             }
-            if (iter == lnav_commands.end()) {
+            if (iter == lnav_commands.end()
+                || (args.size() == 1 && !endswith(line, " ")))
+            {
                 lnav_data.ld_doc_source.replace_with(CMD_HELP);
                 lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
                 lnav_data.ld_preview_source.clear();
@@ -361,12 +363,12 @@ rl_change(readline_curses* rc)
             } else if ((args[0] != "filter-expr" && args[0] != "mark-expr")
                        || !rl_sql_help(rc))
             {
-                readline_context::command_t& cmd = *iter->second;
-                const help_text& ht = cmd.c_help;
+                const auto& cmd = *iter->second;
+                const auto& ht = cmd.c_help;
 
                 if (ht.ht_name) {
-                    textview_curses& dtc = lnav_data.ld_doc_view;
-                    textview_curses& etc = lnav_data.ld_example_view;
+                    auto& dtc = lnav_data.ld_doc_view;
+                    auto& etc = lnav_data.ld_example_view;
                     unsigned long width;
                     vis_line_t height;
                     attr_line_t al;
@@ -383,15 +385,17 @@ rl_change(readline_curses* rc)
                     etc.set_needs_update();
                 }
 
-                if (cmd.c_prompt != nullptr && generation == 0
-                    && trim(line) == args[0])
-                {
-                    const auto new_prompt
+                if (cmd.c_prompt != nullptr) {
+                    const auto prompt_res
                         = cmd.c_prompt(lnav_data.ld_exec_context, line);
 
-                    if (!new_prompt.empty()) {
-                        rc->rewrite_line(line.length(), new_prompt);
+                    if (generation == 0 && trim(line) == args[0]
+                        && !prompt_res.pr_new_prompt.empty())
+                    {
+                        rc->rewrite_line(line.length(),
+                                         prompt_res.pr_new_prompt);
                     }
+                    rc->set_suggestion(prompt_res.pr_suggestion);
                 }
 
                 lnav_data.ld_bottom_source.grep_error("");

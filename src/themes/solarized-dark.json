@@ -287,6 +287,9 @@
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "$base02"
+                    },
+                    "suggestion": {
+                        "color": "$base02"
                     }
                 },
                 "log-level-styles": {

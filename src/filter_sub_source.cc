@@ -151,9 +151,9 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             return true;
         }
         case 'i': {
-            textview_curses* top_view = *lnav_data.ld_view_stack.top();
-            text_sub_source* tss = top_view->get_sub_source();
-            filter_stack& fs = tss->get_filters();
+            auto* top_view = *lnav_data.ld_view_stack.top();
+            auto* tss = top_view->get_sub_source();
+            auto& fs = tss->get_filters();
             auto filter_index = fs.next_index();
 
             if (!filter_index) {
@@ -434,25 +434,32 @@ filter_sub_source::rl_change(readline_curses* rc)
         case filter_lang_t::NONE:
             break;
         case filter_lang_t::REGEX: {
-            auto regex_res
-                = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
-
-            if (regex_res.isErr()) {
-                auto pe = regex_res.unwrapErr();
-                lnav_data.ld_filter_help_status_source.fss_error.set_value(
-                    "error: %s", pe.get_message().c_str());
+            if (new_value.empty()) {
+                if (fs.get_filter(top_view->get_current_search()) == nullptr) {
+                    this->fss_editor->set_suggestion(
+                        top_view->get_current_search());
+                }
             } else {
-                auto& hm = top_view->get_highlights();
-                highlighter hl(regex_res.unwrap().to_shared());
-                auto role = tf->get_type() == text_filter::EXCLUDE
-                    ? role_t::VCR_DIFF_DELETE
-                    : role_t::VCR_DIFF_ADD;
-                hl.with_role(role);
-                hl.with_attrs(text_attrs{A_BLINK | A_REVERSE});
+                auto regex_res
+                    = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
 
-                hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
-                top_view->set_needs_update();
-                lnav_data.ld_filter_help_status_source.fss_error.clear();
+                if (regex_res.isErr()) {
+                    auto pe = regex_res.unwrapErr();
+                    lnav_data.ld_filter_help_status_source.fss_error.set_value(
+                        "error: %s", pe.get_message().c_str());
+                } else {
+                    auto& hm = top_view->get_highlights();
+                    highlighter hl(regex_res.unwrap().to_shared());
+                    auto role = tf->get_type() == text_filter::EXCLUDE
+                        ? role_t::VCR_DIFF_DELETE
+                        : role_t::VCR_DIFF_ADD;
+                    hl.with_role(role);
+                    hl.with_attrs(text_attrs{A_BLINK | A_REVERSE});
+
+                    hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
+                    top_view->set_needs_update();
+                    lnav_data.ld_filter_help_status_source.fss_error.clear();
+                }
             }
             break;
         }

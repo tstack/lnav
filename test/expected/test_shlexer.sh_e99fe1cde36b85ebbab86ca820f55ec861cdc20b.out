@@ -1,0 +1,6 @@
+    abc 
+wsp    ^
+eof    ^
+eval -- abc 
+split:
+  0 ^-^ -- abc

@@ -578,6 +578,12 @@
                         "background-color": "",
                         "underline": true,
                         "bold": true
+                    },
+                    "suggestion": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     }
                 },
                 "log-level-styles": {
@@ -1168,6 +1174,12 @@
                         "background-color": "",
                         "underline": true,
                         "bold": false
+                    },
+                    "suggestion": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     }
                 },
                 "log-level-styles": {
@@ -1720,6 +1732,12 @@
                         "background-color": "",
                         "underline": true,
                         "bold": false
+                    },
+                    "suggestion": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     }
                 },
                 "log-level-styles": {
@@ -2271,6 +2289,12 @@
                         "color": "#fff",
                         "background-color": "",
                         "underline": true,
+                        "bold": false
+                    },
+                    "suggestion": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
                         "bold": false
                     }
                 },
@@ -2825,6 +2849,12 @@
                         "background-color": "",
                         "underline": true,
                         "bold": false
+                    },
+                    "suggestion": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     }
                 },
                 "log-level-styles": {
@@ -3377,6 +3407,12 @@
                         "background-color": "",
                         "underline": true,
                         "bold": true
+                    },
+                    "suggestion": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     }
                 },
                 "log-level-styles": {
@@ -3938,6 +3974,12 @@
                         "background-color": "",
                         "underline": true,
                         "bold": false
+                    },
+                    "suggestion": {
+                        "color": "$base02",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
                     }
                 },
                 "log-level-styles": {
@@ -4496,6 +4538,12 @@
                     },
                     "hotkey": {
                         "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "suggestion": {
+                        "color": "$base03",
                         "background-color": "",
                         "underline": false,
                         "bold": false

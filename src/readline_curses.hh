@@ -171,6 +171,8 @@ public:
 
     void rewrite_line(int pos, const std::string& value);
 
+    void set_suggestion(const std::string& value);
+
     readline_context* get_active_context() const
     {
         require(this->rc_active_context != -1);
@@ -328,6 +330,7 @@ private:
     bool rc_is_alt_focus{false};
     bool rc_ready_for_input{false};
     std::string rc_remote_complete_path;
+    std::string rc_suggestion;
 
     action rc_focus;
     action rc_change;

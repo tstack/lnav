@@ -895,7 +895,7 @@ handle_key(int ch)
                     return handle_paging_key(ch);
 
                 case ln_mode_t::BREADCRUMBS:
-                    if (!breadcrumb_view.handle_key(ch)) {
+                    if (ch == '`' || !breadcrumb_view.handle_key(ch)) {
                         lnav_data.ld_mode = ln_mode_t::PAGING;
                         lnav_data.ld_view_stack.set_needs_update();
                         return true;

@@ -7,6 +7,11 @@ Interface changes:
   configuration panel instead of `q`.  This should make
   it easier to avoid accidentally exiting lnav.
 * Added some default help text for the command prompt.
+* Suggestions are now shown for some commands and can
+  be accepted by pressing the right arrow key.  For
+  example, after typing in `:filter-in` the current
+  search term for the view will be suggested (if
+  one is active).
 
 ## lnav v0.12.0
 

@@ -151,7 +151,9 @@ shlex::tokenize()
                 switch (this->s_state) {
                     case state_t::STATE_NORMAL:
                         retval.tr_frag.sf_begin = this->s_index;
-                        while (isspace(this->s_str[this->s_index])) {
+                        while (this->s_index < this->s_len
+                               && isspace(this->s_str[this->s_index]))
+                        {
                             this->s_index += 1;
                         }
                         retval.tr_frag.sf_end = this->s_index;
@@ -345,11 +347,13 @@ shlex::split(const scoped_resolver& vars)
         auto tokenize_res = TRY(this->tokenize());
 
         if (start_new) {
-            retval.emplace_back(split_element_t{
-                string_fragment::from_byte_range(
-                    this->s_str, last_index, tokenize_res.tr_frag.sf_begin),
-                "",
-            });
+            if (last_index < this->s_len) {
+                retval.emplace_back(split_element_t{
+                    string_fragment::from_byte_range(
+                        this->s_str, last_index, tokenize_res.tr_frag.sf_begin),
+                    "",
+                });
+            }
             start_new = false;
         } else if (tokenize_res.tr_token != shlex_token_t::whitespace) {
             retval.back().se_origin.sf_end = tokenize_res.tr_frag.sf_end;

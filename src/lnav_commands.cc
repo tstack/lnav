@@ -436,47 +436,68 @@ com_set_file_timezone(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
 {
-    std::string retval;
-
     auto* tc = *lnav_data.ld_view_stack.top();
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
 
-    if (lss != nullptr && lss->text_line_count() > 0) {
-        auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
-        if (line_pair) {
-            try {
-                static auto& safe_options_hier
-                    = injector::get<lnav::safe_file_options_hier&>();
-
-                safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
-                    safe_options_hier);
-                auto file_zone = date::get_tzdb().current_zone()->name();
-                auto pattern_arg = line_pair->first->get_filename();
-                auto match_res
-                    = options_hier->match(line_pair->first->get_filename());
-                if (match_res) {
-                    file_zone
-                        = match_res->second.fo_default_zone.pp_value->name();
-                    pattern_arg = match_res->first;
-                }
-
-                retval = fmt::format(FMT_STRING("{} {} {}"),
-                                     trim(cmdline),
-                                     date::get_tzdb().current_zone()->name(),
-                                     pattern_arg);
-            } catch (const std::runtime_error& e) {
-                log_error("cannot get timezones: %s", e.what());
-            }
-        }
+    if (lss == nullptr || lss->text_line_count() == 0) {
+        return {};
     }
 
-    return retval;
+    shlex lexer(cmdline);
+    auto split_res = lexer.split(ec.create_resolver());
+    if (split_res.isErr()) {
+        return {};
+    }
+
+    auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+    if (!line_pair) {
+        return {};
+    }
+
+    auto elems = split_res.unwrap();
+    auto pattern_arg = line_pair->first->get_filename();
+    if (elems.size() == 1) {
+        try {
+            static auto& safe_options_hier
+                = injector::get<lnav::safe_file_options_hier&>();
+
+            safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+                safe_options_hier);
+            auto file_zone = date::get_tzdb().current_zone()->name();
+            auto match_res = options_hier->match(pattern_arg);
+            if (match_res) {
+                file_zone = match_res->second.fo_default_zone.pp_value->name();
+                pattern_arg = match_res->first;
+
+                auto new_prompt = fmt::format(FMT_STRING("{} {} {}"),
+                                              trim(cmdline),
+                                              file_zone,
+                                              pattern_arg);
+
+                return {new_prompt};
+            }
+
+            return {"", file_zone};
+        } catch (const std::runtime_error& e) {
+            log_error("cannot get timezones: %s", e.what());
+        }
+    }
+    auto arg_path = ghc::filesystem::path(pattern_arg);
+    auto arg_parent = arg_path.parent_path().string() + "/";
+    if (elems.size() == 2 && endswith(cmdline, " ")) {
+        return {"", arg_parent};
+    }
+    if (elems.size() == 3 && elems.back().se_value == arg_parent) {
+        return {"", arg_path.filename().string()};
+    }
+
+    return {};
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
 {
     std::string retval;
@@ -511,7 +532,7 @@ com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
         }
     }
 
-    return retval;
+    return {retval};
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -1031,18 +1052,20 @@ com_mark_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_mark_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
     if (tc != &lnav_data.ld_views[LNV_LOG]) {
-        return "";
+        return {""};
     }
 
-    return fmt::format(FMT_STRING("{} {}"),
-                       trim(cmdline),
-                       trim(lnav_data.ld_log_source.get_sql_marker_text()));
+    return {
+        fmt::format(FMT_STRING("{} {}"),
+                    trim(cmdline),
+                    trim(lnav_data.ld_log_source.get_sql_marker_text())),
+    };
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -2388,6 +2411,20 @@ com_filter(exec_context& ec,
     return Ok(retval);
 }
 
+static readline_context::prompt_result_t
+com_filter_prompt(exec_context& ec, const std::string& cmdline)
+{
+    const auto* tc = lnav_data.ld_view_stack.top().value();
+    std::vector<std::string> args;
+
+    split_ws(cmdline, args);
+    if (args.size() > 1) {
+        return {};
+    }
+
+    return {"", tc->get_current_search()};
+}
+
 static Result<std::string, lnav::console::user_message>
 com_delete_filter(exec_context& ec,
                   std::string cmdline,
@@ -2564,18 +2601,20 @@ com_filter_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_filter_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
+    auto* tc = *lnav_data.ld_view_stack.top();
 
     if (tc != &lnav_data.ld_views[LNV_LOG]) {
-        return "";
+        return {""};
     }
 
-    return fmt::format(FMT_STRING("{} {}"),
-                       trim(cmdline),
-                       trim(lnav_data.ld_log_source.get_sql_filter_text()));
+    return {
+        fmt::format(FMT_STRING("{} {}"),
+                    trim(cmdline),
+                    trim(lnav_data.ld_log_source.get_sql_filter_text())),
+    };
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -3616,13 +3655,13 @@ com_comment(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_comment_prompt(exec_context& ec, const std::string& cmdline)
 {
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
+    auto* tc = *lnav_data.ld_view_stack.top();
 
     if (tc != &lnav_data.ld_views[LNV_LOG]) {
-        return "";
+        return {""};
     }
     auto& lss = lnav_data.ld_log_source;
 
@@ -3633,10 +3672,10 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
         auto buf = auto_buffer::alloc(trimmed_comment.size() + 16);
         quote_content(buf, trimmed_comment, 0);
 
-        return trim(cmdline) + " " + buf.to_string();
+        return {trim(cmdline) + " " + buf.to_string()};
     }
 
-    return "";
+    return {""};
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -6052,30 +6091,37 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_opposites({"highlight"})
          .with_example(
              {"To clear the highlight with the pattern 'foobar'", "foobar"})},
-    {"filter-in",
-     com_filter,
+    {
+        "filter-in",
+        com_filter,
 
-     help_text(":filter-in")
-         .with_summary("Only show lines that match the given regular "
-                       "expression in the current view")
-         .with_parameter(
-             help_text("pattern", "The regular expression to match"))
-         .with_tags({"filtering"})
-         .with_example({"To filter out log messages that do not have the "
-                        "string 'dhclient'",
-                        "dhclient"})},
-    {"filter-out",
-     com_filter,
+        help_text(":filter-in")
+            .with_summary("Only show lines that match the given regular "
+                          "expression in the current view")
+            .with_parameter(
+                help_text("pattern", "The regular expression to match"))
+            .with_tags({"filtering"})
+            .with_example({"To filter out log messages that do not have the "
+                           "string 'dhclient'",
+                           "dhclient"}),
+        com_filter_prompt,
+    },
+    {
+        "filter-out",
+        com_filter,
 
-     help_text(":filter-out")
-         .with_summary("Remove lines that match the given regular expression "
-                       "in the current view")
-         .with_parameter(
-             help_text("pattern", "The regular expression to match"))
-         .with_tags({"filtering"})
-         .with_example({"To filter out log messages that contain the string "
-                        "'last message repeated'",
-                        "last message repeated"})},
+        help_text(":filter-out")
+            .with_summary(
+                "Remove lines that match the given regular expression "
+                "in the current view")
+            .with_parameter(
+                help_text("pattern", "The regular expression to match"))
+            .with_tags({"filtering"})
+            .with_example({"To filter out log messages that contain the string "
+                           "'last message repeated'",
+                           "last message repeated"}),
+        com_filter_prompt,
+    },
     {"delete-filter",
      com_delete_filter,
 

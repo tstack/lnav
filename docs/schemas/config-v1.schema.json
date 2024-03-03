@@ -680,6 +680,11 @@
                                             "description": "Styling for hotkey highlights of status bars",
                                             "title": "/ui/theme-defs/<theme_name>/status-styles/hotkey",
                                             "$ref": "#/definitions/style"
+                                        },
+                                        "suggestion": {
+                                            "description": "Styling for suggested values",
+                                            "title": "/ui/theme-defs/<theme_name>/status-styles/suggestion",
+                                            "$ref": "#/definitions/style"
                                         }
                                     },
                                     "additionalProperties": false

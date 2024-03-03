@@ -30,3 +30,5 @@ run_cap_test ./drive_shlexer 'abc $DEF  123'
 run_cap_test ./drive_shlexer '~ foo'
 
 run_cap_test ./drive_shlexer '~nonexistent/bar baz'
+
+run_cap_test ./drive_shlexer 'abc '

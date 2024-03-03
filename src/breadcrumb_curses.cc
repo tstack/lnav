@@ -300,6 +300,8 @@ breadcrumb_curses::handle_key(int ch)
         case '\r':
             this->perform_selection(perform_behavior_t::always);
             break;
+        case KEY_ESCAPE:
+            break;
         default:
             if (isprint(ch)) {
                 this->bc_current_search.push_back(ch);
