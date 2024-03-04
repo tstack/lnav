@@ -134,8 +134,22 @@ static const char* UPGRADE_STMTS[] = {
 static const size_t MAX_SESSIONS = 8;
 static const size_t MAX_SESSION_FILE_COUNT = 256;
 
-static std::vector<content_line_t> marked_session_lines;
-static std::vector<content_line_t> offset_session_lines;
+struct session_line {
+    session_line(struct timeval tv,
+                 intern_string_t format_name,
+                 std::string line_hash)
+        : sl_time(tv), sl_format_name(format_name),
+          sl_line_hash(std::move(line_hash))
+    {
+    }
+
+    struct timeval sl_time;
+    intern_string_t sl_format_name;
+    std::string sl_line_hash;
+};
+
+static std::vector<session_line> marked_session_lines;
+static std::vector<session_line> offset_session_lines;
 
 static bool
 bind_line(sqlite3* db,
@@ -143,7 +157,7 @@ bind_line(sqlite3* db,
           content_line_t cl,
           time_t session_time)
 {
-    logfile_sub_source& lss = lnav_data.ld_log_source;
+    auto& lss = lnav_data.ld_log_source;
     auto lf = lss.find(cl);
 
     if (lf == nullptr) {
@@ -179,7 +193,9 @@ bind_line(sqlite3* db,
 struct session_file_info {
     session_file_info(int timestamp, std::string id, std::string path)
         : sfi_timestamp(timestamp), sfi_id(std::move(id)),
-          sfi_path(std::move(path)){};
+          sfi_path(std::move(path))
+    {
+    }
 
     bool operator<(const session_file_info& other) const
     {
@@ -190,7 +206,7 @@ struct session_file_info {
             return true;
         }
         return false;
-    };
+    }
 
     int sfi_timestamp;
     std::string sfi_id;
@@ -654,7 +670,10 @@ load_time_bookmarks()
                             }
                         }
                         if (!meta) {
-                            marked_session_lines.push_back(line_cl);
+                            marked_session_lines.emplace_back(
+                                lf->original_line_time(line_iter),
+                                format->get_name(),
+                                line_hash);
                             lss.set_user_mark(&textview_curses::BM_USER,
                                               line_cl);
                         }
@@ -778,11 +797,12 @@ load_time_bookmarks()
                         if (lf->get_content_id() == log_hash) {
                             int file_line
                                 = std::distance(lf->begin(), line_iter);
-                            content_line_t line_cl
-                                = content_line_t(base_content_line + file_line);
                             struct timeval offset;
 
-                            offset_session_lines.push_back(line_cl);
+                            offset_session_lines.emplace_back(
+                                lf->original_line_time(line_iter),
+                                lf->get_format_ptr()->get_name(),
+                                log_hash);
                             offset.tv_sec = sqlite3_column_int64(stmt.in(), 4);
                             offset.tv_usec = sqlite3_column_int64(stmt.in(), 5);
                             lf->adjust_content_time(file_line, offset);
@@ -974,13 +994,41 @@ save_user_bookmarks(sqlite3* db,
                     sqlite3_stmt* stmt,
                     bookmark_vector<content_line_t>& user_marks)
 {
-    logfile_sub_source& lss = lnav_data.ld_log_source;
-    bookmark_vector<content_line_t>::iterator iter;
+    auto& lss = lnav_data.ld_log_source;
 
-    for (iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
+    for (auto iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
         content_line_t cl = *iter;
         auto line_meta_opt = lss.find_bookmark_metadata(cl);
-        if (!bind_line(db, stmt, cl, lnav_data.ld_session_time)) {
+        auto lf = lss.find(cl);
+        if (lf == nullptr) {
+            continue;
+        }
+
+        sqlite3_clear_bindings(stmt);
+
+        auto line_iter = lf->begin() + cl;
+        auto read_result = lf->read_line(line_iter);
+
+        if (read_result.isErr()) {
+            continue;
+        }
+
+        auto line_hash = read_result
+                             .map([cl](auto sbr) {
+                                 return hasher()
+                                     .update(sbr.get_data(), sbr.length())
+                                     .update(cl)
+                                     .to_string();
+                             })
+                             .unwrap();
+
+        if (bind_values(stmt,
+                        lf->original_line_time(line_iter),
+                        lf->get_format()->get_name(),
+                        line_hash,
+                        lnav_data.ld_session_time)
+            != SQLITE_OK)
+        {
             continue;
         }
 
@@ -1071,7 +1119,9 @@ save_user_bookmarks(sqlite3* db,
             return;
         }
 
-        marked_session_lines.push_back(cl);
+        marked_session_lines.emplace_back(lf->original_line_time(line_iter),
+                                          lf->get_format_ptr()->get_name(),
+                                          line_hash);
 
         sqlite3_reset(stmt);
     }
@@ -1155,10 +1205,14 @@ save_time_bookmarks()
     }
 
     for (auto& marked_session_line : marked_session_lines) {
-        if (!bind_line(db.in(),
-                       stmt.in(),
-                       marked_session_line,
-                       lnav_data.ld_session_time))
+        sqlite3_clear_bindings(stmt.in());
+
+        if (bind_values(stmt,
+                        marked_session_line.sl_time,
+                        marked_session_line.sl_format_name,
+                        marked_session_line.sl_line_hash,
+                        lnav_data.ld_session_time)
+            != SQLITE_OK)
         {
             continue;
         }
@@ -1249,10 +1303,14 @@ save_time_bookmarks()
     }
 
     for (auto& offset_session_line : offset_session_lines) {
-        if (!bind_line(db.in(),
-                       stmt.in(),
-                       offset_session_line,
-                       lnav_data.ld_session_time))
+        sqlite3_clear_bindings(stmt.in());
+
+        if (bind_values(stmt,
+                        offset_session_line.sl_time,
+                        offset_session_line.sl_format_name,
+                        offset_session_line.sl_line_hash,
+                        lnav_data.ld_session_time)
+            != SQLITE_OK)
         {
             continue;
         }
