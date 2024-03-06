@@ -2762,45 +2762,64 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                  ? configs_installed_path
                                  : formats_installed_path)
                 / dst_name;
-            auto_fd in_fd, out_fd;
 
-            if ((in_fd = open(file_path.c_str(), O_RDONLY)) == -1) {
-                perror("unable to open file to install");
-            } else if ((out_fd = lnav::filesystem::openp(
-                            dst_path, O_WRONLY | O_CREAT | O_TRUNC, 0644))
-                       == -1)
-            {
-                fprintf(stderr,
-                        "error: unable to open destination: %s -- %s\n",
-                        dst_path.c_str(),
-                        strerror(errno));
-            } else {
-                char buffer[2048];
-                ssize_t rc;
+            auto read_res = lnav::filesystem::read_file(file_path);
+            if (read_res.isErr()) {
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("cannot read file to install -- ")
+                                  .append(lnav::roles::file(file_path)))
+                              .with_reason(read_res.unwrap());
 
-                while ((rc = read(in_fd, buffer, sizeof(buffer))) > 0) {
-                    ssize_t remaining = rc, written;
-
-                    while (remaining > 0) {
-                        written = write(out_fd, buffer, rc);
-                        if (written == -1) {
-                            fprintf(stderr,
-                                    "error: unable to install file "
-                                    "-- %s\n",
-                                    strerror(errno));
-                            exit(EXIT_FAILURE);
-                        }
-
-                        remaining -= written;
-                    }
-                }
-
-                lnav::console::print(
-                    stderr,
-                    lnav::console::user_message::ok(
-                        attr_line_t("installed -- ")
-                            .append(lnav::roles::file(dst_path))));
+                lnav::console::print(stderr, um);
+                return EXIT_FAILURE;
             }
+
+            auto file_content = read_res.unwrap();
+
+            auto read_dst_res = lnav::filesystem::read_file(dst_path);
+            if (read_dst_res.isOk()) {
+                auto dst_content = read_dst_res.unwrap();
+
+                if (dst_content == file_content) {
+                    auto um = lnav::console::user_message::info(
+                        attr_line_t("file is already installed at -- ")
+                            .append(lnav::roles::file(dst_path)));
+
+                    lnav::console::print(stdout, um);
+
+                    return EXIT_SUCCESS;
+                }
+            }
+
+            auto write_res = lnav::filesystem::write_file(
+                dst_path,
+                file_content,
+                {lnav::filesystem::write_file_options::backup_existing});
+            if (write_res.isErr()) {
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("failed to install file to -- ")
+                                  .append(lnav::roles::file(dst_path)))
+                              .with_reason(write_res.unwrapErr());
+
+                lnav::console::print(stderr, um);
+                return EXIT_FAILURE;
+            }
+
+            auto write_file_res = write_res.unwrap();
+            auto um = lnav::console::user_message::ok(
+                attr_line_t("installed -- ")
+                    .append(lnav::roles::file(dst_path)));
+            if (write_file_res.wfr_backup_path) {
+                um.with_note(
+                    attr_line_t("the previously installed ")
+                        .append_quoted(
+                            lnav::roles::file(dst_path.filename().string()))
+                        .append(" was backed up to -- ")
+                        .append(lnav::roles::file(
+                            write_file_res.wfr_backup_path.value().string())));
+            }
+
+            lnav::console::print(stdout, um);
         }
         return EXIT_SUCCESS;
     }

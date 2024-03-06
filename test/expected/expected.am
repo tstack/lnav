@@ -278,6 +278,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_events.sh_d9c7907f907b2335e1328b23fdc46d0968a608d9.out \
     $(srcdir)/%reldir%/test_events.sh_ed8dc44add223341c03ccb7b3e18371bdb42b710.err \
     $(srcdir)/%reldir%/test_events.sh_ed8dc44add223341c03ccb7b3e18371bdb42b710.out \
+    $(srcdir)/%reldir%/test_format_installer.sh_1e08efc3b8c7b67d944a1f8c475cd31d98d5b4f6.err \
+    $(srcdir)/%reldir%/test_format_installer.sh_1e08efc3b8c7b67d944a1f8c475cd31d98d5b4f6.out \
+    $(srcdir)/%reldir%/test_format_installer.sh_6cd73153a8990b8ddb8ce489e90ec667a442f7f9.err \
+    $(srcdir)/%reldir%/test_format_installer.sh_6cd73153a8990b8ddb8ce489e90ec667a442f7f9.out \
+    $(srcdir)/%reldir%/test_format_installer.sh_947cbc64a150c7fe2a17e1c7a69e9a932aeaa16b.err \
+    $(srcdir)/%reldir%/test_format_installer.sh_947cbc64a150c7fe2a17e1c7a69e9a932aeaa16b.out \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.err \
     $(srcdir)/%reldir%/test_format_loader.sh_15e861d2327512a721fd42ae51dc5427689e0bb6.out \
     $(srcdir)/%reldir%/test_format_loader.sh_5992e2695b7e6cf1f3520dbb87af8fc2b8f27088.err \

@@ -30,6 +30,7 @@
 #ifndef lnav_fs_util_hh
 #define lnav_fs_util_hh
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -84,8 +85,18 @@ Result<std::pair<ghc::filesystem::path, auto_fd>, std::string> open_temp_file(
 
 Result<std::string, std::string> read_file(const ghc::filesystem::path& path);
 
-Result<void, std::string> write_file(const ghc::filesystem::path& path,
-                                     const string_fragment& content);
+enum class write_file_options {
+    backup_existing,
+};
+
+struct write_file_result {
+    nonstd::optional<ghc::filesystem::path> wfr_backup_path;
+};
+
+Result<write_file_result, std::string> write_file(
+    const ghc::filesystem::path& path,
+    const string_fragment& content,
+    std::set<write_file_options> options = {});
 
 std::string build_path(const std::vector<ghc::filesystem::path>& paths);
 

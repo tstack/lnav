@@ -117,9 +117,12 @@ read_file(const ghc::filesystem::path& path)
     }
 }
 
-Result<void, std::string>
-write_file(const ghc::filesystem::path& path, const string_fragment& content)
+Result<write_file_result, std::string>
+write_file(const ghc::filesystem::path& path,
+           const string_fragment& content,
+           std::set<write_file_options> options)
 {
+    write_file_result retval;
     auto tmp_pattern = path;
     tmp_pattern += ".XXXXXX";
 
@@ -138,7 +141,25 @@ write_file(const ghc::filesystem::path& path, const string_fragment& content)
                                bytes_written,
                                content.length()));
     }
+
     std::error_code ec;
+    if (options.count(write_file_options::backup_existing)) {
+        if (ghc::filesystem::exists(path, ec)) {
+            auto backup_path = path;
+
+            backup_path += ".bak";
+            ghc::filesystem::rename(path, backup_path, ec);
+            if (ec) {
+                return Err(
+                    fmt::format(FMT_STRING("unable to backup file {}: {}"),
+                                path.string(),
+                                ec.message()));
+            }
+
+            retval.wfr_backup_path = backup_path;
+        }
+    }
+
     ghc::filesystem::rename(tmp_pair.first, path, ec);
     if (ec) {
         return Err(
@@ -147,7 +168,7 @@ write_file(const ghc::filesystem::path& path, const string_fragment& content)
                         ec.message()));
     }
 
-    return Ok();
+    return Ok(retval);
 }
 
 std::string
