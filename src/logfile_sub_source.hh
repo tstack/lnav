@@ -477,13 +477,19 @@ public:
 
     nonstd::optional<vis_line_t> find_from_content(content_line_t cl);
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row)
+    nonstd::optional<row_info> time_for_row(vis_line_t row)
     {
         if (row >= 0_vl && row < (ssize_t) this->text_line_count()) {
-            return this->find_line(this->at(row))->get_timeval();
+            auto cl = this->at(row);
+            return row_info{
+                this->find_line(cl)->get_timeval(),
+                (int64_t) cl,
+            };
         }
         return nonstd::nullopt;
     }
+
+    nonstd::optional<vis_line_t> row_for(const row_info& ri);
 
     nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket)
     {

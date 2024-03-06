@@ -12,6 +12,8 @@ Interface changes:
   example, after typing in `:filter-in` the current
   search term for the view will be suggested (if
   one is active).
+* The focused line should be preserved more reliably in
+  the LOG/TEXT views.
 
 ## lnav v0.12.0
 

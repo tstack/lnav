@@ -84,15 +84,15 @@ sql_log_top_datetime()
         return nonstd::nullopt;
     }
 
-    auto top_time = lnav_data.ld_log_source.time_for_row(
+    auto top_ri = lnav_data.ld_log_source.time_for_row(
         lnav_data.ld_views[LNV_LOG].get_selection());
-    if (!top_time) {
+    if (!top_ri) {
         return nonstd::nullopt;
     }
 
     char buffer[64];
 
-    sql_strftime(buffer, sizeof(buffer), top_time.value());
+    sql_strftime(buffer, sizeof(buffer), top_ri->ri_time);
     return buffer;
 }
 

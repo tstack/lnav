@@ -253,8 +253,8 @@ handle_paging_key(int ch)
                 lnav_data.ld_last_view = nullptr;
                 if (src_view != nullptr && dst_view != nullptr) {
                     src_view->time_for_row(top_tc->get_selection()) |
-                        [dst_view, tc](auto top_time) {
-                            dst_view->row_for_time(top_time) |
+                        [dst_view, tc](auto top_ri) {
+                            dst_view->row_for_time(top_ri.ri_time) |
                                 [tc](auto row) { tc->set_selection(row); };
                         };
                 }
@@ -578,9 +578,9 @@ handle_paging_key(int ch)
             if (lss) {
                 const int step = 24 * 60 * 60;
                 lss->time_for_row(tc->get_selection()) |
-                    [lss, tc](auto first_time) {
+                    [lss, tc](auto first_ri) {
                         lss->find_from_time(
-                            roundup_size(first_time.tv_sec, step))
+                            roundup_size(first_ri.ri_time.tv_sec, step))
                             | [tc](auto line) { tc->set_selection(line); };
                     };
             }
@@ -589,8 +589,9 @@ handle_paging_key(int ch)
         case ')':
             if (lss) {
                 lss->time_for_row(tc->get_selection()) |
-                    [lss, tc](auto first_time) {
-                        time_t day = rounddown(first_time.tv_sec, 24 * 60 * 60);
+                    [lss, tc](auto first_ri) {
+                        time_t day
+                            = rounddown(first_ri.ri_time.tv_sec, 24 * 60 * 60);
                         lss->find_from_time(day) | [tc](auto line) {
                             if (line != 0_vl) {
                                 --line;
@@ -607,9 +608,9 @@ handle_paging_key(int ch)
                     "the top of the log has been reached");
             } else if (lss) {
                 lss->time_for_row(tc->get_selection()) |
-                    [lss, ch, tc](auto first_time) {
+                    [lss, ch, tc](auto first_ri) {
                         int step = ch == 'D' ? (24 * 60 * 60) : (60 * 60);
-                        time_t top_time = first_time.tv_sec;
+                        time_t top_time = first_ri.ri_time.tv_sec;
                         lss->find_from_time(top_time - step) | [tc](auto line) {
                             if (line != 0_vl) {
                                 --line;
@@ -625,9 +626,9 @@ handle_paging_key(int ch)
         case 'd':
             if (lss) {
                 lss->time_for_row(tc->get_selection()) |
-                    [ch, lss, tc](auto first_time) {
+                    [ch, lss, tc](auto first_ri) {
                         int step = ch == 'd' ? (24 * 60 * 60) : (60 * 60);
-                        lss->find_from_time(first_time.tv_sec + step) |
+                        lss->find_from_time(first_ri.ri_time.tv_sec + step) |
                             [tc](auto line) { tc->set_selection(line); };
                     };
 
@@ -729,12 +730,13 @@ handle_paging_key(int ch)
 
                 if (src_view != nullptr) {
                     src_view->time_for_row(tc->get_selection()) |
-                        [](auto log_top) {
-                            lnav_data.ld_hist_source2.row_for_time(log_top) |
-                                [](auto row) {
-                                    lnav_data.ld_views[LNV_HISTOGRAM]
-                                        .set_selection(row);
-                                };
+                        [](auto log_top_ri) {
+                            lnav_data.ld_hist_source2.row_for_time(
+                                log_top_ri.ri_time)
+                                | [](auto row) {
+                                      lnav_data.ld_views[LNV_HISTOGRAM]
+                                          .set_selection(row);
+                                  };
                         };
                 }
             } else {
@@ -749,10 +751,10 @@ handle_paging_key(int ch)
                         auto curr_top_time_opt
                             = dst_view->time_for_row(top_tc->get_selection());
                         if (hist_top_time_opt && curr_top_time_opt
-                            && hs.row_for_time(hist_top_time_opt.value())
-                                != hs.row_for_time(curr_top_time_opt.value()))
+                            && hs.row_for_time(hist_top_time_opt->ri_time)
+                                != hs.row_for_time(curr_top_time_opt->ri_time))
                         {
-                            dst_view->row_for_time(hist_top_time_opt.value()) |
+                            dst_view->row_for_time(hist_top_time_opt->ri_time) |
                                 [top_tc](auto new_top) {
                                     top_tc->set_selection(new_top);
                                     top_tc->set_needs_update();

@@ -5,6 +5,11 @@ export YES_COLOR=1
 unset XDG_CONFIG_HOME
 
 run_cap_test ${lnav_test} -n \
+    -c ':goto 5' \
+    -c ':filter-out Lorem|sed' \
+    ${test_dir}/textfile_plain.0
+
+run_cap_test ${lnav_test} -n \
     ${top_srcdir}/README.md
 
 run_cap_test ${lnav_test} -n -c ':goto #screenshot' \

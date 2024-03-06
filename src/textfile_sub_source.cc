@@ -429,18 +429,13 @@ textfile_sub_source::push_back(const std::shared_ptr<logfile>& lf)
 void
 textfile_sub_source::text_filters_changed()
 {
-    for (auto iter = this->tss_files.begin(); iter != this->tss_files.end();) {
-        ++iter;
-    }
-    for (auto iter = this->tss_hidden_files.begin();
-         iter != this->tss_hidden_files.end();)
-    {
-        ++iter;
+    auto lf = this->current_file();
+    if (lf == nullptr || lf->get_text_format() == text_format_t::TF_BINARY) {
+        return;
     }
 
-    std::shared_ptr<logfile> lf = this->current_file();
-
-    if (lf == nullptr) {
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
         return;
     }
 
@@ -462,6 +457,37 @@ textfile_sub_source::text_filters_changed()
     }
 
     this->tss_view->redo_search();
+
+    auto iter = std::lower_bound(lfo->lfo_filter_state.tfs_index.begin(),
+                                 lfo->lfo_filter_state.tfs_index.end(),
+                                 this->tss_content_line);
+    auto vl = vis_line_t(
+        std::distance(lfo->lfo_filter_state.tfs_index.begin(), iter));
+    this->tss_view->set_selection(vl);
+}
+
+void
+textfile_sub_source::scroll_invoked(textview_curses* tc)
+{
+    auto lf = this->current_file();
+    if (lf == nullptr || lf->get_text_format() == text_format_t::TF_BINARY) {
+        return;
+    }
+
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        return;
+    }
+
+    auto line = tc->get_selection();
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (lfo == nullptr || line < 0_vl
+        || line >= lfo->lfo_filter_state.tfs_index.size())
+    {
+        return;
+    }
+
+    this->tss_content_line = lfo->lfo_filter_state.tfs_index[line];
 }
 
 int

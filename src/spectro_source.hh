@@ -154,7 +154,7 @@ public:
 
     void text_selection_changed(textview_curses& tc) override;
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
+    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
 
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
@@ -170,7 +170,7 @@ public:
 
     void cache_bounds();
 
-    nonstd::optional<struct timeval> time_for_row_int(vis_line_t row);
+    nonstd::optional<row_info> time_for_row_int(vis_line_t row);
 
     const spectrogram_row& load_row(const listview_curses& lv, int row);
 

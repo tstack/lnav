@@ -300,15 +300,15 @@ CREATE TABLE lnav_views (
                     = dynamic_cast<text_time_translator*>(tc.get_sub_source());
 
                 if (time_source != nullptr && tc.get_inner_height() > 0) {
-                    auto top_time_opt
+                    auto top_ri_opt
                         = time_source->time_for_row(tc.get_selection());
 
-                    if (top_time_opt) {
+                    if (top_ri_opt) {
                         char timestamp[64];
 
                         sql_strftime(timestamp,
                                      sizeof(timestamp),
-                                     top_time_opt.value(),
+                                     top_ri_opt->ri_time,
                                      ' ');
                         sqlite3_result_text(
                             ctx, timestamp, -1, SQLITE_TRANSIENT);
@@ -373,15 +373,15 @@ CREATE TABLE lnav_views (
 
                     top_line_meta tlm;
                     if (time_source != nullptr) {
-                        auto top_time_opt
+                        auto top_ri_opt
                             = time_source->time_for_row(tc.get_selection());
 
-                        if (top_time_opt) {
+                        if (top_ri_opt) {
                             char timestamp[64];
 
                             sql_strftime(timestamp,
                                          sizeof(timestamp),
-                                         top_time_opt.value(),
+                                         top_ri_opt->ri_time,
                                          ' ');
                             tlm.tlm_time = timestamp;
                         }
@@ -530,11 +530,11 @@ CREATE TABLE lnav_views (
                       tc.get_title().c_str(),
                       top_time);
             if (dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
-                auto last_time_opt
+                auto last_ri_opt
                     = time_source->time_for_row(tc.get_selection());
 
-                if (last_time_opt) {
-                    auto last_time = last_time_opt.value();
+                if (last_ri_opt) {
+                    auto last_time = last_ri_opt->ri_time;
                     if (tv != last_time) {
                         time_source->row_for_time(tv) |
                             [&tc, &selection](auto row) {

@@ -73,7 +73,7 @@ public:
 
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
+    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
 
     void rebuild_indexes();
 

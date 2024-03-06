@@ -724,7 +724,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             auto top_time_opt = ttt->time_for_row(tc->get_selection());
 
             if (top_time_opt) {
-                auto top_time_tv = top_time_opt.value();
+                auto top_time_tv = top_time_opt.value().ri_time;
                 struct tm top_tm;
 
                 localtime_r(&top_time_tv.tv_sec, &top_tm);
@@ -745,7 +745,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (!tv_opt) {
                 return ec.make_error("cannot get time for the top row");
             }
-            tv = tv_opt.value();
+            tv = tv_opt.value().ri_time;
 
             vis_line_t vl = tc->get_selection(), new_vl;
             bool done = false;
@@ -4286,7 +4286,7 @@ com_zoom_to(exec_context& ec,
                     auto old_time_opt = lnav_data.ld_hist_source2.time_for_row(
                         lnav_data.ld_views[LNV_HISTOGRAM].get_top());
                     if (old_time_opt) {
-                        old_time = old_time_opt.value();
+                        old_time = old_time_opt.value().ri_time;
                         rebuild_hist();
                         lnav_data.ld_hist_source2.row_for_time(old_time) |
                             [](auto new_top) {
@@ -4307,7 +4307,7 @@ com_zoom_to(exec_context& ec,
                     spectro_view.reload_data();
                     if (old_time_opt) {
                         lnav_data.ld_spectro_source->row_for_time(
-                            old_time_opt.value())
+                            old_time_opt.value().ri_time)
                             | [](auto new_top) {
                                   lnav_data.ld_views[LNV_SPECTRO].set_selection(
                                       new_top);
@@ -4616,9 +4616,9 @@ com_hide_line(exec_context& ec,
                     struct exttm tm;
 
                     auto vl = tc->get_selection();
-                    auto log_tv = ttt->time_for_row(vl);
-                    if (log_tv) {
-                        tm = exttm::from_tv(log_tv.value());
+                    auto log_vl_ri = ttt->time_for_row(vl);
+                    if (log_vl_ri) {
+                        tm = exttm::from_tv(log_vl_ri.value().ri_time);
                         tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
                     }
                 }

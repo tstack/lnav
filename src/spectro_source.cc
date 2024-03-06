@@ -82,7 +82,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
                 return true;
             }
             auto begin_time = begin_time_opt.value();
-            struct timeval end_time = begin_time;
+            struct timeval end_time = begin_time.ri_time;
 
             end_time.tv_sec += this->ss_granularity;
             double range_min, range_max, column_size;
@@ -93,7 +93,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
                 + this->ss_cursor_column.value_or(0) * column_size;
             range_max = range_min + column_size;
             this->ss_value_source->spectro_mark((textview_curses&) lv,
-                                                begin_time.tv_sec,
+                                                begin_time.ri_time.tv_sec,
                                                 end_time.tv_sec,
                                                 range_min,
                                                 range_max);
@@ -291,7 +291,7 @@ spectrogram_source::text_line_width(textview_curses& tc)
     return width;
 }
 
-nonstd::optional<struct timeval>
+nonstd::optional<text_time_translator::row_info>
 spectrogram_source::time_for_row(vis_line_t row)
 {
     if (this->ss_details_source != nullptr) {
@@ -306,7 +306,7 @@ spectrogram_source::time_for_row(vis_line_t row)
     return this->time_for_row_int(row);
 }
 
-nonstd::optional<struct timeval>
+nonstd::optional<text_time_translator::row_info>
 spectrogram_source::time_for_row_int(vis_line_t row)
 {
     struct timeval retval {
@@ -318,7 +318,7 @@ spectrogram_source::time_for_row_int(vis_line_t row)
         = rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity)
         + row * this->ss_granularity;
 
-    return retval;
+    return row_info{retval, row};
 }
 
 nonstd::optional<vis_line_t>
@@ -359,9 +359,9 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
         value_out.clear();
         return;
     }
-    auto row_time = row_time_opt.value();
+    auto ri = row_time_opt.value();
 
-    gmtime_r(&row_time.tv_sec, &tm);
+    gmtime_r(&ri.ri_time.tv_sec, &tm);
     strftime(tm_buffer, sizeof(tm_buffer), " %a %b %d %H:%M:%S", &tm);
 
     value_out = tm_buffer;

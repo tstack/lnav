@@ -250,22 +250,32 @@ private:
 
 class text_time_translator {
 public:
+    struct row_info {
+        struct timeval ri_time {
+            0, 0
+        };
+        int64_t ri_id{-1};
+    };
+
     virtual ~text_time_translator() = default;
 
     virtual nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket)
         = 0;
 
-    virtual nonstd::optional<struct timeval> time_for_row(vis_line_t row) = 0;
+    virtual nonstd::optional<vis_line_t> row_for(const row_info& ri)
+    {
+        return this->row_for_time(ri.ri_time);
+    }
 
-    void scroll_invoked(textview_curses* tc);
+    virtual nonstd::optional<row_info> time_for_row(vis_line_t row) = 0;
 
     void data_reloaded(textview_curses* tc);
 
+    void ttt_scroll_invoked(textview_curses* tc);
+
 protected:
-    struct timeval ttt_top_time {
-        0, 0
-    };
+    nonstd::optional<row_info> ttt_top_row_info;
 };
 
 class text_accel_source {
@@ -495,6 +505,8 @@ public:
                                       std::vector<breadcrumb::crumb>& crumbs);
 
     virtual void quiesce() {}
+
+    virtual void scroll_invoked(textview_curses* tc);
 
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
@@ -777,11 +789,7 @@ public:
     void invoke_scroll()
     {
         if (this->tc_sub_source != nullptr) {
-            auto ttt = dynamic_cast<text_time_translator*>(this->tc_sub_source);
-
-            if (ttt != nullptr) {
-                ttt->scroll_invoked(this);
-            }
+            this->tc_sub_source->scroll_invoked(this);
         }
 
         listview_curses::invoke_scroll();

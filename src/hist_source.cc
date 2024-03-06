@@ -166,7 +166,7 @@ hist_source2::end_of_row()
     }
 }
 
-nonstd::optional<struct timeval>
+nonstd::optional<text_time_translator::row_info>
 hist_source2::time_for_row(vis_line_t row)
 {
     if (row < 0 || row > this->hs_line_count) {
@@ -175,7 +175,7 @@ hist_source2::time_for_row(vis_line_t row)
 
     bucket_t& bucket = this->find_bucket(row);
 
-    return timeval{bucket.b_time, 0};
+    return row_info{timeval{bucket.b_time, 0}, row};
 }
 
 hist_source2::bucket_t&

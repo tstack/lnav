@@ -82,7 +82,7 @@ public:
         return this->fss_time_delegate->row_for_time(time_bucket);
     }
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override
+    nonstd::optional<row_info> time_for_row(vis_line_t row) override
     {
         return this->fss_lines | lnav::itertools::nth(row)
             | lnav::itertools::flat_map([this](const auto row) {

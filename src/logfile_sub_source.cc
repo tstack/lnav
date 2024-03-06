@@ -2778,3 +2778,31 @@ logfile_sub_source::get_filtered_count_for(size_t filter_index) const
 
     return retval;
 }
+
+nonstd::optional<vis_line_t>
+logfile_sub_source::row_for(const row_info& ri)
+{
+    auto lb = std::lower_bound(this->lss_filtered_index.begin(),
+                               this->lss_filtered_index.end(),
+                               ri.ri_time,
+                               filtered_logline_cmp(*this));
+    if (lb != this->lss_filtered_index.end()) {
+        auto first_lb = lb;
+        while (true) {
+            auto cl = this->lss_index[*lb];
+            if (content_line_t(ri.ri_id) == cl) {
+                first_lb = lb;
+                break;
+            }
+            auto ll = this->find_line(cl);
+            if (ll->get_timeval() != ri.ri_time) {
+                break;
+            }
+            ++lb;
+        }
+
+        return vis_line_t(first_lb - this->lss_filtered_index.begin());
+    }
+
+    return nonstd::nullopt;
+}

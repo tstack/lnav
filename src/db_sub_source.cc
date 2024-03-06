@@ -300,14 +300,14 @@ db_label_source::row_for_time(struct timeval time_bucket)
     return nonstd::nullopt;
 }
 
-nonstd::optional<struct timeval>
+nonstd::optional<text_time_translator::row_info>
 db_label_source::time_for_row(vis_line_t row)
 {
     if ((row < 0_vl) || (((size_t) row) >= this->dls_time_column.size())) {
         return nonstd::nullopt;
     }
 
-    return this->dls_time_column[row];
+    return row_info{this->dls_time_column[row], row};
 }
 
 void
