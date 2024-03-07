@@ -389,6 +389,7 @@ dist_noinst_DATA = \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
 	textfile_nonl.txt \
+	textfile_plain.0 \
 	textfile_quoted_json.0 \
 	toplevel.lnav \
 	UTF-8-test.txt \
