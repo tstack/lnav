@@ -22,6 +22,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/journald_json_log.json \
     $(srcdir)/%reldir%/katello_log.json \
     $(srcdir)/%reldir%/nextcloud_log.json \
+    $(srcdir)/%reldir%/nextflow_log.json \
     $(srcdir)/%reldir%/openam_log.json \
     $(srcdir)/%reldir%/openamdb_log.json \
     $(srcdir)/%reldir%/openstack_log.json \
