@@ -1,0 +1,83 @@
+log_line,log_part,log_body
+0,<NULL>,restart.
+1,<NULL>,Invalid query packet.
+2,<NULL>,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x654a04aa)
+3,<NULL>,DHCPNAK from 10.1.10.1 (xid=0x654a04aa)
+4,<NULL>,/sbin/dhclient-script : updated /etc/resolv.conf
+5,<NULL>,Withdrawing address record for 10.1.10.49 on eth0.
+6,<NULL>,Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.49.
+7,<NULL>,iface.c: interface_mdns_mcast_join() called but no local address available.
+8,<NULL>,Interface eth0.IPv4 no longer relevant for mDNS.
+9,<NULL>,DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0x4e17f141)
+10,<NULL>,DHCPOFFER from 10.1.10.1
+11,<NULL>,DHCPREQUEST on eth0 to 255.255.255.255 port 67 (xid=0x4e17f141)
+12,<NULL>,DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+13,<NULL>,New relevant interface eth0.IPv4 for mDNS.
+14,<NULL>,Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+15,<NULL>,Registering new address record for 10.1.10.103 on eth0.
+16,<NULL>,Withdrawing address record for 10.1.10.103 on eth0.
+17,<NULL>,Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+18,<NULL>,iface.c: interface_mdns_mcast_join() called but no local address available.
+19,<NULL>,Interface eth0.IPv4 no longer relevant for mDNS.
+20,<NULL>,New relevant interface eth0.IPv4 for mDNS.
+21,<NULL>,Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+22,<NULL>,Registering new address record for 10.1.10.103 on eth0.
+23,<NULL>,/sbin/dhclient-script : updated /etc/resolv.conf
+24,10.1.10.103,bound to 10.1.10.103 -- renewal in 54694 seconds.
+25,10.1.10.103,Invalid query packet.
+26,10.1.10.103,Invalid query packet.
+27,10.1.10.103,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+28,10.1.10.103,DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+29,10.1.10.103,bound to 10.1.10.103 -- renewal in 8787 seconds.
+30,10.1.10.103,Invalid query packet.
+31,10.1.10.103,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+32,10.1.10.103,DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+33,10.1.10.103,bound to 10.1.10.103 -- renewal in 9938 seconds.
+34,10.1.10.103,Invalid query packet.
+35,10.1.10.103,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+36,10.1.10.103,DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+37,10.1.10.103,bound to 10.1.10.103 -- renewal in 2656 seconds.
+38,10.1.10.103,Invalid query packet.
+39,10.1.10.103,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+40,10.1.10.103,DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+41,10.1.10.103,bound to 10.1.10.103 -- renewal in 15112 seconds.
+42,10.1.10.103,Invalid query packet.
+43,10.1.10.103,Invalid query packet.
+44,10.1.10.103,Invalid query packet.
+45,10.1.10.103,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+46,10.1.10.103,DHCPNAK from 10.1.10.1 (xid=0x4e17f141)
+47,10.1.10.103,/sbin/dhclient-script : updated /etc/resolv.conf
+48,10.1.10.103,Withdrawing address record for 10.1.10.103 on eth0.
+49,10.1.10.103,Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+50,10.1.10.103,iface.c: interface_mdns_mcast_join() called but no local address available.
+51,10.1.10.103,Interface eth0.IPv4 no longer relevant for mDNS.
+52,10.1.10.103,DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0xd16b79d)
+53,10.1.10.103,DHCPOFFER from 10.1.10.1
+54,10.1.10.103,DHCPREQUEST on eth0 to 255.255.255.255 port 67 (xid=0xd16b79d)
+55,10.1.10.103,DHCPACK from 10.1.10.1 (xid=0xd16b79d)
+56,10.1.10.103,New relevant interface eth0.IPv4 for mDNS.
+57,10.1.10.103,Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
+58,10.1.10.103,Registering new address record for 10.1.10.62 on eth0.
+59,10.1.10.103,Withdrawing address record for 10.1.10.62 on eth0.
+60,10.1.10.103,Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
+61,10.1.10.103,iface.c: interface_mdns_mcast_join() called but no local address available.
+62,10.1.10.103,Interface eth0.IPv4 no longer relevant for mDNS.
+63,10.1.10.103,New relevant interface eth0.IPv4 for mDNS.
+64,10.1.10.103,Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
+65,10.1.10.103,Registering new address record for 10.1.10.62 on eth0.
+66,10.1.10.103,/sbin/dhclient-script : updated /etc/resolv.conf
+67,10.1.10.62,bound to 10.1.10.62 -- renewal in 31782 seconds.
+68,10.1.10.62,Invalid query packet.
+69,10.1.10.62,Invalid query packet.
+70,10.1.10.62,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
+71,10.1.10.62,DHCPACK from 10.1.10.1 (xid=0xd16b79d)
+72,10.1.10.62,bound to 10.1.10.62 -- renewal in 19742 seconds.
+73,10.1.10.62,Invalid query packet.
+74,10.1.10.62,Invalid query packet.
+75,10.1.10.62,DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
+76,10.1.10.62,DHCPACK from 10.1.10.1 (xid=0xd16b79d)
+77,10.1.10.62,bound to 10.1.10.62 -- renewal in 55327 seconds.
+78,10.1.10.62,Invalid query packet.
+79,10.1.10.62,Invalid response packet from host 10.1.10.10.
+80,10.1.10.62,Invalid response packet from host fe80::22c9:d0ff:fe15:1b7c.
+81,10.1.10.62,Invalid query packet.

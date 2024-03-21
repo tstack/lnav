@@ -1,6 +1,7 @@
 {
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "nextflow_log": {
+        "title": "Nextflow log format",
         "description": "Format file for nextflow.io logs",
         "url": [
             "https://nextflow.io/docs/latest/cli.html#execution-logs"

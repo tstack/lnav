@@ -64,10 +64,19 @@ bookmark_metadata::remove_tag(const std::string& tag)
 }
 
 bool
-bookmark_metadata::empty() const
+bookmark_metadata::empty(bookmark_metadata::categories props) const
 {
-    return this->bm_name.empty() && this->bm_comment.empty()
-        && this->bm_tags.empty() && this->bm_annotations.la_pairs.empty();
+    switch (props) {
+        case categories::any:
+            return this->bm_name.empty() && this->bm_comment.empty()
+                && this->bm_tags.empty()
+                && this->bm_annotations.la_pairs.empty();
+        case categories::partition:
+            return this->bm_name.empty();
+        case categories::notes:
+            return this->bm_comment.empty() && this->bm_tags.empty()
+                && this->bm_annotations.la_pairs.empty();
+    }
 }
 
 void

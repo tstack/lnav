@@ -626,7 +626,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 
         case VT_COL_PARTITION: {
             auto& vb = vt->tc->get_bookmarks();
-            const auto& bv = vb[&textview_curses::BM_META];
+            const auto& bv = vb[&textview_curses::BM_PARTITION];
 
             if (bv.empty()) {
                 sqlite3_result_null(ctx);
@@ -1985,23 +1985,35 @@ vt_update(sqlite3_vtab* tab,
             tmp_bm.bm_annotations = parse_res.unwrap();
         }
 
-        auto& bv = vt->tc->get_bookmarks()[&textview_curses::BM_META];
-        bool has_meta = part_name != nullptr || log_comment != nullptr
-            || log_tags.has_value() || log_annos.has_value();
+        auto& bv_meta = vt->tc->get_bookmarks()[&textview_curses::BM_META];
+        bool has_meta = log_comment != nullptr || log_tags.has_value()
+            || log_annos.has_value();
 
-        if (binary_search(bv.begin(), bv.end(), vrowid) && !has_meta) {
+        if (std::binary_search(bv_meta.begin(), bv_meta.end(), vrowid)
+            && !has_meta)
+        {
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);
-            vt->lss->erase_bookmark_metadata(vrowid);
             vt->lss->set_line_meta_changed();
+        }
+
+        if (!has_meta && part_name == nullptr) {
+            vt->lss->erase_bookmark_metadata(vrowid);
+        }
+
+        if (part_name) {
+            auto& line_meta = vt->lss->get_bookmark_metadata(vrowid);
+            line_meta.bm_name = std::string((const char*) part_name);
+            vt->tc->set_user_mark(&textview_curses::BM_PARTITION, vrowid, true);
+        } else {
+            vt->tc->set_user_mark(
+                &textview_curses::BM_PARTITION, vrowid, false);
         }
 
         if (has_meta) {
             auto& line_meta = vt->lss->get_bookmark_metadata(vrowid);
 
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, true);
-            if (part_name) {
-                line_meta.bm_name = std::string((const char*) part_name);
-            } else {
+            if (part_name == nullptr) {
                 line_meta.bm_name.clear();
             }
             if (log_comment) {

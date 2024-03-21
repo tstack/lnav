@@ -472,6 +472,8 @@ private:
     robin_hood::unordered_map<uint32_t, bookmark_metadata> lf_bookmark_metadata;
 
     std::vector<std::shared_ptr<format_tag_def>> lf_applicable_taggers;
+    std::vector<std::shared_ptr<format_partition_def>>
+        lf_applicable_partitioners;
     std::map<std::string, metadata> lf_embedded_metadata;
     size_t lf_file_options_generation{0};
     nonstd::optional<std::pair<std::string, lnav::file_options>>

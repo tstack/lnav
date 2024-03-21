@@ -343,6 +343,7 @@ dist_noinst_DATA = \
 	logfile_nested_json.json \
 	logfile_nextcloud.0 \
 	logfile_openam.0 \
+	logfile_partitions.0 \
 	logfile_plain.0 \
 	logfile_pretty.0 \
 	logfile_procstate.0 \
@@ -412,6 +413,7 @@ dist_noinst_DATA = \
 	formats/jsontest3/format.json \
 	formats/jsontest-subsec/format.json \
 	formats/nestedjson/format.json \
+	formats/partitions/format.json \
 	formats/scripts/multiline-echo.lnav \
 	formats/scripts/redirecting.lnav \
 	formats/scripts/nested-redirecting.lnav \

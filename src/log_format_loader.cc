@@ -171,6 +171,26 @@ format_tag_def_provider(const yajlpp_provider_context& ypc,
     return retval.get();
 }
 
+static format_partition_def*
+format_partition_def_provider(const yajlpp_provider_context& ypc,
+                              external_log_format* elf)
+{
+    const intern_string_t partition_name = ypc.get_substr_i(0);
+
+    auto iter = elf->lf_partition_defs.find(partition_name);
+    std::shared_ptr<format_partition_def> retval;
+
+    if (iter == elf->lf_partition_defs.end()) {
+        retval = std::make_shared<format_partition_def>(
+            partition_name.to_string());
+        elf->lf_partition_defs[partition_name] = retval;
+    } else {
+        retval = iter->second;
+    }
+
+    return retval.get();
+}
+
 static scaling_factor*
 scaling_factor_provider(const yajlpp_provider_context& ypc,
                         external_log_format::value_def* value_def)
@@ -759,6 +779,35 @@ static const struct json_path_container tag_handlers = {
         .with_children(format_tag_def_handlers),
 };
 
+static const struct json_path_container format_partition_def_handlers = {
+    yajlpp::property_handler("paths#")
+        .with_description("Restrict partitioning to the given paths")
+        .for_field(&format_partition_def::fpd_paths)
+        .with_children(tag_path_handlers),
+    yajlpp::property_handler("pattern")
+        .with_synopsis("<regex>")
+        .with_description("The regular expression to match against the body of "
+                          "the log message")
+        .with_example("\\w+ is down")
+        .for_field(&format_partition_def::fpd_pattern),
+    yajlpp::property_handler("description")
+        .with_synopsis("<string>")
+        .with_description("A description of this partition")
+        .for_field(&format_partition_def::fpd_description),
+    json_path_handler("level")
+        .with_synopsis("<log-level>")
+        .with_description("Constrain hits to log messages with this level")
+        .with_enum_values(LEVEL_ENUM)
+        .for_field(&format_partition_def::fpd_level),
+};
+
+static const struct json_path_container partition_handlers = {
+    yajlpp::pattern_property_handler(R"((?<partition_type>[\w:;\._\-]+))")
+        .with_description("The type of partition to apply")
+        .with_obj_provider(format_partition_def_provider)
+        .with_children(format_partition_def_handlers),
+};
+
 static const struct json_path_container highlight_handlers = {
     yajlpp::pattern_property_handler(R"((?<highlight_name>[^/]+))")
         .with_description("The definition of a highlight")
@@ -1009,6 +1058,11 @@ const struct json_path_container format_handlers = {
     yajlpp::property_handler("tags")
         .with_description("The tags to automatically apply to log messages")
         .with_children(tag_handlers),
+
+    yajlpp::property_handler("partitions")
+        .with_description(
+            "The partitions to automatically apply to log messages")
+        .with_children(partition_handlers),
 
     yajlpp::property_handler("action").with_children(action_handlers),
     yajlpp::property_handler("sample#")

@@ -4240,5 +4240,11 @@ format_tag_def::path_restriction::matches(const char* fn) const
     return fnmatch(this->p_glob.c_str(), fn, 0) == 0;
 }
 
+bool
+format_partition_def::path_restriction::matches(const char* fn) const
+{
+    return fnmatch(this->p_glob.c_str(), fn, 0) == 0;
+}
+
 /* XXX */
 #include "log_format_impls.cc"

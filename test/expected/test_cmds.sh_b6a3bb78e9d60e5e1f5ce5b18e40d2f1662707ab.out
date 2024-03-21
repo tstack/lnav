@@ -260,11 +260,10 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
              and then the last message arrives five seconds
              later, the last message will be highlighted as a
              slow down.
- {/}         Move to the previous/next location in history.
-             Whenever you jump to a new location in the view,
-             the location will be added to the history. The
-             history is not updated when using only the arrow
-             keys.
+ {/}         Move to the previous/next section in the view.  In
+             the LOG view, this moves through partitions.  In
+             other views, it moves through sections of
+             documents.
 
 [4mChronological Navigation[0m
 

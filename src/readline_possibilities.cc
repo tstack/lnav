@@ -482,10 +482,10 @@ add_tag_possibilities()
     if (lnav_data.ld_view_stack.top().value_or(nullptr)
         == &lnav_data.ld_views[LNV_LOG])
     {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
+        auto& lss = lnav_data.ld_log_source;
         if (lss.text_line_count() > 0) {
             auto line_meta_opt = lss.find_bookmark_metadata(
-                lnav_data.ld_views[LNV_LOG].get_top());
+                lnav_data.ld_views[LNV_LOG].get_selection());
             if (line_meta_opt) {
                 rc->add_possibility(ln_mode_t::COMMAND,
                                     "line-tags",

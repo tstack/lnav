@@ -241,6 +241,17 @@
                 "pattern": "^Expected equality of these values:"
             }
         },
+        "partitions": {
+            "test-partition": {
+                "description": "Partition for gtest sections",
+                "paths": [
+                    {
+                        "glob": "*/test.log"
+                    }
+                ],
+                "pattern": "^\\[ RUN      \\] ([^\\n]+)"
+            }
+        },
         "sample": [
             {
                 "line": "2021-05-24T20:31:05.671Z - last log rotation time, 2021-05-24T09:30:02.683Z - time the service was last started, Section for VMware ESX, pid=1000080910, version=7.0.3, build=0, option=DEBUG"

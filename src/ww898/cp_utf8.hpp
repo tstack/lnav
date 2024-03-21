@@ -89,8 +89,7 @@ struct utf8 final {
         if (ch0 < 0x80)  // 0xxx_xxxx
             return Ok((uint32_t) ch0);
         if (ch0 < 0xC0)
-            throw std::runtime_error(
-                "The utf8 first char in sequence is incorrect");
+            return Err("The utf8 first char in sequence is incorrect");
         if (ch0 < 0xE0)  // 110x_xxxx 10xx_xxxx
         {
             char_type const ch1 = read_fn();

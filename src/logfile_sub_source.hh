@@ -200,7 +200,8 @@ class logfile_sub_source
     : public text_sub_source
     , public text_time_translator
     , public text_accel_source
-    , public list_input_delegate {
+    , public list_input_delegate
+    , public text_anchors {
 public:
     const static bookmark_type_t BM_ERRORS;
     const static bookmark_type_t BM_WARNINGS;
@@ -351,10 +352,22 @@ public:
         return this->get_bookmark_metadata(this->at(vl));
     }
 
-    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
-        content_line_t cl);
+    struct bookmark_metadata_context {
+        nonstd::optional<vis_line_t> bmc_current;
+        nonstd::optional<bookmark_metadata*> bmc_current_metadata;
+        nonstd::optional<vis_line_t> bmc_next_line;
+    };
 
-    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(vis_line_t vl)
+    bookmark_metadata_context get_bookmark_metadata_context(
+        vis_line_t vl,
+        bookmark_metadata::categories desired
+        = bookmark_metadata::categories::any) const;
+
+    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
+        content_line_t cl) const;
+
+    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
+        vis_line_t vl) const
     {
         return this->find_bookmark_metadata(this->at(vl));
     }
@@ -711,6 +724,14 @@ public:
     };
 
     big_array<indexed_content> lss_index;
+
+    nonstd::optional<vis_line_t> row_for_anchor(const std::string& id);
+
+    nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl, direction dir);
+
+    nonstd::optional<std::string> anchor_for_row(vis_line_t vl);
+
+    std::unordered_set<std::string> get_anchors();
 
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }

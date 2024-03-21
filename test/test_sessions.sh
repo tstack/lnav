@@ -78,6 +78,14 @@ run_cap_test ${lnav_test} -n \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 
+# partition name was not saved in session and doesn't not show up in crumbs
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ':goto 2' \
+    -c ";SELECT top_meta FROM lnav_views WHERE name = 'log'" \
+    -c ':write-json-to -' \
+    ${test_dir}/logfile_access_log.0
+
 # adjust time is not working
 run_cap_test ${lnav_test} -nq \
     -c ":adjust-log-time 2010-01-01T00:00:00" \

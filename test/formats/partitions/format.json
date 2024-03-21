@@ -1,0 +1,11 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "syslog_log": {
+        "partitions": {
+            "dhclient-binding": {
+                "description": "Set partition name to current IP",
+                "pattern": " bound to ([^ ]+) --"
+            }
+        }
+    }
+}

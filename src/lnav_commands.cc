@@ -3703,10 +3703,12 @@ com_clear_comment(exec_context& ec,
             bookmark_metadata& line_meta = *(line_meta_opt.value());
 
             line_meta.bm_comment.clear();
-            if (line_meta.empty()) {
-                lss.erase_bookmark_metadata(tc->get_selection());
+            if (line_meta.empty(bookmark_metadata::categories::notes)) {
                 tc->set_user_mark(
                     &textview_curses::BM_META, tc->get_selection(), false);
+                if (line_meta.empty(bookmark_metadata::categories::any)) {
+                    lss.erase_bookmark_metadata(tc->get_selection());
+                }
             }
 
             lss.set_line_meta_changed();
@@ -3786,7 +3788,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
         if (line_meta_opt) {
-            bookmark_metadata& line_meta = *(line_meta_opt.value());
+            auto& line_meta = *(line_meta_opt.value());
 
             for (size_t lpc = 1; lpc < args.size(); lpc++) {
                 std::string tag = args[lpc];
@@ -3796,7 +3798,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 }
                 line_meta.remove_tag(tag);
             }
-            if (line_meta.empty()) {
+            if (line_meta.empty(bookmark_metadata::categories::notes)) {
                 tc->set_user_mark(
                     &textview_curses::BM_META, tc->get_selection(), false);
             }
@@ -3868,12 +3870,14 @@ com_delete_tags(exec_context& ec,
                 line_meta->remove_tag(tag);
             }
 
-            if (line_meta->empty()) {
-                lss.erase_bookmark_metadata(*iter);
-                size_t off = distance(vbm.begin(), iter);
-
+            if (line_meta->empty(bookmark_metadata::categories::notes)) {
+                size_t off = std::distance(vbm.begin(), iter);
                 tc->set_user_mark(&textview_curses::BM_META, *iter, false);
-                iter = next(vbm.begin(), off);
+                if (line_meta->empty(bookmark_metadata::categories::any)) {
+                    lss.erase_bookmark_metadata(*iter);
+                }
+
+                iter = std::next(vbm.begin(), off);
             } else {
                 ++iter;
             }
@@ -3906,7 +3910,7 @@ com_partition_name(exec_context& ec,
             args[1] = trim(remaining_args(cmdline, args));
 
             tc.set_user_mark(
-                &textview_curses::BM_META, tc.get_selection(), true);
+                &textview_curses::BM_PARTITION, tc.get_selection(), true);
 
             auto& line_meta = lss.get_bookmark_metadata(tc.get_selection());
 
@@ -3932,7 +3936,7 @@ com_clear_partition(exec_context& ec,
     } else if (args.size() == 1) {
         textview_curses& tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source& lss = lnav_data.ld_log_source;
-        auto& bv = tc.get_bookmarks()[&textview_curses::BM_META];
+        auto& bv = tc.get_bookmarks()[&textview_curses::BM_PARTITION];
         nonstd::optional<vis_line_t> part_start;
 
         if (binary_search(bv.begin(), bv.end(), tc.get_selection())) {
@@ -3948,10 +3952,12 @@ com_clear_partition(exec_context& ec,
             auto& line_meta = lss.get_bookmark_metadata(part_start.value());
 
             line_meta.bm_name.clear();
-            if (line_meta.empty()) {
-                lss.erase_bookmark_metadata(part_start.value());
+            if (line_meta.empty(bookmark_metadata::categories::partition)) {
                 tc.set_user_mark(
-                    &textview_curses::BM_META, part_start.value(), false);
+                    &textview_curses::BM_PARTITION, part_start.value(), false);
+                if (line_meta.empty(bookmark_metadata::categories::any)) {
+                    lss.erase_bookmark_metadata(part_start.value());
+                }
             }
 
             retval = "info: cleared partition name";

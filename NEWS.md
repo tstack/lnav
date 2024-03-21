@@ -1,5 +1,16 @@
 ## lnav v0.12.1
 
+Features:
+* Log partitions can automatically be created by defining a log
+  message pattern in a log format.  Under a format definition,
+  add an entry into the "partitions" object in a format definition.
+  The "pattern" property specifies the regular expression to match
+  against a line in a file that matches the format.  If a match is
+  found, the partition name will be set to the value(s) captured
+  by the regex.  To restrict matches to certain files, you can add
+  a "paths" array whose object elements contain a "glob" property
+  that will be matched against file names.
+
 Interface changes:
 * Changed the breadcrumb bar styling to space things out
   more and make the divisions between items clearer.
@@ -14,6 +25,14 @@ Interface changes:
   one is active).
 * The focused line should be preserved more reliably in
   the LOG/TEXT views.
+* In the LOG view, the current partition name (as set
+  with the `:partition-name` command) is shown as the
+  first breadcrumb in the breadcrumb bar.  And, when
+  that breadcrumb is selected, you can select another
+  partition to jump to.
+* The `{` / `}` hotkeys, `:next-section`, and `:prev-section`
+  commands now work in the LOG view and take you to the
+  next/previous partition.
 
 ## lnav v0.12.0
 

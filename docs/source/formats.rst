@@ -367,6 +367,19 @@ object with the following fields:
 
     :glob: A glob pattern to check against the log files read by lnav.
 
+:partitions: This object contains a description of partitions that should
+  automatically be created in the log view.
+
+  :pattern: The regular expression evaluated over a line in the log file as
+    it is read in.  If there is a match, the log message the line is a part
+    of will be used as the start of the partition.  The name of the
+    partition will be taken from any captures in the regex.
+  :paths: This array contains objects that define restrictions on the file
+    paths in which partitions will be created.  The objects in this array
+    can contain:
+
+    :glob: A glob pattern to check against the log files read by lnav.
+
 .. _format_sample:
 
 :sample: A list of objects that contain sample log messages.  All formats

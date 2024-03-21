@@ -1,4 +1,4 @@
 [1m[31m✘ error[0m: unknown bookmark type: foobar
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:[0m[1m[36m[40mnext-mark[0m[37m[40m foobar                       [0m
-[36m =[0m [36mhelp[0m: available types: error, file, meta, search, user, user-expr, warning
+[36m =[0m [36mhelp[0m: available types: error, file, meta, partition, search, user, user-expr, warning

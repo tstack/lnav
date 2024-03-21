@@ -576,6 +576,7 @@ public:
     const static bookmark_type_t BM_USER_EXPR;
     const static bookmark_type_t BM_SEARCH;
     const static bookmark_type_t BM_META;
+    const static bookmark_type_t BM_PARTITION;
 
     textview_curses();
 

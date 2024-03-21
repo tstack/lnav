@@ -822,6 +822,12 @@ log_line,log_part
 2,<NULL>
 EOF
 
+# test the partitions defined in the format
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_line, log_part, log_body FROM syslog_log" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_partitions.0
 
 run_test ${lnav_test} -n \
     -c ";SELECT * FROM openam_log" \

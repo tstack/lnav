@@ -518,6 +518,74 @@
                     },
                     "additionalProperties": false
                 },
+                "partitions": {
+                    "description": "The partitions to automatically apply to log messages",
+                    "title": "/<format_name>/partitions",
+                    "type": "object",
+                    "patternProperties": {
+                        "([\\w:;\\._\\-]+)": {
+                            "description": "The type of partition to apply",
+                            "title": "/<format_name>/partitions/<partition_type>",
+                            "type": "object",
+                            "properties": {
+                                "paths": {
+                                    "description": "Restrict partitioning to the given paths",
+                                    "title": "/<format_name>/partitions/<partition_type>/paths",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "glob": {
+                                                "title": "/<format_name>/partitions/<partition_type>/paths/glob",
+                                                "description": "The glob to match against file paths",
+                                                "type": "string",
+                                                "examples": [
+                                                    "*/system.log*"
+                                                ]
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    }
+                                },
+                                "pattern": {
+                                    "title": "/<format_name>/partitions/<partition_type>/pattern",
+                                    "description": "The regular expression to match against the body of the log message",
+                                    "type": "string",
+                                    "examples": [
+                                        "\\w+ is down"
+                                    ]
+                                },
+                                "description": {
+                                    "title": "/<format_name>/partitions/<partition_type>/description",
+                                    "description": "A description of this partition",
+                                    "type": "string"
+                                },
+                                "level": {
+                                    "title": "/<format_name>/partitions/<partition_type>/level",
+                                    "description": "Constrain hits to log messages with this level",
+                                    "type": "string",
+                                    "enum": [
+                                        "trace",
+                                        "debug5",
+                                        "debug4",
+                                        "debug3",
+                                        "debug2",
+                                        "debug",
+                                        "info",
+                                        "stats",
+                                        "notice",
+                                        "warning",
+                                        "error",
+                                        "critical",
+                                        "fatal"
+                                    ]
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "action": {
                     "title": "/<format_name>/action",
                     "type": "object",

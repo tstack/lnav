@@ -1,0 +1,89 @@
+[
+    {
+        "top_meta": {
+            "time": "2009-07-20 22:59:29.000",
+            "file": "{test_dir}/logfile_access_log.0",
+            "anchor": "#middle",
+            "breadcrumbs": [
+                {
+                    "display_value": "⊑ middle",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "middle"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "2009-07-20T22:59:29.000",
+                    "search_placeholder": "(Enter an absolute or relative time)",
+                    "possibilities": [
+                        {
+                            "display_value": "-1 day"
+                        },
+                        {
+                            "display_value": "-1h"
+                        },
+                        {
+                            "display_value": "-30m"
+                        },
+                        {
+                            "display_value": "-15m"
+                        },
+                        {
+                            "display_value": "-5m"
+                        },
+                        {
+                            "display_value": "-1m"
+                        },
+                        {
+                            "display_value": "+1m"
+                        },
+                        {
+                            "display_value": "+5m"
+                        },
+                        {
+                            "display_value": "+15m"
+                        },
+                        {
+                            "display_value": "+30m"
+                        },
+                        {
+                            "display_value": "+1h"
+                        },
+                        {
+                            "display_value": "+1 day"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "access_log",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "access_log"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "logfile_access_log.0[2]",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "logfile_access_log.0"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "192.168.202.254",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "192.168.202.254"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

@@ -1,0 +1,82 @@
+Apr 28 04:02:03 tstack-centos5 syslogd 1.4.1: restart.
+Apr 28 04:04:01 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 28 06:53:54 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x654a04aa)
+Apr 28 06:53:54 tstack-centos5 dhclient: DHCPNAK from 10.1.10.1 (xid=0x654a04aa)
+Apr 28 06:53:54 tstack-centos5 NET[31050]: /sbin/dhclient-script : updated /etc/resolv.conf
+Apr 28 06:53:54 tstack-centos5 avahi-daemon[2467]: Withdrawing address record for 10.1.10.49 on eth0.
+Apr 28 06:53:54 tstack-centos5 avahi-daemon[2467]: Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.49.
+Apr 28 06:53:54 tstack-centos5 avahi-daemon[2467]: iface.c: interface_mdns_mcast_join() called but no local address available.
+Apr 28 06:53:54 tstack-centos5 avahi-daemon[2467]: Interface eth0.IPv4 no longer relevant for mDNS.
+Apr 28 06:53:54 tstack-centos5 dhclient: DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0x4e17f141)
+Apr 28 06:53:55 tstack-centos5 dhclient: DHCPOFFER from 10.1.10.1
+Apr 28 06:53:55 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 255.255.255.255 port 67 (xid=0x4e17f141)
+Apr 28 06:53:55 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: New relevant interface eth0.IPv4 for mDNS.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.103 on eth0.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Withdrawing address record for 10.1.10.103 on eth0.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: iface.c: interface_mdns_mcast_join() called but no local address available.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Interface eth0.IPv4 no longer relevant for mDNS.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: New relevant interface eth0.IPv4 for mDNS.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+Apr 28 06:53:55 tstack-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.103 on eth0.
+Apr 28 06:53:55 tstack-centos5 NET[31132]: /sbin/dhclient-script : updated /etc/resolv.conf
+Apr 28 06:53:55 tstack-centos5 dhclient: bound to 10.1.10.103 -- renewal in 54694 seconds.
+Apr 28 07:03:50 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 28 17:01:19 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 28 22:05:28 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+Apr 28 22:05:29 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+Apr 28 22:05:29 tstack-centos5 dhclient: bound to 10.1.10.103 -- renewal in 8787 seconds.
+Apr 28 22:10:01 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 00:31:55 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+Apr 29 00:31:56 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+Apr 29 00:31:56 tstack-centos5 dhclient: bound to 10.1.10.103 -- renewal in 9938 seconds.
+Apr 29 00:39:19 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 03:17:34 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+Apr 29 03:17:34 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+Apr 29 03:17:34 tstack-centos5 dhclient: bound to 10.1.10.103 -- renewal in 2656 seconds.
+Apr 29 03:18:07 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 04:01:50 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+Apr 29 04:01:50 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0x4e17f141)
+Apr 29 04:01:50 tstack-centos5 dhclient: bound to 10.1.10.103 -- renewal in 15112 seconds.
+Apr 29 04:10:03 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 05:55:18 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 06:39:04 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 08:13:41 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0x4e17f141)
+Apr 29 08:13:42 tstack-centos5 dhclient: DHCPNAK from 10.1.10.1 (xid=0x4e17f141)
+Apr 29 08:13:42 tstack-centos5 NET[13600]: /sbin/dhclient-script : updated /etc/resolv.conf
+Apr 29 08:13:42 tstack-centos5 avahi-daemon[2467]: Withdrawing address record for 10.1.10.103 on eth0.
+Apr 29 08:13:42 tstack-centos5 avahi-daemon[2467]: Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.103.
+Apr 29 08:13:42 tstack-centos5 avahi-daemon[2467]: iface.c: interface_mdns_mcast_join() called but no local address available.
+Apr 29 08:13:42 tstack-centos5 avahi-daemon[2467]: Interface eth0.IPv4 no longer relevant for mDNS.
+Apr 29 08:13:42 tstack-centos5 dhclient: DHCPDISCOVER on eth0 to 255.255.255.255 port 67 interval 5 (xid=0xd16b79d)
+Apr 29 08:13:43 tstack-centos5 dhclient: DHCPOFFER from 10.1.10.1
+Apr 29 08:13:43 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 255.255.255.255 port 67 (xid=0xd16b79d)
+Apr 29 08:13:43 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0xd16b79d)
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: New relevant interface eth0.IPv4 for mDNS.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.62 on eth0.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Withdrawing address record for 10.1.10.62 on eth0.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Leaving mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: iface.c: interface_mdns_mcast_join() called but no local address available.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Interface eth0.IPv4 no longer relevant for mDNS.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: New relevant interface eth0.IPv4 for mDNS.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Joining mDNS multicast group on interface eth0.IPv4 with address 10.1.10.62.
+Apr 29 08:13:43 tstack-centos5 avahi-daemon[2467]: Registering new address record for 10.1.10.62 on eth0.
+Apr 29 08:13:43 tstack-centos5 NET[13682]: /sbin/dhclient-script : updated /etc/resolv.conf
+Apr 29 08:13:43 tstack-centos5 dhclient: bound to 10.1.10.62 -- renewal in 31782 seconds.
+Apr 29 08:15:06 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 17:03:19 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 17:03:25 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
+Apr 29 17:03:25 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0xd16b79d)
+Apr 29 17:03:25 tstack-centos5 dhclient: bound to 10.1.10.62 -- renewal in 19742 seconds.
+Apr 29 17:03:51 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 17:20:00 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 22:32:26 tstack-centos5 dhclient: DHCPREQUEST on eth0 to 10.1.10.1 port 67 (xid=0xd16b79d)
+Apr 29 22:32:27 tstack-centos5 dhclient: DHCPACK from 10.1.10.1 (xid=0xd16b79d)
+Apr 29 22:32:27 tstack-centos5 dhclient: bound to 10.1.10.62 -- renewal in 55327 seconds.
+Apr 29 22:45:57 tstack-centos5 avahi-daemon[2467]: Invalid query packet.
+Apr 29 23:02:45 tstack-centos5 avahi-daemon[2467]: Invalid response packet from host 10.1.10.10.
+Apr 29 23:02:45 tstack-centos5 avahi-daemon[2467]: Invalid response packet from host fe80::22c9:d0ff:fe15:1b7c.
+Apr 29 23:02:46 tstack-centos5 avahi-daemon[2467]: Invalid query packet.

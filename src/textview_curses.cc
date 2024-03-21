@@ -180,6 +180,7 @@ const bookmark_type_t textview_curses::BM_USER("user");
 const bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
 const bookmark_type_t textview_curses::BM_SEARCH("search");
 const bookmark_type_t textview_curses::BM_META("meta");
+const bookmark_type_t textview_curses::BM_PARTITION("partition");
 
 textview_curses::textview_curses()
     : lnav_config_listener(__FILE__), tc_search_action(noop_func{})
@@ -555,8 +556,9 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 
     const auto& user_marks = this->tc_bookmarks[&BM_USER];
     const auto& user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];
-    if (binary_search(user_marks.begin(), user_marks.end(), row)
-        || binary_search(user_expr_marks.begin(), user_expr_marks.end(), row))
+    if (std::binary_search(user_marks.begin(), user_marks.end(), row)
+        || std::binary_search(
+            user_expr_marks.begin(), user_expr_marks.end(), row))
     {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
                         VC_STYLE.value(text_attrs{A_REVERSE}));

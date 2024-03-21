@@ -160,7 +160,7 @@ view_curses::mvwattrline(WINDOW* window,
     line_range lr_bytes;
     int char_index = 0;
 
-    for (size_t lpc = 0; lpc < line.size(); lpc++) {
+    for (size_t lpc = 0; lpc < line.size();) {
         int exp_start_index = expanded_line.size();
         auto ch = static_cast<unsigned char>(line[lpc]);
 
@@ -178,6 +178,7 @@ view_curses::mvwattrline(WINDOW* window,
                 } while (expanded_line.size() % 8);
                 utf_adjustments.emplace_back(
                     lpc, expanded_line.size() - exp_start_index - 1);
+                lpc += 1;
                 break;
             }
 
@@ -185,49 +186,48 @@ view_curses::mvwattrline(WINDOW* window,
                 expanded_line.append("\u238b");
                 utf_adjustments.emplace_back(lpc, -1);
                 char_index += 1;
+                lpc += 1;
                 break;
 
             case '\b':
                 expanded_line.append("\u232b");
                 utf_adjustments.emplace_back(lpc, -1);
                 char_index += 1;
+                lpc += 1;
                 break;
 
             case '\r':
             case '\n':
                 expanded_line.push_back(' ');
                 char_index += 1;
+                lpc += 1;
                 break;
 
             default: {
-                auto size_result = ww898::utf::utf8::char_size([&line, lpc]() {
-                    return std::make_pair(line[lpc], line.length() - lpc - 1);
-                });
+                auto exp_read_start = expanded_line.size();
+                auto lpc_start = lpc;
+                auto read_res
+                    = ww898::utf::utf8::read([&line, &expanded_line, &lpc]() {
+                          auto ch = line[lpc++];
+                          expanded_line.push_back(ch);
+                          return ch;
+                      });
 
-                if (size_result.isErr()) {
+                if (read_res.isErr()) {
+                    log_trace(
+                        "error:%d:%d:%s", y, x + lpc, read_res.unwrapErr());
+                    expanded_line.resize(exp_read_start);
                     expanded_line.push_back('?');
+                    char_index += 1;
+                    lpc = lpc_start + 1;
                 } else {
-                    auto offset = 1 - (int) size_result.unwrap();
-
-                    expanded_line.push_back(ch);
-                    if (offset) {
-#if 0
-                        if (char_index < lr_chars.lr_start) {
-                            lr_bytes.lr_start += abs(offset);
-                        }
-                        if (char_index < lr_chars.lr_end) {
-                            lr_bytes.lr_end += abs(offset);
-                        }
-#endif
-                        utf_adjustments.emplace_back(lpc, offset);
-                        for (; offset && (lpc + 1) < line.size();
-                             lpc++, offset++)
-                        {
-                            expanded_line.push_back(line[lpc + 1]);
-                        }
+                    if (lpc > (lpc_start + 1)) {
+                        utf_adjustments.emplace_back(lpc_start,
+                                                     1 - (lpc - lpc_start));
                     }
+                    auto wch = read_res.unwrap();
+                    char_index += wcwidth(wch);
                 }
-                char_index += 1;
                 break;
             }
         }

@@ -433,6 +433,27 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 this->lf_applicable_taggers.emplace_back(td_pair.second);
             }
 
+            for (auto& pd_pair : this->lf_format->lf_partition_defs) {
+                bool matches = pd_pair.second->fpd_paths.empty();
+                for (const auto& pr : pd_pair.second->fpd_paths) {
+                    if (pr.matches(this->lf_filename.c_str())) {
+                        matches = true;
+                        break;
+                    }
+                }
+                if (!matches) {
+                    continue;
+                }
+
+                log_info(
+                    "%s: found applicable partition definition "
+                    "/%s/partitions/%s",
+                    this->lf_filename.c_str(),
+                    this->lf_format->get_name().get(),
+                    pd_pair.second->fpd_name.c_str());
+                this->lf_applicable_partitioners.emplace_back(pd_pair.second);
+            }
+
             /*
              * We'll go ahead and assume that any previous lines were
              * written out at the same time as the last one, so we need to
@@ -844,33 +865,60 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             }
 #endif
             if (this->lf_format) {
-                if (!this->lf_applicable_taggers.empty()) {
-                    auto sf = sbr.to_string_fragment();
+                auto sf = sbr.to_string_fragment();
 
-                    for (const auto& td : this->lf_applicable_taggers) {
-                        auto curr_ll = this->end() - 1;
+                for (const auto& td : this->lf_applicable_taggers) {
+                    auto curr_ll = this->end() - 1;
 
-                        if (td->ftd_level != LEVEL_UNKNOWN
-                            && td->ftd_level != curr_ll->get_msg_level())
-                        {
-                            continue;
+                    if (td->ftd_level != LEVEL_UNKNOWN
+                        && td->ftd_level != curr_ll->get_msg_level())
+                    {
+                        continue;
+                    }
+
+                    if (td->ftd_pattern.pp_value
+                            ->find_in(sf, PCRE2_NO_UTF_CHECK)
+                            .ignore_error()
+                            .has_value())
+                    {
+                        while (curr_ll->is_continued()) {
+                            --curr_ll;
                         }
+                        curr_ll->set_meta_mark(true);
+                        auto line_number = static_cast<uint32_t>(
+                            std::distance(this->begin(), curr_ll));
 
-                        if (td->ftd_pattern.pp_value
-                                ->find_in(sf, PCRE2_NO_UTF_CHECK)
-                                .ignore_error()
-                                .has_value())
-                        {
-                            while (curr_ll->is_continued()) {
-                                --curr_ll;
-                            }
-                            curr_ll->set_mark(true);
-                            auto line_number = static_cast<uint32_t>(
-                                std::distance(this->begin(), curr_ll));
+                        this->lf_bookmark_metadata[line_number].add_tag(
+                            td->ftd_name);
+                    }
+                }
 
-                            this->lf_bookmark_metadata[line_number].add_tag(
-                                td->ftd_name);
+                for (const auto& pd : this->lf_applicable_partitioners) {
+                    static thread_local auto part_md
+                        = lnav::pcre2pp::match_data::unitialized();
+
+                    auto curr_ll = this->end() - 1;
+
+                    if (pd->fpd_level != LEVEL_UNKNOWN
+                        && pd->fpd_level != curr_ll->get_msg_level())
+                    {
+                        continue;
+                    }
+
+                    auto match_res = pd->fpd_pattern.pp_value->capture_from(sf)
+                                         .into(part_md)
+                                         .matches(PCRE2_NO_UTF_CHECK)
+                                         .ignore_error();
+                    if (match_res) {
+                        while (curr_ll->is_continued()) {
+                            --curr_ll;
                         }
+                        curr_ll->set_meta_mark(true);
+                        auto line_number = static_cast<uint32_t>(
+                            std::distance(this->begin(), curr_ll));
+
+                        this->lf_bookmark_metadata[line_number].bm_name
+                            = part_md.to_string();
                     }
                 }
 

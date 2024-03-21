@@ -67,8 +67,7 @@ breadcrumb_curses::do_update()
     attr_line_t crumbs_line;
     for (const auto& crumb : crumbs) {
         auto accum_width = crumbs_line.column_width();
-        auto elem_width = utf8_string_length(crumb.c_display_value.get_string())
-                              .template unwrap();
+        auto elem_width = crumb.c_display_value.column_width();
         auto is_selected = this->bc_selected_crumb
             && (crumb_index == this->bc_selected_crumb.value());
 

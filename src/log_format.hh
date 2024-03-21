@@ -581,6 +581,9 @@ public:
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;
 
+    std::map<const intern_string_t, std::shared_ptr<format_partition_def>>
+        lf_partition_defs;
+
     struct opid_descriptor {
         positioned_property<intern_string_t> od_field;
         factory_container<lnav::pcre2pp::code> od_extractor;

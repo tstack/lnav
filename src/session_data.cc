@@ -604,7 +604,7 @@ load_time_bookmarks()
                         bool meta = false;
 
                         if (part_name != nullptr && part_name[0] != '\0') {
-                            lss.set_user_mark(&textview_curses::BM_META,
+                            lss.set_user_mark(&textview_curses::BM_PARTITION,
                                               line_cl);
                             bm_meta[line_number].bm_name = part_name;
                             meta = true;
@@ -1041,7 +1041,7 @@ save_user_bookmarks(sqlite3* db,
             }
         } else {
             const auto& line_meta = *(line_meta_opt.value());
-            if (line_meta.empty()) {
+            if (line_meta.empty(bookmark_metadata::categories::any)) {
                 continue;
             }
 
@@ -1286,7 +1286,11 @@ save_time_bookmarks()
     }
 
     save_user_bookmarks(db.in(), stmt.in(), bm[&textview_curses::BM_USER]);
-    save_user_bookmarks(db.in(), stmt.in(), bm[&textview_curses::BM_META]);
+    auto all_meta_marks = bm[&textview_curses::BM_META];
+    const auto& bm_parts = bm[&textview_curses::BM_PARTITION];
+    all_meta_marks.insert(
+        all_meta_marks.end(), bm_parts.begin(), bm_parts.end());
+    save_user_bookmarks(db.in(), stmt.in(), all_meta_marks);
 
     if (sqlite3_prepare_v2(db.in(),
                            "DELETE FROM time_offset WHERE "

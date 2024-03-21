@@ -265,10 +265,41 @@ columns will be included in the table.
 Taking Notes
 ------------
 
-A few of the columns in the log tables can be updated on a row-by-row basis to
-allow you to take notes.  The majority of the columns in a log table are
-read-only since they are backed by the log files themselves.  However, the
-following columns can be changed by an :code:`UPDATE` statement:
+As you are looking through logs, you might find that you want to leave some
+notes of your findings.  **lnav** can help here by saving information in
+the session without needing to modify the actual log files.  Thus, when
+you re-open the files in lnav, the notes will be restored.  The following
+types of information can be saved:
+
+:tags: Log messages can be tagged with the :ref:`:tag<tag>` command as a
+  simple way to leave a descriptive mark.  The tags attached to a
+  message will be shown underneath the message.  You can press
+  :kbd:`u` and :kbd:`Shift` + :kbd:`u` to jump to the next/previous
+  marked line.  A regular search will also match tags.
+
+:comments: Free-form text can be attached to a log message with the
+  :ref:`:comment<comment>` command.  The comment will be shown
+  underneath the message. If the text contains markdown syntax,
+  it will be rendered to the best of the terminal's ability.
+  You can press :kbd:`u` and :kbd:`Shift` + :kbd:`u` to jump to the
+  next/previous marked line.  A regular search will also match the
+  comment text.
+
+:partitions: The log view can be partitioned to provide some context
+  about where you are in a collection of logs.  For example, in logs
+  for a test run, partitions could be created with the name for each
+  test.  The current partition is shown in the breadcrumb bar and
+  prefixed by the "⊑" symbol.  You can select the partition breadcrumb
+  to jump to another partition.  Pressing :kbd:`{` and :kbd:`}` will
+  jump to the next/previous partition.
+
+Accessing notes through the SQLite interface
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The note taking functionality in lnav can also be accessed through the
+log tables exposed through SQLite.  The majority of the columns in a log
+table are read-only since they are backed by the log files themselves.
+However, the following columns can be changed by an :code:`UPDATE` statement:
 
 * **log_part** - The "partition" the log message belongs to.  This column can
   also be changed by the :ref:`:partition-name<partition_name>` command.
