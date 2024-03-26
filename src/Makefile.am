@@ -203,6 +203,8 @@ dist_noinst_DATA = \
 
 noinst_HEADERS = \
     third-party/md4c/md4c.h \
+    third-party/prqlc-c/prqlc.h \
+    third-party/prqlc-c/prqlc.hpp \
     third-party/rapidyaml/ryml_all.hpp \
 	all_logs_vtab.hh \
 	archive_manager.hh \
@@ -551,6 +553,10 @@ RE2C_FILES = data_scanner_re.cc log_level_re.cc
 endif
 
 EXTRA_DIST = \
+    src/third-party/prqlc-c/Cargo.lock \
+    src/third-party/prqlc-c/Cargo.toml \
+    src/third-party/prqlc-c/cbindgen.toml \
+    src/third-party/prqlc-c/src/lib.rs \
 	ptimec.c
 
 CLEANFILES = \
