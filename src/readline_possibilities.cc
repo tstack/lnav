@@ -39,6 +39,7 @@
 #include "date/tz.h"
 #include "lnav.hh"
 #include "lnav_config.hh"
+#include "log_data_helper.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_help.hh"
@@ -78,7 +79,12 @@ handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 
         if (sqlite_function_help.count(table_name) == 0) {
             lnav_data.ld_rl_view->add_possibility(
-                ln_mode_t::SQL, "*", colvalues[0]);
+                ln_mode_t::SQL, "*", table_name);
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "prql-table",
+                fmt::format(FMT_STRING("db.{}"),
+                            lnav::prql::quote_ident(std::move(table_name))));
         }
 
         lnav_data.ld_table_ddl[colvalues[0]] = colvalues[1];
@@ -535,4 +541,113 @@ add_tz_possibilities(ln_mode_t context)
             }
         }
     }
+}
+
+void
+add_sqlite_possibilities()
+{
+    // Hidden columns don't show up in the table_info pragma.
+    static const char* hidden_table_columns[] = {
+        "log_time_msecs",
+        "log_path",
+        "log_text",
+        "log_body",
+
+        nullptr,
+    };
+
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
+
+    add_env_possibilities(ln_mode_t::SQL);
+
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "prql-expr", lnav::sql::prql_keywords);
+    for (const auto& pair : lnav::sql::prql_functions) {
+        lnav_data.ld_rl_view->add_possibility(
+            ln_mode_t::SQL, "prql-expr", pair.first);
+    }
+
+    if (log_view.get_inner_height() > 0) {
+        log_data_helper ldh(lnav_data.ld_log_source);
+        auto vl = log_view.get_selection();
+        auto cl = lnav_data.ld_log_source.at_base(vl);
+
+        ldh.parse_line(cl);
+
+        for (const auto& jextra : ldh.ldh_extra_json) {
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                lnav::sql::mprintf("%Q", jextra.first.c_str()).in());
+        }
+        for (const auto& jpair : ldh.ldh_json_pairs) {
+            for (const auto& wt : jpair.second) {
+                lnav_data.ld_rl_view->add_possibility(
+                    ln_mode_t::SQL,
+                    "*",
+                    lnav::sql::mprintf("%Q", wt.wt_ptr.c_str()).in());
+            }
+        }
+        for (const auto& xml_pair : ldh.ldh_xml_pairs) {
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                lnav::sql::mprintf("%Q", xml_pair.first.second.c_str()).in());
+        }
+    }
+
+    lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::SQL, "*");
+    add_view_text_possibilities(lnav_data.ld_rl_view,
+                                ln_mode_t::SQL,
+                                "*",
+                                &log_view,
+                                text_quoting::sql);
+
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "*", std::begin(sql_keywords), std::end(sql_keywords));
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "*", sql_function_names);
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "*", hidden_table_columns);
+
+    for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
+        struct FuncDef* basic_funcs;
+        struct FuncDefAgg* agg_funcs;
+
+        sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
+        for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
+            const FuncDef& func_def = basic_funcs[lpc2];
+
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+        }
+        for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
+            const FuncDefAgg& func_def = agg_funcs[lpc2];
+
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+        }
+    }
+
+    for (const auto& pair : sqlite_function_help) {
+        switch (pair.second->ht_context) {
+            case help_context_t::HC_SQL_FUNCTION:
+            case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
+                std::string poss = pair.first
+                    + (pair.second->ht_parameters.empty() ? "()" : ("("));
+
+                lnav_data.ld_rl_view->add_possibility(
+                    ln_mode_t::SQL, "*", poss);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
 }

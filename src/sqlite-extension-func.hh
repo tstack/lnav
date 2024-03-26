@@ -95,6 +95,8 @@ extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs);
 
+extern std::string sqlite_extension_prql;
+
 extern "C"
 {
 int sqlite3_db_dump(

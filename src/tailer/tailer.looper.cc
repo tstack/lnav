@@ -225,10 +225,11 @@ tailer::looper::load_preview(int64_t id, const network::path& path)
                     if (lnav_data.ld_preview_generation != id) {
                         return;
                     }
-                    lnav_data.ld_preview_status_source.get_description()
+                    lnav_data.ld_preview_status_source[0]
+                        .get_description()
                         .set_cylon(false)
                         .clear();
-                    lnav_data.ld_preview_source.clear();
+                    lnav_data.ld_preview_source[0].clear();
                     lnav_data.ld_bottom_source.grep_error(msg);
                 });
             return;
@@ -539,7 +540,8 @@ tailer::looper::host_tailer::load_preview(int64_t id, const std::string& path)
                 if (lnav_data.ld_preview_generation != id) {
                     return;
                 }
-                lnav_data.ld_preview_status_source.get_description()
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
                     .set_cylon(false)
                     .set_value(msg);
             });
@@ -995,10 +997,11 @@ tailer::looper::host_tailer::loop_body()
                                       ppe.ppe_id);
                             return;
                         }
-                        lnav_data.ld_preview_status_source.get_description()
+                        lnav_data.ld_preview_status_source[0]
+                            .get_description()
                             .set_cylon(false)
                             .clear();
-                        lnav_data.ld_preview_source.clear();
+                        lnav_data.ld_preview_source[0].clear();
                         lnav_data.ld_bottom_source.grep_error(ppe.ppe_msg);
                     });
 
@@ -1015,12 +1018,14 @@ tailer::looper::host_tailer::loop_body()
                         }
                         std::string str(ppd.ppd_bits.begin(),
                                         ppd.ppd_bits.end());
-                        lnav_data.ld_preview_status_source.get_description()
+                        lnav_data.ld_preview_status_source[0]
+                            .get_description()
                             .set_cylon(false)
                             .set_value("For file: %s:%s",
                                        netloc.c_str(),
                                        ppd.ppd_path.c_str());
-                        lnav_data.ld_preview_source.replace_with(str)
+                        lnav_data.ld_preview_source[0]
+                            .replace_with(str)
                             .set_text_format(detect_text_format(str));
                     });
                 return std::move(this->ht_state);

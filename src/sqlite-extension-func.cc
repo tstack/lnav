@@ -32,6 +32,7 @@
 #include "sqlite-extension-func.hh"
 
 #include "base/auto_mem.hh"
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "config.h"
@@ -46,6 +47,15 @@ int sqlite3_series_init(sqlite3* db,
                         const sqlite3_api_routines* pApi);
 }
 
+std::string sqlite_extension_prql;
+
+namespace lnav {
+namespace sql {
+std::multimap<std::string, const help_text*> prql_functions;
+
+}
+}  // namespace lnav
+
 sqlite_registration_func_t sqlite_registration_funcs[] = {
     common_extension_functions,
     state_extension_functions,
@@ -59,10 +69,73 @@ sqlite_registration_func_t sqlite_registration_funcs[] = {
     nullptr,
 };
 
+struct prql_hier {
+    std::map<std::string, prql_hier> ph_modules;
+    std::map<std::string, std::string> ph_declarations;
+
+    void to_string(std::string& accum) const
+    {
+        for (const auto& mod_pair : this->ph_modules) {
+            accum.append("module ");
+            accum.append(mod_pair.first);
+            accum.append(" {\n");
+            mod_pair.second.to_string(accum);
+            accum.append("}\n");
+        }
+        for (const auto& decl_pair : this->ph_declarations) {
+            accum.append(decl_pair.second);
+            accum.append("\n");
+        }
+    }
+};
+
+static void
+register_help(prql_hier& phier, const help_text& ht)
+{
+    auto prql_fqid
+        = fmt::format(FMT_STRING("{}"), fmt::join(ht.ht_prql_path, "."));
+    lnav::sql::prql_functions.emplace(prql_fqid, &ht);
+
+    auto* curr_hier = &phier;
+    for (size_t name_index = 0; name_index < ht.ht_prql_path.size();
+         name_index++)
+    {
+        const auto& prql_name = ht.ht_prql_path[name_index];
+        if (name_index == ht.ht_prql_path.size() - 1) {
+            auto param_names
+                = ht.ht_parameters | lnav::itertools::map([](const auto& elem) {
+                      if (elem.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                          return fmt::format(FMT_STRING("{}:null"),
+                                             elem.ht_name);
+                      }
+                      return fmt::format(FMT_STRING("p_{}"), elem.ht_name);
+                  });
+            auto func_args
+                = ht.ht_parameters | lnav::itertools::map([](const auto& elem) {
+                      if (elem.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                          return fmt::format(FMT_STRING("{{{}:0}}"),
+                                             elem.ht_name);
+                      }
+                      return fmt::format(FMT_STRING("{{p_{}:0}}"),
+                                         elem.ht_name);
+                  });
+            curr_hier->ph_declarations[prql_name]
+                = fmt::format(FMT_STRING("let {} = func {} -> s\"{}({})\""),
+                              prql_name,
+                              fmt::join(param_names, " "),
+                              ht.ht_name,
+                              fmt::join(func_args, ", "));
+        } else {
+            curr_hier = &curr_hier->ph_modules[prql_name];
+        }
+    }
+}
+
 int
 register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 {
     static bool help_registration_done = false;
+    prql_hier phier;
     int lpc;
 
     require(db != nullptr);
@@ -98,10 +171,13 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             if (!help_registration_done
                 && fd.fd_help.ht_context != help_context_t::HC_NONE)
             {
-                help_text& ht = fd.fd_help;
+                auto& ht = fd.fd_help;
 
                 sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
                 ht.index_tags();
+                if (!ht.ht_prql_path.empty()) {
+                    register_help(phier, ht);
+                }
             }
         }
 
@@ -121,12 +197,19 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             if (!help_registration_done
                 && fda.fda_help.ht_context != help_context_t::HC_NONE)
             {
-                help_text& ht = fda.fda_help;
+                auto& ht = fda.fda_help;
 
                 sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
                 ht.index_tags();
+                if (!ht.ht_prql_path.empty()) {
+                    register_help(phier, ht);
+                }
             }
         }
+    }
+
+    if (sqlite_extension_prql.empty()) {
+        phier.to_string(sqlite_extension_prql);
     }
 
     static help_text builtin_funcs[] = {

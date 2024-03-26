@@ -47,11 +47,17 @@
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
+#include "prelude-prql.h"
 #include "readline_highlighters.hh"
 #include "service_tags.hh"
 #include "shlex.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
+
+#ifdef HAVE_RUST_DEPS
+#    include "prqlc.hpp"
+#endif
 
 using namespace lnav::roles::literals;
 
@@ -250,14 +256,56 @@ execute_search(const std::string& search_cmd)
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
-    db_label_source& dls = lnav_data.ld_db_row_source;
+    db_label_source& dls = *(ec.ec_label_source_stack.back());
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     struct timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
     std::string retval;
     int retcode = SQLITE_OK;
 
-    log_info("Executing SQL: %s", sql.c_str());
+    if (lnav::sql::is_prql(stmt_str)) {
+        log_info("compiling PRQL: %s", stmt_str.c_str());
+
+#if HAVE_RUST_DEPS
+        auto opts = prqlc::Options{true, "sql.sqlite", true};
+
+        auto full_prql = fmt::format(FMT_STRING("{}\n{}{}"),
+                                     prelude_prql.to_string_fragment(),
+                                     sqlite_extension_prql,
+                                     stmt_str);
+        auto cr = prqlc::compile(full_prql.c_str(), &opts);
+
+        for (size_t lpc = 0; lpc < cr.messages_len; lpc++) {
+            const auto& msg = cr.messages[lpc];
+
+            if (msg.kind != prqlc::MessageKind::Error) {
+                continue;
+            }
+
+            auto um
+                = lnav::console::user_message::error(
+                      attr_line_t("unable to compile PRQL: ").append(stmt_str))
+                      .with_reason(msg.reason);
+            if (msg.display && *msg.display) {
+                um.with_note(*msg.display);
+            }
+            if (msg.hint && *msg.hint) {
+                um.with_help(*msg.hint);
+            }
+            return Err(um);
+        }
+        if (cr.output && cr.output[0]) {
+            stmt_str = cr.output;
+        }
+        prqlc::result_destroy(cr);
+#else
+        auto um = lnav::console::user_message::error(
+            attr_line_t("PRQL is not supported in this build"));
+        return Err(um);
+#endif
+    }
+
+    log_info("Executing SQL: %s", stmt_str.c_str());
 
     auto old_mode = lnav_data.ld_mode;
     lnav_data.ld_mode = ln_mode_t::BUSY;
@@ -268,8 +316,9 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         std::vector<std::string> args;
         split_ws(stmt_str, args);
 
-        auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
-                                          sql_cmd_map_tag>();
+        const auto* sql_cmd_map
+            = injector::get<readline_context::command_map_t*,
+                            sql_cmd_map_tag>();
         auto cmd_iter = sql_cmd_map->find(args[0]);
 
         if (cmd_iter != sql_cmd_map->end()) {
@@ -798,7 +847,7 @@ execute_init_commands(
         ec_out = std::make_pair(tmpout.release(), fclose);
     }
 
-    auto& dls = lnav_data.ld_db_row_source;
+    auto& dls = *(ec.ec_label_source_stack.back());
     int option_index = 1;
 
     {
@@ -883,7 +932,7 @@ execute_init_commands(
 int
 sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
-    auto& dls = lnav_data.ld_db_row_source;
+    auto& dls = *(ec.ec_label_source_stack.back());
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();

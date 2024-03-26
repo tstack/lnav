@@ -73,7 +73,8 @@ typedef enum {
     LNS_FILTER,
     LNS_FILTER_HELP,
     LNS_DOC,
-    LNS_PREVIEW,
+    LNS_PREVIEW0,
+    LNS_PREVIEW1,
     LNS_SPECTRO,
     LNS_GANTT,
 
@@ -182,7 +183,7 @@ struct lnav_data_t {
     filter_status_source ld_filter_status_source;
     filter_help_status_source ld_filter_help_status_source;
     doc_status_source ld_doc_status_source;
-    preview_status_source ld_preview_status_source;
+    preview_status_source ld_preview_status_source[2];
     std::unique_ptr<spectro_status_source> ld_spectro_status_source;
     gantt_status_source ld_gantt_status_source;
     bool ld_preview_hidden;
@@ -202,8 +203,8 @@ struct lnav_data_t {
     textview_curses ld_example_view;
     plain_text_source ld_match_source;
     textview_curses ld_match_view;
-    plain_text_source ld_preview_source;
-    textview_curses ld_preview_view;
+    plain_text_source ld_preview_source[2];
+    textview_curses ld_preview_view[2];
     plain_text_source ld_user_message_source;
     textview_curses ld_user_message_view;
     std::chrono::time_point<std::chrono::steady_clock>
@@ -231,6 +232,8 @@ struct lnav_data_t {
 
     db_label_source ld_db_row_source;
     db_overlay_source ld_db_overlay;
+    db_label_source ld_db_preview_source[2];
+    db_overlay_source ld_db_preview_overlay_source[2];
     std::vector<std::string> ld_db_key_names;
 
     vis_line_t ld_last_pretty_print_top;

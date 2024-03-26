@@ -96,6 +96,14 @@ help_text::with_opposites(
     return *this;
 }
 
+help_text&
+help_text::with_prql_path(
+    const std::initializer_list<const char*>& prql) noexcept
+{
+    this->ht_prql_path = prql;
+    return *this;
+}
+
 void
 help_text::index_tags()
 {

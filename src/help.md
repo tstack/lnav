@@ -315,12 +315,12 @@ mark lines of text and move the view by grabbing the scrollbar.
 NOTE: You need to manually enable this feature by setting the LNAV_EXP
 environment variable to "mouse". F2 toggles mouse support.
 
-## SQL Queries (experimental)
+## SQL Queries
 
 Lnav has support for performing SQL queries on log files using the
-Sqlite3 "virtual" table feature. For all supported log file types,
+SQLite3 "virtual" table feature. For all supported log file types,
 lnav will create tables that can be queried using the subset of SQL
-that is supported by Sqlite3. For example, to get the top ten URLs
+that is supported by SQLite3. For example, to get the top ten URLs
 being accessed in any loaded Apache log files, you can execute:
 
 ```lnav

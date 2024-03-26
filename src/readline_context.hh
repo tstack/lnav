@@ -44,7 +44,7 @@
 class attr_line_t;
 struct exec_context;
 
-typedef void (*readline_highlighter_t)(attr_line_t& line, int x);
+using readline_highlighter_t = void (*)(attr_line_t& line, int x);
 
 /**
  * Container for information related to different readline contexts.  Since
@@ -61,28 +61,42 @@ public:
         std::string pr_suggestion;
     };
 
+    struct stage {
+        std::vector<line_range> s_args;
+    };
+
+    struct split_result_t {
+        std::vector<stage> sr_stages;
+    };
+
     using prompt_func_t
         = prompt_result_t (*)(exec_context& ec, const std::string& cmdline);
-    typedef struct _command_t {
+    using splitter_func_t
+        = split_result_t (*)(readline_context& rc, const std::string& cmdline);
+    using command_t = struct _command_t {
         const char* c_name;
         command_func_t c_func;
 
         struct help_text c_help;
         prompt_func_t c_prompt{nullptr};
+        std::string c_provides;
+        std::set<std::string> c_dependencies;
 
         _command_t(const char* name,
                    command_func_t func,
                    help_text help = {},
-                   prompt_func_t prompt = nullptr) noexcept
+                   prompt_func_t prompt = nullptr,
+                   std::string provides = {},
+                   std::set<std::string> deps = {}) noexcept
             : c_name(name), c_func(func), c_help(std::move(help)),
-              c_prompt(prompt)
+              c_prompt(prompt), c_provides(provides), c_dependencies(deps)
         {
         }
 
         _command_t(command_func_t func) noexcept : c_name("anon"), c_func(func)
         {
         }
-    } command_t;
+    };
     typedef std::map<std::string, command_t*> command_map_t;
 
     readline_context(std::string name,
@@ -146,6 +160,12 @@ public:
         return this->rc_highlighter;
     }
 
+    readline_context& with_splitter(splitter_func_t sf)
+    {
+        this->rc_splitter = sf;
+        return *this;
+    }
+
     static int command_complete(int, int);
 
     std::map<std::string, std::string> rc_prefixes;
@@ -176,11 +196,13 @@ private:
     HISTORY_STATE rc_history;
     std::map<std::string, std::set<std::string>> rc_possibilities;
     std::map<std::string, std::vector<std::string>> rc_prototypes;
+    std::map<std::string, command_t*> rc_commands;
     bool rc_case_sensitive;
     int rc_append_character;
     const char* rc_quote_chars;
     readline_highlighter_t rc_highlighter;
     std::vector<readline_var> rc_vars;
+    splitter_func_t rc_splitter;
 };
 
 #endif

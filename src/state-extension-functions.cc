@@ -161,31 +161,36 @@ state_extension_functions(struct FuncDef** basic_funcs,
                 help_text(
                     "log_top_line",
                     "Return the number of the focused line of the log view.")
-                    .sql_function()),
+                    .sql_function()
+                    .with_prql_path({"lnav", "view", "top_line"})),
 
         sqlite_func_adapter<decltype(&sql_log_msg_line), sql_log_msg_line>::
             builder(help_text("log_msg_line",
                               "Return the starting line number of the focused "
                               "log message.")
-                        .sql_function()),
+                        .sql_function()
+                        .with_prql_path({"lnav", "view", "msg_line"})),
 
         sqlite_func_adapter<decltype(&sql_log_top_datetime),
                             sql_log_top_datetime>::
             builder(help_text("log_top_datetime",
                               "Return the timestamp of the line at the top of "
                               "the log view.")
-                        .sql_function()),
+                        .sql_function()
+                        .with_prql_path({"lnav", "view", "top_datetime"})),
 
         sqlite_func_adapter<decltype(&sql_lnav_top_file), sql_lnav_top_file>::
             builder(help_text("lnav_top_file",
                               "Return the name of the file that the top line "
                               "in the current view came from.")
-                        .sql_function()),
+                        .sql_function()
+                        .with_prql_path({"lnav", "view", "top_file"})),
 
         sqlite_func_adapter<decltype(&sql_lnav_version), sql_lnav_version>::
             builder(
                 help_text("lnav_version", "Return the current version of lnav")
-                    .sql_function()),
+                    .sql_function()
+                    .with_prql_path({"lnav", "version"})),
 
         sqlite_func_adapter<decltype(&sql_error), sql_error>::builder(
             help_text("raise_error",

@@ -71,6 +71,15 @@ The DB view has the following display features:
   the `jget`_ function.
 
 
+PRQL Support (v0.12.1+)
+-----------------------
+
+`PRQL <https://prql-lang.org>`_ is an alternative database query language
+that compiles to SQLite.  You can enter PRQL in the database query prompt
+and lnav will switch accordingly.  A major advantage of using PRQL is that
+lnav can show previews of the results of the pipeline stages and provide
+better tab completion options.
+
 Log Tables
 ----------
 

@@ -35,8 +35,10 @@
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "lnav.hh"
 #include "readline_context.hh"
 #include "shlex.hh"
+#include "sql_help.hh"
 #include "sqlite-extension-func.hh"
 #include "sqlitepp.hh"
 #include "view_helpers.hh"
@@ -222,6 +224,184 @@ sql_cmd_generic(exec_context& ec,
     return Ok(retval);
 }
 
+static Result<std::string, lnav::console::user_message>
+prql_cmd_from(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-table");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static readline_context::prompt_result_t
+prql_cmd_from_prompt(exec_context& ec, const std::string& cmdline)
+{
+    if (!endswith(cmdline, "from ")) {
+        return {};
+    }
+
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
+
+    if (lss == nullptr || lss->text_line_count() == 0) {
+        return {};
+    }
+
+    auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+    if (!line_pair) {
+        return {};
+    }
+
+    auto format_name
+        = line_pair->first->get_format_ptr()->get_name().to_string();
+    return {
+        "",
+        fmt::format(FMT_STRING("db.{}"), lnav::prql::quote_ident(format_name)),
+    };
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_aggregate(exec_context& ec,
+                   std::string cmdline,
+                   std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-expr");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_append(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-table");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_derive(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-expr");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_filter(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-expr");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_group(exec_context& ec,
+               std::string cmdline,
+               std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-column");
+        args.emplace_back("prql-source");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_join(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-table");
+        args.emplace_back("prql-expr");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_select(exec_context& ec,
+                std::string cmdline,
+                std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-expr");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_sort(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("prql-expr");
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+prql_cmd_take(exec_context& ec,
+              std::string cmdline,
+              std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        return Ok(retval);
+    }
+
+    return Ok(retval);
+}
+
 static readline_context::command_t sql_commands[] = {
     {
         ".dump",
@@ -294,6 +474,147 @@ static readline_context::command_t sql_commands[] = {
     {
         "WITH",
         sql_cmd_generic,
+    },
+    {
+        "from",
+        prql_cmd_from,
+        help_text("from")
+            .prql_transform()
+            .with_summary("PRQL command to specify a data source")
+            .with_parameter({"table", "The table to use as a source"})
+            .with_example({
+                "To pull data from the 'http_status_codes' database table",
+                "from db.http_status_codes | take 3",
+                help_example::language::prql,
+            })
+            .with_example({
+                "To use an array literal as a source",
+                "from [{ col1=1, col2='abc' }, { col1=2, col2='def' }]",
+                help_example::language::prql,
+            }),
+        prql_cmd_from_prompt,
+        "prql-source",
+    },
+    {
+        "aggregate",
+        prql_cmd_aggregate,
+        help_text("aggregate")
+            .prql_transform()
+            .with_summary("PRQL transform to summarize many rows into one")
+            .with_parameter(
+                help_text{"expr", "The aggregate expression(s)"}.with_grouping(
+                    "{", "}"))
+            .with_example({"To group values into a JSON array", ""}),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "append",
+        prql_cmd_append,
+        help_text("append")
+            .prql_transform()
+            .with_summary("PRQL transform to concatenate tables together")
+            .with_parameter({"table", "The table to use as a source"}),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "derive",
+        prql_cmd_derive,
+        help_text("derive")
+            .prql_transform()
+            .with_summary("PRQL transform to derive one or more columns")
+            .with_parameter(
+                help_text{"column", "The new column"}.with_grouping("{", "}")),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "filter",
+        prql_cmd_filter,
+        help_text("filter")
+            .prql_transform()
+            .with_summary("PRQL transform to pick rows based on their values")
+            .with_parameter(
+                {"expr", "The expression to evaluate over each row"}),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "group",
+        prql_cmd_group,
+        help_text("group")
+            .prql_transform()
+            .with_summary("PRQL transform to partition rows into groups")
+            .with_parameter(
+                help_text{"key_columns", "The columns that define the group"}
+                    .with_grouping("{", "}"))
+            .with_parameter(
+                help_text{"pipeline", "The pipeline to execute over a group"}
+                    .with_grouping("(", ")")),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "join",
+        prql_cmd_join,
+        help_text("join")
+            .prql_transform()
+            .with_summary("PRQL transform to add columns from another table")
+            .with_parameter(
+                help_text{"side", "Specifies which rows to include"}
+                    .with_enum_values({"inner", "left", "right", "full"})
+                    .optional())
+            .with_parameter(
+                {"table", "The other table to join with the current rows"})
+            .with_parameter(
+                help_text{"condition", "The condition used to join rows"}
+                    .with_grouping("(", ")")),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "select",
+        prql_cmd_select,
+        help_text("select")
+            .prql_transform()
+            .with_summary("PRQL transform to select columns")
+            .with_parameter(
+                help_text{"expr", "The columns to include in the result set"}
+                    .with_grouping("{", "}")),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "sort",
+        prql_cmd_sort,
+        help_text("sort")
+            .prql_transform()
+            .with_summary("PRQL transform to sort rows")
+            .with_parameter(help_text{
+                "expr", "The values to use when ordering the result set"}
+                                .with_grouping("{", "}")),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "take",
+        prql_cmd_take,
+        help_text("take")
+            .prql_transform()
+            .with_summary("PRQL command to pick rows based on their position")
+            .with_parameter({"n_or_range", "The number of rows or range"}),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
     },
 };
 

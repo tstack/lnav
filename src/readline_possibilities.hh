@@ -39,6 +39,7 @@
 enum class text_quoting {
     none,
     sql,
+    prql,
     regex,
 };
 
@@ -80,6 +81,7 @@ void add_tag_possibilities();
 void add_file_possibilities();
 void add_recent_netlocs_possibilities();
 void add_tz_possibilities(ln_mode_t context);
+void add_sqlite_possibilities();
 
 extern struct sqlite_metadata_callbacks lnav_sql_meta_callbacks;
 

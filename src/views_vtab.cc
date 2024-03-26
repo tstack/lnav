@@ -719,8 +719,7 @@ CREATE TABLE lnav_view_stack (
 
         lnav_data.ld_last_view = *lnav_data.ld_view_stack.top();
         lnav_data.ld_view_stack.pop_back();
-        lnav_data.ld_preview_source.clear();
-        lnav_data.ld_preview_status_source.get_description().clear();
+        clear_preview();
 
         return SQLITE_OK;
     }

@@ -370,12 +370,49 @@ readline_context::attempted_completion(const char* text, int start, int end)
 {
     char** retval = nullptr;
 
+    log_info("completion start %d:%d -- %s", start, end, text);
+
+    auto at_start = start == 0;
+    auto cmd_start = 0;
+    auto cmd_key = std::string("__command");
+    if (loaded_context->rc_splitter != nullptr) {
+        auto split_res
+            = loaded_context->rc_splitter(*loaded_context, rl_line_buffer);
+
+        readline_context::command_t* last_cmd = nullptr;
+        for (const auto& stage : split_res.sr_stages) {
+            if (stage.s_args.empty()) {
+                continue;
+            }
+
+            if (stage.s_args.front().lr_start == start) {
+                at_start = true;
+                break;
+            }
+            if (start <= stage.s_args.back().lr_end) {
+                cmd_start = stage.s_args.front().lr_start;
+            }
+            auto cmd_lr = stage.s_args.front();
+            auto cmd_name = std::string(&rl_line_buffer[cmd_lr.lr_start],
+                                        cmd_lr.length());
+            auto cmd_iter = loaded_context->rc_commands.find(cmd_name);
+            if (cmd_iter == loaded_context->rc_commands.end()) {
+                continue;
+            }
+            last_cmd = cmd_iter->second;
+        }
+        if (last_cmd != nullptr && !last_cmd->c_provides.empty()) {
+            cmd_key
+                = fmt::format(FMT_STRING("__command_{}"), last_cmd->c_provides);
+        }
+    }
+
     completion_start = start;
-    if (start == 0
-        && loaded_context->rc_possibilities.find("__command")
+    if (at_start
+        && loaded_context->rc_possibilities.find(cmd_key)
             != loaded_context->rc_possibilities.end())
     {
-        arg_possibilities = &loaded_context->rc_possibilities["__command"];
+        arg_possibilities = &loaded_context->rc_possibilities[cmd_key];
         arg_needs_shlex = false;
         rl_completion_append_character = loaded_context->rc_append_character;
     } else {
@@ -407,12 +444,12 @@ readline_context::attempted_completion(const char* text, int start, int end)
         }
 
         if (arg_possibilities == nullptr) {
-            space = strchr(rl_line_buffer, ' ');
+            space = strchr(&rl_line_buffer[cmd_start], ' ');
             if (space == nullptr) {
                 space = rl_line_buffer + strlen(rl_line_buffer);
             }
-            cmd = std::string(rl_line_buffer, space - rl_line_buffer);
-
+            cmd = std::string(&rl_line_buffer[cmd_start],
+                              space - &rl_line_buffer[cmd_start]);
             auto iter = loaded_context->rc_prototypes.find(cmd);
 
             if (iter == loaded_context->rc_prototypes.end()) {
@@ -425,8 +462,7 @@ readline_context::attempted_completion(const char* text, int start, int end)
                         = loaded_context->rc_append_character;
                 }
             } else {
-                std::vector<std::string>& proto
-                    = loaded_context->rc_prototypes[cmd];
+                auto& proto = loaded_context->rc_prototypes[cmd];
 
                 if (proto.empty()) {
                     arg_possibilities = nullptr;
@@ -608,8 +644,24 @@ readline_context::readline_context(std::string name,
 
         for (iter = commands->begin(); iter != commands->end(); ++iter) {
             std::string cmd = iter->first;
+            auto cmd_complete = cmd;
+            const auto& ht = iter->second->c_help;
 
-            this->rc_possibilities["__command"].insert(cmd);
+            if (!ht.ht_parameters.empty()
+                && ht.ht_parameters.front().ht_group_start != nullptr)
+            {
+                cmd_complete.append(" ");
+                cmd_complete.append(ht.ht_parameters.front().ht_group_start);
+            }
+            if (iter->second->c_dependencies.empty()) {
+                this->rc_possibilities["__command"].insert(cmd_complete);
+            } else {
+                for (const auto& dep : iter->second->c_dependencies) {
+                    auto cmd_key = fmt::format(FMT_STRING("__command_{}"), dep);
+                    this->rc_possibilities[cmd_key].insert(cmd_complete);
+                }
+            }
+            this->rc_commands[cmd] = iter->second;
             iter->second->c_func(
                 INIT_EXEC_CONTEXT, cmd, this->rc_prototypes[cmd]);
         }

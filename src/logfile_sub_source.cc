@@ -300,10 +300,12 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         exec_context ec(
             &this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
         std::string rewritten_line;
+        db_label_source rewrite_label_source;
 
         ec.with_perms(exec_context::perm_t::READ_ONLY);
         ec.ec_local_vars.push(std::map<std::string, scoped_value_t>());
         ec.ec_top_line = vis_line_t(row);
+        ec.ec_label_source_stack.push_back(&rewrite_label_source);
         add_ansi_vars(ec.ec_global_vars);
         add_global_vars(ec);
         format->rewrite(ec, sbr, this->lss_token_attrs, rewritten_line);

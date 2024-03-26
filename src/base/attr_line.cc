@@ -457,7 +457,7 @@ attr_line_t::apply_hide()
 }
 
 attr_line_t&
-attr_line_t::rtrim()
+attr_line_t::rtrim(nonstd::optional<const char*> chars)
 {
     auto index = this->al_string.length();
 
@@ -468,7 +468,12 @@ attr_line_t::rtrim()
         {
             break;
         }
-        if (!isspace(this->al_string[index - 1])) {
+        if (chars
+            && strchr(chars.value(), this->al_string[index - 1]) == nullptr)
+        {
+            break;
+        }
+        if (!chars && !isspace(this->al_string[index - 1])) {
             break;
         }
     }
@@ -490,7 +495,9 @@ attr_line_t::erase(size_t pos, size_t len)
 
     this->al_string.erase(pos, len);
 
-    shift_string_attrs(this->al_attrs, pos, -((int32_t) len));
+    shift_string_attrs(this->al_attrs,
+                       line_range{(int) pos, (int) (pos + len)},
+                       -((int32_t) len));
     auto new_end = std::remove_if(
         this->al_attrs.begin(), this->al_attrs.end(), [](const auto& attr) {
             return attr.sa_range.empty();
@@ -541,12 +548,18 @@ line_range::shift_range(const line_range& cover, int32_t amount)
         if (this->lr_end != -1) {
             this->lr_end = std::max(0, this->lr_end + amount);
         }
-    } else if (this->lr_end != -1) {
-        if (cover.lr_start < this->lr_end) {
-            if (amount < 0 && amount < (cover.lr_start - this->lr_end)) {
-                this->lr_end = cover.lr_start;
-            } else {
-                this->lr_end = std::max(this->lr_start, this->lr_end + amount);
+    } else {
+        if (amount < 0 && cover.contains(*this)) {
+            this->lr_start = cover.lr_start;
+        }
+        if (this->lr_end != -1) {
+            if (cover.lr_start < this->lr_end) {
+                if (amount < 0 && amount < (cover.lr_start - this->lr_end)) {
+                    this->lr_end = cover.lr_start;
+                } else {
+                    this->lr_end
+                        = std::max(this->lr_start, this->lr_end + amount);
+                }
             }
         }
     }

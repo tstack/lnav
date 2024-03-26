@@ -779,16 +779,28 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             if (old_size == 0
                 && this->lf_text_format == text_format_t::TF_UNKNOWN)
             {
-                file_range fr = this->lf_line_buffer.get_available();
+                auto fr = this->lf_line_buffer.get_available();
                 auto avail_data = this->lf_line_buffer.read_range(fr);
 
                 this->lf_text_format
                     = avail_data
-                          .map([path = this->get_path()](
-                                   const shared_buffer_ref& avail_sbr)
+                          .map([path = this->get_path(),
+                                this](const shared_buffer_ref& avail_sbr)
                                    -> text_format_t {
-                              return detect_text_format(
-                                  avail_sbr.to_string_fragment(), path);
+                              auto sbr_str = to_string(avail_sbr);
+
+                              if (this->lf_line_buffer.is_piper()) {
+                                  auto lines
+                                      = string_fragment::from_str(sbr_str)
+                                            .split_lines();
+                                  for (auto line_iter = lines.rbegin();
+                                       line_iter != lines.rend();
+                                       ++line_iter)
+                                  {
+                                      sbr_str.erase(line_iter->sf_begin, 22);
+                                  }
+                              }
+                              return detect_text_format(sbr_str, path);
                           })
                           .unwrapOr(text_format_t::TF_UNKNOWN);
                 log_debug("setting text format to %d", this->lf_text_format);

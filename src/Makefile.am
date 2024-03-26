@@ -74,6 +74,9 @@ builtin-sh-scripts.cc: $(BIN2C_PATH) $(BUILTIN_SHSCRIPTS)
 %-sql.cc: $(srcdir)/%.sql $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-sql $<
 
+%-prql.cc: $(srcdir)/%.prql $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-prql $<
+
 %-lnav.cc: $(srcdir)/%.lnav $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-lnav $<
 
@@ -104,6 +107,7 @@ LNAV_BUILT_FILES = \
     words-json.cc \
     help-md.cc \
     init-sql.cc \
+    prelude-prql.cc \
     time_fmts.cc \
     xml-entities-json.cc \
     xterm-palette-json.cc
@@ -113,6 +117,22 @@ BUILT_SOURCES = $(LNAV_BUILT_FILES)
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) $(USER_CXXFLAGS)
+
+if HAVE_CARGO
+RUST_DEPS_CPPFLAGS = -I$(srcdir)/third-party/prqlc-c -DHAVE_RUST_DEPS=1
+PRQLC_DIR = src/third-party/prqlc-c/target
+RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
+
+$(RUST_DEPS_LIBS): $(srcdir)/third-party/prqlc-c/src/lib.rs
+	mkdir -p $(PRQLC_DIR)
+	env CARGO_TARGET_DIR=src/third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
+	    $(srcdir)/third-party/prqlc-c/Cargo.toml --package prqlc-c --release
+
+else
+RUST_DEPS =
+RUST_DEPS_CPPFLAGS =
+RUST_DEPS_LIBS =
+endif
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
@@ -136,7 +156,8 @@ AM_CPPFLAGS = \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
 	$(PCRE_CFLAGS) \
-	$(LIBCURL_CPPFLAGS)
+	$(LIBCURL_CPPFLAGS) \
+	$(RUST_DEPS_CPPFLAGS)
 
 LDADD = \
 	libdiag.a \
@@ -154,6 +175,7 @@ LDADD = \
 	yajl/libyajl.a \
 	yajlpp/libyajlpp.a \
 	third-party/base64/lib/libbase64.a \
+    $(RUST_DEPS_LIBS) \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
@@ -276,6 +298,7 @@ noinst_HEADERS = \
 	piper.looper.cfg.hh \
 	plain_text_source.hh \
 	pollable.hh \
+	prelude.prql \
 	pretty_printer.hh \
 	preview_status_source.hh \
 	ptimec.hh \
@@ -547,10 +570,17 @@ DISTCLEANFILES = \
     words-json.h \
     help-md.h \
     init-sql.h \
+    prelude-prql.h \
     time_fmts.h \
     xml-entities-json.h \
     xterm-palette-json.h \
 	$(RE2C_FILES)
+
+if HAVE_CARGO
+clean-local:
+	env CARGO_TARGET_DIR=src/third-party/prqlc-c/target $(CARGO_CMD) clean --manifest-path \
+    	    $(srcdir)/third-party/prqlc-c/Cargo.toml
+endif
 
 distclean-local:
 	$(RM_V)rm -rf *.dSYM
@@ -560,13 +590,13 @@ uncrusty:
 		$(HEADERS))
 
 if !CROSS_COMPILING
-all-local: $(LNAV_BUILT_FILES) lnav
+all-local: $(LNAV_BUILT_FILES) lnav $(RUST_DEPS)
 	if test -w $(srcdir)/internals; then \
 		env DUMP_INTERNALS_DIR=$(srcdir)/internals DUMP_CRASH=1 ./lnav Makefile; \
 		mv $(srcdir)/internals/*.schema.json $(top_srcdir)/docs/schemas; \
 	fi
 else
-all-local: $(LNAV_BUILT_FILES)
+all-local: $(LNAV_BUILT_FILES) $(RUST_DEPS)
 endif
 
 install-exec-hook:

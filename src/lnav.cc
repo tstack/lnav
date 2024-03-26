@@ -291,29 +291,8 @@ struct lnav_data_t lnav_data;
 bool
 setup_logline_table(exec_context& ec)
 {
-    // Hidden columns don't show up in the table_info pragma.
-    static const char* hidden_table_columns[] = {
-        "log_time_msecs",
-        "log_path",
-        "log_text",
-        "log_body",
-
-        nullptr,
-    };
-
     auto& log_view = lnav_data.ld_views[LNV_LOG];
     bool retval = false;
-    bool update_possibilities
-        = (lnav_data.ld_rl_view != nullptr && ec.ec_local_vars.size() == 1);
-
-    if (update_possibilities) {
-        lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::SQL, "*");
-        add_view_text_possibilities(lnav_data.ld_rl_view,
-                                    ln_mode_t::SQL,
-                                    "*",
-                                    &log_view,
-                                    text_quoting::sql);
-    }
 
     if (log_view.get_inner_height()) {
         static intern_string_t logline = intern_string::lookup("logline");
@@ -327,96 +306,12 @@ setup_logline_table(exec_context& ec)
                                              cl,
                                              logline));
 
-        if (update_possibilities) {
-            log_data_helper ldh(lnav_data.ld_log_source);
-
-            ldh.parse_line(cl);
-
-            for (const auto& jextra : ldh.ldh_extra_json) {
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    lnav::sql::mprintf("%Q", jextra.first.c_str()).in());
-            }
-            for (const auto& jpair : ldh.ldh_json_pairs) {
-                for (const auto& wt : jpair.second) {
-                    lnav_data.ld_rl_view->add_possibility(
-                        ln_mode_t::SQL,
-                        "*",
-                        lnav::sql::mprintf("%Q", wt.wt_ptr.c_str()).in());
-                }
-            }
-            for (const auto& xml_pair : ldh.ldh_xml_pairs) {
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    lnav::sql::mprintf("%Q", xml_pair.first.second.c_str())
-                        .in());
-            }
-        }
-
         retval = true;
     }
 
     auto& db_key_names = lnav_data.ld_db_key_names;
 
     db_key_names = DEFAULT_DB_KEY_NAMES;
-
-    if (update_possibilities) {
-        add_env_possibilities(ln_mode_t::SQL);
-
-        lnav_data.ld_rl_view->add_possibility(ln_mode_t::SQL,
-                                              "*",
-                                              std::begin(sql_keywords),
-                                              std::end(sql_keywords));
-        lnav_data.ld_rl_view->add_possibility(
-            ln_mode_t::SQL, "*", sql_function_names);
-        lnav_data.ld_rl_view->add_possibility(
-            ln_mode_t::SQL, "*", hidden_table_columns);
-
-        for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
-            struct FuncDef* basic_funcs;
-            struct FuncDefAgg* agg_funcs;
-
-            sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
-            for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
-                const FuncDef& func_def = basic_funcs[lpc2];
-
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
-            }
-            for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
-                const FuncDefAgg& func_def = agg_funcs[lpc2];
-
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
-            }
-        }
-
-        for (const auto& pair : sqlite_function_help) {
-            switch (pair.second->ht_context) {
-                case help_context_t::HC_SQL_FUNCTION:
-                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
-                    std::string poss = pair.first
-                        + (pair.second->ht_parameters.empty() ? "()" : ("("));
-
-                    lnav_data.ld_rl_view->add_possibility(
-                        ln_mode_t::SQL, "*", poss);
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
-
-    if (update_possibilities) {
-        walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
-    }
 
     for (const auto& iter : *lnav_data.ld_vtab_manager) {
         iter.second->get_foreign_keys(db_key_names);
@@ -1176,7 +1071,8 @@ looper()
         sql_context.set_highlighter(readline_sqlite_highlighter)
             .set_quote_chars("\"")
             .with_readline_var((char**) &rl_completer_word_break_characters,
-                               " \t\n(),");
+                               " \t\n(),")
+            .with_splitter(prql_splitter);
         exec_context.set_highlighter(readline_shlex_highlighter);
 
         lnav_data.ld_log_source.lss_sorting_observer
@@ -1351,7 +1247,8 @@ looper()
             setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
-            setup_highlights(lnav_data.ld_preview_view.get_highlights());
+            setup_highlights(lnav_data.ld_preview_view[0].get_highlights());
+            setup_highlights(lnav_data.ld_preview_view[1].get_highlights());
 
             for (const auto& format : log_format::get_root_formats()) {
                 for (auto& hl : format->lf_highlighters) {
@@ -1437,8 +1334,10 @@ looper()
 
         lnav_data.ld_match_view.set_window(lnav_data.ld_window);
 
-        lnav_data.ld_preview_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_preview_view.set_show_scrollbar(false);
+        lnav_data.ld_preview_view[0].set_window(lnav_data.ld_window);
+        lnav_data.ld_preview_view[0].set_show_scrollbar(false);
+        lnav_data.ld_preview_view[1].set_window(lnav_data.ld_window);
+        lnav_data.ld_preview_view[1].set_show_scrollbar(false);
 
         lnav_data.ld_filter_view.set_selectable(true);
         lnav_data.ld_filter_view.set_window(lnav_data.ld_window);
@@ -1500,8 +1399,10 @@ looper()
             &lnav_data.ld_filter_help_status_source);
         lnav_data.ld_status[LNS_DOC].set_data_source(
             &lnav_data.ld_doc_status_source);
-        lnav_data.ld_status[LNS_PREVIEW].set_data_source(
-            &lnav_data.ld_preview_status_source);
+        lnav_data.ld_status[LNS_PREVIEW0].set_data_source(
+            &lnav_data.ld_preview_status_source[0]);
+        lnav_data.ld_status[LNS_PREVIEW1].set_data_source(
+            &lnav_data.ld_preview_status_source[1]);
         lnav_data.ld_spectro_status_source
             = std::make_unique<spectro_status_source>();
         lnav_data.ld_status[LNS_SPECTRO].set_data_source(
@@ -1604,7 +1505,8 @@ looper()
             gettimeofday(&current_time, nullptr);
 
             top_source->update_time(current_time);
-            lnav_data.ld_preview_view.set_needs_update();
+            lnav_data.ld_preview_view[0].set_needs_update();
+            lnav_data.ld_preview_view[1].set_needs_update();
 
             layout_views();
 
@@ -1708,7 +1610,8 @@ looper()
             lnav_data.ld_doc_view.do_update();
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
-            lnav_data.ld_preview_view.do_update();
+            lnav_data.ld_preview_view[0].do_update();
+            lnav_data.ld_preview_view[1].do_update();
             lnav_data.ld_spectro_details_view.do_update();
             lnav_data.ld_gantt_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
@@ -2219,7 +2122,7 @@ main(int argc, char* argv[])
 {
     std::vector<lnav::console::user_message> config_errors;
     std::vector<lnav::console::user_message> loader_errors;
-    exec_context& ec = lnav_data.ld_exec_context;
+    auto& ec = lnav_data.ld_exec_context;
     int retval = EXIT_SUCCESS;
 
     bool exec_stdin = false, load_stdin = false;
@@ -2229,6 +2132,8 @@ main(int argc, char* argv[])
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
         setenv("LANG", "en_US.UTF-8", 1);
     }
+
+    ec.ec_label_source_stack.push_back(&lnav_data.ld_db_row_source);
 
     (void) signal(SIGPIPE, SIG_IGN);
     (void) signal(SIGCHLD, sigchld);
@@ -2890,6 +2795,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_sub_source(&lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
+    lnav_data.ld_db_preview_overlay_source[0].dos_labels
+        = &lnav_data.ld_db_preview_source[0];
+    lnav_data.ld_db_preview_overlay_source[1].dos_labels
+        = &lnav_data.ld_db_preview_source[1];
     lnav_data.ld_views[LNV_DB]
         .set_reload_config_delegate(sel_reload_delegate)
         .set_overlay_source(&lnav_data.ld_db_overlay);
@@ -2923,7 +2832,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
     lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
-    lnav_data.ld_preview_view.set_sub_source(&lnav_data.ld_preview_source);
+    lnav_data.ld_preview_view[0].set_sub_source(
+        &lnav_data.ld_preview_source[0]);
     lnav_data.ld_filter_view.set_sub_source(filter_source)
         .add_input_delegate(*filter_source)
         .add_child_view(&filter_source->fss_match_view)

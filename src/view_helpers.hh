@@ -86,6 +86,7 @@ bool toggle_view(textview_curses* toggle_tc);
 bool handle_winch();
 void layout_views();
 void update_hits(textview_curses* tc);
+void clear_preview();
 
 nonstd::optional<vis_line_t> next_cluster(
     nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)

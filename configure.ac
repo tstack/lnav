@@ -1,4 +1,4 @@
-AC_INIT([lnav],[0.12.0],[lnav@googlegroups.com],[lnav],[http://lnav.org])
+AC_INIT([lnav],[0.12.1],[lnav@googlegroups.com],[lnav],[http://lnav.org])
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -50,6 +50,7 @@ AM_PROG_AR
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
+AC_PATH_PROG(CARGO_CMD, [cargo])
 AC_PATH_PROG(BZIP2_CMD, [bzip2])
 AC_PATH_PROG(RE2C_CMD, [re2c])
 AM_CONDITIONAL(HAVE_RE2C, test x"$RE2C_CMD" != x"")
@@ -265,7 +266,7 @@ AC_SUBST(STATIC_LDFLAGS)
 
 AS_CASE(["$host_os"],
     [darwin*],
-    [],
+    [LDFLAGS="$LDFLAGS -framework CoreFoundation"],
     [
     curses_lib=$(echo $CURSES_LIB | sed -e 's/-l//')
     AS_IF([test $? -eq 0],
@@ -305,6 +306,7 @@ AS_IF([test $? -eq 0],
          [VCS package string])],
     AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_STRING"], [VCS package string]))
 
+AM_CONDITIONAL(HAVE_CARGO, test x"$CARGO_CMD" != x"")
 AM_CONDITIONAL(USE_INCLUDED_YAJL, test $HAVE_LOCAL_YAJL -eq 0)
 AM_CONDITIONAL(HAVE_LIBCURL, test x"$LIBCURL" != x"")
 AM_CONDITIONAL([CROSS_COMPILING], [ test x"$cross_compiling" != x"no" ])

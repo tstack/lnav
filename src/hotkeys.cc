@@ -155,6 +155,7 @@ handle_keyseq(const char* keyseq)
     exec_context ec(&values, key_sql_callback, pipe_callback);
     auto& var_stack = ec.ec_local_vars;
 
+    ec.ec_label_source_stack.push_back(&lnav_data.ld_db_row_source);
     ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
     ec.ec_error_callback_stack
         = lnav_data.ld_exec_context.ec_error_callback_stack;

@@ -1038,7 +1038,7 @@ com_mark_expr(exec_context& ec,
             if (set_res.isErr()) {
                 return Err(set_res.unwrapErr());
             }
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the text view");
         } else {
             auto set_res = lss.set_sql_marker(expr, stmt.release());
@@ -1926,10 +1926,13 @@ com_save_to(exec_context& ec,
 
         attr_line_t al(std::string(buffer, rc));
 
-        lnav_data.ld_preview_source.replace_with(al)
+        lnav_data.ld_preview_view[0].set_sub_source(
+            &lnav_data.ld_preview_source[0]);
+        lnav_data.ld_preview_source[0]
+            .replace_with(al)
             .set_text_format(detect_text_format(al.get_string()))
             .truncate_to(10);
-        lnav_data.ld_preview_status_source.get_description().set_value(
+        lnav_data.ld_preview_status_source[0].get_description().set_value(
             "First lines of file: %s", split_args[0].c_str());
     } else {
         retval = fmt::format(FMT_STRING("info: Wrote {:L} rows to {}"),
@@ -2243,7 +2246,7 @@ com_highlight(exec_context& ec,
         if (ec.ec_dry_run) {
             hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
 
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the view");
 
             retval = "";
@@ -2363,9 +2366,12 @@ com_filter(exec_context& ec,
         }
         if (ec.ec_dry_run) {
             if (args[0] == "filter-in" && !fs.empty()) {
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "Match preview for :filter-in only works if there are no "
-                    "other filters");
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value(
+                        "Match preview for :filter-in only works if there are "
+                        "no "
+                        "other filters");
                 retval = "";
             } else {
                 auto& hm = tc->get_highlights();
@@ -2378,9 +2384,11 @@ com_filter(exec_context& ec,
                 hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                 tc->reload_data();
 
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "Matches are highlighted in %s in the text view",
-                    role == role_t::VCR_DIFF_DELETE ? "red" : "green");
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value(
+                        "Matches are highlighted in %s in the text view",
+                        role == role_t::VCR_DIFF_DELETE ? "red" : "green");
 
                 retval = "";
             }
@@ -2581,7 +2589,7 @@ com_filter_expr(exec_context& ec,
             if (set_res.isErr()) {
                 return Err(set_res.unwrapErr());
             }
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the text view");
         } else {
             lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
@@ -2696,9 +2704,12 @@ com_create_logline_table(exec_context& ec,
             if (ec.ec_dry_run) {
                 attr_line_t al(ldt->get_table_statement());
 
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "The following table will be created:");
-                lnav_data.ld_preview_source.replace_with(al).set_text_format(
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value("The following table will be created:");
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
                     text_format_t::TF_SQL);
 
                 return Ok(std::string());
@@ -2813,10 +2824,12 @@ com_create_search_table(exec_context& ec,
 
             attr_line_t al(lst->get_table_statement());
 
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The following table will be created:");
 
-            lnav_data.ld_preview_source.replace_with(al).set_text_format(
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
                 text_format_t::TF_SQL);
 
             return Ok(std::string());
@@ -3216,7 +3229,9 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     if (ec.ec_dry_run) {
-        lnav_data.ld_preview_source.clear();
+        lnav_data.ld_preview_view[0].set_sub_source(
+            &lnav_data.ld_preview_source[0]);
+        lnav_data.ld_preview_source[0].clear();
         if (!fc.fc_file_names.empty()) {
             auto iter = fc.fc_file_names.begin();
             std::string fn = iter->first;
@@ -3224,10 +3239,13 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
             if (fn.find(':') != std::string::npos) {
                 auto id = lnav_data.ld_preview_generation;
-                lnav_data.ld_preview_status_source.get_description()
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
                     .set_cylon(true)
                     .set_value("Loading %s...", fn.c_str());
-                lnav_data.ld_preview_source.clear();
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0].clear();
 
                 isc::to<tailer::looper&, services::remote_tailer_t>().send(
                     [id, fn](auto& tlooper) {
@@ -3236,7 +3254,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                             tlooper.load_preview(id, *rp_opt);
                         }
                     });
-                lnav_data.ld_preview_view.set_needs_update();
+                lnav_data.ld_preview_view[0].set_needs_update();
             } else if (lnav::filesystem::is_glob(fn.c_str())) {
                 static_root_mem<glob_t, globfree> gl;
 
@@ -3253,9 +3271,12 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                 std::to_string(gl->gl_pathc - 10)))
                             .append(" files not shown ...");
                     }
-                    lnav_data.ld_preview_status_source.get_description()
+                    lnav_data.ld_preview_status_source[0]
+                        .get_description()
                         .set_value("The following files will be loaded:");
-                    lnav_data.ld_preview_source.replace_with(al);
+                    lnav_data.ld_preview_view[0].set_sub_source(
+                        &lnav_data.ld_preview_source[0]);
+                    lnav_data.ld_preview_source[0].replace_with(al);
                 } else {
                     return ec.make_error("failed to evaluate glob -- {}", fn);
                 }
@@ -3288,10 +3309,14 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     lines.append(sbr.get_data(), sbr.length());
                 }
 
-                lnav_data.ld_preview_source.replace_with(al.with_string(lines))
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0]
+                    .replace_with(al.with_string(lines))
                     .set_text_format(detect_text_format(al.get_string()));
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "For file: %s", fn.c_str());
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value("For file: %s", fn.c_str());
             }
         }
     } else {
@@ -5027,9 +5052,11 @@ com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         auto ec_out = ec.get_output();
         if (ec.ec_dry_run) {
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The text to output:");
-            lnav_data.ld_preview_source.replace_with(attr_line_t(retval));
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_source[0].replace_with(attr_line_t(retval));
             retval = "";
         } else if (ec_out) {
             FILE* outfile = *ec_out;
@@ -5111,10 +5138,12 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (ec.ec_dry_run) {
             attr_line_t al(expanded_cmd);
 
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The command to be executed:");
 
-            lnav_data.ld_preview_source.replace_with(al);
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_source[0].replace_with(al);
 
             return Ok(std::string());
         }
@@ -5187,10 +5216,14 @@ com_config(exec_context& ec,
                 if (ec.ec_dry_run) {
                     attr_line_t al(old_value);
 
-                    lnav_data.ld_preview_source.replace_with(al)
+                    lnav_data.ld_preview_view[0].set_sub_source(
+                        &lnav_data.ld_preview_source[0]);
+                    lnav_data.ld_preview_source[0]
+                        .replace_with(al)
                         .set_text_format(detect_text_format(old_value))
                         .truncate_to(10);
-                    lnav_data.ld_preview_status_source.get_description()
+                    lnav_data.ld_preview_status_source[0]
+                        .get_description()
                         .set_value("Value of option: %s", option.c_str());
 
                     char help_text[1024];
@@ -5677,8 +5710,8 @@ search_spectro_details_prompt(std::vector<std::string>& args)
 static void
 sql_prompt(std::vector<std::string>& args)
 {
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
-    textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
 
@@ -5701,6 +5734,8 @@ sql_prompt(std::vector<std::string>& args)
     tc->reload_data();
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");
+
+    add_sqlite_possibilities();
 }
 
 static void

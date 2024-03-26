@@ -87,6 +87,7 @@ yaml_extension_functions(struct FuncDef** basic_funcs,
             help_text("yaml_to_json",
                       "Convert a YAML document to a JSON-encoded string")
                 .sql_function()
+                .with_prql_path({"yaml", "to_json"})
                 .with_parameter({"yaml", "The YAML value to convert to JSON."})
                 .with_tags({"json", "yaml"})
                 .with_example({

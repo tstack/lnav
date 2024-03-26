@@ -33,6 +33,7 @@
 #define sql_help_hh
 
 #include <map>
+#include <set>
 
 #include "base/attr_line.hh"
 #include "help_text.hh"
@@ -50,10 +51,45 @@ extern string_attr_type<void> SQL_COMMENT_ATTR;
 
 void annotate_sql_statement(attr_line_t& al_inout);
 
-extern std::multimap<std::string, help_text*> sqlite_function_help;
+extern std::multimap<std::string, const help_text*> sqlite_function_help;
 
 std::string sql_keyword_re();
 std::vector<const help_text*> find_sql_help_for_line(const attr_line_t& al,
                                                      size_t x);
+
+namespace lnav {
+namespace sql {
+
+extern string_attr_type<void> PRQL_STAGE_ATTR;
+extern string_attr_type<void> PRQL_TRANSFORM_ATTR;
+extern string_attr_type<void> PRQL_KEYWORD_ATTR;
+extern string_attr_type<void> PRQL_IDENTIFIER_ATTR;
+extern string_attr_type<void> PRQL_FQID_ATTR;
+extern string_attr_type<void> PRQL_PIPE_ATTR;
+extern string_attr_type<void> PRQL_DOT_ATTR;
+extern string_attr_type<void> PRQL_STRING_ATTR;
+extern string_attr_type<void> PRQL_NUMBER_ATTR;
+extern string_attr_type<void> PRQL_OPERATOR_ATTR;
+extern string_attr_type<void> PRQL_PAREN_ATTR;
+extern string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR;
+extern string_attr_type<void> PRQL_GARBAGE_ATTR;
+extern string_attr_type<void> PRQL_COMMENT_ATTR;
+
+bool is_prql(const string_fragment& sf);
+
+void annotate_prql_statement(attr_line_t& al);
+
+extern const char* prql_keywords[];
+extern std::multimap<std::string, const help_text*> prql_functions;
+
+}  // namespace sql
+
+namespace prql {
+
+std::string quote_ident(std::string id);
+
+}
+
+}  // namespace lnav
 
 #endif

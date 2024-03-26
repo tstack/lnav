@@ -52,7 +52,9 @@ void format_help_text_for_term(const help_text& ht,
 void format_example_text_for_term(const help_text& ht,
                                   help_example_to_attr_line_fun_t eval,
                                   size_t width,
-                                  attr_line_t& out);
+                                  attr_line_t& out,
+                                  help_example::language lang
+                                  = help_example::language::undefined);
 
 void format_help_text_for_rst(const help_text& ht,
                               help_example_to_attr_line_fun_t eval,

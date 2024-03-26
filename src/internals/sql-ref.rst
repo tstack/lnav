@@ -491,6 +491,8 @@ anonymize(*value*)
 
   Replace identifying information with random values.
 
+  **PRQL Name**: text.anonymize
+
   **Parameters**
     * **value\*** --- The text to anonymize
 
@@ -694,6 +696,8 @@ basename(*path*)
 
   Extract the base portion of a pathname.
 
+  **PRQL Name**: fs.basename
+
   **Parameters**
     * **path\*** --- The path
 
@@ -739,6 +743,13 @@ basename(*path*)
 
       ;SELECT basename('/')
       /
+
+    To get the base of a path:
+
+    .. code-block::  custsqlite
+
+      ;from [{p='foo/bar'}] | select { fs.basename p }
+      bar
 
   **See Also**
     :ref:`dirname`, :ref:`joinpath`, :ref:`readlink`, :ref:`realpath`
@@ -1050,6 +1061,8 @@ dirname(*path*)
 
   Extract the directory portion of a pathname.
 
+  **PRQL Name**: fs.dirname
+
   **Parameters**
     * **path\*** --- The path
 
@@ -1213,6 +1226,8 @@ extract(*str*)
 
   Automatically Parse and extract data from a string
 
+  **PRQL Name**: text.extract
+
   **Parameters**
     * **str\*** --- The string to parse
 
@@ -1360,6 +1375,8 @@ gethostbyaddr(*hostname*)
 
   Get the hostname for the given IP address
 
+  **PRQL Name**: net.gethostbyaddr
+
   **Parameters**
     * **hostname\*** --- The IP address to lookup.
 
@@ -1383,6 +1400,8 @@ gethostbyname(*hostname*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Get the IP address for the given hostname
+
+  **PRQL Name**: net.gethostbyname
 
   **Parameters**
     * **hostname\*** --- The DNS hostname to lookup.
@@ -1548,6 +1567,8 @@ humanize_duration(*secs*)
 
   Format the given seconds value as an abbreviated duration string
 
+  **PRQL Name**: humanize.duration
+
   **Parameters**
     * **secs\*** --- The duration in seconds
 
@@ -1578,6 +1599,8 @@ humanize_file_size(*value*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Format the given file size as a human-friendly string
+
+  **PRQL Name**: humanize.file_size
 
   **Parameters**
     * **value\*** --- The file size to format
@@ -1651,6 +1674,8 @@ jget(*json*, *ptr*, *\[default\]*)
 
   Get the value from a JSON object using a JSON-Pointer.
 
+  **PRQL Name**: json.get
+
   **Parameters**
     * **json\*** --- The JSON object to query.
     * **ptr\*** --- The JSON-Pointer to lookup in the object.
@@ -1690,6 +1715,8 @@ joinpath(*path*)
 ^^^^^^^^^^^^^^^^
 
   Join components of a path together.
+
+  **PRQL Name**: fs.join
 
   **Parameters**
     * **path** --- One or more path components to join together.  If an argument starts with a forward or backward slash, it will be considered an absolute path and any preceding elements will be ignored.
@@ -1815,6 +1842,8 @@ json_concat(*json*, *value*)
 
   Returns an array with the given values concatenated onto the end.  If the initial value is null, the result will be an array with the given elements.  If the initial value is an array, the result will be an array with the given values at the end.  If the initial value is not null or an array, the result will be an array with two elements: the initial value and the given value.
 
+  **PRQL Name**: json.concat
+
   **Parameters**
     * **json\*** --- The initial JSON value.
     * **value** --- The value(s) to add to the end of the array.
@@ -1853,6 +1882,8 @@ json_contains(*json*, *value*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Check if a JSON value contains the given element.
+
+  **PRQL Name**: json.contains
 
   **Parameters**
     * **json\*** --- The JSON value to query.
@@ -1954,6 +1985,8 @@ json_group_array(*value*)
 
   Collect the given values from a query into a JSON array
 
+  **PRQL Name**: json.group_array
+
   **Parameters**
     * **value** --- The values to append to the array
 
@@ -1984,6 +2017,8 @@ json_group_object(*name*, *value*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Collect the given values from a query into a JSON object
+
+  **PRQL Name**: json.group_object
 
   **Parameters**
     * **name\*** --- The property name for the value
@@ -2544,6 +2579,8 @@ lnav_top_file()
 
   Return the name of the file that the top line in the current view came from.
 
+  **PRQL Name**: lnav.view.top_file
+
 
 ----
 
@@ -2554,6 +2591,8 @@ lnav_version()
 ^^^^^^^^^^^^^^
 
   Return the current version of lnav
+
+  **PRQL Name**: lnav.version
 
 
 ----
@@ -2628,6 +2667,8 @@ log_msg_line()
 
   Return the starting line number of the focused log message.
 
+  **PRQL Name**: lnav.view.msg_line
+
 
 ----
 
@@ -2638,6 +2679,8 @@ log_top_datetime()
 ^^^^^^^^^^^^^^^^^^
 
   Return the timestamp of the line at the top of the log view.
+
+  **PRQL Name**: lnav.view.top_datetime
 
 
 ----
@@ -2650,6 +2693,8 @@ log_top_line()
 
   Return the number of the focused line of the log view.
 
+  **PRQL Name**: lnav.view.top_line
+
 
 ----
 
@@ -2660,6 +2705,8 @@ logfmt2json(*str*)
 ^^^^^^^^^^^^^^^^^^
 
   Convert a logfmt-encoded string into JSON
+
+  **PRQL Name**: logfmt.to_json
 
   **Parameters**
     * **str\*** --- The logfmt message to parse
@@ -3232,6 +3279,8 @@ readlink(*path*)
 
   Read the target of a symbolic link.
 
+  **PRQL Name**: fs.readlink
+
   **Parameters**
     * **path\*** --- The path to the symbolic link.
 
@@ -3247,6 +3296,8 @@ realpath(*path*)
 ^^^^^^^^^^^^^^^^
 
   Returns the resolved version of the given path, expanding symbolic links and resolving '.' and '..' references.
+
+  **PRQL Name**: fs.realpath
 
   **Parameters**
     * **path\*** --- The path to resolve.
@@ -3338,6 +3389,8 @@ regexp_match(*re*, *str*)
 
   Match a string against a regular expression and return the capture groups as JSON.
 
+  **PRQL Name**: text.regexp_match
+
   **Parameters**
     * **re\*** --- The regular expression to use
     * **str\*** --- The string to test against the regular expression
@@ -3376,6 +3429,8 @@ regexp_replace(*str*, *re*, *repl*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Replace the parts of a string that match a regular expression.
+
+  **PRQL Name**: text.regexp_replace
 
   **Parameters**
     * **str\*** --- The string to perform replacements on
@@ -3467,6 +3522,8 @@ reverse(*str*)
 ^^^^^^^^^^^^^^
 
   Returns the reverse of the given string.
+
+  **PRQL Name**: text.reverse
 
   **Parameters**
     * **str\*** --- The string to reverse.
@@ -3620,6 +3677,8 @@ shell_exec(*cmd*, *\[input\]*, *\[options\]*)
 
   Executes a shell command and returns its output.
 
+  **PRQL Name**: shell.exec
+
   **Parameters**
     * **cmd\*** --- The command to execute.
     * **input** --- A blob of data to write to the command's standard input.
@@ -3677,6 +3736,8 @@ sparkline(*value*, *\[upper\]*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Function used to generate a sparkline bar chart.  The non-aggregate version converts a single numeric value on a range to a bar chart character.  The aggregate version returns a string with a bar character for every numeric input
+
+  **PRQL Name**: text.sparkline
 
   **Parameters**
     * **value\*** --- The numeric value to convert
@@ -4044,6 +4105,8 @@ timediff(*time1*, *time2*)
 
   Compute the difference between two timestamps in seconds
 
+  **PRQL Name**: time.diff
+
   **Parameters**
     * **time1\*** --- The first timestamp
     * **time2\*** --- The timestamp to subtract from the first
@@ -4075,6 +4138,8 @@ timeslice(*time*, *slice*)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
   Return the start of the slice of time that the given timestamp falls in.  If the time falls outside of the slice, NULL is returned.
+
+  **PRQL Name**: time.slice
 
   **Parameters**
     * **time\*** --- The timestamp to get the time slice for.
@@ -4120,6 +4185,8 @@ timezone(*tz*, *ts*)
 ^^^^^^^^^^^^^^^^^^^^
 
   Convert a timestamp to the given timezone
+
+  **PRQL Name**: time.to_zone
 
   **Parameters**
     * **tz\*** --- The target timezone
@@ -4370,6 +4437,8 @@ yaml_to_json(*yaml*)
 ^^^^^^^^^^^^^^^^^^^^
 
   Convert a YAML document to a JSON-encoded string
+
+  **PRQL Name**: yaml.to_json
 
   **Parameters**
     * **yaml\*** --- The YAML value to convert to JSON.

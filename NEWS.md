@@ -1,6 +1,12 @@
 ## lnav v0.12.1
 
 Features:
+* Database queries can now be written in
+  [PRQL](https://prql-lang.org).  When executing a query with `;`,
+  if the query starts with `from`, it will be treated as PRQL.
+  The pipeline structure of PRQL queries is more desirable for
+  interactive use since lnav can make better suggestions and
+  show previews of the stages of the pipeline.
 * Log partitions can automatically be created by defining a log
   message pattern in a log format.  Under a format definition,
   add an entry into the "partitions" object in a format definition.
@@ -12,6 +18,12 @@ Features:
   that will be matched against file names.
 
 Interface changes:
+* When using PRQL in the database query prompt (`;`),
+  the preview pane will show the results for the pipeline
+  stage the cursor is within along with the results of
+  the previous stage (if there is one).  The preview
+  works on a limited data set, so the preview results
+  may differ from the final results.
 * Changed the breadcrumb bar styling to space things out
   more and make the divisions between items clearer.
 * The `ESC` key can now be used to exit the files/filters

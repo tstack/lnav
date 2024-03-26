@@ -77,10 +77,10 @@ dump_internals(const char* internals_dir)
     auto sql_ref_path = ghc::filesystem::path(internals_dir) / "sql-ref.rst";
     auto sql_file = std::unique_ptr<FILE, decltype(&fclose)>(
         fopen(sql_ref_path.c_str(), "w+"), fclose);
-    std::set<help_text*> unique_sql_help;
+    std::set<const help_text*> unique_sql_help;
 
     if (sql_file != nullptr) {
-        for (auto& sql : sqlite_function_help) {
+        for (const auto& sql : sqlite_function_help) {
             if (unique_sql_help.find(sql.second) != unique_sql_help.end()) {
                 continue;
             }

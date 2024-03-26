@@ -44,6 +44,7 @@ enum class help_context_t {
     HC_SQL_INFIX,
     HC_SQL_FUNCTION,
     HC_SQL_TABLE_VALUED_FUNCTION,
+    HC_PRQL_TRANSFORM,
 };
 
 enum class help_function_type_t {
@@ -68,8 +69,14 @@ enum class help_parameter_format_t {
 };
 
 struct help_example {
+    enum class language {
+        undefined,
+        prql,
+    };
+
     const char* he_description{nullptr};
     const char* he_cmd{nullptr};
+    language he_language{language::undefined};
 };
 
 struct help_text {
@@ -89,6 +96,7 @@ struct help_text {
     std::vector<const char*> ht_tags;
     std::vector<const char*> ht_opposites;
     help_function_type_t ht_function_type{help_function_type_t::HFT_REGULAR};
+    std::vector<const char*> ht_prql_path;
     void* ht_impl{nullptr};
 
     help_text() = default;
@@ -142,6 +150,12 @@ struct help_text {
     help_text& sql_infix() noexcept
     {
         this->ht_context = help_context_t::HC_SQL_INFIX;
+        return *this;
+    }
+
+    help_text& prql_transform() noexcept
+    {
+        this->ht_context = help_context_t::HC_PRQL_TRANSFORM;
         return *this;
     }
 
@@ -209,6 +223,9 @@ struct help_text {
 
     help_text& with_opposites(
         const std::initializer_list<const char*>& opps) noexcept;
+
+    help_text& with_prql_path(
+        const std::initializer_list<const char*>& prql) noexcept;
 
     template<typename F>
     help_text& with_impl(F impl)

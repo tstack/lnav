@@ -1,0 +1,10 @@
+[1m[31m✘ error[0m: unable to compile PRQL: from db.access_log | take abc
+ [1m[31mreason[0m: `take` expected int or range, but found this.access_log.abc
+[36m =[0m [36mnote[0m: Error: 
+             ╭─[:57:27]
+             │
+          57 │ from db.access_log | take abc
+             │                           ─┬─  
+             │                            ╰─── `take` expected int or range, but found this.access_log.abc
+         ────╯
+         

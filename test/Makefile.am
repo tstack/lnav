@@ -12,6 +12,16 @@ AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
+if HAVE_CARGO
+RUST_DEPS_CPPFLAGS = -I$(srcdir)/third-party/prqlc-c -DHAVE_RUST_DEPS=1
+PRQLC_DIR = ../src/third-party/prqlc-c/target
+RUST_DEPS_LD_FLAGS = -L$(PRQLC_DIR)/release -lprqlc_c
+else
+RUST_DEPS =
+RUST_DEPS_CPPFLAGS =
+RUST_DEPS_LD_FLAGS =
+endif
+
 AM_CPPFLAGS = \
 	-Wall \
 	-I$(top_srcdir)/src \
@@ -23,7 +33,8 @@ AM_CPPFLAGS = \
 	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
 	$(PCRE_CFLAGS) \
-	$(SQLITE3_CFLAGS)
+	$(SQLITE3_CFLAGS) \
+    $(RUST_DEPS_CPPFLAGS)
 
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
@@ -86,7 +97,8 @@ AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
 	$(SQLITE3_LDFLAGS) \
 	$(READLINE_LDFLAGS) \
-	$(CURSES_LIB)
+	$(CURSES_LIB) \
+    $(RUST_DEPS_LD_FLAGS)
 
 CONFIG_OBJS = \
 	../src/ansi-palette-json.$(OBJEXT) \
@@ -202,6 +214,7 @@ dist_noinst_SCRIPTS = \
 	test_logfile.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \
+	test_prql.sh \
 	test_regex101.sh \
 	test_remote.sh \
 	test_scripts.sh \
@@ -499,6 +512,10 @@ TESTS = \
 	test_pretty_print.sh \
     test_view_colors.sh \
 	test_vt52_curses.sh
+
+if HAVE_CARGO
+TESTS += test_prql.sh
+endif
 
 DISABLED_TESTS = \
     test_regex101.sh \

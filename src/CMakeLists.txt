@@ -130,7 +130,7 @@ function(bin2c)
             DEPENDS bin2c "${FILE_TO_LINK}")
 endfunction(bin2c)
 
-foreach (FILE_TO_LINK animals.json ansi-palette.json css-color-names.json diseases.json emojis.json xml-entities.json xterm-palette.json help.txt help.md init.sql words.json)
+foreach (FILE_TO_LINK animals.json ansi-palette.json css-color-names.json diseases.json emojis.json xml-entities.json xterm-palette.json help.txt help.md init.sql prelude.prql words.json)
     string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
     add_custom_command(
             OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
@@ -659,6 +659,8 @@ add_library(
         third-party/md4c/md4c.h
 
         third-party/robin_hood/robin_hood.h
+
+        third-party/prqlc-c/prqlc.hpp
 )
 
 set(lnav_SRCS lnav.cc)
@@ -667,6 +669,7 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party
         third-party/base64/include
         third-party/date/include
+        third-party/prqlc-c
         third-party/rapidyaml
 )
 

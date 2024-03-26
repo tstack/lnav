@@ -30,6 +30,7 @@
 #include "view_helpers.hh"
 
 #include "base/itertools.hh"
+#include "bound_tags.hh"
 #include "config.h"
 #include "document.sections.hh"
 #include "environ_vtab.hh"
@@ -527,8 +528,8 @@ build_all_help_text()
     auto parse_res = md4cpp::parse(sub_help_text, mdal);
     attr_line_t all_help_text = parse_res.unwrap();
 
-    std::map<std::string, help_text*> sql_funcs;
-    std::map<std::string, help_text*> sql_keywords;
+    std::map<std::string, const help_text*> sql_funcs;
+    std::map<std::string, const help_text*> sql_keywords;
 
     for (const auto& iter : sqlite_function_help) {
         switch (iter.second->ht_context) {
@@ -630,8 +631,10 @@ layout_views()
 
     int doc_height;
     bool doc_side_by_side = width > (90 + 60);
-    bool preview_open
-        = !lnav_data.ld_preview_status_source.get_description().empty();
+    bool preview_open0
+        = !lnav_data.ld_preview_status_source[0].get_description().empty();
+    bool preview_open1
+        = !lnav_data.ld_preview_status_source[1].get_description().empty();
     bool filters_supported = false;
     auto is_spectro = false;
     auto is_gantt = false;
@@ -659,9 +662,22 @@ layout_views()
             + lnav_data.ld_example_source.text_line_count();
     }
 
-    int preview_height = lnav_data.ld_preview_hidden
+    int preview_height0 = lnav_data.ld_preview_hidden
         ? 0
-        : lnav_data.ld_preview_source.text_line_count();
+        : lnav_data.ld_preview_view[0].get_inner_height();
+    if (preview_height0
+        && lnav_data.ld_preview_view[0].get_overlay_source() != nullptr)
+    {
+        preview_height0 += 1;  // XXX extra height for db overlay
+    }
+    int preview_height1 = lnav_data.ld_preview_hidden
+        ? 0
+        : lnav_data.ld_preview_view[1].get_inner_height();
+    if (preview_height1
+        && lnav_data.ld_preview_view[1].get_overlay_source() != nullptr)
+    {
+        preview_height1 += 1;  // XXX extra height for db overlay
+    }
 
     int match_rows = lnav_data.ld_match_source.text_line_count();
     int match_height = std::min(match_rows, (height - 4) / 2);
@@ -706,13 +722,21 @@ layout_views()
     lnav_data.ld_status[LNS_BOTTOM].set_enabled(!filters_open
                                                 && !breadcrumb_open);
 
-    vis = preview_open && bottom.try_consume(preview_height + 1);
-    lnav_data.ld_preview_view.set_height(vis_line_t(preview_height));
-    lnav_data.ld_preview_view.set_y(bottom + 1);
-    lnav_data.ld_preview_view.set_visible(vis);
+    vis = preview_open1 && bottom.try_consume(preview_height1 + 1);
+    lnav_data.ld_preview_view[1].set_height(vis_line_t(preview_height1));
+    lnav_data.ld_preview_view[1].set_y(bottom + 1);
+    lnav_data.ld_preview_view[1].set_visible(vis);
 
-    lnav_data.ld_status[LNS_PREVIEW].set_top(bottom);
-    lnav_data.ld_status[LNS_PREVIEW].set_visible(vis);
+    lnav_data.ld_status[LNS_PREVIEW1].set_top(bottom);
+    lnav_data.ld_status[LNS_PREVIEW1].set_visible(vis);
+
+    vis = preview_open0 && bottom.try_consume(preview_height0 + 1);
+    lnav_data.ld_preview_view[0].set_height(vis_line_t(preview_height0));
+    lnav_data.ld_preview_view[0].set_y(bottom + 1);
+    lnav_data.ld_preview_view[0].set_visible(vis);
+
+    lnav_data.ld_status[LNS_PREVIEW0].set_top(bottom);
+    lnav_data.ld_status[LNS_PREVIEW0].set_visible(vis);
 
     if (doc_side_by_side && doc_height > 0) {
         vis = bottom.try_consume(doc_height + 1);
@@ -816,7 +840,7 @@ update_hits(textview_curses* tc)
 
             int preview_count = 0;
 
-            vis_bookmarks& bm = tc->get_bookmarks();
+            auto& bm = tc->get_bookmarks();
             const auto& bv = bm[&textview_curses::BM_SEARCH];
             auto vl = tc->get_top();
             unsigned long width;
@@ -888,11 +912,15 @@ update_hits(textview_curses* tc)
             }
 
             if (preview_count > 0) {
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "Matching lines for search");
-                lnav_data.ld_preview_source.replace_with(all_matches)
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value("Matching lines for search");
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0]
+                    .replace_with(all_matches)
                     .set_text_format(text_format_t::TF_UNKNOWN);
-                lnav_data.ld_preview_view.set_needs_update();
+                lnav_data.ld_preview_view[0].set_needs_update();
             }
         }
     }
@@ -900,77 +928,95 @@ update_hits(textview_curses* tc)
 
 static std::unordered_map<std::string, attr_line_t> EXAMPLE_RESULTS;
 
+static void
+execute_example(const help_text& ht)
+{
+    auto& dls = lnav_data.ld_db_row_source;
+    auto& dos = lnav_data.ld_db_overlay;
+    auto& db_tc = lnav_data.ld_views[LNV_DB];
+
+    for (const auto& ex : ht.ht_example) {
+        std::string alt_msg;
+        attr_line_t result;
+
+        if (!ex.he_cmd) {
+            continue;
+        }
+
+        if (EXAMPLE_RESULTS.count(ex.he_cmd)) {
+            continue;
+        }
+
+        switch (ht.ht_context) {
+            case help_context_t::HC_SQL_KEYWORD:
+            case help_context_t::HC_SQL_INFIX:
+            case help_context_t::HC_SQL_FUNCTION:
+            case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
+            case help_context_t::HC_PRQL_TRANSFORM: {
+                exec_context ec;
+
+                ec.ec_label_source_stack.push_back(&dls);
+
+                auto exec_res = execute_sql(ec, ex.he_cmd, alt_msg);
+
+                if (exec_res.isErr()) {
+                    auto um = exec_res.unwrapErr();
+                    result.append(um.to_attr_line());
+                } else if (dls.dls_rows.size() == 1
+                           && dls.dls_rows[0].size() == 1)
+                {
+                    result.append(dls.dls_rows[0][0]);
+                } else {
+                    attr_line_t al;
+                    dos.list_static_overlay(db_tc, 0, 1, al);
+                    result.append(al);
+                    for (int lpc = 0; lpc < (int) dls.text_line_count(); lpc++)
+                    {
+                        al.clear();
+                        dls.text_value_for_line(
+                            db_tc, lpc, al.get_string(), false);
+                        dls.text_attrs_for_line(db_tc, lpc, al.get_attrs());
+                        std::replace(al.get_string().begin(),
+                                     al.get_string().end(),
+                                     '\n',
+                                     ' ');
+                        result.append("\n").append(al);
+                    }
+                }
+
+                EXAMPLE_RESULTS[ex.he_cmd] = result;
+
+                log_trace("example: %s", ex.he_cmd);
+                log_trace("example result: %s", result.get_string().c_str());
+                break;
+            }
+            default:
+                log_warning("Not executing example: %s", ex.he_cmd);
+                break;
+        }
+    }
+}
+
 void
 execute_examples()
 {
-    db_label_source& dls = lnav_data.ld_db_row_source;
-    db_overlay_source& dos = lnav_data.ld_db_overlay;
-    textview_curses& db_tc = lnav_data.ld_views[LNV_DB];
+    static const auto* sql_cmd_map
+        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+
+    auto& dls = lnav_data.ld_db_row_source;
 
     auto old_width = dls.dls_max_column_width;
     dls.dls_max_column_width = 15;
-    for (auto& help_iter : sqlite_function_help) {
-        auto& ht = *(help_iter.second);
-
-        for (auto& ex : ht.ht_example) {
-            std::string alt_msg;
-            attr_line_t result;
-
-            if (!ex.he_cmd) {
-                continue;
-            }
-
-            if (EXAMPLE_RESULTS.count(ex.he_cmd)) {
-                continue;
-            }
-
-            switch (ht.ht_context) {
-                case help_context_t::HC_SQL_KEYWORD:
-                case help_context_t::HC_SQL_INFIX:
-                case help_context_t::HC_SQL_FUNCTION:
-                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
-                    exec_context ec;
-
-                    auto exec_res = execute_sql(ec, ex.he_cmd, alt_msg);
-
-                    if (exec_res.isErr()) {
-                        auto um = exec_res.unwrapErr();
-                        result.append(um.to_attr_line());
-                    } else if (dls.dls_rows.size() == 1
-                               && dls.dls_rows[0].size() == 1)
-                    {
-                        result.append(dls.dls_rows[0][0]);
-                    } else {
-                        attr_line_t al;
-                        dos.list_static_overlay(db_tc, 0, 1, al);
-                        result.append(al);
-                        for (int lpc = 0; lpc < (int) dls.text_line_count();
-                             lpc++)
-                        {
-                            al.clear();
-                            dls.text_value_for_line(
-                                db_tc, lpc, al.get_string(), false);
-                            dls.text_attrs_for_line(db_tc, lpc, al.get_attrs());
-                            std::replace(al.get_string().begin(),
-                                         al.get_string().end(),
-                                         '\n',
-                                         ' ');
-                            result.append("\n").append(al);
-                        }
-                    }
-
-                    EXAMPLE_RESULTS[ex.he_cmd] = result;
-
-                    log_trace("example: %s", ex.he_cmd);
-                    log_trace("example result: %s",
-                              result.get_string().c_str());
-                    break;
-                }
-                default:
-                    log_warning("Not executing example: %s", ex.he_cmd);
-                    break;
-            }
+    for (auto help_pair : sqlite_function_help) {
+        execute_example(*help_pair.second);
+    }
+    for (auto cmd_pair : *sql_cmd_map) {
+        if (cmd_pair.second->c_help.ht_context
+            != help_context_t::HC_PRQL_TRANSFORM)
+        {
+            continue;
         }
+        execute_example(cmd_pair.second->c_help);
     }
     dls.dls_max_column_width = old_width;
 
@@ -999,8 +1045,12 @@ toggle_view(textview_curses* toggle_tc)
     require(toggle_tc >= &lnav_data.ld_views[0]);
     require(toggle_tc < &lnav_data.ld_views[LNV__MAX]);
 
-    lnav_data.ld_preview_source.clear();
-    lnav_data.ld_preview_status_source.get_description().clear();
+    lnav_data.ld_preview_view[0].set_sub_source(
+        &lnav_data.ld_preview_source[0]);
+    lnav_data.ld_preview_source[0].clear();
+    lnav_data.ld_preview_status_source[0].get_description().clear();
+    lnav_data.ld_preview_view[1].set_sub_source(nullptr);
+    lnav_data.ld_preview_status_source[1].get_description().clear();
 
     if (tc == toggle_tc) {
         if (lnav_data.ld_view_stack.size() == 1) {
@@ -1320,4 +1370,19 @@ lnav_crumb_source()
     }
 
     return retval;
+}
+
+void
+clear_preview()
+{
+    for (size_t lpc = 0; lpc < 2; lpc++) {
+        lnav_data.ld_preview_source[lpc].clear();
+        lnav_data.ld_preview_status_source[lpc]
+            .get_description()
+            .set_cylon(false)
+            .clear();
+        lnav_data.ld_db_preview_source[lpc].clear();
+        lnav_data.ld_preview_view[lpc].set_sub_source(nullptr);
+        lnav_data.ld_preview_view[lpc].set_overlay_source(nullptr);
+    }
 }

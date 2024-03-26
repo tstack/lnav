@@ -472,7 +472,7 @@ public:
 
     attr_line_t& erase(size_t pos, size_t len = std::string::npos);
 
-    attr_line_t& rtrim();
+    attr_line_t& rtrim(nonstd::optional<const char*> chars = nonstd::nullopt);
 
     attr_line_t& erase_utf8_chars(size_t start)
     {

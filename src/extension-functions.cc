@@ -106,7 +106,7 @@ Original code 2006 June 05 by relicoder.
 
 */
 
-//#include "config.h"
+// #include "config.h"
 
 // #define COMPILE_SQLITE_EXTENSIONS_AS_LOADABLE_MODULE 1
 #define HAVE_ACOSH     1
@@ -2550,6 +2550,7 @@ common_extension_functions(struct FuncDef** basic_funcs,
             reverseFunc,
             help_text("reverse")
                 .sql_function()
+                .with_prql_path({"text", "reverse"})
                 .with_summary("Returns the reverse of the given string.")
                 .with_parameter({"str", "The string to reverse."})
                 .with_tags({"string"})

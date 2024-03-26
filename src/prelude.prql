@@ -1,0 +1,2 @@
+
+let json_each = func input -> s"SELECT * FROM json_each({input})"
