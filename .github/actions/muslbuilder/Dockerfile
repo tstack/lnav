@@ -176,7 +176,9 @@ RUN apk add --no-cache \
     autoconf \
     automake \
     build-base \
+    cargo \
     git \
+    rust \
     zip
 
 COPY entrypoint.sh /entrypoint.sh
