@@ -553,10 +553,10 @@ RE2C_FILES = data_scanner_re.cc log_level_re.cc
 endif
 
 EXTRA_DIST = \
-    src/third-party/prqlc-c/Cargo.lock \
-    src/third-party/prqlc-c/Cargo.toml \
-    src/third-party/prqlc-c/cbindgen.toml \
-    src/third-party/prqlc-c/src/lib.rs \
+    third-party/prqlc-c/Cargo.lock \
+    third-party/prqlc-c/Cargo.toml \
+    third-party/prqlc-c/cbindgen.toml \
+    third-party/prqlc-c/src/lib.rs \
 	ptimec.c
 
 CLEANFILES = \
