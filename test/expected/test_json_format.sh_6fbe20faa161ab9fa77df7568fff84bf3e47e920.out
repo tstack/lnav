@@ -1,4 +1,4 @@
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,user,cl
-0,<NULL>,2013-09-06 20:00:49.124,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,com.exmaple.foo
-1,<NULL>,2013-09-06 22:00:49.124,7200000,info,0,<NULL>,<NULL>,<NULL>,<NULL>,steve@example.com,com.exmaple.foo
-3,<NULL>,2013-09-06 22:01:49.124,60000,error,0,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,com.exmaple.foo
+log_line,log_time,log_level,user,cl,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
+0,2013-09-06 20:00:49.124,info,<NULL>,com.exmaple.foo,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+1,2013-09-06 22:00:49.124,info,steve@example.com,com.exmaple.foo,<NULL>,7200000,0,<NULL>,<NULL>,<NULL>,<NULL>
+3,2013-09-06 22:01:49.124,error,<NULL>,com.exmaple.foo,<NULL>,60000,0,<NULL>,<NULL>,<NULL>,<NULL>

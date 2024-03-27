@@ -334,7 +334,7 @@ prql_cmd_group(exec_context& ec,
     std::string retval;
 
     if (args.empty()) {
-        args.emplace_back("prql-column");
+        args.emplace_back("prql-expr");
         args.emplace_back("prql-source");
         return Ok(retval);
     }
@@ -504,7 +504,11 @@ static readline_context::command_t sql_commands[] = {
             .with_parameter(
                 help_text{"expr", "The aggregate expression(s)"}.with_grouping(
                     "{", "}"))
-            .with_example({"To group values into a JSON array", ""}),
+            .with_example({
+                "To group values into a JSON array",
+                "from [{a=1}, {a=2}] | aggregate { arr = json.group_array a }",
+                help_example::language::prql,
+            }),
         nullptr,
         "prql-source",
         {"prql-source"},
@@ -527,7 +531,12 @@ static readline_context::command_t sql_commands[] = {
             .prql_transform()
             .with_summary("PRQL transform to derive one or more columns")
             .with_parameter(
-                help_text{"column", "The new column"}.with_grouping("{", "}")),
+                help_text{"column", "The new column"}.with_grouping("{", "}"))
+            .with_example({
+                "To add a column that is a multiplication of another",
+                "from [{a=1}, {a=2}] | derive b = a * 2",
+                help_example::language::prql,
+            }),
         nullptr,
         "prql-source",
         {"prql-source"},
@@ -539,7 +548,12 @@ static readline_context::command_t sql_commands[] = {
             .prql_transform()
             .with_summary("PRQL transform to pick rows based on their values")
             .with_parameter(
-                {"expr", "The expression to evaluate over each row"}),
+                {"expr", "The expression to evaluate over each row"})
+            .with_example({
+                "To pick rows where 'a' is greater than one",
+                "from [{a=1}, {a=2}] | filter a > 1",
+                help_example::language::prql,
+            }),
         nullptr,
         "prql-source",
         {"prql-source"},
@@ -555,7 +569,13 @@ static readline_context::command_t sql_commands[] = {
                     .with_grouping("{", "}"))
             .with_parameter(
                 help_text{"pipeline", "The pipeline to execute over a group"}
-                    .with_grouping("(", ")")),
+                    .with_grouping("(", ")"))
+            .with_example({
+                "To group by log_level and count the rows in each partition",
+                "from db.lnav_example_log | group { log_level } (aggregate { "
+                "count this })",
+                help_example::language::prql,
+            }),
         nullptr,
         "prql-source",
         {"prql-source"},
@@ -584,10 +604,20 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_select,
         help_text("select")
             .prql_transform()
-            .with_summary("PRQL transform to select columns")
+            .with_summary("PRQL transform to pick and compute columns")
             .with_parameter(
                 help_text{"expr", "The columns to include in the result set"}
-                    .with_grouping("{", "}")),
+                    .with_grouping("{", "}"))
+            .with_example({
+                "To pick the 'b' column from the rows",
+                "from [{a=1, b='abc'}, {a=2, b='def'}] | select b",
+                help_example::language::prql,
+            })
+            .with_example({
+                "To compute a new column from an input",
+                "from [{a=1}, {a=2}] | select b = a * 2",
+                help_example::language::prql,
+            }),
         nullptr,
         "prql-source",
         {"prql-source"},
@@ -600,7 +630,12 @@ static readline_context::command_t sql_commands[] = {
             .with_summary("PRQL transform to sort rows")
             .with_parameter(help_text{
                 "expr", "The values to use when ordering the result set"}
-                                .with_grouping("{", "}")),
+                                .with_grouping("{", "}"))
+            .with_example({
+                "To sort the rows in descending order",
+                "from [{a=1}, {a=2}] | sort {-a}",
+                help_example::language::prql,
+            }),
         nullptr,
         "prql-source",
         {"prql-source"},
@@ -611,7 +646,17 @@ static readline_context::command_t sql_commands[] = {
         help_text("take")
             .prql_transform()
             .with_summary("PRQL command to pick rows based on their position")
-            .with_parameter({"n_or_range", "The number of rows or range"}),
+            .with_parameter({"n_or_range", "The number of rows or range"})
+            .with_example({
+                "To pick the first row",
+                "from [{a=1}, {a=2}, {a=3}] | take 1",
+                help_example::language::prql,
+            })
+            .with_example({
+                "To pick the second and third rows",
+                "from [{a=1}, {a=2}, {a=3}] | take 2..3",
+                help_example::language::prql,
+            }),
         nullptr,
         "prql-source",
         {"prql-source"},

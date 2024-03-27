@@ -243,6 +243,7 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
     static const char* brackets[] = {
         "[]",
         "()",
+        "{}",
 
         nullptr,
     };

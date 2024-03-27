@@ -120,12 +120,12 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) $(USER_CXXFLAGS)
 
 if HAVE_CARGO
 RUST_DEPS_CPPFLAGS = -I$(srcdir)/third-party/prqlc-c -DHAVE_RUST_DEPS=1
-PRQLC_DIR = src/third-party/prqlc-c/target
+PRQLC_DIR = third-party/prqlc-c/target
 RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
 
 $(RUST_DEPS_LIBS): $(srcdir)/third-party/prqlc-c/src/lib.rs
 	mkdir -p $(PRQLC_DIR)
-	env CARGO_TARGET_DIR=src/third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
+	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
 	    $(srcdir)/third-party/prqlc-c/Cargo.toml --package prqlc-c --release
 
 else
@@ -584,7 +584,7 @@ DISTCLEANFILES = \
 
 if HAVE_CARGO
 clean-local:
-	env CARGO_TARGET_DIR=src/third-party/prqlc-c/target $(CARGO_CMD) clean --manifest-path \
+	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) clean --manifest-path \
     	    $(srcdir)/third-party/prqlc-c/Cargo.toml
 endif
 

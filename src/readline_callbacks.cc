@@ -140,7 +140,7 @@ const char *PRQL_HELP =
 
 const char *PRQL_EXAMPLE =
     ANSI_UNDERLINE("Examples") "\n"
-        "  from db.%s | group { log_level } (aggregate { total = count this })\n"
+        "  from db.%s | count_by { log_level }\n"
         "  from db.%s | filter log_line == lnav.view.top_line\n"
     ;
 
@@ -306,7 +306,6 @@ rl_change(readline_curses* rc)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_user_message_source.clear();
-    clear_preview();
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::SQL: {
@@ -316,6 +315,10 @@ rl_change(readline_curses* rc)
 
             const auto line = rc->get_line_buffer();
             std::vector<std::string> args;
+
+            if (!lnav::sql::is_prql(line)) {
+                clear_preview();
+            }
 
             split_ws(line, args);
             if (!args.empty()) {
@@ -333,6 +336,8 @@ rl_change(readline_curses* rc)
             break;
         }
         case ln_mode_t::COMMAND: {
+            clear_preview();
+
             static std::string last_command;
             static int generation = 0;
 
@@ -453,6 +458,8 @@ rl_change(readline_curses* rc)
             break;
         }
         case ln_mode_t::EXEC: {
+            clear_preview();
+
             const auto line = rc->get_line_buffer();
             size_t name_end = line.find(' ');
             const auto script_name = line.substr(0, name_end);
@@ -577,7 +584,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                                            "| take 1000 ");
                 }
                 curr_stage_prql.rtrim();
-                curr_stage_prql.append(" | take 10");
+                curr_stage_prql.append(" | take 5");
                 log_debug("preview prql: %s",
                           curr_stage_prql.get_string().c_str());
 
@@ -599,7 +606,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                         prev_stage_prql.insert(riter->sa_range.lr_start,
                                                "| take 1000 ");
                     }
-                    prev_stage_prql.append(" | take 10");
+                    prev_stage_prql.append(" | take 5");
 
                     curr_stage_index = 1;
                     auto db_guard = lnav_data.ld_exec_context.enter_db_source(
@@ -640,13 +647,16 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                 auto exec_res = execute_sql(lnav_data.ld_exec_context,
                                             curr_stage_prql.get_string(),
                                             alt_msg);
+                auto err = exec_res.isErr()
+                    ? exec_res.unwrapErr()
+                    : lnav::console::user_message::ok({});
                 if (exec_res.isErr()) {
-                    auto err = exec_res.unwrapErr();
-
                     lnav_data.ld_bottom_source.grep_error(
                         err.um_reason.get_string());
 
-                    auto near = term_val.length();
+                    curr_stage_prql.erase(curr_stage_prql.get_string().length()
+                                          - 9);
+                    auto near = curr_stage_prql.get_string().length() - 1;
                     while (near > 0) {
                         auto paren_iter = rfind_string_attr_if(
                             curr_stage_prql.get_attrs(),
@@ -659,20 +669,27 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                         if (paren_iter == curr_stage_prql.get_attrs().end()) {
                             break;
                         }
-                        switch (term_val[paren_iter->sa_range.lr_start]) {
+                        switch (
+                            curr_stage_prql
+                                .get_string()[paren_iter->sa_range.lr_start])
+                        {
                             case '(':
-                                term_val.append(")");
+                                curr_stage_prql.append(")");
                                 break;
                             case '{':
-                                term_val.append("}");
+                                curr_stage_prql.append("}");
                                 break;
                         }
                         near = paren_iter->sa_range.lr_start - 1;
                     }
 
-                    auto exec_termed_res = execute_sql(
-                        lnav_data.ld_exec_context, term_val, alt_msg);
+                    curr_stage_prql.append(" | take 5");
+                    auto exec_termed_res
+                        = execute_sql(lnav_data.ld_exec_context,
+                                      curr_stage_prql.get_string(),
+                                      alt_msg);
                     if (exec_termed_res.isErr()) {
+                        err = exec_termed_res.unwrapErr();
                     }
                 } else {
                     lnav_data.ld_bottom_source.grep_error("");
@@ -714,7 +731,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                                  [curr_stage_index]);
                 } else if (exec_res.isErr()) {
                     lnav_data.ld_preview_source[curr_stage_index].replace_with(
-                        exec_res.unwrapErr().to_attr_line());
+                        err.to_attr_line());
                     lnav_data.ld_preview_view[curr_stage_index].set_sub_source(
                         &lnav_data.ld_preview_source[curr_stage_index]);
                     lnav_data.ld_preview_view[curr_stage_index]

@@ -1,4 +1,4 @@
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,client_ip,request/method,request/uri,request/size,response/status,response/size,details1,details2,details3
-0,<NULL>,2017-03-24 20:06:26.240,0,info,0,<NULL>,<NULL>,<NULL>,<NULL>,1.1.1.1,GET,/example/uri/5,166,200,443,<NULL>,<NULL>,<NULL>
-1,<NULL>,2017-03-24 20:12:47.764,381524,critical,0,<NULL>,<NULL>,<NULL>,<NULL>,1.1.1.1,GET,/example/uri/5,166,500,4433,<NULL>,<NULL>,<NULL>
-2,<NULL>,2017-03-24 20:15:31.694,163930,warning,0,<NULL>,<NULL>,<NULL>,<NULL>,1.1.1.1,GET,/example/uri/5,166,400,44345,"{""foo"": ""bar""}","{""foo"": ""bar""}","{""foo"": ""bar""}"
+log_line,log_time,log_level,client_ip,request/method,request/uri,request/size,response/status,response/size,details1,details2,details3,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
+0,2017-03-24 20:06:26.240,info,1.1.1.1,GET,/example/uri/5,166,200,443,<NULL>,<NULL>,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+1,2017-03-24 20:12:47.764,critical,1.1.1.1,GET,/example/uri/5,166,500,4433,<NULL>,<NULL>,<NULL>,<NULL>,381524,0,<NULL>,<NULL>,<NULL>,<NULL>
+2,2017-03-24 20:15:31.694,warning,1.1.1.1,GET,/example/uri/5,166,400,44345,"{""foo"": ""bar""}","{""foo"": ""bar""}","{""foo"": ""bar""}",<NULL>,163930,0,<NULL>,<NULL>,<NULL>,<NULL>

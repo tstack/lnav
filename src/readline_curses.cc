@@ -408,9 +408,15 @@ readline_context::attempted_completion(const char* text, int start, int end)
     }
 
     completion_start = start;
-    if (at_start
-        && loaded_context->rc_possibilities.find(cmd_key)
-            != loaded_context->rc_possibilities.end())
+    if (text[0] == '\0' && !rc_local_suggestion.empty()) {
+        static std::set<std::string> suggestion_possibilities;
+
+        suggestion_possibilities.clear();
+        suggestion_possibilities.emplace(rc_local_suggestion);
+        arg_possibilities = &suggestion_possibilities;
+    } else if (at_start
+               && loaded_context->rc_possibilities.find(cmd_key)
+                   != loaded_context->rc_possibilities.end())
     {
         arg_possibilities = &loaded_context->rc_possibilities[cmd_key];
         arg_needs_shlex = false;

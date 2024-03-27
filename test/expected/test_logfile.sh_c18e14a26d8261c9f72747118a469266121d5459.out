@@ -1,3 +1,3 @@
-log_line log_part        log_time         log_idle_msecs log_level log_mark log_comment log_tags log_annotations log_filters col_0  col_1   
-       0   <NULL> 2021-05-19 08:00:01.000              0 info             0      <NULL>   <NULL>          <NULL>      <NULL>     1 /abc/def 
-       2   <NULL> 2021-05-19 08:00:03.000           2000 info             0      <NULL>   <NULL>          <NULL>      <NULL>     3 /ghi/jkl 
+log_line        log_time         log_level col_0  col_1   log_part log_idle_msecs log_mark log_comment log_tags log_annotations log_filters 
+       0 2021-05-19 08:00:01.000 info          1 /abc/def   <NULL>              0        0      <NULL>   <NULL>          <NULL>      <NULL> 
+       2 2021-05-19 08:00:03.000 info          3 /ghi/jkl   <NULL>           2000        0      <NULL>   <NULL>          <NULL>      <NULL> 

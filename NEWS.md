@@ -45,6 +45,13 @@ Interface changes:
 * The `{` / `}` hotkeys, `:next-section`, and `:prev-section`
   commands now work in the LOG view and take you to the
   next/previous partition.
+* The DB view now defaults to not showing bar charts.
+
+Breaking changes:
+* Many of the lesser used column in the log format tables
+  (e.g. `log_tags`) have been moved to after the columns
+  defined by the format.  These columns are usually `NULL`
+  and are a distraction when previewing queries.
 
 ## lnav v0.12.0
 

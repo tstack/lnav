@@ -665,18 +665,18 @@ layout_views()
     int preview_height0 = lnav_data.ld_preview_hidden
         ? 0
         : lnav_data.ld_preview_view[0].get_inner_height();
-    if (preview_height0
+    if (!lnav_data.ld_preview_hidden
         && lnav_data.ld_preview_view[0].get_overlay_source() != nullptr)
     {
-        preview_height0 += 1;  // XXX extra height for db overlay
+        preview_height0 = 6;  // XXX extra height for db overlay
     }
     int preview_height1 = lnav_data.ld_preview_hidden
         ? 0
         : lnav_data.ld_preview_view[1].get_inner_height();
-    if (preview_height1
+    if (!lnav_data.ld_preview_hidden
         && lnav_data.ld_preview_view[1].get_overlay_source() != nullptr)
     {
-        preview_height1 += 1;  // XXX extra height for db overlay
+        preview_height1 = 6;  // XXX extra height for db overlay
     }
 
     int match_rows = lnav_data.ld_match_source.text_line_count();

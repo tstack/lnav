@@ -40,6 +40,7 @@
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "log_data_helper.hh"
+#include "log_format_ext.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_help.hh"
@@ -71,13 +72,51 @@ handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
     return 0;
 }
 
+static size_t
+files_with_format(log_format* format)
+{
+    auto retval = size_t{0};
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        if (lf->get_format_name() == format->get_name()) {
+            retval += 1;
+        }
+    }
+
+    return retval;
+}
+
 static int
 handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     if (lnav_data.ld_rl_view != nullptr) {
         std::string table_name = colvalues[0];
+        intern_string_t table_intern = intern_string::lookup(table_name);
+        auto format = log_format::find_root_format(table_name.c_str());
+        auto add_poss = true;
 
-        if (sqlite_function_help.count(table_name) == 0) {
+        if (format != nullptr) {
+            if (files_with_format(format.get()) == 0) {
+                add_poss = false;
+            }
+        } else if (sqlite_function_help.count(table_name) != 0) {
+            add_poss = false;
+        } else {
+            for (const auto& lf : log_format::get_root_formats()) {
+                auto* elf = dynamic_cast<external_log_format*>(lf.get());
+                if (elf == nullptr) {
+                    continue;
+                }
+
+                if (elf->elf_search_tables.find(table_intern)
+                        != elf->elf_search_tables.end()
+                    && files_with_format(lf.get()) == 0)
+                {
+                    add_poss = false;
+                }
+            }
+        }
+
+        if (add_poss) {
             lnav_data.ld_rl_view->add_possibility(
                 ln_mode_t::SQL, "*", table_name);
             lnav_data.ld_rl_view->add_possibility(

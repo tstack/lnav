@@ -1,2 +1,7 @@
-
 let json_each = func input -> s"SELECT * FROM json_each({input})"
+
+let count_by = func column rel <relation> -> <relation> (
+  rel
+  group {column} (aggregate {total = count this})
+  sort {-total}
+)

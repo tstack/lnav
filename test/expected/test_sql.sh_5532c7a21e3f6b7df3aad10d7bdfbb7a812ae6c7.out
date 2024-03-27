@@ -1,2 +1,2 @@
-log_line,log_part,log_time,log_idle_msecs,log_level,log_mark,log_comment,log_tags,log_annotations,log_filters,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version,col_0,TTY,PWD,USER,COMMAND
-0,<NULL>,2007-11-03 09:47:02.000,0,info,0,<NULL>,<NULL>,<NULL>,[1],veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,sudo,<NULL>,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages
+log_line,log_time,log_level,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version,col_0,TTY,PWD,USER,COMMAND,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
+0,2007-11-03 09:47:02.000,info,veridian,<NULL>,<NULL>,<NULL>,sudo,<NULL>,sudo,<NULL>,timstack,pts/6,/auto/wstimstack/rpms/lbuild/test,root,/usr/bin/tail /var/log/messages,<NULL>,0,0,<NULL>,<NULL>,<NULL>,[1]

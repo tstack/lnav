@@ -1,5 +1,5 @@
 [1m[4mmatch_index [0m[1m[4m  content    [0m[1m[4m                            case match_index when 2 then replicate('abc', 1000) else '' end                              [0m
-[7m [0m         0 {"col_0":10}                                                                                                                          
-[7m          1[0m[7m [0m[7m{"col_0":50}[0m[7m [0m[7m                                                                                                                         [0m
-[1m[7m          2[0m[1m[7m [0m[1m[7m{"col_0":50}[0m[1m[7m [0m[1m[7mabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc⋯bcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc [0m
-[1m[7m          3[0m[1m[7m [0m[1m[7m{"col_0":50}[0m[1m[7m [0m[1m[7m                                                                                                                         [0m
+          0 {"col_0":10}                                                                                                                          
+          1 {"col_0":50}                                                                                                                          
+[1m          2[0m[1m [0m[1m{"col_0":50}[0m[1m [0m[1mabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc⋯bcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc [0m
+[1m          3[0m[1m [0m[1m{"col_0":50}[0m[1m [0m[1m                                                                                                                         [0m

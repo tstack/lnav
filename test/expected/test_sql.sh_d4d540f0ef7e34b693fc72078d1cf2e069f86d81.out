@@ -1,4 +1,4 @@
 [1m[4m[7mtotal [0m[1m[4mlog_line [0m[1m[4m       log_time         [0m[1m[4mduration [0m[1m[4mlog_formats [0m[1m[4m                    log_msg_format                      [0m
-[1m[7m    2[0m[7m [0m[7m       0[0m[7m [0m[7m2007-04-28 06:53:55.000[0m[7m [0m[7m        [0m[7m [0m[7msyslog_log [0m[7m [0m[7mNew relevant interface # for #                         [0m 
-[1m[7m    2[0m[7m [0m[7m       1[0m[7m [0m[7m2007-04-28 06:53:55.000[0m[7m [0m[7m        [0m[7m [0m[7msyslog_log [0m[7m [0m[7mJoining # multicast group on interface # with address #[0m 
-[1m[7m    2[0m[1m[7m [0m[1m[7m       2[0m[1m[7m [0m[1m[7m2007-04-28 06:53:55.000[0m[1m[7m [0m[1m[7m        [0m[1m[7m [0m[1m[7msyslog_log [0m[1m[7m [0m[1m[7mRegistering new address record for # on #              [0m[1m [0m
+[1m    2[0m        0 2007-04-28 06:53:55.000          syslog_log  New relevant interface # for #                          
+[1m    2[0m        1 2007-04-28 06:53:55.000          syslog_log  Joining # multicast group on interface # with address # 
+[1m    2[0m[1m [0m[1m       2[0m[1m [0m[1m2007-04-28 06:53:55.000[0m[1m [0m[1m        [0m[1m [0m[1msyslog_log [0m[1m [0m[1mRegistering new address record for # on #               [0m

@@ -3897,9 +3897,10 @@ com_delete_tags(exec_context& ec,
 
             if (line_meta->empty(bookmark_metadata::categories::notes)) {
                 size_t off = std::distance(vbm.begin(), iter);
-                tc->set_user_mark(&textview_curses::BM_META, *iter, false);
+                auto vl = *iter;
+                tc->set_user_mark(&textview_curses::BM_META, vl, false);
                 if (line_meta->empty(bookmark_metadata::categories::any)) {
-                    lss.erase_bookmark_metadata(*iter);
+                    lss.erase_bookmark_metadata(vl);
                 }
 
                 iter = std::next(vbm.begin(), off);

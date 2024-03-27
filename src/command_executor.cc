@@ -282,9 +282,11 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                 continue;
             }
 
+            auto stmt_al = attr_line_t(stmt_str);
+            readline_sqlite_highlighter(stmt_al, 0);
             auto um
                 = lnav::console::user_message::error(
-                      attr_line_t("unable to compile PRQL: ").append(stmt_str))
+                      attr_line_t("unable to compile PRQL: ").append(stmt_al))
                       .with_reason(msg.reason);
             if (msg.display && *msg.display) {
                 um.with_note(*msg.display);

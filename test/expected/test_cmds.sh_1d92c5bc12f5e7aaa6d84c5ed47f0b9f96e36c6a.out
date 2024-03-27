@@ -1,15 +1,8 @@
 [
     {
         "log_line": 0,
-        "log_part": null,
         "log_time": "2009-07-20 22:59:26.000",
-        "log_idle_msecs": 0,
         "log_level": "info",
-        "log_mark": 0,
-        "log_comment": null,
-        "log_tags": null,
-        "log_annotations": null,
-        "log_filters": null,
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",
@@ -20,19 +13,19 @@
         "cs_version": "HTTP/1.0",
         "sc_bytes": 134,
         "sc_status": 200,
-        "cs_host": null
-    },
-    {
-        "log_line": 1,
+        "cs_host": null,
         "log_part": null,
-        "log_time": "2009-07-20 22:59:29.000",
-        "log_idle_msecs": 3000,
-        "log_level": "error",
+        "log_idle_msecs": 0,
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
         "log_annotations": null,
-        "log_filters": null,
+        "log_filters": null
+    },
+    {
+        "log_line": 1,
+        "log_time": "2009-07-20 22:59:29.000",
+        "log_level": "error",
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",
@@ -43,19 +36,19 @@
         "cs_version": "HTTP/1.0",
         "sc_bytes": 46210,
         "sc_status": 404,
-        "cs_host": null
-    },
-    {
-        "log_line": 2,
+        "cs_host": null,
         "log_part": null,
-        "log_time": "2009-07-20 22:59:29.000",
-        "log_idle_msecs": 0,
-        "log_level": "info",
+        "log_idle_msecs": 3000,
         "log_mark": 0,
         "log_comment": null,
         "log_tags": null,
         "log_annotations": null,
-        "log_filters": null,
+        "log_filters": null
+    },
+    {
+        "log_line": 2,
+        "log_time": "2009-07-20 22:59:29.000",
+        "log_level": "info",
         "c_ip": "192.168.202.254",
         "cs_method": "GET",
         "cs_referer": "-",
@@ -66,6 +59,13 @@
         "cs_version": "HTTP/1.0",
         "sc_bytes": 78929,
         "sc_status": 200,
-        "cs_host": null
+        "cs_host": null,
+        "log_part": null,
+        "log_idle_msecs": 0,
+        "log_mark": 0,
+        "log_comment": null,
+        "log_tags": null,
+        "log_annotations": null,
+        "log_filters": null
     }
 ]

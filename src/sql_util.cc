@@ -1291,27 +1291,16 @@ const char* prql_transforms[] = {
     "sort",
     "take",
     "window",
+
+    nullptr,
 };
 
 const char* prql_keywords[] = {
-    "average",
-    "avg",
-    "case",
-    "count",
-    "count_distinct",
-    "false",
-    "func",
-    "into",
-    "let",
-    "max",
-    "min",
-    "module",
-    "null",
-    "prql",
-    "stddev",
-    "sum",
-    "true",
-    "type",
+    "average", "avg", "case", "count", "count_distinct", "false", "func",
+    "into",    "let", "max",  "min",   "module",         "null",  "prql",
+    "stddev",  "sum", "true", "type",
+
+    nullptr,
 };
 
 std::string
@@ -1321,6 +1310,9 @@ prql_keyword_re()
     bool first = true;
 
     for (const char* kw : prql_keywords) {
+        if (kw == nullptr) {
+            break;
+        }
         if (!first) {
             retval.append("|");
         } else {
@@ -1342,6 +1334,9 @@ prql_transform_re()
     bool first = true;
 
     for (const char* kw : prql_transforms) {
+        if (kw == nullptr) {
+            break;
+        }
         if (!first) {
             retval.append("|");
         } else {
