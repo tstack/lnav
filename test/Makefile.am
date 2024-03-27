@@ -15,11 +15,13 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 if HAVE_CARGO
 RUST_DEPS_CPPFLAGS = -I$(srcdir)/third-party/prqlc-c -DHAVE_RUST_DEPS=1
 PRQLC_DIR = ../src/third-party/prqlc-c/target
-RUST_DEPS_LD_FLAGS = -L$(PRQLC_DIR)/release -lprqlc_c
+RUST_DEPS_LD_FLAGS = -L$(PRQLC_DIR)/release
+RUST_DEPS_LIBS = -lprqlc_c
 else
 RUST_DEPS =
 RUST_DEPS_CPPFLAGS =
 RUST_DEPS_LD_FLAGS =
+RUST_DEPS_LIBS =
 endif
 
 AM_CPPFLAGS = \
@@ -134,7 +136,8 @@ LDADD = \
     $(LIBARCHIVE_LIBS) \
     $(SQLITE3_LIBS) \
     $(PCRE_LIBS) \
-    $(LIBCURL)
+    $(LIBCURL) \
+    $(RUST_DEPS_LIBS)
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 
