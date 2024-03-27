@@ -1,6 +1,5 @@
 add_library(
         yajlpp STATIC
-        ../config.h.in
         json_op.hh
         json_ptr.hh
         yajlpp.hh

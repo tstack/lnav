@@ -14,6 +14,7 @@
 #include <exception>
 #include <functional>
 #include <type_traits>
+#include <stdlib.h>
 
 #include <stdio.h>
 

@@ -1,6 +1,5 @@
 add_library(
         base STATIC
-        ../config.h.in
         ansi_scrubber.cc
         attr_line.cc
         attr_line.builder.cc
