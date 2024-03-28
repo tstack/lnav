@@ -898,6 +898,7 @@ static const typed_json_path_container<session_data_t> view_info_handlers = {
 void
 load_session()
 {
+    log_info("BEGIN load_session");
     load_time_bookmarks();
     scan_sessions() | [](const auto pair) {
         lnav_data.ld_session_load_time = pair.first.second;
@@ -979,6 +980,8 @@ load_session()
 
     lnav::events::publish(lnav_data.ld_db.in(),
                           lnav::events::session::loaded{});
+
+    log_info("END load_session");
 }
 
 static void

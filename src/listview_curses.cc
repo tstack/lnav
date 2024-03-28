@@ -875,6 +875,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
         this->lv_focused_overlay_selection = 0_vl;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
+                this->set_selection(top);
             } else if (this->lv_selection < top) {
                 auto sel_diff = this->lv_selection - old_top;
                 this->set_selection(top + sel_diff);

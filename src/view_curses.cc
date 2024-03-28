@@ -244,12 +244,13 @@ view_curses::mvwattrline(WINDOW* window,
 
     auto& vc = view_colors::singleton();
     auto text_role_attrs = vc.attrs_for_role(role_t::VCR_TEXT);
-    auto attrs = vc.attrs_for_role(base_role);
+    auto base_attrs = vc.attrs_for_role(base_role);
     wmove(window, y, x);
-    wattr_set(window,
-              attrs.ta_attrs,
-              vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
-              nullptr);
+    wattr_set(
+        window,
+        base_attrs.ta_attrs,
+        vc.ensure_color_pair(base_attrs.ta_fg_color, base_attrs.ta_bg_color),
+        nullptr);
     if (lr_bytes.lr_start < (int) full_line.size()) {
         waddnstr(
             window, &full_line.c_str()[lr_bytes.lr_start], lr_bytes.length());
@@ -341,6 +342,7 @@ view_curses::mvwattrline(WINDOW* window,
         }
 
         if (attr_range.lr_start < attr_range.lr_end) {
+            auto attrs = text_attrs{};
             nonstd::optional<char> graphic;
             nonstd::optional<wchar_t> block_elem;
 
@@ -427,6 +429,30 @@ view_curses::mvwattrline(WINDOW* window,
 #endif
         short cur_fg, cur_bg;
         pair_content(cur_pair, &cur_fg, &cur_bg);
+
+        if (fg_color[lpc] != -1 && bg_color[lpc] == -1) {
+            const auto& fg_color_info
+                = view_colors::vc_active_palette->tc_palette[fg_color[lpc]];
+            const auto& bg_color_info
+                = view_colors::vc_active_palette
+                      ->tc_palette[base_attrs.ta_bg_color.value_or(0)];
+
+            if (!fg_color_info.xc_lab_color.sufficient_contrast(
+                    bg_color_info.xc_lab_color))
+            {
+                auto adjusted_color = bg_color_info.xc_lab_color;
+                adjusted_color.lc_l -= 40.0;
+                auto new_bg = view_colors::vc_active_palette->match_color(
+                    adjusted_color);
+                for (int lpc2 = lpc; lpc2 < line_width_chars; lpc2++) {
+                    if (fg_color[lpc2] == fg_color[lpc] && bg_color[lpc2] == -1)
+                    {
+                        bg_color[lpc2] = new_bg;
+                    }
+                }
+            }
+        }
+
         if (fg_color[lpc] == -1) {
             fg_color[lpc] = cur_fg;
         }
@@ -475,7 +501,7 @@ view_colors::view_colors() : vc_dyn_pairs(0)
 
 bool view_colors::initialized = false;
 
-static std::string COLOR_NAMES[] = {
+static const std::string COLOR_NAMES[] = {
     "black",
     "red",
     "green",

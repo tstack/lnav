@@ -197,7 +197,7 @@ term_color_palette::term_color_palette(const char* name,
 }
 
 short
-term_color_palette::match_color(const lab_color& to_match)
+term_color_palette::match_color(const lab_color& to_match) const
 {
     double lowest = 1000.0;
     short lowest_id = -1;
@@ -221,7 +221,6 @@ term_color_palette::match_color(const lab_color& to_match)
 }
 
 namespace styling {
-
 Result<color_unit, std::string>
 color_unit::from_str(const string_fragment& sf)
 {

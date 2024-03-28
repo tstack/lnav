@@ -1226,7 +1226,7 @@ extract(*str*)
 
   Automatically Parse and extract data from a string
 
-  **PRQL Name**: text.extract
+  **PRQL Name**: text.discover
 
   **Parameters**
     * **str\*** --- The string to parse

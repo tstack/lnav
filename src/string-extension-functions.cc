@@ -1011,7 +1011,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
             help_text("extract",
                       "Automatically Parse and extract data from a string")
                 .sql_function()
-                .with_prql_path({"text", "extract"})
+                .with_prql_path({"text", "discover"})
                 .with_parameter({"str", "The string to parse"})
                 .with_tags({"string"})
                 .with_example({

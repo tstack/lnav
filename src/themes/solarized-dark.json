@@ -124,7 +124,8 @@
                         "color": "$yellow"
                     },
                     "breadcrumb": {
-                        "color": "#99a"
+                        "color": "#99a",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"

@@ -303,7 +303,7 @@
                         "color": "Teal",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444",
@@ -899,7 +899,7 @@
                         "color": "#99a",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444",
@@ -1279,6 +1279,7 @@
                     "cyan": "#34e2e2",
                     "green": "#8ae234",
                     "magenta": "#ad7fa8",
+                    "orange": "#ef8c29",
                     "red": "#ef2929",
                     "semantic_highlight_color": "semantic()",
                     "white": "#ffffff",
@@ -1454,10 +1455,10 @@
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "#99a",
+                        "color": "#448",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444",
@@ -2015,7 +2016,7 @@
                         "color": "#999",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444",
@@ -3129,10 +3130,10 @@
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "#99a",
+                        "color": "#2d5a80",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444",
@@ -3699,7 +3700,7 @@
                         "color": "#99a",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444",
@@ -4080,7 +4081,7 @@
                     "base02": "#073642",
                     "base03": "#002b36",
                     "base1": "#93a1a1",
-                    "base2": "#eee8d5",
+                    "base2": "#ededb0",
                     "base3": "#fdf6e3",
                     "black": "#002b36",
                     "blue": "#268bd2",
@@ -4096,7 +4097,7 @@
                 "styles": {
                     "identifier": {
                         "color": "semantic()",
-                        "background-color": "$base3",
+                        "background-color": "",
                         "underline": false,
                         "bold": false
                     },
@@ -4143,14 +4144,14 @@
                         "bold": true
                     },
                     "cursor-line": {
-                        "color": "$cyan",
-                        "background-color": "$red",
+                        "color": "$base0",
+                        "background-color": "#fafa4a",
                         "underline": true,
                         "bold": true
                     },
                     "disabled-cursor-line": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$cyan",
+                        "background-color": "$yellow",
                         "underline": false,
                         "bold": false
                     },
@@ -4186,7 +4187,7 @@
                     },
                     "popup": {
                         "color": "$base00",
-                        "background-color": "$base3",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false
                     },
@@ -4245,7 +4246,7 @@
                         "bold": false
                     },
                     "hr": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -4253,23 +4254,23 @@
                     "hyperlink": {
                         "color": "",
                         "background-color": "",
-                        "underline": false,
+                        "underline": true,
                         "bold": false
                     },
                     "list-glyph": {
-                        "color": "",
+                        "color": "$yellow",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "breadcrumb": {
-                        "color": "",
+                        "color": "#99a",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "table-border": {
-                        "color": "",
+                        "color": "#444",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -4278,40 +4279,40 @@
                         "color": "",
                         "background-color": "",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "quote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#666",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$blue",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "footnote-text": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "#eee",
+                        "background-color": "#444",
                         "underline": false,
                         "bold": false
                     },
                     "snippet-border": {
-                        "color": "",
+                        "color": "$cyan",
                         "background-color": "",
                         "underline": false,
                         "bold": false
                     },
                     "indent-guide": {
-                        "color": "#444",
+                        "color": "$base1",
                         "background-color": "",
                         "underline": false,
                         "bold": false
@@ -4514,15 +4515,15 @@
                     },
                     "title": {
                         "color": "$base2",
-                        "background-color": "$base0",
+                        "background-color": "$base00",
                         "underline": false,
                         "bold": true
                     },
                     "disabled-title": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$base2",
+                        "background-color": "$base02",
                         "underline": false,
-                        "bold": false
+                        "bold": true
                     },
                     "subtitle": {
                         "color": "$base2",
@@ -4543,7 +4544,7 @@
                         "bold": false
                     },
                     "suggestion": {
-                        "color": "$base03",
+                        "color": "$base1",
                         "background-color": "",
                         "underline": false,
                         "bold": false

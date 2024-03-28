@@ -12,6 +12,7 @@
                     "cyan": "#34e2e2",
                     "green": "#8ae234",
                     "white": "#ffffff",
+                    "orange": "#ef8c29",
                     "semantic_highlight_color": "semantic()"
                 },
                 "styles": {
@@ -115,7 +116,8 @@
                         "color": "$yellow"
                     },
                     "breadcrumb": {
-                        "color": "#99a"
+                        "color": "#448",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"

@@ -10,7 +10,7 @@
                     "base00": "#657b83",
                     "base0": "#839496",
                     "base1": "#93a1a1",
-                    "base2": "#eee8d5",
+                    "base2": "#ededb0",
                     "base3": "#fdf6e3",
                     "black": "#002b36",
                     "yellow": "#b58900",
@@ -25,7 +25,6 @@
                 },
                 "styles": {
                     "identifier": {
-                        "background-color": "$base3",
                         "color": "semantic()"
                     },
                     "text": {
@@ -52,10 +51,14 @@
                         "bold": true
                     },
                     "cursor-line": {
-                        "color": "$cyan",
-                        "background-color": "$red",
+                        "color": "$base0",
+                        "background-color": "#fafa4a",
                         "bold": true,
                         "underline": true
+                    },
+                    "disabled-cursor-line": {
+                        "color": "$cyan",
+                        "background-color": "$yellow"
                     },
                     "adjusted-time": {
                         "color": "$magenta"
@@ -71,7 +74,7 @@
                     },
                     "popup": {
                         "color": "$base00",
-                        "background-color": "$base3"
+                        "background-color": "$base2"
                     },
                     "scrollbar": {
                         "color": "$base3",
@@ -103,8 +106,45 @@
                     "h6": {
                         "underline": true
                     },
-                    "indent-guide": {
+                    "hr": {
                         "color": "#444"
+                    },
+                    "hyperlink": {
+                        "underline": true
+                    },
+                    "list-glyph": {
+                        "color": "$yellow"
+                    },
+                    "breadcrumb": {
+                        "color": "#99a",
+                        "bold": true
+                    },
+                    "table-border": {
+                        "color": "#444"
+                    },
+                    "table-header": {
+                        "bold": true
+                    },
+                    "quote-border": {
+                        "color": "#666",
+                        "background-color": "#444"
+                    },
+                    "quoted-text": {
+                        "background-color": "#444"
+                    },
+                    "footnote-border": {
+                        "color": "$blue",
+                        "background-color": "#444"
+                    },
+                    "footnote-text": {
+                        "color": "#eee",
+                        "background-color": "#444"
+                    },
+                    "snippet-border": {
+                        "color": "$cyan"
+                    },
+                    "indent-guide": {
+                        "color": "$base1"
                     }
                 },
                 "syntax-styles": {
@@ -158,7 +198,12 @@
                 "status-styles": {
                     "title": {
                         "color": "$base2",
-                        "background-color": "$base0",
+                        "background-color": "$base00",
+                        "bold": true
+                    },
+                    "disabled-title": {
+                        "color": "$base2",
+                        "background-color": "$base02",
                         "bold": true
                     },
                     "subtitle": {
@@ -195,7 +240,7 @@
                         "background-color": "$base03"
                     },
                     "suggestion": {
-                        "color": "$base03"
+                        "color": "$base1"
                     }
                 },
                 "log-level-styles": {

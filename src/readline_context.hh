@@ -202,7 +202,7 @@ private:
     const char* rc_quote_chars;
     readline_highlighter_t rc_highlighter;
     std::vector<readline_var> rc_vars;
-    splitter_func_t rc_splitter;
+    splitter_func_t rc_splitter{nullptr};
 };
 
 #endif

@@ -107,7 +107,8 @@
                         "color": "Yellow"
                     },
                     "breadcrumb": {
-                        "color": "Teal"
+                        "color": "Teal",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"

@@ -54,7 +54,7 @@ struct term_color {
 struct term_color_palette {
     term_color_palette(const char* name, const string_fragment& json);
 
-    short match_color(const lab_color& to_match);
+    short match_color(const lab_color& to_match) const;
 
     std::vector<term_color> tc_palette;
 };
