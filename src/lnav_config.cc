@@ -256,19 +256,23 @@ install_from_git(const std::string& repo)
     }
 
     auto finished_child = std::move(git_cmd).wait_for_child();
-
     if (!finished_child.was_normal_exit() || finished_child.exit_status() != 0)
     {
         return false;
     }
 
+    if (ghc::filesystem::is_directory(local_formats_path)
+        || ghc::filesystem::is_directory(local_configs_path))
+    {
+        return false;
+    }
     if (!ghc::filesystem::is_directory(local_staging_path)) {
         auto um
             = lnav::console::user_message::error(
                   attr_line_t("failed to install git repo: ")
                       .append(lnav::roles::file(repo)))
                   .with_reason(
-                      attr_line_t("git failed to create the local directory")
+                      attr_line_t("git failed to create the local directory ")
                           .append(
                               lnav::roles::file(local_staging_path.string())));
         lnav::console::print(stderr, um);

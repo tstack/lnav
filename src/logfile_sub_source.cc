@@ -1237,7 +1237,7 @@ logfile_sub_source::rebuild_index(
 void
 logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 {
-    logfile* last_file;
+    logfile* last_file = nullptr;
     vis_line_t vl;
 
     bm[&BM_WARNINGS].clear();

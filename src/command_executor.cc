@@ -47,7 +47,7 @@
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
-#include "prelude-prql.h"
+#include "prql-modules.h"
 #include "readline_highlighters.hh"
 #include "service_tags.hh"
 #include "shlex.hh"
@@ -56,7 +56,7 @@
 #include "vtab_module.hh"
 
 #ifdef HAVE_RUST_DEPS
-#    include "prqlc.hpp"
+#    include "prqlc.cxx.hh"
 #endif
 
 using namespace lnav::roles::literals;
@@ -269,15 +269,17 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 #if HAVE_RUST_DEPS
         auto opts = prqlc::Options{true, "sql.sqlite", true};
 
-        auto full_prql = fmt::format(FMT_STRING("{}\n{}{}"),
-                                     prelude_prql.to_string_fragment(),
-                                     sqlite_extension_prql,
-                                     stmt_str);
-        auto cr = prqlc::compile(full_prql.c_str(), &opts);
+        auto tree = sqlite_extension_prql;
+        for (const auto& mod : lnav_prql_modules) {
+            tree.emplace_back(prqlc::SourceTreeElement{
+                mod.get_name(),
+                mod.to_string_fragment().to_string(),
+            });
+        }
+        tree.emplace_back(prqlc::SourceTreeElement{"", stmt_str});
+        auto cr = prqlc::compile_tree(tree, opts);
 
-        for (size_t lpc = 0; lpc < cr.messages_len; lpc++) {
-            const auto& msg = cr.messages[lpc];
-
+        for (const auto& msg : cr.messages) {
             if (msg.kind != prqlc::MessageKind::Error) {
                 continue;
             }
@@ -287,19 +289,17 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             auto um
                 = lnav::console::user_message::error(
                       attr_line_t("unable to compile PRQL: ").append(stmt_al))
-                      .with_reason(msg.reason);
-            if (msg.display && *msg.display) {
-                um.with_note(*msg.display);
+                      .with_reason((std::string) msg.reason);
+            if (!msg.display.empty()) {
+                um.with_note((std::string) msg.display);
             }
-            if (msg.hint && *msg.hint) {
-                um.with_help(*msg.hint);
+            for (const auto& hint : msg.hints) {
+                um.with_help(hint.data());
+                break;
             }
             return Err(um);
         }
-        if (cr.output && cr.output[0]) {
-            stmt_str = cr.output;
-        }
-        prqlc::result_destroy(cr);
+        stmt_str = (std::string) cr.output;
 #else
         auto um = lnav::console::user_message::error(
             attr_line_t("PRQL is not supported in this build"));

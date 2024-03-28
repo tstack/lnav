@@ -3290,6 +3290,23 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 log_info("    %s", file_iter->first.c_str());
             }
 
+            if (!(lnav_data.ld_flags & LNF_HEADLESS)
+                && verbosity == verbosity_t::quiet && load_stdin
+                && lnav_data.ld_active_files.fc_file_names.size() == 1)
+            {
+                rescan_files(true);
+                gather_pipers();
+                rebuild_indexes(ui_clock::now() + 10ms);
+                if (lnav_data.ld_child_pollers.empty()) {
+                    if (lnav_data.ld_active_files.fc_files.empty()
+                        || lnav_data.ld_active_files.fc_files[0]->size() < 24)
+                    {
+                        lnav_data.ld_flags |= LNF_HEADLESS;
+                        verbosity = verbosity_t::standard;
+                    }
+                }
+            }
+
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 std::vector<
                     std::pair<Result<std::string, lnav::console::user_message>,

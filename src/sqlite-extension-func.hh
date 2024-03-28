@@ -39,6 +39,7 @@
 #include <stdint.h>
 
 #include "help_text.hh"
+#include "prqlc.cxx.hh"
 
 struct FuncDef {
     const char* zName{nullptr};
@@ -95,7 +96,7 @@ extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs);
 
-extern std::string sqlite_extension_prql;
+extern rust::Vec<prqlc::SourceTreeElement> sqlite_extension_prql;
 
 extern "C"
 {

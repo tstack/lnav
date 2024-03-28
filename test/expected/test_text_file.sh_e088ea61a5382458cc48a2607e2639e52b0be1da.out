@@ -161,6 +161,8 @@ The following software packages are required to build lnav:
    archive files, like zip/tgz.
  [33m•[0m wireshark  - The [35m'tshark'[0m program is used to interpret
    pcap files.
+ [33m•[0m cargo/rust - The Rust language is used to build the
+   PRQL compiler.
 
 [4mBuild[0m
 

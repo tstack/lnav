@@ -13,7 +13,7 @@ AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
 if HAVE_CARGO
-RUST_DEPS_CPPFLAGS = -I$(srcdir)/third-party/prqlc-c -DHAVE_RUST_DEPS=1
+RUST_DEPS_CPPFLAGS = -I$(top_srcdir)/src/third-party/prqlc-c -DHAVE_RUST_DEPS=1
 PRQLC_DIR = ../src/third-party/prqlc-c/target
 RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
 else

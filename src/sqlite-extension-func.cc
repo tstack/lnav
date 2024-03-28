@@ -47,7 +47,7 @@ int sqlite3_series_init(sqlite3* db,
                         const sqlite3_api_routines* pApi);
 }
 
-std::string sqlite_extension_prql;
+rust::Vec<prqlc::SourceTreeElement> sqlite_extension_prql;
 
 namespace lnav {
 namespace sql {
@@ -209,7 +209,16 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
     }
 
     if (sqlite_extension_prql.empty()) {
-        phier.to_string(sqlite_extension_prql);
+        require(phier.ph_declarations.empty());
+        for (const auto& mod_pair : phier.ph_modules) {
+            std::string content;
+
+            mod_pair.second.to_string(content);
+            sqlite_extension_prql.emplace_back(prqlc::SourceTreeElement{
+                fmt::format(FMT_STRING("{}.prql"), mod_pair.first),
+                content,
+            });
+        }
     }
 
     static help_text builtin_funcs[] = {
