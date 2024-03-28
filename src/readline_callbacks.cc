@@ -140,8 +140,8 @@ const char *PRQL_HELP =
 
 const char *PRQL_EXAMPLE =
     ANSI_UNDERLINE("Examples") "\n"
-        "  from db.%s | count_by { log_level }\n"
-        "  from db.%s | filter log_line == lnav.view.top_line\n"
+        "  from %s | count_by { log_level }\n"
+        "  from %s | filter log_line == lnav.view.top_line\n"
     ;
 
 static const char* LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;

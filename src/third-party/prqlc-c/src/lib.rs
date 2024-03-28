@@ -1,6 +1,6 @@
 #![cfg(not(target_family = "wasm"))]
 
-use prqlc::Target;
+use prqlc::{DisplayOptions, Target};
 use prqlc::{ErrorMessage, ErrorMessages};
 use std::panic;
 use std::path::PathBuf;
@@ -53,6 +53,7 @@ impl TryFrom<&ffi::Options> for prqlc::Options {
             target: Target::from_str(value.target.as_str()).map_err(prqlc::ErrorMessages::from)?,
             signature_comment: value.signature_comment,
             color: false,
+            display: DisplayOptions::AnsiColor,
         })
     }
 }
@@ -96,19 +97,19 @@ fn compile_tree_int(
             .and_then(prqlc::pl_to_rq)
             .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
             .and_then(|rq| prqlc::rq_to_sql(rq, &options))?)
-        .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
+            .map_err(|e: ErrorMessages| ErrorMessages::from(e).composed(&tree))
     })
-    .map_err(|p| {
-        ErrorMessages::from(ErrorMessage {
-            kind: prqlc::MessageKind::Error,
-            code: None,
-            reason: format!("internal error: {:#?}", p),
-            hints: vec![],
-            span: None,
-            display: None,
-            location: None,
-        })
-    })?
+        .map_err(|p| {
+            ErrorMessages::from(ErrorMessage {
+                kind: prqlc::MessageKind::Error,
+                code: None,
+                reason: format!("internal error: {:#?}", p),
+                hints: vec![],
+                span: None,
+                display: None,
+                location: None,
+            })
+        })?
 }
 
 pub fn compile_tree(

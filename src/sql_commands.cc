@@ -262,7 +262,7 @@ prql_cmd_from_prompt(exec_context& ec, const std::string& cmdline)
         = line_pair->first->get_format_ptr()->get_name().to_string();
     return {
         "",
-        fmt::format(FMT_STRING("db.{}"), lnav::prql::quote_ident(format_name)),
+        lnav::prql::quote_ident(format_name),
     };
 }
 

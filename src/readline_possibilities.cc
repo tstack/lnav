@@ -122,8 +122,7 @@ handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
             lnav_data.ld_rl_view->add_possibility(
                 ln_mode_t::SQL,
                 "prql-table",
-                fmt::format(FMT_STRING("db.{}"),
-                            lnav::prql::quote_ident(std::move(table_name))));
+                lnav::prql::quote_ident(std::move(table_name)));
         }
 
         lnav_data.ld_table_ddl[colvalues[0]] = colvalues[1];
