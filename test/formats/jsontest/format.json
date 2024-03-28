@@ -15,6 +15,15 @@
                 "field": "lvl",
                 "auto-width": true
             },
+            {
+                "field": "logger",
+                "prefix": " <",
+                "suffix": ">",
+                "min-width": 20,
+                "max-width": 20,
+                "overflow": "abbrev",
+                "default-value": ""
+            },
             " ",
             {
                 "field": "msg"
@@ -32,6 +41,10 @@
             },
             "obj": {
                 "kind": "json"
+            },
+            "logger": {
+                "kind": "string",
+                "identifier": true
             },
             "lvl": {
                 "kind": "string",

@@ -1,7 +1,7 @@
 
-[2013-09-06T20:00:48.124] ⋮ trace test
+[2013-09-06T20:00:48.124] ⋮ <c.e.foo.bar.bazzer  > trace test
 
-[2013-09-06T20:00:49.124] ⋮ Starting up [32mservice[0m
+[2013-09-06T20:00:49.124] ⋮ <com.example.demo    > Starting up [32mservice[0m
 
 [2013-09-06T22:00:49.124] ⋮ Shutting down service
   user: steve@example.com

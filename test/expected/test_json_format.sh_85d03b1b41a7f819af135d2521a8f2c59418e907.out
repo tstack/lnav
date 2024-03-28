@@ -1,14 +1,14 @@
-log_line,log_time,log_level,arr,obj,lvl,user,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
-0,2013-09-06 20:00:48.124,trace,<NULL>,<NULL>,TRACE,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-2,2013-09-06 20:00:49.124,info,<NULL>,<NULL>,INFO,<NULL>,<NULL>,1000,0,<NULL>,<NULL>,<NULL>,<NULL>
-4,2013-09-06 22:00:49.124,info,<NULL>,<NULL>,INFO,steve@example.com,<NULL>,7200000,0,<NULL>,<NULL>,<NULL>,<NULL>
-7,2013-09-06 22:00:59.124,debug5,<NULL>,<NULL>,DEBUG5,<NULL>,<NULL>,10000,0,<NULL>,<NULL>,<NULL>,<NULL>
-9,2013-09-06 22:00:59.124,debug4,<NULL>,<NULL>,DEBUG4,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-11,2013-09-06 22:00:59.124,debug3,<NULL>,<NULL>,DEBUG3,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-13,2013-09-06 22:00:59.124,debug2,<NULL>,<NULL>,DEBUG2,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-15,2013-09-06 22:01:00.000,debug,<NULL>,<NULL>,DEBUG,<NULL>,<NULL>,876,0,<NULL>,<NULL>,<NULL>,<NULL>
-17,2013-09-06 22:01:49.124,stats,<NULL>,<NULL>,STATS,<NULL>,<NULL>,49124,0,<NULL>,<NULL>,<NULL>,<NULL>
-19,2013-09-06 22:01:49.124,warning,<NULL>,<NULL>,WARNING,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-21,2013-09-06 22:01:49.124,error,<NULL>,<NULL>,ERROR,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-23,2013-09-06 22:01:49.124,critical,<NULL>,<NULL>,CRITICAL,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-25,2013-09-06 22:01:49.124,fatal,"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",FATAL,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+log_line,log_time,log_level,arr,obj,logger,lvl,user,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
+0,2013-09-06 20:00:48.124,trace,<NULL>,<NULL>,com.example.foo.bar.bazzer,TRACE,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+2,2013-09-06 20:00:49.124,info,<NULL>,<NULL>,com.example.demo,INFO,<NULL>,<NULL>,1000,0,<NULL>,<NULL>,<NULL>,<NULL>
+4,2013-09-06 22:00:49.124,info,<NULL>,<NULL>,<NULL>,INFO,steve@example.com,<NULL>,7200000,0,<NULL>,<NULL>,<NULL>,<NULL>
+7,2013-09-06 22:00:59.124,debug5,<NULL>,<NULL>,<NULL>,DEBUG5,<NULL>,<NULL>,10000,0,<NULL>,<NULL>,<NULL>,<NULL>
+9,2013-09-06 22:00:59.124,debug4,<NULL>,<NULL>,<NULL>,DEBUG4,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+11,2013-09-06 22:00:59.124,debug3,<NULL>,<NULL>,<NULL>,DEBUG3,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+13,2013-09-06 22:00:59.124,debug2,<NULL>,<NULL>,<NULL>,DEBUG2,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+15,2013-09-06 22:01:00.000,debug,<NULL>,<NULL>,<NULL>,DEBUG,<NULL>,<NULL>,876,0,<NULL>,<NULL>,<NULL>,<NULL>
+17,2013-09-06 22:01:49.124,stats,<NULL>,<NULL>,<NULL>,STATS,<NULL>,<NULL>,49124,0,<NULL>,<NULL>,<NULL>,<NULL>
+19,2013-09-06 22:01:49.124,warning,<NULL>,<NULL>,<NULL>,WARNING,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+21,2013-09-06 22:01:49.124,error,<NULL>,<NULL>,<NULL>,ERROR,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+23,2013-09-06 22:01:49.124,critical,<NULL>,<NULL>,<NULL>,CRITICAL,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+25,2013-09-06 22:01:49.124,fatal,"[""hi"", {""sub1"": true}]","{ ""field1"" : ""hi"", ""field2"": 2 }",<NULL>,FATAL,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>

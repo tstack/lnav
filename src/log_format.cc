@@ -2130,6 +2130,14 @@ external_log_format::get_subline(const logline& ll,
                             logline_value_cmp(&jfe.jfe_value.pp_value));
                         if (lv_iter != this->jlf_line_values.lvv_values.end()) {
                             auto str = lv_iter->to_string();
+                            value_def* vd = nullptr;
+
+                            if (lv_iter->lv_meta.lvm_values_index) {
+                                vd = this->elf_value_def_order
+                                         [lv_iter->lv_meta.lvm_values_index
+                                              .value()]
+                                             .get();
+                            }
                             while (endswith(str, "\n")) {
                                 str.pop_back();
                             }
@@ -2144,15 +2152,13 @@ external_log_format::get_subline(const logline& ll,
                                 switch (jfe.jfe_overflow) {
                                     case json_format_element::overflow_t::
                                         ABBREV: {
-                                        this->json_append_to_cache(str.c_str(),
-                                                                   str.size());
-                                        size_t new_size = abbreviate_str(
-                                            &this->jlf_cached_line[lr.lr_start],
-                                            str.size(),
-                                            jfe.jfe_max_width);
-
-                                        this->jlf_cached_line.resize(
-                                            lr.lr_start + new_size);
+                                        size_t new_size
+                                            = abbreviate_str(&str[0],
+                                                             str.size(),
+                                                             jfe.jfe_max_width);
+                                        str.resize(new_size);
+                                        this->json_append(
+                                            jfe, vd, str.data(), str.size());
                                         break;
                                     }
                                     case json_format_element::overflow_t::
@@ -2177,14 +2183,6 @@ external_log_format::get_subline(const logline& ll,
                                     }
                                 }
                             } else {
-                                value_def* vd = nullptr;
-
-                                if (lv_iter->lv_meta.lvm_values_index) {
-                                    vd = this->elf_value_def_order
-                                             [lv_iter->lv_meta.lvm_values_index
-                                                  .value()]
-                                                 .get();
-                                }
                                 sub_offset
                                     += std::count(str.begin(), str.end(), '\n');
                                 this->json_append(
