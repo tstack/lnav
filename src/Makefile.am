@@ -123,7 +123,7 @@ AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) $(USER_CXXFLAGS)
 
 if HAVE_CARGO
-RUST_DEPS_CPPFLAGS = -I$(srcdir)/third-party/prqlc-c -DHAVE_RUST_DEPS=1
+RUST_DEPS_CPPFLAGS = -DHAVE_RUST_DEPS=1
 PRQLC_DIR = third-party/prqlc-c/target
 RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
 
@@ -152,6 +152,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party \
 	-I$(srcdir)/third-party/base64/include \
 	-I$(srcdir)/third-party/date/include \
+	-I$(srcdir)/third-party/prqlc-c \
 	-I$(srcdir)/third-party/rapidyaml \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	-Wall \

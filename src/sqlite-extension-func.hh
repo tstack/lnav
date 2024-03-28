@@ -39,7 +39,10 @@
 #include <stdint.h>
 
 #include "help_text.hh"
-#include "prqlc.cxx.hh"
+
+#ifdef HAVE_RUST_DEPS
+#    include "prqlc.cxx.hh"
+#endif
 
 struct FuncDef {
     const char* zName{nullptr};
@@ -96,7 +99,9 @@ extern sqlite_registration_func_t sqlite_registration_funcs[];
 
 int register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs);
 
+#ifdef HAVE_RUST_DEPS
 extern rust::Vec<prqlc::SourceTreeElement> sqlite_extension_prql;
+#endif
 
 extern "C"
 {

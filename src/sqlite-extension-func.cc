@@ -47,7 +47,9 @@ int sqlite3_series_init(sqlite3* db,
                         const sqlite3_api_routines* pApi);
 }
 
+#ifdef HAVE_RUST_DEPS
 rust::Vec<prqlc::SourceTreeElement> sqlite_extension_prql;
+#endif
 
 namespace lnav {
 namespace sql {
@@ -208,6 +210,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
         }
     }
 
+#ifdef HAVE_RUST_DEPS
     if (sqlite_extension_prql.empty()) {
         require(phier.ph_declarations.empty());
         for (const auto& mod_pair : phier.ph_modules) {
@@ -220,6 +223,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             });
         }
     }
+#endif
 
     static help_text builtin_funcs[] = {
         help_text("abs", "Return the absolute value of the argument")
