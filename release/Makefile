@@ -95,7 +95,7 @@ release: osx-package musl-package release-NEWS.md
 
 push:
 	env LANG=UTF-8 package_cloud push tstack/lnav/ubuntu/lucid outbox/lnav*.deb
-	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.12.0-1.x86_64.rpm
+	env LANG=UTF-8 package_cloud push tstack/lnav/el/5 outbox/lnav-0.12.1-1.x86_64.rpm
 
 clean:
 	cd vagrant-static && vagrant destroy -f

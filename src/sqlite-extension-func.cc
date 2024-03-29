@@ -1045,13 +1045,136 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_tags({"json"})
             .with_example(
                 {"To iterate over an array",
-                 R"(SELECT key,value,type,atom,fullkey,path FROM json_tree('[null,1,"two",{"three":4.5}]'))"})
+                 R"(SELECT key,value,type,atom,fullkey,path FROM json_tree('[null,1,"two",{"three":4.5}]'))"}),
 
+        help_text("text.contains", "Returns true if col contains sub")
+            .prql_function()
+            .with_parameter(
+                help_text{"sub", "The substring to look for in col"})
+            .with_parameter(help_text{"col", "The string to examine"})
+            .with_example({
+                "To check if 'Hello' contains 'lo'",
+                "from [{s='Hello'}] | select { s=text.contains 'lo' s }",
+                help_example::language::prql,
+            })
+            .with_example({
+                "To check if 'Goodbye' contains 'lo'",
+                "from [{s='Goodbye'}] | select { s=text.contains 'lo' s }",
+                help_example::language::prql,
+            }),
+        help_text("text.ends_with", "Returns true if col ends with suffix")
+            .prql_function()
+            .with_parameter(
+                help_text{"suffix", "The string to look for at the end of col"})
+            .with_parameter(help_text{"col", "The string to examine"})
+            .with_example({
+                "To check if 'Hello' ends with 'lo'",
+                "from [{s='Hello'}] | select { s=text.ends_with 'lo' s }",
+                help_example::language::prql,
+            })
+            .with_example({
+                "To check if 'Goodbye' ends with 'lo'",
+                "from [{s='Goodbye'}] | select { s=text.ends_with 'lo' s }",
+                help_example::language::prql,
+            }),
+        help_text("text.extract", "Extract a slice of a string")
+            .prql_function()
+            .with_parameter(help_text{
+                "idx",
+                "The starting index where the first character is index 1"})
+            .with_parameter(help_text{"len", "The length of the slice"})
+            .with_parameter(help_text{"str", "The string to extract from"})
+            .with_example({
+                "To extract a substring from s",
+                "from [{s='Hello, World!'}] | select { s=text.extract 1 5 s }",
+                help_example::language::prql,
+            }),
+        help_text("text.length", "Returns the number of characters in col")
+            .prql_function()
+            .with_parameter(help_text{"col", "The string to examine"})
+            .with_example({
+                "To count the number of characters in s",
+                "from [{s='Hello, World!'}] | select { s=text.length s }",
+                help_example::language::prql,
+            }),
+        help_text("text.lower", "Converts col to lowercase")
+            .prql_function()
+            .with_parameter(help_text{"col", "The string to convert"})
+            .with_example({
+                "To convert s to lowercase",
+                "from [{s='HELLO'}] | select { s=text.lower s }",
+                help_example::language::prql,
+            }),
+        help_text("text.ltrim", "Remove whitespace from the left side of col")
+            .prql_function()
+            .with_parameter(help_text{"col", "The string to trim"})
+            .with_example({
+                "To trim the left side of s",
+                "from [{s='  HELLO  '}] | select { s=text.ltrim s }",
+                help_example::language::prql,
+            }),
+        help_text("text.replace",
+                  "Replace all occurrences of before with after in col")
+            .prql_function()
+            .with_parameter(help_text{"before", "The string to find"})
+            .with_parameter(help_text{"after", "The replacement"})
+            .with_parameter(help_text{"col", "The string to trim"})
+            .with_example({
+                "To erase foo in s",
+                "from [{s='foobar'}] | select { s=text.replace 'foo' '' s }",
+                help_example::language::prql,
+            }),
+        help_text("text.rtrim", "Remove whitespace from the right side of col")
+            .prql_function()
+            .with_parameter(help_text{"col", "The string to trim"})
+            .with_example({
+                "To trim the right side of s",
+                "from [{s='  HELLO  '}] | select { s=text.rtrim s }",
+                help_example::language::prql,
+            }),
+        help_text("text.starts_with", "Returns true if col starts with suffix")
+            .prql_function()
+            .with_parameter(help_text{
+                "suffix", "The string to look for at the start of col"})
+            .with_parameter(help_text{"col", "The string to examine"})
+            .with_example({
+                "To check if 'Hello' starts with 'lo'",
+                "from [{s='Hello'}] | select { s=text.starts_with 'He' s }",
+                help_example::language::prql,
+            })
+            .with_example({
+                "To check if 'Goodbye' starts with 'lo'",
+                "from [{s='Goodbye'}] | select { s=text.starts_with 'He' s }",
+                help_example::language::prql,
+            }),
+        help_text("text.trim", "Remove whitespace from the both sides of col")
+            .prql_function()
+            .with_parameter(help_text{"col", "The string to trim"})
+            .with_example({
+                "To trim s",
+                "from [{s='  HELLO  '}] | select { s=text.trim s }",
+                help_example::language::prql,
+            }),
+        help_text("text.upper", "Converts col to uppercase")
+            .prql_function()
+            .with_parameter(help_text{"col", "The string to convert"})
+            .with_example({
+                "To convert s to uppercase",
+                "from [{s='hello'}] | select { s=text.upper s }",
+                help_example::language::prql,
+            }),
     };
 
     if (!help_registration_done) {
         for (auto& ht : builtin_funcs) {
-            sqlite_function_help.insert(std::make_pair(ht.ht_name, &ht));
+            switch (ht.ht_context) {
+                case help_context_t::HC_PRQL_FUNCTION:
+                    lnav::sql::prql_functions.emplace(ht.ht_name, &ht);
+                    break;
+                default:
+                    sqlite_function_help.emplace(ht.ht_name, &ht);
+                    break;
+            }
             ht.index_tags();
         }
     }

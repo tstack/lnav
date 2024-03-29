@@ -357,12 +357,55 @@ format_help_text_for_term(const help_text& ht,
             for (const auto& param : ht.ht_parameters) {
                 out.append(" ");
                 if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
-                    out.append("[");
+                    out.append(lnav::roles::symbol(param.ht_name));
+                    out.append(":");
+                    if (param.ht_default_value) {
+                        out.append(param.ht_default_value);
+                    } else {
+                        out.append("null");
+                    }
+                } else {
+                    if (param.ht_group_start) {
+                        out.append(param.ht_group_start);
+                    }
+                    out.append(lnav::roles::variable(param.ht_name));
                 }
-                out.append(lnav::roles::variable(param.ht_name));
-                if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+                if (param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
+                    out.append("1"_variable);
+                    out.append(" [");
+                    out.append("..."_variable);
+                    out.append(" ");
+                    out.append(lnav::roles::variable(param.ht_name));
+                    out.append("N"_variable);
                     out.append("]");
                 }
+                if (param.ht_group_end) {
+                    out.append(param.ht_group_end);
+                }
+            }
+            out.with_attr(string_attr{
+                line_range{(int) line_start, (int) out.get_string().length()},
+                VC_ROLE.value(role_t::VCR_H3),
+            });
+            if (htc != help_text_content::synopsis) {
+                alb.append("\n")
+                    .append(lnav::roles::table_border(
+                        repeat("\u2550", tws.tws_width)))
+                    .append("\n")
+                    .indent(body_indent)
+                    .append(attr_line_t::from_ansi_str(ht.ht_summary),
+                            &tws.with_indent(body_indent + 2))
+                    .append("\n");
+            }
+            break;
+        }
+        case help_context_t::HC_PRQL_FUNCTION: {
+            auto line_start = out.al_string.length();
+
+            out.append(lnav::roles::symbol(ht.ht_name));
+            for (const auto& param : ht.ht_parameters) {
+                out.append(" ");
+                out.append(lnav::roles::variable(param.ht_name));
                 if (param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE) {
                     out.append("1"_variable);
                     out.append(" [");
@@ -417,6 +460,21 @@ format_help_text_for_term(const help_text& ht,
                 .append(attr_line_t::from_ansi_str(param.ht_summary),
                         &(tws.with_indent(2 + max_param_name_width + 3)))
                 .append("\n");
+            if (!param.ht_enum_values.empty()) {
+                alb.indent(body_indent + max_param_name_width)
+                    .append("   ")
+                    .append("Values"_h5)
+                    .append(": ");
+                auto initial = true;
+                for (const auto* ename : param.ht_enum_values) {
+                    if (!initial) {
+                        alb.append("|");
+                    }
+                    alb.append(lnav::roles::symbol(ename));
+                    initial = false;
+                }
+                alb.append("\n");
+            }
             if (!param.ht_parameters.empty()) {
                 for (const auto& sub_param : param.ht_parameters) {
                     alb.indent(body_indent + max_param_name_width + 3)
@@ -536,6 +594,7 @@ format_example_text_for_term(const help_text& ht,
             case help_context_t::HC_SQL_FUNCTION:
             case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
             case help_context_t::HC_PRQL_TRANSFORM:
+            case help_context_t::HC_PRQL_FUNCTION:
                 readline_sqlite_highlighter(ex_line, 0);
                 prompt = ";";
                 break;
@@ -627,6 +686,7 @@ format_help_text_for_rst(const help_text& ht,
             prefix = "";
             break;
         case help_context_t::HC_PRQL_TRANSFORM:
+        case help_context_t::HC_PRQL_FUNCTION:
             is_sql = true;
             break;
         default:

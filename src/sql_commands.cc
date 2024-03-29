@@ -589,6 +589,7 @@ static readline_context::command_t sql_commands[] = {
             .with_parameter(
                 help_text{"side", "Specifies which rows to include"}
                     .with_enum_values({"inner", "left", "right", "full"})
+                    .with_default_value("inner")
                     .optional())
             .with_parameter(
                 {"table", "The other table to join with the current rows"})
@@ -616,6 +617,25 @@ static readline_context::command_t sql_commands[] = {
             .with_example({
                 "To compute a new column from an input",
                 "from [{a=1}, {a=2}] | select b = a * 2",
+                help_example::language::prql,
+            }),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "stats.count_by",
+        prql_cmd_sort,
+        help_text(
+            "stats.count_by",
+            "Partition rows and count the number of rows in each partition")
+            .prql_function()
+            .with_parameter(help_text{"column", "The columns to group by"}
+                                .one_or_more()
+                                .with_grouping("{", "}"))
+            .with_example({
+                "To count rows for a particular value of column 'a'",
+                "from [{a=1}, {a=1}, {a=2}] | stats.count_by a",
                 help_example::language::prql,
             }),
         nullptr,
