@@ -134,7 +134,7 @@ hist_source2::init()
 {
     view_colors& vc = view_colors::singleton();
 
-    this->hs_chart
+    this->hs_chart.with_show_state(stacked_bar_chart_base::show_all{})
         .with_attrs_for_ident(HT_NORMAL, vc.attrs_for_role(role_t::VCR_TEXT))
         .with_attrs_for_ident(HT_WARNING,
                               vc.attrs_for_role(role_t::VCR_WARNING))
