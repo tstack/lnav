@@ -1145,6 +1145,9 @@ annotate_sql_statement(attr_line_t& al)
 std::vector<const help_text*>
 find_sql_help_for_line(const attr_line_t& al, size_t x)
 {
+    static const auto* sql_cmd_map
+        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+
     std::vector<const help_text*> retval;
     const auto& sa = al.get_attrs();
     std::string name;
@@ -1152,10 +1155,6 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
     x = al.nearest_text(x);
 
     {
-        const auto* sql_cmd_map
-            = injector::get<readline_context::command_map_t*,
-                            sql_cmd_map_tag>();
-
         auto sa_opt = get_string_attr(al.get_attrs(), &SQL_COMMAND_ATTR);
         if (sa_opt) {
             auto cmd_name = al.get_substring((*sa_opt)->sa_range);
@@ -1182,6 +1181,11 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
         al.get_attrs(), &lnav::sql ::PRQL_FQID_ATTR, x);
     if (prql_fqid_iter != al.get_attrs().end()) {
         auto fqid = al.get_substring(prql_fqid_iter->sa_range);
+        auto cmd_iter = sql_cmd_map->find(fqid);
+        if (cmd_iter != sql_cmd_map->end()) {
+            return {&cmd_iter->second->c_help};
+        }
+
         auto func_pair = lnav::sql::prql_functions.equal_range(fqid);
 
         for (auto func_iter = func_pair.first; func_iter != func_pair.second;

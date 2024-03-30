@@ -1019,7 +1019,9 @@ execute_examples()
     }
     for (auto cmd_pair : *sql_cmd_map) {
         if (cmd_pair.second->c_help.ht_context
-            != help_context_t::HC_PRQL_TRANSFORM)
+                != help_context_t::HC_PRQL_TRANSFORM
+            && cmd_pair.second->c_help.ht_context
+                != help_context_t::HC_PRQL_FUNCTION)
         {
             continue;
         }

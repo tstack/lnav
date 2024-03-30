@@ -3,3 +3,17 @@ let count_by = func column rel <relation> -> <relation> (
   group {column} (aggregate {total = count this})
   sort {-total}
 )
+
+let average_of = func column rel <relation> -> <relation> (
+  rel
+  aggregate {value = average column}
+)
+
+let sum_of = func column rel <relation> -> <relation> (
+  (rel | aggregate {total = sum column})
+)
+
+let by = func column values rel <relation> -> <relation> (
+  rel
+  group {column} (aggregate values)
+)

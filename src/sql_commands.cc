@@ -572,7 +572,7 @@ static readline_context::command_t sql_commands[] = {
                     .with_grouping("(", ")"))
             .with_example({
                 "To group by log_level and count the rows in each partition",
-                "from db.lnav_example_log | group { log_level } (aggregate { "
+                "from lnav_example_log | group { log_level } (aggregate { "
                 "count this })",
                 help_example::language::prql,
             }),
@@ -624,6 +624,21 @@ static readline_context::command_t sql_commands[] = {
         {"prql-source"},
     },
     {
+        "stats.average_of",
+        prql_cmd_sort,
+        help_text("stats.average_of", "Compute the average of col")
+            .prql_function()
+            .with_parameter(help_text{"col", "The column to average"})
+            .with_example({
+                "To get the average of a",
+                "from [{a=1}, {a=1}, {a=2}] | stats.average_of a",
+                help_example::language::prql,
+            }),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
         "stats.count_by",
         prql_cmd_sort,
         help_text(
@@ -636,6 +651,38 @@ static readline_context::command_t sql_commands[] = {
             .with_example({
                 "To count rows for a particular value of column 'a'",
                 "from [{a=1}, {a=1}, {a=2}] | stats.count_by a",
+                help_example::language::prql,
+            }),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "stats.sum_of",
+        prql_cmd_sort,
+        help_text("stats.sum_of", "Compute the sum of col")
+            .prql_function()
+            .with_parameter(help_text{"col", "The column to sum"})
+            .with_example({
+                "To get the sum of a",
+                "from [{a=1}, {a=1}, {a=2}] | stats.sum_of a",
+                help_example::language::prql,
+            }),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "stats.by",
+        prql_cmd_sort,
+        help_text("stats.by", "A shorthand for grouping and aggregating")
+            .prql_function()
+            .with_parameter(help_text{"col", "The column to sum"})
+            .with_parameter(help_text{"values", "The aggregations to perform"})
+            .with_example({
+                "To partition by a and get the sum of b",
+                "from [{a=1, b=1}, {a=1, b=1}, {a=2, b=1}] | stats.by a "
+                "{sum b}",
                 help_example::language::prql,
             }),
         nullptr,
@@ -675,6 +722,22 @@ static readline_context::command_t sql_commands[] = {
             .with_example({
                 "To pick the second and third rows",
                 "from [{a=1}, {a=2}, {a=3}] | take 2..3",
+                help_example::language::prql,
+            }),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
+        "utils.distinct",
+        prql_cmd_sort,
+        help_text("utils.distinct",
+                  "A shorthand for getting distinct values of col")
+            .prql_function()
+            .with_parameter(help_text{"col", "The column to sum"})
+            .with_example({
+                "To get the distinct values of a",
+                "from [{a=1}, {a=1}, {a=2}] | utils.distinct a",
                 help_example::language::prql,
             }),
         nullptr,

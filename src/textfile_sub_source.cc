@@ -1257,6 +1257,9 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
                 if (neighbors_res->cnr_next) {
                     return to_vis_line(
                         lf, neighbors_res->cnr_next.value()->hn_start);
+                } else if (!md.m_sections_root->hn_children.empty()) {
+                    return to_vis_line(
+                        lf, md.m_sections_root->hn_children[0]->hn_start);
                 }
                 break;
             }

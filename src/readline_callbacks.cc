@@ -583,7 +583,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                         continue;
                     }
                     curr_stage_prql.insert(riter->sa_range.lr_start,
-                                           "| take 1000 ");
+                                           "| take 10000 ");
                 }
                 curr_stage_prql.rtrim();
                 curr_stage_prql.append(" | take 5");
@@ -608,7 +608,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                             continue;
                         }
                         prev_stage_prql.insert(riter->sa_range.lr_start,
-                                               "| take 1000 ");
+                                               "| take 10000 ");
                     }
                     prev_stage_prql.append(" | take 5");
 
