@@ -56,7 +56,7 @@ have been loaded, you can use the following options:
 
 * `-c cmd` A command, query, or file to execute. The first character
   determines the type of operation: a colon (`:`) is used for the
-  built-in commands; a semi-colon (`;`) for SQL queries; and a
+  built-in commands; a semi-colon (`;`) for SQL/PRQL queries; and a
   pipe symbol (`|`) for executing a file containing other
   commands. For example, to open the file "foo.log" and go
   to the tenth line in the file, you can do:
@@ -315,7 +315,7 @@ mark lines of text and move the view by grabbing the scrollbar.
 NOTE: You need to manually enable this feature by setting the LNAV_EXP
 environment variable to "mouse". F2 toggles mouse support.
 
-## SQL Queries
+## Log Analysis
 
 Lnav has support for performing SQL queries on log files using the
 SQLite3 "virtual" table feature. For all supported log file types,
@@ -414,6 +414,37 @@ example of a top ten query into the "/tmp/topten.db" file, you can do:
    FROM access_log GROUP BY cs_uri_stem ORDER BY total DESC
    LIMIT 10;
 ```
+
+### PRQL Support
+
+The Pipelined Relational Query Language
+[(PRQL)](https://prql-lang.org) is an alternative database query
+language that compiles to SQL.  The main advantage of PRQL,
+in the context of lnav, is that it is easier to work with
+interactively compared to SQL.  For example, lnav can provide
+previews of different stages of the pipeline and provide more
+accurate tab-completions for the columns in the result set.
+
+You can execute a PRQL query in the SQL prompt.  A PRQL query 
+starts with the `from` keyword that specifies the table to use as 
+a data source.  The next stage of a pipeline is started by entering
+a pipe symbol (`|`) followed by a
+[PRQL transform](https://prql-lang.org/book/reference/stdlib/transforms/index.html).
+As you build the query in the prompt, lnav will display any relevant
+help and preview for the current and previous stages of the pipeline.
+
+Using the top ten URLs query from earlier as an example, the PRQL
+version would be as follows:
+
+```lnav
+;from access_log | stats.count_by cs_uri_stem | take 10
+```
+
+The first stage selects the data source, the web `access_log` table
+in this case.  The `stats.count_by` transform is a convenience
+provided by lnav that groups by the given column, counts the rows
+in each group, and sorts by count in descending order.  The `take 10`
+turns into the `LIMIT 10`.
 
 ## Dynamic logline Table (experimental)
 

@@ -634,7 +634,14 @@ link_name(const help_text& ht)
     if (is_sql_infix) {
         scrubbed_name = "infix";
     } else {
-        scrubbed_name = ht.ht_name;
+        if (ht.ht_context == help_context_t::HC_PRQL_TRANSFORM) {
+            scrubbed_name += "prql_";
+        }
+        scrubbed_name += ht.ht_name;
+        if (scrubbed_name[0] == '.') {
+            scrubbed_name.erase(scrubbed_name.begin());
+            scrubbed_name.insert(0, "dot_");
+        }
     }
     if (ht.ht_function_type == help_function_type_t::HFT_AGGREGATE) {
         scrubbed_name += "_agg";
@@ -667,7 +674,7 @@ format_help_text_for_rst(const help_text& ht,
         return;
     }
 
-    bool is_sql_func = false, is_sql = false;
+    bool is_sql_func = false, is_sql = false, is_prql = false;
     switch (ht.ht_context) {
         case help_context_t::HC_COMMAND:
             prefix = ":";
@@ -688,6 +695,8 @@ format_help_text_for_rst(const help_text& ht,
         case help_context_t::HC_PRQL_TRANSFORM:
         case help_context_t::HC_PRQL_FUNCTION:
             is_sql = true;
+            is_prql = true;
+            prefix = "";
             break;
         default:
             prefix = "";
@@ -721,6 +730,11 @@ format_help_text_for_rst(const help_text& ht,
                 out_count += fmt::fprintf(rst_file, "\\[");
             }
             out_count += fmt::fprintf(rst_file, "%s", param.ht_name);
+            if (is_prql && param.ht_default_value) {
+                out_count += fmt::fprintf(rst_file, ":");
+                out_count
+                    += fmt::fprintf(rst_file, "%s", param.ht_default_value);
+            }
             if (param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
                 out_count += fmt::fprintf(rst_file, "\\]");
             }

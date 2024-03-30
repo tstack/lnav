@@ -931,6 +931,12 @@ static std::unordered_map<std::string, attr_line_t> EXAMPLE_RESULTS;
 static void
 execute_example(const help_text& ht)
 {
+    static const std::set<std::string> IGNORED_NAMES = {"ATTACH"};
+
+    if (IGNORED_NAMES.count(ht.ht_name)) {
+        return;
+    }
+
     auto& dls = lnav_data.ld_db_row_source;
     auto& dos = lnav_data.ld_db_overlay;
     auto& db_tc = lnav_data.ld_views[LNV_DB];

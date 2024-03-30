@@ -480,6 +480,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_from,
         help_text("from")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL command to specify a data source")
             .with_parameter({"table", "The table to use as a source"})
             .with_example({
@@ -500,6 +501,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_aggregate,
         help_text("aggregate")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to summarize many rows into one")
             .with_parameter(
                 help_text{"expr", "The aggregate expression(s)"}.with_grouping(
@@ -518,6 +520,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_append,
         help_text("append")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to concatenate tables together")
             .with_parameter({"table", "The table to use as a source"}),
         nullptr,
@@ -529,6 +532,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_derive,
         help_text("derive")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to derive one or more columns")
             .with_parameter(
                 help_text{"column", "The new column"}.with_grouping("{", "}"))
@@ -546,6 +550,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_filter,
         help_text("filter")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to pick rows based on their values")
             .with_parameter(
                 {"expr", "The expression to evaluate over each row"})
@@ -563,6 +568,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_group,
         help_text("group")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to partition rows into groups")
             .with_parameter(
                 help_text{"key_columns", "The columns that define the group"}
@@ -585,6 +591,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_join,
         help_text("join")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to add columns from another table")
             .with_parameter(
                 help_text{"side", "Specifies which rows to include"}
@@ -605,6 +612,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_select,
         help_text("select")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to pick and compute columns")
             .with_parameter(
                 help_text{"expr", "The columns to include in the result set"}
@@ -628,6 +636,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_sort,
         help_text("stats.average_of", "Compute the average of col")
             .prql_function()
+            .with_tags({"prql"})
             .with_parameter(help_text{"col", "The column to average"})
             .with_example({
                 "To get the average of a",
@@ -645,6 +654,7 @@ static readline_context::command_t sql_commands[] = {
             "stats.count_by",
             "Partition rows and count the number of rows in each partition")
             .prql_function()
+            .with_tags({"prql"})
             .with_parameter(help_text{"column", "The columns to group by"}
                                 .one_or_more()
                                 .with_grouping("{", "}"))
@@ -662,6 +672,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_sort,
         help_text("stats.sum_of", "Compute the sum of col")
             .prql_function()
+            .with_tags({"prql"})
             .with_parameter(help_text{"col", "The column to sum"})
             .with_example({
                 "To get the sum of a",
@@ -677,6 +688,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_sort,
         help_text("stats.by", "A shorthand for grouping and aggregating")
             .prql_function()
+            .with_tags({"prql"})
             .with_parameter(help_text{"col", "The column to sum"})
             .with_parameter(help_text{"values", "The aggregations to perform"})
             .with_example({
@@ -694,6 +706,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_sort,
         help_text("sort")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL transform to sort rows")
             .with_parameter(help_text{
                 "expr", "The values to use when ordering the result set"}
@@ -712,6 +725,7 @@ static readline_context::command_t sql_commands[] = {
         prql_cmd_take,
         help_text("take")
             .prql_transform()
+            .with_tags({"prql"})
             .with_summary("PRQL command to pick rows based on their position")
             .with_parameter({"n_or_range", "The number of rows or range"})
             .with_example({
@@ -734,6 +748,7 @@ static readline_context::command_t sql_commands[] = {
         help_text("utils.distinct",
                   "A shorthand for getting distinct values of col")
             .prql_function()
+            .with_tags({"prql"})
             .with_parameter(help_text{"col", "The column to sum"})
             .with_example({
                 "To get the distinct values of a",
@@ -753,6 +768,9 @@ static auto bound_sql_cmd_map
                      sql_cmd_map_tag>::to_instance(+[]() {
           for (auto& cmd : sql_commands) {
               sql_cmd_map[cmd.c_name] = &cmd;
+              if (cmd.c_help.ht_name) {
+                  cmd.c_help.index_tags();
+              }
           }
 
           return &sql_cmd_map;

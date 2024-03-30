@@ -238,7 +238,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             }
         } else if (lang_sf == "lnav") {
             readline_lnav_highlighter(block_text, block_text.length());
-        } else if (lang_sf == "sql" || lang_sf == "sqlite") {
+        } else if (lang_sf == "sql" || lang_sf == "sqlite" || lang_sf == "prql")
+        {
             readline_sqlite_highlighter(block_text, block_text.length());
         } else if (lang_sf == "shell" || lang_sf == "bash") {
             readline_shlex_highlighter(block_text, block_text.length());

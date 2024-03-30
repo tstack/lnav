@@ -182,6 +182,10 @@ DETACH DATABASE *schema-name*
     .. code-block::  custsqlite
 
       ;DETACH DATABASE customers
+      ✘ error: SQL statement failed
+       reason: no such database: customers
+       --> command:1
+      
 
 
 ----
@@ -1119,7 +1123,7 @@ echoln(*value*)
     * **value\*** --- The value to write to the current output file
 
   **See Also**
-    :ref:`append_to`, :ref:`echo`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`echo`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
 
 ----
 
@@ -4467,6 +4471,463 @@ zeroblob(*N*)
   **Parameters**
     * **N\*** --- The size of the BLOB.
 
+
+----
+
+
+.. _dot_dump:
+
+;.dump *path*
+^^^^^^^^^^^^^
+
+  Dump the contents of the database
+
+  **Parameters**
+    * **path\*** --- The path to the file to write
+
+  **See Also**
+    :ref:`append_to`, :ref:`dot_read`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+
+----
+
+
+.. _dot_msgformats:
+
+;.msgformats
+^^^^^^^^^^^^
+
+  Executes a query that will summarize the different message formats found in the logs
+
+
+----
+
+
+.. _dot_read:
+
+;.read *path*
+^^^^^^^^^^^^^
+
+  Execute the SQLite statements in the given file
+
+  **Parameters**
+    * **path\*** --- The path to the file to write
+
+  **See Also**
+    :ref:`append_to`, :ref:`dot_dump`, :ref:`echo`, :ref:`echoln`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`redirect_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_view_to`
+
+----
+
+
+.. _dot_schema:
+
+;.schema
+^^^^^^^^
+
+  Switch to the SCHEMA view that contains a dump of the current database schema
+
+
+----
+
+
+.. _prql_aggregate:
+
+aggregate *expr*
+^^^^^^^^^^^^^^^^
+
+  PRQL transform to summarize many rows into one
+
+  **Parameters**
+    * **expr\*** --- The aggregate expression(s)
+
+  **Examples**
+    To group values into a JSON array:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=2}] | aggregate { arr = json.group_array a }
+      [1,2]
+
+  **See Also**
+    :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_append:
+
+append *table*
+^^^^^^^^^^^^^^
+
+  PRQL transform to concatenate tables together
+
+  **Parameters**
+    * **table\*** --- The table to use as a source
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_derive:
+
+derive *column*
+^^^^^^^^^^^^^^^
+
+  PRQL transform to derive one or more columns
+
+  **Parameters**
+    * **column\*** --- The new column
+
+  **Examples**
+    To add a column that is a multiplication of another:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=2}] | derive b = a * 2
+      a b 
+      1 2 
+      2 4 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_filter:
+
+filter *expr*
+^^^^^^^^^^^^^
+
+  PRQL transform to pick rows based on their values
+
+  **Parameters**
+    * **expr\*** --- The expression to evaluate over each row
+
+  **Examples**
+    To pick rows where 'a' is greater than one:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=2}] | filter a > 1
+      2
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_from:
+
+from *table*
+^^^^^^^^^^^^
+
+  PRQL command to specify a data source
+
+  **Parameters**
+    * **table\*** --- The table to use as a source
+
+  **Examples**
+    To pull data from the 'http_status_codes' database table:
+
+    .. code-block::  custsqlite
+
+      ;from db.http_status_codes | take 3
+      ✘ error: failed to compile SQL statement
+       reason: no such table: db.http_status_codes
+       --> command:1
+       | SELECT                                                                                
+       |   *                                                                                   
+       | FROM                                                                                  
+       |   db.http_status_codes                                                                
+       | LIMIT                                                                                 
+       |   3                                                                                   
+       |                                                                                       
+       | -- Generated by PRQL compiler version:0.11.5 target:sql.sqlite (https://prql-lang.org)
+       |                                                                                       
+      
+
+    To use an array literal as a source:
+
+    .. code-block::  custsqlite
+
+      ;from [{ col1=1, col2='abc' }, { col1=2, col2='def' }]
+      col1 col2 
+         1 abc  
+         2 def  
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_group:
+
+group *key_columns* *pipeline*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  PRQL transform to partition rows into groups
+
+  **Parameters**
+    * **key_columns\*** --- The columns that define the group
+    * **pipeline\*** --- The pipeline to execute over a group
+
+  **Examples**
+    To group by log_level and count the rows in each partition:
+
+    .. code-block::  custsqlite
+
+      ;from lnav_example_log | group { log_level } (aggregate { count this })
+      log_level COUNT(*) 
+      debug            1 
+      info             1 
+      warn             1 
+      error            1 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_join:
+
+join *\[side:inner\]* *table* *condition*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  PRQL transform to add columns from another table
+
+  **Parameters**
+    * **side** --- Specifies which rows to include
+    * **table\*** --- The other table to join with the current rows
+    * **condition\*** --- The condition used to join rows
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_select:
+
+select *expr*
+^^^^^^^^^^^^^
+
+  PRQL transform to pick and compute columns
+
+  **Parameters**
+    * **expr\*** --- The columns to include in the result set
+
+  **Examples**
+    To pick the 'b' column from the rows:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1, b='abc'}, {a=2, b='def'}] | select b
+       b  
+      abc 
+      def 
+
+    To compute a new column from an input:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=2}] | select b = a * 2
+      b 
+      2 
+      4 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_sort:
+
+sort *expr*
+^^^^^^^^^^^
+
+  PRQL transform to sort rows
+
+  **Parameters**
+    * **expr\*** --- The values to use when ordering the result set
+
+  **Examples**
+    To sort the rows in descending order:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=2}] | sort {-a}
+      a 
+      2 
+      1 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _stats_average_of:
+
+stats.average_of *col*
+^^^^^^^^^^^^^^^^^^^^^^
+
+  Compute the average of col
+
+  **Parameters**
+    * **col\*** --- The column to average
+
+  **Examples**
+    To get the average of a:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=1}, {a=2}] | stats.average_of a
+      1.3333333333333333
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _stats_by:
+
+stats.by *col* *values*
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  A shorthand for grouping and aggregating
+
+  **Parameters**
+    * **col\*** --- The column to sum
+    * **values\*** --- The aggregations to perform
+
+  **Examples**
+    To partition by a and get the sum of b:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1, b=1}, {a=1, b=1}, {a=2, b=1}] | stats.by a {sum b}
+      a COALESC⋯(b), 0) 
+      1               2 
+      2               1 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _stats_count_by:
+
+stats.count_by *column*
+^^^^^^^^^^^^^^^^^^^^^^^
+
+  Partition rows and count the number of rows in each partition
+
+  **Parameters**
+    * **column** --- The columns to group by
+
+  **Examples**
+    To count rows for a particular value of column 'a':
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=1}, {a=2}] | stats.count_by a
+      a total 
+      1     2 
+      2     1 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _stats_sum_of:
+
+stats.sum_of *col*
+^^^^^^^^^^^^^^^^^^
+
+  Compute the sum of col
+
+  **Parameters**
+    * **col\*** --- The column to sum
+
+  **Examples**
+    To get the sum of a:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=1}, {a=2}] | stats.sum_of a
+      4
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`utils_distinct`
+
+----
+
+
+.. _prql_take:
+
+take *n_or_range*
+^^^^^^^^^^^^^^^^^
+
+  PRQL command to pick rows based on their position
+
+  **Parameters**
+    * **n_or_range\*** --- The number of rows or range
+
+  **Examples**
+    To pick the first row:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=2}, {a=3}] | take 1
+      1
+
+    To pick the second and third rows:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=2}, {a=3}] | take 2..3
+      a 
+      2 
+      3 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`, :ref:`utils_distinct`
+
+----
+
+
+.. _utils_distinct:
+
+utils.distinct *col*
+^^^^^^^^^^^^^^^^^^^^
+
+  A shorthand for getting distinct values of col
+
+  **Parameters**
+    * **col\*** --- The column to sum
+
+  **Examples**
+    To get the distinct values of a:
+
+    .. code-block::  custsqlite
+
+      ;from [{a=1}, {a=1}, {a=2}] | utils.distinct a
+      a 
+      1 
+      2 
+
+  **See Also**
+    :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_sum_of`
 
 ----
 
