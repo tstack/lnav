@@ -430,7 +430,9 @@ view_curses::mvwattrline(WINDOW* window,
         short cur_fg, cur_bg;
         pair_content(cur_pair, &cur_fg, &cur_bg);
 
-        if (fg_color[lpc] != -1 && bg_color[lpc] == -1) {
+        if (fg_color[lpc] != -1 && bg_color[lpc] == -1
+            && base_attrs.ta_bg_color.value_or(0) >= 0)
+        {
             const auto& fg_color_info
                 = view_colors::vc_active_palette->tc_palette[fg_color[lpc]];
             const auto& bg_color_info
