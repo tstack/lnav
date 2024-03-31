@@ -323,7 +323,10 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                                         semi_pred);
                                 auto color_index = scn::scan_value<short>(
                                     color_index_pair.first.to_string_view());
-                                if (!color_index.has_value()) {
+                                if (!color_index.has_value()
+                                    || color_index.value() < 0
+                                    || color_index.value() > 255)
+                                {
                                     break;
                                 }
                                 if (ansi_code == 38) {
