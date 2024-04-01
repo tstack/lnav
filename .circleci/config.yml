@@ -6,7 +6,8 @@ orbs:
 jobs:
   macos-apple-clang:
     macos:
-      xcode: 12.5.1
+      xcode: 14.2.0
+    resource_class: macos.m1.medium.gen1
     steps:
       - checkout
       - run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl autoconf automake
