@@ -42,15 +42,13 @@
 
 using namespace lnav::roles::literals;
 
-std::multimap<std::string, help_text*> help_text::TAGGED;
-
 static std::vector<help_text*>
 get_related(const help_text& ht)
 {
     std::vector<help_text*> retval;
 
     for (const auto& tag : ht.ht_tags) {
-        auto tagged = help_text::TAGGED.equal_range(tag);
+        auto tagged = help_text::tag_map().equal_range(tag);
 
         for (auto tag_iter = tagged.first; tag_iter != tagged.second;
              ++tag_iter)

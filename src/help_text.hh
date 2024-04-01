@@ -250,7 +250,7 @@ struct help_text {
 
     void index_tags();
 
-    static std::multimap<std::string, help_text*> TAGGED;
+    static std::multimap<std::string, help_text*>& tag_map();
 };
 
 #endif

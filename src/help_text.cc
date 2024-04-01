@@ -104,10 +104,18 @@ help_text::with_prql_path(
     return *this;
 }
 
+std::multimap<std::string, help_text*>&
+help_text::tag_map()
+{
+    static std::multimap<std::string, help_text*> retval;
+
+    return retval;
+}
+
 void
 help_text::index_tags()
 {
     for (const auto& tag : this->ht_tags) {
-        TAGGED.insert(std::make_pair(tag, this));
+        tag_map().insert(std::make_pair(tag, this));
     }
 }
