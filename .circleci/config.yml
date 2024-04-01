@@ -7,7 +7,7 @@ jobs:
   macos-apple-clang:
     macos:
       xcode: 14.2.0
-    resource_class: macos.m1.large.gen1
+    resource_class: macos.m1.medium.gen1
     steps:
       - checkout
       - run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl autoconf automake
@@ -22,7 +22,7 @@ jobs:
             "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/" \
             --with-readline=$(brew --prefix readline) \
             --with-libarchive=$(brew --prefix libarchive) \
-            "LIBS=-llzma -lzstd -liconv -llz4"
+            "LIBS=-llzma -lzstd -liconv -llz4" || cat config.log
       - run: make -j2
 workflows:
   build-and-test:
