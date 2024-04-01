@@ -65,6 +65,7 @@ log_level_t string2level(const char *levelstr, ssize_t len, bool exact)
     /*!stags:re2c format = 'const unsigned char *@@;'; */
     loop:
     /*!re2c
+     re2c:tags = 1;
      re2c:yyfill:enable = 0;
      re2c:flags:input = custom;
 
