@@ -13,7 +13,7 @@ jobs:
       - run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl autoconf automake
       - run: ./autogen.sh
       - run: >-
-          ./configure --enable-static \
+          ./configure \
             --with-libcurl=/usr \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
@@ -22,7 +22,7 @@ jobs:
             "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix lz4)/lib -L$(brew --prefix zstd)/lib/" \
             --with-readline=$(brew --prefix readline) \
             --with-libarchive=$(brew --prefix libarchive) \
-            "LIBS=-llzma -lzstd -liconv -llz4" || cat config.log
+            || cat config.log
       - run: make -j2
 workflows:
   build-and-test:
