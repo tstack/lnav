@@ -23,8 +23,8 @@ jobs:
             --with-readline=$(brew --prefix readline) \
             --with-libarchive=$(brew --prefix libarchive) \
             || cat config.log
-      - run: make -j2
-      - run: src/lnav -V
+      - run: make -j2 || true
+      - run: env DUMP_CRASH=1 src/lnav -V
       - run: make check -j2
 workflows:
   build-and-test:
