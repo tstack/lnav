@@ -14,7 +14,7 @@ jobs:
       - run: ./autogen.sh
       - run: >-
           ./configure \
-            --with-libcurl=/usr \
+            --with-libcurl=$(brew --prefix curl) \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
             "CXXFLAGS=-I$(brew --prefix ncurses)/include -g2 -O2" \
@@ -24,6 +24,8 @@ jobs:
             --with-libarchive=$(brew --prefix libarchive) \
             || cat config.log
       - run: make -j2
+      - run: src/lnav -V
+      - run: make check -j2
 workflows:
   build-and-test:
     jobs:
