@@ -1529,6 +1529,7 @@ json_path_container::gen_schema(yajlpp_gen_context& ygc) const
 void
 json_path_container::gen_properties(yajlpp_gen_context& ygc) const
 {
+    static const auto FWD_SLASH = lnav::pcre2pp::code::from_const(R"(\[\^/\])");
     auto pattern_count = count_if(
         this->jpc_children.begin(), this->jpc_children.end(), [](auto& jph) {
             return jph.jph_is_pattern_property;
@@ -1558,7 +1559,10 @@ json_path_container::gen_properties(yajlpp_gen_context& ygc) const
                 if (!child_handler.jph_is_pattern_property) {
                     continue;
                 }
-                properties.gen(child_handler.jph_property);
+
+                auto pattern = child_handler.jph_property;
+                pattern = FWD_SLASH.replace(pattern, ".");
+                properties.gen(fmt::format(FMT_STRING("^{}$"), pattern));
                 child_handler.gen_schema(ygc);
             }
         }

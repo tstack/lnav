@@ -41,7 +41,7 @@
             "title": "/values",
             "type": "object",
             "patternProperties": {
-                "([\\w\\-]+)": {
+                "^([\\w\\-]+)$": {
                     "title": "/values/<name>",
                     "type": [
                         "boolean",

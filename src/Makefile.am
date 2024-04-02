@@ -612,5 +612,11 @@ else
 all-local: $(LNAV_BUILT_FILES) $(RUST_DEPS)
 endif
 
+check-local:
+if HAVE_CHECK_JSONSCHEMA
+	$(CHECK_JSONSCHEMA) --schemafile $(top_srcdir)/docs/schemas/format-v1.schema.json $(FORMAT_FILES)
+	$(CHECK_JSONSCHEMA) --schemafile $(top_srcdir)/docs/schemas/config-v1.schema.json $(CONFIG_FILES)
+endif
+
 install-exec-hook:
 	bash $(srcdir)/alpha-release.sh

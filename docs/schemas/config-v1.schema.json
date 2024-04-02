@@ -140,7 +140,7 @@
                                     "title": "/tuning/remote/ssh/options",
                                     "type": "object",
                                     "patternProperties": {
-                                        "(\\w+)": {
+                                        "^(\\w+)$": {
                                             "title": "/tuning/remote/ssh/options/<option_name>",
                                             "description": "Set an option to be passed to the SSH command",
                                             "type": "string"
@@ -153,7 +153,7 @@
                                     "title": "/tuning/remote/ssh/config",
                                     "type": "object",
                                     "patternProperties": {
-                                        "(\\w+)": {
+                                        "^(\\w+)$": {
                                             "title": "/tuning/remote/ssh/config/<config_name>",
                                             "description": "Set an SSH configuration value",
                                             "type": "string"
@@ -177,7 +177,7 @@
                             "title": "/tuning/clipboard/impls",
                             "type": "object",
                             "patternProperties": {
-                                "([\\w\\-]+)": {
+                                "^([\\w\\-]+)$": {
                                     "description": "Clipboard implementation",
                                     "title": "/tuning/clipboard/impls/<clipboard_impl_name>",
                                     "type": "object",
@@ -214,7 +214,7 @@
                     "title": "/tuning/url-scheme",
                     "type": "object",
                     "patternProperties": {
-                        "([a-z][\\w\\-\\+\\.]+)": {
+                        "^([a-z][\\w\\-\\+\\.]+)$": {
                             "description": "Definition of a custom URL scheme",
                             "title": "/tuning/url-scheme/<url_scheme>",
                             "type": "object",
@@ -272,7 +272,7 @@
                     "title": "/ui/theme-defs",
                     "type": "object",
                     "patternProperties": {
-                        "([\\w\\-]+)": {
+                        "^([\\w\\-]+)$": {
                             "description": "Theme definitions",
                             "title": "/ui/theme-defs/<theme_name>",
                             "type": "object",
@@ -282,7 +282,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/vars",
                                     "type": "object",
                                     "patternProperties": {
-                                        "(\\w+)": {
+                                        "^(\\w+)$": {
                                             "title": "/ui/theme-defs/<theme_name>/vars/<var_name>",
                                             "description": "A theme variable definition",
                                             "type": "string"
@@ -694,7 +694,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/log-level-styles",
                                     "type": "object",
                                     "patternProperties": {
-                                        "(trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal|invalid)": {
+                                        "^(trace|debug5|debug4|debug3|debug2|debug|info|stats|notice|warning|error|critical|fatal|invalid)$": {
                                             "title": "/ui/theme-defs/<theme_name>/log-level-styles/<level>",
                                             "$ref": "#/definitions/style"
                                         }
@@ -706,7 +706,7 @@
                                     "title": "/ui/theme-defs/<theme_name>/highlights",
                                     "type": "object",
                                     "patternProperties": {
-                                        "([\\w\\-]+)": {
+                                        "^([\\w\\-]+)$": {
                                             "title": "/ui/theme-defs/<theme_name>/highlights/<highlight_name>",
                                             "type": "object",
                                             "properties": {
@@ -758,12 +758,12 @@
                     "title": "/ui/keymap-defs",
                     "type": "object",
                     "patternProperties": {
-                        "([\\w\\-]+)": {
+                        "^([\\w\\-]+)$": {
                             "description": "The keymap definitions",
                             "title": "/ui/keymap-defs/<keymap_name>",
                             "type": "object",
                             "patternProperties": {
-                                "((?:x[0-9a-f]{2})+)": {
+                                "^((?:x[0-9a-f]{2})+)$": {
                                     "description": "Map of key codes to commands to execute.  The field names are the keys to be mapped using as a hexadecimal representation of the UTF-8 encoding.  Each byte of the UTF-8 should start with an 'x' followed by the hexadecimal representation of the byte.",
                                     "title": "/ui/keymap-defs/<keymap_name>/<key_seq>",
                                     "type": "object",
@@ -817,7 +817,7 @@
                     "title": "/log/watch-expressions",
                     "type": "object",
                     "patternProperties": {
-                        "([\\w\\.\\-]+)": {
+                        "^([\\w\\.\\-]+)$": {
                             "description": "A log message watch expression",
                             "title": "/log/watch-expressions/<watch_name>",
                             "type": "object",
@@ -842,7 +842,7 @@
                     "title": "/log/annotations",
                     "type": "object",
                     "patternProperties": {
-                        "([\\w\\.\\-]+)": {
+                        "^([\\w\\.\\-]+)$": {
                             "title": "/log/annotations/<annotation_name>",
                             "type": "object",
                             "properties": {
@@ -877,7 +877,7 @@
             "title": "/global",
             "type": "object",
             "patternProperties": {
-                "(\\w+)": {
+                "^(\\w+)$": {
                     "title": "/global/<var_name>",
                     "description": "A global variable definition.  Global variables can be referenced in scripts, SQL statements, or commands.",
                     "type": "string"

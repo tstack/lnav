@@ -10,7 +10,7 @@
         }
     },
     "patternProperties": {
-        "(\\w+)": {
+        "^(\\w+)$": {
             "description": "The definition of a log file format.",
             "title": "/<format_name>",
             "type": "object",
@@ -20,7 +20,7 @@
                     "title": "/<format_name>/regex",
                     "type": "object",
                     "patternProperties": {
-                        "([^/]+)": {
+                        "^(.+)$": {
                             "description": "The set of patterns used to match log messages",
                             "title": "/<format_name>/regex/<pattern_name>",
                             "type": "object",
@@ -95,7 +95,7 @@
                                     "title": "/<format_name>/converter/header/expr",
                                     "type": "object",
                                     "patternProperties": {
-                                        "(\\w+)": {
+                                        "^(\\w+)$": {
                                             "title": "/<format_name>/converter/header/expr/<header_expr_name>",
                                             "description": "SQLite expression",
                                             "type": "string"
@@ -214,7 +214,7 @@
                             "title": "/<format_name>/opid/description",
                             "type": "object",
                             "patternProperties": {
-                                "([\\w\\.\\-]+)": {
+                                "^([\\w\\.\\-]+)$": {
                                     "description": "A type of description for this operation",
                                     "title": "/<format_name>/opid/description/<opid_descriptor>",
                                     "type": "object",
@@ -266,7 +266,7 @@
                             "title": "/<format_name>/opid/sub-description",
                             "type": "object",
                             "patternProperties": {
-                                "([\\w\\.\\-]+)": {
+                                "^([\\w\\.\\-]+)$": {
                                     "description": "A type of description for this sub-operation",
                                     "title": "/<format_name>/opid/sub-description/<subid_descriptor>",
                                     "type": "object",
@@ -326,7 +326,7 @@
                     "title": "/<format_name>/level",
                     "type": "object",
                     "patternProperties": {
-                        "(trace|debug[2345]?|info|stats|notice|warning|error|critical|fatal)": {
+                        "^(trace|debug[2345]?|info|stats|notice|warning|error|critical|fatal)$": {
                             "title": "/<format_name>/level/<level>",
                             "description": "The regular expression used to match the log text for this level.  For JSON logs with numeric levels, this should be the number for the corresponding level.",
                             "type": [
@@ -342,7 +342,7 @@
                     "title": "/<format_name>/value",
                     "type": "object",
                     "patternProperties": {
-                        "([^/]+)": {
+                        "^(.+)$": {
                             "description": "The set of values captured by the log message patterns",
                             "title": "/<format_name>/value/<value_name>",
                             "type": "object",
@@ -382,7 +382,7 @@
                                             "title": "/<format_name>/value/<value_name>/unit/scaling-factor",
                                             "type": "object",
                                             "patternProperties": {
-                                                "([^/]+)": {
+                                                "^(.+)$": {
                                                     "title": "/<format_name>/value/<value_name>/unit/scaling-factor/<scale>",
                                                     "type": "object",
                                                     "properties": {
@@ -455,7 +455,7 @@
                     "title": "/<format_name>/tags",
                     "type": "object",
                     "patternProperties": {
-                        "([\\w:;\\._\\-]+)": {
+                        "^([\\w:;\\._\\-]+)$": {
                             "description": "The name of the tag to apply",
                             "title": "/<format_name>/tags/<tag_name>",
                             "type": "object",
@@ -523,7 +523,7 @@
                     "title": "/<format_name>/partitions",
                     "type": "object",
                     "patternProperties": {
-                        "([\\w:;\\._\\-]+)": {
+                        "^([\\w:;\\._\\-]+)$": {
                             "description": "The type of partition to apply",
                             "title": "/<format_name>/partitions/<partition_type>",
                             "type": "object",
@@ -590,7 +590,7 @@
                     "title": "/<format_name>/action",
                     "type": "object",
                     "patternProperties": {
-                        "(\\w+)": {
+                        "^(\\w+)$": {
                             "title": "/<format_name>/action/<action_name>",
                             "type": [
                                 "string",
@@ -751,7 +751,7 @@
                     "title": "/<format_name>/search-table",
                     "type": "object",
                     "patternProperties": {
-                        "(\\w+)": {
+                        "^(\\w+)$": {
                             "description": "The set of search tables to be automatically defined",
                             "title": "/<format_name>/search-table/<table_name>",
                             "type": "object",
@@ -797,7 +797,7 @@
                     "title": "/<format_name>/highlights",
                     "type": "object",
                     "patternProperties": {
-                        "([^/]+)": {
+                        "^(.+)$": {
                             "description": "The definition of a highlight",
                             "title": "/<format_name>/highlights/<highlight_name>",
                             "type": "object",
