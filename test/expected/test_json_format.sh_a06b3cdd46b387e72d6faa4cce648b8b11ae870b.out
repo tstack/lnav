@@ -1,29 +1,29 @@
 
-[2013-09-06T20:00:48.124000Z] ⋮ <c.e.foo.bar.bazzer  > trace testbork bork bork
+[2013-09-06T20:00:48.124817Z] ⋮ <c.e.foo.bar.bazzer  > trace testbork bork bork
 
-[2013-09-06T20:00:49.124000Z] ⋮ <com.example.demo    > Starting up [32mservice[0mbork bork bork
+[2013-09-06T20:00:49.124817Z] ⋮ <com.example.demo    > Starting up [32mservice[0mbork bork bork
 
-[2013-09-06T22:00:49.124000Z] ⋮ Shutting down servicebork bork bork
+[2013-09-06T22:00:49.124817Z] ⋮ Shutting down servicebork bork bork
   user: mailto:steve@example.com
 
-[2013-09-06T22:00:59.124000Z] ⋮ [1mD[0metails...
+[2013-09-06T22:00:59.124817Z] ⋮ [1mD[0metails...
 bork bork bork
 
-[2013-09-06T22:00:59.124000Z] ⋮ [1mDe[0mtails...
+[2013-09-06T22:00:59.124817Z] ⋮ [1mDe[0mtails...
 bork bork bork
 
-[2013-09-06T22:00:59.124000Z] ⋮ Details...
+[2013-09-06T22:00:59.124817Z] ⋮ Details...
 bork bork bork
 
-[2013-09-06T22:00:59.124000Z] ⋮ Details...
+[2013-09-06T22:00:59.124817Z] ⋮ Details...
 bork bork bork
 
-[2013-09-06T22:01:00.000000Z] ⋮ Details...bork bork bork
+[2013-09-06 22:01:00Z] ⋮ Details...bork bork bork
 
-[2013-09-06T22:01:49.124000Z] ⋮ 1 beat per secondbork bork bork
+[2013-09-06T22:01:49.124817Z] ⋮ 1 beat per secondbork bork bork
 
-[33m[[0m[33m2013-09-06T22:01:49.124000Z[0m[33m] [0m[33m⋮[0m[33m [0m[33mnot looking goodbork bork bork[0m
+[33m[[0m[33m2013-09-06T22:01:49.124817Z[0m[33m] [0m[33m⋮[0m[33m [0m[33mnot looking goodbork bork bork[0m
 
-[31m[[0m[31m2013-09-06T22:01:49.124000Z[0m[31m] [0m[31m⋮[0m[31m [0m[31mlooking badbork bork bork[0m
+[31m[[0m[31m2013-09-06T22:01:49.124817Z[0m[31m] [0m[31m⋮[0m[31m [0m[31mlooking badbork bork bork[0m
 
-[31m[[0m[31m2013-09-06T22:01:49.124000Z[0m[31m] [0m[31m⋮[0m[31m [0m[31msooo badbork bork bork[0m
+[31m[[0m[31m2013-09-06T22:01:49.124817Z[0m[31m] [0m[31m⋮[0m[31m [0m[31msooo badbork bork bork[0m

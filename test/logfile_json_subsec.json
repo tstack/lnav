@@ -1,2 +1,2 @@
 {"instant":{"epochSecond": 1663977609,"nanoOfSecond": 484000000}, "msg": "Hello, World!"}
-{"instant":{"epochSecond": 1663977619,"nanoOfSecond": 222000000}, "msg": "Goodbye, World!"}
+{"instant":{"epochSecond": 1663977619,"nanoOfSecond": 222000123}, "msg": "Goodbye, World!"}

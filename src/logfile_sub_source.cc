@@ -319,7 +319,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         this->lss_token_attrs.emplace_back(lr, SA_ORIGINAL_LINE.value());
     }
 
-    if (!this->lss_token_line->is_continued()
+    if (!this->lss_token_line->is_continued() && !format->lf_formatted_lines
         && (this->lss_token_file->is_time_adjusted()
             || ((format->lf_timestamp_flags & ETF_ZONE_SET
                  || format->lf_date_time.dts_default_zone != nullptr)

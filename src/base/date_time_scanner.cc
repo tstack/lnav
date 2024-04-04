@@ -47,8 +47,14 @@ date_time_scanner::ftime(char* dst,
 {
     off_t off = 0;
 
-    if (time_fmt == nullptr) {
-        PTIMEC_FORMATS[this->dts_fmt_lock].pf_ffunc(dst, off, len, tm);
+    if (time_fmt == nullptr || this->dts_fmt_lock == -1
+        || (tm.et_flags & ETF_MACHINE_ORIENTED))
+    {
+        auto index
+            = this->dts_fmt_lock != -1 && !(tm.et_flags & ETF_MACHINE_ORIENTED)
+            ? this->dts_fmt_lock
+            : PTIMEC_DEFAULT_FMT_INDEX;
+        PTIMEC_FORMATS[index].pf_ffunc(dst, off, len, tm);
         if (tm.et_flags & ETF_SUB_NOT_IN_FORMAT) {
             if (tm.et_flags & ETF_MILLIS_SET) {
                 dst[off++] = '.';
@@ -60,6 +66,9 @@ date_time_scanner::ftime(char* dst,
                 dst[off++] = '.';
                 ftime_N(dst, off, len, tm);
             }
+        }
+        if (index == PTIMEC_DEFAULT_FMT_INDEX && tm.et_flags & ETF_ZONE_SET) {
+            ftime_z(dst, off, len, tm);
         }
         dst[off] = '\0';
     } else {

@@ -562,6 +562,7 @@ public:
     uint8_t lf_mod_index{0};
     bool lf_multiline{true};
     bool lf_structured{false};
+    bool lf_formatted_lines{false};
     date_time_scanner lf_date_time;
     date_time_scanner lf_time_scanner;
     std::vector<pattern_for_lines> lf_pattern_locks;

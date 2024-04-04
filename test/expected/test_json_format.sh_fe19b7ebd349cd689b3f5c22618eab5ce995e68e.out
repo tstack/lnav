@@ -1,4 +1,4 @@
--09-06T22:00:49.124 INFO Shutting down service
+-09-06T22:00:49.124817Z INFO Shutting down service
   @fields/user: steve@example.com
   @fields: { "lvl": "INFO", "msg": "Shutting down service", "user": "steve@example.com"}
 
