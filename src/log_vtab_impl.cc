@@ -897,15 +897,19 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     case log_footer_columns::path: {
                         const auto& fn = lf->get_filename();
 
-                        sqlite3_result_text(
-                            ctx, fn.c_str(), fn.length(), SQLITE_STATIC);
+                        sqlite3_result_text(ctx,
+                                            fn.c_str(),
+                                            fn.native().length(),
+                                            SQLITE_STATIC);
                         break;
                     }
                     case log_footer_columns::unique_path: {
                         const auto& fn = lf->get_unique_path();
 
-                        sqlite3_result_text(
-                            ctx, fn.c_str(), fn.length(), SQLITE_STATIC);
+                        sqlite3_result_text(ctx,
+                                            fn.c_str(),
+                                            fn.native().length(),
+                                            SQLITE_STATIC);
                         break;
                     }
                     case log_footer_columns::text: {

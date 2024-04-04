@@ -141,4 +141,12 @@ public:
 }  // namespace filesystem
 }  // namespace lnav
 
+namespace fmt {
+template<>
+struct formatter<ghc::filesystem::path> : formatter<string_view> {
+    auto format(const ghc::filesystem::path& p, format_context& ctx)
+        -> decltype(ctx.out()) const;
+};
+}  // namespace fmt
+
 #endif

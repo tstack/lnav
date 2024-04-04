@@ -34,6 +34,7 @@
 #include "config.h"
 #include "fmt/format.h"
 #include "itertools.hh"
+#include "lnav_log.hh"
 #include "opt_util.hh"
 
 namespace lnav {
@@ -217,3 +218,20 @@ file_lock::file_lock(const ghc::filesystem::path& archive_path)
 
 }  // namespace filesystem
 }  // namespace lnav
+
+namespace fmt {
+
+auto
+formatter<ghc::filesystem::path>::format(const ghc::filesystem::path& p,
+                                         format_context& ctx)
+    -> decltype(ctx.out()) const
+{
+    auto esc_res = fmt::v10::detail::find_escape(&(*p.native().begin()),
+                                                 &(*p.native().end()));
+    if (esc_res.end == nullptr) {
+        return formatter<string_view>::format(p.native(), ctx);
+    }
+
+    return format_to(ctx.out(), FMT_STRING("{:?}"), p.native());
+}
+}  // namespace fmt

@@ -385,7 +385,7 @@ com_set_file_timezone(exec_context& ec,
             const auto* tz = date::locate_zone(split_args[1]);
             auto pattern = split_args.size() == 2
                 ? line_pair->first->get_filename()
-                : split_args[2];
+                : ghc::filesystem::path(split_args[2]);
 
             if (!ec.ec_dry_run) {
                 static auto& safe_options_hier

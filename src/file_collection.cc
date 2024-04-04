@@ -170,8 +170,8 @@ file_collection::regenerate_unique_file_names()
     for (const auto& lf : this->fc_files) {
         const auto& path = lf->get_unique_path();
 
-        if (path.length() > this->fc_largest_path_length) {
-            this->fc_largest_path_length = path.length();
+        if (path.native().length() > this->fc_largest_path_length) {
+            this->fc_largest_path_length = path.native().length();
         }
     }
     for (const auto& pair : this->fc_other_files) {

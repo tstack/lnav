@@ -1612,6 +1612,9 @@ external_log_format::annotate(uint64_t line_number,
             for (const auto& attr : this->jlf_line_attrs) {
                 if (this->jlf_cached_sub_range.contains(attr.sa_range)) {
                     sa.emplace_back(attr);
+                    sa.back().sa_range.shift(
+                        this->jlf_cached_sub_range.lr_start,
+                        -this->jlf_cached_sub_range.lr_start);
                 }
             }
         }

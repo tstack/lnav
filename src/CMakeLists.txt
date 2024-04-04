@@ -118,7 +118,7 @@ add_custom_command(OUTPUT time_fmts.cc COMMAND ptimec ${TIME_FORMATS} >
         time_fmts.cc)
 
 add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_rt.cc time_fmts.cc)
-target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR} third-party/date/include)
 
 function(bin2c)
     cmake_parse_arguments(BIN2C_ "" "VARNAME" "" ${ARGN})
@@ -190,6 +190,20 @@ add_custom_command(
         COMMAND bin2c -n lnav_format_json default-formats ${FORMAT_FILE_PATHS}
         DEPENDS bin2c ${FORMAT_FILES})
 list(APPEND GEN_SRCS default-formats.h default-formats.cc)
+
+set(PRQL_FILES
+        prql/stats.prql
+        prql/utils.prql)
+
+set(PRQL_FILE_PATHS ${PRQL_FILES})
+
+list(TRANSFORM PRQL_FILE_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT prql-modules.h prql-modules.cc
+        COMMAND bin2c -n lnav_prql_modules prql-modules ${PRQL_FILE_PATHS}
+        DEPENDS bin2c ${PRQL_FILES})
+list(APPEND GEN_SRCS prql-modules.h prql-modules.cc)
 
 set(CONFIG_FILES
         root-config.json
@@ -660,7 +674,8 @@ add_library(
 
         third-party/robin_hood/robin_hood.h
 
-        third-party/prqlc-c/prqlc.hpp
+        third-party/prqlc-c/prqlc.cxx.hh
+        third-party/prqlc-c/prqlc.cxx.cc
 )
 
 set(lnav_SRCS lnav.cc)

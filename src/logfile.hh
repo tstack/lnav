@@ -114,7 +114,7 @@ public:
      * descriptor needs to be seekable.
      */
     static Result<std::shared_ptr<logfile>, std::string> open(
-        std::string filename,
+        ghc::filesystem::path filename,
         const logfile_open_options& loo,
         auto_fd fd = auto_fd{});
 
@@ -128,7 +128,10 @@ public:
     }
 
     /** @return The filename as given in the constructor. */
-    const std::string& get_filename() const { return this->lf_filename; }
+    const ghc::filesystem::path& get_filename() const
+    {
+        return this->lf_filename;
+    }
 
     /** @return The filename as given in the constructor, excluding the path
      * prefix. */
@@ -428,11 +431,11 @@ protected:
     void set_format_base_time(log_format* lf);
 
 private:
-    logfile(std::string filename, const logfile_open_options& loo);
+    logfile(ghc::filesystem::path filename, const logfile_open_options& loo);
 
     bool file_options_have_changed();
 
-    std::string lf_filename;
+    ghc::filesystem::path lf_filename;
     logfile_open_options lf_options;
     logfile_activity lf_activity;
     bool lf_named_file{true};

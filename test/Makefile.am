@@ -460,6 +460,7 @@ dist_noinst_DATA = \
     log-samples/sample-f2fba0d0b1e57f9a707ea96a8a4efcdc.txt \
     log-samples/sample-f5afbee90a8c054061c4e9ffe673293cce7761de.txt \
     log-samples/sample-fc8923633e57bacd641d80dde3ff878212230552.txt \
+    naughty_files.py \
 	remote-log-dir/logfile_access_log.0 \
 	remote-log-dir/logfile_access_log.1 \
     tui-captures/tui_echo.0 \

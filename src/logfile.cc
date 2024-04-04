@@ -70,23 +70,27 @@ static const typed_json_path_container<lnav::gzip::header> file_header_handlers
 };
 
 Result<std::shared_ptr<logfile>, std::string>
-logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
+logfile::open(ghc::filesystem::path filename,
+              const logfile_open_options& loo,
+              auto_fd fd)
 {
     require(!filename.empty());
 
     auto lf = std::shared_ptr<logfile>(new logfile(std::move(filename), loo));
 
     memset(&lf->lf_stat, 0, sizeof(lf->lf_stat));
-    char resolved_path[PATH_MAX] = "";
+    ghc::filesystem::path resolved_path;
 
     if (!fd.has_value()) {
-        if (realpath(lf->lf_filename.c_str(), resolved_path) == nullptr) {
+        auto rp_res = lnav::filesystem::realpath(lf->lf_filename);
+        if (rp_res.isErr()) {
             return Err(fmt::format(FMT_STRING("realpath({}) failed with: {}"),
                                    lf->lf_filename,
-                                   strerror(errno)));
+                                   rp_res.unwrapErr()));
         }
 
-        if (stat(resolved_path, &lf->lf_stat) == -1) {
+        resolved_path = rp_res.unwrap();
+        if (lnav::filesystem::statp(resolved_path, &lf->lf_stat) == -1) {
             return Err(fmt::format(FMT_STRING("stat({}) failed with: {}"),
                                    lf->lf_filename,
                                    strerror(errno)));
@@ -94,15 +98,17 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
 
         if (!S_ISREG(lf->lf_stat.st_mode)) {
             return Err(fmt::format(FMT_STRING("{} is not a regular file"),
-                                   lf->lf_filename,
-                                   strerror(errno)));
+                                   lf->lf_filename));
         }
     }
 
     auto_fd lf_fd;
     if (fd.has_value()) {
         lf_fd = std::move(fd);
-    } else if ((lf_fd = ::open(resolved_path, O_RDONLY | O_CLOEXEC)) == -1) {
+    } else if ((lf_fd
+                = lnav::filesystem::openp(resolved_path, O_RDONLY | O_CLOEXEC))
+               == -1)
+    {
         return Err(fmt::format(FMT_STRING("open({}) failed with: {}"),
                                lf->lf_filename,
                                strerror(errno)));
@@ -166,7 +172,8 @@ logfile::open(std::string filename, const logfile_open_options& loo, auto_fd fd)
     return Ok(lf);
 }
 
-logfile::logfile(std::string filename, const logfile_open_options& loo)
+logfile::logfile(ghc::filesystem::path filename,
+                 const logfile_open_options& loo)
     : lf_filename(std::move(filename)), lf_options(loo)
 {
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
@@ -794,16 +801,23 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
                                       = string_fragment::from_str(sbr_str)
                                             .split_lines();
                                   for (auto line_iter = lines.rbegin();
-                                       line_iter != lines.rend();
+                                       // XXX rejigger read_range() for
+                                       // multi-line reads
+                                       std::next(line_iter) != lines.rend();
                                        ++line_iter)
                                   {
                                       sbr_str.erase(line_iter->sf_begin, 22);
                                   }
                               }
+                              if (is_utf8(sbr_str).is_valid()) {
+                                  auto new_size = erase_ansi_escapes(sbr_str);
+                                  sbr_str.resize(new_size);
+                              }
                               return detect_text_format(sbr_str, path);
                           })
                           .unwrapOr(text_format_t::TF_UNKNOWN);
-                log_debug("setting text format to %d", this->lf_text_format);
+                log_debug("setting text format to %s",
+                          fmt::to_string(this->lf_text_format).c_str());
             }
             if (!li.li_utf8_scan_result.is_valid()
                 && this->lf_text_format != text_format_t::TF_MARKDOWN

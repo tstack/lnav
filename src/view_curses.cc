@@ -196,6 +196,13 @@ view_curses::mvwattrline(WINDOW* window,
                 lpc += 1;
                 break;
 
+            case '\x07':
+                expanded_line.append("\U0001F514");
+                utf_adjustments.emplace_back(lpc, -1);
+                char_index += 1;
+                lpc += 1;
+                break;
+
             case '\r':
             case '\n':
                 expanded_line.push_back(' ');
@@ -430,11 +437,31 @@ view_curses::mvwattrline(WINDOW* window,
         short cur_fg, cur_bg;
         pair_content(cur_pair, &cur_fg, &cur_bg);
 
-        if (fg_color[lpc] >= 0
-            && fg_color[lpc] < view_colors::vc_active_palette->tc_palette.size()
-            && bg_color[lpc] == -1 && base_attrs.ta_bg_color.value_or(0) >= 0
-            && base_attrs.ta_bg_color.value_or(0)
-                < view_colors::vc_active_palette->tc_palette.size())
+        auto desired_fg = fg_color[lpc] != -1 ? fg_color[lpc] : cur_fg;
+        auto desired_bg = bg_color[lpc] != -1 ? bg_color[lpc] : cur_bg;
+        if (desired_fg == desired_bg) {
+            if (desired_bg >= 0
+                && desired_bg
+                    < view_colors::vc_active_palette->tc_palette.size())
+            {
+                auto adjusted_color
+                    = view_colors::vc_active_palette->tc_palette[desired_bg]
+                          .xc_lab_color;
+                if (adjusted_color.lc_l < 50.0) {
+                    adjusted_color.lc_l += 50.0;
+                } else {
+                    adjusted_color.lc_l -= 50.0;
+                }
+                bg_color[lpc] = view_colors::vc_active_palette->match_color(
+                    adjusted_color);
+            }
+        } else if (fg_color[lpc] >= 0
+                   && fg_color[lpc]
+                       < view_colors::vc_active_palette->tc_palette.size()
+                   && bg_color[lpc] == -1
+                   && base_attrs.ta_bg_color.value_or(0) >= 0
+                   && base_attrs.ta_bg_color.value_or(0)
+                       < view_colors::vc_active_palette->tc_palette.size())
         {
             const auto& fg_color_info
                 = view_colors::vc_active_palette->tc_palette.at(fg_color[lpc]);
@@ -446,7 +473,7 @@ view_curses::mvwattrline(WINDOW* window,
                     bg_color_info.xc_lab_color))
             {
                 auto adjusted_color = bg_color_info.xc_lab_color;
-                adjusted_color.lc_l -= 40.0;
+                adjusted_color.lc_l = std::max(0.0, adjusted_color.lc_l - 40.0);
                 auto new_bg = view_colors::vc_active_palette->match_color(
                     adjusted_color);
                 for (int lpc2 = lpc; lpc2 < line_width_chars; lpc2++) {

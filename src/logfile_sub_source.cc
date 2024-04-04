@@ -36,6 +36,7 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
+#include "base/fs_util.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "bookmarks.json.hh"
@@ -404,14 +405,14 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         std::string name;
         if (this->lss_flags & F_FILENAME) {
             file_offset_end = this->lss_filename_width;
-            name = this->lss_token_file->get_filename();
+            name = fmt::to_string(this->lss_token_file->get_filename());
             if (file_offset_end < name.size()) {
                 file_offset_end = name.size();
                 this->lss_filename_width = name.size();
             }
         } else {
             file_offset_end = this->lss_basename_width;
-            name = this->lss_token_file->get_unique_path();
+            name = fmt::to_string(this->lss_token_file->get_unique_path());
             if (file_offset_end < name.size()) {
                 file_offset_end = name.size();
                 this->lss_basename_width = name.size();
@@ -992,10 +993,11 @@ logfile_sub_source::rebuild_index(
             }
             this->lss_longest_line = std::max(this->lss_longest_line,
                                               lf->get_longest_line_length());
-            this->lss_basename_width = std::max(this->lss_basename_width,
-                                                lf->get_unique_path().size());
-            this->lss_filename_width
-                = std::max(this->lss_filename_width, lf->get_filename().size());
+            this->lss_basename_width
+                = std::max(this->lss_basename_width,
+                           lf->get_unique_path().native().size());
+            this->lss_filename_width = std::max(
+                this->lss_filename_width, lf->get_filename().native().size());
         }
 
         if (full_sort) {
@@ -1721,7 +1723,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             sqlite3_bind_text(stmt,
                               lpc + 1,
                               filename.c_str(),
-                              filename.length(),
+                              filename.native().length(),
                               SQLITE_STATIC);
             continue;
         }
@@ -1730,7 +1732,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             sqlite3_bind_text(stmt,
                               lpc + 1,
                               filename.c_str(),
-                              filename.length(),
+                              filename.native().length(),
                               SQLITE_STATIC);
             continue;
         }

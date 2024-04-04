@@ -51,6 +51,7 @@ hier_node::lookup_child(section_key_t key) const
             if (iter != this->hn_named_children.end()) {
                 return iter->second;
             }
+
             return nullptr;
         },
         [this](size_t index) -> hier_node* {
@@ -522,6 +523,14 @@ public:
                         }
                         file2 = file2.consume_n(2).value();
                     }
+                    this->sw_line.get_attrs().emplace_back(
+                        line_range{
+                            this->sw_range.lr_start
+                                + tokenize_res->tr_capture.c_begin,
+                            this->sw_range.lr_start
+                                + tokenize_res->tr_capture.c_begin,
+                        },
+                        VC_ROLE.value(role_t::VCR_H1));
                     if (file1 == "/dev/null" || file1 == file2) {
                         this->sw_line.get_attrs().emplace_back(
                             line_range{
@@ -541,6 +550,14 @@ public:
                     break;
                 }
                 case DT_DIFF_HUNK_HEADING: {
+                    this->sw_line.get_attrs().emplace_back(
+                        line_range{
+                            this->sw_range.lr_start
+                                + tokenize_res->tr_capture.c_begin,
+                            this->sw_range.lr_start
+                                + tokenize_res->tr_capture.c_begin,
+                        },
+                        VC_ROLE.value(role_t::VCR_H2));
                     this->sw_line.get_attrs().emplace_back(
                         line_range{
                             this->sw_range.lr_start + inner_cap.c_begin,
@@ -878,3 +895,31 @@ metadata::possibility_provider(const std::vector<section_key_t>& path)
 
 }  // namespace document
 }  // namespace lnav
+
+namespace fmt {
+auto
+formatter<lnav::document::section_key_t>::format(
+    const lnav::document::section_key_t& key, fmt::format_context& ctx)
+    -> decltype(ctx.out()) const
+{
+    return key.match(
+        [this, &ctx](const std::string& str) {
+            return formatter<string_view>::format(str, ctx);
+        },
+        [&ctx](size_t index) {
+            return format_to(ctx.out(), FMT_STRING("{}"), index);
+        });
+}
+
+auto
+formatter<std::vector<lnav::document::section_key_t>>::format(
+    const std::vector<lnav::document::section_key_t>& path,
+    fmt::format_context& ctx) -> decltype(ctx.out()) const
+{
+    for (const auto& part : path) {
+        format_to(ctx.out(), FMT_STRING("\uff1a"));
+        format_to(ctx.out(), FMT_STRING("{}"), part);
+    }
+    return ctx.out();
+}
+}  // namespace fmt

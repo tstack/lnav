@@ -52,7 +52,7 @@ run_cap_test ${lnav_test} -n -e 'echo hi'
 
 run_cap_test ${lnav_test} -m piper list
 
-PIPER_URL=$(${lnav_test} -m -q piper list | tail -1 | sed -r -e 's;.*(piper://[^ ]+).*;\1;g')
+PIPER_URL=$(env NO_COLOR=1 ${lnav_test} -m -q piper list | tail -1 | sed -r -e 's;.*(piper://[^ ]+).*;\1;g')
 
 run_cap_test ${lnav_test} -n $PIPER_URL
 

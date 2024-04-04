@@ -117,3 +117,8 @@ echo "Hello, World!" | run_cap_test \
 echo "Hello, World!" | run_cap_test \
     env TEST_COMMENT="piper crumbs" TZ=America/Los_Angeles \
     ${lnav_test} -nt
+
+${test_dir}/naughty_files.py
+run_cap_test ${lnav_test} -n naughty/file-with-hidden-text.txt
+
+run_cap_test ${lnav_test} -n naughty/file-with-terminal-controls.txt

@@ -45,6 +45,26 @@ using namespace std;
 int
 main(int argc, char* argv[])
 {
+    printf("BEGIN test\n");
+    {
+        std::string bad_bold = "That is not\b\b\ball\n";
+        string_attrs_t sa;
+
+        scrub_ansi_string(bad_bold, &sa);
+        printf("bad bold1: '%s'\n",
+               fmt::format(FMT_STRING("{:?}"), bad_bold).c_str());
+        assert(bad_bold == "That is not\b\b\ball\n");
+    }
+    {
+        std::string bad_bold = "test r\bra\bc not\b\b\ball \x16";
+        string_attrs_t sa;
+
+        scrub_ansi_string(bad_bold, &sa);
+        printf("bad bold2: '%s'\n",
+               fmt::format(FMT_STRING("{:?}"), bad_bold).c_str());
+        assert(bad_bold == "test ra\bc not\b\b\ball ");
+    }
+
     {
         char input[] = "Hello, \x1b[33;mWorld\x1b[0;m!";
 

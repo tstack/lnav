@@ -144,4 +144,19 @@ metadata discover_structure(attr_line_t& al,
 }  // namespace document
 }  // namespace lnav
 
+namespace fmt {
+template<>
+struct formatter<lnav::document::section_key_t> : formatter<string_view> {
+    auto format(const lnav::document::section_key_t& p, format_context& ctx)
+        -> decltype(ctx.out()) const;
+};
+
+template<>
+struct formatter<std::vector<lnav::document::section_key_t>>
+    : formatter<string_view> {
+    auto format(const std::vector<lnav::document::section_key_t>& p,
+                format_context& ctx) -> decltype(ctx.out()) const;
+};
+}  // namespace fmt
+
 #endif

@@ -313,15 +313,6 @@ public:
         return *this;
     }
 
-    attr_line_t& append_quoted(const attr_line_t& al)
-    {
-        this->al_string.append("\u201c");
-        this->append(al);
-        this->al_string.append("\u201d");
-
-        return *this;
-    }
-
     template<typename S>
     attr_line_t& append_quoted(S s)
     {
@@ -344,10 +335,22 @@ public:
         return *this;
     }
 
-    template<typename S>
-    attr_line_t& append(S str)
+    attr_line_t& append(const std::string& str)
     {
         this->al_string.append(str);
+        return *this;
+    }
+
+    attr_line_t& append(const char* str)
+    {
+        this->al_string.append(str);
+        return *this;
+    }
+
+    template<typename V>
+    attr_line_t& append(const V& v)
+    {
+        this->al_string.append(fmt::to_string(v));
         return *this;
     }
 

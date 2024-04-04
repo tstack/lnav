@@ -193,7 +193,7 @@ eval_with(logfile& lf, logfile::iterator ll)
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
                                   filename.c_str(),
-                                  filename.length(),
+                                  filename.native().length(),
                                   SQLITE_STATIC);
                 continue;
             }
@@ -202,7 +202,7 @@ eval_with(logfile& lf, logfile::iterator ll)
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
                                   filename.c_str(),
-                                  filename.length(),
+                                  filename.native().length(),
                                   SQLITE_STATIC);
                 continue;
             }

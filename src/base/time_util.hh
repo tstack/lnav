@@ -32,7 +32,6 @@
 
 #include <chrono>
 
-#include <date/date.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/time.h>
@@ -40,6 +39,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "date/date.h"
 
 namespace lnav {
 

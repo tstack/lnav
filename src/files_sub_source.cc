@@ -30,6 +30,7 @@
 #include "files_sub_source.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
 #include "base/opt_util.hh"
@@ -255,7 +256,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
             auto iter = errs->begin();
             std::advance(iter, line);
             auto path = ghc::filesystem::path(iter->first);
-            auto fn = path.filename().string();
+            auto fn = fmt::to_string(path.filename());
 
             truncate_to(fn, filename_width);
             value_out = fmt::format(FMT_STRING("    {:<{}}   {}"),
@@ -272,7 +273,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         auto iter = fc.fc_other_files.begin();
         std::advance(iter, line);
         auto path = ghc::filesystem::path(iter->first);
-        auto fn = path.string();
+        auto fn = fmt::to_string(path);
 
         truncate_to(fn, filename_width);
         value_out = fmt::format(FMT_STRING("    {:<{}}   {:14}  {}"),
@@ -286,7 +287,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     line -= fc.fc_other_files.size();
 
     const auto& lf = fc.fc_files[line];
-    auto fn = lf->get_unique_path();
+    auto fn = fmt::to_string(ghc::filesystem::path(lf->get_unique_path()));
     char start_time[64] = "", end_time[64] = "";
     std::vector<std::string> file_notes;
 

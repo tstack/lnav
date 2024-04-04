@@ -51,11 +51,14 @@ public:
         this->ups_unique_path = path;
     }
 
-    const std::string& get_unique_path() const { return this->ups_unique_path; }
+    const ghc::filesystem::path& get_unique_path() const
+    {
+        return this->ups_unique_path;
+    }
 
     virtual ghc::filesystem::path get_path() const = 0;
 
-    ghc::filesystem::path& get_path_prefix()
+    const ghc::filesystem::path& get_path_prefix() const
     {
         return this->ups_prefix;
     }
@@ -67,7 +70,7 @@ public:
 
 private:
     ghc::filesystem::path ups_prefix;
-    std::string ups_unique_path;
+    ghc::filesystem::path ups_unique_path;
 };
 
 /**

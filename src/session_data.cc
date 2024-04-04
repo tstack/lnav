@@ -1509,7 +1509,7 @@ save_session_with_id(const std::string& session_id)
                 for (auto& lf : lnav_data.ld_active_files.fc_files) {
                     auto ld_opt = lnav_data.ld_log_source.find_data(lf);
 
-                    file_states.gen(lf->get_filename());
+                    file_states.gen(lf->get_filename().native());
 
                     {
                         yajlpp_map file_state(handle);

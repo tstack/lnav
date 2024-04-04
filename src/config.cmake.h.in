@@ -26,8 +26,6 @@
 
 #define HAVE_SQLITE3_DROP_MODULES
 
-#define HAVE_RUST_DEPS 1
-
 #define _XOPEN_SOURCE_EXTENDED 1
 
 #define PACKAGE_BUGREPORT "lnav@googlegroups.com"

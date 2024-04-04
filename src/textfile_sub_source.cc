@@ -1267,12 +1267,15 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
         return nonstd::nullopt;
     }
 
+    log_debug("  path for line: %s", fmt::to_string(path_for_line).c_str());
     auto last_key = path_for_line.back();
     path_for_line.pop_back();
 
     auto parent_opt = lnav::document::hier_node::lookup_path(
         md.m_sections_root.get(), path_for_line);
     if (!parent_opt) {
+        log_debug("  no parent for path: %s",
+                  fmt::to_string(path_for_line).c_str());
         return nonstd::nullopt;
     }
     auto parent = parent_opt.value();
@@ -1280,6 +1283,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     auto child_hn = parent->lookup_child(last_key);
     if (!child_hn) {
         // XXX "should not happen"
+        log_debug("  child not found");
         return nonstd::nullopt;
     }
 

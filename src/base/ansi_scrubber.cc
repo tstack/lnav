@@ -153,6 +153,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             line_range bold_range;
             line_range ul_range;
             auto sub_sf = sf;
+            auto mid_sf = string_fragment();
 
             while (!sub_sf.empty()) {
                 auto lhs_opt = sub_sf.consume_codepoint();
@@ -170,7 +171,6 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     return;
                 }
                 auto rhs_pair = rhs_opt.value();
-                sub_sf = rhs_pair.second;
 
                 if (lhs_pair.first == '_' || rhs_pair.first == '_') {
                     if (sa != nullptr && bold_range.is_valid()) {
@@ -191,7 +191,9 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     ww898::utf::utf8::write(cp, [&str, &fill_index](auto ch) {
                         str[fill_index++] = ch;
                     });
-                } else {
+                } else if (lhs_pair.first == rhs_pair.first
+                           && !fmt::v10::detail::needs_escape(lhs_pair.first))
+                {
                     if (sa != nullptr && ul_range.is_valid()) {
                         shift_string_attrs(
                             *sa, ul_range.lr_start, -ul_range.length() * 2);
@@ -214,11 +216,15 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         log_error("invalid UTF-8 at %d", sf.sf_begin);
                         return;
                     }
+                } else {
+                    mid_sf = mid_pair.second;
+                    break;
                 }
+                sub_sf = rhs_pair.second;
             }
 
             auto output_size = fill_index - sf.sf_begin;
-            auto erased_size = sf.length() - output_size;
+            auto erased_size = sub_sf.sf_begin - fill_index;
 
             if (sa != nullptr && ul_range.is_valid()) {
                 shift_string_attrs(
@@ -234,14 +240,18 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                                  VC_STYLE.value(text_attrs{A_BOLD}));
                 bold_range.clear();
             }
-            if (sa != nullptr) {
+            if (sa != nullptr && output_size > 0) {
                 sa->emplace_back(line_range{last_origin_offset_end,
                                             sf.sf_begin + (int) output_size},
                                  SA_ORIGIN_OFFSET.value(origin_offset));
             }
 
-            str.erase(str.begin() + fill_index, str.begin() + sf.sf_end);
-            last_origin_offset_end = sf.sf_begin + output_size;
+            str.erase(str.begin() + fill_index, str.begin() + sub_sf.sf_begin);
+            if (!mid_sf.empty()) {
+                last_origin_offset_end = mid_sf.sf_begin;
+            } else {
+                last_origin_offset_end = sf.sf_begin + output_size;
+            }
             origin_offset += erased_size;
             matcher.reload_input(str, last_origin_offset_end);
             continue;

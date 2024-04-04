@@ -75,6 +75,7 @@ add_library(
 )
 
 target_include_directories(base PUBLIC . .. ../third-party
+        ../third-party/date/include
         ${CMAKE_CURRENT_BINARY_DIR}/..)
 target_link_libraries(base cppfmt cppscnlib pcrepp ncurses::libcurses pthread lnavdt datepp)
 

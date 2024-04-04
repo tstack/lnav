@@ -32,6 +32,7 @@
 
 #include "readline_possibilities.hh"
 
+#include "base/fs_util.hh"
 #include "base/isc.hh"
 #include "base/opt_util.hh"
 #include "config.h"
@@ -425,8 +426,7 @@ add_file_possibilities()
             continue;
         }
 
-        auto escaped_fn
-            = std::regex_replace(lf->get_filename(), sh_escape, R"(\\\1)");
+        auto escaped_fn = fmt::to_string(lf->get_filename());
 
         rc->add_possibility(ln_mode_t::COMMAND, "loaded-files", escaped_fn);
 

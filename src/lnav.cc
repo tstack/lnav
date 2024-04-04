@@ -2577,7 +2577,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             return EXIT_FAILURE;
         }
 
-        for (auto& file_path : file_args) {
+        for (const auto& file_path : file_args) {
             if (endswith(file_path, ".git")) {
                 if (!install_from_git(file_path)) {
                     return EXIT_FAILURE;
@@ -2963,62 +2963,63 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         load_stdin = true;
     }
 
-    for (auto& file_path : file_args) {
-        scrub_ansi_string(file_path, nullptr);
-        auto file_path_without_trailer = file_path;
+    for (const auto& file_path_str : file_args) {
+        auto file_path_without_trailer = file_path_str;
         auto file_loc = file_location_t{mapbox::util::no_init{}};
         auto_mem<char> abspath;
         struct stat st;
 
-        auto colon_index = file_path.rfind(':');
+        auto colon_index = file_path_str.rfind(':');
         if (colon_index != std::string::npos) {
-            auto top_range = scn::string_view{&file_path[colon_index + 1],
-                                              &(*file_path.cend())};
+            auto top_range = scn::string_view{&file_path_str[colon_index + 1],
+                                              &(*file_path_str.cend())};
             auto scan_res = scn::scan_value<int>(top_range);
 
             if (scan_res) {
-                file_path_without_trailer = file_path.substr(0, colon_index);
+                file_path_without_trailer
+                    = file_path_str.substr(0, colon_index);
                 file_loc = vis_line_t(scan_res.value());
             } else {
                 log_warning(
                     "failed to parse line number from file path "
                     "with colon: %s",
-                    file_path.c_str());
+                    file_path_str.c_str());
             }
         }
-        auto hash_index = file_path.rfind('#');
+        auto hash_index = file_path_str.rfind('#');
         if (hash_index != std::string::npos) {
-            file_loc = file_path.substr(hash_index);
-            file_path_without_trailer = file_path.substr(0, hash_index);
+            file_loc = file_path_str.substr(hash_index);
+            file_path_without_trailer = file_path_str.substr(0, hash_index);
         }
-        if (stat(file_path_without_trailer.c_str(), &st) == 0) {
-            file_path = file_path_without_trailer;
-        }
+        auto file_path = ghc::filesystem::path(
+            stat(file_path_without_trailer.c_str(), &st) == 0
+                ? file_path_without_trailer
+                : file_path_str);
 
-        if (file_path == "-") {
+        if (file_path_str == "-") {
             load_stdin = true;
         }
 #ifdef HAVE_LIBCURL
-        else if (is_url(file_path))
+        else if (is_url(file_path_str))
         {
-            auto ul = std::make_shared<url_loader>(file_path);
+            auto ul = std::make_shared<url_loader>(file_path_str);
 
             lnav_data.ld_active_files.fc_file_names[ul->get_path()]
                 .with_filename(file_path);
             isc::to<curl_looper&, services::curl_streamer_t>().send(
                 [ul](auto& clooper) { clooper.add_request(ul); });
-        } else if (file_path.find("://") != std::string::npos) {
+        } else if (file_path_str.find("://") != std::string::npos) {
             lnav_data.ld_commands.insert(
                 lnav_data.ld_commands.begin(),
-                fmt::format(FMT_STRING(":open {}"), file_path));
+                fmt::format(FMT_STRING(":open {}"), file_path_str));
         }
 #endif
         else if (lnav::filesystem::is_glob(file_path))
         {
             lnav_data.ld_active_files.fc_file_names[file_path].with_tail(
                 !(lnav_data.ld_flags & LNF_HEADLESS));
-        } else if (stat(file_path.c_str(), &st) == -1) {
-            if (file_path.find(':') != std::string::npos) {
+        } else if (lnav::filesystem::statp(file_path, &st) == -1) {
+            if (file_path_str.find(':') != std::string::npos) {
                 lnav_data.ld_active_files.fc_file_names[file_path].with_tail(
                     !(lnav_data.ld_flags & LNF_HEADLESS));
             } else {
@@ -3041,7 +3042,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         } else if (S_ISFIFO(st.st_mode)) {
             auto_fd fifo_fd;
 
-            if ((fifo_fd = open(file_path.c_str(), O_RDONLY)) == -1) {
+            if ((fifo_fd = lnav::filesystem::openp(file_path, O_RDONLY)) == -1)
+            {
                 lnav::console::print(
                     stderr,
                     lnav::console::user_message::error(

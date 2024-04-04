@@ -69,8 +69,6 @@ public:
 
     void update_title(listview_curses* lc)
     {
-        static const char* xterm_title_fmt = "\033]0;%s\007";
-
         if (!this->te_enabled) {
             return;
         }
@@ -84,12 +82,12 @@ public:
             auto line_attr_opt = get_string_attr(sa, logline::L_FILE);
             if (line_attr_opt) {
                 auto lf = line_attr_opt.value().get();
-                const std::string& filename = lf->get_unique_path();
+                const auto& filename = lf->get_unique_path();
 
                 if (filename != this->te_last_title) {
-                    std::string title = this->te_prefix + filename;
-
-                    printf(xterm_title_fmt, title.c_str());
+                    fmt::print(FMT_STRING("\033]0;{}{}\007"),
+                               this->te_prefix,
+                               filename);
                     fflush(stdout);
 
                     this->te_last_title = filename;
@@ -101,9 +99,8 @@ public:
         const std::string& view_title = lc->get_title();
 
         if (view_title != this->te_last_title) {
-            std::string title = this->te_prefix + view_title;
-
-            printf(xterm_title_fmt, title.c_str());
+            fmt::print(
+                FMT_STRING("\033]0;{}{}\007"), this->te_prefix, view_title);
             fflush(stdout);
 
             this->te_last_title = view_title;
