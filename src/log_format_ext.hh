@@ -231,6 +231,7 @@ public:
             ABBREV,
             TRUNCATE,
             DOTDOT,
+            LASTWORD,
         };
 
         enum class transform_t {

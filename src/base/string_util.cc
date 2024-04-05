@@ -199,6 +199,34 @@ is_url(const std::string& fn)
 }
 
 size_t
+last_word_str(char* str, size_t len, size_t max_len)
+{
+    if (len < max_len) {
+        return len;
+    }
+
+    size_t last_start = 0;
+
+    for (size_t index = 0; index < len; index++) {
+        switch (str[index]) {
+            case '.':
+            case '-':
+            case '/':
+            case ':':
+                last_start = index + 1;
+                break;
+        }
+    }
+
+    if (last_start == 0) {
+        return len;
+    }
+
+    memmove(&str[0], &str[last_start], len - last_start);
+    return len - last_start;
+}
+
+size_t
 abbreviate_str(char* str, size_t len, size_t max_len)
 {
     size_t last_start = 1;
