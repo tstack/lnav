@@ -7,6 +7,8 @@ Bug Fixes:
     with backslash escapes.
   - Text that has the same foreground and background colors will
     have the background set to a contrasting color.
+* Sub-millisecond time values should now be preserved when
+  displaying JSON-lines logs.
 * A crash during initialization on Apple Silicon and MacOS 12
   has been fixed.
 
