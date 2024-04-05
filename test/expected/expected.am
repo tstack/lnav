@@ -676,6 +676,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_764306f0e5f610ba71f521ba3d19fe158ece0ba5.out \
     $(srcdir)/%reldir%/test_sql.sh_7f664c9cda0ae1c48333e21051b5e0eeafd5b4bc.err \
     $(srcdir)/%reldir%/test_sql.sh_7f664c9cda0ae1c48333e21051b5e0eeafd5b4bc.out \
+    $(srcdir)/%reldir%/test_sql.sh_859af4cc5f57345be8dcece599419d58f332841a.err \
+    $(srcdir)/%reldir%/test_sql.sh_859af4cc5f57345be8dcece599419d58f332841a.out \
     $(srcdir)/%reldir%/test_sql.sh_85fe3b9803254ea54b864d4865d7bd4d7a7f86c6.err \
     $(srcdir)/%reldir%/test_sql.sh_85fe3b9803254ea54b864d4865d7bd4d7a7f86c6.out \
     $(srcdir)/%reldir%/test_sql.sh_8ee288f1508eaab0367e465e9f382e848f3282aa.err \

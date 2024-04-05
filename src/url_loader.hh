@@ -44,6 +44,8 @@ class url_loader : public curl_request {
 public:
     url_loader(const std::string& url) : curl_request(url)
     {
+        std::error_code errc;
+        ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
         auto tmp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
                                                         / "url.XXXXXX");
         if (tmp_res.isErr()) {

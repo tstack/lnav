@@ -1052,6 +1052,8 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
             return std::string();
         });
     }
+    std::error_code errc;
+    ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
     auto open_temp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
                                                           / "exec.XXXXXX");
     if (open_temp_res.isErr()) {

@@ -1008,6 +1008,8 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         }
 
         case ln_mode_t::EXEC: {
+            std::error_code errc;
+            ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
             auto open_temp_res = lnav::filesystem::open_temp_file(
                 lnav::paths::workdir() / "exec.XXXXXX");
 
