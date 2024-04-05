@@ -456,6 +456,7 @@ static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
     {"truncate",
      external_log_format::json_format_element::overflow_t::TRUNCATE},
     {"dot-dot", external_log_format::json_format_element::overflow_t::DOTDOT},
+    {"last-word", external_log_format::json_format_element::overflow_t::LASTWORD},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
