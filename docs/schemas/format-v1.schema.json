@@ -718,7 +718,8 @@
                                 "enum": [
                                     "abbrev",
                                     "truncate",
-                                    "dot-dot"
+                                    "dot-dot",
+                                    "last-word"
                                 ]
                             },
                             "text-transform": {

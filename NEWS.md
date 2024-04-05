@@ -1,5 +1,9 @@
 ## lnav v0.12.2
 
+Features:
+* Added the "last-word" line-format field shortening algorithm
+  from @flicus.
+
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good
   time to add some checks for data being hidden by escape codes:

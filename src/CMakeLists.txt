@@ -288,6 +288,7 @@ add_library(
         third-party/date/src/tz.cpp
 )
 target_include_directories(datepp PUBLIC third-party/date/include)
+target_link_libraries(datepp ${lnav_LIBS})
 
 add_library(
         cppscnlib STATIC

@@ -227,8 +227,9 @@ object with the following fields:
       :truncate: Truncates any text past the maximum width.
       :dot-dot: Cuts out the middle of the text and replaces it with two
         dots (i.e. '..').
-      :last-word: Removes all but the last word in dotted text. For example,
-        "com.example.foo" would be shortened to "foo".
+      :last-word: Removes all but the last word in text with dot, dash,
+        forward-slash, or colon separators. For example, "com.example.foo"
+        would be shortened to "foo".
 
     (v0.8.2+)
   :timestamp-format: The timestamp format to use when displaying the time

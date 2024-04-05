@@ -2282,9 +2282,13 @@ external_log_format::get_subline(const logline& ll,
                                     }
                                     case json_format_element::overflow_t::
                                         LASTWORD: {
-                                        size_t new_size = last_word_str(&str[0], str.size(), jfe.jfe_max_width);
+                                        size_t new_size
+                                            = last_word_str(&str[0],
+                                                            str.size(),
+                                                            jfe.jfe_max_width);
                                         str.resize(new_size);
-                                        this->json_append(jfe, vd, str.data(), str.size());
+                                        this->json_append(
+                                            jfe, vd, str.data(), str.size());
                                         break;
                                     }
                                 }
