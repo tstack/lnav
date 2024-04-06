@@ -280,9 +280,7 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
                    || attr.sa_type == &lnav::sql::PRQL_NUMBER_ATTR)
         {
             alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_NUMBER));
-        } else if (attr.sa_type == &SQL_STRING_ATTR
-                   || attr.sa_type == &lnav::sql::PRQL_STRING_ATTR)
-        {
+        } else if (attr.sa_type == &SQL_STRING_ATTR) {
             if (lr.length() > 1 && al.al_string[lr.lr_end - 1] == '\'') {
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_STRING));
             } else {
@@ -291,6 +289,8 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
                 alb.overlay_attr_for_char(lr.lr_start,
                                           VC_ROLE.value(role_t::VCR_ERROR));
             }
+        } else if (attr.sa_type == &lnav::sql::PRQL_STRING_ATTR) {
+            alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_STRING));
         } else if (attr.sa_type == &SQL_OPERATOR_ATTR
                    || attr.sa_type == &lnav::sql::PRQL_OPERATOR_ATTR)
         {

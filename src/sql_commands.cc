@@ -485,7 +485,7 @@ static readline_context::command_t sql_commands[] = {
             .with_parameter({"table", "The table to use as a source"})
             .with_example({
                 "To pull data from the 'http_status_codes' database table",
-                "from db.http_status_codes | take 3",
+                "from http_status_codes | take 3",
                 help_example::language::prql,
             })
             .with_example({

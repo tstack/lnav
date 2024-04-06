@@ -1397,7 +1397,7 @@ annotate_prql_statement(attr_line_t& al)
             &PRQL_STRING_ATTR,
         },
         {
-            lnav::pcre2pp::code::from_const(R"(\A(?:f|r|s)?\"([^\"]|\\.)*\")"),
+            lnav::pcre2pp::code::from_const(R"(\A(?:f|r|s)?"([^\"]|\\.)*")"),
             &PRQL_STRING_ATTR,
         },
         {
