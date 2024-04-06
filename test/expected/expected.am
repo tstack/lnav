@@ -776,6 +776,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_anno.sh_ce0506ee7a12eb0f7b970522cc6a79180ecb20cc.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_de46094b6e005285dc0921ef9979e36240c5042d.err \
     $(srcdir)/%reldir%/test_sql_anno.sh_de46094b6e005285dc0921ef9979e36240c5042d.out \
+    $(srcdir)/%reldir%/test_sql_anno.sh_e7dae4ba18c42c416ed03afd8819200f63e89ac8.err \
+    $(srcdir)/%reldir%/test_sql_anno.sh_e7dae4ba18c42c416ed03afd8819200f63e89ac8.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_f3c64191d6016767a5857fbb1bad26548586bb96.err \
     $(srcdir)/%reldir%/test_sql_anno.sh_f3c64191d6016767a5857fbb1bad26548586bb96.out \
     $(srcdir)/%reldir%/test_sql_coll_func.sh_077cab6e271c914daf5b221cc512853077891f35.err \

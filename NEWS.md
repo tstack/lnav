@@ -3,6 +3,8 @@
 Features:
 * Added the "last-word" line-format field shortening algorithm
   from @flicus.
+* Added a `stats.hist` PRQL transform that produces a histogram
+  of values over time.
 
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good

@@ -359,7 +359,9 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
             stacked_bar_chart<std::string> chart;
             int start_line = value_out.size();
 
-            chart.with_stacking_enabled(false).with_margins(3, 0);
+            chart.with_stacking_enabled(false)
+                .with_margins(3, 0)
+                .with_show_state(stacked_bar_chart_base::show_all{});
 
             for (auto& jpw_value : jpw.jpw_values) {
                 value_out.emplace_back("   " + jpw_value.wt_ptr + " = "

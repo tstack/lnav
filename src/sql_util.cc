@@ -1385,10 +1385,6 @@ annotate_prql_statement(attr_line_t& al)
             &PRQL_PAREN_ATTR,
         },
         {
-            lnav::pcre2pp::code::from_const(R"(\A\|)"),
-            &PRQL_PIPE_ATTR,
-        },
-        {
             lnav::pcre2pp::code::from(transform_re_str).unwrap(),
             &PRQL_TRANSFORM_ATTR,
         },
@@ -1424,8 +1420,12 @@ annotate_prql_statement(attr_line_t& al)
         },
         {
             lnav::pcre2pp::code::from_const(
-                R"(\A(\*|\->{1,2}|<|>|=>|={1,2}|!|\-|\+|~=|\.\.|,))"),
+                R"(\A(\*|\->{1,2}|<|>|=>|={1,2}|\|\||&&|!|\-|\+|~=|\.\.|,|\?\?))"),
             &PRQL_OPERATOR_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A\|)"),
+            &PRQL_PIPE_ATTR,
         },
         {
             lnav::pcre2pp::code::from_const(R"(\A\.)"),

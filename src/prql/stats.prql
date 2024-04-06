@@ -17,3 +17,13 @@ let by = func column values rel <relation> -> <relation> (
   rel
   group {column} (aggregate values)
 )
+
+let hist = func column slice:'5m' rel <relation> -> (
+  rel
+  group { tslice = (time.slice log_time_msecs slice), column } (
+    aggregate { total = count(this) }
+  )
+  group { tslice } (
+    aggregate { v = json.group_object column total }
+  )
+)

@@ -668,6 +668,25 @@ static readline_context::command_t sql_commands[] = {
         {"prql-source"},
     },
     {
+        "stats.hist",
+        prql_cmd_sort,
+        help_text("stats.hist", "Count values per bucket of time")
+            .prql_function()
+            .with_tags({"prql"})
+            .with_parameter(help_text{"col", "The column to count"})
+            .with_parameter(help_text{"slice", "The time slice"}
+                                .optional()
+                                .with_default_value("'5m'"))
+            .with_example({
+                "To chart the values of ex_procname over time",
+                "from lnav_example_log | stats.hist ex_procname",
+                help_example::language::prql,
+            }),
+        nullptr,
+        "prql-source",
+        {"prql-source"},
+    },
+    {
         "stats.sum_of",
         prql_cmd_sort,
         help_text("stats.sum_of", "Compute the sum of col")
