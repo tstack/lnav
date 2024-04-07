@@ -43,7 +43,7 @@ jobs:
         run: >-
           mkdir ${{ env.LNAV_BASENAME }} &&
           cd ${{ env.LNAV_BASENAME }} &&
-          cp ../NEWS.md ../README . &&
+          cp ../NEWS.md ../README ../lnav.1 . &&
           cp ../lbuild/src/lnav . &&
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
@@ -96,7 +96,7 @@ jobs:
           cd ${{ github.workspace }} &&
           mkdir ${{ env.LNAV_BASENAME }} &&
           cd ${{ env.LNAV_BASENAME }} &&
-          cp ../NEWS.md ../README . &&
+          cp ../NEWS.md ../README ../lnav.1 . &&
           cp ../lbuild/src/lnav . &&
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
@@ -149,7 +149,7 @@ jobs:
         run: >-
           mkdir ${{ env.LNAV_BASENAME }} &&
           cd ${{ env.LNAV_BASENAME }} &&
-          cp ../NEWS.md ../README . &&
+          cp ../NEWS.md ../README ../lnav.1 . &&
           cp ../src/lnav . &&
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
