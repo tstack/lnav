@@ -5,6 +5,8 @@ Features:
   from @flicus.
 * Added a `stats.hist` PRQL transform that produces a histogram
   of values over time.
+* The preview for the `:open` command will now show a listing
+  of archive contents.
 
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good
@@ -17,6 +19,7 @@ Bug Fixes:
   displaying JSON-lines logs.
 * A crash during initialization on Apple Silicon and MacOS 12
   has been fixed.
+* A crash when previewing non-text files.
 
 ## lnav v0.12.1
 

@@ -37,8 +37,11 @@
 #include <string>
 #include <utility>
 
+#include "base/file_range.hh"
 #include "base/result.h"
 #include "ghc/filesystem.hpp"
+#include "mapbox/variant.hpp"
+#include "optional.hpp"
 
 namespace archive_manager {
 
@@ -56,7 +59,22 @@ struct extract_progress {
 using extract_cb
     = std::function<extract_progress*(const ghc::filesystem::path&, ssize_t)>;
 
-bool is_archive(const ghc::filesystem::path& filename);
+struct archive_info {
+    struct entry {
+        ghc::filesystem::path e_name;
+        const char* e_mode;
+        time_t e_mtime;
+        nonstd::optional<file_ssize_t> e_size;
+    };
+    const char* ai_format_name;
+    std::vector<entry> ai_entries;
+};
+struct unknown_file {};
+
+using describe_result = mapbox::util::variant<archive_info, unknown_file>;
+
+Result<describe_result, std::string> describe(
+    const ghc::filesystem::path& filename);
 
 ghc::filesystem::path filename_to_tmp_path(const std::string& filename);
 

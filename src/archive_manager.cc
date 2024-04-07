@@ -74,10 +74,13 @@ enable_desired_archive_formats(archive* arc)
 }
 #endif
 
-bool
-is_archive(const fs::path& filename)
+Result<describe_result, std::string>
+describe(const fs::path& filename)
 {
 #if HAVE_ARCHIVE_H
+    static const auto RAW_FORMAT_NAME = string_fragment::from_const("raw");
+    static const auto GZ_FILTER_NAME = string_fragment::from_const("gzip");
+
     auto_mem<archive> arc(archive_read_free);
 
     arc = archive_read_new();
@@ -96,39 +99,56 @@ is_archive(const fs::path& filename)
         if (archive_read_next_header(arc, &entry) == ARCHIVE_OK) {
             log_debug("read next done %s", filename.c_str());
 
-            static const auto RAW_FORMAT_NAME = string_fragment("raw");
-            static const auto GZ_FILTER_NAME = string_fragment("gzip");
-
             format_name = archive_format_name(arc);
-
             if (RAW_FORMAT_NAME == format_name) {
                 auto filter_count = archive_filter_count(arc);
 
                 if (filter_count == 1) {
-                    return false;
+                    return Ok(describe_result{unknown_file{}});
                 }
 
                 const auto* first_filter_name = archive_filter_name(arc, 0);
                 if (filter_count == 2 && GZ_FILTER_NAME == first_filter_name) {
-                    return false;
+                    return Ok(describe_result{unknown_file{}});
                 }
             }
             log_info(
                 "detected archive: %s -- %s", filename.c_str(), format_name);
-            return true;
+            auto ai = archive_info{
+                format_name,
+            };
+
+            do {
+                ai.ai_entries.emplace_back(archive_info::entry{
+                    archive_entry_pathname_utf8(entry),
+                    archive_entry_strmode(entry),
+                    archive_entry_mtime(entry),
+                    archive_entry_size_is_set(entry)
+                        ? nonstd::make_optional(archive_entry_size(entry))
+                        : nonstd::nullopt,
+                });
+            } while (archive_read_next_header(arc, &entry) == ARCHIVE_OK);
+
+            return Ok(describe_result{ai});
         }
 
         log_info("archive read header failed: %s -- %s",
                  filename.c_str(),
                  archive_error_string(arc));
+        return Err(fmt::format(FMT_STRING("unable to read header: {} -- {}"),
+                               filename,
+                               archive_error_string(arc)));
     } else {
         log_info("archive open failed: %s -- %s",
                  filename.c_str(),
                  archive_error_string(arc));
+        return Err(fmt::format(FMT_STRING("unable to open file: {} -- {}"),
+                               filename,
+                               archive_error_string(arc)));
     }
 #endif
 
-    return false;
+    return Ok(describe_result{unknown_file{}});
 }
 
 static fs::path

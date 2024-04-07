@@ -44,6 +44,7 @@
 #include "base/attr_line.builder.hh"
 #include "base/auto_mem.hh"
 #include "base/fs_util.hh"
+#include "base/humanize.hh"
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
 #include "base/isc.hh"
@@ -3234,31 +3235,32 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         lnav_data.ld_preview_source[0].clear();
         if (!fc.fc_file_names.empty()) {
             auto iter = fc.fc_file_names.begin();
-            std::string fn = iter->first;
-            auto_fd preview_fd;
+            std::string fn_str = iter->first;
 
-            if (fn.find(':') != std::string::npos) {
+            if (fn_str.find(':') != std::string::npos) {
                 auto id = lnav_data.ld_preview_generation;
                 lnav_data.ld_preview_status_source[0]
                     .get_description()
                     .set_cylon(true)
-                    .set_value("Loading %s...", fn.c_str());
+                    .set_value("Loading %s...", fn_str.c_str());
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
                 lnav_data.ld_preview_source[0].clear();
 
                 isc::to<tailer::looper&, services::remote_tailer_t>().send(
-                    [id, fn](auto& tlooper) {
-                        auto rp_opt = humanize::network::path::from_str(fn);
+                    [id, fn_str](auto& tlooper) {
+                        auto rp_opt = humanize::network::path::from_str(fn_str);
                         if (rp_opt) {
                             tlooper.load_preview(id, *rp_opt);
                         }
                     });
                 lnav_data.ld_preview_view[0].set_needs_update();
-            } else if (lnav::filesystem::is_glob(fn.c_str())) {
+            } else if (lnav::filesystem::is_glob(fn_str)) {
                 static_root_mem<glob_t, globfree> gl;
 
-                if (glob(fn.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+                if (glob(fn_str.c_str(), GLOB_NOCHECK, nullptr, gl.inout())
+                    == 0)
+                {
                     attr_line_t al;
 
                     for (size_t lpc = 0; lpc < gl->gl_pathc && lpc < 10; lpc++)
@@ -3278,42 +3280,124 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         &lnav_data.ld_preview_source[0]);
                     lnav_data.ld_preview_source[0].replace_with(al);
                 } else {
-                    return ec.make_error("failed to evaluate glob -- {}", fn);
+                    return ec.make_error("failed to evaluate glob -- {}",
+                                         fn_str);
                 }
-            } else if ((preview_fd = open(fn.c_str(), O_RDONLY)) == -1) {
-                return ec.make_error(
-                    "unable to open file3: {} -- {}", fn, strerror(errno));
             } else {
-                line_buffer lb;
+                auto fn = ghc::filesystem::path(fn_str);
+                auto detect_res = detect_file_format(fn);
                 attr_line_t al;
-                file_range range;
-                std::string lines;
+                attr_line_builder alb(al);
 
-                lb.set_fd(preview_fd);
-                for (int lpc = 0; lpc < 10; lpc++) {
-                    auto load_result = lb.load_next_line(range);
+                switch (detect_res) {
+                    case file_format_t::ARCHIVE: {
+                        auto describe_res = archive_manager::describe(fn);
 
-                    if (load_result.isErr()) {
+                        if (describe_res.isOk()) {
+                            auto arc_res = describe_res.unwrap();
+
+                            if (arc_res.is<archive_manager::archive_info>()) {
+                                auto ai
+                                    = arc_res
+                                          .get<archive_manager::archive_info>();
+                                auto lines_remaining = size_t{9};
+
+                                al.append("Archive: ")
+                                    .append(
+                                        lnav::roles::symbol(ai.ai_format_name))
+                                    .append("\n");
+                                for (const auto& entry : ai.ai_entries) {
+                                    if (lines_remaining == 0) {
+                                        break;
+                                    }
+                                    lines_remaining -= 1;
+
+                                    char timebuf[64];
+                                    sql_strftime(timebuf,
+                                                 sizeof(timebuf),
+                                                 entry.e_mtime,
+                                                 0,
+                                                 'T');
+                                    al.append("    ")
+                                        .append(entry.e_mode)
+                                        .append(" ")
+                                        .appendf(
+                                            FMT_STRING("{:>8}"),
+                                            humanize::file_size(
+                                                entry.e_size.value(),
+                                                humanize::alignment::columnar))
+                                        .append(" ")
+                                        .append(timebuf)
+                                        .append(" ")
+                                        .append(lnav::roles::file(entry.e_name))
+                                        .append("\n");
+                                }
+                            }
+                        } else {
+                            al.append(describe_res.unwrapErr());
+                        }
                         break;
                     }
+                    case file_format_t::UNKNOWN: {
+                        auto open_res
+                            = lnav::filesystem::open_file(fn, O_RDONLY);
 
-                    auto li = load_result.unwrap();
+                        if (open_res.isErr()) {
+                            return ec.make_error("unable to open -- {}", fn);
+                        }
+                        auto preview_fd = open_res.unwrap();
+                        line_buffer lb;
+                        file_range range;
 
-                    range = li.li_file_range;
-                    auto read_result = lb.read_range(range);
-                    if (read_result.isErr()) {
+                        lb.set_fd(preview_fd);
+                        for (int lpc = 0; lpc < 10; lpc++) {
+                            auto load_result = lb.load_next_line(range);
+
+                            if (load_result.isErr()) {
+                                break;
+                            }
+
+                            auto li = load_result.unwrap();
+
+                            range = li.li_file_range;
+                            if (!li.li_utf8_scan_result.is_valid()) {
+                                range.fr_size = 16;
+                            }
+                            auto read_result = lb.read_range(range);
+                            if (read_result.isErr()) {
+                                break;
+                            }
+
+                            auto sbr = read_result.unwrap();
+                            auto sf = sbr.to_string_fragment();
+                            if (li.li_utf8_scan_result.is_valid()) {
+                                alb.append(sf);
+                            } else {
+                                {
+                                    auto ag = alb.with_attr(
+                                        VC_ROLE.value(role_t::VCR_FILE_OFFSET));
+                                    alb.appendf(FMT_STRING("{: >16x} "),
+                                                range.fr_offset);
+                                }
+                                alb.append_as_hexdump(sf);
+                                alb.append("\n");
+                            }
+                        }
                         break;
                     }
-
-                    auto sbr = read_result.unwrap();
-                    lines.append(sbr.get_data(), sbr.length());
+                    case file_format_t::SQLITE_DB: {
+                        alb.append(fmt::to_string(detect_res));
+                        break;
+                    }
+                    case file_format_t::REMOTE: {
+                        break;
+                    }
                 }
 
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
-                lnav_data.ld_preview_source[0]
-                    .replace_with(al.with_string(lines))
-                    .set_text_format(detect_text_format(al.get_string()));
+                lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
+                    detect_text_format(al.get_string()));
                 lnav_data.ld_preview_status_source[0]
                     .get_description()
                     .set_value("For file: %s", fn.c_str());
@@ -3719,7 +3803,8 @@ com_clear_comment(exec_context& ec,
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return ec.make_error(
-                "The :clear-comment command only works in the log view");
+                "The :clear-comment command only works in the log "
+                "view");
         }
         auto& lss = lnav_data.ld_log_source;
 
@@ -3859,7 +3944,8 @@ com_delete_tags(exec_context& ec,
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return ec.make_error(
-                "The :delete-tag command only works in the log view");
+                "The :delete-tag command only works in the log "
+                "view");
         }
 
         auto& known_tags = bookmark_metadata::KNOWN_TAGS;
@@ -4133,7 +4219,8 @@ com_summarize(exec_context& ec,
                 query += ",";
             }
             query_frag = sqlite3_mprintf(
-                " \"count_%s\" desc, \"c_%s\" collate naturalnocase asc",
+                " \"count_%s\" desc, \"c_%s\" collate "
+                "naturalnocase asc",
                 iter->c_str(),
                 iter->c_str());
             query += query_frag;
@@ -4437,7 +4524,8 @@ com_export_session_to(exec_context& ec,
                 setvbuf(stdout, nullptr, _IONBF, 0);
                 to_term = true;
                 fprintf(outfile,
-                        "\n---------------- Press any key to exit lo-fi "
+                        "\n---------------- Press any key to exit "
+                        "lo-fi "
                         "display "
                         "----------------\n\n");
             } else {
@@ -4562,7 +4650,9 @@ com_toggle_field(exec_context& ec,
                     if (hide) {
                         if (lnav_data.ld_rl_view != nullptr) {
                             lnav_data.ld_rl_view->set_alt_value(
-                                HELP_MSG_1(x, "to quickly show hidden fields"));
+                                HELP_MSG_1(x,
+                                           "to quickly show hidden "
+                                           "fields"));
                         }
                     }
                     tc->set_needs_update();
@@ -4613,10 +4703,11 @@ com_hide_line(exec_context& ec,
                     max_time_str, sizeof(max_time_str), max_time_opt.value());
             }
             if (min_time_opt && max_time_opt) {
-                retval = fmt::format(
-                    FMT_STRING("info: hiding lines before {} and after {}"),
-                    min_time_str,
-                    max_time_str);
+                retval
+                    = fmt::format(FMT_STRING("info: hiding lines before {} and "
+                                             "after {}"),
+                                  min_time_str,
+                                  max_time_str);
             } else if (min_time_opt) {
                 retval = fmt::format(FMT_STRING("info: hiding lines before {}"),
                                      min_time_str);
@@ -4625,7 +4716,8 @@ com_hide_line(exec_context& ec,
                                      max_time_str);
             } else {
                 retval
-                    = "info: no lines hidden by time, pass an absolute or "
+                    = "info: no lines hidden by time, pass an "
+                      "absolute or "
                       "relative time";
             }
         } else {
@@ -4656,7 +4748,8 @@ com_hide_line(exec_context& ec,
                 }
             } else {
                 return ec.make_error(
-                    "relative time values only work in a time-based view");
+                    "relative time values only work in a "
+                    "time-based view");
             }
         } else if (dts.convert_to_timeval(all_args, tv_abs)) {
             tv_opt = tv_abs;
@@ -5569,8 +5662,9 @@ command_prompt(std::vector<std::string>& args)
 
     rollback_lnav_config = lnav_config;
     lnav_data.ld_doc_status_source.set_title("Command Help");
-    lnav_data.ld_doc_status_source.set_description(" See " ANSI_BOLD(
-        "https://docs.lnav.org/en/latest/commands.html") " for more details");
+    lnav_data.ld_doc_status_source.set_description(
+        " See " ANSI_BOLD("https://docs.lnav.org/en/latest/"
+                          "commands.html") " for more details");
     add_view_text_possibilities(lnav_data.ld_rl_view,
                                 ln_mode_t::COMMAND,
                                 "filter",
@@ -5723,8 +5817,9 @@ sql_prompt(std::vector<std::string>& args)
                                 cget(args, 3).value_or(""));
 
     lnav_data.ld_doc_status_source.set_title("Query Help");
-    lnav_data.ld_doc_status_source.set_description("See " ANSI_BOLD(
-        "https://docs.lnav.org/en/latest/sqlext.html") " for more details");
+    lnav_data.ld_doc_status_source.set_description(
+        "See " ANSI_BOLD("https://docs.lnav.org/en/latest/"
+                         "sqlext.html") " for more details");
     rl_set_help();
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -5819,14 +5914,13 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":prompt")
          .with_summary("Open the given prompt")
-         .with_parameter(
-             {"type",
-              "The type of prompt -- command, script, search, sql, user"})
-         .with_parameter(
-             help_text(
-                 "--alt",
-                 "Perform the alternate action for this prompt by default")
-                 .optional())
+         .with_parameter({"type",
+                          "The type of prompt -- command, script, "
+                          "search, sql, user"})
+         .with_parameter(help_text("--alt",
+                                   "Perform the alternate action "
+                                   "for this prompt by default")
+                             .optional())
          .with_parameter(
              help_text("prompt", "The prompt to display").optional())
          .with_parameter(
@@ -5834,7 +5928,8 @@ readline_context::command_t STD_COMMANDS[] = {
                        "The initial value to fill in for the prompt")
                  .optional())
          .with_example({
-             "To open the command prompt with 'filter-in' already filled "
+             "To open the command prompt with 'filter-in' already "
+             "filled "
              "in",
              "command : 'filter-in '",
          })
@@ -5869,7 +5964,8 @@ readline_context::command_t STD_COMMANDS[] = {
         "convert-time-to",
         com_convert_time_to,
         help_text(":convert-time-to")
-            .with_summary("Convert the focused timestamp to the given timezone")
+            .with_summary("Convert the focused timestamp to the "
+                          "given timezone")
             .with_parameter(help_text("zone", "The timezone name")),
     },
     {
@@ -5877,7 +5973,8 @@ readline_context::command_t STD_COMMANDS[] = {
         com_set_file_timezone,
         help_text(":set-file-timezone")
             .with_summary("Set the timezone to use for log messages that do "
-                          "not include a timezone.  The timezone is applied to "
+                          "not include a timezone.  The timezone is applied "
+                          "to "
                           "the focused file or the given glob pattern.")
             .with_parameter({"zone", "The timezone name"})
             .with_parameter(help_text{"pattern",
@@ -5891,12 +5988,13 @@ readline_context::command_t STD_COMMANDS[] = {
         "clear-file-timezone",
         com_clear_file_timezone,
         help_text(":clear-file-timezone")
-            .with_summary("Clear the timezone setting for the focused file or "
+            .with_summary("Clear the timezone setting for the "
+                          "focused file or "
                           "the given glob pattern.")
-            .with_parameter(
-                help_text{"pattern",
-                          "The glob pattern to match against files that should "
-                          "no longer use this timezone"})
+            .with_parameter(help_text{"pattern",
+                                      "The glob pattern to match against files "
+                                      "that should "
+                                      "no longer use this timezone"})
             .with_tags({"file-options"}),
         com_clear_file_timezone_prompt,
     },
@@ -5918,7 +6016,8 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_examples(
              {{"To go to line 22", "22"},
               {"To go to the line 75% of the way into the view", "75%"},
-              {"To go to the first message on the first day of 2017",
+              {"To go to the first message on the first day of "
+               "2017",
                "2017-01-01"},
               {"To go to the Screenshots section", "#screenshots"}})
          .with_tags({"navigation"})},
@@ -5939,8 +6038,8 @@ readline_context::command_t STD_COMMANDS[] = {
         com_annotate,
 
         help_text(":annotate")
-            .with_summary(
-                "Analyze the focused log message and attach annotations")
+            .with_summary("Analyze the focused log message and "
+                          "attach annotations")
             .with_tags({"metadata"}),
     },
 
@@ -5957,16 +6056,18 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":mark-expr")
             .with_summary("Set the bookmark expression")
-            .with_parameter(help_text(
-                "expr",
-                "The SQL expression to evaluate for each log message.  "
-                "The message values can be accessed using column names "
-                "prefixed with a colon"))
+            .with_parameter(help_text("expr",
+                                      "The SQL expression to evaluate for each "
+                                      "log message.  "
+                                      "The message values can be accessed "
+                                      "using column names "
+                                      "prefixed with a colon"))
             .with_opposites({"clear-mark-expr"})
             .with_tags({"bookmarks"})
-            .with_example(
-                {"To mark lines from 'dhclient' that mention 'eth0'",
-                 ":log_procname = 'dhclient' AND :log_body LIKE '%eth0%'"}),
+            .with_example({"To mark lines from 'dhclient' that "
+                           "mention 'eth0'",
+                           ":log_procname = 'dhclient' AND "
+                           ":log_body LIKE '%eth0%'"}),
 
         com_mark_expr_prompt,
     },
@@ -5993,7 +6094,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_goto_mark,
 
      help_text(":prev-mark")
-         .with_summary("Move to the previous bookmark of the given type in the "
+         .with_summary("Move to the previous bookmark of the given "
+                       "type in the "
                        "current view")
          .with_parameter(help_text("type",
                                    "The type of bookmark -- error, warning, "
@@ -6011,7 +6113,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_goto_location,
 
      help_text(":prev-location")
-         .with_summary("Move to the previous position in the location history")
+         .with_summary("Move to the previous position in the "
+                       "location history")
          .with_tags({"navigation"})},
 
     {
@@ -6039,21 +6142,23 @@ readline_context::command_t STD_COMMANDS[] = {
      com_toggle_field,
 
      help_text(":hide-fields")
-         .with_summary(
-             "Hide log message fields by replacing them with an ellipsis")
+         .with_summary("Hide log message fields by replacing them "
+                       "with an ellipsis")
          .with_parameter(
              help_text("field-name",
-                       "The name of the field to hide in the format for the "
+                       "The name of the field to hide in the format for "
+                       "the "
                        "top log line.  "
-                       "A qualified name can be used where the field name is "
+                       "A qualified name can be used where the field "
+                       "name is "
                        "prefixed "
                        "by the format name and a dot to hide any field.")
                  .one_or_more())
          .with_example(
              {"To hide the log_procname fields in all formats", "log_procname"})
-         .with_example(
-             {"To hide only the log_procname field in the syslog format",
-              "syslog_log.log_procname"})
+         .with_example({"To hide only the log_procname field in "
+                        "the syslog format",
+                        "syslog_log.log_procname"})
          .with_tags({"display"})},
     {"show-fields",
      com_toggle_field,
@@ -6093,8 +6198,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_show_lines,
 
      help_text(":show-lines-before-and-after")
-         .with_summary(
-             "Show lines that were hidden by the 'hide-lines' commands")
+         .with_summary("Show lines that were hidden by the "
+                       "'hide-lines' commands")
          .with_opposites({"hide-lines-before", "hide-lines-after"})
          .with_tags({"filtering"})},
     {"hide-unmarked-lines",
@@ -6114,7 +6219,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_highlight,
 
      help_text(":highlight")
-         .with_summary("Add coloring to log messages fragments that match the "
+         .with_summary("Add coloring to log messages fragments "
+                       "that match the "
                        "given regular expression")
          .with_parameter(
              help_text("pattern", "The regular expression to match"))
@@ -6126,9 +6232,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":clear-highlight")
          .with_summary("Remove a previously set highlight regular expression")
-         .with_parameter(help_text(
-             "pattern",
-             "The regular expression previously used with :highlight"))
+         .with_parameter(help_text("pattern",
+                                   "The regular expression previously used "
+                                   "with :highlight"))
          .with_tags({"display"})
          .with_opposites({"highlight"})
          .with_example(
@@ -6153,13 +6259,14 @@ readline_context::command_t STD_COMMANDS[] = {
         com_filter,
 
         help_text(":filter-out")
-            .with_summary(
-                "Remove lines that match the given regular expression "
-                "in the current view")
+            .with_summary("Remove lines that match the given "
+                          "regular expression "
+                          "in the current view")
             .with_parameter(
                 help_text("pattern", "The regular expression to match"))
             .with_tags({"filtering"})
-            .with_example({"To filter out log messages that contain the string "
+            .with_example({"To filter out log messages that "
+                           "contain the string "
                            "'last message repeated'",
                            "last message repeated"}),
         com_filter_prompt,
@@ -6183,22 +6290,25 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":filter-expr")
             .with_summary("Set the filter expression")
-            .with_parameter(help_text(
-                "expr",
-                "The SQL expression to evaluate for each log message.  "
-                "The message values can be accessed using column names "
-                "prefixed with a colon"))
+            .with_parameter(help_text("expr",
+                                      "The SQL expression to evaluate for each "
+                                      "log message.  "
+                                      "The message values can be accessed "
+                                      "using column names "
+                                      "prefixed with a colon"))
             .with_opposites({"clear-filter-expr"})
             .with_tags({"filtering"})
             .with_example({"To set a filter expression that matched syslog "
                            "messages from 'syslogd'",
                            ":log_procname = 'syslogd'"})
-            .with_example(
-                {"To set a filter expression that matches log messages "
-                 "where "
-                 "'id' is followed by a number and contains the string "
-                 "'foo'",
-                 ":log_body REGEXP 'id\\d+' AND :log_body REGEXP 'foo'"}),
+            .with_example({"To set a filter expression that "
+                           "matches log messages "
+                           "where "
+                           "'id' is followed by a number and "
+                           "contains the string "
+                           "'foo'",
+                           ":log_body REGEXP 'id\\d+' AND "
+                           ":log_body REGEXP 'foo'"}),
 
         com_filter_expr_prompt,
     },
@@ -6213,8 +6323,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":append-to")
-         .with_summary(
-             "Append marked lines in the current view to the given file")
+         .with_summary("Append marked lines in the current view to "
+                       "the given file")
          .with_parameter(help_text("path", "The path to the file to append to"))
          .with_tags({"io"})
          .with_example({"To append marked lines to the file "
@@ -6224,7 +6334,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":write-to")
-         .with_summary("Overwrite the given file with any marked lines in the "
+         .with_summary("Overwrite the given file with any marked "
+                       "lines in the "
                        "current view")
          .with_parameter(
              help_text("--anonymize", "Anonymize the lines").optional())
@@ -6259,20 +6370,21 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":write-jsonlines-to")
-         .with_summary(
-             "Write SQL results to the given file in JSON Lines format")
+         .with_summary("Write SQL results to the given file in "
+                       "JSON Lines format")
          .with_parameter(
              help_text("--anonymize", "Anonymize the JSON values").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
-         .with_example({"To write SQL results as JSON Lines to /tmp/table.json",
+         .with_example({"To write SQL results as JSON Lines to "
+                        "/tmp/table.json",
                         "/tmp/table.json"})},
     {"write-table-to",
      com_save_to,
 
      help_text(":write-table-to")
-         .with_summary(
-             "Write SQL results to the given file in a tabular format")
+         .with_summary("Write SQL results to the given file in a "
+                       "tabular format")
          .with_parameter(
              help_text("--anonymize", "Anonymize the table contents")
                  .optional())
@@ -6284,10 +6396,10 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":write-raw-to")
-         .with_summary(
-             "In the log view, write the original log file content "
-             "of the marked messages to the file.  In the DB view, "
-             "the contents of the cells are written to the output file.")
+         .with_summary("In the log view, write the original log file content "
+                       "of the marked messages to the file.  In the DB view, "
+                       "the contents of the cells are written to the output "
+                       "file.")
          .with_parameter(help_text("--view={log,db}",
                                    "The view to use as the source of data")
                              .optional())
@@ -6295,9 +6407,9 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
-         .with_example(
-             {"To write the marked lines in the log view to /tmp/table.txt",
-              "/tmp/table.txt"})},
+         .with_example({"To write the marked lines in the log view "
+                        "to /tmp/table.txt",
+                        "/tmp/table.txt"})},
     {"write-view-to",
      com_save_to,
 
@@ -6336,9 +6448,10 @@ readline_context::command_t STD_COMMANDS[] = {
      com_pipe_to,
 
      help_text(":pipe-line-to")
-         .with_summary(
-             "Pipe the focused line to the given shell command.  Any fields "
-             "defined by the format will be set as environment variables.")
+         .with_summary("Pipe the focused line to the given shell "
+                       "command.  Any fields "
+                       "defined by the format will be set as "
+                       "environment variables.")
          .with_parameter(
              help_text("shell-cmd", "The shell command-line to execute"))
          .with_tags({"io"})
@@ -6350,12 +6463,11 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":redirect-to")
          .with_summary("Redirect the output of commands that write to "
                        "stdout to the given file")
-         .with_parameter(
-             help_text(
-                 "path",
-                 "The path to the file to write."
-                 "  If not specified, the current redirect will be cleared")
-                 .optional())
+         .with_parameter(help_text("path",
+                                   "The path to the file to write."
+                                   "  If not specified, the current redirect "
+                                   "will be cleared")
+                             .optional())
          .with_tags({"io", "scripting"})
          .with_example({"To write the output of lnav commands to the file "
                         "/tmp/script-output.txt",
@@ -6369,7 +6481,8 @@ readline_context::command_t STD_COMMANDS[] = {
              "pattern", "The regular expression used in the filter command"))
          .with_tags({"filtering"})
          .with_opposites({"disable-filter"})
-         .with_example({"To enable the disabled filter with the pattern 'last "
+         .with_example({"To enable the disabled filter with the "
+                        "pattern 'last "
                         "message repeated'",
                         "last message repeated"})},
     {"disable-filter",
@@ -6401,13 +6514,14 @@ readline_context::command_t STD_COMMANDS[] = {
      com_create_logline_table,
 
      help_text(":create-logline-table")
-         .with_summary("Create an SQL table using the top line of the log view "
+         .with_summary("Create an SQL table using the top line of "
+                       "the log view "
                        "as a template")
          .with_parameter(help_text("table-name", "The name for the new table"))
          .with_tags({"vtables", "sql"})
-         .with_example(
-             {"To create a logline-style table named 'task_durations'",
-              "task_durations"})},
+         .with_example({"To create a logline-style table named "
+                        "'task_durations'",
+                        "task_durations"})},
     {"delete-logline-table",
      com_delete_logline_table,
 
@@ -6417,9 +6531,9 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("table-name", "The name of the table to delete"))
          .with_opposites({"delete-logline-table"})
          .with_tags({"vtables", "sql"})
-         .with_example(
-             {"To delete the logline-style table named 'task_durations'",
-              "task_durations"})},
+         .with_example({"To delete the logline-style table named "
+                        "'task_durations'",
+                        "task_durations"})},
     {"create-search-table",
      com_create_search_table,
 
@@ -6431,13 +6545,15 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("pattern",
                        "The regular expression used to capture the table "
                        "columns.  "
-                       "If not given, the current search pattern is used.")
+                       "If not given, the current search pattern is "
+                       "used.")
                  .optional())
          .with_tags({"vtables", "sql"})
-         .with_example(
-             {"To create a table named 'task_durations' that matches log "
-              "messages with the pattern 'duration=(?<duration>\\d+)'",
-              R"(task_durations duration=(?<duration>\d+))"})},
+         .with_example({"To create a table named 'task_durations' that "
+                        "matches log "
+                        "messages with the pattern "
+                        "'duration=(?<duration>\\d+)'",
+                        R"(task_durations duration=(?<duration>\d+))"})},
     {"delete-search-table",
      com_delete_search_table,
 
@@ -6453,10 +6569,10 @@ readline_context::command_t STD_COMMANDS[] = {
      com_open,
 
      help_text(":open")
-         .with_summary(
-             "Open the given file(s) in lnav.  Opening files on machines "
-             "accessible via SSH can be done using the syntax: "
-             "[user@]host:/path/to/logs")
+         .with_summary("Open the given file(s) in lnav.  Opening files on "
+                       "machines "
+                       "accessible via SSH can be done using the syntax: "
+                       "[user@]host:/path/to/logs")
          .with_parameter(
              help_text{"path", "The path to the file to open"}.one_or_more())
          .with_example({"To open the file '/path/to/file'", "/path/to/file"})
@@ -6469,8 +6585,9 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_summary("Hide the given file(s) and skip indexing until it "
                        "is shown again.  If no path is given, the current "
                        "file in the view is hidden")
-         .with_parameter(help_text{
-             "path", "A path or glob pattern that specifies the files to hide"}
+         .with_parameter(help_text{"path",
+                                   "A path or glob pattern that "
+                                   "specifies the files to hide"}
                              .zero_or_more())
          .with_opposites({"show-file"})},
     {"show-file",
@@ -6478,9 +6595,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":show-file")
          .with_summary("Show the given file(s) and resume indexing.")
-         .with_parameter(help_text{
-             "path",
-             "The path or glob pattern that specifies the files to show"}
+         .with_parameter(help_text{"path",
+                                   "The path or glob pattern that "
+                                   "specifies the files to show"}
                              .zero_or_more())
          .with_opposites({"hide-file"})},
     {"show-only-this-file",
@@ -6494,8 +6611,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":close")
          .with_summary("Close the given file(s) or the top file in the view")
-         .with_parameter(help_text{
-             "path", "A path or glob pattern that specifies the files to close"}
+         .with_parameter(help_text{"path",
+                                   "A path or glob pattern that "
+                                   "specifies the files to close"}
                              .zero_or_more())
          .with_opposites({"open"})},
     {
@@ -6544,7 +6662,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":untag")
          .with_summary("Detach tags from the top log line")
          .with_parameter(help_text("tag", "The tags to detach").one_or_more())
-         .with_example({"To remove the tags '#BUG123' and '#needs-review' from "
+         .with_example({"To remove the tags '#BUG123' and "
+                        "'#needs-review' from "
                         "the top line",
                         "#BUG123 #needs-review"})
          .with_opposites({"tag"})
@@ -6555,7 +6674,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":delete-tags")
          .with_summary("Remove the given tags from all log lines")
          .with_parameter(help_text("tag", "The tags to delete").one_or_more())
-         .with_example({"To remove the tags '#BUG123' and '#needs-review' from "
+         .with_example({"To remove the tags '#BUG123' and "
+                        "'#needs-review' from "
                         "all log lines",
                         "#BUG123 #needs-review"})
          .with_opposites({"tag"})
@@ -6580,17 +6700,18 @@ readline_context::command_t STD_COMMANDS[] = {
      com_session,
 
      help_text(":session")
-         .with_summary(
-             "Add the given command to the session file (~/.lnav/session)")
+         .with_summary("Add the given command to the session file "
+                       "(~/.lnav/session)")
          .with_parameter(help_text("lnav-command", "The lnav command to save."))
-         .with_example(
-             {"To add the command ':highlight foobar' to the session file",
-              ":highlight foobar"})},
+         .with_example({"To add the command ':highlight foobar' to "
+                        "the session file",
+                        ":highlight foobar"})},
     {"summarize",
      com_summarize,
 
      help_text(":summarize")
-         .with_summary("Execute a SQL query that computes the characteristics "
+         .with_summary("Execute a SQL query that computes the "
+                       "characteristics "
                        "of the values in the given column")
          .with_parameter(
              help_text("column-name", "The name of the column to analyze."))
@@ -6609,12 +6730,13 @@ readline_context::command_t STD_COMMANDS[] = {
      com_switch_to_view,
 
      help_text(":toggle-view")
-         .with_summary(
-             "Switch to the given view or, if it is already displayed, "
-             "switch to the previous view")
+         .with_summary("Switch to the given view or, if it is "
+                       "already displayed, "
+                       "switch to the previous view")
          .with_parameter(help_text(
              "view-name", "The name of the view to toggle the display of."))
-         .with_example({"To switch to the 'schema' view if it is not displayed "
+         .with_example({"To switch to the 'schema' view if it is "
+                        "not displayed "
                         "or switch back to the previous view",
                         "schema"})},
     {"toggle-filtering",
@@ -6675,15 +6797,17 @@ readline_context::command_t STD_COMMANDS[] = {
      com_echo,
 
      help_text(":echo")
-         .with_summary(
-             "Echo the given message to the screen or, if :redirect-to has "
-             "been called, to output file specified in the redirect.  "
-             "Variable substitution is performed on the message.  Use a "
-             "backslash to escape any special characters, like '$'")
-         .with_parameter(
-             help_text("-n",
-                       "Do not print a line-feed at the end of the output")
-                 .optional())
+         .with_summary("Echo the given message to the screen or, if "
+                       ":redirect-to has "
+                       "been called, to output file specified in the "
+                       "redirect.  "
+                       "Variable substitution is performed on the message.  "
+                       "Use a "
+                       "backslash to escape any special characters, like '$'")
+         .with_parameter(help_text("-n",
+                                   "Do not print a line-feed at "
+                                   "the end of the output")
+                             .optional())
          .with_parameter(help_text("msg", "The message to display"))
          .with_tags({"io", "scripting"})
          .with_example({"To output 'Hello, World!'", "Hello, World!"})},
@@ -6743,9 +6867,9 @@ readline_context::command_t STD_COMMANDS[] = {
                                    "The value to write.  If not given, the "
                                    "current value is returned")
                              .optional())
-         .with_example(
-             {"To read the configuration of the '/ui/clock-format' option",
-              "/ui/clock-format"})
+         .with_example({"To read the configuration of the "
+                        "'/ui/clock-format' option",
+                        "/ui/clock-format"})
          .with_example({"To set the '/ui/dim-text' option to 'false'",
                         "/ui/dim-text false"})
          .with_tags({"configuration"})},
@@ -6767,9 +6891,9 @@ readline_context::command_t STD_COMMANDS[] = {
                        "using a spectrogram")
          .with_parameter(help_text(
              "field-name", "The name of the numeric field to visualize."))
-         .with_example(
-             {"To visualize the sc_bytes field in the access_log format",
-              "sc_bytes"})},
+         .with_example({"To visualize the sc_bytes field in the "
+                        "access_log format",
+                        "sc_bytes"})},
     {"quit",
      com_quit,
 

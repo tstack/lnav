@@ -127,6 +127,8 @@ public:
         return *this;
     }
 
+    attr_line_builder& append_as_hexdump(const string_fragment& sf);
+
 private:
     attr_line_t& alb_line;
 };

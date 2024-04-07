@@ -28,3 +28,57 @@
  */
 
 #include "attr_line.builder.hh"
+
+attr_line_builder&
+attr_line_builder::append_as_hexdump(const string_fragment& sf)
+{
+    auto byte_off = size_t{0};
+    for (auto ch : sf) {
+        if (byte_off == 8) {
+            this->append(" ");
+        }
+        nonstd::optional<role_t> ro;
+        if (ch == '\0') {
+            ro = role_t::VCR_NULL;
+        } else if (isspace(ch) || iscntrl(ch)) {
+            ro = role_t::VCR_ASCII_CTRL;
+        } else if (!isprint(ch)) {
+            ro = role_t::VCR_NON_ASCII;
+        }
+        auto ag = ro.has_value() ? this->with_attr(VC_ROLE.value(ro.value()))
+                                 : this->with_default();
+        this->appendf(FMT_STRING(" {:0>2x}"), ch);
+        byte_off += 1;
+    }
+    for (; byte_off < 16; byte_off++) {
+        if (byte_off == 8) {
+            this->append(" ");
+        }
+        this->append("   ");
+    }
+    this->append("  ");
+    byte_off = 0;
+    for (auto ch : sf) {
+        if (byte_off == 8) {
+            this->append(" ");
+        }
+        if (ch == '\0') {
+            auto ag = this->with_attr(VC_ROLE.value(role_t::VCR_NULL));
+            this->append("\u22c4");
+        } else if (isspace(ch)) {
+            auto ag = this->with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
+            this->append("_");
+        } else if (iscntrl(ch)) {
+            auto ag = this->with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
+            this->append("\u2022");
+        } else if (isprint(ch)) {
+            this->alb_line.get_string().push_back(ch);
+        } else {
+            auto ag = this->with_attr(VC_ROLE.value(role_t::VCR_NON_ASCII));
+            this->append("\u00d7");
+        }
+        byte_off += 1;
+    }
+
+    return *this;
+}

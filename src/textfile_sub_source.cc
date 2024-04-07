@@ -100,9 +100,6 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
 
     if (lf->get_text_format() == text_format_t::TF_BINARY) {
         this->tss_hex_line.clear();
-
-        attr_line_builder alb(this->tss_hex_line);
-
         auto fsize = lf->get_stat().st_size;
         auto fr = file_range{line * 16};
         fr.fr_size = std::min((file_ssize_t) 16, fsize - fr.fr_offset);
@@ -119,57 +116,12 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
 
         auto sbr = read_res.unwrap();
         auto sf = sbr.to_string_fragment();
+        attr_line_builder alb(this->tss_hex_line);
         {
             auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_FILE_OFFSET));
             alb.appendf(FMT_STRING("{: >16x} "), fr.fr_offset);
         }
-        auto byte_off = size_t{0};
-        for (auto ch : sf) {
-            if (byte_off == 8) {
-                alb.append(" ");
-            }
-            nonstd::optional<role_t> ro;
-            if (ch == '\0') {
-                ro = role_t::VCR_NULL;
-            } else if (isspace(ch) || iscntrl(ch)) {
-                ro = role_t::VCR_ASCII_CTRL;
-            } else if (!isprint(ch)) {
-                ro = role_t::VCR_NON_ASCII;
-            }
-            auto ag = ro.has_value() ? alb.with_attr(VC_ROLE.value(ro.value()))
-                                     : alb.with_default();
-            alb.appendf(FMT_STRING(" {:0>2x}"), ch);
-            byte_off += 1;
-        }
-        for (; byte_off < 16; byte_off++) {
-            if (byte_off == 8) {
-                alb.append(" ");
-            }
-            alb.append("   ");
-        }
-        alb.append("  ");
-        byte_off = 0;
-        for (auto ch : sf) {
-            if (byte_off == 8) {
-                alb.append(" ");
-            }
-            if (ch == '\0') {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NULL));
-                alb.append("\u22c4");
-            } else if (isspace(ch)) {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
-                alb.append("_");
-            } else if (iscntrl(ch)) {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
-                alb.append("\u2022");
-            } else if (isprint(ch)) {
-                this->tss_hex_line.get_string().push_back(ch);
-            } else {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NON_ASCII));
-                alb.append("\u00d7");
-            }
-            byte_off += 1;
-        }
+        alb.append_as_hexdump(sf);
         auto alt_row_index = line % 4;
         if (alt_row_index == 2 || alt_row_index == 3) {
             this->tss_hex_line.with_attr_for_all(
