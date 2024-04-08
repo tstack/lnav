@@ -167,6 +167,10 @@ Check the `downloads page <http://lnav.org/downloads>`_ to see if there are
 packages for your operating system.  To compile from source, use the following
 commands:
 
+.. note::
+
+   Run :code:`./autogen.sh` if compiling from the git repository.
+
 .. prompt:: bash
 
    ./configure

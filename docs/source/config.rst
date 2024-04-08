@@ -158,15 +158,15 @@ definition, see one of the definitions built into **lnav**, like
 Reference
 ^^^^^^^^^
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/vars
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/^([\w\-]+)$/properties/vars
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/^([\w\-]+)$/properties/styles
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/syntax-styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/^([\w\-]+)$/properties/syntax-styles
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/status-styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/^([\w\-]+)$/properties/status-styles
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/([\w\-]+)/properties/log-level-styles
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/theme-defs/patternProperties/^([\w\-]+)$/properties/log-level-styles
 
 .. _theme_style:
 
@@ -217,7 +217,7 @@ to the key.
 Reference
 ^^^^^^^^^
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/([\w\-]+)
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/keymap-defs/patternProperties/^([\w\-]+)$
 
 
 Log Handling
@@ -309,8 +309,8 @@ so the content can be styled as desired.
 Reference
 ^^^^^^^^^
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/watch-expressions/patternProperties/([\w\.\-]+)
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/annotations/patternProperties/([\w\.\-]+)
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/watch-expressions/patternProperties/^([\w\.\-]+)$
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/annotations/patternProperties/^([\w\.\-]+)$
 
 
 .. _tuning:
