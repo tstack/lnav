@@ -431,14 +431,22 @@ setup_highlights(highlight_map_t& hm)
         = highlighter(xpcre_compile("^\\@@ .*"))
               .with_role(role_t::VCR_DIFF_SECTION);
     hm[{highlight_source_t::INTERNAL, "0.comment"}]
+        = highlighter(xpcre_compile(R"((?<=[\s;]|^)//.*|/\*.*\*/|\(\*.*\*\))"))
+              .with_nestable(false)
+              .with_text_format(text_format_t::TF_C_LIKE)
+              .with_text_format(text_format_t::TF_JAVA)
+              .with_text_format(text_format_t::TF_RUST)
+              .with_role(role_t::VCR_COMMENT);
+    hm[{highlight_source_t::INTERNAL, ".comment"}]
         = highlighter(
               xpcre_compile(
-                  R"((?<=[\s;]|^)//.*|/\*.*\*/|\(\*.*\*\)|^\s*#(?!\s*(?:include|if|ifndef|elif|else|endif|error|pragma|define|undef)\b).*|dnl.*)"))
+                  R"((?:\s+#.*|^\s*#(?!\s*(?:include|if|ifndef|elif|else|endif|error|pragma|define|undef)\b).*|dnl.*))"))
               .with_nestable(false)
-              .with_role(role_t::VCR_COMMENT);
-    hm[{highlight_source_t::INTERNAL, "z.comment"}]
-        = highlighter(xpcre_compile(R"(\s+#.*)"))
-              .with_nestable(false)
+              .with_text_format(text_format_t::TF_SHELL_SCRIPT)
+              .with_text_format(text_format_t::TF_PYTHON)
+              .with_text_format(text_format_t::TF_MAKEFILE)
+              .with_text_format(text_format_t::TF_YAML)
+              .with_text_format(text_format_t::TF_TOML)
               .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}]
         = highlighter(
