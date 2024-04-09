@@ -215,6 +215,7 @@ log_vtab_impl::get_foreign_keys(std::vector<std::string>& keys_inout) const
     keys_inout.emplace_back("log_mark");
     keys_inout.emplace_back("log_time_msecs");
     keys_inout.emplace_back("log_top_line()");
+    keys_inout.emplace_back("log_msg_line()");
 }
 
 void

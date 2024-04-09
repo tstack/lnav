@@ -92,12 +92,15 @@ hist_source2::text_attrs_for_line(textview_curses& tc,
                                   int row,
                                   string_attrs_t& value_out)
 {
-    bucket_t& bucket = this->find_bucket(row);
+    auto& bucket = this->find_bucket(row);
+    auto dim = tc.get_dimensions();
+    auto width = dim.second;
     int left = 0;
 
     for (int lpc = 0; lpc < HT__MAX; lpc++) {
         this->hs_chart.chart_attrs_for_value(tc,
                                              left,
+                                             width,
                                              (const hist_type_t) lpc,
                                              bucket.b_values[lpc].hv_value,
                                              value_out);

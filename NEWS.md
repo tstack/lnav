@@ -10,6 +10,12 @@ Features:
 * Added `humanize_id` SQL function that colorizes a string using
   ANSI escape codes.
 
+Interface changes:
+* The bar charts in the DB view have now been moved to their
+  individual columns instead of occupying the whole width of
+  the view.  The result is much cleaner, so the charts are
+  now enabled by default again.
+
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good
   time to add some checks for data being hidden by escape codes:

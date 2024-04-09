@@ -105,10 +105,10 @@ public:
         bool hm_graphable{false};
         size_t hm_column_size{0};
         text_attrs hm_title_attrs;
+        stacked_bar_chart<std::string> hm_chart;
     };
 
     size_t dls_max_column_width{120};
-    stacked_bar_chart<std::string> dls_chart;
     std::vector<header_meta> dls_headers;
     std::vector<std::vector<const char*>> dls_rows;
     std::vector<struct timeval> dls_time_column;

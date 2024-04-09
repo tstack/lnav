@@ -846,28 +846,6 @@ handle_paging_key(int ch)
         case '\t':
         case KEY_BTAB:
             if (tc == &lnav_data.ld_views[LNV_DB]) {
-                auto& chart = lnav_data.ld_db_row_source.dls_chart;
-                const auto& state = chart.show_next_ident(
-                    ch == '\t' ? stacked_bar_chart_base::direction::forward
-                               : stacked_bar_chart_base::direction::backward);
-
-                state.match(
-                    [&](stacked_bar_chart_base::show_none) {
-                        lnav_data.ld_rl_view->set_value("Graphing no values");
-                    },
-                    [&](stacked_bar_chart_base::show_all) {
-                        lnav_data.ld_rl_view->set_value("Graphing all values");
-                    },
-                    [&](stacked_bar_chart_base::show_one) {
-                        std::string colname;
-
-                        chart.get_ident_to_show(colname);
-                        lnav_data.ld_rl_view->set_value(
-                            "Graphing column " ANSI_BOLD_START + colname
-                            + ANSI_NORM);
-                    });
-
-                tc->reload_data();
             } else if (tc == &lnav_data.ld_views[LNV_SPECTRO]) {
                 lnav_data.ld_mode = ln_mode_t::SPECTRO_DETAILS;
             } else if (tc_tss != nullptr && tc_tss->tss_supports_filtering) {

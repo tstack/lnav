@@ -942,7 +942,6 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         return 0;
     }
 
-    auto& chart = dls.dls_chart;
     auto& vc = view_colors::singleton();
     int ncols = sqlite3_column_count(stmt);
     int row_number;
@@ -964,16 +963,17 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 
             dls.push_header(colname, type, graphable);
             if (graphable) {
+                auto& hm = dls.dls_headers.back();
                 auto name_for_ident_attrs = colname;
                 auto attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 for (size_t attempt = 0;
-                     chart.attrs_in_use(attrs) && attempt < 3;
+                     hm.hm_chart.attrs_in_use(attrs) && attempt < 3;
                      attempt++)
                 {
                     name_for_ident_attrs += " ";
                     attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 }
-                chart.with_attrs_for_ident(colname, attrs);
+                hm.hm_chart.with_attrs_for_ident(colname, attrs);
                 dls.dls_headers.back().hm_title_attrs = attrs;
             }
         }

@@ -116,17 +116,22 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     for (const auto& attr : sa) {
         require_ge(attr.sa_range.lr_start, 0);
     }
-    int left = 0;
+    int cell_start = 0;
     for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
         auto row_view = scn::string_view{this->dls_rows[row][lpc]};
         const auto& hm = this->dls_headers[lpc];
 
+        int left = cell_start;
         if (hm.hm_graphable) {
             auto num_scan_res = scn::scan_value<double>(row_view);
 
             if (num_scan_res) {
-                this->dls_chart.chart_attrs_for_value(
-                    tc, left, hm.hm_name, num_scan_res.value(), sa);
+                hm.hm_chart.chart_attrs_for_value(tc,
+                                                  left,
+                                                  this->dls_cell_width[lpc],
+                                                  hm.hm_name,
+                                                  num_scan_res.value(),
+                                                  sa);
 
                 for (const auto& attr : sa) {
                     require_ge(attr.sa_range.lr_start, 0);
@@ -151,9 +156,10 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                         = scn::scan_value<double>(jpw_value.wt_value);
 
                     if (num_scan_res) {
-                        this->dls_chart.chart_attrs_for_value(
+                        hm.hm_chart.chart_attrs_for_value(
                             tc,
                             left,
+                            this->dls_cell_width[lpc],
                             jpw_value.wt_ptr,
                             num_scan_res.value(),
                             sa);
@@ -164,6 +170,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                 }
             }
         }
+        cell_start += this->dls_cell_width[lpc] + 1;
     }
 
     for (const auto& attr : sa) {
@@ -187,6 +194,7 @@ db_label_source::push_header(const std::string& colstr,
     if (colstr == "log_time" || colstr == "min(log_time)") {
         this->dls_time_column_index = this->dls_headers.size() - 1;
     }
+    hm.hm_chart.with_show_state(stacked_bar_chart_base::show_all{});
 }
 
 void
@@ -247,9 +255,9 @@ db_label_source::push_column(const scoped_value_t& sv)
         && this->dls_headers[index].hm_graphable)
     {
         if (sv.is<int64_t>()) {
-            this->dls_chart.add_value(hm.hm_name, sv.get<int64_t>());
+            hm.hm_chart.add_value(hm.hm_name, sv.get<int64_t>());
         } else {
-            this->dls_chart.add_value(hm.hm_name, sv.get<double>());
+            hm.hm_chart.add_value(hm.hm_name, sv.get<double>());
         }
     } else if (col_sf.length() > 2
                && ((col_sf.startswith("{") && col_sf.endswith("}"))
@@ -267,9 +275,9 @@ db_label_source::push_column(const scoped_value_t& sv)
 
                 auto num_scan_res = scn::scan_value<double>(jpw_value.wt_value);
                 if (num_scan_res) {
-                    this->dls_chart.add_value(jpw_value.wt_ptr,
-                                              num_scan_res.value());
-                    this->dls_chart.with_attrs_for_ident(
+                    hm.hm_chart.add_value(jpw_value.wt_ptr,
+                                          num_scan_res.value());
+                    hm.hm_chart.with_attrs_for_ident(
                         jpw_value.wt_ptr, vc.attrs_for_ident(jpw_value.wt_ptr));
                 }
             }
@@ -280,7 +288,6 @@ db_label_source::push_column(const scoped_value_t& sv)
 void
 db_label_source::clear()
 {
-    this->dls_chart.clear();
     this->dls_headers.clear();
     this->dls_rows.clear();
     this->dls_time_column.clear();
@@ -375,7 +382,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                 value_out.emplace_back("   " + jpw_value.wt_ptr + " = "
                                        + jpw_value.wt_value);
 
-                string_attrs_t& sa = value_out.back().get_attrs();
+                auto& sa = value_out.back().get_attrs();
                 struct line_range lr(1, 2);
 
                 sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LTEE));
@@ -413,8 +420,12 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                     auto& sa = value_out[curr_line].get_attrs();
                     int left = 3;
 
-                    chart.chart_attrs_for_value(
-                        lv, left, iter->wt_ptr, num_scan_res.value(), sa);
+                    chart.chart_attrs_for_value(lv,
+                                                left,
+                                                width,
+                                                iter->wt_ptr,
+                                                num_scan_res.value(),
+                                                sa);
                 }
             }
         }

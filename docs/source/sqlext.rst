@@ -47,6 +47,14 @@ and maximum number of bytes returned by the server, grouped by IP address:
 
     ;SELECT c_ip, avg(sc_bytes), max(sc_bytes) FROM access_log GROUP BY c_ip
 
+.. note::
+
+   For reference, the PRQL query would look like this:
+
+   .. code-block:: elm
+
+       from access_log | stats.by c_ip {average sc_bytes, max sc_bytes}
+
 After pressing :kbd:`Enter`, SQLite will execute the query using **lnav**'s
 virtual table implementation to extract the data directly from the log files.
 Once the query has finished, the main window will switch to the DB view to

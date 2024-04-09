@@ -175,6 +175,7 @@ public:
 
     void chart_attrs_for_value(const listview_curses& lc,
                                int& left,
+                               unsigned long width,
                                const T& ident,
                                double value,
                                string_attrs_t& value_out) const
@@ -184,10 +185,9 @@ public:
         require(ident_iter != this->sbc_ident_lookup.end());
 
         size_t ident_index = ident_iter->second;
-        unsigned long width, avail_width;
+        unsigned long avail_width;
         bucket_stats_t overall_stats;
         struct line_range lr;
-        vis_line_t height;
 
         lr.lr_unit = line_range::unit::codepoint;
 
@@ -200,8 +200,6 @@ public:
             return;
         }
 
-        lc.get_dimensions(height, width);
-
         for (size_t lpc = 0; lpc < this->sbc_idents.size(); lpc++) {
             if (this->sbc_show_state.template is<show_all>()
                 || lpc == (size_t) ident_to_show)
@@ -212,7 +210,9 @@ public:
         }
 
         if (this->sbc_show_state.template is<show_all>()) {
-            if (width < this->sbc_idents.size()) {
+            if (this->sbc_idents.size() == 1) {
+                avail_width = width;
+            } else if (width < this->sbc_idents.size()) {
                 avail_width = 0;
             } else {
                 avail_width = width - this->sbc_idents.size();

@@ -345,7 +345,6 @@ db_spectro_value_source::update_stats()
     this->dsvs_stats.clear();
 
     auto& dls = lnav_data.ld_db_row_source;
-    auto& chart = dls.dls_chart;
 
     this->dsvs_column_index = dls.column_name_to_index(this->dsvs_colname);
 
@@ -438,12 +437,20 @@ db_spectro_value_source::update_stats()
         return;
     }
 
-    auto bs = chart.get_stats_for(this->dsvs_colname);
-
     this->dsvs_begin_time = dls.dls_time_column.front().tv_sec;
     this->dsvs_end_time = dls.dls_time_column.back().tv_sec;
-    this->dsvs_stats.lvs_min_value = bs.bs_min_value;
-    this->dsvs_stats.lvs_max_value = bs.bs_max_value;
+
+    auto find_res
+        = dls.dls_headers | lnav::itertools::find_if([this](const auto& elem) {
+              return elem.hm_name == this->dsvs_colname;
+          });
+    if (find_res) {
+        auto hm = find_res.value();
+        auto& bs = hm->hm_chart.get_stats_for(this->dsvs_colname);
+        this->dsvs_stats.lvs_min_value = bs.bs_min_value;
+        this->dsvs_stats.lvs_max_value = bs.bs_max_value;
+    }
+
     this->dsvs_stats.lvs_count = dls.dls_rows.size();
 }
 
