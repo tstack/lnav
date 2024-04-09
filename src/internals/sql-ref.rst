@@ -1339,34 +1339,34 @@ generate_series(*start*, *stop*, *\[step\]*)
     .. code-block::  custsqlite
 
       ;SELECT value FROM generate_series(10, 14)
-      value 
-         10 
-         11 
-         12 
-         13 
-         14 
+        value    
+              10 
+              11 
+              12 
+              13 
+              14 
 
     To generate every other number in the range [10, 14]:
 
     .. code-block::  custsqlite
 
       ;SELECT value FROM generate_series(10, 14, 2)
-      value 
-         10 
-         12 
-         14 
+        value    
+              10 
+              12 
+              14 
 
     To count down from five to 1:
 
     .. code-block::  custsqlite
 
       ;SELECT value FROM generate_series(1, 5, -1)
-      value 
-          5 
-          4 
-          3 
-          2 
-          1 
+        value    
+               5 
+               4 
+               3 
+               2 
+               1 
 
 
 ----
@@ -3656,11 +3656,11 @@ row_number()
     .. code-block::  custsqlite
 
       ;SELECT row_number() OVER (PARTITION BY ex_procname ORDER BY log_line) AS msg_num, ex_procname, log_body FROM lnav_example_log
-      msg_num ex_procname    log_body     
-            1 gw          Goodbye, World! 
-            2 gw          Goodbye, World! 
-            3 gw          Goodbye, World! 
-            1 hw          Hello, World!   
+       msg_num   ex_procname    log_body     
+               1 gw          Goodbye, World! 
+               2 gw          Goodbye, World! 
+               3 gw          Goodbye, World! 
+               1 hw          Hello, World!   
 
   **See Also**
     :ref:`cume_dist`, :ref:`dense_rank`, :ref:`first_value`, :ref:`lag`, :ref:`last_value`, :ref:`lead`, :ref:`nth_value`, :ref:`ntile`, :ref:`percent_rank`, :ref:`rank`
@@ -4189,19 +4189,19 @@ timeslice(*time*, *slice*)
 
       ;SELECT timeslice(log_time_msecs, '5m') AS slice, count(1)
     FROM lnav_example_log GROUP BY slice
-           slice      count(1) 
-      2017-02⋯:00.000        2 
-      2017-02⋯:00.000        1 
-      2017-02⋯:00.000        1 
+           slice       count(1)  
+      2017-02⋯:00.000          2 
+      2017-02⋯:00.000          1 
+      2017-02⋯:00.000          1 
 
     To group log messages by those before 4:30am and after:
 
     .. code-block::  custsqlite
 
       ;SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice
-           slice      count(1) 
-      <NULL>                 1 
-      2017-02⋯:00.000        3 
+           slice       count(1)  
+      <NULL>                   1 
+      2017-02⋯:00.000          3 
 
   **See Also**
     :ref:`date`, :ref:`datetime`, :ref:`humanize_duration`, :ref:`julianday`, :ref:`strftime`, :ref:`time`, :ref:`timediff`, :ref:`timezone`
@@ -4611,9 +4611,9 @@ derive *column*
     .. code-block::  custsqlite
 
       ;from [{a=1}, {a=2}] | derive b = a * 2
-      a b 
-      1 2 
-      2 4 
+          a          b      
+               1          2 
+               2          4 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4661,19 +4661,19 @@ from *table*
     .. code-block::  custsqlite
 
       ;from http_status_codes | take 3
-      status     message     
-         100 Continue        
-         101 Switchi⋯otocols 
-         102 Processing      
+        status       message     
+             100 Continue        
+             101 Switchi⋯otocols 
+             102 Processing      
 
     To use an array literal as a source:
 
     .. code-block::  custsqlite
 
       ;from [{ col1=1, col2='abc' }, { col1=2, col2='def' }]
-      col1 col2 
-         1 abc  
-         2 def  
+         col1    col2 
+               1 abc  
+               2 def  
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4698,11 +4698,11 @@ group *key_columns* *pipeline*
     .. code-block::  custsqlite
 
       ;from lnav_example_log | group { log_level } (aggregate { count this })
-      log_level COUNT(*) 
-      debug            1 
-      info             1 
-      warn             1 
-      error            1 
+      log_level  COUNT(*)  
+      debug              1 
+      info               1 
+      warn               1 
+      error              1 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4753,9 +4753,9 @@ select *expr*
     .. code-block::  custsqlite
 
       ;from [{a=1}, {a=2}] | select b = a * 2
-      b 
-      2 
-      4 
+          b      
+               2 
+               4 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4779,9 +4779,9 @@ sort *expr*
     .. code-block::  custsqlite
 
       ;from [{a=1}, {a=2}] | sort {-a}
-      a 
-      2 
-      1 
+          a      
+               2 
+               1 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4830,9 +4830,9 @@ stats.by *col* *values*
     .. code-block::  custsqlite
 
       ;from [{a=1, b=1}, {a=1, b=1}, {a=2, b=1}] | stats.by a {sum b}
-      a COALESC⋯(b), 0) 
-      1               2 
-      2               1 
+          a      COALESC⋯(b), 0) 
+               1               2 
+               2               1 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4856,9 +4856,9 @@ stats.count_by *column*
     .. code-block::  custsqlite
 
       ;from [{a=1}, {a=1}, {a=2}] | stats.count_by a
-      a total 
-      1     2 
-      2     1 
+          a        total    
+               1          2 
+               2          1 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4941,9 +4941,9 @@ take *n_or_range*
     .. code-block::  custsqlite
 
       ;from [{a=1}, {a=2}, {a=3}] | take 2..3
-      a 
-      2 
-      3 
+          a      
+               2 
+               3 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`, :ref:`utils_distinct`
@@ -4967,9 +4967,9 @@ utils.distinct *col*
     .. code-block::  custsqlite
 
       ;from [{a=1}, {a=1}, {a=2}] | utils.distinct a
-      a 
-      1 
-      2 
+          a      
+               1 
+               2 
 
   **See Also**
     :ref:`prql_aggregate`, :ref:`prql_append`, :ref:`prql_derive`, :ref:`prql_filter`, :ref:`prql_from`, :ref:`prql_group`, :ref:`prql_join`, :ref:`prql_select`, :ref:`prql_sort`, :ref:`prql_take`, :ref:`stats_average_of`, :ref:`stats_by`, :ref:`stats_count_by`, :ref:`stats_hist`, :ref:`stats_sum_of`

@@ -191,6 +191,9 @@ db_label_source::push_header(const std::string& colstr,
     hm.hm_column_size = utf8_string_length(colstr).unwrapOr(colstr.length());
     hm.hm_column_type = type;
     hm.hm_graphable = graphable;
+    if (graphable) {
+        hm.hm_column_size = std::max(hm.hm_column_size, size_t{10});
+    }
     if (colstr == "log_time" || colstr == "min(log_time)") {
         this->dls_time_column_index = this->dls_headers.size() - 1;
     }
@@ -464,7 +467,8 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         auto actual_col_size = std::min(dls->dls_max_column_width,
                                         dls->dls_headers[lpc].hm_column_size);
         std::string cell_title = dls->dls_headers[lpc].hm_name;
-
+        string_attrs_t cell_attrs;
+        scrub_ansi_string(cell_title, &cell_attrs);
         truncate_to(cell_title, dls->dls_max_column_width);
 
         auto cell_length
@@ -475,11 +479,12 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         before = total_fill / 2;
         total_fill -= before;
         line.append(before, ' ');
+        shift_string_attrs(cell_attrs, 0, line.size());
         line.append(cell_title);
         line.append(total_fill, ' ');
-        line.append(1, ' ');
-
         struct line_range header_range(line_len_before, line.length());
+
+        line.append(1, ' ');
 
         require_ge(header_range.lr_start, 0);
 
@@ -491,6 +496,7 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
             attrs.ta_attrs = A_UNDERLINE;
         }
         sa.emplace_back(header_range, VC_STYLE.value(attrs));
+        sa.insert(sa.end(), cell_attrs.begin(), cell_attrs.end());
     }
 
     struct line_range lr(0);
