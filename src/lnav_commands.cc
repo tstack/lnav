@@ -3056,6 +3056,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (file_iter == lnav_data.ld_active_files.fc_files.end()) {
             auto_mem<char> abspath;
             struct stat st;
+            size_t url_index;
 
             if (is_url(fn.c_str())) {
 #ifndef HAVE_LIBCURL
@@ -3075,9 +3076,16 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     retval = "";
                 }
 #endif
-            } else if (fn.find("://") != std::string::npos) {
+            } else if ((url_index = fn.find("://")) != std::string::npos) {
                 const auto& cfg
                     = injector::get<const lnav::url_handler::config&>();
+                const auto HOST_REGEX
+                    = lnav::pcre2pp::code::from_const("://(?:\\?|$)");
+
+                auto find_res = HOST_REGEX.find_in(fn).ignore_error();
+                if (find_res) {
+                    fn.insert(url_index + 3, "localhost");
+                }
 
                 auto_mem<CURLU> cu(curl_url_cleanup);
                 cu = curl_url();
