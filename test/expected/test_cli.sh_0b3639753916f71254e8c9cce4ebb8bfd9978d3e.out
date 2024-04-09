@@ -111,6 +111,9 @@
             "hw": {
                 "handler": "hw-url-handler"
             },
+            "journald": {
+                "handler": "journald-url-handler"
+            },
             "piper": {
                 "handler": "piper-url-handler"
             },

@@ -48,11 +48,12 @@
 /tuning/remote/ssh/config/ConnectTimeout -> root-config.json:35
 /tuning/remote/ssh/start-command -> root-config.json:37
 /tuning/remote/ssh/transfer-command -> root-config.json:38
-/tuning/url-scheme/docker-compose/handler -> root-config.json:103
+/tuning/url-scheme/docker-compose/handler -> root-config.json:100
 /tuning/url-scheme/docker/handler -> root-config.json:97
 /tuning/url-scheme/hw/handler -> {test_dir}/configs/installed/hw-url-handler.json:6
+/tuning/url-scheme/journald/handler -> root-config.json:103
 /tuning/url-scheme/piper/handler -> root-config.json:106
-/tuning/url-scheme/podman/handler -> root-config.json:100
+/tuning/url-scheme/podman/handler -> root-config.json:109
 /ui/clock-format -> root-config.json:4
 /ui/default-colors -> root-config.json:6
 /ui/dim-text -> root-config.json:5
