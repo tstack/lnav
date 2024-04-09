@@ -7,6 +7,8 @@ Features:
   of values over time.
 * The preview for the `:open` command will now show a listing
   of archive contents.
+* Added `humanize_id` SQL function that colorizes a string using
+  ANSI escape codes.
 
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good

@@ -1,5 +1,7 @@
 #! /bin/bash
 
+export YES_COLOR=1
+
 run_cap_test ./drive_sql "select length(gzip(1))"
 
 run_cap_test ./drive_sql "select gunzip(gzip(1))"
@@ -194,3 +196,6 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ';SELECT anonymize(bro_id_resp_h) FROM bro_http_log' \
     ${test_dir}/logfile_bro_http.log.0
+
+run_cap_test ${lnav_test} -nN \
+    -c ";SELECT humanize_id('foo'), humanize_id('bar')"

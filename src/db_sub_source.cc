@@ -29,6 +29,7 @@
 
 #include "db_sub_source.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/date_time_scanner.hh"
 #include "base/itertools.hh"
 #include "base/time_util.hh"
@@ -52,6 +53,7 @@ db_label_source::text_value_for_line(textview_curses& tc,
      */
 
     label_out.clear();
+    this->dls_ansi_attrs.clear();
     if (row < 0_vl || row >= (int) this->dls_rows.size()) {
         return;
     }
@@ -59,7 +61,8 @@ db_label_source::text_value_for_line(textview_curses& tc,
         auto actual_col_size = std::min(this->dls_max_column_width,
                                         this->dls_headers[lpc].hm_column_size);
         auto cell_str = scrub_ws(this->dls_rows[row][lpc]);
-
+        string_attrs_t cell_attrs;
+        scrub_ansi_string(cell_str, &cell_attrs);
         truncate_to(cell_str, this->dls_max_column_width);
 
         auto cell_length
@@ -69,11 +72,15 @@ db_label_source::text_value_for_line(textview_curses& tc,
         if (this->dls_headers[lpc].hm_column_type != SQLITE3_TEXT) {
             label_out.append(padding, ' ');
         }
+        shift_string_attrs(cell_attrs, 0, label_out.size());
         label_out.append(cell_str);
         if (this->dls_headers[lpc].hm_column_type == SQLITE3_TEXT) {
             label_out.append(padding, ' ');
         }
         label_out.append(1, ' ');
+
+        this->dls_ansi_attrs.insert(
+            this->dls_ansi_attrs.end(), cell_attrs.begin(), cell_attrs.end());
     }
 }
 
@@ -88,6 +95,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     if (row < 0_vl || row >= (int) this->dls_rows.size()) {
         return;
     }
+    sa = this->dls_ansi_attrs;
     auto alt_row_index = row % 4;
     if (alt_row_index == 2 || alt_row_index == 3) {
         sa.emplace_back(lr2, VC_ROLE.value(role_t::VCR_ALT_ROW));

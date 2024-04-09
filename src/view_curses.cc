@@ -1180,20 +1180,16 @@ view_colors::color_for_ident(const char* str, size_t len) const
     auto index = crc32(1, (const Bytef*) str, len);
     int retval;
 
-    if (COLORS >= 256) {
-        if (str[0] == '#' && (len == 4 || len == 7)) {
-            auto fg_res
-                = styling::color_unit::from_str(string_fragment(str, 0, len));
-            if (fg_res.isOk()) {
-                return this->match_color(fg_res.unwrap());
-            }
+    if (str[0] == '#' && (len == 4 || len == 7)) {
+        auto fg_res
+            = styling::color_unit::from_str(string_fragment(str, 0, len));
+        if (fg_res.isOk()) {
+            return this->match_color(fg_res.unwrap());
         }
-
-        auto offset = index % HI_COLOR_COUNT;
-        retval = this->vc_highlight_colors[offset];
-    } else {
-        retval = -1;
     }
+
+    auto offset = index % HI_COLOR_COUNT;
+    retval = this->vc_highlight_colors[offset];
 
     return retval;
 }

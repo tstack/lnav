@@ -35,6 +35,7 @@
 #include "spookyhash/SpookyV2.h"
 #include "sqlite-extension-func.hh"
 #include "text_anonymizer.hh"
+#include "view_curses.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 #include "yajl/api/yajl_gen.h"
@@ -879,6 +880,17 @@ extract(const char* str)
     return json_string(gen);
 }
 
+static std::string
+sql_humanize_id(string_fragment id)
+{
+    auto& vc = view_colors::singleton();
+    auto attrs = vc.attrs_for_ident(id.data(), id.length());
+
+    return fmt::format(FMT_STRING("\x1b[38;5;{}m{}\x1b[0m"),
+                       attrs.ta_fg_color.value_or(COLOR_CYAN),
+                       id);
+}
+
 int
 string_extension_functions(struct FuncDef** basic_funcs,
                            struct FuncDefAgg** agg_funcs)
@@ -961,6 +973,18 @@ string_extension_functions(struct FuncDef** basic_funcs,
                         .with_example({
                             "To format an amount",
                             "SELECT humanize_file_size(10 * 1024 * 1024)",
+                        })),
+
+        sqlite_func_adapter<decltype(&sql_humanize_id), sql_humanize_id>::
+            builder(help_text("humanize_id",
+                              "Colorize the given ID using ANSI escape codes.")
+                        .sql_function()
+                        .with_prql_path({"humanize", "id"})
+                        .with_parameter({"id", "The identifier to color"})
+                        .with_tags({"string"})
+                        .with_example({
+                            "To colorize the ID 'cluster1'",
+                            "SELECT humanize_id('cluster1')",
                         })),
 
         sqlite_func_adapter<decltype(&humanize::sparkline),
