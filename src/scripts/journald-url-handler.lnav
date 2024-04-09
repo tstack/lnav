@@ -1,0 +1,32 @@
+#
+# @synopsis: journald-url-handler
+# @description: Internal script to handle opening journald URLs
+#
+
+;SELECT
+    jget(url, '/scheme') AS jscheme,
+    jget(url, '/host') AS jhost,
+    jget(url, '/parameters') as jparams
+    FROM (SELECT parse_url(
+              CASE WHEN regexp('^journald://(?:\?|$)', $1) THEN
+                  'journald://localhost/' || substr($1, 11)
+              END) AS url
+    )
+
+;SELECT
+    printf(':sh journalctl --output=json -f %s', (
+        SELECT group_concat(
+            CASE length(key)
+                WHEN 1 THEN
+                    '-'
+                ELSE
+                    '--'
+            END ||
+            key ||
+            '=' || value,
+            ' ')
+            FROM json_each($jparams)
+        )
+    ) AS cmds
+
+:eval ${cmds}

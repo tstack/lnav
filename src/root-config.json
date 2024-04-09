@@ -96,14 +96,17 @@
             "docker": {
                 "handler": "docker-url-handler"
             },
-            "podman": {
-                "handler": "docker-url-handler"
-            },
             "docker-compose": {
                 "handler": "docker-compose-url-handler"
             },
+            "journald": {
+                "handler": "journald-url-handler"
+            },
             "piper": {
                 "handler": "piper-url-handler"
+            },
+            "podman": {
+                "handler": "docker-url-handler"
             }
         }
     }
