@@ -425,25 +425,22 @@ listview_curses::do_update()
                     require_ge(attr.sa_range.lr_start, 0);
                 }
 
-                size_t remaining = 0;
+                view_curses::mvwattrline_result write_res;
                 do {
-                    remaining = mvwattrline(this->lv_window,
+                    if (this->lv_word_wrap) {
+                        mvwhline(this->lv_window, y, this->lv_x, ' ', width);
+                    }
+                    write_res = mvwattrline(this->lv_window,
                                             y,
                                             this->lv_x,
                                             al,
                                             lr,
                                             this->vc_default_role);
-                    if (this->lv_word_wrap) {
-                        mvwhline(this->lv_window,
-                                 y,
-                                 this->lv_x + wrap_width,
-                                 ' ',
-                                 width - wrap_width);
-                    }
-                    lr.lr_start += wrap_width;
-                    lr.lr_end += wrap_width;
+                    lr.lr_start += write_res.mr_chars_out;
+                    lr.lr_end += write_res.mr_chars_out;
                     ++y;
-                } while (this->lv_word_wrap && y < bottom && remaining > 0);
+                } while (this->lv_word_wrap && y < bottom
+                         && write_res.mr_bytes_remaining > 0);
 
                 if (this->lv_overlay_source != nullptr) {
                     row_overlay_content.clear();

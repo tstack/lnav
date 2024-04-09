@@ -140,7 +140,7 @@ view_curses::awaiting_user_input()
     }
 }
 
-size_t
+view_curses::mvwattrline_result
 view_curses::mvwattrline(WINDOW* window,
                          int y,
                          const int x,
@@ -155,6 +155,7 @@ view_curses::mvwattrline(WINDOW* window,
 
     require(lr_chars.lr_end >= 0);
 
+    mvwattrline_result retval;
     auto line_width_chars = lr_chars.length();
     std::string expanded_line;
     line_range lr_bytes;
@@ -168,6 +169,7 @@ view_curses::mvwattrline(WINDOW* window,
             lr_bytes.lr_start = exp_start_index;
         } else if (char_index == lr_chars.lr_end) {
             lr_bytes.lr_end = exp_start_index;
+            retval.mr_chars_out = char_index;
         }
 
         switch (ch) {
@@ -234,6 +236,10 @@ view_curses::mvwattrline(WINDOW* window,
                     }
                     auto wch = read_res.unwrap();
                     char_index += wcwidth(wch);
+                    if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
+                        lr_bytes.lr_end = exp_start_index;
+                        retval.mr_chars_out = char_index - wcwidth(wch);
+                    }
                 }
                 break;
             }
@@ -245,7 +251,10 @@ view_curses::mvwattrline(WINDOW* window,
     if (lr_bytes.lr_end == -1) {
         lr_bytes.lr_end = expanded_line.size();
     }
-    size_t retval = expanded_line.size() - lr_bytes.lr_end;
+    if (retval.mr_chars_out == 0) {
+        retval.mr_chars_out = char_index;
+    }
+    retval.mr_bytes_remaining = expanded_line.size() - lr_bytes.lr_end;
 
     full_line = expanded_line;
 
