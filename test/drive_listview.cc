@@ -41,12 +41,9 @@ static listview_curses lv;
 
 class my_source : public list_data_source {
 public:
-    my_source() : ms_rows(2){};
+    my_source() : ms_rows(2) {}
 
-    size_t listview_rows(const listview_curses& lv)
-    {
-        return this->ms_rows;
-    };
+    size_t listview_rows(const listview_curses& lv) { return this->ms_rows; }
 
     void listview_value_for_rows(const listview_curses& lv,
                                  vis_line_t row,
@@ -67,12 +64,12 @@ public:
             }
             ++row;
         }
-    };
+    }
 
     size_t listview_size_for_row(const listview_curses& lv, vis_line_t row)
     {
         return 100;
-    };
+    }
 
     bool attrline_next_token(const view_curses& vc,
                              int line,
@@ -80,7 +77,7 @@ public:
                              int& attrs_out)
     {
         return false;
-    };
+    }
 
     int ms_rows;
 };
@@ -90,6 +87,7 @@ main(int argc, char* argv[])
 {
     int c, retval = EXIT_SUCCESS;
     bool wait_for_input = false, set_height = false;
+    const char* keys = nullptr;
     my_source ms;
     WINDOW* win;
 
@@ -111,15 +109,9 @@ main(int argc, char* argv[])
                 lv.set_height(vis_line_t(atoi(optarg)));
                 set_height = true;
                 break;
-            case 'k': {
-                // Treats the string argument as sequence of key presses (only
-                // individual characters supported as key input)
-                for (char* ptr = optarg; ptr != nullptr && *ptr != '\0'; ++ptr)
-                {
-                    lv.handle_key(static_cast<int>(*ptr));
-                }
+            case 'k':
+                keys = optarg;
                 break;
-            }
             case 't':
                 lv.set_selection(vis_line_t(atoi(optarg)));
                 break;
@@ -139,6 +131,19 @@ main(int argc, char* argv[])
         unsigned long height, width;
         getmaxyx(win, height, width);
         lv.set_height(vis_line_t(height - lv.get_y()));
+    }
+
+    if (keys != nullptr) {
+        // Treats the string argument as sequence of key presses (only
+        // individual characters supported as key input)
+        for (const char* ptr = keys; ptr != nullptr && *ptr != '\0'; ++ptr) {
+            lv.do_update();
+            if (wait_for_input) {
+                getch();
+                refresh();
+            }
+            lv.handle_key(static_cast<int>(*ptr));
+        }
     }
 
     lv.do_update();

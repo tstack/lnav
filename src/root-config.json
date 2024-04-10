@@ -7,7 +7,7 @@
         "keymap": "default",
         "theme": "default",
         "movement": {
-            "mode": "top"
+            "mode": "cursor"
         }
     },
     "log": {

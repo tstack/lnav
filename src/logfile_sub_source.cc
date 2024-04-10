@@ -2871,7 +2871,9 @@ logfile_sub_source::text_size_for_line(textview_curses& tc,
         std::string value;
 
         this->text_value_for_line(tc, row, value, flags);
-        this->lss_line_size_cache[index].second = value.size();
+        scrub_ansi_string(value, nullptr);
+        this->lss_line_size_cache[index].second
+            = string_fragment::from_str(value).column_width();
         this->lss_line_size_cache[index].first = row;
     }
     return this->lss_line_size_cache[index].second;

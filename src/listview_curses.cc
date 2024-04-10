@@ -215,8 +215,9 @@ listview_curses::handle_key(int ch)
             {
                 this->set_selection(0_vl);
             } else {
-                this->shift_top(
-                    -(this->rows_available(this->lv_top, RD_UP) - 1_vl));
+                auto shift_amount
+                    = -(this->rows_available(this->lv_top, RD_UP) - 1_vl);
+                this->shift_top(shift_amount);
             }
             break;
 
@@ -232,8 +233,12 @@ listview_curses::handle_key(int ch)
                 }
             }
 
-            auto rows_avail
-                = this->rows_available(this->lv_top, RD_DOWN) - 1_vl;
+            auto rows_avail = this->rows_available(this->lv_top, RD_DOWN);
+            if (rows_avail == 0_vl) {
+                rows_avail = 2_vl;
+            } else if (rows_avail > 2_vl) {
+                rows_avail -= 1_vl;
+            }
             auto top_for_last = this->get_top_for_last_row();
 
             if ((this->lv_top < top_for_last)
@@ -436,8 +441,8 @@ listview_curses::do_update()
                                             al,
                                             lr,
                                             this->vc_default_role);
-                    lr.lr_start += write_res.mr_chars_out;
-                    lr.lr_end += write_res.mr_chars_out;
+                    lr.lr_start = write_res.mr_chars_out;
+                    lr.lr_end = write_res.mr_chars_out + width - 1;
                     ++y;
                 } while (this->lv_word_wrap && y < bottom
                          && write_res.mr_bytes_remaining > 0);
@@ -884,8 +889,14 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
 
                 this->get_dimensions(height, width);
 
-                if (bot != -1_vl && (bot - top) >= (height - 1)) {
-                    if (this->lv_selection > (bot - this->lv_tail_space)) {
+                if (bot == -1_vl) {
+                    this->set_selection(this->lv_top);
+                } else if (this->lv_selection < this->lv_top
+                           || bot < this->lv_selection)
+                {
+                    if (top + sel_diff > bot) {
+                        this->set_selection(bot);
+                    } else {
                         this->set_selection(top + sel_diff);
                     }
                 }

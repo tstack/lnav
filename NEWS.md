@@ -15,6 +15,11 @@ Interface changes:
   individual columns instead of occupying the whole width of
   the view.  The result is much cleaner, so the charts are
   now enabled by default again.
+* Cursor mode in the main view is now the default instead of
+  using the top line as the focus.  You can change back by
+  running:
+
+  `:config /ui/movement/mode top`
 
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good

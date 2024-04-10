@@ -295,10 +295,14 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
                 || line >= lfo->lfo_filter_state.tfs_index.size())
             {
             } else {
-                retval
-                    = lf->message_byte_length(
-                            lf->begin() + lfo->lfo_filter_state.tfs_index[line])
-                          .mlr_length;
+                auto read_res = lf->read_line(
+                    lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+                if (read_res.isOk()) {
+                    auto sbr = read_res.unwrap();
+                    auto str = to_string(sbr);
+                    scrub_ansi_string(str, nullptr);
+                    retval = string_fragment::from_str(str).column_width();
+                }
             }
         } else {
             retval = rend_iter->second.rf_text_source->text_size_for_line(
