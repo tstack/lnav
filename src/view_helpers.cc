@@ -718,7 +718,7 @@ layout_views()
     lnav_data.ld_user_message_view.set_visible(vis);
 
     bottom -= 1;
-    lnav_data.ld_status[LNS_BOTTOM].set_top(bottom);
+    lnav_data.ld_status[LNS_BOTTOM].set_y(bottom);
     lnav_data.ld_status[LNS_BOTTOM].set_enabled(!filters_open
                                                 && !breadcrumb_open);
 
@@ -727,7 +727,7 @@ layout_views()
     lnav_data.ld_preview_view[1].set_y(bottom + 1);
     lnav_data.ld_preview_view[1].set_visible(vis);
 
-    lnav_data.ld_status[LNS_PREVIEW1].set_top(bottom);
+    lnav_data.ld_status[LNS_PREVIEW1].set_y(bottom);
     lnav_data.ld_status[LNS_PREVIEW1].set_visible(vis);
 
     vis = preview_open0 && bottom.try_consume(preview_height0 + 1);
@@ -735,7 +735,7 @@ layout_views()
     lnav_data.ld_preview_view[0].set_y(bottom + 1);
     lnav_data.ld_preview_view[0].set_visible(vis);
 
-    lnav_data.ld_status[LNS_PREVIEW0].set_top(bottom);
+    lnav_data.ld_status[LNS_PREVIEW0].set_y(bottom);
     lnav_data.ld_status[LNS_PREVIEW0].set_visible(vis);
 
     if (doc_side_by_side && doc_height > 0) {
@@ -770,7 +770,7 @@ layout_views()
 
     auto has_doc = lnav_data.ld_example_view.get_height() > 0_vl
         || lnav_data.ld_doc_view.get_height() > 0_vl;
-    lnav_data.ld_status[LNS_DOC].set_top(bottom);
+    lnav_data.ld_status[LNS_DOC].set_y(bottom);
     lnav_data.ld_status[LNS_DOC].set_visible(has_doc && vis);
 
     if (is_gantt) {
@@ -783,7 +783,7 @@ layout_views()
     lnav_data.ld_gantt_details_view.set_width(width);
     lnav_data.ld_gantt_details_view.set_visible(vis);
 
-    lnav_data.ld_status[LNS_GANTT].set_top(bottom);
+    lnav_data.ld_status[LNS_GANTT].set_y(bottom);
     lnav_data.ld_status[LNS_GANTT].set_visible(vis);
 
     vis = bottom.try_consume(filter_height + (filters_open ? 1 : 0)
@@ -799,11 +799,11 @@ layout_views()
     lnav_data.ld_files_view.set_visible(filters_open && vis);
 
     lnav_data.ld_status[LNS_FILTER_HELP].set_visible(filters_open && vis);
-    lnav_data.ld_status[LNS_FILTER_HELP].set_top(bottom + 1);
+    lnav_data.ld_status[LNS_FILTER_HELP].set_y(bottom + 1);
 
     lnav_data.ld_status[LNS_FILTER].set_visible(vis);
     lnav_data.ld_status[LNS_FILTER].set_enabled(filters_open);
-    lnav_data.ld_status[LNS_FILTER].set_top(bottom);
+    lnav_data.ld_status[LNS_FILTER].set_y(bottom);
 
     vis = is_spectro && bottom.try_consume(5 + 1);
     lnav_data.ld_spectro_details_view.set_y(bottom + 1);
@@ -811,7 +811,7 @@ layout_views()
     lnav_data.ld_spectro_details_view.set_width(width);
     lnav_data.ld_spectro_details_view.set_visible(vis);
 
-    lnav_data.ld_status[LNS_SPECTRO].set_top(bottom);
+    lnav_data.ld_status[LNS_SPECTRO].set_y(bottom);
     lnav_data.ld_status[LNS_SPECTRO].set_visible(vis);
     lnav_data.ld_status[LNS_SPECTRO].set_enabled(lnav_data.ld_mode
                                                  == ln_mode_t::SPECTRO_DETAILS);
@@ -1399,5 +1399,75 @@ clear_preview()
         lnav_data.ld_db_preview_source[lpc].clear();
         lnav_data.ld_preview_view[lpc].set_sub_source(nullptr);
         lnav_data.ld_preview_view[lpc].set_overlay_source(nullptr);
+    }
+}
+
+void
+lnav_behavior::mouse_event(int button, bool release, int x, int y)
+{
+    struct mouse_event me;
+
+    switch (button & xterm_mouse::XT_BUTTON__MASK) {
+        case xterm_mouse::XT_BUTTON1:
+            me.me_button = mouse_button_t::BUTTON_LEFT;
+            break;
+        case xterm_mouse::XT_BUTTON2:
+            me.me_button = mouse_button_t::BUTTON_MIDDLE;
+            break;
+        case xterm_mouse::XT_BUTTON3:
+            me.me_button = mouse_button_t::BUTTON_RIGHT;
+            break;
+        case xterm_mouse::XT_SCROLL_UP:
+            me.me_button = mouse_button_t::BUTTON_SCROLL_UP;
+            break;
+        case xterm_mouse::XT_SCROLL_DOWN:
+            me.me_button = mouse_button_t::BUTTON_SCROLL_DOWN;
+            break;
+    }
+
+    me.me_modifiers = button & xterm_mouse::XT_MODIFIER_MASK;
+
+    if (button & xterm_mouse::XT_DRAG_FLAG) {
+        me.me_state = mouse_button_state_t::BUTTON_STATE_DRAGGED;
+    } else if (release) {
+        me.me_state = mouse_button_state_t::BUTTON_STATE_RELEASED;
+    } else {
+        me.me_state = mouse_button_state_t::BUTTON_STATE_PRESSED;
+    }
+
+    auto width = getmaxx(lnav_data.ld_window);
+    gettimeofday(&me.me_time, nullptr);
+
+    me.me_x = x - 1;
+    if (me.me_x >= width) {
+        me.me_x = width - 1;
+    }
+    me.me_y = y - 1;
+
+    switch (me.me_state) {
+        case mouse_button_state_t::BUTTON_STATE_PRESSED: {
+            auto* tc = *(lnav_data.ld_view_stack.top());
+            if (tc->contains(me.me_x, me.me_y)) {
+                this->lb_last_view = tc;
+            }
+            break;
+        }
+        case mouse_button_state_t::BUTTON_STATE_DRAGGED:
+        case mouse_button_state_t::BUTTON_STATE_RELEASED: {
+            break;
+        }
+    }
+
+    if (this->lb_last_view != nullptr) {
+        me.me_y -= this->lb_last_view->get_y();
+        me.me_x -= this->lb_last_view->get_x();
+        this->lb_last_view->handle_mouse(me);
+    }
+    this->lb_last_event = me;
+    if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+        || me.me_button == mouse_button_t::BUTTON_SCROLL_UP
+        || me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN)
+    {
+        this->lb_last_view = nullptr;
     }
 }

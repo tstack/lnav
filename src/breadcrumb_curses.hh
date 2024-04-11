@@ -42,14 +42,6 @@ class breadcrumb_curses : public view_curses {
 public:
     breadcrumb_curses();
 
-    void set_y(int y)
-    {
-        this->bc_y = y;
-        this->bc_match_view.set_y(y + 1);
-    }
-
-    int get_y() const { return this->bc_y; }
-
     void set_window(WINDOW* win)
     {
         this->bc_window = win;
@@ -66,7 +58,7 @@ public:
 
     bool handle_key(int ch);
 
-    void do_update() override;
+    bool do_update() override;
 
     void reload_data();
 
@@ -90,7 +82,6 @@ private:
 
     WINDOW* bc_window{nullptr};
     std::function<std::vector<breadcrumb::crumb>()> bc_line_source;
-    int bc_y{0};
     std::vector<breadcrumb::crumb> bc_focused_crumbs;
     nonstd::optional<size_t> bc_selected_crumb;
     nonstd::optional<size_t> bc_last_selected_crumb;

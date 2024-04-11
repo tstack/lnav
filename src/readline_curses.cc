@@ -821,7 +821,7 @@ readline_curses::start()
     if (this->vc_width > 0) {
         ws.ws_col = this->vc_width;
     } else if (this->vc_width < 0) {
-        ws.ws_col -= this->vc_left;
+        ws.ws_col -= this->vc_x;
         ws.ws_col += this->vc_width;
     }
 
@@ -1294,11 +1294,11 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
 
         rc = read(this->rc_pty[RCF_MASTER], buffer, sizeof(buffer));
         if (rc > 0) {
-            int old_x = this->vc_x;
+            int old_x = this->vc_cursor_x;
 
             this->rc_suggestion.clear();
             this->map_output(buffer, rc);
-            if (this->vc_x != old_x) {
+            if (this->vc_cursor_x != old_x) {
                 this->rc_change(this);
             }
         }
@@ -1451,7 +1451,7 @@ readline_curses::focus(int context,
     al.append(lnav::roles::suggestion(this->rc_suggestion));
     view_curses::mvwattrline(this->vc_window,
                              this->get_actual_y(),
-                             this->vc_left,
+                             this->vc_x,
                              al,
                              line_range{0, (int) this->get_actual_width()});
     if (!initial.empty()) {
@@ -1495,7 +1495,7 @@ readline_curses::abort()
 {
     char buffer[1024];
 
-    this->vc_x = 0;
+    this->vc_cursor_x = 0;
     snprintf(buffer, sizeof(buffer), "a");
     if (sendstring(this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer))
         == -1)
@@ -1600,11 +1600,11 @@ readline_curses::clear_possibilities(int context, std::string type)
     }
 }
 
-void
+bool
 readline_curses::do_update()
 {
     if (!this->vc_visible || this->vc_window == nullptr) {
-        return;
+        return false;
     }
 
     auto actual_width = this->get_actual_width();
@@ -1614,7 +1614,7 @@ readline_curses::do_update()
         attr_line_t alt_al;
         auto& vc = view_colors::singleton();
 
-        wmove(this->vc_window, this->get_actual_y(), this->vc_left);
+        wmove(this->vc_window, this->get_actual_y(), this->vc_x);
         auto attrs = vc.attrs_for_role(role_t::VCR_TEXT);
         wattr_set(this->vc_window,
                   attrs.ta_attrs,
@@ -1642,7 +1642,7 @@ readline_curses::do_update()
         lr.lr_end = this->rc_value.length();
         view_curses::mvwattrline(this->vc_window,
                                  this->get_actual_y(),
-                                 this->vc_left,
+                                 this->vc_x,
                                  this->rc_value,
                                  lr);
         this->set_x(0);
@@ -1654,24 +1654,27 @@ readline_curses::do_update()
         auto al = this->vc_line;
 
         if (hl != nullptr) {
-            hl(al, this->vc_left + this->vc_x);
+            hl(al, this->vc_x + this->vc_cursor_x);
         }
         al.append(lnav::roles::suggestion(this->rc_suggestion));
         view_curses::mvwattrline(this->vc_window,
                                  this->get_actual_y(),
-                                 this->vc_left,
+                                 this->vc_x,
                                  al,
                                  line_range{0, (int) actual_width});
 
-        wmove(
-            this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
+        wmove(this->vc_window,
+              this->get_actual_y(),
+              this->vc_x + this->vc_cursor_x);
     }
+
+    return true;
 }
 
 std::string
 readline_curses::get_match_string() const
 {
-    auto len = std::min((size_t) this->vc_x, this->rc_line_buffer.size())
+    auto len = std::min((size_t) this->vc_cursor_x, this->rc_line_buffer.size())
         - this->rc_match_start;
     auto* context = this->get_active_context();
 
@@ -1734,7 +1737,7 @@ readline_curses::window_change()
     if (this->vc_width > 0) {
         ws.ws_col = this->vc_width;
     } else if (this->vc_width < 0) {
-        ws.ws_col -= this->vc_left;
+        ws.ws_col -= this->vc_x;
         ws.ws_col += this->vc_width;
     }
     if (ioctl(this->rc_pty[RCF_MASTER], TIOCSWINSZ, &ws) == -1) {

@@ -396,8 +396,7 @@ textview_curses::handle_mouse(mouse_event& me)
     unsigned long width;
     vis_line_t height;
 
-    if (this->tc_selection_start == -1_vl && listview_curses::handle_mouse(me))
-    {
+    if (!this->tc_selection_start && listview_curses::handle_mouse(me)) {
         return true;
     }
 
@@ -411,64 +410,58 @@ textview_curses::handle_mouse(mouse_event& me)
         return false;
     }
 
-    vis_line_t mouse_line(this->get_top() + me.me_y);
-
-    if (mouse_line > this->get_bottom()) {
-        mouse_line = this->get_bottom();
-    }
-
+    auto mouse_line = this->lv_display_lines[me.me_y];
     this->get_dimensions(height, width);
 
     switch (me.me_state) {
-        case mouse_button_state_t::BUTTON_STATE_PRESSED:
-            this->tc_selection_start = mouse_line;
-            this->tc_selection_last = -1_vl;
-            this->tc_selection_cleared = false;
-            break;
-        case mouse_button_state_t::BUTTON_STATE_DRAGGED:
-            if (me.me_y <= 0) {
-                this->shift_top(-1_vl);
-                me.me_y = 0;
-                mouse_line = this->get_top();
+        case mouse_button_state_t::BUTTON_STATE_PRESSED: {
+            if (!this->lv_selectable) {
+                this->set_selectable(true);
             }
-            if (me.me_y >= height
-                && this->get_top() < this->get_top_for_last_row())
-            {
-                this->shift_top(1_vl);
-                me.me_y = height;
-                mouse_line = this->get_bottom();
-            }
-
-            if (this->tc_selection_last == mouse_line)
-                break;
-
-            if (this->tc_selection_last != -1) {
-                this->toggle_user_mark(&textview_curses::BM_USER,
-                                       this->tc_selection_start,
-                                       this->tc_selection_last);
-            }
-            if (this->tc_selection_start == mouse_line) {
-                this->tc_selection_last = -1_vl;
-            } else {
-                if (!this->tc_selection_cleared) {
-                    if (this->tc_sub_source != nullptr) {
-                        this->tc_sub_source->text_clear_marks(&BM_USER);
+            mouse_line.match(
+                [this, &me](const main_content& mc) {
+                    if (me.is_modifier_pressed(mouse_event::modifier_t::shift))
+                    {
+                        this->tc_selection_start = mc.mc_line;
                     }
-                    this->tc_bookmarks[&BM_USER].clear();
+                    this->set_selection(mc.mc_line);
+                    this->tc_press_event = me;
+                },
+                [](const static_overlay_content& soc) {
 
-                    this->tc_selection_cleared = true;
-                }
-                this->toggle_user_mark(
-                    &BM_USER, this->tc_selection_start, mouse_line);
-                this->tc_selection_last = mouse_line;
+                },
+                [](const overlay_content& oc) {
+
+                },
+                [](const empty_space& es) {});
+            break;
+        }
+        case mouse_button_state_t::BUTTON_STATE_DRAGGED: {
+            if (me.me_y <= 0) {
+                this->shift_selection(listview_curses::shift_amount_t::up_line);
+                me.me_y = 0;
+                mouse_line = main_content{this->get_top()};
+            } else if (me.me_y >= height
+                       && this->get_top() < this->get_top_for_last_row())
+            {
+                this->shift_selection(
+                    listview_curses::shift_amount_t::down_line);
+                me.me_y = height;
+            } else if (mouse_line.is<main_content>()) {
+                this->set_selection(mouse_line.get<main_content>().mc_line);
             }
-            this->reload_data();
             break;
-        case mouse_button_state_t::BUTTON_STATE_RELEASED:
-            this->tc_selection_start = -1_vl;
-            this->tc_selection_last = -1_vl;
-            this->tc_selection_cleared = false;
+        }
+        case mouse_button_state_t::BUTTON_STATE_RELEASED: {
+            if (this->tc_selection_start) {
+                this->toggle_user_mark(&BM_USER,
+                                       this->tc_selection_start.value(),
+                                       this->get_selection());
+                this->reload_data();
+            }
+            this->tc_selection_start = nonstd::nullopt;
             break;
+        }
     }
 
     return true;
@@ -509,15 +502,28 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         format_name = format_attr_opt.value().get();
     }
 
-    if (this->is_selectable() && row == this->get_selection()
-        && this->tc_cursor_role && this->tc_disabled_cursor_role)
+    if (this->is_selectable() && this->tc_cursor_role
+        && this->tc_disabled_cursor_role)
     {
-        auto role = this->get_overlay_selection()
-            ? this->tc_disabled_cursor_role.value()
-            : this->tc_cursor_role.value();
+        vis_line_t sel_start, sel_end;
 
-        sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        VC_ROLE.value(role));
+        sel_start = sel_end = this->get_selection();
+        if (this->tc_selection_start) {
+            if (this->tc_selection_start.value() < sel_end) {
+                sel_start = this->tc_selection_start.value();
+            } else {
+                sel_end = this->tc_selection_start.value();
+            }
+        }
+
+        if (sel_start <= row && row <= sel_end) {
+            auto role = this->get_overlay_selection()
+                ? this->tc_disabled_cursor_role.value()
+                : this->tc_cursor_role.value();
+
+            sa.emplace_back(line_range{orig_line.lr_start, -1},
+                            VC_ROLE.value(role));
+        }
     }
 
     for (auto& tc_highlight : this->tc_highlights) {

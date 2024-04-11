@@ -275,8 +275,7 @@ handle_paging_key(int ch)
             } else {
                 lnav_data.ld_rl_view->set_value(
                     "error: mouse support is not available, make sure your "
-                    "TERM is set to "
-                    "xterm or xterm-256color");
+                    "TERM is set to xterm or xterm-256color");
             }
             break;
 

@@ -129,6 +129,15 @@ struct utf_to_display_adjustment {
     }
 };
 
+bool
+view_curses::contains(int x, int y) const
+{
+    if (this->vc_x <= x && x < this->vc_x + this->vc_width && this->vc_y == y) {
+        return true;
+    }
+    return false;
+}
+
 void
 view_curses::awaiting_user_input()
 {

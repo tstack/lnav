@@ -29,6 +29,7 @@
  * @file listview_curses.cc
  */
 
+#include <chrono>
 #include <cmath>
 
 #include "listview_curses.hh"
@@ -40,9 +41,24 @@
 #include "base/lnav_log.hh"
 #include "config.h"
 
+using namespace std::chrono_literals;
+
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
 listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
+
+bool
+listview_curses::contains(int x, int y) const
+{
+    auto dim = this->get_dimensions();
+
+    if (this->vc_x <= x && x < this->vc_x + dim.second && this->vc_y <= y
+        && y < this->vc_y + dim.first)
+    {
+        return true;
+    }
+    return false;
+}
 
 void
 listview_curses::update_top_from_selection()
@@ -369,34 +385,36 @@ listview_curses::get_overlay_top(vis_line_t row, size_t count, size_t total)
     return 0_vl;
 }
 
-void
+bool
 listview_curses::do_update()
 {
+    bool retval = false;
+
     if (this->lv_window == nullptr || this->lv_height == 0 || !this->vc_visible)
     {
-        view_curses::do_update();
-        return;
+        return view_curses::do_update();
     }
 
     std::vector<attr_line_t> row_overlay_content;
     vis_line_t height;
     unsigned long width;
 
-    this->update_top_from_selection();
     this->get_dimensions(height, width);
+    if (height <= 0) {
+        return retval;
+    }
+
+    this->update_top_from_selection();
     while (this->vc_needs_update) {
         auto& vc = view_colors::singleton();
         vis_line_t row;
         attr_line_t overlay_line;
         struct line_range lr;
         unsigned long wrap_width;
-        int y = this->lv_y, bottom;
+        int y = this->vc_y, bottom;
         auto role_attrs = vc.attrs_for_role(this->vc_default_role);
 
-        if (height <= 0) {
-            return;
-        }
-
+        retval = true;
         if (this->vc_width > 0) {
             width = std::min((unsigned long) this->vc_width, width);
         }
@@ -413,14 +431,16 @@ listview_curses::do_update()
         std::vector<attr_line_t> rows(
             std::min((size_t) height, row_count - (int) this->lv_top));
         this->lv_source->listview_value_for_rows(*this, row, rows);
+        this->lv_display_lines.clear();
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end = this->lv_left + wrap_width;
             if (this->lv_overlay_source != nullptr
                 && this->lv_overlay_source->list_static_overlay(
-                    *this, y - this->lv_y, bottom - this->lv_y, overlay_line))
+                    *this, y - this->vc_y, bottom - this->vc_y, overlay_line))
             {
-                mvwattrline(this->lv_window, y, this->lv_x, overlay_line, lr);
+                this->lv_display_lines.push_back(static_overlay_content{});
+                mvwattrline(this->lv_window, y, this->vc_x, overlay_line, lr);
                 overlay_line.clear();
                 ++y;
             } else if (row < (int) row_count) {
@@ -430,14 +450,15 @@ listview_curses::do_update()
                     require_ge(attr.sa_range.lr_start, 0);
                 }
 
+                this->lv_display_lines.push_back(main_content{row});
                 view_curses::mvwattrline_result write_res;
                 do {
                     if (this->lv_word_wrap) {
-                        mvwhline(this->lv_window, y, this->lv_x, ' ', width);
+                        mvwhline(this->lv_window, y, this->vc_x, ' ', width);
                     }
                     write_res = mvwattrline(this->lv_window,
                                             y,
-                                            this->lv_x,
+                                            this->vc_x,
                                             al,
                                             lr,
                                             this->vc_default_role);
@@ -469,9 +490,11 @@ listview_curses::do_update()
                             ov_hdr_attrs.ta_attrs |= A_UNDERLINE;
                             auto ov_hdr = hdr.value().with_attr_for_all(
                                 VC_STYLE.value(ov_hdr_attrs));
+                            this->lv_display_lines.push_back(
+                                static_overlay_content{});
                             mvwattrline(this->lv_window,
                                         y,
-                                        this->lv_x,
+                                        this->vc_x,
                                         ov_hdr,
                                         lr,
                                         role_t::VCR_STATUS_INFO);
@@ -488,9 +511,11 @@ listview_curses::do_update()
                             row_overlay_content[overlay_row].with_attr_for_all(
                                 VC_ROLE.value(role_t::VCR_CURSOR_LINE));
                         }
+                        this->lv_display_lines.push_back(
+                            overlay_content{overlay_row});
                         mvwattrline(this->lv_window,
                                     y,
-                                    this->lv_x,
+                                    this->vc_x,
                                     row_overlay_content[overlay_row],
                                     lr,
                                     role_t::VCR_ALT_ROW);
@@ -545,7 +570,7 @@ listview_curses::do_update()
                                       nullptr);
                             mvwaddch(this->lv_window,
                                      gutter_y,
-                                     this->lv_x + width - 2,
+                                     this->vc_x + width - 2,
                                      ch);
                         }
                     }
@@ -558,7 +583,8 @@ listview_curses::do_update()
                           vc.ensure_color_pair(role_attrs.ta_fg_color,
                                                role_attrs.ta_bg_color),
                           nullptr);
-                mvwhline(this->lv_window, y, this->lv_x, ' ', width);
+                this->lv_display_lines.push_back(empty_space{});
+                mvwhline(this->lv_window, y, this->vc_x, ' ', width);
                 ++y;
                 blank_rows += 1;
             }
@@ -577,19 +603,18 @@ listview_curses::do_update()
             double progress = 1.0;
             double coverage = 1.0;
             double adjusted_height = (double) row_count / (double) height;
-            vis_line_t lines;
 
             if (row_count > 0) {
                 progress = (double) this->lv_top / (double) row_count;
                 coverage = (double) height / (double) row_count;
             }
 
-            y = this->lv_y + (int) (progress * (double) height);
-            lines = vis_line_t(
-                y + std::min((int) height, (int) (coverage * (double) height)));
+            this->lv_scroll_top = (int) (progress * (double) height);
+            this->lv_scroll_bottom = this->lv_scroll_top
+                + std::min((int) height, (int) (coverage * (double) height));
 
-            for (unsigned int gutter_y = this->lv_y;
-                 gutter_y < (this->lv_y + height);
+            for (unsigned int gutter_y = this->vc_y;
+                 gutter_y < (this->vc_y + height);
                  gutter_y++)
             {
                 int range_start = 0, range_end;
@@ -600,14 +625,14 @@ listview_curses::do_update()
 
                 if (row_count > 0) {
                     range_start
-                        = (double) (gutter_y - this->lv_y) * adjusted_height;
+                        = (double) (gutter_y - this->vc_y) * adjusted_height;
                 }
                 range_end = range_start + adjusted_height;
 
                 this->lv_gutter_source->listview_gutter_value_for_range(
                     *this, range_start, range_end, ch, role, bar_role);
-                if (gutter_y >= (unsigned int) y
-                    && gutter_y <= (unsigned int) lines)
+                if (gutter_y >= this->vc_y + this->lv_scroll_top
+                    && gutter_y <= this->vc_y + this->lv_scroll_bottom)
                 {
                     role = bar_role;
                 }
@@ -617,26 +642,26 @@ listview_curses::do_update()
                     attrs.ta_attrs,
                     vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
                     nullptr);
-                mvwaddch(this->lv_window, gutter_y, this->lv_x + width - 1, ch);
+                mvwaddch(this->lv_window, gutter_y, this->vc_x + width - 1, ch);
             }
-            wmove(this->lv_window, this->lv_y + height - 1, this->lv_x);
+            wmove(this->lv_window, this->vc_y + height - 1, this->vc_x);
         }
 
         if (this->lv_show_bottom_border) {
             cchar_t row_ch[width];
-            int y = this->lv_y + height - 1;
+            int y = this->vc_y + height - 1;
 
-            mvwin_wchnstr(this->lv_window, y, this->lv_x, row_ch, width - 1);
+            mvwin_wchnstr(this->lv_window, y, this->vc_x, row_ch, width - 1);
             for (unsigned long lpc = 0; lpc < width - 1; lpc++) {
                 row_ch[lpc].attr |= A_UNDERLINE;
             }
-            mvwadd_wchnstr(this->lv_window, y, this->lv_x, row_ch, width - 1);
+            mvwadd_wchnstr(this->lv_window, y, this->vc_x, row_ch, width - 1);
         }
 
         this->vc_needs_update = false;
     }
 
-    view_curses::do_update();
+    return view_curses::do_update() || retval;
 }
 
 void
@@ -766,6 +791,9 @@ scroll_polarity(mouse_button_t button)
 bool
 listview_curses::handle_mouse(mouse_event& me)
 {
+    auto GUTTER_REPEAT_DELAY
+        = std::chrono::duration_cast<std::chrono::microseconds>(100ms).count();
+
     vis_line_t inner_height, height;
     struct timeval diff;
     unsigned long width;
@@ -776,30 +804,40 @@ listview_curses::handle_mouse(mouse_event& me)
 
     switch (me.me_button) {
         case mouse_button_t::BUTTON_SCROLL_UP:
-        case mouse_button_t::BUTTON_SCROLL_DOWN:
-            if (diff.tv_sec > 0 || diff.tv_usec > 80000) {
-                this->lv_scroll_accel = 1;
-                this->lv_scroll_velo = 0;
-            } else {
-                this->lv_scroll_accel += 2;
-            }
-            this->lv_scroll_velo += this->lv_scroll_accel;
-
-            this->shift_top(vis_line_t(scroll_polarity(me.me_button)
-                                       * this->lv_scroll_velo),
+        case mouse_button_t::BUTTON_SCROLL_DOWN: {
+            this->shift_top(vis_line_t(scroll_polarity(me.me_button) * 2_vl),
                             true);
-            break;
+            return true;
+        }
         default:
             break;
     }
-    this->lv_mouse_time = me.me_time;
-
-    if (me.me_button != mouse_button_t::BUTTON_LEFT || inner_height == 0
-        || (this->lv_mouse_mode != lv_mode_t::DRAG
-            && me.me_x < (int) (width - 2)))
-    {
+    if (me.me_button != mouse_button_t::BUTTON_LEFT || inner_height == 0) {
         return false;
     }
+    switch (this->lv_mouse_mode) {
+        case lv_mode_t::NONE: {
+            if (me.me_x < (int) (width - 2)) {
+                return false;
+            }
+            break;
+        }
+        case lv_mode_t::DRAG:
+            break;
+        case lv_mode_t::UP:
+        case lv_mode_t::DOWN:
+            if (me.me_x < (int) (width - 2)) {
+                return true;
+            }
+            break;
+    }
+    if (me.me_state != mouse_button_state_t::BUTTON_STATE_RELEASED
+        && this->lv_mouse_mode != lv_mode_t::DRAG && diff.tv_sec == 0
+        && diff.tv_usec < GUTTER_REPEAT_DELAY)
+    {
+        return true;
+    }
+    this->lv_mouse_time = me.me_time;
 
     if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED) {
         this->lv_mouse_y = -1;
@@ -807,19 +845,14 @@ listview_curses::handle_mouse(mouse_event& me)
         return true;
     }
 
-    int scroll_top, scroll_bottom, shift_amount = 0, new_top = 0;
-    double top_pct, bot_pct, pct;
-
-    top_pct = (double) this->get_top() / (double) inner_height;
-    bot_pct = (double) this->get_bottom() / (double) inner_height;
-    scroll_top = (this->get_y() + (int) (top_pct * (double) height));
-    scroll_bottom = (this->get_y() + (int) (bot_pct * (double) height));
+    int shift_amount = 0;
 
     if (this->lv_mouse_mode == lv_mode_t::NONE) {
-        if ((scroll_top - 1) <= me.me_y && me.me_y <= (scroll_bottom + 1)) {
+        if (this->lv_scroll_top <= me.me_y && me.me_y <= this->lv_scroll_bottom)
+        {
             this->lv_mouse_mode = lv_mode_t::DRAG;
-            this->lv_mouse_y = me.me_y - scroll_top;
-        } else if (me.me_y < scroll_top) {
+            this->lv_mouse_y = me.me_y - this->lv_scroll_top;
+        } else if (me.me_y < this->lv_scroll_top) {
             this->lv_mouse_mode = lv_mode_t::UP;
         } else {
             this->lv_mouse_mode = lv_mode_t::DOWN;
@@ -832,27 +865,28 @@ listview_curses::handle_mouse(mouse_event& me)
             break;
 
         case lv_mode_t::UP:
-            if (me.me_y < scroll_top) {
+            if (me.me_y < this->lv_scroll_top) {
                 shift_amount = -1 * height;
             }
             break;
 
         case lv_mode_t::DOWN:
-            if (me.me_y > scroll_bottom) {
+            if (me.me_y > this->lv_scroll_bottom) {
                 shift_amount = height;
             }
             break;
 
-        case lv_mode_t::DRAG:
-            pct = (double) inner_height / (double) height;
-            new_top = me.me_y - this->get_y() - this->lv_mouse_y;
+        case lv_mode_t::DRAG: {
+            auto pct = (double) inner_height / (double) height;
+            auto new_top = me.me_y - this->lv_mouse_y;
             new_top = (int) floor(((double) new_top * pct) + 0.5);
-            this->set_top(vis_line_t(new_top));
+            this->set_top(vis_line_t(new_top), true);
             break;
+        }
     }
 
     if (shift_amount != 0) {
-        this->shift_top(vis_line_t(shift_amount));
+        this->shift_top(vis_line_t(shift_amount), true);
     }
 
     return true;

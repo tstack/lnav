@@ -162,9 +162,6 @@ public:
     void set_data_source(status_data_source* src) { this->sc_source = src; }
     status_data_source* get_data_source() { return this->sc_source; }
 
-    void set_top(int top) { this->sc_top = top; }
-    int get_top() const { return this->sc_top; }
-
     void set_window(WINDOW* win) { this->sc_window = win; }
     WINDOW* get_window() { return this->sc_window; }
 
@@ -176,12 +173,11 @@ public:
 
     void window_change();
 
-    void do_update() override;
+    bool do_update() override;
 
 private:
     status_data_source* sc_source{nullptr};
     WINDOW* sc_window{nullptr};
-    int sc_top{0};
     bool sc_enabled{true};
     role_t sc_default_role{role_t::VCR_STATUS};
 };

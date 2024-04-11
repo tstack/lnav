@@ -551,8 +551,6 @@ class text_delegate {
 public:
     virtual ~text_delegate() = default;
 
-    virtual void text_overlay(textview_curses& tc) {}
-
     virtual bool text_handle_mouse(textview_curses& tc, mouse_event& me)
     {
         return false;
@@ -726,14 +724,6 @@ public:
 
     void reload_data();
 
-    void do_update()
-    {
-        this->listview_curses::do_update();
-        if (this->tc_delegate != nullptr) {
-            this->tc_delegate->text_overlay(*this);
-        }
-    }
-
     bool toggle_hide_fields()
     {
         bool retval = this->tc_hide_fields;
@@ -857,9 +847,8 @@ protected:
     highlight_map_t tc_highlights;
     std::set<highlight_source_t> tc_disabled_highlights;
 
-    vis_line_t tc_selection_start{-1_vl};
-    vis_line_t tc_selection_last{-1_vl};
-    bool tc_selection_cleared{false};
+    nonstd::optional<vis_line_t> tc_selection_start;
+    mouse_event tc_press_event;
     bool tc_hide_fields{true};
     bool tc_paused{false};
 

@@ -38,7 +38,7 @@ class test_colors : public view_curses {
 public:
     test_colors() : tc_window(nullptr) {}
 
-    void do_update() override
+    bool do_update() override
     {
         auto& vc = view_colors::singleton();
         int lpc;
@@ -68,7 +68,9 @@ public:
         al.with_attr(
             {line_range{8, 11}, VC_STYLE.value(text_attrs{A_REVERSE})});
         test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);
-    };
+
+        return true;
+    }
 
     WINDOW* tc_window;
 };

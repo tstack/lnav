@@ -84,7 +84,7 @@ status_field::set_stitch_value(role_t left, role_t right)
     sa.emplace_back(lr, VC_ROLE.value(right));
 }
 
-void
+bool
 statusview_curses::do_update()
 {
     int top, field, field_count, left = 0, right;
@@ -92,13 +92,13 @@ statusview_curses::do_update()
     unsigned long width, height;
 
     if (!this->vc_visible || this->sc_window == nullptr) {
-        return;
+        return false;
     }
 
     getmaxyx(this->sc_window, height, width);
     this->window_change();
 
-    top = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
+    top = this->vc_y < 0 ? height + this->vc_y : this->vc_y;
     right = width;
     auto attrs = vc.attrs_for_role(
         this->sc_enabled ? this->sc_default_role : role_t::VCR_INACTIVE_STATUS);
@@ -181,6 +181,8 @@ statusview_curses::do_update()
         }
     }
     wmove(this->sc_window, top + 1, 0);
+
+    return true;
 }
 
 void

@@ -44,7 +44,7 @@ using namespace lnav::roles::literals;
 filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
-    this->fss_editor->set_left(25);
+    this->fss_editor->set_x(25);
     this->fss_editor->set_width(-1);
     this->fss_editor->set_save_history(!(lnav_data.ld_flags & LNF_SECURE_MODE));
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
@@ -656,7 +656,7 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
 
     this->fss_match_view.set_window(this->tss_view->get_window());
     this->fss_match_view.set_y(rc->get_y() + 1);
-    this->fss_match_view.set_x(rc->get_left() + rc->get_match_start());
+    this->fss_match_view.set_x(rc->get_x() + rc->get_match_start());
     this->fss_match_view.set_width(width + 3);
     this->fss_match_view.set_needs_update();
     this->fss_match_view.reload_data();

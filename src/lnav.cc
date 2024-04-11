@@ -665,47 +665,6 @@ update_view_position(listview_curses* lv)
     };
 }
 
-class lnav_behavior : public mouse_behavior {
-public:
-    void mouse_event(int button, bool release, int x, int y) override
-    {
-        textview_curses* tc = *(lnav_data.ld_view_stack.top());
-        struct mouse_event me;
-
-        switch (button & xterm_mouse::XT_BUTTON__MASK) {
-            case xterm_mouse::XT_BUTTON1:
-                me.me_button = mouse_button_t::BUTTON_LEFT;
-                break;
-            case xterm_mouse::XT_BUTTON2:
-                me.me_button = mouse_button_t::BUTTON_MIDDLE;
-                break;
-            case xterm_mouse::XT_BUTTON3:
-                me.me_button = mouse_button_t::BUTTON_RIGHT;
-                break;
-            case xterm_mouse::XT_SCROLL_UP:
-                me.me_button = mouse_button_t::BUTTON_SCROLL_UP;
-                break;
-            case xterm_mouse::XT_SCROLL_DOWN:
-                me.me_button = mouse_button_t::BUTTON_SCROLL_DOWN;
-                break;
-        }
-
-        if (button & xterm_mouse::XT_DRAG_FLAG) {
-            me.me_state = mouse_button_state_t::BUTTON_STATE_DRAGGED;
-        } else if (release) {
-            me.me_state = mouse_button_state_t::BUTTON_STATE_RELEASED;
-        } else {
-            me.me_state = mouse_button_state_t::BUTTON_STATE_PRESSED;
-        }
-
-        gettimeofday(&me.me_time, nullptr);
-        me.me_x = x - 1;
-        me.me_y = y - tc->get_y() - 1;
-
-        tc->handle_mouse(me);
-    }
-};
-
 static bool
 handle_config_ui_key(int ch)
 {
@@ -1373,11 +1332,11 @@ looper()
 
         auto top_source = injector::get<std::shared_ptr<top_status_source>>();
 
-        lnav_data.ld_status[LNS_TOP].set_top(0);
+        lnav_data.ld_status[LNS_TOP].set_y(0);
         lnav_data.ld_status[LNS_TOP].set_default_role(
             role_t::VCR_INACTIVE_STATUS);
         lnav_data.ld_status[LNS_TOP].set_data_source(top_source.get());
-        lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
+        lnav_data.ld_status[LNS_BOTTOM].set_y(-(rlc->get_height() + 1));
         for (auto& stat_bar : lnav_data.ld_status) {
             stat_bar.set_window(lnav_data.ld_window);
         }
@@ -1596,7 +1555,9 @@ looper()
             {
                 lnav_data.ld_view_stack.set_needs_update();
             }
-            lnav_data.ld_view_stack.do_update();
+            if (lnav_data.ld_view_stack.do_update()) {
+                breadcrumb_view.set_needs_update();
+            }
             lnav_data.ld_doc_view.do_update();
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
@@ -1684,6 +1645,11 @@ looper()
 
             gettimeofday(&current_time, nullptr);
             lnav_data.ld_input_dispatcher.poll(current_time);
+
+            if (lb.lb_last_view != nullptr) {
+                lb.lb_last_event.me_time = current_time;
+                lb.lb_last_view->handle_mouse(lb.lb_last_event);
+            }
 
             if (rc < 0) {
                 switch (errno) {

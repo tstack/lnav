@@ -59,27 +59,11 @@ public:
     /** @return The curses window this view is attached to. */
     WINDOW* get_window() { return this->vc_window; }
 
-    void set_left(int left) { this->vc_left = left; }
-
-    int get_left() const { return this->vc_left; }
-
-    /**
-     * Set the Y position of this view on the display.  A value greater than
-     * zero is considered to be an absolute size.  A value less than zero makes
-     * the position relative to the bottom of the enclosing window.
-     *
-     * @param y The Y position of the cursor on the curses display.
-     */
-    void set_y(int y) { this->vc_y = y; }
-
-    /** @return The abs/rel Y position of the cursor on the curses display. */
-    int get_y() const { return this->vc_y; }
-
     /** @param x The X position of the cursor on the curses display. */
-    void set_x(int x) { this->vc_x = x; }
+    void set_cursor_x(int x) { this->vc_cursor_x = x; }
 
     /** @return The X position of the cursor on the curses display. */
-    int get_x() const { return this->vc_x; }
+    int get_cursor_x() const { return this->vc_cursor_x; }
 
     /**
      * @return The height of this view, which consists of a single line for
@@ -112,7 +96,7 @@ public:
     /**
      * Paints any past lines and moves the cursor to the current X position.
      */
-    void do_update();
+    bool do_update() override;
 
     const static char ESCAPE = 27; /*< VT52 Escape key value. */
     const static char BACKSPACE = 8; /*< VT52 Backspace key value. */
@@ -141,20 +125,18 @@ protected:
         auto retval = getmaxx(this->vc_window);
 
         if (this->vc_width < 0) {
-            retval -= this->vc_left;
+            retval -= this->vc_x;
             retval += this->vc_width;
         } else if (this->vc_width > 0) {
             retval = this->vc_width;
         } else {
-            retval = retval - this->vc_left;
+            retval = retval - this->vc_x;
         }
         return retval;
     }
 
     WINDOW* vc_window{nullptr}; /*< The window that contains this view. */
-    int vc_left{0};
-    int vc_x{0}; /*< The X position of the cursor. */
-    int vc_y{0}; /*< The Y position of the cursor. */
+    int vc_cursor_x{0}; /*< The X position of the cursor. */
     int vc_max_height{0};
     char vc_escape[16]; /*< Storage for escape sequences. */
     int vc_escape_len{0}; /*< The number of chars in vc_escape. */

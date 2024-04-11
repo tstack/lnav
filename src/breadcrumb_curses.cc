@@ -38,6 +38,7 @@ breadcrumb_curses::breadcrumb_curses()
 {
     this->bc_match_search_overlay.sos_parent = this;
     this->bc_match_source.set_reverse_selection(true);
+    this->bc_match_view.set_title("breadcrumb popup");
     this->bc_match_view.set_selectable(true);
     this->bc_match_view.set_overlay_source(&this->bc_match_search_overlay);
     this->bc_match_view.set_sub_source(&this->bc_match_source);
@@ -47,11 +48,11 @@ breadcrumb_curses::breadcrumb_curses()
     this->add_child_view(&this->bc_match_view);
 }
 
-void
+bool
 breadcrumb_curses::do_update()
 {
     if (!this->bc_line_source) {
-        return;
+        return false;
     }
 
     size_t crumb_index = 0;
@@ -94,12 +95,14 @@ breadcrumb_curses::do_update()
 
     line_range lr{0, static_cast<int>(width)};
     view_curses::mvwattrline(
-        this->bc_window, this->bc_y, 0, crumbs_line, lr, role_t::VCR_STATUS);
+        this->bc_window, this->vc_y, 0, crumbs_line, lr, role_t::VCR_STATUS);
 
     if (this->bc_selected_crumb) {
         this->bc_match_view.set_x(sel_crumb_offset);
     }
     view_curses::do_update();
+
+    return true;
 }
 
 void
@@ -172,6 +175,7 @@ breadcrumb_curses::reload_data()
 void
 breadcrumb_curses::focus()
 {
+    this->bc_match_view.set_y(this->vc_y + 1);
     this->bc_focused_crumbs = this->bc_line_source();
     if (this->bc_focused_crumbs.empty()) {
         return;
