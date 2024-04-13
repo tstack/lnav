@@ -988,6 +988,10 @@ textfile_sub_source::set_top_from_off(file_off_t off)
 
         if (new_top_opt) {
             this->tss_view->set_selection(vis_line_t(new_top_opt.value()));
+            if (this->tss_view->is_selectable()) {
+                this->tss_view->set_top(this->tss_view->get_selection() - 2_vl,
+                                        false);
+            }
         }
     };
 }

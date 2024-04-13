@@ -314,6 +314,7 @@ enum class mouse_button_state_t {
     BUTTON_STATE_PRESSED,
     BUTTON_STATE_DRAGGED,
     BUTTON_STATE_RELEASED,
+    BUTTON_STATE_DOUBLE_CLICK,
 };
 
 struct mouse_event {
@@ -339,12 +340,26 @@ struct mouse_event {
         return this->me_modifiers & lnav::enums::to_underlying(mod);
     }
 
+    bool is_click_in(mouse_button_t button, int x_start, int x_end) const;
+
+    bool is_click_in(mouse_button_t button, line_range lr) const
+    {
+        return this->is_click_in(button, lr.lr_start, lr.lr_end);
+    }
+
+    bool is_press_in(mouse_button_t button, line_range lr) const;
+
+    bool is_drag_in(mouse_button_t button, line_range lr) const;
+    bool is_double_click_in(mouse_button_t button, line_range lr) const;
+
     mouse_button_t me_button;
     mouse_button_state_t me_state;
     uint8_t me_modifiers;
     struct timeval me_time {};
     int me_x;
     int me_y;
+    int me_press_x{-1};
+    int me_press_y{-1};
 };
 
 /**
@@ -373,7 +388,7 @@ public:
         return retval;
     }
 
-    virtual bool handle_mouse(mouse_event& me) { return false; }
+    virtual bool handle_mouse(mouse_event& me);
 
     virtual bool contains(int x, int y) const;
 
@@ -445,6 +460,8 @@ public:
                                           const struct line_range& lr,
                                           role_t base_role = role_t::VCR_TEXT);
 
+    bool vc_enabled{true};
+
 protected:
     bool vc_visible{true};
     /** Flag to indicate if a display update is needed. */
@@ -454,6 +471,7 @@ protected:
     long vc_width{0};
     std::vector<view_curses*> vc_children;
     role_t vc_default_role{role_t::VCR_TEXT};
+    view_curses* vc_last_drag_child{nullptr};
 };
 
 template<class T>

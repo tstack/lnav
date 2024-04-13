@@ -97,6 +97,11 @@ struct movement_config {
     config_movement_mode mode{config_movement_mode::TOP};
 };
 
+enum class lnav_mouse_mode {
+    disabled,
+    enabled,
+};
+
 struct _lnav_config {
     top_status_source_cfg lc_top_status_cfg;
     bool lc_ui_dim_text;
@@ -104,6 +109,7 @@ struct _lnav_config {
     std::string lc_ui_keymap;
     std::string lc_ui_theme;
     movement_config lc_ui_movement;
+    lnav_mouse_mode lc_mouse_mode;
     std::map<std::string, key_map> lc_ui_keymaps;
     std::map<std::string, std::string> lc_ui_key_overrides;
     std::map<std::string, std::string> lc_global_vars;

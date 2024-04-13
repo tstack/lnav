@@ -30,6 +30,7 @@
 #include "files_sub_source.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/attr_line.builder.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
@@ -39,6 +40,8 @@
 #include "lnav.hh"
 #include "mapbox/variant.hpp"
 #include "sql_util.hh"
+
+using namespace lnav::roles::literals;
 
 namespace files_model {
 files_list_selection
@@ -243,26 +246,45 @@ files_sub_source::text_value_for_line(textview_curses& tc,
                                       std::string& value_out,
                                       text_sub_source::line_flags_t flags)
 {
+    bool selected
+        = lnav_data.ld_mode == ln_mode_t::FILES && line == tc.get_selection();
     const auto dim = tc.get_dimensions();
     const auto& fc = lnav_data.ld_active_files;
     auto filename_width
         = std::min(fc.fc_largest_path_length,
                    std::max((size_t) 40, (size_t) dim.second - 30));
 
+    this->fss_curr_line.clear();
+    auto& al = this->fss_curr_line;
+    attr_line_builder alb(al);
+
+    if (selected) {
+        al.append(" ", VC_GRAPHIC.value(ACS_RARROW));
+    } else {
+        al.append(" ");
+    }
     {
         safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
 
         if (line < errs->size()) {
-            auto iter = errs->begin();
-            std::advance(iter, line);
+            auto iter = std::next(errs->begin(), line);
             auto path = ghc::filesystem::path(iter->first);
             auto fn = fmt::to_string(path.filename());
 
             truncate_to(fn, filename_width);
-            value_out = fmt::format(FMT_STRING("    {:<{}}   {}"),
-                                    fn,
-                                    filename_width,
-                                    iter->second.fei_description);
+            al.append("   ");
+            {
+                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_ERROR));
+
+                al.appendf(FMT_STRING("{:<{}}"), fn, filename_width);
+            }
+            al.append("   ").append(iter->second.fei_description);
+            if (selected) {
+                al.with_attr_for_all(
+                    VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
+            }
+
+            value_out = al.get_string();
             return;
         }
 
@@ -270,23 +292,36 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     if (line < fc.fc_other_files.size()) {
-        auto iter = fc.fc_other_files.begin();
-        std::advance(iter, line);
+        auto iter = std::next(fc.fc_other_files.begin(), line);
         auto path = ghc::filesystem::path(iter->first);
         auto fn = fmt::to_string(path);
 
         truncate_to(fn, filename_width);
-        value_out = fmt::format(FMT_STRING("    {:<{}}   {:14}  {}"),
-                                fn,
-                                filename_width,
-                                iter->second.ofd_format,
-                                iter->second.ofd_description);
+        al.append("   ");
+        {
+            auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_FILE));
+
+            al.appendf(FMT_STRING("{:<{}}"), fn, filename_width);
+        }
+        al.append("   ")
+            .appendf(FMT_STRING("{:14}"), iter->second.ofd_format)
+            .append("  ")
+            .append(iter->second.ofd_description);
+        if (selected) {
+            al.with_attr_for_all(VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
+        }
+        if (line == fc.fc_other_files.size() - 1) {
+            al.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
+        }
+
+        value_out = al.get_string();
         return;
     }
 
     line -= fc.fc_other_files.size();
 
     const auto& lf = fc.fc_files[line];
+    auto ld_opt = lnav_data.ld_log_source.find_data(lf);
     auto fn = fmt::to_string(ghc::filesystem::path(lf->get_unique_path()));
     char start_time[64] = "", end_time[64] = "";
     std::vector<std::string> file_notes;
@@ -299,14 +334,37 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     for (const auto& pair : lf->get_notes()) {
         file_notes.push_back(pair.second);
     }
-    value_out = fmt::format(FMT_STRING("    {:<{}}   {:>8} {} \u2014 {}  {}"),
-                            fn,
-                            filename_width,
-                            humanize::file_size(lf->get_index_size(),
-                                                humanize::alignment::columnar),
-                            start_time,
-                            end_time,
-                            fmt::join(file_notes, "; "));
+
+    al.append(" ");
+    if (ld_opt) {
+        if (ld_opt.value()->ld_visible) {
+            al.append("\u25c6"_ok);
+        } else {
+            al.append("\u25c7"_comment);
+        }
+    } else {
+        al.append("\u25c6"_comment);
+    }
+    al.append(" ");
+    al.appendf(FMT_STRING("{:<{}}"), fn, filename_width);
+    al.append("   ");
+    {
+        auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
+
+        al.appendf(FMT_STRING("{:>8}"),
+                   humanize::file_size(lf->get_index_size(),
+                                       humanize::alignment::columnar));
+    }
+    al.append(" ")
+        .append(start_time)
+        .append(" \u2014 ")
+        .append(end_time)
+        .appendf(FMT_STRING("{}"), fmt::join(file_notes, "; "));
+    if (selected) {
+        al.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOCUSED));
+    }
+
+    value_out = al.get_string();
     this->fss_last_line_len
         = filename_width + 23 + strlen(start_time) + strlen(end_time);
 }
@@ -316,77 +374,7 @@ files_sub_source::text_attrs_for_line(textview_curses& tc,
                                       int line,
                                       string_attrs_t& value_out)
 {
-    bool selected
-        = lnav_data.ld_mode == ln_mode_t::FILES && line == tc.get_selection();
-    const auto& fc = lnav_data.ld_active_files;
-    const auto dim = tc.get_dimensions();
-    auto filename_width
-        = std::min(fc.fc_largest_path_length,
-                   std::max((size_t) 40, (size_t) dim.second - 30));
-
-    if (selected) {
-        value_out.emplace_back(line_range{0, 1}, VC_GRAPHIC.value(ACS_RARROW));
-    }
-
-    {
-        safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
-
-        if (line < errs->size()) {
-            if (selected) {
-                value_out.emplace_back(
-                    line_range{0, -1},
-                    VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
-            }
-
-            value_out.emplace_back(line_range{4 + (int) filename_width, -1},
-                                   VC_ROLE_FG.value(role_t::VCR_ERROR));
-            return;
-        }
-        line -= errs->size();
-    }
-
-    if (line < fc.fc_other_files.size()) {
-        if (selected) {
-            value_out.emplace_back(line_range{0, -1},
-                                   VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
-        }
-        if (line == fc.fc_other_files.size() - 1) {
-            value_out.emplace_back(line_range{0, -1},
-                                   VC_STYLE.value(text_attrs{A_UNDERLINE}));
-        }
-        return;
-    }
-
-    line -= fc.fc_other_files.size();
-
-    if (selected) {
-        value_out.emplace_back(line_range{0, -1},
-                               VC_ROLE.value(role_t::VCR_FOCUSED));
-    }
-
-    auto& lss = lnav_data.ld_log_source;
-    auto& lf = fc.fc_files[line];
-    auto ld_opt = lss.find_data(lf);
-
-    chtype visible = ACS_DIAMOND;
-    if (ld_opt && !ld_opt.value()->ld_visible) {
-        visible = ' ';
-    }
-    value_out.emplace_back(line_range{2, 3}, VC_GRAPHIC.value(visible));
-    if (visible == ACS_DIAMOND) {
-        value_out.emplace_back(line_range{2, 3},
-                               VC_FOREGROUND.value(COLOR_GREEN));
-    }
-
-    auto lr = line_range{
-        (int) filename_width + 3 + 4,
-        (int) filename_width + 3 + 10,
-    };
-    value_out.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD}));
-
-    lr.lr_start = this->fss_last_line_len;
-    lr.lr_end = -1;
-    value_out.emplace_back(lr, VC_FOREGROUND.value(COLOR_YELLOW));
+    value_out = this->fss_curr_line.get_attrs();
 }
 
 size_t
@@ -446,6 +434,19 @@ files_overlay_source::list_static_overlay(const listview_curses& lv,
             first_iter->first,
             first_iter->second.tp_message));
         return true;
+    }
+
+    return false;
+}
+
+bool
+files_sub_source::text_handle_mouse(textview_curses& tc, mouse_event& me)
+{
+    if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
+        this->list_input_handle_key(tc, ' ');
+    }
+    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{4, -1})) {
+        this->list_input_handle_key(tc, '\r');
     }
 
     return false;

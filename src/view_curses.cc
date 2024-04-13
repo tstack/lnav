@@ -40,12 +40,14 @@
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.hh"
 #include "base/from_trait.hh"
+#include "base/injector.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "lnav_config.hh"
 #include "shlex.hh"
 #include "view_curses.hh"
+#include "xterm_mouse.hh"
 
 #if defined HAVE_NCURSESW_CURSES_H
 #    include <ncursesw/term.h>
@@ -130,9 +132,85 @@ struct utf_to_display_adjustment {
 };
 
 bool
+mouse_event::is_click_in(mouse_button_t button, int x_start, int x_end) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+        && (x_start <= this->me_x && this->me_x <= x_end)
+        && (x_start <= this->me_press_x && this->me_press_x <= x_end)
+        && this->me_y == this->me_press_y;
+}
+
+bool
+mouse_event::is_press_in(mouse_button_t button, line_range lr) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_PRESSED
+        && lr.contains(this->me_x);
+}
+
+bool
+mouse_event::is_drag_in(mouse_button_t button, line_range lr) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED
+        && lr.contains(this->me_x);
+}
+
+bool
+mouse_event::is_double_click_in(mouse_button_t button, line_range lr) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
+        && lr.contains(this->me_x) && this->me_y == this->me_press_y;
+}
+
+bool
+view_curses::handle_mouse(mouse_event& me)
+{
+    if (me.me_state != mouse_button_state_t::BUTTON_STATE_DRAGGED) {
+        this->vc_last_drag_child = nullptr;
+    }
+
+    for (auto* child : this->vc_children) {
+        auto x = this->vc_x + me.me_x;
+        auto y = this->vc_y + me.me_y;
+        if ((me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED
+             && child == this->vc_last_drag_child && child->vc_x <= x
+             && x < (child->vc_x + child->vc_width))
+            || child->contains(x, y))
+        {
+            auto sub_me = me;
+
+            sub_me.me_x = x - child->vc_x;
+            sub_me.me_y = y - child->vc_y;
+            sub_me.me_press_x = this->vc_x + me.me_press_x - child->vc_x;
+            sub_me.me_press_y = this->vc_y + me.me_press_y - child->vc_y;
+            if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED) {
+                this->vc_last_drag_child = child;
+            }
+            return child->handle_mouse(sub_me);
+        }
+    }
+    return false;
+}
+
+bool
 view_curses::contains(int x, int y) const
 {
-    if (this->vc_x <= x && x < this->vc_x + this->vc_width && this->vc_y == y) {
+    if (!this->vc_visible) {
+        return false;
+    }
+
+    for (auto* child : this->vc_children) {
+        if (child->contains(x, y)) {
+            return true;
+        }
+    }
+    if (this->vc_x <= x
+        && (this->vc_width < 0 || x < this->vc_x + this->vc_width)
+        && this->vc_y == y)
+    {
         return true;
     }
     return false;
@@ -562,9 +640,9 @@ static const std::string COLOR_NAMES[] = {
     "white",
 };
 
-class color_listener : public lnav_config_listener {
+class ui_listener : public lnav_config_listener {
 public:
-    color_listener() : lnav_config_listener(__FILE__) {}
+    ui_listener() : lnav_config_listener(__FILE__) {}
 
     void reload_config(error_reporter& reporter) override
     {
@@ -597,11 +675,16 @@ public:
 
         if (view_colors::initialized) {
             vc.init_roles(iter->second, reporter);
+
+            auto& mouse_i = injector::get<xterm_mouse&>();
+            mouse_i.set_enabled(check_experimental("mouse")
+                                || lnav_config.lc_mouse_mode
+                                    == lnav_mouse_mode::enabled);
         }
     }
 };
 
-static color_listener _COLOR_LISTENER;
+static ui_listener _UI_LISTENER;
 term_color_palette* view_colors::vc_active_palette;
 
 void
@@ -627,7 +710,7 @@ view_colors::init(bool headless)
         auto reporter
             = [](const void*, const lnav::console::user_message& um) {};
 
-        _COLOR_LISTENER.reload_config(reporter);
+        _UI_LISTENER.reload_config(reporter);
     }
 }
 

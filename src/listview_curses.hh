@@ -225,6 +225,8 @@ public:
 
     void set_selection(vis_line_t sel);
 
+    void set_selection_without_context(vis_line_t sel);
+
     enum class shift_amount_t {
         up_line,
         up_page,

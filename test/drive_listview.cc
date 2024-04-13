@@ -91,6 +91,10 @@ main(int argc, char* argv[])
     my_source ms;
     WINDOW* win;
 
+    setenv("DUMP_CRASH", "1", 1);
+    log_install_handlers();
+    lnav_log_crash_dir = "/tmp";
+
     win = initscr();
     lv.set_data_source(&ms);
     lv.set_window(win);

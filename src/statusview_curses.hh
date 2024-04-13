@@ -42,6 +42,8 @@
  */
 class status_field {
 public:
+    using action = std::function<void(status_field&)>;
+
     /**
      * @param width The maximum width of the field in characters.
      * @param role The color role for this field, defaults to VCR_STATUS.
@@ -121,6 +123,10 @@ public:
 
     int get_share() const { return this->sf_share; }
 
+    static void no_op_action(status_field&);
+
+    action on_click{no_op_action};
+
 protected:
     ssize_t sf_width; /*< The maximum display width, in chars. */
     ssize_t sf_min_width{0}; /*< The minimum display width, in chars. */
@@ -175,11 +181,25 @@ public:
 
     bool do_update() override;
 
+    bool handle_mouse(mouse_event& me) override;
+
 private:
     status_data_source* sc_source{nullptr};
     WINDOW* sc_window{nullptr};
     bool sc_enabled{true};
     role_t sc_default_role{role_t::VCR_STATUS};
+
+    struct displayed_field {
+        displayed_field(line_range lr, size_t field_index)
+            : df_range(lr), df_field_index(field_index)
+        {
+        }
+
+        line_range df_range;
+        size_t df_field_index;
+    };
+
+    std::vector<displayed_field> sc_displayed_fields;
 };
 
 #endif

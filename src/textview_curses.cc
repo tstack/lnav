@@ -396,13 +396,11 @@ textview_curses::handle_mouse(mouse_event& me)
     unsigned long width;
     vis_line_t height;
 
-    if (!this->tc_selection_start && listview_curses::handle_mouse(me)) {
-        return true;
+    if (!this->vc_visible || this->lv_height == 0) {
+        return false;
     }
 
-    if (this->tc_delegate != nullptr
-        && this->tc_delegate->text_handle_mouse(*this, me))
-    {
+    if (!this->tc_selection_start && listview_curses::handle_mouse(me)) {
         return true;
     }
 
@@ -410,8 +408,12 @@ textview_curses::handle_mouse(mouse_event& me)
         return false;
     }
 
-    auto mouse_line = this->lv_display_lines[me.me_y];
+    auto mouse_line = (me.me_y < 0 || me.me_y >= this->lv_display_lines.size())
+        ? empty_space{}
+        : this->lv_display_lines[me.me_y];
     this->get_dimensions(height, width);
+
+    auto* sub_delegate = dynamic_cast<text_delegate*>(this->tc_sub_source);
 
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED: {
@@ -419,13 +421,51 @@ textview_curses::handle_mouse(mouse_event& me)
                 this->set_selectable(true);
             }
             mouse_line.match(
-                [this, &me](const main_content& mc) {
-                    if (me.is_modifier_pressed(mouse_event::modifier_t::shift))
-                    {
-                        this->tc_selection_start = mc.mc_line;
+                [this, &me, sub_delegate](const main_content& mc) {
+                    if (this->vc_enabled) {
+                        if (this->tc_supports_marks
+                            && me.is_modifier_pressed(
+                                mouse_event::modifier_t::shift))
+                        {
+                            this->tc_selection_start = mc.mc_line;
+                        }
+                        this->set_selection_without_context(mc.mc_line);
+                        this->tc_press_event = me;
                     }
-                    this->set_selection(mc.mc_line);
-                    this->tc_press_event = me;
+                    if (this->tc_delegate != nullptr) {
+                        this->tc_delegate->text_handle_mouse(*this, me);
+                    }
+                    if (sub_delegate != nullptr) {
+                        sub_delegate->text_handle_mouse(*this, me);
+                    }
+                },
+                [](const static_overlay_content& soc) {
+
+                },
+                [](const overlay_content& oc) {
+
+                },
+                [](const empty_space& es) {});
+            break;
+        }
+        case mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK: {
+            if (!this->lv_selectable) {
+                this->set_selectable(true);
+            }
+            mouse_line.match(
+                [this, &me, sub_delegate](const main_content& mc) {
+                    if (this->vc_enabled) {
+                        if (this->tc_supports_marks) {
+                            this->toggle_user_mark(&BM_USER, mc.mc_line);
+                        }
+                        this->set_selection_without_context(mc.mc_line);
+                    }
+                    if (this->tc_delegate != nullptr) {
+                        this->tc_delegate->text_handle_mouse(*this, me);
+                    }
+                    if (sub_delegate != nullptr) {
+                        sub_delegate->text_handle_mouse(*this, me);
+                    }
                 },
                 [](const static_overlay_content& soc) {
 
@@ -437,29 +477,35 @@ textview_curses::handle_mouse(mouse_event& me)
             break;
         }
         case mouse_button_state_t::BUTTON_STATE_DRAGGED: {
-            if (me.me_y <= 0) {
+            if (!this->vc_enabled) {
+            } else if (me.me_y < 0) {
                 this->shift_selection(listview_curses::shift_amount_t::up_line);
-                me.me_y = 0;
                 mouse_line = main_content{this->get_top()};
-            } else if (me.me_y >= height
-                       && this->get_top() < this->get_top_for_last_row())
-            {
+            } else if (me.me_y >= height) {
                 this->shift_selection(
                     listview_curses::shift_amount_t::down_line);
-                me.me_y = height;
             } else if (mouse_line.is<main_content>()) {
-                this->set_selection(mouse_line.get<main_content>().mc_line);
+                this->set_selection_without_context(
+                    mouse_line.get<main_content>().mc_line);
             }
             break;
         }
         case mouse_button_state_t::BUTTON_STATE_RELEASED: {
-            if (this->tc_selection_start) {
-                this->toggle_user_mark(&BM_USER,
-                                       this->tc_selection_start.value(),
-                                       this->get_selection());
-                this->reload_data();
+            if (this->vc_enabled) {
+                if (this->tc_selection_start) {
+                    this->toggle_user_mark(&BM_USER,
+                                           this->tc_selection_start.value(),
+                                           this->get_selection());
+                    this->reload_data();
+                }
+                this->tc_selection_start = nonstd::nullopt;
             }
-            this->tc_selection_start = nonstd::nullopt;
+            if (this->tc_delegate != nullptr) {
+                this->tc_delegate->text_handle_mouse(*this, me);
+            }
+            if (sub_delegate != nullptr) {
+                sub_delegate->text_handle_mouse(*this, me);
+            }
             break;
         }
     }

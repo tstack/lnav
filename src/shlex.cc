@@ -34,9 +34,18 @@
 #endif
 
 #include "config.h"
+#include "pcrepp/pcre2pp.hh"
 #include "shlex.hh"
 
 using namespace lnav::roles::literals;
+
+std::string
+shlex::escape(std::string s)
+{
+    static const auto SH_CHARS = lnav::pcre2pp::code::from_const("'");
+
+    return SH_CHARS.replace(s, "\\'");
+}
 
 attr_line_t
 shlex::to_attr_line(const shlex::tokenize_error_t& te) const

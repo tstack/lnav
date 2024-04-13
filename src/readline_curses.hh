@@ -188,6 +188,8 @@ public:
 
     bool do_update() override;
 
+    bool handle_mouse(mouse_event& me) override;
+
     void window_change();
 
     void line_ready(const char* line);

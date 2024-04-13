@@ -385,7 +385,7 @@ public:
     {
     }
 
-    void register_view(textview_curses* tc) { this->tss_view = tc; }
+    virtual void register_view(textview_curses* tc) { this->tss_view = tc; }
 
     /**
      * @return The total number of lines available from the source.
@@ -605,6 +605,12 @@ public:
     textview_curses& set_sub_source(text_sub_source* src);
 
     text_sub_source* get_sub_source() const { return this->tc_sub_source; }
+
+    textview_curses& set_supports_marks(bool m)
+    {
+        this->tc_supports_marks = m;
+        return *this;
+    }
 
     textview_curses& set_delegate(std::shared_ptr<text_delegate> del)
     {
@@ -851,6 +857,7 @@ protected:
     mouse_event tc_press_event;
     bool tc_hide_fields{true};
     bool tc_paused{false};
+    bool tc_supports_marks{false};
 
     std::string tc_current_search;
     std::string tc_previous_search;

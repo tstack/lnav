@@ -698,6 +698,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         std::string all_args = remaining_args(cmdline, args);
         auto* tc = *lnav_data.ld_view_stack.top();
         nonstd::optional<vis_line_t> dst_vl;
+        auto is_location = false;
 
         if (startswith(all_args, "#")) {
             auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
@@ -710,6 +711,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (!dst_vl) {
                 return ec.make_error("unable to find anchor: {}", all_args);
             }
+            is_location = true;
         }
 
         auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
@@ -878,7 +880,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             return Err(um);
         }
 
-        dst_vl | [&ec, tc, &retval](auto new_top) {
+        dst_vl | [&ec, tc, &retval, is_location](auto new_top) {
             if (ec.ec_dry_run) {
                 retval = "info: will move to line "
                     + std::to_string((int) new_top);
@@ -886,6 +888,9 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 tc->get_sub_source()->get_location_history() |
                     [new_top](auto lh) { lh->loc_history_append(new_top); };
                 tc->set_selection(new_top);
+                if (tc->is_selectable() && is_location) {
+                    tc->set_top(new_top - 2_vl, false);
+                }
 
                 retval = "";
             }
@@ -1210,7 +1215,12 @@ com_goto_location(exec_context& ec,
                         ? lh->loc_history_back(tc->get_selection())
                         : lh->loc_history_forward(tc->get_selection());
                 }
-                | [tc](auto new_top) { tc->set_selection(new_top); };
+                | [tc](auto new_top) {
+                      tc->set_selection(new_top);
+                      if (tc->is_selectable()) {
+                          tc->set_top(new_top - 2_vl, false);
+                      }
+                  };
         };
     }
 
@@ -1240,6 +1250,9 @@ com_next_section(exec_context& ec,
         }
 
         tc->set_selection(adj_opt.value());
+        if (tc->is_selectable()) {
+            tc->set_top(adj_opt.value() - 2_vl, false);
+        }
     }
 
     return Ok(retval);
@@ -1268,6 +1281,9 @@ com_prev_section(exec_context& ec,
         }
 
         tc->set_selection(adj_opt.value());
+        if (tc->is_selectable()) {
+            tc->set_top(adj_opt.value() - 2_vl, false);
+        }
     }
 
     return Ok(retval);

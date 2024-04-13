@@ -626,6 +626,7 @@ handle_winch()
 void
 layout_views()
 {
+    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
     int width, height;
     getmaxyx(lnav_data.ld_window, height, width);
 
@@ -694,19 +695,26 @@ layout_views()
     auto um_height = std::min(um_rows, (height - 4) / 2);
     lnav_data.ld_user_message_view.set_height(vis_line_t(um_height));
 
+    auto config_panel_open = (lnav_data.ld_mode == ln_mode_t::FILTER
+                              || lnav_data.ld_mode == ln_mode_t::FILES
+                              || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS
+                              || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
     auto filters_open = (lnav_data.ld_mode == ln_mode_t::FILTER
-                         || lnav_data.ld_mode == ln_mode_t::FILES
-                         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS
-                         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
-    int filter_height = filters_open ? 5 : 0;
+                         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS);
+    auto files_open = (lnav_data.ld_mode == ln_mode_t::FILES
+                       || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
+    int filter_height = config_panel_open ? 5 : 0;
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
     auto bottom_min = std::min(2 + 3, height);
     auto bottom = clamped<int>::from(height, bottom_min, height);
 
+    lnav_data.ld_rl_view->set_y(height - 1);
     bottom -= lnav_data.ld_rl_view->get_height();
     lnav_data.ld_rl_view->set_width(width);
+
+    breadcrumb_view->set_width(width);
 
     bool vis;
     vis = bottom.try_consume(lnav_data.ld_match_view.get_height());
@@ -719,7 +727,8 @@ layout_views()
 
     bottom -= 1;
     lnav_data.ld_status[LNS_BOTTOM].set_y(bottom);
-    lnav_data.ld_status[LNS_BOTTOM].set_enabled(!filters_open
+    lnav_data.ld_status[LNS_BOTTOM].set_width(width);
+    lnav_data.ld_status[LNS_BOTTOM].set_enabled(!config_panel_open
                                                 && !breadcrumb_open);
 
     vis = preview_open1 && bottom.try_consume(preview_height1 + 1);
@@ -728,6 +737,7 @@ layout_views()
     lnav_data.ld_preview_view[1].set_visible(vis);
 
     lnav_data.ld_status[LNS_PREVIEW1].set_y(bottom);
+    lnav_data.ld_status[LNS_PREVIEW1].set_width(width);
     lnav_data.ld_status[LNS_PREVIEW1].set_visible(vis);
 
     vis = preview_open0 && bottom.try_consume(preview_height0 + 1);
@@ -736,6 +746,7 @@ layout_views()
     lnav_data.ld_preview_view[0].set_visible(vis);
 
     lnav_data.ld_status[LNS_PREVIEW0].set_y(bottom);
+    lnav_data.ld_status[LNS_PREVIEW0].set_width(width);
     lnav_data.ld_status[LNS_PREVIEW0].set_visible(vis);
 
     if (doc_side_by_side && doc_height > 0) {
@@ -771,6 +782,7 @@ layout_views()
     auto has_doc = lnav_data.ld_example_view.get_height() > 0_vl
         || lnav_data.ld_doc_view.get_height() > 0_vl;
     lnav_data.ld_status[LNS_DOC].set_y(bottom);
+    lnav_data.ld_status[LNS_DOC].set_width(width);
     lnav_data.ld_status[LNS_DOC].set_visible(has_doc && vis);
 
     if (is_gantt) {
@@ -784,9 +796,10 @@ layout_views()
     lnav_data.ld_gantt_details_view.set_visible(vis);
 
     lnav_data.ld_status[LNS_GANTT].set_y(bottom);
+    lnav_data.ld_status[LNS_GANTT].set_width(width);
     lnav_data.ld_status[LNS_GANTT].set_visible(vis);
 
-    vis = bottom.try_consume(filter_height + (filters_open ? 1 : 0)
+    vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
                              + (filters_supported ? 1 : 0));
     lnav_data.ld_filter_view.set_height(vis_line_t(filter_height));
     lnav_data.ld_filter_view.set_y(bottom + 2);
@@ -796,14 +809,16 @@ layout_views()
     lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
     lnav_data.ld_files_view.set_y(bottom + 2);
     lnav_data.ld_files_view.set_width(width);
-    lnav_data.ld_files_view.set_visible(filters_open && vis);
+    lnav_data.ld_files_view.set_visible(files_open && vis);
 
-    lnav_data.ld_status[LNS_FILTER_HELP].set_visible(filters_open && vis);
+    lnav_data.ld_status[LNS_FILTER_HELP].set_visible(config_panel_open && vis);
     lnav_data.ld_status[LNS_FILTER_HELP].set_y(bottom + 1);
+    lnav_data.ld_status[LNS_FILTER_HELP].set_width(width);
 
     lnav_data.ld_status[LNS_FILTER].set_visible(vis);
-    lnav_data.ld_status[LNS_FILTER].set_enabled(filters_open);
+    lnav_data.ld_status[LNS_FILTER].set_enabled(config_panel_open);
     lnav_data.ld_status[LNS_FILTER].set_y(bottom);
+    lnav_data.ld_status[LNS_FILTER].set_width(width);
 
     vis = is_spectro && bottom.try_consume(5 + 1);
     lnav_data.ld_spectro_details_view.set_y(bottom + 1);
@@ -812,6 +827,7 @@ layout_views()
     lnav_data.ld_spectro_details_view.set_visible(vis);
 
     lnav_data.ld_status[LNS_SPECTRO].set_y(bottom);
+    lnav_data.ld_status[LNS_SPECTRO].set_width(width);
     lnav_data.ld_status[LNS_SPECTRO].set_visible(vis);
     lnav_data.ld_status[LNS_SPECTRO].set_enabled(lnav_data.ld_mode
                                                  == ln_mode_t::SPECTRO_DETAILS);
@@ -1403,8 +1419,54 @@ clear_preview()
 }
 
 void
+set_view_mode(ln_mode_t mode)
+{
+    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+
+    switch (lnav_data.ld_mode) {
+        case ln_mode_t::BREADCRUMBS: {
+            breadcrumb_view->blur();
+            break;
+        }
+        default:
+            break;
+    }
+    lnav_data.ld_mode = mode;
+}
+
+static std::vector<view_curses*>
+all_views()
+{
+    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+
+    std::vector<view_curses*> retval;
+
+    retval.push_back(breadcrumb_view);
+    for (auto& sc : lnav_data.ld_status) {
+        retval.push_back(&sc);
+    }
+    retval.push_back(&lnav_data.ld_doc_view);
+    retval.push_back(&lnav_data.ld_example_view);
+    retval.push_back(&lnav_data.ld_preview_view[0]);
+    retval.push_back(&lnav_data.ld_preview_view[1]);
+    retval.push_back(&lnav_data.ld_files_view);
+    retval.push_back(&lnav_data.ld_filter_view);
+    retval.push_back(&lnav_data.ld_user_message_view);
+    retval.push_back(&lnav_data.ld_spectro_details_view);
+    retval.push_back(&lnav_data.ld_gantt_details_view);
+    retval.push_back(lnav_data.ld_rl_view);
+
+    return retval;
+}
+
+void
 lnav_behavior::mouse_event(int button, bool release, int x, int y)
 {
+    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+    static const std::vector<view_curses*> VIEWS = all_views();
+    static const auto CLICK_INTERVAL
+        = std::chrono::milliseconds(mouseinterval(-1) * 2);
+
     struct mouse_event me;
 
     switch (button & xterm_mouse::XT_BUTTON__MASK) {
@@ -1425,9 +1487,16 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
             break;
     }
 
+    gettimeofday(&me.me_time, nullptr);
     me.me_modifiers = button & xterm_mouse::XT_MODIFIER_MASK;
 
-    if (button & xterm_mouse::XT_DRAG_FLAG) {
+    if (release
+        && (to_mstime(me.me_time)
+            - to_mstime(this->lb_last_release_event.me_time))
+            < CLICK_INTERVAL.count())
+    {
+        me.me_state = mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK;
+    } else if (button & xterm_mouse::XT_DRAG_FLAG) {
         me.me_state = mouse_button_state_t::BUTTON_STATE_DRAGGED;
     } else if (release) {
         me.me_state = mouse_button_state_t::BUTTON_STATE_RELEASED;
@@ -1436,8 +1505,9 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
     }
 
     auto width = getmaxx(lnav_data.ld_window);
-    gettimeofday(&me.me_time, nullptr);
 
+    me.me_press_x = this->lb_last_event.me_press_x;
+    me.me_press_y = this->lb_last_event.me_press_y;
     me.me_x = x - 1;
     if (me.me_x >= width) {
         me.me_x = width - 1;
@@ -1445,15 +1515,38 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
     me.me_y = y - 1;
 
     switch (me.me_state) {
-        case mouse_button_state_t::BUTTON_STATE_PRESSED: {
+        case mouse_button_state_t::BUTTON_STATE_PRESSED:
+        case mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK: {
+            if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS) {
+                if (breadcrumb_view->contains(me.me_x, me.me_y)) {
+                    this->lb_last_view = breadcrumb_view;
+                    break;
+                } else {
+                    set_view_mode(ln_mode_t::PAGING);
+                    lnav_data.ld_view_stack.set_needs_update();
+                }
+            }
+
             auto* tc = *(lnav_data.ld_view_stack.top());
             if (tc->contains(me.me_x, me.me_y)) {
                 this->lb_last_view = tc;
+            } else {
+                for (auto* vc : VIEWS) {
+                    if (vc->contains(me.me_x, me.me_y)) {
+                        this->lb_last_view = vc;
+                        me.me_press_y = me.me_y - vc->get_y();
+                        me.me_press_x = me.me_x - vc->get_x();
+                        break;
+                    }
+                }
             }
             break;
         }
-        case mouse_button_state_t::BUTTON_STATE_DRAGGED:
+        case mouse_button_state_t::BUTTON_STATE_DRAGGED: {
+            break;
+        }
         case mouse_button_state_t::BUTTON_STATE_RELEASED: {
+            this->lb_last_release_event = me;
             break;
         }
     }
@@ -1465,6 +1558,7 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
     }
     this->lb_last_event = me;
     if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+        || me.me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
         || me.me_button == mouse_button_t::BUTTON_SCROLL_UP
         || me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN)
     {

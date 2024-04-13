@@ -54,6 +54,8 @@ filter_status_source::filter_status_source()
     this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
     this->tss_fields[TSF_TITLE].set_value(" " ANSI_ROLE("T") "ext Filters ",
                                           role_t::VCR_STATUS_TITLE_HOTKEY);
+    this->tss_fields[TSF_TITLE].on_click
+        = [](status_field&) { set_view_mode(ln_mode_t::FILTER); };
 
     this->tss_fields[TSF_STITCH_TITLE].set_width(2);
     this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
@@ -73,6 +75,8 @@ filter_status_source::filter_status_source()
         role_t::VCR_STATUS_DISABLED_TITLE);
     this->tss_fields[TSF_FILES_TITLE].set_value(" " ANSI_ROLE("F") "iles ",
                                                 role_t::VCR_STATUS_HOTKEY);
+    this->tss_fields[TSF_FILES_TITLE].on_click
+        = [](status_field&) { set_view_mode(ln_mode_t::FILES); };
 
     this->tss_fields[TSF_FILES_RIGHT_STITCH].set_width(2);
     this->tss_fields[TSF_FILES_RIGHT_STITCH].set_stitch_value(

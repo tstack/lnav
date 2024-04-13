@@ -9,6 +9,28 @@ Features:
   of archive contents.
 * Added `humanize_id` SQL function that colorizes a string using
   ANSI escape codes.
+* Added mouse support that can be toggled with `F2` or enabled
+  by default with: `:config /ui/mouse/mode enabled`.  With
+  mouse support enabled, many of the UI elements will respond to
+  mouse inputs:
+  - clicking on the main view will move the cursor to the given
+    row and dragging will scroll the view as needed;
+  - shift + dragging in the main view will highlight lines and
+    then toggle their bookmark status on release;
+  - clicking in the scroll area will move the view by a page and
+    dragging the scrollbar will move the view to the given spot;
+  - clicking on the breadcrumb bar will select a crumb and
+    selecting a possibility from the popup will move to that
+    location in the view;
+  - clicking on portions of the bottom status bar will trigger
+    a relevant action (e.g. clicking the line number will open
+    the command prompt with `:goto <current-line>`);
+  - clicking on the configuration panel tabs (i.e. Files/Filters)
+    will open the selected panel and clicking parts of the
+    display in there will perform the relevant action (e.g.
+    clicking the diamond will enable/disable the file/filter);
+  - clicking in a prompt will move the cursor to the location.
+  This is new work, so there are likely to be some glitches.
 
 Interface changes:
 * The bar charts in the DB view have now been moved to their
@@ -33,6 +55,7 @@ Bug Fixes:
 * A crash during initialization on Apple Silicon and MacOS 12
   has been fixed.
 * A crash when previewing non-text files.
+* Various fixes to make lnav usable as a `PAGER`.
 
 ## lnav v0.12.1
 

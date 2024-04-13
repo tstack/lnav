@@ -50,6 +50,14 @@ listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
 bool
 listview_curses::contains(int x, int y) const
 {
+    if (!this->vc_visible) {
+        return false;
+    }
+
+    if (view_curses::contains(x, y)) {
+        return true;
+    }
+
     auto dim = this->get_dimensions();
 
     if (this->vc_x <= x && x < this->vc_x + dim.second && this->vc_y <= y
@@ -76,26 +84,20 @@ listview_curses::update_top_from_selection()
         this->set_top(0_vl);
     } else if (this->lv_sync_selection_and_top) {
         this->set_top(this->lv_selection);
-    } else if (this->lv_selection == this->get_inner_height() - 1_vl) {
-        this->set_top(this->get_top_for_last_row());
     } else if (height <= this->lv_tail_space) {
         this->set_top(this->lv_selection);
-    } else if (this->lv_selection
-               >= (this->lv_top + height - this->lv_tail_space - 1_vl))
-    {
-        auto diff = this->lv_selection
-            - (this->lv_top + height - this->lv_tail_space - 1_vl);
+    } else if (this->lv_selection > (this->lv_top + height - 1_vl)) {
+        auto diff = this->lv_selection - (this->lv_top + height - 1_vl);
 
         if (height < 10 || diff < (height / 8_vl)) {
             // for small differences between the bottom and the
             // selection, just move a little bit.
-            this->set_top(
-                this->lv_selection - height + 1_vl + this->lv_tail_space, true);
+            this->set_top(this->lv_selection - height + 1_vl, true);
         } else {
             // for large differences, put the focus in the middle
             this->set_top(this->lv_selection - height / 2_vl, true);
         }
-    } else if (this->lv_selection <= this->lv_top) {
+    } else if (this->lv_selection < this->lv_top) {
         auto diff = this->lv_top - this->lv_selection;
 
         if (this->lv_selection > 0 && (height < 10 || diff < (height / 8_vl))) {
@@ -126,9 +128,10 @@ listview_curses::reload_data()
         }
         if (this->lv_selectable) {
             if (this->get_inner_height() == 0) {
-                this->set_selection(-1_vl);
+                this->set_selection_without_context(-1_vl);
             } else if (this->lv_selection >= this->get_inner_height()) {
-                this->set_selection(this->get_inner_height() - 1_vl);
+                this->set_selection_without_context(this->get_inner_height()
+                                                    - 1_vl);
             } else {
                 auto curr_sel = this->get_selection();
 
@@ -136,7 +139,7 @@ listview_curses::reload_data()
                     curr_sel = 0_vl;
                 }
                 this->lv_selection = -1_vl;
-                this->set_selection(curr_sel);
+                this->set_selection_without_context(curr_sel);
             }
 
             this->update_top_from_selection();
@@ -425,7 +428,6 @@ listview_curses::do_update()
         }
 
         size_t row_count = this->get_inner_height();
-        size_t blank_rows = 0;
         row = this->lv_top;
         bottom = y + height;
         std::vector<attr_line_t> rows(
@@ -586,14 +588,11 @@ listview_curses::do_update()
                 this->lv_display_lines.push_back(empty_space{});
                 mvwhline(this->lv_window, y, this->vc_x, ' ', width);
                 ++y;
-                blank_rows += 1;
             }
         }
 
         if (this->lv_selectable && !this->lv_sync_selection_and_top
-            && this->lv_selection >= 0 && (row > this->lv_tail_space)
-            && (blank_rows < this->lv_tail_space)
-            && ((row - this->lv_tail_space) < this->lv_selection))
+            && this->lv_selection >= 0 && row < this->lv_selection)
         {
             this->shift_top(this->lv_selection - row + this->lv_tail_space);
             continue;
@@ -649,13 +648,15 @@ listview_curses::do_update()
 
         if (this->lv_show_bottom_border) {
             cchar_t row_ch[width];
-            int y = this->vc_y + height - 1;
+            int bottom_y = this->vc_y + height - 1;
 
-            mvwin_wchnstr(this->lv_window, y, this->vc_x, row_ch, width - 1);
+            mvwin_wchnstr(
+                this->lv_window, bottom_y, this->vc_x, row_ch, width - 1);
             for (unsigned long lpc = 0; lpc < width - 1; lpc++) {
                 row_ch[lpc].attr |= A_UNDERLINE;
             }
-            mvwadd_wchnstr(this->lv_window, y, this->vc_x, row_ch, width - 1);
+            mvwadd_wchnstr(
+                this->lv_window, bottom_y, this->vc_x, row_ch, width - 1);
         }
 
         this->vc_needs_update = false;
@@ -763,7 +764,7 @@ listview_curses::shift_selection(shift_amount_t sa)
             {
                 this->set_top(top_for_last);
                 if (this->lv_selection <= top_for_last) {
-                    this->set_selection(top_for_last + 1_vl);
+                    new_selection = top_for_last + 1_vl;
                 }
             } else {
                 this->shift_top(rows_avail);
@@ -772,7 +773,7 @@ listview_curses::shift_selection(shift_amount_t sa)
                 if (this->lv_selectable && this->lv_top >= top_for_last
                     && inner_height > 0_vl)
                 {
-                    this->set_selection(inner_height - 1_vl);
+                    new_selection = inner_height - 1_vl;
                 }
             }
         }
@@ -793,6 +794,14 @@ listview_curses::handle_mouse(mouse_event& me)
 {
     auto GUTTER_REPEAT_DELAY
         = std::chrono::duration_cast<std::chrono::microseconds>(100ms).count();
+
+    if (view_curses::handle_mouse(me)) {
+        return true;
+    }
+
+    if (!this->vc_enabled) {
+        return false;
+    }
 
     vis_line_t inner_height, height;
     struct timeval diff;
@@ -911,10 +920,10 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
         this->lv_focused_overlay_selection = 0_vl;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
-                this->set_selection(top);
+                this->set_selection_without_context(top);
             } else if (this->lv_selection < top) {
                 auto sel_diff = this->lv_selection - old_top;
-                this->set_selection(top + sel_diff);
+                this->set_selection_without_context(top + sel_diff);
             } else {
                 auto sel_diff = this->lv_selection - old_top;
                 auto bot = this->get_bottom();
@@ -924,14 +933,14 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                 this->get_dimensions(height, width);
 
                 if (bot == -1_vl) {
-                    this->set_selection(this->lv_top);
+                    this->set_selection_without_context(this->lv_top);
                 } else if (this->lv_selection < this->lv_top
                            || bot < this->lv_selection)
                 {
                     if (top + sel_diff > bot) {
-                        this->set_selection(bot);
+                        this->set_selection_without_context(bot);
                     } else {
-                        this->set_selection(top + sel_diff);
+                        this->set_selection_without_context(top + sel_diff);
                     }
                 }
             }
@@ -996,7 +1005,7 @@ listview_curses::rows_available(vis_line_t line,
 }
 
 void
-listview_curses::set_selection(vis_line_t sel)
+listview_curses::set_selection_without_context(vis_line_t sel)
 {
     if (this->lv_selectable) {
         if (this->lv_selection == sel) {
@@ -1052,6 +1061,23 @@ listview_curses::set_selection(vis_line_t sel)
         }
     } else if (sel >= 0_vl) {
         this->set_top(sel);
+    }
+}
+
+void
+listview_curses::set_selection(vis_line_t sel)
+{
+    this->set_selection_without_context(sel);
+
+    auto dim = this->get_dimensions();
+    if (this->lv_selection > 0 && this->lv_selection <= this->lv_top) {
+        this->set_top(this->lv_selection - 1_vl);
+    } else if (dim.first > this->lv_tail_space
+               && (this->lv_selection
+                   > (this->lv_top + (dim.first - 1_vl) - this->lv_tail_space)))
+    {
+        this->set_top(this->lv_selection + this->lv_tail_space
+                      - (dim.first - 1_vl));
     }
 }
 

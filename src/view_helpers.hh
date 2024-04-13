@@ -89,6 +89,7 @@ bool handle_winch();
 void layout_views();
 void update_hits(textview_curses* tc);
 void clear_preview();
+void set_view_mode(ln_mode_t mode);
 
 nonstd::optional<vis_line_t> next_cluster(
     nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
@@ -108,6 +109,7 @@ public:
 
     view_curses* lb_last_view{nullptr};
     struct mouse_event lb_last_event;
+    struct mouse_event lb_last_release_event;
 };
 
 #endif

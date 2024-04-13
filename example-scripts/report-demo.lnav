@@ -17,7 +17,7 @@
 ;SELECT printf('\n%d total requests', count(1)) AS msg FROM access_log
 :echo $msg
 
-;WITH top_paths AS (
+;WITH top_paths AS MATERIALIZED (
         SELECT
             cs_uri_stem,
             count(1) AS total_hits,
@@ -28,7 +28,7 @@
           GROUP BY cs_uri_stem
           ORDER BY total_hits DESC
           LIMIT 50),
-      weekly_hits_with_gaps AS (
+      weekly_hits_with_gaps AS MATERIALIZED (
         SELECT timeslice(log_time_msecs, '1w') AS week,
                cs_uri_stem,
                count(1) AS weekly_hits

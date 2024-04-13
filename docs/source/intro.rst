@@ -113,16 +113,62 @@ To create or customize a theme, consult the :ref:`themes` section.
 Cursor Mode (v0.11.2+)
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The default mode for scrolling in **lnav** is to move the contents of the
-main view when the arrow keys are pressed.  Any interactions, such as
-jumping to a search hit, are then focused on the top line in the view.
-Alternatively, you can enable "cursor" mode where there is a cursor line
-in the view that is moved by the arrow keys and other interactions.  You
-can enable cursor mode with the following command:
+The default mode for scrolling in **lnav** is "cursor" mode where
+there is a cursor line in the view that is moved by the arrow keys
+and other interactions.  Any interactions, such as jumping to a
+search hit, are then focused on that line.
+
+Alternatively, you can enable "top" mode where the contents of the
+main view are moved when the arrow keys are pressed.  Any
+interactions, such as jumping to a search hit, are then focused
+on the top line in the view.  You can change to "top" mode with
+the following command:
 
 .. code-block:: lnav
 
-   :config /ui/movement/mode cursor
+   :config /ui/movement/mode top
+
+
+Mouse Support (v0.12.2+)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Mouse support can be enabled temporarily by pressing :kbd:`F2`
+and can be set as the default by executing the following command:
+
+.. code-block:: lnav
+
+   :config /ui/mouse/mode enabled
+
+With mouse support enabled, many of the UI elements will respond to
+mouse inputs:
+
+* clicking on the main view will move the cursor to the given
+  row and dragging will scroll the view as needed;
+* shift + dragging in the main view will highlight lines and
+  then toggle their bookmark status on release;
+* clicking in the scroll area will move the view by a page and
+  dragging the scrollbar will move the view to the given spot;
+* clicking on the breadcrumb bar will select a crumb and
+  selecting a possibility from the popup will move to that
+  location in the view;
+* clicking on portions of the bottom status bar will trigger
+  a relevant action (e.g. clicking the line number will open
+  the command prompt with `:goto <current-line>`);
+* clicking on the configuration panel tabs (i.e. Files/Filters)
+  will open the selected panel and clicking parts of the
+  display in there will perform the relevant action (e.g.
+  clicking the diamond will enable/disable the file/filter);
+* clicking in a prompt will move the cursor to the location.
+
+.. note::
+
+   A downside of enabling mouse support is that normal text
+   selection and copy will no longer work.  You can press
+   :kbd:`F2` to quickly switch back-and-forth.  Or, some
+   terminals have support for switching using a modifier
+   key, like `iTerm <https://iterm2.com/documentation-preferences-profiles-terminal.html>_`
+   where pressing :kbd:`Option` will allow you to select
+   text and copy.
 
 Log Formats
 ^^^^^^^^^^^

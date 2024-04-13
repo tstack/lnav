@@ -59,6 +59,8 @@ enum class shlex_token_t {
 
 class shlex {
 public:
+    static std::string escape(std::string s);
+
     shlex(const char* str, size_t len) : s_str(str), s_len(len) {}
 
     explicit shlex(const string_fragment& sf)

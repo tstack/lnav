@@ -4644,6 +4644,9 @@
                 }
             }
         },
+        "mouse": {
+            "mode": "disabled"
+        },
         "movement": {
             "mode": "cursor"
         },

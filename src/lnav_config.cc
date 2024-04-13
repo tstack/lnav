@@ -382,13 +382,11 @@ update_installs_from_git()
                                         git_dir.string());
             int ret = system(pull_cmd.c_str());
             if (ret == -1) {
-                std::cerr << "Failed to spawn command "
-                          << "\"" << pull_cmd << "\": " << strerror(errno)
-                          << std::endl;
+                std::cerr << "Failed to spawn command " << "\"" << pull_cmd
+                          << "\": " << strerror(errno) << std::endl;
                 retval = false;
             } else if (ret > 0) {
-                std::cerr << "Command "
-                          << "\"" << pull_cmd
+                std::cerr << "Command " << "\"" << pull_cmd
                           << "\" failed: " << strerror(errno) << std::endl;
                 retval = false;
             }
@@ -559,6 +557,23 @@ static const struct json_path_container movement_handlers = {
         .with_example("cursor")
         .with_description("The mode of cursor movement to use.")
         .for_field<>(&_lnav_config::lc_ui_movement, &movement_config::mode),
+};
+
+static const json_path_handler_base::enum_value_t _mouse_mode_values[] = {
+    {"disabled", lnav_mouse_mode::disabled},
+    {"enabled", lnav_mouse_mode::enabled},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
+static const struct json_path_container mouse_handlers = {
+    yajlpp::property_handler("mode")
+        .with_synopsis("enabled|disabled")
+        .with_enum_values(_mouse_mode_values)
+        .with_example("enabled")
+        .with_example("disabled")
+        .with_description("Overall control for mouse support")
+        .for_field<>(&_lnav_config::lc_mouse_mode),
 };
 
 static const struct json_path_container global_var_handlers = {
@@ -1130,6 +1145,9 @@ static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("theme-defs")
         .with_description("Theme definitions.")
         .with_children(theme_defs_handlers),
+    yajlpp::property_handler("mouse")
+        .with_description("Mouse-related settings")
+        .with_children(mouse_handlers),
     yajlpp::property_handler("movement")
         .with_description("Log file cursor movement mode settings")
         .with_children(movement_handlers),

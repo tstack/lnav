@@ -34,6 +34,11 @@
 
 using namespace lnav::roles::literals;
 
+void
+breadcrumb_curses::no_op_action(breadcrumb_curses&)
+{
+}
+
 breadcrumb_curses::breadcrumb_curses()
 {
     this->bc_match_search_overlay.sos_parent = this;
@@ -65,6 +70,7 @@ breadcrumb_curses::do_update()
     {
         this->bc_last_selected_crumb = crumbs.size() - 1;
     }
+    this->bc_displayed_crumbs.clear();
     attr_line_t crumbs_line;
     for (const auto& crumb : crumbs) {
         auto accum_width = crumbs_line.column_width();
@@ -78,17 +84,21 @@ breadcrumb_curses::do_update()
             accum_width = 2;
         }
 
+        line_range crumb_range;
+        crumb_range.lr_start = (int) crumbs_line.length();
         crumbs_line.append(crumb.c_display_value);
+        crumb_range.lr_end = (int) crumbs_line.length();
         if (is_selected) {
             sel_crumb_offset = accum_width;
             crumbs_line.get_attrs().emplace_back(
-                line_range{
-                    (int) (crumbs_line.length()
-                           - crumb.c_display_value.length()),
-                    (int) crumbs_line.length(),
-                },
-                VC_STYLE.template value(text_attrs{A_REVERSE}));
+                crumb_range, VC_STYLE.template value(text_attrs{A_REVERSE}));
         }
+
+        this->bc_displayed_crumbs.emplace_back(
+            line_range{(int) accum_width,
+                       (int) (accum_width + elem_width),
+                       line_range::unit::codepoint},
+            crumb_index);
         crumb_index += 1;
         crumbs_line.append(" \uff1a"_breadcrumb);
     }
@@ -168,6 +178,9 @@ breadcrumb_curses::reload_data()
     this->bc_match_view.set_needs_update();
     this->bc_match_view.set_selection(
         vis_line_t(selected_value.value_or(-1_vl)));
+    if (selected_value) {
+        this->bc_match_view.set_top(vis_line_t(selected_value.value()));
+    }
     this->bc_match_view.reload_data();
     this->set_needs_update();
 }
@@ -453,4 +466,78 @@ breadcrumb_curses::search_overlay_source::list_static_overlay(
     }
 
     return false;
+}
+
+bool
+breadcrumb_curses::handle_mouse(mouse_event& me)
+{
+    if (me.me_state == mouse_button_state_t::BUTTON_STATE_PRESSED
+        && this->bc_focused_crumbs.empty())
+    {
+        this->focus();
+        this->on_focus(*this);
+        this->do_update();
+    }
+
+    auto find_res = this->bc_displayed_crumbs
+        | lnav::itertools::find_if([&me](const auto& elem) {
+                        return me.me_button == mouse_button_t::BUTTON_LEFT
+                            && elem.dc_range.contains(me.me_x);
+                    });
+
+    if (!this->bc_focused_crumbs.empty()) {
+        if (me.me_y > 0 || !find_res
+            || find_res.value()->dc_index == this->bc_selected_crumb)
+        {
+            if (view_curses::handle_mouse(me)) {
+                if (me.me_y > 0
+                    && (me.me_state
+                            == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
+                        || me.me_state
+                            == mouse_button_state_t::BUTTON_STATE_RELEASED))
+                {
+                    this->perform_selection(perform_behavior_t::if_different);
+                    this->blur();
+                    this->reload_data();
+                    this->on_blur(*this);
+                    this->bc_initial_mouse_event = true;
+                }
+                return true;
+            }
+        }
+        if (!this->bc_initial_mouse_event
+            && me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+            && me.me_y == 0 && find_res
+            && find_res.value()->dc_index == this->bc_selected_crumb.value())
+        {
+            this->blur();
+            this->reload_data();
+            this->on_blur(*this);
+            this->bc_initial_mouse_event = true;
+            return true;
+        }
+    }
+
+    if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED) {
+        this->bc_initial_mouse_event = false;
+    }
+
+    if (me.me_y != 0) {
+        return true;
+    }
+
+    if (find_res) {
+        auto crumb_index = find_res.value()->dc_index;
+
+        if (this->bc_selected_crumb) {
+            this->blur();
+            this->focus();
+            this->reload_data();
+            this->bc_selected_crumb = crumb_index;
+            this->bc_current_search.clear();
+            this->reload_data();
+        }
+    }
+
+    return true;
 }

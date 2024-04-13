@@ -6,6 +6,9 @@
         "default-colors": true,
         "keymap": "default",
         "theme": "default",
+        "mouse": {
+            "mode": "disabled"
+        },
         "movement": {
             "mode": "cursor"
         }

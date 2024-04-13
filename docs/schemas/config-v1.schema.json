@@ -732,6 +732,27 @@
                     },
                     "additionalProperties": false
                 },
+                "mouse": {
+                    "description": "Mouse-related settings",
+                    "title": "/ui/mouse",
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "title": "/ui/mouse/mode",
+                            "description": "Overall control for mouse support",
+                            "type": "string",
+                            "enum": [
+                                "disabled",
+                                "enabled"
+                            ],
+                            "examples": [
+                                "enabled",
+                                "disabled"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "movement": {
                     "description": "Log file cursor movement mode settings",
                     "title": "/ui/movement",

@@ -35,7 +35,8 @@
 
 class files_sub_source
     : public text_sub_source
-    , public list_input_delegate {
+    , public list_input_delegate
+    , public text_delegate {
 public:
     files_sub_source();
 
@@ -60,7 +61,10 @@ public:
                               int line,
                               line_flags_t raw) override;
 
+    bool text_handle_mouse(textview_curses& tc, mouse_event& me) override;
+
     size_t fss_last_line_len{0};
+    attr_line_t fss_curr_line;
 };
 
 struct files_overlay_source : public list_overlay_source {

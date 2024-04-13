@@ -313,7 +313,7 @@ If you are using Xterm, or a compatible terminal, you can use the mouse to
 mark lines of text and move the view by grabbing the scrollbar.
 
 NOTE: You need to manually enable this feature by setting the LNAV_EXP
-environment variable to "mouse". F2 toggles mouse support.
+environment variable to "mouse". `F2` toggles mouse support.
 
 ## Log Analysis
 

@@ -1037,7 +1037,7 @@ readline_curses::start()
                 {
                     looping = false;
                 } else {
-                    int context, prompt_start = 0;
+                    int context, prompt_start = 0, new_point = 0;
                     char type[1024];
 
                     msg[rc] = '\0';
@@ -1047,6 +1047,14 @@ readline_curses::start()
                         log_perror(chdir(cwd));
                     } else if (startswith(msg, "sugg:")) {
                         rc_local_suggestion = &msg[5];
+                    } else if (sscanf(msg, "x:%d", &new_point) == 1) {
+                        if (rl_prompt) {
+                            new_point -= strlen(rl_prompt);
+                        }
+                        if (0 <= new_point && new_point <= rl_end) {
+                            rl_point = new_point;
+                            rl_redisplay();
+                        }
                     } else if (sscanf(msg, "i:%d:%n", &rl_point, &prompt_start)
                                == 1)
                     {
@@ -1668,6 +1676,25 @@ readline_curses::do_update()
               this->vc_x + this->vc_cursor_x);
     }
 
+    return true;
+}
+
+bool
+readline_curses::handle_mouse(mouse_event& me)
+{
+    if (this->rc_active_context == -1) {
+        return false;
+    }
+
+    char buffer[32];
+
+    snprintf(buffer, sizeof(buffer), "x:%d", me.me_x);
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
+        perror("handle_mouse: write failed");
+    }
     return true;
 }
 

@@ -37,7 +37,8 @@
 
 class filter_sub_source
     : public text_sub_source
-    , public list_input_delegate {
+    , public list_input_delegate
+    , public text_delegate {
 public:
     filter_sub_source(std::shared_ptr<readline_curses> editor);
 
@@ -51,6 +52,8 @@ public:
     bool list_input_handle_key(listview_curses& lv, int ch) override;
 
     void list_input_handle_scroll_out(listview_curses& lv) override;
+
+    void register_view(textview_curses* tc) override;
 
     size_t text_line_count() override;
 
@@ -69,6 +72,8 @@ public:
                               int line,
                               line_flags_t raw) override;
 
+    bool text_handle_mouse(textview_curses& tc, mouse_event& me) override;
+
     void rl_change(readline_curses* rc);
 
     void rl_perform(readline_curses* rc);
@@ -84,6 +89,7 @@ public:
     std::shared_ptr<readline_curses> fss_editor;
     plain_text_source fss_match_source;
     textview_curses fss_match_view;
+    attr_line_t fss_curr_line;
 
     bool fss_editing{false};
     bool fss_filter_state{false};
