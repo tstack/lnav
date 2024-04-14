@@ -783,14 +783,7 @@ public:
 
     void revert_search() { this->execute_search(this->tc_previous_search); }
 
-    void invoke_scroll()
-    {
-        if (this->tc_sub_source != nullptr) {
-            this->tc_sub_source->scroll_invoked(this);
-        }
-
-        listview_curses::invoke_scroll();
-    }
+    void invoke_scroll();
 
     textview_curses& set_reload_config_delegate(
         std::function<void(textview_curses&)> func)
@@ -806,6 +799,14 @@ public:
 
     nonstd::optional<role_t> tc_cursor_role;
     nonstd::optional<role_t> tc_disabled_cursor_role;
+
+    struct selected_text_info {
+        int64_t sti_line;
+        line_range sti_range;
+        std::string sti_value;
+    };
+
+    nonstd::optional<selected_text_info> tc_selected_text;
 
 protected:
     class grep_highlighter {

@@ -25,6 +25,9 @@
                         "color": "#f6f6f6",
                         "background-color": "$black"
                     },
+                    "selected-text": {
+                        "background-color": "$cyan"
+                    },
                     "alt-text": {
                         "background-color": "#1c1c1c"
                     },

@@ -451,6 +451,7 @@ public:
     struct mvwattrline_result {
         size_t mr_chars_out{0};
         size_t mr_bytes_remaining{0};
+        string_fragment mr_selected_text;
     };
 
     static mvwattrline_result mvwattrline(WINDOW* window,

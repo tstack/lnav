@@ -146,6 +146,12 @@
                         "underline": false,
                         "bold": false
                     },
+                    "selected-text": {
+                        "color": "",
+                        "background-color": "DarkCyan",
+                        "underline": false,
+                        "bold": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "#262626",
@@ -742,6 +748,12 @@
                         "underline": false,
                         "bold": false
                     },
+                    "selected-text": {
+                        "color": "",
+                        "background-color": "$cyan",
+                        "underline": false,
+                        "bold": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "#1c1c1c",
@@ -1301,6 +1313,12 @@
                         "underline": false,
                         "bold": false
                     },
+                    "selected-text": {
+                        "color": "",
+                        "background-color": "$cyan",
+                        "underline": false,
+                        "bold": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "",
@@ -1854,6 +1872,12 @@
                         "bold": true
                     },
                     "text": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "selected-text": {
                         "color": "",
                         "background-color": "",
                         "underline": false,
@@ -2418,6 +2442,12 @@
                         "underline": false,
                         "bold": false
                     },
+                    "selected-text": {
+                        "color": "",
+                        "background-color": "$cyan",
+                        "underline": false,
+                        "bold": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "#1c1c1c",
@@ -2973,6 +3003,12 @@
                     "text": {
                         "color": "#d6deeb",
                         "background-color": "#011627",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "selected-text": {
+                        "color": "",
+                        "background-color": "$cyan",
                         "underline": false,
                         "bold": false
                     },
@@ -3543,6 +3579,12 @@
                         "underline": false,
                         "bold": false
                     },
+                    "selected-text": {
+                        "color": "",
+                        "background-color": "$cyan",
+                        "underline": false,
+                        "bold": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "$base02",
@@ -4107,6 +4149,12 @@
                     "text": {
                         "color": "$base00",
                         "background-color": "$base3",
+                        "underline": false,
+                        "bold": false
+                    },
+                    "selected-text": {
+                        "color": "",
+                        "background-color": "$cyan",
                         "underline": false,
                         "bold": false
                     },
@@ -4847,7 +4895,7 @@
                     "alt-msg": ""
                 },
                 "x63": {
-                    "command": ":write-to /dev/clipboard",
+                    "command": "|lnav-copy-text",
                     "alt-msg": "${keymap_def_clear}"
                 },
                 "x65": {

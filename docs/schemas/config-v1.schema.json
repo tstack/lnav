@@ -305,6 +305,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/text",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "selected-text": {
+                                            "description": "Styling for text selected in a view",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/selected-text",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "alt-text": {
                                             "description": "Styling for plain text when alternating",
                                             "title": "/ui/theme-defs/<theme_name>/styles/alt-text",

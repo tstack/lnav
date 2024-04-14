@@ -37,6 +37,7 @@
 #include "base/injector.hh"
 #include "base/time_util.hh"
 #include "config.h"
+#include "data_scanner.hh"
 #include "fmt/format.h"
 #include "lnav_config.hh"
 #include "log_format_fwd.hh"
@@ -285,8 +286,20 @@ textview_curses::reload_config(error_reporter& reporter)
 }
 
 void
+textview_curses::invoke_scroll()
+{
+    this->tc_selected_text = nonstd::nullopt;
+    if (this->tc_sub_source != nullptr) {
+        this->tc_sub_source->scroll_invoked(this);
+    }
+
+    listview_curses::invoke_scroll();
+}
+
+void
 textview_curses::reload_data()
 {
+    this->tc_selected_text = nonstd::nullopt;
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
     }
@@ -415,6 +428,13 @@ textview_curses::handle_mouse(mouse_event& me)
 
     auto* sub_delegate = dynamic_cast<text_delegate*>(this->tc_sub_source);
 
+    if (me.me_button != mouse_button_t::BUTTON_LEFT
+        || me.me_state != mouse_button_state_t::BUTTON_STATE_RELEASED)
+    {
+        this->tc_selected_text = nonstd::nullopt;
+        this->set_needs_update();
+    }
+
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED: {
             if (!this->lv_selectable) {
@@ -456,7 +476,36 @@ textview_curses::handle_mouse(mouse_event& me)
                 [this, &me, sub_delegate](const main_content& mc) {
                     if (this->vc_enabled) {
                         if (this->tc_supports_marks) {
-                            this->toggle_user_mark(&BM_USER, mc.mc_line);
+                            attr_line_t al;
+
+                            this->textview_value_for_row(mc.mc_line, al);
+                            auto line_sf
+                                = string_fragment::from_str(al.get_string());
+                            auto cursor_sf
+                                = line_sf.sub_cell_range(me.me_x, me.me_x);
+                            auto ds = data_scanner(line_sf);
+                            auto tf = this->tc_sub_source->get_text_format();
+                            while (true) {
+                                auto tok_res = ds.tokenize2(tf);
+                                if (!tok_res) {
+                                    break;
+                                }
+
+                                auto tok = tok_res.value();
+                                auto tok_sf = tok.to_string_fragment();
+                                if (tok_sf.contains(cursor_sf)) {
+                                    this->tc_selected_text = selected_text_info{
+                                        mc.mc_line,
+                                        line_range{
+                                            tok_sf.sf_begin,
+                                            tok_sf.sf_end,
+                                        },
+                                        tok_sf.to_string(),
+                                    };
+                                    this->set_needs_update();
+                                    break;
+                                }
+                            }
                         }
                         this->set_selection_without_context(mc.mc_line);
                     }
@@ -478,6 +527,27 @@ textview_curses::handle_mouse(mouse_event& me)
         }
         case mouse_button_state_t::BUTTON_STATE_DRAGGED: {
             if (!this->vc_enabled) {
+            } else if (me.me_y == me.me_press_y) {
+                if (mouse_line.is<main_content>()) {
+                    auto& mc = mouse_line.get<main_content>();
+                    attr_line_t al;
+                    auto low_x = std::min(me.me_x, me.me_press_x);
+                    auto high_x = std::max(me.me_x, me.me_press_x);
+
+                    this->textview_value_for_row(mc.mc_line, al);
+                    auto line_sf = string_fragment::from_str(al.get_string());
+                    auto cursor_sf = line_sf.sub_cell_range(low_x, high_x);
+                    if (!cursor_sf.empty()) {
+                        this->tc_selected_text = {
+                            mc.mc_line,
+                            line_range{
+                                cursor_sf.sf_begin,
+                                cursor_sf.sf_end,
+                            },
+                            cursor_sf.to_string(),
+                        };
+                    }
+                }
             } else if (me.me_y < 0) {
                 this->shift_selection(listview_curses::shift_amount_t::up_line);
                 mouse_line = main_content{this->get_top()};
@@ -614,6 +684,14 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
                         VC_STYLE.value(text_attrs{A_REVERSE}));
+    }
+
+    if (this->tc_selected_text) {
+        const auto& sti = this->tc_selected_text.value();
+        if (sti.sti_line == row) {
+            sa.emplace_back(sti.sti_range,
+                            VC_ROLE.value(role_t::VCR_SELECTED_TEXT));
+        }
     }
 }
 

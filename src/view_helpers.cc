@@ -1529,6 +1529,8 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
 
             auto* tc = *(lnav_data.ld_view_stack.top());
             if (tc->contains(me.me_x, me.me_y)) {
+                me.me_press_y = me.me_y - tc->get_y();
+                me.me_press_x = me.me_x - tc->get_x();
                 this->lb_last_view = tc;
             } else {
                 for (auto* vc : VIEWS) {

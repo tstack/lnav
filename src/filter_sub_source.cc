@@ -434,9 +434,12 @@ filter_sub_source::rl_change(readline_curses* rc)
             break;
         case filter_lang_t::REGEX: {
             if (new_value.empty()) {
-                if (fs.get_filter(top_view->get_current_search()) == nullptr) {
-                    this->fss_editor->set_suggestion(
-                        top_view->get_current_search());
+                auto sugg = top_view->get_current_search();
+                if (top_view->tc_selected_text) {
+                    sugg = top_view->tc_selected_text->sti_value;
+                }
+                if (fs.get_filter(sugg) == nullptr) {
+                    this->fss_editor->set_suggestion(sugg);
                 }
             } else {
                 auto regex_res

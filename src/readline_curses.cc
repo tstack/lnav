@@ -933,6 +933,8 @@ readline_curses::start()
 
     maxfd = std::max(STDIN_FILENO, this->rc_command_pipe[RCF_SLAVE].get());
 
+    static uint64_t last_h1, last_h2;
+
     while (looping) {
         fd_set ready_rfds;
         int rc;
@@ -951,8 +953,6 @@ readline_curses::start()
             }
         } else {
             if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
-                static uint64_t last_h1, last_h2;
-
                 struct itimerval itv;
 
                 itv.it_value.tv_sec = 0;
@@ -960,7 +960,6 @@ readline_curses::start()
                 itv.it_interval.tv_sec = 0;
                 itv.it_interval.tv_usec = 0;
                 setitimer(ITIMER_REAL, &itv, nullptr);
-
                 rl_callback_read_char();
                 if (RL_ISSTATE(RL_STATE_DONE) && !got_line) {
                     got_line = 1;
@@ -969,6 +968,7 @@ readline_curses::start()
                 } else {
                     uint64_t h1 = 1, h2 = 2;
 
+                    rc_local_suggestion.clear();
                     if (rl_last_func == readline_context::command_complete) {
                         rl_last_func = rl_menu_complete;
                     }
@@ -1304,7 +1304,6 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
         if (rc > 0) {
             int old_x = this->vc_cursor_x;
 
-            this->rc_suggestion.clear();
             this->map_output(buffer, rc);
             if (this->vc_cursor_x != old_x) {
                 this->rc_change(this);
@@ -1389,7 +1388,7 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
                         this->rc_blur(this);
                         break;
 
-                    case 'l':
+                    case 'l': {
                         this->rc_line_buffer = &msg[2];
                         if (this->rc_active_context != -1) {
                             this->rc_suggestion.clear();
@@ -1400,6 +1399,7 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
                             this->rc_display_match(this);
                         }
                         break;
+                    }
 
                     case 'c':
                         this->rc_line_buffer = &msg[2];
@@ -1496,6 +1496,7 @@ readline_curses::set_suggestion(const std::string& value)
         perror("set_suggestion: write failed");
     }
     this->rc_suggestion = value;
+    this->set_needs_update();
 }
 
 void
@@ -1653,7 +1654,7 @@ readline_curses::do_update()
                                  this->vc_x,
                                  this->rc_value,
                                  lr);
-        this->set_x(0);
+        this->set_cursor_x(0);
     }
 
     if (this->rc_active_context != -1) {

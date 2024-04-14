@@ -236,7 +236,7 @@ view_curses::mvwattrline(WINDOW* window,
                          role_t base_role)
 {
     auto& sa = al.get_attrs();
-    auto& line = al.get_string();
+    const auto& line = al.get_string();
     std::vector<utf_to_display_adjustment> utf_adjustments;
     std::string full_line;
 
@@ -464,6 +464,12 @@ view_curses::mvwattrline(WINDOW* window,
             } else if (iter->sa_type == &VC_ROLE) {
                 auto role = iter->sa_value.get<role_t>();
                 attrs = vc.attrs_for_role(role);
+
+                if (role == role_t::VCR_SELECTED_TEXT) {
+                    retval.mr_selected_text
+                        = string_fragment::from_str(line).sub_range(
+                            iter->sa_range.lr_start, iter->sa_range.lr_end);
+                }
             } else if (iter->sa_type == &VC_ROLE_FG) {
                 auto role_attrs
                     = vc.attrs_for_role(iter->sa_value.get<role_t>());
@@ -1138,6 +1144,8 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_sep_ref_acc, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SUGGESTION)]
         = this->to_attrs(lt, lt.lt_style_suggestion, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SELECTED_TEXT)]
+        = this->to_attrs(lt, lt.lt_style_selected_text, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_RE_SPECIAL)]
         = this->to_attrs(lt, lt.lt_style_re_special, reporter);

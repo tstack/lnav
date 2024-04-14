@@ -144,8 +144,13 @@ mouse inputs:
 
 * clicking on the main view will move the cursor to the given
   row and dragging will scroll the view as needed;
-* shift + dragging in the main view will highlight lines and
-  then toggle their bookmark status on release;
+* shift + clicking/dragging in the main view will highlight
+  lines and then toggle their bookmark status on release;
+* double-clicking will select the underlying token and
+  drag-selecting within a line will select the given text;
+* with selected text, pressing :kbd:`c` will copy the text to
+  the clipboard and it will be used as the suggestion for
+  searching/filtering;
 * clicking in the scroll area will move the view by a page and
   dragging the scrollbar will move the view to the given spot;
 * clicking on the breadcrumb bar will select a crumb and

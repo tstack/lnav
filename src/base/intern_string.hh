@@ -178,6 +178,8 @@ struct string_fragment {
     Result<ssize_t, const char*> codepoint_to_byte_index(
         ssize_t cp_index) const;
 
+    string_fragment sub_cell_range(int cell_start, int cell_end) const;
+
     const char& operator[](int index) const
     {
         return this->sf_string[sf_begin + index];
@@ -279,6 +281,12 @@ struct string_fragment {
     {
         return string_fragment{
             this->sf_string, this->sf_begin + begin, this->sf_begin + end};
+    }
+
+    bool contains(const string_fragment& sf) const
+    {
+        return this->sf_string == sf.sf_string && this->sf_begin <= sf.sf_begin
+            && sf.sf_end <= this->sf_end;
     }
 
     size_t count(char ch) const

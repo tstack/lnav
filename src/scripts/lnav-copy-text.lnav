@@ -1,0 +1,15 @@
+#
+# @synopsis: lnav-copy-text
+# @description: Copy text from the top view
+#
+
+;SELECT jget(selected_text, '/value') AS content FROM lnav_top_view
+;SELECT CASE
+    WHEN $content IS NULL THEN
+        ':write-to -'
+    ELSE
+        ':echo -n ${content}'
+    END AS cmd
+
+:redirect-to /dev/clipboard
+:eval ${cmd}

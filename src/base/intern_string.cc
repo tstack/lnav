@@ -387,6 +387,43 @@ string_fragment::codepoint_to_byte_index(ssize_t cp_index) const
     return Ok(retval);
 }
 
+string_fragment
+string_fragment::sub_cell_range(int cell_start, int cell_end) const
+{
+    int byte_index = this->sf_begin;
+    nonstd::optional<int> byte_start;
+    nonstd::optional<int> byte_end;
+    int cell_index = 0;
+
+    while (byte_index < this->sf_end) {
+        if (cell_start == cell_index) {
+            byte_start = byte_index;
+        }
+        if (cell_index == cell_end) {
+            byte_end = byte_index;
+        }
+        auto read_res = ww898::utf::utf8::read(
+            [this, &byte_index]() { return this->sf_string[byte_index++]; });
+        if (read_res.isErr()) {
+            byte_index += 1;
+        } else {
+            cell_index += wcwidth(read_res.unwrap());
+        }
+    }
+    if (cell_start == cell_index) {
+        byte_start = byte_index;
+    }
+    if (!byte_end) {
+        byte_end = byte_index;
+    }
+
+    if (byte_start && byte_end) {
+        return this->sub_range(byte_start.value(), byte_end.value());
+    }
+
+    return string_fragment{};
+}
+
 size_t
 string_fragment::column_width() const
 {

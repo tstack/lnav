@@ -194,7 +194,7 @@ rl_sql_help(readline_curses* rc)
 {
     auto al = attr_line_t(rc->get_line_buffer());
     const auto& sa = al.get_attrs();
-    size_t x = rc->get_x();
+    size_t x = rc->get_cursor_x();
     bool has_doc = false;
 
     if (x > 0) {
@@ -308,6 +308,12 @@ rl_change(readline_curses* rc)
     lnav_data.ld_user_message_source.clear();
 
     switch (lnav_data.ld_mode) {
+        case ln_mode_t::SEARCH: {
+            if (rc->get_line_buffer().empty() && tc->tc_selected_text) {
+                rc->set_suggestion(tc->tc_selected_text->sti_value);
+            }
+            break;
+        }
         case ln_mode_t::SQL: {
             static const auto* sql_cmd_map
                 = injector::get<readline_context::command_map_t*,
@@ -563,7 +569,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                 auto orig_prql_stmt = attr_line_t(term_val);
                 orig_prql_stmt.rtrim("| \r\n\t");
                 annotate_sql_statement(orig_prql_stmt);
-                auto cursor_x = rc->get_x();
+                auto cursor_x = rc->get_cursor_x();
                 if (cursor_x > orig_prql_stmt.get_string().length()) {
                     cursor_x = orig_prql_stmt.length() - 1;
                 }

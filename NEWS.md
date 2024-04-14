@@ -15,8 +15,13 @@ Features:
   mouse inputs:
   - clicking on the main view will move the cursor to the given
     row and dragging will scroll the view as needed;
-  - shift + dragging in the main view will highlight lines and
-    then toggle their bookmark status on release;
+  - shift + clicking/dragging in the main view will highlight
+    lines and then toggle their bookmark status on release;
+  - double-clicking will select the underlying token and
+    drag-selecting within a line will select the given text;
+  - when text is selected: pressing `c` will copy the text to
+    the clipboard; the text will be used as the suggestion for
+    searching/filtering;
   - clicking in the scroll area will move the view by a page and
     dragging the scrollbar will move the view to the given spot;
   - clicking on the breadcrumb bar will select a crumb and
@@ -31,6 +36,10 @@ Features:
     clicking the diamond will enable/disable the file/filter);
   - clicking in a prompt will move the cursor to the location.
   This is new work, so there are likely to be some glitches.
+* Added a `selected_text` column to the `lnav_views` table that
+  reports information about text that was selected with a mouse.
+  This makes it possible to script operations that use the
+  selected text as an input.
 
 Interface changes:
 * The bar charts in the DB view have now been moved to their

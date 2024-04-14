@@ -3,6 +3,7 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/dhclient-summary.lnav \
     $(srcdir)/scripts/docker-url-handler.lnav \
     $(srcdir)/scripts/journald-url-handler.lnav \
+    $(srcdir)/scripts/lnav-copy-text.lnav \
     $(srcdir)/scripts/lnav-pop-view.lnav \
     $(srcdir)/scripts/partition-by-boot.lnav \
     $(srcdir)/scripts/piper-url-handler.lnav \

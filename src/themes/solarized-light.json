@@ -31,6 +31,9 @@
                         "color": "$base00",
                         "background-color": "$base3"
                     },
+                    "selected-text": {
+                        "background-color": "$cyan"
+                    },
                     "alt-text": {
                         "background-color": "$base2"
                     },

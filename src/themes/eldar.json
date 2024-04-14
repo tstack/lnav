@@ -24,6 +24,9 @@
                         "color": "$white",
                         "background-color": ""
                     },
+                    "selected-text": {
+                        "background-color": "$cyan"
+                    },
                     "alt-text": {
                         "bold": true
                     },

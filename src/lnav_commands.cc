@@ -2447,6 +2447,10 @@ com_filter_prompt(exec_context& ec, const std::string& cmdline)
         return {};
     }
 
+    if (tc->tc_selected_text) {
+        return {"", tc->tc_selected_text->sti_value};
+    }
+
     return {"", tc->get_current_search()};
 }
 
@@ -5899,11 +5903,11 @@ com_prompt(exec_context& ec,
         auto split_args_res = lexer.split(ec.create_resolver());
         if (split_args_res.isErr()) {
             auto split_err = split_args_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "unable to parse file name")
-                          .with_reason(split_err.te_msg)
-                          .with_snippet(lnav::console::snippet::from(
-                              SRC, lexer.to_attr_line(split_err)));
+            auto um
+                = lnav::console::user_message::error("unable to parse prompt")
+                      .with_reason(split_err.te_msg)
+                      .with_snippet(lnav::console::snippet::from(
+                          SRC, lexer.to_attr_line(split_err)));
 
             return Err(um);
         }

@@ -175,6 +175,22 @@ static const typed_json_path_container<top_line_meta> top_line_meta_handlers = {
         .with_children(breadcrumb_crumb_handlers),
 };
 
+static const typed_json_path_container<line_range> line_range_handlers = {
+    yajlpp::property_handler("start").for_field(&line_range::lr_start),
+    yajlpp::property_handler("end").for_field(&line_range::lr_end),
+};
+
+static const typed_json_path_container<textview_curses::selected_text_info>
+    selected_text_handlers = {
+        yajlpp::property_handler("line").for_field(
+            &textview_curses::selected_text_info::sti_line),
+        yajlpp::property_handler("range")
+            .for_child(&textview_curses::selected_text_info::sti_range)
+            .with_children(line_range_handlers),
+        yajlpp::property_handler("value").for_field(
+            &textview_curses::selected_text_info::sti_value),
+};
+
 enum class row_details_t {
     hide,
     show,
@@ -259,7 +275,8 @@ CREATE TABLE lnav_views (
     movement TEXT,          -- The movement mode, either 'top' or 'cursor'.
     top_meta TEXT,          -- A JSON object that contains metadata related to the top line in the view.
     selection INTEGER,      -- The number of the line that is focused for selection.
-    options TEXT            -- A JSON object that contains optional settings for this view.
+    options TEXT,           -- A JSON object that contains optional settings for this view.
+    selected_text TEXT      -- A JSON object that contains information about the text selected by the mouse in the view.
 );
 )";
 
@@ -456,6 +473,16 @@ CREATE TABLE lnav_views (
                 }
                 break;
             }
+            case 14: {
+                if (tc.tc_selected_text) {
+                    to_sqlite(ctx,
+                              selected_text_handlers.to_json_string(
+                                  tc.tc_selected_text.value()));
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
         }
 
         return SQLITE_OK;
@@ -490,7 +517,8 @@ CREATE TABLE lnav_views (
                    string_fragment movement,
                    const char* top_meta,
                    int64_t selection,
-                   nonstd::optional<string_fragment> options)
+                   nonstd::optional<string_fragment> options,
+                   nonstd::optional<string_fragment> selected_text)
     {
         auto& tc = lnav_data.ld_views[index];
         auto* time_source

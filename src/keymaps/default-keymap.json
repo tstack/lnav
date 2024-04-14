@@ -114,7 +114,7 @@
                     "alt-msg": "${keymap_def_alt_hour_boundary}"
                 },
                 "x63": {
-                    "command": ":write-to /dev/clipboard",
+                    "command": "|lnav-copy-text",
                     "alt-msg": "${keymap_def_clear}"
                 },
                 "x67": {

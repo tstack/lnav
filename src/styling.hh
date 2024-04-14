@@ -148,6 +148,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_type;
     positioned_property<style_config> lt_style_sep_ref_acc;
     positioned_property<style_config> lt_style_suggestion;
+    positioned_property<style_config> lt_style_selected_text;
     positioned_property<style_config> lt_style_re_special;
     positioned_property<style_config> lt_style_re_repeat;
     positioned_property<style_config> lt_style_diff_delete;
