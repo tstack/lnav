@@ -41,10 +41,6 @@
 #include "sql_util.hh"
 #include "view_curses.hh"
 
-static void readline_sqlite_highlighter_int(attr_line_t& al,
-                                            int x,
-                                            line_range sub);
-
 static bool
 is_bracket(const std::string& str, int index, bool is_lit)
 {
@@ -237,7 +233,7 @@ readline_command_highlighter(attr_line_t& al, int x)
         al, x, line_range{0, (int) al.get_string().length()});
 }
 
-static void
+void
 readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
     static const char* brackets[] = {

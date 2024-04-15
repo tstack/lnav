@@ -42,6 +42,7 @@
 #include "bookmarks.json.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "field_overlay_source.hh"
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
@@ -1382,6 +1383,30 @@ bool
 logfile_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 {
     switch (ch) {
+        case ' ': {
+            auto ov_vl = lv.get_overlay_selection();
+            if (ov_vl) {
+                auto* fos = dynamic_cast<field_overlay_source*>(
+                    lv.get_overlay_source());
+                auto iter = fos->fos_row_to_field_name.find(ov_vl.value());
+                if (iter != fos->fos_row_to_field_name.end()) {
+                    auto find_res = this->find_line_with_file(lv.get_top());
+                    if (find_res) {
+                        auto file_and_line = find_res.value();
+                        auto* format = file_and_line.first->get_format_ptr();
+                        auto fstates = format->get_field_states();
+                        auto state_iter = fstates.find(iter->second);
+                        if (state_iter != fstates.end()) {
+                            format->hide_field(iter->second,
+                                               !state_iter->second.is_hidden());
+                            lv.set_needs_update();
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
         case 'h':
         case 'H':
         case KEY_SLEFT:
@@ -2994,4 +3019,15 @@ logfile_sub_source::get_anchors()
     }
 
     return retval;
+}
+
+bool
+logfile_sub_source::text_handle_mouse(textview_curses& tc, mouse_event& me)
+{
+    if (tc.get_overlay_selection()
+        && me.is_click_in(mouse_button_t::BUTTON_LEFT, 2, 4))
+    {
+        this->list_input_handle_key(tc, ' ');
+    }
+    return true;
 }

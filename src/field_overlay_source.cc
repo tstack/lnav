@@ -54,6 +54,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     auto& vc = view_colors::singleton();
 
     this->fos_lines.clear();
+    this->fos_row_to_field_name.clear();
 
     if (lss.text_line_count() == 0) {
         this->fos_log_helper.clear();
@@ -292,7 +293,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     const log_format* last_format = nullptr;
 
     for (const auto& lv : this->fos_log_helper.ldh_line_values.lvv_values) {
-        auto& meta = lv.lv_meta;
+        const auto& meta = lv.lv_meta;
         if (!meta.lvm_format) {
             continue;
         }
@@ -305,7 +306,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         auto* curr_elf = dynamic_cast<external_log_format*>(curr_format);
         const auto format_name = curr_format->get_name().to_string();
         attr_line_t al;
-        std::string str, value_str = lv.to_string();
+        std::string value_str = lv.to_string();
 
         if (curr_format != last_format) {
             this->fos_lines.emplace_back(" Known message fields for table "
@@ -318,6 +319,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
 
         std::string field_name, orig_field_name;
+        line_range hl_range;
+        al.append(" ").append("|", VC_GRAPHIC.value(ACS_LTEE)).append(" ");
         if (meta.lvm_struct_name.empty()) {
             if (curr_elf && curr_elf->elf_body_field == meta.lvm_name) {
                 field_name = LOG_BODY;
@@ -332,31 +335,32 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             if (!this->fos_contexts.empty()) {
                 field_name = this->fos_contexts.top().c_prefix + field_name;
             }
-            str = "   " + field_name;
-        } else {
-            str = lnav::sql::mprintf("   jget(%s, '/%q')",
-                                     meta.lvm_struct_name.get(),
-                                     meta.lvm_name.get());
-        }
-        str.append(this->fos_known_key_size - (str.length() - 3), ' ');
+            if (meta.is_hidden()) {
+                al.append("\u25c7"_comment);
+            } else {
+                al.append("\u25c6"_ok);
+            }
+            al.append(" ");
+            auto prefix_len = al.utf8_length_or_length();
+            hl_range.lr_start = al.get_string().length();
+            al.append(field_name);
+            hl_range.lr_end = al.get_string().length();
+            al.pad_to(prefix_len + this->fos_known_key_size);
 
-        al.with_string(str);
-        readline_sqlite_highlighter(al, 0);
+            this->fos_row_to_field_name[this->fos_lines.size()] = meta.lvm_name;
+        } else {
+            auto jget_str = lnav::sql::mprintf("jget(%s, '/%q')",
+                                               meta.lvm_struct_name.get(),
+                                               meta.lvm_name.get());
+            hl_range.lr_start = al.get_string().length();
+            al.append(jget_str.in());
+            hl_range.lr_end = al.get_string().length();
+        }
+        readline_sqlite_highlighter_int(al, -1, hl_range);
 
         al.append(" = ").append(scrub_ws(value_str.c_str()));
-        if (meta.lvm_struct_name.empty()) {
-            auto prefix_len = field_name.length() - orig_field_name.length();
-            al.with_attr(string_attr(
-                line_range(3 + prefix_len, 3 + prefix_len + field_name.size()),
-                VC_STYLE.value(vc.attrs_for_ident(orig_field_name))));
-        } else {
-            al.with_attr(string_attr(
-                line_range(8, 8 + meta.lvm_struct_name.size()),
-                VC_STYLE.value(vc.attrs_for_ident(meta.lvm_struct_name))));
-        }
 
         this->fos_lines.emplace_back(al);
-        this->add_key_line_attrs(this->fos_known_key_size);
 
         if (meta.lvm_kind == value_kind_t::VALUE_STRUCT) {
             json_string js = extract(value_str.c_str());
@@ -684,9 +688,11 @@ field_overlay_source::list_header_for_overlay(const listview_curses& lv,
     }
 
     if (lv.get_overlay_selection()) {
-        retval.append("  Press ")
+        retval.append("  ")
+            .append("SPC"_hotkey)
+            .append(": hide/show field  ")
             .append("Esc"_hotkey)
-            .append(" to exit this panel.");
+            .append(": exit this panel");
     } else {
         retval.append("  Press ")
             .append("CTRL-]"_hotkey)

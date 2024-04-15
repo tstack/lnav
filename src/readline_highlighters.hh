@@ -38,6 +38,7 @@ void readline_regex_highlighter(attr_line_t& line, int x);
 
 void readline_command_highlighter(attr_line_t& line, int x);
 
+void readline_sqlite_highlighter_int(attr_line_t& line, int x, line_range sub);
 void readline_sqlite_highlighter(attr_line_t& line, int x);
 
 void readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub);

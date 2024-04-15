@@ -416,3 +416,48 @@ range of values.  The panel at the bottom of the view shows the data points
 themselves from the original source, the log file or the SQL query results.
 You can press :kbd:`TAB` to focus on the details panel so you can scroll
 around and get a closer look at the values.
+
+.. _ui_mouse:
+
+Mouse Support (v0.12.2+)
+------------------------
+
+With mouse support enabled, either through the `/ui/mouse/mode`
+configuration option or by pressing :kbd:`F2`, many of the UI
+elements will respond to mouse inputs:
+
+* clicking on the main view will move the cursor to the given
+  row and dragging will scroll the view as needed;
+* shift + clicking/dragging in the main view will highlight
+  lines and then toggle their bookmark status on release;
+* double-clicking will select the underlying token and
+  drag-selecting within a line will select the given text;
+* with selected text, pressing :kbd:`c` will copy the text to
+  the clipboard and it will be used as the suggestion for
+  searching/filtering;
+* clicking in the scroll area will move the view by a page and
+  dragging the scrollbar will move the view to the given spot;
+* clicking on the breadcrumb bar will select a crumb and
+  selecting a possibility from the popup will move to that
+  location in the view;
+* clicking on portions of the bottom status bar will trigger
+  a relevant action (e.g. clicking the line number will open
+  the command prompt with `:goto <current-line>`);
+* clicking on the configuration panel tabs (i.e. Files/Filters)
+  will open the selected panel and clicking parts of the
+  display in there will perform the relevant action (e.g.
+  clicking the diamond will enable/disable the file/filter);
+* clicking in a prompt will move the cursor to the location.
+
+.. note::
+
+   A downside of enabling mouse support is that normal text
+   selection and copy will no longer work.  While lnav has
+   some support for selection in the main view, there are
+   still likely to be cases where that is insufficient.
+   In those cases, you can press :kbd:`F2` to quickly
+   switch back-and-forth.  Or, some terminals have support
+   for switching using a modifier key, like
+   `iTerm <https://iterm2.com/documentation-preferences-profiles-terminal.html>_`
+   where pressing :kbd:`Option` will allow you to select
+   text and copy.

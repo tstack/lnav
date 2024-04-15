@@ -51,6 +51,10 @@ Interface changes:
   running:
 
   `:config /ui/movement/mode top`
+* In the parser details panel (opened by pressing `p`), you
+  can now hide/show fields by moving the cursor line to the
+  given field and pressing the space bar or by clicking on
+  the diamond with the mouse.
 
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good

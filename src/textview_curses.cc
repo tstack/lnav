@@ -462,8 +462,8 @@ textview_curses::handle_mouse(mouse_event& me)
                 [](const static_overlay_content& soc) {
 
                 },
-                [](const overlay_content& oc) {
-
+                [this](const overlay_content& oc) {
+                    this->set_overlay_selection(oc.oc_line);
                 },
                 [](const empty_space& es) {});
             break;

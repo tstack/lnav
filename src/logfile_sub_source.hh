@@ -201,7 +201,8 @@ class logfile_sub_source
     , public text_time_translator
     , public text_accel_source
     , public list_input_delegate
-    , public text_anchors {
+    , public text_anchors
+    , public text_delegate {
 public:
     const static bookmark_type_t BM_ERRORS;
     const static bookmark_type_t BM_WARNINGS;
@@ -687,6 +688,8 @@ public:
     }
 
     void text_crumbs_for_line(int line, std::vector<breadcrumb::crumb>& crumbs);
+
+    bool text_handle_mouse(textview_curses& tc, mouse_event& me);
 
     Result<bool, lnav::console::user_message> eval_sql_filter(
         sqlite3_stmt* stmt, iterator ld, logfile::const_iterator ll);

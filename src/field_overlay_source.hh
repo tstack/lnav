@@ -102,6 +102,7 @@ public:
     std::vector<attr_line_t> fos_lines;
     vis_line_t fos_meta_lines_row{0_vl};
     std::vector<attr_line_t> fos_meta_lines;
+    std::map<size_t, intern_string_t> fos_row_to_field_name;
 };
 
 #endif  // LNAV_FIELD_OVERLAY_SOURCE_H
