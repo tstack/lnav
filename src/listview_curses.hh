@@ -542,6 +542,7 @@ public:
         vis_line_t om_line;
     };
     struct overlay_content {
+        vis_line_t oc_main_line;
         vis_line_t oc_line;
     };
     struct empty_space {};

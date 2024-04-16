@@ -432,12 +432,6 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->add_key_line_attrs(key_size - 3);
     }
 
-    if (!this->fos_contexts.empty()
-        && !this->fos_contexts.top().c_show_discovered)
-    {
-        return;
-    }
-
     if (this->fos_log_helper.ldh_parser->dp_pairs.empty()) {
         this->fos_lines.emplace_back(" No discovered message fields");
     } else {

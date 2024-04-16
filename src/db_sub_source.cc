@@ -328,6 +328,16 @@ db_label_source::time_for_row(vis_line_t row)
     return row_info{this->dls_time_column[row], row};
 }
 
+nonstd::optional<attr_line_t>
+db_overlay_source::list_header_for_overlay(const listview_curses& lv,
+                                           vis_line_t line)
+{
+    attr_line_t retval;
+
+    retval.append(" JSON column details");
+    return retval;
+}
+
 void
 db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                                           vis_line_t row,
@@ -369,7 +379,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
             {
                 const std::string& header
                     = this->dos_labels->dls_headers[col].hm_name;
-                value_out.emplace_back(" JSON Column: " + header);
+                value_out.emplace_back(" Column: " + header);
 
                 retval += 1;
             }

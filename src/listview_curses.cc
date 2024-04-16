@@ -536,7 +536,7 @@ listview_curses::do_update()
                                 VC_ROLE.value(role_t::VCR_CURSOR_LINE));
                         }
                         this->lv_display_lines.push_back(
-                            overlay_content{overlay_row});
+                            overlay_content{row, overlay_row});
                         mvwattrline(this->lv_window,
                                     y,
                                     this->vc_x,
@@ -1158,12 +1158,14 @@ listview_curses::set_overlay_selection(nonstd::optional<vis_line_t> sel)
         this->lv_overlay_source->list_value_for_overlay(
             *this, this->get_selection(), overlay_content);
         if (!overlay_content.empty()) {
-            if (sel.value() >= 0 && sel.value() < overlay_content.size()) {
-                this->lv_overlay_focused = true;
-                this->lv_focused_overlay_selection = sel.value();
-            } else {
-                this->lv_overlay_focused = true;
+            this->lv_overlay_focused = true;
+            if (sel.value() < 0) {
                 this->lv_focused_overlay_selection = 0_vl;
+            } else if (sel.value() >= overlay_content.size()) {
+                this->lv_focused_overlay_selection
+                    = vis_line_t(overlay_content.size());
+            } else {
+                this->lv_focused_overlay_selection = sel.value();
             }
         }
     } else {

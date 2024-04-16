@@ -434,11 +434,37 @@ textview_curses::handle_mouse(mouse_event& me)
         this->set_needs_update();
     }
 
+    nonstd::optional<int> overlay_content_min_y;
+    nonstd::optional<int> overlay_content_max_y;
+    if (this->tc_press_line.is<overlay_content>()) {
+        auto main_line
+            = this->tc_press_line.get<overlay_content>().oc_main_line;
+        for (size_t lpc = 0; lpc < this->lv_display_lines.size(); lpc++) {
+            if (overlay_content_min_y
+                && !this->lv_display_lines[lpc].is<static_overlay_content>()
+                && !this->lv_display_lines[lpc].is<overlay_content>())
+            {
+                overlay_content_max_y = lpc;
+                break;
+            }
+            if (this->lv_display_lines[lpc].is<main_content>()) {
+                auto& mc = this->lv_display_lines[lpc].get<main_content>();
+                if (mc.mc_line == main_line) {
+                    overlay_content_min_y = lpc;
+                }
+            }
+        }
+        if (overlay_content_min_y && !overlay_content_max_y) {
+            overlay_content_max_y = this->lv_display_lines.size();
+        }
+    }
+
     auto* sub_delegate = dynamic_cast<text_delegate*>(this->tc_sub_source);
 
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED: {
             this->tc_text_selection_active = true;
+            this->tc_press_line = mouse_line;
             if (!this->lv_selectable) {
                 this->set_selectable(true);
             }
@@ -564,15 +590,33 @@ textview_curses::handle_mouse(mouse_event& me)
                         };
                     }
                 }
-            } else if (me.me_y < 0) {
-                this->shift_selection(listview_curses::shift_amount_t::up_line);
-                mouse_line = main_content{this->get_top()};
-            } else if (me.me_y >= height) {
-                this->shift_selection(
-                    listview_curses::shift_amount_t::down_line);
-            } else if (mouse_line.is<main_content>()) {
-                this->set_selection_without_context(
-                    mouse_line.get<main_content>().mc_line);
+            } else {
+                if (this->tc_press_line.is<main_content>()) {
+                    if (me.me_y < 0) {
+                        this->shift_selection(
+                            listview_curses::shift_amount_t::up_line);
+                    } else if (me.me_y >= height) {
+                        this->shift_selection(
+                            listview_curses::shift_amount_t::down_line);
+                    } else if (mouse_line.is<main_content>()) {
+                        this->set_selection_without_context(
+                            mouse_line.get<main_content>().mc_line);
+                    }
+                } else if (this->tc_press_line.is<overlay_content>()
+                           && overlay_content_min_y && overlay_content_max_y)
+                {
+                    if (me.me_y < overlay_content_min_y.value()) {
+                        this->set_overlay_selection(
+                            this->get_overlay_selection().value_or(0_vl)
+                            - 1_vl);
+                    } else if (me.me_y >= overlay_content_max_y.value()) {
+                        this->set_overlay_selection(
+                            this->get_overlay_selection().value() + 1_vl);
+                    } else if (mouse_line.is<overlay_content>()) {
+                        this->set_overlay_selection(
+                            mouse_line.get<overlay_content>().oc_line);
+                    }
+                }
             }
             break;
         }
