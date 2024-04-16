@@ -55,6 +55,9 @@ public:
         this->fos_meta_lines_row = -1_vl;
     }
 
+    std::vector<attr_line_t> list_overlay_menu(const listview_curses& lv,
+                                               vis_line_t row) override;
+
     nonstd::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t vl) override;
 
@@ -103,6 +106,20 @@ public:
     vis_line_t fos_meta_lines_row{0_vl};
     std::vector<attr_line_t> fos_meta_lines;
     std::map<size_t, intern_string_t> fos_row_to_field_name;
+
+    struct menu_item {
+        menu_item(vis_line_t line,
+                  line_range range,
+                  std::function<void(const std::string&)> action)
+            : mi_line(line), mi_range(range), mi_action(std::move(action))
+        {
+        }
+
+        vis_line_t mi_line;
+        line_range mi_range;
+        std::function<void(const std::string&)> mi_action;
+    };
+    std::vector<menu_item> fos_menu_items;
 };
 
 #endif  // LNAV_FIELD_OVERLAY_SOURCE_H

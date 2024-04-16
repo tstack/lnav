@@ -43,12 +43,24 @@ quote(const char* unquoted)
 
     for (int lpc = 0; unquoted[lpc]; lpc++) {
         if (isalnum(unquoted[lpc]) || unquoted[lpc] == '_'
+            || unquoted[lpc] == '-' || unquoted[lpc] == ' '
+            || unquoted[lpc] == ':' || unquoted[lpc] == ';'
             || unquoted[lpc] & 0x80)
         {
             retval.push_back(unquoted[lpc]);
         } else {
             retval.push_back('\\');
-            retval.push_back(unquoted[lpc]);
+            switch (unquoted[lpc]) {
+                case '\t':
+                    retval.push_back('t');
+                    break;
+                case '\n':
+                    retval.push_back('n');
+                    break;
+                default:
+                    retval.push_back(unquoted[lpc]);
+                    break;
+            }
         }
     }
 

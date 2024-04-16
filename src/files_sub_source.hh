@@ -61,7 +61,9 @@ public:
                               int line,
                               line_flags_t raw) override;
 
-    bool text_handle_mouse(textview_curses& tc, mouse_event& me) override;
+    bool text_handle_mouse(textview_curses& tc,
+                           const listview_curses::display_line_content_t&,
+                           mouse_event& me) override;
 
     size_t fss_last_line_len{0};
     attr_line_t fss_curr_line;

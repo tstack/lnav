@@ -440,7 +440,10 @@ files_overlay_source::list_static_overlay(const listview_curses& lv,
 }
 
 bool
-files_sub_source::text_handle_mouse(textview_curses& tc, mouse_event& me)
+files_sub_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t&,
+    mouse_event& me)
 {
     if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
         this->list_input_handle_key(tc, ' ');

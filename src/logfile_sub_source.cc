@@ -3022,8 +3022,27 @@ logfile_sub_source::get_anchors()
 }
 
 bool
-logfile_sub_source::text_handle_mouse(textview_curses& tc, mouse_event& me)
+logfile_sub_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t& mouse_line,
+    mouse_event& me)
 {
+    auto* fos = dynamic_cast<field_overlay_source*>(tc.get_overlay_source());
+
+    if (mouse_line.is<listview_curses::overlay_menu>() && tc.tc_selected_text) {
+        auto& om = mouse_line.get<listview_curses::overlay_menu>();
+        auto& sti = tc.tc_selected_text.value();
+
+        for (const auto& mi : fos->fos_menu_items) {
+            if (om.om_line == mi.mi_line
+                && me.is_click_in(mouse_button_t::BUTTON_LEFT, mi.mi_range))
+            {
+                mi.mi_action(sti.sti_value);
+                break;
+            }
+        }
+    }
+
     if (tc.get_overlay_selection()
         && me.is_click_in(mouse_button_t::BUTTON_LEFT, 2, 4))
     {

@@ -432,9 +432,9 @@ elements will respond to mouse inputs:
   lines and then toggle their bookmark status on release;
 * double-clicking will select the underlying token and
   drag-selecting within a line will select the given text;
-* with selected text, pressing :kbd:`c` will copy the text to
-  the clipboard and it will be used as the suggestion for
-  searching/filtering;
+* when text is selected, a menu will pop up that can be used
+  to filter based on the current text, search for it, or copy
+  it to the clipboard;
 * clicking in the scroll area will move the view by a page and
   dragging the scrollbar will move the view to the given spot;
 * clicking on the breadcrumb bar will select a crumb and
@@ -457,7 +457,14 @@ elements will respond to mouse inputs:
    still likely to be cases where that is insufficient.
    In those cases, you can press :kbd:`F2` to quickly
    switch back-and-forth.  Or, some terminals have support
-   for switching using a modifier key, like
-   `iTerm <https://iterm2.com/documentation-preferences-profiles-terminal.html>_`
-   where pressing :kbd:`Option` will allow you to select
-   text and copy.
+   for switching while a modifier is pressed:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Key
+        - Terminal
+      * - :kbd:`Option`
+        - iTerm, Hyper
+      * - :kbd:`Fn`
+        - Terminal.app

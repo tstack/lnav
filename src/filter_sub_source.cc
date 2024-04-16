@@ -686,7 +686,10 @@ filter_sub_source::list_input_handle_scroll_out(listview_curses& lv)
 }
 
 bool
-filter_sub_source::text_handle_mouse(textview_curses& tc, mouse_event& me)
+filter_sub_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t&,
+    mouse_event& me)
 {
     if (this->fss_editing) {
         return true;

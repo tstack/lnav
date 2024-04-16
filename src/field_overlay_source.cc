@@ -31,6 +31,7 @@
 
 #include "base/humanize.time.hh"
 #include "base/snippet_highlighters.hh"
+#include "command_executor.hh"
 #include "config.h"
 #include "log.annotate.hh"
 #include "log_format_ext.hh"
@@ -513,10 +514,10 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     if (!line_meta_opt) {
         return;
     }
+    const auto* tc = dynamic_cast<const textview_curses*>(&lv);
     auto& vc = view_colors::singleton();
     const auto& line_meta = *(line_meta_opt.value());
     size_t filename_width = this->fos_lss.get_filename_offset();
-    const auto* tc = dynamic_cast<const textview_curses*>(&lv);
 
     if (!line_meta.bm_comment.empty()) {
         const auto* lead = line_meta.bm_tags.empty() ? " \u2514 " : " \u251c ";
@@ -664,6 +665,81 @@ field_overlay_source::list_value_for_overlay(
         value_out = this->fos_lines;
     }
     this->build_meta_line(lv, value_out, row);
+}
+
+std::vector<attr_line_t>
+field_overlay_source::list_overlay_menu(const listview_curses& lv,
+                                        vis_line_t row)
+{
+    const auto* tc = dynamic_cast<const textview_curses*>(&lv);
+    std::vector<attr_line_t> retval;
+
+    if (!tc->tc_text_selection_active && tc->tc_selected_text) {
+        const auto& sti = tc->tc_selected_text.value();
+
+        if (sti.sti_line == row) {
+            auto left = std::max(0, sti.sti_x - 2);
+
+            this->fos_menu_items.clear();
+            retval.emplace_back(attr_line_t().pad_to(left).append(
+                " Filter   Other   "_status_title));
+            {
+                attr_line_t al;
+
+                al.append(" ").append("\u2714 IN"_ok).append("   ");
+                int start = left;
+                this->fos_menu_items.emplace_back(
+                    1_vl,
+                    line_range{start, start + (int) al.length()},
+                    [this](const std::string& value) {
+                        auto cmd = fmt::format(FMT_STRING(":filter-in {}"),
+                                               lnav::pcre2pp::quote(value));
+                        execute_any(*this->fos_lss.get_exec_context(), cmd);
+                    });
+                start += al.length();
+                al.append(":mag_right:"_emoji)
+                    .append(" Search ")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+                this->fos_menu_items.emplace_back(
+                    1_vl,
+                    line_range{start, start + (int) al.length()},
+                    [this](const std::string& value) {
+                        auto cmd = fmt::format(FMT_STRING("/{}"),
+                                               lnav::pcre2pp::quote(value));
+                        execute_any(*this->fos_lss.get_exec_context(), cmd);
+                    });
+                retval.emplace_back(attr_line_t().pad_to(left).append(al));
+            }
+            {
+                attr_line_t al;
+
+                al.append(" ").append("\u2718 OUT"_error).append("  ");
+                int start = left;
+                this->fos_menu_items.emplace_back(
+                    2_vl,
+                    line_range{start, start + (int) al.length()},
+                    [this](const std::string& value) {
+                        auto cmd = fmt::format(FMT_STRING(":filter-out {}"),
+                                               lnav::pcre2pp::quote(value));
+                        execute_any(*this->fos_lss.get_exec_context(), cmd);
+                    });
+                start += al.length();
+                al.append(":clipboard:"_emoji)
+                    .append(" Copy   ")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+                this->fos_menu_items.emplace_back(
+                    2_vl,
+                    line_range{start, start + (int) al.length()},
+                    [this](const std::string& value) {
+                        execute_any(*this->fos_lss.get_exec_context(),
+                                    "|lnav-copy-text");
+                    });
+                retval.emplace_back(attr_line_t().pad_to(left).append(al));
+            }
+        }
+    }
+
+    return retval;
 }
 
 nonstd::optional<attr_line_t>

@@ -575,6 +575,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _info(
                           VC_ROLE.template value(role_t::VCR_INFO));
 }
 
+inline std::pair<std::string, string_attr_pair> operator"" _status_title(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_STATUS_TITLE));
+}
+
 inline std::pair<std::string, string_attr_pair> operator"" _symbol(
     const char* str, std::size_t len)
 {

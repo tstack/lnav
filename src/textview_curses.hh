@@ -551,7 +551,10 @@ class text_delegate {
 public:
     virtual ~text_delegate() = default;
 
-    virtual bool text_handle_mouse(textview_curses& tc, mouse_event& me)
+    virtual bool text_handle_mouse(
+        textview_curses& tc,
+        const listview_curses::display_line_content_t&,
+        mouse_event& me)
     {
         return false;
     }
@@ -801,12 +804,14 @@ public:
     nonstd::optional<role_t> tc_disabled_cursor_role;
 
     struct selected_text_info {
+        int sti_x;
         int64_t sti_line;
         line_range sti_range;
         std::string sti_value;
     };
 
     nonstd::optional<selected_text_info> tc_selected_text;
+    bool tc_text_selection_active{false};
 
 protected:
     class grep_highlighter {

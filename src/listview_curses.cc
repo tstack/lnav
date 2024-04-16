@@ -475,6 +475,28 @@ listview_curses::do_update()
 
                     lr.lr_start = this->lv_left;
                     lr.lr_end = this->lv_left + wrap_width;
+
+                    auto ov_menu = this->lv_overlay_source->list_overlay_menu(
+                        *this, row);
+                    auto ov_menu_row = 0_vl;
+                    for (auto& ov_menu_line : ov_menu) {
+                        if (y >= bottom) {
+                            break;
+                        }
+
+                        this->lv_display_lines.push_back(overlay_menu{
+                            ov_menu_row,
+                        });
+                        mvwattrline(this->lv_window,
+                                    y,
+                                    this->vc_x,
+                                    ov_menu_line,
+                                    lr,
+                                    role_t::VCR_ALT_ROW);
+                        ov_menu_row += 1_vl;
+                        ++y;
+                    }
+
                     this->lv_overlay_source->list_value_for_overlay(
                         *this, row, row_overlay_content);
                     auto overlay_height = this->get_overlay_height(

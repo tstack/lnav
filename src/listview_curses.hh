@@ -114,6 +114,12 @@ public:
         return false;
     }
 
+    virtual std::vector<attr_line_t> list_overlay_menu(
+        const listview_curses& lv, vis_line_t line)
+    {
+        return {};
+    }
+
     virtual nonstd::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t line)
     {
@@ -528,6 +534,24 @@ public:
 
     virtual void invoke_scroll() { this->lv_scroll(this); }
 
+    struct main_content {
+        vis_line_t mc_line;
+    };
+    struct static_overlay_content {};
+    struct overlay_menu {
+        vis_line_t om_line;
+    };
+    struct overlay_content {
+        vis_line_t oc_line;
+    };
+    struct empty_space {};
+
+    using display_line_content_t = mapbox::util::variant<main_content,
+                                                         overlay_menu,
+                                                         static_overlay_content,
+                                                         overlay_content,
+                                                         empty_space>;
+
 protected:
     void delegate_scroll_out()
     {
@@ -580,20 +604,6 @@ protected:
     int lv_mouse_y{-1};
     lv_mode_t lv_mouse_mode{lv_mode_t::NONE};
     vis_line_t lv_tail_space{1};
-
-    struct main_content {
-        vis_line_t mc_line;
-    };
-    struct static_overlay_content {};
-    struct overlay_content {
-        vis_line_t oc_line;
-    };
-    struct empty_space {};
-
-    using display_line_content_t = mapbox::util::variant<main_content,
-                                                         static_overlay_content,
-                                                         overlay_content,
-                                                         empty_space>;
 
     std::vector<display_line_content_t> lv_display_lines;
     unsigned int lv_scroll_top{0};

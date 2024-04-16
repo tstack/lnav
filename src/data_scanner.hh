@@ -130,8 +130,7 @@ public:
     static const char* token2name(data_token_t token);
 
     struct capture_t {
-        capture_t()
-        { /* We don't initialize anything since it's a perf hit. */
+        capture_t() { /* We don't initialize anything since it's a perf hit. */
         }
 
         capture_t(int begin, int end) : c_begin(begin), c_end(end)
@@ -187,6 +186,14 @@ public:
             return string_fragment::from_byte_range(this->tr_data,
                                                     this->tr_capture.c_begin,
                                                     this->tr_capture.c_end);
+        }
+
+        string_fragment inner_string_fragment() const
+        {
+            return string_fragment::from_byte_range(
+                this->tr_data,
+                this->tr_inner_capture.c_begin,
+                this->tr_inner_capture.c_end);
         }
 
         std::string to_string() const

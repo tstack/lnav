@@ -1,6 +1,19 @@
 ## lnav v0.12.2
 
 Features:
+* Added a `journald://` URL handler that will call `journalctl`
+  and pass any query parameters as options.  For example, the
+  following command:
+
+  ```
+  $ lnav 'journal://?since=yesterday'
+  ```
+
+  Will execute the following and capture the output:
+
+  ```
+  journalctl --output=json -f --since=yesterday
+  ```
 * Added the "last-word" line-format field shortening algorithm
   from @flicus.
 * Added a `stats.hist` PRQL transform that produces a histogram
@@ -19,9 +32,9 @@ Features:
     lines and then toggle their bookmark status on release;
   - double-clicking will select the underlying token and
     drag-selecting within a line will select the given text;
-  - when text is selected: pressing `c` will copy the text to
-    the clipboard; the text will be used as the suggestion for
-    searching/filtering;
+  - when text is selected, a menu will pop up that can be used
+    to filter based on the current text, search for it, or copy
+    it to the clipboard;
   - clicking in the scroll area will move the view by a page and
     dragging the scrollbar will move the view to the given spot;
   - clicking on the breadcrumb bar will select a crumb and

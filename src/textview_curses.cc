@@ -426,22 +426,24 @@ textview_curses::handle_mouse(mouse_event& me)
         : this->lv_display_lines[me.me_y];
     this->get_dimensions(height, width);
 
-    auto* sub_delegate = dynamic_cast<text_delegate*>(this->tc_sub_source);
-
-    if (me.me_button != mouse_button_t::BUTTON_LEFT
-        || me.me_state != mouse_button_state_t::BUTTON_STATE_RELEASED)
+    if (!mouse_line.is<overlay_menu>()
+        && (me.me_button != mouse_button_t::BUTTON_LEFT
+            || me.me_state != mouse_button_state_t::BUTTON_STATE_RELEASED))
     {
         this->tc_selected_text = nonstd::nullopt;
         this->set_needs_update();
     }
 
+    auto* sub_delegate = dynamic_cast<text_delegate*>(this->tc_sub_source);
+
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED: {
+            this->tc_text_selection_active = true;
             if (!this->lv_selectable) {
                 this->set_selectable(true);
             }
             mouse_line.match(
-                [this, &me, sub_delegate](const main_content& mc) {
+                [this, &me, sub_delegate, &mouse_line](const main_content& mc) {
                     if (this->vc_enabled) {
                         if (this->tc_supports_marks
                             && me.is_modifier_pressed(
@@ -453,12 +455,14 @@ textview_curses::handle_mouse(mouse_event& me)
                         this->tc_press_event = me;
                     }
                     if (this->tc_delegate != nullptr) {
-                        this->tc_delegate->text_handle_mouse(*this, me);
+                        this->tc_delegate->text_handle_mouse(
+                            *this, mouse_line, me);
                     }
                     if (sub_delegate != nullptr) {
-                        sub_delegate->text_handle_mouse(*this, me);
+                        sub_delegate->text_handle_mouse(*this, mouse_line, me);
                     }
                 },
+                [](const overlay_menu& om) {},
                 [](const static_overlay_content& soc) {
 
                 },
@@ -472,8 +476,9 @@ textview_curses::handle_mouse(mouse_event& me)
             if (!this->lv_selectable) {
                 this->set_selectable(true);
             }
+            this->tc_text_selection_active = false;
             mouse_line.match(
-                [this, &me, sub_delegate](const main_content& mc) {
+                [this, &me, &mouse_line, sub_delegate](const main_content& mc) {
                     if (this->vc_enabled) {
                         if (this->tc_supports_marks) {
                             attr_line_t al;
@@ -481,8 +486,9 @@ textview_curses::handle_mouse(mouse_event& me)
                             this->textview_value_for_row(mc.mc_line, al);
                             auto line_sf
                                 = string_fragment::from_str(al.get_string());
-                            auto cursor_sf
-                                = line_sf.sub_cell_range(me.me_x, me.me_x);
+                            auto cursor_sf = line_sf.sub_cell_range(
+                                this->lv_left + me.me_x,
+                                this->lv_left + me.me_x);
                             auto ds = data_scanner(line_sf);
                             auto tf = this->tc_sub_source->get_text_format();
                             while (true) {
@@ -492,9 +498,10 @@ textview_curses::handle_mouse(mouse_event& me)
                                 }
 
                                 auto tok = tok_res.value();
-                                auto tok_sf = tok.to_string_fragment();
+                                auto tok_sf = tok.inner_string_fragment();
                                 if (tok_sf.contains(cursor_sf)) {
                                     this->tc_selected_text = selected_text_info{
+                                        me.me_x,
                                         mc.mc_line,
                                         line_range{
                                             tok_sf.sf_begin,
@@ -510,13 +517,17 @@ textview_curses::handle_mouse(mouse_event& me)
                         this->set_selection_without_context(mc.mc_line);
                     }
                     if (this->tc_delegate != nullptr) {
-                        this->tc_delegate->text_handle_mouse(*this, me);
+                        this->tc_delegate->text_handle_mouse(
+                            *this, mouse_line, me);
                     }
                     if (sub_delegate != nullptr) {
-                        sub_delegate->text_handle_mouse(*this, me);
+                        sub_delegate->text_handle_mouse(*this, mouse_line, me);
                     }
                 },
                 [](const static_overlay_content& soc) {
+
+                },
+                [](const overlay_menu& om) {
 
                 },
                 [](const overlay_content& oc) {
@@ -526,19 +537,24 @@ textview_curses::handle_mouse(mouse_event& me)
             break;
         }
         case mouse_button_state_t::BUTTON_STATE_DRAGGED: {
+            this->tc_text_selection_active = true;
             if (!this->vc_enabled) {
             } else if (me.me_y == me.me_press_y) {
                 if (mouse_line.is<main_content>()) {
                     auto& mc = mouse_line.get<main_content>();
                     attr_line_t al;
-                    auto low_x = std::min(me.me_x, me.me_press_x);
-                    auto high_x = std::max(me.me_x, me.me_press_x);
+                    auto low_x = std::min(this->lv_left + me.me_x,
+                                          this->lv_left + me.me_press_x);
+                    auto high_x = std::max(this->lv_left + me.me_x,
+                                           this->lv_left + me.me_press_x);
 
+                    this->set_selection_without_context(mc.mc_line);
                     this->textview_value_for_row(mc.mc_line, al);
                     auto line_sf = string_fragment::from_str(al.get_string());
                     auto cursor_sf = line_sf.sub_cell_range(low_x, high_x);
                     if (!cursor_sf.empty()) {
                         this->tc_selected_text = {
+                            me.me_press_x,
                             mc.mc_line,
                             line_range{
                                 cursor_sf.sf_begin,
@@ -561,6 +577,7 @@ textview_curses::handle_mouse(mouse_event& me)
             break;
         }
         case mouse_button_state_t::BUTTON_STATE_RELEASED: {
+            this->tc_text_selection_active = false;
             if (this->vc_enabled) {
                 if (this->tc_selection_start) {
                     this->toggle_user_mark(&BM_USER,
@@ -571,10 +588,14 @@ textview_curses::handle_mouse(mouse_event& me)
                 this->tc_selection_start = nonstd::nullopt;
             }
             if (this->tc_delegate != nullptr) {
-                this->tc_delegate->text_handle_mouse(*this, me);
+                this->tc_delegate->text_handle_mouse(*this, mouse_line, me);
             }
             if (sub_delegate != nullptr) {
-                sub_delegate->text_handle_mouse(*this, me);
+                sub_delegate->text_handle_mouse(*this, mouse_line, me);
+            }
+            if (mouse_line.is<overlay_menu>()) {
+                this->tc_selected_text = nonstd::nullopt;
+                this->set_needs_update();
             }
             break;
         }

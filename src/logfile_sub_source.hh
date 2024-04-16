@@ -689,7 +689,9 @@ public:
 
     void text_crumbs_for_line(int line, std::vector<breadcrumb::crumb>& crumbs);
 
-    bool text_handle_mouse(textview_curses& tc, mouse_event& me);
+    bool text_handle_mouse(textview_curses& tc,
+                           const listview_curses::display_line_content_t&,
+                           mouse_event& me);
 
     Result<bool, lnav::console::user_message> eval_sql_filter(
         sqlite3_stmt* stmt, iterator ld, logfile::const_iterator ll);
@@ -701,6 +703,8 @@ public:
     bool is_line_meta_changed() const { return this->lss_line_meta_changed; }
 
     void set_exec_context(exec_context* ec) { this->lss_exec_context = ec; }
+
+    exec_context* get_exec_context() const { return this->lss_exec_context; }
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
