@@ -48,6 +48,7 @@
 #include "log_accel.hh"
 #include "md2attr_line.hh"
 #include "ptimec.hh"
+#include "shlex.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
@@ -1388,19 +1389,57 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             if (ov_vl) {
                 auto* fos = dynamic_cast<field_overlay_source*>(
                     lv.get_overlay_source());
-                auto iter = fos->fos_row_to_field_name.find(ov_vl.value());
-                if (iter != fos->fos_row_to_field_name.end()) {
+                auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
+                if (iter != fos->fos_row_to_field_meta.end()) {
                     auto find_res = this->find_line_with_file(lv.get_top());
                     if (find_res) {
                         auto file_and_line = find_res.value();
                         auto* format = file_and_line.first->get_format_ptr();
                         auto fstates = format->get_field_states();
-                        auto state_iter = fstates.find(iter->second);
+                        auto state_iter = fstates.find(iter->second.lvm_name);
                         if (state_iter != fstates.end()) {
-                            format->hide_field(iter->second,
+                            format->hide_field(iter->second.lvm_name,
                                                !state_iter->second.is_hidden());
                             lv.set_needs_update();
                         }
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+        case '#': {
+            auto ov_vl = lv.get_overlay_selection();
+            if (ov_vl) {
+                auto* fos = dynamic_cast<field_overlay_source*>(
+                    lv.get_overlay_source());
+                auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
+                if (iter != fos->fos_row_to_field_meta.end()) {
+                    const auto& meta = iter->second;
+                    std::string cmd;
+
+                    switch (meta.to_chart_type()) {
+                        case chart_type_t::none:
+                            break;
+                        case chart_type_t::hist: {
+                            auto prql = fmt::format(
+                                FMT_STRING(
+                                    "from {} | stats.hist {} slice:'1h'"),
+                                meta.lvm_format.value()->get_name(),
+                                meta.lvm_name);
+                            cmd = fmt::format(FMT_STRING(":prompt sql ; '{}'"),
+                                              shlex::escape(prql));
+                            break;
+                        }
+                        case chart_type_t::spectro:
+                            cmd = fmt::format(FMT_STRING(":spectrogram {}"),
+                                              meta.lvm_name);
+                            break;
+                    }
+                    if (!cmd.empty()) {
+                        this->lss_exec_context
+                            ->with_provenance(exec_context::mouse_input{})
+                            ->execute(cmd);
                     }
                 }
                 return true;
@@ -3043,10 +3082,12 @@ logfile_sub_source::text_handle_mouse(
         }
     }
 
-    if (tc.get_overlay_selection()
-        && me.is_click_in(mouse_button_t::BUTTON_LEFT, 2, 4))
-    {
-        this->list_input_handle_key(tc, ' ');
+    if (tc.get_overlay_selection()) {
+        if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 2, 4)) {
+            this->list_input_handle_key(tc, ' ');
+        } else if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 5, 6)) {
+            this->list_input_handle_key(tc, '#');
+        }
     }
     return true;
 }

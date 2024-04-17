@@ -121,12 +121,13 @@ struct exec_context {
 
     void clear_output();
 
+    struct mouse_input {};
     struct user {};
     struct file_open {
         std::string fo_name;
     };
 
-    using provenance_t = mapbox::util::variant<user, file_open>;
+    using provenance_t = mapbox::util::variant<user, mouse_input, file_open>;
 
     struct provenance_guard {
         explicit provenance_guard(exec_context* context, provenance_t prov)
@@ -149,8 +150,15 @@ struct exec_context {
             }
         }
 
+        exec_context* operator->() { return this->pg_context; }
+
         exec_context* pg_context;
     };
+
+    provenance_guard with_provenance(provenance_t prov)
+    {
+        return provenance_guard{this, prov};
+    }
 
     struct source_guard {
         source_guard(exec_context* context) : sg_context(context) {}

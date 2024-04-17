@@ -173,6 +173,8 @@ public:
 
     void set_suggestion(const std::string& value);
 
+    bool is_active() const { return this->rc_active_context != -1; }
+
     readline_context* get_active_context() const
     {
         require(this->rc_active_context != -1);
@@ -275,6 +277,8 @@ public:
     {
         this->clear_possibilities(lnav::enums::to_underlying(context), args...);
     }
+
+    void append_to_history(int context, const std::string& line);
 
     const std::vector<std::string>& get_matches() const
     {

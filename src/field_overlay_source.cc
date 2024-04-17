@@ -55,7 +55,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     auto& vc = view_colors::singleton();
 
     this->fos_lines.clear();
-    this->fos_row_to_field_name.clear();
+    this->fos_row_to_field_meta.clear();
 
     if (lss.text_line_count() == 0) {
         this->fos_log_helper.clear();
@@ -342,13 +342,23 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                 al.append("\u25c6"_ok);
             }
             al.append(" ");
+
+            switch (meta.to_chart_type()) {
+                case chart_type_t::none:
+                    al.append("   ");
+                    break;
+                case chart_type_t::hist:
+                case chart_type_t::spectro:
+                    al.append(":bar_chart:"_emoji).append(" ");
+                    break;
+            }
             auto prefix_len = al.utf8_length_or_length();
             hl_range.lr_start = al.get_string().length();
             al.append(field_name);
             hl_range.lr_end = al.get_string().length();
             al.pad_to(prefix_len + this->fos_known_key_size);
 
-            this->fos_row_to_field_name[this->fos_lines.size()] = meta.lvm_name;
+            this->fos_row_to_field_meta.emplace(this->fos_lines.size(), meta);
         } else {
             auto jget_str = lnav::sql::mprintf("jget(%s, '/%q')",
                                                meta.lvm_struct_name.get(),
@@ -436,7 +446,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         this->fos_lines.emplace_back(" No discovered message fields");
     } else {
         this->fos_lines.emplace_back(
-            " Discovered fields for logline table from message format: ");
+            " Discovered fields for logline table from message "
+            "format: ");
         this->fos_lines.back().with_attr(
             string_attr(line_range(23, 23 + 7),
                         VC_STYLE.value(vc.attrs_for_ident("logline"))));
@@ -688,7 +699,9 @@ field_overlay_source::list_overlay_menu(const listview_curses& lv,
                     [this](const std::string& value) {
                         auto cmd = fmt::format(FMT_STRING(":filter-in {}"),
                                                lnav::pcre2pp::quote(value));
-                        execute_any(*this->fos_lss.get_exec_context(), cmd);
+                        this->fos_lss.get_exec_context()
+                            ->with_provenance(exec_context::mouse_input{})
+                            ->execute(cmd);
                     });
                 start += al.length();
                 al.append(":mag_right:"_emoji)
@@ -700,7 +713,9 @@ field_overlay_source::list_overlay_menu(const listview_curses& lv,
                     [this](const std::string& value) {
                         auto cmd = fmt::format(FMT_STRING("/{}"),
                                                lnav::pcre2pp::quote(value));
-                        execute_any(*this->fos_lss.get_exec_context(), cmd);
+                        this->fos_lss.get_exec_context()
+                            ->with_provenance(exec_context::mouse_input{})
+                            ->execute(cmd);
                     });
                 retval.emplace_back(attr_line_t().pad_to(left).append(al));
             }
@@ -715,7 +730,9 @@ field_overlay_source::list_overlay_menu(const listview_curses& lv,
                     [this](const std::string& value) {
                         auto cmd = fmt::format(FMT_STRING(":filter-out {}"),
                                                lnav::pcre2pp::quote(value));
-                        execute_any(*this->fos_lss.get_exec_context(), cmd);
+                        this->fos_lss.get_exec_context()
+                            ->with_provenance(exec_context::mouse_input{})
+                            ->execute(cmd);
                     });
                 start += al.length();
                 al.append(":clipboard:"_emoji)
@@ -725,8 +742,8 @@ field_overlay_source::list_overlay_menu(const listview_curses& lv,
                     2_vl,
                     line_range{start, start + (int) al.length()},
                     [this](const std::string& value) {
-                        execute_any(*this->fos_lss.get_exec_context(),
-                                    "|lnav-copy-text");
+                        this->fos_lss.get_exec_context()->execute(
+                            "|lnav-copy-text");
                     });
                 retval.emplace_back(attr_line_t().pad_to(left).append(al));
             }

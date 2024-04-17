@@ -670,13 +670,17 @@ static readline_context::command_t sql_commands[] = {
     {
         "stats.hist",
         prql_cmd_sort,
-        help_text("stats.hist", "Count values per bucket of time")
+        help_text("stats.hist", "Count the top values per bucket of time")
             .prql_function()
             .with_tags({"prql"})
             .with_parameter(help_text{"col", "The column to count"})
             .with_parameter(help_text{"slice", "The time slice"}
                                 .optional()
-                                .with_default_value("'5m'"))
+                                .with_default_value("'1h'"))
+            .with_parameter(
+                help_text{"top", "The limit on the number of values to report"}
+                    .optional()
+                    .with_default_value("10"))
             .with_example({
                 "To chart the values of ex_procname over time",
                 "from lnav_example_log | stats.hist ex_procname",

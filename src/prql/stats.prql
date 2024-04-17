@@ -18,12 +18,16 @@ let by = func column values rel <relation> -> <relation> (
   group {column} (aggregate values)
 )
 
-let hist = func column slice:'5m' rel <relation> -> (
+let hist = func column slice:'1h' top:10 rel <relation> -> (
   rel
   group { tslice = (time.slice log_time_msecs slice), column } (
     aggregate { total = count this }
   )
   group { tslice } (
-    aggregate { v = json.group_object column total }
+    window (
+        sort {-total}
+        take top
+        aggregate { v = json.group_object column total }
+    )
   )
 )

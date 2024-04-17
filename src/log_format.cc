@@ -236,6 +236,35 @@ log_format::opid_descriptors::to_string(
     return retval;
 }
 
+chart_type_t
+logline_value_meta::to_chart_type() const
+{
+    auto retval = chart_type_t::hist;
+    switch (this->lvm_kind) {
+        case value_kind_t::VALUE_NULL:
+            retval = chart_type_t::none;
+            break;
+        case value_kind_t::VALUE_INTEGER:
+            if (!this->lvm_identifier) {
+                retval = chart_type_t::spectro;
+            }
+            break;
+        case value_kind_t::VALUE_FLOAT:
+            retval = chart_type_t::spectro;
+            break;
+        case value_kind_t::VALUE_XML:
+        case value_kind_t::VALUE_JSON:
+        case value_kind_t::VALUE_BOOLEAN:
+        case value_kind_t::VALUE_TIMESTAMP:
+            retval = chart_type_t::none;
+            break;
+        default:
+            break;
+    }
+
+    return retval;
+}
+
 struct line_range
 logline_value::origin_in_full_msg(const char* msg, ssize_t len) const
 {

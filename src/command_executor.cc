@@ -1156,6 +1156,28 @@ exec_context::exec_context(logline_value_vector* line_values,
 void
 exec_context::execute(const std::string& cmdline)
 {
+    if (this->get_provenance<mouse_input>()) {
+        require(!lnav_data.ld_rl_view->is_active());
+
+        int context = 0;
+        switch (cmdline[0]) {
+            case '/':
+                context = lnav::enums::to_underlying(ln_mode_t::SEARCH);
+                break;
+            case ':':
+                context = lnav::enums::to_underlying(ln_mode_t::COMMAND);
+                break;
+            case ';':
+                context = lnav::enums::to_underlying(ln_mode_t::SQL);
+                break;
+            case '|':
+                context = lnav::enums::to_underlying(ln_mode_t::EXEC);
+                break;
+        }
+
+        lnav_data.ld_rl_view->append_to_history(context, cmdline.substr(1));
+    }
+
     auto exec_res = execute_any(*this, cmdline);
     if (exec_res.isErr()) {
         this->ec_error_callback_stack.back()(exec_res.unwrapErr());

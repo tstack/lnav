@@ -407,7 +407,18 @@ string_fragment::sub_cell_range(int cell_start, int cell_end) const
         if (read_res.isErr()) {
             byte_index += 1;
         } else {
-            cell_index += wcwidth(read_res.unwrap());
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        cell_index += 1;
+                    } while (cell_index % 8);
+                    break;
+                default:
+                    cell_index += wcwidth(read_res.unwrap());
+                    break;
+            }
         }
     }
     if (cell_start == cell_index) {
@@ -436,7 +447,18 @@ string_fragment::column_width() const
         if (read_res.isErr()) {
             retval += 1;
         } else {
-            retval += wcwidth(read_res.unwrap());
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        retval += 1;
+                    } while (retval % 8);
+                    break;
+                default:
+                    retval += wcwidth(read_res.unwrap());
+                    break;
+            }
         }
     }
 

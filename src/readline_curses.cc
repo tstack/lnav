@@ -685,6 +685,12 @@ readline_context::readline_context(std::string name,
 }
 
 void
+readline_context::set_history()
+{
+    history_set_history_state(&this->rc_history);
+}
+
+void
 readline_context::load()
 {
     char buffer[128];
@@ -1160,6 +1166,11 @@ readline_curses::start()
 
                         this->rc_contexts[context]->rem_possibility(
                             std::string(type), std::string(&msg[prompt_start]));
+                    } else if (sscanf(msg, "ah:%d:%n", &context, &prompt_start)
+                               == 1)
+                    {
+                        this->rc_contexts[context]->set_history();
+                        add_history(&msg[prompt_start]);
                     } else if (sscanf(msg, "cpre:%d", &context) == 1) {
                         this->rc_contexts[context]->rc_prefixes.clear();
                     } else if (sscanf(msg, "cp:%d:%s", &context, type)) {
@@ -1289,6 +1300,23 @@ readline_curses::line_ready(const char* line)
         {
             add_history(line);
         }
+    }
+}
+
+void
+readline_curses::append_to_history(int context, const std::string& line)
+{
+    if (line.empty()) {
+        return;
+    }
+
+    char buffer[2048];
+    snprintf(buffer, sizeof(buffer), "ah:%d:%s", context, line.c_str());
+    if (sendstring(
+            this->rc_command_pipe[RCF_MASTER], buffer, strlen(buffer) + 1)
+        == -1)
+    {
+        perror("add_possibility: write failed");
     }
 }
 

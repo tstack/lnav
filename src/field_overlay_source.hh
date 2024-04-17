@@ -105,7 +105,7 @@ public:
     std::vector<attr_line_t> fos_lines;
     vis_line_t fos_meta_lines_row{0_vl};
     std::vector<attr_line_t> fos_meta_lines;
-    std::map<size_t, intern_string_t> fos_row_to_field_name;
+    std::map<size_t, logline_value_meta> fos_row_to_field_meta;
 
     struct menu_item {
         menu_item(vis_line_t line,

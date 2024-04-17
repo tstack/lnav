@@ -1532,6 +1532,19 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
                 me.me_press_y = me.me_y - tc->get_y();
                 me.me_press_x = me.me_x - tc->get_x();
                 this->lb_last_view = tc;
+
+                switch (lnav_data.ld_mode) {
+                    case ln_mode_t::PAGING:
+                        break;
+                    case ln_mode_t::FILES:
+                    case ln_mode_t::FILTER:
+                        // Clicking on the main view when the config panels are
+                        // open should return us to paging.
+                        set_view_mode(ln_mode_t::PAGING);
+                        break;
+                    default:
+                        break;
+                }
             } else {
                 for (auto* vc : VIEWS) {
                     if (vc->contains(me.me_x, me.me_y)) {

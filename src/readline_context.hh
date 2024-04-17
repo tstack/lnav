@@ -107,6 +107,8 @@ public:
 
     void load();
 
+    void set_history();
+
     void save();
 
     void add_possibility(const std::string& type, const std::string& value)

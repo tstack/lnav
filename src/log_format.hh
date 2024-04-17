@@ -108,6 +108,12 @@ enum class value_kind_t : int {
     VALUE__MAX
 };
 
+enum class chart_type_t {
+    none,
+    hist,
+    spectro,
+};
+
 struct logline_value_meta {
     struct internal_column {
         bool operator==(const internal_column&) const { return true; }
@@ -149,6 +155,8 @@ struct logline_value_meta {
         this->lvm_struct_name = name;
         return *this;
     }
+
+    chart_type_t to_chart_type() const;
 
     intern_string_t lvm_name;
     value_kind_t lvm_kind;

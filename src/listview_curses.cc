@@ -491,7 +491,7 @@ listview_curses::do_update()
                                     y,
                                     this->vc_x,
                                     ov_menu_line,
-                                    lr,
+                                    line_range{0, (int) wrap_width},
                                     role_t::VCR_ALT_ROW);
                         ov_menu_row += 1_vl;
                         ++y;
