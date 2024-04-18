@@ -125,12 +125,15 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
     static const auto semi_pred = string_fragment::tag1{';'};
 
     const auto& regex = ansi_regex();
-    int64_t origin_offset = 0;
-    int last_origin_offset_end = 0;
     nonstd::optional<std::string> href;
     size_t href_start = 0;
+    string_attrs_t tmp_sa;
+    size_t cp_dst = std::string::npos;
+    size_t cp_start = std::string::npos;
+    int last_origin_end = 0;
+    int erased = 0;
 
-    replace(str.begin(), str.end(), '\0', ' ');
+    std::replace(str.begin(), str.end(), '\0', ' ');
     auto matcher = regex.capture_from(str).into(md);
     while (true) {
         auto match_res = matcher.matches(PCRE2_NO_UTF_CHECK);
@@ -146,10 +149,18 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
         const auto sf = md[0].value();
         auto bs_index_res = sf.codepoint_to_byte_index(1);
 
+        if (cp_dst != std::string::npos) {
+            auto cp_len = sf.sf_begin - cp_start;
+            memmove(&str[cp_dst], &str[cp_start], cp_len);
+            cp_dst += cp_len;
+        } else {
+            cp_dst = sf.sf_begin;
+        }
+
         if (sf.length() >= 3 && bs_index_res.isOk()
             && sf[bs_index_res.unwrap()] == '\b')
         {
-            ssize_t fill_index = sf.sf_begin;
+            ssize_t fill_index = cp_dst;
             line_range bold_range;
             line_range ul_range;
             auto sub_sf = sf;
@@ -176,8 +187,8 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     if (sa != nullptr && bold_range.is_valid()) {
                         shift_string_attrs(
                             *sa, bold_range.lr_start, -bold_range.length() * 2);
-                        sa->emplace_back(bold_range,
-                                         VC_STYLE.value(text_attrs{A_BOLD}));
+                        tmp_sa.emplace_back(bold_range,
+                                            VC_STYLE.value(text_attrs{A_BOLD}));
                         bold_range.clear();
                     }
                     if (ul_range.is_valid()) {
@@ -197,7 +208,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     if (sa != nullptr && ul_range.is_valid()) {
                         shift_string_attrs(
                             *sa, ul_range.lr_start, -ul_range.length() * 2);
-                        sa->emplace_back(
+                        tmp_sa.emplace_back(
                             ul_range, VC_STYLE.value(text_attrs{A_UNDERLINE}));
                         ul_range.clear();
                     }
@@ -223,37 +234,33 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 sub_sf = rhs_pair.second;
             }
 
-            auto output_size = fill_index - sf.sf_begin;
-            auto erased_size = sub_sf.sf_begin - fill_index;
-
+            auto output_size = fill_index - cp_dst;
             if (sa != nullptr && ul_range.is_valid()) {
                 shift_string_attrs(
                     *sa, ul_range.lr_start, -ul_range.length() * 2);
-                sa->emplace_back(ul_range,
-                                 VC_STYLE.value(text_attrs{A_UNDERLINE}));
+                tmp_sa.emplace_back(ul_range,
+                                    VC_STYLE.value(text_attrs{A_UNDERLINE}));
                 ul_range.clear();
             }
             if (sa != nullptr && bold_range.is_valid()) {
                 shift_string_attrs(
                     *sa, bold_range.lr_start, -bold_range.length() * 2);
-                sa->emplace_back(bold_range,
-                                 VC_STYLE.value(text_attrs{A_BOLD}));
+                tmp_sa.emplace_back(bold_range,
+                                    VC_STYLE.value(text_attrs{A_BOLD}));
                 bold_range.clear();
             }
-            if (sa != nullptr && output_size > 0) {
-                sa->emplace_back(line_range{last_origin_offset_end,
-                                            sf.sf_begin + (int) output_size},
-                                 SA_ORIGIN_OFFSET.value(origin_offset));
+            if (sa != nullptr && output_size > 0 && cp_dst > 0) {
+                tmp_sa.emplace_back(
+                    line_range{
+                        (int) last_origin_end,
+                        (int) cp_dst + (int) output_size,
+                    },
+                    SA_ORIGIN_OFFSET.value(erased));
             }
-
-            str.erase(str.begin() + fill_index, str.begin() + sub_sf.sf_begin);
-            if (!mid_sf.empty()) {
-                last_origin_offset_end = mid_sf.sf_begin;
-            } else {
-                last_origin_offset_end = sf.sf_begin + output_size;
-            }
-            origin_offset += erased_size;
-            matcher.reload_input(str, last_origin_offset_end);
+            last_origin_end = cp_dst + output_size;
+            cp_dst = fill_index;
+            cp_start = sub_sf.sf_begin;
+            erased += sf.length() - output_size;
             continue;
         }
 
@@ -275,16 +282,18 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
 
                             if (href) {
                                 if (sa != nullptr) {
-                                    sa->emplace_back(
-                                        line_range{(int) href_start,
-                                                   (int) str.size()},
+                                    tmp_sa.emplace_back(
+                                        line_range{
+                                            (int) href_start,
+                                            (int) cp_dst,
+                                        },
                                         VC_HYPERLINK.value(href.value()));
                                 }
                                 href = nonstd::nullopt;
                             }
                             if (!uri.empty()) {
                                 href = uri.to_string();
-                                href_start = sf.sf_begin;
+                                href_start = cp_dst;
                             }
                         }
                         break;
@@ -370,6 +379,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     has_attrs = true;
                     break;
 
+#if 0
                 case 'C': {
                     auto spaces_res
                         = scn::scan_value<unsigned int>(seq.to_string_view());
@@ -397,6 +407,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     }
                     break;
                 }
+#endif
 
                 case 'O': {
                     auto role_res = scn::scan_value<int>(seq.to_string_view());
@@ -415,40 +426,54 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             }
         }
         if (md[1] || md[3] || md[5]) {
-            str.erase(str.begin() + sf.sf_begin, str.begin() + sf.sf_end);
             if (sa != nullptr) {
                 shift_string_attrs(*sa, sf.sf_begin, -sf.length());
 
                 if (has_attrs) {
-                    for (auto rit = sa->rbegin(); rit != sa->rend(); rit++) {
+                    for (auto rit = tmp_sa.rbegin(); rit != tmp_sa.rend();
+                         rit++)
+                    {
                         if (rit->sa_range.lr_end != -1) {
                             continue;
                         }
-                        rit->sa_range.lr_end = sf.sf_begin;
+                        rit->sa_range.lr_end = cp_dst;
                     }
-                    lr.lr_start = sf.sf_begin;
+                    lr.lr_start = cp_dst;
                     lr.lr_end = -1;
                     if (!attrs.empty()) {
-                        sa->emplace_back(lr, VC_STYLE.value(attrs));
+                        tmp_sa.emplace_back(lr, VC_STYLE.value(attrs));
                     }
-                    role | [&lr, &sa](role_t r) {
-                        sa->emplace_back(lr, VC_ROLE.value(r));
+                    role | [&lr, &tmp_sa](role_t r) {
+                        tmp_sa.emplace_back(lr, VC_ROLE.value(r));
                     };
                 }
-                sa->emplace_back(
-                    line_range{last_origin_offset_end, sf.sf_begin},
-                    SA_ORIGIN_OFFSET.value(origin_offset));
-                last_origin_offset_end = sf.sf_begin;
-                origin_offset += sf.length();
+                if (cp_dst > 0) {
+                    tmp_sa.emplace_back(
+                        line_range{
+                            (int) last_origin_end,
+                            (int) cp_dst,
+                        },
+                        SA_ORIGIN_OFFSET.value(erased));
+                }
+                last_origin_end = cp_dst;
             }
-
-            matcher.reload_input(str, sf.sf_begin);
+            erased += sf.length();
         }
+        cp_start = sf.sf_end;
     }
 
-    if (sa != nullptr && last_origin_offset_end > 0) {
-        sa->emplace_back(line_range{last_origin_offset_end, (int) str.size()},
-                         SA_ORIGIN_OFFSET.value(origin_offset));
+    if (cp_dst != std::string::npos) {
+        auto cp_len = str.size() - cp_start;
+        memmove(&str[cp_dst], &str[cp_start], cp_len);
+        cp_dst += cp_len;
+        str.resize(cp_dst);
+    }
+    if (sa != nullptr && last_origin_end > 0 && last_origin_end != str.size()) {
+        tmp_sa.emplace_back(line_range{(int) last_origin_end, (int) str.size()},
+                            SA_ORIGIN_OFFSET.value(erased));
+    }
+    if (sa != nullptr) {
+        sa->insert(sa->end(), tmp_sa.begin(), tmp_sa.end());
     }
 }
 

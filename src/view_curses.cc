@@ -541,6 +541,12 @@ view_curses::mvwattrline(WINDOW* window,
 
         auto desired_fg = fg_color[lpc] != -1 ? fg_color[lpc] : cur_fg;
         auto desired_bg = bg_color[lpc] != -1 ? bg_color[lpc] : cur_bg;
+        if (desired_fg >= COLOR_BLACK && desired_fg <= COLOR_WHITE) {
+            desired_fg = vc.ansi_to_theme_color(desired_fg);
+        }
+        if (desired_bg >= COLOR_BLACK && desired_bg <= COLOR_WHITE) {
+            desired_bg = vc.ansi_to_theme_color(desired_bg);
+        }
         if (desired_fg == desired_bg) {
             if (desired_bg >= 0
                 && desired_bg

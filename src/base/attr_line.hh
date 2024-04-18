@@ -221,6 +221,13 @@ public:
         return retval.with_ansi_string("%s", str);
     }
 
+    static inline attr_line_t from_ansi_str(const std::string& str)
+    {
+        attr_line_t retval;
+
+        return retval.with_ansi_string(str);
+    }
+
     /** @return The string itself. */
     std::string& get_string() { return this->al_string; }
 

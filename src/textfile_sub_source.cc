@@ -879,8 +879,13 @@ textfile_sub_source::rescan_files(
                 auto ms_iter = this->tss_doc_metadata.find(lf->get_filename());
 
                 if (!new_data && ms_iter != this->tss_doc_metadata.end()) {
-                    if (st.st_mtime != ms_iter->second.ms_mtime
-                        || st.st_size != ms_iter->second.ms_file_size)
+                    // Only invalidate the meta if the file is small, or we
+                    // found some meta previously.
+                    if ((st.st_mtime != ms_iter->second.ms_mtime
+                         || st.st_size != ms_iter->second.ms_file_size)
+                        && (st.st_size < 10 * 1024
+                            || !ms_iter->second.ms_metadata.m_sections_tree
+                                    .empty()))
                     {
                         log_debug(
                             "text file has changed, invalidating metadata.  "

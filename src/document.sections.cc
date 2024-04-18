@@ -899,8 +899,8 @@ metadata::possibility_provider(const std::vector<section_key_t>& path)
 namespace fmt {
 auto
 formatter<lnav::document::section_key_t>::format(
-    const lnav::document::section_key_t& key, fmt::format_context& ctx)
-    -> decltype(ctx.out()) const
+    const lnav::document::section_key_t& key,
+    fmt::format_context& ctx) -> decltype(ctx.out()) const
 {
     return key.match(
         [this, &ctx](const std::string& str) {

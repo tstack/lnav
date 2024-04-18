@@ -289,12 +289,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             auto um
                 = lnav::console::user_message::error(
                       attr_line_t("unable to compile PRQL: ").append(stmt_al))
-                      .with_reason((std::string) msg.reason);
+                      .with_reason(
+                          attr_line_t::from_ansi_str((std::string) msg.reason));
             if (!msg.display.empty()) {
-                um.with_note((std::string) msg.display);
+                um.with_note(
+                    attr_line_t::from_ansi_str((std::string) msg.display));
             }
             for (const auto& hint : msg.hints) {
-                um.with_help(hint.data());
+                um.with_help(attr_line_t::from_ansi_str((std::string) hint));
                 break;
             }
             return Err(um);

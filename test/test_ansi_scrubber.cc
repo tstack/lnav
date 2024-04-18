@@ -37,6 +37,7 @@
 #include <assert.h>
 
 #include "base/ansi_scrubber.hh"
+#include "base/attr_line.builder.hh"
 #include "config.h"
 #include "view_curses.hh"
 
@@ -46,6 +47,30 @@ int
 main(int argc, char* argv[])
 {
     printf("BEGIN test\n");
+
+    {
+        std::string zero_width = "\x16 1 \x16 2 \x16";
+        string_attrs_t sa;
+
+        scrub_ansi_string(zero_width, &sa);
+        printf("zero width: '%s'\n",
+               fmt::format(FMT_STRING("{:?}"), zero_width).c_str());
+        assert(zero_width == " 1  2 ");
+        for (const auto& attr : sa) {
+            printf("attr %d:%d %s\n",
+                   attr.sa_range.lr_start,
+                   attr.sa_range.lr_end,
+                   attr.sa_type->sat_name);
+            if (attr.sa_type == &VC_HYPERLINK) {
+                printf("  value: %s\n",
+                       attr.sa_value.get<std::string>().c_str());
+            }
+            if (attr.sa_type == &SA_ORIGIN_OFFSET) {
+                printf("  value: %lld\n", attr.sa_value.get<int64_t>());
+            }
+        }
+    }
+
     {
         std::string bad_bold = "That is not\b\b\ball\n";
         string_attrs_t sa;
@@ -109,16 +134,49 @@ main(int argc, char* argv[])
             }
         }
     }
+    {
+        string_attrs_t sa;
+        string str_cp;
+
+        str_cp = "Hello, World!";
+        scrub_ansi_string(str_cp, &sa);
+
+        assert(str_cp == "Hello, World!");
+        assert(sa.empty());
+
+        str_cp = "Hello\x1b[44;m, \x1b[33;mWorld\x1b[0;m!";
+        scrub_ansi_string(str_cp, &sa);
+        assert(str_cp == "Hello, World!");
+        printf("%s\n", str_cp.c_str());
+        for (const auto& attr : sa) {
+            printf("  attr %d:%d %s %s\n",
+                   attr.sa_range.lr_start,
+                   attr.sa_range.lr_end,
+                   attr.sa_type->sat_name,
+                   string_fragment::from_str_range(
+                       str_cp, attr.sa_range.lr_start, attr.sa_range.lr_end)
+                       .to_string()
+                       .c_str());
+        }
+    }
 
     {
+        // "•]8;;http://example.com•\This_is_a_link•]8;;•\_"
         auto hlink = std::string(
             "\033]8;;http://example.com\033\\This is a "
             "link\033]8;;\033\\\n");
+
+        auto al = attr_line_t();
+        attr_line_builder alb(al);
+
+        alb.append_as_hexdump(hlink);
+        printf("%s\n", al.get_string().c_str());
+
         string_attrs_t sa;
         scrub_ansi_string(hlink, &sa);
 
         printf("hlink %d %d %s", hlink.size(), sa.size(), hlink.c_str());
-        assert(sa.size() == 4);
+        assert(sa.size() == 3);
         for (const auto& attr : sa) {
             printf("attr %d:%d %s\n",
                    attr.sa_range.lr_start,
@@ -128,19 +186,9 @@ main(int argc, char* argv[])
                 printf("  value: %s\n",
                        attr.sa_value.get<std::string>().c_str());
             }
+            if (attr.sa_type == &SA_ORIGIN_OFFSET) {
+                printf("  value: %lld\n", attr.sa_value.get<int64_t>());
+            }
         }
     }
-
-    string_attrs_t sa;
-    string str_cp;
-
-    str_cp = "Hello, World!";
-    scrub_ansi_string(str_cp, &sa);
-
-    assert(str_cp == "Hello, World!");
-    assert(sa.empty());
-
-    str_cp = "Hello\x1b[44;m, \x1b[33;mWorld\x1b[0;m!";
-    scrub_ansi_string(str_cp, &sa);
-    assert(str_cp == "Hello, World!");
 }
