@@ -1,6 +1,53 @@
 ## lnav v0.12.2
 
 Features:
+* Added mouse support that can be toggled with `F2` or enabled
+  by default with: `:config /ui/mouse/mode enabled`.  With
+  mouse support enabled, many of the UI elements will respond to
+  mouse inputs:
+  - clicking on the main view will move the cursor to the given
+    row and dragging will scroll the view as needed;
+  - shift + clicking/dragging in the main view will highlight
+    lines and then toggle their bookmark status on release;
+  - double-clicking in the main view will select the underlying 
+    text and drag-selecting within a line will select the given
+    text;
+  - when double-clicking text: if the mouse pointer is inside
+    a quoted string, the contents of the string will be selected;
+    if the mouse pointer is on the quote, the quote will be included
+    in the selection; if the mouse pointer is over a bracket
+    (e.g. [],{},()) where the matching bracket is on the same line,
+    the selection will span from one bracket to the other;
+  - when text is selected, a menu will pop up that can be used
+    to filter based on the current text, search for it, or copy
+    it to the clipboard;
+  - right-clicking the start of a log message in the main view
+    will open the parser details overlay;
+  - the parser details now displays a diamond next to fields to
+    indicate whether they are shown/hidden and this can be
+    clicked to toggle the state;
+  - the parser details will show a bar chart icon for fields with
+    values which, when clicked, will open either the spectrogram
+    view for the given field or open the DB query prompt with a
+    PRQL query to generate a histogram of the field values;
+  - clicking in the scroll area will move the view by a page,
+    double-clicking will move the view to that area, and
+    dragging the scrollbar will move the view to the given spot;
+  - clicking on the breadcrumb bar will select a crumb and
+    selecting a possibility from the popup will move to that
+    location in the view;
+  - clicking on portions of the bottom status bar will trigger
+    a relevant action (e.g. clicking the line number will open
+    the command prompt with `:goto <current-line>`);
+  - clicking on the configuration panel tabs (i.e. Files/Filters)
+    will open the selected panel and clicking parts of the
+    display in there will perform the relevant action (e.g.
+    clicking the diamond will enable/disable the file/filter);
+  - clicking in a prompt will move the cursor to the location;
+  - clicking on a column in the spectrogram view will select it.
+
+  (Note that this is new work, so there are likely to be some 
+  glitches.)
 * Added a `journald://` URL handler that will call `journalctl`
   and pass any query parameters as options.  For example, the
   following command:
@@ -22,33 +69,6 @@ Features:
   of archive contents.
 * Added `humanize_id` SQL function that colorizes a string using
   ANSI escape codes.
-* Added mouse support that can be toggled with `F2` or enabled
-  by default with: `:config /ui/mouse/mode enabled`.  With
-  mouse support enabled, many of the UI elements will respond to
-  mouse inputs:
-  - clicking on the main view will move the cursor to the given
-    row and dragging will scroll the view as needed;
-  - shift + clicking/dragging in the main view will highlight
-    lines and then toggle their bookmark status on release;
-  - double-clicking will select the underlying token and
-    drag-selecting within a line will select the given text;
-  - when text is selected, a menu will pop up that can be used
-    to filter based on the current text, search for it, or copy
-    it to the clipboard;
-  - clicking in the scroll area will move the view by a page and
-    dragging the scrollbar will move the view to the given spot;
-  - clicking on the breadcrumb bar will select a crumb and
-    selecting a possibility from the popup will move to that
-    location in the view;
-  - clicking on portions of the bottom status bar will trigger
-    a relevant action (e.g. clicking the line number will open
-    the command prompt with `:goto <current-line>`);
-  - clicking on the configuration panel tabs (i.e. Files/Filters)
-    will open the selected panel and clicking parts of the
-    display in there will perform the relevant action (e.g.
-    clicking the diamond will enable/disable the file/filter);
-  - clicking in a prompt will move the cursor to the location.
-  This is new work, so there are likely to be some glitches.
 * Added a `selected_text` column to the `lnav_views` table that
   reports information about text that was selected with a mouse.
   This makes it possible to script operations that use the

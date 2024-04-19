@@ -177,6 +177,35 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
     }
 }
 
+bool
+spectrogram_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t&,
+    mouse_event& me)
+{
+    auto sel = tc.get_selection();
+    const auto& s_row = this->load_row(tc, sel);
+
+    for (int lpc = 0; lpc <= (int) s_row.sr_width; lpc++) {
+        int col_value = s_row.sr_values[lpc].rb_counter;
+
+        if (col_value == 0) {
+            continue;
+        }
+
+        auto lr = line_range{lpc, lpc + 1};
+        if (me.is_click_in(mouse_button_t::BUTTON_LEFT, lr)) {
+            this->ss_cursor_column = lr.lr_start;
+            this->ss_details_source.reset();
+
+            tc.reload_data();
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void
 spectrogram_source::list_value_for_overlay(const listview_curses& lv,
                                            vis_line_t row,

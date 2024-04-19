@@ -849,6 +849,16 @@ listview_curses::handle_mouse(mouse_event& me)
         return false;
     }
 
+    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT,
+                              line_range{(int) width - 2, (int) width}))
+    {
+        auto pct = (double) inner_height / (double) height;
+        auto new_top = (int) floor(((double) me.me_y * pct) + 0.5);
+        this->set_top(vis_line_t(new_top), true);
+        this->lv_mouse_mode = lv_mode_t::NONE;
+        return true;
+    }
+
     switch (this->lv_mouse_mode) {
         case lv_mode_t::NONE: {
             if (me.me_x < (int) (width - 2)) {
