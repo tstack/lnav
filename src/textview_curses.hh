@@ -813,6 +813,7 @@ public:
     nonstd::optional<selected_text_info> tc_selected_text;
     bool tc_text_selection_active{false};
     display_line_content_t tc_press_line;
+    int tc_press_left{0};
 
 protected:
     class grep_highlighter {

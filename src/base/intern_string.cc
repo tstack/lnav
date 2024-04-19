@@ -399,8 +399,9 @@ string_fragment::sub_cell_range(int cell_start, int cell_end) const
         if (cell_start == cell_index) {
             byte_start = byte_index;
         }
-        if (cell_index == cell_end) {
+        if (!byte_end && cell_index >= cell_end) {
             byte_end = byte_index;
+            break;
         }
         auto read_res = ww898::utf::utf8::read(
             [this, &byte_index]() { return this->sf_string[byte_index++]; });

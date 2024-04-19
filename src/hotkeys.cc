@@ -43,6 +43,7 @@
 #include "lnav_config.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
+#include "sqlitepp.client.hh"
 #include "xterm_mouse.hh"
 
 using namespace lnav::roles::literals;
@@ -267,10 +268,22 @@ handle_paging_key(int ch)
             if (xterm_mouse::is_available()) {
                 auto& mouse_i = injector::get<xterm_mouse&>();
                 mouse_i.set_enabled(!mouse_i.is_enabled());
-                auto um = lnav::console::user_message::ok(
-                    attr_line_t("mouse mode -- ")
-                        .append(mouse_i.is_enabled() ? "enabled"_symbol
-                                                     : "disabled"_symbol));
+
+                auto al = attr_line_t("mouse mode -- ")
+                              .append(mouse_i.is_enabled() ? "enabled"_symbol
+                                                           : "disabled"_symbol);
+                if (mouse_i.is_enabled()
+                    && lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled)
+                {
+                    al.append(" -- enable permanently with ")
+                        .append(":config /ui/mouse/mode enabled"_quoted_code);
+
+                    auto clear_note = prepare_stmt(lnav_data.ld_db, R"(
+DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
+)");
+                    clear_note.unwrap().execute();
+                }
+                auto um = lnav::console::user_message::ok(al);
                 lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
             } else {
                 lnav_data.ld_rl_view->set_value(

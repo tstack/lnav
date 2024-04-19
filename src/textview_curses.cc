@@ -43,6 +43,7 @@
 #include "log_format_fwd.hh"
 #include "logfile.hh"
 #include "shlex.hh"
+#include "text_overlay_menu.hh"
 #include "view_curses.hh"
 
 const auto REVERSE_SEARCH_OFFSET = 2000_vl;
@@ -461,6 +462,7 @@ textview_curses::handle_mouse(mouse_event& me)
         case mouse_button_state_t::BUTTON_STATE_PRESSED: {
             this->tc_text_selection_active = true;
             this->tc_press_line = mouse_line;
+            this->tc_press_left = this->lv_left + me.me_press_x;
             if (!this->lv_selectable) {
                 this->set_selectable(true);
             }
@@ -523,10 +525,27 @@ textview_curses::handle_mouse(mouse_event& me)
                                 }
 
                                 auto tok = tok_res.value();
-                                auto tok_sf = tok.inner_string_fragment();
+                                auto tok_sf
+                                    = (tok.tr_token
+                                           == data_token_t::DT_QUOTED_STRING
+                                       && (cursor_sf.sf_begin
+                                               == tok.to_string_fragment()
+                                                      .sf_begin
+                                           || cursor_sf.sf_begin
+                                               == tok.to_string_fragment()
+                                                       .sf_end
+                                                   - 1))
+                                    ? tok.to_string_fragment()
+                                    : tok.inner_string_fragment();
                                 if (tok_sf.contains(cursor_sf)
                                     && tok.tr_token != data_token_t::DT_WHITE)
                                 {
+                                    auto group_tok
+                                        = ds.find_matching_bracket(tf, tok);
+                                    if (group_tok) {
+                                        tok_sf = group_tok.value()
+                                                     .to_string_fragment();
+                                    }
                                     this->tc_selected_text = selected_text_info{
                                         me.me_x,
                                         mc.mc_line,
@@ -570,10 +589,10 @@ textview_curses::handle_mouse(mouse_event& me)
                 if (mouse_line.is<main_content>()) {
                     auto& mc = mouse_line.get<main_content>();
                     attr_line_t al;
-                    auto low_x = std::min(this->lv_left + me.me_x,
-                                          this->lv_left + me.me_press_x);
-                    auto high_x = std::max(this->lv_left + me.me_x,
-                                           this->lv_left + me.me_press_x);
+                    auto low_x = std::min(this->tc_press_left,
+                                          (int) this->lv_left + me.me_x);
+                    auto high_x = std::max(this->tc_press_left,
+                                           (int) this->lv_left + me.me_x);
 
                     this->set_selection_without_context(mc.mc_line);
                     if (me.me_button == mouse_button_t::BUTTON_LEFT) {
@@ -581,9 +600,14 @@ textview_curses::handle_mouse(mouse_event& me)
                         auto line_sf
                             = string_fragment::from_str(al.get_string());
                         auto cursor_sf = line_sf.sub_cell_range(low_x, high_x);
+                        if (me.me_x <= 1) {
+                            this->set_left(this->lv_left - 1);
+                        } else if (me.me_x >= width - 1) {
+                            this->set_left(this->lv_left + 1);
+                        }
                         if (!cursor_sf.empty()) {
                             this->tc_selected_text = {
-                                me.me_press_x,
+                                me.me_x,
                                 mc.mc_line,
                                 line_range{
                                     cursor_sf.sf_begin,
@@ -626,6 +650,26 @@ textview_curses::handle_mouse(mouse_event& me)
             break;
         }
         case mouse_button_state_t::BUTTON_STATE_RELEASED: {
+            auto* ov = this->get_overlay_source();
+            if (ov != nullptr && mouse_line.is<listview_curses::overlay_menu>()
+                && this->tc_selected_text)
+            {
+                auto* tom = dynamic_cast<text_overlay_menu*>(ov);
+                if (tom != nullptr) {
+                    auto& om = mouse_line.get<listview_curses::overlay_menu>();
+                    auto& sti = this->tc_selected_text.value();
+
+                    for (const auto& mi : tom->tom_menu_items) {
+                        if (om.om_line == mi.mi_line
+                            && me.is_click_in(mouse_button_t::BUTTON_LEFT,
+                                              mi.mi_range))
+                        {
+                            mi.mi_action(sti.sti_value);
+                            break;
+                        }
+                    }
+                }
+            }
             this->tc_text_selection_active = false;
             if (me.is_click_in(mouse_button_t::BUTTON_RIGHT, 0, INT_MAX)) {
                 auto* lov = this->get_overlay_source();

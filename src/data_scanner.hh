@@ -206,6 +206,9 @@ public:
     nonstd::optional<tokenize_result> tokenize2(text_format_t tf
                                                 = text_format_t::TF_UNKNOWN);
 
+    nonstd::optional<tokenize_result> find_matching_bracket(text_format_t tf,
+                                                            tokenize_result tr);
+
     void reset() { this->ds_next_offset = this->ds_init_offset; }
 
     int get_init_offset() const { return this->ds_init_offset; }
@@ -222,6 +225,9 @@ private:
 
     bool is_credit_card(string_fragment frag) const;
 
+    nonstd::optional<tokenize_result> tokenize_int(text_format_t tf
+                                                   = text_format_t::TF_UNKNOWN);
+
     std::string ds_line;
     shared_buffer_ref ds_sbr;
     string_fragment ds_input;
@@ -229,7 +235,26 @@ private:
     int ds_next_offset{0};
     bool ds_bol{true};
     bool ds_units{false};
+    std::vector<tokenize_result> ds_matching_brackets;
+    bool ds_last_bracket_matched{false};
 };
+
+inline data_token_t
+to_opener(data_token_t dt)
+{
+    switch (dt) {
+        case DT_XML_CLOSE_TAG:
+            return DT_XML_OPEN_TAG;
+        case DT_RCURLY:
+            return DT_LCURLY;
+        case DT_RSQUARE:
+            return DT_LSQUARE;
+        case DT_RPAREN:
+            return DT_LPAREN;
+        default:
+            ensure(0);
+    }
+}
 
 inline data_token_t
 to_closer(data_token_t dt)

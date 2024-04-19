@@ -36,9 +36,10 @@
 #include "listview_curses.hh"
 #include "log_data_helper.hh"
 #include "logfile_sub_source.hh"
+#include "text_overlay_menu.hh"
 #include "textfile_sub_source.hh"
 
-class field_overlay_source : public list_overlay_source {
+class field_overlay_source : public text_overlay_menu {
 public:
     explicit field_overlay_source(logfile_sub_source& lss,
                                   textfile_sub_source& tss)
@@ -52,11 +53,7 @@ public:
     {
         this->fos_lines.clear();
         this->fos_meta_lines.clear();
-        this->fos_meta_lines_row = -1_vl;
     }
-
-    std::vector<attr_line_t> list_overlay_menu(const listview_curses& lv,
-                                               vis_line_t row) override;
 
     nonstd::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t vl) override;
@@ -103,23 +100,8 @@ public:
     int fos_known_key_size{0};
     int fos_unknown_key_size{0};
     std::vector<attr_line_t> fos_lines;
-    vis_line_t fos_meta_lines_row{0_vl};
     std::vector<attr_line_t> fos_meta_lines;
     std::map<size_t, logline_value_meta> fos_row_to_field_meta;
-
-    struct menu_item {
-        menu_item(vis_line_t line,
-                  line_range range,
-                  std::function<void(const std::string&)> action)
-            : mi_line(line), mi_range(range), mi_action(std::move(action))
-        {
-        }
-
-        vis_line_t mi_line;
-        line_range mi_range;
-        std::function<void(const std::string&)> mi_action;
-    };
-    std::vector<menu_item> fos_menu_items;
 };
 
 #endif  // LNAV_FIELD_OVERLAY_SOURCE_H

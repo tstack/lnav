@@ -5799,7 +5799,7 @@ search_files_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_mode = ln_mode_t::SEARCH_FILES;
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-        auto path = lnav::pcre2pp::quote(lf->get_unique_path());
+        auto path = lnav::pcre2pp::quote(lf->get_unique_path().string());
         lnav_data.ld_rl_view->add_possibility(
             ln_mode_t::SEARCH_FILES, "*", path);
     }

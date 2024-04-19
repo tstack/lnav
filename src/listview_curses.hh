@@ -364,31 +364,10 @@ public:
      *
      * @param left The new value for left.
      */
-    void set_left(unsigned int left)
-    {
-        if (this->lv_left == left) {
-            return;
-        }
-
-        if (left > this->lv_left) {
-            unsigned long width;
-            vis_line_t height;
-
-            this->get_dimensions(height, width);
-            if ((this->get_inner_width() - this->lv_left) <= width) {
-                alerter::singleton().chime(
-                    "the maximum width of the view has been reached");
-                return;
-            }
-        }
-
-        this->lv_left = left;
-        this->invoke_scroll();
-        this->set_needs_update();
-    }
+    void set_left(int left);
 
     /** @return The column number that is displayed at the left. */
-    unsigned int get_left() const { return this->lv_left; }
+    int get_left() const { return this->lv_left; }
 
     /**
      * Shift the value of left by the given value.
@@ -396,7 +375,7 @@ public:
      * @param offset The amount to change top by.
      * @return The final value of top.
      */
-    unsigned int shift_left(int offset)
+    int shift_left(int offset)
     {
         if (this->lv_word_wrap) {
             alerter::singleton().chime(
@@ -526,7 +505,7 @@ public:
             this->lv_title.c_str(),
             this->vc_y,
             (int) this->lv_top,
-            (int) this->lv_left,
+            this->lv_left,
             this->lv_height,
             (int) this->lv_selection,
             (int) this->get_inner_height());
@@ -582,7 +561,7 @@ protected:
     action lv_scroll; /*< The scroll action. */
     WINDOW* lv_window{nullptr}; /*< The window that contains this view. */
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
-    unsigned int lv_left{0}; /*< The column at the left of the view. */
+    int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
     bool lv_overlay_focused{false};
     vis_line_t lv_focused_overlay_top{0_vl};

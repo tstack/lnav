@@ -43,7 +43,7 @@ SELECT message FROM lnav_user_notifications
         (expiration IS NULL OR expiration > datetime('now')) AND
         (views IS NULL OR
          json_contains(views, (SELECT name FROM lnav_top_view)))
-  ORDER BY priority DESC
+  ORDER BY priority DESC, expiration ASC
   LIMIT 1
 )";
 

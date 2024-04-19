@@ -34,6 +34,7 @@
 #include "gantt_status_source.hh"
 #include "logfile_sub_source.hh"
 #include "plain_text_source.hh"
+#include "text_overlay_menu.hh"
 #include "textview_curses.hh"
 
 class gantt_source
@@ -164,7 +165,7 @@ public:
     exec_context* gs_exec_context;
 };
 
-class gantt_header_overlay : public list_overlay_source {
+class gantt_header_overlay : public text_overlay_menu {
 public:
     explicit gantt_header_overlay(std::shared_ptr<gantt_source> src);
 

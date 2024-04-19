@@ -32,40 +32,10 @@
 #include "pcre2pp.hh"
 
 #include "config.h"
+#include "ww898/cp_utf8.hpp"
 
 namespace lnav {
 namespace pcre2pp {
-
-std::string
-quote(const char* unquoted)
-{
-    std::string retval;
-
-    for (int lpc = 0; unquoted[lpc]; lpc++) {
-        if (isalnum(unquoted[lpc]) || unquoted[lpc] == '_'
-            || unquoted[lpc] == '-' || unquoted[lpc] == ' '
-            || unquoted[lpc] == ':' || unquoted[lpc] == ';'
-            || unquoted[lpc] & 0x80)
-        {
-            retval.push_back(unquoted[lpc]);
-        } else {
-            retval.push_back('\\');
-            switch (unquoted[lpc]) {
-                case '\t':
-                    retval.push_back('t');
-                    break;
-                case '\n':
-                    retval.push_back('n');
-                    break;
-                default:
-                    retval.push_back(unquoted[lpc]);
-                    break;
-            }
-        }
-    }
-
-    return retval;
-}
 
 std::string
 match_data::to_string() const

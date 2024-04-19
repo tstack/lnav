@@ -348,3 +348,77 @@ formatter<lnav::tainted_string>::format(const lnav::tainted_string& ts,
     return format_to(ctx.out(), FMT_STRING("{:?}"), ts.ts_str);
 }
 }  // namespace fmt
+
+namespace lnav {
+namespace pcre2pp {
+
+static bool
+is_meta(char ch)
+{
+    switch (ch) {
+        case '\\':
+        case '^':
+        case '$':
+        case '.':
+        case '[':
+        case ']':
+        case '(':
+        case ')':
+        case '*':
+        case '+':
+        case '?':
+        case '{':
+        case '}':
+            return true;
+        default:
+            return false;
+    }
+}
+
+static nonstd::optional<const char*>
+char_escape_seq(char ch)
+{
+    switch (ch) {
+        case '\t':
+            return "\\t";
+        case '\n':
+            return "\\n";
+    }
+
+    return nonstd::nullopt;
+}
+
+std::string
+quote(string_fragment str)
+{
+    std::string retval;
+
+    while (true) {
+        auto cp_pair_opt = str.consume_codepoint();
+        if (!cp_pair_opt) {
+            break;
+        }
+
+        auto cp_pair = cp_pair_opt.value();
+        if ((cp_pair.first & ~0xff) == 0) {
+            if (is_meta(cp_pair.first)) {
+                retval.push_back('\\');
+            } else {
+                auto esc_seq = char_escape_seq(cp_pair.first);
+                if (esc_seq) {
+                    retval.append(esc_seq.value());
+                    str = cp_pair_opt->second;
+                    continue;
+                }
+            }
+        }
+        ww898::utf::utf8::write(cp_pair.first,
+                                [&retval](char ch) { retval.push_back(ch); });
+        str = cp_pair_opt->second;
+    }
+
+    return retval;
+}
+
+}  // namespace pcre2pp
+}  // namespace lnav

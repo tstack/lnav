@@ -36,6 +36,7 @@
 #include "filter_observer.hh"
 #include "logfile.hh"
 #include "plain_text_source.hh"
+#include "text_overlay_menu.hh"
 #include "textview_curses.hh"
 
 class textfile_sub_source
@@ -198,7 +199,7 @@ private:
     int64_t tss_content_line{0};
 };
 
-class textfile_header_overlay : public list_overlay_source {
+class textfile_header_overlay : public text_overlay_menu {
 public:
     explicit textfile_header_overlay(textfile_sub_source* src);
 

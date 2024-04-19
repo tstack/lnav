@@ -1134,6 +1134,27 @@ looper()
         }
         auto echo_views_stmt = echo_views_stmt_res.unwrap();
 
+        if (xterm_mouse::is_available()
+            && lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled)
+        {
+            auto mouse_note = prepare_stmt(lnav_data.ld_db, R"(
+INSERT INTO lnav_user_notifications (id, priority, expiration, message)
+VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
+        'Press <span class="-lnav_status-styles_hotkey">F2</span> to enable mouse support');
+)");
+            if (mouse_note.isErr()) {
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::error(
+                        "unable to prepare INSERT statement for "
+                        "lnav_user_notifications table")
+                        .with_reason(mouse_note.unwrapErr()));
+                return;
+            }
+
+            mouse_note.unwrap().execute();
+        }
+
         (void) signal(SIGINT, sigint);
         (void) signal(SIGTERM, sigint);
         (void) signal(SIGWINCH, sigwinch);

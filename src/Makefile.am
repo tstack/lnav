@@ -349,6 +349,7 @@ noinst_HEADERS = \
 	term_extra.hh \
 	text_anonymizer.hh \
 	text_format.hh \
+	text_overlay_menu.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
@@ -506,6 +507,7 @@ libdiag_a_SOURCES = \
 	styling.cc \
 	text_anonymizer.cc \
 	text_format.cc \
+	text_overlay_menu.cc \
 	textfile_sub_source.cc \
 	timer.cc \
 	sql_commands.cc \

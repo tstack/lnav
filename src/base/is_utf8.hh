@@ -40,6 +40,7 @@ struct utf8_scan_result {
     string_fragment usr_valid_frag{string_fragment::invalid()};
     nonstd::optional<string_fragment> usr_remaining;
     bool usr_has_ansi{false};
+    size_t usr_column_width_guess{0};
 
     const char* remaining_ptr(const string_fragment& frag) const
     {

@@ -282,9 +282,17 @@ private:
 namespace fmt {
 template<>
 struct formatter<lnav::tainted_string> : formatter<string_view> {
-    auto format(const lnav::tainted_string& ts, format_context& ctx)
-        -> decltype(ctx.out()) const;
+    auto format(const lnav::tainted_string& ts,
+                format_context& ctx) -> decltype(ctx.out()) const;
 };
 }  // namespace fmt
+
+namespace lnav {
+namespace pcre2pp {
+
+std::string quote(string_fragment sf);
+
+}
+}  // namespace lnav
 
 #endif

@@ -482,6 +482,7 @@ add_library(
         styling.cc
         text_anonymizer.cc
         text_format.cc
+        text_overlay_menu.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
         textview_curses.cc
@@ -608,6 +609,7 @@ add_library(
         termios_guard.hh
         text_anonymizer.hh
         text_format.hh
+        text_overlay_menu.hh
         textfile_highlighters.hh
         textfile_sub_source.hh
         textview_curses.hh

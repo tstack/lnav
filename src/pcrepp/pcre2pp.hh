@@ -46,14 +46,6 @@
 namespace lnav {
 namespace pcre2pp {
 
-std::string quote(const char* unquoted);
-
-inline std::string
-quote(const std::string& unquoted)
-{
-    return quote(unquoted.c_str());
-}
-
 class code;
 struct capture_builder;
 class matcher;

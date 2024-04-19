@@ -843,9 +843,12 @@ listview_curses::handle_mouse(mouse_event& me)
         default:
             break;
     }
-    if (me.me_button != mouse_button_t::BUTTON_LEFT || inner_height == 0) {
+    if (me.me_button != mouse_button_t::BUTTON_LEFT || inner_height == 0
+        || (me.me_press_x < (int) (width - 2)))
+    {
         return false;
     }
+
     switch (this->lv_mouse_mode) {
         case lv_mode_t::NONE: {
             if (me.me_x < (int) (width - 2)) {
@@ -1138,6 +1141,33 @@ listview_curses::shift_top(vis_line_t offset, bool suppress_flash)
     }
 
     return this->lv_top;
+}
+
+void
+listview_curses::set_left(int left)
+{
+    if (this->lv_left == left || left < 0) {
+        return;
+    }
+
+    if (left > this->lv_left) {
+        unsigned long width;
+        vis_line_t height;
+
+        this->get_dimensions(height, width);
+        if (this->lv_show_scrollbar) {
+            width -= 1;
+        }
+        if ((this->get_inner_width() - this->lv_left) <= width) {
+            alerter::singleton().chime(
+                "the maximum width of the view has been reached");
+            return;
+        }
+    }
+
+    this->lv_left = left;
+    this->invoke_scroll();
+    this->set_needs_update();
 }
 
 size_t

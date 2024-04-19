@@ -846,7 +846,8 @@ logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
             }
 
             this->lf_longest_line
-                = std::max(this->lf_longest_line, sbr.length());
+                = std::max(this->lf_longest_line,
+                           li.li_utf8_scan_result.usr_column_width_guess);
             this->lf_partial_line = li.li_partial;
             sort_needed = this->process_prefix(sbr, li, sbc) || sort_needed;
 

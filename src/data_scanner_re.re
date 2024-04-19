@@ -37,7 +37,7 @@
 
 /*!conditions:re2c*/
 
-nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize2(text_format_t tf)
+nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_format_t tf)
 {
     data_token_t token_out = DT_INVALID;
     capture_t cap_all;

@@ -128,7 +128,7 @@ CREATE TABLE lnav_user_notifications
 );
 
 INSERT INTO lnav_user_notifications (id, priority, expiration, message)
-VALUES ('org.lnav.breadcrumb.focus', -1, DATETIME('now', '+1 minute'),
+VALUES ('org.lnav.breadcrumb.focus', -1, DATETIME('now', '+2 minute'),
         'Press <span class="-lnav_status-styles_hotkey">`</span> to focus on the breadcrumb bar');
 
 CREATE TABLE lnav_views_echo AS

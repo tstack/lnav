@@ -154,7 +154,7 @@ mouse_event::is_drag_in(mouse_button_t button, line_range lr) const
 {
     return this->me_button == button
         && this->me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED
-        && lr.contains(this->me_x);
+        && lr.contains(this->me_press_x) && lr.contains(this->me_x);
 }
 
 bool
@@ -264,6 +264,13 @@ view_curses::mvwattrline(WINDOW* window,
                 do {
                     expanded_line.push_back(' ');
                     char_index += 1;
+                    if (char_index == lr_chars.lr_start) {
+                        lr_bytes.lr_start = expanded_line.size();
+                    }
+                    if (char_index == lr_chars.lr_end) {
+                        lr_bytes.lr_end = expanded_line.size();
+                        retval.mr_chars_out = char_index;
+                    }
                 } while (expanded_line.size() % 8);
                 utf_adjustments.emplace_back(
                     lpc, expanded_line.size() - exp_start_index - 1);
