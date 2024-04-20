@@ -132,19 +132,19 @@ describe(const fs::path& filename)
             return Ok(describe_result{ai});
         }
 
-        log_info("archive read header failed: %s -- %s",
-                 filename.c_str(),
-                 archive_error_string(arc));
-        return Err(fmt::format(FMT_STRING("unable to read header: {} -- {}"),
-                               filename,
-                               archive_error_string(arc)));
+        const auto* errstr = archive_error_string(arc);
+        log_info(
+            "archive read header failed: %s -- %s", filename.c_str(), errstr);
+        return Err(
+            fmt::format(FMT_STRING("unable to read archive header: {} -- {}"),
+                        filename,
+                        errstr ? errstr : "not an archive"));
     } else {
-        log_info("archive open failed: %s -- %s",
-                 filename.c_str(),
-                 archive_error_string(arc));
+        const auto* errstr = archive_error_string(arc);
+        log_info("archive open failed: %s -- %s", filename.c_str(), errstr);
         return Err(fmt::format(FMT_STRING("unable to open file: {} -- {}"),
                                filename,
-                               archive_error_string(arc)));
+                               errstr ? errstr : "unknown"));
     }
 #endif
 
