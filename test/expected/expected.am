@@ -474,10 +474,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_prql.sh_06900fac5c2e854b1208320b753fcd43d4ba63a3.out \
     $(srcdir)/%reldir%/test_prql.sh_15ebcd913f56cde35af26c6300533d6e76bf1b55.err \
     $(srcdir)/%reldir%/test_prql.sh_15ebcd913f56cde35af26c6300533d6e76bf1b55.out \
-    $(srcdir)/%reldir%/test_prql.sh_451e242cdfa2db9005d4fe752a7b05d1ab5cba29.err \
-    $(srcdir)/%reldir%/test_prql.sh_451e242cdfa2db9005d4fe752a7b05d1ab5cba29.out \
-    $(srcdir)/%reldir%/test_prql.sh_45d57a042092ffdcd28ea35a892f02859e78f33d.err \
-    $(srcdir)/%reldir%/test_prql.sh_45d57a042092ffdcd28ea35a892f02859e78f33d.out \
+    $(srcdir)/%reldir%/test_prql.sh_5aea925b5ad95f55ce6b1b07b7046bc3d7310137.err \
+    $(srcdir)/%reldir%/test_prql.sh_5aea925b5ad95f55ce6b1b07b7046bc3d7310137.out \
     $(srcdir)/%reldir%/test_regex101.sh_0fa3663a45aca6a328cb728872af7ed7ee896f1c.err \
     $(srcdir)/%reldir%/test_regex101.sh_0fa3663a45aca6a328cb728872af7ed7ee896f1c.out \
     $(srcdir)/%reldir%/test_regex101.sh_182ae9244db314a953af2bee969726e381bc5a32.err \

@@ -595,7 +595,9 @@ textview_curses::handle_mouse(mouse_event& me)
                                            (int) this->lv_left + me.me_x);
 
                     this->set_selection_without_context(mc.mc_line);
-                    if (me.me_button == mouse_button_t::BUTTON_LEFT) {
+                    if (this->tc_supports_marks
+                        && me.me_button == mouse_button_t::BUTTON_LEFT)
+                    {
                         this->textview_value_for_row(mc.mc_line, al);
                         auto line_sf
                             = string_fragment::from_str(al.get_string());

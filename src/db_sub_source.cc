@@ -286,6 +286,7 @@ db_label_source::push_column(const scoped_value_t& sv)
             }
         }
     }
+    hm.hm_chart.next_row();
 }
 
 void

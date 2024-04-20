@@ -359,6 +359,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         .append(start_time)
         .append(" \u2014 ")
         .append(end_time)
+        .append(" ")
         .appendf(FMT_STRING("{}"), fmt::join(file_notes, "; "));
     if (selected) {
         al.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOCUSED));

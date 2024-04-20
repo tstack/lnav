@@ -67,8 +67,12 @@ hist_source2::text_value_for_line(textview_curses& tc,
                                   std::string& value_out,
                                   text_sub_source::line_flags_t flags)
 {
-    bucket_t& bucket = this->find_bucket(row);
+    auto& bucket = this->find_bucket(row);
     struct tm bucket_tm;
+
+    if (this->hs_needs_flush) {
+        this->end_of_row();
+    }
 
     value_out.clear();
     if (gmtime_r(&bucket.b_time, &bucket_tm) != nullptr) {
@@ -130,12 +134,14 @@ hist_source2::add_value(time_t row,
     auto& bucket = this->find_bucket(this->hs_last_bucket);
     bucket.b_time = row;
     bucket.b_values[htype].hv_value += value;
+
+    this->hs_needs_flush = true;
 }
 
 void
 hist_source2::init()
 {
-    view_colors& vc = view_colors::singleton();
+    auto& vc = view_colors::singleton();
 
     this->hs_chart.with_show_state(stacked_bar_chart_base::show_all{})
         .with_attrs_for_ident(HT_NORMAL, vc.attrs_for_role(role_t::VCR_TEXT))
@@ -160,12 +166,13 @@ void
 hist_source2::end_of_row()
 {
     if (this->hs_last_bucket >= 0) {
-        bucket_t& last_bucket = this->find_bucket(this->hs_last_bucket);
+        auto& last_bucket = this->find_bucket(this->hs_last_bucket);
 
         for (int lpc = 0; lpc < HT__MAX; lpc++) {
             this->hs_chart.add_value((const hist_type_t) lpc,
                                      last_bucket.b_values[lpc].hv_value);
         }
+        this->hs_chart.next_row();
     }
 }
 

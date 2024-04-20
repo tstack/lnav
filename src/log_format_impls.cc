@@ -489,10 +489,12 @@ public:
 
         field_def& with_kind(value_kind_t kind,
                              bool identifier = false,
+                             bool foreign_key = false,
                              const std::string& collator = "")
         {
             this->fd_meta.lvm_kind = kind;
             this->fd_meta.lvm_identifier = identifier;
+            this->fd_meta.lvm_foreign_key = foreign_key;
             this->fd_collator = collator;
             return *this;
         }
@@ -768,11 +770,13 @@ public:
                     "bro_referrer",
                     "bro_resp_fuids",
                     "bro_service",
-                    "bro_status_code",
                     "bro_uid",
                     "bro_uri",
                     "bro_user_agent",
                     "bro_username",
+                };
+                static const char* KNOWN_FOREIGN[] = {
+                    "bro_status_code",
                 };
 
                 int numeric_count = 0;
@@ -792,7 +796,12 @@ public:
                         bool ident = std::binary_search(std::begin(KNOWN_IDS),
                                                         std::end(KNOWN_IDS),
                                                         fd.fd_meta.lvm_name);
-                        fd.with_kind(value_kind_t::VALUE_INTEGER, ident)
+                        bool foreign
+                            = std::binary_search(std::begin(KNOWN_FOREIGN),
+                                                 std::end(KNOWN_FOREIGN),
+                                                 fd.fd_meta.lvm_name);
+                        fd.with_kind(
+                              value_kind_t::VALUE_INTEGER, ident, foreign)
                             .with_numeric_index(numeric_count);
                         numeric_count += 1;
                     } else if (field_type == "bool") {
@@ -950,7 +959,7 @@ public:
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
             for (const auto& fd : this->blt_format.blf_field_defs) {
-                if (fd.fd_meta.lvm_identifier) {
+                if (fd.fd_meta.lvm_identifier || fd.fd_meta.lvm_foreign_key) {
                     keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
                 }
             }
@@ -1124,6 +1133,7 @@ public:
                   const char* name,
                   value_kind_t kind,
                   bool ident = false,
+                  bool foreign_key = false,
                   std::string coll = "")
             : fd_name(intern_string::lookup(name)),
               fd_meta(
@@ -1133,6 +1143,7 @@ public:
               fd_collator(std::move(coll))
         {
             this->fd_meta.lvm_identifier = ident;
+            this->fd_meta.lvm_foreign_key = foreign_key;
         }
 
         field_def& with_kind(value_kind_t kind,
@@ -1625,7 +1636,7 @@ public:
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
             for (const auto& fd : KNOWN_FIELDS) {
-                if (fd.fd_meta.lvm_identifier) {
+                if (fd.fd_meta.lvm_identifier || fd.fd_meta.lvm_foreign_key) {
                     keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
                 }
             }
@@ -1687,6 +1698,7 @@ const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
         "c-ip",
         value_kind_t::VALUE_TEXT,
         true,
+        false,
         "ipaddress",
     },
     {
@@ -1706,6 +1718,7 @@ const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
         "cs-uri-stem",
         value_kind_t::VALUE_TEXT,
         true,
+        false,
         "naturalnocase",
     },
     {
@@ -1731,6 +1744,7 @@ const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
         "s-ip",
         value_kind_t::VALUE_TEXT,
         true,
+        false,
         "ipaddress",
     },
     {
@@ -1762,6 +1776,7 @@ const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {
         "sc-status",
         value_kind_t::VALUE_INTEGER,
         false,
+        true,
     },
     {
         KNOWN_FIELD_INDEX++,

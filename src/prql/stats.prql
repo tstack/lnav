@@ -25,9 +25,24 @@ let hist = func column slice:'1h' top:10 rel <relation> -> (
   )
   group { tslice } (
     window (
-        sort {-total}
-        take top
-        aggregate { v = json.group_object column total }
+      sort {-total}
+      derive {rn = row_number column}
+    )
+  )
+  derive top_value = case [
+    rn < top => column,
+    rn >= top => 'Other',
+  ]
+  group { tslice, top_value } (
+    aggregate { total2 = sum total }
+  )
+  group { tslice } (
+    window (
+      sort {-total2}
+      # XXX The `take` here is necessary to workaround a
+      # PRQL issue where the above sort is dropped entirely
+      take top
+      aggregate { v = json.group_object top_value total2 }
     )
   )
 )

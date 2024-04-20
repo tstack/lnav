@@ -68,7 +68,6 @@ public:
 
         logline_value_meta vd_meta;
         std::string vd_collate;
-        bool vd_foreign_key{false};
         intern_string_t vd_unit_field;
         std::map<const intern_string_t, scaling_factor> vd_unit_scaling;
         bool vd_internal{false};

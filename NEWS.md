@@ -101,6 +101,7 @@ Bug Fixes:
 * A crash during initialization on Apple Silicon and MacOS 12
   has been fixed.
 * A crash when previewing non-text files.
+* Optimized ANSI-escape processing.
 * Various fixes to make lnav usable as a `PAGER`.
 
 ## lnav v0.12.1

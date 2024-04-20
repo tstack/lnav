@@ -267,6 +267,8 @@ listview_curses::handle_key(int ch)
                 if (this->lv_selection <= top_for_last) {
                     this->set_selection(top_for_last + 1_vl);
                 }
+            } else if (this->lv_top > top_for_last) {
+                this->set_top(top_for_last);
             } else {
                 this->shift_top(rows_avail);
 

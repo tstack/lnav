@@ -163,6 +163,7 @@ struct logline_value_meta {
     column_t lvm_column{external_column{}};
     nonstd::optional<size_t> lvm_values_index;
     bool lvm_identifier{false};
+    bool lvm_foreign_key{false};
     bool lvm_hidden{false};
     nonstd::optional<bool> lvm_user_hidden;
     bool lvm_from_module{false};

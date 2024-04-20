@@ -245,7 +245,7 @@ logline_value_meta::to_chart_type() const
             retval = chart_type_t::none;
             break;
         case value_kind_t::VALUE_INTEGER:
-            if (!this->lvm_identifier) {
+            if (!this->lvm_identifier && !this->lvm_foreign_key) {
                 retval = chart_type_t::spectro;
             }
             break;
@@ -2843,7 +2843,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             auto& ivd = pat.p_value_by_index[lpc];
             auto vd = ivd.ivd_value_def;
 
-            if (!vd->vd_foreign_key && !vd->vd_meta.lvm_identifier) {
+            if (!vd->vd_meta.lvm_foreign_key && !vd->vd_meta.lvm_identifier) {
                 switch (vd->vd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER:
                     case value_kind_t::VALUE_FLOAT:
@@ -3606,7 +3606,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         elf_value_def->vd_meta.lvm_values_index
             = nonstd::make_optional(value_def_index++);
 
-        if (elf_value_def->vd_foreign_key
+        if (elf_value_def->vd_meta.lvm_foreign_key
             || elf_value_def->vd_meta.lvm_identifier)
         {
             continue;
@@ -3856,7 +3856,7 @@ public:
         log_vtab_impl::get_foreign_keys(keys_inout);
 
         for (const auto& elf_value_def : this->elt_format.elf_value_defs) {
-            if (elf_value_def.second->vd_foreign_key) {
+            if (elf_value_def.second->vd_meta.lvm_foreign_key) {
                 keys_inout.emplace_back(elf_value_def.first.to_string());
             }
         }

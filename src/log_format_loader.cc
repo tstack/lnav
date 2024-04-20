@@ -456,7 +456,8 @@ static const json_path_handler_base::enum_value_t OVERFLOW_ENUM[] = {
     {"truncate",
      external_log_format::json_format_element::overflow_t::TRUNCATE},
     {"dot-dot", external_log_format::json_format_element::overflow_t::DOTDOT},
-    {"last-word", external_log_format::json_format_element::overflow_t::LASTWORD},
+    {"last-word",
+     external_log_format::json_format_element::overflow_t::LASTWORD},
 
     json_path_handler_base::ENUM_TERMINATOR,
 };
@@ -616,7 +617,8 @@ static const struct json_path_container value_def_handlers = {
         .with_synopsis("<bool>")
         .with_description("Indicates whether or not this field should be "
                           "treated as a foreign key for row in another table")
-        .for_field(&external_log_format::value_def::vd_foreign_key),
+        .for_field(&external_log_format::value_def::vd_meta,
+                   &logline_value_meta::lvm_foreign_key),
 
     yajlpp::property_handler("hidden")
         .with_synopsis("<bool>")
