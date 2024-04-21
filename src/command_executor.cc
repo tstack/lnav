@@ -465,14 +465,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         }
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_files_view.reload_data();
-        lnav_data.ld_views[LNV_DB].reload_data();
-        lnav_data.ld_views[LNV_DB].set_left(0);
 
         lnav_data.ld_active_files.fc_files
             | lnav::itertools::for_each(&logfile::dump_stats);
         if (ec.ec_sql_callback != sql_callback) {
             retval = ec.ec_accumulator->get_string();
         } else if (!dls.dls_rows.empty()) {
+            lnav_data.ld_views[LNV_DB].reload_data();
+            lnav_data.ld_views[LNV_DB].set_left(0);
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 if (ec.ec_local_vars.size() == 1) {
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
