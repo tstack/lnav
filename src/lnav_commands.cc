@@ -481,7 +481,7 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
                 return {new_prompt};
             }
 
-            return {"", file_zone};
+            return {"", file_zone + " "};
         } catch (const std::runtime_error& e) {
             log_error("cannot get timezones: %s", e.what());
         }

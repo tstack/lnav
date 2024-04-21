@@ -414,6 +414,7 @@ readline_context::attempted_completion(const char* text, int start, int end)
         suggestion_possibilities.clear();
         suggestion_possibilities.emplace(rc_local_suggestion);
         arg_possibilities = &suggestion_possibilities;
+        rl_completion_append_character = 0;
     } else if (at_start
                && loaded_context->rc_possibilities.find(cmd_key)
                    != loaded_context->rc_possibilities.end())
@@ -680,8 +681,6 @@ readline_context::readline_context(std::string name,
     auto hpath = (config_dir / this->rc_name).string() + ".history";
     read_history(hpath.c_str());
     this->save();
-
-    this->rc_append_character = ' ';
 }
 
 void
@@ -974,7 +973,6 @@ readline_curses::start()
                 } else {
                     uint64_t h1 = 1, h2 = 2;
 
-                    rc_local_suggestion.clear();
                     if (rl_last_func == readline_context::command_complete) {
                         rl_last_func = rl_menu_complete;
                     }
@@ -1014,14 +1012,17 @@ readline_curses::start()
 
                     if (h1 == last_h1 && h2 == last_h2) {
                         // do nothing
-                    } else if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
-                                       complete_done ? 'l' : 'c',
-                                       rl_line_buffer,
-                                       rl_end)
-                               != 0)
-                    {
-                        perror("line: write failed");
-                        _exit(1);
+                    } else {
+                        rc_local_suggestion.clear();
+                        if (sendcmd(this->rc_command_pipe[RCF_SLAVE],
+                                    complete_done ? 'l' : 'c',
+                                    rl_line_buffer,
+                                    rl_end)
+                            != 0)
+                        {
+                            perror("line: write failed");
+                            _exit(1);
+                        }
                     }
                     last_h1 = h1;
                     last_h2 = h2;
@@ -1057,10 +1058,14 @@ readline_curses::start()
                         if (rl_prompt) {
                             new_point -= strlen(rl_prompt);
                         }
-                        if (0 <= new_point && new_point <= rl_end) {
-                            rl_point = new_point;
-                            rl_redisplay();
+                        if (new_point < 0) {
+                            new_point = 0;
                         }
+                        if (new_point > rl_end) {
+                            new_point = rl_end;
+                        }
+                        rl_point = new_point;
+                        rl_redisplay();
                     } else if (sscanf(msg, "i:%d:%n", &rl_point, &prompt_start)
                                == 1)
                     {
