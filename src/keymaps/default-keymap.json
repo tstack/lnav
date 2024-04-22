@@ -171,6 +171,10 @@
                     "command": ":toggle-view pretty",
                     "alt-msg": "${keymap_def_pop_view}"
                 },
+                "x60": {
+                    "id": "org.lnav.key.breadcrumb.focus",
+                    "command": ":prompt breadcrumb"
+                },
                 "x76": {
                     "command": ":toggle-view db"
                 },

@@ -103,7 +103,7 @@
 /ui/keymap-defs/default/x4e/command -> default-keymap.json:128
 /ui/keymap-defs/default/x50/alt-msg -> default-keymap.json:172
 /ui/keymap-defs/default/x50/command -> default-keymap.json:171
-/ui/keymap-defs/default/x51/command -> default-keymap.json:181
+/ui/keymap-defs/default/x51/command -> default-keymap.json:185
 /ui/keymap-defs/default/x54/alt-msg -> default-keymap.json:137
 /ui/keymap-defs/default/x54/command -> default-keymap.json:136
 /ui/keymap-defs/default/x55/command -> default-keymap.json:153
@@ -111,6 +111,8 @@
 /ui/keymap-defs/default/x57/command -> default-keymap.json:109
 /ui/keymap-defs/default/x58/command -> default-keymap.json:86
 /ui/keymap-defs/default/x5e/command -> default-keymap.json:62
+/ui/keymap-defs/default/x60/command -> default-keymap.json:176
+/ui/keymap-defs/default/x60/id -> default-keymap.json:175
 /ui/keymap-defs/default/x63/alt-msg -> default-keymap.json:118
 /ui/keymap-defs/default/x63/command -> default-keymap.json:117
 /ui/keymap-defs/default/x65/alt-msg -> default-keymap.json:106
@@ -123,10 +125,10 @@
 /ui/keymap-defs/default/x6e/alt-msg -> default-keymap.json:133
 /ui/keymap-defs/default/x6e/command -> default-keymap.json:132
 /ui/keymap-defs/default/x70/command -> default-keymap.json:140
-/ui/keymap-defs/default/x71/command -> default-keymap.json:178
+/ui/keymap-defs/default/x71/command -> default-keymap.json:182
 /ui/keymap-defs/default/x75/alt-msg -> default-keymap.json:150
 /ui/keymap-defs/default/x75/command -> default-keymap.json:149
-/ui/keymap-defs/default/x76/command -> default-keymap.json:175
+/ui/keymap-defs/default/x76/command -> default-keymap.json:179
 /ui/keymap-defs/default/x77/alt-msg -> default-keymap.json:114
 /ui/keymap-defs/default/x77/command -> default-keymap.json:113
 /ui/keymap-defs/default/x78/command -> default-keymap.json:143
@@ -153,7 +155,10 @@
 /ui/keymap-defs/sv/x26/command -> sv-keymap.json:16
 /ui/keymap-defs/sv/x2b/command -> sv-keymap.json:22
 /ui/keymap-defs/sv/x3d/command -> sv-keymap.json:19
+/ui/keymap-defs/sv/x60/id -> sv-keymap.json:25
 /ui/keymap-defs/sv/xc2xa4/command -> sv-keymap.json:10
+/ui/keymap-defs/sv/xc2xa7/command -> sv-keymap.json:29
+/ui/keymap-defs/sv/xc2xa7/id -> sv-keymap.json:28
 /ui/keymap-defs/sv/xe2x82xac/command -> sv-keymap.json:13
 /ui/keymap-defs/uk/x22/command -> uk-keymap.json:7
 /ui/keymap-defs/uk/xc2xa3/command -> uk-keymap.json:10

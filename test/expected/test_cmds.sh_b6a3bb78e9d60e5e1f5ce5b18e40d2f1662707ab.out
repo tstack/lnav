@@ -1394,6 +1394,7 @@ For support questions, email:
   [4m--alt[0m           Perform the alternate action for
                   this prompt by default
   [4mprompt[0m          The prompt to display
+                  [4mValues[0m: [1mbreadcrumb[0m|[1mcommand[0m|[1mscript[0m|[1msearch[0m|[1msql[0m
   [4minitial-value[0m   The initial value to fill in for
                   the prompt
 

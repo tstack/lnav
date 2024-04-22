@@ -4701,408 +4701,522 @@
         "keymap-defs": {
             "de": {
                 "x21": {
+                    "id": "",
                     "command": ":goto last 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x22": {
+                    "id": "",
                     "command": ":goto last 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x24": {
+                    "id": "",
                     "command": ":goto last 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x25": {
+                    "id": "",
                     "command": ":goto last 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x26": {
+                    "id": "",
                     "command": ":goto last hour",
                     "alt-msg": ""
                 },
                 "x31": {
+                    "id": "",
                     "command": ":goto next 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x32": {
+                    "id": "",
                     "command": ":goto next 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x33": {
+                    "id": "",
                     "command": ":goto next 30 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x34": {
+                    "id": "",
                     "command": ":goto next 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x35": {
+                    "id": "",
                     "command": ":goto next 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x36": {
+                    "id": "",
                     "command": ":goto next hour",
                     "alt-msg": ""
                 },
                 "x37": {
+                    "id": "",
                     "command": ":goto previous minute",
                     "alt-msg": ""
                 },
                 "x38": {
+                    "id": "",
                     "command": ":goto next minute",
                     "alt-msg": ""
                 },
                 "xc2xa7": {
+                    "id": "",
                     "command": ":goto last 30 minutes after the hour",
                     "alt-msg": ""
                 }
             },
             "default": {
                 "x04": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET top = top + (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top + (height / 2) + (selection - top) END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
                 },
                 "x06": {
+                    "id": "",
                     "command": ";UPDATE lnav_view_filters SET enabled = 1 - enabled WHERE view_name = (SELECT name FROM lnav_view_stack WHERE name in ('log', 'text') ORDER BY rowid DESC LIMIT 1)",
                     "alt-msg": ""
                 },
                 "x0c": {
+                    "id": "",
                     "command": ":write-screen-to -",
                     "alt-msg": ""
                 },
                 "x12": {
+                    "id": "",
                     "command": ":reset-session",
                     "alt-msg": ""
                 },
                 "x15": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET top = max(0, top - (height / 2)), selection = (CASE movement WHEN 'top' THEN selection ELSE max(0, top - (height / 2) + (selection - top)) END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
                 },
                 "x17": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET options = json_set(options, '$.word-wrap', CASE jget(options, '/word-wrap', 'none') WHEN 'none' THEN 'normal' ELSE 'none' END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
                 },
                 "x18": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
                 },
                 "x21": {
+                    "id": "",
                     "command": ":goto last 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x23": {
+                    "id": "",
                     "command": ":goto last 30 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x24": {
+                    "id": "",
                     "command": ":goto last 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x25": {
+                    "id": "",
                     "command": ":goto last 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x2f": {
+                    "id": "",
                     "command": ":prompt search",
                     "alt-msg": ""
                 },
                 "x31": {
+                    "id": "",
                     "command": ":goto next 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x32": {
+                    "id": "",
                     "command": ":goto next 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x33": {
+                    "id": "",
                     "command": ":goto next 30 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x34": {
+                    "id": "",
                     "command": ":goto next 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x35": {
+                    "id": "",
                     "command": ":goto next 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x36": {
+                    "id": "",
                     "command": ":goto next hour",
                     "alt-msg": ""
                 },
                 "x37": {
+                    "id": "",
                     "command": ":goto previous minute",
                     "alt-msg": ""
                 },
                 "x38": {
+                    "id": "",
                     "command": ":goto next minute",
                     "alt-msg": ""
                 },
                 "x3a": {
+                    "id": "",
                     "command": ":prompt command",
                     "alt-msg": ""
                 },
                 "x3b": {
+                    "id": "",
                     "command": ":prompt sql",
                     "alt-msg": ""
                 },
                 "x3d": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET paused = 1 - paused",
                     "alt-msg": ""
                 },
                 "x3f": {
+                    "id": "",
                     "command": ":toggle-view help",
                     "alt-msg": ""
                 },
                 "x40": {
+                    "id": "",
                     "command": ":goto last 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x45": {
+                    "id": "",
                     "command": ":prev-mark error",
                     "alt-msg": "${keymap_def_alt_warning}"
                 },
                 "x4e": {
+                    "id": "",
                     "command": ":prev-mark search",
                     "alt-msg": "${keymap_def_scroll_horiz}"
                 },
                 "x50": {
+                    "id": "",
                     "command": ":toggle-view pretty",
                     "alt-msg": "${keymap_def_pop_view}"
                 },
                 "x51": {
+                    "id": "",
                     "command": "|lnav-pop-view ${keyseq}",
                     "alt-msg": ""
                 },
                 "x54": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET options = json_set(options, '$.row-time-offset', CASE jget(options, '/row-time-offset', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": "${keymap_def_time_offset}"
                 },
                 "x55": {
+                    "id": "",
                     "command": ":prev-mark",
                     "alt-msg": ""
                 },
                 "x57": {
+                    "id": "",
                     "command": ":prev-mark warning",
                     "alt-msg": "${keymap_def_alt_hour_boundary}"
                 },
                 "x58": {
+                    "id": "",
                     "command": ":close",
                     "alt-msg": ""
                 },
                 "x5e": {
+                    "id": "",
                     "command": ":goto last hour",
                     "alt-msg": ""
                 },
+                "x60": {
+                    "id": "org.lnav.key.breadcrumb.focus",
+                    "command": ":prompt breadcrumb",
+                    "alt-msg": ""
+                },
                 "x63": {
+                    "id": "",
                     "command": "|lnav-copy-text",
                     "alt-msg": "${keymap_def_clear}"
                 },
                 "x65": {
+                    "id": "",
                     "command": ":next-mark error",
                     "alt-msg": "${keymap_def_alt_warning}"
                 },
                 "x67": {
+                    "id": "",
                     "command": ":goto 0",
                     "alt-msg": ""
                 },
                 "x69": {
+                    "id": "",
                     "command": ":toggle-view histogram",
                     "alt-msg": "${keymap_def_zoom}"
                 },
                 "x6d": {
+                    "id": "",
                     "command": ":mark",
                     "alt-msg": "${keymap_def_next_user_mark}"
                 },
                 "x6e": {
+                    "id": "",
                     "command": ":next-mark search",
                     "alt-msg": "${keymap_def_scroll_horiz}"
                 },
                 "x70": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET options = json_set(options, '$.row-details', CASE jget(options, '/row-details', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
                 },
                 "x71": {
+                    "id": "",
                     "command": "|lnav-pop-view ${keyseq}",
                     "alt-msg": ""
                 },
                 "x75": {
+                    "id": "",
                     "command": ":next-mark",
                     "alt-msg": "${keymap_def_next_mark}"
                 },
                 "x76": {
+                    "id": "",
                     "command": ":toggle-view db",
                     "alt-msg": ""
                 },
                 "x77": {
+                    "id": "",
                     "command": ":next-mark warning",
                     "alt-msg": "${keymap_def_alt_hour_boundary}"
                 },
                 "x78": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET options = json_set(options, '$.hidden-fields', CASE jget(options, '/hidden-fields', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
                     "alt-msg": ""
                 },
                 "x7b": {
+                    "id": "",
                     "command": ":prev-section",
                     "alt-msg": "${keymap_def_next_location}"
                 },
                 "x7c": {
+                    "id": "",
                     "command": ":prompt script",
                     "alt-msg": ""
                 },
                 "x7d": {
+                    "id": "",
                     "command": ":next-section",
                     "alt-msg": "${keymap_def_prev_location}"
                 }
             },
             "fr": {
                 "x22": {
+                    "id": "",
                     "command": ":goto next 30 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x26": {
+                    "id": "",
                     "command": ":goto next 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x27": {
+                    "id": "",
                     "command": ":goto next 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x28": {
+                    "id": "",
                     "command": ":goto next 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x2d": {
+                    "id": "",
                     "command": ":goto next hour",
                     "alt-msg": ""
                 },
                 "x31": {
+                    "id": "",
                     "command": ":goto last 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x32": {
+                    "id": "",
                     "command": ":goto last 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x33": {
+                    "id": "",
                     "command": ":goto last 30 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x34": {
+                    "id": "",
                     "command": ":goto last 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x35": {
+                    "id": "",
                     "command": ":goto last 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x36": {
+                    "id": "",
                     "command": ":goto last hour",
                     "alt-msg": ""
                 },
                 "x37": {
+                    "id": "",
                     "command": ":goto previous minute",
                     "alt-msg": ""
                 },
                 "xc3xa8": {
+                    "id": "",
                     "command": ":goto next minute",
                     "alt-msg": ""
                 },
                 "xc3xa9": {
+                    "id": "",
                     "command": ":goto next 20 minutes after the hour",
                     "alt-msg": ""
                 }
             },
             "sv": {
                 "x22": {
+                    "id": "",
                     "command": ":goto last 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x26": {
+                    "id": "",
                     "command": ":goto last hour",
                     "alt-msg": ""
                 },
                 "x2b": {
+                    "id": "",
                     "command": ";UPDATE lnav_views SET paused = 1 - paused",
                     "alt-msg": ""
                 },
                 "x3d": {
+                    "id": "",
                     "command": ":goto last day",
                     "alt-msg": ""
                 },
+                "x60": {
+                    "id": "",
+                    "command": "",
+                    "alt-msg": ""
+                },
                 "xc2xa4": {
+                    "id": "",
                     "command": ":goto last 40 minutes after the hour",
                     "alt-msg": ""
                 },
+                "xc2xa7": {
+                    "id": "org.lnav.key.breadcrumb.focus",
+                    "command": ":prompt breadcrumb",
+                    "alt-msg": ""
+                },
                 "xe2x82xac": {
+                    "id": "",
                     "command": ":goto last 40 minutes after the hour",
                     "alt-msg": ""
                 }
             },
             "uk": {
                 "x22": {
+                    "id": "",
                     "command": ":goto last 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "xc2xa3": {
+                    "id": "",
                     "command": ":goto last 30 minutes after the hour",
                     "alt-msg": ""
                 }
             },
             "us": {
                 "x21": {
+                    "id": "",
                     "command": ":goto last 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x23": {
+                    "id": "",
                     "command": ":goto last 30 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x24": {
+                    "id": "",
                     "command": ":goto last 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x25": {
+                    "id": "",
                     "command": ":goto last 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x31": {
+                    "id": "",
                     "command": ":goto next 10 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x32": {
+                    "id": "",
                     "command": ":goto next 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x33": {
+                    "id": "",
                     "command": ":goto next 30 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x34": {
+                    "id": "",
                     "command": ":goto next 40 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x35": {
+                    "id": "",
                     "command": ":goto next 50 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x36": {
+                    "id": "",
                     "command": ":goto next hour",
                     "alt-msg": ""
                 },
                 "x37": {
+                    "id": "",
                     "command": ":goto previous minute",
                     "alt-msg": ""
                 },
                 "x38": {
+                    "id": "",
                     "command": ":goto next minute",
                     "alt-msg": ""
                 },
                 "x40": {
+                    "id": "",
                     "command": ":goto last 20 minutes after the hour",
                     "alt-msg": ""
                 },
                 "x5e": {
+                    "id": "",
                     "command": ":goto last hour",
                     "alt-msg": ""
                 }

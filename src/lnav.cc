@@ -219,6 +219,9 @@ static auto bound_lnav_flags
     = injector::bind<unsigned long, lnav_flags_tag>::to_instance(
         &lnav_data.ld_flags);
 
+static auto bound_lnav_exec_context
+    = injector::bind<exec_context>::to_instance(&lnav_data.ld_exec_context);
+
 static auto bound_last_rel_time
     = injector::bind<relative_time, last_relative_time_tag>::to_singleton();
 
@@ -746,12 +749,6 @@ handle_key(int ch)
         default: {
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::PAGING:
-                    if (ch == '`') {
-                        breadcrumb_view->focus();
-                        lnav_data.ld_mode = ln_mode_t::BREADCRUMBS;
-                        return true;
-                    }
-
                     return handle_paging_key(ch);
 
                 case ln_mode_t::BREADCRUMBS:

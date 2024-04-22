@@ -1421,11 +1421,23 @@ clear_preview()
 void
 set_view_mode(ln_mode_t mode)
 {
+    if (mode == lnav_data.ld_mode) {
+        return;
+    }
+
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::BREADCRUMBS: {
             breadcrumb_view->blur();
+            break;
+        }
+        default:
+            break;
+    }
+    switch (mode) {
+        case ln_mode_t::BREADCRUMBS: {
+            breadcrumb_view->focus();
             break;
         }
         default:

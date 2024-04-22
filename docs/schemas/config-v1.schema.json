@@ -794,6 +794,11 @@
                                     "title": "/ui/keymap-defs/<keymap_name>/<key_seq>",
                                     "type": "object",
                                     "properties": {
+                                        "id": {
+                                            "title": "/ui/keymap-defs/<keymap_name>/<key_seq>/id",
+                                            "description": "The identifier that can be used to refer to this key",
+                                            "type": "string"
+                                        },
                                         "command": {
                                             "title": "/ui/keymap-defs/<keymap_name>/<key_seq>/command",
                                             "description": "The command to execute for the given key sequence.  Use a script to execute more complicated operations.",

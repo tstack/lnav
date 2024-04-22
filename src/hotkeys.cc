@@ -145,8 +145,7 @@ key_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 bool
 handle_keyseq(const char* keyseq)
 {
-    key_map& km = lnav_config.lc_active_keymap;
-
+    const auto& km = lnav_config.lc_active_keymap;
     const auto& iter = km.km_seq_to_cmd.find(keyseq);
     if (iter == km.km_seq_to_cmd.end()) {
         return false;

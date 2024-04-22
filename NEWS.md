@@ -73,6 +73,8 @@ Features:
   reports information about text that was selected with a mouse.
   This makes it possible to script operations that use the
   selected text as an input.
+* Added `breadcrumb` as an option to the `:prompt` command so
+  that the breadcrumb hotkey can be configured.
 
 Interface changes:
 * The bar charts in the DB view have now been moved to their

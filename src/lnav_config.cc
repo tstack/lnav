@@ -56,8 +56,10 @@
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bin2c.hh"
+#include "command_executor.hh"
 #include "config.h"
 #include "default-config.h"
+#include "scn/scn.h"
 #include "styling.hh"
 #include "view_curses.hh"
 #include "yajlpp/yajlpp.hh"
@@ -486,6 +488,11 @@ config_error_reporter(const yajlpp_parse_context& ypc,
 }
 
 static const struct json_path_container key_command_handlers = {
+    yajlpp::property_handler("id")
+        .with_synopsis("<id>")
+        .with_description(
+            "The identifier that can be used to refer to this key")
+        .for_field(&key_command::kc_id),
     yajlpp::property_handler("command")
         .with_synopsis("<command>")
         .with_description(
@@ -1565,6 +1572,39 @@ public:
         {
             lnav_config.lc_active_keymap.km_seq_to_cmd[pair.first]
                 = pair.second;
+        }
+
+        auto& ec = injector::get<exec_context&>();
+        for (const auto& pair : lnav_config.lc_active_keymap.km_seq_to_cmd) {
+            if (pair.second.kc_id.empty()) {
+                continue;
+            }
+
+            std::string keystr;
+
+            auto sv = string_fragment::from_str(pair.first).to_string_view();
+            while (!sv.empty()) {
+                int32_t value;
+                auto scan_res = scn::scan(sv, "x{:2x}", value);
+                if (!scan_res) {
+                    throw "invalid hex input";
+                }
+                auto ch = (char) (value & 0xff);
+                switch (ch) {
+                    case '\t':
+                        keystr.append("TAB");
+                        break;
+                    case '\r':
+                        keystr.append("ENTER");
+                        break;
+                    default:
+                        keystr.push_back(ch);
+                        break;
+                }
+                sv = scan_res.range_as_string_view();
+            }
+
+            ec.ec_global_vars[pair.second.kc_id] = keystr;
         }
     }
 };

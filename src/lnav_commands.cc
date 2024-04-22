@@ -52,6 +52,7 @@
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
+#include "breadcrumb_curses.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
@@ -5591,6 +5592,12 @@ com_quit(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 }
 
 static void
+breadcrumb_prompt(std::vector<std::string>& args)
+{
+    set_view_mode(ln_mode_t::BREADCRUMBS);
+}
+
+static void
 command_prompt(std::vector<std::string>& args)
 {
     auto* tc = *lnav_data.ld_view_stack.top();
@@ -5885,6 +5892,7 @@ com_prompt(exec_context& ec,
 {
     static std::map<std::string, std::function<void(std::vector<std::string>&)>>
         PROMPT_TYPES = {
+            {"breadcrumb", breadcrumb_prompt},
             {"command", command_prompt},
             {"script", script_prompt},
             {"search", search_prompt},
@@ -5949,8 +5957,15 @@ readline_context::command_t STD_COMMANDS[] = {
                                    "Perform the alternate action "
                                    "for this prompt by default")
                              .optional())
-         .with_parameter(
-             help_text("prompt", "The prompt to display").optional())
+         .with_parameter(help_text("prompt", "The prompt to display")
+                             .with_enum_values({
+                                 "breadcrumb",
+                                 "command",
+                                 "script",
+                                 "search",
+                                 "sql",
+                             })
+                             .optional())
          .with_parameter(
              help_text("initial-value",
                        "The initial value to fill in for the prompt")
