@@ -1992,6 +1992,47 @@ com_pipe_to(exec_context& ec,
     auto* tc = *lnav_data.ld_view_stack.top();
     auto bv = combined_user_marks(tc->get_bookmarks());
     bool pipe_line_to = (args[0] == "pipe-line-to");
+    auto path_v = ec.ec_path_stack;
+    std::map<std::string, std::string> extra_env;
+
+    if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
+        log_data_helper ldh(lnav_data.ld_log_source);
+        char tmp_str[64];
+
+        ldh.parse_line(ec.ec_top_line, true);
+        auto format = ldh.ldh_file->get_format();
+        auto source_path = format->get_source_path();
+        path_v.insert(path_v.end(), source_path.begin(), source_path.end());
+
+        extra_env["log_line"] = fmt::to_string((int) ec.ec_top_line);
+        sql_strftime(tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
+        extra_env["log_time"] = tmp_str;
+        extra_env["log_path"] = ldh.ldh_file->get_filename();
+        extra_env["log_level"] = ldh.ldh_line->get_level_name();
+        if (ldh.ldh_line_values.lvv_opid_value) {
+            extra_env["log_opid"] = ldh.ldh_line_values.lvv_opid_value.value();
+        }
+        auto read_res = ldh.ldh_file->read_raw_message(ldh.ldh_line);
+        if (read_res.isOk()) {
+            auto raw_text = to_string(read_res.unwrap());
+            extra_env["log_raw_text"] = raw_text;
+        }
+        for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
+            extra_env[ldh_line_value.lv_meta.lvm_name.to_string()]
+                = ldh_line_value.to_string();
+        }
+        auto iter = ldh.ldh_parser->dp_pairs.begin();
+        for (size_t lpc = 0; lpc < ldh.ldh_parser->dp_pairs.size();
+             lpc++, ++iter)
+        {
+            std::string colname = ldh.ldh_parser->get_element_string(
+                iter->e_sub_elements->front());
+            colname = ldh.ldh_namer->add_column(colname).to_string();
+            std::string val = ldh.ldh_parser->get_element_string(
+                iter->e_sub_elements->back());
+            extra_env[colname] = val;
+        }
+    }
 
     std::string cmd = trim(remaining_args(cmdline, args));
     auto for_child_res = auto_pipe::for_child_fds(STDIN_FILENO, STDOUT_FILENO);
@@ -2015,66 +2056,22 @@ com_pipe_to(exec_context& ec,
                                  strerror(errno));
 
         case 0: {
-            const char* args[] = {
+            const char* exec_args[] = {
                 "sh",
                 "-c",
                 cmd.c_str(),
                 nullptr,
             };
-            auto path_v = ec.ec_path_stack;
             std::string path;
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
             path_v.emplace_back(lnav::paths::dotlnav() / "formats/default");
 
-            if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
-                auto& lss = lnav_data.ld_log_source;
-                log_data_helper ldh(lss);
-                char tmp_str[64];
-
-                ldh.parse_line(ec.ec_top_line, true);
-                auto format = ldh.ldh_file->get_format();
-                auto source_path = format->get_source_path();
-                path_v.insert(
-                    path_v.end(), source_path.begin(), source_path.end());
-
-                snprintf(tmp_str, sizeof(tmp_str), "%d", (int) ec.ec_top_line);
-                setenv("log_line", tmp_str, 1);
-                sql_strftime(
-                    tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
-                setenv("log_time", tmp_str, 1);
-                setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
-                setenv("log_level", ldh.ldh_line->get_level_name(), 1);
-                if (ldh.ldh_line_values.lvv_opid_value) {
-                    setenv("log_opid",
-                           ldh.ldh_line_values.lvv_opid_value->c_str(),
-                           1);
-                }
-                auto read_res = ldh.ldh_file->read_raw_message(ldh.ldh_line);
-                if (read_res.isOk()) {
-                    auto raw_text = to_string(read_res.unwrap());
-                    setenv("log_raw_text", raw_text.c_str(), 1);
-                }
-                for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
-                    setenv(ldh_line_value.lv_meta.lvm_name.get(),
-                           ldh_line_value.to_string().c_str(),
-                           1);
-                }
-                auto iter = ldh.ldh_parser->dp_pairs.begin();
-                for (size_t lpc = 0; lpc < ldh.ldh_parser->dp_pairs.size();
-                     lpc++, ++iter)
-                {
-                    std::string colname = ldh.ldh_parser->get_element_string(
-                        iter->e_sub_elements->front());
-                    colname = ldh.ldh_namer->add_column(colname).to_string();
-                    std::string val = ldh.ldh_parser->get_element_string(
-                        iter->e_sub_elements->back());
-                    setenv(colname.c_str(), val.c_str(), 1);
-                }
-            }
-
             setenv("PATH", lnav::filesystem::build_path(path_v).c_str(), 1);
-            execvp(args[0], (char* const*) args);
+            for (const auto& pair : extra_env) {
+                setenv(pair.first.c_str(), pair.second.c_str(), 1);
+            }
+            execvp(exec_args[0], (char* const*) exec_args);
             _exit(1);
             break;
         }
