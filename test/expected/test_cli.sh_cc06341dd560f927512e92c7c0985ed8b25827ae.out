@@ -155,10 +155,11 @@
 /ui/keymap-defs/sv/x26/command -> sv-keymap.json:16
 /ui/keymap-defs/sv/x2b/command -> sv-keymap.json:22
 /ui/keymap-defs/sv/x3d/command -> sv-keymap.json:19
+/ui/keymap-defs/sv/x60/command -> sv-keymap.json:26
 /ui/keymap-defs/sv/x60/id -> sv-keymap.json:25
 /ui/keymap-defs/sv/xc2xa4/command -> sv-keymap.json:10
-/ui/keymap-defs/sv/xc2xa7/command -> sv-keymap.json:29
-/ui/keymap-defs/sv/xc2xa7/id -> sv-keymap.json:28
+/ui/keymap-defs/sv/xc2xa7/command -> sv-keymap.json:30
+/ui/keymap-defs/sv/xc2xa7/id -> sv-keymap.json:29
 /ui/keymap-defs/sv/xe2x82xac/command -> sv-keymap.json:13
 /ui/keymap-defs/uk/x22/command -> uk-keymap.json:7
 /ui/keymap-defs/uk/xc2xa3/command -> uk-keymap.json:10

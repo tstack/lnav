@@ -166,8 +166,12 @@ handle_keyseq(const char* keyseq)
     vars["keyseq"] = keyseq;
     const auto& kc = iter->second;
 
-    log_debug("executing key sequence %s: %s", keyseq, kc.kc_cmd.c_str());
-    auto result = execute_any(ec, kc.kc_cmd);
+    log_debug(
+        "executing key sequence %s: %s", keyseq, kc.kc_cmd.pp_value.c_str());
+    auto sg = ec.enter_source(kc.kc_cmd.pp_location.sl_source,
+                              kc.kc_cmd.pp_location.sl_line_number,
+                              kc.kc_cmd.pp_value);
+    auto result = execute_any(ec, kc.kc_cmd.pp_value);
     if (result.isOk()) {
         lnav_data.ld_rl_view->set_value(result.unwrap());
     } else {
@@ -194,7 +198,7 @@ handle_keyseq(const char* keyseq)
 }
 
 bool
-handle_paging_key(int ch)
+handle_paging_key(int ch, const char* keyseq)
 {
     if (lnav_data.ld_view_stack.empty()) {
         return false;
@@ -211,8 +215,7 @@ handle_paging_key(int ch)
         }
     }
 
-    auto keyseq = fmt::format(FMT_STRING("x{:02x}"), ch);
-    if (handle_keyseq(keyseq.c_str())) {
+    if (handle_keyseq(keyseq)) {
         return true;
     }
 

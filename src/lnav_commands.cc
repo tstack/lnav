@@ -5971,9 +5971,7 @@ readline_context::command_t STD_COMMANDS[] = {
                        "The initial value to fill in for the prompt")
                  .optional())
          .with_example({
-             "To open the command prompt with 'filter-in' already "
-             "filled "
-             "in",
+             "To open the command prompt with 'filter-in' already filled in",
              "command : 'filter-in '",
          })
          .with_example({

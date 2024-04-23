@@ -498,7 +498,7 @@ static const struct json_path_container key_command_handlers = {
         .with_description(
             "The command to execute for the given key sequence.  Use a script "
             "to execute more complicated operations.")
-        .with_pattern("^[:|;].*")
+        .with_pattern("^$|^[:|;].*")
         .with_example(":goto next hour")
         .for_field(&key_command::kc_cmd),
     yajlpp::property_handler("alt-msg")
@@ -520,6 +520,14 @@ static const struct json_path_container keymap_def_handlers = {
             [](const yajlpp_provider_context& ypc, key_map* km) {
                 auto& retval = km->km_seq_to_cmd[ypc.get_substr("key_seq")];
 
+                if (ypc.ypc_parse_context != nullptr) {
+                    retval.kc_cmd.pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                    retval.kc_cmd.pp_location.sl_source
+                        = ypc.ypc_parse_context->ypc_source;
+                    retval.kc_cmd.pp_location.sl_line_number
+                        = ypc.ypc_parse_context->get_line_number();
+                }
                 return &retval;
             })
         .with_path_provider<key_map>(
@@ -1570,8 +1578,12 @@ public:
         for (const auto& pair :
              lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap].km_seq_to_cmd)
         {
-            lnav_config.lc_active_keymap.km_seq_to_cmd[pair.first]
-                = pair.second;
+            if (pair.second.kc_cmd.pp_value.empty()) {
+                lnav_config.lc_active_keymap.km_seq_to_cmd.erase(pair.first);
+            } else {
+                lnav_config.lc_active_keymap.km_seq_to_cmd[pair.first]
+                    = pair.second;
+            }
         }
 
         auto& ec = injector::get<exec_context&>();
@@ -1580,31 +1592,52 @@ public:
                 continue;
             }
 
+            auto keyseq_sf = string_fragment::from_str(pair.first);
             std::string keystr;
-
-            auto sv = string_fragment::from_str(pair.first).to_string_view();
-            while (!sv.empty()) {
+            if (keyseq_sf.startswith("f")) {
+                auto sv = keyseq_sf.to_string_view();
                 int32_t value;
-                auto scan_res = scn::scan(sv, "x{:2x}", value);
+                auto scan_res = scn::scan(sv, "f{}", value);
                 if (!scan_res) {
-                    throw "invalid hex input";
+                    log_error("invalid function key sequence: %s", keyseq_sf);
+                    continue;
                 }
-                auto ch = (char) (value & 0xff);
-                switch (ch) {
-                    case '\t':
-                        keystr.append("TAB");
-                        break;
-                    case '\r':
-                        keystr.append("ENTER");
-                        break;
-                    default:
-                        keystr.push_back(ch);
-                        break;
+                if (value < 0 || value > 64) {
+                    log_error("invalid function key number: %s", keyseq_sf);
+                    continue;
                 }
-                sv = scan_res.range_as_string_view();
+
+                keystr = toupper(pair.first);
+            } else {
+                auto sv
+                    = string_fragment::from_str(pair.first).to_string_view();
+                while (!sv.empty()) {
+                    int32_t value;
+                    auto scan_res = scn::scan(sv, "x{:2x}", value);
+                    if (!scan_res) {
+                        log_error("invalid key sequence: %s",
+                                  pair.first.c_str());
+                        break;
+                    }
+                    auto ch = (char) (value & 0xff);
+                    switch (ch) {
+                        case '\t':
+                            keystr.append("TAB");
+                            break;
+                        case '\r':
+                            keystr.append("ENTER");
+                            break;
+                        default:
+                            keystr.push_back(ch);
+                            break;
+                    }
+                    sv = scan_res.range_as_string_view();
+                }
             }
 
-            ec.ec_global_vars[pair.second.kc_id] = keystr;
+            if (!keystr.empty()) {
+                ec.ec_global_vars[pair.second.kc_id] = keystr;
+            }
         }
     }
 };
@@ -1908,7 +1941,7 @@ save_config()
 void
 reload_config(std::vector<lnav::console::user_message>& errors)
 {
-    lnav_config_listener* curr = lnav_config_listener::LISTENER_LIST;
+    auto* curr = lnav_config_listener::LISTENER_LIST;
 
     while (curr != nullptr) {
         auto reporter = [&errors](const void* cfg_value,

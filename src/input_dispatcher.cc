@@ -102,8 +102,12 @@ input_dispatcher::new_input(const struct timeval& current_time, int ch)
                             for (int lpc = 0; this->id_escape_buffer[lpc];
                                  lpc++)
                             {
+                                snprintf(keyseq.data(),
+                                         keyseq.size(),
+                                         "x%02x",
+                                         this->id_escape_buffer[lpc] & 0xff);
                                 handled = this->id_key_handler(
-                                    this->id_escape_buffer[lpc]);
+                                    this->id_escape_buffer[lpc], keyseq.data());
                             }
                             this->id_escape_index = 0;
                             break;
@@ -121,6 +125,13 @@ input_dispatcher::new_input(const struct timeval& current_time, int ch)
                 {
                     this->id_escape_index = 0;
                 }
+            } else if (ch > 0xff) {
+                if (KEY_F(0) <= ch && ch <= KEY_F(64)) {
+                    snprintf(keyseq.data(), keyseq.size(), "f%d", ch - KEY_F0);
+                } else {
+                    snprintf(keyseq.data(), keyseq.size(), "n%04o", ch);
+                }
+                handled = this->id_key_handler(ch, keyseq.data());
             } else {
                 auto seq_size = utf::utf8::char_size([ch]() {
                                     return std::make_pair(ch, 16);
@@ -128,7 +139,7 @@ input_dispatcher::new_input(const struct timeval& current_time, int ch)
 
                 if (seq_size == 1) {
                     snprintf(keyseq.data(), keyseq.size(), "x%02x", ch & 0xff);
-                    handled = this->id_key_handler(ch);
+                    handled = this->id_key_handler(ch, keyseq.data());
                 } else {
                     this->reset_escape_buffer(ch, current_time, seq_size);
                 }
@@ -150,7 +161,8 @@ input_dispatcher::poll(const struct timeval& current_time)
 
         timersub(&current_time, &this->id_escape_start_time, &diff);
         if (escape_threshold < diff) {
-            this->id_key_handler(KEY_ESCAPE);
+            static const char ESC_KEYSEQ[] = "\x1b";
+            this->id_key_handler(KEY_ESCAPE, ESC_KEYSEQ);
             this->id_escape_index = 0;
         }
     }

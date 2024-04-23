@@ -81,7 +81,7 @@ void install_extra_formats();
 
 struct key_command {
     std::string kc_id;
-    std::string kc_cmd;
+    positioned_property<std::string> kc_cmd;
     std::string kc_alt_msg;
 };
 

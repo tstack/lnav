@@ -31,6 +31,6 @@
 #define LNAV_HOTKEYS_H
 
 bool handle_keyseq(const char* keyseq);
-bool handle_paging_key(int ch);
+bool handle_paging_key(int ch, const char* keyseq);
 
 #endif  // LNAV_HOTKEYS_H

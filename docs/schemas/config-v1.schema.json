@@ -803,7 +803,7 @@
                                             "title": "/ui/keymap-defs/<keymap_name>/<key_seq>/command",
                                             "description": "The command to execute for the given key sequence.  Use a script to execute more complicated operations.",
                                             "type": "string",
-                                            "pattern": "^[:|;].*",
+                                            "pattern": "^$|^[:|;].*",
                                             "examples": [
                                                 ":goto next hour"
                                             ]

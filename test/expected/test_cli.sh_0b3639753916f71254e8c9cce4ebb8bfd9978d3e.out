@@ -5118,7 +5118,7 @@
                 },
                 "x60": {
                     "id": "",
-                    "command": "",
+                    "command": ":prompt breadcrumb",
                     "alt-msg": ""
                 },
                 "xc2xa4": {

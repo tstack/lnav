@@ -90,6 +90,7 @@ Interface changes:
   can now hide/show fields by moving the cursor line to the
   given field and pressing the space bar or by clicking on
   the diamond with the mouse.
+* The `sv` keymap binds `§` to focus the breadcrumb bar.
 
 Bug Fixes:
 * With the recent xz backdoor shenanigans, it seems like a good

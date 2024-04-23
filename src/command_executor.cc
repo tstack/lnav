@@ -785,6 +785,17 @@ execute_from_file(exec_context& ec,
 Result<std::string, lnav::console::user_message>
 execute_any(exec_context& ec, const std::string& cmdline_with_mode)
 {
+    if (cmdline_with_mode.empty()) {
+        auto um = lnav::console::user_message::error("empty command")
+                      .with_help(
+                          "a command should start with ':', ';', '/', '|' and "
+                          "followed by the operation to perform");
+        if (!ec.ec_source.empty()) {
+            um.with_snippet(ec.ec_source.back());
+        }
+        return Err(um);
+    }
+
     std::string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
     auto _cleanup = finally([&ec] {
         if (ec.is_read_write() &&

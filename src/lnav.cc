@@ -367,7 +367,7 @@ sigchld(int sig)
 }
 
 static void
-handle_rl_key(int ch)
+handle_rl_key(int ch, const char* keyseq)
 {
     switch (ch) {
         case KEY_F(2):
@@ -379,7 +379,7 @@ handle_rl_key(int ch)
         case KEY_PPAGE:
         case KEY_NPAGE:
         case KEY_CTRL('p'):
-            handle_paging_key(ch);
+            handle_paging_key(ch, keyseq);
             break;
 
         case KEY_CTRL(']'):
@@ -675,7 +675,7 @@ update_view_position(listview_curses* lv)
 }
 
 static bool
-handle_config_ui_key(int ch)
+handle_config_ui_key(int ch, const char* keyseq)
 {
     bool retval = false;
 
@@ -730,14 +730,14 @@ handle_config_ui_key(int ch)
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_status[LNS_FILTER].set_needs_update();
     } else {
-        return handle_paging_key(ch);
+        return handle_paging_key(ch, keyseq);
     }
 
     return true;
 }
 
 static bool
-handle_key(int ch)
+handle_key(int ch, const char* keyseq)
 {
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
 
@@ -749,7 +749,7 @@ handle_key(int ch)
         default: {
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::PAGING:
-                    return handle_paging_key(ch);
+                    return handle_paging_key(ch, keyseq);
 
                 case ln_mode_t::BREADCRUMBS:
                     if (ch == '`' || !breadcrumb_view->handle_key(ch)) {
@@ -761,7 +761,7 @@ handle_key(int ch)
 
                 case ln_mode_t::FILTER:
                 case ln_mode_t::FILES:
-                    return handle_config_ui_key(ch);
+                    return handle_config_ui_key(ch, keyseq);
 
                 case ln_mode_t::SPECTRO_DETAILS: {
                     if (ch == '\t' || ch == 'q') {
@@ -800,7 +800,7 @@ handle_key(int ch)
                 case ln_mode_t::SQL:
                 case ln_mode_t::EXEC:
                 case ln_mode_t::USER:
-                    handle_rl_key(ch);
+                    handle_rl_key(ch, keyseq);
                     break;
 
                 case ln_mode_t::BUSY:
