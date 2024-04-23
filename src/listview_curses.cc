@@ -790,15 +790,6 @@ listview_curses::shift_selection(shift_amount_t sa)
                 if (this->lv_selection <= top_for_last) {
                     new_selection = top_for_last + 1_vl;
                 }
-            } else {
-                this->shift_top(rows_avail);
-
-                auto inner_height = this->get_inner_height();
-                if (this->lv_selectable && this->lv_top >= top_for_last
-                    && inner_height > 0_vl)
-                {
-                    new_selection = inner_height - 1_vl;
-                }
             }
         }
         this->set_selection(new_selection);

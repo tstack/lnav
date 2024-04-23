@@ -304,15 +304,7 @@ file_collection::watch_logfile(const std::string& filename,
         return nonstd::nullopt;
     }
 
-    if (loo.loo_temp_file) {
-        memset(&st, 0, sizeof(st));
-        st.st_dev = loo.loo_temp_dev;
-        st.st_ino = loo.loo_temp_ino;
-        st.st_mode = S_IFREG;
-        rc = 0;
-    } else {
-        rc = stat(filename.c_str(), &st);
-    }
+    rc = stat(filename.c_str(), &st);
 
     if (rc == 0) {
         if (S_ISDIR(st.st_mode) && this->fc_recursive) {
@@ -405,8 +397,7 @@ file_collection::watch_logfile(const std::string& filename,
                 }
             }
 
-            auto ff = loo.loo_temp_file ? file_format_t::UNKNOWN
-                                        : detect_file_format(filename);
+            auto ff = detect_file_format(filename);
 
             loo.loo_file_format = ff;
             switch (ff) {
@@ -487,59 +478,54 @@ file_collection::watch_logfile(const std::string& filename,
                 default: {
                     auto filename_to_open = filename;
 
-                    if (!loo.loo_temp_file) {
-                        auto eff = detect_mime_type(filename);
+                    auto eff = detect_mime_type(filename);
 
-                        if (eff) {
-                            auto cr = file_converter_manager::convert(
-                                eff.value(), filename);
+                    if (eff) {
+                        auto cr = file_converter_manager::convert(eff.value(),
+                                                                  filename);
 
-                            if (cr.isErr()) {
-                                retval.fc_name_to_errors->writeAccess()
-                                    ->emplace(filename,
-                                              file_error_info{
-                                                  st.st_mtime,
-                                                  cr.unwrapErr(),
-                                              });
-                                break;
-                            }
-
-                            auto convert_res = cr.unwrap();
-                            retval.fc_child_pollers.emplace_back(child_poller{
+                        if (cr.isErr()) {
+                            retval.fc_name_to_errors->writeAccess()->emplace(
                                 filename,
-                                std::move(convert_res.cr_child),
-                                [filename,
-                                 st,
-                                 error_queue = convert_res.cr_error_queue](
-                                    auto& fc, auto& child) {
-                                    if (child.was_normal_exit()
-                                        && child.exit_status() == EXIT_SUCCESS)
-                                    {
-                                        log_info(
-                                            "converter[%d] exited normally",
-                                            child.in());
-                                        return;
-                                    }
-                                    log_error("converter[%d] exited with %d",
-                                              child.in(),
-                                              child.status());
-                                    fc.fc_name_to_errors->writeAccess()
-                                        ->emplace(
-                                            filename,
-                                            file_error_info{
-                                                st.st_mtime,
-                                                fmt::format(
-                                                    FMT_STRING("{}"),
-                                                    fmt::join(*error_queue,
-                                                              "\n")),
-                                            });
-                                },
-                            });
-                            loo.with_filename(filename);
-                            loo.with_stat_for_temp(st);
-                            loo.loo_format_name = eff->eff_format_name;
-                            filename_to_open = convert_res.cr_destination;
+                                file_error_info{
+                                    st.st_mtime,
+                                    cr.unwrapErr(),
+                                });
+                            break;
                         }
+
+                        auto convert_res = cr.unwrap();
+                        retval.fc_child_pollers.emplace_back(child_poller{
+                            filename,
+                            std::move(convert_res.cr_child),
+                            [filename,
+                             st,
+                             error_queue = convert_res.cr_error_queue](
+                                auto& fc, auto& child) {
+                                if (child.was_normal_exit()
+                                    && child.exit_status() == EXIT_SUCCESS)
+                                {
+                                    log_info("converter[%d] exited normally",
+                                             child.in());
+                                    return;
+                                }
+                                log_error("converter[%d] exited with %d",
+                                          child.in(),
+                                          child.status());
+                                fc.fc_name_to_errors->writeAccess()->emplace(
+                                    filename,
+                                    file_error_info{
+                                        st.st_mtime,
+                                        fmt::format(
+                                            FMT_STRING("{}"),
+                                            fmt::join(*error_queue, "\n")),
+                                    });
+                            },
+                        });
+                        loo.with_filename(filename);
+                        loo.with_stat_for_temp(st);
+                        loo.loo_format_name = eff->eff_format_name;
+                        filename_to_open = convert_res.cr_destination;
                     }
 
                     log_info("loading new file: filename=%s", filename.c_str());
@@ -770,7 +756,7 @@ file_collection::rescan_files(bool required)
                 pair.second.loo_piper->get_out_pattern().string(),
                 pair.second,
                 required);
-        } else if (!pair.second.loo_temp_file) {
+        } else {
             this->expand_filename(fq, pair.first, pair.second, required);
             if (this->fc_rotated) {
                 std::string path = pair.first + ".*";

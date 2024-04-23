@@ -60,7 +60,6 @@ using file_location_t = mapbox::util::variant<vis_line_t, std::string>;
 struct logfile_open_options_base {
     std::string loo_filename;
     logfile_name_source loo_source{logfile_name_source::USER};
-    bool loo_temp_file{false};
     dev_t loo_temp_dev{0};
     ino_t loo_temp_ino{0};
     bool loo_detect_format{true};
