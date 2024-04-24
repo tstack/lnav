@@ -32,6 +32,7 @@
 
 #include "readline_possibilities.hh"
 
+#include "base/fs_util.hh"
 #include "base/isc.hh"
 #include "base/opt_util.hh"
 #include "config.h"
@@ -39,6 +40,8 @@
 #include "date/tz.h"
 #include "lnav.hh"
 #include "lnav_config.hh"
+#include "log_data_helper.hh"
+#include "log_format_ext.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_help.hh"
@@ -70,15 +73,57 @@ handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
     return 0;
 }
 
+static size_t
+files_with_format(log_format* format)
+{
+    auto retval = size_t{0};
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        if (lf->get_format_name() == format->get_name()) {
+            retval += 1;
+        }
+    }
+
+    return retval;
+}
+
 static int
 handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     if (lnav_data.ld_rl_view != nullptr) {
         std::string table_name = colvalues[0];
+        intern_string_t table_intern = intern_string::lookup(table_name);
+        auto format = log_format::find_root_format(table_name.c_str());
+        auto add_poss = true;
 
-        if (sqlite_function_help.count(table_name) == 0) {
+        if (format != nullptr) {
+            if (files_with_format(format.get()) == 0) {
+                add_poss = false;
+            }
+        } else if (sqlite_function_help.count(table_name) != 0) {
+            add_poss = false;
+        } else {
+            for (const auto& lf : log_format::get_root_formats()) {
+                auto* elf = dynamic_cast<external_log_format*>(lf.get());
+                if (elf == nullptr) {
+                    continue;
+                }
+
+                if (elf->elf_search_tables.find(table_intern)
+                        != elf->elf_search_tables.end()
+                    && files_with_format(lf.get()) == 0)
+                {
+                    add_poss = false;
+                }
+            }
+        }
+
+        if (add_poss) {
             lnav_data.ld_rl_view->add_possibility(
-                ln_mode_t::SQL, "*", colvalues[0]);
+                ln_mode_t::SQL, "*", table_name);
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "prql-table",
+                lnav::prql::quote_ident(std::move(table_name)));
         }
 
         lnav_data.ld_table_ddl[colvalues[0]] = colvalues[1];
@@ -381,8 +426,7 @@ add_file_possibilities()
             continue;
         }
 
-        auto escaped_fn
-            = std::regex_replace(lf->get_filename(), sh_escape, R"(\\\1)");
+        auto escaped_fn = fmt::to_string(lf->get_filename());
 
         rc->add_possibility(ln_mode_t::COMMAND, "loaded-files", escaped_fn);
 
@@ -482,10 +526,10 @@ add_tag_possibilities()
     if (lnav_data.ld_view_stack.top().value_or(nullptr)
         == &lnav_data.ld_views[LNV_LOG])
     {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
+        auto& lss = lnav_data.ld_log_source;
         if (lss.text_line_count() > 0) {
             auto line_meta_opt = lss.find_bookmark_metadata(
-                lnav_data.ld_views[LNV_LOG].get_top());
+                lnav_data.ld_views[LNV_LOG].get_selection());
             if (line_meta_opt) {
                 rc->add_possibility(ln_mode_t::COMMAND,
                                     "line-tags",
@@ -535,4 +579,113 @@ add_tz_possibilities(ln_mode_t context)
             }
         }
     }
+}
+
+void
+add_sqlite_possibilities()
+{
+    // Hidden columns don't show up in the table_info pragma.
+    static const char* hidden_table_columns[] = {
+        "log_time_msecs",
+        "log_path",
+        "log_text",
+        "log_body",
+
+        nullptr,
+    };
+
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
+
+    add_env_possibilities(ln_mode_t::SQL);
+
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "prql-expr", lnav::sql::prql_keywords);
+    for (const auto& pair : lnav::sql::prql_functions) {
+        lnav_data.ld_rl_view->add_possibility(
+            ln_mode_t::SQL, "prql-expr", pair.first);
+    }
+
+    if (log_view.get_inner_height() > 0) {
+        log_data_helper ldh(lnav_data.ld_log_source);
+        auto vl = log_view.get_selection();
+        auto cl = lnav_data.ld_log_source.at_base(vl);
+
+        ldh.parse_line(cl);
+
+        for (const auto& jextra : ldh.ldh_extra_json) {
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                lnav::sql::mprintf("%Q", jextra.first.c_str()).in());
+        }
+        for (const auto& jpair : ldh.ldh_json_pairs) {
+            for (const auto& wt : jpair.second) {
+                lnav_data.ld_rl_view->add_possibility(
+                    ln_mode_t::SQL,
+                    "*",
+                    lnav::sql::mprintf("%Q", wt.wt_ptr.c_str()).in());
+            }
+        }
+        for (const auto& xml_pair : ldh.ldh_xml_pairs) {
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                lnav::sql::mprintf("%Q", xml_pair.first.second.c_str()).in());
+        }
+    }
+
+    lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::SQL, "*");
+    add_view_text_possibilities(lnav_data.ld_rl_view,
+                                ln_mode_t::SQL,
+                                "*",
+                                &log_view,
+                                text_quoting::sql);
+
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "*", std::begin(sql_keywords), std::end(sql_keywords));
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "*", sql_function_names);
+    lnav_data.ld_rl_view->add_possibility(
+        ln_mode_t::SQL, "*", hidden_table_columns);
+
+    for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
+        struct FuncDef* basic_funcs;
+        struct FuncDefAgg* agg_funcs;
+
+        sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
+        for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
+            const FuncDef& func_def = basic_funcs[lpc2];
+
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+        }
+        for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
+            const FuncDefAgg& func_def = agg_funcs[lpc2];
+
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
+                "*",
+                std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
+        }
+    }
+
+    for (const auto& pair : sqlite_function_help) {
+        switch (pair.second->ht_context) {
+            case help_context_t::HC_SQL_FUNCTION:
+            case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
+                std::string poss = pair.first
+                    + (pair.second->ht_parameters.empty() ? "()" : ("("));
+
+                lnav_data.ld_rl_view->add_possibility(
+                    ln_mode_t::SQL, "*", poss);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
 }

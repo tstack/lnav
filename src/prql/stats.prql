@@ -1,0 +1,48 @@
+let count_by = func column rel <relation> -> <relation> (
+  rel
+  group {column} (aggregate {total = count this})
+  sort {-total}
+)
+
+let average_of = func column rel <relation> -> <relation> (
+  rel
+  aggregate {value = average column}
+)
+
+let sum_of = func column rel <relation> -> <relation> (
+  (rel | aggregate {total = sum column})
+)
+
+let by = func column values rel <relation> -> <relation> (
+  rel
+  group {column} (aggregate values)
+)
+
+let hist = func column slice:'1h' top:10 rel <relation> -> (
+  rel
+  group { tslice = (time.slice log_time_msecs slice), column } (
+    aggregate { total = count this }
+  )
+  group { tslice } (
+    window (
+      sort {-total}
+      derive {rn = row_number column}
+    )
+  )
+  derive top_value = case [
+    rn < top => column,
+    rn >= top => 'Other',
+  ]
+  group { tslice, top_value } (
+    aggregate { total2 = sum total }
+  )
+  group { tslice } (
+    window (
+      sort {-total2}
+      # XXX The `take` here is necessary to workaround a
+      # PRQL issue where the above sort is dropped entirely
+      take top
+      aggregate { v = json.group_object top_value total2 }
+    )
+  )
+)

@@ -11,6 +11,9 @@
                         "color": "Silver",
                         "background-color": "Black"
                     },
+                    "selected-text": {
+                        "background-color": "DarkCyan"
+                    },
                     "identifier": {
                         "background-color": "",
                         "color": "semantic()"
@@ -107,7 +110,8 @@
                         "color": "Yellow"
                     },
                     "breadcrumb": {
-                        "color": "Teal"
+                        "color": "Teal",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"

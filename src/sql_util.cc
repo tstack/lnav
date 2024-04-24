@@ -285,7 +285,7 @@ const std::unordered_map<unsigned char, const char*> sql_constraint_names = {
 #endif
 };
 
-std::multimap<std::string, help_text*> sqlite_function_help;
+std::multimap<std::string, const help_text*> sqlite_function_help;
 
 static int
 handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
@@ -1059,6 +1059,11 @@ annotate_sql_statement(attr_line_t& al)
     auto& line = al.get_string();
     auto& sa = al.get_attrs();
 
+    if (lnav::sql::is_prql(line)) {
+        lnav::sql::annotate_prql_statement(al);
+        return;
+    }
+
     auto cmd_find_res
         = cmd_pattern.find_in(line, PCRE2_ANCHORED).ignore_error();
     if (cmd_find_res) {
@@ -1140,6 +1145,9 @@ annotate_sql_statement(attr_line_t& al)
 std::vector<const help_text*>
 find_sql_help_for_line(const attr_line_t& al, size_t x)
 {
+    static const auto* sql_cmd_map
+        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+
     std::vector<const help_text*> retval;
     const auto& sa = al.get_attrs();
     std::string name;
@@ -1148,16 +1156,43 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
 
     {
         auto sa_opt = get_string_attr(al.get_attrs(), &SQL_COMMAND_ATTR);
-
         if (sa_opt) {
-            auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
-                                              sql_cmd_map_tag>();
             auto cmd_name = al.get_substring((*sa_opt)->sa_range);
             auto cmd_iter = sql_cmd_map->find(cmd_name);
 
             if (cmd_iter != sql_cmd_map->end()) {
                 return {&cmd_iter->second->c_help};
             }
+        }
+
+        auto prql_trans_iter = find_string_attr_containing(
+            al.get_attrs(), &lnav::sql::PRQL_TRANSFORM_ATTR, x);
+        if (prql_trans_iter != al.get_attrs().end()) {
+            auto cmd_name = al.get_substring(prql_trans_iter->sa_range);
+            auto cmd_iter = sql_cmd_map->find(cmd_name);
+
+            if (cmd_iter != sql_cmd_map->end()) {
+                return {&cmd_iter->second->c_help};
+            }
+        }
+    }
+
+    auto prql_fqid_iter = find_string_attr_containing(
+        al.get_attrs(), &lnav::sql ::PRQL_FQID_ATTR, x);
+    if (prql_fqid_iter != al.get_attrs().end()) {
+        auto fqid = al.get_substring(prql_fqid_iter->sa_range);
+        auto cmd_iter = sql_cmd_map->find(fqid);
+        if (cmd_iter != sql_cmd_map->end()) {
+            return {&cmd_iter->second->c_help};
+        }
+
+        auto func_pair = lnav::sql::prql_functions.equal_range(fqid);
+
+        for (auto func_iter = func_pair.first; func_iter != func_pair.second;
+             ++func_iter)
+        {
+            retval.emplace_back(func_iter->second);
+            return retval;
         }
     }
 
@@ -1239,5 +1274,295 @@ mprintf(const char* fmt, ...)
     return retval;
 }
 
+bool
+is_prql(const string_fragment& sf)
+{
+    auto trimmed = sf.trim().skip(string_fragment::tag1{';'});
+
+    return (trimmed.startswith("let ") || trimmed.startswith("from"));
+}
+
+const char* prql_transforms[] = {
+    "aggregate",
+    "append",
+    "derive",
+    "filter",
+    "from",
+    "group",
+    "join",
+    "loop",
+    "select",
+    "sort",
+    "take",
+    "window",
+
+    nullptr,
+};
+
+const char* prql_keywords[] = {
+    "average", "avg", "case", "count", "count_distinct", "false", "func",
+    "into",    "let", "max",  "min",   "module",         "null",  "prql",
+    "stddev",  "sum", "true", "type",
+
+    nullptr,
+};
+
+std::string
+prql_keyword_re()
+{
+    std::string retval = "(?:";
+    bool first = true;
+
+    for (const char* kw : prql_keywords) {
+        if (kw == nullptr) {
+            break;
+        }
+        if (!first) {
+            retval.append("|");
+        } else {
+            first = false;
+        }
+        retval.append("\\b");
+        retval.append(kw);
+        retval.append("\\b");
+    }
+    retval += ")";
+
+    return retval;
+}
+
+std::string
+prql_transform_re()
+{
+    std::string retval = "(?:";
+    bool first = true;
+
+    for (const char* kw : prql_transforms) {
+        if (kw == nullptr) {
+            break;
+        }
+        if (!first) {
+            retval.append("|");
+        } else {
+            first = false;
+        }
+        retval.append("\\b");
+        retval.append(kw);
+        retval.append("\\b");
+    }
+    retval += ")";
+
+    return retval;
+}
+
+string_attr_type<void> PRQL_STAGE_ATTR("prql_stage");
+string_attr_type<void> PRQL_TRANSFORM_ATTR("prql_transform");
+string_attr_type<void> PRQL_KEYWORD_ATTR("prql_keyword");
+string_attr_type<void> PRQL_IDENTIFIER_ATTR("prql_ident");
+string_attr_type<void> PRQL_FQID_ATTR("prql_fqid");
+string_attr_type<void> PRQL_DOT_ATTR("prql_dot");
+string_attr_type<void> PRQL_PIPE_ATTR("prql_pipe");
+string_attr_type<void> PRQL_STRING_ATTR("prql_string");
+string_attr_type<void> PRQL_NUMBER_ATTR("prql_number");
+string_attr_type<void> PRQL_OPERATOR_ATTR("prql_oper");
+string_attr_type<void> PRQL_PAREN_ATTR("prql_paren");
+string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR("prql_unterminated_paren");
+string_attr_type<void> PRQL_GARBAGE_ATTR("prql_garbage");
+string_attr_type<void> PRQL_COMMENT_ATTR("prql_comment");
+
+void
+annotate_prql_statement(attr_line_t& al)
+{
+    static const std::string keyword_re_str = R"(\A)" + prql_keyword_re();
+    static const std::string transform_re_str = R"(\A)" + prql_transform_re();
+
+    static const struct {
+        lnav::pcre2pp::code re;
+        string_attr_type<void>* type;
+    } PATTERNS[] = {
+        {
+            lnav::pcre2pp::code::from_const(R"(\A(?:\[|\]|\{|\}|\(|\)))"),
+            &PRQL_PAREN_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from(transform_re_str).unwrap(),
+            &PRQL_TRANSFORM_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from(keyword_re_str).unwrap(),
+            &PRQL_KEYWORD_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A(?:f|r|s)?'([^']|\\.)*')"),
+            &PRQL_STRING_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A(?:f|r|s)?"([^\"]|\\.)*")"),
+            &PRQL_STRING_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A0x[0-9a-fA-F]+)"),
+            &PRQL_NUMBER_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(
+                R"(\A-?\d+(?:\.\d+)?(?:[eE][\-\+]?\d+)?)"),
+            &PRQL_NUMBER_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(
+                R"(\A(?:(?:(?:\$)?\b[a-z_]\w*)|`([^`]+)`))", PCRE2_CASELESS),
+            &PRQL_IDENTIFIER_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A#.*)"),
+            &PRQL_COMMENT_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(
+                R"(\A(\*|\->{1,2}|<|>|=>|={1,2}|\|\||&&|!|\-|\+|~=|\.\.|,|\?\?))"),
+            &PRQL_OPERATOR_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A\|)"),
+            &PRQL_PIPE_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A\.)"),
+            &PRQL_DOT_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A.)"),
+            &PRQL_GARBAGE_ATTR,
+        },
+    };
+
+    static const auto ws_pattern = lnav::pcre2pp::code::from_const(R"(\A\s+)");
+
+    const auto& line = al.get_string();
+    auto& sa = al.get_attrs();
+    auto remaining = string_fragment::from_str(line);
+    while (!remaining.empty()) {
+        auto ws_find_res = ws_pattern.find_in(remaining).ignore_error();
+        if (ws_find_res) {
+            remaining = ws_find_res->f_remaining;
+            continue;
+        }
+        for (const auto& pat : PATTERNS) {
+            auto pat_find_res = pat.re.find_in(remaining).ignore_error();
+            if (pat_find_res) {
+                sa.emplace_back(to_line_range(pat_find_res->f_all),
+                                pat.type->value());
+                remaining = pat_find_res->f_remaining;
+                break;
+            }
+        }
+    }
+
+    auto stages = std::vector<int>{};
+    std::vector<std::pair<char, int>> groups;
+    std::vector<line_range> fqids;
+    nonstd::optional<line_range> id_start;
+    bool saw_id_dot = false;
+    for (const auto& attr : sa) {
+        if (groups.empty() && attr.sa_type == &PRQL_PIPE_ATTR) {
+            stages.push_back(attr.sa_range.lr_start);
+        }
+        if (!id_start) {
+            if (attr.sa_type == &PRQL_IDENTIFIER_ATTR) {
+                id_start = attr.sa_range;
+                saw_id_dot = false;
+            }
+        } else if (!saw_id_dot) {
+            if (attr.sa_type == &PRQL_DOT_ATTR) {
+                saw_id_dot = true;
+            } else {
+                fqids.emplace_back(id_start.value());
+                id_start = nonstd::nullopt;
+                saw_id_dot = false;
+            }
+        } else {
+            if (attr.sa_type == &PRQL_IDENTIFIER_ATTR) {
+                id_start = line_range{
+                    id_start.value().lr_start,
+                    attr.sa_range.lr_end,
+                };
+            } else {
+                id_start = nonstd::nullopt;
+            }
+            saw_id_dot = false;
+        }
+        if (attr.sa_type != &PRQL_PAREN_ATTR) {
+            continue;
+        }
+
+        auto ch = line[attr.sa_range.lr_start];
+        switch (ch) {
+            case '(':
+            case '{':
+            case '[':
+                groups.emplace_back(ch, attr.sa_range.lr_start);
+                break;
+            case ')':
+                if (!groups.empty() && groups.back().first == '(') {
+                    groups.pop_back();
+                }
+                break;
+            case '}':
+                if (!groups.empty() && groups.back().first == '{') {
+                    groups.pop_back();
+                }
+                break;
+            case ']':
+                if (!groups.empty() && groups.back().first == '[') {
+                    groups.pop_back();
+                }
+                break;
+        }
+    }
+    if (id_start) {
+        fqids.emplace_back(id_start.value());
+    }
+    int prev_stage_index = 0;
+    for (auto stage_index : stages) {
+        sa.emplace_back(line_range{prev_stage_index, stage_index},
+                        PRQL_STAGE_ATTR.value());
+        prev_stage_index = stage_index;
+    }
+    sa.emplace_back(
+        line_range{prev_stage_index, (int) al.get_string().length()},
+        PRQL_STAGE_ATTR.value());
+    for (const auto& group : groups) {
+        sa.emplace_back(line_range{group.second, group.second + 1},
+                        PRQL_UNTERMINATED_PAREN_ATTR.value());
+    }
+    for (const auto& fqid_range : fqids) {
+        sa.emplace_back(fqid_range, PRQL_FQID_ATTR.value());
+    }
+
+    stable_sort(sa.begin(), sa.end());
+}
+
 }  // namespace sql
+
+namespace prql {
+
+std::string
+quote_ident(std::string id)
+{
+    static const auto PLAIN_NAME
+        = pcre2pp::code::from_const("^[a-zA-Z_][a-zA-Z_0-9]*$");
+
+    if (PLAIN_NAME.find_in(id).ignore_error()) {
+        return id;
+    }
+
+    auto buf = auto_buffer::alloc(id.length() + 8);
+    quote_content(buf, id, '`');
+
+    return fmt::format(FMT_STRING("`{}`"), buf.in());
+}
+
+}  // namespace prql
+
 }  // namespace lnav

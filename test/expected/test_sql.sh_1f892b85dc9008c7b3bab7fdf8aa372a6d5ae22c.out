@@ -1,0 +1,23 @@
+[
+    {
+        "cs_headers": {
+            "User-Agent": "Mozilla/5.0 (Linux; Android 4.4.4; SM-G900V Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.59 Mobile Safari/537.36",
+            "Referer": "http://example.com/Search/SearchResults.pg?informationRecipient.languageCode.c=en",
+            "Host": "xzy.example.com"
+        }
+    },
+    {
+        "cs_headers": {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.1 Safari/537.36",
+            "Referer": null,
+            "Host": "example.hello.com"
+        }
+    },
+    {
+        "cs_headers": {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.124 Safari/537.36",
+            "Referer": null,
+            "Host": "hello.example.com"
+        }
+    }
+]

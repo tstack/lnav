@@ -1,4 +1,4 @@
-[1m[4m               log_body                [0m
+[1m[4m               log_body               [0m[1m[4m [0m
 lookup(file): lookup for foobar failed 
 attempting to mount entry /auto/opt    
 [1mlookup(file): lookup for opt failed    [0m

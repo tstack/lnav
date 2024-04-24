@@ -1,0 +1,33 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "nextflow_log": {
+        "title": "Nextflow log format",
+        "description": "Format file for nextflow.io logs",
+        "url": [
+            "https://nextflow.io/docs/latest/cli.html#execution-logs"
+        ],
+        "regex": {
+            "std": {
+                "pattern": "(?<timestamp>\\w{3}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(?<thread>[^\\]]+)\\] (?<level>[^ ]+)\\s+(?<module>[^ ]+) - (?<body>.*)"
+            }
+        },
+        "timestamp-format": [
+            "%b-%d %H:%M:%S"
+        ],
+        "value": {
+            "module": {
+                "kind": "string",
+                "identifier": true
+            },
+            "thread": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "sample": [
+            {
+                "line": "Mar-18 21:41:15.684 [main] DEBUG nextflow.cli.Launcher - $> nextflow run nf-core/rnaseq -profile test,docker --outdir results"
+            }
+        ]
+    }
+}

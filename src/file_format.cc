@@ -41,7 +41,10 @@
 file_format_t
 detect_file_format(const ghc::filesystem::path& filename)
 {
-    if (archive_manager::is_archive(filename)) {
+    auto describe_res = archive_manager::describe(filename);
+    if (describe_res.isOk()
+        && describe_res.unwrap().is<archive_manager::archive_info>())
+    {
         return file_format_t::ARCHIVE;
     }
 

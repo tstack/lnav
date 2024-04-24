@@ -56,8 +56,10 @@
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bin2c.hh"
+#include "command_executor.hh"
 #include "config.h"
 #include "default-config.h"
+#include "scn/scn.h"
 #include "styling.hh"
 #include "view_curses.hh"
 #include "yajlpp/yajlpp.hh"
@@ -256,19 +258,23 @@ install_from_git(const std::string& repo)
     }
 
     auto finished_child = std::move(git_cmd).wait_for_child();
-
     if (!finished_child.was_normal_exit() || finished_child.exit_status() != 0)
     {
         return false;
     }
 
+    if (ghc::filesystem::is_directory(local_formats_path)
+        || ghc::filesystem::is_directory(local_configs_path))
+    {
+        return false;
+    }
     if (!ghc::filesystem::is_directory(local_staging_path)) {
         auto um
             = lnav::console::user_message::error(
                   attr_line_t("failed to install git repo: ")
                       .append(lnav::roles::file(repo)))
                   .with_reason(
-                      attr_line_t("git failed to create the local directory")
+                      attr_line_t("git failed to create the local directory ")
                           .append(
                               lnav::roles::file(local_staging_path.string())));
         lnav::console::print(stderr, um);
@@ -378,13 +384,11 @@ update_installs_from_git()
                                         git_dir.string());
             int ret = system(pull_cmd.c_str());
             if (ret == -1) {
-                std::cerr << "Failed to spawn command "
-                          << "\"" << pull_cmd << "\": " << strerror(errno)
-                          << std::endl;
+                std::cerr << "Failed to spawn command " << "\"" << pull_cmd
+                          << "\": " << strerror(errno) << std::endl;
                 retval = false;
             } else if (ret > 0) {
-                std::cerr << "Command "
-                          << "\"" << pull_cmd
+                std::cerr << "Command " << "\"" << pull_cmd
                           << "\" failed: " << strerror(errno) << std::endl;
                 retval = false;
             }
@@ -484,12 +488,17 @@ config_error_reporter(const yajlpp_parse_context& ypc,
 }
 
 static const struct json_path_container key_command_handlers = {
+    yajlpp::property_handler("id")
+        .with_synopsis("<id>")
+        .with_description(
+            "The identifier that can be used to refer to this key")
+        .for_field(&key_command::kc_id),
     yajlpp::property_handler("command")
         .with_synopsis("<command>")
         .with_description(
             "The command to execute for the given key sequence.  Use a script "
             "to execute more complicated operations.")
-        .with_pattern("^[:|;].*")
+        .with_pattern("^$|^[:|;].*")
         .with_example(":goto next hour")
         .for_field(&key_command::kc_cmd),
     yajlpp::property_handler("alt-msg")
@@ -511,6 +520,14 @@ static const struct json_path_container keymap_def_handlers = {
             [](const yajlpp_provider_context& ypc, key_map* km) {
                 auto& retval = km->km_seq_to_cmd[ypc.get_substr("key_seq")];
 
+                if (ypc.ypc_parse_context != nullptr) {
+                    retval.kc_cmd.pp_path
+                        = ypc.ypc_parse_context->get_full_path();
+                    retval.kc_cmd.pp_location.sl_source
+                        = ypc.ypc_parse_context->ypc_source;
+                    retval.kc_cmd.pp_location.sl_line_number
+                        = ypc.ypc_parse_context->get_line_number();
+                }
                 return &retval;
             })
         .with_path_provider<key_map>(
@@ -555,6 +572,23 @@ static const struct json_path_container movement_handlers = {
         .with_example("cursor")
         .with_description("The mode of cursor movement to use.")
         .for_field<>(&_lnav_config::lc_ui_movement, &movement_config::mode),
+};
+
+static const json_path_handler_base::enum_value_t _mouse_mode_values[] = {
+    {"disabled", lnav_mouse_mode::disabled},
+    {"enabled", lnav_mouse_mode::enabled},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
+static const struct json_path_container mouse_handlers = {
+    yajlpp::property_handler("mode")
+        .with_synopsis("enabled|disabled")
+        .with_enum_values(_mouse_mode_values)
+        .with_example("enabled")
+        .with_example("disabled")
+        .with_description("Overall control for mouse support")
+        .for_field<>(&_lnav_config::lc_mouse_mode),
 };
 
 static const struct json_path_container global_var_handlers = {
@@ -610,6 +644,10 @@ static const struct json_path_container theme_styles_handlers = {
     yajlpp::property_handler("text")
         .with_description("Styling for plain text")
         .for_child(&lnav_theme::lt_style_text)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("selected-text")
+        .with_description("Styling for text selected in a view")
+        .for_child(&lnav_theme::lt_style_selected_text)
         .with_children(style_config_handlers),
     yajlpp::property_handler("alt-text")
         .with_description("Styling for plain text when alternating")
@@ -969,6 +1007,10 @@ static const struct json_path_container theme_status_styles_handlers = {
         .with_description("Styling for hotkey highlights of status bars")
         .for_child(&lnav_theme::lt_style_status_hotkey)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("suggestion")
+        .with_description("Styling for suggested values")
+        .for_child(&lnav_theme::lt_style_suggestion)
+        .with_children(style_config_handlers),
 };
 
 static const struct json_path_container theme_log_level_styles_handlers = {
@@ -1122,6 +1164,9 @@ static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("theme-defs")
         .with_description("Theme definitions.")
         .with_children(theme_defs_handlers),
+    yajlpp::property_handler("mouse")
+        .with_description("Mouse-related settings")
+        .with_children(mouse_handlers),
     yajlpp::property_handler("movement")
         .with_description("Log file cursor movement mode settings")
         .with_children(movement_handlers),
@@ -1533,8 +1578,66 @@ public:
         for (const auto& pair :
              lnav_config.lc_ui_keymaps[lnav_config.lc_ui_keymap].km_seq_to_cmd)
         {
-            lnav_config.lc_active_keymap.km_seq_to_cmd[pair.first]
-                = pair.second;
+            if (pair.second.kc_cmd.pp_value.empty()) {
+                lnav_config.lc_active_keymap.km_seq_to_cmd.erase(pair.first);
+            } else {
+                lnav_config.lc_active_keymap.km_seq_to_cmd[pair.first]
+                    = pair.second;
+            }
+        }
+
+        auto& ec = injector::get<exec_context&>();
+        for (const auto& pair : lnav_config.lc_active_keymap.km_seq_to_cmd) {
+            if (pair.second.kc_id.empty()) {
+                continue;
+            }
+
+            auto keyseq_sf = string_fragment::from_str(pair.first);
+            std::string keystr;
+            if (keyseq_sf.startswith("f")) {
+                auto sv = keyseq_sf.to_string_view();
+                int32_t value;
+                auto scan_res = scn::scan(sv, "f{}", value);
+                if (!scan_res) {
+                    log_error("invalid function key sequence: %s", keyseq_sf);
+                    continue;
+                }
+                if (value < 0 || value > 64) {
+                    log_error("invalid function key number: %s", keyseq_sf);
+                    continue;
+                }
+
+                keystr = toupper(pair.first);
+            } else {
+                auto sv
+                    = string_fragment::from_str(pair.first).to_string_view();
+                while (!sv.empty()) {
+                    int32_t value;
+                    auto scan_res = scn::scan(sv, "x{:2x}", value);
+                    if (!scan_res) {
+                        log_error("invalid key sequence: %s",
+                                  pair.first.c_str());
+                        break;
+                    }
+                    auto ch = (char) (value & 0xff);
+                    switch (ch) {
+                        case '\t':
+                            keystr.append("TAB");
+                            break;
+                        case '\r':
+                            keystr.append("ENTER");
+                            break;
+                        default:
+                            keystr.push_back(ch);
+                            break;
+                    }
+                    sv = scan_res.range_as_string_view();
+                }
+            }
+
+            if (!keystr.empty()) {
+                ec.ec_global_vars[pair.second.kc_id] = keystr;
+            }
         }
     }
 };
@@ -1838,7 +1941,7 @@ save_config()
 void
 reload_config(std::vector<lnav::console::user_message>& errors)
 {
-    lnav_config_listener* curr = lnav_config_listener::LISTENER_LIST;
+    auto* curr = lnav_config_listener::LISTENER_LIST;
 
     while (curr != nullptr) {
         auto reporter = [&errors](const void* cfg_value,

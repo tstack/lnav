@@ -171,6 +171,10 @@ public:
 
     void rewrite_line(int pos, const std::string& value);
 
+    void set_suggestion(const std::string& value);
+
+    bool is_active() const { return this->rc_active_context != -1; }
+
     readline_context* get_active_context() const
     {
         require(this->rc_active_context != -1);
@@ -184,7 +188,9 @@ public:
 
     void start();
 
-    void do_update() override;
+    bool do_update() override;
+
+    bool handle_mouse(mouse_event& me) override;
 
     void window_change();
 
@@ -272,6 +278,8 @@ public:
         this->clear_possibilities(lnav::enums::to_underlying(context), args...);
     }
 
+    void append_to_history(int context, const std::string& line);
+
     const std::vector<std::string>& get_matches() const
     {
         return this->rc_matches;
@@ -328,6 +336,7 @@ private:
     bool rc_is_alt_focus{false};
     bool rc_ready_for_input{false};
     std::string rc_remote_complete_path;
+    std::string rc_suggestion;
 
     action rc_focus;
     action rc_change;

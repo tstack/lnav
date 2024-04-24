@@ -117,7 +117,8 @@ class spectrogram_source
     : public text_sub_source
     , public text_time_translator
     , public list_overlay_source
-    , public list_input_delegate {
+    , public list_input_delegate
+    , public text_delegate {
 public:
     ~spectrogram_source() override = default;
 
@@ -129,6 +130,10 @@ public:
     }
 
     bool list_input_handle_key(listview_curses& lv, int ch) override;
+
+    bool text_handle_mouse(textview_curses& tc,
+                           const listview_curses::display_line_content_t&,
+                           mouse_event& me) override;
 
     bool list_static_overlay(const listview_curses& lv,
                              int y,
@@ -154,7 +159,7 @@ public:
 
     void text_selection_changed(textview_curses& tc) override;
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
+    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
 
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
@@ -170,7 +175,7 @@ public:
 
     void cache_bounds();
 
-    nonstd::optional<struct timeval> time_for_row_int(vis_line_t row);
+    nonstd::optional<row_info> time_for_row_int(vis_line_t row);
 
     const spectrogram_row& load_row(const listview_curses& lv, int row);
 

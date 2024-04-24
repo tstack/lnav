@@ -520,7 +520,8 @@ ptime_i(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MILLIS_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET;
+        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
+        | ETF_SUB_NOT_IN_FORMAT;
 
     return (epoch_ms > 0);
 }
@@ -557,7 +558,8 @@ ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
         | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_MICROS_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET;
+        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
+        | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
 
     return (epoch_us > 0);
 }
@@ -1284,5 +1286,7 @@ struct ptime_fmt {
 extern struct ptime_fmt PTIMEC_FORMATS[];
 
 extern const char* PTIMEC_FORMAT_STR[];
+
+extern size_t PTIMEC_DEFAULT_FMT_INDEX;
 
 #endif

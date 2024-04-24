@@ -199,6 +199,34 @@ is_url(const std::string& fn)
 }
 
 size_t
+last_word_str(char* str, size_t len, size_t max_len)
+{
+    if (len < max_len) {
+        return len;
+    }
+
+    size_t last_start = 0;
+
+    for (size_t index = 0; index < len; index++) {
+        switch (str[index]) {
+            case '.':
+            case '-':
+            case '/':
+            case ':':
+                last_start = index + 1;
+                break;
+        }
+    }
+
+    if (last_start == 0) {
+        return len;
+    }
+
+    memmove(&str[0], &str[last_start], len - last_start);
+    return len - last_start;
+}
+
+size_t
 abbreviate_str(char* str, size_t len, size_t max_len)
 {
     size_t last_start = 1;
@@ -304,3 +332,93 @@ scrub_ws(const char* in, ssize_t len)
 
     return retval;
 }
+
+namespace fmt {
+auto
+formatter<lnav::tainted_string>::format(const lnav::tainted_string& ts,
+                                        format_context& ctx)
+    -> decltype(ctx.out()) const
+{
+    auto esc_res = fmt::v10::detail::find_escape(&(*ts.ts_str.begin()),
+                                                 &(*ts.ts_str.end()));
+    if (esc_res.end == nullptr) {
+        return formatter<string_view>::format(ts.ts_str, ctx);
+    }
+
+    return format_to(ctx.out(), FMT_STRING("{:?}"), ts.ts_str);
+}
+}  // namespace fmt
+
+namespace lnav {
+namespace pcre2pp {
+
+static bool
+is_meta(char ch)
+{
+    switch (ch) {
+        case '\\':
+        case '^':
+        case '$':
+        case '.':
+        case '[':
+        case ']':
+        case '(':
+        case ')':
+        case '*':
+        case '+':
+        case '?':
+        case '{':
+        case '}':
+            return true;
+        default:
+            return false;
+    }
+}
+
+static nonstd::optional<const char*>
+char_escape_seq(char ch)
+{
+    switch (ch) {
+        case '\t':
+            return "\\t";
+        case '\n':
+            return "\\n";
+    }
+
+    return nonstd::nullopt;
+}
+
+std::string
+quote(string_fragment str)
+{
+    std::string retval;
+
+    while (true) {
+        auto cp_pair_opt = str.consume_codepoint();
+        if (!cp_pair_opt) {
+            break;
+        }
+
+        auto cp_pair = cp_pair_opt.value();
+        if ((cp_pair.first & ~0xff) == 0) {
+            if (is_meta(cp_pair.first)) {
+                retval.push_back('\\');
+            } else {
+                auto esc_seq = char_escape_seq(cp_pair.first);
+                if (esc_seq) {
+                    retval.append(esc_seq.value());
+                    str = cp_pair_opt->second;
+                    continue;
+                }
+            }
+        }
+        ww898::utf::utf8::write(cp_pair.first,
+                                [&retval](char ch) { retval.push_back(ch); });
+        str = cp_pair_opt->second;
+    }
+
+    return retval;
+}
+
+}  // namespace pcre2pp
+}  // namespace lnav

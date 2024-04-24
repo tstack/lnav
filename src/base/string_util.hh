@@ -228,6 +228,8 @@ bool is_blank(const std::string& str);
 
 size_t abbreviate_str(char* str, size_t len, size_t max_len);
 
+size_t last_word_str(char* str, size_t len, size_t max_len);
+
 void split_ws(const std::string& str, std::vector<std::string>& toks_out);
 
 std::string repeat(const std::string& input, size_t num);
@@ -243,5 +245,54 @@ on_blank(const std::string& str, const std::string& def)
 
     return str;
 }
+
+namespace lnav {
+class tainted_string {
+public:
+    explicit tainted_string(std::string s) : ts_str(std::move(s)) {}
+
+    bool operator==(const tainted_string& other) const
+    {
+        return this->ts_str == other.ts_str;
+    }
+
+    bool operator!=(const tainted_string& other) const
+    {
+        return this->ts_str != other.ts_str;
+    }
+
+    bool operator<(const tainted_string& other) const
+    {
+        return this->ts_str < other.ts_str;
+    }
+
+    bool empty() const { return this->ts_str.empty(); }
+
+    size_t length() const { return this->ts_str.length(); }
+
+    size_t size() const { return this->ts_str.size(); }
+
+    friend fmt::formatter<lnav::tainted_string>;
+
+private:
+    const std::string ts_str;
+};
+}  // namespace lnav
+
+namespace fmt {
+template<>
+struct formatter<lnav::tainted_string> : formatter<string_view> {
+    auto format(const lnav::tainted_string& ts,
+                format_context& ctx) -> decltype(ctx.out()) const;
+};
+}  // namespace fmt
+
+namespace lnav {
+namespace pcre2pp {
+
+std::string quote(string_fragment sf);
+
+}
+}  // namespace lnav
 
 #endif

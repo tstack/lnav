@@ -76,6 +76,7 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
             break;
         }
 
+        retval.usr_column_width_guess += 1;
         if (retval.usr_message != nullptr) {
             i += 1;
             continue;
@@ -83,6 +84,9 @@ is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
 
         valid_end = i;
         if (ustr[i] <= 0x7F) /* 00..7F */ {
+            if (ustr[i] == '\t') {
+                retval.usr_column_width_guess += 7;
+            }
             i += 1;
         } else if (ustr[i] >= 0xC2 && ustr[i] <= 0xDF) /* C2..DF 80..BF */ {
             if (i + 1 < str.length()) /* Expect a 2nd byte */ {

@@ -267,6 +267,7 @@ time_extension_functions(struct FuncDef** basic_funcs,
                 "timestamp falls in.  "
                 "If the time falls outside of the slice, NULL is returned.")
                 .sql_function()
+                .with_prql_path({"time", "slice"})
                 .with_parameter(
                     {"time", "The timestamp to get the time slice for."})
                 .with_parameter({"slice", "The size of the time slices"})
@@ -293,6 +294,7 @@ time_extension_functions(struct FuncDef** basic_funcs,
                 "timediff",
                 "Compute the difference between two timestamps in seconds")
                 .sql_function()
+                .with_prql_path({"time", "diff"})
                 .with_parameter({"time1", "The first timestamp"})
                 .with_parameter(
                     {"time2", "The timestamp to subtract from the first"})
@@ -314,6 +316,7 @@ time_extension_functions(struct FuncDef** basic_funcs,
                           "Format the given seconds value as an abbreviated "
                           "duration string")
                     .sql_function()
+                    .with_prql_path({"humanize", "duration"})
                     .with_parameter({"secs", "The duration in seconds"})
                     .with_tags({"datetime", "string"})
                     .with_example({
@@ -328,6 +331,7 @@ time_extension_functions(struct FuncDef** basic_funcs,
         sqlite_func_adapter<decltype(&sql_timezone), sql_timezone>::builder(
             help_text("timezone", "Convert a timestamp to the given timezone")
                 .sql_function()
+                .with_prql_path({"time", "to_zone"})
                 .with_parameter({"tz", "The target timezone"})
                 .with_parameter({"ts", "The source timestamp"})
                 .with_tags({"datetime", "string"})

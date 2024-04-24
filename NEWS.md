@@ -1,3 +1,167 @@
+## lnav v0.12.2
+
+Features:
+* Added mouse support that can be toggled with `F2` or enabled
+  by default with: `:config /ui/mouse/mode enabled`.  With
+  mouse support enabled, many of the UI elements will respond to
+  mouse inputs:
+  - clicking on the main view will move the cursor to the given
+    row and dragging will scroll the view as needed;
+  - shift + clicking/dragging in the main view will highlight
+    lines and then toggle their bookmark status on release;
+  - double-clicking in the main view will select the underlying 
+    text and drag-selecting within a line will select the given
+    text;
+  - when double-clicking text: if the mouse pointer is inside
+    a quoted string, the contents of the string will be selected;
+    if the mouse pointer is on the quote, the quote will be included
+    in the selection; if the mouse pointer is over a bracket
+    (e.g. [],{},()) where the matching bracket is on the same line,
+    the selection will span from one bracket to the other;
+  - when text is selected, a menu will pop up that can be used
+    to filter based on the current text, search for it, or copy
+    it to the clipboard;
+  - right-clicking the start of a log message in the main view
+    will open the parser details overlay;
+  - the parser details now displays a diamond next to fields to
+    indicate whether they are shown/hidden and this can be
+    clicked to toggle the state;
+  - the parser details will show a bar chart icon for fields with
+    values which, when clicked, will open either the spectrogram
+    view for the given field or open the DB query prompt with a
+    PRQL query to generate a histogram of the field values;
+  - clicking in the scroll area will move the view by a page,
+    double-clicking will move the view to that area, and
+    dragging the scrollbar will move the view to the given spot;
+  - clicking on the breadcrumb bar will select a crumb and
+    selecting a possibility from the popup will move to that
+    location in the view;
+  - clicking on portions of the bottom status bar will trigger
+    a relevant action (e.g. clicking the line number will open
+    the command prompt with `:goto <current-line>`);
+  - clicking on the configuration panel tabs (i.e. Files/Filters)
+    will open the selected panel and clicking parts of the
+    display in there will perform the relevant action (e.g.
+    clicking the diamond will enable/disable the file/filter);
+  - clicking in a prompt will move the cursor to the location;
+  - clicking on a column in the spectrogram view will select it.
+
+  (Note that this is new work, so there are likely to be some 
+  glitches.)
+* Added a `journald://` URL handler that will call `journalctl`
+  and pass any query parameters as options.  For example, the
+  following command:
+
+  ```
+  $ lnav 'journal://?since=yesterday'
+  ```
+
+  Will execute the following and capture the output:
+
+  ```
+  journalctl --output=json -f --since=yesterday
+  ```
+* Added the "last-word" line-format field shortening algorithm
+  from @flicus.
+* Added a `stats.hist` PRQL transform that produces a histogram
+  of values over time.
+* The preview for the `:open` command will now show a listing
+  of archive contents.
+* Added `humanize_id` SQL function that colorizes a string using
+  ANSI escape codes.
+* Added a `selected_text` column to the `lnav_views` table that
+  reports information about text that was selected with a mouse.
+  This makes it possible to script operations that use the
+  selected text as an input.
+* Added `breadcrumb` as an option to the `:prompt` command so
+  that the breadcrumb hotkey can be configured.
+
+Interface changes:
+* The bar charts in the DB view have now been moved to their
+  individual columns instead of occupying the whole width of
+  the view.  The result is much cleaner, so the charts are
+  now enabled by default again.
+* Cursor mode in the main view is now the default instead of
+  using the top line as the focus.  You can change back by
+  running:
+
+  `:config /ui/movement/mode top`
+* In the parser details panel (opened by pressing `p`), you
+  can now hide/show fields by moving the cursor line to the
+  given field and pressing the space bar or by clicking on
+  the diamond with the mouse.
+* The `sv` keymap binds `§` to focus the breadcrumb bar.
+
+Bug Fixes:
+* With the recent xz backdoor shenanigans, it seems like a good
+  time to add some checks for data being hidden by escape codes:
+  - File names with escape sequences are now displayed in quotes
+    with backslash escapes.
+  - Text that has the same foreground and background colors will
+    have the background set to a contrasting color.
+* Sub-millisecond time values should now be preserved when
+  displaying JSON-lines logs.
+* A crash during initialization on Apple Silicon and MacOS 12
+  has been fixed.
+* A crash when previewing non-text files.
+* Optimized ANSI-escape processing.
+* Various fixes to make lnav usable as a `PAGER`.
+
+## lnav v0.12.1
+
+Features:
+* Database queries can now be written in
+  [PRQL](https://prql-lang.org).  When executing a query with `;`,
+  if the query starts with `from`, it will be treated as PRQL.
+  The pipeline structure of PRQL queries is more desirable for
+  interactive use since lnav can make better suggestions and
+  show previews of the stages of the pipeline.
+* Log partitions can automatically be created by defining a log
+  message pattern in a log format.  Under a format definition,
+  add an entry into the "partitions" object in a format definition.
+  The "pattern" property specifies the regular expression to match
+  against a line in a file that matches the format.  If a match is
+  found, the partition name will be set to the value(s) captured
+  by the regex.  To restrict matches to certain files, you can add
+  a "paths" array whose object elements contain a "glob" property
+  that will be matched against file names.
+
+Interface changes:
+* When using PRQL in the database query prompt (`;`),
+  the preview pane will show the results for the pipeline
+  stage the cursor is within along with the results of
+  the previous stage (if there is one).  The preview
+  works on a limited data set, so the preview results
+  may differ from the final results.
+* Changed the breadcrumb bar styling to space things out
+  more and make the divisions between items clearer.
+* The `ESC` key can now be used to exit the files/filters
+  configuration panel instead of `q`.  This should make
+  it easier to avoid accidentally exiting lnav.
+* Added some default help text for the command prompt.
+* Suggestions are now shown for some commands and can
+  be accepted by pressing the right arrow key.  For
+  example, after typing in `:filter-in` the current
+  search term for the view will be suggested (if
+  one is active).
+* The focused line should be preserved more reliably in
+  the LOG/TEXT views.
+* In the LOG view, the current partition name (as set
+  with the `:partition-name` command) is shown as the
+  first breadcrumb in the breadcrumb bar.  And, when
+  that breadcrumb is selected, you can select another
+  partition to jump to.
+* The `{` / `}` hotkeys, `:next-section`, and `:prev-section`
+  commands now work in the LOG view and take you to the
+  next/previous partition.
+* The DB view now defaults to not showing bar charts.
+
+Breaking changes:
+* Many of the lesser used column in the log format tables
+  (e.g. `log_tags`) have been moved to after the columns
+  defined by the format.  These columns are usually `NULL`
+  and are a distraction when previewing queries.
+
 ## lnav v0.12.0
 
 Features:

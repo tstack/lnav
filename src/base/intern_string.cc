@@ -358,12 +358,12 @@ uint32_t
 string_fragment::front_codepoint() const
 {
     size_t index = 0;
-    try {
-        return ww898::utf::utf8::read(
-            [this, &index]() { return this->data()[index++]; });
-    } catch (const std::runtime_error& e) {
+    auto read_res = ww898::utf::utf8::read(
+        [this, &index]() { return this->data()[index++]; });
+    if (read_res.isErr()) {
         return this->data()[0];
     }
+    return read_res.unwrap();
 }
 
 Result<ssize_t, const char*>
@@ -385,4 +385,83 @@ string_fragment::codepoint_to_byte_index(ssize_t cp_index) const
     }
 
     return Ok(retval);
+}
+
+string_fragment
+string_fragment::sub_cell_range(int cell_start, int cell_end) const
+{
+    int byte_index = this->sf_begin;
+    nonstd::optional<int> byte_start;
+    nonstd::optional<int> byte_end;
+    int cell_index = 0;
+
+    while (byte_index < this->sf_end) {
+        if (cell_start == cell_index) {
+            byte_start = byte_index;
+        }
+        if (!byte_end && cell_index >= cell_end) {
+            byte_end = byte_index;
+            break;
+        }
+        auto read_res = ww898::utf::utf8::read(
+            [this, &byte_index]() { return this->sf_string[byte_index++]; });
+        if (read_res.isErr()) {
+            byte_index += 1;
+        } else {
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        cell_index += 1;
+                    } while (cell_index % 8);
+                    break;
+                default:
+                    cell_index += wcwidth(read_res.unwrap());
+                    break;
+            }
+        }
+    }
+    if (cell_start == cell_index) {
+        byte_start = byte_index;
+    }
+    if (!byte_end) {
+        byte_end = byte_index;
+    }
+
+    if (byte_start && byte_end) {
+        return this->sub_range(byte_start.value(), byte_end.value());
+    }
+
+    return string_fragment{};
+}
+
+size_t
+string_fragment::column_width() const
+{
+    auto index = this->sf_begin;
+    size_t retval = 0;
+
+    while (index < this->sf_end) {
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            retval += 1;
+        } else {
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        retval += 1;
+                    } while (retval % 8);
+                    break;
+                default:
+                    retval += wcwidth(read_res.unwrap());
+                    break;
+            }
+        }
+    }
+
+    return retval;
 }

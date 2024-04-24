@@ -59,7 +59,7 @@ been loaded, you can use the following options:
  [33m•[0m [37m[40m -c cmd [0m A command, query, or file to execute. The
    first character determines the type of operation: a colon
    ([37m[40m : [0m) is used for the built-in commands; a semi-colon (
-   [37m[40m ; [0m) for SQL queries; and a pipe symbol ([37m[40m | [0m) for
+   [37m[40m ; [0m) for SQL/PRQL queries; and a pipe symbol ([37m[40m | [0m) for
    executing a file containing other commands. For example,
    to open the file "foo.log" and go to the tenth line in
    the file, you can do:
@@ -260,11 +260,10 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
              and then the last message arrives five seconds
              later, the last message will be highlighted as a
              slow down.
- {/}         Move to the previous/next location in history.
-             Whenever you jump to a new location in the view,
-             the location will be added to the history. The
-             history is not updated when using only the arrow
-             keys.
+ {/}         Move to the previous/next section in the view.  In
+             the LOG view, this moves through partitions.  In
+             other views, it moves through sections of
+             documents.
 
 [4mChronological Navigation[0m
 
@@ -468,14 +467,14 @@ mouse to mark lines of text and move the view by grabbing the
 scrollbar.
 
 NOTE: You need to manually enable this feature by setting the LNAV_EXP
-environment variable to "mouse". F2 toggles mouse support.
+environment variable to "mouse". [37m[40m F2 [0m toggles mouse support.
 
-[1mSQL Queries (experimental)[0m
+[1mLog Analysis[0m
 
 Lnav has support for performing SQL queries on log files using the
-Sqlite3 "virtual" table feature. For all supported log file types,
+SQLite3 "virtual" table feature. For all supported log file types,
 lnav will create tables that can be queried using the subset of SQL
-that is supported by Sqlite3. For example, to get the top ten URLs
+that is supported by SQLite3. For example, to get the top ten URLs
 being accessed in any loaded Apache log files, you can execute:
 
  ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m    [0m
@@ -575,6 +574,37 @@ example of a top ten query into the "/tmp/topten.db" file, you can do:
  ▌[37m[40m;[0m[1m[36m[40mCREATE[0m[37m[40m [0m[1m[36m[40mTABLE[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m.[0m[37m[40mfoo[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m    [0m
  ▌[37m[40m   [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m          [0m
  ▌[37m[40m   [0m[1m[36m[40mLIMIT[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m;                                                         [0m
+
+[4mPRQL Support[0m
+
+The Pipelined Relational Query Language ]8;;https://prql-lang.org\[4m(PRQL)[0m]8;;\[4m[1][0m is an alternative
+database query language that compiles to SQL.  The main advantage of
+PRQL, in the context of lnav, is that it is easier to work with
+interactively compared to SQL.  For example, lnav can provide previews
+of different stages of the pipeline and provide more accurate
+tab-completions for the columns in the result set.
+
+ ▌[1] - https://prql-lang.org 
+
+You can execute a PRQL query in the SQL prompt.  A PRQL query starts
+with the [37m[40m from [0m keyword that specifies the table to use as a data
+source.  The next stage of a pipeline is started by entering a pipe
+symbol ([37m[40m | [0m) followed by a ]8;;https://prql-lang.org/book/reference/stdlib/transforms/index.html\[4mPRQL transform[0m]8;;\[4m[1][0m. As you build the query
+in the prompt, lnav will display any relevant help and preview for the
+current and previous stages of the pipeline.
+
+ ▌[1] - https://prql-lang.org/book/reference/stdlib/transforms/index.html 
+
+Using the top ten URLs query from earlier as an example, the PRQL
+version would be as follows:
+
+ ▌[37m[40m;[0m[1m[36m[40mfrom[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m | [0m[37m[40mstats[0m[37m[40m.[0m[37m[40mcount_by[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m | [0m[1m[36m[40mtake[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m    [0m
+
+The first stage selects the data source, the web [37m[40m access_log [0m table in
+this case.  The [37m[40m stats.count_by [0m transform is a convenience provided
+by lnav that groups by the given column, counts the rows in each
+group, and sorts by count in descending order.  The [37m[40m take 10 [0mturns
+into the [37m[40m LIMIT 10 [0m.
 
 [1mDynamic logline Table (experimental)[0m
 
@@ -720,9 +750,10 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the file to append to
 [4mSee Also[0m
-  [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
+  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To append marked lines to the file /tmp/interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m /tmp/interesting-lines.txt             [0m
@@ -969,7 +1000,7 @@ For support questions, email:
   [4m-n[0m    Do not print a line-feed at the end of the output
   [4mmsg[0m   The message to display
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:eval[0m, [1m:export-session-to[0m, 
   [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
   [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
@@ -1027,12 +1058,12 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
+  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
 
 [4m:[0m[1m[4mfilter-expr[0m[4m [0m[4mexpr[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1297,9 +1328,10 @@ For support questions, email:
 [4mParameter[0m
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
-  [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-to[0m, 
+  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the top line to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-line-to[0m[37m[40m sed -e 's/foo/bar/g'                [0m
@@ -1312,9 +1344,10 @@ For support questions, email:
 [4mParameter[0m
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
-  [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:redirect-to[0m, 
-  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, 
+  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-to[0m[37m[40m sed -e s/foo/bar/g                       [0m
@@ -1361,6 +1394,7 @@ For support questions, email:
   [4m--alt[0m           Perform the alternate action for
                   this prompt by default
   [4mprompt[0m          The prompt to display
+                  [4mValues[0m: [1mbreadcrumb[0m|[1mcommand[0m|[1mscript[0m|[1msearch[0m|[1msql[0m
   [4minitial-value[0m   The initial value to fill in for
                   the prompt
 
@@ -1405,12 +1439,13 @@ For support questions, email:
   [4mpath[0m   The path to the file to write.  If not specified,
          the current redirect will be cleared
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
+  [1m:rebuild[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the output of lnav commands to the file /tmp/script-output.txt:
    [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m /tmp/script-output.txt               [0m
@@ -1660,11 +1695,11 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the table contents
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
@@ -1682,14 +1717,15 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the row contents
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as CSV to /tmp/table.csv:
    [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m /tmp/table.csv                      [0m
@@ -1703,14 +1739,15 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the JSON values
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON to /tmp/table.json:
    [37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m /tmp/table.json                    [0m
@@ -1724,14 +1761,15 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the JSON values
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
+  [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON Lines to /tmp/table.json:
    [37m[40m:[0m[1m[36m[40mwrite-jsonlines-to[0m[37m[40m /tmp/table.json               [0m
@@ -1749,11 +1787,11 @@ For support questions, email:
   [4m--anonymize[0m       Anonymize the lines
   [4mpath[0m              The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-screen-to[0m, 
   [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
@@ -1772,11 +1810,11 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the lines
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-raw-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
@@ -1794,11 +1832,11 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the table contents
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
@@ -1816,13 +1854,13 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the lines
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
+  [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to the file /tmp/interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m /tmp/interesting-lines.txt              [0m
@@ -1837,11 +1875,11 @@ For support questions, email:
   [4m--anonymize[0m   Anonymize the lines
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
-  [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
-  [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, [1m:export-session-to[0m, 
-  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
-  [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
+  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
+  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
+  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
   [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
@@ -1947,9 +1985,9 @@ For support questions, email:
 [4mSee Also[0m
   [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2138,9 +2176,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2164,9 +2202,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2279,9 +2317,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2350,10 +2388,10 @@ For support questions, email:
 [4mParameter[0m
   [4mvalue[0m   The value to write to the current output file
 [4mSee Also[0m
-  [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m
 
 [1m[4mencode[0m[4m([0m[4mvalue[0m[4m, [0m[4malgorithm[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2365,9 +2403,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mendswith()[0m, [1mextract()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2395,9 +2433,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mextract()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2436,9 +2474,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2588,13 +2626,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
-  [1mxpath()[0m
+  [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
+  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To concatenate the values of the column 'ex_procname' from the table
    'lnav_example_log':
@@ -2619,13 +2657,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
-  [1mxpath()[0m
+  [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
+  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To produce a hash of all of the values of 'column1':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_spooky_hash[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'abc'[0m[37m[40m), ([0m[35m[40m'123'[0m[37m[40m))[0m
@@ -2640,9 +2678,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2656,9 +2694,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -2685,14 +2723,14 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdate()[0m, [1mdatetime()[0m, [1mdecode()[0m, 
   [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, 
-  [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mjulianday()[0m, 
-  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
-  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
-  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
-  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
-  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, 
-  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, 
-  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mjulianday()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, 
+  [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, 
+  [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
+  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
+  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
+  [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, [1mtimezone()[0m, 
+  [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To format a duration:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_duration[0m[37m[40m([0m[1m[37m[40m15[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m60[0m[37m[40m)                 [0m
@@ -2711,16 +2749,37 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, 
-  [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, 
-  [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
-  [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mleftstr()[0m, [1mlength()[0m, 
+  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
+  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To format an amount:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_file_size[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[37m[40m1024[0m[37m[40m)       [0m
+   
+
+
+[1m[4mhumanize_id[0m[4m([0m[4mid[0m[4m)[0m
+══════════════════════════════════════════════════════════════════════
+  Colorize the given ID using ANSI escape codes.
+[4mParameter[0m
+  [4mid[0m   The identifier to color
+[4mSee Also[0m
+  [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
+  [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+[4mExample[0m
+#1 To colorize the ID 'cluster1':
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mhumanize_id[0m[37m[40m([0m[35m[40m'cluster1'[0m[37m[40m)                    [0m
    
 
 
@@ -2749,13 +2808,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mleftstr()[0m, [1mlength()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To test get the position of 'b' in the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40minstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[35m[40m'b'[0m[37m[40m)                          [0m
@@ -3327,13 +3386,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mlength()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To get the first character of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mleftstr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)                          [0m
@@ -3353,13 +3412,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To get the length of the string 'abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlength[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m)                              [0m
@@ -3479,13 +3538,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To extract key/value pairs from a log message:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlogfmt2json[0m[37m[40m([0m[35m[40m'foo=1 bar=2 name="Rolo Tomassi"'[0m[37m[40m)[0m
@@ -3501,13 +3560,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To lowercase the string 'AbC':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mlower[0m[37m[40m([0m[35m[40m'AbC'[0m[37m[40m)                               [0m
@@ -3524,13 +3583,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To trim the leading space characters from the string '   abc':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mltrim[0m[37m[40m([0m[35m[40m'   abc'[0m[37m[40m)                            [0m
@@ -3633,13 +3692,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadc[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
@@ -3660,13 +3719,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadl[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m)                             [0m
@@ -3687,13 +3746,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To pad the string 'abc' to a length of six characters:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mpadr[0m[37m[40m([0m[35m[40m'abc'[0m[37m[40m, [0m[1m[37m[40m6[0m[37m[40m) [0m[1m[37m[40m||[0m[37m[40m [0m[35m[40m'def'[0m[37m[40m                    [0m
@@ -3726,13 +3785,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To parse the URL 'https://example.com/search?q=hello%20world':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mparse_url[0m[37m[40m([0m[35m[40m'https://example.com/search?q=hello%20world'[0m[37m[40m)[0m
@@ -3793,13 +3852,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExamples[0m
 #1 To substitute 'World' into the string 'Hello, %s!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[35m[40m'Hello, %s!'[0m[37m[40m, [0m[35m[40m'World'[0m[37m[40m)              [0m
@@ -3822,13 +3881,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
-  [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
+  [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To capitalize the words in the string 'hello, world!':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mproper[0m[37m[40m([0m[35m[40m'hello, world!'[0m[37m[40m)                    [0m
@@ -3953,9 +4012,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture_into_json()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture_into_json()[0m, 
   [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
   [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
   [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
@@ -3987,13 +4046,13 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_match()[0m, 
-  [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, 
-  [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, 
-  [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
-  [1mxpath()[0m
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
+  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
+  [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, 
+  [1mupper()[0m, [1mxpath()[0m
 [4mExample[0m
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture_into_json[0m[37m[40m([0m[35m[40m'a=1; b=2'[0m[37m[40m, [0m[35m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
@@ -4010,9 +4069,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_replace()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4045,9 +4104,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_match()[0m, [1mreplace()[0m, 
   [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4075,9 +4134,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4101,9 +4160,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
   [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, 
@@ -4122,9 +4181,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4145,9 +4204,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, 
   [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, 
@@ -4213,9 +4272,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4282,9 +4341,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1mspooky_hash()[0m, 
   [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, 
@@ -4307,9 +4366,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, 
@@ -4389,9 +4448,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, 
@@ -4416,9 +4475,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, [1municode()[0m, 
@@ -4476,9 +4535,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4601,13 +4660,14 @@ For support questions, email:
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdate()[0m, [1mdatetime()[0m, [1mdecode()[0m, 
   [1mencode()[0m, [1mendswith()[0m, [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, 
   [1mgunzip()[0m, [1mgzip()[0m, [1mhumanize_duration()[0m, [1mhumanize_duration()[0m, 
-  [1mhumanize_file_size()[0m, [1minstr()[0m, [1mjulianday()[0m, [1mleftstr()[0m, [1mlength()[0m, 
-  [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, [1mparse_url()[0m, 
-  [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, [1mregexp_capture_into_json()[0m, 
-  [1mregexp_match()[0m, [1mregexp_replace()[0m, [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, 
-  [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, [1mspooky_hash()[0m, [1mstartswith()[0m, 
-  [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, [1mtimediff()[0m, [1mtimeslice()[0m, 
-  [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, [1mxpath()[0m
+  [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, [1mjulianday()[0m, [1mleftstr()[0m, 
+  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
+  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
+  [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
+  [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1mstrftime()[0m, [1msubstr()[0m, [1mtime()[0m, 
+  [1mtimediff()[0m, [1mtimeslice()[0m, [1mtrim()[0m, [1municode()[0m, [1munparse_url()[0m, [1mupper()[0m, 
+  [1mxpath()[0m
 [4mExample[0m
 #1 To convert a time to America/Los_Angeles:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimezone[0m[37m[40m([0m[35m[40m'America/Los_Angeles'[0m[37m[40m, [0m[35m[40m'2022-03-02T10:00'[0m[37m[40m)[0m
@@ -4649,9 +4709,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, 
@@ -4692,9 +4752,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4721,9 +4781,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4743,9 +4803,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 
@@ -4774,9 +4834,9 @@ For support questions, email:
 [4mSee Also[0m
   [1manonymize()[0m, [1mchar()[0m, [1mcharindex()[0m, [1mdecode()[0m, [1mencode()[0m, [1mendswith()[0m, 
   [1mextract()[0m, [1mgroup_concat()[0m, [1mgroup_spooky_hash()[0m, [1mgunzip()[0m, [1mgzip()[0m, 
-  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1minstr()[0m, [1mleftstr()[0m, 
-  [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, [1mpadr()[0m, 
-  [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
+  [1mhumanize_duration()[0m, [1mhumanize_file_size()[0m, [1mhumanize_id()[0m, [1minstr()[0m, 
+  [1mleftstr()[0m, [1mlength()[0m, [1mlogfmt2json()[0m, [1mlower()[0m, [1mltrim()[0m, [1mpadc()[0m, [1mpadl()[0m, 
+  [1mpadr()[0m, [1mparse_url()[0m, [1mprintf()[0m, [1mproper()[0m, [1mregexp_capture()[0m, 
   [1mregexp_capture_into_json()[0m, [1mregexp_match()[0m, [1mregexp_replace()[0m, 
   [1mreplace()[0m, [1mreplicate()[0m, [1mreverse()[0m, [1mrightstr()[0m, [1mrtrim()[0m, [1msparkline()[0m, 
   [1mspooky_hash()[0m, [1mstartswith()[0m, [1mstrfilter()[0m, [1msubstr()[0m, [1mtimezone()[0m, [1mtrim()[0m, 

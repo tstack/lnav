@@ -216,7 +216,7 @@ shared_buffer_ref::widen(narrow_result old_data_length)
 void
 shared_buffer_ref::erase_ansi()
 {
-    if (!this->sb_metadata.m_has_ansi) {
+    if (!this->sb_metadata.m_valid_utf || !this->sb_metadata.m_has_ansi) {
         return;
     }
 

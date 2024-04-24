@@ -20,6 +20,14 @@
                 },
                 "x2b": {
                     "command": ";UPDATE lnav_views SET paused = 1 - paused"
+                },
+                "x60": {
+                    "id": "",
+                    "command": ":prompt breadcrumb"
+                },
+                "xc2xa7": {
+                    "id": "org.lnav.key.breadcrumb.focus",
+                    "command": ":prompt breadcrumb"
                 }
             }
         }

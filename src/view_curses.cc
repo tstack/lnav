@@ -40,12 +40,14 @@
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.hh"
 #include "base/from_trait.hh"
+#include "base/injector.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "lnav_config.hh"
 #include "shlex.hh"
 #include "view_curses.hh"
+#include "xterm_mouse.hh"
 
 #if defined HAVE_NCURSESW_CURSES_H
 #    include <ncursesw/term.h>
@@ -129,6 +131,91 @@ struct utf_to_display_adjustment {
     }
 };
 
+bool
+mouse_event::is_click_in(mouse_button_t button, int x_start, int x_end) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+        && (x_start <= this->me_x && this->me_x <= x_end)
+        && (x_start <= this->me_press_x && this->me_press_x <= x_end)
+        && this->me_y == this->me_press_y;
+}
+
+bool
+mouse_event::is_press_in(mouse_button_t button, line_range lr) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_PRESSED
+        && lr.contains(this->me_x);
+}
+
+bool
+mouse_event::is_drag_in(mouse_button_t button, line_range lr) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED
+        && lr.contains(this->me_press_x) && lr.contains(this->me_x);
+}
+
+bool
+mouse_event::is_double_click_in(mouse_button_t button, line_range lr) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
+        && lr.contains(this->me_x) && this->me_y == this->me_press_y;
+}
+
+bool
+view_curses::handle_mouse(mouse_event& me)
+{
+    if (me.me_state != mouse_button_state_t::BUTTON_STATE_DRAGGED) {
+        this->vc_last_drag_child = nullptr;
+    }
+
+    for (auto* child : this->vc_children) {
+        auto x = this->vc_x + me.me_x;
+        auto y = this->vc_y + me.me_y;
+        if ((me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED
+             && child == this->vc_last_drag_child && child->vc_x <= x
+             && x < (child->vc_x + child->vc_width))
+            || child->contains(x, y))
+        {
+            auto sub_me = me;
+
+            sub_me.me_x = x - child->vc_x;
+            sub_me.me_y = y - child->vc_y;
+            sub_me.me_press_x = this->vc_x + me.me_press_x - child->vc_x;
+            sub_me.me_press_y = this->vc_y + me.me_press_y - child->vc_y;
+            if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED) {
+                this->vc_last_drag_child = child;
+            }
+            return child->handle_mouse(sub_me);
+        }
+    }
+    return false;
+}
+
+bool
+view_curses::contains(int x, int y) const
+{
+    if (!this->vc_visible) {
+        return false;
+    }
+
+    for (auto* child : this->vc_children) {
+        if (child->contains(x, y)) {
+            return true;
+        }
+    }
+    if (this->vc_x <= x
+        && (this->vc_width < 0 || x < this->vc_x + this->vc_width)
+        && this->vc_y == y)
+    {
+        return true;
+    }
+    return false;
+}
+
 void
 view_curses::awaiting_user_input()
 {
@@ -140,32 +227,28 @@ view_curses::awaiting_user_input()
     }
 }
 
-size_t
+view_curses::mvwattrline_result
 view_curses::mvwattrline(WINDOW* window,
                          int y,
-                         int x,
+                         const int x,
                          attr_line_t& al,
                          const struct line_range& lr_chars,
                          role_t base_role)
 {
     auto& sa = al.get_attrs();
-    auto& line = al.get_string();
+    const auto& line = al.get_string();
     std::vector<utf_to_display_adjustment> utf_adjustments;
     std::string full_line;
 
     require(lr_chars.lr_end >= 0);
 
+    mvwattrline_result retval;
     auto line_width_chars = lr_chars.length();
     std::string expanded_line;
-
-    short* fg_color = (short*) alloca(line_width_chars * sizeof(short));
-    bool has_fg = false;
-    short* bg_color = (short*) alloca(line_width_chars * sizeof(short));
-    bool has_bg = false;
     line_range lr_bytes;
     int char_index = 0;
 
-    for (size_t lpc = 0; lpc < line.size(); lpc++) {
+    for (size_t lpc = 0; lpc < line.size();) {
         int exp_start_index = expanded_line.size();
         auto ch = static_cast<unsigned char>(line[lpc]);
 
@@ -173,6 +256,7 @@ view_curses::mvwattrline(WINDOW* window,
             lr_bytes.lr_start = exp_start_index;
         } else if (char_index == lr_chars.lr_end) {
             lr_bytes.lr_end = exp_start_index;
+            retval.mr_chars_out = char_index;
         }
 
         switch (ch) {
@@ -180,9 +264,17 @@ view_curses::mvwattrline(WINDOW* window,
                 do {
                     expanded_line.push_back(' ');
                     char_index += 1;
+                    if (char_index == lr_chars.lr_start) {
+                        lr_bytes.lr_start = expanded_line.size();
+                    }
+                    if (char_index == lr_chars.lr_end) {
+                        lr_bytes.lr_end = expanded_line.size();
+                        retval.mr_chars_out = char_index;
+                    }
                 } while (expanded_line.size() % 8);
                 utf_adjustments.emplace_back(
                     lpc, expanded_line.size() - exp_start_index - 1);
+                lpc += 1;
                 break;
             }
 
@@ -190,49 +282,59 @@ view_curses::mvwattrline(WINDOW* window,
                 expanded_line.append("\u238b");
                 utf_adjustments.emplace_back(lpc, -1);
                 char_index += 1;
+                lpc += 1;
                 break;
 
             case '\b':
                 expanded_line.append("\u232b");
                 utf_adjustments.emplace_back(lpc, -1);
                 char_index += 1;
+                lpc += 1;
+                break;
+
+            case '\x07':
+                expanded_line.append("\U0001F514");
+                utf_adjustments.emplace_back(lpc, -1);
+                char_index += 1;
+                lpc += 1;
                 break;
 
             case '\r':
             case '\n':
                 expanded_line.push_back(' ');
                 char_index += 1;
+                lpc += 1;
                 break;
 
             default: {
-                auto size_result = ww898::utf::utf8::char_size([&line, lpc]() {
-                    return std::make_pair(line[lpc], line.length() - lpc - 1);
-                });
+                auto exp_read_start = expanded_line.size();
+                auto lpc_start = lpc;
+                auto read_res
+                    = ww898::utf::utf8::read([&line, &expanded_line, &lpc]() {
+                          auto ch = line[lpc++];
+                          expanded_line.push_back(ch);
+                          return ch;
+                      });
 
-                if (size_result.isErr()) {
+                if (read_res.isErr()) {
+                    log_trace(
+                        "error:%d:%d:%s", y, x + lpc, read_res.unwrapErr());
+                    expanded_line.resize(exp_read_start);
                     expanded_line.push_back('?');
+                    char_index += 1;
+                    lpc = lpc_start + 1;
                 } else {
-                    auto offset = 1 - (int) size_result.unwrap();
-
-                    expanded_line.push_back(ch);
-                    if (offset) {
-#if 0
-                        if (char_index < lr_chars.lr_start) {
-                            lr_bytes.lr_start += abs(offset);
-                        }
-                        if (char_index < lr_chars.lr_end) {
-                            lr_bytes.lr_end += abs(offset);
-                        }
-#endif
-                        utf_adjustments.emplace_back(lpc, offset);
-                        for (; offset && (lpc + 1) < line.size();
-                             lpc++, offset++)
-                        {
-                            expanded_line.push_back(line[lpc + 1]);
-                        }
+                    if (lpc > (lpc_start + 1)) {
+                        utf_adjustments.emplace_back(lpc_start,
+                                                     1 - (lpc - lpc_start));
+                    }
+                    auto wch = read_res.unwrap();
+                    char_index += wcwidth(wch);
+                    if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
+                        lr_bytes.lr_end = exp_start_index;
+                        retval.mr_chars_out = char_index - wcwidth(wch);
                     }
                 }
-                char_index += 1;
                 break;
             }
         }
@@ -243,18 +345,22 @@ view_curses::mvwattrline(WINDOW* window,
     if (lr_bytes.lr_end == -1) {
         lr_bytes.lr_end = expanded_line.size();
     }
-    size_t retval = expanded_line.size() - lr_bytes.lr_end;
+    if (retval.mr_chars_out == 0) {
+        retval.mr_chars_out = char_index;
+    }
+    retval.mr_bytes_remaining = expanded_line.size() - lr_bytes.lr_end;
 
     full_line = expanded_line;
 
     auto& vc = view_colors::singleton();
     auto text_role_attrs = vc.attrs_for_role(role_t::VCR_TEXT);
-    auto attrs = vc.attrs_for_role(base_role);
+    auto base_attrs = vc.attrs_for_role(base_role);
     wmove(window, y, x);
-    wattr_set(window,
-              attrs.ta_attrs,
-              vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
-              nullptr);
+    wattr_set(
+        window,
+        base_attrs.ta_attrs,
+        vc.ensure_color_pair(base_attrs.ta_fg_color, base_attrs.ta_bg_color),
+        nullptr);
     if (lr_bytes.lr_start < (int) full_line.size()) {
         waddnstr(
             window, &full_line.c_str()[lr_bytes.lr_start], lr_bytes.length());
@@ -263,6 +369,13 @@ view_curses::mvwattrline(WINDOW* window,
         whline(window, ' ', lr_chars.lr_end - char_index);
     }
 
+    cchar_t row_ch[line_width_chars + 1];
+    short fg_color[line_width_chars + 1];
+    short bg_color[line_width_chars + 1];
+    memset(fg_color, -1, sizeof(fg_color));
+    memset(bg_color, -1, sizeof(bg_color));
+
+    mvwin_wchnstr(window, y, x, row_ch, line_width_chars);
     std::stable_sort(sa.begin(), sa.end());
     for (auto iter = sa.cbegin(); iter != sa.cend(); ++iter) {
         auto attr_range = iter->sa_range;
@@ -313,9 +426,6 @@ view_curses::mvwattrline(WINDOW* window,
             = std::min(line_width_chars, attr_range.lr_end - lr_chars.lr_start);
 
         if (iter->sa_type == &VC_FOREGROUND) {
-            if (!has_fg) {
-                memset(fg_color, -1, line_width_chars * sizeof(short));
-            }
             short attr_fg = iter->sa_value.get<int64_t>();
             if (attr_fg == view_colors::MATCH_COLOR_SEMANTIC) {
                 attr_fg = vc.color_for_ident(al.to_string_fragment(iter))
@@ -326,14 +436,10 @@ view_curses::mvwattrline(WINDOW* window,
             std::fill(&fg_color[attr_range.lr_start],
                       &fg_color[attr_range.lr_end],
                       attr_fg);
-            has_fg = true;
             continue;
         }
 
         if (iter->sa_type == &VC_BACKGROUND) {
-            if (!has_bg) {
-                memset(bg_color, -1, line_width_chars * sizeof(short));
-            }
             short attr_bg = iter->sa_value.get<int64_t>();
             if (attr_bg == view_colors::MATCH_COLOR_SEMANTIC) {
                 attr_bg = vc.color_for_ident(al.to_string_fragment(iter))
@@ -342,12 +448,11 @@ view_curses::mvwattrline(WINDOW* window,
             std::fill(bg_color + attr_range.lr_start,
                       bg_color + attr_range.lr_end,
                       attr_bg);
-            has_bg = true;
             continue;
         }
 
         if (attr_range.lr_start < attr_range.lr_end) {
-            int awidth = attr_range.length();
+            auto attrs = text_attrs{};
             nonstd::optional<char> graphic;
             nonstd::optional<wchar_t> block_elem;
 
@@ -366,6 +471,12 @@ view_curses::mvwattrline(WINDOW* window,
             } else if (iter->sa_type == &VC_ROLE) {
                 auto role = iter->sa_value.get<role_t>();
                 attrs = vc.attrs_for_role(role);
+
+                if (role == role_t::VCR_SELECTED_TEXT) {
+                    retval.mr_selected_text
+                        = string_fragment::from_str(line).sub_range(
+                            iter->sa_range.lr_start, iter->sa_range.lr_end);
+                }
             } else if (iter->sa_type == &VC_ROLE_FG) {
                 auto role_attrs
                     = vc.attrs_for_role(iter->sa_value.get<role_t>());
@@ -373,11 +484,6 @@ view_curses::mvwattrline(WINDOW* window,
             }
 
             if (graphic || block_elem || !attrs.empty()) {
-                int x_pos = x + attr_range.lr_start;
-                int ch_width = std::min(
-                    awidth, (line_width_chars - attr_range.lr_start));
-                cchar_t row_ch[ch_width + 1];
-
                 if (attrs.ta_attrs & (A_LEFT | A_RIGHT)) {
                     if (attrs.ta_attrs & A_LEFT) {
                         attrs.ta_fg_color
@@ -391,26 +497,20 @@ view_curses::mvwattrline(WINDOW* window,
                 }
 
                 if (attrs.ta_fg_color) {
-                    if (!has_fg) {
-                        memset(fg_color, -1, line_width_chars * sizeof(short));
-                    }
                     std::fill(&fg_color[attr_range.lr_start],
                               &fg_color[attr_range.lr_end],
                               attrs.ta_fg_color.value());
-                    has_fg = true;
                 }
                 if (attrs.ta_bg_color) {
-                    if (!has_bg) {
-                        memset(bg_color, -1, line_width_chars * sizeof(short));
-                    }
                     std::fill(&bg_color[attr_range.lr_start],
                               &bg_color[attr_range.lr_end],
                               attrs.ta_bg_color.value());
-                    has_bg = true;
                 }
 
-                mvwin_wchnstr(window, y, x_pos, row_ch, ch_width);
-                for (int lpc = 0; lpc < ch_width; lpc++) {
+                for (int lpc = attr_range.lr_start;
+                     lpc < attr_range.lr_end && lpc < line_width_chars;
+                     lpc++)
+                {
                     bool clear_rev = false;
 
                     if (graphic) {
@@ -430,52 +530,93 @@ view_curses::mvwattrline(WINDOW* window,
                         row_ch[lpc].attr &= ~A_REVERSE;
                     }
                 }
-                mvwadd_wchnstr(window, y, x_pos, row_ch, ch_width);
             }
         }
     }
 
-    if (has_fg || has_bg) {
-        if (!has_fg) {
-            memset(fg_color, -1, line_width_chars * sizeof(short));
+    for (int lpc = 0; lpc < line_width_chars; lpc++) {
+        if (fg_color[lpc] == -1 && bg_color[lpc] == -1) {
+            continue;
         }
-        if (!has_bg) {
-            memset(bg_color, -1, line_width_chars * sizeof(short));
-        }
-
-        int ch_width = lr_chars.length();
-        cchar_t row_ch[ch_width + 1];
-
-        mvwin_wchnstr(window, y, x, row_ch, ch_width);
-        for (int lpc = 0; lpc < ch_width; lpc++) {
-            if (fg_color[lpc] == -1 && bg_color[lpc] == -1) {
-                continue;
-            }
 #ifdef NCURSES_EXT_COLORS
-            auto cur_pair = row_ch[lpc].ext_color;
+        auto cur_pair = row_ch[lpc].ext_color;
 #else
-            auto cur_pair = PAIR_NUMBER(row_ch[lpc].attr);
+        auto cur_pair = PAIR_NUMBER(row_ch[lpc].attr);
 #endif
-            short cur_fg, cur_bg;
-            pair_content(cur_pair, &cur_fg, &cur_bg);
-            if (fg_color[lpc] == -1) {
-                fg_color[lpc] = cur_fg;
-            }
-            if (bg_color[lpc] == -1) {
-                bg_color[lpc] = cur_bg;
-            }
+        short cur_fg, cur_bg;
+        pair_content(cur_pair, &cur_fg, &cur_bg);
 
-            int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
-
-            row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
-#ifdef NCURSES_EXT_COLORS
-            row_ch[lpc].ext_color = color_pair;
-#else
-            row_ch[lpc].attr |= COLOR_PAIR(color_pair);
-#endif
+        auto desired_fg = fg_color[lpc] != -1 ? fg_color[lpc] : cur_fg;
+        auto desired_bg = bg_color[lpc] != -1 ? bg_color[lpc] : cur_bg;
+        if (desired_fg >= COLOR_BLACK && desired_fg <= COLOR_WHITE) {
+            desired_fg = vc.ansi_to_theme_color(desired_fg);
         }
-        mvwadd_wchnstr(window, y, x, row_ch, ch_width);
+        if (desired_bg >= COLOR_BLACK && desired_bg <= COLOR_WHITE) {
+            desired_bg = vc.ansi_to_theme_color(desired_bg);
+        }
+        if (desired_fg == desired_bg) {
+            if (desired_bg >= 0
+                && desired_bg
+                    < view_colors::vc_active_palette->tc_palette.size())
+            {
+                auto adjusted_color
+                    = view_colors::vc_active_palette->tc_palette[desired_bg]
+                          .xc_lab_color;
+                if (adjusted_color.lc_l < 50.0) {
+                    adjusted_color.lc_l += 50.0;
+                } else {
+                    adjusted_color.lc_l -= 50.0;
+                }
+                bg_color[lpc] = view_colors::vc_active_palette->match_color(
+                    adjusted_color);
+            }
+        } else if (fg_color[lpc] >= 0
+                   && fg_color[lpc]
+                       < view_colors::vc_active_palette->tc_palette.size()
+                   && bg_color[lpc] == -1
+                   && base_attrs.ta_bg_color.value_or(0) >= 0
+                   && base_attrs.ta_bg_color.value_or(0)
+                       < view_colors::vc_active_palette->tc_palette.size())
+        {
+            const auto& fg_color_info
+                = view_colors::vc_active_palette->tc_palette.at(fg_color[lpc]);
+            const auto& bg_color_info
+                = view_colors::vc_active_palette->tc_palette.at(
+                    base_attrs.ta_bg_color.value_or(0));
+
+            if (!fg_color_info.xc_lab_color.sufficient_contrast(
+                    bg_color_info.xc_lab_color))
+            {
+                auto adjusted_color = bg_color_info.xc_lab_color;
+                adjusted_color.lc_l = std::max(0.0, adjusted_color.lc_l - 40.0);
+                auto new_bg = view_colors::vc_active_palette->match_color(
+                    adjusted_color);
+                for (int lpc2 = lpc; lpc2 < line_width_chars; lpc2++) {
+                    if (fg_color[lpc2] == fg_color[lpc] && bg_color[lpc2] == -1)
+                    {
+                        bg_color[lpc2] = new_bg;
+                    }
+                }
+            }
+        }
+
+        if (fg_color[lpc] == -1) {
+            fg_color[lpc] = cur_fg;
+        }
+        if (bg_color[lpc] == -1) {
+            bg_color[lpc] = cur_bg;
+        }
+
+        int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
+
+        row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
+#ifdef NCURSES_EXT_COLORS
+        row_ch[lpc].ext_color = color_pair;
+#else
+        row_ch[lpc].attr |= COLOR_PAIR(color_pair);
+#endif
     }
+    mvwadd_wchnstr(window, y, x, row_ch, line_width_chars);
 
     return retval;
 }
@@ -507,7 +648,7 @@ view_colors::view_colors() : vc_dyn_pairs(0)
 
 bool view_colors::initialized = false;
 
-static std::string COLOR_NAMES[] = {
+static const std::string COLOR_NAMES[] = {
     "black",
     "red",
     "green",
@@ -518,9 +659,9 @@ static std::string COLOR_NAMES[] = {
     "white",
 };
 
-class color_listener : public lnav_config_listener {
+class ui_listener : public lnav_config_listener {
 public:
-    color_listener() : lnav_config_listener(__FILE__) {}
+    ui_listener() : lnav_config_listener(__FILE__) {}
 
     void reload_config(error_reporter& reporter) override
     {
@@ -553,11 +694,16 @@ public:
 
         if (view_colors::initialized) {
             vc.init_roles(iter->second, reporter);
+
+            auto& mouse_i = injector::get<xterm_mouse&>();
+            mouse_i.set_enabled(check_experimental("mouse")
+                                || lnav_config.lc_mouse_mode
+                                    == lnav_mouse_mode::enabled);
         }
     }
 };
 
-static color_listener _COLOR_LISTENER;
+static ui_listener _UI_LISTENER;
 term_color_palette* view_colors::vc_active_palette;
 
 void
@@ -583,7 +729,7 @@ view_colors::init(bool headless)
         auto reporter
             = [](const void*, const lnav::console::user_message& um) {};
 
-        _COLOR_LISTENER.reload_config(reporter);
+        _UI_LISTENER.reload_config(reporter);
     }
 }
 
@@ -1009,6 +1155,10 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_type, reporter);
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SEP_REF_ACC)]
         = this->to_attrs(lt, lt.lt_style_sep_ref_acc, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SUGGESTION)]
+        = this->to_attrs(lt, lt.lt_style_suggestion, reporter);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_SELECTED_TEXT)]
+        = this->to_attrs(lt, lt.lt_style_selected_text, reporter);
 
     this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_RE_SPECIAL)]
         = this->to_attrs(lt, lt.lt_style_re_special, reporter);
@@ -1152,20 +1302,16 @@ view_colors::color_for_ident(const char* str, size_t len) const
     auto index = crc32(1, (const Bytef*) str, len);
     int retval;
 
-    if (COLORS >= 256) {
-        if (str[0] == '#' && (len == 4 || len == 7)) {
-            auto fg_res
-                = styling::color_unit::from_str(string_fragment(str, 0, len));
-            if (fg_res.isOk()) {
-                return this->match_color(fg_res.unwrap());
-            }
+    if (str[0] == '#' && (len == 4 || len == 7)) {
+        auto fg_res
+            = styling::color_unit::from_str(string_fragment(str, 0, len));
+        if (fg_res.isOk()) {
+            return this->match_color(fg_res.unwrap());
         }
-
-        auto offset = index % HI_COLOR_COUNT;
-        retval = this->vc_highlight_colors[offset];
-    } else {
-        retval = -1;
     }
+
+    auto offset = index % HI_COLOR_COUNT;
+    retval = this->vc_highlight_colors[offset];
 
     return retval;
 }

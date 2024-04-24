@@ -31,6 +31,7 @@
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
 #include "base/paths.hh"
+#include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "field_overlay_source.hh"
@@ -53,12 +54,13 @@ using namespace lnav::roles::literals;
 
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
-#define STR_HELPER(x) #x
-#define STR(x)        STR_HELPER(x)
-
-#define ANSI_RE(msg)  ANSI_CSI "1;3" STR(COLOR_CYAN) "m" msg ANSI_NORM
-#define ANSI_CLS(msg) ANSI_CSI "1;3" STR(COLOR_MAGENTA) "m" msg ANSI_NORM
-#define ANSI_KW(msg)  ANSI_CSI "3" STR(COLOR_BLUE) "m" msg ANSI_NORM
+#define ANSI_RE(msg) \
+    ANSI_CSI ANSI_BOLD_PARAM ";" ANSI_COLOR_PARAM(COLOR_CYAN) "m" msg ANSI_NORM
+#define ANSI_CLS(msg) \
+    ANSI_CSI ANSI_BOLD_PARAM \
+        ";" ANSI_COLOR_PARAM(COLOR_MAGENTA) "m" msg ANSI_NORM
+#define ANSI_KW(msg) \
+    ANSI_CSI ANSI_BOLD_PARAM ";" ANSI_COLOR_PARAM(COLOR_BLUE) "m" msg ANSI_NORM
 #define ANSI_REV(msg) ANSI_CSI "7m" msg ANSI_NORM
 #define ANSI_STR(msg) ANSI_CSI "32m" msg ANSI_NORM
 
@@ -97,6 +99,18 @@ const char *RE_EXAMPLE =
     "  " ANSI_RE("(?-i)") "ABC   matches  " ANSI_STR("'ABC'") " and " ANSI_UNDERLINE("not") " " ANSI_STR("'abc'")
 ;
 
+const char* CMD_HELP =
+    " " ANSI_KW(":goto") "              Go to a line #, timestamp, etc...\n"
+    " " ANSI_KW(":filter-out") "        Filter out lines that match a pattern\n"
+    " " ANSI_KW(":hide-lines-before") " Hide lines before a timestamp\n"
+    " " ANSI_KW(":open") "              Open another file/directory\n";
+
+const char* CMD_EXAMPLE =
+    ANSI_UNDERLINE("Examples") "\n"
+    "  " ANSI_KW(":goto") " 123\n"
+    "  " ANSI_KW(":filter-out") " spam\n"
+    "  " ANSI_KW(":hide-lines-before") " here\n";
+
 const char *SQL_HELP =
     " " ANSI_KW("SELECT") "  Select rows from a table      "
     " " ANSI_KW("DELETE") "  Delete rows from a table\n"
@@ -115,7 +129,40 @@ const char *SQL_EXAMPLE =
     "  SELECT * FROM logline LIMIT 10"
 ;
 
+const char *PRQL_HELP =
+    " " ANSI_KW("from") "    Specify a data source       "
+    " " ANSI_KW("derive") "     Derive one or more columns\n"
+    " " ANSI_KW("select") "  Select one or more columns  "
+    " " ANSI_KW("aggregate") "  Summary many rows into one\n"
+    " " ANSI_KW("group") "   Partition rows into groups  "
+    " " ANSI_KW("filter") "     Pick rows based on their values\n"
+    ;
+
+const char *PRQL_EXAMPLE =
+    ANSI_UNDERLINE("Examples") "\n"
+        "  from %s | stats.count_by { log_level }\n"
+        "  from %s | filter log_line == lnav.view.top_line\n"
+    ;
+
 static const char* LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
+
+static attr_line_t
+format_sql_example(const char* sql_example_fmt)
+{
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
+    auto* lss = (logfile_sub_source*) log_view.get_sub_source();
+    attr_line_t retval;
+
+    if (log_view.get_inner_height() > 0) {
+        auto cl = lss->at(log_view.get_top());
+        auto lf = lss->find(cl);
+        const auto* format_name = lf->get_format()->get_name().get();
+
+        retval.with_ansi_string(sql_example_fmt, format_name, format_name);
+        readline_sqlite_highlighter(retval, 0);
+    }
+    return retval;
+}
 
 void
 rl_set_help()
@@ -127,22 +174,14 @@ rl_set_help()
             break;
         }
         case ln_mode_t::SQL: {
-            textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
-            auto* lss = (logfile_sub_source*) log_view.get_sub_source();
-            attr_line_t example_al;
-
-            if (log_view.get_inner_height() > 0) {
-                auto cl = lss->at(log_view.get_top());
-                auto lf = lss->find(cl);
-                const auto* format_name = lf->get_format()->get_name().get();
-
-                example_al.with_ansi_string(
-                    SQL_EXAMPLE, format_name, format_name);
-                readline_sqlite_highlighter(example_al, 0);
-            }
-
+            auto example_al = format_sql_example(SQL_EXAMPLE);
             lnav_data.ld_doc_source.replace_with(SQL_HELP);
             lnav_data.ld_example_source.replace_with(example_al);
+            break;
+        }
+        case ln_mode_t::COMMAND: {
+            lnav_data.ld_doc_source.replace_with(CMD_HELP);
+            lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
             break;
         }
         default:
@@ -153,9 +192,9 @@ rl_set_help()
 static bool
 rl_sql_help(readline_curses* rc)
 {
-    attr_line_t al(rc->get_line_buffer());
-    const string_attrs_t& sa = al.get_attrs();
-    size_t x = rc->get_x();
+    auto al = attr_line_t(rc->get_line_buffer());
+    const auto& sa = al.get_attrs();
+    size_t x = rc->get_cursor_x();
     bool has_doc = false;
 
     if (x > 0) {
@@ -165,11 +204,15 @@ rl_sql_help(readline_curses* rc)
     annotate_sql_statement(al);
 
     auto avail_help = find_sql_help_for_line(al, x);
+    auto lang = help_example::language::undefined;
+    if (lnav::sql::is_prql(al.get_string())) {
+        lang = help_example::language::prql;
+    }
 
     if (!avail_help.empty()) {
         size_t help_count = avail_help.size();
-        textview_curses& dtc = lnav_data.ld_doc_view;
-        textview_curses& etc = lnav_data.ld_example_view;
+        auto& dtc = lnav_data.ld_doc_view;
+        auto& etc = lnav_data.ld_example_view;
         unsigned long doc_width, ex_width;
         vis_line_t doc_height, ex_height;
         attr_line_t doc_al, ex_al;
@@ -186,7 +229,7 @@ rl_sql_help(readline_curses* rc)
                                           : help_text_content::full);
             if (help_count == 1) {
                 format_example_text_for_term(
-                    *ht, eval_example, std::min(70UL, ex_width), ex_al);
+                    *ht, eval_example, std::min(70UL, ex_width), ex_al, lang);
             } else {
                 doc_al.append("\n");
             }
@@ -205,6 +248,10 @@ rl_sql_help(readline_curses* rc)
 
     auto ident_iter = find_string_attr_containing(
         sa, &SQL_IDENTIFIER_ATTR, al.nearest_text(x));
+    if (ident_iter == sa.end()) {
+        ident_iter = find_string_attr_containing(
+            sa, &lnav::sql::PRQL_IDENTIFIER_ATTR, al.nearest_text(x));
+    }
     if (ident_iter != sa.end()) {
         auto ident = al.get_substring(ident_iter->sa_range);
         auto intern_ident = intern_string::lookup(ident);
@@ -225,10 +272,14 @@ rl_sql_help(readline_curses* rc)
         }
 
         if (!ddl.empty()) {
-            lnav_data.ld_preview_source.replace_with(ddl)
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_view[0].set_overlay_source(nullptr);
+            lnav_data.ld_preview_source[0]
+                .replace_with(ddl)
                 .set_text_format(text_format_t::TF_SQL)
                 .truncate_to(30);
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Definition for table -- %s", ident.c_str());
         }
     }
@@ -249,19 +300,50 @@ rl_change(readline_curses* rc)
         "show-fields",
     };
 
-    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_user_message_source.clear();
-    lnav_data.ld_preview_source.clear();
-    lnav_data.ld_preview_status_source.get_description()
-        .set_cylon(false)
-        .clear();
 
     switch (lnav_data.ld_mode) {
+        case ln_mode_t::SEARCH: {
+            if (rc->get_line_buffer().empty() && tc->tc_selected_text) {
+                rc->set_suggestion(tc->tc_selected_text->sti_value);
+            }
+            break;
+        }
+        case ln_mode_t::SQL: {
+            static const auto* sql_cmd_map
+                = injector::get<readline_context::command_map_t*,
+                                sql_cmd_map_tag>();
+
+            const auto line = rc->get_line_buffer();
+            std::vector<std::string> args;
+
+            if (!lnav::sql::is_prql(line)) {
+                clear_preview();
+            }
+
+            split_ws(line, args);
+            if (!args.empty()) {
+                auto cmd_iter = sql_cmd_map->find(args[0]);
+                if (cmd_iter != sql_cmd_map->end()) {
+                    const auto* sql_cmd = cmd_iter->second;
+                    if (sql_cmd->c_prompt != nullptr) {
+                        const auto prompt_res = sql_cmd->c_prompt(
+                            lnav_data.ld_exec_context, line);
+
+                        rc->set_suggestion(prompt_res.pr_suggestion);
+                    }
+                }
+            }
+            break;
+        }
         case ln_mode_t::COMMAND: {
+            clear_preview();
+
             static std::string last_command;
             static int generation = 0;
 
@@ -308,13 +390,11 @@ rl_change(readline_curses* rc)
             if (!args.empty()) {
                 iter = lnav_commands.find(args[0]);
             }
-            if (iter == lnav_commands.end()) {
-                lnav_data.ld_doc_source.clear();
-                lnav_data.ld_example_source.clear();
-                lnav_data.ld_preview_source.clear();
-                lnav_data.ld_preview_status_source.get_description()
-                    .set_cylon(false)
-                    .clear();
+            if (iter == lnav_commands.end()
+                || (args.size() == 1 && !endswith(line, " ")))
+            {
+                lnav_data.ld_doc_source.replace_with(CMD_HELP);
+                lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
                 lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
                 lnav_data.ld_bottom_source.grep_error("");
             } else if (args[0] == "config" && args.size() > 1) {
@@ -343,12 +423,12 @@ rl_change(readline_curses* rc)
             } else if ((args[0] != "filter-expr" && args[0] != "mark-expr")
                        || !rl_sql_help(rc))
             {
-                readline_context::command_t& cmd = *iter->second;
-                const help_text& ht = cmd.c_help;
+                const auto& cmd = *iter->second;
+                const auto& ht = cmd.c_help;
 
                 if (ht.ht_name) {
-                    textview_curses& dtc = lnav_data.ld_doc_view;
-                    textview_curses& etc = lnav_data.ld_example_view;
+                    auto& dtc = lnav_data.ld_doc_view;
+                    auto& etc = lnav_data.ld_example_view;
                     unsigned long width;
                     vis_line_t height;
                     attr_line_t al;
@@ -365,15 +445,17 @@ rl_change(readline_curses* rc)
                     etc.set_needs_update();
                 }
 
-                if (cmd.c_prompt != nullptr && generation == 0
-                    && trim(line) == args[0])
-                {
-                    const auto new_prompt
+                if (cmd.c_prompt != nullptr) {
+                    const auto prompt_res
                         = cmd.c_prompt(lnav_data.ld_exec_context, line);
 
-                    if (!new_prompt.empty()) {
-                        rc->rewrite_line(line.length(), new_prompt);
+                    if (generation == 0 && trim(line) == args[0]
+                        && !prompt_res.pr_new_prompt.empty())
+                    {
+                        rc->rewrite_line(line.length(),
+                                         prompt_res.pr_new_prompt);
                     }
+                    rc->set_suggestion(prompt_res.pr_suggestion);
                 }
 
                 lnav_data.ld_bottom_source.grep_error("");
@@ -382,6 +464,8 @@ rl_change(readline_curses* rc)
             break;
         }
         case ln_mode_t::EXEC: {
+            clear_preview();
+
             const auto line = rc->get_line_buffer();
             size_t name_end = line.find(' ');
             const auto script_name = line.substr(0, name_end);
@@ -414,7 +498,7 @@ rl_change(readline_curses* rc)
 static void
 rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
 {
-    textview_curses* tc = get_textview_for_mode(mode);
+    auto* tc = get_textview_for_mode(mode);
     std::string term_val;
     std::string name;
 
@@ -441,10 +525,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
             lnav_data.ld_exec_context.ec_dry_run = true;
 
             lnav_data.ld_preview_generation += 1;
-            lnav_data.ld_preview_status_source.get_description()
-                .set_cylon(false)
-                .clear();
-            lnav_data.ld_preview_source.clear();
+            clear_preview();
             auto result = execute_command(lnav_data.ld_exec_context,
                                           rc->get_value().get_string());
 
@@ -464,18 +545,213 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                     result.unwrapErr().um_message.get_string());
             }
 
-            lnav_data.ld_preview_view.reload_data();
+            lnav_data.ld_preview_view[0].reload_data();
 
             lnav_data.ld_exec_context.ec_dry_run = false;
             return;
         }
 
         case ln_mode_t::SQL: {
-            term_val = trim(rc->get_value().get_string() + ";");
+            term_val = trim(rc->get_value().get_string());
 
             if (!term_val.empty() && term_val[0] == '.') {
                 lnav_data.ld_bottom_source.grep_error("");
-            } else if (!sqlite3_complete(term_val.c_str())) {
+            } else if (lnav::sql::is_prql(term_val)) {
+                std::string alt_msg;
+
+                lnav_data.ld_doc_source.replace_with(PRQL_HELP);
+                lnav_data.ld_example_source.replace_with(
+                    format_sql_example(PRQL_EXAMPLE));
+                lnav_data.ld_db_preview_source[0].clear();
+                lnav_data.ld_db_preview_source[1].clear();
+                rc->clear_possibilities(ln_mode_t::SQL, "prql-expr");
+
+                auto orig_prql_stmt = attr_line_t(term_val);
+                orig_prql_stmt.rtrim("| \r\n\t");
+                annotate_sql_statement(orig_prql_stmt);
+                auto cursor_x = rc->get_cursor_x();
+                if (cursor_x > orig_prql_stmt.get_string().length()) {
+                    cursor_x = orig_prql_stmt.length() - 1;
+                }
+                auto curr_stage_iter
+                    = find_string_attr_containing(orig_prql_stmt.get_attrs(),
+                                                  &lnav::sql::PRQL_STAGE_ATTR,
+                                                  cursor_x);
+                auto curr_stage_prql = orig_prql_stmt.subline(
+                    0, curr_stage_iter->sa_range.lr_end);
+                for (auto riter = curr_stage_prql.get_attrs().rbegin();
+                     riter != curr_stage_prql.get_attrs().rend();
+                     ++riter)
+                {
+                    if (riter->sa_type != &lnav::sql::PRQL_STAGE_ATTR
+                        || riter->sa_range.lr_start == 0)
+                    {
+                        continue;
+                    }
+                    curr_stage_prql.insert(riter->sa_range.lr_start,
+                                           "| take 10000 ");
+                }
+                curr_stage_prql.rtrim();
+                curr_stage_prql.append(" | take 5");
+                log_debug("preview prql: %s",
+                          curr_stage_prql.get_string().c_str());
+
+                size_t curr_stage_index = 0;
+                if (curr_stage_iter->sa_range.lr_start > 0) {
+                    auto prev_stage_iter = find_string_attr_containing(
+                        orig_prql_stmt.get_attrs(),
+                        &lnav::sql::PRQL_STAGE_ATTR,
+                        curr_stage_iter->sa_range.lr_start - 1);
+                    auto prev_stage_prql = orig_prql_stmt.subline(
+                        0, prev_stage_iter->sa_range.lr_end);
+                    for (auto riter = prev_stage_prql.get_attrs().rbegin();
+                         riter != prev_stage_prql.get_attrs().rend();
+                         ++riter)
+                    {
+                        if (riter->sa_type != &lnav::sql::PRQL_STAGE_ATTR
+                            || riter->sa_range.lr_start == 0)
+                        {
+                            continue;
+                        }
+                        prev_stage_prql.insert(riter->sa_range.lr_start,
+                                               "| take 10000 ");
+                    }
+                    prev_stage_prql.append(" | take 5");
+
+                    curr_stage_index = 1;
+                    auto db_guard = lnav_data.ld_exec_context.enter_db_source(
+                        &lnav_data.ld_db_preview_source[0]);
+                    auto exec_res = execute_sql(lnav_data.ld_exec_context,
+                                                prev_stage_prql.get_string(),
+                                                alt_msg);
+                    lnav_data.ld_preview_status_source[0]
+                        .get_description()
+                        .set_value("Result for query: %s",
+                                   prev_stage_prql.get_string().c_str());
+                    if (exec_res.isOk()) {
+                        for (const auto& hdr :
+                             lnav_data.ld_db_preview_source[0].dls_headers)
+                        {
+                            rc->add_possibility(
+                                ln_mode_t::SQL,
+                                "prql-expr",
+                                lnav::prql::quote_ident(hdr.hm_name));
+                        }
+
+                        lnav_data.ld_preview_view[0].set_sub_source(
+                            &lnav_data.ld_db_preview_source[0]);
+                        lnav_data.ld_preview_view[0].set_overlay_source(
+                            &lnav_data.ld_db_preview_overlay_source[0]);
+                    } else {
+                        lnav_data.ld_preview_source[0].replace_with(
+                            exec_res.unwrapErr().to_attr_line());
+                        lnav_data.ld_preview_view[0].set_sub_source(
+                            &lnav_data.ld_preview_source[0]);
+                        lnav_data.ld_preview_view[0].set_overlay_source(
+                            nullptr);
+                    }
+                }
+
+                auto db_guard = lnav_data.ld_exec_context.enter_db_source(
+                    &lnav_data.ld_db_preview_source[curr_stage_index]);
+                auto exec_res = execute_sql(lnav_data.ld_exec_context,
+                                            curr_stage_prql.get_string(),
+                                            alt_msg);
+                auto err = exec_res.isErr()
+                    ? exec_res.unwrapErr()
+                    : lnav::console::user_message::ok({});
+                if (exec_res.isErr()) {
+                    lnav_data.ld_bottom_source.grep_error(
+                        err.um_reason.get_string());
+
+                    curr_stage_prql.erase(curr_stage_prql.get_string().length()
+                                          - 9);
+                    auto near = curr_stage_prql.get_string().length() - 1;
+                    while (near > 0) {
+                        auto paren_iter = rfind_string_attr_if(
+                            curr_stage_prql.get_attrs(),
+                            near,
+                            [](const string_attr& sa) {
+                                return sa.sa_type
+                                    == &lnav::sql::PRQL_UNTERMINATED_PAREN_ATTR;
+                            });
+
+                        if (paren_iter == curr_stage_prql.get_attrs().end()) {
+                            break;
+                        }
+                        switch (
+                            curr_stage_prql
+                                .get_string()[paren_iter->sa_range.lr_start])
+                        {
+                            case '(':
+                                curr_stage_prql.append(")");
+                                break;
+                            case '{':
+                                curr_stage_prql.append("}");
+                                break;
+                        }
+                        near = paren_iter->sa_range.lr_start - 1;
+                    }
+
+                    curr_stage_prql.append(" | take 5");
+                    auto exec_termed_res
+                        = execute_sql(lnav_data.ld_exec_context,
+                                      curr_stage_prql.get_string(),
+                                      alt_msg);
+                    if (exec_termed_res.isErr()) {
+                        err = exec_termed_res.unwrapErr();
+                    }
+                } else {
+                    lnav_data.ld_bottom_source.grep_error("");
+                }
+
+                rc->add_possibility(
+                    ln_mode_t::SQL, "prql-expr", lnav::sql::prql_keywords);
+                for (const auto& pair : lnav::sql::prql_functions) {
+                    rc->add_possibility(
+                        ln_mode_t::SQL, "prql-expr", pair.first);
+                }
+
+                rl_sql_help(rc);
+
+                lnav_data.ld_preview_status_source[curr_stage_index]
+                    .get_description()
+                    .set_value("Result for query: %s",
+                               curr_stage_prql.get_string().c_str());
+                if (!lnav_data.ld_db_preview_source[curr_stage_index]
+                         .dls_headers.empty())
+                {
+                    if (curr_stage_index == 0) {
+                        for (const auto& hdr :
+                             lnav_data.ld_db_preview_source[curr_stage_index]
+                                 .dls_headers)
+                        {
+                            rc->add_possibility(
+                                ln_mode_t::SQL,
+                                "prql-expr",
+                                lnav::prql::quote_ident(hdr.hm_name));
+                        }
+                    }
+
+                    lnav_data.ld_preview_view[curr_stage_index].set_sub_source(
+                        &lnav_data.ld_db_preview_source[curr_stage_index]);
+                    lnav_data.ld_preview_view[curr_stage_index]
+                        .set_overlay_source(
+                            &lnav_data.ld_db_preview_overlay_source
+                                 [curr_stage_index]);
+                } else if (exec_res.isErr()) {
+                    lnav_data.ld_preview_source[curr_stage_index].replace_with(
+                        err.to_attr_line());
+                    lnav_data.ld_preview_view[curr_stage_index].set_sub_source(
+                        &lnav_data.ld_preview_source[curr_stage_index]);
+                    lnav_data.ld_preview_view[curr_stage_index]
+                        .set_overlay_source(nullptr);
+                }
+                return;
+            }
+
+            term_val += ";";
+            if (!sqlite3_complete(term_val.c_str())) {
                 lnav_data.ld_bottom_source.grep_error(
                     "SQL error: incomplete statement");
             } else {
@@ -500,7 +776,6 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
 
             if (!rl_sql_help(rc)) {
                 rl_set_help();
-                lnav_data.ld_preview_source.clear();
             }
             return;
         }
@@ -539,10 +814,7 @@ lnav_rl_abort(readline_curses* rc)
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_example_source.clear();
     lnav_data.ld_doc_source.clear();
-    lnav_data.ld_preview_status_source.get_description()
-        .set_cylon(false)
-        .clear();
-    lnav_data.ld_preview_source.clear();
+    clear_preview();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
@@ -577,10 +849,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_doc_source.clear();
     lnav_data.ld_example_source.clear();
-    lnav_data.ld_preview_status_source.get_description()
-        .set_cylon(false)
-        .clear();
-    lnav_data.ld_preview_source.clear();
+    clear_preview();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
@@ -745,6 +1014,8 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         }
 
         case ln_mode_t::EXEC: {
+            std::error_code errc;
+            ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
             auto open_temp_res = lnav::filesystem::open_temp_file(
                 lnav::paths::workdir() / "exec.XXXXXX");
 
@@ -920,4 +1191,29 @@ rl_blur(readline_curses* rc)
         tc.set_sync_selection_and_top(false);
     }
     lnav_data.ld_preview_generation += 1;
+}
+
+readline_context::split_result_t
+prql_splitter(readline_context& rc, const std::string& cmdline)
+{
+    auto stmt = attr_line_t(cmdline);
+    readline_context::split_result_t retval;
+    readline_context::stage st;
+
+    lnav::sql::annotate_prql_statement(stmt);
+    for (const auto& attr : stmt.get_attrs()) {
+        if (attr.sa_type == &lnav::sql::PRQL_STAGE_ATTR) {
+        } else if (attr.sa_type == &lnav::sql::PRQL_PIPE_ATTR) {
+            retval.sr_stages.emplace_back(st);
+            st.s_args.clear();
+        } else {
+            st.s_args.emplace_back(attr.sa_range);
+        }
+    }
+    if (!cmdline.empty() && isspace(cmdline.back())) {
+        st.s_args.emplace_back(cmdline.length(), cmdline.length());
+    }
+    retval.sr_stages.emplace_back(st);
+
+    return retval;
 }

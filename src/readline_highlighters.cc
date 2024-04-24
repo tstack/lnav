@@ -41,10 +41,6 @@
 #include "sql_util.hh"
 #include "view_curses.hh"
 
-static void readline_sqlite_highlighter_int(attr_line_t& al,
-                                            int x,
-                                            line_range sub);
-
 static bool
 is_bracket(const std::string& str, int index, bool is_lit)
 {
@@ -237,12 +233,13 @@ readline_command_highlighter(attr_line_t& al, int x)
         al, x, line_range{0, (int) al.get_string().length()});
 }
 
-static void
+void
 readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
     static const char* brackets[] = {
         "[]",
         "()",
+        "{}",
 
         nullptr,
     };
@@ -260,10 +257,14 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
             sub.lr_start + attr.sa_range.lr_end,
         };
         if (attr.sa_type == &SQL_COMMAND_ATTR
-            || attr.sa_type == &SQL_KEYWORD_ATTR)
+            || attr.sa_type == &SQL_KEYWORD_ATTR
+            || attr.sa_type == &lnav::sql::PRQL_KEYWORD_ATTR
+            || attr.sa_type == &lnav::sql::PRQL_TRANSFORM_ATTR)
         {
             alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_KEYWORD));
-        } else if (attr.sa_type == &SQL_IDENTIFIER_ATTR) {
+        } else if (attr.sa_type == &SQL_IDENTIFIER_ATTR
+                   || attr.sa_type == &lnav::sql::PRQL_IDENTIFIER_ATTR)
+        {
             if (!attr.sa_range.contains(x) && attr.sa_range.lr_end != x) {
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_IDENTIFIER));
             }
@@ -271,7 +272,9 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
             alb.overlay_attr(
                 line_range{lr.lr_start, (int) line.find('(', lr.lr_start)},
                 VC_ROLE.value(role_t::VCR_SYMBOL));
-        } else if (attr.sa_type == &SQL_NUMBER_ATTR) {
+        } else if (attr.sa_type == &SQL_NUMBER_ATTR
+                   || attr.sa_type == &lnav::sql::PRQL_NUMBER_ATTR)
+        {
             alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_NUMBER));
         } else if (attr.sa_type == &SQL_STRING_ATTR) {
             if (lr.length() > 1 && al.al_string[lr.lr_end - 1] == '\'') {
@@ -282,9 +285,15 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
                 alb.overlay_attr_for_char(lr.lr_start,
                                           VC_ROLE.value(role_t::VCR_ERROR));
             }
-        } else if (attr.sa_type == &SQL_OPERATOR_ATTR) {
+        } else if (attr.sa_type == &lnav::sql::PRQL_STRING_ATTR) {
+            alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_STRING));
+        } else if (attr.sa_type == &SQL_OPERATOR_ATTR
+                   || attr.sa_type == &lnav::sql::PRQL_OPERATOR_ATTR)
+        {
             alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_SYMBOL));
-        } else if (attr.sa_type == &SQL_COMMENT_ATTR) {
+        } else if (attr.sa_type == &SQL_COMMENT_ATTR
+                   || attr.sa_type == &lnav::sql::PRQL_COMMENT_ATTR)
+        {
             alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_COMMENT));
         }
     }

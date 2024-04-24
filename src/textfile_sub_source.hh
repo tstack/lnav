@@ -36,6 +36,7 @@
 #include "filter_observer.hh"
 #include "logfile.hh"
 #include "plain_text_source.hh"
+#include "text_overlay_menu.hh"
 #include "textview_curses.hh"
 
 class textfile_sub_source
@@ -166,6 +167,8 @@ public:
 
     logline* text_accel_get_line(vis_line_t vl) override;
 
+    void scroll_invoked(textview_curses* tc) override;
+
 private:
     void detach_observer(std::shared_ptr<logfile> lf)
     {
@@ -193,9 +196,10 @@ private:
     size_t tss_line_indent_size{0};
     bool tss_completed_last_scan{true};
     attr_line_t tss_hex_line;
+    int64_t tss_content_line{0};
 };
 
-class textfile_header_overlay : public list_overlay_source {
+class textfile_header_overlay : public text_overlay_menu {
 public:
     explicit textfile_header_overlay(textfile_sub_source* src);
 

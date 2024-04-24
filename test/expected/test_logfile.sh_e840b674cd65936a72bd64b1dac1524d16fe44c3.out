@@ -1,4 +1,4 @@
-[1m[4m       log_time         [0m[1m[4m                        log_body                         [0m
+[1m[4m       log_time        [0m[1m[4m [0m[1m[4m                        log_body                        [0m[1m[4m [0m
 2022-09-19 09:24:04.000 tid:1d1f - Mux ID not found in mapping dictionary        
 2022-09-19 09:24:04.000 tid:1d1f - Can't handle disconnect with invalid ecid     
 [1m2022-09-19 09:24:20.000[0m[1m [0m[1mEntered:_AMMuxedDeviceDisconnected, mux-device:1003      [0m

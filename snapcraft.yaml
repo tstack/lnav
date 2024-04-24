@@ -66,6 +66,7 @@ parts:
       "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout --debug --force-snapshot
     build-packages:
       - build-essential
+      - cargo
       - libarchive-dev
       - libcurl4-gnutls-dev
       - libpcre2-dev
@@ -75,6 +76,7 @@ parts:
       - zlib1g-dev
       - libbz2-dev
       - libgpm-dev
+      - rustc
     stage-packages:
       - zlib1g
       - git-core

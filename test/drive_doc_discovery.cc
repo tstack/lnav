@@ -81,8 +81,10 @@ main(int argc, char* argv[])
                         fmt::print(FMT_STRING("{}^"),
                                    std::string(indent_diff, ' '));
                         if (iv.stop >= line_sf.sf_end + 1) {
-                            fmt::print(
-                                FMT_STRING("  [{}:{})"), iv.start, iv.stop);
+                            fmt::print(FMT_STRING("  [{}:{}) - {}"),
+                                       iv.start,
+                                       iv.stop,
+                                       iv.value);
                             return;
                         }
                         auto dot_len = iv.stop - iv.start - 1;
@@ -90,7 +92,9 @@ main(int argc, char* argv[])
                                    std::string(dot_len, '-'));
                         fmt::print(FMT_STRING("  [{}:{})"), iv.start, iv.stop);
                     });
-                fmt::print(FMT_STRING("\n"));
+                fmt::print(FMT_STRING("\nPath for line[{}:{}): "),
+                           line_sf.sf_begin,
+                           line_sf.sf_end);
                 meta.m_sections_tree.visit_overlapping(
                     line_sf.sf_begin,
                     line_sf.sf_end,
@@ -99,11 +103,11 @@ main(int argc, char* argv[])
                             fmt::fg(iv.start < line_sf.sf_begin
                                         ? fmt::terminal_color::yellow
                                         : fmt::terminal_color::green),
-                            FMT_STRING("/{}"),
+                            FMT_STRING("\uff1a{}"),
                             iv.value.match(
                                 [](const std::string& str) { return str; },
                                 [](size_t ind) {
-                                    return fmt::to_string(ind);
+                                    return fmt::format(FMT_STRING("[{}]"), ind);
                                 }));
                     });
                 fmt::print(FMT_STRING("\n"));

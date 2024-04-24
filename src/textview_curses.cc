@@ -37,11 +37,13 @@
 #include "base/injector.hh"
 #include "base/time_util.hh"
 #include "config.h"
+#include "data_scanner.hh"
 #include "fmt/format.h"
 #include "lnav_config.hh"
 #include "log_format_fwd.hh"
 #include "logfile.hh"
 #include "shlex.hh"
+#include "text_overlay_menu.hh"
 #include "view_curses.hh"
 
 const auto REVERSE_SEARCH_OFFSET = 2000_vl;
@@ -180,6 +182,7 @@ const bookmark_type_t textview_curses::BM_USER("user");
 const bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
 const bookmark_type_t textview_curses::BM_SEARCH("search");
 const bookmark_type_t textview_curses::BM_META("meta");
+const bookmark_type_t textview_curses::BM_PARTITION("partition");
 
 textview_curses::textview_curses()
     : lnav_config_listener(__FILE__), tc_search_action(noop_func{})
@@ -284,8 +287,20 @@ textview_curses::reload_config(error_reporter& reporter)
 }
 
 void
+textview_curses::invoke_scroll()
+{
+    this->tc_selected_text = nonstd::nullopt;
+    if (this->tc_sub_source != nullptr) {
+        this->tc_sub_source->scroll_invoked(this);
+    }
+
+    listview_curses::invoke_scroll();
+}
+
+void
 textview_curses::reload_data()
 {
+    this->tc_selected_text = nonstd::nullopt;
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
     }
@@ -395,79 +410,297 @@ textview_curses::handle_mouse(mouse_event& me)
     unsigned long width;
     vis_line_t height;
 
-    if (this->tc_selection_start == -1_vl && listview_curses::handle_mouse(me))
-    {
-        return true;
-    }
-
-    if (this->tc_delegate != nullptr
-        && this->tc_delegate->text_handle_mouse(*this, me))
-    {
-        return true;
-    }
-
-    if (me.me_button != mouse_button_t::BUTTON_LEFT) {
+    if (!this->vc_visible || this->lv_height == 0) {
         return false;
     }
 
-    vis_line_t mouse_line(this->get_top() + me.me_y);
-
-    if (mouse_line > this->get_bottom()) {
-        mouse_line = this->get_bottom();
+    if (!this->tc_selection_start && listview_curses::handle_mouse(me)) {
+        return true;
     }
 
+    auto mouse_line = (me.me_y < 0 || me.me_y >= this->lv_display_lines.size())
+        ? empty_space{}
+        : this->lv_display_lines[me.me_y];
     this->get_dimensions(height, width);
 
-    switch (me.me_state) {
-        case mouse_button_state_t::BUTTON_STATE_PRESSED:
-            this->tc_selection_start = mouse_line;
-            this->tc_selection_last = -1_vl;
-            this->tc_selection_cleared = false;
-            break;
-        case mouse_button_state_t::BUTTON_STATE_DRAGGED:
-            if (me.me_y <= 0) {
-                this->shift_top(-1_vl);
-                me.me_y = 0;
-                mouse_line = this->get_top();
-            }
-            if (me.me_y >= height
-                && this->get_top() < this->get_top_for_last_row())
+    if (!mouse_line.is<overlay_menu>()
+        && (me.me_button != mouse_button_t::BUTTON_LEFT
+            || me.me_state != mouse_button_state_t::BUTTON_STATE_RELEASED))
+    {
+        this->tc_selected_text = nonstd::nullopt;
+        this->set_needs_update();
+    }
+
+    nonstd::optional<int> overlay_content_min_y;
+    nonstd::optional<int> overlay_content_max_y;
+    if (this->tc_press_line.is<overlay_content>()) {
+        auto main_line
+            = this->tc_press_line.get<overlay_content>().oc_main_line;
+        for (size_t lpc = 0; lpc < this->lv_display_lines.size(); lpc++) {
+            if (overlay_content_min_y
+                && !this->lv_display_lines[lpc].is<static_overlay_content>()
+                && !this->lv_display_lines[lpc].is<overlay_content>())
             {
-                this->shift_top(1_vl);
-                me.me_y = height;
-                mouse_line = this->get_bottom();
-            }
-
-            if (this->tc_selection_last == mouse_line)
+                overlay_content_max_y = lpc;
                 break;
-
-            if (this->tc_selection_last != -1) {
-                this->toggle_user_mark(&textview_curses::BM_USER,
-                                       this->tc_selection_start,
-                                       this->tc_selection_last);
             }
-            if (this->tc_selection_start == mouse_line) {
-                this->tc_selection_last = -1_vl;
-            } else {
-                if (!this->tc_selection_cleared) {
-                    if (this->tc_sub_source != nullptr) {
-                        this->tc_sub_source->text_clear_marks(&BM_USER);
-                    }
-                    this->tc_bookmarks[&BM_USER].clear();
-
-                    this->tc_selection_cleared = true;
+            if (this->lv_display_lines[lpc].is<main_content>()) {
+                auto& mc = this->lv_display_lines[lpc].get<main_content>();
+                if (mc.mc_line == main_line) {
+                    overlay_content_min_y = lpc;
                 }
-                this->toggle_user_mark(
-                    &BM_USER, this->tc_selection_start, mouse_line);
-                this->tc_selection_last = mouse_line;
             }
-            this->reload_data();
+        }
+        if (overlay_content_min_y && !overlay_content_max_y) {
+            overlay_content_max_y = this->lv_display_lines.size();
+        }
+    }
+
+    auto* sub_delegate = dynamic_cast<text_delegate*>(this->tc_sub_source);
+
+    switch (me.me_state) {
+        case mouse_button_state_t::BUTTON_STATE_PRESSED: {
+            this->tc_text_selection_active = true;
+            this->tc_press_line = mouse_line;
+            this->tc_press_left = this->lv_left + me.me_press_x;
+            if (!this->lv_selectable) {
+                this->set_selectable(true);
+            }
+            mouse_line.match(
+                [this, &me, sub_delegate, &mouse_line](const main_content& mc) {
+                    if (this->vc_enabled) {
+                        if (this->tc_supports_marks
+                            && me.me_button == mouse_button_t::BUTTON_LEFT
+                            && me.is_modifier_pressed(
+                                mouse_event::modifier_t::shift))
+                        {
+                            this->tc_selection_start = mc.mc_line;
+                        }
+                        this->set_selection_without_context(mc.mc_line);
+                        this->tc_press_event = me;
+                    }
+                    if (this->tc_delegate != nullptr) {
+                        this->tc_delegate->text_handle_mouse(
+                            *this, mouse_line, me);
+                    }
+                    if (sub_delegate != nullptr) {
+                        sub_delegate->text_handle_mouse(*this, mouse_line, me);
+                    }
+                },
+                [](const overlay_menu& om) {},
+                [](const static_overlay_content& soc) {
+
+                },
+                [this](const overlay_content& oc) {
+                    this->set_overlay_selection(oc.oc_line);
+                },
+                [](const empty_space& es) {});
             break;
-        case mouse_button_state_t::BUTTON_STATE_RELEASED:
-            this->tc_selection_start = -1_vl;
-            this->tc_selection_last = -1_vl;
-            this->tc_selection_cleared = false;
+        }
+        case mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK: {
+            if (!this->lv_selectable) {
+                this->set_selectable(true);
+            }
+            this->tc_text_selection_active = false;
+            mouse_line.match(
+                [this, &me, &mouse_line, sub_delegate](const main_content& mc) {
+                    if (this->vc_enabled) {
+                        if (this->tc_supports_marks
+                            && me.me_button == mouse_button_t::BUTTON_LEFT)
+                        {
+                            attr_line_t al;
+
+                            this->textview_value_for_row(mc.mc_line, al);
+                            auto line_sf
+                                = string_fragment::from_str(al.get_string());
+                            auto cursor_sf = line_sf.sub_cell_range(
+                                this->lv_left + me.me_x,
+                                this->lv_left + me.me_x);
+                            auto ds = data_scanner(line_sf);
+                            auto tf = this->tc_sub_source->get_text_format();
+                            while (true) {
+                                auto tok_res = ds.tokenize2(tf);
+                                if (!tok_res) {
+                                    break;
+                                }
+
+                                auto tok = tok_res.value();
+                                auto tok_sf
+                                    = (tok.tr_token
+                                           == data_token_t::DT_QUOTED_STRING
+                                       && (cursor_sf.sf_begin
+                                               == tok.to_string_fragment()
+                                                      .sf_begin
+                                           || cursor_sf.sf_begin
+                                               == tok.to_string_fragment()
+                                                       .sf_end
+                                                   - 1))
+                                    ? tok.to_string_fragment()
+                                    : tok.inner_string_fragment();
+                                if (tok_sf.contains(cursor_sf)
+                                    && tok.tr_token != data_token_t::DT_WHITE)
+                                {
+                                    auto group_tok
+                                        = ds.find_matching_bracket(tf, tok);
+                                    if (group_tok) {
+                                        tok_sf = group_tok.value()
+                                                     .to_string_fragment();
+                                    }
+                                    this->tc_selected_text = selected_text_info{
+                                        me.me_x,
+                                        mc.mc_line,
+                                        line_range{
+                                            tok_sf.sf_begin,
+                                            tok_sf.sf_end,
+                                        },
+                                        tok_sf.to_string(),
+                                    };
+                                    this->set_needs_update();
+                                    break;
+                                }
+                            }
+                        }
+                        this->set_selection_without_context(mc.mc_line);
+                    }
+                    if (this->tc_delegate != nullptr) {
+                        this->tc_delegate->text_handle_mouse(
+                            *this, mouse_line, me);
+                    }
+                    if (sub_delegate != nullptr) {
+                        sub_delegate->text_handle_mouse(*this, mouse_line, me);
+                    }
+                },
+                [](const static_overlay_content& soc) {
+
+                },
+                [](const overlay_menu& om) {
+
+                },
+                [](const overlay_content& oc) {
+
+                },
+                [](const empty_space& es) {});
             break;
+        }
+        case mouse_button_state_t::BUTTON_STATE_DRAGGED: {
+            this->tc_text_selection_active = true;
+            if (!this->vc_enabled) {
+            } else if (me.me_y == me.me_press_y) {
+                if (mouse_line.is<main_content>()) {
+                    auto& mc = mouse_line.get<main_content>();
+                    attr_line_t al;
+                    auto low_x = std::min(this->tc_press_left,
+                                          (int) this->lv_left + me.me_x);
+                    auto high_x = std::max(this->tc_press_left,
+                                           (int) this->lv_left + me.me_x);
+
+                    this->set_selection_without_context(mc.mc_line);
+                    if (this->tc_supports_marks
+                        && me.me_button == mouse_button_t::BUTTON_LEFT)
+                    {
+                        this->textview_value_for_row(mc.mc_line, al);
+                        auto line_sf
+                            = string_fragment::from_str(al.get_string());
+                        auto cursor_sf = line_sf.sub_cell_range(low_x, high_x);
+                        if (me.me_x <= 1) {
+                            this->set_left(this->lv_left - 1);
+                        } else if (me.me_x >= width - 1) {
+                            this->set_left(this->lv_left + 1);
+                        }
+                        if (!cursor_sf.empty()) {
+                            this->tc_selected_text = {
+                                me.me_x,
+                                mc.mc_line,
+                                line_range{
+                                    cursor_sf.sf_begin,
+                                    cursor_sf.sf_end,
+                                },
+                                cursor_sf.to_string(),
+                            };
+                        }
+                    }
+                }
+            } else {
+                if (this->tc_press_line.is<main_content>()) {
+                    if (me.me_y < 0) {
+                        this->shift_selection(
+                            listview_curses::shift_amount_t::up_line);
+                    } else if (me.me_y >= height) {
+                        this->shift_selection(
+                            listview_curses::shift_amount_t::down_line);
+                    } else if (mouse_line.is<main_content>()) {
+                        this->set_selection_without_context(
+                            mouse_line.get<main_content>().mc_line);
+                    }
+                } else if (this->tc_press_line.is<overlay_content>()
+                           && overlay_content_min_y && overlay_content_max_y)
+                {
+                    if (me.me_y < overlay_content_min_y.value()) {
+                        this->set_overlay_selection(
+                            this->get_overlay_selection().value_or(0_vl)
+                            - 1_vl);
+                    } else if (me.me_y >= overlay_content_max_y.value()) {
+                        this->set_overlay_selection(
+                            this->get_overlay_selection().value_or(0_vl)
+                            + 1_vl);
+                    } else if (mouse_line.is<overlay_content>()) {
+                        this->set_overlay_selection(
+                            mouse_line.get<overlay_content>().oc_line);
+                    }
+                }
+            }
+            break;
+        }
+        case mouse_button_state_t::BUTTON_STATE_RELEASED: {
+            auto* ov = this->get_overlay_source();
+            if (ov != nullptr && mouse_line.is<listview_curses::overlay_menu>()
+                && this->tc_selected_text)
+            {
+                auto* tom = dynamic_cast<text_overlay_menu*>(ov);
+                if (tom != nullptr) {
+                    auto& om = mouse_line.get<listview_curses::overlay_menu>();
+                    auto& sti = this->tc_selected_text.value();
+
+                    for (const auto& mi : tom->tom_menu_items) {
+                        if (om.om_line == mi.mi_line
+                            && me.is_click_in(mouse_button_t::BUTTON_LEFT,
+                                              mi.mi_range))
+                        {
+                            mi.mi_action(sti.sti_value);
+                            break;
+                        }
+                    }
+                }
+            }
+            this->tc_text_selection_active = false;
+            if (me.is_click_in(mouse_button_t::BUTTON_RIGHT, 0, INT_MAX)) {
+                auto* lov = this->get_overlay_source();
+                if (lov != nullptr) {
+                    lov->set_show_details_in_overlay(
+                        !lov->get_show_details_in_overlay());
+                }
+            }
+            if (this->vc_enabled) {
+                if (this->tc_selection_start) {
+                    this->toggle_user_mark(&BM_USER,
+                                           this->tc_selection_start.value(),
+                                           this->get_selection());
+                    this->reload_data();
+                }
+                this->tc_selection_start = nonstd::nullopt;
+            }
+            if (this->tc_delegate != nullptr) {
+                this->tc_delegate->text_handle_mouse(*this, mouse_line, me);
+            }
+            if (sub_delegate != nullptr) {
+                sub_delegate->text_handle_mouse(*this, mouse_line, me);
+            }
+            if (mouse_line.is<overlay_menu>()) {
+                this->tc_selected_text = nonstd::nullopt;
+                this->set_needs_update();
+            }
+            break;
+        }
     }
 
     return true;
@@ -508,15 +741,28 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         format_name = format_attr_opt.value().get();
     }
 
-    if (this->is_selectable() && row == this->get_selection()
-        && this->tc_cursor_role && this->tc_disabled_cursor_role)
+    if (this->is_selectable() && this->tc_cursor_role
+        && this->tc_disabled_cursor_role)
     {
-        auto role = this->get_overlay_selection()
-            ? this->tc_disabled_cursor_role.value()
-            : this->tc_cursor_role.value();
+        vis_line_t sel_start, sel_end;
 
-        sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        VC_ROLE.value(role));
+        sel_start = sel_end = this->get_selection();
+        if (this->tc_selection_start) {
+            if (this->tc_selection_start.value() < sel_end) {
+                sel_start = this->tc_selection_start.value();
+            } else {
+                sel_end = this->tc_selection_start.value();
+            }
+        }
+
+        if (sel_start <= row && row <= sel_end) {
+            auto role = this->get_overlay_selection()
+                ? this->tc_disabled_cursor_role.value()
+                : this->tc_cursor_role.value();
+
+            sa.emplace_back(line_range{orig_line.lr_start, -1},
+                            VC_ROLE.value(role));
+        }
     }
 
     for (auto& tc_highlight : this->tc_highlights) {
@@ -555,11 +801,20 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 
     const auto& user_marks = this->tc_bookmarks[&BM_USER];
     const auto& user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];
-    if (binary_search(user_marks.begin(), user_marks.end(), row)
-        || binary_search(user_expr_marks.begin(), user_expr_marks.end(), row))
+    if (std::binary_search(user_marks.begin(), user_marks.end(), row)
+        || std::binary_search(
+            user_expr_marks.begin(), user_expr_marks.end(), row))
     {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
                         VC_STYLE.value(text_attrs{A_REVERSE}));
+    }
+
+    if (this->tc_selected_text) {
+        const auto& sti = this->tc_selected_text.value();
+        if (sti.sti_line == row) {
+            sa.emplace_back(sti.sti_range,
+                            VC_ROLE.value(role_t::VCR_SELECTED_TEXT));
+        }
     }
 }
 
@@ -822,11 +1077,21 @@ textview_curses::grep_value_for_line(vis_line_t line, std::string& value_out)
 }
 
 void
-text_time_translator::scroll_invoked(textview_curses* tc)
+text_sub_source::scroll_invoked(textview_curses* tc)
 {
-    if (tc->get_inner_height() > 0) {
+    auto* ttt = dynamic_cast<text_time_translator*>(this);
+
+    if (ttt != nullptr) {
+        ttt->ttt_scroll_invoked(tc);
+    }
+}
+
+void
+text_time_translator::ttt_scroll_invoked(textview_curses* tc)
+{
+    if (tc->get_inner_height() > 0 && tc->get_selection() >= 0_vl) {
         this->time_for_row(tc->get_selection()) |
-            [this](auto new_top_time) { this->ttt_top_time = new_top_time; };
+            [this](auto new_top_ri) { this->ttt_top_row_info = new_top_ri; };
     }
 }
 
@@ -834,29 +1099,13 @@ void
 text_time_translator::data_reloaded(textview_curses* tc)
 {
     if (tc->get_inner_height() == 0) {
+        this->ttt_top_row_info = nonstd::nullopt;
         return;
     }
-    if (tc->get_selection() < 0_vl
-        || tc->get_selection() > tc->get_inner_height())
-    {
-        if (this->ttt_top_time.tv_sec != 0) {
-            this->row_for_time(this->ttt_top_time) |
-                [tc](auto new_top) { tc->set_selection(new_top); };
-        }
-        return;
+    if (this->ttt_top_row_info) {
+        this->row_for(this->ttt_top_row_info.value()) |
+            [tc](auto new_top) { tc->set_selection(new_top); };
     }
-    this->time_for_row(tc->get_selection()) | [this, tc](auto top_time) {
-        if (top_time != this->ttt_top_time) {
-            if (this->ttt_top_time.tv_sec != 0) {
-                this->row_for_time(this->ttt_top_time) |
-                    [tc](auto new_top) { tc->set_selection(new_top); };
-            }
-            this->time_for_row(tc->get_selection()) |
-                [this](auto new_top_time) {
-                    this->ttt_top_time = new_top_time;
-                };
-        }
-    };
 }
 
 template class bookmark_vector<vis_line_t>;

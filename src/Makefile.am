@@ -43,6 +43,7 @@ default-formats.cc: $(BIN2C_PATH) $(FORMAT_FILES)
 	$(BIN2C_V)$(BIN2C_PATH) -n lnav_format_json default-formats $(FORMAT_FILES)
 
 include keymaps/keymaps.am
+include prql/prql.am
 include themes/themes.am
 
 CONFIG_FILES = \
@@ -53,6 +54,9 @@ CONFIG_FILES = \
 
 default-config.cc: $(BIN2C_PATH) $(CONFIG_FILES)
 	$(BIN2C_V)$(BIN2C_PATH) -n lnav_config_json default-config $(CONFIG_FILES)
+
+prql-modules.cc: $(BIN2C_PATH) $(PRQL_FILES)
+	$(BIN2C_V)$(BIN2C_PATH) -n lnav_prql_modules prql-modules $(PRQL_FILES)
 
 include scripts/scripts.am
 
@@ -73,6 +77,9 @@ builtin-sh-scripts.cc: $(BIN2C_PATH) $(BUILTIN_SHSCRIPTS)
 
 %-sql.cc: $(srcdir)/%.sql $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-sql $<
+
+%-prql.cc: $(srcdir)/%.prql $(BIN2C_PATH)
+	$(BIN2C_V)$(BIN2C_PATH) $(*)-prql $<
 
 %-lnav.cc: $(srcdir)/%.lnav $(BIN2C_PATH)
 	$(BIN2C_V)$(BIN2C_PATH) $(*)-lnav $<
@@ -104,6 +111,7 @@ LNAV_BUILT_FILES = \
     words-json.cc \
     help-md.cc \
     init-sql.cc \
+    prql-modules.cc \
     time_fmts.cc \
     xml-entities-json.cc \
     xterm-palette-json.cc
@@ -113,6 +121,22 @@ BUILT_SOURCES = $(LNAV_BUILT_FILES)
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) $(USER_CXXFLAGS)
+
+if HAVE_CARGO
+RUST_DEPS_CPPFLAGS = -DHAVE_RUST_DEPS=1
+PRQLC_DIR = third-party/prqlc-c/target
+RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
+
+$(RUST_DEPS_LIBS): $(srcdir)/third-party/prqlc-c/src/lib.rs $(srcdir)/third-party/prqlc-c/Cargo.toml
+	mkdir -p $(PRQLC_DIR)
+	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
+	    $(srcdir)/third-party/prqlc-c/Cargo.toml --package prqlc-c --release
+
+else
+RUST_DEPS =
+RUST_DEPS_CPPFLAGS =
+RUST_DEPS_LIBS =
+endif
 
 AM_LDFLAGS = \
 	$(STATIC_LDFLAGS) \
@@ -128,6 +152,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party \
 	-I$(srcdir)/third-party/base64/include \
 	-I$(srcdir)/third-party/date/include \
+	-I$(srcdir)/third-party/prqlc-c \
 	-I$(srcdir)/third-party/rapidyaml \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	-Wall \
@@ -136,7 +161,8 @@ AM_CPPFLAGS = \
 	$(READLINE_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
 	$(PCRE_CFLAGS) \
-	$(LIBCURL_CPPFLAGS)
+	$(LIBCURL_CPPFLAGS) \
+	$(RUST_DEPS_CPPFLAGS)
 
 LDADD = \
 	libdiag.a \
@@ -154,6 +180,7 @@ LDADD = \
 	yajl/libyajl.a \
 	yajlpp/libyajlpp.a \
 	third-party/base64/lib/libbase64.a \
+    $(RUST_DEPS_LIBS) \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
@@ -175,12 +202,16 @@ dist_noinst_DATA = \
 	$(BUILTIN_SHSCRIPTS) \
 	$(CONFIG_FILES) \
 	$(FORMAT_FILES) \
+	$(PRQL_FILES) \
 	words.json \
 	xml-entities.json \
 	xterm-palette.json
 
 noinst_HEADERS = \
     third-party/md4c/md4c.h \
+    third-party/prqlc-c/prqlc.h \
+    third-party/prqlc-c/prqlc.hpp \
+    third-party/prqlc-c/prqlc.cxx.hh \
     third-party/rapidyaml/ryml_all.hpp \
 	all_logs_vtab.hh \
 	archive_manager.hh \
@@ -318,6 +349,7 @@ noinst_HEADERS = \
 	term_extra.hh \
 	text_anonymizer.hh \
 	text_format.hh \
+	text_overlay_menu.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
@@ -379,6 +411,7 @@ THIRD_PARTY_SRCS = \
     third-party/doctest-root/doctest/doctest.h \
     third-party/intervaltree/IntervalTree.h \
     third-party/md4c/md4c.c \
+    third-party/prqlc-c/prqlc.cxx.cc \
     third-party/robin_hood/robin_hood.h \
 	third-party/sqlite/ext/dbdump.c \
 	third-party/sqlite/ext/series.c
@@ -474,6 +507,7 @@ libdiag_a_SOURCES = \
 	styling.cc \
 	text_anonymizer.cc \
 	text_format.cc \
+	text_overlay_menu.cc \
 	textfile_sub_source.cc \
 	timer.cc \
 	sql_commands.cc \
@@ -528,6 +562,10 @@ RE2C_FILES = data_scanner_re.cc log_level_re.cc
 endif
 
 EXTRA_DIST = \
+    third-party/prqlc-c/Cargo.lock \
+    third-party/prqlc-c/Cargo.toml \
+    third-party/prqlc-c/cbindgen.toml \
+    third-party/prqlc-c/src/lib.rs \
 	ptimec.c
 
 CLEANFILES = \
@@ -547,10 +585,17 @@ DISTCLEANFILES = \
     words-json.h \
     help-md.h \
     init-sql.h \
+    prql-modules.h \
     time_fmts.h \
     xml-entities-json.h \
     xterm-palette-json.h \
 	$(RE2C_FILES)
+
+if HAVE_CARGO
+clean-local:
+	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) clean --manifest-path \
+    	    $(srcdir)/third-party/prqlc-c/Cargo.toml
+endif
 
 distclean-local:
 	$(RM_V)rm -rf *.dSYM
@@ -560,13 +605,19 @@ uncrusty:
 		$(HEADERS))
 
 if !CROSS_COMPILING
-all-local: $(LNAV_BUILT_FILES) lnav
+all-local: $(LNAV_BUILT_FILES) lnav $(RUST_DEPS)
 	if test -w $(srcdir)/internals; then \
 		env DUMP_INTERNALS_DIR=$(srcdir)/internals DUMP_CRASH=1 ./lnav Makefile; \
 		mv $(srcdir)/internals/*.schema.json $(top_srcdir)/docs/schemas; \
 	fi
 else
-all-local: $(LNAV_BUILT_FILES)
+all-local: $(LNAV_BUILT_FILES) $(RUST_DEPS)
+endif
+
+check-local:
+if HAVE_CHECK_JSONSCHEMA
+	$(CHECK_JSONSCHEMA) --schemafile $(top_srcdir)/docs/schemas/format-v1.schema.json $(FORMAT_FILES)
+	$(CHECK_JSONSCHEMA) --schemafile $(top_srcdir)/docs/schemas/config-v1.schema.json $(CONFIG_FILES)
 endif
 
 install-exec-hook:

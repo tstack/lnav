@@ -304,3 +304,102 @@ data_scanner::cleanup_end()
         }
     }
 }
+
+nonstd::optional<data_scanner::tokenize_result>
+data_scanner::tokenize2(text_format_t tf)
+{
+    auto retval = this->tokenize_int(tf);
+
+    if (this->ds_last_bracket_matched) {
+        this->ds_matching_brackets.pop_back();
+        this->ds_last_bracket_matched = false;
+    }
+    if (retval) {
+        auto dt = retval.value().tr_token;
+        switch (dt) {
+            case DT_LSQUARE:
+            case DT_LCURLY:
+            case DT_LPAREN:
+                this->ds_matching_brackets.emplace_back(retval.value());
+                break;
+            case DT_RSQUARE:
+            case DT_RCURLY:
+            case DT_RPAREN:
+                if (!this->ds_matching_brackets.empty()
+                    && this->ds_matching_brackets.back().tr_token
+                        == to_opener(dt))
+                {
+                    this->ds_last_bracket_matched = true;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    return retval;
+}
+
+nonstd::optional<data_scanner::tokenize_result>
+data_scanner::find_matching_bracket(text_format_t tf, tokenize_result tr)
+{
+    switch (tr.tr_token) {
+        case DT_LSQUARE:
+        case DT_LCURLY:
+        case DT_LPAREN: {
+            auto curr_size = this->ds_matching_brackets.size();
+            while (true) {
+                auto tok_res = this->tokenize2(tf);
+                if (!tok_res) {
+                    break;
+                }
+
+                if (this->ds_matching_brackets.size() == curr_size
+                    && this->ds_last_bracket_matched)
+                {
+                    return tokenize_result{
+                        DNT_GROUP,
+                        {
+                            tr.tr_capture.c_begin,
+                            tok_res->tr_capture.c_end,
+                        },
+                        {
+                            tr.tr_capture.c_begin,
+                            tok_res->tr_capture.c_end,
+                        },
+                        tr.tr_data,
+                    };
+                }
+            }
+            break;
+        }
+        case DT_RSQUARE:
+        case DT_RCURLY:
+        case DT_RPAREN: {
+            for (auto riter = this->ds_matching_brackets.rbegin();
+                 riter != this->ds_matching_brackets.rend();
+                 ++riter)
+            {
+                if (riter->tr_token == to_opener(tr.tr_token)) {
+                    return data_scanner::tokenize_result{
+                        DNT_GROUP,
+                        {
+                            riter->tr_capture.c_begin,
+                            tr.tr_capture.c_end,
+                        },
+                        {
+                            riter->tr_capture.c_begin,
+                            tr.tr_capture.c_end,
+                        },
+                        tr.tr_data,
+                    };
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    return nonstd::nullopt;
+}

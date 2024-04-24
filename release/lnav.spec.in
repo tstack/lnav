@@ -30,6 +30,7 @@ BuildRequires:  gcc-toolset-12-annobin-plugin-gcc
 BuildRequires:  gcc-toolset-12-annobin-annocheck
 BuildRequires:  autoconf
 BuildRequires:  automake
+BuildRequires:  cargo
 BuildRequires:  libarchive-devel
 BuildRequires:  libcurl-devel
 BuildRequires:  ncurses-devel
@@ -38,6 +39,7 @@ BuildRequires:  openssh
 BuildRequires:  bzip2-devel
 BuildRequires:  pcre2-devel
 BuildRequires:  readline-devel
+BuildRequires:  rust
 BuildRequires:  zlib-devel
 %if 0%{?suse_version}
 BuildRequires:  sqlite3-devel >= 3.9.0

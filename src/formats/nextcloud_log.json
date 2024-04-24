@@ -48,8 +48,7 @@
         },
         "line-format": [
             {
-                "field": "__timestamp__",
-                "timestamp-format": "%b %e %H:%M:%S"
+                "field": "__timestamp__"
             },
             " ",
             {

@@ -1,0 +1,40 @@
+[
+    {
+        "fields": {
+            "namespace": "inc-1-enh-domain-c14-ns-2",
+            "pod": "hello-inc-1-enh-domain-c14-ns-2-3-d8f465685-k75gp",
+            "reason": "",
+            "status": "Pending"
+        }
+    },
+    {
+        "fields": {
+            "error": "pod inc-1-domain-c14-ns-6/fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b is not found: PodNotFound",
+            "namespace": "inc-1-domain-c14-ns-6",
+            "pod": "fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b",
+            "uid": "be2def59-3a08-42fd-8f84-6f64cfcefa93"
+        }
+    },
+    {
+        "fields": {
+            "namespace": "inc-1-domain-c14-ns-6",
+            "pod": "fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b",
+            "uid": "be2def59-3a08-42fd-8f84-6f64cfcefa93"
+        }
+    },
+    {
+        "fields": {
+            "namespace": "inc-1-domain-c14-ns-6",
+            "pod": "fe-inc-1-domain-c14-ns-6-5-656d9bb695-4584b",
+            "uid": "be2def59-3a08-42fd-8f84-6f64cfcefa93"
+        }
+    },
+    {
+        "fields": {
+            "namespace": "inc-1-enh-domain-c14-ns-2",
+            "pod": "hello-inc-1-enh-domain-c14-ns-2-7-5ddd6bcd69-6rqct",
+            "reason": "",
+            "status": "Pending"
+        }
+    }
+]

@@ -34,8 +34,10 @@
 
 #include "bookmarks.hh"
 #include "help_text.hh"
+#include "listview_curses.hh"
 #include "logfile_fwd.hh"
 #include "vis_line.hh"
+#include "xterm_mouse.hh"
 
 class textview_curses;
 class hist_source2;
@@ -86,6 +88,8 @@ bool toggle_view(textview_curses* toggle_tc);
 bool handle_winch();
 void layout_views();
 void update_hits(textview_curses* tc);
+void clear_preview();
+void set_view_mode(ln_mode_t mode);
 
 nonstd::optional<vis_line_t> next_cluster(
     nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
@@ -98,5 +102,14 @@ bool moveto_cluster(nonstd::optional<vis_line_t> (
                     vis_line_t top);
 vis_line_t search_forward_from(textview_curses* tc);
 textview_curses* get_textview_for_mode(ln_mode_t mode);
+
+class lnav_behavior : public mouse_behavior {
+public:
+    void mouse_event(int button, bool release, int x, int y) override;
+
+    view_curses* lb_last_view{nullptr};
+    struct mouse_event lb_last_event;
+    struct mouse_event lb_last_release_event;
+};
 
 #endif

@@ -89,7 +89,7 @@ public:
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
+    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
 
     struct header_meta {
         explicit header_meta(std::string name) : hm_name(std::move(name)) {}
@@ -105,10 +105,10 @@ public:
         bool hm_graphable{false};
         size_t hm_column_size{0};
         text_attrs hm_title_attrs;
+        stacked_bar_chart<std::string> hm_chart;
     };
 
     size_t dls_max_column_width{120};
-    stacked_bar_chart<std::string> dls_chart;
     std::vector<header_meta> dls_headers;
     std::vector<std::vector<const char*>> dls_rows;
     std::vector<struct timeval> dls_time_column;
@@ -117,6 +117,7 @@ public:
     nonstd::optional<size_t> dls_time_column_invalidated_at;
     std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator{
         std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024)};
+    string_attrs_t dls_ansi_attrs;
 
     static const char NULL_STR[];
 };
@@ -131,6 +132,9 @@ public:
     void list_value_for_overlay(const listview_curses& lv,
                                 vis_line_t line,
                                 std::vector<attr_line_t>& value_out) override;
+
+    nonstd::optional<attr_line_t> list_header_for_overlay(
+        const listview_curses& lv, vis_line_t line) override;
 
     void set_show_details_in_overlay(bool val) override
     {

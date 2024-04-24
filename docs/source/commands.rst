@@ -68,9 +68,13 @@ an error message in the status bar, like so:
 .. note:: The following commands can be disabled by setting the ``LNAVSECURE``
    environment variable before executing the **lnav** binary:
 
+   - :code:`:cd`
+   - :code:`:export-session-to`
    - :code:`:open`
    - :code:`:pipe-to`
    - :code:`:pipe-line-to`
+   - :code:`:redirecto-to`
+   - :code:`:sh`
    - :code:`:write-*-to`
 
    This makes it easier to run **lnav** in restricted environments without the

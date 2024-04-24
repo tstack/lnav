@@ -65,6 +65,8 @@ struct lab_color {
 
     double deltaE(const lab_color& other) const;
 
+    bool sufficient_contrast(const lab_color& other) const;
+
     lab_color& operator=(const lab_color& other)
     {
         this->lc_l = other.lc_l;

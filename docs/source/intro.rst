@@ -113,16 +113,33 @@ To create or customize a theme, consult the :ref:`themes` section.
 Cursor Mode (v0.11.2+)
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The default mode for scrolling in **lnav** is to move the contents of the
-main view when the arrow keys are pressed.  Any interactions, such as
-jumping to a search hit, are then focused on the top line in the view.
-Alternatively, you can enable "cursor" mode where there is a cursor line
-in the view that is moved by the arrow keys and other interactions.  You
-can enable cursor mode with the following command:
+The default mode for scrolling in **lnav** is "cursor" mode where
+there is a cursor line in the view that is moved by the arrow keys
+and other interactions.  Any interactions, such as jumping to a
+search hit, are then focused on that line.
+
+Alternatively, you can enable "top" mode where the contents of the
+main view are moved when the arrow keys are pressed.  Any
+interactions, such as jumping to a search hit, are then focused
+on the top line in the view.  You can change to "top" mode with
+the following command:
 
 .. code-block:: lnav
 
-   :config /ui/movement/mode cursor
+   :config /ui/movement/mode top
+
+
+Mouse Support (v0.12.2+)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Mouse support can be enabled temporarily by pressing :kbd:`F2`
+and can be set as the default by executing the following command:
+
+.. code-block:: lnav
+
+   :config /ui/mouse/mode enabled
+
+See :ref:`ui_mouse` for more details.
 
 Log Formats
 ^^^^^^^^^^^
@@ -166,6 +183,10 @@ Installation
 Check the `downloads page <http://lnav.org/downloads>`_ to see if there are
 packages for your operating system.  To compile from source, use the following
 commands:
+
+.. note::
+
+   Run :code:`./autogen.sh` if compiling from the git repository.
 
 .. prompt:: bash
 

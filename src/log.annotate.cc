@@ -190,7 +190,7 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
             }
         }
         root.gen("log_path");
-        root.gen(lf->get_filename());
+        root.gen(lf->get_filename().native());
         root.gen("log_format");
         root.gen(lf->get_format_name());
         root.gen("log_format_regex");

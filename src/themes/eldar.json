@@ -12,6 +12,7 @@
                     "cyan": "#34e2e2",
                     "green": "#8ae234",
                     "white": "#ffffff",
+                    "orange": "#ef8c29",
                     "semantic_highlight_color": "semantic()"
                 },
                 "styles": {
@@ -22,6 +23,9 @@
                     "text": {
                         "color": "$white",
                         "background-color": ""
+                    },
+                    "selected-text": {
+                        "background-color": "$cyan"
                     },
                     "alt-text": {
                         "bold": true
@@ -115,7 +119,8 @@
                         "color": "$yellow"
                     },
                     "breadcrumb": {
-                        "color": "#99a"
+                        "color": "#448",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"
@@ -278,6 +283,9 @@
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "Grey"
+                    },
+                    "suggestion": {
+                        "color": "#888"
                     }
                 },
                 "log-level-styles": {

@@ -35,6 +35,7 @@
 #include "spookyhash/SpookyV2.h"
 #include "sqlite-extension-func.hh"
 #include "text_anonymizer.hh"
+#include "view_curses.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 #include "yajl/api/yajl_gen.h"
@@ -879,6 +880,17 @@ extract(const char* str)
     return json_string(gen);
 }
 
+static std::string
+sql_humanize_id(string_fragment id)
+{
+    auto& vc = view_colors::singleton();
+    auto attrs = vc.attrs_for_ident(id.data(), id.length());
+
+    return fmt::format(FMT_STRING("\x1b[38;5;{}m{}\x1b[0m"),
+                       attrs.ta_fg_color.value_or(COLOR_CYAN),
+                       id);
+}
+
 int
 string_extension_functions(struct FuncDef** basic_funcs,
                            struct FuncDefAgg** agg_funcs)
@@ -898,6 +910,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
                       "Match a string against a regular expression and return "
                       "the capture groups as JSON.")
                 .sql_function()
+                .with_prql_path({"text", "regexp_match"})
                 .with_parameter({"re", "The regular expression to use"})
                 .with_parameter({
                     "str",
@@ -925,6 +938,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
                       "Replace the parts of a string that match a regular "
                       "expression.")
                 .sql_function()
+                .with_prql_path({"text", "regexp_replace"})
                 .with_parameter(
                     {"str", "The string to perform replacements on"})
                 .with_parameter({"re", "The regular expression to match"})
@@ -953,11 +967,24 @@ string_extension_functions(struct FuncDef** basic_funcs,
                         "humanize_file_size",
                         "Format the given file size as a human-friendly string")
                         .sql_function()
+                        .with_prql_path({"humanize", "file_size"})
                         .with_parameter({"value", "The file size to format"})
                         .with_tags({"string"})
                         .with_example({
                             "To format an amount",
                             "SELECT humanize_file_size(10 * 1024 * 1024)",
+                        })),
+
+        sqlite_func_adapter<decltype(&sql_humanize_id), sql_humanize_id>::
+            builder(help_text("humanize_id",
+                              "Colorize the given ID using ANSI escape codes.")
+                        .sql_function()
+                        .with_prql_path({"humanize", "id"})
+                        .with_parameter({"id", "The identifier to color"})
+                        .with_tags({"string"})
+                        .with_example({
+                            "To colorize the ID 'cluster1'",
+                            "SELECT humanize_id('cluster1')",
                         })),
 
         sqlite_func_adapter<decltype(&humanize::sparkline),
@@ -970,6 +997,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
                           "aggregate version returns a string with a bar "
                           "character for every numeric input")
                     .sql_function()
+                    .with_prql_path({"text", "sparkline"})
                     .with_parameter({"value", "The numeric value to convert"})
                     .with_parameter(help_text("upper",
                                               "The upper bound of the numeric "
@@ -995,6 +1023,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
             help_text("anonymize",
                       "Replace identifying information with random values.")
                 .sql_function()
+                .with_prql_path({"text", "anonymize"})
                 .with_parameter({"value", "The text to anonymize"})
                 .with_tags({"string"})
                 .with_example({
@@ -1006,6 +1035,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
             help_text("extract",
                       "Automatically Parse and extract data from a string")
                 .sql_function()
+                .with_prql_path({"text", "discover"})
                 .with_parameter({"str", "The string to parse"})
                 .with_tags({"string"})
                 .with_example({
@@ -1021,6 +1051,7 @@ string_extension_functions(struct FuncDef** basic_funcs,
             help_text("logfmt2json",
                       "Convert a logfmt-encoded string into JSON")
                 .sql_function()
+                .with_prql_path({"logfmt", "to_json"})
                 .with_parameter({"str", "The logfmt message to parse"})
                 .with_tags({"string"})
                 .with_example({

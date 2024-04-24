@@ -23,6 +23,9 @@
                         "color": "#d6deeb",
                         "background-color": "#011627"
                     },
+                    "selected-text": {
+                        "background-color": "$cyan"
+                    },
                     "alt-text": {
                         "background-color": "#1c1c1c"
                     },
@@ -115,7 +118,8 @@
                         "color": "$yellow"
                     },
                     "breadcrumb": {
-                        "color": "#99a"
+                        "color": "#2d5a80",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"
@@ -279,6 +283,9 @@
                         "background-color": "#2d5a80",
                         "bold": true,
                         "underline": true
+                    },
+                    "suggestion": {
+                        "color": "#888"
                     }
                 },
                 "log-level-styles": {

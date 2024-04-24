@@ -29,6 +29,7 @@
 
 #include "filter_sub_source.hh"
 
+#include "base/attr_line.builder.hh"
 #include "base/enum_util.hh"
 #include "base/func_util.hh"
 #include "base/opt_util.hh"
@@ -44,7 +45,7 @@ using namespace lnav::roles::literals;
 filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
-    this->fss_editor->set_left(25);
+    this->fss_editor->set_x(25);
     this->fss_editor->set_width(-1);
     this->fss_editor->set_save_history(!(lnav_data.ld_flags & LNF_SECURE_MODE));
     this->fss_regex_context.set_highlighter(readline_regex_highlighter)
@@ -68,6 +69,14 @@ filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
     this->fss_match_view.set_height(0_vl);
     this->fss_match_view.set_show_scrollbar(true);
     this->fss_match_view.set_default_role(role_t::VCR_POPUP);
+}
+
+void
+filter_sub_source::register_view(textview_curses* tc)
+{
+    text_sub_source::register_view(tc);
+    tc->add_child_view(this->fss_editor.get());
+    tc->add_child_view(&this->fss_match_view);
 }
 
 bool
@@ -151,9 +160,9 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             return true;
         }
         case 'i': {
-            textview_curses* top_view = *lnav_data.ld_view_stack.top();
-            text_sub_source* tss = top_view->get_sub_source();
-            filter_stack& fs = tss->get_filters();
+            auto* top_view = *lnav_data.ld_view_stack.top();
+            auto* tss = top_view->get_sub_source();
+            auto& fs = tss->get_filters();
             auto filter_index = fs.next_index();
 
             if (!filter_index) {
@@ -169,6 +178,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             lv.reload_data();
 
             this->fss_editing = true;
+            this->tss_view->vc_enabled = false;
 
             add_view_text_possibilities(this->fss_editor.get(),
                                         filter_lang_t::REGEX,
@@ -204,6 +214,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             lv.reload_data();
 
             this->fss_editing = true;
+            this->tss_view->vc_enabled = false;
 
             add_view_text_possibilities(this->fss_editor.get(),
                                         filter_lang_t::REGEX,
@@ -233,6 +244,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             auto tf = *(fs.begin() + lv.get_selection());
 
             this->fss_editing = true;
+            this->tss_view->vc_enabled = false;
 
             auto tq = tf->get_lang() == filter_lang_t::SQL
                 ? text_quoting::sql
@@ -315,17 +327,34 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     auto* tss = top_view->get_sub_source();
     auto& fs = tss->get_filters();
     auto tf = *(fs.begin() + line);
+    bool selected
+        = lnav_data.ld_mode == ln_mode_t::FILTER && line == tc.get_selection();
 
-    value_out = "    ";
+    this->fss_curr_line.clear();
+    auto& al = this->fss_curr_line;
+    attr_line_builder alb(al);
+
+    if (selected) {
+        al.append(" ", VC_GRAPHIC.value(ACS_RARROW));
+    } else {
+        al.append(" ");
+    }
+    al.append(" ");
+    if (tf->is_enabled()) {
+        al.append("\u25c6"_ok);
+    } else {
+        al.append("\u25c7"_comment);
+    }
+    al.append(" ");
     switch (tf->get_type()) {
         case text_filter::INCLUDE:
-            value_out.append(" IN ");
+            al.append(" ").append(lnav::roles::ok("IN")).append(" ");
             break;
         case text_filter::EXCLUDE:
             if (tf->get_lang() == filter_lang_t::REGEX) {
-                value_out.append("OUT ");
+                al.append(lnav::roles::error("OUT")).append(" ");
             } else {
-                value_out.append("    ");
+                al.append("    ");
             }
             break;
         default:
@@ -333,60 +362,19 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
             break;
     }
 
-    if (this->fss_editing && line == tc.get_selection()) {
-        fmt::format_to(
-            std::back_inserter(value_out), FMT_STRING("{:>9} hits | "), "-");
-    } else {
-        fmt::format_to(std::back_inserter(value_out),
-                       FMT_STRING("{:>9L} hits | "),
-                       tss->get_filtered_count_for(tf->get_index()));
+    {
+        auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NUMBER));
+        if (this->fss_editing && line == tc.get_selection()) {
+            alb.appendf(FMT_STRING("{:>9}"), "-");
+        } else {
+            alb.appendf(FMT_STRING("{:>9}"),
+                        tss->get_filtered_count_for(tf->get_index()));
+        }
     }
 
-    value_out.append(tf->get_id());
-}
-
-void
-filter_sub_source::text_attrs_for_line(textview_curses& tc,
-                                       int line,
-                                       string_attrs_t& value_out)
-{
-    textview_curses* top_view = *lnav_data.ld_view_stack.top();
-    text_sub_source* tss = top_view->get_sub_source();
-    filter_stack& fs = tss->get_filters();
-    auto tf = *(fs.begin() + line);
-    bool selected
-        = lnav_data.ld_mode == ln_mode_t::FILTER && line == tc.get_selection();
-
-    if (selected) {
-        value_out.emplace_back(line_range{0, 1}, VC_GRAPHIC.value(ACS_RARROW));
-    }
-
-    chtype enabled = tf->is_enabled() ? ACS_DIAMOND : ' ';
-
-    line_range lr{2, 3};
-    value_out.emplace_back(lr, VC_GRAPHIC.value(enabled));
-    if (tf->is_enabled()) {
-        value_out.emplace_back(lr, VC_FOREGROUND.value(COLOR_GREEN));
-    }
-
-    if (selected) {
-        value_out.emplace_back(line_range{0, -1},
-                               VC_ROLE.value(role_t::VCR_FOCUSED));
-    }
-
-    role_t fg_role = tf->get_type() == text_filter::INCLUDE ? role_t::VCR_OK
-                                                            : role_t::VCR_ERROR;
-    value_out.emplace_back(line_range{4, 7}, VC_ROLE.value(fg_role));
-    value_out.emplace_back(line_range{4, 7},
-                           VC_STYLE.value(text_attrs{A_BOLD}));
-
-    value_out.emplace_back(line_range{8, 17},
-                           VC_STYLE.value(text_attrs{A_BOLD}));
-    value_out.emplace_back(line_range{23, 24}, VC_GRAPHIC.value(ACS_VLINE));
+    al.append(" hits ").append("|", VC_GRAPHIC.value(ACS_VLINE)).append(" ");
 
     attr_line_t content{tf->get_id()};
-    auto& content_attrs = content.get_attrs();
-
     switch (tf->get_lang()) {
         case filter_lang_t::REGEX:
             readline_regex_highlighter(content, content.length());
@@ -397,10 +385,21 @@ filter_sub_source::text_attrs_for_line(textview_curses& tc,
         case filter_lang_t::NONE:
             break;
     }
+    al.append(content);
 
-    shift_string_attrs(content_attrs, 0, 25);
-    value_out.insert(
-        value_out.end(), content_attrs.begin(), content_attrs.end());
+    if (selected) {
+        al.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOCUSED));
+    }
+
+    value_out = al.get_string();
+}
+
+void
+filter_sub_source::text_attrs_for_line(textview_curses& tc,
+                                       int line,
+                                       string_attrs_t& value_out)
+{
+    value_out = this->fss_curr_line.get_attrs();
 }
 
 size_t
@@ -434,25 +433,35 @@ filter_sub_source::rl_change(readline_curses* rc)
         case filter_lang_t::NONE:
             break;
         case filter_lang_t::REGEX: {
-            auto regex_res
-                = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
-
-            if (regex_res.isErr()) {
-                auto pe = regex_res.unwrapErr();
-                lnav_data.ld_filter_help_status_source.fss_error.set_value(
-                    "error: %s", pe.get_message().c_str());
+            if (new_value.empty()) {
+                auto sugg = top_view->get_current_search();
+                if (top_view->tc_selected_text) {
+                    sugg = top_view->tc_selected_text->sti_value;
+                }
+                if (fs.get_filter(sugg) == nullptr) {
+                    this->fss_editor->set_suggestion(sugg);
+                }
             } else {
-                auto& hm = top_view->get_highlights();
-                highlighter hl(regex_res.unwrap().to_shared());
-                auto role = tf->get_type() == text_filter::EXCLUDE
-                    ? role_t::VCR_DIFF_DELETE
-                    : role_t::VCR_DIFF_ADD;
-                hl.with_role(role);
-                hl.with_attrs(text_attrs{A_BLINK | A_REVERSE});
+                auto regex_res
+                    = lnav::pcre2pp::code::from(new_value, PCRE2_CASELESS);
 
-                hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
-                top_view->set_needs_update();
-                lnav_data.ld_filter_help_status_source.fss_error.clear();
+                if (regex_res.isErr()) {
+                    auto pe = regex_res.unwrapErr();
+                    lnav_data.ld_filter_help_status_source.fss_error.set_value(
+                        "error: %s", pe.get_message().c_str());
+                } else {
+                    auto& hm = top_view->get_highlights();
+                    highlighter hl(regex_res.unwrap().to_shared());
+                    auto role = tf->get_type() == text_filter::EXCLUDE
+                        ? role_t::VCR_DIFF_DELETE
+                        : role_t::VCR_DIFF_ADD;
+                    hl.with_role(role);
+                    hl.with_attrs(text_attrs{A_BLINK | A_REVERSE});
+
+                    hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
+                    top_view->set_needs_update();
+                    lnav_data.ld_filter_help_status_source.fss_error.clear();
+                }
             }
             break;
         }
@@ -585,6 +594,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     this->fss_editing = false;
+    this->tss_view->vc_enabled = true;
     this->fss_editor->set_visible(false);
     top_view->reload_data();
     this->tss_view->reload_data();
@@ -608,6 +618,7 @@ filter_sub_source::rl_abort(readline_curses* rc)
     this->tss_view->reload_data();
     this->fss_editor->set_visible(false);
     this->fss_editing = false;
+    this->tss_view->vc_enabled = true;
     this->tss_view->set_needs_update();
     tf->set_enabled(this->fss_filter_state);
     tss->text_filters_changed();
@@ -649,7 +660,7 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
 
     this->fss_match_view.set_window(this->tss_view->get_window());
     this->fss_match_view.set_y(rc->get_y() + 1);
-    this->fss_match_view.set_x(rc->get_left() + rc->get_match_start());
+    this->fss_match_view.set_x(rc->get_x() + rc->get_match_start());
     this->fss_match_view.set_width(width + 3);
     this->fss_match_view.set_needs_update();
     this->fss_match_view.reload_data();
@@ -672,4 +683,26 @@ filter_sub_source::list_input_handle_scroll_out(listview_curses& lv)
 {
     lnav_data.ld_mode = ln_mode_t::PAGING;
     lnav_data.ld_filter_view.reload_data();
+}
+
+bool
+filter_sub_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t&,
+    mouse_event& me)
+{
+    if (this->fss_editing) {
+        return true;
+    }
+    if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
+        this->list_input_handle_key(tc, ' ');
+    }
+    if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 4, 7)) {
+        this->list_input_handle_key(tc, 't');
+    }
+    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{25, -1}))
+    {
+        this->list_input_handle_key(tc, '\r');
+    }
+    return true;
 }

@@ -12,6 +12,16 @@ AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
+if HAVE_CARGO
+RUST_DEPS_CPPFLAGS = -I$(top_srcdir)/src/third-party/prqlc-c -DHAVE_RUST_DEPS=1
+PRQLC_DIR = ../src/third-party/prqlc-c/target
+RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
+else
+RUST_DEPS =
+RUST_DEPS_CPPFLAGS =
+RUST_DEPS_LIBS =
+endif
+
 AM_CPPFLAGS = \
 	-Wall \
 	-I$(top_srcdir)/src \
@@ -23,7 +33,8 @@ AM_CPPFLAGS = \
 	$(LIBARCHIVE_CFLAGS) \
 	$(READLINE_CFLAGS) \
 	$(PCRE_CFLAGS) \
-	$(SQLITE3_CFLAGS)
+	$(SQLITE3_CFLAGS) \
+    $(RUST_DEPS_CPPFLAGS)
 
 # AM_CFLAGS = -fprofile-arcs -ftest-coverage
 # AM_CXXFLAGS = -fprofile-arcs -ftest-coverage
@@ -122,7 +133,8 @@ LDADD = \
     $(LIBARCHIVE_LIBS) \
     $(SQLITE3_LIBS) \
     $(PCRE_LIBS) \
-    $(LIBCURL)
+    $(LIBCURL) \
+    $(RUST_DEPS_LIBS)
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 
@@ -202,6 +214,7 @@ dist_noinst_SCRIPTS = \
 	test_logfile.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \
+	test_prql.sh \
 	test_regex101.sh \
 	test_remote.sh \
 	test_scripts.sh \
@@ -343,6 +356,7 @@ dist_noinst_DATA = \
 	logfile_nested_json.json \
 	logfile_nextcloud.0 \
 	logfile_openam.0 \
+	logfile_partitions.0 \
 	logfile_plain.0 \
 	logfile_pretty.0 \
 	logfile_procstate.0 \
@@ -389,6 +403,7 @@ dist_noinst_DATA = \
 	textfile_json_indented.0 \
 	textfile_json_one_line.0 \
 	textfile_nonl.txt \
+	textfile_plain.0 \
 	textfile_quoted_json.0 \
 	toplevel.lnav \
 	UTF-8-test.txt \
@@ -411,6 +426,7 @@ dist_noinst_DATA = \
 	formats/jsontest3/format.json \
 	formats/jsontest-subsec/format.json \
 	formats/nestedjson/format.json \
+	formats/partitions/format.json \
 	formats/scripts/multiline-echo.lnav \
 	formats/scripts/redirecting.lnav \
 	formats/scripts/nested-redirecting.lnav \
@@ -444,6 +460,7 @@ dist_noinst_DATA = \
     log-samples/sample-f2fba0d0b1e57f9a707ea96a8a4efcdc.txt \
     log-samples/sample-f5afbee90a8c054061c4e9ffe673293cce7761de.txt \
     log-samples/sample-fc8923633e57bacd641d80dde3ff878212230552.txt \
+    naughty_files.py \
 	remote-log-dir/logfile_access_log.0 \
 	remote-log-dir/logfile_access_log.1 \
     tui-captures/tui_echo.0 \
@@ -496,6 +513,10 @@ TESTS = \
 	test_pretty_print.sh \
     test_view_colors.sh \
 	test_vt52_curses.sh
+
+if HAVE_CARGO
+TESTS += test_prql.sh
+endif
 
 DISABLED_TESTS = \
     test_regex101.sh \
@@ -563,6 +584,7 @@ distclean-local:
 	$(RM_V)rm -rf rotmp
 	$(RM_V)rm -rf meta-sessions
 	$(RM_V)rm -rf mgmt-config
+	$(RM_V)rm -rf naughty
 	$(RM_V)rm -rf piper-config
 	$(RM_V)rm -rf nested
 	$(RM_V)rm -rf test-config

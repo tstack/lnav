@@ -36,16 +36,19 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
+#include "base/fs_util.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "bookmarks.json.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "field_overlay_source.hh"
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
 #include "md2attr_line.hh"
 #include "ptimec.hh"
+#include "shlex.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
@@ -214,10 +217,10 @@ struct filtered_logline_cmp {
 nonstd::optional<vis_line_t>
 logfile_sub_source::find_from_time(const struct timeval& start) const
 {
-    auto lb = lower_bound(this->lss_filtered_index.begin(),
-                          this->lss_filtered_index.end(),
-                          start,
-                          filtered_logline_cmp(*this));
+    auto lb = std::lower_bound(this->lss_filtered_index.begin(),
+                               this->lss_filtered_index.end(),
+                               start,
+                               filtered_logline_cmp(*this));
     if (lb != this->lss_filtered_index.end()) {
         return vis_line_t(lb - this->lss_filtered_index.begin());
     }
@@ -300,10 +303,12 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         exec_context ec(
             &this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
         std::string rewritten_line;
+        db_label_source rewrite_label_source;
 
         ec.with_perms(exec_context::perm_t::READ_ONLY);
         ec.ec_local_vars.push(std::map<std::string, scoped_value_t>());
         ec.ec_top_line = vis_line_t(row);
+        ec.ec_label_source_stack.push_back(&rewrite_label_source);
         add_ansi_vars(ec.ec_global_vars);
         add_global_vars(ec);
         format->rewrite(ec, sbr, this->lss_token_attrs, rewritten_line);
@@ -316,7 +321,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         this->lss_token_attrs.emplace_back(lr, SA_ORIGINAL_LINE.value());
     }
 
-    if (!this->lss_token_line->is_continued()
+    if (!this->lss_token_line->is_continued() && !format->lf_formatted_lines
         && (this->lss_token_file->is_time_adjusted()
             || ((format->lf_timestamp_flags & ETF_ZONE_SET
                  || format->lf_date_time.dts_default_zone != nullptr)
@@ -402,14 +407,14 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         std::string name;
         if (this->lss_flags & F_FILENAME) {
             file_offset_end = this->lss_filename_width;
-            name = this->lss_token_file->get_filename();
+            name = fmt::to_string(this->lss_token_file->get_filename());
             if (file_offset_end < name.size()) {
                 file_offset_end = name.size();
                 this->lss_filename_width = name.size();
             }
         } else {
             file_offset_end = this->lss_basename_width;
-            name = this->lss_token_file->get_unique_path();
+            name = fmt::to_string(this->lss_token_file->get_unique_path());
             if (file_offset_end < name.size()) {
                 file_offset_end = name.size();
                 this->lss_basename_width = name.size();
@@ -604,20 +609,15 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         lr, SA_FORMAT.value(this->lss_token_file->get_format()->get_name()));
 
     {
-        const auto& bv = lv.get_bookmarks()[&textview_curses::BM_META];
-        bookmark_vector<vis_line_t>::const_iterator bv_iter;
-
-        bv_iter = lower_bound(bv.begin(), bv.end(), vis_line_t(row + 1));
-        if (bv_iter != bv.begin()) {
-            --bv_iter;
-            auto line_meta_opt = this->find_bookmark_metadata(*bv_iter);
-
-            if (line_meta_opt && !line_meta_opt.value()->bm_name.empty()) {
-                lr.lr_start = 0;
-                lr.lr_end = -1;
-                value_out.emplace_back(
-                    lr, logline::L_PARTITION.value(line_meta_opt.value()));
-            }
+        auto line_meta_context = this->get_bookmark_metadata_context(
+            vis_line_t(row + 1), bookmark_metadata::categories::partition);
+        if (line_meta_context.bmc_current_metadata) {
+            lr.lr_start = 0;
+            lr.lr_end = -1;
+            value_out.emplace_back(
+                lr,
+                logline::L_PARTITION.value(
+                    line_meta_context.bmc_current_metadata.value()));
         }
 
         auto line_meta_opt = this->find_bookmark_metadata(vis_line_t(row));
@@ -993,12 +993,13 @@ logfile_sub_source::rebuild_index(
             if (lf == nullptr) {
                 continue;
             }
-            this->lss_longest_line = std::max(this->lss_longest_line,
-                                              lf->get_longest_line_length());
-            this->lss_basename_width = std::max(this->lss_basename_width,
-                                                lf->get_unique_path().size());
-            this->lss_filename_width
-                = std::max(this->lss_filename_width, lf->get_filename().size());
+            this->lss_longest_line = std::max(
+                this->lss_longest_line, lf->get_longest_line_length() + 1);
+            this->lss_basename_width
+                = std::max(this->lss_basename_width,
+                           lf->get_unique_path().native().size());
+            this->lss_filename_width = std::max(
+                this->lss_filename_width, lf->get_filename().native().size());
         }
 
         if (full_sort) {
@@ -1021,7 +1022,7 @@ logfile_sub_source::rebuild_index(
                     content_line_t con_line(
                         ld->ld_file_index * MAX_LINES_PER_FILE + line_index);
 
-                    if (lf_iter->is_marked()) {
+                    if (lf_iter->is_meta_marked()) {
                         auto start_iter = lf_iter;
                         while (start_iter->is_continued()) {
                             --start_iter;
@@ -1032,9 +1033,20 @@ logfile_sub_source::rebuild_index(
                                                           * MAX_LINES_PER_FILE
                                                       + start_index);
 
-                        this->lss_user_marks[&textview_curses::BM_META]
-                            .insert_once(start_con_line);
-                        lf_iter->set_mark(false);
+                        auto& line_meta
+                            = ld->get_file_ptr()
+                                  ->get_bookmark_metadata()[start_index];
+                        if (line_meta.has(bookmark_metadata::categories::notes))
+                        {
+                            this->lss_user_marks[&textview_curses::BM_META]
+                                .insert_once(start_con_line);
+                        }
+                        if (line_meta.has(
+                                bookmark_metadata::categories::partition))
+                        {
+                            this->lss_user_marks[&textview_curses::BM_PARTITION]
+                                .insert_once(start_con_line);
+                        }
                     }
                     this->lss_index.push_back(con_line);
                 }
@@ -1088,7 +1100,7 @@ logfile_sub_source::rebuild_index(
                     content_line_t con_line(file_index * MAX_LINES_PER_FILE
                                             + line_index);
 
-                    if (lf_iter->is_marked()) {
+                    if (lf_iter->is_meta_marked()) {
                         auto start_iter = lf_iter;
                         while (start_iter->is_continued()) {
                             --start_iter;
@@ -1098,9 +1110,20 @@ logfile_sub_source::rebuild_index(
                         content_line_t start_con_line(
                             file_index * MAX_LINES_PER_FILE + start_index);
 
-                        this->lss_user_marks[&textview_curses::BM_META]
-                            .insert_once(start_con_line);
-                        lf_iter->set_mark(false);
+                        auto& line_meta
+                            = ld->get_file_ptr()
+                                  ->get_bookmark_metadata()[start_index];
+                        if (line_meta.has(bookmark_metadata::categories::notes))
+                        {
+                            this->lss_user_marks[&textview_curses::BM_META]
+                                .insert_once(start_con_line);
+                        }
+                        if (line_meta.has(
+                                bookmark_metadata::categories::partition))
+                        {
+                            this->lss_user_marks[&textview_curses::BM_PARTITION]
+                                .insert_once(start_con_line);
+                        }
                     }
                     this->lss_index.push_back(con_line);
                 }
@@ -1218,7 +1241,7 @@ logfile_sub_source::rebuild_index(
 void
 logfile_sub_source::text_update_marks(vis_bookmarks& bm)
 {
-    logfile* last_file;
+    logfile* last_file = nullptr;
     vis_line_t vl;
 
     bm[&BM_WARNINGS].clear();
@@ -1361,6 +1384,68 @@ bool
 logfile_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 {
     switch (ch) {
+        case ' ': {
+            auto ov_vl = lv.get_overlay_selection();
+            if (ov_vl) {
+                auto* fos = dynamic_cast<field_overlay_source*>(
+                    lv.get_overlay_source());
+                auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
+                if (iter != fos->fos_row_to_field_meta.end()) {
+                    auto find_res = this->find_line_with_file(lv.get_top());
+                    if (find_res) {
+                        auto file_and_line = find_res.value();
+                        auto* format = file_and_line.first->get_format_ptr();
+                        auto fstates = format->get_field_states();
+                        auto state_iter = fstates.find(iter->second.lvm_name);
+                        if (state_iter != fstates.end()) {
+                            format->hide_field(iter->second.lvm_name,
+                                               !state_iter->second.is_hidden());
+                            lv.set_needs_update();
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+        case '#': {
+            auto ov_vl = lv.get_overlay_selection();
+            if (ov_vl) {
+                auto* fos = dynamic_cast<field_overlay_source*>(
+                    lv.get_overlay_source());
+                auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
+                if (iter != fos->fos_row_to_field_meta.end()) {
+                    const auto& meta = iter->second;
+                    std::string cmd;
+
+                    switch (meta.to_chart_type()) {
+                        case chart_type_t::none:
+                            break;
+                        case chart_type_t::hist: {
+                            auto prql = fmt::format(
+                                FMT_STRING(
+                                    "from {} | stats.hist {} slice:'1h'"),
+                                meta.lvm_format.value()->get_name(),
+                                meta.lvm_name);
+                            cmd = fmt::format(FMT_STRING(":prompt sql ; '{}'"),
+                                              shlex::escape(prql));
+                            break;
+                        }
+                        case chart_type_t::spectro:
+                            cmd = fmt::format(FMT_STRING(":spectrogram {}"),
+                                              meta.lvm_name);
+                            break;
+                    }
+                    if (!cmd.empty()) {
+                        this->lss_exec_context
+                            ->with_provenance(exec_context::mouse_input{})
+                            ->execute(cmd);
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
         case 'h':
         case 'H':
         case KEY_SLEFT:
@@ -1702,7 +1787,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             sqlite3_bind_text(stmt,
                               lpc + 1,
                               filename.c_str(),
-                              filename.length(),
+                              filename.native().length(),
                               SQLITE_STATIC);
             continue;
         }
@@ -1711,7 +1796,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             sqlite3_bind_text(stmt,
                               lpc + 1,
                               filename.c_str(),
-                              filename.length(),
+                              filename.native().length(),
                               SQLITE_STATIC);
             continue;
         }
@@ -1884,11 +1969,6 @@ logfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
         for (iter = this->lss_user_marks[bm].begin();
              iter != this->lss_user_marks[bm].end();)
         {
-            auto line_meta_opt = this->find_bookmark_metadata(*iter);
-            if (line_meta_opt) {
-                ++iter;
-                continue;
-            }
             this->find_line(*iter)->set_mark(false);
             iter = this->lss_user_marks[bm].erase(iter);
         }
@@ -2347,7 +2427,43 @@ logfile_sub_source::text_crumbs_for_line(int line,
         return;
     }
 
-    auto line_pair_opt = this->find_line_with_file(vis_line_t(line));
+    auto vl = vis_line_t(line);
+    auto bmc = this->get_bookmark_metadata_context(
+        vl, bookmark_metadata::categories::partition);
+    if (bmc.bmc_current_metadata) {
+        const auto& name = bmc.bmc_current_metadata.value()->bm_name;
+        auto key = text_anchors::to_anchor_string(name);
+        auto display = attr_line_t()
+                           .append("\u2291 "_symbol)
+                           .append(lnav::roles::variable(name));
+        crumbs.emplace_back(
+            key,
+            display,
+            [this]() -> std::vector<breadcrumb::possibility> {
+                auto& vb = this->tss_view->get_bookmarks();
+                const auto& bv = vb[&textview_curses::BM_PARTITION];
+                std::vector<breadcrumb::possibility> retval;
+
+                for (const auto& vl : bv) {
+                    auto meta_opt = this->find_bookmark_metadata(vl);
+                    if (!meta_opt || meta_opt.value()->bm_name.empty()) {
+                        continue;
+                    }
+
+                    const auto& name = meta_opt.value()->bm_name;
+                    retval.emplace_back(text_anchors::to_anchor_string(name),
+                                        name);
+                }
+
+                return retval;
+            },
+            [ec = this->lss_exec_context](const auto& part) {
+                ec->execute(fmt::format(FMT_STRING(":goto {}"),
+                                        part.template get<std::string>()));
+            });
+    }
+
+    auto line_pair_opt = this->find_line_with_file(vl);
     if (!line_pair_opt) {
         return;
     }
@@ -2627,8 +2743,62 @@ logfile_sub_source::get_bookmark_metadata(content_line_t cl)
     return line_pair.first->get_bookmark_metadata()[line_number];
 }
 
+logfile_sub_source::bookmark_metadata_context
+logfile_sub_source::get_bookmark_metadata_context(
+    vis_line_t vl, bookmark_metadata::categories desired) const
+{
+    const auto& vb = this->tss_view->get_bookmarks();
+    const auto bv_iter
+        = vb.find(desired == bookmark_metadata::categories::partition
+                      ? &textview_curses::BM_PARTITION
+                      : &textview_curses::BM_META);
+    if (bv_iter == vb.end()) {
+        return bookmark_metadata_context{};
+    }
+
+    const auto& bv = bv_iter->second;
+    auto vl_iter = std::lower_bound(bv.begin(), bv.end(), vl + 1_vl);
+
+    nonstd::optional<vis_line_t> next_line;
+    for (auto next_vl_iter = vl_iter; next_vl_iter != bv.end(); ++next_vl_iter)
+    {
+        auto bm_opt = this->find_bookmark_metadata(*next_vl_iter);
+        if (!bm_opt) {
+            continue;
+        }
+
+        if (bm_opt.value()->has(desired)) {
+            next_line = *next_vl_iter;
+            break;
+        }
+    }
+    if (vl_iter == bv.begin()) {
+        return bookmark_metadata_context{
+            nonstd::nullopt, nonstd::nullopt, next_line};
+    }
+
+    --vl_iter;
+    while (true) {
+        auto bm_opt = this->find_bookmark_metadata(*vl_iter);
+        if (bm_opt) {
+            if (bm_opt.value()->has(desired)) {
+                return bookmark_metadata_context{
+                    *vl_iter, bm_opt.value(), next_line};
+            }
+        }
+
+        if (vl_iter == bv.begin()) {
+            return bookmark_metadata_context{
+                nonstd::nullopt, nonstd::nullopt, next_line};
+        }
+        --vl_iter;
+    }
+    return bookmark_metadata_context{
+        nonstd::nullopt, nonstd::nullopt, next_line};
+}
+
 nonstd::optional<bookmark_metadata*>
-logfile_sub_source::find_bookmark_metadata(content_line_t cl)
+logfile_sub_source::find_bookmark_metadata(content_line_t cl) const
 {
     auto line_pair = this->find_line_with_file(cl).value();
     auto line_number = static_cast<uint32_t>(
@@ -2760,7 +2930,9 @@ logfile_sub_source::text_size_for_line(textview_curses& tc,
         std::string value;
 
         this->text_value_for_line(tc, row, value, flags);
-        this->lss_line_size_cache[index].second = value.size();
+        scrub_ansi_string(value, nullptr);
+        this->lss_line_size_cache[index].second
+            = string_fragment::from_str(value).column_width();
         this->lss_line_size_cache[index].first = row;
     }
     return this->lss_line_size_cache[index].second;
@@ -2777,4 +2949,129 @@ logfile_sub_source::get_filtered_count_for(size_t filter_index) const
     }
 
     return retval;
+}
+
+nonstd::optional<vis_line_t>
+logfile_sub_source::row_for(const row_info& ri)
+{
+    auto lb = std::lower_bound(this->lss_filtered_index.begin(),
+                               this->lss_filtered_index.end(),
+                               ri.ri_time,
+                               filtered_logline_cmp(*this));
+    if (lb != this->lss_filtered_index.end()) {
+        auto first_lb = lb;
+        while (true) {
+            auto cl = this->lss_index[*lb];
+            if (content_line_t(ri.ri_id) == cl) {
+                first_lb = lb;
+                break;
+            }
+            auto ll = this->find_line(cl);
+            if (ll->get_timeval() != ri.ri_time) {
+                break;
+            }
+            ++lb;
+        }
+
+        return vis_line_t(first_lb - this->lss_filtered_index.begin());
+    }
+
+    return nonstd::nullopt;
+}
+
+nonstd::optional<vis_line_t>
+logfile_sub_source::row_for_anchor(const std::string& id)
+{
+    auto& vb = this->tss_view->get_bookmarks();
+    const auto& bv = vb[&textview_curses::BM_PARTITION];
+
+    for (const auto& vl : bv) {
+        auto meta_opt = this->find_bookmark_metadata(vl);
+        if (!meta_opt || meta_opt.value()->bm_name.empty()) {
+            continue;
+        }
+
+        const auto& name = meta_opt.value()->bm_name;
+        if (id == text_anchors::to_anchor_string(name)) {
+            return vl;
+        }
+    }
+
+    return nonstd::nullopt;
+}
+
+nonstd::optional<vis_line_t>
+logfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
+{
+    auto bmc = this->get_bookmark_metadata_context(
+        vl, bookmark_metadata::categories::partition);
+    switch (dir) {
+        case text_anchors::direction::prev: {
+            if (bmc.bmc_current && bmc.bmc_current.value() != vl) {
+                return bmc.bmc_current;
+            }
+            if (!bmc.bmc_current || bmc.bmc_current.value() == 0_vl) {
+                return 0_vl;
+            }
+            auto prev_bmc = this->get_bookmark_metadata_context(
+                bmc.bmc_current.value() - 1_vl,
+                bookmark_metadata::categories::partition);
+            if (!prev_bmc.bmc_current) {
+                return 0_vl;
+            }
+            return prev_bmc.bmc_current;
+        }
+        case text_anchors::direction::next:
+            return bmc.bmc_next_line;
+    }
+    return nonstd::nullopt;
+}
+
+nonstd::optional<std::string>
+logfile_sub_source::anchor_for_row(vis_line_t vl)
+{
+    auto line_meta = this->get_bookmark_metadata_context(
+        vl, bookmark_metadata::categories::partition);
+    if (!line_meta.bmc_current_metadata) {
+        return nonstd::nullopt;
+    }
+
+    return text_anchors::to_anchor_string(
+        line_meta.bmc_current_metadata.value()->bm_name);
+}
+
+std::unordered_set<std::string>
+logfile_sub_source::get_anchors()
+{
+    auto& vb = this->tss_view->get_bookmarks();
+    const auto& bv = vb[&textview_curses::BM_PARTITION];
+    std::unordered_set<std::string> retval;
+
+    for (const auto& vl : bv) {
+        auto meta_opt = this->find_bookmark_metadata(vl);
+        if (!meta_opt || meta_opt.value()->bm_name.empty()) {
+            continue;
+        }
+
+        const auto& name = meta_opt.value()->bm_name;
+        retval.emplace(text_anchors::to_anchor_string(name));
+    }
+
+    return retval;
+}
+
+bool
+logfile_sub_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t& mouse_line,
+    mouse_event& me)
+{
+    if (tc.get_overlay_selection()) {
+        if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 2, 4)) {
+            this->list_input_handle_key(tc, ' ');
+        } else if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 5, 6)) {
+            this->list_input_handle_key(tc, '#');
+        }
+    }
+    return true;
 }

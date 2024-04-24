@@ -1,0 +1,5 @@
+
+PRQL_FILES = \
+    $(srcdir)/%reldir%/stats.prql \
+    $(srcdir)/%reldir%/utils.prql \
+    $()

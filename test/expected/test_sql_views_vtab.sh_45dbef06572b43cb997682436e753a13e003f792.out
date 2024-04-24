@@ -2,9 +2,9 @@
  Received Time: [1m2020-12-10T06:56:41.092[0m — [1min the future[0m  Format: [1m%Y-%m-%d %H:%M:%S,%L[0m
  Pattern: /xml_msg_log/regex/std = [1m[36m^[0m\[[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[32m{[0m4[1m[32m}[0m-[1m\d[0m[1m[32m{[0m2[1m[32m}[0m-[1m\d[0m[1m[32m{[0m2[1m[32m}[0m [1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m:[1m\d[0m[1m[32m{[0m2[1m[32m}[0m,[1m\d[0m[1m[32m{[0m3[1m[32m}[0m[1m[32m)[0m\][1m\s[0m[1m[36m+[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m\s[0m[1m[36m+[0m\[[1m[32m([0m[1m[32m?[0m[1m[36m<[0mmodule>[1m[32m[[0m[1m[36m^[0m:[1m[32m][0m[1m[36m*[0m[1m[32m)[0m:[1m[32m([0m[1m[32m?[0m[1m[36m<[0mline>[1m\d[0m[1m[36m+[0m[1m[32m)[0m\][1m\s[0m[1m[36m*[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m[32m[[0m[1m[36m^[0m\n[1m[32m][0m[1m[36m*[0m[1m[32m)[0m\n[1m[36m?[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mmsg_data>[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m
  Known message fields for table [1mxml_msg_log[0m:
-   module   = [1mconnect.client[0m
-   line     = [1m69[0m
-   msg_data = [1m<?xml version='1.0' encoding='iso-8859-2'?>␊<a-request>␊  <head>␊    x␊  </head>␊  <source>␊    x␊  </source>␊  <request id="1">␊    <name>␊      x␊    </name>␊  </request>␊</a-request>␊[0m
+ | [1m[32m◆[0m 📊 module   = connect.client
+ | [1m[32m◆[0m 📊 line     = 69
+ | [1m[32m◆[0m    msg_data = <?xml version='1.0' encoding='iso-8859-2'?>␊<a-request>␊  <head>␊    x␊  </head>␊  <source>␊    x␊  </source>␊  <request id="1">␊    <name>␊      x␊    </name>␊  </request>␊</a-request>␊
  XML fields:
    [1mxpath[0m([35m'/a-request/head/text()'[0m, xml_msg_log.msg_data) = [1mx[0m
    [1mxpath[0m([35m'/a-request/request/@id'[0m, xml_msg_log.msg_data) = [1m1[0m

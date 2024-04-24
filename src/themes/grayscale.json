@@ -116,7 +116,8 @@
                         "color": "#444"
                     },
                     "breadcrumb": {
-                        "color": "#999"
+                        "color": "#999",
+                        "bold": true
                     },
                     "table-border": {
                         "color": "#444"
@@ -218,6 +219,9 @@
                     "inactive-alert": {
                         "color": "$red",
                         "background-color": "#2f2f2f"
+                    },
+                    "suggestion": {
+                        "color": "#888"
                     }
                 },
                 "log-level-styles": {

@@ -250,22 +250,32 @@ private:
 
 class text_time_translator {
 public:
+    struct row_info {
+        struct timeval ri_time {
+            0, 0
+        };
+        int64_t ri_id{-1};
+    };
+
     virtual ~text_time_translator() = default;
 
     virtual nonstd::optional<vis_line_t> row_for_time(
         struct timeval time_bucket)
         = 0;
 
-    virtual nonstd::optional<struct timeval> time_for_row(vis_line_t row) = 0;
+    virtual nonstd::optional<vis_line_t> row_for(const row_info& ri)
+    {
+        return this->row_for_time(ri.ri_time);
+    }
 
-    void scroll_invoked(textview_curses* tc);
+    virtual nonstd::optional<row_info> time_for_row(vis_line_t row) = 0;
 
     void data_reloaded(textview_curses* tc);
 
+    void ttt_scroll_invoked(textview_curses* tc);
+
 protected:
-    struct timeval ttt_top_time {
-        0, 0
-    };
+    nonstd::optional<row_info> ttt_top_row_info;
 };
 
 class text_accel_source {
@@ -375,7 +385,7 @@ public:
     {
     }
 
-    void register_view(textview_curses* tc) { this->tss_view = tc; }
+    virtual void register_view(textview_curses* tc) { this->tss_view = tc; }
 
     /**
      * @return The total number of lines available from the source.
@@ -496,6 +506,8 @@ public:
 
     virtual void quiesce() {}
 
+    virtual void scroll_invoked(textview_curses* tc);
+
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
 
@@ -539,9 +551,10 @@ class text_delegate {
 public:
     virtual ~text_delegate() = default;
 
-    virtual void text_overlay(textview_curses& tc) {}
-
-    virtual bool text_handle_mouse(textview_curses& tc, mouse_event& me)
+    virtual bool text_handle_mouse(
+        textview_curses& tc,
+        const listview_curses::display_line_content_t&,
+        mouse_event& me)
     {
         return false;
     }
@@ -564,6 +577,7 @@ public:
     const static bookmark_type_t BM_USER_EXPR;
     const static bookmark_type_t BM_SEARCH;
     const static bookmark_type_t BM_META;
+    const static bookmark_type_t BM_PARTITION;
 
     textview_curses();
 
@@ -594,6 +608,12 @@ public:
     textview_curses& set_sub_source(text_sub_source* src);
 
     text_sub_source* get_sub_source() const { return this->tc_sub_source; }
+
+    textview_curses& set_supports_marks(bool m)
+    {
+        this->tc_supports_marks = m;
+        return *this;
+    }
 
     textview_curses& set_delegate(std::shared_ptr<text_delegate> del)
     {
@@ -713,14 +733,6 @@ public:
 
     void reload_data();
 
-    void do_update()
-    {
-        this->listview_curses::do_update();
-        if (this->tc_delegate != nullptr) {
-            this->tc_delegate->text_overlay(*this);
-        }
-    }
-
     bool toggle_hide_fields()
     {
         bool retval = this->tc_hide_fields;
@@ -774,18 +786,7 @@ public:
 
     void revert_search() { this->execute_search(this->tc_previous_search); }
 
-    void invoke_scroll()
-    {
-        if (this->tc_sub_source != nullptr) {
-            auto ttt = dynamic_cast<text_time_translator*>(this->tc_sub_source);
-
-            if (ttt != nullptr) {
-                ttt->scroll_invoked(this);
-            }
-        }
-
-        listview_curses::invoke_scroll();
-    }
+    void invoke_scroll();
 
     textview_curses& set_reload_config_delegate(
         std::function<void(textview_curses&)> func)
@@ -801,6 +802,18 @@ public:
 
     nonstd::optional<role_t> tc_cursor_role;
     nonstd::optional<role_t> tc_disabled_cursor_role;
+
+    struct selected_text_info {
+        int sti_x;
+        int64_t sti_line;
+        line_range sti_range;
+        std::string sti_value;
+    };
+
+    nonstd::optional<selected_text_info> tc_selected_text;
+    bool tc_text_selection_active{false};
+    display_line_content_t tc_press_line;
+    int tc_press_left{0};
 
 protected:
     class grep_highlighter {
@@ -848,11 +861,11 @@ protected:
     highlight_map_t tc_highlights;
     std::set<highlight_source_t> tc_disabled_highlights;
 
-    vis_line_t tc_selection_start{-1_vl};
-    vis_line_t tc_selection_last{-1_vl};
-    bool tc_selection_cleared{false};
+    nonstd::optional<vis_line_t> tc_selection_start;
+    mouse_event tc_press_event;
     bool tc_hide_fields{true};
     bool tc_paused{false};
+    bool tc_supports_marks{false};
 
     std::string tc_current_search;
     std::string tc_previous_search;

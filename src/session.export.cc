@@ -272,7 +272,6 @@ SELECT content_id, format, time_offset FROM lnav_file
         const auto& open_opts = name_pair.second;
 
         if (!open_opts.loo_is_visible || !open_opts.loo_include_in_session
-            || open_opts.loo_temp_file
             || open_opts.loo_source != logfile_name_source::USER)
         {
             continue;

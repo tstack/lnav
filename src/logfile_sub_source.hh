@@ -200,7 +200,9 @@ class logfile_sub_source
     : public text_sub_source
     , public text_time_translator
     , public text_accel_source
-    , public list_input_delegate {
+    , public list_input_delegate
+    , public text_anchors
+    , public text_delegate {
 public:
     const static bookmark_type_t BM_ERRORS;
     const static bookmark_type_t BM_WARNINGS;
@@ -351,10 +353,22 @@ public:
         return this->get_bookmark_metadata(this->at(vl));
     }
 
-    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
-        content_line_t cl);
+    struct bookmark_metadata_context {
+        nonstd::optional<vis_line_t> bmc_current;
+        nonstd::optional<bookmark_metadata*> bmc_current_metadata;
+        nonstd::optional<vis_line_t> bmc_next_line;
+    };
 
-    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(vis_line_t vl)
+    bookmark_metadata_context get_bookmark_metadata_context(
+        vis_line_t vl,
+        bookmark_metadata::categories desired
+        = bookmark_metadata::categories::any) const;
+
+    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
+        content_line_t cl) const;
+
+    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
+        vis_line_t vl) const
     {
         return this->find_bookmark_metadata(this->at(vl));
     }
@@ -477,13 +491,19 @@ public:
 
     nonstd::optional<vis_line_t> find_from_content(content_line_t cl);
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row)
+    nonstd::optional<row_info> time_for_row(vis_line_t row)
     {
         if (row >= 0_vl && row < (ssize_t) this->text_line_count()) {
-            return this->find_line(this->at(row))->get_timeval();
+            auto cl = this->at(row);
+            return row_info{
+                this->find_line(cl)->get_timeval(),
+                (int64_t) cl,
+            };
         }
         return nonstd::nullopt;
     }
+
+    nonstd::optional<vis_line_t> row_for(const row_info& ri);
 
     nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket)
     {
@@ -669,6 +689,10 @@ public:
 
     void text_crumbs_for_line(int line, std::vector<breadcrumb::crumb>& crumbs);
 
+    bool text_handle_mouse(textview_curses& tc,
+                           const listview_curses::display_line_content_t&,
+                           mouse_event& me);
+
     Result<bool, lnav::console::user_message> eval_sql_filter(
         sqlite3_stmt* stmt, iterator ld, logfile::const_iterator ll);
 
@@ -679,6 +703,8 @@ public:
     bool is_line_meta_changed() const { return this->lss_line_meta_changed; }
 
     void set_exec_context(exec_context* ec) { this->lss_exec_context = ec; }
+
+    exec_context* get_exec_context() const { return this->lss_exec_context; }
 
     static const uint64_t MAX_CONTENT_LINES = (1ULL << 40) - 1;
     static const uint64_t MAX_LINES_PER_FILE = 256 * 1024 * 1024;
@@ -705,6 +731,14 @@ public:
     };
 
     big_array<indexed_content> lss_index;
+
+    nonstd::optional<vis_line_t> row_for_anchor(const std::string& id);
+
+    nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl, direction dir);
+
+    nonstd::optional<std::string> anchor_for_row(vis_line_t vl);
+
+    std::unordered_set<std::string> get_anchors();
 
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }

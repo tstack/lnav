@@ -38,6 +38,7 @@
 
 #include "base/auto_fd.hh"
 #include "base/lnav.console.hh"
+#include "db_sub_source.hh"
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
 #include "help_text.hh"
@@ -120,12 +121,13 @@ struct exec_context {
 
     void clear_output();
 
+    struct mouse_input {};
     struct user {};
     struct file_open {
         std::string fo_name;
     };
 
-    using provenance_t = mapbox::util::variant<user, file_open>;
+    using provenance_t = mapbox::util::variant<user, mouse_input, file_open>;
 
     struct provenance_guard {
         explicit provenance_guard(exec_context* context, provenance_t prov)
@@ -148,8 +150,15 @@ struct exec_context {
             }
         }
 
+        exec_context* operator->() { return this->pg_context; }
+
         exec_context* pg_context;
     };
+
+    provenance_guard with_provenance(provenance_t prov)
+    {
+        return provenance_guard{this, prov};
+    }
 
     struct source_guard {
         source_guard(exec_context* context) : sg_context(context) {}
@@ -185,6 +194,33 @@ struct exec_context {
     source_guard enter_source(intern_string_t path,
                               int line_number,
                               const std::string& content);
+
+    struct db_source_guard {
+        db_source_guard(exec_context* context) : dsg_context(context) {}
+
+        db_source_guard(const source_guard&) = delete;
+
+        db_source_guard(source_guard&& other) : dsg_context(other.sg_context)
+        {
+            other.sg_context = nullptr;
+        }
+
+        ~db_source_guard()
+        {
+            if (this->dsg_context != nullptr) {
+                this->dsg_context->ec_label_source_stack.pop_back();
+            }
+        }
+
+        exec_context* dsg_context;
+    };
+
+    db_source_guard enter_db_source(db_label_source* dls)
+    {
+        this->ec_label_source_stack.push_back(dls);
+
+        return db_source_guard{this};
+    }
 
     struct error_cb_guard {
         error_cb_guard(exec_context* context) : sg_context(context) {}
@@ -277,6 +313,7 @@ struct exec_context {
     sql_callback_t ec_sql_callback;
     pipe_callback_t ec_pipe_callback;
     std::vector<error_callback_t> ec_error_callback_stack;
+    std::vector<db_label_source*> ec_label_source_stack;
 };
 
 Result<std::string, lnav::console::user_message> execute_command(

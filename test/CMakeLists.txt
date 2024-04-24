@@ -2,6 +2,7 @@ enable_testing()
 
 include_directories(
         . ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/fmtlib
+        ${CMAKE_SOURCE_DIR}/src/third-party/date/include
         ${CMAKE_CURRENT_BINARY_DIR}/../src ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(test_abbrev test_abbrev.cc test_stubs.cc)

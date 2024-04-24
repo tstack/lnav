@@ -314,23 +314,52 @@ enum class mouse_button_state_t {
     BUTTON_STATE_PRESSED,
     BUTTON_STATE_DRAGGED,
     BUTTON_STATE_RELEASED,
+    BUTTON_STATE_DOUBLE_CLICK,
 };
 
 struct mouse_event {
     mouse_event(mouse_button_t button = mouse_button_t::BUTTON_LEFT,
                 mouse_button_state_t state
                 = mouse_button_state_t::BUTTON_STATE_PRESSED,
+                uint8_t mods = 0,
                 int x = -1,
                 int y = -1)
-        : me_button(button), me_state(state), me_x(x), me_y(y)
+        : me_button(button), me_state(state), me_modifiers(mods), me_x(x),
+          me_y(y)
     {
     }
 
+    enum class modifier_t : uint8_t {
+        shift = 4,
+        meta = 8,
+        ctrl = 16,
+    };
+
+    bool is_modifier_pressed(modifier_t mod) const
+    {
+        return this->me_modifiers & lnav::enums::to_underlying(mod);
+    }
+
+    bool is_click_in(mouse_button_t button, int x_start, int x_end) const;
+
+    bool is_click_in(mouse_button_t button, line_range lr) const
+    {
+        return this->is_click_in(button, lr.lr_start, lr.lr_end);
+    }
+
+    bool is_press_in(mouse_button_t button, line_range lr) const;
+
+    bool is_drag_in(mouse_button_t button, line_range lr) const;
+    bool is_double_click_in(mouse_button_t button, line_range lr) const;
+
     mouse_button_t me_button;
     mouse_button_state_t me_state;
+    uint8_t me_modifiers;
     struct timeval me_time {};
     int me_x;
     int me_y;
+    int me_press_x{-1};
+    int me_press_y{-1};
 };
 
 /**
@@ -343,20 +372,25 @@ public:
     /**
      * Update the curses display.
      */
-    virtual void do_update()
+    virtual bool do_update()
     {
+        bool retval = false;
+
         this->vc_needs_update = false;
 
         if (!this->vc_visible) {
-            return;
+            return retval;
         }
 
         for (auto* child : this->vc_children) {
-            child->do_update();
+            retval = child->do_update() || retval;
         }
+        return retval;
     }
 
-    virtual bool handle_mouse(mouse_event& me) { return false; }
+    virtual bool handle_mouse(mouse_event& me);
+
+    virtual bool contains(int x, int y) const;
 
     void set_needs_update()
     {
@@ -381,26 +415,64 @@ public:
 
     bool is_visible() const { return this->vc_visible; }
 
+    /**
+     * Set the Y position of this view on the display.  A value greater than
+     * zero is considered to be an absolute size.  A value less than zero makes
+     * the position relative to the bottom of the enclosing window.
+     *
+     * @param y The Y position of the cursor on the curses display.
+     */
+    void set_y(int y)
+    {
+        if (y != this->vc_y) {
+            this->vc_y = y;
+            this->set_needs_update();
+        }
+    }
+
+    int get_y() const { return this->vc_y; }
+
+    void set_x(unsigned int x)
+    {
+        if (x != this->vc_x) {
+            this->vc_x = x;
+            this->set_needs_update();
+        }
+    }
+
+    unsigned int get_x() const { return this->vc_x; }
+
     void set_width(long width) { this->vc_width = width; }
 
     long get_width() const { return this->vc_width; }
 
     static void awaiting_user_input();
 
-    static size_t mvwattrline(WINDOW* window,
-                              int y,
-                              int x,
-                              attr_line_t& al,
-                              const struct line_range& lr,
-                              role_t base_role = role_t::VCR_TEXT);
+    struct mvwattrline_result {
+        size_t mr_chars_out{0};
+        size_t mr_bytes_remaining{0};
+        string_fragment mr_selected_text;
+    };
+
+    static mvwattrline_result mvwattrline(WINDOW* window,
+                                          int y,
+                                          int x,
+                                          attr_line_t& al,
+                                          const struct line_range& lr,
+                                          role_t base_role = role_t::VCR_TEXT);
+
+    bool vc_enabled{true};
 
 protected:
     bool vc_visible{true};
     /** Flag to indicate if a display update is needed. */
     bool vc_needs_update{true};
+    unsigned int vc_x{0};
+    int vc_y{0};
     long vc_width{0};
     std::vector<view_curses*> vc_children;
     role_t vc_default_role{role_t::VCR_TEXT};
+    view_curses* vc_last_drag_child{nullptr};
 };
 
 template<class T>
@@ -416,22 +488,24 @@ public:
         return this->vs_views.back();
     }
 
-    void do_update() override
+    bool do_update() override
     {
         if (!this->vc_visible) {
-            return;
+            return false;
         }
 
-        this->top() | [this](T* vc) {
+        bool retval;
+        this->top() | [this, &retval](T* vc) {
             if (this->vc_needs_update) {
                 vc->set_needs_update();
             }
-            vc->do_update();
+            retval = vc->do_update();
         };
 
-        view_curses::do_update();
+        retval = view_curses::do_update() || retval;
 
         this->vc_needs_update = false;
+        return retval;
     }
 
     void push_back(T* view)

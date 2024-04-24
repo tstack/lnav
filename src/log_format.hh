@@ -108,6 +108,12 @@ enum class value_kind_t : int {
     VALUE__MAX
 };
 
+enum class chart_type_t {
+    none,
+    hist,
+    spectro,
+};
+
 struct logline_value_meta {
     struct internal_column {
         bool operator==(const internal_column&) const { return true; }
@@ -150,11 +156,14 @@ struct logline_value_meta {
         return *this;
     }
 
+    chart_type_t to_chart_type() const;
+
     intern_string_t lvm_name;
     value_kind_t lvm_kind;
     column_t lvm_column{external_column{}};
     nonstd::optional<size_t> lvm_values_index;
     bool lvm_identifier{false};
+    bool lvm_foreign_key{false};
     bool lvm_hidden{false};
     nonstd::optional<bool> lvm_user_hidden;
     bool lvm_from_module{false};
@@ -562,6 +571,7 @@ public:
     uint8_t lf_mod_index{0};
     bool lf_multiline{true};
     bool lf_structured{false};
+    bool lf_formatted_lines{false};
     date_time_scanner lf_date_time;
     date_time_scanner lf_time_scanner;
     std::vector<pattern_for_lines> lf_pattern_locks;
@@ -580,6 +590,9 @@ public:
     nonstd::optional<int64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;
+
+    std::map<const intern_string_t, std::shared_ptr<format_partition_def>>
+        lf_partition_defs;
 
     struct opid_descriptor {
         positioned_property<intern_string_t> od_field;

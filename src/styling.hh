@@ -54,7 +54,7 @@ struct term_color {
 struct term_color_palette {
     term_color_palette(const char* name, const string_fragment& json);
 
-    short match_color(const lab_color& to_match);
+    short match_color(const lab_color& to_match) const;
 
     std::vector<term_color> tc_palette;
 };
@@ -147,6 +147,8 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_function;
     positioned_property<style_config> lt_style_type;
     positioned_property<style_config> lt_style_sep_ref_acc;
+    positioned_property<style_config> lt_style_suggestion;
+    positioned_property<style_config> lt_style_selected_text;
     positioned_property<style_config> lt_style_re_special;
     positioned_property<style_config> lt_style_re_repeat;
     positioned_property<style_config> lt_style_diff_delete;

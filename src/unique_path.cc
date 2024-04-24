@@ -30,6 +30,7 @@
 #include "unique_path.hh"
 
 #include "config.h"
+#include "fmt/format.h"
 
 void
 unique_path_generator::add_source(
@@ -54,13 +55,14 @@ unique_path_generator::generate()
             if (pair.second.size() == 1) {
                 if (loop_count > 0) {
                     const auto src = pair.second[0];
-
-                    src->set_unique_path("[" + src->get_unique_path());
+                    auto lsquare = fmt::format(FMT_STRING("[{}"),
+                                               src->get_unique_path().native());
+                    src->set_unique_path(lsquare);
                 }
 
-                this->upg_max_len
-                    = std::max(this->upg_max_len,
-                               pair.second[0]->get_unique_path().size());
+                this->upg_max_len = std::max(
+                    this->upg_max_len,
+                    pair.second[0]->get_unique_path().native().size());
             } else {
                 bool all_common = true;
 
@@ -107,10 +109,10 @@ unique_path_generator::generate()
 
             if (loop_count == 0) {
                 src->set_unique_path(prefix.filename().string() + "]/"
-                                     + unique_path);
+                                     + unique_path.string());
             } else {
                 src->set_unique_path(prefix.filename().string() + "/"
-                                     + unique_path);
+                                     + unique_path.string());
             }
 
             const auto parent = prefix.parent_path();
@@ -118,7 +120,9 @@ unique_path_generator::generate()
             src->set_path_prefix(parent);
 
             if (parent.empty() || parent == prefix) {
-                src->set_unique_path("[" + src->get_unique_path());
+                auto lsquare = fmt::format(FMT_STRING("[{}"),
+                                           src->get_unique_path().native());
+                src->set_unique_path(lsquare);
             } else {
                 this->upg_unique_paths[src->get_unique_path()].push_back(src);
             }

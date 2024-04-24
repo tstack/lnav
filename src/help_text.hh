@@ -44,6 +44,8 @@ enum class help_context_t {
     HC_SQL_INFIX,
     HC_SQL_FUNCTION,
     HC_SQL_TABLE_VALUED_FUNCTION,
+    HC_PRQL_TRANSFORM,
+    HC_PRQL_FUNCTION,
 };
 
 enum class help_function_type_t {
@@ -68,8 +70,14 @@ enum class help_parameter_format_t {
 };
 
 struct help_example {
+    enum class language {
+        undefined,
+        prql,
+    };
+
     const char* he_description{nullptr};
     const char* he_cmd{nullptr};
+    language he_language{language::undefined};
 };
 
 struct help_text {
@@ -89,6 +97,8 @@ struct help_text {
     std::vector<const char*> ht_tags;
     std::vector<const char*> ht_opposites;
     help_function_type_t ht_function_type{help_function_type_t::HFT_REGULAR};
+    std::vector<const char*> ht_prql_path;
+    const char* ht_default_value{nullptr};
     void* ht_impl{nullptr};
 
     help_text() = default;
@@ -145,6 +155,18 @@ struct help_text {
         return *this;
     }
 
+    help_text& prql_transform() noexcept
+    {
+        this->ht_context = help_context_t::HC_PRQL_TRANSFORM;
+        return *this;
+    }
+
+    help_text& prql_function() noexcept
+    {
+        this->ht_context = help_context_t::HC_PRQL_FUNCTION;
+        return *this;
+    }
+
     help_text& with_summary(const char* summary) noexcept
     {
         this->ht_summary = summary;
@@ -176,6 +198,12 @@ struct help_text {
         const std::initializer_list<help_example>& examples) noexcept;
 
     help_text& with_example(const help_example& example) noexcept;
+
+    help_text& with_default_value(const char* defval)
+    {
+        this->ht_default_value = defval;
+        return *this;
+    }
 
     help_text& optional() noexcept
     {
@@ -210,6 +238,9 @@ struct help_text {
     help_text& with_opposites(
         const std::initializer_list<const char*>& opps) noexcept;
 
+    help_text& with_prql_path(
+        const std::initializer_list<const char*>& prql) noexcept;
+
     template<typename F>
     help_text& with_impl(F impl)
     {
@@ -219,7 +250,7 @@ struct help_text {
 
     void index_tags();
 
-    static std::multimap<std::string, help_text*> TAGGED;
+    static std::multimap<std::string, help_text*>& tag_map();
 };
 
 #endif

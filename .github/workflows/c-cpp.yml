@@ -71,8 +71,11 @@ jobs:
           libbz2-dev
           libcurl4-openssl-dev
           libreadline-dev
+          pipx
           tshark
           zlib1g-dev
+      - name: Install python packages
+        run: pipx install check-jsonschema
       - name: autogen
         run: ./autogen.sh
       - name: configure

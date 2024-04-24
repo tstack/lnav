@@ -327,6 +327,10 @@ plain_text_source::text_crumbs_for_line(int line,
                             this->line_for_offset(sib_iter->second->hn_start) |
                                 [this](const auto new_top) {
                                     this->tss_view->set_selection(new_top);
+                                    if (this->tss_view->is_selectable()) {
+                                        this->tss_view->set_top(new_top - 2_vl,
+                                                                false);
+                                    }
                                 };
                         },
                         [this, parent_node](size_t index) {
@@ -337,6 +341,10 @@ plain_text_source::text_crumbs_for_line(int line,
                             this->line_for_offset(sib->hn_start) |
                                 [this](const auto new_top) {
                                     this->tss_view->set_selection(new_top);
+                                    if (this->tss_view->is_selectable()) {
+                                        this->tss_view->set_top(new_top - 2_vl,
+                                                                false);
+                                    }
                                 };
                         });
                 });
@@ -528,6 +536,9 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
                 if (neighbors_res->cnr_next) {
                     return this->line_for_offset(
                         neighbors_res->cnr_next.value()->hn_start);
+                } else if (!md.m_sections_root->hn_children.empty()) {
+                    return this->line_for_offset(
+                        md.m_sections_root->hn_children[0]->hn_start);
                 }
                 break;
             }

@@ -141,6 +141,7 @@ network_extension_functions(struct FuncDef** basic_funcs,
                 help_text("gethostbyname",
                           "Get the IP address for the given hostname")
                     .sql_function()
+                    .with_prql_path({"net", "gethostbyname"})
                     .with_parameter({"hostname", "The DNS hostname to lookup."})
                     .with_tags({"net"})
                     .with_example({
@@ -153,6 +154,7 @@ network_extension_functions(struct FuncDef** basic_funcs,
                 help_text("gethostbyaddr",
                           "Get the hostname for the given IP address")
                     .sql_function()
+                    .with_prql_path({"net", "gethostbyaddr"})
                     .with_parameter({"hostname", "The IP address to lookup."})
                     .with_tags({"net"})
                     .with_example({

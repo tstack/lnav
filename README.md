@@ -182,6 +182,7 @@ The following software packages are required to build lnav:
 - libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
 - libarchive - The libarchive library for opening archive files, like zip/tgz.
 - wireshark  - The 'tshark' program is used to interpret pcap files.
+- cargo/rust - The Rust language is used to build the PRQL compiler.
 
 #### Build
 

@@ -33,6 +33,7 @@
 
 #include "text_format.hh"
 
+#include "base/lnav_log.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
 #include "yajl/api/yajl_parse.h"

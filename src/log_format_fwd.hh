@@ -146,7 +146,7 @@ public:
             uint8_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_millis(millis),
           ll_opid(opid), ll_sub_offset(0), ll_valid_utf(1), ll_level(lev),
-          ll_module_id(mod), ll_expr_mark(0)
+          ll_module_id(mod), ll_meta_mark(0), ll_expr_mark(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     }
@@ -157,7 +157,8 @@ public:
             uint8_t mod = 0,
             uint8_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_opid(opid), ll_sub_offset(0),
-          ll_valid_utf(1), ll_level(lev), ll_module_id(mod), ll_expr_mark(0)
+          ll_valid_utf(1), ll_level(lev), ll_module_id(mod), ll_meta_mark(0),
+          ll_expr_mark(0)
     {
         this->set_time(tv);
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
@@ -225,6 +226,10 @@ public:
     }
 
     bool is_marked() const { return this->ll_level & LEVEL_MARK; }
+
+    void set_meta_mark(bool val) { this->ll_meta_mark = val; }
+
+    bool is_meta_marked() const { return this->ll_meta_mark; }
 
     void set_expr_mark(bool val) { this->ll_expr_mark = val; }
 
@@ -367,7 +372,8 @@ private:
     unsigned int ll_sub_offset : 15;
     unsigned int ll_valid_utf : 1;
     uint8_t ll_level;
-    uint8_t ll_module_id : 7;
+    uint8_t ll_module_id : 6;
+    uint8_t ll_meta_mark : 1;
     uint8_t ll_expr_mark : 1;
     char ll_schema[2];
 };
@@ -387,6 +393,25 @@ struct format_tag_def {
     factory_container<lnav::pcre2pp::code, int>::with_default_args<PCRE2_DOTALL>
         ftd_pattern;
     log_level_t ftd_level{LEVEL_UNKNOWN};
+};
+
+struct format_partition_def {
+    explicit format_partition_def(std::string name) : fpd_name(std::move(name))
+    {
+    }
+
+    struct path_restriction {
+        std::string p_glob;
+
+        bool matches(const char* fn) const;
+    };
+
+    std::string fpd_name;
+    std::string fpd_description;
+    std::vector<path_restriction> fpd_paths;
+    factory_container<lnav::pcre2pp::code, int>::with_default_args<PCRE2_DOTALL>
+        fpd_pattern;
+    log_level_t fpd_level{LEVEL_UNKNOWN};
 };
 
 #endif

@@ -135,6 +135,8 @@ enum class role_t : int32_t {
     VCR_FUNCTION,
     VCR_TYPE,
     VCR_SEP_REF_ACC,
+    VCR_SUGGESTION,
+    VCR_SELECTED_TEXT,
 
     VCR__MAX
 };
@@ -535,6 +537,14 @@ h6(S str)
                           VC_ROLE.template value(role_t::VCR_H6));
 }
 
+template<typename S>
+inline std::pair<S, string_attr_pair>
+suggestion(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.template value(role_t::VCR_SUGGESTION));
+}
+
 namespace literals {
 
 inline std::pair<std::string, string_attr_pair> operator"" _ok(const char* str,
@@ -563,6 +573,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _info(
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.template value(role_t::VCR_INFO));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _status_title(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.template value(role_t::VCR_STATUS_TITLE));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _symbol(

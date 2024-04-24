@@ -1,0 +1,3 @@
+log_line,log_time,log_level,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
+1,2015-03-24 14:02:50.000,info,127.0.0.1,GET,<NULL>,<NULL>,/includes/js/combined-javascript.js,<NULL>,-,HTTP/1.1,65508,200,<NULL>,<NULL>,6927348000,0,<NULL>,<NULL>,<NULL>,<NULL>
+2,2015-03-24 14:02:50.000,error,127.0.0.1,GET,<NULL>,<NULL>,/bad.foo,<NULL>,-,HTTP/1.1,65508,404,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>

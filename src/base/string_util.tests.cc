@@ -114,3 +114,20 @@ TEST_CASE("strnatcmp")
         CHECK(ipcmp == -1);
     }
 }
+
+TEST_CASE("last_word_str")
+{
+    {
+        std::string s = "foobar baz";
+
+        auto rc = last_word_str(&s[0], s.length(), 6);
+        CHECK(s.length() == rc);
+    }
+    {
+        std::string s = "com.example.foo";
+
+        auto rc = last_word_str(&s[0], s.length(), 6);
+        s.resize(rc);
+        CHECK(s == "foo");
+    }
+}

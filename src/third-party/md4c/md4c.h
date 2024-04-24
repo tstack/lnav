@@ -2,7 +2,7 @@
  * MD4C: Markdown parser for C
  * (http://github.com/mity/md4c)
  *
- * Copyright (c) 2016-2020 Martin Mitas
+ * Copyright (c) 2016-2024 Martin Mitáš
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -284,6 +284,7 @@ typedef struct MD_BLOCK_TD_DETAIL {
 typedef struct MD_SPAN_A_DETAIL {
     MD_ATTRIBUTE href;
     MD_ATTRIBUTE title;
+    int is_autolink;            /* nonzero if this is an autolink */
 } MD_SPAN_A_DETAIL;
 
 /* Detailed info for MD_SPAN_IMG. */
@@ -316,6 +317,7 @@ typedef struct MD_SPAN_WIKILINK {
 #define MD_FLAG_LATEXMATHSPANS              0x1000  /* Enable $ and $$ containing LaTeX equations. */
 #define MD_FLAG_WIKILINKS                   0x2000  /* Enable wiki links extension. */
 #define MD_FLAG_UNDERLINE                   0x4000  /* Enable underline extension (and disables '_' for normal emphasis). */
+#define MD_FLAG_HARD_SOFT_BREAKS            0x8000  /* Force all soft breaks to act as hard breaks. */
 
 #define MD_FLAG_PERMISSIVEAUTOLINKS         (MD_FLAG_PERMISSIVEEMAILAUTOLINKS | MD_FLAG_PERMISSIVEURLAUTOLINKS | MD_FLAG_PERMISSIVEWWWAUTOLINKS)
 #define MD_FLAG_NOHTML                      (MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS)

@@ -84,6 +84,12 @@ public:
     static const int XT_BUTTON__MASK
         = XT_SCROLL_WHEEL_FLAG | XT_BUTTON1 | XT_BUTTON2 | XT_BUTTON3;
 
+    static const int XT_MODIFIER_SHIFT = 4;
+    static const int XT_MODIFIER_META = 8;
+    static const int XT_MODIFIER_CTRL = 16;
+    static const int XT_MODIFIER_MASK
+        = XT_MODIFIER_SHIFT | XT_MODIFIER_META | XT_MODIFIER_CTRL;
+
     static const char* XT_TERMCAP;
     static const char* XT_TERMCAP_TRACKING;
     static const char* XT_TERMCAP_SGR;

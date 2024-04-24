@@ -1,4 +1,4 @@
-[1m[4mmatch_index [0m[1m[4mcapture_index [0m[1m[4mcapture_name [0m[1m[4mcapture_count [0m[1m[4mrange_start [0m[1m[4mrange_stop [0m[1m[4mcontent  [0m
+[1m[4mmatch_index[0m[1m[4m [0m[1m[4mcapture_index[0m[1m[4m [0m[1m[4mcapture_name[0m[1m[4m [0m[1m[4mcapture_count[0m[1m[4m [0m[1m[4mrange_start[0m[1m[4m [0m[1m[4mrange_stop[0m[1m[4m [0m[1m[4mcontent [0m[1m[4m [0m
           0             0       <NULL>             3           1          9 abc=def; 
           0             1       <NULL>             3           1          4 abc      
 [1m          0[0m[1m [0m[1m            2[0m[1m [0m[1m      <[0m[1mNULL[0m[1m>[0m[1m [0m[1m            3[0m[1m [0m[1m          5[0m[1m [0m[1m         8[0m[1m [0m[1mdef      [0m

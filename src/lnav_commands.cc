@@ -44,6 +44,7 @@
 #include "base/attr_line.builder.hh"
 #include "base/auto_mem.hh"
 #include "base/fs_util.hh"
+#include "base/humanize.hh"
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
 #include "base/isc.hh"
@@ -51,6 +52,7 @@
 #include "base/paths.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
+#include "breadcrumb_curses.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
@@ -385,7 +387,7 @@ com_set_file_timezone(exec_context& ec,
             const auto* tz = date::locate_zone(split_args[1]);
             auto pattern = split_args.size() == 2
                 ? line_pair->first->get_filename()
-                : split_args[2];
+                : ghc::filesystem::path(split_args[2]);
 
             if (!ec.ec_dry_run) {
                 static auto& safe_options_hier
@@ -436,47 +438,68 @@ com_set_file_timezone(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
 {
-    std::string retval;
-
     auto* tc = *lnav_data.ld_view_stack.top();
     auto* lss = dynamic_cast<logfile_sub_source*>(tc->get_sub_source());
 
-    if (lss != nullptr && lss->text_line_count() > 0) {
-        auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
-        if (line_pair) {
-            try {
-                static auto& safe_options_hier
-                    = injector::get<lnav::safe_file_options_hier&>();
-
-                safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
-                    safe_options_hier);
-                auto file_zone = date::get_tzdb().current_zone()->name();
-                auto pattern_arg = line_pair->first->get_filename();
-                auto match_res
-                    = options_hier->match(line_pair->first->get_filename());
-                if (match_res) {
-                    file_zone
-                        = match_res->second.fo_default_zone.pp_value->name();
-                    pattern_arg = match_res->first;
-                }
-
-                retval = fmt::format(FMT_STRING("{} {} {}"),
-                                     trim(cmdline),
-                                     date::get_tzdb().current_zone()->name(),
-                                     pattern_arg);
-            } catch (const std::runtime_error& e) {
-                log_error("cannot get timezones: %s", e.what());
-            }
-        }
+    if (lss == nullptr || lss->text_line_count() == 0) {
+        return {};
     }
 
-    return retval;
+    shlex lexer(cmdline);
+    auto split_res = lexer.split(ec.create_resolver());
+    if (split_res.isErr()) {
+        return {};
+    }
+
+    auto line_pair = lss->find_line_with_file(lss->at(tc->get_selection()));
+    if (!line_pair) {
+        return {};
+    }
+
+    auto elems = split_res.unwrap();
+    auto pattern_arg = line_pair->first->get_filename();
+    if (elems.size() == 1) {
+        try {
+            static auto& safe_options_hier
+                = injector::get<lnav::safe_file_options_hier&>();
+
+            safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
+                safe_options_hier);
+            auto file_zone = date::get_tzdb().current_zone()->name();
+            auto match_res = options_hier->match(pattern_arg);
+            if (match_res) {
+                file_zone = match_res->second.fo_default_zone.pp_value->name();
+                pattern_arg = match_res->first;
+
+                auto new_prompt = fmt::format(FMT_STRING("{} {} {}"),
+                                              trim(cmdline),
+                                              file_zone,
+                                              pattern_arg);
+
+                return {new_prompt};
+            }
+
+            return {"", file_zone + " "};
+        } catch (const std::runtime_error& e) {
+            log_error("cannot get timezones: %s", e.what());
+        }
+    }
+    auto arg_path = ghc::filesystem::path(pattern_arg);
+    auto arg_parent = arg_path.parent_path().string() + "/";
+    if (elems.size() == 2 && endswith(cmdline, " ")) {
+        return {"", arg_parent};
+    }
+    if (elems.size() == 3 && elems.back().se_value == arg_parent) {
+        return {"", arg_path.filename().string()};
+    }
+
+    return {};
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
 {
     std::string retval;
@@ -511,7 +534,7 @@ com_clear_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
         }
     }
 
-    return retval;
+    return {retval};
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -676,6 +699,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         std::string all_args = remaining_args(cmdline, args);
         auto* tc = *lnav_data.ld_view_stack.top();
         nonstd::optional<vis_line_t> dst_vl;
+        auto is_location = false;
 
         if (startswith(all_args, "#")) {
             auto* ta = dynamic_cast<text_anchors*>(tc->get_sub_source());
@@ -688,6 +712,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (!dst_vl) {
                 return ec.make_error("unable to find anchor: {}", all_args);
             }
+            is_location = true;
         }
 
         auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
@@ -703,7 +728,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             auto top_time_opt = ttt->time_for_row(tc->get_selection());
 
             if (top_time_opt) {
-                auto top_time_tv = top_time_opt.value();
+                auto top_time_tv = top_time_opt.value().ri_time;
                 struct tm top_tm;
 
                 localtime_r(&top_time_tv.tv_sec, &top_tm);
@@ -724,7 +749,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             if (!tv_opt) {
                 return ec.make_error("cannot get time for the top row");
             }
-            tv = tv_opt.value();
+            tv = tv_opt.value().ri_time;
 
             vis_line_t vl = tc->get_selection(), new_vl;
             bool done = false;
@@ -856,7 +881,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             return Err(um);
         }
 
-        dst_vl | [&ec, tc, &retval](auto new_top) {
+        dst_vl | [&ec, tc, &retval, is_location](auto new_top) {
             if (ec.ec_dry_run) {
                 retval = "info: will move to line "
                     + std::to_string((int) new_top);
@@ -864,6 +889,9 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 tc->get_sub_source()->get_location_history() |
                     [new_top](auto lh) { lh->loc_history_append(new_top); };
                 tc->set_selection(new_top);
+                if (tc->is_selectable() && is_location) {
+                    tc->set_top(new_top - 2_vl, false);
+                }
 
                 retval = "";
             }
@@ -1017,7 +1045,7 @@ com_mark_expr(exec_context& ec,
             if (set_res.isErr()) {
                 return Err(set_res.unwrapErr());
             }
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the text view");
         } else {
             auto set_res = lss.set_sql_marker(expr, stmt.release());
@@ -1031,18 +1059,20 @@ com_mark_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_mark_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
     textview_curses* tc = *lnav_data.ld_view_stack.top();
 
     if (tc != &lnav_data.ld_views[LNV_LOG]) {
-        return "";
+        return {""};
     }
 
-    return fmt::format(FMT_STRING("{} {}"),
-                       trim(cmdline),
-                       trim(lnav_data.ld_log_source.get_sql_marker_text()));
+    return {
+        fmt::format(FMT_STRING("{} {}"),
+                    trim(cmdline),
+                    trim(lnav_data.ld_log_source.get_sql_marker_text())),
+    };
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -1186,7 +1216,12 @@ com_goto_location(exec_context& ec,
                         ? lh->loc_history_back(tc->get_selection())
                         : lh->loc_history_forward(tc->get_selection());
                 }
-                | [tc](auto new_top) { tc->set_selection(new_top); };
+                | [tc](auto new_top) {
+                      tc->set_selection(new_top);
+                      if (tc->is_selectable()) {
+                          tc->set_top(new_top - 2_vl, false);
+                      }
+                  };
         };
     }
 
@@ -1216,6 +1251,9 @@ com_next_section(exec_context& ec,
         }
 
         tc->set_selection(adj_opt.value());
+        if (tc->is_selectable()) {
+            tc->set_top(adj_opt.value() - 2_vl, false);
+        }
     }
 
     return Ok(retval);
@@ -1244,6 +1282,9 @@ com_prev_section(exec_context& ec,
         }
 
         tc->set_selection(adj_opt.value());
+        if (tc->is_selectable()) {
+            tc->set_top(adj_opt.value() - 2_vl, false);
+        }
     }
 
     return Ok(retval);
@@ -1903,10 +1944,13 @@ com_save_to(exec_context& ec,
 
         attr_line_t al(std::string(buffer, rc));
 
-        lnav_data.ld_preview_source.replace_with(al)
+        lnav_data.ld_preview_view[0].set_sub_source(
+            &lnav_data.ld_preview_source[0]);
+        lnav_data.ld_preview_source[0]
+            .replace_with(al)
             .set_text_format(detect_text_format(al.get_string()))
             .truncate_to(10);
-        lnav_data.ld_preview_status_source.get_description().set_value(
+        lnav_data.ld_preview_status_source[0].get_description().set_value(
             "First lines of file: %s", split_args[0].c_str());
     } else {
         retval = fmt::format(FMT_STRING("info: Wrote {:L} rows to {}"),
@@ -1948,6 +1992,47 @@ com_pipe_to(exec_context& ec,
     auto* tc = *lnav_data.ld_view_stack.top();
     auto bv = combined_user_marks(tc->get_bookmarks());
     bool pipe_line_to = (args[0] == "pipe-line-to");
+    auto path_v = ec.ec_path_stack;
+    std::map<std::string, std::string> extra_env;
+
+    if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
+        log_data_helper ldh(lnav_data.ld_log_source);
+        char tmp_str[64];
+
+        ldh.parse_line(ec.ec_top_line, true);
+        auto format = ldh.ldh_file->get_format();
+        auto source_path = format->get_source_path();
+        path_v.insert(path_v.end(), source_path.begin(), source_path.end());
+
+        extra_env["log_line"] = fmt::to_string((int) ec.ec_top_line);
+        sql_strftime(tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
+        extra_env["log_time"] = tmp_str;
+        extra_env["log_path"] = ldh.ldh_file->get_filename();
+        extra_env["log_level"] = ldh.ldh_line->get_level_name();
+        if (ldh.ldh_line_values.lvv_opid_value) {
+            extra_env["log_opid"] = ldh.ldh_line_values.lvv_opid_value.value();
+        }
+        auto read_res = ldh.ldh_file->read_raw_message(ldh.ldh_line);
+        if (read_res.isOk()) {
+            auto raw_text = to_string(read_res.unwrap());
+            extra_env["log_raw_text"] = raw_text;
+        }
+        for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
+            extra_env[ldh_line_value.lv_meta.lvm_name.to_string()]
+                = ldh_line_value.to_string();
+        }
+        auto iter = ldh.ldh_parser->dp_pairs.begin();
+        for (size_t lpc = 0; lpc < ldh.ldh_parser->dp_pairs.size();
+             lpc++, ++iter)
+        {
+            std::string colname = ldh.ldh_parser->get_element_string(
+                iter->e_sub_elements->front());
+            colname = ldh.ldh_namer->add_column(colname).to_string();
+            std::string val = ldh.ldh_parser->get_element_string(
+                iter->e_sub_elements->back());
+            extra_env[colname] = val;
+        }
+    }
 
     std::string cmd = trim(remaining_args(cmdline, args));
     auto for_child_res = auto_pipe::for_child_fds(STDIN_FILENO, STDOUT_FILENO);
@@ -1971,66 +2056,22 @@ com_pipe_to(exec_context& ec,
                                  strerror(errno));
 
         case 0: {
-            const char* args[] = {
+            const char* exec_args[] = {
                 "sh",
                 "-c",
                 cmd.c_str(),
                 nullptr,
             };
-            auto path_v = ec.ec_path_stack;
             std::string path;
 
             dup2(STDOUT_FILENO, STDERR_FILENO);
             path_v.emplace_back(lnav::paths::dotlnav() / "formats/default");
 
-            if (pipe_line_to && tc == &lnav_data.ld_views[LNV_LOG]) {
-                auto& lss = lnav_data.ld_log_source;
-                log_data_helper ldh(lss);
-                char tmp_str[64];
-
-                ldh.parse_line(ec.ec_top_line, true);
-                auto format = ldh.ldh_file->get_format();
-                auto source_path = format->get_source_path();
-                path_v.insert(
-                    path_v.end(), source_path.begin(), source_path.end());
-
-                snprintf(tmp_str, sizeof(tmp_str), "%d", (int) ec.ec_top_line);
-                setenv("log_line", tmp_str, 1);
-                sql_strftime(
-                    tmp_str, sizeof(tmp_str), ldh.ldh_line->get_timeval());
-                setenv("log_time", tmp_str, 1);
-                setenv("log_path", ldh.ldh_file->get_filename().c_str(), 1);
-                setenv("log_level", ldh.ldh_line->get_level_name(), 1);
-                if (ldh.ldh_line_values.lvv_opid_value) {
-                    setenv("log_opid",
-                           ldh.ldh_line_values.lvv_opid_value->c_str(),
-                           1);
-                }
-                auto read_res = ldh.ldh_file->read_raw_message(ldh.ldh_line);
-                if (read_res.isOk()) {
-                    auto raw_text = to_string(read_res.unwrap());
-                    setenv("log_raw_text", raw_text.c_str(), 1);
-                }
-                for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
-                    setenv(ldh_line_value.lv_meta.lvm_name.get(),
-                           ldh_line_value.to_string().c_str(),
-                           1);
-                }
-                auto iter = ldh.ldh_parser->dp_pairs.begin();
-                for (size_t lpc = 0; lpc < ldh.ldh_parser->dp_pairs.size();
-                     lpc++, ++iter)
-                {
-                    std::string colname = ldh.ldh_parser->get_element_string(
-                        iter->e_sub_elements->front());
-                    colname = ldh.ldh_namer->add_column(colname).to_string();
-                    std::string val = ldh.ldh_parser->get_element_string(
-                        iter->e_sub_elements->back());
-                    setenv(colname.c_str(), val.c_str(), 1);
-                }
-            }
-
             setenv("PATH", lnav::filesystem::build_path(path_v).c_str(), 1);
-            execvp(args[0], (char* const*) args);
+            for (const auto& pair : extra_env) {
+                setenv(pair.first.c_str(), pair.second.c_str(), 1);
+            }
+            execvp(exec_args[0], (char* const*) exec_args);
             _exit(1);
             break;
         }
@@ -2220,7 +2261,7 @@ com_highlight(exec_context& ec,
         if (ec.ec_dry_run) {
             hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
 
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the view");
 
             retval = "";
@@ -2340,9 +2381,12 @@ com_filter(exec_context& ec,
         }
         if (ec.ec_dry_run) {
             if (args[0] == "filter-in" && !fs.empty()) {
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "Match preview for :filter-in only works if there are no "
-                    "other filters");
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value(
+                        "Match preview for :filter-in only works if there are "
+                        "no "
+                        "other filters");
                 retval = "";
             } else {
                 auto& hm = tc->get_highlights();
@@ -2355,9 +2399,11 @@ com_filter(exec_context& ec,
                 hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                 tc->reload_data();
 
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "Matches are highlighted in %s in the text view",
-                    role == role_t::VCR_DIFF_DELETE ? "red" : "green");
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value(
+                        "Matches are highlighted in %s in the text view",
+                        role == role_t::VCR_DIFF_DELETE ? "red" : "green");
 
                 retval = "";
             }
@@ -2386,6 +2432,24 @@ com_filter(exec_context& ec,
     }
 
     return Ok(retval);
+}
+
+static readline_context::prompt_result_t
+com_filter_prompt(exec_context& ec, const std::string& cmdline)
+{
+    const auto* tc = lnav_data.ld_view_stack.top().value();
+    std::vector<std::string> args;
+
+    split_ws(cmdline, args);
+    if (args.size() > 1) {
+        return {};
+    }
+
+    if (tc->tc_selected_text) {
+        return {"", tc->tc_selected_text->sti_value};
+    }
+
+    return {"", tc->get_current_search()};
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -2544,7 +2608,7 @@ com_filter_expr(exec_context& ec,
             if (set_res.isErr()) {
                 return Err(set_res.unwrapErr());
             }
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the text view");
         } else {
             lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
@@ -2564,18 +2628,20 @@ com_filter_expr(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_filter_expr_prompt(exec_context& ec, const std::string& cmdline)
 {
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
+    auto* tc = *lnav_data.ld_view_stack.top();
 
     if (tc != &lnav_data.ld_views[LNV_LOG]) {
-        return "";
+        return {""};
     }
 
-    return fmt::format(FMT_STRING("{} {}"),
-                       trim(cmdline),
-                       trim(lnav_data.ld_log_source.get_sql_filter_text()));
+    return {
+        fmt::format(FMT_STRING("{} {}"),
+                    trim(cmdline),
+                    trim(lnav_data.ld_log_source.get_sql_filter_text())),
+    };
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -2657,9 +2723,12 @@ com_create_logline_table(exec_context& ec,
             if (ec.ec_dry_run) {
                 attr_line_t al(ldt->get_table_statement());
 
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "The following table will be created:");
-                lnav_data.ld_preview_source.replace_with(al).set_text_format(
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value("The following table will be created:");
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
                     text_format_t::TF_SQL);
 
                 return Ok(std::string());
@@ -2774,10 +2843,12 @@ com_create_search_table(exec_context& ec,
 
             attr_line_t al(lst->get_table_statement());
 
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The following table will be created:");
 
-            lnav_data.ld_preview_source.replace_with(al).set_text_format(
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
                 text_format_t::TF_SQL);
 
             return Ok(std::string());
@@ -3003,6 +3074,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (file_iter == lnav_data.ld_active_files.fc_files.end()) {
             auto_mem<char> abspath;
             struct stat st;
+            size_t url_index;
 
             if (is_url(fn.c_str())) {
 #ifndef HAVE_LIBCURL
@@ -3022,9 +3094,16 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     retval = "";
                 }
 #endif
-            } else if (fn.find("://") != std::string::npos) {
+            } else if ((url_index = fn.find("://")) != std::string::npos) {
                 const auto& cfg
                     = injector::get<const lnav::url_handler::config&>();
+                const auto HOST_REGEX
+                    = lnav::pcre2pp::code::from_const("://(?:\\?|$)");
+
+                auto find_res = HOST_REGEX.find_in(fn).ignore_error();
+                if (find_res) {
+                    fn.insert(url_index + 3, "localhost");
+                }
 
                 auto_mem<CURLU> cu(curl_url_cleanup);
                 cu = curl_url();
@@ -3177,31 +3256,37 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     if (ec.ec_dry_run) {
-        lnav_data.ld_preview_source.clear();
+        lnav_data.ld_preview_view[0].set_sub_source(
+            &lnav_data.ld_preview_source[0]);
+        lnav_data.ld_preview_source[0].clear();
         if (!fc.fc_file_names.empty()) {
             auto iter = fc.fc_file_names.begin();
-            std::string fn = iter->first;
-            auto_fd preview_fd;
+            std::string fn_str = iter->first;
 
-            if (fn.find(':') != std::string::npos) {
+            if (fn_str.find(':') != std::string::npos) {
                 auto id = lnav_data.ld_preview_generation;
-                lnav_data.ld_preview_status_source.get_description()
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
                     .set_cylon(true)
-                    .set_value("Loading %s...", fn.c_str());
-                lnav_data.ld_preview_source.clear();
+                    .set_value("Loading %s...", fn_str.c_str());
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0].clear();
 
                 isc::to<tailer::looper&, services::remote_tailer_t>().send(
-                    [id, fn](auto& tlooper) {
-                        auto rp_opt = humanize::network::path::from_str(fn);
+                    [id, fn_str](auto& tlooper) {
+                        auto rp_opt = humanize::network::path::from_str(fn_str);
                         if (rp_opt) {
                             tlooper.load_preview(id, *rp_opt);
                         }
                     });
-                lnav_data.ld_preview_view.set_needs_update();
-            } else if (lnav::filesystem::is_glob(fn.c_str())) {
+                lnav_data.ld_preview_view[0].set_needs_update();
+            } else if (lnav::filesystem::is_glob(fn_str)) {
                 static_root_mem<glob_t, globfree> gl;
 
-                if (glob(fn.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
+                if (glob(fn_str.c_str(), GLOB_NOCHECK, nullptr, gl.inout())
+                    == 0)
+                {
                     attr_line_t al;
 
                     for (size_t lpc = 0; lpc < gl->gl_pathc && lpc < 10; lpc++)
@@ -3214,45 +3299,134 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                 std::to_string(gl->gl_pathc - 10)))
                             .append(" files not shown ...");
                     }
-                    lnav_data.ld_preview_status_source.get_description()
+                    lnav_data.ld_preview_status_source[0]
+                        .get_description()
                         .set_value("The following files will be loaded:");
-                    lnav_data.ld_preview_source.replace_with(al);
+                    lnav_data.ld_preview_view[0].set_sub_source(
+                        &lnav_data.ld_preview_source[0]);
+                    lnav_data.ld_preview_source[0].replace_with(al);
                 } else {
-                    return ec.make_error("failed to evaluate glob -- {}", fn);
+                    return ec.make_error("failed to evaluate glob -- {}",
+                                         fn_str);
                 }
-            } else if ((preview_fd = open(fn.c_str(), O_RDONLY)) == -1) {
-                return ec.make_error(
-                    "unable to open file3: {} -- {}", fn, strerror(errno));
             } else {
-                line_buffer lb;
+                auto fn = ghc::filesystem::path(fn_str);
+                auto detect_res = detect_file_format(fn);
                 attr_line_t al;
-                file_range range;
-                std::string lines;
+                attr_line_builder alb(al);
 
-                lb.set_fd(preview_fd);
-                for (int lpc = 0; lpc < 10; lpc++) {
-                    auto load_result = lb.load_next_line(range);
+                switch (detect_res) {
+                    case file_format_t::ARCHIVE: {
+                        auto describe_res = archive_manager::describe(fn);
 
-                    if (load_result.isErr()) {
+                        if (describe_res.isOk()) {
+                            auto arc_res = describe_res.unwrap();
+
+                            if (arc_res.is<archive_manager::archive_info>()) {
+                                auto ai
+                                    = arc_res
+                                          .get<archive_manager::archive_info>();
+                                auto lines_remaining = size_t{9};
+
+                                al.append("Archive: ")
+                                    .append(
+                                        lnav::roles::symbol(ai.ai_format_name))
+                                    .append("\n");
+                                for (const auto& entry : ai.ai_entries) {
+                                    if (lines_remaining == 0) {
+                                        break;
+                                    }
+                                    lines_remaining -= 1;
+
+                                    char timebuf[64];
+                                    sql_strftime(timebuf,
+                                                 sizeof(timebuf),
+                                                 entry.e_mtime,
+                                                 0,
+                                                 'T');
+                                    al.append("    ")
+                                        .append(entry.e_mode)
+                                        .append(" ")
+                                        .appendf(
+                                            FMT_STRING("{:>8}"),
+                                            humanize::file_size(
+                                                entry.e_size.value(),
+                                                humanize::alignment::columnar))
+                                        .append(" ")
+                                        .append(timebuf)
+                                        .append(" ")
+                                        .append(lnav::roles::file(entry.e_name))
+                                        .append("\n");
+                                }
+                            }
+                        } else {
+                            al.append(describe_res.unwrapErr());
+                        }
                         break;
                     }
+                    case file_format_t::UNKNOWN: {
+                        auto open_res
+                            = lnav::filesystem::open_file(fn, O_RDONLY);
 
-                    auto li = load_result.unwrap();
+                        if (open_res.isErr()) {
+                            return ec.make_error("unable to open -- {}", fn);
+                        }
+                        auto preview_fd = open_res.unwrap();
+                        line_buffer lb;
+                        file_range range;
 
-                    range = li.li_file_range;
-                    auto read_result = lb.read_range(range);
-                    if (read_result.isErr()) {
+                        lb.set_fd(preview_fd);
+                        for (int lpc = 0; lpc < 10; lpc++) {
+                            auto load_result = lb.load_next_line(range);
+
+                            if (load_result.isErr()) {
+                                break;
+                            }
+
+                            auto li = load_result.unwrap();
+
+                            range = li.li_file_range;
+                            if (!li.li_utf8_scan_result.is_valid()) {
+                                range.fr_size = 16;
+                            }
+                            auto read_result = lb.read_range(range);
+                            if (read_result.isErr()) {
+                                break;
+                            }
+
+                            auto sbr = read_result.unwrap();
+                            auto sf = sbr.to_string_fragment();
+                            if (li.li_utf8_scan_result.is_valid()) {
+                                alb.append(sf);
+                            } else {
+                                {
+                                    auto ag = alb.with_attr(
+                                        VC_ROLE.value(role_t::VCR_FILE_OFFSET));
+                                    alb.appendf(FMT_STRING("{: >16x} "),
+                                                range.fr_offset);
+                                }
+                                alb.append_as_hexdump(sf);
+                                alb.append("\n");
+                            }
+                        }
                         break;
                     }
-
-                    auto sbr = read_result.unwrap();
-                    lines.append(sbr.get_data(), sbr.length());
+                    case file_format_t::SQLITE_DB: {
+                        alb.append(fmt::to_string(detect_res));
+                        break;
+                    }
+                    case file_format_t::REMOTE: {
+                        break;
+                    }
                 }
 
-                lnav_data.ld_preview_source.replace_with(al.with_string(lines))
-                    .set_text_format(detect_text_format(al.get_string()));
-                lnav_data.ld_preview_status_source.get_description().set_value(
-                    "For file: %s", fn.c_str());
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
+                    detect_text_format(al.get_string()));
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value("For file: %s", fn.c_str());
             }
         }
     } else {
@@ -3616,13 +3790,13 @@ com_comment(exec_context& ec,
     return Ok(retval);
 }
 
-static std::string
+static readline_context::prompt_result_t
 com_comment_prompt(exec_context& ec, const std::string& cmdline)
 {
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
+    auto* tc = *lnav_data.ld_view_stack.top();
 
     if (tc != &lnav_data.ld_views[LNV_LOG]) {
-        return "";
+        return {""};
     }
     auto& lss = lnav_data.ld_log_source;
 
@@ -3633,10 +3807,10 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
         auto buf = auto_buffer::alloc(trimmed_comment.size() + 16);
         quote_content(buf, trimmed_comment, 0);
 
-        return trim(cmdline) + " " + buf.to_string();
+        return {trim(cmdline) + " " + buf.to_string()};
     }
 
-    return "";
+    return {""};
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -3655,7 +3829,8 @@ com_clear_comment(exec_context& ec,
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return ec.make_error(
-                "The :clear-comment command only works in the log view");
+                "The :clear-comment command only works in the log "
+                "view");
         }
         auto& lss = lnav_data.ld_log_source;
 
@@ -3664,10 +3839,12 @@ com_clear_comment(exec_context& ec,
             bookmark_metadata& line_meta = *(line_meta_opt.value());
 
             line_meta.bm_comment.clear();
-            if (line_meta.empty()) {
-                lss.erase_bookmark_metadata(tc->get_selection());
+            if (line_meta.empty(bookmark_metadata::categories::notes)) {
                 tc->set_user_mark(
                     &textview_curses::BM_META, tc->get_selection(), false);
+                if (line_meta.empty(bookmark_metadata::categories::any)) {
+                    lss.erase_bookmark_metadata(tc->get_selection());
+                }
             }
 
             lss.set_line_meta_changed();
@@ -3747,7 +3924,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
         if (line_meta_opt) {
-            bookmark_metadata& line_meta = *(line_meta_opt.value());
+            auto& line_meta = *(line_meta_opt.value());
 
             for (size_t lpc = 1; lpc < args.size(); lpc++) {
                 std::string tag = args[lpc];
@@ -3757,7 +3934,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 }
                 line_meta.remove_tag(tag);
             }
-            if (line_meta.empty()) {
+            if (line_meta.empty(bookmark_metadata::categories::notes)) {
                 tc->set_user_mark(
                     &textview_curses::BM_META, tc->get_selection(), false);
             }
@@ -3793,7 +3970,8 @@ com_delete_tags(exec_context& ec,
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
             return ec.make_error(
-                "The :delete-tag command only works in the log view");
+                "The :delete-tag command only works in the log "
+                "view");
         }
 
         auto& known_tags = bookmark_metadata::KNOWN_TAGS;
@@ -3829,12 +4007,15 @@ com_delete_tags(exec_context& ec,
                 line_meta->remove_tag(tag);
             }
 
-            if (line_meta->empty()) {
-                lss.erase_bookmark_metadata(*iter);
-                size_t off = distance(vbm.begin(), iter);
+            if (line_meta->empty(bookmark_metadata::categories::notes)) {
+                size_t off = std::distance(vbm.begin(), iter);
+                auto vl = *iter;
+                tc->set_user_mark(&textview_curses::BM_META, vl, false);
+                if (line_meta->empty(bookmark_metadata::categories::any)) {
+                    lss.erase_bookmark_metadata(vl);
+                }
 
-                tc->set_user_mark(&textview_curses::BM_META, *iter, false);
-                iter = next(vbm.begin(), off);
+                iter = std::next(vbm.begin(), off);
             } else {
                 ++iter;
             }
@@ -3867,7 +4048,7 @@ com_partition_name(exec_context& ec,
             args[1] = trim(remaining_args(cmdline, args));
 
             tc.set_user_mark(
-                &textview_curses::BM_META, tc.get_selection(), true);
+                &textview_curses::BM_PARTITION, tc.get_selection(), true);
 
             auto& line_meta = lss.get_bookmark_metadata(tc.get_selection());
 
@@ -3893,7 +4074,7 @@ com_clear_partition(exec_context& ec,
     } else if (args.size() == 1) {
         textview_curses& tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source& lss = lnav_data.ld_log_source;
-        auto& bv = tc.get_bookmarks()[&textview_curses::BM_META];
+        auto& bv = tc.get_bookmarks()[&textview_curses::BM_PARTITION];
         nonstd::optional<vis_line_t> part_start;
 
         if (binary_search(bv.begin(), bv.end(), tc.get_selection())) {
@@ -3909,10 +4090,12 @@ com_clear_partition(exec_context& ec,
             auto& line_meta = lss.get_bookmark_metadata(part_start.value());
 
             line_meta.bm_name.clear();
-            if (line_meta.empty()) {
-                lss.erase_bookmark_metadata(part_start.value());
+            if (line_meta.empty(bookmark_metadata::categories::partition)) {
                 tc.set_user_mark(
-                    &textview_curses::BM_META, part_start.value(), false);
+                    &textview_curses::BM_PARTITION, part_start.value(), false);
+                if (line_meta.empty(bookmark_metadata::categories::any)) {
+                    lss.erase_bookmark_metadata(part_start.value());
+                }
             }
 
             retval = "info: cleared partition name";
@@ -4062,7 +4245,8 @@ com_summarize(exec_context& ec,
                 query += ",";
             }
             query_frag = sqlite3_mprintf(
-                " \"count_%s\" desc, \"c_%s\" collate naturalnocase asc",
+                " \"count_%s\" desc, \"c_%s\" collate "
+                "naturalnocase asc",
                 iter->c_str(),
                 iter->c_str());
             query += query_frag;
@@ -4247,7 +4431,7 @@ com_zoom_to(exec_context& ec,
                     auto old_time_opt = lnav_data.ld_hist_source2.time_for_row(
                         lnav_data.ld_views[LNV_HISTOGRAM].get_top());
                     if (old_time_opt) {
-                        old_time = old_time_opt.value();
+                        old_time = old_time_opt.value().ri_time;
                         rebuild_hist();
                         lnav_data.ld_hist_source2.row_for_time(old_time) |
                             [](auto new_top) {
@@ -4268,7 +4452,7 @@ com_zoom_to(exec_context& ec,
                     spectro_view.reload_data();
                     if (old_time_opt) {
                         lnav_data.ld_spectro_source->row_for_time(
-                            old_time_opt.value())
+                            old_time_opt.value().ri_time)
                             | [](auto new_top) {
                                   lnav_data.ld_views[LNV_SPECTRO].set_selection(
                                       new_top);
@@ -4366,7 +4550,8 @@ com_export_session_to(exec_context& ec,
                 setvbuf(stdout, nullptr, _IONBF, 0);
                 to_term = true;
                 fprintf(outfile,
-                        "\n---------------- Press any key to exit lo-fi "
+                        "\n---------------- Press any key to exit "
+                        "lo-fi "
                         "display "
                         "----------------\n\n");
             } else {
@@ -4491,7 +4676,9 @@ com_toggle_field(exec_context& ec,
                     if (hide) {
                         if (lnav_data.ld_rl_view != nullptr) {
                             lnav_data.ld_rl_view->set_alt_value(
-                                HELP_MSG_1(x, "to quickly show hidden fields"));
+                                HELP_MSG_1(x,
+                                           "to quickly show hidden "
+                                           "fields"));
                         }
                     }
                     tc->set_needs_update();
@@ -4542,10 +4729,11 @@ com_hide_line(exec_context& ec,
                     max_time_str, sizeof(max_time_str), max_time_opt.value());
             }
             if (min_time_opt && max_time_opt) {
-                retval = fmt::format(
-                    FMT_STRING("info: hiding lines before {} and after {}"),
-                    min_time_str,
-                    max_time_str);
+                retval
+                    = fmt::format(FMT_STRING("info: hiding lines before {} and "
+                                             "after {}"),
+                                  min_time_str,
+                                  max_time_str);
             } else if (min_time_opt) {
                 retval = fmt::format(FMT_STRING("info: hiding lines before {}"),
                                      min_time_str);
@@ -4554,7 +4742,8 @@ com_hide_line(exec_context& ec,
                                      max_time_str);
             } else {
                 retval
-                    = "info: no lines hidden by time, pass an absolute or "
+                    = "info: no lines hidden by time, pass an "
+                      "absolute or "
                       "relative time";
             }
         } else {
@@ -4577,15 +4766,16 @@ com_hide_line(exec_context& ec,
                     struct exttm tm;
 
                     auto vl = tc->get_selection();
-                    auto log_tv = ttt->time_for_row(vl);
-                    if (log_tv) {
-                        tm = exttm::from_tv(log_tv.value());
+                    auto log_vl_ri = ttt->time_for_row(vl);
+                    if (log_vl_ri) {
+                        tm = exttm::from_tv(log_vl_ri.value().ri_time);
                         tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
                     }
                 }
             } else {
                 return ec.make_error(
-                    "relative time values only work in a time-based view");
+                    "relative time values only work in a "
+                    "time-based view");
             }
         } else if (dts.convert_to_timeval(all_args, tv_abs)) {
             tv_opt = tv_abs;
@@ -4982,9 +5172,11 @@ com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
         auto ec_out = ec.get_output();
         if (ec.ec_dry_run) {
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The text to output:");
-            lnav_data.ld_preview_source.replace_with(attr_line_t(retval));
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_source[0].replace_with(attr_line_t(retval));
             retval = "";
         } else if (ec_out) {
             FILE* outfile = *ec_out;
@@ -5066,10 +5258,12 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (ec.ec_dry_run) {
             attr_line_t al(expanded_cmd);
 
-            lnav_data.ld_preview_status_source.get_description().set_value(
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The command to be executed:");
 
-            lnav_data.ld_preview_source.replace_with(al);
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_source[0].replace_with(al);
 
             return Ok(std::string());
         }
@@ -5142,10 +5336,14 @@ com_config(exec_context& ec,
                 if (ec.ec_dry_run) {
                     attr_line_t al(old_value);
 
-                    lnav_data.ld_preview_source.replace_with(al)
+                    lnav_data.ld_preview_view[0].set_sub_source(
+                        &lnav_data.ld_preview_source[0]);
+                    lnav_data.ld_preview_source[0]
+                        .replace_with(al)
                         .set_text_format(detect_text_format(old_value))
                         .truncate_to(10);
-                    lnav_data.ld_preview_status_source.get_description()
+                    lnav_data.ld_preview_status_source[0]
+                        .get_description()
                         .set_value("Value of option: %s", option.c_str());
 
                     char help_text[1024];
@@ -5391,6 +5589,12 @@ com_quit(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 }
 
 static void
+breadcrumb_prompt(std::vector<std::string>& args)
+{
+    set_view_mode(ln_mode_t::BREADCRUMBS);
+}
+
+static void
 command_prompt(std::vector<std::string>& args)
 {
     auto* tc = *lnav_data.ld_view_stack.top();
@@ -5490,6 +5694,9 @@ command_prompt(std::vector<std::string>& args)
 
     rollback_lnav_config = lnav_config;
     lnav_data.ld_doc_status_source.set_title("Command Help");
+    lnav_data.ld_doc_status_source.set_description(
+        " See " ANSI_BOLD("https://docs.lnav.org/en/latest/"
+                          "commands.html") " for more details");
     add_view_text_possibilities(lnav_data.ld_rl_view,
                                 ln_mode_t::COMMAND,
                                 "filter",
@@ -5520,6 +5727,8 @@ command_prompt(std::vector<std::string>& args)
     lnav_data.ld_rl_view->focus(ln_mode_t::COMMAND,
                                 cget(args, 2).value_or(":"),
                                 cget(args, 3).value_or(""));
+
+    rl_set_help();
 }
 
 static void
@@ -5560,6 +5769,7 @@ search_prompt(std::vector<std::string>& args)
                                 cget(args, 2).value_or("/"),
                                 cget(args, 3).value_or(""));
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
+    lnav_data.ld_doc_status_source.set_description("");
     rl_set_help();
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
@@ -5593,7 +5803,7 @@ search_files_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_mode = ln_mode_t::SEARCH_FILES;
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
-        auto path = lnav::pcre2pp::quote(lf->get_unique_path());
+        auto path = lnav::pcre2pp::quote(lf->get_unique_path().string());
         lnav_data.ld_rl_view->add_possibility(
             ln_mode_t::SEARCH_FILES, "*", path);
     }
@@ -5627,8 +5837,8 @@ search_spectro_details_prompt(std::vector<std::string>& args)
 static void
 sql_prompt(std::vector<std::string>& args)
 {
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
-    textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
+    auto* tc = *lnav_data.ld_view_stack.top();
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
 
@@ -5639,6 +5849,9 @@ sql_prompt(std::vector<std::string>& args)
                                 cget(args, 3).value_or(""));
 
     lnav_data.ld_doc_status_source.set_title("Query Help");
+    lnav_data.ld_doc_status_source.set_description(
+        "See " ANSI_BOLD("https://docs.lnav.org/en/latest/"
+                         "sqlext.html") " for more details");
     rl_set_help();
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -5649,6 +5862,8 @@ sql_prompt(std::vector<std::string>& args)
     tc->reload_data();
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");
+
+    add_sqlite_possibilities();
 }
 
 static void
@@ -5674,6 +5889,7 @@ com_prompt(exec_context& ec,
 {
     static std::map<std::string, std::function<void(std::vector<std::string>&)>>
         PROMPT_TYPES = {
+            {"breadcrumb", breadcrumb_prompt},
             {"command", command_prompt},
             {"script", script_prompt},
             {"search", search_prompt},
@@ -5692,11 +5908,11 @@ com_prompt(exec_context& ec,
         auto split_args_res = lexer.split(ec.create_resolver());
         if (split_args_res.isErr()) {
             auto split_err = split_args_res.unwrapErr();
-            auto um = lnav::console::user_message::error(
-                          "unable to parse file name")
-                          .with_reason(split_err.te_msg)
-                          .with_snippet(lnav::console::snippet::from(
-                              SRC, lexer.to_attr_line(split_err)));
+            auto um
+                = lnav::console::user_message::error("unable to parse prompt")
+                      .with_reason(split_err.te_msg)
+                      .with_snippet(lnav::console::snippet::from(
+                          SRC, lexer.to_attr_line(split_err)));
 
             return Err(um);
         }
@@ -5731,23 +5947,28 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":prompt")
          .with_summary("Open the given prompt")
-         .with_parameter(
-             {"type",
-              "The type of prompt -- command, script, search, sql, user"})
-         .with_parameter(
-             help_text(
-                 "--alt",
-                 "Perform the alternate action for this prompt by default")
-                 .optional())
-         .with_parameter(
-             help_text("prompt", "The prompt to display").optional())
+         .with_parameter({"type",
+                          "The type of prompt -- command, script, "
+                          "search, sql, user"})
+         .with_parameter(help_text("--alt",
+                                   "Perform the alternate action "
+                                   "for this prompt by default")
+                             .optional())
+         .with_parameter(help_text("prompt", "The prompt to display")
+                             .with_enum_values({
+                                 "breadcrumb",
+                                 "command",
+                                 "script",
+                                 "search",
+                                 "sql",
+                             })
+                             .optional())
          .with_parameter(
              help_text("initial-value",
                        "The initial value to fill in for the prompt")
                  .optional())
          .with_example({
-             "To open the command prompt with 'filter-in' already filled "
-             "in",
+             "To open the command prompt with 'filter-in' already filled in",
              "command : 'filter-in '",
          })
          .with_example({
@@ -5781,7 +6002,8 @@ readline_context::command_t STD_COMMANDS[] = {
         "convert-time-to",
         com_convert_time_to,
         help_text(":convert-time-to")
-            .with_summary("Convert the focused timestamp to the given timezone")
+            .with_summary("Convert the focused timestamp to the "
+                          "given timezone")
             .with_parameter(help_text("zone", "The timezone name")),
     },
     {
@@ -5789,7 +6011,8 @@ readline_context::command_t STD_COMMANDS[] = {
         com_set_file_timezone,
         help_text(":set-file-timezone")
             .with_summary("Set the timezone to use for log messages that do "
-                          "not include a timezone.  The timezone is applied to "
+                          "not include a timezone.  The timezone is applied "
+                          "to "
                           "the focused file or the given glob pattern.")
             .with_parameter({"zone", "The timezone name"})
             .with_parameter(help_text{"pattern",
@@ -5803,12 +6026,13 @@ readline_context::command_t STD_COMMANDS[] = {
         "clear-file-timezone",
         com_clear_file_timezone,
         help_text(":clear-file-timezone")
-            .with_summary("Clear the timezone setting for the focused file or "
+            .with_summary("Clear the timezone setting for the "
+                          "focused file or "
                           "the given glob pattern.")
-            .with_parameter(
-                help_text{"pattern",
-                          "The glob pattern to match against files that should "
-                          "no longer use this timezone"})
+            .with_parameter(help_text{"pattern",
+                                      "The glob pattern to match against files "
+                                      "that should "
+                                      "no longer use this timezone"})
             .with_tags({"file-options"}),
         com_clear_file_timezone_prompt,
     },
@@ -5830,7 +6054,8 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_examples(
              {{"To go to line 22", "22"},
               {"To go to the line 75% of the way into the view", "75%"},
-              {"To go to the first message on the first day of 2017",
+              {"To go to the first message on the first day of "
+               "2017",
                "2017-01-01"},
               {"To go to the Screenshots section", "#screenshots"}})
          .with_tags({"navigation"})},
@@ -5851,8 +6076,8 @@ readline_context::command_t STD_COMMANDS[] = {
         com_annotate,
 
         help_text(":annotate")
-            .with_summary(
-                "Analyze the focused log message and attach annotations")
+            .with_summary("Analyze the focused log message and "
+                          "attach annotations")
             .with_tags({"metadata"}),
     },
 
@@ -5869,16 +6094,18 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":mark-expr")
             .with_summary("Set the bookmark expression")
-            .with_parameter(help_text(
-                "expr",
-                "The SQL expression to evaluate for each log message.  "
-                "The message values can be accessed using column names "
-                "prefixed with a colon"))
+            .with_parameter(help_text("expr",
+                                      "The SQL expression to evaluate for each "
+                                      "log message.  "
+                                      "The message values can be accessed "
+                                      "using column names "
+                                      "prefixed with a colon"))
             .with_opposites({"clear-mark-expr"})
             .with_tags({"bookmarks"})
-            .with_example(
-                {"To mark lines from 'dhclient' that mention 'eth0'",
-                 ":log_procname = 'dhclient' AND :log_body LIKE '%eth0%'"}),
+            .with_example({"To mark lines from 'dhclient' that "
+                           "mention 'eth0'",
+                           ":log_procname = 'dhclient' AND "
+                           ":log_body LIKE '%eth0%'"}),
 
         com_mark_expr_prompt,
     },
@@ -5905,7 +6132,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_goto_mark,
 
      help_text(":prev-mark")
-         .with_summary("Move to the previous bookmark of the given type in the "
+         .with_summary("Move to the previous bookmark of the given "
+                       "type in the "
                        "current view")
          .with_parameter(help_text("type",
                                    "The type of bookmark -- error, warning, "
@@ -5923,7 +6151,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_goto_location,
 
      help_text(":prev-location")
-         .with_summary("Move to the previous position in the location history")
+         .with_summary("Move to the previous position in the "
+                       "location history")
          .with_tags({"navigation"})},
 
     {
@@ -5951,21 +6180,23 @@ readline_context::command_t STD_COMMANDS[] = {
      com_toggle_field,
 
      help_text(":hide-fields")
-         .with_summary(
-             "Hide log message fields by replacing them with an ellipsis")
+         .with_summary("Hide log message fields by replacing them "
+                       "with an ellipsis")
          .with_parameter(
              help_text("field-name",
-                       "The name of the field to hide in the format for the "
+                       "The name of the field to hide in the format for "
+                       "the "
                        "top log line.  "
-                       "A qualified name can be used where the field name is "
+                       "A qualified name can be used where the field "
+                       "name is "
                        "prefixed "
                        "by the format name and a dot to hide any field.")
                  .one_or_more())
          .with_example(
              {"To hide the log_procname fields in all formats", "log_procname"})
-         .with_example(
-             {"To hide only the log_procname field in the syslog format",
-              "syslog_log.log_procname"})
+         .with_example({"To hide only the log_procname field in "
+                        "the syslog format",
+                        "syslog_log.log_procname"})
          .with_tags({"display"})},
     {"show-fields",
      com_toggle_field,
@@ -6005,8 +6236,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_show_lines,
 
      help_text(":show-lines-before-and-after")
-         .with_summary(
-             "Show lines that were hidden by the 'hide-lines' commands")
+         .with_summary("Show lines that were hidden by the "
+                       "'hide-lines' commands")
          .with_opposites({"hide-lines-before", "hide-lines-after"})
          .with_tags({"filtering"})},
     {"hide-unmarked-lines",
@@ -6026,7 +6257,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_highlight,
 
      help_text(":highlight")
-         .with_summary("Add coloring to log messages fragments that match the "
+         .with_summary("Add coloring to log messages fragments "
+                       "that match the "
                        "given regular expression")
          .with_parameter(
              help_text("pattern", "The regular expression to match"))
@@ -6038,37 +6270,45 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":clear-highlight")
          .with_summary("Remove a previously set highlight regular expression")
-         .with_parameter(help_text(
-             "pattern",
-             "The regular expression previously used with :highlight"))
+         .with_parameter(help_text("pattern",
+                                   "The regular expression previously used "
+                                   "with :highlight"))
          .with_tags({"display"})
          .with_opposites({"highlight"})
          .with_example(
              {"To clear the highlight with the pattern 'foobar'", "foobar"})},
-    {"filter-in",
-     com_filter,
+    {
+        "filter-in",
+        com_filter,
 
-     help_text(":filter-in")
-         .with_summary("Only show lines that match the given regular "
-                       "expression in the current view")
-         .with_parameter(
-             help_text("pattern", "The regular expression to match"))
-         .with_tags({"filtering"})
-         .with_example({"To filter out log messages that do not have the "
-                        "string 'dhclient'",
-                        "dhclient"})},
-    {"filter-out",
-     com_filter,
+        help_text(":filter-in")
+            .with_summary("Only show lines that match the given regular "
+                          "expression in the current view")
+            .with_parameter(
+                help_text("pattern", "The regular expression to match"))
+            .with_tags({"filtering"})
+            .with_example({"To filter out log messages that do not have the "
+                           "string 'dhclient'",
+                           "dhclient"}),
+        com_filter_prompt,
+    },
+    {
+        "filter-out",
+        com_filter,
 
-     help_text(":filter-out")
-         .with_summary("Remove lines that match the given regular expression "
-                       "in the current view")
-         .with_parameter(
-             help_text("pattern", "The regular expression to match"))
-         .with_tags({"filtering"})
-         .with_example({"To filter out log messages that contain the string "
-                        "'last message repeated'",
-                        "last message repeated"})},
+        help_text(":filter-out")
+            .with_summary("Remove lines that match the given "
+                          "regular expression "
+                          "in the current view")
+            .with_parameter(
+                help_text("pattern", "The regular expression to match"))
+            .with_tags({"filtering"})
+            .with_example({"To filter out log messages that "
+                           "contain the string "
+                           "'last message repeated'",
+                           "last message repeated"}),
+        com_filter_prompt,
+    },
     {"delete-filter",
      com_delete_filter,
 
@@ -6088,22 +6328,25 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":filter-expr")
             .with_summary("Set the filter expression")
-            .with_parameter(help_text(
-                "expr",
-                "The SQL expression to evaluate for each log message.  "
-                "The message values can be accessed using column names "
-                "prefixed with a colon"))
+            .with_parameter(help_text("expr",
+                                      "The SQL expression to evaluate for each "
+                                      "log message.  "
+                                      "The message values can be accessed "
+                                      "using column names "
+                                      "prefixed with a colon"))
             .with_opposites({"clear-filter-expr"})
             .with_tags({"filtering"})
             .with_example({"To set a filter expression that matched syslog "
                            "messages from 'syslogd'",
                            ":log_procname = 'syslogd'"})
-            .with_example(
-                {"To set a filter expression that matches log messages "
-                 "where "
-                 "'id' is followed by a number and contains the string "
-                 "'foo'",
-                 ":log_body REGEXP 'id\\d+' AND :log_body REGEXP 'foo'"}),
+            .with_example({"To set a filter expression that "
+                           "matches log messages "
+                           "where "
+                           "'id' is followed by a number and "
+                           "contains the string "
+                           "'foo'",
+                           ":log_body REGEXP 'id\\d+' AND "
+                           ":log_body REGEXP 'foo'"}),
 
         com_filter_expr_prompt,
     },
@@ -6118,8 +6361,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":append-to")
-         .with_summary(
-             "Append marked lines in the current view to the given file")
+         .with_summary("Append marked lines in the current view to "
+                       "the given file")
          .with_parameter(help_text("path", "The path to the file to append to"))
          .with_tags({"io"})
          .with_example({"To append marked lines to the file "
@@ -6129,7 +6372,8 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":write-to")
-         .with_summary("Overwrite the given file with any marked lines in the "
+         .with_summary("Overwrite the given file with any marked "
+                       "lines in the "
                        "current view")
          .with_parameter(
              help_text("--anonymize", "Anonymize the lines").optional())
@@ -6164,20 +6408,21 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":write-jsonlines-to")
-         .with_summary(
-             "Write SQL results to the given file in JSON Lines format")
+         .with_summary("Write SQL results to the given file in "
+                       "JSON Lines format")
          .with_parameter(
              help_text("--anonymize", "Anonymize the JSON values").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
-         .with_example({"To write SQL results as JSON Lines to /tmp/table.json",
+         .with_example({"To write SQL results as JSON Lines to "
+                        "/tmp/table.json",
                         "/tmp/table.json"})},
     {"write-table-to",
      com_save_to,
 
      help_text(":write-table-to")
-         .with_summary(
-             "Write SQL results to the given file in a tabular format")
+         .with_summary("Write SQL results to the given file in a "
+                       "tabular format")
          .with_parameter(
              help_text("--anonymize", "Anonymize the table contents")
                  .optional())
@@ -6189,10 +6434,10 @@ readline_context::command_t STD_COMMANDS[] = {
      com_save_to,
 
      help_text(":write-raw-to")
-         .with_summary(
-             "In the log view, write the original log file content "
-             "of the marked messages to the file.  In the DB view, "
-             "the contents of the cells are written to the output file.")
+         .with_summary("In the log view, write the original log file content "
+                       "of the marked messages to the file.  In the DB view, "
+                       "the contents of the cells are written to the output "
+                       "file.")
          .with_parameter(help_text("--view={log,db}",
                                    "The view to use as the source of data")
                              .optional())
@@ -6200,9 +6445,9 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("--anonymize", "Anonymize the lines").optional())
          .with_parameter(help_text("path", "The path to the file to write"))
          .with_tags({"io", "scripting", "sql"})
-         .with_example(
-             {"To write the marked lines in the log view to /tmp/table.txt",
-              "/tmp/table.txt"})},
+         .with_example({"To write the marked lines in the log view "
+                        "to /tmp/table.txt",
+                        "/tmp/table.txt"})},
     {"write-view-to",
      com_save_to,
 
@@ -6241,9 +6486,10 @@ readline_context::command_t STD_COMMANDS[] = {
      com_pipe_to,
 
      help_text(":pipe-line-to")
-         .with_summary(
-             "Pipe the focused line to the given shell command.  Any fields "
-             "defined by the format will be set as environment variables.")
+         .with_summary("Pipe the focused line to the given shell "
+                       "command.  Any fields "
+                       "defined by the format will be set as "
+                       "environment variables.")
          .with_parameter(
              help_text("shell-cmd", "The shell command-line to execute"))
          .with_tags({"io"})
@@ -6255,12 +6501,11 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":redirect-to")
          .with_summary("Redirect the output of commands that write to "
                        "stdout to the given file")
-         .with_parameter(
-             help_text(
-                 "path",
-                 "The path to the file to write."
-                 "  If not specified, the current redirect will be cleared")
-                 .optional())
+         .with_parameter(help_text("path",
+                                   "The path to the file to write."
+                                   "  If not specified, the current redirect "
+                                   "will be cleared")
+                             .optional())
          .with_tags({"io", "scripting"})
          .with_example({"To write the output of lnav commands to the file "
                         "/tmp/script-output.txt",
@@ -6274,7 +6519,8 @@ readline_context::command_t STD_COMMANDS[] = {
              "pattern", "The regular expression used in the filter command"))
          .with_tags({"filtering"})
          .with_opposites({"disable-filter"})
-         .with_example({"To enable the disabled filter with the pattern 'last "
+         .with_example({"To enable the disabled filter with the "
+                        "pattern 'last "
                         "message repeated'",
                         "last message repeated"})},
     {"disable-filter",
@@ -6306,13 +6552,14 @@ readline_context::command_t STD_COMMANDS[] = {
      com_create_logline_table,
 
      help_text(":create-logline-table")
-         .with_summary("Create an SQL table using the top line of the log view "
+         .with_summary("Create an SQL table using the top line of "
+                       "the log view "
                        "as a template")
          .with_parameter(help_text("table-name", "The name for the new table"))
          .with_tags({"vtables", "sql"})
-         .with_example(
-             {"To create a logline-style table named 'task_durations'",
-              "task_durations"})},
+         .with_example({"To create a logline-style table named "
+                        "'task_durations'",
+                        "task_durations"})},
     {"delete-logline-table",
      com_delete_logline_table,
 
@@ -6322,9 +6569,9 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("table-name", "The name of the table to delete"))
          .with_opposites({"delete-logline-table"})
          .with_tags({"vtables", "sql"})
-         .with_example(
-             {"To delete the logline-style table named 'task_durations'",
-              "task_durations"})},
+         .with_example({"To delete the logline-style table named "
+                        "'task_durations'",
+                        "task_durations"})},
     {"create-search-table",
      com_create_search_table,
 
@@ -6336,13 +6583,15 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("pattern",
                        "The regular expression used to capture the table "
                        "columns.  "
-                       "If not given, the current search pattern is used.")
+                       "If not given, the current search pattern is "
+                       "used.")
                  .optional())
          .with_tags({"vtables", "sql"})
-         .with_example(
-             {"To create a table named 'task_durations' that matches log "
-              "messages with the pattern 'duration=(?<duration>\\d+)'",
-              R"(task_durations duration=(?<duration>\d+))"})},
+         .with_example({"To create a table named 'task_durations' that "
+                        "matches log "
+                        "messages with the pattern "
+                        "'duration=(?<duration>\\d+)'",
+                        R"(task_durations duration=(?<duration>\d+))"})},
     {"delete-search-table",
      com_delete_search_table,
 
@@ -6358,10 +6607,10 @@ readline_context::command_t STD_COMMANDS[] = {
      com_open,
 
      help_text(":open")
-         .with_summary(
-             "Open the given file(s) in lnav.  Opening files on machines "
-             "accessible via SSH can be done using the syntax: "
-             "[user@]host:/path/to/logs")
+         .with_summary("Open the given file(s) in lnav.  Opening files on "
+                       "machines "
+                       "accessible via SSH can be done using the syntax: "
+                       "[user@]host:/path/to/logs")
          .with_parameter(
              help_text{"path", "The path to the file to open"}.one_or_more())
          .with_example({"To open the file '/path/to/file'", "/path/to/file"})
@@ -6374,8 +6623,9 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_summary("Hide the given file(s) and skip indexing until it "
                        "is shown again.  If no path is given, the current "
                        "file in the view is hidden")
-         .with_parameter(help_text{
-             "path", "A path or glob pattern that specifies the files to hide"}
+         .with_parameter(help_text{"path",
+                                   "A path or glob pattern that "
+                                   "specifies the files to hide"}
                              .zero_or_more())
          .with_opposites({"show-file"})},
     {"show-file",
@@ -6383,9 +6633,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":show-file")
          .with_summary("Show the given file(s) and resume indexing.")
-         .with_parameter(help_text{
-             "path",
-             "The path or glob pattern that specifies the files to show"}
+         .with_parameter(help_text{"path",
+                                   "The path or glob pattern that "
+                                   "specifies the files to show"}
                              .zero_or_more())
          .with_opposites({"hide-file"})},
     {"show-only-this-file",
@@ -6399,8 +6649,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":close")
          .with_summary("Close the given file(s) or the top file in the view")
-         .with_parameter(help_text{
-             "path", "A path or glob pattern that specifies the files to close"}
+         .with_parameter(help_text{"path",
+                                   "A path or glob pattern that "
+                                   "specifies the files to close"}
                              .zero_or_more())
          .with_opposites({"open"})},
     {
@@ -6449,7 +6700,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":untag")
          .with_summary("Detach tags from the top log line")
          .with_parameter(help_text("tag", "The tags to detach").one_or_more())
-         .with_example({"To remove the tags '#BUG123' and '#needs-review' from "
+         .with_example({"To remove the tags '#BUG123' and "
+                        "'#needs-review' from "
                         "the top line",
                         "#BUG123 #needs-review"})
          .with_opposites({"tag"})
@@ -6460,7 +6712,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":delete-tags")
          .with_summary("Remove the given tags from all log lines")
          .with_parameter(help_text("tag", "The tags to delete").one_or_more())
-         .with_example({"To remove the tags '#BUG123' and '#needs-review' from "
+         .with_example({"To remove the tags '#BUG123' and "
+                        "'#needs-review' from "
                         "all log lines",
                         "#BUG123 #needs-review"})
          .with_opposites({"tag"})
@@ -6485,17 +6738,18 @@ readline_context::command_t STD_COMMANDS[] = {
      com_session,
 
      help_text(":session")
-         .with_summary(
-             "Add the given command to the session file (~/.lnav/session)")
+         .with_summary("Add the given command to the session file "
+                       "(~/.lnav/session)")
          .with_parameter(help_text("lnav-command", "The lnav command to save."))
-         .with_example(
-             {"To add the command ':highlight foobar' to the session file",
-              ":highlight foobar"})},
+         .with_example({"To add the command ':highlight foobar' to "
+                        "the session file",
+                        ":highlight foobar"})},
     {"summarize",
      com_summarize,
 
      help_text(":summarize")
-         .with_summary("Execute a SQL query that computes the characteristics "
+         .with_summary("Execute a SQL query that computes the "
+                       "characteristics "
                        "of the values in the given column")
          .with_parameter(
              help_text("column-name", "The name of the column to analyze."))
@@ -6514,12 +6768,13 @@ readline_context::command_t STD_COMMANDS[] = {
      com_switch_to_view,
 
      help_text(":toggle-view")
-         .with_summary(
-             "Switch to the given view or, if it is already displayed, "
-             "switch to the previous view")
+         .with_summary("Switch to the given view or, if it is "
+                       "already displayed, "
+                       "switch to the previous view")
          .with_parameter(help_text(
              "view-name", "The name of the view to toggle the display of."))
-         .with_example({"To switch to the 'schema' view if it is not displayed "
+         .with_example({"To switch to the 'schema' view if it is "
+                        "not displayed "
                         "or switch back to the previous view",
                         "schema"})},
     {"toggle-filtering",
@@ -6580,15 +6835,17 @@ readline_context::command_t STD_COMMANDS[] = {
      com_echo,
 
      help_text(":echo")
-         .with_summary(
-             "Echo the given message to the screen or, if :redirect-to has "
-             "been called, to output file specified in the redirect.  "
-             "Variable substitution is performed on the message.  Use a "
-             "backslash to escape any special characters, like '$'")
-         .with_parameter(
-             help_text("-n",
-                       "Do not print a line-feed at the end of the output")
-                 .optional())
+         .with_summary("Echo the given message to the screen or, if "
+                       ":redirect-to has "
+                       "been called, to output file specified in the "
+                       "redirect.  "
+                       "Variable substitution is performed on the message.  "
+                       "Use a "
+                       "backslash to escape any special characters, like '$'")
+         .with_parameter(help_text("-n",
+                                   "Do not print a line-feed at "
+                                   "the end of the output")
+                             .optional())
          .with_parameter(help_text("msg", "The message to display"))
          .with_tags({"io", "scripting"})
          .with_example({"To output 'Hello, World!'", "Hello, World!"})},
@@ -6648,9 +6905,9 @@ readline_context::command_t STD_COMMANDS[] = {
                                    "The value to write.  If not given, the "
                                    "current value is returned")
                              .optional())
-         .with_example(
-             {"To read the configuration of the '/ui/clock-format' option",
-              "/ui/clock-format"})
+         .with_example({"To read the configuration of the "
+                        "'/ui/clock-format' option",
+                        "/ui/clock-format"})
          .with_example({"To set the '/ui/dim-text' option to 'false'",
                         "/ui/dim-text false"})
          .with_tags({"configuration"})},
@@ -6672,9 +6929,9 @@ readline_context::command_t STD_COMMANDS[] = {
                        "using a spectrogram")
          .with_parameter(help_text(
              "field-name", "The name of the numeric field to visualize."))
-         .with_example(
-             {"To visualize the sc_bytes field in the access_log format",
-              "sc_bytes"})},
+         .with_example({"To visualize the sc_bytes field in the "
+                        "access_log format",
+                        "sc_bytes"})},
     {"quit",
      com_quit,
 

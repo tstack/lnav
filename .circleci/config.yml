@@ -1,0 +1,32 @@
+# This config was automatically generated from your source code
+# Stacks detected: cicd:github-actions:.github/workflows,deps:python:docs,deps:ruby:docs,deps:rust:src/third-party/prqlc-c
+version: 2.1
+orbs:
+  macos: circleci/macos@2.2.0
+jobs:
+  macos-apple-clang:
+    macos:
+      xcode: 14.2.0
+    resource_class: macos.m1.medium.gen1
+    steps:
+      - checkout
+      - run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl autoconf automake
+      - run: ./autogen.sh
+      - run: >-
+          ./configure \
+            --with-libcurl=$(brew --prefix curl) \
+            --with-pcre2=$(brew --prefix pcre2) \
+            --with-sqlite3=$(brew --prefix sqlite3) \
+            "CXXFLAGS=-I$(brew --prefix ncurses)/include -g2 -O2" \
+            'CFLAGS=-O2 -g2' \
+            "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix lz4)/lib -L$(brew --prefix zstd)/lib/" \
+            --with-readline=$(brew --prefix readline) \
+            --with-libarchive=$(brew --prefix libarchive) \
+            || cat config.log
+      - run: make -j2 || true
+      - run: env DUMP_CRASH=1 src/lnav -V
+      - run: make check -j2 || (test -e test/test-suite.log && cat test/test-suite.log && false)
+workflows:
+  build-and-test:
+    jobs:
+      - macos-apple-clang

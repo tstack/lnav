@@ -1,6 +1,6 @@
-2013-09-06T20:00:48.124000Z TRACE trace test
+2013-09-06T20:00:48.124817Z TRACE trace test
   @fields: { "lvl": "TRACE", "msg": "trace test"}
-2013-09-06T20:00:49.124000Z INFO Starting up service
+2013-09-06T20:00:49.124817Z INFO Starting up service
   @fields: { "lvl": "INFO", "msg": "Starting up service"}
 [offset: 186] {"ts": "2013-09-06T22:00:49.124817Z", "@fields": { "lvl": "INFO", "msg":
 parse error: premature EOF

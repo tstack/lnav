@@ -114,6 +114,12 @@ public:
         return false;
     }
 
+    virtual std::vector<attr_line_t> list_overlay_menu(
+        const listview_curses& lv, vis_line_t line)
+    {
+        return {};
+    }
+
     virtual nonstd::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t line)
     {
@@ -225,6 +231,8 @@ public:
 
     void set_selection(vis_line_t sel);
 
+    void set_selection_without_context(vis_line_t sel);
+
     enum class shift_amount_t {
         up_line,
         up_page,
@@ -307,26 +315,6 @@ public:
     /** @return The curses window this view is attached to. */
     WINDOW* get_window() const { return this->lv_window; }
 
-    void set_y(unsigned int y)
-    {
-        if (y != this->lv_y) {
-            this->lv_y = y;
-            this->set_needs_update();
-        }
-    }
-
-    unsigned int get_y() const { return this->lv_y; }
-
-    void set_x(unsigned int x)
-    {
-        if (x != this->lv_x) {
-            this->lv_x = x;
-            this->set_needs_update();
-        }
-    }
-
-    unsigned int get_x() const { return this->lv_x; }
-
     /**
      * Set the line number to be displayed at the top of the view.  If the
      * value is invalid, flash() will be called.  If the value is valid, the
@@ -376,31 +364,10 @@ public:
      *
      * @param left The new value for left.
      */
-    void set_left(unsigned int left)
-    {
-        if (this->lv_left == left) {
-            return;
-        }
-
-        if (left > this->lv_left) {
-            unsigned long width;
-            vis_line_t height;
-
-            this->get_dimensions(height, width);
-            if ((this->get_inner_width() - this->lv_left) <= width) {
-                alerter::singleton().chime(
-                    "the maximum width of the view has been reached");
-                return;
-            }
-        }
-
-        this->lv_left = left;
-        this->invoke_scroll();
-        this->set_needs_update();
-    }
+    void set_left(int left);
 
     /** @return The column number that is displayed at the left. */
-    unsigned int get_left() const { return this->lv_left; }
+    int get_left() const { return this->lv_left; }
 
     /**
      * Shift the value of left by the given value.
@@ -408,7 +375,7 @@ public:
      * @param offset The amount to change top by.
      * @return The final value of top.
      */
-    unsigned int shift_left(int offset)
+    int shift_left(int offset)
     {
         if (this->lv_word_wrap) {
             alerter::singleton().chime(
@@ -478,7 +445,7 @@ public:
             getmaxyx(this->lv_window, height, width_out);
             if (this->lv_height < 0) {
                 height_out = vis_line_t(height) + this->lv_height
-                    - vis_line_t(this->lv_y);
+                    - vis_line_t(this->vc_y);
                 if (height_out < 0_vl) {
                     height_out = 0_vl;
                 }
@@ -486,8 +453,8 @@ public:
                 height_out = this->lv_height;
             }
         }
-        if (this->lv_x < width_out) {
-            width_out -= this->lv_x;
+        if (this->vc_x < width_out) {
+            width_out -= this->vc_x;
         } else {
             width_out = 0;
         }
@@ -514,9 +481,11 @@ public:
     /**
      * Query the data source and draw the visible lines on the display.
      */
-    void do_update();
+    bool do_update() override;
 
-    bool handle_mouse(mouse_event& me);
+    bool handle_mouse(mouse_event& me) override;
+
+    bool contains(int x, int y) const override;
 
     listview_curses& set_tail_space(vis_line_t space)
     {
@@ -527,22 +496,41 @@ public:
 
     vis_line_t get_tail_space() const { return this->lv_tail_space; }
 
-    void log_state()
+    void log_state() override
     {
         log_debug("listview_curses=%p", this);
         log_debug(
-            "  lv_title=%s; lv_y=%u; lv_top=%d; lv_left=%d; lv_height=%d; "
+            "  lv_title=%s; vc_y=%u; lv_top=%d; lv_left=%d; lv_height=%d; "
             "lv_selection=%d; inner_height=%d",
             this->lv_title.c_str(),
-            this->lv_y,
+            this->vc_y,
             (int) this->lv_top,
-            (int) this->lv_left,
+            this->lv_left,
             this->lv_height,
             (int) this->lv_selection,
             (int) this->get_inner_height());
     }
 
     virtual void invoke_scroll() { this->lv_scroll(this); }
+
+    struct main_content {
+        vis_line_t mc_line;
+    };
+    struct static_overlay_content {};
+    struct overlay_menu {
+        vis_line_t om_line;
+    };
+    struct overlay_content {
+        vis_line_t oc_main_line;
+        vis_line_t oc_line;
+    };
+    struct empty_space {};
+
+    using display_line_content_t = mapbox::util::variant<main_content,
+                                                         overlay_menu,
+                                                         static_overlay_content,
+                                                         overlay_content,
+                                                         empty_space>;
 
 protected:
     void delegate_scroll_out()
@@ -572,10 +560,8 @@ protected:
     list_overlay_source* lv_overlay_source{nullptr};
     action lv_scroll; /*< The scroll action. */
     WINDOW* lv_window{nullptr}; /*< The window that contains this view. */
-    unsigned int lv_x{0};
-    unsigned int lv_y{0}; /*< The y offset of this view. */
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
-    unsigned int lv_left{0}; /*< The column at the left of the view. */
+    int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */
     bool lv_overlay_focused{false};
     vis_line_t lv_focused_overlay_top{0_vl};
@@ -598,6 +584,10 @@ protected:
     int lv_mouse_y{-1};
     lv_mode_t lv_mouse_mode{lv_mode_t::NONE};
     vis_line_t lv_tail_space{1};
+
+    std::vector<display_line_content_t> lv_display_lines;
+    unsigned int lv_scroll_top{0};
+    unsigned int lv_scroll_bottom{0};
 };
 
 #endif

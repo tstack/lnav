@@ -1,0 +1,17 @@
+                 from access_log | filter cs_method == 'GET' || cs_method == 'PUT'
+      prql_stage ----------------
+  prql_transform ----
+      prql_ident      ----------
+       prql_fqid      ----------
+      prql_stage                 -------------------------------------------------
+       prql_pipe                 -
+  prql_transform                   ------
+      prql_ident                          ---------
+       prql_fqid                          ---------
+       prql_oper                                    --
+     prql_string                                       -----
+       prql_oper                                             --
+      prql_ident                                                ---------
+       prql_fqid                                                ---------
+       prql_oper                                                          --
+     prql_string                                                             -----

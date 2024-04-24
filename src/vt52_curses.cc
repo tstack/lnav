@@ -17,7 +17,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHAN`TABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -208,8 +208,8 @@ vt52_curses::map_output(const char* output, int len)
             if (this->vc_expected_escape_len != -1) {
                 if (this->vc_escape_len == this->vc_expected_escape_len) {
                     auto& line_string = this->vc_line.get_string();
-                    auto x_byte_index
-                        = utf8_char_to_byte_index(line_string, this->vc_x);
+                    auto x_byte_index = utf8_char_to_byte_index(
+                        line_string, this->vc_cursor_x);
 
                     for (int esc_index = 0; esc_index < this->vc_escape_len;
                          esc_index++)
@@ -222,7 +222,7 @@ vt52_curses::map_output(const char* output, int len)
                         }
                         x_byte_index += 1;
                     }
-                    this->vc_x += 1;
+                    this->vc_cursor_x += 1;
                     this->vc_escape_len = 0;
                 }
             } else if ((cap = vt52_escape_map::singleton()[this->vc_escape])
@@ -230,11 +230,11 @@ vt52_curses::map_output(const char* output, int len)
             {
                 this->vc_escape_len = 0;
                 if (strcmp(cap, "ce") == 0) {
-                    this->vc_line.erase_utf8_chars(this->vc_x);
+                    this->vc_line.erase_utf8_chars(this->vc_cursor_x);
                 } else if (strcmp(cap, "kl") == 0) {
-                    this->vc_x -= 1;
+                    this->vc_cursor_x -= 1;
                 } else if (strcmp(cap, "kr") == 0) {
-                    this->vc_x += 1;
+                    this->vc_cursor_x += 1;
                 } else if (strcmp(cap, "BE") == 0 || strcmp(cap, "BD") == 0) {
                     // TODO pass bracketed paste mode through
                 } else {
@@ -256,7 +256,7 @@ vt52_curses::map_output(const char* output, int len)
 
             switch (next_ch) {
                 case STX:
-                    this->vc_x = 0;
+                    this->vc_cursor_x = 0;
                     this->vc_line.clear();
                     break;
 
@@ -265,7 +265,7 @@ vt52_curses::map_output(const char* output, int len)
                     break;
 
                 case BACKSPACE:
-                    this->vc_x -= 1;
+                    this->vc_cursor_x -= 1;
                     break;
 
                 case ESCAPE:
@@ -275,25 +275,25 @@ vt52_curses::map_output(const char* output, int len)
                     break;
 
                 case '\n':
-                    this->vc_x = 0;
+                    this->vc_cursor_x = 0;
                     this->vc_line.clear();
                     break;
 
                 case '\r':
-                    this->vc_x = 0;
+                    this->vc_cursor_x = 0;
                     break;
 
                 default: {
                     auto& line_string = this->vc_line.get_string();
-                    auto x_byte_index
-                        = utf8_char_to_byte_index(line_string, this->vc_x);
+                    auto x_byte_index = utf8_char_to_byte_index(
+                        line_string, this->vc_cursor_x);
 
                     if (x_byte_index < this->vc_line.length()) {
                         line_string[x_byte_index] = next_ch;
                     } else {
                         this->vc_line.append(1, next_ch);
                     }
-                    this->vc_x += 1;
+                    this->vc_cursor_x += 1;
                     break;
                 }
             }
@@ -301,14 +301,16 @@ vt52_curses::map_output(const char* output, int len)
     }
 }
 
-void
+bool
 vt52_curses::do_update()
 {
     auto actual_width = this->get_actual_width();
     view_curses::mvwattrline(this->vc_window,
                              this->get_actual_y(),
-                             this->vc_left,
+                             this->vc_x,
                              this->vc_line,
                              line_range{0, (int) actual_width});
-    wmove(this->vc_window, this->get_actual_y(), this->vc_left + this->vc_x);
+    wmove(
+        this->vc_window, this->get_actual_y(), this->vc_x + this->vc_cursor_x);
+    return true;
 }

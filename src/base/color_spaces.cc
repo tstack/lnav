@@ -163,3 +163,14 @@ lab_color::operator!=(const lab_color& rhs) const
 {
     return !(rhs == *this);
 }
+
+bool
+lab_color::sufficient_contrast(const lab_color& other) const
+{
+    if (std::abs(this->lc_l - other.lc_l) > 15) {
+        return true;
+    }
+
+    return (std::signbit(this->lc_a) != std::signbit(other.lc_a)
+            || std::signbit(this->lc_b) != std::signbit(other.lc_b));
+}

@@ -145,8 +145,12 @@ main(int argc, char* argv[])
         printf("}\n\n");
     }
 
+    size_t default_format_index = 0;
     printf("struct ptime_fmt PTIMEC_FORMATS[] = {\n");
     for (int lpc = 1; lpc < argc; lpc++) {
+        if (strcmp(argv[lpc], "%Y-%m-%dT%H:%M:%S") == 0) {
+            default_format_index = lpc - 1;
+        }
         printf("    { \"%s\", ptime_f%d, ftime_f%d },\n", argv[lpc], lpc, lpc);
     }
     printf("\n");
@@ -160,6 +164,9 @@ main(int argc, char* argv[])
     printf("\n");
     printf("    nullptr\n");
     printf("};\n");
+
+    printf("\n");
+    printf("size_t PTIMEC_DEFAULT_FMT_INDEX = %zu;\n", default_format_index);
 
     return retval;
 }

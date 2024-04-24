@@ -6,8 +6,11 @@
         "default-colors": true,
         "keymap": "default",
         "theme": "default",
+        "mouse": {
+            "mode": "disabled"
+        },
         "movement": {
-            "mode": "top"
+            "mode": "cursor"
         }
     },
     "log": {
@@ -96,14 +99,17 @@
             "docker": {
                 "handler": "docker-url-handler"
             },
-            "podman": {
-                "handler": "docker-url-handler"
-            },
             "docker-compose": {
                 "handler": "docker-compose-url-handler"
             },
+            "journald": {
+                "handler": "journald-url-handler"
+            },
             "piper": {
                 "handler": "piper-url-handler"
+            },
+            "podman": {
+                "handler": "docker-url-handler"
             }
         }
     }

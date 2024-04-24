@@ -2,7 +2,7 @@
     {
         "top_meta": {
             "file": "{test_dir}/formats/jsontest/format.json",
-            "anchor": "#/test_log/timestamp-field",
+            "anchor": "#/test_log/line-format/4/overflow",
             "breadcrumbs": [
                 {
                     "display_value": "format.json",
@@ -26,7 +26,7 @@
                     ]
                 },
                 {
-                    "display_value": "timestamp-field",
+                    "display_value": "line-format",
                     "search_placeholder": "",
                     "possibilities": [
                         {
@@ -55,6 +55,40 @@
                         },
                         {
                             "display_value": "value"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "[4]",
+                    "search_placeholder": "(Enter a number from 0 to 6)",
+                    "possibilities": [
+
+                    ]
+                },
+                {
+                    "display_value": "overflow",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "default-value"
+                        },
+                        {
+                            "display_value": "field"
+                        },
+                        {
+                            "display_value": "max-width"
+                        },
+                        {
+                            "display_value": "min-width"
+                        },
+                        {
+                            "display_value": "overflow"
+                        },
+                        {
+                            "display_value": "prefix"
+                        },
+                        {
+                            "display_value": "suffix"
                         }
                     ]
                 }

@@ -53,7 +53,7 @@ public:
     };
 
     std::function<escape_match_t(const char*)> id_escape_matcher;
-    std::function<bool(int)> id_key_handler;
+    std::function<bool(int, const char*)> id_key_handler;
     std::function<void(const char*)> id_escape_handler;
     std::function<void()> id_mouse_handler;
     std::function<void(const char*)> id_unhandled_handler;

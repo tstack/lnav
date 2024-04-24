@@ -47,6 +47,33 @@ struct logmsg_annotations {
 struct bookmark_metadata {
     static std::unordered_set<std::string> KNOWN_TAGS;
 
+    enum class categories : int {
+        any = 0,
+        partition = 0x01,
+        notes = 0x02,
+    };
+
+    bool has(categories props) const
+    {
+        if (props == categories::any) {
+            return true;
+        }
+
+        if (props == categories::partition && !this->bm_name.empty()) {
+            return true;
+        }
+
+        if (props == categories::notes
+            && (!this->bm_comment.empty()
+                || !this->bm_annotations.la_pairs.empty()
+                || !this->bm_tags.empty()))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     std::string bm_name;
     std::string bm_comment;
     logmsg_annotations bm_annotations;
@@ -56,7 +83,7 @@ struct bookmark_metadata {
 
     bool remove_tag(const std::string& tag);
 
-    bool empty() const;
+    bool empty(categories props) const;
 
     void clear();
 };

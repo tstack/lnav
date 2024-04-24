@@ -1,0 +1,31 @@
+[package]
+name = "prqlc-c"
+publish = false
+version = "0.11.3"
+
+edition = "2021"
+rust-version = "1.70.0"
+
+# This means we can build with `--features=default`, which can make builds more generic
+[features]
+default = []
+
+[lib]
+# We produce both of these at the moment, but could consider refining this. ref
+# https://github.com/rust-lang/cargo/issues/8607 &
+# https://github.com/rust-lang/rust/issues/59302
+crate_type = ["staticlib"]
+doctest = false
+test = false
+doc = false
+
+[dependencies]
+prqlc = { git = "https://github.com/PRQL/prql.git" }
+cxx = "1.0"
+
+[build-dependencies]
+cxx-build = "1.0"
+
+[package.metadata.release]
+tag-name = "{{version}}"
+tag-prefix = ""

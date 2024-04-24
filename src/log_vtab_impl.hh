@@ -44,16 +44,8 @@ class textview_curses;
 
 enum {
     VT_COL_LINE_NUMBER,
-    VT_COL_PARTITION,
     VT_COL_LOG_TIME,
-    VT_COL_LOG_ACTUAL_TIME,
-    VT_COL_IDLE_MSECS,
     VT_COL_LEVEL,
-    VT_COL_MARK,
-    VT_COL_LOG_COMMENT,
-    VT_COL_LOG_TAGS,
-    VT_COL_LOG_ANNOTATIONS,
-    VT_COL_FILTERS,
     VT_COL_MAX
 };
 

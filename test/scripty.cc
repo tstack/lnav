@@ -108,7 +108,8 @@ public:
         memset(&ws, 0, sizeof(ws));
 
         if (isatty(STDIN_FILENO)
-            && tcgetattr(STDIN_FILENO, &this->ct_termios) == -1) {
+            && tcgetattr(STDIN_FILENO, &this->ct_termios) == -1)
+        {
             throw error(errno);
         }
 
@@ -122,7 +123,8 @@ public:
         ws.ws_row = 24;
 
         if (openpty(this->ct_master.out(), slave.out(), nullptr, nullptr, &ws)
-            < 0) {
+            < 0)
+        {
             throw error(errno);
         }
 
@@ -174,20 +176,11 @@ public:
         return retval;
     };
 
-    bool is_child() const
-    {
-        return this->ct_child == 0;
-    };
+    bool is_child() const { return this->ct_child == 0; };
 
-    pid_t get_child_pid() const
-    {
-        return this->ct_child;
-    };
+    pid_t get_child_pid() const { return this->ct_child; };
 
-    int get_fd() const
-    {
-        return this->ct_master;
-    };
+    int get_fd() const { return this->ct_master; };
 
 protected:
     pid_t ct_child;
@@ -328,15 +321,9 @@ struct term_machine {
         std::vector<std::string> ta_desc;
     };
 
-    term_machine(child_term& ct) : tm_child_term(ct)
-    {
-        this->clear();
-    }
+    term_machine(child_term& ct) : tm_child_term(ct) { this->clear(); }
 
-    ~term_machine()
-    {
-        this->flush_line();
-    }
+    ~term_machine() { this->flush_line(); }
 
     void clear()
     {
@@ -460,7 +447,8 @@ struct term_machine {
                     line_len -= 4;
                 }
                 for (size_t lpc2 = lpc + 1; lpc2 < this->tm_line_attrs.size();
-                     lpc2++) {
+                     lpc2++)
+                {
                     auto bar_pos = 7 + this->tm_line_attrs[lpc2].ta_pos;
 
                     if (bar_pos < line_len) {
@@ -488,7 +476,8 @@ struct term_machine {
             int val, last;
 
             if (sscanf(&this->tm_escape_buffer[index], "%d%n", &val, &last)
-                == 1) {
+                == 1)
+            {
                 retval.push_back(val);
                 index += last;
                 if (this->tm_escape_buffer[index] != ';') {
@@ -503,10 +492,7 @@ struct term_machine {
         return retval;
     }
 
-    void new_user_input(char ch)
-    {
-        this->tm_user_input.push_back(ch);
-    }
+    void new_user_input(char ch) { this->tm_user_input.push_back(ch); }
 
     void new_input(char ch)
     {
@@ -521,7 +507,7 @@ struct term_machine {
 
                           this->tm_unicode_buffer.pop_front();
                           return retval;
-                      });
+                      }).unwrap();
             }
             return;
         } else {
@@ -602,7 +588,8 @@ struct term_machine {
             case state::ESCAPE_FIXED_LENGTH: {
                 this->tm_escape_buffer.push_back(ch);
                 if (this->tm_escape_buffer.size()
-                    == this->tm_escape_expected_size) {
+                    == this->tm_escape_expected_size)
+                {
                     auto iter = CSI_TO_DESC.find(
                         std::string(this->tm_escape_buffer.data(),
                                     this->tm_escape_buffer.size()));
@@ -1101,7 +1088,8 @@ main(int argc, char* argv[])
 #endif
                                     tm.new_input(buffer[lpc]);
                                     if (scripty_data.sd_replay.size()
-                                        != last_replay_size) {
+                                        != last_replay_size)
+                                    {
                                         last = now;
                                         last_replay_size
                                             = scripty_data.sd_replay.size();

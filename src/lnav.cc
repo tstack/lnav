@@ -194,23 +194,13 @@ const std::vector<std::string> lnav_zoom_strings = {
 };
 
 static const std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
-    "capture_count",
-    "capture_index",
-    "device",
-    "id",
-    "inode",
-    "key",
-    "match_index",
-    "parent",
-    "range_start",
-    "range_stop",
-    "rowid",
-    "st_dev",
-    "st_gid",
-    "st_ino",
-    "st_mode",
-    "st_rdev",
-    "st_uid",
+    "$id",         "capture_count", "capture_index",
+    "device",      "enabled",       "filter_id",
+    "id",          "inode",         "key",
+    "match_index", "parent",        "range_start",
+    "range_stop",  "rowid",         "st_dev",
+    "st_gid",      "st_ino",        "st_mode",
+    "st_rdev",     "st_uid",
 };
 
 static auto bound_pollable_supervisor
@@ -229,6 +219,9 @@ static auto bound_lnav_flags
     = injector::bind<unsigned long, lnav_flags_tag>::to_instance(
         &lnav_data.ld_flags);
 
+static auto bound_lnav_exec_context
+    = injector::bind<exec_context>::to_instance(&lnav_data.ld_exec_context);
+
 static auto bound_last_rel_time
     = injector::bind<relative_time, last_relative_time_tag>::to_singleton();
 
@@ -237,6 +230,8 @@ static auto bound_term_extra = injector::bind<term_extra>::to_singleton();
 static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
 
 static auto bound_scripts = injector::bind<available_scripts>::to_singleton();
+
+static auto bound_crumbs = injector::bind<breadcrumb_curses>::to_singleton();
 
 static auto bound_curl
     = injector::bind_multiple<isc::service_base>()
@@ -284,36 +279,13 @@ force_linking(services::main_t anno)
 }
 }  // namespace injector
 
-static breadcrumb_curses breadcrumb_view;
-
 struct lnav_data_t lnav_data;
 
 bool
 setup_logline_table(exec_context& ec)
 {
-    // Hidden columns don't show up in the table_info pragma.
-    static const char* hidden_table_columns[] = {
-        "log_time_msecs",
-        "log_path",
-        "log_text",
-        "log_body",
-
-        nullptr,
-    };
-
     auto& log_view = lnav_data.ld_views[LNV_LOG];
     bool retval = false;
-    bool update_possibilities
-        = (lnav_data.ld_rl_view != nullptr && ec.ec_local_vars.size() == 1);
-
-    if (update_possibilities) {
-        lnav_data.ld_rl_view->clear_possibilities(ln_mode_t::SQL, "*");
-        add_view_text_possibilities(lnav_data.ld_rl_view,
-                                    ln_mode_t::SQL,
-                                    "*",
-                                    &log_view,
-                                    text_quoting::sql);
-    }
 
     if (log_view.get_inner_height()) {
         static intern_string_t logline = intern_string::lookup("logline");
@@ -327,96 +299,12 @@ setup_logline_table(exec_context& ec)
                                              cl,
                                              logline));
 
-        if (update_possibilities) {
-            log_data_helper ldh(lnav_data.ld_log_source);
-
-            ldh.parse_line(cl);
-
-            for (const auto& jextra : ldh.ldh_extra_json) {
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    lnav::sql::mprintf("%Q", jextra.first.c_str()).in());
-            }
-            for (const auto& jpair : ldh.ldh_json_pairs) {
-                for (const auto& wt : jpair.second) {
-                    lnav_data.ld_rl_view->add_possibility(
-                        ln_mode_t::SQL,
-                        "*",
-                        lnav::sql::mprintf("%Q", wt.wt_ptr.c_str()).in());
-                }
-            }
-            for (const auto& xml_pair : ldh.ldh_xml_pairs) {
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    lnav::sql::mprintf("%Q", xml_pair.first.second.c_str())
-                        .in());
-            }
-        }
-
         retval = true;
     }
 
     auto& db_key_names = lnav_data.ld_db_key_names;
 
     db_key_names = DEFAULT_DB_KEY_NAMES;
-
-    if (update_possibilities) {
-        add_env_possibilities(ln_mode_t::SQL);
-
-        lnav_data.ld_rl_view->add_possibility(ln_mode_t::SQL,
-                                              "*",
-                                              std::begin(sql_keywords),
-                                              std::end(sql_keywords));
-        lnav_data.ld_rl_view->add_possibility(
-            ln_mode_t::SQL, "*", sql_function_names);
-        lnav_data.ld_rl_view->add_possibility(
-            ln_mode_t::SQL, "*", hidden_table_columns);
-
-        for (int lpc = 0; sqlite_registration_funcs[lpc]; lpc++) {
-            struct FuncDef* basic_funcs;
-            struct FuncDefAgg* agg_funcs;
-
-            sqlite_registration_funcs[lpc](&basic_funcs, &agg_funcs);
-            for (int lpc2 = 0; basic_funcs && basic_funcs[lpc2].zName; lpc2++) {
-                const FuncDef& func_def = basic_funcs[lpc2];
-
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
-            }
-            for (int lpc2 = 0; agg_funcs && agg_funcs[lpc2].zName; lpc2++) {
-                const FuncDefAgg& func_def = agg_funcs[lpc2];
-
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::SQL,
-                    "*",
-                    std::string(func_def.zName) + (func_def.nArg ? "(" : "()"));
-            }
-        }
-
-        for (const auto& pair : sqlite_function_help) {
-            switch (pair.second->ht_context) {
-                case help_context_t::HC_SQL_FUNCTION:
-                case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION: {
-                    std::string poss = pair.first
-                        + (pair.second->ht_parameters.empty() ? "()" : ("("));
-
-                    lnav_data.ld_rl_view->add_possibility(
-                        ln_mode_t::SQL, "*", poss);
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
-
-    if (update_possibilities) {
-        walk_sqlite_metadata(lnav_data.ld_db.in(), lnav_sql_meta_callbacks);
-    }
 
     for (const auto& iter : *lnav_data.ld_vtab_manager) {
         iter.second->get_foreign_keys(db_key_names);
@@ -479,13 +367,19 @@ sigchld(int sig)
 }
 
 static void
-handle_rl_key(int ch)
+handle_rl_key(int ch, const char* keyseq)
 {
     switch (ch) {
+        case KEY_F(2):
+            if (xterm_mouse::is_available()) {
+                auto& mouse_i = injector::get<xterm_mouse&>();
+                mouse_i.set_enabled(!mouse_i.is_enabled());
+            }
+            break;
         case KEY_PPAGE:
         case KEY_NPAGE:
         case KEY_CTRL('p'):
-            handle_paging_key(ch);
+            handle_paging_key(ch, keyseq);
             break;
 
         case KEY_CTRL(']'):
@@ -780,51 +674,18 @@ update_view_position(listview_curses* lv)
     };
 }
 
-class lnav_behavior : public mouse_behavior {
-public:
-    void mouse_event(int button, bool release, int x, int y) override
-    {
-        textview_curses* tc = *(lnav_data.ld_view_stack.top());
-        struct mouse_event me;
-
-        switch (button & xterm_mouse::XT_BUTTON__MASK) {
-            case xterm_mouse::XT_BUTTON1:
-                me.me_button = mouse_button_t::BUTTON_LEFT;
-                break;
-            case xterm_mouse::XT_BUTTON2:
-                me.me_button = mouse_button_t::BUTTON_MIDDLE;
-                break;
-            case xterm_mouse::XT_BUTTON3:
-                me.me_button = mouse_button_t::BUTTON_RIGHT;
-                break;
-            case xterm_mouse::XT_SCROLL_UP:
-                me.me_button = mouse_button_t::BUTTON_SCROLL_UP;
-                break;
-            case xterm_mouse::XT_SCROLL_DOWN:
-                me.me_button = mouse_button_t::BUTTON_SCROLL_DOWN;
-                break;
-        }
-
-        if (button & xterm_mouse::XT_DRAG_FLAG) {
-            me.me_state = mouse_button_state_t::BUTTON_STATE_DRAGGED;
-        } else if (release) {
-            me.me_state = mouse_button_state_t::BUTTON_STATE_RELEASED;
-        } else {
-            me.me_state = mouse_button_state_t::BUTTON_STATE_PRESSED;
-        }
-
-        gettimeofday(&me.me_time, nullptr);
-        me.me_x = x - 1;
-        me.me_y = y - tc->get_y() - 1;
-
-        tc->handle_mouse(me);
-    }
-};
-
 static bool
-handle_config_ui_key(int ch)
+handle_config_ui_key(int ch, const char* keyseq)
 {
     bool retval = false;
+
+    if (ch == KEY_F(2)) {
+        if (xterm_mouse::is_available()) {
+            auto& mouse_i = injector::get<xterm_mouse&>();
+            mouse_i.set_enabled(!mouse_i.is_enabled());
+        }
+        return retval;
+    }
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::FILES:
@@ -854,7 +715,7 @@ handle_config_ui_key(int ch)
         } else {
             new_mode = ln_mode_t::FILES;
         }
-    } else if (ch == 'q') {
+    } else if (ch == 'q' || ch == KEY_ESCAPE) {
         new_mode = ln_mode_t::PAGING;
     }
 
@@ -869,15 +730,17 @@ handle_config_ui_key(int ch)
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_status[LNS_FILTER].set_needs_update();
     } else {
-        return handle_paging_key(ch);
+        return handle_paging_key(ch, keyseq);
     }
 
     return true;
 }
 
 static bool
-handle_key(int ch)
+handle_key(int ch, const char* keyseq)
 {
+    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+
     lnav_data.ld_input_state.push_back(ch);
 
     switch (ch) {
@@ -886,16 +749,10 @@ handle_key(int ch)
         default: {
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::PAGING:
-                    if (ch == '`') {
-                        breadcrumb_view.focus();
-                        lnav_data.ld_mode = ln_mode_t::BREADCRUMBS;
-                        return true;
-                    }
-
-                    return handle_paging_key(ch);
+                    return handle_paging_key(ch, keyseq);
 
                 case ln_mode_t::BREADCRUMBS:
-                    if (!breadcrumb_view.handle_key(ch)) {
+                    if (ch == '`' || !breadcrumb_view->handle_key(ch)) {
                         lnav_data.ld_mode = ln_mode_t::PAGING;
                         lnav_data.ld_view_stack.set_needs_update();
                         return true;
@@ -904,7 +761,7 @@ handle_key(int ch)
 
                 case ln_mode_t::FILTER:
                 case ln_mode_t::FILES:
-                    return handle_config_ui_key(ch);
+                    return handle_config_ui_key(ch, keyseq);
 
                 case ln_mode_t::SPECTRO_DETAILS: {
                     if (ch == '\t' || ch == 'q') {
@@ -943,7 +800,7 @@ handle_key(int ch)
                 case ln_mode_t::SQL:
                 case ln_mode_t::EXEC:
                 case ln_mode_t::USER:
-                    handle_rl_key(ch);
+                    handle_rl_key(ch, keyseq);
                     break;
 
                 case ln_mode_t::BUSY:
@@ -1142,6 +999,7 @@ looper()
 {
     static auto* ps = injector::get<pollable_supervisor*>();
     static auto* filter_source = injector::get<filter_sub_source*>();
+    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
 
     try {
         auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
@@ -1176,7 +1034,8 @@ looper()
         sql_context.set_highlighter(readline_sqlite_highlighter)
             .set_quote_chars("\"")
             .with_readline_var((char**) &rl_completer_word_break_characters,
-                               " \t\n(),");
+                               " \t\n(),")
+            .with_splitter(prql_splitter);
         exec_context.set_highlighter(readline_shlex_highlighter);
 
         lnav_data.ld_log_source.lss_sorting_observer
@@ -1272,6 +1131,27 @@ looper()
         }
         auto echo_views_stmt = echo_views_stmt_res.unwrap();
 
+        if (xterm_mouse::is_available()
+            && lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled)
+        {
+            auto mouse_note = prepare_stmt(lnav_data.ld_db, R"(
+INSERT INTO lnav_user_notifications (id, priority, expiration, message)
+VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
+        'Press <span class="-lnav_status-styles_hotkey">F2</span> to enable mouse support');
+)");
+            if (mouse_note.isErr()) {
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::error(
+                        "unable to prepare INSERT statement for "
+                        "lnav_user_notifications table")
+                        .with_reason(mouse_note.unwrapErr()));
+                return;
+            }
+
+            mouse_note.unwrap().execute();
+        }
+
         (void) signal(SIGINT, sigint);
         (void) signal(SIGTERM, sigint);
         (void) signal(SIGWINCH, sigwinch);
@@ -1302,10 +1182,12 @@ looper()
 
         ui_periodic_timer::singleton();
 
-        auto mouse_i = injector::get<xterm_mouse&>();
+        auto& mouse_i = injector::get<xterm_mouse&>();
 
         mouse_i.set_behavior(&lb);
-        mouse_i.set_enabled(check_experimental("mouse"));
+        mouse_i.set_enabled(check_experimental("mouse")
+                            || lnav_config.lc_mouse_mode
+                                == lnav_mouse_mode::enabled);
 
         lnav_data.ld_window = sc.get_window();
         keypad(stdscr, TRUE);
@@ -1351,7 +1233,8 @@ looper()
             setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
             setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
-            setup_highlights(lnav_data.ld_preview_view.get_highlights());
+            setup_highlights(lnav_data.ld_preview_view[0].get_highlights());
+            setup_highlights(lnav_data.ld_preview_view[1].get_highlights());
 
             for (const auto& format : log_format::get_root_formats()) {
                 for (auto& hl : format->lf_highlighters) {
@@ -1373,7 +1256,6 @@ looper()
         execute_examples();
 
         rlc->set_window(lnav_data.ld_window);
-        rlc->set_y(-1);
         rlc->set_focus_action(rl_focus);
         rlc->set_change_action(rl_change);
         rlc->set_perform_action(rl_callback);
@@ -1406,9 +1288,15 @@ looper()
 
         vsb.push_back(sb);
 
-        breadcrumb_view.set_y(1);
-        breadcrumb_view.set_window(lnav_data.ld_window);
-        breadcrumb_view.set_line_source(lnav_crumb_source);
+        breadcrumb_view->on_focus
+            = [](breadcrumb_curses&) { set_view_mode(ln_mode_t::BREADCRUMBS); };
+        breadcrumb_view->on_blur = [](breadcrumb_curses&) {
+            set_view_mode(ln_mode_t::PAGING);
+            lnav_data.ld_view_stack.set_needs_update();
+        };
+        breadcrumb_view->set_y(1);
+        breadcrumb_view->set_window(lnav_data.ld_window);
+        breadcrumb_view->set_line_source(lnav_crumb_source);
         auto event_handler = [](auto&& tc) {
             auto top_view = lnav_data.ld_view_stack.top();
 
@@ -1428,6 +1316,13 @@ looper()
                 = role_t::VCR_DISABLED_CURSOR_LINE;
             lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
         }
+        lnav_data.ld_views[LNV_DB].set_supports_marks(true);
+        lnav_data.ld_views[LNV_HELP].set_supports_marks(true);
+        lnav_data.ld_views[LNV_HISTOGRAM].set_supports_marks(true);
+        lnav_data.ld_views[LNV_LOG].set_supports_marks(true);
+        lnav_data.ld_views[LNV_TEXT].set_supports_marks(true);
+        lnav_data.ld_views[LNV_SCHEMA].set_supports_marks(true);
+        lnav_data.ld_views[LNV_PRETTY].set_supports_marks(true);
 
         lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
         lnav_data.ld_doc_view.set_show_scrollbar(false);
@@ -1437,13 +1332,17 @@ looper()
 
         lnav_data.ld_match_view.set_window(lnav_data.ld_window);
 
-        lnav_data.ld_preview_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_preview_view.set_show_scrollbar(false);
+        lnav_data.ld_preview_view[0].set_window(lnav_data.ld_window);
+        lnav_data.ld_preview_view[0].set_show_scrollbar(false);
+        lnav_data.ld_preview_view[1].set_window(lnav_data.ld_window);
+        lnav_data.ld_preview_view[1].set_show_scrollbar(false);
 
+        lnav_data.ld_filter_view.set_title("Text Filters");
         lnav_data.ld_filter_view.set_selectable(true);
         lnav_data.ld_filter_view.set_window(lnav_data.ld_window);
         lnav_data.ld_filter_view.set_show_scrollbar(true);
 
+        lnav_data.ld_files_view.set_title("Files");
         lnav_data.ld_files_view.set_selectable(true);
         lnav_data.ld_files_view.set_window(lnav_data.ld_window);
         lnav_data.ld_files_view.set_show_scrollbar(true);
@@ -1484,11 +1383,37 @@ looper()
 
         auto top_source = injector::get<std::shared_ptr<top_status_source>>();
 
-        lnav_data.ld_status[LNS_TOP].set_top(0);
+        lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
+            .on_click
+            = [](status_field&) { ensure_view(&lnav_data.ld_views[LNV_HELP]); };
+        lnav_data.ld_bottom_source
+            .get_field(bottom_status_source::BSF_LINE_NUMBER)
+            .on_click
+            = [](status_field&) {
+                  auto cmd = fmt::format(
+                      FMT_STRING("prompt command : 'goto {}'"),
+                      (int) lnav_data.ld_view_stack.top().value()->get_top());
+
+                  execute_command(lnav_data.ld_exec_context, cmd);
+              };
+        lnav_data.ld_bottom_source
+            .get_field(bottom_status_source::BSF_SEARCH_TERM)
+            .on_click
+            = [](status_field&) {
+                  auto term = lnav_data.ld_view_stack.top()
+                                  .value()
+                                  ->get_current_search();
+                  auto cmd
+                      = fmt::format(FMT_STRING("prompt search / '{}'"), term);
+
+                  execute_command(lnav_data.ld_exec_context, cmd);
+              };
+
+        lnav_data.ld_status[LNS_TOP].set_y(0);
         lnav_data.ld_status[LNS_TOP].set_default_role(
             role_t::VCR_INACTIVE_STATUS);
         lnav_data.ld_status[LNS_TOP].set_data_source(top_source.get());
-        lnav_data.ld_status[LNS_BOTTOM].set_top(-(rlc->get_height() + 1));
+        lnav_data.ld_status[LNS_BOTTOM].set_y(-(rlc->get_height() + 1));
         for (auto& stat_bar : lnav_data.ld_status) {
             stat_bar.set_window(lnav_data.ld_window);
         }
@@ -1500,8 +1425,10 @@ looper()
             &lnav_data.ld_filter_help_status_source);
         lnav_data.ld_status[LNS_DOC].set_data_source(
             &lnav_data.ld_doc_status_source);
-        lnav_data.ld_status[LNS_PREVIEW].set_data_source(
-            &lnav_data.ld_preview_status_source);
+        lnav_data.ld_status[LNS_PREVIEW0].set_data_source(
+            &lnav_data.ld_preview_status_source[0]);
+        lnav_data.ld_status[LNS_PREVIEW1].set_data_source(
+            &lnav_data.ld_preview_status_source[1]);
         lnav_data.ld_spectro_status_source
             = std::make_unique<spectro_status_source>();
         lnav_data.ld_status[LNS_SPECTRO].set_data_source(
@@ -1604,7 +1531,8 @@ looper()
             gettimeofday(&current_time, nullptr);
 
             top_source->update_time(current_time);
-            lnav_data.ld_preview_view.set_needs_update();
+            lnav_data.ld_preview_view[0].set_needs_update();
+            lnav_data.ld_preview_view[1].set_needs_update();
 
             layout_views();
 
@@ -1700,15 +1628,18 @@ looper()
             }
 
             if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS
-                && breadcrumb_view.get_needs_update())
+                && breadcrumb_view->get_needs_update())
             {
                 lnav_data.ld_view_stack.set_needs_update();
             }
-            lnav_data.ld_view_stack.do_update();
+            if (lnav_data.ld_view_stack.do_update()) {
+                breadcrumb_view->set_needs_update();
+            }
             lnav_data.ld_doc_view.do_update();
             lnav_data.ld_example_view.do_update();
             lnav_data.ld_match_view.do_update();
-            lnav_data.ld_preview_view.do_update();
+            lnav_data.ld_preview_view[0].do_update();
+            lnav_data.ld_preview_view[1].do_update();
             lnav_data.ld_spectro_details_view.do_update();
             lnav_data.ld_gantt_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
@@ -1723,7 +1654,7 @@ looper()
             if (filter_source->fss_editing) {
                 filter_source->fss_match_view.set_needs_update();
             }
-            breadcrumb_view.do_update();
+            breadcrumb_view->do_update();
             // These updates need to be done last so their readline views can
             // put the cursor in the right place.
             switch (lnav_data.ld_mode) {
@@ -1791,6 +1722,11 @@ looper()
 
             gettimeofday(&current_time, nullptr);
             lnav_data.ld_input_dispatcher.poll(current_time);
+
+            if (lb.lb_last_view != nullptr) {
+                lb.lb_last_event.me_time = current_time;
+                lb.lb_last_view->handle_mouse(lb.lb_last_event);
+            }
 
             if (rc < 0) {
                 switch (errno) {
@@ -2219,7 +2155,7 @@ main(int argc, char* argv[])
 {
     std::vector<lnav::console::user_message> config_errors;
     std::vector<lnav::console::user_message> loader_errors;
-    exec_context& ec = lnav_data.ld_exec_context;
+    auto& ec = lnav_data.ld_exec_context;
     int retval = EXIT_SUCCESS;
 
     bool exec_stdin = false, load_stdin = false;
@@ -2229,6 +2165,8 @@ main(int argc, char* argv[])
     if (LANG == nullptr || strcmp(LANG, "C") == 0) {
         setenv("LANG", "en_US.UTF-8", 1);
     }
+
+    ec.ec_label_source_stack.push_back(&lnav_data.ld_db_row_source);
 
     (void) signal(SIGPIPE, SIG_IGN);
     (void) signal(SIGCHLD, sigchld);
@@ -2672,7 +2610,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             return EXIT_FAILURE;
         }
 
-        for (auto& file_path : file_args) {
+        for (const auto& file_path : file_args) {
             if (endswith(file_path, ".git")) {
                 if (!install_from_git(file_path)) {
                     return EXIT_FAILURE;
@@ -2762,45 +2700,64 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                  ? configs_installed_path
                                  : formats_installed_path)
                 / dst_name;
-            auto_fd in_fd, out_fd;
 
-            if ((in_fd = open(file_path.c_str(), O_RDONLY)) == -1) {
-                perror("unable to open file to install");
-            } else if ((out_fd = lnav::filesystem::openp(
-                            dst_path, O_WRONLY | O_CREAT | O_TRUNC, 0644))
-                       == -1)
-            {
-                fprintf(stderr,
-                        "error: unable to open destination: %s -- %s\n",
-                        dst_path.c_str(),
-                        strerror(errno));
-            } else {
-                char buffer[2048];
-                ssize_t rc;
+            auto read_res = lnav::filesystem::read_file(file_path);
+            if (read_res.isErr()) {
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("cannot read file to install -- ")
+                                  .append(lnav::roles::file(file_path)))
+                              .with_reason(read_res.unwrap());
 
-                while ((rc = read(in_fd, buffer, sizeof(buffer))) > 0) {
-                    ssize_t remaining = rc, written;
-
-                    while (remaining > 0) {
-                        written = write(out_fd, buffer, rc);
-                        if (written == -1) {
-                            fprintf(stderr,
-                                    "error: unable to install file "
-                                    "-- %s\n",
-                                    strerror(errno));
-                            exit(EXIT_FAILURE);
-                        }
-
-                        remaining -= written;
-                    }
-                }
-
-                lnav::console::print(
-                    stderr,
-                    lnav::console::user_message::ok(
-                        attr_line_t("installed -- ")
-                            .append(lnav::roles::file(dst_path))));
+                lnav::console::print(stderr, um);
+                return EXIT_FAILURE;
             }
+
+            auto file_content = read_res.unwrap();
+
+            auto read_dst_res = lnav::filesystem::read_file(dst_path);
+            if (read_dst_res.isOk()) {
+                auto dst_content = read_dst_res.unwrap();
+
+                if (dst_content == file_content) {
+                    auto um = lnav::console::user_message::info(
+                        attr_line_t("file is already installed at -- ")
+                            .append(lnav::roles::file(dst_path)));
+
+                    lnav::console::print(stdout, um);
+
+                    return EXIT_SUCCESS;
+                }
+            }
+
+            auto write_res = lnav::filesystem::write_file(
+                dst_path,
+                file_content,
+                {lnav::filesystem::write_file_options::backup_existing});
+            if (write_res.isErr()) {
+                auto um = lnav::console::user_message::error(
+                              attr_line_t("failed to install file to -- ")
+                                  .append(lnav::roles::file(dst_path)))
+                              .with_reason(write_res.unwrapErr());
+
+                lnav::console::print(stderr, um);
+                return EXIT_FAILURE;
+            }
+
+            auto write_file_res = write_res.unwrap();
+            auto um = lnav::console::user_message::ok(
+                attr_line_t("installed -- ")
+                    .append(lnav::roles::file(dst_path)));
+            if (write_file_res.wfr_backup_path) {
+                um.with_note(
+                    attr_line_t("the previously installed ")
+                        .append_quoted(
+                            lnav::roles::file(dst_path.filename().string()))
+                        .append(" was backed up to -- ")
+                        .append(lnav::roles::file(
+                            write_file_res.wfr_backup_path.value().string())));
+            }
+
+            lnav::console::print(stdout, um);
         }
         return EXIT_SUCCESS;
     }
@@ -2816,7 +2773,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     /* If we statically linked against an ncurses library that had a
-     * non- standard path to the terminfo database, we need to set this
+     * non-standard path to the terminfo database, we need to set this
      * variable so that it will try the default path.
      */
     setenv("TERMINFO_DIRS",
@@ -2871,6 +2828,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_sub_source(&lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
+    lnav_data.ld_db_preview_overlay_source[0].dos_labels
+        = &lnav_data.ld_db_preview_source[0];
+    lnav_data.ld_db_preview_overlay_source[1].dos_labels
+        = &lnav_data.ld_db_preview_source[1];
     lnav_data.ld_views[LNV_DB]
         .set_reload_config_delegate(sel_reload_delegate)
         .set_overlay_source(&lnav_data.ld_db_overlay);
@@ -2904,11 +2865,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
     lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
-    lnav_data.ld_preview_view.set_sub_source(&lnav_data.ld_preview_source);
+    lnav_data.ld_preview_view[0].set_sub_source(
+        &lnav_data.ld_preview_source[0]);
     lnav_data.ld_filter_view.set_sub_source(filter_source)
-        .add_input_delegate(*filter_source)
-        .add_child_view(&filter_source->fss_match_view)
-        .add_child_view(filter_source->fss_editor.get());
+        .add_input_delegate(*filter_source);
     lnav_data.ld_files_view.set_sub_source(&lnav_data.ld_files_source)
         .add_input_delegate(lnav_data.ld_files_source);
     lnav_data.ld_user_message_view.set_sub_source(
@@ -3034,62 +2994,63 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         load_stdin = true;
     }
 
-    for (auto& file_path : file_args) {
-        scrub_ansi_string(file_path, nullptr);
-        auto file_path_without_trailer = file_path;
+    for (const auto& file_path_str : file_args) {
+        auto file_path_without_trailer = file_path_str;
         auto file_loc = file_location_t{mapbox::util::no_init{}};
         auto_mem<char> abspath;
         struct stat st;
 
-        auto colon_index = file_path.rfind(':');
+        auto colon_index = file_path_str.rfind(':');
         if (colon_index != std::string::npos) {
-            auto top_range = scn::string_view{&file_path[colon_index + 1],
-                                              &(*file_path.cend())};
+            auto top_range = scn::string_view{&file_path_str[colon_index + 1],
+                                              &(*file_path_str.cend())};
             auto scan_res = scn::scan_value<int>(top_range);
 
             if (scan_res) {
-                file_path_without_trailer = file_path.substr(0, colon_index);
+                file_path_without_trailer
+                    = file_path_str.substr(0, colon_index);
                 file_loc = vis_line_t(scan_res.value());
             } else {
                 log_warning(
                     "failed to parse line number from file path "
                     "with colon: %s",
-                    file_path.c_str());
+                    file_path_str.c_str());
             }
         }
-        auto hash_index = file_path.rfind('#');
+        auto hash_index = file_path_str.rfind('#');
         if (hash_index != std::string::npos) {
-            file_loc = file_path.substr(hash_index);
-            file_path_without_trailer = file_path.substr(0, hash_index);
+            file_loc = file_path_str.substr(hash_index);
+            file_path_without_trailer = file_path_str.substr(0, hash_index);
         }
-        if (stat(file_path_without_trailer.c_str(), &st) == 0) {
-            file_path = file_path_without_trailer;
-        }
+        auto file_path = ghc::filesystem::path(
+            stat(file_path_without_trailer.c_str(), &st) == 0
+                ? file_path_without_trailer
+                : file_path_str);
 
-        if (file_path == "-") {
+        if (file_path_str == "-") {
             load_stdin = true;
         }
 #ifdef HAVE_LIBCURL
-        else if (is_url(file_path))
+        else if (is_url(file_path_str))
         {
-            auto ul = std::make_shared<url_loader>(file_path);
+            auto ul = std::make_shared<url_loader>(file_path_str);
 
             lnav_data.ld_active_files.fc_file_names[ul->get_path()]
                 .with_filename(file_path);
             isc::to<curl_looper&, services::curl_streamer_t>().send(
                 [ul](auto& clooper) { clooper.add_request(ul); });
-        } else if (file_path.find("://") != std::string::npos) {
+        } else if (file_path_str.find("://") != std::string::npos) {
             lnav_data.ld_commands.insert(
                 lnav_data.ld_commands.begin(),
-                fmt::format(FMT_STRING(":open {}"), file_path));
+                fmt::format(FMT_STRING(":open {}"), file_path_str));
         }
 #endif
         else if (lnav::filesystem::is_glob(file_path))
         {
             lnav_data.ld_active_files.fc_file_names[file_path].with_tail(
                 !(lnav_data.ld_flags & LNF_HEADLESS));
-        } else if (stat(file_path.c_str(), &st) == -1) {
-            if (file_path.find(':') != std::string::npos) {
+        } else if (lnav::filesystem::statp(file_path, &st) == -1) {
+            if (file_path_str.find(':') != std::string::npos) {
                 lnav_data.ld_active_files.fc_file_names[file_path].with_tail(
                     !(lnav_data.ld_flags & LNF_HEADLESS));
             } else {
@@ -3112,7 +3073,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         } else if (S_ISFIFO(st.st_mode)) {
             auto_fd fifo_fd;
 
-            if ((fifo_fd = open(file_path.c_str(), O_RDONLY)) == -1) {
+            if ((fifo_fd = lnav::filesystem::openp(file_path, O_RDONLY)) == -1)
+            {
                 lnav::console::print(
                     stderr,
                     lnav::console::user_message::error(
@@ -3359,6 +3321,26 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                  ++file_iter)
             {
                 log_info("    %s", file_iter->first.c_str());
+            }
+
+            if (!(lnav_data.ld_flags & LNF_HEADLESS)
+                && verbosity == verbosity_t::quiet && load_stdin
+                && lnav_data.ld_active_files.fc_file_names.size() == 1)
+            {
+                rescan_files(true);
+                gather_pipers();
+                auto rebuild_res = rebuild_indexes(ui_clock::now() + 15ms);
+                if (rebuild_res.rir_completed
+                    && lnav_data.ld_child_pollers.empty())
+                {
+                    rebuild_indexes_repeatedly();
+                    if (lnav_data.ld_active_files.fc_files.empty()
+                        || lnav_data.ld_active_files.fc_files[0]->size() < 24)
+                    {
+                        lnav_data.ld_flags |= LNF_HEADLESS;
+                        verbosity = verbosity_t::standard;
+                    }
+                }
             }
 
             if (lnav_data.ld_flags & LNF_HEADLESS) {

@@ -29,6 +29,7 @@
 
 #include "db_sub_source.hh"
 
+#include "base/ansi_scrubber.hh"
 #include "base/date_time_scanner.hh"
 #include "base/itertools.hh"
 #include "base/time_util.hh"
@@ -52,6 +53,7 @@ db_label_source::text_value_for_line(textview_curses& tc,
      */
 
     label_out.clear();
+    this->dls_ansi_attrs.clear();
     if (row < 0_vl || row >= (int) this->dls_rows.size()) {
         return;
     }
@@ -59,7 +61,8 @@ db_label_source::text_value_for_line(textview_curses& tc,
         auto actual_col_size = std::min(this->dls_max_column_width,
                                         this->dls_headers[lpc].hm_column_size);
         auto cell_str = scrub_ws(this->dls_rows[row][lpc]);
-
+        string_attrs_t cell_attrs;
+        scrub_ansi_string(cell_str, &cell_attrs);
         truncate_to(cell_str, this->dls_max_column_width);
 
         auto cell_length
@@ -69,11 +72,15 @@ db_label_source::text_value_for_line(textview_curses& tc,
         if (this->dls_headers[lpc].hm_column_type != SQLITE3_TEXT) {
             label_out.append(padding, ' ');
         }
+        shift_string_attrs(cell_attrs, 0, label_out.size());
         label_out.append(cell_str);
         if (this->dls_headers[lpc].hm_column_type == SQLITE3_TEXT) {
             label_out.append(padding, ' ');
         }
         label_out.append(1, ' ');
+
+        this->dls_ansi_attrs.insert(
+            this->dls_ansi_attrs.end(), cell_attrs.begin(), cell_attrs.end());
     }
 }
 
@@ -88,6 +95,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     if (row < 0_vl || row >= (int) this->dls_rows.size()) {
         return;
     }
+    sa = this->dls_ansi_attrs;
     auto alt_row_index = row % 4;
     if (alt_row_index == 2 || alt_row_index == 3) {
         sa.emplace_back(lr2, VC_ROLE.value(role_t::VCR_ALT_ROW));
@@ -108,17 +116,22 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     for (const auto& attr : sa) {
         require_ge(attr.sa_range.lr_start, 0);
     }
-    int left = 0;
+    int cell_start = 0;
     for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
         auto row_view = scn::string_view{this->dls_rows[row][lpc]};
         const auto& hm = this->dls_headers[lpc];
 
+        int left = cell_start;
         if (hm.hm_graphable) {
             auto num_scan_res = scn::scan_value<double>(row_view);
 
             if (num_scan_res) {
-                this->dls_chart.chart_attrs_for_value(
-                    tc, left, hm.hm_name, num_scan_res.value(), sa);
+                hm.hm_chart.chart_attrs_for_value(tc,
+                                                  left,
+                                                  this->dls_cell_width[lpc],
+                                                  hm.hm_name,
+                                                  num_scan_res.value(),
+                                                  sa);
 
                 for (const auto& attr : sa) {
                     require_ge(attr.sa_range.lr_start, 0);
@@ -143,9 +156,10 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                         = scn::scan_value<double>(jpw_value.wt_value);
 
                     if (num_scan_res) {
-                        this->dls_chart.chart_attrs_for_value(
+                        hm.hm_chart.chart_attrs_for_value(
                             tc,
                             left,
+                            this->dls_cell_width[lpc],
                             jpw_value.wt_ptr,
                             num_scan_res.value(),
                             sa);
@@ -156,6 +170,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                 }
             }
         }
+        cell_start += this->dls_cell_width[lpc] + 1;
     }
 
     for (const auto& attr : sa) {
@@ -176,9 +191,13 @@ db_label_source::push_header(const std::string& colstr,
     hm.hm_column_size = utf8_string_length(colstr).unwrapOr(colstr.length());
     hm.hm_column_type = type;
     hm.hm_graphable = graphable;
+    if (graphable) {
+        hm.hm_column_size = std::max(hm.hm_column_size, size_t{10});
+    }
     if (colstr == "log_time" || colstr == "min(log_time)") {
         this->dls_time_column_index = this->dls_headers.size() - 1;
     }
+    hm.hm_chart.with_show_state(stacked_bar_chart_base::show_all{});
 }
 
 void
@@ -239,9 +258,9 @@ db_label_source::push_column(const scoped_value_t& sv)
         && this->dls_headers[index].hm_graphable)
     {
         if (sv.is<int64_t>()) {
-            this->dls_chart.add_value(hm.hm_name, sv.get<int64_t>());
+            hm.hm_chart.add_value(hm.hm_name, sv.get<int64_t>());
         } else {
-            this->dls_chart.add_value(hm.hm_name, sv.get<double>());
+            hm.hm_chart.add_value(hm.hm_name, sv.get<double>());
         }
     } else if (col_sf.length() > 2
                && ((col_sf.startswith("{") && col_sf.endswith("}"))
@@ -259,20 +278,20 @@ db_label_source::push_column(const scoped_value_t& sv)
 
                 auto num_scan_res = scn::scan_value<double>(jpw_value.wt_value);
                 if (num_scan_res) {
-                    this->dls_chart.add_value(jpw_value.wt_ptr,
-                                              num_scan_res.value());
-                    this->dls_chart.with_attrs_for_ident(
+                    hm.hm_chart.add_value(jpw_value.wt_ptr,
+                                          num_scan_res.value());
+                    hm.hm_chart.with_attrs_for_ident(
                         jpw_value.wt_ptr, vc.attrs_for_ident(jpw_value.wt_ptr));
                 }
             }
         }
     }
+    hm.hm_chart.next_row();
 }
 
 void
 db_label_source::clear()
 {
-    this->dls_chart.clear();
     this->dls_headers.clear();
     this->dls_rows.clear();
     this->dls_time_column.clear();
@@ -300,14 +319,24 @@ db_label_source::row_for_time(struct timeval time_bucket)
     return nonstd::nullopt;
 }
 
-nonstd::optional<struct timeval>
+nonstd::optional<text_time_translator::row_info>
 db_label_source::time_for_row(vis_line_t row)
 {
     if ((row < 0_vl) || (((size_t) row) >= this->dls_time_column.size())) {
         return nonstd::nullopt;
     }
 
-    return this->dls_time_column[row];
+    return row_info{this->dls_time_column[row], row};
+}
+
+nonstd::optional<attr_line_t>
+db_overlay_source::list_header_for_overlay(const listview_curses& lv,
+                                           vis_line_t line)
+{
+    attr_line_t retval;
+
+    retval.append(" JSON column details");
+    return retval;
 }
 
 void
@@ -351,7 +380,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
             {
                 const std::string& header
                     = this->dos_labels->dls_headers[col].hm_name;
-                value_out.emplace_back(" JSON Column: " + header);
+                value_out.emplace_back(" Column: " + header);
 
                 retval += 1;
             }
@@ -359,13 +388,15 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
             stacked_bar_chart<std::string> chart;
             int start_line = value_out.size();
 
-            chart.with_stacking_enabled(false).with_margins(3, 0);
+            chart.with_stacking_enabled(false)
+                .with_margins(3, 0)
+                .with_show_state(stacked_bar_chart_base::show_all{});
 
             for (auto& jpw_value : jpw.jpw_values) {
                 value_out.emplace_back("   " + jpw_value.wt_ptr + " = "
                                        + jpw_value.wt_value);
 
-                string_attrs_t& sa = value_out.back().get_attrs();
+                auto& sa = value_out.back().get_attrs();
                 struct line_range lr(1, 2);
 
                 sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LTEE));
@@ -403,8 +434,12 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                     auto& sa = value_out[curr_line].get_attrs();
                     int left = 3;
 
-                    chart.chart_attrs_for_value(
-                        lv, left, iter->wt_ptr, num_scan_res.value(), sa);
+                    chart.chart_attrs_for_value(lv,
+                                                left,
+                                                width,
+                                                iter->wt_ptr,
+                                                num_scan_res.value(),
+                                                sa);
                 }
             }
         }
@@ -443,7 +478,8 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         auto actual_col_size = std::min(dls->dls_max_column_width,
                                         dls->dls_headers[lpc].hm_column_size);
         std::string cell_title = dls->dls_headers[lpc].hm_name;
-
+        string_attrs_t cell_attrs;
+        scrub_ansi_string(cell_title, &cell_attrs);
         truncate_to(cell_title, dls->dls_max_column_width);
 
         auto cell_length
@@ -454,11 +490,12 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         before = total_fill / 2;
         total_fill -= before;
         line.append(before, ' ');
+        shift_string_attrs(cell_attrs, 0, line.size());
         line.append(cell_title);
         line.append(total_fill, ' ');
-        line.append(1, ' ');
-
         struct line_range header_range(line_len_before, line.length());
+
+        line.append(1, ' ');
 
         require_ge(header_range.lr_start, 0);
 
@@ -470,6 +507,7 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
             attrs.ta_attrs = A_UNDERLINE;
         }
         sa.emplace_back(header_range, VC_STYLE.value(attrs));
+        sa.insert(sa.end(), cell_attrs.begin(), cell_attrs.end());
     }
 
     struct line_range lr(0);

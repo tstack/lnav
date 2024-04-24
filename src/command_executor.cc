@@ -47,11 +47,17 @@
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
+#include "prql-modules.h"
 #include "readline_highlighters.hh"
 #include "service_tags.hh"
 #include "shlex.hh"
+#include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
+
+#ifdef HAVE_RUST_DEPS
+#    include "prqlc.cxx.hh"
+#endif
 
 using namespace lnav::roles::literals;
 
@@ -250,14 +256,60 @@ execute_search(const std::string& search_cmd)
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
-    db_label_source& dls = lnav_data.ld_db_row_source;
+    db_label_source& dls = *(ec.ec_label_source_stack.back());
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     struct timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
     std::string retval;
     int retcode = SQLITE_OK;
 
-    log_info("Executing SQL: %s", sql.c_str());
+    if (lnav::sql::is_prql(stmt_str)) {
+        log_info("compiling PRQL: %s", stmt_str.c_str());
+
+#if HAVE_RUST_DEPS
+        auto opts = prqlc::Options{true, "sql.sqlite", true};
+
+        auto tree = sqlite_extension_prql;
+        for (const auto& mod : lnav_prql_modules) {
+            tree.emplace_back(prqlc::SourceTreeElement{
+                mod.get_name(),
+                mod.to_string_fragment().to_string(),
+            });
+        }
+        tree.emplace_back(prqlc::SourceTreeElement{"", stmt_str});
+        auto cr = prqlc::compile_tree(tree, opts);
+
+        for (const auto& msg : cr.messages) {
+            if (msg.kind != prqlc::MessageKind::Error) {
+                continue;
+            }
+
+            auto stmt_al = attr_line_t(stmt_str);
+            readline_sqlite_highlighter(stmt_al, 0);
+            auto um
+                = lnav::console::user_message::error(
+                      attr_line_t("unable to compile PRQL: ").append(stmt_al))
+                      .with_reason(
+                          attr_line_t::from_ansi_str((std::string) msg.reason));
+            if (!msg.display.empty()) {
+                um.with_note(
+                    attr_line_t::from_ansi_str((std::string) msg.display));
+            }
+            for (const auto& hint : msg.hints) {
+                um.with_help(attr_line_t::from_ansi_str((std::string) hint));
+                break;
+            }
+            return Err(um);
+        }
+        stmt_str = (std::string) cr.output;
+#else
+        auto um = lnav::console::user_message::error(
+            attr_line_t("PRQL is not supported in this build"));
+        return Err(um);
+#endif
+    }
+
+    log_info("Executing SQL: %s", stmt_str.c_str());
 
     auto old_mode = lnav_data.ld_mode;
     lnav_data.ld_mode = ln_mode_t::BUSY;
@@ -268,8 +320,9 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         std::vector<std::string> args;
         split_ws(stmt_str, args);
 
-        auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
-                                          sql_cmd_map_tag>();
+        const auto* sql_cmd_map
+            = injector::get<readline_context::command_map_t*,
+                            sql_cmd_map_tag>();
         auto cmd_iter = sql_cmd_map->find(args[0]);
 
         if (cmd_iter != sql_cmd_map->end()) {
@@ -412,14 +465,14 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         }
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_files_view.reload_data();
-        lnav_data.ld_views[LNV_DB].reload_data();
-        lnav_data.ld_views[LNV_DB].set_left(0);
 
         lnav_data.ld_active_files.fc_files
             | lnav::itertools::for_each(&logfile::dump_stats);
         if (ec.ec_sql_callback != sql_callback) {
             retval = ec.ec_accumulator->get_string();
         } else if (!dls.dls_rows.empty()) {
+            lnav_data.ld_views[LNV_DB].reload_data();
+            lnav_data.ld_views[LNV_DB].set_left(0);
             if (lnav_data.ld_flags & LNF_HEADLESS) {
                 if (ec.ec_local_vars.size() == 1) {
                     ensure_view(&lnav_data.ld_views[LNV_DB]);
@@ -732,6 +785,17 @@ execute_from_file(exec_context& ec,
 Result<std::string, lnav::console::user_message>
 execute_any(exec_context& ec, const std::string& cmdline_with_mode)
 {
+    if (cmdline_with_mode.empty()) {
+        auto um = lnav::console::user_message::error("empty command")
+                      .with_help(
+                          "a command should start with ':', ';', '/', '|' and "
+                          "followed by the operation to perform");
+        if (!ec.ec_source.empty()) {
+            um.with_snippet(ec.ec_source.back());
+        }
+        return Err(um);
+    }
+
     std::string retval, alt_msg, cmdline = cmdline_with_mode.substr(1);
     auto _cleanup = finally([&ec] {
         if (ec.is_read_write() &&
@@ -798,7 +862,7 @@ execute_init_commands(
         ec_out = std::make_pair(tmpout.release(), fclose);
     }
 
-    auto& dls = lnav_data.ld_db_row_source;
+    auto& dls = *(ec.ec_label_source_stack.back());
     int option_index = 1;
 
     {
@@ -883,7 +947,7 @@ execute_init_commands(
 int
 sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
-    auto& dls = lnav_data.ld_db_row_source;
+    auto& dls = *(ec.ec_label_source_stack.back());
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();
@@ -891,7 +955,6 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         return 0;
     }
 
-    auto& chart = dls.dls_chart;
     auto& vc = view_colors::singleton();
     int ncols = sqlite3_column_count(stmt);
     int row_number;
@@ -913,16 +976,17 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 
             dls.push_header(colname, type, graphable);
             if (graphable) {
+                auto& hm = dls.dls_headers.back();
                 auto name_for_ident_attrs = colname;
                 auto attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 for (size_t attempt = 0;
-                     chart.attrs_in_use(attrs) && attempt < 3;
+                     hm.hm_chart.attrs_in_use(attrs) && attempt < 3;
                      attempt++)
                 {
                     name_for_ident_attrs += " ";
                     attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 }
-                chart.with_attrs_for_ident(colname, attrs);
+                hm.hm_chart.with_attrs_for_ident(colname, attrs);
                 dls.dls_headers.back().hm_title_attrs = attrs;
             }
         }
@@ -1001,6 +1065,8 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
             return std::string();
         });
     }
+    std::error_code errc;
+    ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
     auto open_temp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
                                                           / "exec.XXXXXX");
     if (open_temp_res.isErr()) {
@@ -1103,6 +1169,28 @@ exec_context::exec_context(logline_value_vector* line_values,
 void
 exec_context::execute(const std::string& cmdline)
 {
+    if (this->get_provenance<mouse_input>()) {
+        require(!lnav_data.ld_rl_view->is_active());
+
+        int context = 0;
+        switch (cmdline[0]) {
+            case '/':
+                context = lnav::enums::to_underlying(ln_mode_t::SEARCH);
+                break;
+            case ':':
+                context = lnav::enums::to_underlying(ln_mode_t::COMMAND);
+                break;
+            case ';':
+                context = lnav::enums::to_underlying(ln_mode_t::SQL);
+                break;
+            case '|':
+                context = lnav::enums::to_underlying(ln_mode_t::EXEC);
+                break;
+        }
+
+        lnav_data.ld_rl_view->append_to_history(context, cmdline.substr(1));
+    }
+
     auto exec_res = execute_any(*this, cmdline);
     if (exec_res.isErr()) {
         this->ec_error_callback_stack.back()(exec_res.unwrapErr());

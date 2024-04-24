@@ -1,0 +1,4 @@
+log_line,log_time,log_level,log_msg_format,log_msg_values,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters,log_msg_schema
+0,2015-11-03 09:23:38.000,info,# is up,"{""col_0"":""eth0""}",<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>,ce6143108d22799c9c7a994e21e7302e
+1,2015-11-03 09:23:38.000,info,# is up,"{""col_0"":""eth1""}",<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>,ce6143108d22799c9c7a994e21e7302e
+2,2015-11-03 09:23:38.000,info,# is down,"{""col_0"":""eth0""}",<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>,83cd119b5b6f7e79abff4d28946b7a61

@@ -80,11 +80,13 @@ void
 xterm_mouse::set_enabled(bool enabled)
 {
     if (is_available()) {
-        putp(tparm((char*) XT_TERMCAP, enabled ? 1 : 0));
-        putp(tparm((char*) XT_TERMCAP_TRACKING, enabled ? 1 : 0));
-        putp(tparm((char*) XT_TERMCAP_SGR, enabled ? 1 : 0));
-        fflush(stdout);
-        this->xm_enabled = enabled;
+        if (this->xm_enabled != enabled) {
+            putp(tparm((char*) XT_TERMCAP, enabled ? 1 : 0));
+            putp(tparm((char*) XT_TERMCAP_TRACKING, enabled ? 1 : 0));
+            putp(tparm((char*) XT_TERMCAP_SGR, enabled ? 1 : 0));
+            fflush(stdout);
+            this->xm_enabled = enabled;
+        }
     } else {
         log_warning("mouse support is not available");
     }

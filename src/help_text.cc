@@ -96,10 +96,26 @@ help_text::with_opposites(
     return *this;
 }
 
+help_text&
+help_text::with_prql_path(
+    const std::initializer_list<const char*>& prql) noexcept
+{
+    this->ht_prql_path = prql;
+    return *this;
+}
+
+std::multimap<std::string, help_text*>&
+help_text::tag_map()
+{
+    static std::multimap<std::string, help_text*> retval;
+
+    return retval;
+}
+
 void
 help_text::index_tags()
 {
     for (const auto& tag : this->ht_tags) {
-        TAGGED.insert(std::make_pair(tag, this));
+        tag_map().insert(std::make_pair(tag, this));
     }
 }

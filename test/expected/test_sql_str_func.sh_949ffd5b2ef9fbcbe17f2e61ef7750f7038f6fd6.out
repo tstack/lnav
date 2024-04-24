@@ -1,2 +1,2 @@
-regexp_match('^(\w+)=([^;]+);', 'abc=def;ghi=jkl;') 
+[1m[4mregexp_match('^(\w+)=([^;]+);', 'abc=def;ghi=jkl;')[0m[1m[4m [0m
 {"col_0":"abc","col_1":"def"}                       

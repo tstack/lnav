@@ -118,7 +118,7 @@ add_custom_command(OUTPUT time_fmts.cc COMMAND ptimec ${TIME_FORMATS} >
         time_fmts.cc)
 
 add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_rt.cc time_fmts.cc)
-target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR} third-party/date/include)
 
 function(bin2c)
     cmake_parse_arguments(BIN2C_ "" "VARNAME" "" ${ARGN})
@@ -191,6 +191,20 @@ add_custom_command(
         DEPENDS bin2c ${FORMAT_FILES})
 list(APPEND GEN_SRCS default-formats.h default-formats.cc)
 
+set(PRQL_FILES
+        prql/stats.prql
+        prql/utils.prql)
+
+set(PRQL_FILE_PATHS ${PRQL_FILES})
+
+list(TRANSFORM PRQL_FILE_PATHS PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
+
+add_custom_command(
+        OUTPUT prql-modules.h prql-modules.cc
+        COMMAND bin2c -n lnav_prql_modules prql-modules ${PRQL_FILE_PATHS}
+        DEPENDS bin2c ${PRQL_FILES})
+list(APPEND GEN_SRCS prql-modules.h prql-modules.cc)
+
 set(CONFIG_FILES
         root-config.json
         keymaps/de-keymap.json
@@ -219,6 +233,7 @@ list(APPEND GEN_SRCS default-config.h default-config.cc)
 set(BUILTIN_LNAV_SCRIPTS
         scripts/dhclient-summary.lnav
         scripts/docker-url-handler.lnav
+        scripts/journald-url-handler.lnav
         scripts/lnav-pop-view.lnav
         scripts/partition-by-boot.lnav
         scripts/piper-url-handler.lnav
@@ -274,6 +289,7 @@ add_library(
         third-party/date/src/tz.cpp
 )
 target_include_directories(datepp PUBLIC third-party/date/include)
+target_link_libraries(datepp ${lnav_LIBS})
 
 add_library(
         cppscnlib STATIC
@@ -466,6 +482,7 @@ add_library(
         styling.cc
         text_anonymizer.cc
         text_format.cc
+        text_overlay_menu.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
         textview_curses.cc
@@ -592,6 +609,7 @@ add_library(
         termios_guard.hh
         text_anonymizer.hh
         text_format.hh
+        text_overlay_menu.hh
         textfile_highlighters.hh
         textfile_sub_source.hh
         textview_curses.hh
@@ -659,6 +677,9 @@ add_library(
         third-party/md4c/md4c.h
 
         third-party/robin_hood/robin_hood.h
+
+        third-party/prqlc-c/prqlc.cxx.hh
+        third-party/prqlc-c/prqlc.cxx.cc
 )
 
 set(lnav_SRCS lnav.cc)
@@ -667,6 +688,7 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party
         third-party/base64/include
         third-party/date/include
+        third-party/prqlc-c
         third-party/rapidyaml
 )
 

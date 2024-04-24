@@ -514,15 +514,66 @@ println(FILE* file, const attr_line_t& al)
             line_style |= default_bg_style;
         }
 
+        if (line_style.has_foreground() && line_style.has_background()
+            && !line_style.get_foreground().is_rgb
+            && !line_style.get_background().is_rgb
+            && line_style.get_foreground().value.term_color
+                == line_style.get_background().value.term_color)
+        {
+            auto new_style = fmt::text_style{};
+
+            if (line_style.has_emphasis()) {
+                new_style |= line_style.get_emphasis();
+            }
+            new_style |= fmt::fg(line_style.get_foreground());
+            if (line_style.get_background().value.term_color
+                == lnav::enums::to_underlying(fmt::terminal_color::black))
+            {
+                new_style |= fmt::bg(fmt::terminal_color::white);
+            } else {
+                new_style |= fmt::bg(fmt::terminal_color::black);
+            }
+            line_style = new_style;
+        }
+
         if (href) {
             fmt::print(file, FMT_STRING("\x1b]8;;{}\x1b\\"), href.value());
         }
         if (start < str.size()) {
             auto actual_end = std::min(str.size(), static_cast<size_t>(point));
-            fmt::print(file,
-                       line_style,
-                       FMT_STRING("{}"),
-                       str.substr(start, actual_end - start));
+            auto sub = std::string{};
+
+            for (auto lpc = start; lpc < actual_end;) {
+                auto cp_start = lpc;
+                auto read_res = ww898::utf::utf8::read(
+                    [&str, &lpc]() { return str[lpc++]; });
+
+                if (read_res.isErr()) {
+                    sub.append(fmt::format(
+                        FMT_STRING("{:?}"),
+                        fmt::string_view{&str[cp_start], lpc - cp_start}));
+                    continue;
+                }
+
+                auto ch = read_res.unwrap();
+                switch (ch) {
+                    case '\b':
+                        sub.append("\u232b");
+                        break;
+                    case '\x1b':
+                        sub.append("\u238b");
+                        break;
+                    case '\x07':
+                        sub.append("\U0001F514");
+                        break;
+
+                    default:
+                        sub.append(&str[cp_start], lpc - cp_start);
+                        break;
+                }
+            }
+
+            fmt::print(file, line_style, FMT_STRING("{}"), sub);
         }
         if (href) {
             fmt::print(file, FMT_STRING("\x1b]8;;\x1b\\"));

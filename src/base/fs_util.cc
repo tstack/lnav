@@ -34,6 +34,7 @@
 #include "config.h"
 #include "fmt/format.h"
 #include "itertools.hh"
+#include "lnav_log.hh"
 #include "opt_util.hh"
 
 namespace lnav {
@@ -117,9 +118,12 @@ read_file(const ghc::filesystem::path& path)
     }
 }
 
-Result<void, std::string>
-write_file(const ghc::filesystem::path& path, const string_fragment& content)
+Result<write_file_result, std::string>
+write_file(const ghc::filesystem::path& path,
+           const string_fragment& content,
+           std::set<write_file_options> options)
 {
+    write_file_result retval;
     auto tmp_pattern = path;
     tmp_pattern += ".XXXXXX";
 
@@ -138,7 +142,25 @@ write_file(const ghc::filesystem::path& path, const string_fragment& content)
                                bytes_written,
                                content.length()));
     }
+
     std::error_code ec;
+    if (options.count(write_file_options::backup_existing)) {
+        if (ghc::filesystem::exists(path, ec)) {
+            auto backup_path = path;
+
+            backup_path += ".bak";
+            ghc::filesystem::rename(path, backup_path, ec);
+            if (ec) {
+                return Err(
+                    fmt::format(FMT_STRING("unable to backup file {}: {}"),
+                                path.string(),
+                                ec.message()));
+            }
+
+            retval.wfr_backup_path = backup_path;
+        }
+    }
+
     ghc::filesystem::rename(tmp_pair.first, path, ec);
     if (ec) {
         return Err(
@@ -147,7 +169,7 @@ write_file(const ghc::filesystem::path& path, const string_fragment& content)
                         ec.message()));
     }
 
-    return Ok();
+    return Ok(retval);
 }
 
 std::string
@@ -196,3 +218,20 @@ file_lock::file_lock(const ghc::filesystem::path& archive_path)
 
 }  // namespace filesystem
 }  // namespace lnav
+
+namespace fmt {
+
+auto
+formatter<ghc::filesystem::path>::format(const ghc::filesystem::path& p,
+                                         format_context& ctx)
+    -> decltype(ctx.out()) const
+{
+    auto esc_res = fmt::v10::detail::find_escape(&(*p.native().begin()),
+                                                 &(*p.native().end()));
+    if (esc_res.end == nullptr) {
+        return formatter<string_view>::format(p.native(), ctx);
+    }
+
+    return format_to(ctx.out(), FMT_STRING("{:?}"), p.native());
+}
+}  // namespace fmt

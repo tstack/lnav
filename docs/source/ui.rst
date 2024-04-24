@@ -26,11 +26,11 @@ times in the views.
 
 **lnav** provides many operations to work with the log/text data in the
 main view.  For example, you can add comments and tags to log messages.
-By default, the top line is used as the reference point to edit the
+The highlighted cursor line is used as the reference point to edit the
 comment or tags.  Alternatively, you can press :kbd:`Ctrl` + :kbd:`x`
-to switch to "cursor" mode where the "focused" line is highlighted and
-most operations now work with that line.  When in "cursor" mode, the
-:kbd:`↑` and :kbd:`↓` keys now move the focused line instead of scrolling
+to switch to "top" mode where the "focused" line is the top line in the
+view and most operations now work with that line.  When in "cursor" mode,
+the :kbd:`↑` and :kbd:`↓` keys now move the focused line instead of scrolling
 the view.  Jumping to bookmarks, like errors, will also move the focused
 line instead of moving the next error to the top of the view.
 
@@ -416,3 +416,71 @@ range of values.  The panel at the bottom of the view shows the data points
 themselves from the original source, the log file or the SQL query results.
 You can press :kbd:`TAB` to focus on the details panel so you can scroll
 around and get a closer look at the values.
+
+.. _ui_mouse:
+
+Mouse Support (v0.12.2+)
+------------------------
+
+With mouse support enabled, either through the `/ui/mouse/mode`
+configuration option or by pressing :kbd:`F2`, many of the UI
+elements will respond to mouse inputs:
+
+* clicking on the main view will move the cursor to the given
+  row and dragging will scroll the view as needed;
+* double-clicking in the main view will select the underlying
+  text and drag-selecting within a line will select the given
+  text;
+* when double-clicking text: if the mouse pointer is inside
+  a quoted string, the contents of the string will be selected;
+  if the mouse pointer is on the quote, the quote will be included
+  in the selection; if the mouse pointer is over a bracket
+  (e.g. [],{},()) where the matching bracket is on the same line,
+  the selection will span from one bracket to the other;
+* when text is selected, a menu will pop up that can be used
+  to filter based on the current text, search for it, or copy
+  it to the clipboard;
+* right-clicking the start of a log message in the main view
+  will open the parser details overlay;
+* the parser details now displays a diamond next to fields to
+  indicate whether they are shown/hidden and this can be
+  clicked to toggle the state;
+* the parser details will show a bar chart icon for fields with
+  values which, when clicked, will open either the spectrogram
+  view for the given field or open the DB query prompt with a
+  PRQL query to generate a histogram of the field values;
+* clicking in the scroll area will move the view by a page,
+  double-clicking will move the view to that area, and
+  dragging the scrollbar will move the view to the given spot;
+* clicking on the breadcrumb bar will select a crumb and
+  selecting a possibility from the popup will move to that
+  location in the view;
+* clicking on portions of the bottom status bar will trigger
+  a relevant action (e.g. clicking the line number will open
+  the command prompt with :code:`:goto <current-line>`);
+* clicking on the configuration panel tabs (i.e. Files/Filters)
+  will open the selected panel and clicking parts of the
+  display in there will perform the relevant action (e.g.
+  clicking the diamond will enable/disable the file/filter);
+* clicking in a prompt will move the cursor to the location;
+* clicking on a column in the spectrogram view will select it.
+
+.. note::
+
+   A downside of enabling mouse support is that normal text
+   selection and copy will no longer work.  While lnav has
+   some support for selection in the main view, there are
+   still likely to be cases where that is insufficient.
+   In those cases, you can press :kbd:`F2` to quickly
+   switch back-and-forth.  Or, some terminals have support
+   for switching while a modifier is pressed:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Key
+        - Terminal
+      * - :kbd:`Option`
+        - iTerm, Hyper
+      * - :kbd:`Fn`
+        - Terminal.app

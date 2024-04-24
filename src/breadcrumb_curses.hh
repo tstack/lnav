@@ -40,15 +40,9 @@
 
 class breadcrumb_curses : public view_curses {
 public:
+    using action = std::function<void(breadcrumb_curses&)>;
+
     breadcrumb_curses();
-
-    void set_y(int y)
-    {
-        this->bc_y = y;
-        this->bc_match_view.set_y(y + 1);
-    }
-
-    int get_y() const { return this->bc_y; }
 
     void set_window(WINDOW* win)
     {
@@ -61,14 +55,21 @@ public:
         this->bc_line_source = std::move(ls);
     }
 
+    bool handle_mouse(mouse_event& me) override;
+
     void focus();
     void blur();
 
     bool handle_key(int ch);
 
-    void do_update() override;
+    bool do_update() override;
 
     void reload_data();
+
+    static void no_op_action(breadcrumb_curses&);
+
+    action on_focus{no_op_action};
+    action on_blur{no_op_action};
 
 private:
     class search_overlay_source : public list_overlay_source {
@@ -90,7 +91,6 @@ private:
 
     WINDOW* bc_window{nullptr};
     std::function<std::vector<breadcrumb::crumb>()> bc_line_source;
-    int bc_y{0};
     std::vector<breadcrumb::crumb> bc_focused_crumbs;
     nonstd::optional<size_t> bc_selected_crumb;
     nonstd::optional<size_t> bc_last_selected_crumb;
@@ -101,6 +101,19 @@ private:
     plain_text_source bc_match_source;
     search_overlay_source bc_match_search_overlay;
     textview_curses bc_match_view;
+
+    struct displayed_crumb {
+        displayed_crumb(line_range range, size_t index)
+            : dc_range(range), dc_index(index)
+        {
+        }
+
+        line_range dc_range;
+        size_t dc_index{0};
+    };
+
+    std::vector<displayed_crumb> bc_displayed_crumbs;
+    bool bc_initial_mouse_event{true};
 };
 
 #endif

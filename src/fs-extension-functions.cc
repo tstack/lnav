@@ -328,6 +328,7 @@ fs_extension_functions(struct FuncDef** basic_funcs,
         sqlite_func_adapter<decltype(&sql_basename), sql_basename>::builder(
             help_text("basename", "Extract the base portion of a pathname.")
                 .sql_function()
+                .with_prql_path({"fs", "basename"})
                 .with_parameter({"path", "The path"})
                 .with_tags({"filename"})
                 .with_example({"To get the base of a plain file name",
@@ -341,12 +342,18 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                 .with_example({"To get the base of a Windows path",
                                "SELECT basename('foo\\bar')"})
                 .with_example({"To get the base of the root directory",
-                               "SELECT basename('/')"})),
+                               "SELECT basename('/')"})
+                .with_example({
+                    "To get the base of a path",
+                    "from [{p='foo/bar'}] | select { fs.basename p }",
+                    help_example::language::prql,
+                })),
 
         sqlite_func_adapter<decltype(&sql_dirname), sql_dirname>::builder(
             help_text("dirname", "Extract the directory portion of a pathname.")
                 .sql_function()
                 .with_parameter({"path", "The path"})
+                .with_prql_path({"fs", "dirname"})
                 .with_tags({"filename"})
                 .with_example({"To get the directory of a relative file path",
                                "SELECT dirname('foo/bar')"})
@@ -363,6 +370,7 @@ fs_extension_functions(struct FuncDef** basic_funcs,
         sqlite_func_adapter<decltype(&sql_joinpath), sql_joinpath>::builder(
             help_text("joinpath", "Join components of a path together.")
                 .sql_function()
+                .with_prql_path({"fs", "join"})
                 .with_parameter(
                     help_text(
                         "path",
@@ -391,6 +399,7 @@ fs_extension_functions(struct FuncDef** basic_funcs,
         sqlite_func_adapter<decltype(&sql_readlink), sql_readlink>::builder(
             help_text("readlink", "Read the target of a symbolic link.")
                 .sql_function()
+                .with_prql_path({"fs", "readlink"})
                 .with_parameter({"path", "The path to the symbolic link."})
                 .with_tags({"filename"})),
 
@@ -401,6 +410,7 @@ fs_extension_functions(struct FuncDef** basic_funcs,
                 "symbolic links and "
                 "resolving '.' and '..' references.")
                 .sql_function()
+                .with_prql_path({"fs", "realpath"})
                 .with_parameter({"path", "The path to resolve."})
                 .with_tags({"filename"})),
 
@@ -408,6 +418,7 @@ fs_extension_functions(struct FuncDef** basic_funcs,
             help_text("shell_exec",
                       "Executes a shell command and returns its output.")
                 .sql_function()
+                .with_prql_path({"shell", "exec"})
                 .with_parameter({"cmd", "The command to execute."})
                 .with_parameter(help_text{
                     "input",

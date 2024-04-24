@@ -1,0 +1,3 @@
+group_concat(cs_uri_stem),sc_status
+"/vmw/cgi/tramp,/vmw/vSphere/default/vmkernel.gz",200
+/vmw/vSphere/default/vmkboot.gz,404

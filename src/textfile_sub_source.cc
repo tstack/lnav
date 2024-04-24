@@ -100,9 +100,6 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
 
     if (lf->get_text_format() == text_format_t::TF_BINARY) {
         this->tss_hex_line.clear();
-
-        attr_line_builder alb(this->tss_hex_line);
-
         auto fsize = lf->get_stat().st_size;
         auto fr = file_range{line * 16};
         fr.fr_size = std::min((file_ssize_t) 16, fsize - fr.fr_offset);
@@ -119,57 +116,12 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
 
         auto sbr = read_res.unwrap();
         auto sf = sbr.to_string_fragment();
+        attr_line_builder alb(this->tss_hex_line);
         {
             auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_FILE_OFFSET));
             alb.appendf(FMT_STRING("{: >16x} "), fr.fr_offset);
         }
-        auto byte_off = size_t{0};
-        for (auto ch : sf) {
-            if (byte_off == 8) {
-                alb.append(" ");
-            }
-            nonstd::optional<role_t> ro;
-            if (ch == '\0') {
-                ro = role_t::VCR_NULL;
-            } else if (isspace(ch) || iscntrl(ch)) {
-                ro = role_t::VCR_ASCII_CTRL;
-            } else if (!isprint(ch)) {
-                ro = role_t::VCR_NON_ASCII;
-            }
-            auto ag = ro.has_value() ? alb.with_attr(VC_ROLE.value(ro.value()))
-                                     : alb.with_default();
-            alb.appendf(FMT_STRING(" {:0>2x}"), ch);
-            byte_off += 1;
-        }
-        for (; byte_off < 16; byte_off++) {
-            if (byte_off == 8) {
-                alb.append(" ");
-            }
-            alb.append("   ");
-        }
-        alb.append("  ");
-        byte_off = 0;
-        for (auto ch : sf) {
-            if (byte_off == 8) {
-                alb.append(" ");
-            }
-            if (ch == '\0') {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NULL));
-                alb.append("\u22c4");
-            } else if (isspace(ch)) {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
-                alb.append("_");
-            } else if (iscntrl(ch)) {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_ASCII_CTRL));
-                alb.append("\u2022");
-            } else if (isprint(ch)) {
-                this->tss_hex_line.get_string().push_back(ch);
-            } else {
-                auto ag = alb.with_attr(VC_ROLE.value(role_t::VCR_NON_ASCII));
-                alb.append("\u00d7");
-            }
-            byte_off += 1;
-        }
+        alb.append_as_hexdump(sf);
         auto alt_row_index = line % 4;
         if (alt_row_index == 2 || alt_row_index == 3) {
             this->tss_hex_line.with_attr_for_all(
@@ -343,10 +295,14 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
                 || line >= lfo->lfo_filter_state.tfs_index.size())
             {
             } else {
-                retval
-                    = lf->message_byte_length(
-                            lf->begin() + lfo->lfo_filter_state.tfs_index[line])
-                          .mlr_length;
+                auto read_res = lf->read_line(
+                    lf->begin() + lfo->lfo_filter_state.tfs_index[line]);
+                if (read_res.isOk()) {
+                    auto sbr = read_res.unwrap();
+                    auto str = to_string(sbr);
+                    scrub_ansi_string(str, nullptr);
+                    retval = string_fragment::from_str(str).column_width();
+                }
             }
         } else {
             retval = rend_iter->second.rf_text_source->text_size_for_line(
@@ -429,18 +385,13 @@ textfile_sub_source::push_back(const std::shared_ptr<logfile>& lf)
 void
 textfile_sub_source::text_filters_changed()
 {
-    for (auto iter = this->tss_files.begin(); iter != this->tss_files.end();) {
-        ++iter;
-    }
-    for (auto iter = this->tss_hidden_files.begin();
-         iter != this->tss_hidden_files.end();)
-    {
-        ++iter;
+    auto lf = this->current_file();
+    if (lf == nullptr || lf->get_text_format() == text_format_t::TF_BINARY) {
+        return;
     }
 
-    std::shared_ptr<logfile> lf = this->current_file();
-
-    if (lf == nullptr) {
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
         return;
     }
 
@@ -462,6 +413,37 @@ textfile_sub_source::text_filters_changed()
     }
 
     this->tss_view->redo_search();
+
+    auto iter = std::lower_bound(lfo->lfo_filter_state.tfs_index.begin(),
+                                 lfo->lfo_filter_state.tfs_index.end(),
+                                 this->tss_content_line);
+    auto vl = vis_line_t(
+        std::distance(lfo->lfo_filter_state.tfs_index.begin(), iter));
+    this->tss_view->set_selection(vl);
+}
+
+void
+textfile_sub_source::scroll_invoked(textview_curses* tc)
+{
+    auto lf = this->current_file();
+    if (lf == nullptr || lf->get_text_format() == text_format_t::TF_BINARY) {
+        return;
+    }
+
+    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    if (rend_iter != this->tss_rendered_files.end()) {
+        return;
+    }
+
+    auto line = tc->get_selection();
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (lfo == nullptr || line < 0_vl
+        || line >= lfo->lfo_filter_state.tfs_index.size())
+    {
+        return;
+    }
+
+    this->tss_content_line = lfo->lfo_filter_state.tfs_index[line];
 }
 
 int
@@ -897,8 +879,13 @@ textfile_sub_source::rescan_files(
                 auto ms_iter = this->tss_doc_metadata.find(lf->get_filename());
 
                 if (!new_data && ms_iter != this->tss_doc_metadata.end()) {
-                    if (st.st_mtime != ms_iter->second.ms_mtime
-                        || st.st_size != ms_iter->second.ms_file_size)
+                    // Only invalidate the meta if the file is small, or we
+                    // found some meta previously.
+                    if ((st.st_mtime != ms_iter->second.ms_mtime
+                         || st.st_size != ms_iter->second.ms_file_size)
+                        && (st.st_size < 10 * 1024
+                            || !ms_iter->second.ms_metadata.m_sections_tree
+                                    .empty()))
                     {
                         log_debug(
                             "text file has changed, invalidating metadata.  "
@@ -1006,6 +993,10 @@ textfile_sub_source::set_top_from_off(file_off_t off)
 
         if (new_top_opt) {
             this->tss_view->set_selection(vis_line_t(new_top_opt.value()));
+            if (this->tss_view->is_selectable()) {
+                this->tss_view->set_top(this->tss_view->get_selection() - 2_vl,
+                                        false);
+            }
         }
     };
 }
@@ -1231,6 +1222,9 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
                 if (neighbors_res->cnr_next) {
                     return to_vis_line(
                         lf, neighbors_res->cnr_next.value()->hn_start);
+                } else if (!md.m_sections_root->hn_children.empty()) {
+                    return to_vis_line(
+                        lf, md.m_sections_root->hn_children[0]->hn_start);
                 }
                 break;
             }
@@ -1238,12 +1232,15 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
         return nonstd::nullopt;
     }
 
+    log_debug("  path for line: %s", fmt::to_string(path_for_line).c_str());
     auto last_key = path_for_line.back();
     path_for_line.pop_back();
 
     auto parent_opt = lnav::document::hier_node::lookup_path(
         md.m_sections_root.get(), path_for_line);
     if (!parent_opt) {
+        log_debug("  no parent for path: %s",
+                  fmt::to_string(path_for_line).c_str());
         return nonstd::nullopt;
     }
     auto parent = parent_opt.value();
@@ -1251,6 +1248,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     auto child_hn = parent->lookup_child(last_key);
     if (!child_hn) {
         // XXX "should not happen"
+        log_debug("  child not found");
         return nonstd::nullopt;
     }
 

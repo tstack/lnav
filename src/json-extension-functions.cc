@@ -773,6 +773,7 @@ json_extension_functions(struct FuncDef** basic_funcs,
                       "array with "
                       "two elements: the initial value and the given value.")
                 .sql_function()
+                .with_prql_path({"json", "concat"})
                 .with_parameter({"json", "The initial JSON value."})
                 .with_parameter(
                     help_text("value",
@@ -796,6 +797,7 @@ json_extension_functions(struct FuncDef** basic_funcs,
             help_text("json_contains",
                       "Check if a JSON value contains the given element.")
                 .sql_function()
+                .with_prql_path({"json", "contains"})
                 .with_parameter({"json", "The JSON value to query."})
                 .with_parameter(
                     {"value", "The value to look for in the first argument"})
@@ -818,6 +820,7 @@ json_extension_functions(struct FuncDef** basic_funcs,
             help_text("jget",
                       "Get the value from a JSON object using a JSON-Pointer.")
                 .sql_function()
+                .with_prql_path({"json", "get"})
                 .with_parameter({"json", "The JSON object to query."})
                 .with_parameter(
                     {"ptr", "The JSON-Pointer to lookup in the object."})
@@ -859,6 +862,7 @@ json_extension_functions(struct FuncDef** basic_funcs,
             sql_json_group_object_final,
             help_text("json_group_object")
                 .sql_function()
+                .with_prql_path({"json", "group_object"})
                 .with_summary(
                     "Collect the given values from a query into a JSON object")
                 .with_parameter(
@@ -883,6 +887,7 @@ json_extension_functions(struct FuncDef** basic_funcs,
             sql_json_group_array_final,
             help_text("json_group_array")
                 .sql_function()
+                .with_prql_path({"json", "group_array"})
                 .with_summary(
                     "Collect the given values from a query into a JSON array")
                 .with_parameter(

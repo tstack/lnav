@@ -1,0 +1,5 @@
+let distinct = func column rel <relation> -> <relation> (
+  rel
+  select {column}
+  group {column} (take 1)
+)

@@ -92,6 +92,12 @@ public:
         return *this;
     }
 
+    stacked_bar_chart& with_show_state(show_state ss)
+    {
+        this->sbc_show_state = ss;
+        return *this;
+    }
+
     bool attrs_in_use(const text_attrs& attrs) const
     {
         for (const auto& ident : this->sbc_idents) {
@@ -169,6 +175,7 @@ public:
 
     void chart_attrs_for_value(const listview_curses& lc,
                                int& left,
+                               unsigned long width,
                                const T& ident,
                                double value,
                                string_attrs_t& value_out) const
@@ -178,10 +185,9 @@ public:
         require(ident_iter != this->sbc_ident_lookup.end());
 
         size_t ident_index = ident_iter->second;
-        unsigned long width, avail_width;
+        unsigned long avail_width;
         bucket_stats_t overall_stats;
         struct line_range lr;
-        vis_line_t height;
 
         lr.lr_unit = line_range::unit::codepoint;
 
@@ -194,22 +200,27 @@ public:
             return;
         }
 
-        lc.get_dimensions(height, width);
-
         for (size_t lpc = 0; lpc < this->sbc_idents.size(); lpc++) {
             if (this->sbc_show_state.template is<show_all>()
                 || lpc == (size_t) ident_to_show)
             {
-                overall_stats.merge(this->sbc_idents[lpc].ci_stats,
-                                    this->sbc_do_stacking);
+                overall_stats.merge(this->sbc_idents[lpc].ci_stats);
             }
+        }
+        if (this->sbc_max_row_value > overall_stats.bs_max_value) {
+            overall_stats.bs_max_value = this->sbc_max_row_value;
+        }
+        if (this->sbc_row_sum > overall_stats.bs_max_value) {
+            overall_stats.bs_max_value = this->sbc_row_sum;
         }
 
         if (this->sbc_show_state.template is<show_all>()) {
-            if (width < this->sbc_idents.size()) {
+            if (this->sbc_idents.size() == 1) {
+                avail_width = width;
+            } else if (width < this->sbc_max_row_items) {
                 avail_width = 0;
             } else {
-                avail_width = width - this->sbc_idents.size();
+                avail_width = width;
             }
         } else {
             avail_width = width - 1;
@@ -249,13 +260,35 @@ public:
     {
         this->sbc_idents.clear();
         this->sbc_ident_lookup.clear();
-        this->sbc_show_state = show_all();
+        this->sbc_show_state = show_none();
+        this->sbc_row_sum = 0;
+        this->sbc_row_items = 0;
+        this->sbc_max_row_value = 0;
+        this->sbc_max_row_items = 0;
     }
 
     void add_value(const T& ident, double amount = 1.0)
     {
         struct chart_ident& ci = this->find_ident(ident);
         ci.ci_stats.update(amount);
+        this->sbc_row_sum += amount;
+        if (ci.ci_last_seen_row != this->sbc_row_counter) {
+            ci.ci_last_seen_row = this->sbc_row_counter;
+            this->sbc_row_items += 1;
+        }
+    }
+
+    void next_row()
+    {
+        if (this->sbc_row_sum > this->sbc_max_row_value) {
+            this->sbc_max_row_value = this->sbc_row_sum;
+        }
+        if (this->sbc_row_items > this->sbc_max_row_items) {
+            this->sbc_max_row_items = this->sbc_row_items;
+        }
+        this->sbc_row_sum = 0;
+        this->sbc_row_items = 0;
+        this->sbc_row_counter += 1;
     }
 
     struct bucket_stats_t {
@@ -264,15 +297,10 @@ public:
         {
         }
 
-        void merge(const bucket_stats_t& rhs, bool do_stacking)
+        void merge(const bucket_stats_t& rhs)
         {
             this->bs_min_value = std::min(this->bs_min_value, rhs.bs_min_value);
-            if (do_stacking) {
-                this->bs_max_value += rhs.bs_max_value;
-            } else {
-                this->bs_max_value
-                    = std::max(this->bs_max_value, rhs.bs_max_value);
-            }
+            this->bs_max_value = std::max(this->bs_max_value, rhs.bs_max_value);
         }
 
         double width() const
@@ -304,6 +332,7 @@ protected:
         T ci_ident;
         text_attrs ci_attrs;
         bucket_stats_t ci_stats;
+        ssize_t ci_last_seen_row{-1};
     };
 
     struct chart_ident& find_ident(const T& ident)
@@ -321,7 +350,13 @@ protected:
     unsigned long sbc_left{0}, sbc_right{0};
     std::vector<struct chart_ident> sbc_idents;
     std::unordered_map<T, unsigned int> sbc_ident_lookup;
-    show_state sbc_show_state{show_all()};
+    show_state sbc_show_state{show_none()};
+
+    ssize_t sbc_row_counter{0};
+    double sbc_row_sum{0};
+    size_t sbc_row_items{0};
+    double sbc_max_row_value{0};
+    size_t sbc_max_row_items{0};
 };
 
 class hist_source2
@@ -376,7 +411,7 @@ public:
         return 0;
     }
 
-    nonstd::optional<struct timeval> time_for_row(vis_line_t row) override;
+    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
 
     nonstd::optional<vis_line_t> row_for_time(
         struct timeval tv_bucket) override;
@@ -411,6 +446,7 @@ private:
     time_t hs_last_row;
     std::map<int64_t, struct bucket_block> hs_blocks;
     stacked_bar_chart<hist_type_t> hs_chart;
+    bool hs_needs_flush{false};
 };
 
 #endif

@@ -778,7 +778,7 @@ gantt_source::row_for_time(struct timeval time_bucket)
     return vis_line_t(std::distance(this->gs_time_order.begin(), closest_iter));
 }
 
-nonstd::optional<struct timeval>
+nonstd::optional<text_time_translator::row_info>
 gantt_source::time_for_row(vis_line_t row)
 {
     if (row >= this->gs_time_order.size()) {
@@ -791,11 +791,17 @@ gantt_source::time_for_row(vis_line_t row)
         auto ov_sel = this->tss_view->get_overlay_selection();
 
         if (ov_sel && ov_sel.value() < otr.otr_sub_ops.size()) {
-            return otr.otr_sub_ops[ov_sel.value()].ostr_range.tr_begin;
+            return row_info{
+                otr.otr_sub_ops[ov_sel.value()].ostr_range.tr_begin,
+                row,
+            };
         }
     }
 
-    return otr.otr_range.tr_begin;
+    return row_info{
+        otr.otr_range.tr_begin,
+        row,
+    };
 }
 
 size_t

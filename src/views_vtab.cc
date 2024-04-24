@@ -175,6 +175,22 @@ static const typed_json_path_container<top_line_meta> top_line_meta_handlers = {
         .with_children(breadcrumb_crumb_handlers),
 };
 
+static const typed_json_path_container<line_range> line_range_handlers = {
+    yajlpp::property_handler("start").for_field(&line_range::lr_start),
+    yajlpp::property_handler("end").for_field(&line_range::lr_end),
+};
+
+static const typed_json_path_container<textview_curses::selected_text_info>
+    selected_text_handlers = {
+        yajlpp::property_handler("line").for_field(
+            &textview_curses::selected_text_info::sti_line),
+        yajlpp::property_handler("range")
+            .for_child(&textview_curses::selected_text_info::sti_range)
+            .with_children(line_range_handlers),
+        yajlpp::property_handler("value").for_field(
+            &textview_curses::selected_text_info::sti_value),
+};
+
 enum class row_details_t {
     hide,
     show,
@@ -259,7 +275,8 @@ CREATE TABLE lnav_views (
     movement TEXT,          -- The movement mode, either 'top' or 'cursor'.
     top_meta TEXT,          -- A JSON object that contains metadata related to the top line in the view.
     selection INTEGER,      -- The number of the line that is focused for selection.
-    options TEXT            -- A JSON object that contains optional settings for this view.
+    options TEXT,           -- A JSON object that contains optional settings for this view.
+    selected_text TEXT      -- A JSON object that contains information about the text selected by the mouse in the view.
 );
 )";
 
@@ -300,15 +317,15 @@ CREATE TABLE lnav_views (
                     = dynamic_cast<text_time_translator*>(tc.get_sub_source());
 
                 if (time_source != nullptr && tc.get_inner_height() > 0) {
-                    auto top_time_opt
+                    auto top_ri_opt
                         = time_source->time_for_row(tc.get_selection());
 
-                    if (top_time_opt) {
+                    if (top_ri_opt) {
                         char timestamp[64];
 
                         sql_strftime(timestamp,
                                      sizeof(timestamp),
-                                     top_time_opt.value(),
+                                     top_ri_opt->ri_time,
                                      ' ');
                         sqlite3_result_text(
                             ctx, timestamp, -1, SQLITE_TRANSIENT);
@@ -373,15 +390,15 @@ CREATE TABLE lnav_views (
 
                     top_line_meta tlm;
                     if (time_source != nullptr) {
-                        auto top_time_opt
+                        auto top_ri_opt
                             = time_source->time_for_row(tc.get_selection());
 
-                        if (top_time_opt) {
+                        if (top_ri_opt) {
                             char timestamp[64];
 
                             sql_strftime(timestamp,
                                          sizeof(timestamp),
-                                         top_time_opt.value(),
+                                         top_ri_opt->ri_time,
                                          ' ');
                             tlm.tlm_time = timestamp;
                         }
@@ -456,6 +473,16 @@ CREATE TABLE lnav_views (
                 }
                 break;
             }
+            case 14: {
+                if (tc.tc_selected_text) {
+                    to_sqlite(ctx,
+                              selected_text_handlers.to_json_string(
+                                  tc.tc_selected_text.value()));
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
         }
 
         return SQLITE_OK;
@@ -490,7 +517,8 @@ CREATE TABLE lnav_views (
                    string_fragment movement,
                    const char* top_meta,
                    int64_t selection,
-                   nonstd::optional<string_fragment> options)
+                   nonstd::optional<string_fragment> options,
+                   nonstd::optional<string_fragment> selected_text)
     {
         auto& tc = lnav_data.ld_views[index];
         auto* time_source
@@ -530,11 +558,11 @@ CREATE TABLE lnav_views (
                       tc.get_title().c_str(),
                       top_time);
             if (dts.convert_to_timeval(top_time, -1, nullptr, tv)) {
-                auto last_time_opt
+                auto last_ri_opt
                     = time_source->time_for_row(tc.get_selection());
 
-                if (last_time_opt) {
-                    auto last_time = last_time_opt.value();
+                if (last_ri_opt) {
+                    auto last_time = last_ri_opt->ri_time;
                     if (tv != last_time) {
                         time_source->row_for_time(tv) |
                             [&tc, &selection](auto row) {
@@ -719,8 +747,7 @@ CREATE TABLE lnav_view_stack (
 
         lnav_data.ld_last_view = *lnav_data.ld_view_stack.top();
         lnav_data.ld_view_stack.pop_back();
-        lnav_data.ld_preview_source.clear();
-        lnav_data.ld_preview_status_source.get_description().clear();
+        clear_preview();
 
         return SQLITE_OK;
     }

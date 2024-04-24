@@ -221,6 +221,13 @@ public:
         return retval.with_ansi_string("%s", str);
     }
 
+    static inline attr_line_t from_ansi_str(const std::string& str)
+    {
+        attr_line_t retval;
+
+        return retval.with_ansi_string(str);
+    }
+
     /** @return The string itself. */
     std::string& get_string() { return this->al_string; }
 
@@ -313,15 +320,6 @@ public:
         return *this;
     }
 
-    attr_line_t& append_quoted(const attr_line_t& al)
-    {
-        this->al_string.append("\u201c");
-        this->append(al);
-        this->al_string.append("\u201d");
-
-        return *this;
-    }
-
     template<typename S>
     attr_line_t& append_quoted(S s)
     {
@@ -344,10 +342,22 @@ public:
         return *this;
     }
 
-    template<typename S>
-    attr_line_t& append(S str)
+    attr_line_t& append(const std::string& str)
     {
         this->al_string.append(str);
+        return *this;
+    }
+
+    attr_line_t& append(const char* str)
+    {
+        this->al_string.append(str);
+        return *this;
+    }
+
+    template<typename V>
+    attr_line_t& append(const V& v)
+    {
+        this->al_string.append(fmt::to_string(v));
         return *this;
     }
 
@@ -472,7 +482,7 @@ public:
 
     attr_line_t& erase(size_t pos, size_t len = std::string::npos);
 
-    attr_line_t& rtrim();
+    attr_line_t& rtrim(nonstd::optional<const char*> chars = nonstd::nullopt);
 
     attr_line_t& erase_utf8_chars(size_t start)
     {
@@ -508,6 +518,11 @@ public:
     ssize_t utf8_length_or_length() const
     {
         return utf8_string_length(this->al_string).unwrapOr(this->length());
+    }
+
+    size_t column_width() const
+    {
+        return string_fragment::from_str(this->al_string).column_width();
     }
 
     std::string get_substring(const line_range& lr) const

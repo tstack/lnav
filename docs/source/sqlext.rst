@@ -47,6 +47,14 @@ and maximum number of bytes returned by the server, grouped by IP address:
 
     ;SELECT c_ip, avg(sc_bytes), max(sc_bytes) FROM access_log GROUP BY c_ip
 
+.. note::
+
+   For reference, the PRQL query would look like this:
+
+   .. code-block:: elm
+
+       from access_log | stats.by c_ip {average sc_bytes, max sc_bytes}
+
 After pressing :kbd:`Enter`, SQLite will execute the query using **lnav**'s
 virtual table implementation to extract the data directly from the log files.
 Once the query has finished, the main window will switch to the DB view to
@@ -70,6 +78,39 @@ The DB view has the following display features:
   The display will show the value and JSON-Pointer path that can be passed to
   the `jget`_ function.
 
+
+PRQL Support (v0.12.1+)
+-----------------------
+
+`PRQL <https://prql-lang.org>`_ is an alternative database query language
+that compiles to SQLite.  You can enter PRQL in the database query prompt
+and lnav will switch accordingly.  A major advantage of using PRQL is that
+lnav can show previews of the results of the pipeline stages and provide
+better tab completion options.
+
+A PRQL query starts with the :code:`from` keyword that specifies the table
+to use as a data source.  The next stage of a pipeline is started by
+entering a pipe symbol (:code:`|`) followed by a
+`PRQL transform <https://prql-lang.org/book/reference/stdlib/transforms/index.html>`_.
+As you build the query in the prompt, lnav will display any relevant
+help and preview for the current and previous stages of the pipeline.
+
+The following is a screenshot of lnav viewing a web access log with a
+query in progress:
+
+.. figure:: ../assets/images/lnav-prql-preview.png
+   :align: center
+
+   Screenshot of a PRQL query in progress
+
+The top half of the window is the usual log message view.  Below that is
+the online help panel showing the documentation for the :code:`stats.count_by`
+PRQL function.  lnav will show the help for what is currently under the
+cursor.  The next panel shows the preview data for the pipeline stage
+that precedes the stage where the cursor is.  In this case, the
+results of :code:`from access_log`, which is the contents of the access
+log table.  The second preview window shows the result of the
+pipeline stage where the cursor is located.
 
 Log Tables
 ----------

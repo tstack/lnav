@@ -35,7 +35,13 @@
 #include "statusview_curses.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/itertools.hh"
 #include "config.h"
+
+void
+status_field::no_op_action(status_field&)
+{
+}
 
 void
 status_field::set_value(std::string value)
@@ -61,7 +67,7 @@ status_field::do_cylon()
         : (this->sf_width - (cycle_pos - this->sf_width) - 1);
     auto stop = std::min(start + 3, this->sf_width);
     struct line_range lr(std::max<long>(start, 0L), stop);
-    auto& vc = view_colors::singleton();
+    const auto& vc = view_colors::singleton();
 
     auto attrs = vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS);
     attrs.ta_attrs |= A_REVERSE;
@@ -84,21 +90,22 @@ status_field::set_stitch_value(role_t left, role_t right)
     sa.emplace_back(lr, VC_ROLE.value(right));
 }
 
-void
+bool
 statusview_curses::do_update()
 {
-    int top, field, field_count, left = 0, right;
+    int top, left = 0, right;
     auto& vc = view_colors::singleton();
     unsigned long width, height;
 
+    this->sc_displayed_fields.clear();
     if (!this->vc_visible || this->sc_window == nullptr) {
-        return;
+        return false;
     }
 
     getmaxyx(this->sc_window, height, width);
     this->window_change();
 
-    top = this->sc_top < 0 ? height + this->sc_top : this->sc_top;
+    top = this->vc_y < 0 ? height + this->vc_y : this->vc_y;
     right = width;
     auto attrs = vc.attrs_for_role(
         this->sc_enabled ? this->sc_default_role : role_t::VCR_INACTIVE_STATUS);
@@ -110,8 +117,8 @@ statusview_curses::do_update()
     whline(this->sc_window, ' ', width);
 
     if (this->sc_source != nullptr) {
-        field_count = this->sc_source->statusview_fields();
-        for (field = 0; field < field_count; field++) {
+        auto field_count = this->sc_source->statusview_fields();
+        for (size_t field = 0; field < field_count; field++) {
             auto& sf = this->sc_source->statusview_value_for_field(field);
             struct line_range lr(0, sf.get_width());
             int x;
@@ -177,10 +184,16 @@ statusview_curses::do_update()
                 }
             }
 
-            mvwattrline(this->sc_window, top, x, val, lr, default_role);
+            auto write_res
+                = mvwattrline(this->sc_window, top, x, val, lr, default_role);
+            this->sc_displayed_fields.emplace_back(
+                line_range{x, static_cast<int>(x + write_res.mr_chars_out)},
+                field);
         }
     }
     wmove(this->sc_window, top + 1, 0);
+
+    return true;
 }
 
 void
@@ -237,4 +250,24 @@ statusview_curses::window_change()
 
         sf->set_width(actual_width);
     }
+}
+
+bool
+statusview_curses::handle_mouse(mouse_event& me)
+{
+    auto find_res = this->sc_displayed_fields
+        | lnav::itertools::find_if([&me](const auto& elem) {
+                        return me.is_click_in(mouse_button_t::BUTTON_LEFT,
+                                              elem.df_range.lr_start,
+                                              elem.df_range.lr_end);
+                    });
+
+    if (find_res) {
+        auto& sf = this->sc_source->statusview_value_for_field(
+            find_res.value()->df_field_index);
+
+        sf.on_click(sf);
+    }
+
+    return true;
 }

@@ -1,18 +1,18 @@
 ﻿/*
  * MIT License
- * 
+ *
  * Copyright (c) 2017-2019 Mikhail Pilin
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *  
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *  
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,8 +25,8 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
 #include <stdexcept>
+#include <utility>
 
 #include "base/result.h"
 
@@ -40,8 +40,7 @@ namespace utf {
 //   1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
 //   1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
 //   1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
-struct utf8 final
-{
+struct utf8 final {
     static size_t const max_unicode_symbol_size = 4;
     static size_t const max_supported_symbol_size = 6;
 
@@ -50,26 +49,29 @@ struct utf8 final
     using char_type = uint8_t;
 
     template<typename PeekFn>
-    static Result<size_t, const char *> char_size(PeekFn && peek_fn)
+    static Result<size_t, const char*> char_size(PeekFn&& peek_fn)
     {
-        const std::pair<char_type, size_t> peek_res = std::forward<PeekFn>(peek_fn)();
+        const std::pair<char_type, size_t> peek_res
+            = std::forward<PeekFn>(peek_fn)();
         const auto ch0 = peek_res.first;
         const auto remaining = peek_res.second;
         size_t retval = 0;
 
-        if (ch0 < 0x80) { // 0xxx_xxxx
+        if (ch0 < 0x80) {  // 0xxx_xxxx
             retval = 1;
         } else if (ch0 < 0xC0) {
             return Err("The utf8 first char in sequence is incorrect");
-        } else if (ch0 < 0xE0) { // 110x_xxxx 10xx_xxxx
+        } else if (ch0 < 0xE0) {  // 110x_xxxx 10xx_xxxx
             retval = 2;
-        } else if (ch0 < 0xF0) { // 1110_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (ch0 < 0xF0) {  // 1110_xxxx 10xx_xxxx 10xx_xxxx
             retval = 3;
-        } else if (ch0 < 0xF8) { // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (ch0 < 0xF8) {  // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
             retval = 4;
-        } else if (ch0 < 0xFC) { // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (ch0 < 0xFC)
+        {  // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
             retval = 5;
-        } else if (ch0 < 0xFE) { // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (ch0 < 0xFE)
+        {  // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
             retval = 6;
         } else {
             return Err("The utf8 first char in sequence is incorrect");
@@ -81,91 +83,129 @@ struct utf8 final
     }
 
     template<typename ReadFn>
-    static uint32_t read(ReadFn && read_fn)
+    static Result<uint32_t, const char*> read(ReadFn&& read_fn)
     {
         char_type const ch0 = read_fn();
-        if (ch0 < 0x80) // 0xxx_xxxx
-            return ch0;
+        if (ch0 < 0x80)  // 0xxx_xxxx
+            return Ok((uint32_t) ch0);
         if (ch0 < 0xC0)
-            throw std::runtime_error("The utf8 first char in sequence is incorrect");
-        if (ch0 < 0xE0) // 110x_xxxx 10xx_xxxx
+            return Err("The utf8 first char in sequence is incorrect");
+        if (ch0 < 0xE0)  // 110x_xxxx 10xx_xxxx
         {
-            char_type const ch1 = read_fn(); if (ch1 >> 6 != 2) goto _err;
-            return (ch0 << 6) + ch1 - 0x3080;
+            char_type const ch1 = read_fn();
+            if (ch1 >> 6 != 2)
+                goto _err;
+            return Ok((((uint32_t) ch0) << 6) + ch1 - 0x3080);
         }
-        if (ch0 < 0xF0) // 1110_xxxx 10xx_xxxx 10xx_xxxx
+        if (ch0 < 0xF0)  // 1110_xxxx 10xx_xxxx 10xx_xxxx
         {
-            char_type const ch1 = read_fn(); if (ch1 >> 6 != 2) goto _err;
-            char_type const ch2 = read_fn(); if (ch2 >> 6 != 2) goto _err;
-            return (ch0 << 12) + (ch1 << 6) + ch2 - 0xE2080;
+            char_type const ch1 = read_fn();
+            if (ch1 >> 6 != 2)
+                goto _err;
+            char_type const ch2 = read_fn();
+            if (ch2 >> 6 != 2)
+                goto _err;
+            return Ok((((uint32_t) ch0) << 12) + (ch1 << 6) + ch2 - 0xE2080);
         }
-        if (ch0 < 0xF8) // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        if (ch0 < 0xF8)  // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
         {
-            char_type const ch1 = read_fn(); if (ch1 >> 6 != 2) goto _err;
-            char_type const ch2 = read_fn(); if (ch2 >> 6 != 2) goto _err;
-            char_type const ch3 = read_fn(); if (ch3 >> 6 != 2) goto _err;
-            return (ch0 << 18) + (ch1 << 12) + (ch2 << 6) + ch3 - 0x3C82080;
+            char_type const ch1 = read_fn();
+            if (ch1 >> 6 != 2)
+                goto _err;
+            char_type const ch2 = read_fn();
+            if (ch2 >> 6 != 2)
+                goto _err;
+            char_type const ch3 = read_fn();
+            if (ch3 >> 6 != 2)
+                goto _err;
+            return Ok((((uint32_t) ch0) << 18) + (ch1 << 12) + (ch2 << 6) + ch3
+                      - 0x3C82080);
         }
-        if (ch0 < 0xFC) // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        if (ch0 < 0xFC)  // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
         {
-            char_type const ch1 = read_fn(); if (ch1 >> 6 != 2) goto _err;
-            char_type const ch2 = read_fn(); if (ch2 >> 6 != 2) goto _err;
-            char_type const ch3 = read_fn(); if (ch3 >> 6 != 2) goto _err;
-            char_type const ch4 = read_fn(); if (ch4 >> 6 != 2) goto _err;
-            return (ch0 << 24) + (ch1 << 18) + (ch2 << 12) + (ch3 << 6) + ch4 - 0xFA082080;
+            char_type const ch1 = read_fn();
+            if (ch1 >> 6 != 2)
+                goto _err;
+            char_type const ch2 = read_fn();
+            if (ch2 >> 6 != 2)
+                goto _err;
+            char_type const ch3 = read_fn();
+            if (ch3 >> 6 != 2)
+                goto _err;
+            char_type const ch4 = read_fn();
+            if (ch4 >> 6 != 2)
+                goto _err;
+            return Ok((ch0 << 24) + (ch1 << 18) + (ch2 << 12) + (ch3 << 6) + ch4
+                      - 0xFA082080);
         }
-        if (ch0 < 0xFE) // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        if (ch0 < 0xFE)  // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+                         // 10xx_xxxx
         {
-            char_type const ch1 = read_fn(); if (ch1 >> 6 != 2) goto _err;
-            char_type const ch2 = read_fn(); if (ch2 >> 6 != 2) goto _err;
-            char_type const ch3 = read_fn(); if (ch3 >> 6 != 2) goto _err;
-            char_type const ch4 = read_fn(); if (ch4 >> 6 != 2) goto _err;
-            char_type const ch5 = read_fn(); if (ch5 >> 6 != 2) goto _err;
-            return (ch0 << 30) + (ch1 << 24) + (ch2 << 18) + (ch3 << 12) + (ch4 << 6) + ch5 - 0x82082080;
+            char_type const ch1 = read_fn();
+            if (ch1 >> 6 != 2)
+                goto _err;
+            char_type const ch2 = read_fn();
+            if (ch2 >> 6 != 2)
+                goto _err;
+            char_type const ch3 = read_fn();
+            if (ch3 >> 6 != 2)
+                goto _err;
+            char_type const ch4 = read_fn();
+            if (ch4 >> 6 != 2)
+                goto _err;
+            char_type const ch5 = read_fn();
+            if (ch5 >> 6 != 2)
+                goto _err;
+            return Ok((ch0 << 30) + (ch1 << 24) + (ch2 << 18) + (ch3 << 12)
+                      + (ch4 << 6) + ch5 - 0x82082080);
         }
-        throw std::runtime_error("The utf8 first char in sequence is incorrect");
-        _err: throw std::runtime_error("The utf8 slave char in sequence is incorrect");
+        return Err("The utf8 first char in sequence is incorrect");
+    _err:
+        return Err("The utf8 slave char in sequence is incorrect");
     }
 
     template<typename WriteFn>
-    static void write(uint32_t const cp, WriteFn && write_fn)
+    static void write(uint32_t const cp, WriteFn&& write_fn)
     {
-        if (cp < 0x80)          // 0xxx_xxxx
+        if (cp < 0x80)  // 0xxx_xxxx
             write_fn(static_cast<char_type>(cp));
-        else if (cp < 0x800)    // 110x_xxxx 10xx_xxxx
+        else if (cp < 0x800)  // 110x_xxxx 10xx_xxxx
         {
-            write_fn(static_cast<char_type>(0xC0 | cp >>  6));
+            write_fn(static_cast<char_type>(0xC0 | cp >> 6));
             goto _1;
-        }
-        else if (cp < 0x10000)  // 1110_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (cp < 0x10000)  // 1110_xxxx 10xx_xxxx 10xx_xxxx
         {
             write_fn(static_cast<char_type>(0xE0 | cp >> 12));
             goto _2;
-        }
-        else if (cp < 0x200000) // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (cp < 0x200000)  // 1111_0xxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
         {
             write_fn(static_cast<char_type>(0xF0 | cp >> 18));
             goto _3;
-        }
-        else if (cp < 0x4000000) // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (cp < 0x4000000)  // 1111_10xx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+                                    // 10xx_xxxx
         {
             write_fn(static_cast<char_type>(0xF8 | cp >> 24));
             goto _4;
-        }
-        else if (cp < 0x80000000) // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx 10xx_xxxx
+        } else if (cp < 0x80000000)  // 1111_110x 10xx_xxxx 10xx_xxxx 10xx_xxxx
+                                     // 10xx_xxxx 10xx_xxxx
         {
             write_fn(static_cast<char_type>(0xFC | cp >> 30));
             goto _5;
-        }
-        else
+        } else
             throw std::runtime_error("Tool large UTF8 code point");
         return;
-        _5: write_fn(static_cast<char_type>(0x80 | (cp >> 24 & 0x3F)));
-        _4: write_fn(static_cast<char_type>(0x80 | (cp >> 18 & 0x3F)));
-        _3: write_fn(static_cast<char_type>(0x80 | (cp >> 12 & 0x3F)));
-        _2: write_fn(static_cast<char_type>(0x80 | (cp >>  6 & 0x3F)));
-        _1: write_fn(static_cast<char_type>(0x80 | (cp       & 0x3F)));
+    _5:
+        write_fn(static_cast<char_type>(0x80 | (cp >> 24 & 0x3F)));
+    _4:
+        write_fn(static_cast<char_type>(0x80 | (cp >> 18 & 0x3F)));
+    _3:
+        write_fn(static_cast<char_type>(0x80 | (cp >> 12 & 0x3F)));
+    _2:
+        write_fn(static_cast<char_type>(0x80 | (cp >> 6 & 0x3F)));
+    _1:
+        write_fn(static_cast<char_type>(0x80 | (cp & 0x3F)));
     }
 };
 
-}}
+}  // namespace utf
+}  // namespace ww898
