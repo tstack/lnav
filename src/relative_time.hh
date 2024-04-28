@@ -208,7 +208,7 @@ public:
 
     struct exttm adjust(const struct exttm& tm) const;
 
-    nonstd::optional<exttm> window_start(const struct exttm& tm) const;
+    std::optional<exttm> window_start(const struct exttm& tm) const;
 
     int64_t to_microseconds() const;
 

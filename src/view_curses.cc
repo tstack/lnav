@@ -353,7 +353,6 @@ view_curses::mvwattrline(WINDOW* window,
     full_line = expanded_line;
 
     auto& vc = view_colors::singleton();
-    auto text_role_attrs = vc.attrs_for_role(role_t::VCR_TEXT);
     auto base_attrs = vc.attrs_for_role(base_role);
     wmove(window, y, x);
     wattr_set(
@@ -453,8 +452,8 @@ view_curses::mvwattrline(WINDOW* window,
 
         if (attr_range.lr_start < attr_range.lr_end) {
             auto attrs = text_attrs{};
-            nonstd::optional<char> graphic;
-            nonstd::optional<wchar_t> block_elem;
+            std::optional<char> graphic;
+            std::optional<wchar_t> block_elem;
 
             if (iter->sa_type == &VC_GRAPHIC) {
                 graphic = iter->sa_value.get<int64_t>();
@@ -734,7 +733,7 @@ view_colors::init(bool headless)
 }
 
 inline text_attrs
-attr_for_colors(nonstd::optional<short> fg, nonstd::optional<short> bg)
+attr_for_colors(std::optional<short> fg, std::optional<short> bg)
 {
     if (fg && fg.value() == -1) {
         fg = COLOR_WHITE;
@@ -1264,8 +1263,7 @@ view_colors::ensure_color_pair(short fg, short bg)
 }
 
 int
-view_colors::ensure_color_pair(nonstd::optional<short> fg,
-                               nonstd::optional<short> bg)
+view_colors::ensure_color_pair(std::optional<short> fg, std::optional<short> bg)
 {
     return this->ensure_color_pair(fg.value_or(-1), bg.value_or(-1));
 }
@@ -1280,23 +1278,23 @@ view_colors::ensure_color_pair(const styling::color_unit& rgb_fg,
     return this->ensure_color_pair(fg, bg);
 }
 
-nonstd::optional<short>
+std::optional<short>
 view_colors::match_color(const styling::color_unit& color) const
 {
     return color.cu_value.match(
-        [](styling::semantic) -> nonstd::optional<short> {
+        [](styling::semantic) -> std::optional<short> {
             return MATCH_COLOR_SEMANTIC;
         },
-        [](const rgb_color& color) -> nonstd::optional<short> {
+        [](const rgb_color& color) -> std::optional<short> {
             if (color.empty()) {
-                return nonstd::nullopt;
+                return std::nullopt;
             }
 
             return vc_active_palette->match_color(lab_color(color));
         });
 }
 
-nonstd::optional<short>
+std::optional<short>
 view_colors::color_for_ident(const char* str, size_t len) const
 {
     auto index = crc32(1, (const Bytef*) str, len);

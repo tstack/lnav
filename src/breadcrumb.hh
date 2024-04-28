@@ -136,7 +136,7 @@ struct crumb {
     attr_line_t c_display_value;
     crumb_possibilities c_possibility_provider;
     perform c_performer;
-    nonstd::optional<size_t> c_possible_range;
+    std::optional<size_t> c_possible_range;
     expected_input_t c_expected_input{expected_input_t::exact};
     std::string c_search_placeholder;
 };

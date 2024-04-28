@@ -302,7 +302,6 @@ noinst_HEADERS = \
 	mapbox/variant_visitor.hpp \
 	md2attr_line.hh \
 	md4cpp.hh \
-	optional.hpp \
 	piper.looper.hh \
 	piper.looper.cfg.hh \
 	plain_text_source.hh \

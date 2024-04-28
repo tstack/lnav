@@ -1195,6 +1195,23 @@ static const struct json_path_container archive_handlers = {
                    &archive_manager::config::amc_cache_ttl),
 };
 
+static const struct typed_json_path_container<lnav::piper::demux_def>
+    demux_def_handlers = {
+    yajlpp::property_handler("pattern")
+        .with_synopsis("<regex>")
+        .with_description(
+            "A regular expression to match a line in a multiplexed file")
+        .for_field(&lnav::piper::demux_def::dd_pattern),
+};
+
+static const struct json_path_container demux_defs_handlers = {
+    yajlpp::pattern_property_handler("(?<name>[\\w\\-\\.]+)")
+        .with_description("The definition of a demultiplexer")
+        .with_children(demux_def_handlers)
+        .for_field(&_lnav_config::lc_piper,
+                   &lnav::piper::config::c_demux_definitions),
+};
+
 static const struct json_path_container piper_handlers = {
     yajlpp::property_handler("max-size")
         .with_synopsis("<bytes>")
@@ -1450,6 +1467,9 @@ static const struct json_path_container log_source_handlers = {
         .with_description("Log message watch expressions")
         .with_children(log_source_watch_handlers),
     yajlpp::property_handler("annotations").with_children(annotations_handlers),
+    yajlpp::property_handler("demux")
+        .with_description("Demultiplexer definitions")
+        .with_children(demux_defs_handlers),
 };
 
 static const struct json_path_container url_scheme_handlers = {

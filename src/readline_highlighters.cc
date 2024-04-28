@@ -100,7 +100,7 @@ find_matching_bracket(
         }
     }
 
-    nonstd::optional<int> first_left;
+    std::optional<int> first_left;
 
     depth = 0;
 
@@ -315,7 +315,7 @@ readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
 {
     attr_line_builder alb(al);
     const auto& str = al.get_string();
-    nonstd::optional<int> quote_start;
+    std::optional<int> quote_start;
     shlex lexer(string_fragment{al.al_string.data(), sub.lr_start, sub.lr_end});
     bool done = false;
 
@@ -355,7 +355,7 @@ readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
                     line_range(quote_start.value(),
                                sub.lr_start + token.tr_frag.sf_end),
                     VC_ROLE.value(role_t::VCR_STRING));
-                quote_start = nonstd::nullopt;
+                quote_start = std::nullopt;
                 break;
             case shlex_token_t::variable_ref:
             case shlex_token_t::quoted_variable_ref: {
@@ -438,7 +438,7 @@ readline_lnav_highlighter(attr_line_t& al, int x)
 
     attr_line_builder alb(al);
     size_t start = 0, lf_pos;
-    nonstd::optional<size_t> section_start;
+    std::optional<size_t> section_start;
 
     while ((lf_pos = al.get_string().find('\n', start)) != std::string::npos) {
         line_range line{(int) start, (int) lf_pos};
@@ -460,7 +460,7 @@ readline_lnav_highlighter(attr_line_t& al, int x)
                                                   (int) section_start.value(),
                                                   line.lr_start,
                                               });
-                section_start = nonstd::nullopt;
+                section_start = std::nullopt;
             }
             alb.overlay_attr(line_range{find_res->f_all.sf_begin, line.lr_end},
                              VC_ROLE.value(role_t::VCR_COMMENT));

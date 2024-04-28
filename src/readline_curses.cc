@@ -101,7 +101,7 @@ std::set<std::string>* readline_context::arg_possibilities;
 static std::string last_match_str;
 static bool last_match_str_valid;
 static bool arg_needs_shlex;
-static nonstd::optional<std::string> rewrite_line_start;
+static std::optional<std::string> rewrite_line_start;
 static std::string rc_local_suggestion;
 
 static void
@@ -1006,7 +1006,7 @@ readline_curses::start()
                         }
                         rl_redisplay();
                     }
-                    rewrite_line_start = nonstd::nullopt;
+                    rewrite_line_start = std::nullopt;
 
                     SpookyHash::Hash128(rl_line_buffer, rl_end, &h1, &h2);
 

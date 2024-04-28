@@ -655,7 +655,7 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
     }
     for (const auto& child : doc.children()) {
         if (child.name() == NAME_IMG) {
-            nonstd::optional<std::string> src_href;
+            std::optional<std::string> src_href;
             std::string link_label;
             auto img_src = child.attribute("src");
             auto img_alt = child.attribute("alt");
@@ -710,8 +710,8 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                 retval.append(link_label);
             }
         } else if (child.name() == NAME_SPAN) {
-            nonstd::optional<attr_line_t> left_border;
-            nonstd::optional<attr_line_t> right_border;
+            std::optional<attr_line_t> left_border;
+            std::optional<attr_line_t> right_border;
             auto styled_span = attr_line_t(child.text().get());
 
             auto span_class = child.attribute("class");

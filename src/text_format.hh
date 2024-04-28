@@ -131,14 +131,14 @@ struct formatter<text_format_t> : formatter<string_view> {
  * @return The detected format.
  */
 text_format_t detect_text_format(string_fragment sf,
-                                 nonstd::optional<ghc::filesystem::path> path
-                                 = nonstd::nullopt);
+                                 std::optional<ghc::filesystem::path> path
+                                 = std::nullopt);
 
 struct text_format_meta_t {
     std::string tfm_filename;
 };
 
-nonstd::optional<text_format_meta_t> extract_text_meta(string_fragment sf,
+std::optional<text_format_meta_t> extract_text_meta(string_fragment sf,
                                                        text_format_t tf);
 
 #endif

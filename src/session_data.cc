@@ -302,7 +302,7 @@ init_session()
     session_data.sd_view_states[LNV_LOG].vs_top = -1;
 }
 
-static nonstd::optional<std::string>
+static std::optional<std::string>
 compute_session_id()
 {
     bool has_files = false;
@@ -327,13 +327,13 @@ compute_session_id()
         h.update(lf->get_filename());
     }
     if (!has_files) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return h.to_string();
 }
 
-nonstd::optional<session_pair_t>
+std::optional<session_pair_t>
 scan_sessions()
 {
     static_root_mem<glob_t, globfree> view_info_list;
@@ -342,7 +342,7 @@ scan_sessions()
 
     const auto session_id = compute_session_id();
     if (!session_id) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     std::list<session_pair_t>& session_file_names
         = lnav_data.ld_session_id[session_id.value()];
@@ -394,10 +394,10 @@ scan_sessions()
     }
 
     if (session_file_names.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional(session_file_names.back());
+    return std::make_optional(session_file_names.back());
 }
 
 void
@@ -1744,7 +1744,7 @@ reset_session()
         bool changed = false;
         for (const auto& vd : elf->elf_value_defs) {
             if (vd.second->vd_meta.lvm_user_hidden) {
-                vd.second->vd_meta.lvm_user_hidden = nonstd::nullopt;
+                vd.second->vd_meta.lvm_user_hidden = std::nullopt;
                 changed = true;
             }
         }

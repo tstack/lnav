@@ -214,7 +214,7 @@ struct filtered_logline_cmp {
     const logfile_sub_source& llss_controller;
 };
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 logfile_sub_source::find_from_time(const struct timeval& start) const
 {
     auto lb = std::lower_bound(this->lss_filtered_index.begin(),
@@ -225,7 +225,7 @@ logfile_sub_source::find_from_time(const struct timeval& start) const
         return vis_line_t(lb - this->lss_filtered_index.begin());
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 void
@@ -747,7 +747,7 @@ struct logline_cmp {
 
 logfile_sub_source::rebuild_result
 logfile_sub_source::rebuild_index(
-    nonstd::optional<ui_clock::time_point> deadline)
+    std::optional<ui_clock::time_point> deadline)
 {
     if (this->tss_view == nullptr) {
         return rebuild_result::rr_no_change;
@@ -762,7 +762,7 @@ logfile_sub_source::rebuild_index(
     int file_count = 0;
     bool force = this->lss_force_rebuild;
     auto retval = rebuild_result::rr_no_change;
-    nonstd::optional<struct timeval> lowest_tv = nonstd::nullopt;
+    std::optional<struct timeval> lowest_tv = std::nullopt;
     vis_line_t search_start = 0_vl;
 
     this->lss_force_rebuild = false;
@@ -1469,7 +1469,7 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv, int ch)
     return false;
 }
 
-nonstd::optional<
+std::optional<
     std::pair<grep_proc_source<vis_line_t>*, grep_proc_sink<vis_line_t>*>>
 logfile_sub_source::get_grepper()
 {
@@ -2008,7 +2008,7 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
     }
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 logfile_sub_source::find_from_content(content_line_t cl)
 {
     content_line_t line = cl;
@@ -2020,7 +2020,7 @@ logfile_sub_source::find_from_content(content_line_t cl)
         auto vis_start_opt = this->find_from_time(ll.get_timeval());
 
         if (!vis_start_opt) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         auto vis_start = *vis_start_opt;
@@ -2035,14 +2035,14 @@ logfile_sub_source::find_from_content(content_line_t cl)
             auto guess_line = this->find_line(guess_cl);
 
             if (!guess_line || ll < *guess_line) {
-                return nonstd::nullopt;
+                return std::nullopt;
             }
 
             ++vis_start;
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 void
@@ -2065,7 +2065,7 @@ logfile_sub_source::reload_index_delegate()
     this->lss_index_delegate->index_complete(*this);
 }
 
-nonstd::optional<std::shared_ptr<text_filter>>
+std::optional<std::shared_ptr<text_filter>>
 logfile_sub_source::get_sql_filter()
 {
     return this->tss_filters | lnav::itertools::find_if([](const auto& filt) {
@@ -2090,7 +2090,7 @@ log_location_history::loc_history_append(vis_line_t top)
     this->llh_history.push_back(cl);
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 log_location_history::loc_history_back(vis_line_t current_top)
 {
     while (this->lh_history_position < this->llh_history.size()) {
@@ -2117,10 +2117,10 @@ log_location_history::loc_history_back(vis_line_t current_top)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 log_location_history::loc_history_forward(vis_line_t current_top)
 {
     while (this->lh_history_position > 0) {
@@ -2137,11 +2137,11 @@ log_location_history::loc_history_forward(vis_line_t current_top)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 bool
-sql_filter::matches(nonstd::optional<line_source> ls_opt,
+sql_filter::matches(std::optional<line_source> ls_opt,
                     const shared_buffer_ref& line)
 {
     if (!ls_opt) {
@@ -2759,7 +2759,7 @@ logfile_sub_source::get_bookmark_metadata_context(
     const auto& bv = bv_iter->second;
     auto vl_iter = std::lower_bound(bv.begin(), bv.end(), vl + 1_vl);
 
-    nonstd::optional<vis_line_t> next_line;
+    std::optional<vis_line_t> next_line;
     for (auto next_vl_iter = vl_iter; next_vl_iter != bv.end(); ++next_vl_iter)
     {
         auto bm_opt = this->find_bookmark_metadata(*next_vl_iter);
@@ -2774,7 +2774,7 @@ logfile_sub_source::get_bookmark_metadata_context(
     }
     if (vl_iter == bv.begin()) {
         return bookmark_metadata_context{
-            nonstd::nullopt, nonstd::nullopt, next_line};
+            std::nullopt, std::nullopt, next_line};
     }
 
     --vl_iter;
@@ -2789,15 +2789,15 @@ logfile_sub_source::get_bookmark_metadata_context(
 
         if (vl_iter == bv.begin()) {
             return bookmark_metadata_context{
-                nonstd::nullopt, nonstd::nullopt, next_line};
+                std::nullopt, std::nullopt, next_line};
         }
         --vl_iter;
     }
     return bookmark_metadata_context{
-        nonstd::nullopt, nonstd::nullopt, next_line};
+        std::nullopt, std::nullopt, next_line};
 }
 
-nonstd::optional<bookmark_metadata*>
+std::optional<bookmark_metadata*>
 logfile_sub_source::find_bookmark_metadata(content_line_t cl) const
 {
     auto line_pair = this->find_line_with_file(cl).value();
@@ -2807,7 +2807,7 @@ logfile_sub_source::find_bookmark_metadata(content_line_t cl) const
     auto& bm = line_pair.first->get_bookmark_metadata();
     auto bm_iter = bm.find(line_number);
     if (bm_iter == bm.end()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return &bm_iter->second;
@@ -2951,7 +2951,7 @@ logfile_sub_source::get_filtered_count_for(size_t filter_index) const
     return retval;
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 logfile_sub_source::row_for(const row_info& ri)
 {
     auto lb = std::lower_bound(this->lss_filtered_index.begin(),
@@ -2976,10 +2976,10 @@ logfile_sub_source::row_for(const row_info& ri)
         return vis_line_t(first_lb - this->lss_filtered_index.begin());
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 logfile_sub_source::row_for_anchor(const std::string& id)
 {
     auto& vb = this->tss_view->get_bookmarks();
@@ -2997,10 +2997,10 @@ logfile_sub_source::row_for_anchor(const std::string& id)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 logfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
 {
     auto bmc = this->get_bookmark_metadata_context(
@@ -3024,16 +3024,16 @@ logfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
         case text_anchors::direction::next:
             return bmc.bmc_next_line;
     }
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<std::string>
+std::optional<std::string>
 logfile_sub_source::anchor_for_row(vis_line_t vl)
 {
     auto line_meta = this->get_bookmark_metadata_context(
         vl, bookmark_metadata::categories::partition);
     if (!line_meta.bmc_current_metadata) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return text_anchors::to_anchor_string(

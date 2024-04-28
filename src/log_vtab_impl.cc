@@ -409,7 +409,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     *pp_cursor = (sqlite3_vtab_cursor*) p_cur;
 
     p_cur->base.pVtab = p_svt;
-    p_cur->log_cursor.lc_opid = nonstd::nullopt;
+    p_cur->log_cursor.lc_opid = std::nullopt;
     p_cur->log_cursor.lc_curr_line = 0_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
@@ -1295,8 +1295,8 @@ log_cursor::string_constraint::matches(const std::string& sf) const
 }
 
 struct vtab_time_range {
-    nonstd::optional<timeval> vtr_begin;
-    nonstd::optional<timeval> vtr_end;
+    std::optional<timeval> vtr_begin;
+    std::optional<timeval> vtr_end;
 
     bool empty() const { return !this->vtr_begin && !this->vtr_end; }
 
@@ -1342,8 +1342,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 #endif
     p_cur->log_cursor.lc_format_name.clear();
     p_cur->log_cursor.lc_pattern_name.clear();
-    p_cur->log_cursor.lc_opid = nonstd::nullopt;
-    p_cur->log_cursor.lc_level_constraint = nonstd::nullopt;
+    p_cur->log_cursor.lc_opid = std::nullopt;
+    p_cur->log_cursor.lc_level_constraint = std::nullopt;
     p_cur->log_cursor.lc_log_path.clear();
     p_cur->log_cursor.lc_indexed_columns.clear();
     p_cur->log_cursor.lc_last_log_path_match = nullptr;
@@ -1354,8 +1354,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_curr_line = 0_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
 
-    nonstd::optional<vtab_time_range> log_time_range;
-    nonstd::optional<log_cursor::opid_hash> opid_val;
+    std::optional<vtab_time_range> log_time_range;
+    std::optional<log_cursor::opid_hash> opid_val;
     std::vector<log_cursor::string_constraint> log_path_constraints;
     std::vector<log_cursor::string_constraint> log_unique_path_constraints;
 
@@ -1634,7 +1634,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     }
 
     if (!p_cur->log_cursor.lc_indexed_columns.empty()) {
-        nonstd::optional<vis_line_t> max_indexed_line;
+        std::optional<vis_line_t> max_indexed_line;
 
         for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
             auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
@@ -1688,10 +1688,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             && max_indexed_line.value() < vt->lss->text_line_count())
         {
             log_debug("max indexed out of sync, clearing other indexes");
-            p_cur->log_cursor.lc_level_constraint = nonstd::nullopt;
+            p_cur->log_cursor.lc_level_constraint = std::nullopt;
             p_cur->log_cursor.lc_curr_line = 0_vl;
-            opid_val = nonstd::nullopt;
-            log_time_range = nonstd::nullopt;
+            opid_val = std::nullopt;
+            log_time_range = std::nullopt;
             p_cur->log_cursor.lc_indexed_lines.clear();
             log_path_constraints.clear();
             log_unique_path_constraints.clear();
@@ -1982,9 +1982,9 @@ vt_update(sqlite3_vtab* tab,
             argv[2 + vt->footer_index(log_footer_columns::partition)]);
         const auto* log_comment = sqlite3_value_text(
             argv[2 + vt->footer_index(log_footer_columns::comment)]);
-        const auto log_tags = from_sqlite<nonstd::optional<string_fragment>>()(
+        const auto log_tags = from_sqlite<std::optional<string_fragment>>()(
             argc, argv, 2 + vt->footer_index(log_footer_columns::tags));
-        const auto log_annos = from_sqlite<nonstd::optional<string_fragment>>()(
+        const auto log_annos = from_sqlite<std::optional<string_fragment>>()(
             argc, argv, 2 + vt->footer_index(log_footer_columns::annotations));
         bookmark_metadata tmp_bm;
 

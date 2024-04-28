@@ -164,12 +164,12 @@ text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
         = tc.get_bookmarks()[&textview_curses::BM_USER_EXPR].next(vl);
     if (!prev_umark && !prev_emark && (next_umark || next_emark)) {
         auto next_line = this->text_accel_get_line(
-            std::max(next_umark.value_or(0), next_emark.value_or(0)));
+            std::max(next_umark.value_or(0_vl), next_emark.value_or(0_vl)));
 
         diff_tv = curr_tv - next_line->get_timeval();
     } else {
         auto prev_row
-            = std::max(prev_umark.value_or(0), prev_emark.value_or(0));
+            = std::max(prev_umark.value_or(0_vl), prev_emark.value_or(0_vl));
         auto first_line = this->text_accel_get_line(prev_row);
         auto start_tv = first_line->get_timeval();
         diff_tv = curr_tv - start_tv;
@@ -289,7 +289,7 @@ textview_curses::reload_config(error_reporter& reporter)
 void
 textview_curses::invoke_scroll()
 {
-    this->tc_selected_text = nonstd::nullopt;
+    this->tc_selected_text = std::nullopt;
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->scroll_invoked(this);
     }
@@ -300,7 +300,7 @@ textview_curses::invoke_scroll()
 void
 textview_curses::reload_data()
 {
-    this->tc_selected_text = nonstd::nullopt;
+    this->tc_selected_text = std::nullopt;
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
     }
@@ -427,12 +427,12 @@ textview_curses::handle_mouse(mouse_event& me)
         && (me.me_button != mouse_button_t::BUTTON_LEFT
             || me.me_state != mouse_button_state_t::BUTTON_STATE_RELEASED))
     {
-        this->tc_selected_text = nonstd::nullopt;
+        this->tc_selected_text = std::nullopt;
         this->set_needs_update();
     }
 
-    nonstd::optional<int> overlay_content_min_y;
-    nonstd::optional<int> overlay_content_max_y;
+    std::optional<int> overlay_content_min_y;
+    std::optional<int> overlay_content_max_y;
     if (this->tc_press_line.is<overlay_content>()) {
         auto main_line
             = this->tc_press_line.get<overlay_content>().oc_main_line;
@@ -687,7 +687,7 @@ textview_curses::handle_mouse(mouse_event& me)
                                            this->get_selection());
                     this->reload_data();
                 }
-                this->tc_selection_start = nonstd::nullopt;
+                this->tc_selection_start = std::nullopt;
             }
             if (this->tc_delegate != nullptr) {
                 this->tc_delegate->text_handle_mouse(*this, mouse_line, me);
@@ -696,7 +696,7 @@ textview_curses::handle_mouse(mouse_event& me)
                 sub_delegate->text_handle_mouse(*this, mouse_line, me);
             }
             if (mouse_line.is<overlay_menu>()) {
-                this->tc_selected_text = nonstd::nullopt;
+                this->tc_selected_text = std::nullopt;
                 this->set_needs_update();
             }
             break;
@@ -908,7 +908,7 @@ textview_curses::execute_search(const std::string& regex_orig)
     }
 }
 
-nonstd::optional<std::pair<int, int>>
+std::optional<std::pair<int, int>>
 textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start)
 {
     auto hl_iter
@@ -916,7 +916,7 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start)
     if (hl_iter == this->tc_highlights.end()
         || hl_iter->second.h_regex == nullptr)
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     int prev_hit = -1, next_hit = INT_MAX;
 
@@ -937,7 +937,7 @@ textview_curses::horiz_shift(vis_line_t start, vis_line_t end, int off_start)
     }
 
     if (prev_hit == -1 && next_hit == INT_MAX) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     return std::make_pair(prev_hit, next_hit);
 }
@@ -1099,7 +1099,7 @@ void
 text_time_translator::data_reloaded(textview_curses* tc)
 {
     if (tc->get_inner_height() == 0) {
-        this->ttt_top_row_info = nonstd::nullopt;
+        this->ttt_top_row_info = std::nullopt;
         return;
     }
     if (this->ttt_top_row_info) {
@@ -1111,7 +1111,7 @@ text_time_translator::data_reloaded(textview_curses* tc)
 template class bookmark_vector<vis_line_t>;
 
 bool
-empty_filter::matches(nonstd::optional<line_source> ls,
+empty_filter::matches(std::optional<line_source> ls,
                       const shared_buffer_ref& line)
 {
     return false;
@@ -1123,7 +1123,7 @@ empty_filter::to_command() const
     return "";
 }
 
-nonstd::optional<size_t>
+std::optional<size_t>
 filter_stack::next_index()
 {
     bool used[32];
@@ -1148,7 +1148,7 @@ filter_stack::next_index()
             return lpc;
         }
     }
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 std::shared_ptr<text_filter>
@@ -1252,7 +1252,7 @@ vis_location_history::loc_history_append(vis_line_t top)
     this->vlh_history.push_back(top);
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 vis_location_history::loc_history_back(vis_line_t current_top)
 {
     if (this->lh_history_position == 0) {
@@ -1263,7 +1263,7 @@ vis_location_history::loc_history_back(vis_line_t current_top)
     }
 
     if (this->lh_history_position + 1 >= this->vlh_history.size()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     this->lh_history_position += 1;
@@ -1271,11 +1271,11 @@ vis_location_history::loc_history_back(vis_line_t current_top)
     return this->current_position();
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 vis_location_history::loc_history_forward(vis_line_t current_top)
 {
     if (this->lh_history_position == 0) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     this->lh_history_position -= 1;
@@ -1367,21 +1367,21 @@ logfile_filter_state::resize(size_t newsize)
     }
 }
 
-nonstd::optional<size_t>
+std::optional<size_t>
 logfile_filter_state::content_line_to_vis_line(uint32_t line)
 {
     if (this->tfs_index.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto iter = std::lower_bound(
         this->tfs_index.begin(), this->tfs_index.end(), line);
 
     if (iter == this->tfs_index.end() || *iter != line) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional(std::distance(this->tfs_index.begin(), iter));
+    return std::make_optional(std::distance(this->tfs_index.begin(), iter));
 }
 
 std::string

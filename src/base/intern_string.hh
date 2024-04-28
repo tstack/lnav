@@ -40,7 +40,6 @@
 #include <sys/types.h>
 
 #include "fmt/format.h"
-#include "optional.hpp"
 #include "result.h"
 #include "scn/util/string_view.h"
 #include "strnatcmp.h"
@@ -302,7 +301,7 @@ struct string_fragment {
         return retval;
     }
 
-    nonstd::optional<size_t> find(char ch) const
+    std::optional<size_t> find(char ch) const
     {
         for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
             if (this->sf_string[lpc] == ch) {
@@ -310,7 +309,7 @@ struct string_fragment {
             }
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     template<typename P>
@@ -374,21 +373,21 @@ struct string_fragment {
             start - left.sf_begin, predicate, count);
     }
 
-    nonstd::optional<std::pair<uint32_t, string_fragment>> consume_codepoint()
+    std::optional<std::pair<uint32_t, string_fragment>> consume_codepoint()
         const
     {
         auto cp = this->front_codepoint();
         auto index_res = this->codepoint_to_byte_index(1);
 
         if (index_res.isErr()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return std::make_pair(cp, this->substr(index_res.unwrap()));
     }
 
     template<typename P>
-    nonstd::optional<string_fragment> consume(P predicate) const
+    std::optional<string_fragment> consume(P predicate) const
     {
         int consumed = 0;
         while (consumed < this->length()) {
@@ -400,7 +399,7 @@ struct string_fragment {
         }
 
         if (consumed == 0) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return string_fragment{
@@ -410,7 +409,7 @@ struct string_fragment {
         };
     }
 
-    nonstd::optional<string_fragment> consume_n(int amount) const;
+    std::optional<string_fragment> consume_n(int amount) const;
 
     template<typename P>
     string_fragment skip(P predicate) const
@@ -428,7 +427,7 @@ struct string_fragment {
     }
 
     using split_result
-        = nonstd::optional<std::pair<string_fragment, string_fragment>>;
+        = std::optional<std::pair<string_fragment, string_fragment>>;
 
     template<typename P>
     split_result split_while(P&& predicate) const
@@ -443,7 +442,7 @@ struct string_fragment {
         }
 
         if (consumed == 0) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return std::make_pair(
@@ -500,7 +499,7 @@ struct string_fragment {
         }
 
         if (consumed == this->length()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return std::make_pair(

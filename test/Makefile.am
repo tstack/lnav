@@ -203,6 +203,7 @@ dist_noinst_SCRIPTS = \
 	test_config.sh \
 	test_curl.sh \
 	test_data_parser.sh \
+	test_demux.sh \
 	test_events.sh \
 	test_format_installer.sh \
 	test_format_loader.sh \
@@ -330,6 +331,8 @@ dist_noinst_DATA = \
 	logfile_crlf.0 \
 	logfile_cloudflare.json \
 	logfile_cxx.0 \
+	logfile_docker_compose.0 \
+	logfile_docker_compose_with_ts.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \
 	logfile_epoch.1 \
@@ -479,6 +482,8 @@ TESTS = \
 	test_cli.sh \
 	test_cmds.sh \
 	test_config.sh \
+	test_data_parser.sh \
+	test_demux.sh \
 	test_events.sh \
 	test_listview.sh \
 	test_meta.sh \
@@ -509,7 +514,6 @@ TESTS = \
 	test_text_anonymizer \
 	test_text_file.sh \
 	test_tui.sh \
-	test_data_parser.sh \
 	test_pretty_print.sh \
     test_view_colors.sh \
 	test_vt52_curses.sh

@@ -203,10 +203,10 @@ public:
         }
     };
 
-    nonstd::optional<tokenize_result> tokenize2(text_format_t tf
+    std::optional<tokenize_result> tokenize2(text_format_t tf
                                                 = text_format_t::TF_UNKNOWN);
 
-    nonstd::optional<tokenize_result> find_matching_bracket(text_format_t tf,
+    std::optional<tokenize_result> find_matching_bracket(text_format_t tf,
                                                             tokenize_result tr);
 
     void reset() { this->ds_next_offset = this->ds_init_offset; }
@@ -225,7 +225,7 @@ private:
 
     bool is_credit_card(string_fragment frag) const;
 
-    nonstd::optional<tokenize_result> tokenize_int(text_format_t tf
+    std::optional<tokenize_result> tokenize_int(text_format_t tf
                                                    = text_format_t::TF_UNKNOWN);
 
     std::string ds_line;

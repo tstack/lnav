@@ -155,13 +155,33 @@ logfile::open(ghc::filesystem::path filename,
                 }
             },
             [&lf](const lnav::piper::header& phdr) {
+                static auto& safe_options_hier
+                    = injector::get<lnav::safe_file_options_hier&>();
+
                 lf->lf_embedded_metadata["org.lnav.piper.header"] = {
                     text_format_t::TF_JSON,
                     lnav::piper::header_handlers.to_string(phdr),
                 };
-                log_debug("setting file name: %s", phdr.h_name.c_str());
+                log_info("setting file name from piper header: %s",
+                         phdr.h_name.c_str());
                 lf->set_filename(phdr.h_name);
                 lf->lf_valid_filename = false;
+
+                lnav::file_options fo;
+                if (!phdr.h_timezone.empty()) {
+                    log_info("setting default time zone from piper header: %s",
+                             phdr.h_timezone.c_str());
+                    fo.fo_default_zone.pp_value
+                        = date::locate_zone(phdr.h_timezone);
+                }
+                if (!fo.empty()) {
+                    safe::WriteAccess<lnav::safe_file_options_hier>
+                        options_hier(safe_options_hier);
+
+                    options_hier->foh_generation += 1;
+                    auto& coll = options_hier->foh_path_to_collection["/"];
+                    coll.foc_pattern_to_options[lf->get_filename()] = fo;
+                }
             });
     }
 
@@ -217,6 +237,7 @@ logfile::file_options_have_changed()
                 && this->lf_format != nullptr
                 && !(this->lf_format->lf_timestamp_flags & ETF_ZONE_SET))
             {
+                log_info("  tz change affects this file");
                 tz_changed = true;
             }
         } else if (this->lf_format != nullptr
@@ -306,7 +327,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
     } else if (this->lf_options.loo_detect_format) {
         const auto& root_formats = log_format::get_root_formats();
-        nonstd::optional<std::pair<log_format*, log_format::scan_match>>
+        std::optional<std::pair<log_format*, log_format::scan_match>>
             best_match;
         size_t scan_count = 0;
 
@@ -565,7 +586,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 }
 
 logfile::rebuild_result_t
-logfile::rebuild_index(nonstd::optional<ui_clock::time_point> deadline)
+logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 {
     static const auto& dts_cfg
         = injector::get<const date_time_scanner_ns::config&>();
@@ -1239,8 +1260,8 @@ logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
     } else {
         retval = next_line->get_offset() - ll->get_offset() - 1;
         if (!include_continues) {
-            this->lf_next_line_cache = nonstd::make_optional(
-                std::make_pair(ll->get_offset(), retval));
+            this->lf_next_line_cache
+                = std::make_optional(std::make_pair(ll->get_offset(), retval));
         }
     }
 
@@ -1265,13 +1286,13 @@ logfile::get_format_name() const
     return {};
 }
 
-nonstd::optional<logfile::const_iterator>
+std::optional<logfile::const_iterator>
 logfile::find_from_time(const timeval& tv) const
 {
     auto retval
         = std::lower_bound(this->lf_index.begin(), this->lf_index.end(), tv);
     if (retval == this->lf_index.end()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return retval;
@@ -1340,7 +1361,7 @@ logfile::original_line_time(logfile::iterator ll)
     return ll->get_timeval();
 }
 
-nonstd::optional<logfile::const_iterator>
+std::optional<logfile::const_iterator>
 logfile::line_for_offset(file_off_t off) const
 {
     struct cmper {
@@ -1356,7 +1377,7 @@ logfile::line_for_offset(file_off_t off) const
     };
 
     if (this->lf_index.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto iter = std::lower_bound(
@@ -1365,16 +1386,16 @@ logfile::line_for_offset(file_off_t off) const
         if (this->lf_index.back().get_offset() <= off
             && off < this->lf_index_size)
         {
-            return nonstd::make_optional(iter);
+            return std::make_optional(iter);
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     if (off < iter->get_offset() && iter != this->lf_index.begin()) {
         --iter;
     }
 
-    return nonstd::make_optional(iter);
+    return std::make_optional(iter);
 }
 
 void

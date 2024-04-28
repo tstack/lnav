@@ -42,7 +42,7 @@
 namespace lnav {
 namespace document {
 
-nonstd::optional<hier_node*>
+std::optional<hier_node*>
 hier_node::lookup_child(section_key_t key) const
 {
     return make_optional_from_nullable(key.match(
@@ -62,7 +62,7 @@ hier_node::lookup_child(section_key_t key) const
         }));
 }
 
-nonstd::optional<size_t>
+std::optional<size_t>
 hier_node::child_index(const hier_node* hn) const
 {
     size_t retval = 0;
@@ -74,16 +74,16 @@ hier_node::child_index(const hier_node* hn) const
         retval += 1;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<hier_node::child_neighbors_result>
+std::optional<hier_node::child_neighbors_result>
 hier_node::child_neighbors(const lnav::document::hier_node* hn,
                            file_off_t offset) const
 {
     auto index_opt = this->child_index(hn);
     if (!index_opt) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     hier_node::child_neighbors_result retval;
@@ -153,11 +153,11 @@ hier_node::child_neighbors(const lnav::document::hier_node* hn,
     return retval;
 }
 
-nonstd::optional<hier_node::child_neighbors_result>
+std::optional<hier_node::child_neighbors_result>
 hier_node::line_neighbors(size_t ln) const
 {
     if (this->hn_children.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     hier_node::child_neighbors_result retval;
@@ -173,7 +173,7 @@ hier_node::line_neighbors(size_t ln) const
     return retval;
 }
 
-nonstd::optional<const hier_node*>
+std::optional<const hier_node*>
 hier_node::lookup_path(const hier_node* root,
                        const std::vector<section_key_t>& path)
 {
@@ -188,7 +188,7 @@ hier_node::lookup_path(const hier_node* root,
     }
 
     if (!retval) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return retval;
@@ -484,7 +484,7 @@ public:
                             }
                             if (term) {
                                 this->append_child_node(term);
-                                term = nonstd::nullopt;
+                                term = std::nullopt;
                             }
                             this->sw_interval_state.pop_back();
                             this->sw_hier_stage
@@ -605,7 +605,7 @@ public:
                                     found = true;
                                 }
                                 this->append_child_node(term);
-                                term = nonstd::nullopt;
+                                term = std::nullopt;
                                 this->sw_depth -= 1;
                                 this->sw_interval_state.pop_back();
                                 this->sw_hier_stage
@@ -758,15 +758,15 @@ private:
     };
 
     struct interval_state {
-        nonstd::optional<file_off_t> is_start;
+        std::optional<file_off_t> is_start;
         size_t is_line_number{0};
         std::string is_name;
     };
 
-    nonstd::optional<data_scanner::capture_t> flush_values()
+    std::optional<data_scanner::capture_t> flush_values()
     {
-        nonstd::optional<data_scanner::capture_t> last_key;
-        nonstd::optional<data_scanner::capture_t> retval;
+        std::optional<data_scanner::capture_t> last_key;
+        std::optional<data_scanner::capture_t> retval;
 
         if (!this->sw_values.empty()) {
             if (!this->sw_interval_state.back().is_start) {
@@ -799,7 +799,7 @@ private:
                             this->sw_interval_state.back().is_line_number
                                 = this->sw_line_number;
                         }
-                        last_key = nonstd::nullopt;
+                        last_key = std::nullopt;
                     }
                     break;
                 default:
@@ -812,11 +812,11 @@ private:
         return retval;
     }
 
-    void append_child_node(nonstd::optional<data_scanner::capture_t> terminator)
+    void append_child_node(std::optional<data_scanner::capture_t> terminator)
     {
         auto& ivstate = this->sw_interval_state.back();
         if (!ivstate.is_start || !terminator || this->sw_depth == 0) {
-            ivstate.is_start = nonstd::nullopt;
+            ivstate.is_start = std::nullopt;
             ivstate.is_line_number = 0;
             ivstate.is_name.clear();
             return;
@@ -847,7 +847,7 @@ private:
             }
             top_node->hn_children.emplace_back(std::move(new_node));
         }
-        ivstate.is_start = nonstd::nullopt;
+        ivstate.is_start = std::nullopt;
         ivstate.is_line_number = 0;
         ivstate.is_name.clear();
     }

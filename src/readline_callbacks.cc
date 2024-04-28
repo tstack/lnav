@@ -935,7 +935,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                             return false;
                         }
 
-                        nonstd::optional<vis_line_t> first_hit;
+                        std::optional<vis_line_t> first_hit;
 
                         if (is_alt) {
                             first_hit = bm[&textview_curses::BM_SEARCH].prev(

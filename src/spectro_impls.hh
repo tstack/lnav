@@ -80,8 +80,8 @@ public:
     logline_value_stats dsvs_stats;
     time_t dsvs_begin_time{0};
     time_t dsvs_end_time{0};
-    nonstd::optional<size_t> dsvs_column_index;
-    nonstd::optional<lnav::console::user_message> dsvs_error_msg;
+    std::optional<size_t> dsvs_column_index;
+    std::optional<lnav::console::user_message> dsvs_error_msg;
 };
 
 #endif

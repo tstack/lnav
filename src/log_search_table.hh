@@ -71,7 +71,7 @@ public:
     log_format* lst_format{nullptr};
     mutable size_t lst_format_column_count{0};
     std::string lst_log_path_glob;
-    nonstd::optional<log_level_t> lst_log_level;
+    std::optional<log_level_t> lst_log_level;
     mutable std::vector<logline_value_meta> lst_column_metas;
     int64_t lst_match_index{-1};
     mutable std::vector<vtab_column> lst_cols;

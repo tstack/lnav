@@ -804,7 +804,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
             (lnav_data.ld_flags & LNF_HEADLESS || ec.ec_path_stack.size() > 1))
         {
             rescan_files();
-            wait_for_pipers(nonstd::nullopt);
+            wait_for_pipers(std::nullopt);
             rebuild_indexes_repeatedly();
         }
     });
@@ -842,7 +842,7 @@ execute_init_commands(
         return;
     }
 
-    nonstd::optional<exec_context::output_t> ec_out;
+    std::optional<exec_context::output_t> ec_out;
     auto_fd fd_copy;
 
     if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
@@ -1090,7 +1090,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 
     static int exec_count = 0;
     auto desc
-        = fmt::format(FMT_STRING("[{}] Output of {}"), exec_count++, cmdline);
+        = fmt::format(FMT_STRING("exec-{}-output {}"), exec_count++, cmdline);
     lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
         .with_filename(desc)
         .with_include_in_session(false)
@@ -1145,7 +1145,7 @@ exec_context::clear_output()
             out.second(out.first);
         }
     };
-    this->ec_output_stack.back() = std::make_pair("default", nonstd::nullopt);
+    this->ec_output_stack.back() = std::make_pair("default", std::nullopt);
 }
 
 exec_context::exec_context(logline_value_vector* line_values,
@@ -1161,7 +1161,7 @@ exec_context::exec_context(logline_value_vector* line_values,
     this->ec_path_stack.emplace_back(".");
     this->ec_source.emplace_back(
         lnav::console::snippet::from(COMMAND_SRC, "").with_line(1));
-    this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
+    this->ec_output_stack.emplace_back("screen", std::nullopt);
     this->ec_error_callback_stack.emplace_back(
         [](const auto& um) { lnav::console::print(stderr, um); });
 }
@@ -1239,7 +1239,7 @@ exec_context::enter_source(intern_string_t path,
 
 exec_context::output_guard::output_guard(exec_context& context,
                                          std::string name,
-                                         const nonstd::optional<output_t>& file)
+                                         const std::optional<output_t>& file)
     : sg_context(context)
 {
     if (file) {

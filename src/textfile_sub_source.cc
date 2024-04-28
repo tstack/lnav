@@ -688,7 +688,7 @@ textfile_sub_source::text_crumbs_for_line(
 textfile_sub_source::rescan_result_t
 textfile_sub_source::rescan_files(
     textfile_sub_source::scan_callback& callback,
-    nonstd::optional<ui_clock::time_point> deadline)
+    std::optional<ui_clock::time_point> deadline)
 {
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
@@ -1009,12 +1009,12 @@ textfile_sub_source::quiesce()
     }
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 textfile_sub_source::row_for_anchor(const std::string& id)
 {
     auto lf = this->current_file();
     if (!lf || id.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
@@ -1024,11 +1024,11 @@ textfile_sub_source::row_for_anchor(const std::string& id)
 
     auto iter = this->tss_doc_metadata.find(lf->get_filename());
     if (iter == this->tss_doc_metadata.end()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     const auto& meta = iter->second.ms_metadata;
-    nonstd::optional<vis_line_t> retval;
+    std::optional<vis_line_t> retval;
 
     auto is_ptr = startswith(id, "#/");
     if (is_ptr) {
@@ -1155,7 +1155,7 @@ textfile_sub_source::get_anchors()
     return retval;
 }
 
-static nonstd::optional<vis_line_t>
+static std::optional<vis_line_t>
 to_vis_line(const std::shared_ptr<logfile>& lf, file_off_t off)
 {
     auto ll_opt = lf->line_for_offset(off);
@@ -1163,15 +1163,15 @@ to_vis_line(const std::shared_ptr<logfile>& lf, file_off_t off)
         return vis_line_t(std::distance(lf->cbegin(), ll_opt.value()));
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
 {
     auto lf = this->current_file();
     if (!lf) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     log_debug("adjacent_anchor: %s:L%d:%s",
@@ -1186,7 +1186,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     auto iter = this->tss_doc_metadata.find(lf->get_filename());
     if (iter == this->tss_doc_metadata.end()) {
         log_debug("  no metadata available");
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto& md = iter->second.ms_metadata;
@@ -1194,7 +1194,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     if (vl >= lfo->lfo_filter_state.tfs_index.size()
         || md.m_sections_root == nullptr)
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
     auto line_offsets = lf->get_file_range(ll_iter, false);
@@ -1207,7 +1207,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
         log_debug("  no path found");
         auto neighbors_res = md.m_sections_root->line_neighbors(vl);
         if (!neighbors_res) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         switch (dir) {
@@ -1229,7 +1229,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
                 break;
             }
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     log_debug("  path for line: %s", fmt::to_string(path_for_line).c_str());
@@ -1241,7 +1241,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     if (!parent_opt) {
         log_debug("  no parent for path: %s",
                   fmt::to_string(path_for_line).c_str());
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     auto parent = parent_opt.value();
 
@@ -1249,14 +1249,14 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     if (!child_hn) {
         // XXX "should not happen"
         log_debug("  child not found");
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto neighbors_res = parent->child_neighbors(
         child_hn.value(), line_offsets.next_offset() + 1);
     if (!neighbors_res) {
         log_debug("  no neighbors found");
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     log_debug("  neighbors p:%d n:%d",
@@ -1295,15 +1295,15 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<std::string>
+std::optional<std::string>
 textfile_sub_source::anchor_for_row(vis_line_t vl)
 {
     auto lf = this->current_file();
     if (!lf) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
@@ -1313,12 +1313,12 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
 
     auto iter = this->tss_doc_metadata.find(lf->get_filename());
     if (iter == this->tss_doc_metadata.end()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     if (vl >= lfo->lfo_filter_state.tfs_index.size()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     auto& md = iter->second.ms_metadata;
     auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
@@ -1327,7 +1327,7 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
         = md.path_for_range(line_offsets.fr_offset, line_offsets.next_offset());
 
     if (path_for_line.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     if ((path_for_line.size() == 1

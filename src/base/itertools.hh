@@ -39,7 +39,6 @@
 #include <vector>
 
 #include "func_util.hh"
-#include "optional.hpp"
 
 namespace lnav {
 namespace itertools {
@@ -122,7 +121,7 @@ struct append {
 };
 
 struct nth {
-    nonstd::optional<size_t> a_index;
+    std::optional<size_t> a_index;
 };
 
 struct skip {
@@ -190,7 +189,7 @@ second()
 }
 
 inline details::nth
-nth(nonstd::optional<size_t> index)
+nth(std::optional<size_t> index)
 {
     return details::nth{
         index,
@@ -340,7 +339,7 @@ sum()
 }  // namespace lnav
 
 template<typename C, typename P>
-nonstd::optional<std::conditional_t<
+std::optional<std::conditional_t<
     std::is_const<typename std::remove_reference_t<C>>::value,
     typename std::remove_reference_t<C>::const_iterator,
     typename std::remove_reference_t<C>::iterator>>
@@ -348,44 +347,44 @@ operator|(C&& in, const lnav::itertools::details::find_if<P>& finder)
 {
     for (auto iter = in.begin(); iter != in.end(); ++iter) {
         if (lnav::func::invoke(finder.fi_predicate, *iter)) {
-            return nonstd::make_optional(iter);
+            return std::make_optional(iter);
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 template<typename C, typename T>
-nonstd::optional<size_t>
+std::optional<size_t>
 operator|(const C& in, const lnav::itertools::details::find<T>& finder)
 {
     size_t retval = 0;
     for (const auto& elem : in) {
         if (elem == finder.f_value) {
-            return nonstd::make_optional(retval);
+            return std::make_optional(retval);
         }
         retval += 1;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 template<typename C>
-nonstd::optional<typename C::const_iterator>
+std::optional<typename C::const_iterator>
 operator|(const C& in, const lnav::itertools::details::nth indexer)
 {
     if (!indexer.a_index.has_value()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     if (indexer.a_index.value() < in.size()) {
         auto iter = in.begin();
 
         std::advance(iter, indexer.a_index.value());
-        return nonstd::make_optional(iter);
+        return std::make_optional(iter);
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 template<typename C>
@@ -402,10 +401,10 @@ operator|(const C& in, const lnav::itertools::details::first indexer)
 }
 
 template<typename C>
-nonstd::optional<typename C::value_type>
+std::optional<typename C::value_type>
 operator|(const C& in, const lnav::itertools::details::max_value maxer)
 {
-    nonstd::optional<typename C::value_type> retval;
+    std::optional<typename C::value_type> retval;
 
     for (const auto& elem : in) {
         if (!retval) {
@@ -572,13 +571,13 @@ template<typename T,
          typename F,
          std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
-operator|(nonstd::optional<T> in,
+operator|(std::optional<T> in,
           const lnav::itertools::details::flat_mapper<F>& mapper) ->
     typename std::remove_const_t<typename std::remove_reference_t<
         decltype(lnav::func::invoke(mapper.fm_func, in.value()))>>
 {
     if (!in) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return lnav::func::invoke(mapper.fm_func, in.value());
@@ -588,7 +587,7 @@ template<typename T,
          typename F,
          std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
 void
-operator|(nonstd::optional<T> in,
+operator|(std::optional<T> in,
           const lnav::itertools::details::for_eacher<F>& eacher)
 {
     if (!in) {
@@ -614,17 +613,17 @@ template<typename T,
          typename F,
          std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
-operator|(nonstd::optional<T> in,
+operator|(std::optional<T> in,
           const lnav::itertools::details::mapper<F>& mapper)
-    -> nonstd::optional<
+    -> std::optional<
         typename std::remove_const_t<typename std::remove_reference_t<
             decltype(lnav::func::invoke(mapper.m_func, in.value()))>>>
 {
     if (!in) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional(lnav::func::invoke(mapper.m_func, in.value()));
+    return std::make_optional(lnav::func::invoke(mapper.m_func, in.value()));
 }
 
 template<typename T, typename F>
@@ -813,38 +812,38 @@ template<typename T,
          typename F,
          std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
-operator|(nonstd::optional<T> in,
+operator|(std::optional<T> in,
           const lnav::itertools::details::mapper<F>& mapper)
-    -> nonstd::optional<typename std::remove_reference_t<
+    -> std::optional<typename std::remove_reference_t<
         typename std::remove_const_t<decltype(((in.value()).*mapper.m_func))>>>
 {
     if (!in) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional((in.value()).*mapper.m_func);
+    return std::make_optional((in.value()).*mapper.m_func);
 }
 
 template<typename T,
          typename F,
          std::enable_if_t<!lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
-operator|(nonstd::optional<T> in,
+operator|(std::optional<T> in,
           const lnav::itertools::details::mapper<F>& mapper)
-    -> nonstd::optional<
+    -> std::optional<
         typename std::remove_const_t<typename std::remove_reference_t<
             decltype(((*in.value()).*mapper.m_func))>>>
 {
     if (!in) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional((*in.value()).*mapper.m_func);
+    return std::make_optional((*in.value()).*mapper.m_func);
 }
 
 template<typename T>
 T
-operator|(nonstd::optional<T> in,
+operator|(std::optional<T> in,
           const lnav::itertools::details::unwrap_or<T>& unwrapper)
 {
     return in.value_or(unwrapper.uo_value);

@@ -35,7 +35,6 @@
 #include "fmt/format.h"
 #include "intern_string.hh"
 #include "network.tcp.hh"
-#include "optional.hpp"
 
 namespace fmt {
 
@@ -100,7 +99,7 @@ namespace humanize {
 namespace network {
 namespace path {
 
-nonstd::optional<::network::path> from_str(string_fragment sf);
+std::optional<::network::path> from_str(string_fragment sf);
 
 }  // namespace path
 }  // namespace network

@@ -40,6 +40,7 @@
 
 #include "config.h"
 #include "date/date.h"
+#include "date/tz.h"
 
 namespace lnav {
 
@@ -50,6 +51,10 @@ ssize_t strftime_rfc3339(char* buffer,
                          lnav::time64_t tim,
                          int millis,
                          char sep = ' ');
+
+date::sys_info sys_time_to_info(date::sys_seconds secs);
+
+date::local_info local_time_to_info(date::local_seconds secs);
 
 date::sys_seconds to_sys_time(date::local_seconds secs);
 

@@ -81,11 +81,11 @@ const char* lnav_view_titles[LNV__MAX] = {
     "GANTT",
 };
 
-nonstd::optional<lnav_view_t>
+std::optional<lnav_view_t>
 view_from_string(const char* name)
 {
     if (name == nullptr) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto* view_name_iter
@@ -96,7 +96,7 @@ view_from_string(const char* name)
                        });
 
     if (view_name_iter == std::end(lnav_view_strings)) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return lnav_view_t(view_name_iter - lnav_view_strings);
@@ -900,7 +900,7 @@ update_hits(textview_curses* tc)
                 }
             }
 
-            nonstd::optional<vis_line_t> next_vl;
+            std::optional<vis_line_t> next_vl;
             while ((next_vl = bv.next(vl)) && preview_count < MAX_MATCH_COUNT) {
                 if (next_vl.value() < 0_vl
                     || next_vl.value() >= tc->get_inner_height())
@@ -1155,8 +1155,8 @@ ensure_view(lnav_view_t expected)
     return ensure_view(&lnav_data.ld_views[expected]);
 }
 
-nonstd::optional<vis_line_t>
-next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+std::optional<vis_line_t>
+next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
                  vis_line_t) const,
              const bookmark_type_t* bt,
              const vis_line_t top)
@@ -1166,7 +1166,7 @@ next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     auto& bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
     vis_line_t last_top(top), tc_height;
-    nonstd::optional<vis_line_t> new_top = top;
+    std::optional<vis_line_t> new_top = top;
     unsigned long tc_width;
     int hit_count = 0;
 
@@ -1202,11 +1202,11 @@ next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
         return last_top;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 bool
-moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
                    vis_line_t) const,
                const bookmark_type_t* bt,
                vis_line_t top)
@@ -1328,7 +1328,7 @@ view_title_poss()
 
     for (int view_index = 0; view_index < LNV__MAX; view_index++) {
         attr_line_t display_value{lnav_view_titles[view_index]};
-        nonstd::optional<size_t> quantity;
+        std::optional<size_t> quantity;
         std::string units;
 
         switch (view_index) {

@@ -1,3 +1,20 @@
+## lnav v0.12.3
+
+Features:
+* Files that contain a mixture of log messages from separate
+  services (e.g. docker logs) can now be automatically
+  de-multiplexed into separate files that lnav can digest.
+
+Bug Fixes:
+* Log messages in formats with custom timestamp formats were
+  not being converted to the local timezone.
+* The timezone offset is now shown in the parser details
+  overlay for log messages.
+
+Maintenance:
+* Upgrade to C++17
+
+
 ## lnav v0.12.2
 
 Features:

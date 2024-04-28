@@ -50,6 +50,8 @@ is_glob(const std::string& fn)
             || fn.find('[') != std::string::npos);
 }
 
+std::string escape_path(const ghc::filesystem::path& p);
+
 inline int
 statp(const ghc::filesystem::path& path, struct stat* buf)
 {
@@ -90,7 +92,7 @@ enum class write_file_options {
 };
 
 struct write_file_result {
-    nonstd::optional<ghc::filesystem::path> wfr_backup_path;
+    std::optional<ghc::filesystem::path> wfr_backup_path;
 };
 
 Result<write_file_result, std::string> write_file(
@@ -144,8 +146,8 @@ public:
 namespace fmt {
 template<>
 struct formatter<ghc::filesystem::path> : formatter<string_view> {
-    auto format(const ghc::filesystem::path& p, format_context& ctx)
-        -> decltype(ctx.out()) const;
+    auto format(const ghc::filesystem::path& p,
+                format_context& ctx) -> decltype(ctx.out()) const;
 };
 }  // namespace fmt
 

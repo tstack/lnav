@@ -44,8 +44,8 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
-static nonstd::optional<text_auto_buffer>
-timeslice(sqlite3_value* time_in, nonstd::optional<const char*> slice_in_opt)
+static std::optional<text_auto_buffer>
+timeslice(sqlite3_value* time_in, std::optional<const char*> slice_in_opt)
 {
     thread_local date_time_scanner dts;
     thread_local struct {
@@ -128,14 +128,14 @@ timeslice(sqlite3_value* time_in, nonstd::optional<const char*> slice_in_opt)
             break;
         }
         case SQLITE_NULL: {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
     }
 
     auto win_start_opt = cache.c_rel_time.window_start(tm);
 
     if (!win_start_opt) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto win_start = *win_start_opt;
@@ -147,7 +147,7 @@ timeslice(sqlite3_value* time_in, nonstd::optional<const char*> slice_in_opt)
     return text_auto_buffer{std::move(ts)};
 }
 
-static nonstd::optional<double>
+static std::optional<double>
 sql_timediff(string_fragment time1, string_fragment time2)
 {
     struct timeval tv1, tv2, retval;
@@ -159,7 +159,7 @@ sql_timediff(string_fragment time1, string_fragment time2)
     } else if (!dts1.convert_to_timeval(
                    time1.data(), time1.length(), nullptr, tv1))
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto parse_res2 = relative_time::from_str(time2);
@@ -168,7 +168,7 @@ sql_timediff(string_fragment time1, string_fragment time2)
     } else if (!dts2.convert_to_timeval(
                    time2.data(), time2.length(), nullptr, tv2))
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     timersub(&tv1, &tv2, &retval);
@@ -188,7 +188,7 @@ sql_humanize_duration(double value)
     return humanize::time::duration::from_tv(tv).to_string();
 }
 
-static nonstd::optional<std::string>
+static std::optional<std::string>
 sql_timezone(std::string tz_str, string_fragment ts_str)
 {
     thread_local date_time_scanner dts;

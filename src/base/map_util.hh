@@ -35,13 +35,12 @@
 #include <type_traits>
 #include <vector>
 
-#include "optional.hpp"
 
 namespace lnav {
 namespace map {
 
 template<typename C>
-nonstd::optional<
+std::optional<
     std::reference_wrapper<std::conditional_t<std::is_const<C>::value,
                                               const typename C::mapped_type,
                                               typename C::mapped_type>>>
@@ -49,10 +48,10 @@ find(C& container, const typename C::key_type& key)
 {
     auto iter = container.find(key);
     if (iter != container.end()) {
-        return nonstd::make_optional(std::ref(iter->second));
+        return std::make_optional(std::ref(iter->second));
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 template<typename K, typename V, typename M = std::map<K, V>>

@@ -44,7 +44,6 @@
 #include "fmt/format.h"
 #include "help_text_formatter.hh"
 #include "mapbox/variant.hpp"
-#include "optional.hpp"
 #include "sqlite-extension-func.hh"
 
 lnav::console::user_message sqlite3_error_to_user_message(sqlite3*);
@@ -181,16 +180,16 @@ struct from_sqlite<double> {
 };
 
 template<typename T>
-struct from_sqlite<nonstd::optional<T>> {
-    inline nonstd::optional<T> operator()(int argc,
+struct from_sqlite<std::optional<T>> {
+    inline std::optional<T> operator()(int argc,
                                           sqlite3_value** val,
                                           int argi)
     {
         if (argi >= argc || sqlite3_value_type(val[argi]) == SQLITE_NULL) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
-        return nonstd::optional<T>(from_sqlite<T>()(argc, val, argi));
+        return std::optional<T>(from_sqlite<T>()(argc, val, argi));
     }
 };
 
@@ -305,7 +304,7 @@ to_sqlite(sqlite3_context* ctx, auto_mem<char> str)
 
 template<typename T>
 inline void
-to_sqlite(sqlite3_context* ctx, nonstd::optional<T>& val)
+to_sqlite(sqlite3_context* ctx, std::optional<T>& val)
 {
     if (val.has_value()) {
         to_sqlite(ctx, val.value());
@@ -316,7 +315,7 @@ to_sqlite(sqlite3_context* ctx, nonstd::optional<T>& val)
 
 template<typename T>
 inline void
-to_sqlite(sqlite3_context* ctx, nonstd::optional<T> val)
+to_sqlite(sqlite3_context* ctx, std::optional<T> val)
 {
     if (val.has_value()) {
         to_sqlite(ctx, std::move(val.value()));
@@ -352,17 +351,17 @@ struct optional_counter {
 };
 
 template<typename T>
-struct optional_counter<nonstd::optional<T>> {
+struct optional_counter<std::optional<T>> {
     constexpr static int value = 1;
 };
 
 template<typename T, typename U>
-struct optional_counter<nonstd::optional<T>, const std::vector<U>&> {
+struct optional_counter<std::optional<T>, const std::vector<U>&> {
     constexpr static int value = 1;
 };
 
 template<typename T, typename... Rest>
-struct optional_counter<nonstd::optional<T>, Rest...> {
+struct optional_counter<std::optional<T>, Rest...> {
     constexpr static int value = 1 + sizeof...(Rest);
 };
 

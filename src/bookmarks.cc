@@ -87,7 +87,7 @@ bookmark_metadata::clear()
     this->bm_annotations.la_pairs.clear();
 }
 
-nonstd::optional<bookmark_type_t*>
+std::optional<bookmark_type_t*>
 bookmark_type_t::find_type(const std::string& name)
 {
     return get_all_types()

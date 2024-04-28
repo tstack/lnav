@@ -41,7 +41,6 @@
 #include "base/result.h"
 #include "ghc/filesystem.hpp"
 #include "mapbox/variant.hpp"
-#include "optional.hpp"
 
 namespace archive_manager {
 
@@ -64,7 +63,7 @@ struct archive_info {
         ghc::filesystem::path e_name;
         const char* e_mode;
         time_t e_mtime;
-        nonstd::optional<file_ssize_t> e_size;
+        std::optional<file_ssize_t> e_size;
     };
     const char* ai_format_name;
     std::vector<entry> ai_entries;

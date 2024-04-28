@@ -702,7 +702,7 @@ handle_config_ui_key(int ch, const char* keyseq)
         return retval;
     }
 
-    nonstd::optional<ln_mode_t> new_mode;
+    std::optional<ln_mode_t> new_mode;
 
     lnav_data.ld_filter_help_status_source.fss_error.clear();
     if (ch == 'F') {
@@ -868,7 +868,7 @@ gather_pipers()
 }
 
 void
-wait_for_pipers(nonstd::optional<timeval> deadline)
+wait_for_pipers(std::optional<timeval> deadline)
 {
     static const auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
     auto sleep_time = std::chrono::milliseconds(10);
@@ -3108,7 +3108,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         } else {
             lnav_data.ld_active_files.fc_file_names.emplace(
                 abspath.in(),
-                logfile_open_options().with_init_location(file_loc));
+                logfile_open_options().with_init_location(file_loc).with_tail(
+                    !(lnav_data.ld_flags & LNF_HEADLESS)));
             if (file_loc.valid()) {
                 lnav_data.ld_files_to_front.emplace_back(abspath.in(),
                                                          file_loc);
@@ -3196,7 +3197,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         retval = EXIT_FAILURE;
     }
 
-    nonstd::optional<std::string> stdin_url;
+    std::optional<std::string> stdin_url;
     ghc::filesystem::path stdin_dir;
     if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO)
         && !exec_stdin)

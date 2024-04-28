@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #include <stdlib.h>
 #include <unistd.h>
 

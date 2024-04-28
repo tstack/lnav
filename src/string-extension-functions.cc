@@ -28,7 +28,6 @@
 #include "formats/logfmt/logfmt.parser.hh"
 #include "libbase64.h"
 #include "mapbox/variant.hpp"
-#include "optional.hpp"
 #include "pcrepp/pcre2pp.hh"
 #include "safe/safe.h"
 #include "scn/scn.h"
@@ -394,7 +393,7 @@ sparkline_final(sqlite3_context* context)
     sc->~sparkline_context();
 }
 
-nonstd::optional<util::variant<blob_auto_buffer, sqlite3_int64, double>>
+std::optional<util::variant<blob_auto_buffer, sqlite3_int64, double>>
 sql_gunzip(sqlite3_value* val)
 {
     switch (sqlite3_value_type(val)) {
@@ -423,10 +422,10 @@ sql_gunzip(sqlite3_value* val)
             return sqlite3_value_double(val);
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<blob_auto_buffer>
+std::optional<blob_auto_buffer>
 sql_gzip(sqlite3_value* val)
 {
     switch (sqlite3_value_type(val)) {
@@ -458,7 +457,7 @@ sql_gzip(sqlite3_value* val)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 #if defined(HAVE_LIBCURL)
@@ -764,15 +763,15 @@ sql_parse_url(std::string url)
 }
 
 struct url_parts {
-    nonstd::optional<std::string> up_scheme;
-    nonstd::optional<std::string> up_username;
-    nonstd::optional<std::string> up_password;
-    nonstd::optional<std::string> up_host;
-    nonstd::optional<std::string> up_port;
-    nonstd::optional<std::string> up_path;
-    nonstd::optional<std::string> up_query;
-    std::map<std::string, nonstd::optional<std::string>> up_parameters;
-    nonstd::optional<std::string> up_fragment;
+    std::optional<std::string> up_scheme;
+    std::optional<std::string> up_username;
+    std::optional<std::string> up_password;
+    std::optional<std::string> up_host;
+    std::optional<std::string> up_port;
+    std::optional<std::string> up_path;
+    std::optional<std::string> up_query;
+    std::map<std::string, std::optional<std::string>> up_parameters;
+    std::optional<std::string> up_fragment;
 };
 
 static const json_path_container url_params_handlers = {

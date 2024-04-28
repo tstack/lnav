@@ -40,7 +40,6 @@
 #include "breadcrumb.hh"
 #include "intervaltree/IntervalTree.h"
 #include "mapbox/variant.hpp"
-#include "optional.hpp"
 #include "text_format.hh"
 
 namespace lnav {
@@ -67,37 +66,37 @@ struct hier_node {
     std::multimap<std::string, hier_node*> hn_named_children;
     std::vector<std::unique_ptr<hier_node>> hn_children;
 
-    nonstd::optional<hier_node*> lookup_child(section_key_t key) const;
+    std::optional<hier_node*> lookup_child(section_key_t key) const;
 
-    nonstd::optional<size_t> child_index(const hier_node* hn) const;
+    std::optional<size_t> child_index(const hier_node* hn) const;
 
     struct child_neighbors_result {
-        nonstd::optional<const hier_node*> cnr_previous;
-        nonstd::optional<const hier_node*> cnr_next;
+        std::optional<const hier_node*> cnr_previous;
+        std::optional<const hier_node*> cnr_next;
     };
 
-    nonstd::optional<child_neighbors_result> child_neighbors(
+    std::optional<child_neighbors_result> child_neighbors(
         const hier_node* hn, file_off_t offset) const;
 
-    nonstd::optional<child_neighbors_result> line_neighbors(size_t ln) const;
+    std::optional<child_neighbors_result> line_neighbors(size_t ln) const;
 
-    nonstd::optional<size_t> find_line_number(const std::string& str) const
+    std::optional<size_t> find_line_number(const std::string& str) const
     {
         auto iter = this->hn_named_children.find(str);
         if (iter != this->hn_named_children.end()) {
-            return nonstd::make_optional(iter->second->hn_line_number);
+            return std::make_optional(iter->second->hn_line_number);
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    nonstd::optional<size_t> find_line_number(size_t index) const
+    std::optional<size_t> find_line_number(size_t index) const
     {
         if (index < this->hn_children.size()) {
-            return nonstd::make_optional(
+            return std::make_optional(
                 this->hn_children[index]->hn_line_number);
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     bool is_named_only() const
@@ -105,7 +104,7 @@ struct hier_node {
         return this->hn_children.size() == this->hn_named_children.size();
     }
 
-    static nonstd::optional<const hier_node*> lookup_path(
+    static std::optional<const hier_node*> lookup_path(
         const hier_node* root, const std::vector<section_key_t>& path);
 
     template<typename F>

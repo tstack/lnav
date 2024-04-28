@@ -52,7 +52,6 @@
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "json_ptr.hh"
-#include "optional.hpp"
 #include "pcrepp/pcre2pp.hh"
 #include "relative_time.hh"
 #include "yajl/api/yajl_gen.h"
@@ -224,7 +223,7 @@ struct json_path_handler_base {
 
     bool is_array() const { return this->jph_is_array; }
 
-    nonstd::optional<int> to_enum_value(const string_fragment& sf) const;
+    std::optional<int> to_enum_value(const string_fragment& sf) const;
     const char* to_enum_string(int value) const;
 
     template<typename T>
@@ -271,7 +270,7 @@ struct json_path_handler_base {
     std::function<void(yajlpp_parse_context& ypc,
                        const json_path_handler_base& jph)>
         jph_validator;
-    std::function<const void*(void* root, nonstd::optional<std::string> name)>
+    std::function<const void*(void* root, std::optional<std::string> name)>
         jph_field_getter;
     std::function<void*(const yajlpp_provider_context& pe, void* root)>
         jph_obj_provider;
@@ -572,7 +571,7 @@ public:
     }
 
     template<typename T>
-    yajl_gen_status operator()(nonstd::optional<T> value)
+    yajl_gen_status operator()(std::optional<T> value)
     {
         if (!value.has_value()) {
             return yajl_gen_status_ok;

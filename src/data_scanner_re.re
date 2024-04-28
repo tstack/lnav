@@ -37,7 +37,7 @@
 
 /*!conditions:re2c*/
 
-nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_format_t tf)
+std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_format_t tf)
 {
     data_token_t token_out = DT_INVALID;
     capture_t cap_all;
@@ -168,9 +168,9 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_
                   );
        UNITS = (([mup]?("s"|"S"))|(([kKmMgG]"i"?)?[bB])|("m"|"min"));
 
-       <init, bol> EOF { return nonstd::nullopt; }
-       <init, bol> [\x00] { return nonstd::nullopt; }
-       <*> * { return nonstd::nullopt; }
+       <init, bol> EOF { return std::nullopt; }
+       <init, bol> [\x00] { return std::nullopt; }
+       <*> * { return std::nullopt; }
        <init, bol> SYN+ {
            RET(DT_ZERO_WIDTH_SPACE);
        }
@@ -477,5 +477,5 @@ nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_
 
      */
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }

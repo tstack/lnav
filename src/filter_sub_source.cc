@@ -290,14 +290,14 @@ size_t
 filter_sub_source::text_line_count()
 {
     return (lnav_data.ld_view_stack.top() |
-                [](auto tc) -> nonstd::optional<size_t> {
+                [](auto tc) -> std::optional<size_t> {
                text_sub_source* tss = tc->get_sub_source();
 
                if (tss == nullptr) {
-                   return nonstd::nullopt;
+                   return std::nullopt;
                }
                auto& fs = tss->get_filters();
-               return nonstd::make_optional(fs.size());
+               return std::make_optional(fs.size());
            })
         .value_or(0);
 }

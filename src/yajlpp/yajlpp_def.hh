@@ -333,7 +333,7 @@ struct json_path_handler : public json_path_handler_base {
     };
 
     template<typename T, typename U>
-    struct LastIsEnum<nonstd::optional<U> T::*> {
+    struct LastIsEnum<std::optional<U> T::*> {
         using value_type = U;
 
         static constexpr bool value = std::is_enum<U>::value;
@@ -351,7 +351,7 @@ struct json_path_handler : public json_path_handler_base {
     };
 
     template<typename T, typename U>
-    struct LastIsInteger<nonstd::optional<U> T::*> {
+    struct LastIsInteger<std::optional<U> T::*> {
         static constexpr bool value
             = std::is_integral<U>::value && !std::is_same<U, bool>::value;
     };
@@ -367,7 +367,7 @@ struct json_path_handler : public json_path_handler_base {
     };
 
     template<typename T, typename U>
-    struct LastIsFloat<nonstd::optional<U> T::*> {
+    struct LastIsFloat<std::optional<U> T::*> {
         static constexpr bool value = std::is_same<U, double>::value;
     };
 
@@ -416,6 +416,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename... Args>
     struct LastIsMap {
+        static constexpr bool is_ptr = LastIsMap<Args...>::is_ptr;
         using key_type = typename LastIsMap<Args...>::key_type;
         using value_type = typename LastIsMap<Args...>::value_type;
         static constexpr bool value = LastIsMap<Args...>::value;
@@ -423,6 +424,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename K, typename U>
     struct LastIsMap<std::shared_ptr<std::map<K, U>> T::*> {
+        static constexpr bool is_ptr = true;
         using key_type = K;
         using value_type = U;
         static constexpr bool value = true;
@@ -430,6 +432,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename K, typename U>
     struct LastIsMap<std::map<K, U> T::*> {
+        static constexpr bool is_ptr = false;
         using key_type = K;
         using value_type = U;
         static constexpr bool value = true;
@@ -437,13 +440,14 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename U>
     struct LastIsMap<U T::*> {
+        static constexpr bool is_ptr = false;
         using key_type = void;
         using value_type = void;
         static constexpr bool value = false;
     };
 
     template<typename T>
-    static bool is_field_set(const nonstd::optional<T>& field)
+    static bool is_field_set(const std::optional<T>& field)
     {
         return field.has_value();
     }
@@ -490,7 +494,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(field);
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
 
@@ -581,6 +585,10 @@ struct json_path_handler : public json_path_handler_base {
             }
             return &child.pp_value;
         };
+        this->jph_field_getter
+            = [field](void* root, std::optional<std::string> name) {
+                  return (void*) &json_path_handler::get_field(root, field);
+              };
 
         return *this;
     }
@@ -626,7 +634,7 @@ struct json_path_handler : public json_path_handler_base {
             };
         this->jph_field_getter
             = [args...](void* root,
-                        nonstd::optional<std::string> name) -> const void* {
+                        std::optional<std::string> name) -> const void* {
             const auto& field = json_path_handler::get_field(root, args...);
             if (!name) {
                 return &field;
@@ -684,6 +692,30 @@ struct json_path_handler : public json_path_handler_base {
                     paths_out.emplace_back(std::to_string(pair.first));
                 }
             };
+        this->jph_field_getter
+            = [args...](void* root,
+                        std::optional<std::string> name) -> const void* {
+            const auto& field = json_path_handler::get_field(root, args...);
+            if (!name) {
+                return &field;
+            }
+
+            if constexpr (std::is_same_v<typename LastIsMap<Args...>::key_type,
+                                         intern_string_t>)
+            {
+                auto iter = field.find(intern_string::lookup(name.value()));
+                if (iter == field.end()) {
+                    return nullptr;
+                }
+                return (void*) &iter->second;
+            } else {
+                auto iter = field.find(name.value());
+                if (iter == field.end()) {
+                    return nullptr;
+                }
+                return (void*) &iter->second;
+            }
+        };
         this->jph_obj_provider
             = [args...](const yajlpp_provider_context& ypc, void* root) {
                   auto& field = json_path_handler::get_field(root, args...);
@@ -707,7 +739,7 @@ struct json_path_handler : public json_path_handler_base {
                 && !std::is_same<std::string,
                                  typename LastIsMap<Args...>::value_type>::value
                 && !std::is_same<
-                    nonstd::optional<std::string>,
+                    std::optional<std::string>,
                     typename LastIsMap<Args...>::value_type>::value,
             bool>
         = true>
@@ -733,7 +765,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename... Args,
              std::enable_if_t<
-                 LastIs<std::map<std::string, nonstd::optional<std::string>>,
+                 LastIs<std::map<std::string, std::optional<std::string>>,
                         Args...>::value,
                  bool>
              = true>
@@ -755,7 +787,7 @@ struct json_path_handler : public json_path_handler_base {
             auto* obj = ypc->ypc_obj_stack.top();
             auto key = ypc->get_path_fragment(-1);
 
-            json_path_handler::get_field(obj, args...)[key] = nonstd::nullopt;
+            json_path_handler::get_field(obj, args...)[key] = std::nullopt;
 
             return 1;
         };
@@ -899,7 +931,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(field);
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
         return *this;
@@ -961,7 +993,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(string_fragment::from_bytes(buf, buf_len));
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
         return *this;
@@ -969,7 +1001,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<
         typename... Args,
-        std::enable_if_t<LastIs<nonstd::optional<std::string>, Args...>::value,
+        std::enable_if_t<LastIs<std::optional<std::string>, Args...>::value,
                          bool>
         = true>
     json_path_handler& for_field(Args... args)
@@ -989,7 +1021,7 @@ struct json_path_handler : public json_path_handler_base {
         this->jph_null_cb = [args...](yajlpp_parse_context* ypc) {
             auto* obj = ypc->ypc_obj_stack.top();
 
-            json_path_handler::get_field(obj, args...) = nonstd::nullopt;
+            json_path_handler::get_field(obj, args...) = std::nullopt;
 
             return 1;
         };
@@ -1021,7 +1053,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(field.value());
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
         return *this;
@@ -1074,7 +1106,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(field.pp_value);
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
         return *this;
@@ -1281,6 +1313,10 @@ struct json_path_handler : public json_path_handler_base {
 
                   return gen(field.to_string());
               };
+        this->jph_field_getter
+            = [args..., ptr_arg](void* root, std::optional<std::string> name) {
+                  return &json_path_handler::get_field(root, args..., ptr_arg);
+              };
         return *this;
     }
 
@@ -1331,7 +1367,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(field);
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
 
@@ -1384,7 +1420,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(field);
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
 
@@ -1443,7 +1479,7 @@ struct json_path_handler : public json_path_handler_base {
                            .to_string());
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
         return *this;
@@ -1497,7 +1533,7 @@ struct json_path_handler : public json_path_handler_base {
             return gen(jph.to_enum_string(field));
         };
         this->jph_field_getter
-            = [args...](void* root, nonstd::optional<std::string> name) {
+            = [args...](void* root, std::optional<std::string> name) {
                   return (void*) &json_path_handler::get_field(root, args...);
               };
 

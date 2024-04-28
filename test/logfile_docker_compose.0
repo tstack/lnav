@@ -1,0 +1,22 @@
+[2Kweb-1  |  * Serving Flask app 'app.py'
+[2Kweb-1  |  * Debug mode: on
+[2Kweb-1  | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+[2Kweb-1  |  * Running on all addresses (0.0.0.0)
+[2Kweb-1  |  * Running on http://127.0.0.1:5000
+[2Kweb-1  |  * Running on http://172.18.0.3:5000
+[2Kweb-1  | [33mPress CTRL+C to quit[0m
+[2Kweb-1  |  * Restarting with stat
+[2Kweb-1  |  * Debugger is active!
+[2Kweb-1  |  * Debugger PIN: 593-762-075
+[2Kredis-1  | 1:C 25 Apr 2024 05:32:35.018 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+[2Kredis-1  | 1:C 25 Apr 2024 05:32:35.018 * Redis version=7.2.0, bits=64, commit=00000000, modified=0, pid=1, just started
+[2Kredis-1  | 1:C 25 Apr 2024 05:32:35.018 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+[2Kredis-1  | 1:M 25 Apr 2024 05:32:35.019 * monotonic clock: POSIX clock_gettime
+[2Kredis-1  | 1:M 25 Apr 2024 05:32:35.019 * Running mode=standalone, port=6379.
+[2Kredis-1  | 1:M 25 Apr 2024 05:32:35.020 * Server initialized
+[2Kredis-1  | 1:M 25 Apr 2024 05:32:35.022 * Ready to accept connections tcp
+[2Kredis-1  | 1:signal-handler (1714024483) Received SIGTERM scheduling shutdown...
+[2Kredis-1  | 1:M 25 Apr 2024 05:54:43.946 * User requested shutdown...
+[2Kredis-1  | 1:M 25 Apr 2024 05:54:43.946 * Saving the final RDB snapshot before exiting.
+[2Kredis-1  | 1:M 25 Apr 2024 05:54:43.948 * DB saved on disk
+[2Kredis-1  | 1:M 25 Apr 2024 05:54:43.948 # Redis is now ready to exit, bye bye...

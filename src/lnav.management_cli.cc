@@ -59,10 +59,16 @@ struct no_subcmd_t {
     CLI::App* ns_root_app{nullptr};
 };
 
+static auto DEFAULT_WRAPPING
+    = text_wrap_settings{}.with_padding_indent(4).with_width(60);
+
 inline attr_line_t&
 symbol_reducer(const std::string& elem, attr_line_t& accum)
 {
-    return accum.append("\n   ").append(lnav::roles::symbol(elem));
+    if (!accum.empty()) {
+        accum.append(", ");
+    }
+    return accum.append(lnav::roles::symbol(elem));
 }
 
 inline attr_line_t&
@@ -209,7 +215,8 @@ struct subcmd_format_t {
                  | lnav::itertools::sort_with(intern_string_t::case_lt)
                  | lnav::itertools::map(&intern_string_t::to_string)
                  | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                    .add_header("the available formats are:"));
+                    .add_header("the available formats are: ")
+                    .wrap_with(&DEFAULT_WRAPPING));
 
             return Err(um);
         }
@@ -225,7 +232,8 @@ struct subcmd_format_t {
                  | lnav::itertools::similar_to(this->sf_name)
                  | lnav::itertools::map(&intern_string_t::to_string)
                  | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                    .add_header("did you mean one of the following?"));
+                    .add_header("did you mean one of the following?\n")
+                    .wrap_with(&DEFAULT_WRAPPING));
 
             return Err(um);
         }
@@ -265,7 +273,8 @@ struct subcmd_format_t {
                 | lnav::itertools::map(&external_log_format::pattern::p_name)
                 | lnav::itertools::map(&intern_string_t::to_string)
                 | lnav::itertools::fold(
-                    symbol_reducer, attr_line_t{"the available regexes are:"}));
+                    symbol_reducer,
+                    attr_line_t{"the available regexes are: "}));
 
             return Err(um);
         }
@@ -285,7 +294,7 @@ struct subcmd_format_t {
              | lnav::itertools::map(&intern_string_t::to_string)
              | lnav::itertools::similar_to(this->sf_regex_name)
              | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                .add_header("did you mean one of the following?"));
+                .add_header("did you mean one of the following?\n"));
 
         return Err(um);
     }
@@ -784,7 +793,7 @@ struct subcmd_piper_t {
                 continue;
             }
 
-            nonstd::optional<lnav::piper::header> hdr_opt;
+            std::optional<lnav::piper::header> hdr_opt;
             auto url = fmt::format(FMT_STRING("piper://{}"),
                                    instance_dir.path().filename().string());
             file_size_t total_size{0};

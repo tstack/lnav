@@ -156,7 +156,7 @@ remaining_args_frag(const std::string& cmdline,
         cmdline, index_in_cmdline, cmdline.size());
 }
 
-static nonstd::optional<std::string>
+static std::optional<std::string>
 find_arg(std::vector<std::string>& args, const std::string& flag)
 {
     auto iter = find_if(args.begin(), args.end(), [&flag](const auto elem) {
@@ -164,7 +164,7 @@ find_arg(std::vector<std::string>& args, const std::string& flag)
     });
 
     if (iter == args.end()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto index = iter->find('=');
@@ -472,7 +472,7 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
             auto match_res = options_hier->match(pattern_arg);
             if (match_res) {
                 file_zone = match_res->second.fo_default_zone.pp_value->name();
-                pattern_arg = match_res->first;
+                pattern_arg = lnav::filesystem::escape_path(match_res->first);
 
                 auto new_prompt = fmt::format(FMT_STRING("{} {} {}"),
                                               trim(cmdline),
@@ -488,7 +488,10 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
         }
     }
     auto arg_path = ghc::filesystem::path(pattern_arg);
-    auto arg_parent = arg_path.parent_path().string() + "/";
+    auto arg_parent = lnav::filesystem::escape_path(arg_path.parent_path());
+    if (!endswith(arg_parent, "/")) {
+        arg_parent += "/";
+    }
     if (elems.size() == 2 && endswith(cmdline, " ")) {
         return {"", arg_parent};
     }
@@ -698,7 +701,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     } else if (args.size() > 1) {
         std::string all_args = remaining_args(cmdline, args);
         auto* tc = *lnav_data.ld_view_stack.top();
-        nonstd::optional<vis_line_t> dst_vl;
+        std::optional<vis_line_t> dst_vl;
         auto is_location = false;
 
         if (startswith(all_args, "#")) {
@@ -1136,7 +1139,7 @@ com_goto_mark(exec_context& ec,
         }
 
         if (!ec.ec_dry_run) {
-            nonstd::optional<vis_line_t> new_top;
+            std::optional<vis_line_t> new_top;
 
             if (args[0] == "next-mark") {
                 auto search_from_top = search_forward_from(tc);
@@ -1806,7 +1809,7 @@ com_save_to(exec_context& ec,
                 line_count += 1;
             }
         } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
-            nonstd::optional<std::pair<logfile*, content_line_t>> last_line;
+            std::optional<std::pair<logfile*, content_line_t>> last_line;
             bookmark_vector<vis_line_t> visited;
             auto& lss = lnav_data.ld_log_source;
             std::vector<attr_line_t> rows(1);
@@ -2190,8 +2193,6 @@ com_redirect_to(exec_context& ec,
     if (ec.ec_dry_run) {
         return Ok("info: output will be redirected to -- " + split_args[0]);
     }
-
-    nonstd::optional<FILE*> file;
 
     if (split_args[0] == "-") {
         ec.clear_output();
@@ -3455,7 +3456,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     auto* tc = *lnav_data.ld_view_stack.top();
-    std::vector<nonstd::optional<ghc::filesystem::path>> actual_path_v;
+    std::vector<std::optional<ghc::filesystem::path>> actual_path_v;
     std::vector<std::string> fn_v;
 
     if (args.size() > 1) {
@@ -4075,7 +4076,7 @@ com_clear_partition(exec_context& ec,
         textview_curses& tc = lnav_data.ld_views[LNV_LOG];
         logfile_sub_source& lss = lnav_data.ld_log_source;
         auto& bv = tc.get_bookmarks()[&textview_curses::BM_PARTITION];
-        nonstd::optional<vis_line_t> part_start;
+        std::optional<vis_line_t> part_start;
 
         if (binary_search(bv.begin(), bv.end(), tc.get_selection())) {
             part_start = tc.get_selection();
@@ -4757,7 +4758,7 @@ com_hide_line(exec_context& ec,
         auto& lss = lnav_data.ld_log_source;
         date_time_scanner dts;
         struct timeval tv_abs;
-        nonstd::optional<timeval> tv_opt;
+        std::optional<timeval> tv_opt;
         auto parse_res = relative_time::from_str(all_args);
 
         if (parse_res.isOk()) {
@@ -4956,7 +4957,7 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     static size_t EXEC_COUNT = 0;
 
     if (!ec.ec_dry_run) {
-        nonstd::optional<std::string> name_flag;
+        std::optional<std::string> name_flag;
 
         shlex lexer(cmdline);
         auto cmd_start = args[0].size();
@@ -5047,7 +5048,7 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             display_name = name_flag.value();
         } else {
             display_name
-                = fmt::format(FMT_STRING("[{}] {}"), EXEC_COUNT++, carg);
+                = fmt::format(FMT_STRING("sh-{} {}"), EXEC_COUNT++, carg);
         }
 
         auto name_base = display_name;

@@ -252,7 +252,7 @@ user_message::to_attr_line(std::set<render_flags> flags) const
     return retval;
 }
 
-static nonstd::optional<fmt::terminal_color>
+static std::optional<fmt::terminal_color>
 curses_color_to_terminal_color(int curses_color)
 {
     switch (curses_color) {
@@ -273,7 +273,7 @@ curses_color_to_terminal_color(int curses_color)
         case COLOR_RED:
             return fmt::terminal_color::red;
         default:
-            return nonstd::nullopt;
+            return std::nullopt;
     }
 }
 
@@ -326,7 +326,7 @@ println(FILE* file, const attr_line_t& al)
         }
     }
 
-    nonstd::optional<size_t> last_point;
+    std::optional<size_t> last_point;
     for (const auto& point : points) {
         if (!last_point) {
             last_point = point;
@@ -337,7 +337,7 @@ println(FILE* file, const attr_line_t& al)
         auto line_style = fmt::text_style{};
         auto fg_style = fmt::text_style{};
         auto start = last_point.value();
-        nonstd::optional<std::string> href;
+        std::optional<std::string> href;
 
         for (const auto& attr : al.get_attrs()) {
             if (!attr.sa_range.contains(start)

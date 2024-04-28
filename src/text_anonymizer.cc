@@ -343,14 +343,14 @@ text_anonymizer::next(string_fragment line)
                         });
 
                         return anon_mac.to_string(
-                            nonstd::make_optional(inp[2]));
+                            std::make_optional(inp[2]));
                     });
                 break;
             }
             case DT_HEX_DUMP: {
                 auto hex_str = tok_res->to_string();
                 auto hash_str = hasher().update(hex_str).to_array().to_string(
-                    nonstd::make_optional(hex_str[2]));
+                    std::make_optional(hex_str[2]));
                 std::string anon_hex;
 
                 while (anon_hex.size() < hex_str.size()) {

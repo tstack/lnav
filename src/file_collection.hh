@@ -92,7 +92,7 @@ enum class child_poll_result_t {
 class child_poller {
 public:
     explicit child_poller(
-        nonstd::optional<std::string> filename,
+        std::optional<std::string> filename,
         auto_pid<process_state::running> child,
         std::function<void(file_collection&,
                            auto_pid<process_state::finished>&)> finalizer)
@@ -126,7 +126,7 @@ public:
 
     child_poller& operator=(const child_poller&) = delete;
 
-    const nonstd::optional<std::string>& get_filename() const
+    const std::optional<std::string>& get_filename() const
     {
         return this->cp_filename;
     }
@@ -136,8 +136,8 @@ public:
     child_poll_result_t poll(file_collection& fc);
 
 private:
-    nonstd::optional<std::string> cp_filename;
-    nonstd::optional<auto_pid<process_state::running>> cp_child;
+    std::optional<std::string> cp_filename;
+    std::optional<auto_pid<process_state::running>> cp_child;
     std::function<void(file_collection&, auto_pid<process_state::finished>&)>
         cp_finalizer;
 };
@@ -212,7 +212,7 @@ struct file_collection {
                          logfile_open_options& loo,
                          bool required);
 
-    nonstd::optional<std::future<file_collection>> watch_logfile(
+    std::optional<std::future<file_collection>> watch_logfile(
         const std::string& filename, logfile_open_options& loo, bool required);
 
     void merge(file_collection& other);

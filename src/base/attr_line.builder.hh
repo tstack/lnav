@@ -41,7 +41,7 @@ public:
     class attr_guard {
     public:
         explicit attr_guard(attr_line_t& al)
-            : ag_line(al), ag_start(nonstd::nullopt)
+            : ag_line(al), ag_start(std::nullopt)
         {
         }
 
@@ -59,7 +59,7 @@ public:
             : ag_line(other.ag_line), ag_start(std::move(other.ag_start)),
               ag_attr(std::move(other.ag_attr))
         {
-            other.ag_start = nonstd::nullopt;
+            other.ag_start = std::nullopt;
         }
 
         ~attr_guard()
@@ -76,7 +76,7 @@ public:
 
     private:
         attr_line_t& ag_line;
-        nonstd::optional<int> ag_start;
+        std::optional<int> ag_start;
         string_attr_pair ag_attr;
     };
 

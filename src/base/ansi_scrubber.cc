@@ -56,7 +56,7 @@ erase_ansi_escapes(string_fragment input)
     static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     const auto& regex = ansi_regex();
-    nonstd::optional<int> move_start;
+    std::optional<int> move_start;
     size_t fill_index = 0;
 
     auto matcher = regex.capture_from(input).into(md);
@@ -125,7 +125,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
     static const auto semi_pred = string_fragment::tag1{';'};
 
     const auto& regex = ansi_regex();
-    nonstd::optional<std::string> href;
+    std::optional<std::string> href;
     size_t href_start = 0;
     string_attrs_t tmp_sa;
     size_t cp_dst = std::string::npos;
@@ -267,7 +267,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
         struct line_range lr;
         text_attrs attrs;
         bool has_attrs = false;
-        nonstd::optional<role_t> role;
+        std::optional<role_t> role;
 
         if (md[3]) {
             auto osc_id = scn::scan_value<int32_t>(md[3]->to_string_view());
@@ -289,7 +289,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                                         },
                                         VC_HYPERLINK.value(href.value()));
                                 }
-                                href = nonstd::nullopt;
+                                href = std::nullopt;
                             }
                             if (!uri.empty()) {
                                 href = uri.to_string();

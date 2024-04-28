@@ -63,7 +63,7 @@ struct entry {
     std::string e_delimiter{"/"};
     std::string e_flavor{"pcre"};
     std::vector<unit_test> e_unit_tests;
-    nonstd::optional<std::string> e_permalink_fragment;
+    std::optional<std::string> e_permalink_fragment;
 
     bool operator==(const entry& rhs) const;
     bool operator!=(const entry& rhs) const;

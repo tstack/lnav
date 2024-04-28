@@ -306,11 +306,42 @@ standard input.  The handler should then generate the annotation
 content on the standard output.  The output is treated as Markdown,
 so the content can be styled as desired.
 
+Demultiplexing (v0.12.3+)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Files that are a mix of content from different sources, like
+the output of :code:`docker compose logs`, can be automatically
+demultiplexed so that *lnav* can process them correctly.  Each
+line of the input file must have a unique identifier that can
+be used to determine which service the line belongs to.  The
+lines are then distributed to separate files based on the
+identifier.  A demultiplexer is a regular expression that
+extracts the identifier, the log message, and an optional
+timestamp.
+
+Demultiplexers are defined in the main configuration under
+the :code:`/log/demux` path.  The pattern for the demuxer
+has the following known capture names:
+
+:mux_id: (required) Captures the unique identifier.
+
+:body: (required) Captures the body of the log message
+  that should be written to the file.
+
+:timestamp: (optional) The timestamp for the log message.
+  If this is available and the log message does not have
+  it's own timestamp, this will be used instead.
+
+If there are additional captures, they will be included
+in the file metadata that can be accessed by the
+:code:`lnav_file_metadata` table.
+
 Reference
 ^^^^^^^^^
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/watch-expressions/patternProperties/^([\w\.\-]+)$
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/annotations/patternProperties/^([\w\.\-]+)$
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/demux/patternProperties/^([\w\-\.]+)$
 
 
 .. _tuning:

@@ -37,7 +37,7 @@ attr_line_builder::append_as_hexdump(const string_fragment& sf)
         if (byte_off == 8) {
             this->append(" ");
         }
-        nonstd::optional<role_t> ro;
+        std::optional<role_t> ro;
         if (ch == '\0') {
             ro = role_t::VCR_NULL;
         } else if (isspace(ch) || iscntrl(ch)) {

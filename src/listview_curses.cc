@@ -1180,7 +1180,7 @@ listview_curses::get_overlay_height(size_t total, vis_line_t view_height)
 }
 
 void
-listview_curses::set_overlay_selection(nonstd::optional<vis_line_t> sel)
+listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
 {
     if (sel) {
         if (sel.value() == this->lv_focused_overlay_selection) {

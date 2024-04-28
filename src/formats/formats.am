@@ -48,4 +48,5 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/vmw_py_log.json \
     $(srcdir)/%reldir%/vpostgres_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
+    $(srcdir)/%reldir%/zookeeper_log.json \
     $()

@@ -78,23 +78,23 @@ public:
             this->md_input.i_string.sf_end);
     }
 
-    nonstd::optional<string_fragment> operator[](size_t index) const
+    std::optional<string_fragment> operator[](size_t index) const
     {
         if (index >= this->md_capture_end) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         auto start = this->md_ovector[(index * 2)];
         auto stop = this->md_ovector[(index * 2) + 1];
         if (start == PCRE2_UNSET || stop == PCRE2_UNSET) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return this->md_input.i_string.sub_range(start, stop);
     }
 
     template<typename T, std::size_t N>
-    nonstd::optional<string_fragment> operator[](const T (&name)[N]) const;
+    std::optional<string_fragment> operator[](const T (&name)[N]) const;
 
     size_t get_count() const { return this->md_capture_end; }
 
@@ -141,14 +141,14 @@ public:
     public:
         using variant::variant;
 
-        nonstd::optional<found> ignore_error()
+        std::optional<found> ignore_error()
         {
             return this->match(
-                [](found fo) { return nonstd::make_optional(fo); },
-                [](not_found) { return nonstd::nullopt; },
+                [](found fo) { return std::make_optional(fo); },
+                [](not_found) { return std::nullopt; },
                 [](error err) {
                     handle_error(err);
-                    return nonstd::nullopt;
+                    return std::nullopt;
                 });
         }
 
@@ -325,7 +325,7 @@ private:
 };
 
 template<typename T, std::size_t N>
-nonstd::optional<string_fragment>
+std::optional<string_fragment>
 match_data::operator[](const T (&name)[N]) const
 {
     auto index = pcre2_substring_number_from_name(

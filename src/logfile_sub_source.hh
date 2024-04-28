@@ -84,7 +84,7 @@ public:
         this->sf_filter_stmt = stmt;
     }
 
-    bool matches(nonstd::optional<line_source> ls,
+    bool matches(std::optional<line_source> ls,
                  const shared_buffer_ref& line) override;
 
     std::string to_command() const override;
@@ -106,10 +106,10 @@ public:
 
     void loc_history_append(vis_line_t top) override;
 
-    nonstd::optional<vis_line_t> loc_history_back(
+    std::optional<vis_line_t> loc_history_back(
         vis_line_t current_top) override;
 
-    nonstd::optional<vis_line_t> loc_history_forward(
+    std::optional<vis_line_t> loc_history_forward(
         vis_line_t current_top) override;
 
 private:
@@ -242,12 +242,12 @@ public:
         }
     }
 
-    nonstd::optional<timeval> get_min_log_time() const
+    std::optional<timeval> get_min_log_time() const
     {
         if (this->lss_min_log_time.tv_sec == 0
             && this->lss_min_log_time.tv_usec == 0)
         {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return this->lss_min_log_time;
@@ -261,12 +261,12 @@ public:
         }
     }
 
-    nonstd::optional<timeval> get_max_log_time() const
+    std::optional<timeval> get_max_log_time() const
     {
         if (this->lss_max_log_time.tv_sec == std::numeric_limits<time_t>::max()
             && this->lss_max_log_time.tv_usec == 0)
         {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return this->lss_max_log_time;
@@ -331,8 +331,8 @@ public:
         rr_full_rebuild,
     };
 
-    rebuild_result rebuild_index(nonstd::optional<ui_clock::time_point> deadline
-                                 = nonstd::nullopt);
+    rebuild_result rebuild_index(std::optional<ui_clock::time_point> deadline
+                                 = std::nullopt);
 
     void text_update_marks(vis_bookmarks& bm);
 
@@ -354,9 +354,9 @@ public:
     }
 
     struct bookmark_metadata_context {
-        nonstd::optional<vis_line_t> bmc_current;
-        nonstd::optional<bookmark_metadata*> bmc_current_metadata;
-        nonstd::optional<vis_line_t> bmc_next_line;
+        std::optional<vis_line_t> bmc_current;
+        std::optional<bookmark_metadata*> bmc_current_metadata;
+        std::optional<vis_line_t> bmc_next_line;
     };
 
     bookmark_metadata_context get_bookmark_metadata_context(
@@ -364,10 +364,10 @@ public:
         bookmark_metadata::categories desired
         = bookmark_metadata::categories::any) const;
 
-    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
+    std::optional<bookmark_metadata*> find_bookmark_metadata(
         content_line_t cl) const;
 
-    nonstd::optional<bookmark_metadata*> find_bookmark_metadata(
+    std::optional<bookmark_metadata*> find_bookmark_metadata(
         vis_line_t vl) const
     {
         return this->find_bookmark_metadata(this->at(vl));
@@ -408,7 +408,7 @@ public:
         return "";
     }
 
-    nonstd::optional<std::shared_ptr<text_filter>> get_sql_filter();
+    std::optional<std::shared_ptr<text_filter>> get_sql_filter();
 
     std::string get_sql_marker_text() const
     {
@@ -450,7 +450,7 @@ public:
         return retval;
     }
 
-    nonstd::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
+    std::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
     find_line_with_file(content_line_t line) const
     {
         std::shared_ptr<logfile> lf = this->find(line);
@@ -461,37 +461,37 @@ public:
             return std::make_pair(lf, ll_iter);
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    nonstd::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
+    std::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
     find_line_with_file(vis_line_t vl) const
     {
         if (vl >= 0_vl && vl <= vis_line_t(this->lss_filtered_index.size())) {
             return this->find_line_with_file(this->at(vl));
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    nonstd::optional<vis_line_t> find_from_time(
+    std::optional<vis_line_t> find_from_time(
         const struct timeval& start) const;
 
-    nonstd::optional<vis_line_t> find_from_time(time_t start) const
+    std::optional<vis_line_t> find_from_time(time_t start) const
     {
         struct timeval tv = {start, 0};
 
         return this->find_from_time(tv);
     }
 
-    nonstd::optional<vis_line_t> find_from_time(const exttm& etm) const
+    std::optional<vis_line_t> find_from_time(const exttm& etm) const
     {
         return this->find_from_time(etm.to_timeval());
     }
 
-    nonstd::optional<vis_line_t> find_from_content(content_line_t cl);
+    std::optional<vis_line_t> find_from_content(content_line_t cl);
 
-    nonstd::optional<row_info> time_for_row(vis_line_t row)
+    std::optional<row_info> time_for_row(vis_line_t row)
     {
         if (row >= 0_vl && row < (ssize_t) this->text_line_count()) {
             auto cl = this->at(row);
@@ -500,12 +500,12 @@ public:
                 (int64_t) cl,
             };
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    nonstd::optional<vis_line_t> row_for(const row_info& ri);
+    std::optional<vis_line_t> row_for(const row_info& ri);
 
-    nonstd::optional<vis_line_t> row_for_time(struct timeval time_bucket)
+    std::optional<vis_line_t> row_for_time(struct timeval time_bucket)
     {
         return this->find_from_time(time_bucket);
     }
@@ -605,7 +605,7 @@ public:
         return retval;
     }
 
-    nonstd::optional<logfile_data*> find_data(
+    std::optional<logfile_data*> find_data(
         const std::shared_ptr<logfile>& lf)
     {
         for (auto& ld : *this) {
@@ -613,7 +613,7 @@ public:
                 return ld.get();
             }
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     iterator find_data_i(const std::shared_ptr<const logfile>& lf)
@@ -678,11 +678,11 @@ public:
         bool lmg_done{false};
     };
 
-    nonstd::optional<
+    std::optional<
         std::pair<grep_proc_source<vis_line_t>*, grep_proc_sink<vis_line_t>*>>
     get_grepper();
 
-    nonstd::optional<location_history*> get_location_history()
+    std::optional<location_history*> get_location_history()
     {
         return &this->lss_location_history;
     }
@@ -732,11 +732,11 @@ public:
 
     big_array<indexed_content> lss_index;
 
-    nonstd::optional<vis_line_t> row_for_anchor(const std::string& id);
+    std::optional<vis_line_t> row_for_anchor(const std::string& id);
 
-    nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl, direction dir);
+    std::optional<vis_line_t> adjacent_anchor(vis_line_t vl, direction dir);
 
-    nonstd::optional<std::string> anchor_for_row(vis_line_t vl);
+    std::optional<std::string> anchor_for_row(vis_line_t vl);
 
     std::unordered_set<std::string> get_anchors();
 

@@ -67,7 +67,6 @@
 #include "base/opt_util.hh"
 #include "lnav_config_fwd.hh"
 #include "log_level.hh"
-#include "optional.hpp"
 #include "styling.hh"
 
 class view_curses;
@@ -226,9 +225,9 @@ public:
             : this->vc_role_attrs[lnav::enums::to_underlying(role)].ra_normal;
     }
 
-    nonstd::optional<short> color_for_ident(const char* str, size_t len) const;
+    std::optional<short> color_for_ident(const char* str, size_t len) const;
 
-    nonstd::optional<short> color_for_ident(const string_fragment& sf) const
+    std::optional<short> color_for_ident(const string_fragment& sf) const
     {
         return this->color_for_ident(sf.data(), sf.length());
     }
@@ -252,8 +251,8 @@ public:
 
     int ensure_color_pair(short fg, short bg);
 
-    int ensure_color_pair(nonstd::optional<short> fg,
-                          nonstd::optional<short> bg);
+    int ensure_color_pair(std::optional<short> fg,
+                          std::optional<short> bg);
 
     int ensure_color_pair(const styling::color_unit& fg,
                           const styling::color_unit& bg);
@@ -261,7 +260,7 @@ public:
     static constexpr short MATCH_COLOR_DEFAULT = -1;
     static constexpr short MATCH_COLOR_SEMANTIC = -10;
 
-    nonstd::optional<short> match_color(const styling::color_unit& color) const;
+    std::optional<short> match_color(const styling::color_unit& color) const;
 
     short ansi_to_theme_color(short ansi_fg) const
     {
@@ -480,10 +479,10 @@ class view_stack : public view_curses {
 public:
     using iterator = typename std::vector<T*>::iterator;
 
-    nonstd::optional<T*> top()
+    std::optional<T*> top()
     {
         if (this->vs_views.empty()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         return this->vs_views.back();
     }

@@ -179,11 +179,11 @@ string_fragment::trim() const
     return this->trim(" \t\r\n");
 }
 
-nonstd::optional<string_fragment>
+std::optional<string_fragment>
 string_fragment::consume_n(int amount) const
 {
     if (amount > this->length()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return string_fragment{
@@ -197,7 +197,7 @@ string_fragment::split_result
 string_fragment::split_n(int amount) const
 {
     if (amount > this->length()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return std::make_pair(
@@ -391,8 +391,8 @@ string_fragment
 string_fragment::sub_cell_range(int cell_start, int cell_end) const
 {
     int byte_index = this->sf_begin;
-    nonstd::optional<int> byte_start;
-    nonstd::optional<int> byte_end;
+    std::optional<int> byte_start;
+    std::optional<int> byte_end;
     int cell_index = 0;
 
     while (byte_index < this->sf_end) {

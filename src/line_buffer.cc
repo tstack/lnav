@@ -768,13 +768,13 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                   start,
                   this->lb_loader_file_offset.value());
 #endif
-        nonstd::optional<std::chrono::system_clock::time_point> wait_start;
+        std::optional<std::chrono::system_clock::time_point> wait_start;
 
         if (this->lb_loader_future.wait_for(std::chrono::seconds(0))
             != std::future_status::ready)
         {
             wait_start
-                = nonstd::make_optional(std::chrono::system_clock::now());
+                = std::make_optional(std::chrono::system_clock::now());
         }
         retval = this->lb_loader_future.get();
         if (false && wait_start) {
@@ -785,7 +785,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         this->lb_loader_future = {};
         this->lb_share_manager.invalidate_refs();
         this->lb_file_offset = this->lb_loader_file_offset.value();
-        this->lb_loader_file_offset = nonstd::nullopt;
+        this->lb_loader_file_offset = std::nullopt;
         this->lb_buffer.swap(this->lb_alt_buffer.value());
         this->lb_alt_buffer.value().clear();
         this->lb_line_starts = std::move(this->lb_alt_line_starts);

@@ -48,7 +48,7 @@ enum YYCONDTYPE {
 #line 38 "../../lnav/src/data_scanner_re.re"
 
 
-nonstd::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_format_t tf)
+std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_format_t tf)
 {
     data_token_t token_out = DT_INVALID;
     capture_t cap_all;
@@ -832,7 +832,7 @@ yyc_bol:
 yy1:
 	++YYCURSOR;
 #line 172 "../../lnav/src/data_scanner_re.re"
-	{ return nonstd::nullopt; }
+	{ return std::nullopt; }
 #line 837 "../../lnav/src/data_scanner_re.cc"
 yy2:
 	++YYCURSOR;
@@ -1955,7 +1955,7 @@ yy62:
 	++YYCURSOR;
 yy63:
 #line 173 "../../lnav/src/data_scanner_re.re"
-	{ return nonstd::nullopt; }
+	{ return std::nullopt; }
 #line 1960 "../../lnav/src/data_scanner_re.cc"
 yy64:
 	yych = *++YYCURSOR;
@@ -43435,7 +43435,7 @@ yyc_init:
 yy1612:
 	++YYCURSOR;
 #line 172 "../../lnav/src/data_scanner_re.re"
-	{ return nonstd::nullopt; }
+	{ return std::nullopt; }
 #line 43440 "../../lnav/src/data_scanner_re.cc"
 yy1613:
 	++YYCURSOR;
@@ -44503,7 +44503,7 @@ yy1671:
 	++YYCURSOR;
 yy1672:
 #line 173 "../../lnav/src/data_scanner_re.re"
-	{ return nonstd::nullopt; }
+	{ return std::nullopt; }
 #line 44508 "../../lnav/src/data_scanner_re.cc"
 yy1673:
 	yych = *++YYCURSOR;
@@ -84403,7 +84403,7 @@ yy3116:
 	++YYCURSOR;
 yy3117:
 #line 173 "../../lnav/src/data_scanner_re.re"
-	{ return nonstd::nullopt; }
+	{ return std::nullopt; }
 #line 84408 "../../lnav/src/data_scanner_re.cc"
 yy3118:
 	++YYCURSOR;
@@ -84475,5 +84475,5 @@ yy3125:
 #line 478 "../../lnav/src/data_scanner_re.re"
 
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }

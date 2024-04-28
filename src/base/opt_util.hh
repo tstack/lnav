@@ -30,9 +30,9 @@
 #ifndef lnav_opt_util_hh
 #define lnav_opt_util_hh
 
-#include <stdlib.h>
+#include <optional>
 
-#include "optional.hpp"
+#include <stdlib.h>
 
 namespace detail {
 
@@ -47,25 +47,22 @@ template<class T>
 typename std::enable_if<not std::is_void<T>::value, T>::type
 void_or_nullopt()
 {
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 template<class T>
-struct is_optional : std::false_type {
-};
+struct is_optional : std::false_type {};
 
 template<class T>
-struct is_optional<nonstd::optional<T>> : std::true_type {
-};
+struct is_optional<std::optional<T>> : std::true_type {};
 }  // namespace detail
 
 template<class T,
          class F,
          std::enable_if_t<detail::is_optional<std::decay_t<T>>::value, int> = 0>
 auto
-operator|(T&& t, F f)
-    -> decltype(detail::void_or_nullopt<decltype(f(std::forward<T>(t).
-                                                   operator*()))>())
+operator|(T&& t, F f) -> decltype(detail::void_or_nullopt<decltype(f(
+                                      std::forward<T>(t).operator*()))>())
 {
     using return_type = decltype(f(std::forward<T>(t).operator*()));
     if (t)
@@ -75,28 +72,27 @@ operator|(T&& t, F f)
 }
 
 template<class T>
-optional_constexpr nonstd::optional<typename std::decay<T>::type>
+constexpr std::optional<typename std::decay<T>::type>
 make_optional_from_nullable(T&& v)
 {
     if (v != nullptr) {
-        return nonstd::optional<typename std::decay<T>::type>(
-            std::forward<T>(v));
+        return std::optional<typename std::decay<T>::type>(std::forward<T>(v));
     }
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 template<template<typename, typename...> class C, typename T>
-nonstd::optional<T>
+std::optional<T>
 cget(const C<T>& container, size_t index)
 {
     if (index < container.size()) {
         return container[index];
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-inline nonstd::optional<const char*>
+inline std::optional<const char*>
 getenv_opt(const char* name)
 {
     return make_optional_from_nullable(getenv(name));

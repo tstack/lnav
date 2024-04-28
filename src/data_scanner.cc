@@ -305,7 +305,7 @@ data_scanner::cleanup_end()
     }
 }
 
-nonstd::optional<data_scanner::tokenize_result>
+std::optional<data_scanner::tokenize_result>
 data_scanner::tokenize2(text_format_t tf)
 {
     auto retval = this->tokenize_int(tf);
@@ -340,7 +340,7 @@ data_scanner::tokenize2(text_format_t tf)
     return retval;
 }
 
-nonstd::optional<data_scanner::tokenize_result>
+std::optional<data_scanner::tokenize_result>
 data_scanner::find_matching_bracket(text_format_t tf, tokenize_result tr)
 {
     switch (tr.tr_token) {
@@ -401,5 +401,5 @@ data_scanner::find_matching_bracket(text_format_t tf, tokenize_result tr)
             break;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }

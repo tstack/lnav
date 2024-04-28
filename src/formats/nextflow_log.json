@@ -8,7 +8,7 @@
         ],
         "regex": {
             "std": {
-                "pattern": "(?<timestamp>\\w{3}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(?<thread>[^\\]]+)\\] (?<level>[^ ]+)\\s+(?<module>[^ ]+) - (?<body>.*)"
+                "pattern": "^(?<timestamp>\\w{3}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) \\[(?<thread>[^\\]]+)\\] (?<level>[^ ]+)\\s+(?<module>[^ ]+) - (?<body>.*)"
             }
         },
         "timestamp-format": [

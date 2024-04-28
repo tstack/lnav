@@ -223,7 +223,7 @@ public:
         this->ab_capacity = 0;
     }
 
-    auto_buffer& operator=(auto_buffer&) = delete;
+    auto_buffer& operator=(const auto_buffer&) = delete;
 
     auto_buffer& operator=(auto_buffer&& other) noexcept
     {

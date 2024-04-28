@@ -30,15 +30,32 @@
 #ifndef piper_looper_cfg_hh
 #define piper_looper_cfg_hh
 
+#include <map>
+#include <string>
+
 #include <stdint.h>
+
+#include "pcrepp/pcre2pp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 namespace lnav {
 namespace piper {
+
+struct demux_def {
+    bool dd_enabled{false};
+    factory_container<lnav::pcre2pp::code> dd_pattern;
+    int dd_timestamp_capture_index{-1};
+    int dd_muxid_capture_index{-1};
+    int dd_body_capture_index{-1};
+    std::map<std::string, int> dd_meta_capture_indexes;
+};
 
 struct config {
     uint64_t c_max_size{10ULL * 1024ULL * 1024ULL};
     uint32_t c_rotations{4};
     std::chrono::seconds c_ttl{std::chrono::hours(48)};
+
+    std::map<std::string, demux_def> c_demux_definitions;
 };
 
 }  // namespace piper

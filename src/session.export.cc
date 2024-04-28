@@ -40,9 +40,9 @@ struct log_message_session_state {
     int64_t lmss_time_msecs;
     std::string lmss_format;
     bool lmss_mark;
-    nonstd::optional<std::string> lmss_comment;
-    nonstd::optional<std::string> lmss_tags;
-    nonstd::optional<std::string> lmss_annotations;
+    std::optional<std::string> lmss_comment;
+    std::optional<std::string> lmss_tags;
+    std::optional<std::string> lmss_annotations;
     std::string lmss_hash;
 };
 
@@ -56,9 +56,9 @@ struct from_sqlite<log_message_session_state> {
             from_sqlite<int64_t>()(argc, argv, argi + 0),
             from_sqlite<std::string>()(argc, argv, argi + 1),
             from_sqlite<bool>()(argc, argv, argi + 2),
-            from_sqlite<nonstd::optional<std::string>>()(argc, argv, argi + 3),
-            from_sqlite<nonstd::optional<std::string>>()(argc, argv, argi + 4),
-            from_sqlite<nonstd::optional<std::string>>()(argc, argv, argi + 5),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 3),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 4),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 5),
             from_sqlite<std::string>()(argc, argv, argi + 6),
         };
     }
@@ -111,14 +111,14 @@ struct from_sqlite<log_file_session_state> {
 namespace lnav {
 namespace session {
 
-static nonstd::optional<ghc::filesystem::path>
+static std::optional<ghc::filesystem::path>
 find_container_dir(ghc::filesystem::path file_path)
 {
     if (!ghc::filesystem::exists(file_path)) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    nonstd::optional<ghc::filesystem::path> dir_with_last_readme;
+    std::optional<ghc::filesystem::path> dir_with_last_readme;
 
     while (file_path.has_parent_path()
            && file_path != file_path.root_directory())
@@ -147,7 +147,7 @@ find_container_dir(ghc::filesystem::path file_path)
         file_path = parent;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 static std::string

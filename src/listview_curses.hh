@@ -120,10 +120,10 @@ public:
         return {};
     }
 
-    virtual nonstd::optional<attr_line_t> list_header_for_overlay(
+    virtual std::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t line)
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     virtual void list_value_for_overlay(const listview_curses& lv,
@@ -250,16 +250,16 @@ public:
         return this->lv_top;
     }
 
-    nonstd::optional<vis_line_t> get_overlay_selection() const
+    std::optional<vis_line_t> get_overlay_selection() const
     {
         if (this->lv_overlay_focused) {
             return this->lv_focused_overlay_selection;
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    void set_overlay_selection(nonstd::optional<vis_line_t> sel);
+    void set_overlay_selection(std::optional<vis_line_t> sel);
 
     void set_sync_selection_and_top(bool value)
     {
@@ -299,7 +299,7 @@ public:
         typename std::result_of<F(const attr_line_t&)>::type
     {
         if (this->lv_top >= this->get_inner_height()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         std::vector<attr_line_t> top_line{1};
@@ -328,10 +328,10 @@ public:
     /** @return The line number that is displayed at the top. */
     vis_line_t get_top() const { return this->lv_top; }
 
-    nonstd::optional<vis_line_t> get_top_opt() const
+    std::optional<vis_line_t> get_top_opt() const
     {
         if (this->get_inner_height() == 0_vl) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return this->lv_top;

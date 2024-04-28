@@ -38,6 +38,7 @@
 #include "base/piper.file.hh"
 #include "base/result.h"
 #include "ghc/filesystem.hpp"
+#include "safe/safe.h"
 #include "yajlpp/yajlpp_def.hh"
 
 namespace lnav {
@@ -48,9 +49,24 @@ enum class state {
     finished,
 };
 
+using safe_demux_id = safe::Safe<std::string>;
+
+struct options {
+    bool o_tail{true};
+
+    options& with_tail(bool v)
+    {
+        this->o_tail = v;
+        return *this;
+    }
+};
+
 class looper {
 public:
-    looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd);
+    looper(std::string name,
+           auto_fd stdout_fd,
+           auto_fd stderr_fd,
+           options opts);
 
     ~looper();
 
@@ -62,6 +78,8 @@ public:
     {
         return this->l_out_dir / "out.*";
     }
+
+    std::string get_demux_id() const { return *this->l_demux_id.readAccess(); }
 
     std::string get_url() const
     {
@@ -97,8 +115,10 @@ private:
     ghc::filesystem::path l_out_dir;
     auto_fd l_stdout;
     auto_fd l_stderr;
+    options l_options;
     std::future<void> l_future;
     std::atomic<int> l_finished{0};
+    safe_demux_id l_demux_id;
 };
 
 template<state LooperState>
@@ -121,6 +141,8 @@ public:
         return this->h_looper->get_out_pattern();
     }
 
+    std::string get_demux_id() const { return this->h_looper->get_demux_id(); }
+
     std::string get_url() const { return this->h_looper->get_url(); }
 
     bool is_finished() const { return this->h_looper->is_finished(); }
@@ -142,7 +164,8 @@ using running_handle = handle<state::running>;
 
 Result<handle<state::running>, std::string> create_looper(std::string name,
                                                           auto_fd stdout_fd,
-                                                          auto_fd stderr_fd);
+                                                          auto_fd stderr_fd,
+                                                          options opts = {});
 
 void cleanup();
 

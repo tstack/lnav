@@ -12,12 +12,16 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cli.sh_3114508cf42fb2608ef77f4bc294a84885c97a79.out \
     $(srcdir)/%reldir%/test_cli.sh_4327033cfae0d4c170a38a3c4a570520bfabb493.err \
     $(srcdir)/%reldir%/test_cli.sh_4327033cfae0d4c170a38a3c4a570520bfabb493.out \
+    $(srcdir)/%reldir%/test_cli.sh_4761827b538a623c60d2e7d243bae9b653bb1975.err \
+    $(srcdir)/%reldir%/test_cli.sh_4761827b538a623c60d2e7d243bae9b653bb1975.out \
     $(srcdir)/%reldir%/test_cli.sh_5524542b1a6954ff9741155101497270a2f0c557.err \
     $(srcdir)/%reldir%/test_cli.sh_5524542b1a6954ff9741155101497270a2f0c557.out \
     $(srcdir)/%reldir%/test_cli.sh_76aa57821598962e59063a40c20171040c95a731.err \
     $(srcdir)/%reldir%/test_cli.sh_76aa57821598962e59063a40c20171040c95a731.out \
     $(srcdir)/%reldir%/test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.err \
     $(srcdir)/%reldir%/test_cli.sh_97e19b9ff3775d84074455a2e8993a0611b1c269.out \
+    $(srcdir)/%reldir%/test_cli.sh_a2f9a3e798e5f4f09c92eaa25ae236a2fb09dbd9.err \
+    $(srcdir)/%reldir%/test_cli.sh_a2f9a3e798e5f4f09c92eaa25ae236a2fb09dbd9.out \
     $(srcdir)/%reldir%/test_cli.sh_af3ace7762b4cc150fcdcac86083b379bded7b32.err \
     $(srcdir)/%reldir%/test_cli.sh_af3ace7762b4cc150fcdcac86083b379bded7b32.out \
     $(srcdir)/%reldir%/test_cli.sh_c69c835a3c43210225cf62564b3e9584c899af20.err \
@@ -268,6 +272,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_config.sh_d708b6fd32d83ce0ee00ca5383388308ba5a06e1.out \
     $(srcdir)/%reldir%/test_config.sh_eec3768ebc201ca63bca1411270965f78db1abfc.err \
     $(srcdir)/%reldir%/test_config.sh_eec3768ebc201ca63bca1411270965f78db1abfc.out \
+    $(srcdir)/%reldir%/test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.err \
+    $(srcdir)/%reldir%/test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.out \
+    $(srcdir)/%reldir%/test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.err \
+    $(srcdir)/%reldir%/test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.out \
+    $(srcdir)/%reldir%/test_demux.sh_f8cbb968fccbc0442a831c0f69c6dbdfe5413339.err \
+    $(srcdir)/%reldir%/test_demux.sh_f8cbb968fccbc0442a831c0f69c6dbdfe5413339.out \
     $(srcdir)/%reldir%/test_events.sh_09ba47d70bfca88e89faf29598c1095292cad435.err \
     $(srcdir)/%reldir%/test_events.sh_09ba47d70bfca88e89faf29598c1095292cad435.out \
     $(srcdir)/%reldir%/test_events.sh_153e221f3cb50f4d3e4581be0bf311e62489c42d.err \

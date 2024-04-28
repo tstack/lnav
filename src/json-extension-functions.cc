@@ -490,7 +490,7 @@ concat_gen_elements(yajl_gen gen, const unsigned char* text, size_t len)
 }
 
 static json_string
-json_concat(nonstd::optional<const char*> json_in,
+json_concat(std::optional<const char*> json_in,
             const std::vector<sqlite3_value*>& values)
 {
     yajlpp_gen gen;

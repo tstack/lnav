@@ -40,7 +40,7 @@
 
 text_format_t
 detect_text_format(string_fragment sf,
-                   nonstd::optional<ghc::filesystem::path> path)
+                   std::optional<ghc::filesystem::path> path)
 {
     static const std::set<ghc::filesystem::path> FILTER_EXTS = {
         ".bz2",
@@ -230,7 +230,7 @@ detect_text_format(string_fragment sf,
     return text_format_t::TF_UNKNOWN;
 }
 
-nonstd::optional<text_format_meta_t>
+std::optional<text_format_meta_t>
 extract_text_meta(string_fragment sf, text_format_t tf)
 {
     static const auto MAN_NAME = lnav::pcre2pp::code::from_const(
@@ -255,5 +255,5 @@ extract_text_meta(string_fragment sf, text_format_t tf)
             break;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }

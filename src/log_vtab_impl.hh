@@ -132,10 +132,10 @@ struct log_cursor {
 
     using level_constraint = integral_constraint<log_level_t>;
 
-    nonstd::optional<level_constraint> lc_level_constraint;
+    std::optional<level_constraint> lc_level_constraint;
     intern_string_t lc_format_name;
     intern_string_t lc_pattern_name;
-    nonstd::optional<opid_hash> lc_opid;
+    std::optional<opid_hash> lc_opid;
     std::vector<string_constraint> lc_log_path;
     logfile* lc_last_log_path_match{nullptr};
     logfile* lc_last_log_path_mismatch{nullptr};

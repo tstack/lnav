@@ -899,6 +899,27 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "demux": {
+                    "description": "Demultiplexer definitions",
+                    "title": "/log/demux",
+                    "type": "object",
+                    "patternProperties": {
+                        "^([\\w\\-\\.]+)$": {
+                            "description": "The definition of a demultiplexer",
+                            "title": "/log/demux/<name>",
+                            "type": "object",
+                            "properties": {
+                                "pattern": {
+                                    "title": "/log/demux/<name>/pattern",
+                                    "description": "A regular expression to match a line in a multiplexed file",
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
                 }
             },
             "additionalProperties": false

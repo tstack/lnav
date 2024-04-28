@@ -33,23 +33,22 @@
 #include <string>
 
 #include "auto_fd.hh"
-#include "optional.hpp"
 #include "result.h"
 
 namespace network {
 
 struct locality {
-    locality(nonstd::optional<std::string> username,
+    locality(std::optional<std::string> username,
              std::string hostname,
-             nonstd::optional<std::string> service)
+             std::optional<std::string> service)
         : l_username(std::move(username)), l_hostname(std::move(hostname)),
           l_service(std::move(service))
     {
     }
 
-    nonstd::optional<std::string> l_username;
+    std::optional<std::string> l_username;
     std::string l_hostname;
-    nonstd::optional<std::string> l_service;
+    std::optional<std::string> l_service;
 };
 
 struct path {

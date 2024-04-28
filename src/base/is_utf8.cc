@@ -60,7 +60,7 @@
   error.
 */
 utf8_scan_result
-is_utf8(string_fragment str, nonstd::optional<unsigned char> terminator)
+is_utf8(string_fragment str, std::optional<unsigned char> terminator)
 {
     const auto* ustr = str.udata();
     utf8_scan_result retval;

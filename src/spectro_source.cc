@@ -35,11 +35,11 @@
 #include "base/math_util.hh"
 #include "config.h"
 
-nonstd::optional<size_t>
+std::optional<size_t>
 spectrogram_row::nearest_column(size_t current) const
 {
-    nonstd::optional<size_t> retval;
-    nonstd::optional<size_t> nearest_distance;
+    std::optional<size_t> retval;
+    std::optional<size_t> nearest_distance;
 
     for (size_t lpc = 0; lpc < this->sr_width; lpc++) {
         if (this->sr_values[lpc].rb_counter == 0) {
@@ -133,7 +133,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
 
             if (sa.empty()) {
                 this->ss_details_source.reset();
-                this->ss_cursor_column = nonstd::nullopt;
+                this->ss_cursor_column = std::nullopt;
                 return true;
             }
 
@@ -320,7 +320,7 @@ spectrogram_source::text_line_width(textview_curses& tc)
     return width;
 }
 
-nonstd::optional<text_time_translator::row_info>
+std::optional<text_time_translator::row_info>
 spectrogram_source::time_for_row(vis_line_t row)
 {
     if (this->ss_details_source != nullptr) {
@@ -335,7 +335,7 @@ spectrogram_source::time_for_row(vis_line_t row)
     return this->time_for_row_int(row);
 }
 
-nonstd::optional<text_time_translator::row_info>
+std::optional<text_time_translator::row_info>
 spectrogram_source::time_for_row_int(vis_line_t row)
 {
     struct timeval retval {
@@ -350,11 +350,11 @@ spectrogram_source::time_for_row_int(vis_line_t row)
     return row_info{retval, row};
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 spectrogram_source::row_for_time(struct timeval time_bucket)
 {
     if (this->ss_value_source == nullptr) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     time_t diff;
@@ -457,7 +457,7 @@ spectrogram_source::cache_bounds()
     if (this->ss_value_source == nullptr) {
         this->ss_cached_bounds.sb_count = 0;
         this->ss_cached_bounds.sb_begin_time = 0;
-        this->ss_cursor_column = nonstd::nullopt;
+        this->ss_cursor_column = std::nullopt;
         this->reset_details_source();
         return;
     }
@@ -474,7 +474,7 @@ spectrogram_source::cache_bounds()
 
     if (sb.sb_count == 0) {
         this->ss_cached_line_count = 0;
-        this->ss_cursor_column = nonstd::nullopt;
+        this->ss_cursor_column = std::nullopt;
         this->reset_details_source();
         return;
     }
@@ -556,7 +556,7 @@ void
 spectrogram_source::text_selection_changed(textview_curses& tc)
 {
     if (this->ss_value_source == nullptr || this->text_line_count() == 0) {
-        this->ss_cursor_column = nonstd::nullopt;
+        this->ss_cursor_column = std::nullopt;
         this->ss_details_source.reset();
         return;
     }

@@ -59,7 +59,7 @@ wait_for_children()
 }
 
 size_t
-rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
+rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
     return 0;
 }
@@ -70,7 +70,7 @@ rebuild_indexes_repeatedly()
 }
 
 void
-wait_for_pipers(nonstd::optional<timeval>)
+wait_for_pipers(std::optional<timeval>)
 {
 }
 

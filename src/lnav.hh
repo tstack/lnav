@@ -293,6 +293,6 @@ extern const ssize_t ZOOM_COUNT;
 
 bool setup_logline_table(exec_context& ec);
 void wait_for_children();
-void wait_for_pipers(nonstd::optional<timeval> deadline = nonstd::nullopt);
+void wait_for_pipers(std::optional<timeval> deadline = std::nullopt);
 
 #endif

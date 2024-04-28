@@ -34,12 +34,12 @@
 
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
-#include "optional.hpp"
 
 enum class file_format_t : int {
     UNKNOWN,
     SQLITE_DB,
     ARCHIVE,
+    MULTIPLEXED,
     REMOTE,
 };
 
@@ -51,7 +51,7 @@ struct external_file_format {
 
 file_format_t detect_file_format(const ghc::filesystem::path& filename);
 
-nonstd::optional<external_file_format> detect_mime_type(
+std::optional<external_file_format> detect_mime_type(
     const ghc::filesystem::path& filename);
 
 namespace fmt {
@@ -67,6 +67,9 @@ struct formatter<file_format_t> : formatter<string_view> {
                 break;
             case file_format_t::ARCHIVE:
                 name = "\U0001F5C4  Archive";
+                break;
+            case file_format_t::MULTIPLEXED:
+                name = "\u22fa  Multiplexed";
                 break;
             case file_format_t::REMOTE:
                 name = "\U0001F5A5  Remote";

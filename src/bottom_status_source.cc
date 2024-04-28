@@ -71,13 +71,13 @@ bottom_status_source::update_line_number(listview_curses* lc)
 
     this->bss_line_error.set_value(
         lc->map_top_row([](const attr_line_t& top_row)
-                            -> nonstd::optional<std::string> {
+                            -> std::optional<std::string> {
               const auto& sa = top_row.get_attrs();
               auto error_wrapper = get_string_attr(sa, SA_ERROR);
               if (error_wrapper) {
                   return error_wrapper.value().get();
               }
-              return nonstd::nullopt;
+              return std::nullopt;
           }).value_or(""));
 }
 

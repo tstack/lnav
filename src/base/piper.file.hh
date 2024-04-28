@@ -31,13 +31,14 @@
 #define lnav_piper_file_hh
 
 #include <map>
+#include <optional>
 #include <string>
 
 #include <sys/time.h>
 
 #include "auto_mem.hh"
+#include "base/intern_string.hh"
 #include "ghc/filesystem.hpp"
-#include "optional.hpp"
 #include "time_util.hh"
 
 namespace lnav {
@@ -48,6 +49,8 @@ struct header {
     std::string h_name;
     std::string h_cwd;
     std::map<std::string, std::string> h_env;
+    std::string h_timezone;
+    std::map<std::string, std::string> h_demux_meta;
 
     bool operator<(const header& rhs) const
     {
@@ -68,7 +71,9 @@ const ghc::filesystem::path& storage_path();
 constexpr size_t HEADER_SIZE = 8;
 extern const char HEADER_MAGIC[4];
 
-nonstd::optional<auto_buffer> read_header(int fd, const char* first8);
+std::optional<auto_buffer> read_header(int fd, const char* first8);
+
+std::optional<std::string> multiplex_id_for_line(string_fragment line);
 
 }  // namespace piper
 }  // namespace lnav

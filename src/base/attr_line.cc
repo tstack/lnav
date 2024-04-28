@@ -356,6 +356,19 @@ attr_line_t::insert(size_t index,
     return *this;
 }
 
+attr_line_t&
+attr_line_t::wrap_with(text_wrap_settings* tws)
+{
+    attr_line_t tmp;
+
+    tmp.al_string = std::move(this->al_string);
+    tmp.al_attrs = std::move(this->al_attrs);
+
+    this->append(tmp, tws);
+
+    return *this;
+}
+
 attr_line_t
 attr_line_t::subline(size_t start, size_t len) const
 {
@@ -457,7 +470,7 @@ attr_line_t::apply_hide()
 }
 
 attr_line_t&
-attr_line_t::rtrim(nonstd::optional<const char*> chars)
+attr_line_t::rtrim(std::optional<const char*> chars)
 {
     auto index = this->al_string.length();
 
@@ -701,7 +714,7 @@ find_string_attr(const string_attrs_t& sa,
     return iter;
 }
 
-nonstd::optional<const string_attr*>
+std::optional<const string_attr*>
 get_string_attr(const string_attrs_t& sa,
                 const string_attr_type_base* type,
                 int start)
@@ -709,8 +722,8 @@ get_string_attr(const string_attrs_t& sa,
     auto iter = find_string_attr(sa, type, start);
 
     if (iter == sa.end()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional(&(*iter));
+    return std::make_optional(&(*iter));
 }

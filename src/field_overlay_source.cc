@@ -110,12 +110,22 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     attr_line_t time_line;
     auto& time_str = time_line.get_string();
     struct line_range time_lr;
+    off_t ts_len = sql_strftime(curr_timestamp,
+                                sizeof(curr_timestamp),
+                                ll->get_time(),
+                                ll->get_millis(),
+                                'T');
+    {
+        exttm tmptm;
 
-    sql_strftime(curr_timestamp,
-                 sizeof(curr_timestamp),
-                 ll->get_time(),
-                 ll->get_millis(),
-                 'T');
+        tmptm.et_flags |= ETF_ZONE_SET;
+        tmptm.et_gmtoff
+            = lnav::local_time_to_info(
+                  date::local_seconds{std::chrono::seconds{ll->get_time()}})
+                  .first.offset.count();
+        ftime_z(curr_timestamp, ts_len, sizeof(curr_timestamp), tmptm);
+        curr_timestamp[ts_len] = '\0';
+    }
 
     if (ll->is_time_skewed()) {
         time_lr.lr_start = 1;
@@ -212,11 +222,13 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
         time_line.append("  Format: ")
             .append(lnav::roles::symbol(
-                ts_formats[format->lf_date_time.dts_fmt_lock]));
+                ts_formats[format->lf_date_time.dts_fmt_lock]))
+            .append("  Default Zone: ");
         if (format->lf_date_time.dts_default_zone != nullptr) {
-            time_line.append("  Default Zone: ")
-                .append(lnav::roles::symbol(
-                    format->lf_date_time.dts_default_zone->name()));
+            time_line.append(lnav::roles::symbol(
+                format->lf_date_time.dts_default_zone->name()));
+        } else {
+            time_line.append("none"_comment);
         }
     }
 
@@ -672,7 +684,7 @@ field_overlay_source::list_value_for_overlay(
     this->build_meta_line(lv, value_out, row);
 }
 
-nonstd::optional<attr_line_t>
+std::optional<attr_line_t>
 field_overlay_source::list_header_for_overlay(const listview_curses& lv,
                                               vis_line_t vl)
 {

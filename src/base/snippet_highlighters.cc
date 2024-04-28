@@ -99,7 +99,7 @@ find_matching_bracket(
         }
     }
 
-    nonstd::optional<int> first_left;
+    std::optional<int> first_left;
 
     depth = 0;
 

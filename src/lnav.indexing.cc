@@ -200,7 +200,7 @@ public:
 };
 
 rebuild_indexes_result_t
-rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
+rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
     logfile_sub_source& lss = lnav_data.ld_log_source;
     textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
@@ -247,7 +247,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
                 tss->to_front(cb.front_file);
             }
 
-            nonstd::optional<vis_line_t> new_top_opt;
+            std::optional<vis_line_t> new_top_opt;
             cb.front_top.match(
                 [&new_top_opt](vis_line_t vl) {
                     log_info("file open request to jump to line: %d", (int) vl);

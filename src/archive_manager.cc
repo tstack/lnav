@@ -124,8 +124,8 @@ describe(const fs::path& filename)
                     archive_entry_strmode(entry),
                     archive_entry_mtime(entry),
                     archive_entry_size_is_set(entry)
-                        ? nonstd::make_optional(archive_entry_size(entry))
-                        : nonstd::nullopt,
+                        ? std::make_optional(archive_entry_size(entry))
+                        : std::nullopt,
                 });
             } while (archive_read_next_header(arc, &entry) == ARCHIVE_OK);
 

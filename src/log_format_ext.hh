@@ -287,8 +287,8 @@ public:
 
     value_line_count_result value_line_count(const intern_string_t ist,
                                              bool top_level,
-                                             nonstd::optional<double> val
-                                             = nonstd::nullopt,
+                                             std::optional<double> val
+                                             = std::nullopt,
                                              const unsigned char* str = nullptr,
                                              ssize_t len = -1);
 

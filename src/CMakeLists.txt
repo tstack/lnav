@@ -570,7 +570,6 @@ add_library(
         logfile_stats.hh
         md2attr_line.hh
         md4cpp.hh
-        optional.hpp
         file_converter_manager.hh
         plain_text_source.hh
         pretty_printer.hh

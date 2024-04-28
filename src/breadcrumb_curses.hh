@@ -92,8 +92,8 @@ private:
     WINDOW* bc_window{nullptr};
     std::function<std::vector<breadcrumb::crumb>()> bc_line_source;
     std::vector<breadcrumb::crumb> bc_focused_crumbs;
-    nonstd::optional<size_t> bc_selected_crumb;
-    nonstd::optional<size_t> bc_last_selected_crumb;
+    std::optional<size_t> bc_selected_crumb;
+    std::optional<size_t> bc_last_selected_crumb;
     std::vector<breadcrumb::possibility> bc_possible_values;
     std::vector<breadcrumb::possibility> bc_similar_values;
     std::string bc_current_search;

@@ -115,7 +115,7 @@ public:
         return *this;
     }
 
-    nonstd::optional<location_history*> get_location_history() override
+    std::optional<location_history*> get_location_history() override
     {
         return this;
     }
@@ -123,16 +123,16 @@ public:
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override;
 
-    nonstd::optional<vis_line_t> row_for_anchor(const std::string& id) override;
-    nonstd::optional<std::string> anchor_for_row(vis_line_t vl) override;
+    std::optional<vis_line_t> row_for_anchor(const std::string& id) override;
+    std::optional<std::string> anchor_for_row(vis_line_t vl) override;
     std::unordered_set<std::string> get_anchors() override;
-    nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
+    std::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
                                                  direction dir) override;
 
 protected:
     size_t compute_longest_line();
 
-    nonstd::optional<vis_line_t> line_for_offset(file_off_t off) const;
+    std::optional<vis_line_t> line_for_offset(file_off_t off) const;
 
     std::vector<text_line> tds_lines;
     text_format_t tds_text_format{text_format_t::TF_UNKNOWN};

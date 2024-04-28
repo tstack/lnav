@@ -33,6 +33,7 @@
 #define lnav_log_hh
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 #include <stdio.h>
@@ -42,8 +43,6 @@
 #ifndef lnav_dead2
 #    define lnav_dead2 __attribute__((noreturn))
 #endif
-
-#include "optional.hpp"
 
 struct termios;
 
@@ -80,7 +79,7 @@ public:
 
     virtual ~log_state_dumper();
 
-    virtual void log_state(){
+    virtual void log_state() {
 
     };
 
@@ -97,9 +96,9 @@ public:
     virtual void log_crash_recover() = 0;
 };
 
-extern nonstd::optional<FILE*> lnav_log_file;
+extern std::optional<FILE*> lnav_log_file;
 extern const char* lnav_log_crash_dir;
-extern nonstd::optional<const struct termios*> lnav_log_orig_termios;
+extern std::optional<const struct termios*> lnav_log_orig_termios;
 extern enum lnav_log_level_t lnav_log_level;
 
 #define log_msg_wrapper(level, fmt...) \
@@ -146,15 +145,17 @@ extern enum lnav_log_level_t lnav_log_level;
     ((void) ((lhs >= rhs) \
                  ? 0 \
                  : lnav_require_binary( \
-                     #lhs " >= " #rhs, lhs, rhs, __FILE__, __LINE__)))
+                       #lhs " >= " #rhs, lhs, rhs, __FILE__, __LINE__)))
 #define require_gt(lhs, rhs) \
-    ((void) ((lhs > rhs) ? 0 \
-                         : lnav_require_binary( \
-                             #lhs " > " #rhs, lhs, rhs, __FILE__, __LINE__)))
+    ((void) ((lhs > rhs) \
+                 ? 0 \
+                 : lnav_require_binary( \
+                       #lhs " > " #rhs, lhs, rhs, __FILE__, __LINE__)))
 #define require_lt(lhs, rhs) \
-    ((void) ((lhs < rhs) ? 0 \
-                         : lnav_require_binary( \
-                             #lhs " < " #rhs, lhs, rhs, __FILE__, __LINE__)))
+    ((void) ((lhs < rhs) \
+                 ? 0 \
+                 : lnav_require_binary( \
+                       #lhs " < " #rhs, lhs, rhs, __FILE__, __LINE__)))
 
 #define lnav_require_binary(e, lhs, rhs, file, line) \
     (log_msg(lnav_log_level_t::ERROR, \

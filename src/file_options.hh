@@ -59,7 +59,7 @@ struct file_options_collection {
 
     std::map<std::string, file_options> foc_pattern_to_options;
 
-    nonstd::optional<std::pair<std::string, file_options>> match(
+    std::optional<std::pair<std::string, file_options>> match(
         const std::string& path) const;
 
     std::string to_json() const;
@@ -70,7 +70,7 @@ struct file_options_hier {
         foh_path_to_collection;
     size_t foh_generation{0};
 
-    nonstd::optional<std::pair<std::string, file_options>> match(
+    std::optional<std::pair<std::string, file_options>> match(
         const ghc::filesystem::path& path) const;
 };
 

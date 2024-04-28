@@ -163,7 +163,7 @@ struct prepared_stmt {
     template<typename T, typename F>
     Result<void, fetch_error> for_each_row(F func)
     {
-        nonstd::optional<fetch_error> err;
+        std::optional<fetch_error> err;
         auto done = false;
 
         while (!done) {

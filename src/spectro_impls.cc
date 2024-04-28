@@ -76,13 +76,12 @@ public:
               });
     }
 
-    nonstd::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket) override
+    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override
     {
         return this->fss_time_delegate->row_for_time(time_bucket);
     }
 
-    nonstd::optional<row_info> time_for_row(vis_line_t row) override
+    std::optional<row_info> time_for_row(vis_line_t row) override
     {
         return this->fss_lines | lnav::itertools::nth(row)
             | lnav::itertools::flat_map([this](const auto row) {
@@ -190,8 +189,8 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
 {
     auto& lss = lnav_data.ld_log_source;
     auto begin_line = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
-    auto end_line
-        = lss.find_from_time(sr.sr_end_time).value_or(lss.text_line_count());
+    auto end_line = lss.find_from_time(sr.sr_end_time)
+                        .value_or(vis_line_t(lss.text_line_count()));
 
     for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
         const auto& ll = msg_info.get_logline();
@@ -226,7 +225,7 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
         auto retval = std::make_unique<filtered_sub_source>();
         auto begin_line = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
         auto end_line = lss.find_from_time(sr.sr_end_time)
-                            .value_or(lss.text_line_count());
+                            .value_or(vis_line_t(lss.text_line_count()));
 
         retval->fss_delegate = &lss;
         retval->fss_time_delegate = &lss;
@@ -281,8 +280,8 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     auto& log_tc = lnav_data.ld_views[LNV_LOG];
     auto& lss = lnav_data.ld_log_source;
     vis_line_t begin_line = lss.find_from_time(begin_time).value_or(0_vl);
-    vis_line_t end_line
-        = lss.find_from_time(end_time).value_or(lss.text_line_count());
+    vis_line_t end_line = lss.find_from_time(end_time).value_or(
+        vis_line_t(lss.text_line_count()));
     logline_value_vector values;
     string_attrs_t sa;
 
@@ -478,8 +477,8 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
 {
     auto& dls = lnav_data.ld_db_row_source;
     auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
-    auto end_row
-        = dls.row_for_time({sr.sr_end_time, 0}).value_or(dls.dls_rows.size());
+    auto end_row = dls.row_for_time({sr.sr_end_time, 0})
+                       .value_or(vis_line_t(dls.dls_rows.size()));
 
     for (auto lpc = begin_row; lpc < end_row; ++lpc) {
         auto scan_res = scn::scan_value<double>(scn::string_view{
@@ -501,7 +500,7 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
         retval->fss_overlay_delegate = &lnav_data.ld_db_overlay;
         auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
         auto end_row = dls.row_for_time({sr.sr_end_time, 0})
-                           .value_or(dls.dls_rows.size());
+                           .value_or(vis_line_t(dls.dls_rows.size()));
 
         for (auto lpc = begin_row; lpc < end_row; ++lpc) {
             auto scan_res = scn::scan_value<double>(scn::string_view{

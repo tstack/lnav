@@ -103,10 +103,10 @@ static const char* CRASH_MSG
       "  %s\n"
       "=========================\n";
 
-nonstd::optional<FILE*> lnav_log_file;
+std::optional<FILE*> lnav_log_file;
 lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
 const char* lnav_log_crash_dir;
-nonstd::optional<const struct termios*> lnav_log_orig_termios;
+std::optional<const struct termios*> lnav_log_orig_termios;
 // NOTE: This mutex is leaked so that it is not destroyed during exit.
 // Otherwise, any attempts to log will fail.
 static std::mutex*

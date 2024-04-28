@@ -132,8 +132,8 @@ statusview_curses::do_update()
                     if (sa.sa_type == &VC_STYLE) {
                         auto sa_attrs = sa.sa_value.get<text_attrs>();
                         sa_attrs.ta_attrs &= ~(A_REVERSE | A_COLOR);
-                        sa_attrs.ta_fg_color = nonstd::nullopt;
-                        sa_attrs.ta_bg_color = nonstd::nullopt;
+                        sa_attrs.ta_fg_color = std::nullopt;
+                        sa_attrs.ta_bg_color = std::nullopt;
                         sa.sa_value = sa_attrs;
                     } else if (sa.sa_type == &VC_ROLE) {
                         if (sa.sa_value.get<role_t>()

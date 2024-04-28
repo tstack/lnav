@@ -37,6 +37,7 @@
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
+#include "line_buffer.hh"
 
 file_format_t
 detect_file_format(const ghc::filesystem::path& filename)
@@ -68,7 +69,30 @@ detect_file_format(const ghc::filesystem::path& filename)
             auto header_frag = string_fragment::from_bytes(buffer, rc);
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
+                log_info("%s: appears to be a SQLite DB", filename.c_str());
                 retval = file_format_t::SQLITE_DB;
+            } else {
+                file_range next_range;
+                line_buffer lb;
+                lb.set_fd(fd);
+
+                auto load_res = lb.load_next_line(next_range);
+                if (load_res.isOk() && lb.is_header_utf8()) {
+                    auto li = load_res.unwrap();
+                    auto read_res = lb.read_range(li.li_file_range);
+                    if (read_res.isOk()) {
+                        auto sbr = read_res.unwrap();
+                        auto demux_id_opt = lnav::piper::multiplex_id_for_line(
+                            sbr.to_string_fragment());
+
+                        if (demux_id_opt) {
+                            log_info("%s: is multiplexed using %s",
+                                     filename.c_str(),
+                                     demux_id_opt.value().c_str());
+                            return file_format_t::MULTIPLEXED;
+                        }
+                    }
+                }
             }
         }
     }

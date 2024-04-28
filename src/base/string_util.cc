@@ -375,7 +375,7 @@ is_meta(char ch)
     }
 }
 
-static nonstd::optional<const char*>
+static std::optional<const char*>
 char_escape_seq(char ch)
 {
     switch (ch) {
@@ -385,7 +385,7 @@ char_escape_seq(char ch)
             return "\\n";
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 std::string

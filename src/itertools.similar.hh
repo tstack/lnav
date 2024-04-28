@@ -43,7 +43,7 @@ namespace details {
 
 template<typename F>
 struct similar_to {
-    nonstd::optional<F> st_mapper;
+    std::optional<F> st_mapper;
     std::string st_pattern;
     size_t st_count{5};
 };

@@ -126,7 +126,7 @@ breadcrumb_curses::reload_data()
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
     this->bc_possible_values = selected_crumb_ref.c_possibility_provider();
 
-    nonstd::optional<size_t> selected_value;
+    std::optional<size_t> selected_value;
     this->bc_similar_values = this->bc_possible_values
         | lnav::itertools::similar_to(
                                   [](const auto& elem) { return elem.p_key; },
@@ -210,7 +210,7 @@ breadcrumb_curses::blur()
 {
     this->bc_last_selected_crumb = this->bc_selected_crumb;
     this->bc_focused_crumbs.clear();
-    this->bc_selected_crumb = nonstd::nullopt;
+    this->bc_selected_crumb = std::nullopt;
     this->bc_current_search.clear();
     this->bc_match_view.set_height(0_vl);
     this->bc_match_view.set_selection(-1_vl);

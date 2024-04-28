@@ -317,7 +317,7 @@ CREATE TABLE regexp_capture_into_json (
         size_t c_match_index{0};
         sqlite3_int64 c_rowid{0};
         std::string c_flags_string;
-        nonstd::optional<regexp_capture_flags> c_flags;
+        std::optional<regexp_capture_flags> c_flags;
 
         cursor(sqlite3_vtab* vt) : base({vt}) {}
 
@@ -480,7 +480,7 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
         pCur->c_content.clear();
         pCur->c_pattern.reset();
         pCur->c_flags_string.clear();
-        pCur->c_flags = nonstd::nullopt;
+        pCur->c_flags = std::nullopt;
         return SQLITE_OK;
     }
 
@@ -503,7 +503,7 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
     }
 
     pCur->c_flags_string.clear();
-    pCur->c_flags = nonstd::nullopt;
+    pCur->c_flags = std::nullopt;
     if (argc == 3) {
         static const intern_string_t FLAGS_SRC = intern_string::lookup("flags");
         const auto flags_json = from_sqlite<string_fragment>()(argc, argv, 2);

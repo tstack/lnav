@@ -30,11 +30,10 @@
 #ifndef lnav_humanize_time_hh
 #define lnav_humanize_time_hh
 
+#include <optional>
 #include <string>
 
 #include <sys/time.h>
-
-#include "optional.hpp"
 
 namespace humanize {
 namespace time {
@@ -66,7 +65,7 @@ private:
     }
 
     struct timeval p_past_point;
-    nonstd::optional<struct timeval> p_recent_point;
+    std::optional<struct timeval> p_recent_point;
     bool p_convert_to_local{false};
 };
 

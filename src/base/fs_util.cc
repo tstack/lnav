@@ -40,6 +40,36 @@
 namespace lnav {
 namespace filesystem {
 
+std::string
+escape_path(const ghc::filesystem::path& p)
+{
+    auto p_str = p.string();
+    std::string retval;
+
+    for (const auto ch : p_str) {
+        switch (ch) {
+            case ' ':
+            case '$':
+            case '\\':
+            case ';':
+            case '&':
+            case '<':
+            case '>':
+            case '\'':
+            case '"':
+            case '*':
+            case '[':
+            case ']':
+            case '?':
+                retval.push_back('\\');
+                break;
+        }
+        retval.push_back(ch);
+    }
+
+    return retval;
+}
+
 Result<ghc::filesystem::path, std::string>
 realpath(const ghc::filesystem::path& path)
 {

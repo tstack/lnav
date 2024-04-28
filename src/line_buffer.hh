@@ -345,12 +345,12 @@ private:
     file_ssize_t lb_piper_header_size{0};
 
     auto_buffer lb_buffer{auto_buffer::alloc(DEFAULT_LINE_BUFFER_SIZE)};
-    nonstd::optional<auto_buffer> lb_alt_buffer;
+    std::optional<auto_buffer> lb_alt_buffer;
     std::vector<uint32_t> lb_alt_line_starts;
     std::vector<bool> lb_alt_line_is_utf;
     std::vector<bool> lb_alt_line_has_ansi;
     std::future<bool> lb_loader_future;
-    nonstd::optional<file_off_t> lb_loader_file_offset;
+    std::optional<file_off_t> lb_loader_file_offset;
 
     file_off_t lb_compressed_offset{
         0}; /*< The offset into the compressed file. */
@@ -375,7 +375,7 @@ private:
     std::vector<bool> lb_line_has_ansi;
     stats lb_stats;
 
-    nonstd::optional<auto_fd> lb_cached_fd;
+    std::optional<auto_fd> lb_cached_fd;
 
     file_header_t lb_header{mapbox::util::no_init{}};
 };

@@ -122,7 +122,7 @@ public:
 
     const logfile_activity& get_activity() const { return this->lf_activity; }
 
-    nonstd::optional<ghc::filesystem::path> get_actual_path() const
+    std::optional<ghc::filesystem::path> get_actual_path() const
     {
         return this->lf_actual_path;
     }
@@ -160,7 +160,7 @@ public:
 
     file_off_t get_index_size() const { return this->lf_index_size; }
 
-    nonstd::optional<const_iterator> line_for_offset(file_off_t off) const;
+    std::optional<const_iterator> line_for_offset(file_off_t off) const;
 
     /**
      * @return The detected format, rebuild_index() must be called before this
@@ -235,7 +235,7 @@ public:
     /** @return The number of lines in the index. */
     size_t size() const { return this->lf_index.size(); }
 
-    nonstd::optional<const_iterator> find_from_time(
+    std::optional<const_iterator> find_from_time(
         const struct timeval& tv) const;
 
     logline& operator[](int index) { return this->lf_index[index]; }
@@ -328,7 +328,7 @@ public:
      * @return True if any new lines were indexed.
      */
     rebuild_result_t rebuild_index(
-        nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
+        std::optional<ui_clock::time_point> deadline = std::nullopt);
 
     void reobserve_from(iterator iter);
 
@@ -410,7 +410,7 @@ public:
         return this->lf_embedded_metadata;
     }
 
-    nonstd::optional<std::pair<std::string, lnav::file_options>>
+    std::optional<std::pair<std::string, lnav::file_options>>
     get_file_options() const
     {
         return this->lf_file_options;
@@ -440,7 +440,7 @@ private:
     logfile_activity lf_activity;
     bool lf_named_file{true};
     bool lf_valid_filename{true};
-    nonstd::optional<ghc::filesystem::path> lf_actual_path;
+    std::optional<ghc::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
     struct stat lf_stat {};
@@ -467,10 +467,10 @@ private:
     safe_opid_state lf_opids;
     size_t lf_watch_count{0};
     ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
-    nonstd::optional<time_t> lf_cached_base_time;
-    nonstd::optional<tm> lf_cached_base_tm;
+    std::optional<time_t> lf_cached_base_time;
+    std::optional<tm> lf_cached_base_tm;
 
-    nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
+    std::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
     std::set<intern_string_t> lf_mismatched_formats;
     robin_hood::unordered_map<uint32_t, bookmark_metadata> lf_bookmark_metadata;
 
@@ -479,7 +479,7 @@ private:
         lf_applicable_partitioners;
     std::map<std::string, metadata> lf_embedded_metadata;
     size_t lf_file_options_generation{0};
-    nonstd::optional<std::pair<std::string, lnav::file_options>>
+    std::optional<std::pair<std::string, lnav::file_options>>
         lf_file_options;
 };
 

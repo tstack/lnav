@@ -6,22 +6,22 @@
         "url": "http://www.haproxy.org/download/1.4/doc/configuration.txt",
         "regex": {
             "event_started": {
-                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Proxy (?<frontend_name>[^ ]+) started."
+                "pattern": "^(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Proxy (?<frontend_name>[^ ]+) started."
             },
             "event_stopping": {
-                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Stopping frontend (?<frontend_name>[^ ]+) in (?<stopping_timeout>\\d+) ms."
+                "pattern": "^(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Stopping frontend (?<frontend_name>[^ ]+) in (?<stopping_timeout>\\d+) ms."
             },
             "event_stopped": {
-                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Proxy (?<frontend_name>[^ ]+) stopped \\(FE: (?<frontend_connections>\\d+) conns, BE: (?<backend_connections>\\d+) conns\\)."
+                "pattern": "^(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: Proxy (?<frontend_name>[^ ]+) stopped \\(FE: (?<frontend_connections>\\d+) conns, BE: (?<backend_connections>\\d+) conns\\)."
             },
             "tcp": {
-                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<frontend_name>[^ ]+) (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+) (?<tw>\\d+)\\/(?<tc>\\d+)\\/(?<tt>\\d+) (?<bytes_read>\\d+) (?<termination_state>..) (?<actconn>\\d+)\\/(?<feconn>\\d+)\\/(?<beconn>\\d+)\\/(?<srv_conn>\\d+)\\/(?<retries>\\d+) (?<srv_queue>\\d+)\\/(?<backend_queue>\\d+)"
+                "pattern": "^(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<frontend_name>[^ ]+) (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+) (?<tw>\\d+)\\/(?<tc>\\d+)\\/(?<tt>\\d+) (?<bytes_read>\\d+) (?<termination_state>..) (?<actconn>\\d+)\\/(?<feconn>\\d+)\\/(?<beconn>\\d+)\\/(?<srv_conn>\\d+)\\/(?<retries>\\d+) (?<srv_queue>\\d+)\\/(?<backend_queue>\\d+)"
             },
             "http": {
-                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<frontend_name>[^ ]+)(?<ssl>~)? (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+) (?<tq>-?\\d+)\\/(?<tw>-?\\d+)\\/(?<tc>-?\\d+)\\/(?<tr>-?\\d+)\\/(?<tt>\\d+) (?<status_code>\\d{3}|-1) (?<bytes_read>\\d+) (?<captured_request_cookie>.*) (?<captured_response_cookie>.*) (?<termination_state>....) (?<actconn>\\d+)\\/(?<feconn>\\d+)\\/(?<beconn>\\d+)\\/(?<srv_conn>\\d+)\\/(?<retries>\\d+) (?<srv_queue>\\d+)\\/(?<backend_queue>\\d+) (?:\\{(?<captured_request_headers>.*)\\} \\{(?<captured_response_headers>.*)\\} )?\"(?<http_method>[A-Z<>]+)(?: (?<http_url>.*?))?(?: (?<http_version>HTTP\\/\\d+.\\d+))?\"?$"
+                "pattern": "^(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<frontend_name>[^ ]+)(?<ssl>~)? (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+) (?<tq>-?\\d+)\\/(?<tw>-?\\d+)\\/(?<tc>-?\\d+)\\/(?<tr>-?\\d+)\\/(?<tt>\\d+) (?<status_code>\\d{3}|-1) (?<bytes_read>\\d+) (?<captured_request_cookie>.*) (?<captured_response_cookie>.*) (?<termination_state>....) (?<actconn>\\d+)\\/(?<feconn>\\d+)\\/(?<beconn>\\d+)\\/(?<srv_conn>\\d+)\\/(?<retries>\\d+) (?<srv_queue>\\d+)\\/(?<backend_queue>\\d+) (?:\\{(?<captured_request_headers>.*)\\} \\{(?<captured_response_headers>.*)\\} )?\"(?<http_method>[A-Z<>]+)(?: (?<http_url>.*?))?(?: (?<http_version>HTTP\\/\\d+.\\d+))?\"?$"
             },
             "ssl": {
-                "pattern": "(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+): (?<ssl_error>.+)$"
+                "pattern": "^(?<timestamp>\\w{3} \\d{2} \\d{2}:\\d{2}:\\d{2}) (?<logging_host>[^ ]+) (?<process_name>\\w+)\\[(?<pid>\\d+)\\]: (?<client_ip>[^:]+):(?<client_port>\\d+) \\[(?<accept_date>\\d{2}\\/\\w{3}\\/\\d{4}:\\d{2}:\\d{2}:\\d{2}.\\d{3})\\] (?<backend_name>[^ ]+)\\/(?<server_name>[^ ]+): (?<ssl_error>.+)$"
             }
         },
         "json": false,

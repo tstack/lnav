@@ -40,7 +40,6 @@
 #include "base/file_range.hh"
 #include "data_scanner.hh"
 #include "document.sections.hh"
-#include "optional.hpp"
 
 class pretty_printer {
 public:
@@ -112,7 +111,7 @@ private:
     void append_child_node();
 
     struct interval_state {
-        nonstd::optional<file_off_t> is_start;
+        std::optional<file_off_t> is_start;
         std::string is_name;
     };
 

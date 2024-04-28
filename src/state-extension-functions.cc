@@ -40,30 +40,30 @@
 #include "sqlite3.h"
 #include "vtab_module.hh"
 
-static nonstd::optional<int64_t>
+static std::optional<int64_t>
 sql_log_top_line()
 {
     const auto& tc = lnav_data.ld_views[LNV_LOG];
 
     if (tc.get_inner_height() == 0_vl) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     return (int64_t) tc.get_selection();
 }
 
-static nonstd::optional<int64_t>
+static std::optional<int64_t>
 sql_log_msg_line()
 {
     const auto& tc = lnav_data.ld_views[LNV_LOG];
 
     if (tc.get_inner_height() == 0_vl) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto top_line = tc.get_selection();
     auto line_pair_opt = lnav_data.ld_log_source.find_line_with_file(top_line);
     if (!line_pair_opt) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto ll = line_pair_opt.value().second;
@@ -75,19 +75,19 @@ sql_log_msg_line()
     return (int64_t) top_line;
 }
 
-static nonstd::optional<std::string>
+static std::optional<std::string>
 sql_log_top_datetime()
 {
     const auto& tc = lnav_data.ld_views[LNV_LOG];
 
     if (tc.get_inner_height() == 0_vl) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto top_ri = lnav_data.ld_log_source.time_for_row(
         lnav_data.ld_views[LNV_LOG].get_selection());
     if (!top_ri) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     char buffer[64];
@@ -96,13 +96,13 @@ sql_log_top_datetime()
     return buffer;
 }
 
-static nonstd::optional<std::string>
+static std::optional<std::string>
 sql_lnav_top_file()
 {
     auto top_view_opt = lnav_data.ld_view_stack.top();
 
     if (!top_view_opt) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto* top_view = top_view_opt.value();
@@ -111,7 +111,7 @@ sql_lnav_top_file()
             [](const auto wrapper) {
                 auto lf = wrapper.get();
 
-                return nonstd::make_optional(lf->get_filename());
+                return std::make_optional(lf->get_filename());
             };
     });
 }
@@ -123,7 +123,7 @@ sql_lnav_version()
 }
 
 static int64_t
-sql_error(const char* str, nonstd::optional<string_fragment> reason)
+sql_error(const char* str, std::optional<string_fragment> reason)
 {
     auto um = lnav::console::user_message::error(str);
 
@@ -133,8 +133,8 @@ sql_error(const char* str, nonstd::optional<string_fragment> reason)
     throw um;
 }
 
-static nonstd::optional<std::string>
-sql_echoln(nonstd::optional<std::string> arg)
+static std::optional<std::string>
+sql_echoln(std::optional<std::string> arg)
 {
     if (arg) {
         auto& ec = lnav_data.ld_exec_context;

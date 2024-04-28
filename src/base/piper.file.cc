@@ -32,8 +32,10 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
+#include "piper.looper.cfg.hh"
 
 namespace lnav {
 namespace piper {
@@ -48,7 +50,7 @@ storage_path()
     return INSTANCE;
 }
 
-nonstd::optional<auto_buffer>
+std::optional<auto_buffer>
 read_header(int fd, const char* first8)
 {
     if (memcmp(first8, HEADER_MAGIC, sizeof(HEADER_MAGIC)) != 0) {
@@ -57,7 +59,7 @@ read_header(int fd, const char* first8)
                   first8[1],
                   first8[2],
                   first8[3]);
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     uint32_t meta_size = ntohl(*((uint32_t*) &first8[4]));
@@ -65,16 +67,53 @@ read_header(int fd, const char* first8)
     auto meta_buf = auto_buffer::alloc(meta_size);
     if (meta_buf.in() == nullptr) {
         log_error("failed to alloc %d bytes for header", meta_size);
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     auto meta_prc = pread(fd, meta_buf.in(), meta_size, 8);
     if (meta_prc != meta_size) {
         log_error("failed to read piper header: %s", strerror(errno));
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     meta_buf.resize(meta_size);
 
     return meta_buf;
+}
+
+std::optional<std::string>
+multiplex_id_for_line(string_fragment line)
+{
+    const auto& cfg = injector::get<const config&>();
+    auto md = lnav::pcre2pp::match_data::unitialized();
+
+    for (const auto& demux_pair : cfg.c_demux_definitions) {
+        const auto& df = demux_pair.second;
+
+        if (!df.dd_enabled) {
+            continue;
+        }
+
+        log_info("attempting to demux using: %s", demux_pair.first.c_str());
+        md = df.dd_pattern.pp_value->create_match_data();
+        if (df.dd_pattern.pp_value->capture_from(line)
+                .into(md)
+                .matches()
+                .ignore_error())
+        {
+            log_info("  demuxer pattern matched");
+            if (!md[df.dd_muxid_capture_index].has_value()) {
+                log_info("    however, mux_id was not captured");
+                continue;
+            }
+            if (!md[df.dd_body_capture_index].has_value()) {
+                log_info("    however, body was not captured");
+                continue;
+            }
+            log_info("  and required captures were found, using demuxer");
+            return demux_pair.first;
+        }
+    }
+
+    return std::nullopt;
 }
 
 }  // namespace piper

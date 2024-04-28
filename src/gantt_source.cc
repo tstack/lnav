@@ -324,7 +324,7 @@ gantt_header_overlay::list_value_for_overlay(
                                                   VC_STYLE.value(ta_under));
     }
 }
-nonstd::optional<attr_line_t>
+std::optional<attr_line_t>
 gantt_header_overlay::list_header_for_overlay(const listview_curses& lv,
                                               vis_line_t line)
 {
@@ -659,7 +659,7 @@ gantt_source::rebuild_indexes()
                     continue;
                 }
                 for (const auto sbr : {&sbr_opid, &sbr_desc}) {
-                    if (filt->matches(nonstd::nullopt, *sbr)) {
+                    if (filt->matches(std::nullopt, *sbr)) {
                         this->gs_filter_hits[filt->get_index()] += 1;
                         switch (filt->get_type()) {
                             case text_filter::INCLUDE:
@@ -731,13 +731,13 @@ gantt_source::rebuild_indexes()
     this->tss_view->set_needs_update();
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 gantt_source::row_for_time(struct timeval time_bucket)
 {
     auto iter = this->gs_time_order.begin();
     while (true) {
         if (iter == this->gs_time_order.end()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         if (iter->get().or_value.otr_range.contains_inclusive(time_bucket)) {
@@ -778,11 +778,11 @@ gantt_source::row_for_time(struct timeval time_bucket)
     return vis_line_t(std::distance(this->gs_time_order.begin(), closest_iter));
 }
 
-nonstd::optional<text_time_translator::row_info>
+std::optional<text_time_translator::row_info>
 gantt_source::time_for_row(vis_line_t row)
 {
     if (row >= this->gs_time_order.size()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     const auto& otr = this->gs_time_order[row].get().or_value;
@@ -838,7 +838,7 @@ gantt_source::text_selection_changed(textview_curses& tc)
     high_tv.tv_sec += 1;
     auto low_vl = this->gs_lss.row_for_time(low_tv);
     auto high_vl = this->gs_lss.row_for_time(high_tv).value_or(
-        this->gs_lss.text_line_count());
+        vis_line_t(this->gs_lss.text_line_count()));
 
     if (!low_vl) {
         return;
