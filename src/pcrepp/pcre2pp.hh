@@ -33,6 +33,7 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -143,13 +144,12 @@ public:
 
         std::optional<found> ignore_error()
         {
-            return this->match(
-                [](found fo) { return std::make_optional(fo); },
-                [](not_found) { return std::nullopt; },
-                [](error err) {
-                    handle_error(err);
-                    return std::nullopt;
-                });
+            return this->match([](found fo) { return std::make_optional(fo); },
+                               [](not_found) { return std::nullopt; },
+                               [](error err) {
+                                   handle_error(err);
+                                   return std::nullopt;
+                               });
         }
 
     private:
