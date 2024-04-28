@@ -31,6 +31,7 @@
 #define LNAV_COMMAND_EXECUTOR_H
 
 #include <future>
+#include <optional>
 #include <stack>
 #include <string>
 

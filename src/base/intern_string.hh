@@ -32,6 +32,7 @@
 #ifndef intern_string_hh
 #define intern_string_hh
 
+#include <optional>
 #include <ostream>
 #include <vector>
 

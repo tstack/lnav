@@ -31,6 +31,7 @@
 #define db_sub_source_hh
 
 #include <iterator>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -83,11 +84,9 @@ public:
 
     void clear();
 
-    std::optional<size_t> column_name_to_index(
-        const std::string& name) const;
+    std::optional<size_t> column_name_to_index(const std::string& name) const;
 
-    std::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket) override;
+    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
 
     std::optional<row_info> time_for_row(vis_line_t row) override;
 

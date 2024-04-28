@@ -29,6 +29,7 @@
 #ifndef byte_array_hh
 #define byte_array_hh
 
+#include <optional>
 #include <ostream>
 #include <string>
 
@@ -114,8 +115,7 @@ struct byte_array {
             this->ba_data[15 % BYTE_COUNT]);
     }
 
-    std::string to_string(std::optional<char> separator
-                          = std::nullopt) const
+    std::string to_string(std::optional<char> separator = std::nullopt) const
     {
         std::string retval;
 

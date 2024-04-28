@@ -30,6 +30,7 @@
 #ifndef lnav_fs_util_hh
 #define lnav_fs_util_hh
 
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>

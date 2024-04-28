@@ -33,6 +33,7 @@
 #define attr_line_hh
 
 #include <new>
+#include <optional>
 #include <string>
 #include <vector>
 

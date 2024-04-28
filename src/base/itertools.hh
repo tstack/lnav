@@ -34,6 +34,7 @@
 #include <deque>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <type_traits>
 #include <vector>
