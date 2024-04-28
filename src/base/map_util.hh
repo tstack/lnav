@@ -32,9 +32,9 @@
 
 #include <functional>
 #include <map>
+#include <optional>
 #include <type_traits>
 #include <vector>
-
 
 namespace lnav {
 namespace map {

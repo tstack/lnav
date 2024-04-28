@@ -32,6 +32,8 @@
 #ifndef lnav_file_format_hh
 #define lnav_file_format_hh
 
+#include <optional>
+
 #include "fmt/format.h"
 #include "ghc/filesystem.hpp"
 
