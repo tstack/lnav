@@ -694,10 +694,12 @@ public:
         if (view_colors::initialized) {
             vc.init_roles(iter->second, reporter);
 
-            auto& mouse_i = injector::get<xterm_mouse&>();
-            mouse_i.set_enabled(check_experimental("mouse")
-                                || lnav_config.lc_mouse_mode
-                                    == lnav_mouse_mode::enabled);
+            if (stdscr) {
+                auto& mouse_i = injector::get<xterm_mouse&>();
+                mouse_i.set_enabled(check_experimental("mouse")
+                                    || lnav_config.lc_mouse_mode
+                                        == lnav_mouse_mode::enabled);
+            }
         }
     }
 };
@@ -1354,6 +1356,11 @@ screen_curses::create()
     }
 
     newterm(nullptr, stdout, stdin);
+
+    auto& mouse_i = injector::get<xterm_mouse&>();
+    mouse_i.set_enabled(check_experimental("mouse")
+                        || lnav_config.lc_mouse_mode
+                            == lnav_mouse_mode::enabled);
 
     return Ok(screen_curses{stdscr});
 }
