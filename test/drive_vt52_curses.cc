@@ -35,10 +35,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "base/injector.bind.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "view_curses.hh"
 #include "vt52_curses.hh"
+#include "xterm_mouse.hh"
 
 #if defined HAVE_NCURSESW_CURSES_H
 #    include <ncursesw/curses.h>
@@ -60,6 +62,8 @@
 #endif
 
 #undef set_window
+
+static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
 
 int
 main(int argc, char* argv[])

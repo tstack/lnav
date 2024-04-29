@@ -32,8 +32,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "base/injector.bind.hh"
 #include "config.h"
 #include "view_curses.hh"
+#include "xterm_mouse.hh"
+
+static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
 
 int
 main(int argc, char* argv[])
