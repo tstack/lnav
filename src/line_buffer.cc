@@ -371,6 +371,10 @@ line_buffer::line_buffer()
 
 line_buffer::~line_buffer()
 {
+    if (this->lb_loader_future.valid()) {
+        this->lb_loader_future.wait();
+    }
+
     auto empty_fd = auto_fd();
 
     // Make sure any shared refs take ownership of the data.
@@ -773,8 +777,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         if (this->lb_loader_future.wait_for(std::chrono::seconds(0))
             != std::future_status::ready)
         {
-            wait_start
-                = std::make_optional(std::chrono::system_clock::now());
+            wait_start = std::make_optional(std::chrono::system_clock::now());
         }
         retval = this->lb_loader_future.get();
         if (false && wait_start) {

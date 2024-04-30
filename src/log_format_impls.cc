@@ -86,11 +86,12 @@ public:
                      shared_buffer_ref& sbr,
                      bool full_message) override
     {
-        this->plf_cached_line.resize(23);
-        sql_strftime(this->plf_cached_line.data(),
-                     this->plf_cached_line.size(),
-                     ll.get_timeval(),
-                     'T');
+        this->plf_cached_line.resize(32);
+        auto tlen = sql_strftime(this->plf_cached_line.data(),
+                                 this->plf_cached_line.size(),
+                                 ll.get_timeval(),
+                                 'T');
+        this->plf_cached_line.resize(tlen);
         {
             char zone_str[16];
             exttm tmptm;
