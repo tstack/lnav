@@ -296,7 +296,7 @@ public:
 
     template<typename F>
     auto map_top_row(F func) const ->
-        typename std::result_of<F(const attr_line_t&)>::type
+        typename std::invoke_result<F, const attr_line_t&>::type
     {
         if (this->lv_top >= this->get_inner_height()) {
             return std::nullopt;
