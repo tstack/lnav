@@ -2,7 +2,7 @@
 til ^
 wsp  ^
 eof     ^
-eval -- ../test foo
+eval -- ../test/cfg/test_shlexer.sh foo
 split:
-  0 ^ -- ../test
+  0 ^ -- ../test/cfg/test_shlexer.sh
   1   ^-^ -- foo

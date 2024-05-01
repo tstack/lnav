@@ -135,8 +135,7 @@ struct logline_value_meta {
     logline_value_meta(intern_string_t name,
                        value_kind_t kind,
                        column_t col = external_column{},
-                       const std::optional<log_format*>& format
-                       = std::nullopt)
+                       const std::optional<log_format*>& format = std::nullopt)
         : lvm_name(name), lvm_kind(kind), lvm_column(col), lvm_format(format)
     {
     }
@@ -329,9 +328,9 @@ struct logline_value_stats {
 };
 
 struct logline_value_cmp {
-    explicit logline_value_cmp(
-        const intern_string_t* name = nullptr,
-        std::optional<logline_value_meta::column_t> col = std::nullopt)
+    explicit logline_value_cmp(const intern_string_t* name = nullptr,
+                               std::optional<logline_value_meta::column_t> col
+                               = std::nullopt)
         : lvc_name(name), lvc_column(col)
     {
     }
@@ -567,6 +566,7 @@ public:
     };
 
     std::string lf_description;
+    log_format* lf_root_format{this};
     uint8_t lf_mod_index{0};
     bool lf_multiline{true};
     bool lf_structured{false};
