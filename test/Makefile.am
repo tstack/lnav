@@ -348,6 +348,7 @@ dist_noinst_DATA = \
 	logfile_invalid_json.json \
 	logfile_invalid_json2.json \
 	logfile_mixed_json2.json \
+	logfile_mux_zookeeper.0 \
 	logfile_journald.json \
 	logfile_json.json \
 	logfile_json2.json \

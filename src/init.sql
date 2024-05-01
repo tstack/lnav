@@ -93,6 +93,11 @@ SELECT *
 FROM lnav_views
 WHERE name = (SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
 
+CREATE VIEW lnav_file_demux_metadata AS
+SELECT filepath, jget(content, '/demux_meta') AS metadata
+FROM lnav_file_metadata
+WHERE descriptor = 'org.lnav.piper.header';
+
 INSERT INTO lnav_example_log
 VALUES (0, NULL, '2017-02-03T04:05:06.100', '2017-02-03T04:05:06.100', 0,
         'info', 0, NULL, NULL, NULL, 'hw', 2, 1486094706000, '/tmp/log',

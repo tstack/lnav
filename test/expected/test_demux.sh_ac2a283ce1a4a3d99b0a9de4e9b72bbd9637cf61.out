@@ -1,0 +1,2 @@
+[1m[4m                                 filepath                                 [0m[1m[4m [0m[1m[4m        metadata         [0m[1m[4m [0m
+{test_dir}/logfile_mux_zookeeper.0/zk-server-default-1 {"k8s_host":"k8s-node-1"} 

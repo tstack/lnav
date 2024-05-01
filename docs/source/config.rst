@@ -334,6 +334,7 @@ has the following known capture names:
 
 If there are additional captures, they will be included
 in the file metadata that can be accessed by the
+:code:`lnav_file_demux_metadata` view of the
 :code:`lnav_file_metadata` table.
 
 Reference
