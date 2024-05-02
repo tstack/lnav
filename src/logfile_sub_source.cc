@@ -746,8 +746,7 @@ struct logline_cmp {
 };
 
 logfile_sub_source::rebuild_result
-logfile_sub_source::rebuild_index(
-    std::optional<ui_clock::time_point> deadline)
+logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 {
     if (this->tss_view == nullptr) {
         return rebuild_result::rr_no_change;
@@ -1822,7 +1821,6 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             continue;
         }
         if (strcmp(name, ":log_opid") == 0) {
-            auto opid_attr_opt = get_string_attr(sa, logline::L_OPID);
             if (values.lvv_opid_value) {
                 sqlite3_bind_text(stmt,
                                   lpc + 1,
@@ -2773,8 +2771,7 @@ logfile_sub_source::get_bookmark_metadata_context(
         }
     }
     if (vl_iter == bv.begin()) {
-        return bookmark_metadata_context{
-            std::nullopt, std::nullopt, next_line};
+        return bookmark_metadata_context{std::nullopt, std::nullopt, next_line};
     }
 
     --vl_iter;
@@ -2793,8 +2790,7 @@ logfile_sub_source::get_bookmark_metadata_context(
         }
         --vl_iter;
     }
-    return bookmark_metadata_context{
-        std::nullopt, std::nullopt, next_line};
+    return bookmark_metadata_context{std::nullopt, std::nullopt, next_line};
 }
 
 std::optional<bookmark_metadata*>

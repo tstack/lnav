@@ -3365,6 +3365,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         }
                         break;
                     }
+                    case file_format_t::MULTIPLEXED:
                     case file_format_t::UNKNOWN: {
                         auto open_res
                             = lnav::filesystem::open_file(fn, O_RDONLY);
