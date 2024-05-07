@@ -340,25 +340,74 @@ gantt_header_overlay::list_header_for_overlay(const listview_curses& lv,
 
 gantt_source::gantt_source(textview_curses& log_view,
                            logfile_sub_source& lss,
+                           textview_curses& preview_view,
                            plain_text_source& preview_source,
                            gantt_status_source& preview_status_source)
-    : gs_log_view(log_view), gs_lss(lss), gs_preview_source(preview_source),
+    : gs_log_view(log_view), gs_lss(lss), gs_preview_view(preview_view),
+      gs_preview_source(preview_source),
       gs_preview_status_source(preview_status_source)
 {
     this->tss_supports_filtering = true;
 }
 
+bool
+gantt_source::list_input_handle_key(listview_curses& lv, int ch)
+{
+    switch (ch) {
+        case 'q':
+        case KEY_ESCAPE: {
+            if (this->gs_preview_focused) {
+                this->gs_preview_focused = false;
+                this->gs_preview_view.set_height(5_vl);
+            }
+            break;
+        }
+        case '\n':
+        case '\r':
+        case KEY_ENTER: {
+            this->gs_preview_focused = !this->gs_preview_focused;
+            if (this->gs_preview_focused) {
+                auto height = this->tss_view->get_dimensions().first;
+
+                if (height > 5) {
+                    this->gs_preview_view.set_height(height - 3_vl);
+                }
+            } else {
+                this->gs_preview_view.set_height(5_vl);
+            }
+            return true;
+        }
+    }
+    if (this->gs_preview_focused) {
+        return this->gs_preview_view.handle_key(ch);
+    }
+
+    return false;
+}
+
+bool
+gantt_source::text_handle_mouse(textview_curses& tc,
+                                const listview_curses::display_line_content_t&,
+                                mouse_event& me)
+{
+    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{0, -1})) {
+        this->list_input_handle_key(tc, '\r');
+    }
+
+    return false;
+}
+
 std::pair<timeval, timeval>
 gantt_source::get_time_bounds_for(int line)
 {
-    static const int CONTEXT_LINES = 5;
-
     const auto& low_row
-        = this->gs_time_order[std::max(0, line - CONTEXT_LINES)].get();
+        = this->gs_time_order[std::max(0_vl, this->tss_view->get_top())].get();
     const auto& sel_row = this->gs_time_order[line].get();
     const auto& high_row
-        = this->gs_time_order[std::min(line + CONTEXT_LINES,
-                                       (int) this->gs_time_order.size() - 1)]
+        = this
+              ->gs_time_order[std::min(
+                  this->tss_view->get_bottom(),
+                  vis_line_t((int) this->gs_time_order.size() - 1))]
               .get();
     auto high_tv_sec = std::max(sel_row.or_value.otr_range.tr_end.tv_sec,
                                 high_row.or_value.otr_range.tr_begin.tv_sec);
@@ -813,7 +862,7 @@ gantt_source::text_line_width(textview_curses& curses)
 void
 gantt_source::text_selection_changed(textview_curses& tc)
 {
-    static const size_t MAX_PREVIEW_LINES = 5;
+    static const size_t MAX_PREVIEW_LINES = 200;
 
     auto sel = tc.get_selection();
 
@@ -847,7 +896,7 @@ gantt_source::text_selection_changed(textview_curses& tc)
     auto preview_content = attr_line_t();
     auto msgs_remaining = size_t{MAX_PREVIEW_LINES};
     auto win = this->gs_lss.window_at(low_vl.value(), high_vl);
-    auto id_hash = hash_str(row.or_name.data(), row.or_name.length());
+    auto id_hash = row.or_name.hash();
     for (const auto& msg_line : win) {
         if (!msg_line.get_logline().match_opid_hash(id_hash)) {
             continue;
@@ -860,12 +909,14 @@ gantt_source::text_selection_changed(textview_curses& tc)
         auto opid_sf = lvv.lvv_opid_value.value();
 
         if (opid_sf == row.or_name) {
-            std::vector<attr_line_t> rows_al(1);
+            std::vector<attr_line_t> rows_al(msg_line.get_line_count());
 
             this->gs_log_view.listview_value_for_rows(
                 this->gs_log_view, msg_line.get_vis_line(), rows_al);
 
-            preview_content.append(rows_al[0]).append("\n");
+            for (const auto& row_al : rows_al) {
+                preview_content.append(row_al).append("\n");
+            }
             msgs_remaining -= 1;
             if (msgs_remaining == 0) {
                 break;
@@ -873,12 +924,8 @@ gantt_source::text_selection_changed(textview_curses& tc)
         }
     }
 
-    while (msgs_remaining > 0) {
-        preview_content.append("\u2800\n");
-        msgs_remaining -= 1;
-    }
-
     this->gs_preview_source.replace_with(preview_content);
+    this->gs_preview_view.set_top(0_vl);
     this->gs_preview_status_source.get_description().set_value(
         " ID %.*s", id_sf.length(), id_sf.data());
     auto err_count = level_stats.lls_error_count;

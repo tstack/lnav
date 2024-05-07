@@ -45,6 +45,8 @@
 #include "scn/util/string_view.h"
 #include "strnatcmp.h"
 
+unsigned long hash_str(const char* str, size_t len);
+
 struct string_fragment {
     using iterator = const char*;
 
@@ -637,6 +639,11 @@ struct string_fragment {
 
     std::string to_string_with_case_style(case_style style) const;
 
+    unsigned long hash() const
+    {
+        return hash_str(this->data(), this->length());
+    }
+
     const char* sf_string;
     int sf_begin;
     int sf_end;
@@ -804,8 +811,6 @@ public:
 private:
     const intern_string* ist_interned_string;
 };
-
-unsigned long hash_str(const char* str, size_t len);
 
 namespace fmt {
 template<>

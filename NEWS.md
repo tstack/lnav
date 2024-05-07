@@ -4,6 +4,15 @@ Features:
 * Files that contain a mixture of log messages from separate
   services (e.g. docker logs) can now be automatically
   de-multiplexed into separate files that lnav can digest.
+* The `log_opid` column on log vtables can now by `UPDATE`d
+  so that you can manually set an opid on log messages that
+  don't have one.  Setting an opid allows messages to show
+  up in the gantt chart view.
+
+Interface Changes:
+* In the Gantt chart view, pressing `ENTER` will focus on
+  the preview pane so you can scroll through messages
+  with the selected Op ID.
 
 Bug Fixes:
 * Log messages in formats with custom timestamp formats were

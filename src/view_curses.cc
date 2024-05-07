@@ -784,8 +784,7 @@ view_colors::to_attrs(const lnav_theme& lt,
         reporter(&sc.sc_color, lnav::console::user_message::warning(""));
 #endif
     } else {
-        auto role_class_path
-            = ghc::filesystem::path(pp_sc.pp_path.to_string()).parent_path();
+        auto role_class_path = ghc::filesystem::path(pp_sc.pp_path.to_string());
         auto inner = role_class_path.filename().string();
         auto outer = role_class_path.parent_path().filename().string();
 

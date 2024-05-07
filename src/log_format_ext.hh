@@ -151,7 +151,8 @@ public:
     bool scan_for_partial(shared_buffer_ref& sbr,
                           size_t& len_out) const override;
 
-    void annotate(uint64_t line_number,
+    void annotate(logfile* lf,
+                  uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module = true) const override;

@@ -744,7 +744,8 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
                     ? static_cast<size_t>(-1)
                     : this->ypc_array_index[this->ypc_array_handler_count - 1];
 
-                if ((cap.sf_end != (int) this->ypc_path.size() - 1)
+                if ((!jph.is_array()
+                     || cap.sf_end != (int) this->ypc_path.size() - 1)
                     && (!jph.is_array()
                         || index != yajlpp_provider_context::nindex))
                 {

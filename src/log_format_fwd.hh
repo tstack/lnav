@@ -54,7 +54,7 @@ struct log_level_stats {
     uint32_t lls_total_count{0};
 
     log_level_stats& operator|=(const log_level_stats& rhs);
-    void update_msg_count(log_level_t lvl);
+    void update_msg_count(log_level_t lvl, int32_t amount = 1);
 };
 
 struct log_op_description {
@@ -83,6 +83,8 @@ struct opid_time_range {
     log_op_description otr_description;
     std::vector<opid_sub_time_range> otr_sub_ops;
 
+    void clear();
+
     void close_sub_ops(const string_fragment& subid);
 
     opid_time_range& operator|=(const opid_time_range& rhs);
@@ -101,6 +103,10 @@ using sub_opid_map = robin_hood::unordered_map<string_fragment,
 struct log_opid_state {
     log_opid_map los_opid_ranges;
     sub_opid_map los_sub_in_use;
+
+    log_opid_map::iterator insert_op(ArenaAlloc::Alloc<char>& alloc,
+                                     const string_fragment& opid,
+                                     const struct timeval& tv);
 
     opid_sub_time_range* sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
                                        log_opid_map::iterator& op_iter,

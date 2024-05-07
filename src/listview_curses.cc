@@ -792,7 +792,21 @@ listview_curses::shift_selection(shift_amount_t sa)
                 }
             }
         }
-        this->set_selection(new_selection);
+
+        this->set_selection_without_context(new_selection);
+        auto rows_avail = this->rows_available(this->lv_top, RD_DOWN);
+        if (height > rows_avail) {
+            rows_avail = height;
+        }
+        if (this->lv_selection > 0 && this->lv_selection <= this->lv_top) {
+            this->set_top(this->lv_selection - 1_vl);
+        } else if (rows_avail > this->lv_tail_space
+                   && (this->lv_selection > (this->lv_top + (rows_avail - 1_vl)
+                                             - this->lv_tail_space)))
+        {
+            this->set_top(this->lv_selection + this->lv_tail_space
+                          - (rows_avail - 1_vl));
+        }
     } else {
         this->shift_top(vis_line_t{offset});
     }
@@ -1095,9 +1109,21 @@ listview_curses::set_selection_without_context(vis_line_t sel)
 void
 listview_curses::set_selection(vis_line_t sel)
 {
+    auto dim = this->get_dimensions();
+    auto diff = std::optional<vis_line_t>{};
+
+    if (this->lv_selection >= 0_vl && this->lv_selection > this->lv_top
+        && this->lv_selection < this->lv_top + dim.first)
+    {
+        diff = this->lv_selection - this->lv_top;
+    }
     this->set_selection_without_context(sel);
 
-    auto dim = this->get_dimensions();
+    if (diff) {
+        auto new_top = std::max(0_vl, this->lv_selection - diff.value());
+        this->set_top(new_top);
+    }
+
     if (this->lv_selection > 0 && this->lv_selection <= this->lv_top) {
         this->set_top(this->lv_selection - 1_vl);
     } else if (dim.first > this->lv_tail_space

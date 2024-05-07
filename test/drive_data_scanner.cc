@@ -194,7 +194,7 @@ main(int argc, char* argv[])
                 string_attrs_t sa;
 
                 if (format.get() != nullptr) {
-                    format->annotate(0, sa, ll_values, false);
+                    format->annotate(nullptr, 0, sa, ll_values, false);
                     body = find_string_attr_range(sa, &SA_BODY);
                 }
 

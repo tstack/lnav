@@ -9,10 +9,12 @@ BUILTIN_LNAVSCRIPTS = \
     $(srcdir)/scripts/piper-url-handler.lnav \
     $(srcdir)/scripts/rename-stdin.lnav \
     $(srcdir)/scripts/search-for.lnav \
+    $(srcdir)/scripts/zk-set-ops.lnav \
     $()
 
 BUILTIN_SHSCRIPTS = \
     $(srcdir)/scripts/com.vmware.btresolver.py \
     $(srcdir)/scripts/dump-pid.sh \
     $(srcdir)/scripts/pcap_log-converter.sh \
+    $(srcdir)/scripts/zookeeper.sql \
     $()

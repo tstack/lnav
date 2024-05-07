@@ -226,7 +226,7 @@ log_vtab_impl::extract(logfile* lf,
     auto format = lf->get_format();
 
     this->vi_attrs.clear();
-    format->annotate(line_number, this->vi_attrs, values, false);
+    format->annotate(lf, line_number, this->vi_attrs, values, false);
 }
 
 bool
@@ -319,6 +319,12 @@ struct vtab_cursor {
         lf->read_full_message(ll, sbr);
         sbr.erase_ansi();
         this->log_msg_line = this->log_cursor.lc_curr_line;
+    }
+
+    void invalidate()
+    {
+        this->line_values.clear();
+        this->log_msg_line = -1_vl;
     }
 
     sqlite3_vtab_cursor base;
@@ -510,7 +516,7 @@ vt_next(sqlite3_vtab_cursor* cur)
     auto* vt = (log_vtab*) cur->pVtab;
     auto done = false;
 
-    vc->line_values.clear();
+    vc->invalidate();
     if (!vc->log_cursor.lc_indexed_lines.empty()) {
         vc->log_cursor.lc_curr_line = vc->log_cursor.lc_indexed_lines.back();
         vc->log_cursor.lc_indexed_lines.pop_back();
@@ -562,7 +568,7 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
     auto* vt = (log_vtab*) cur->pVtab;
     auto done = false;
 
-    vc->line_values.lvv_values.clear();
+    vc->invalidate();
     do {
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0)
@@ -1977,7 +1983,7 @@ vt_update(sqlite3_vtab* tab,
         int val = sqlite3_value_int(
             argv[2 + vt->footer_index(log_footer_columns::mark)]);
         vis_line_t vrowid(rowid);
-
+        const auto msg_info = *vt->lss->window_at(vrowid).begin();
         const auto* part_name = sqlite3_value_text(
             argv[2 + vt->footer_index(log_footer_columns::partition)]);
         const auto* log_comment = sqlite3_value_text(
@@ -1986,6 +1992,8 @@ vt_update(sqlite3_vtab* tab,
             argc, argv, 2 + vt->footer_index(log_footer_columns::tags));
         const auto log_annos = from_sqlite<std::optional<string_fragment>>()(
             argc, argv, 2 + vt->footer_index(log_footer_columns::annotations));
+        const auto log_opid = from_sqlite<std::optional<string_fragment>>()(
+            argc, argv, 2 + vt->footer_index(log_footer_columns::opid));
         bookmark_metadata tmp_bm;
 
         if (log_tags) {
@@ -2042,7 +2050,11 @@ vt_update(sqlite3_vtab* tab,
             vt->lss->set_line_meta_changed();
         }
 
-        if (!has_meta && part_name == nullptr) {
+        if (!has_meta && part_name == nullptr
+            && (!log_opid
+                || msg_info.get_values().lvv_opid_provenance
+                    == logline_value_vector::opid_provenance::file))
+        {
             vt->lss->erase_bookmark_metadata(vrowid);
         }
 
@@ -2053,6 +2065,23 @@ vt_update(sqlite3_vtab* tab,
         } else {
             vt->tc->set_user_mark(
                 &textview_curses::BM_PARTITION, vrowid, false);
+        }
+
+        if (log_opid) {
+            auto& lvv = msg_info.get_values();
+            if (!lvv.lvv_opid_value
+                || lvv.lvv_opid_provenance
+                    == logline_value_vector::opid_provenance::user)
+            {
+                msg_info.get_file_ptr()->set_logline_opid(
+                    msg_info.get_file_line_number(), log_opid.value());
+                vt->lss->set_line_meta_changed();
+            }
+        } else if (msg_info.get_values().lvv_opid_provenance
+                   == logline_value_vector::opid_provenance::user)
+        {
+            msg_info.get_file_ptr()->clear_logline_opid(
+                msg_info.get_file_line_number());
         }
 
         if (has_meta) {
@@ -2088,7 +2117,6 @@ vt_update(sqlite3_vtab* tab,
             {
                 line_meta.bm_annotations.la_pairs.clear();
             }
-
             vt->lss->set_line_meta_changed();
         }
 
@@ -2096,8 +2124,8 @@ vt_update(sqlite3_vtab* tab,
         rowid += 1;
         while ((size_t) rowid < vt->lss->text_line_count()) {
             vis_line_t vl(rowid);
-            content_line_t cl = vt->lss->at(vl);
-            logline* ll = vt->lss->find_line(cl);
+            auto cl = vt->lss->at(vl);
+            auto* ll = vt->lss->find_line(cl);
             if (ll->is_message()) {
                 break;
             }

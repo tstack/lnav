@@ -275,18 +275,26 @@ public:
 };
 
 struct logline_value_vector {
+    enum class opid_provenance {
+        none,
+        file,
+        user,
+    };
+
     void clear()
     {
         this->lvv_values.clear();
         this->lvv_sbr.disown();
         this->lvv_opid_value = std::nullopt;
+        this->lvv_opid_provenance = opid_provenance::none;
     }
 
-    logline_value_vector() {}
+    logline_value_vector() = default;
 
     logline_value_vector(const logline_value_vector& other)
         : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
-          lvv_opid_value(other.lvv_opid_value)
+          lvv_opid_value(other.lvv_opid_value),
+          lvv_opid_provenance(other.lvv_opid_provenance)
     {
     }
 
@@ -295,6 +303,7 @@ struct logline_value_vector {
         this->lvv_sbr = other.lvv_sbr.clone();
         this->lvv_values = other.lvv_values;
         this->lvv_opid_value = other.lvv_opid_value;
+        this->lvv_opid_provenance = other.lvv_opid_provenance;
 
         return *this;
     }
@@ -302,6 +311,7 @@ struct logline_value_vector {
     shared_buffer_ref lvv_sbr;
     std::vector<logline_value> lvv_values;
     std::optional<std::string> lvv_opid_value;
+    opid_provenance lvv_opid_provenance{opid_provenance::none};
 };
 
 struct logline_value_stats {
@@ -442,12 +452,11 @@ public:
      */
     virtual void scrub(std::string& line) {}
 
-    virtual void annotate(uint64_t line_number,
+    virtual void annotate(logfile* lf,
+                          uint64_t line_number,
                           string_attrs_t& sa,
                           logline_value_vector& values,
-                          bool annotate_module = true) const
-    {
-    }
+                          bool annotate_module = true) const;
 
     virtual void rewrite(exec_context& ec,
                          shared_buffer_ref& line,

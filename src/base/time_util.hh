@@ -255,6 +255,16 @@ struct time_range {
     struct timeval tr_begin;
     struct timeval tr_end;
 
+    bool valid() const { return this->tr_end.tv_sec == 0; }
+
+    void invalidate()
+    {
+        this->tr_begin.tv_sec = INT_MAX;
+        this->tr_begin.tv_usec = 0;
+        this->tr_end.tv_sec = 0;
+        this->tr_end.tv_usec = 0;
+    }
+
     bool operator<(const time_range& rhs) const
     {
         return this->tr_begin < rhs.tr_begin;

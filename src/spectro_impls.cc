@@ -299,7 +299,7 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
         lf->read_full_message(ll, values.lvv_sbr);
         values.lvv_sbr.erase_ansi();
         sa.clear();
-        format->annotate(cl, sa, values, false);
+        format->annotate(lf.get(), cl, sa, values, false);
 
         auto lv_iter = find_if(values.lvv_values.begin(),
                                values.lvv_values.end(),

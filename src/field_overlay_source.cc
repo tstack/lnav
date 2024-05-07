@@ -536,6 +536,14 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     const auto& line_meta = *(line_meta_opt.value());
     size_t filename_width = this->fos_lss.get_filename_offset();
 
+    if (!line_meta.bm_opid.empty()) {
+        auto al = attr_line_t()
+                      .append(" Op ID: "_table_header)
+                      .append(lnav::roles::identifier(line_meta.bm_opid));
+
+        dst.emplace_back(al);
+    }
+
     if (!line_meta.bm_comment.empty()) {
         const auto* lead = line_meta.bm_tags.empty() ? " \u2514 " : " \u251c ";
         md2attr_line mdal;

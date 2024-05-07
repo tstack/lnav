@@ -62,6 +62,13 @@ bind_to_sqlite(sqlite3_stmt* stmt, int index, intern_string_t ist)
 }
 
 inline int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, string_fragment sf)
+{
+    return sqlite3_bind_text(
+        stmt, index, sf.data(), sf.length(), SQLITE_TRANSIENT);
+}
+
+inline int
 bind_to_sqlite(sqlite3_stmt* stmt, int index, const std::string& str)
 {
     return sqlite3_bind_text(

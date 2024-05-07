@@ -106,8 +106,7 @@ public:
 
     void loc_history_append(vis_line_t top) override;
 
-    std::optional<vis_line_t> loc_history_back(
-        vis_line_t current_top) override;
+    std::optional<vis_line_t> loc_history_back(vis_line_t current_top) override;
 
     std::optional<vis_line_t> loc_history_forward(
         vis_line_t current_top) override;
@@ -135,7 +134,13 @@ public:
 
         vis_line_t get_vis_line() const { return this->li_line; }
 
-        const logline& get_logline() const { return *this->li_logline; }
+        size_t get_line_count() const;
+
+        uint32_t get_file_line_number() const { return this->li_line_number; }
+
+        logfile* get_file_ptr() const { return this->li_file; }
+
+        logline& get_logline() const { return *this->li_logline; }
 
         const string_attrs_t& get_attrs() const
         {
@@ -149,18 +154,40 @@ public:
             return this->li_line_values;
         }
 
+        std::optional<bookmark_metadata*> get_metadata() const;
+
+        struct metadata_edit_guard {
+            ~metadata_edit_guard();
+
+            bookmark_metadata& operator*();
+
+        private:
+            friend logmsg_info;
+
+            metadata_edit_guard(logmsg_info& li) : meg_logmsg_info(li) {}
+            logmsg_info& meg_logmsg_info;
+        };
+
+        metadata_edit_guard edit_metadata()
+        {
+            return metadata_edit_guard(*this);
+        }
+
         std::string to_string(const struct line_range& lr) const;
 
     private:
         friend iterator;
+        friend metadata_edit_guard;
 
         void next_msg();
+        void prev_msg();
         void load_msg() const;
 
         logfile_sub_source& li_source;
         vis_line_t li_line;
+        uint32_t li_line_number;
         logfile* li_file{nullptr};
-        logfile::const_iterator li_logline;
+        logfile::iterator li_logline;
         mutable string_attrs_t li_string_attrs;
         mutable logline_value_vector li_line_values;
     };
@@ -170,13 +197,21 @@ public:
         iterator(logfile_sub_source& lss, vis_line_t vl) : i_info(lss, vl) {}
 
         iterator& operator++();
+        iterator& operator--();
 
         bool operator!=(const iterator& rhs) const
         {
             return this->i_info.get_vis_line() != rhs.i_info.get_vis_line();
         }
 
+        bool operator==(const iterator& rhs) const
+        {
+            return this->i_info.get_vis_line() == rhs.i_info.get_vis_line();
+        }
+
         const logmsg_info& operator*() const { return this->i_info; }
+
+        const logmsg_info* operator->() const { return &this->i_info; }
 
     private:
         logmsg_info i_info;
@@ -474,8 +509,7 @@ public:
         return std::nullopt;
     }
 
-    std::optional<vis_line_t> find_from_time(
-        const struct timeval& start) const;
+    std::optional<vis_line_t> find_from_time(const struct timeval& start) const;
 
     std::optional<vis_line_t> find_from_time(time_t start) const
     {
@@ -527,6 +561,17 @@ public:
     logline_window window_at(vis_line_t start_vl, vis_line_t end_vl)
     {
         return logline_window(*this, start_vl, end_vl);
+    }
+
+    logline_window window_at(vis_line_t start_vl)
+    {
+        return logline_window(*this, start_vl, start_vl + 1_vl);
+    }
+
+    logline_window window_to_end(vis_line_t start_vl)
+    {
+        return logline_window(
+            *this, start_vl, vis_line_t(this->text_line_count()));
     }
 
     /**
@@ -605,8 +650,7 @@ public:
         return retval;
     }
 
-    std::optional<logfile_data*> find_data(
-        const std::shared_ptr<logfile>& lf)
+    std::optional<logfile_data*> find_data(const std::shared_ptr<logfile>& lf)
     {
         for (auto& ld : *this) {
             if (ld->ld_filter_state.lfo_filter_state.tfs_logfile == lf) {

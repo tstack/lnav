@@ -68,20 +68,23 @@ bookmark_metadata::empty(bookmark_metadata::categories props) const
 {
     switch (props) {
         case categories::any:
-            return this->bm_name.empty() && this->bm_comment.empty()
-                && this->bm_tags.empty()
+            return this->bm_name.empty() && this->bm_opid.empty()
+                && this->bm_comment.empty() && this->bm_tags.empty()
                 && this->bm_annotations.la_pairs.empty();
         case categories::partition:
             return this->bm_name.empty();
         case categories::notes:
             return this->bm_comment.empty() && this->bm_tags.empty()
                 && this->bm_annotations.la_pairs.empty();
+        case categories::opid:
+            return this->bm_opid.empty();
     }
 }
 
 void
 bookmark_metadata::clear()
 {
+    this->bm_opid.clear();
     this->bm_comment.clear();
     this->bm_tags.clear();
     this->bm_annotations.la_pairs.clear();

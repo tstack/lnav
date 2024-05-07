@@ -128,7 +128,7 @@ eval_with(logfile& lf, logfile::iterator ll)
     auto format = lf.get_format();
     string_attrs_t sa;
     auto line_number = std::distance(lf.begin(), ll);
-    format->annotate(line_number, sa, values);
+    format->annotate(&lf, line_number, sa, values);
 
     for (auto& watch_pair : exprs.e_watch_exprs) {
         if (!watch_pair.second.cwe_enabled) {

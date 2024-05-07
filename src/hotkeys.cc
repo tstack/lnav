@@ -48,58 +48,6 @@
 
 using namespace lnav::roles::literals;
 
-class logline_helper {
-public:
-    explicit logline_helper(logfile_sub_source& lss) : lh_sub_source(lss) {}
-
-    logline& move_to_msg_start()
-    {
-        content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
-        std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
-        auto ll = lf->begin() + cl;
-        while (!ll->is_message()) {
-            --ll;
-            --this->lh_current_line;
-        }
-
-        return (*lf)[cl];
-    }
-
-    logline& current_line() const
-    {
-        content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
-        std::shared_ptr<logfile> lf = this->lh_sub_source.find(cl);
-
-        return (*lf)[cl];
-    }
-
-    void annotate()
-    {
-        this->lh_string_attrs.clear();
-        this->lh_line_values.clear();
-        content_line_t cl = this->lh_sub_source.at(this->lh_current_line);
-        auto lf = this->lh_sub_source.find(cl);
-        auto ll = lf->begin() + cl;
-        auto format = lf->get_format();
-        lf->read_full_message(ll, this->lh_line_values.lvv_sbr);
-        this->lh_line_values.lvv_sbr.erase_ansi();
-        format->annotate(
-            cl, this->lh_string_attrs, this->lh_line_values, false);
-    }
-
-    std::string to_string(const struct line_range& lr) const
-    {
-        const char* start = this->lh_line_values.lvv_sbr.get_data();
-
-        return {&start[lr.lr_start], (size_t) lr.length()};
-    }
-
-    logfile_sub_source& lh_sub_source;
-    vis_line_t lh_current_line;
-    string_attrs_t lh_string_attrs;
-    logline_value_vector lh_line_values;
-};
-
 static int
 key_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
@@ -654,14 +602,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
         case 'o':
         case 'O':
             if (lss != nullptr) {
-                logline_helper start_helper(*lss);
-
-                start_helper.lh_current_line = tc->get_selection();
-                auto& start_line = start_helper.move_to_msg_start();
-                start_helper.annotate();
-
+                auto start_win = lss->window_at(tc->get_selection());
+                auto start_win_iter = start_win.begin();
                 const auto& opid_opt
-                    = start_helper.lh_line_values.lvv_opid_value;
+                    = start_win_iter->get_values().lvv_opid_value;
                 if (!opid_opt) {
                     alerter::singleton().chime(
                         "Log message does not contain an opid");
@@ -670,36 +614,33 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                             "Log message does not contain an opid")
                             .to_attr_line());
                 } else {
+                    const auto& start_line = start_win_iter->get_logline();
                     unsigned int opid_hash = start_line.get_opid();
-                    logline_helper next_helper(*lss);
+                    auto next_win
+                        = lss->window_to_end(start_win_iter->get_vis_line());
+                    auto next_win_iter = next_win.begin();
                     bool found = false;
-
-                    next_helper.lh_current_line = start_helper.lh_current_line;
 
                     while (true) {
                         if (ch == 'o') {
-                            if (++next_helper.lh_current_line
-                                >= tc->get_inner_height())
-                            {
+                            ++next_win_iter;
+                            if (next_win_iter == next_win.end()) {
                                 break;
                             }
                         } else {
-                            if (--next_helper.lh_current_line <= 0) {
+                            if (next_win_iter->get_vis_line() == 0) {
                                 break;
                             }
+                            --next_win_iter;
                         }
-                        logline& next_line = next_helper.current_line();
-                        if (!next_line.is_message()) {
+                        const auto& next_line = next_win_iter->get_logline();
+                        if (!next_line.match_opid_hash(opid_hash)) {
                             continue;
                         }
-                        if (next_line.get_opid() != opid_hash) {
-                            continue;
-                        }
-                        next_helper.annotate();
                         const auto& next_opid_opt
-                            = next_helper.lh_line_values.lvv_opid_value;
-                        if (next_opid_opt
-                            && opid_opt.value() != next_opid_opt.value())
+                            = next_win_iter->get_values().lvv_opid_value;
+                        if (!next_opid_opt
+                            || opid_opt.value() != next_opid_opt.value())
                         {
                             continue;
                         }
@@ -708,7 +649,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     }
                     if (found) {
                         lnav_data.ld_rl_view->set_value("");
-                        tc->set_selection(next_helper.lh_current_line);
+                        tc->set_selection(next_win_iter->get_vis_line());
                     } else {
                         lnav_data.ld_rl_view->set_attr_value(
                             lnav::console::user_message::error(

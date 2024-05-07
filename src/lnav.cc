@@ -1373,7 +1373,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         lnav_data.ld_gantt_details_view.set_title("gantt-details");
         lnav_data.ld_gantt_details_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_gantt_details_view.set_show_scrollbar(false);
+        lnav_data.ld_gantt_details_view.set_show_scrollbar(true);
         lnav_data.ld_gantt_details_view.set_height(5_vl);
         lnav_data.ld_gantt_details_view.set_sub_source(
             &lnav_data.ld_gantt_details_source);
@@ -2846,6 +2846,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     auto gantt_view_source
         = std::make_shared<gantt_source>(lnav_data.ld_views[LNV_LOG],
                                          lnav_data.ld_log_source,
+                                         lnav_data.ld_gantt_details_view,
                                          lnav_data.ld_gantt_details_source,
                                          lnav_data.ld_gantt_status_source);
     gantt_view_source->gs_exec_context = &lnav_data.ld_exec_context;
@@ -2854,6 +2855,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_views[LNV_GANTT]
         .set_sub_source(gantt_view_source.get())
         .set_overlay_source(gantt_header_source.get())
+        .add_input_delegate(*gantt_view_source)
         .set_tail_space(4_vl);
     lnav_data.ld_views[LNV_GANTT].set_selectable(true);
 

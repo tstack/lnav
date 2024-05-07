@@ -388,6 +388,10 @@ public:
 
     safe_opid_state& get_opids() { return this->lf_opids; }
 
+    void set_logline_opid(uint32_t line_number, string_fragment opid);
+
+    void clear_logline_opid(uint32_t line_number);
+
     void quiesce() { this->lf_line_buffer.quiesce(); }
 
     void enable_cache() { this->lf_line_buffer.enable_cache(); }
@@ -459,6 +463,10 @@ private:
     bool lf_indexing{true};
     bool lf_partial_line{false};
     bool lf_zoned_to_local_state{true};
+    robin_hood::unordered_set<string_fragment,
+                              frag_hasher,
+                              std::equal_to<string_fragment>>
+        lf_invalidated_opids;
     logline_observer* lf_logline_observer{nullptr};
     logfile_observer* lf_logfile_observer{nullptr};
     size_t lf_longest_line{0};

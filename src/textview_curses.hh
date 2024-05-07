@@ -259,8 +259,7 @@ public:
 
     virtual ~text_time_translator() = default;
 
-    virtual std::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket)
+    virtual std::optional<vis_line_t> row_for_time(struct timeval time_bucket)
         = 0;
 
     virtual std::optional<vis_line_t> row_for(const row_info& ri)
@@ -321,8 +320,7 @@ public:
 
     static std::string to_anchor_string(const std::string& raw);
 
-    virtual std::optional<vis_line_t> row_for_anchor(const std::string& id)
-        = 0;
+    virtual std::optional<vis_line_t> row_for_anchor(const std::string& id) = 0;
 
     enum class direction {
         prev,
@@ -330,7 +328,7 @@ public:
     };
 
     virtual std::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
-                                                         direction dir)
+                                                      direction dir)
     {
         return std::nullopt;
     }
@@ -346,8 +344,7 @@ public:
 
     virtual void loc_history_append(vis_line_t top) = 0;
 
-    virtual std::optional<vis_line_t> loc_history_back(
-        vis_line_t current_top)
+    virtual std::optional<vis_line_t> loc_history_back(vis_line_t current_top)
         = 0;
 
     virtual std::optional<vis_line_t> loc_history_forward(
@@ -526,8 +523,7 @@ public:
 
     void loc_history_append(vis_line_t top) override;
 
-    std::optional<vis_line_t> loc_history_back(
-        vis_line_t current_top) override;
+    std::optional<vis_line_t> loc_history_back(vis_line_t current_top) override;
 
     std::optional<vis_line_t> loc_history_forward(
         vis_line_t current_top) override;
@@ -628,8 +624,8 @@ public:
     }
 
     std::optional<std::pair<int, int>> horiz_shift(vis_line_t start,
-                                                      vis_line_t end,
-                                                      int off_start);
+                                                   vis_line_t end,
+                                                   int off_start);
 
     void set_search_action(action sa)
     {

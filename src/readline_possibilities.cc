@@ -304,7 +304,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
 
         lf->read_full_message(ll, values.lvv_sbr);
         values.lvv_sbr.erase_ansi();
-        format->annotate(cl, sa, values);
+        format->annotate(lf.get(), cl, sa, values);
         for (auto& lv : values.lvv_values) {
             if (!lv.lv_meta.lvm_struct_name.empty()) {
                 continue;

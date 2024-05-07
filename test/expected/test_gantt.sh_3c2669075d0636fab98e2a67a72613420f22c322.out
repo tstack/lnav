@@ -1,0 +1,10 @@
+[31mE[0m[31m0517 15:04:22.619632[0m[31m [0m[31m1952452992[0m[31m [0m[31mlogging_unittest.cc[0m[31m:253] [0m[31mLog every 3, iteration 19[0m
+I0517 15:04:22.619642  952452992 logging_unittest.cc:259] Log if every 1, iteration 19
+ Op ID: test1
+I0517 15:04:22.619740   52452992 logging_unittest.cc:259] Log if every 1, iteration 20
+[33mW[0m[33m0517 15:04:22.619751[0m[33m    [0m[33m2452992[0m[33m [0m[33mlogging_unittest.cc[0m[33m:263] [0m[33mlog_if this[0m
+ Op ID: test1
+I0517 15:04:22.619760     452992 logging_unittest.cc:267] array
+I0517 15:04:22.619768      52992 logging_unittest.cc:269] const array
+[31mE[0m[31m0517 15:04:22.619776[0m[31m       [0m[31m2992[0m[31m [0m[31mlogging_unittest.cc[0m[31m:271] [0m[31mfoo 1000 0000001000 3e8[0m
+ Op ID: test1

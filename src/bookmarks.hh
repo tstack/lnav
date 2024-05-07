@@ -51,6 +51,7 @@ struct bookmark_metadata {
         any = 0,
         partition = 0x01,
         notes = 0x02,
+        opid = 0x04,
     };
 
     bool has(categories props) const
@@ -71,10 +72,15 @@ struct bookmark_metadata {
             return true;
         }
 
+        if (props == categories::opid && !this->bm_opid.empty()) {
+            return true;
+        }
+
         return false;
     }
 
     std::string bm_name;
+    std::string bm_opid;
     std::string bm_comment;
     logmsg_annotations bm_annotations;
     std::vector<std::string> bm_tags;
@@ -177,8 +183,7 @@ public:
 
     static type_iterator type_end() { return get_all_types().end(); }
 
-    static std::optional<bookmark_type_t*> find_type(
-        const std::string& name);
+    static std::optional<bookmark_type_t*> find_type(const std::string& name);
 
     static std::vector<bookmark_type_t*>& get_all_types();
 

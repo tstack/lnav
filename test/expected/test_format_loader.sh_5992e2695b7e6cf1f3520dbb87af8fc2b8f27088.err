@@ -109,7 +109,7 @@
 [36m --> [0m[1m/bad_file_format1/converter/header/expr/default[0m
 [36m | [0m[37m[40m:header[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[1m[7m[31m[40m'[0m[37m[40mfoobar                  [0m
 [1m[31m✘ error[0m: A command is required when a converter is defined
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-file-format/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-file-format/format.json[0m:3
 [36m =[0m [36mhelp[0m: The converter command transforms the file into a format that can be consumed by lnav
 [1m[31m✘ error[0m: invalid line format element “[1m/bad_json_log/line-format/0/field[0m”
  [1m[31mreason[0m: “” is not a defined value
@@ -169,29 +169,29 @@
 [36m =[0m   [36mhelp[0m: every pattern should have at least one sample that it matches
 [1m[31m✘ error[0m: invalid pattern: “[1m/invalid_props_log/regex/std[0m”
  [1m[31mreason[0m: no timestamp capture found in the pattern
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [36m =[0m [36mhelp[0m: all log messages need a timestamp
 [33m⚠ warning[0m: invalid value “[1m/invalid_props_log/value/non-existent[0m”
    [33mreason[0m: no patterns have a capture named “non-existent”
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [36m =[0m   [36mnote[0m: the following captures are available:
              [1mbody[0m, [1mpid[0m, [1mtimestamp[0m
 [36m =[0m   [36mhelp[0m: values are populated from captures in patterns, so at least one pattern must have a capture with this value name
 [1m[31m✘ error[0m: invalid tag definition “[1m/invalid_props_log/tags/badtag[0m”
  [1m[31mreason[0m: tag definitions must have a non-empty pattern
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [1m[31m✘ error[0m: invalid tag definition “[1m/invalid_props_log/tags/badtag2[0m”
  [1m[31mreason[0m: tag definitions must have a non-empty pattern
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [1m[31m✘ error[0m: invalid tag definition “[1m/invalid_props_log/tags/badtag3[0m”
  [1m[31mreason[0m: tag definitions must have a non-empty pattern
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [1m[31m✘ error[0m: “[1minvalid_props_log[0m” is not a valid log format
  [1m[31mreason[0m: “[1msubsecond-unit[0m” must be set when “[1msubsecond-field[0m” is used
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [1m[31m✘ error[0m: invalid value for property “[1m/invalid_props_log/timestamp-field[0m”
  [1m[31mreason[0m: “ts” was not found in the pattern at [1m/invalid_props_log/regex/std[0m
-[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [36m =[0m [36mnote[0m: the following captures are available:
            [1mbody[0m, [1mpid[0m, [1mtimestamp[0m
 [1m[31m✘ error[0m: “not a color” is not a valid color value for property “[1m/invalid_props_log/highlights/hl1/color[0m”
@@ -202,13 +202,13 @@
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:25
 [1m[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
  [1m[31mreason[0m: no regexes specified
-[36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:3
 [1m[31m✘ error[0m: “[1mno_regexes_log[0m” is not a valid log format
  [1m[31mreason[0m: log message samples must be included in a format definition
-[36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/no-regexes/format.json[0m:3
 [1m[31m✘ error[0m: “[1mno_sample_log[0m” is not a valid log format
  [1m[31mreason[0m: log message samples must be included in a format definition
-[36m --> [0m[1m{test_dir}/bad-config/formats/no-samples/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config/formats/no-samples/format.json[0m:3
 [1m[31m✘ error[0m: invalid sample log message: "gitea  | 2023/09/24 22:15:55 cmd/web.go:223:runWeb() [I] Starting Gitea on PID: 7"
  [1m[31mreason[0m: timestamp was not captured
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-no-tscap/format.json[0m:25

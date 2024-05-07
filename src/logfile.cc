@@ -632,6 +632,39 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     static const auto& dts_cfg
         = injector::get<const date_time_scanner_ns::config&>();
 
+    if (!this->lf_invalidated_opids.empty()) {
+        auto writeOpids = this->lf_opids.writeAccess();
+
+        for (auto bm_pair : this->lf_bookmark_metadata) {
+            if (bm_pair.second.bm_opid.empty()) {
+                continue;
+            }
+
+            if (!this->lf_invalidated_opids.contains(bm_pair.second.bm_opid)) {
+                continue;
+            }
+
+            auto opid_iter
+                = writeOpids->los_opid_ranges.find(bm_pair.second.bm_opid);
+            if (opid_iter == writeOpids->los_opid_ranges.end()) {
+                log_warning("opid not in ranges: %s",
+                            bm_pair.second.bm_opid.c_str());
+                continue;
+            }
+
+            if (bm_pair.first >= this->lf_index.size()) {
+                log_warning("stale bookmark: %d", bm_pair.first);
+                continue;
+            }
+
+            auto& ll = this->lf_index[bm_pair.first];
+            opid_iter->second.otr_range.extend_to(ll.get_timeval());
+            opid_iter->second.otr_level_stats.update_msg_count(
+                ll.get_msg_level());
+        }
+        this->lf_invalidated_opids.clear();
+    }
+
     if (!this->lf_indexing) {
         if (this->lf_sort_needed) {
             this->lf_sort_needed = false;
@@ -1465,4 +1498,84 @@ logfile::dump_stats()
     log_info("  preads=%lu", buf_stats.s_preads);
     log_info("  requested_preloads=%lu", buf_stats.s_requested_preloads);
     log_info("  used_preloads=%lu", buf_stats.s_used_preloads);
+}
+
+void
+logfile::set_logline_opid(uint32_t line_number, string_fragment opid)
+{
+    if (line_number >= this->lf_index.size()) {
+        log_error("invalid line number: %s", line_number);
+        return;
+    }
+
+    auto bm_iter = this->lf_bookmark_metadata.find(line_number);
+    if (bm_iter != this->lf_bookmark_metadata.end()) {
+        if (bm_iter->second.bm_opid == opid) {
+            return;
+        }
+    }
+
+    auto write_opids = this->lf_opids.writeAccess();
+
+    if (bm_iter != this->lf_bookmark_metadata.end()
+        && !bm_iter->second.bm_opid.empty())
+    {
+        auto old_opid_iter = write_opids->los_opid_ranges.find(opid);
+        if (old_opid_iter != write_opids->los_opid_ranges.end()) {
+            this->lf_invalidated_opids.insert(old_opid_iter->first);
+        }
+    }
+
+    auto& ll = this->lf_index[line_number];
+    auto log_tv = ll.get_timeval();
+    auto opid_iter = write_opids->insert_op(this->lf_allocator, opid, log_tv);
+    auto& otr = opid_iter->second;
+
+    otr.otr_level_stats.update_msg_count(ll.get_msg_level());
+    ll.set_opid(opid.hash());
+    this->lf_bookmark_metadata[line_number].bm_opid = opid.to_string();
+}
+
+void
+logfile::clear_logline_opid(uint32_t line_number)
+{
+    if (line_number >= this->lf_index.size()) {
+        return;
+    }
+
+    auto iter = this->lf_bookmark_metadata.find(line_number);
+    if (iter == this->lf_bookmark_metadata.end()) {
+        return;
+    }
+
+    if (iter->second.bm_opid.empty()) {
+        return;
+    }
+
+    auto& ll = this->lf_index[line_number];
+    ll.set_opid(0);
+    auto opid = std::move(iter->second.bm_opid);
+    auto opid_sf = string_fragment::from_str(opid);
+
+    if (iter->second.empty(bookmark_metadata::categories::any)) {
+        this->lf_bookmark_metadata.erase(iter);
+
+        auto writeOpids = this->lf_opids.writeAccess();
+
+        auto otr_iter = writeOpids->los_opid_ranges.find(opid_sf);
+        if (otr_iter == writeOpids->los_opid_ranges.end()) {
+            return;
+        }
+
+        if (otr_iter->second.otr_range.tr_begin != ll.get_timeval()
+            && otr_iter->second.otr_range.tr_end != ll.get_timeval())
+        {
+            otr_iter->second.otr_level_stats.update_msg_count(
+                ll.get_msg_level(), -1);
+            return;
+        }
+
+        otr_iter->second.clear();
+        this->lf_invalidated_opids.insert(opid_sf);
+    }
 }

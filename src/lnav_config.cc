@@ -523,6 +523,7 @@ static const struct json_path_container keymap_def_handlers = {
                 if (ypc.ypc_parse_context != nullptr) {
                     retval.kc_cmd.pp_path
                         = ypc.ypc_parse_context->get_full_path();
+
                     retval.kc_cmd.pp_location.sl_source
                         = ypc.ypc_parse_context->ypc_source;
                     retval.kc_cmd.pp_location.sl_line_number
@@ -1906,6 +1907,7 @@ reset_config(const std::string& path)
             yajlpp_provider_context provider_ctx{&md, static_cast<size_t>(-1)};
             jph->jph_regex->capture_from(path_frag).into(md).matches();
 
+            ypc.ypc_obj_stack.pop();
             jph->jph_obj_deleter(provider_ctx, ypc.ypc_obj_stack.top());
         }
     }

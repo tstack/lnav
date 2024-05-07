@@ -5,6 +5,15 @@ export YES_COLOR=1
 export TZ=UTC
 
 run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ':switch-to-view gantt' \
+    ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
     -c ':switch-to-view gantt' \
     ${test_dir}/logfile_generic.0
 

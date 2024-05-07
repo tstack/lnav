@@ -98,6 +98,14 @@ log_op_description::operator|=(const log_op_description& rhs)
     return *this;
 }
 
+void
+opid_time_range::clear()
+{
+    this->otr_range.invalidate();
+    this->otr_sub_ops.clear();
+    this->otr_level_stats = {};
+}
+
 opid_time_range&
 opid_time_range::operator|=(const opid_time_range& rhs)
 {
@@ -123,21 +131,21 @@ opid_time_range::operator|=(const opid_time_range& rhs)
 }
 
 void
-log_level_stats::update_msg_count(log_level_t lvl)
+log_level_stats::update_msg_count(log_level_t lvl, int32_t amount)
 {
     switch (lvl) {
         case LEVEL_FATAL:
         case LEVEL_CRITICAL:
         case LEVEL_ERROR:
-            this->lls_error_count += 1;
+            this->lls_error_count += amount;
             break;
         case LEVEL_WARNING:
-            this->lls_warning_count += 1;
+            this->lls_warning_count += amount;
             break;
         default:
             break;
     }
-    this->lls_total_count += 1;
+    this->lls_total_count += amount;
 }
 
 void
@@ -148,6 +156,24 @@ opid_time_range::close_sub_ops(const string_fragment& subid)
             other_sub.ostr_open = false;
         }
     }
+}
+
+log_opid_map::iterator
+log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
+                          const string_fragment& opid,
+                          const struct timeval& log_tv)
+{
+    auto retval = this->los_opid_ranges.find(opid);
+    if (retval == this->los_opid_ranges.end()) {
+        auto opid_copy = opid.to_owned(alloc);
+        auto otr = opid_time_range{time_range{log_tv, log_tv}};
+        auto emplace_res = this->los_opid_ranges.emplace(opid_copy, otr);
+        retval = emplace_res.first;
+    } else {
+        retval->second.otr_range.extend_to(log_tv);
+    }
+
+    return retval;
 }
 
 opid_sub_time_range*
@@ -724,6 +750,24 @@ log_format::log_scanf(uint32_t line_number,
 }
 
 void
+log_format::annotate(logfile* lf,
+                     uint64_t line_number,
+                     string_attrs_t& sa,
+                     logline_value_vector& values,
+                     bool annotate_module) const
+{
+    if (lf != nullptr && !values.lvv_opid_value) {
+        const auto& bm = lf->get_bookmark_metadata();
+        auto bm_iter = bm.find(line_number);
+        if (bm_iter != bm.end() && !bm_iter->second.bm_opid.empty()) {
+            values.lvv_opid_value = bm_iter->second.bm_opid;
+            values.lvv_opid_provenance
+                = logline_value_vector::opid_provenance::user;
+        }
+    }
+}
+
+void
 log_format::check_for_new_year(std::vector<logline>& dst,
                                exttm etm,
                                struct timeval log_tv)
@@ -1249,19 +1293,12 @@ external_log_format::scan(logfile& lf,
             if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value
                     = jlu.jlu_opid_frag->to_string();
-                auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(
-                    jlu.jlu_opid_frag.value());
-                if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
-                    auto otr = opid_time_range{
-                        time_range{ll.get_timeval(), ll.get_timeval()},
-                    };
-                    auto emplace_res = sbc.sbc_opids.los_opid_ranges.emplace(
-                        jlu.jlu_opid_frag.value(), otr);
-                    opid_iter = emplace_res.first;
-                } else {
-                    opid_iter->second.otr_range.extend_to(ll.get_timeval());
-                }
-
+                this->jlf_line_values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
+                auto opid_iter
+                    = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
+                                              jlu.jlu_opid_frag.value(),
+                                              ll.get_timeval());
                 opid_iter->second.otr_level_stats.update_msg_count(
                     ll.get_msg_level());
 
@@ -1456,19 +1493,8 @@ external_log_format::scan(logfile& lf,
         }
 
         if (opid_cap && !opid_cap->empty()) {
-            auto opid_iter
-                = sbc.sbc_opids.los_opid_ranges.find(opid_cap.value());
-
-            if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
-                auto opid_copy = opid_cap->to_owned(sbc.sbc_allocator);
-                auto otr = opid_time_range{time_range{log_tv, log_tv}};
-                auto emplace_res
-                    = sbc.sbc_opids.los_opid_ranges.emplace(opid_copy, otr);
-                opid_iter = emplace_res.first;
-            } else {
-                opid_iter->second.otr_range.extend_to(log_tv);
-            }
-
+            auto opid_iter = sbc.sbc_opids.insert_op(
+                sbc.sbc_allocator, opid_cap.value(), log_tv);
             auto& otr = opid_iter->second;
 
             otr.otr_level_stats.update_msg_count(level);
@@ -1493,7 +1519,7 @@ external_log_format::scan(logfile& lf,
             }
             this->update_op_description(
                 *this->lf_opid_description_def, otr.otr_description, fpat, md);
-            opid = hash_str(opid_cap->data(), opid_cap->length());
+            opid = opid_cap->hash();
         }
 
         if (mod_cap) {
@@ -1697,7 +1723,8 @@ external_log_format::module_scan(string_fragment body_cap,
 }
 
 void
-external_log_format::annotate(uint64_t line_number,
+external_log_format::annotate(logfile* lf,
+                              uint64_t line_number,
                               string_attrs_t& sa,
                               logline_value_vector& values,
                               bool annotate_module) const
@@ -1730,7 +1757,11 @@ external_log_format::annotate(uint64_t line_number,
                         -this->jlf_cached_sub_range.lr_start);
                 }
             }
+            values.lvv_opid_value = this->jlf_line_values.lvv_opid_value;
+            values.lvv_opid_provenance
+                = this->jlf_line_values.lvv_opid_provenance;
         }
+        log_format::annotate(lf, line_number, sa, values, annotate_module);
         return;
     }
 
@@ -1785,6 +1816,8 @@ external_log_format::annotate(uint64_t line_number,
             sa.emplace_back(to_line_range(opid_cap.value()),
                             logline::L_OPID.value());
             values.lvv_opid_value = opid_cap->to_string();
+            values.lvv_opid_provenance
+                = logline_value_vector::opid_provenance::file;
         }
     }
 
@@ -1838,7 +1871,7 @@ external_log_format::annotate(uint64_t line_number,
                 = line.narrow(body_cap->sf_begin, body_cap->length());
             auto pre_mod_values_size = values.lvv_values.size();
             auto pre_mod_sa_size = sa.size();
-            mf.mf_mod_format->annotate(line_number, sa, values, false);
+            mf.mf_mod_format->annotate(lf, line_number, sa, values, false);
             for (size_t lpc = pre_mod_values_size;
                  lpc < values.lvv_values.size();
                  lpc++)
@@ -1861,6 +1894,8 @@ external_log_format::annotate(uint64_t line_number,
         }
         sa.emplace_back(lr, SA_BODY.value());
     }
+
+    log_format::annotate(lf, line_number, sa, values, annotate_module);
 }
 
 void
@@ -2044,6 +2079,8 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     if (jlu->jlu_format->elf_opid_field == field_name) {
         auto frag = string_fragment::from_bytes(str, len);
         jlu->jlu_format->jlf_line_values.lvv_opid_value = frag.to_string();
+        jlu->jlu_format->jlf_line_values.lvv_opid_provenance
+            = logline_value_vector::opid_provenance::file;
     }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];
@@ -2235,6 +2272,8 @@ external_log_format::get_subline(const logline& ll,
             if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value
                     = jlu.jlu_opid_frag->to_string();
+                this->jlf_line_values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
             }
 
             int sub_offset = this->jlf_line_format_init_count;
@@ -3884,14 +3923,14 @@ public:
             auto format = lf->get_format();
 
             return lf->read_line(lf_iter)
-                .map([this, format, cl](auto line) {
+                .map([this, format, cl, lf](auto line) {
                     logline_value_vector values;
                     struct line_range mod_name_range;
                     intern_string_t mod_name;
 
                     this->vi_attrs.clear();
                     values.lvv_sbr = line.clone();
-                    format->annotate(cl, this->vi_attrs, values, false);
+                    format->annotate(lf, cl, this->vi_attrs, values, false);
                     this->elt_container_body
                         = find_string_attr_range(this->vi_attrs, &SA_BODY);
                     if (!this->elt_container_body.is_valid()) {
@@ -3940,11 +3979,11 @@ public:
                                         this->elt_container_body.length());
             values.lvv_values.clear();
             this->elt_module_format.mf_mod_format->annotate(
-                line_number, this->vi_attrs, values, false);
+                lf, line_number, this->vi_attrs, values, false);
             values.lvv_sbr.widen(narrow_res);
         } else {
             this->vi_attrs.clear();
-            format->annotate(line_number, this->vi_attrs, values, false);
+            format->annotate(lf, line_number, this->vi_attrs, values, false);
         }
     }
 

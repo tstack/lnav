@@ -298,7 +298,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     sbr.share(this->lss_share_manager,
               (char*) this->lss_token_value.c_str(),
               this->lss_token_value.size());
-    format->annotate(line, this->lss_token_attrs, this->lss_token_values);
+    format->annotate(this->lss_token_file.get(),
+                     line,
+                     this->lss_token_attrs,
+                     this->lss_token_values);
     if (flags & RF_REWRITE) {
         exec_context ec(
             &this->lss_token_values, pretty_sql_callback, pretty_pipe_callback);
@@ -1666,7 +1669,7 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
     auto format = lf->get_format();
     string_attrs_t sa;
     auto line_number = std::distance(lf->cbegin(), ll);
-    format->annotate(line_number, sa, values);
+    format->annotate(lf, line_number, sa, values);
 
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
@@ -2217,6 +2220,8 @@ logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
             }
             value_out.append("\x1c");
         }
+        value_out.append("\x1c");
+        value_out.append(bm.bm_opid);
     }
 
     return !this->lmg_done;
@@ -2286,7 +2291,16 @@ logline_window::begin()
 logline_window::iterator
 logline_window::end()
 {
-    return {this->lw_source, this->lw_end_line};
+    auto vl = this->lw_end_line;
+    while (vl < vis_line_t(this->lw_source.text_line_count())) {
+        const auto& line = this->lw_source.find_line(this->lw_source.at(vl));
+        if (line->is_message()) {
+            break;
+        }
+        ++vl;
+    }
+
+    return {this->lw_source, vl};
 }
 
 logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
@@ -2304,6 +2318,8 @@ logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
             if (line_pair.second->is_message()) {
                 this->li_file = line_pair.first.get();
                 this->li_logline = line_pair.second;
+                this->li_line_number
+                    = std::distance(this->li_file->begin(), this->li_logline);
                 break;
             } else {
                 --vl;
@@ -2331,11 +2347,86 @@ logline_window::logmsg_info::next_msg()
         if (line_pair.second->is_message()) {
             this->li_file = line_pair.first.get();
             this->li_logline = line_pair.second;
+            this->li_line_number
+                = std::distance(this->li_file->begin(), this->li_logline);
             break;
         } else {
             ++this->li_line;
         }
     }
+}
+
+void
+logline_window::logmsg_info::prev_msg()
+{
+    this->li_file = nullptr;
+    this->li_logline = logfile::iterator{};
+    this->li_string_attrs.clear();
+    this->li_line_values.clear();
+    while (this->li_line > 0) {
+        --this->li_line;
+        auto pair_opt = this->li_source.find_line_with_file(this->li_line);
+
+        if (!pair_opt) {
+            break;
+        }
+
+        auto line_pair = pair_opt.value();
+        if (line_pair.second->is_message()) {
+            this->li_file = line_pair.first.get();
+            this->li_logline = line_pair.second;
+            this->li_line_number
+                = std::distance(this->li_file->begin(), this->li_logline);
+            break;
+        }
+    }
+}
+
+std::optional<bookmark_metadata*>
+logline_window::logmsg_info::get_metadata() const
+{
+    auto line_number = std::distance(this->li_file->begin(), this->li_logline);
+    auto& bm = this->li_file->get_bookmark_metadata();
+    auto bm_iter = bm.find(line_number);
+    if (bm_iter == bm.end()) {
+        return std::nullopt;
+    }
+    return &bm_iter->second;
+}
+
+logline_window::logmsg_info::metadata_edit_guard::~metadata_edit_guard()
+{
+    auto line_number = std::distance(this->meg_logmsg_info.li_file->begin(),
+                                     this->meg_logmsg_info.li_logline);
+    auto& bm = this->meg_logmsg_info.li_file->get_bookmark_metadata();
+    auto bm_iter = bm.find(line_number);
+    if (bm_iter != bm.end()
+        && bm_iter->second.empty(bookmark_metadata::categories::any))
+    {
+        bm.erase(bm_iter);
+    }
+}
+
+bookmark_metadata&
+logline_window::logmsg_info::metadata_edit_guard::operator*()
+{
+    auto line_number = std::distance(this->meg_logmsg_info.li_file->begin(),
+                                     this->meg_logmsg_info.li_logline);
+    auto& bm = this->meg_logmsg_info.li_file->get_bookmark_metadata();
+    return bm[line_number];
+}
+
+size_t
+logline_window::logmsg_info::get_line_count() const
+{
+    size_t retval = 1;
+    auto iter = std::next(this->li_logline);
+    while (iter != this->li_file->end() && iter->is_continued()) {
+        ++iter;
+        retval += 1;
+    }
+
+    return retval;
 }
 
 void
@@ -2355,10 +2446,20 @@ logline_window::logmsg_info::load_msg() const
         scrub_ansi_string(str, &this->li_string_attrs);
         this->li_line_values.lvv_sbr.get_metadata().m_has_ansi = false;
     }
-    format->annotate(std::distance(this->li_file->cbegin(), this->li_logline),
+    format->annotate(this->li_file,
+                     std::distance(this->li_file->begin(), this->li_logline),
                      this->li_string_attrs,
                      this->li_line_values,
                      false);
+
+    if (!this->li_line_values.lvv_opid_value) {
+        auto bm_opt = this->get_metadata();
+        if (bm_opt && !bm_opt.value()->bm_opid.empty()) {
+            this->li_line_values.lvv_opid_value = bm_opt.value()->bm_opid;
+            this->li_line_values.lvv_opid_provenance
+                = logline_value_vector::opid_provenance::user;
+        }
+    }
 }
 
 std::string
@@ -2375,6 +2476,14 @@ logline_window::iterator&
 logline_window::iterator::operator++()
 {
     this->i_info.next_msg();
+
+    return *this;
+}
+
+logline_window::iterator&
+logline_window::iterator::operator--()
+{
+    this->i_info.prev_msg();
 
     return *this;
 }
@@ -2553,17 +2662,13 @@ logfile_sub_source::text_crumbs_for_line(int line,
         scrub_ansi_string(al.get_string(), &al.al_attrs);
         sbr.erase_ansi();
     }
-    format->annotate(file_line_number, al.get_attrs(), values);
+    format->annotate(lf.get(), file_line_number, al.get_attrs(), values);
 
-    auto opid_opt = get_string_attr(al.get_attrs(), logline::L_OPID);
-    if (opid_opt && !opid_opt.value().saw_string_attr->sa_range.empty()) {
-        const auto& opid_range = opid_opt.value().saw_string_attr->sa_range;
-        const auto opid_str
-            = sbr.to_string_fragment(opid_range.lr_start, opid_range.length())
-                  .to_string();
+    if (values.lvv_opid_value) {
         crumbs.emplace_back(
-            opid_str,
-            attr_line_t().append(lnav::roles::identifier(opid_str)),
+            values.lvv_opid_value.value(),
+            attr_line_t().append(
+                lnav::roles::identifier(values.lvv_opid_value.value())),
             [this]() -> std::vector<breadcrumb::possibility> {
                 std::vector<breadcrumb::possibility> retval;
 

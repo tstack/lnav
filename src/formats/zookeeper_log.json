@@ -33,6 +33,20 @@
             "zk_notifications": {
                 "level": "info",
                 "pattern": "Notification: my state:(?<my_state>\\w+); (?<nvalues>.*)"
+            },
+            "zk_commit_session_id": {
+                "level": "info",
+                "pattern": "Committing global session (?<session_id>0x[a-zA-Z0-9]+)"
+            }
+        },
+        "tags": {
+            "zk-election-started": {
+                "description": "Tag for the start of a new election",
+                "pattern": "New election. "
+            },
+            "zk-election-finished": {
+                "description": "Tag for the completion of an election",
+                "pattern": "\\w+ - LEADER ELECTION TOOK - "
             }
         },
         "sample": [

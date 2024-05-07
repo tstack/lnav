@@ -39,12 +39,21 @@
 
 class gantt_source
     : public text_sub_source
-    , public text_time_translator {
+    , public list_input_delegate
+    , public text_time_translator
+    , public text_delegate {
 public:
     explicit gantt_source(textview_curses& log_view,
                           logfile_sub_source& lss,
+                          textview_curses& preview_view,
                           plain_text_source& preview_source,
                           gantt_status_source& preview_status_source);
+
+    bool list_input_handle_key(listview_curses& lv, int ch) override;
+
+    bool text_handle_mouse(textview_curses& tc,
+                           const listview_curses::display_line_content_t&,
+                           mouse_event& me) override;
 
     size_t text_line_count() override;
 
@@ -72,8 +81,7 @@ public:
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override;
 
-    std::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket) override;
+    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
     void rebuild_indexes();
@@ -82,6 +90,7 @@ public:
 
     textview_curses& gs_log_view;
     logfile_sub_source& gs_lss;
+    textview_curses& gs_preview_view;
     plain_text_source& gs_preview_source;
     gantt_status_source& gs_preview_status_source;
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
@@ -163,6 +172,7 @@ public:
     size_t gs_filtered_count{0};
     std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
     exec_context* gs_exec_context;
+    bool gs_preview_focused{false};
 };
 
 class gantt_header_overlay : public text_overlay_menu {

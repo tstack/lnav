@@ -302,8 +302,12 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_format_loader.sh_fca6c1fb9f3aaa69b3ffb2d1a8a86434b2f4a247.out \
     $(srcdir)/%reldir%/test_gantt.sh_3af11588ee36bab7e2caea0f7a24d3c9cafd2310.err \
     $(srcdir)/%reldir%/test_gantt.sh_3af11588ee36bab7e2caea0f7a24d3c9cafd2310.out \
+    $(srcdir)/%reldir%/test_gantt.sh_3c2669075d0636fab98e2a67a72613420f22c322.err \
+    $(srcdir)/%reldir%/test_gantt.sh_3c2669075d0636fab98e2a67a72613420f22c322.out \
     $(srcdir)/%reldir%/test_gantt.sh_63500be50fc6743d8312133e2030cbbc39ca15ff.err \
     $(srcdir)/%reldir%/test_gantt.sh_63500be50fc6743d8312133e2030cbbc39ca15ff.out \
+    $(srcdir)/%reldir%/test_gantt.sh_740f22814c5d856234c2450168dae22989c85d1e.err \
+    $(srcdir)/%reldir%/test_gantt.sh_740f22814c5d856234c2450168dae22989c85d1e.out \
     $(srcdir)/%reldir%/test_gantt.sh_74a94ee9103eac5e8e78ca57bccf49efa3827a9d.err \
     $(srcdir)/%reldir%/test_gantt.sh_74a94ee9103eac5e8e78ca57bccf49efa3827a9d.out \
     $(srcdir)/%reldir%/test_gantt.sh_83db753dd2669f801810f311e2d7d74397e10f26.err \
