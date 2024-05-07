@@ -118,4 +118,5 @@ top_status_source::update_user_msg()
             log_error("failed to execute user-message expression: %s",
                       fe.fe_msg.c_str());
         });
+    this->tss_user_msgs_stmt.reset();
 }
