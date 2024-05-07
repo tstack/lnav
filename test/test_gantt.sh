@@ -4,6 +4,7 @@ export YES_COLOR=1
 
 export TZ=UTC
 
+touch -t 200711030923 ${srcdir}/logfile_glog.0
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
     ${test_dir}/logfile_glog.0
