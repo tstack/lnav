@@ -1430,6 +1430,7 @@ set_view_mode(ln_mode_t mode)
     switch (lnav_data.ld_mode) {
         case ln_mode_t::BREADCRUMBS: {
             breadcrumb_view->blur();
+            lnav_data.ld_view_stack.set_needs_update();
             break;
         }
         default:

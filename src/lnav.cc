@@ -753,8 +753,7 @@ handle_key(int ch, const char* keyseq)
 
                 case ln_mode_t::BREADCRUMBS:
                     if (ch == '`' || !breadcrumb_view->handle_key(ch)) {
-                        lnav_data.ld_mode = ln_mode_t::PAGING;
-                        lnav_data.ld_view_stack.set_needs_update();
+                        set_view_mode(ln_mode_t::PAGING);
                         return true;
                     }
                     return true;
