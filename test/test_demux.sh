@@ -16,3 +16,9 @@ run_cap_test ${lnav_test} -n ${test_dir}/logfile_mux_zookeeper.0
 run_cap_test ${lnav_test} -n \
     -c ';SELECT * FROM lnav_file_demux_metadata' \
     ${test_dir}/logfile_mux_zookeeper.0
+
+run_cap_test ${lnav_test} -n ${test_dir}/logfile_docker_compose_with_noise.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view text' \
+    ${test_dir}/logfile_docker_compose_with_noise.0

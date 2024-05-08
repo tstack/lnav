@@ -44,12 +44,20 @@
 namespace lnav {
 namespace piper {
 
+enum class demux_output_t {
+    not_applicable,
+    signal,
+    invalid,
+};
+
 struct header {
     timeval h_ctime{};
     std::string h_name;
     std::string h_cwd;
     std::map<std::string, std::string> h_env;
     std::string h_timezone;
+    std::string h_mux_id;
+    demux_output_t h_demux_output{demux_output_t::not_applicable};
     std::map<std::string, std::string> h_demux_meta;
 
     bool operator<(const header& rhs) const

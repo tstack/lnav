@@ -266,12 +266,16 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_config.sh_eec3768ebc201ca63bca1411270965f78db1abfc.out \
     $(srcdir)/%reldir%/test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.err \
     $(srcdir)/%reldir%/test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.out \
+    $(srcdir)/%reldir%/test_demux.sh_7dd0e59e85769234d589a8a945cf2f80542b7dd1.err \
+    $(srcdir)/%reldir%/test_demux.sh_7dd0e59e85769234d589a8a945cf2f80542b7dd1.out \
     $(srcdir)/%reldir%/test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.err \
     $(srcdir)/%reldir%/test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.out \
     $(srcdir)/%reldir%/test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.err \
     $(srcdir)/%reldir%/test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.out \
     $(srcdir)/%reldir%/test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.err \
     $(srcdir)/%reldir%/test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.out \
+    $(srcdir)/%reldir%/test_demux.sh_e36b696993549ce6aa0ed6f3c2908f1410a8b467.err \
+    $(srcdir)/%reldir%/test_demux.sh_e36b696993549ce6aa0ed6f3c2908f1410a8b467.out \
     $(srcdir)/%reldir%/test_demux.sh_f8cbb968fccbc0442a831c0f69c6dbdfe5413339.err \
     $(srcdir)/%reldir%/test_demux.sh_f8cbb968fccbc0442a831c0f69c6dbdfe5413339.out \
     $(srcdir)/%reldir%/test_events.sh_09ba47d70bfca88e89faf29598c1095292cad435.err \

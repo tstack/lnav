@@ -77,7 +77,7 @@ detect_file_format(const ghc::filesystem::path& filename)
                 lb.set_fd(fd);
 
                 auto load_res = lb.load_next_line(next_range);
-                if (load_res.isOk() && lb.is_header_utf8()) {
+                if (load_res.isOk() && lb.is_header_utf8() && !lb.is_piper()) {
                     auto li = load_res.unwrap();
                     auto read_res = lb.read_range(li.li_file_range);
                     if (read_res.isOk()) {

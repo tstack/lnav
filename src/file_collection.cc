@@ -557,12 +557,6 @@ file_collection::watch_logfile(const std::string& filename,
 
                     log_info("loading new file: filename=%s", filename.c_str());
 
-                    if (loo.loo_piper && !loo.loo_piper->get_demux_id().empty())
-                    {
-                        log_info("  treating demuxed file as a log");
-                        loo.loo_text_format = text_format_t::TF_LOG;
-                    }
-
                     auto open_res = logfile::open(filename_to_open, loo);
                     if (open_res.isOk()) {
                         retval.fc_files.push_back(open_res.unwrap());

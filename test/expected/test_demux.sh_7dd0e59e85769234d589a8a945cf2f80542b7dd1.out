@@ -1,0 +1,22 @@
+2013-06-06T19:13:20.123+0000  * Serving Flask app 'app.py'
+2013-06-06T19:13:20.123+0000  * Debug mode: on
+2013-06-06T19:13:20.123+0000 WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2013-06-06T19:13:20.123+0000  * Running on all addresses (0.0.0.0)
+2013-06-06T19:13:20.123+0000  * Running on http://127.0.0.1:5000
+2013-06-06T19:13:20.123+0000  * Running on http://172.18.0.3:5000
+2013-06-06T19:13:20.123+0000 Press CTRL+C to quit
+2013-06-06T19:13:20.123+0000  * Restarting with stat
+2013-06-06T19:13:20.123+0000  * Debugger is active!
+[4m2013-06-06T19:13:20.123+0000  * Debugger PIN: 593-762-075[0m
+1:C 25 Apr 2024 05:32:35.018 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1:C 25 Apr 2024 05:32:35.018 * Redis version=7.2.0, bits=64, commit=00000000, modified=0, pid=1, just started
+[33m1[0m[33m:C [0m[33m25 Apr 2024 05:32:35.018[0m[33m # [0m[33mWarning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf[0m
+1:M 25 Apr 2024 05:32:35.019 * monotonic clock: POSIX clock_gettime
+1:M 25 Apr 2024 05:32:35.019 * Running mode=standalone, port=6379.
+1:M 25 Apr 2024 05:32:35.020 * Server initialized
+1:M 25 Apr 2024 05:32:35.022 * Ready to accept connections tcp
+1:signal-handler (25 Apr 2024 05:54:43.000) Received SIGTERM scheduling shutdown...
+1:M 25 Apr 2024 05:54:43.946 * User requested shutdown...
+1:M 25 Apr 2024 05:54:43.946 * Saving the final RDB snapshot before exiting.
+1:M 25 Apr 2024 05:54:43.948 * DB saved on disk
+[33m1[0m[33m:M [0m[33m25 Apr 2024 05:54:43.948[0m[33m # [0m[33mRedis is now ready to exit, bye bye...[0m

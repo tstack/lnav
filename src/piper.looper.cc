@@ -139,6 +139,14 @@ const json_path_container header_demux_handlers = {
         .for_field(&lnav::piper::header::h_demux_meta),
 };
 
+static const json_path_handler_base::enum_value_t demux_output_values[] = {
+    {"not_applicable", demux_output_t::not_applicable},
+    {"signal", demux_output_t::signal},
+    {"invalid", demux_output_t::invalid},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 const typed_json_path_container<lnav::piper::header> header_handlers = {
     yajlpp::property_handler("name").for_field(&lnav::piper::header::h_name),
     yajlpp::property_handler("timezone")
@@ -146,6 +154,11 @@ const typed_json_path_container<lnav::piper::header> header_handlers = {
     yajlpp::property_handler("ctime").for_field(&lnav::piper::header::h_ctime),
     yajlpp::property_handler("cwd").for_field(&lnav::piper::header::h_cwd),
     yajlpp::property_handler("env").with_children(header_env_handlers),
+    yajlpp::property_handler("mux_id").for_field(
+        &lnav::piper::header::h_mux_id),
+    yajlpp::property_handler("demux_output")
+        .with_enum_values(demux_output_values)
+        .for_field(&lnav::piper::header::h_demux_output),
     yajlpp::property_handler("demux_meta").with_children(header_demux_handlers),
 };
 
@@ -237,6 +250,7 @@ looper::loop()
         off_t os_woff{0};
         off_t os_last_woff{0};
         std::string os_hash_id;
+        std::optional<log_level_t> os_level;
     };
     robin_hood::unordered_map<string_fragment,
                               out_state,
@@ -437,6 +451,7 @@ looper::loop()
                     break;
                 }
 
+                auto demux_output = demux_output_t::not_applicable;
                 auto sbr = read_result.unwrap();
                 auto line_muxid_sf = DEFAULT_ID;
                 auto body_sf = sbr.to_string_fragment();
@@ -459,6 +474,7 @@ looper::loop()
                     }
                     demux_attempted = true;
                 }
+                std::optional<log_level_t> demux_level;
                 if (curr_demux_def
                     && curr_demux_def->dd_pattern.pp_value
                            ->capture_from(body_sf)
@@ -473,8 +489,11 @@ looper::loop()
                     if (muxid_cap_opt && body_cap_opt) {
                         line_muxid_sf = muxid_cap_opt.value();
                         body_sf = body_cap_opt.value();
+                        demux_output = demux_output_t::signal;
                     } else {
+                        demux_output = demux_output_t::invalid;
                         line_muxid_sf = OUT_OF_FRAME_ID;
+                        demux_level = LEVEL_ERROR;
                     }
                     if (curr_demux_def->dd_timestamp_capture_index >= 0) {
                         auto ts_cap_opt
@@ -484,7 +503,9 @@ looper::loop()
                         }
                     }
                 } else if (curr_demux_def) {
+                    demux_output = demux_output_t::invalid;
                     line_muxid_sf = OUT_OF_FRAME_ID;
+                    demux_level = LEVEL_ERROR;
                 }
 
                 auto outfds_iter = outfds.find(line_muxid_sf);
@@ -495,6 +516,7 @@ looper::loop()
                     outfds_iter = emp_res.first;
                     outfds_iter->second.os_hash_id
                         = hasher().update(line_muxid_sf).to_string();
+                    outfds_iter->second.os_level = demux_level;
                 }
                 auto& os = outfds_iter->second;
                 if (os.os_woff > os.os_last_woff
@@ -535,7 +557,11 @@ looper::loop()
                         this->l_name,
                         this->l_cwd,
                         this->l_env,
+                        "",
+                        line_muxid_sf.to_string(),
+                        demux_output,
                     };
+                    hdr.h_demux_output = demux_output;
                     if (!line_muxid_sf.empty()) {
                         hdr.h_name = fmt::format(
                             FMT_STRING("{}/{}"), hdr.h_name, line_muxid_sf);
@@ -599,8 +625,10 @@ looper::loop()
                 } else {
                     gettimeofday(&line_tv, nullptr);
                 }
-                wrc = write_line_meta(
-                    os.os_fd.get(), line_tv, cap.cf_level, os.os_woff);
+                wrc = write_line_meta(os.os_fd.get(),
+                                      line_tv,
+                                      os.os_level.value_or(cap.cf_level),
+                                      os.os_woff);
                 if (wrc == -1) {
                     log_error("unable to write timestamp: %s -- %s",
                               this->l_name.c_str(),

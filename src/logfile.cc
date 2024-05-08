@@ -165,6 +165,10 @@ logfile::open(ghc::filesystem::path filename,
                          phdr.h_name.c_str());
                 lf->set_filename(phdr.h_name);
                 lf->lf_valid_filename = false;
+                if (phdr.h_demux_output == lnav::piper::demux_output_t::signal)
+                {
+                    lf->lf_text_format = text_format_t::TF_LOG;
+                }
 
                 lnav::file_options fo;
                 if (!phdr.h_timezone.empty()) {

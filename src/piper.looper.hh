@@ -52,7 +52,14 @@ enum class state {
 using safe_demux_id = safe::Safe<std::string>;
 
 struct options {
+    bool o_demux{false};
     bool o_tail{true};
+
+    options& with_demux(bool v)
+    {
+        this->o_demux = v;
+        return *this;
+    }
 
     options& with_tail(bool v)
     {

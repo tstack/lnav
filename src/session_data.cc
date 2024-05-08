@@ -873,7 +873,11 @@ static const struct json_path_container view_handlers = {
                 if (view_index < LNV__MAX) {
                     return &root->sd_view_states[view_index];
                 }
-                return (view_state*) nullptr;
+
+                log_error("unknown view name: %s",
+                          ypc.get_substr("view_name").c_str());
+                static view_state dummy;
+                return &dummy;
             })
         .with_children(view_def_handlers),
 };
