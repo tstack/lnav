@@ -57,8 +57,9 @@ point::as_time_ago() const
         current_time.tv_sec = convert_log_time_to_local(current_time.tv_sec);
     }
 
-    auto delta
-        = std::chrono::seconds(current_time.tv_sec - this->p_past_point.tv_sec);
+    auto curr_secs = std::chrono::seconds(current_time.tv_sec);
+    auto past_secs = std::chrono::seconds(this->p_past_point.tv_sec);
+    auto delta = curr_secs - past_secs;
     if (delta < 0s) {
         return "in the future";
     }
@@ -113,8 +114,8 @@ point::as_precise_time_ago() const
             return fmt::format(FMT_STRING("{:2} seconds ago"), diff.tv_sec);
         }
 
-        time_t seconds = diff.tv_sec % 60;
-        time_t minutes = diff.tv_sec / 60;
+        lnav::time64_t seconds = diff.tv_sec % 60;
+        lnav::time64_t minutes = diff.tv_sec / 60;
 
         return fmt::format(FMT_STRING("{:2} minute{} and {:2} second{} ago"),
                            minutes,
