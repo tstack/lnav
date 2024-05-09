@@ -531,17 +531,17 @@ looper::loop()
                 }
 
                 if (!os.os_fd.has_value()) {
-                    auto out_path = this->l_out_dir
-                        / fmt::format(FMT_STRING("out.{}.{}"),
+                    auto tmp_path = this->l_out_dir
+                        / fmt::format(FMT_STRING("tmp.{}.{}"),
                                       os.os_hash_id,
                                       rotate_count % cfg.c_rotations);
                     log_info("creating capturing file: %s (mux_id: %.*s) -- %s",
                              this->l_name.c_str(),
                              line_muxid_sf.length(),
                              line_muxid_sf.data(),
-                             out_path.c_str());
+                             tmp_path.c_str());
                     auto create_res = lnav::filesystem::create_file(
-                        out_path, O_WRONLY | O_CLOEXEC | O_TRUNC, 0600);
+                        tmp_path, O_WRONLY | O_CLOEXEC | O_TRUNC, 0600);
                     if (create_res.isErr()) {
                         log_error("unable to open capture file: %s -- %s",
                                   this->l_name.c_str(),
@@ -609,6 +609,12 @@ looper::loop()
                         break;
                     }
                     os.os_woff += prc;
+
+                    auto out_path = this->l_out_dir
+                        / fmt::format(FMT_STRING("out.{}.{}"),
+                                      os.os_hash_id,
+                                      rotate_count % cfg.c_rotations);
+                    ghc::filesystem::rename(tmp_path, out_path);
                 }
 
                 ssize_t wrc;
