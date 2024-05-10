@@ -1,6 +1,7 @@
 #! /bin/bash
 
 unset NO_COLOR
+unset XDG_CONFIG_HOME
 
 top_srcdir="@abssrcdir@"
 export top_srcdir
