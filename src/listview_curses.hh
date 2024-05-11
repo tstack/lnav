@@ -432,7 +432,7 @@ public:
      */
     void get_dimensions(vis_line_t& height_out, unsigned long& width_out) const
     {
-        unsigned long height;
+        int height;
 
         if (this->lv_window == nullptr) {
             height_out = std::max(this->lv_height, 1_vl);
@@ -442,7 +442,9 @@ public:
                 width_out = 80;
             }
         } else {
-            getmaxyx(this->lv_window, height, width_out);
+            int width_tmp;
+            getmaxyx(this->lv_window, height, width_tmp);
+            width_out = width_tmp;
             if (this->lv_height < 0) {
                 height_out = vis_line_t(height) + this->lv_height
                     - vis_line_t(this->vc_y);

@@ -1,6 +1,6 @@
 
 #define HAVE_PCRE_H
-#define HAVE_NCURSESW_CURSES_H
+#define HAVE_CURSES_H
 #define HAVE_ARCHIVE_H 1
 #define HAVE_BZLIB_H   1
 

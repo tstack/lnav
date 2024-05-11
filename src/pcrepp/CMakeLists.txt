@@ -6,7 +6,7 @@ add_library(pcrepp STATIC
 
 target_include_directories(pcrepp PUBLIC . .. ../third-party/scnlib/include
         ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(pcrepp cppfmt pcre::libpcre pcre2::pcre2)
+target_link_libraries(pcrepp cppfmt PCRE2::8BIT PCRE2::16BIT PCRE2::32BIT PCRE2::POSIX)
 
 add_executable(test_pcre2pp test_pcre2pp.cc)
 target_include_directories(

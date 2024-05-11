@@ -45,16 +45,23 @@ set(TIME_FORMATS
         "%Y-%m-%d %H:%M:%S:%L"
         "%Y-%m-%d %H:%M:%S"
         "%Y-%m-%d %H:%M"
+        "%Y-%m-%dT%H:%M:%S %p %Z"
+        "%Y-%m-%dT%H:%M:%S.%N%z"
+        "%y-%m-%dT%H:%M:%S.%N%z"
         "%Y-%m-%dT%H:%M:%S.%f%z"
         "%y-%m-%dT%H:%M:%S.%f%z"
         "%Y-%m-%dT%H:%M:%S.%L%z"
         "%y-%m-%dT%H:%M:%S.%L%z"
         "%Y-%m-%dT%H:%M:%S%z"
-        "%Y-%m-%dT%H:%M:%S"
         "%Y-%m-%dT%H:%M:%S%z"
+        "%Y-%m-%dT%H:%M:%S"
         "%Y-%m-%dT%H:%M"
         "%Y/%m/%d %H:%M:%S %z"
         "%Y/%m/%d %H:%M:%S%z"
+        "%Y/%m/%d %H:%M:%S.%f%z"
+        "%Y/%m/%d %H:%M:%S.%f%Z"
+        "%Y/%m/%d %H:%M:%S.%f %z"
+        "%Y/%m/%d %H:%M:%S.%f %Z"
         "%Y/%m/%d %H:%M:%S.%f"
         "%Y/%m/%d %H:%M:%S.%L"
         "%Y/%m/%d %H:%M:%S"
@@ -64,6 +71,7 @@ set(TIME_FORMATS
         "%Y %b %d %H:%M:%S"
         "%a %b %d %H:%M:%S %Y"
         "%a %b %d %H:%M:%S.%f %Y"
+        "%a %b %d %H:%M:%S:%f %Y"
         "%a %b %d %H:%M:%S %Z %Y"
         "%a %b %d %I:%M:%S %p %Z %Y"
         "%a %b %d %H:%M:%S "
@@ -79,6 +87,7 @@ set(TIME_FORMATS
         "%d %b %Y %H:%M:%S.%L"
         "%d %b %Y %H:%M:%S,%L"
         "%d %b %Y %H:%M"
+        "%b-%d %H:%M:%S"
         "%b %d %H:%M:%S"
         "%b %d %k:%M:%S"
         "%b %d %l:%M:%S"
@@ -110,6 +119,7 @@ set(TIME_FORMATS
         "%Y/%m/%d"
         "%Y/%m"
         "%s.%f"
+
 )
 
 set(GEN_SRCS "")
@@ -689,7 +699,9 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party/date/include
         third-party/prqlc-c
         third-party/rapidyaml
+        ${CURSES_INCLUDE_DIRS}
 )
+target_compile_options(diag PRIVATE ${CURSES_CFLAGS})
 
 target_link_libraries(
         diag

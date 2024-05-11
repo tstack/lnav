@@ -40,6 +40,8 @@
 #    include <ncursesw.h>
 #elif defined HAVE_NCURSES_CURSES_H
 #    include <ncurses/curses.h>
+#elif defined HAVE_CURSESW_H
+#    include <cursesw.h>
 #elif defined HAVE_NCURSES_H
 #    include <ncurses.h>
 #elif defined HAVE_CURSES_H

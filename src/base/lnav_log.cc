@@ -76,6 +76,8 @@
 #elif defined HAVE_NCURSES_H
 #    include <ncurses.h>
 #    include <termcap.h>
+#elif defined HAVE_CURSESW_H
+#    include <cursesw.h>
 #elif defined HAVE_CURSES_H
 #    include <curses.h>
 #    include <termcap.h>
