@@ -586,6 +586,7 @@ distclean-local:
 	$(RM_V)rm -rf remote remote-tmp not:a:remote:dir
 	$(RM_V)rm -rf sessions
 	$(RM_V)rm -rf cfg
+	$(RM_V)rm -rf file-tz
 	$(RM_V)rm -rf tmp
 	$(RM_V)rm -rf piper-tmp
 	$(RM_V)rm -rf rotmp
