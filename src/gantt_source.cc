@@ -342,9 +342,10 @@ gantt_source::gantt_source(textview_curses& log_view,
                            logfile_sub_source& lss,
                            textview_curses& preview_view,
                            plain_text_source& preview_source,
+                           statusview_curses& preview_status_view,
                            gantt_status_source& preview_status_source)
     : gs_log_view(log_view), gs_lss(lss), gs_preview_view(preview_view),
-      gs_preview_source(preview_source),
+      gs_preview_source(preview_source), gs_preview_status_view(preview_status_view),
       gs_preview_status_source(preview_status_source)
 {
     this->tss_supports_filtering = true;
@@ -353,6 +354,7 @@ gantt_source::gantt_source(textview_curses& log_view,
 bool
 gantt_source::list_input_handle_key(listview_curses& lv, int ch)
 {
+    log_debug("list input %x", ch);
     switch (ch) {
         case 'q':
         case KEY_ESCAPE: {
@@ -360,25 +362,34 @@ gantt_source::list_input_handle_key(listview_curses& lv, int ch)
                 this->gs_preview_focused = false;
                 this->gs_preview_view.set_height(5_vl);
             }
+            this->tss_view->tc_cursor_role = role_t::VCR_CURSOR_LINE;
+            this->gs_preview_view.tc_cursor_role = role_t::VCR_DISABLED_CURSOR_LINE;
+            this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
             break;
         }
         case '\n':
         case '\r':
         case KEY_ENTER: {
             this->gs_preview_focused = !this->gs_preview_focused;
+            this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
             if (this->gs_preview_focused) {
                 auto height = this->tss_view->get_dimensions().first;
 
                 if (height > 5) {
                     this->gs_preview_view.set_height(height - 3_vl);
                 }
+                this->tss_view->tc_cursor_role = role_t::VCR_DISABLED_CURSOR_LINE;
+                this->gs_preview_view.tc_cursor_role = role_t::VCR_CURSOR_LINE;
             } else {
+                this->tss_view->tc_cursor_role = role_t::VCR_CURSOR_LINE;
+                this->gs_preview_view.tc_cursor_role = role_t::VCR_DISABLED_CURSOR_LINE;
                 this->gs_preview_view.set_height(5_vl);
             }
             return true;
         }
     }
     if (this->gs_preview_focused) {
+        log_debug("to preview");
         return this->gs_preview_view.handle_key(ch);
     }
 
@@ -400,20 +411,23 @@ gantt_source::text_handle_mouse(textview_curses& tc,
 std::pair<timeval, timeval>
 gantt_source::get_time_bounds_for(int line)
 {
-    const auto& low_row
-        = this->gs_time_order[std::max(0_vl, this->tss_view->get_top())].get();
-    const auto& sel_row = this->gs_time_order[line].get();
-    const auto& high_row
-        = this
-              ->gs_time_order[std::min(
-                  this->tss_view->get_bottom(),
-                  vis_line_t((int) this->gs_time_order.size() - 1))]
-              .get();
-    auto high_tv_sec = std::max(sel_row.or_value.otr_range.tr_end.tv_sec,
-                                high_row.or_value.otr_range.tr_begin.tv_sec);
+    auto low_index = this->tss_view->get_top();
+    auto high_index
+        = std::min(this->tss_view->get_bottom(),
+                   vis_line_t((int) this->gs_time_order.size() - 1));
+    const auto& low_row = this->gs_time_order[low_index].get();
+    const auto& high_row = this->gs_time_order[high_index].get();
+    auto low_tv_sec = low_row.or_value.otr_range.tr_begin.tv_sec;
+    auto high_tv_sec = high_row.or_value.otr_range.tr_begin.tv_sec;
 
-    auto duration = std::chrono::seconds{
-        high_tv_sec - low_row.or_value.otr_range.tr_begin.tv_sec};
+    for (auto index = low_index; index <= high_index; index += 1_vl) {
+        const auto& row = this->gs_time_order[index].get();
+
+        if (row.or_value.otr_range.tr_end.tv_sec > high_tv_sec) {
+            high_tv_sec = row.or_value.otr_range.tr_end.tv_sec;
+        }
+    }
+    auto duration = std::chrono::seconds{high_tv_sec - low_tv_sec};
     auto span_iter
         = std::upper_bound(TIME_SPANS.begin(), TIME_SPANS.end(), duration);
     if (span_iter == TIME_SPANS.end()) {
@@ -571,6 +585,7 @@ gantt_source::rebuild_indexes()
     this->gs_subid_map.clear();
     this->gs_allocator.reset();
     this->gs_preview_source.clear();
+    this->gs_preview_rows.clear();
     this->gs_preview_status_source.get_description().clear();
 
     auto min_log_time_opt = this->gs_lss.get_min_log_time();
@@ -847,6 +862,11 @@ gantt_source::time_for_row(vis_line_t row)
         }
     }
 
+    auto preview_selection = this->gs_preview_view.get_selection();
+    if (preview_selection < this->gs_preview_rows.size()) {
+        return this->gs_preview_rows[preview_selection];
+    }
+
     return row_info{
         otr.otr_range.tr_begin,
         row,
@@ -867,6 +887,7 @@ gantt_source::text_selection_changed(textview_curses& tc)
     auto sel = tc.get_selection();
 
     this->gs_preview_source.clear();
+    this->gs_preview_rows.clear();
     if (sel >= this->gs_time_order.size()) {
         return;
     }
@@ -911,10 +932,13 @@ gantt_source::text_selection_changed(textview_curses& tc)
         if (opid_sf == row.or_name) {
             std::vector<attr_line_t> rows_al(msg_line.get_line_count());
 
+            auto cl = this->gs_lss.at(msg_line.get_vis_line());
             this->gs_log_view.listview_value_for_rows(
                 this->gs_log_view, msg_line.get_vis_line(), rows_al);
 
             for (const auto& row_al : rows_al) {
+                this->gs_preview_rows.emplace_back(msg_line.get_logline().get_timeval(), cl);
+                ++cl;
                 preview_content.append(row_al).append("\n");
             }
             msgs_remaining -= 1;
@@ -925,7 +949,7 @@ gantt_source::text_selection_changed(textview_curses& tc)
     }
 
     this->gs_preview_source.replace_with(preview_content);
-    this->gs_preview_view.set_top(0_vl);
+    this->gs_preview_view.set_selection(0_vl);
     this->gs_preview_status_source.get_description().set_value(
         " ID %.*s", id_sf.length(), id_sf.data());
     auto err_count = level_stats.lls_error_count;

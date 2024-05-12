@@ -117,9 +117,6 @@
                     "command": "|lnav-copy-text",
                     "alt-msg": "${keymap_def_clear}"
                 },
-                "x67": {
-                    "command": ":goto 0"
-                },
                 "x6d": {
                     "command": ":mark",
                     "alt-msg": "${keymap_def_next_user_mark}"

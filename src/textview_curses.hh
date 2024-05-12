@@ -251,6 +251,10 @@ private:
 class text_time_translator {
 public:
     struct row_info {
+        row_info() = default;
+
+        row_info(struct timeval tv, int64_t id) : ri_time(tv), ri_id(id) {}
+
         struct timeval ri_time {
             0, 0
         };

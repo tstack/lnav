@@ -47,6 +47,7 @@ public:
                           logfile_sub_source& lss,
                           textview_curses& preview_view,
                           plain_text_source& preview_source,
+                          statusview_curses& preview_status_view,
                           gantt_status_source& preview_status_source);
 
     bool list_input_handle_key(listview_curses& lv, int ch) override;
@@ -92,6 +93,7 @@ public:
     logfile_sub_source& gs_lss;
     textview_curses& gs_preview_view;
     plain_text_source& gs_preview_source;
+    statusview_curses& gs_preview_status_view;
     gantt_status_source& gs_preview_status_source;
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
 
@@ -173,6 +175,7 @@ public:
     std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
     exec_context* gs_exec_context;
     bool gs_preview_focused{false};
+    std::vector<text_time_translator::row_info> gs_preview_rows;
 };
 
 class gantt_header_overlay : public text_overlay_menu {

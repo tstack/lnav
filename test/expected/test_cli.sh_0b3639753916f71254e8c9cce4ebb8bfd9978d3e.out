@@ -4957,11 +4957,6 @@
                     "command": ":next-mark error",
                     "alt-msg": "${keymap_def_alt_warning}"
                 },
-                "x67": {
-                    "id": "",
-                    "command": ":goto 0",
-                    "alt-msg": ""
-                },
                 "x69": {
                     "id": "",
                     "command": ":toggle-view histogram",
