@@ -202,9 +202,9 @@ public:
 rebuild_indexes_result_t
 rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
-    logfile_sub_source& lss = lnav_data.ld_log_source;
-    textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
-    textview_curses& text_view = lnav_data.ld_views[LNV_TEXT];
+    auto& lss = lnav_data.ld_log_source;
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
+    auto& text_view = lnav_data.ld_views[LNV_TEXT];
     bool scroll_downs[LNV__MAX];
     rebuild_indexes_result_t retval;
 

@@ -187,10 +187,8 @@ environ_to_map()
     return retval;
 }
 
-looper::looper(std::string name,
-               auto_fd stdout_fd,
-               auto_fd stderr_fd,
-               options opts)
+looper::
+looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd, options opts)
     : l_name(std::move(name)), l_cwd(ghc::filesystem::current_path().string()),
       l_env(environ_to_map()), l_stdout(std::move(stdout_fd)),
       l_stderr(std::move(stderr_fd)), l_options(opts)
@@ -209,7 +207,8 @@ looper::looper(std::string name,
     this->l_future = std::async(std::launch::async, [this]() { this->loop(); });
 }
 
-looper::~looper()
+looper::~
+looper()
 {
     log_info("piper destructed, shutting down: %s", this->l_name.c_str());
     this->l_looping = false;
@@ -224,10 +223,12 @@ enum class read_mode_t {
 void
 looper::loop()
 {
-    static const auto FORCE_MTIME_UPDATE_DURATION = 8h;
+    static constexpr auto FORCE_MTIME_UPDATE_DURATION = 8h;
     static const auto DEFAULT_ID = string_fragment{};
     static const auto OUT_OF_FRAME_ID
         = string_fragment::from_const("_out_of_frame_");
+    static constexpr auto FILE_TIMEOUT_BACKOFF = 30ms;
+    static constexpr auto FILE_TIMEOUT_MAX = 1000ms;
 
     const auto& cfg = injector::get<const config&>();
     struct pollfd pfd[2];
@@ -265,6 +266,7 @@ looper::loop()
     date_time_scanner dts;
     struct timeval line_tv;
     struct exttm line_tm;
+    auto file_timeout = 0ms;
 
     log_info("starting loop to capture: %s (%d %d)",
              this->l_name.c_str(),
@@ -279,9 +281,8 @@ looper::loop()
     captured_fds[1].cf_level = LEVEL_ERROR;
     auto last_write = std::chrono::system_clock::now();
     do {
-        static const auto TIMEOUT
+        static constexpr auto TIMEOUT
             = std::chrono::duration_cast<std::chrono::milliseconds>(1s).count();
-        static const auto FILE_TIMEOUT = (30ms).count();
 
         auto poll_timeout = TIMEOUT;
         size_t used_pfds = 0;
@@ -294,7 +295,7 @@ looper::loop()
 
             if (!cap.lb.is_pipe()) {
                 file_count += 1;
-                poll_timeout = FILE_TIMEOUT;
+                poll_timeout = file_timeout.count();
             } else if (!cap.lb.is_pipe_closed()) {
                 cap.pfd = &pfd[used_pfds];
                 used_pfds += 1;
@@ -435,7 +436,13 @@ looper::loop()
                                  this->l_name.c_str());
                         this->l_looping = false;
                     }
+                    if (file_count > 0 && file_timeout < FILE_TIMEOUT_MAX) {
+                        file_timeout += FILE_TIMEOUT_BACKOFF;
+                    }
                     break;
+                }
+                if (file_count > 0) {
+                    file_timeout = 0ms;
                 }
 
                 if (li.li_partial && !cap.lb.is_pipe_closed()) {
@@ -679,6 +686,7 @@ looper::loop()
                 }
             }
         }
+        this->l_loop_count += 1;
     } while (this->l_looping);
 
     log_info("exiting loop to capture: %s", this->l_name.c_str());

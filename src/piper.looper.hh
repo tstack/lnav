@@ -94,6 +94,11 @@ public:
                            this->l_out_dir.filename().string());
     }
 
+    int get_loop_count() const
+    {
+        return this->l_loop_count.load();
+    }
+
     bool is_finished() const
     {
         return this->l_future.wait_for(std::chrono::seconds(0))
@@ -125,6 +130,7 @@ private:
     options l_options;
     std::future<void> l_future;
     std::atomic<int> l_finished{0};
+    std::atomic<int> l_loop_count{0};
     safe_demux_id l_demux_id;
 };
 
@@ -151,6 +157,8 @@ public:
     std::string get_demux_id() const { return this->h_looper->get_demux_id(); }
 
     std::string get_url() const { return this->h_looper->get_url(); }
+
+    int get_loop_count() const { return this->h_looper->get_loop_count(); }
 
     bool is_finished() const { return this->h_looper->is_finished(); }
 

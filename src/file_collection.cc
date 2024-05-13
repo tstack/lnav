@@ -80,7 +80,8 @@ child_poller::poll(file_collection& fc)
         });
 }
 
-file_collection::limits_t::limits_t()
+file_collection::limits_t::
+limits_t()
 {
     static constexpr rlim_t RESERVED_FDS = 32;
 
@@ -810,6 +811,22 @@ file_collection::request_close(const std::shared_ptr<logfile>& lf)
 {
     lf->close();
     this->fc_files_generation += 1;
+}
+
+size_t
+file_collection::initial_indexing_pipers() const
+{
+    size_t retval = 0;
+
+    for (const auto& pair : this->fc_file_names) {
+        if (pair.second.loo_piper
+            && pair.second.loo_piper->get_loop_count() == 0)
+        {
+            retval += 1;
+        }
+    }
+
+    return retval;
 }
 
 size_t

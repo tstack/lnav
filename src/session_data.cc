@@ -424,7 +424,7 @@ load_time_bookmarks()
        ORDER BY same_session DESC, session_time DESC
 )";
 
-    logfile_sub_source& lss = lnav_data.ld_log_source;
+    auto& lss = lnav_data.ld_log_source;
     auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -532,6 +532,7 @@ load_time_bookmarks()
                         = (const char*) sqlite3_column_text(stmt.in(), 0);
                     const char* log_hash
                         = (const char*) sqlite3_column_text(stmt.in(), 2);
+                    int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
                     const char* part_name
                         = (const char*) sqlite3_column_text(stmt.in(), 4);
                     const char* comment
@@ -540,7 +541,6 @@ load_time_bookmarks()
                         = (const char*) sqlite3_column_text(stmt.in(), 7);
                     const auto annotations = sqlite3_column_text(stmt.in(), 8);
                     const auto log_opid = sqlite3_column_text(stmt.in(), 9);
-                    int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
                     struct timeval log_tv;
                     struct exttm log_tm;
 
