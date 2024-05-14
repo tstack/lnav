@@ -184,13 +184,15 @@ const bookmark_type_t textview_curses::BM_SEARCH("search");
 const bookmark_type_t textview_curses::BM_META("meta");
 const bookmark_type_t textview_curses::BM_PARTITION("partition");
 
-textview_curses::textview_curses()
+textview_curses::
+textview_curses()
     : lnav_config_listener(__FILE__), tc_search_action(noop_func{})
 {
     this->set_data_source(this);
 }
 
-textview_curses::~textview_curses()
+textview_curses::~
+textview_curses()
 {
     this->tc_search_action = noop_func{};
 }
@@ -471,8 +473,10 @@ textview_curses::handle_mouse(mouse_event& me)
                     if (this->vc_enabled) {
                         if (this->tc_supports_marks
                             && me.me_button == mouse_button_t::BUTTON_LEFT
-                            && me.is_modifier_pressed(
-                                mouse_event::modifier_t::shift))
+                            && (me.is_modifier_pressed(
+                                    mouse_event::modifier_t::shift)
+                                || me.is_modifier_pressed(
+                                    mouse_event::modifier_t::ctrl)))
                         {
                             this->tc_selection_start = mc.mc_line;
                         }
@@ -1296,7 +1300,8 @@ text_sub_source::text_crumbs_for_line(int line,
 {
 }
 
-logfile_filter_state::logfile_filter_state(std::shared_ptr<logfile> lf)
+logfile_filter_state::
+logfile_filter_state(std::shared_ptr<logfile> lf)
     : tfs_logfile(std::move(lf))
 {
     memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));

@@ -13,6 +13,10 @@ Interface Changes:
 * In the Gantt chart view, pressing `ENTER` will focus on
   the preview pane so you can scroll through messages
   with the selected Op ID.
+* With mouse mode enabled, `CTRL` can be used as an alternate
+  to `SHIFT` when clicking/dragging in the main view to
+  highlight lines.  A few terminals capture shift+clicks as a
+  way to select text and do not pass them to the application.
 
 Bug Fixes:
 * Log messages in formats with custom timestamp formats were

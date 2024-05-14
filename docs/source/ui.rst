@@ -428,6 +428,9 @@ elements will respond to mouse inputs:
 
 * clicking on the main view will move the cursor to the given
   row and dragging will scroll the view as needed;
+* :bkd:`Shift` (or :kbd:`CTRL`) clicking/dragging in the main
+  view will highlight lines and then toggle their bookmark
+  status on release;
 * double-clicking in the main view will select the underlying
   text and drag-selecting within a line will select the given
   text;
