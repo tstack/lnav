@@ -20,7 +20,7 @@
 # comments, and tags that were added in the session.
 
 ;SELECT total_changes() AS before_mark_changes
-;UPDATE all_logs SET log_mark = 0, log_comment = NULL, log_tags = NULL, log_annotations = '{"org.lnav.test":"Hello, <span style=\"color: #f00\">World</span>!\n"}' WHERE log_time_msecs = 1248130766000 AND log_format = 'access_log' AND log_line_hash = 'v1:3f7e0f10f2473f83b2b4eacccfc9b4e2'
+;UPDATE all_logs SET log_mark = 0, log_comment = NULL, log_tags = NULL, log_annotations = '{"org.lnav.test":"Hello, <span style=\"color: #f00\">World</span>!\n"}', log_opid = NULL WHERE log_time_msecs = 1248130766000 AND log_format = 'access_log' AND log_line_hash = 'v1:3f7e0f10f2473f83b2b4eacccfc9b4e2'
 
 ;SELECT 1 - (total_changes() - $before_mark_changes) AS failed_mark_changes
 ;SELECT echoln(printf('%sERROR%s: failed to restore %d bookmarks',

@@ -21,7 +21,7 @@
 # comments, and tags that were added in the session.
 
 ;SELECT total_changes() AS before_mark_changes
-;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL, log_annotations = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'v1:b05c1bdfe75cde41e151c89087e31951'
+;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL, log_annotations = NULL, log_opid = NULL WHERE log_time_msecs = 1248130769000 AND log_format = 'access_log' AND log_line_hash = 'v1:b05c1bdfe75cde41e151c89087e31951'
 
 ;SELECT 1 - (total_changes() - $before_mark_changes) AS failed_mark_changes
 ;SELECT echoln(printf('%sERROR%s: failed to restore %d bookmarks',

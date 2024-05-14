@@ -2768,8 +2768,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        if ((sqlite3_set_authorizer(
-                lnav_data.ld_db.in(), sqlite_authorizer, nullptr))
+        if (sqlite3_set_authorizer(
+                lnav_data.ld_db.in(), sqlite_authorizer, nullptr)
             != SQLITE_OK)
         {
             fprintf(stderr, "error: unable to attach sqlite authorizer\n");

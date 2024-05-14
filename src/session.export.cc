@@ -43,6 +43,7 @@ struct log_message_session_state {
     std::optional<std::string> lmss_comment;
     std::optional<std::string> lmss_tags;
     std::optional<std::string> lmss_annotations;
+    std::optional<std::string> lmss_opid;
     std::string lmss_hash;
 };
 
@@ -59,7 +60,8 @@ struct from_sqlite<log_message_session_state> {
             from_sqlite<std::optional<std::string>>()(argc, argv, argi + 3),
             from_sqlite<std::optional<std::string>>()(argc, argv, argi + 4),
             from_sqlite<std::optional<std::string>>()(argc, argv, argi + 5),
-            from_sqlite<std::string>()(argc, argv, argi + 6),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 6),
+            from_sqlite<std::string>()(argc, argv, argi + 7),
         };
     }
 };
@@ -180,12 +182,13 @@ export_to(FILE* file)
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     static const char* BOOKMARK_QUERY = R"(
-SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_annotations, log_line_hash
+SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_annotations, log_user_opid, log_line_hash
    FROM all_logs
    WHERE log_mark = 1 OR
          log_comment IS NOT NULL OR
          log_tags IS NOT NULL OR
-         log_annotations IS NOT NULL
+         log_annotations IS NOT NULL OR
+         (log_user_opid IS NOT NULL AND log_user_opid != '')
 )";
 
     static const char* FILTER_QUERY = R"(
@@ -325,7 +328,8 @@ SELECT content_id, format, time_offset FROM lnav_file
                                       "SET log_mark = {}, "
                                       "log_comment = {}, "
                                       "log_tags = {}, "
-                                      "log_annotations = {} "
+                                      "log_annotations = {}, "
+                                      "log_opid = {} "
                                       "WHERE log_time_msecs = {} AND "
                                       "log_format = {} AND "
                                       "log_line_hash = {}\n"),
@@ -333,6 +337,7 @@ SELECT content_id, format, time_offset FROM lnav_file
                            sqlitepp::quote(lmss.lmss_comment).in(),
                            sqlitepp::quote(lmss.lmss_tags).in(),
                            sqlitepp::quote(lmss.lmss_annotations).in(),
+                           sqlitepp::quote(lmss.lmss_opid).in(),
                            lmss.lmss_time_msecs,
                            sqlitepp::quote(lmss.lmss_format).in(),
                            sqlitepp::quote(lmss.lmss_hash).in());
