@@ -4774,7 +4774,7 @@
             "default": {
                 "x04": {
                     "id": "",
-                    "command": ";UPDATE lnav_views SET top = top + (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top + (height / 2) + (selection - top) END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET top = top + (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top + (height / 2) + (selection - top) END)",
                     "alt-msg": ""
                 },
                 "x06": {
@@ -4794,17 +4794,17 @@
                 },
                 "x15": {
                     "id": "",
-                    "command": ";UPDATE lnav_views SET top = max(0, top - (height / 2)), selection = (CASE movement WHEN 'top' THEN selection ELSE max(0, top - (height / 2) + (selection - top)) END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET top = max(0, top - (height / 2)), selection = (CASE movement WHEN 'top' THEN selection ELSE max(0, top - (height / 2) + (selection - top)) END)",
                     "alt-msg": ""
                 },
                 "x17": {
                     "id": "",
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.word-wrap', CASE jget(options, '/word-wrap', 'none') WHEN 'none' THEN 'normal' ELSE 'none' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.word-wrap', CASE jget(options, '/word-wrap', 'none') WHEN 'none' THEN 'normal' ELSE 'none' END)",
                     "alt-msg": ""
                 },
                 "x18": {
                     "id": "",
-                    "command": ";UPDATE lnav_views SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END)",
                     "alt-msg": ""
                 },
                 "x21": {
@@ -4919,7 +4919,7 @@
                 },
                 "x54": {
                     "id": "",
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.row-time-offset', CASE jget(options, '/row-time-offset', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.row-time-offset', CASE jget(options, '/row-time-offset', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END)",
                     "alt-msg": "${keymap_def_time_offset}"
                 },
                 "x55": {
@@ -4974,7 +4974,7 @@
                 },
                 "x70": {
                     "id": "",
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.row-details', CASE jget(options, '/row-details', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.row-details', CASE jget(options, '/row-details', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END)",
                     "alt-msg": ""
                 },
                 "x71": {
@@ -4999,7 +4999,7 @@
                 },
                 "x78": {
                     "id": "",
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.hidden-fields', CASE jget(options, '/hidden-fields', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.hidden-fields', CASE jget(options, '/hidden-fields', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END)",
                     "alt-msg": ""
                 },
                 "x7b": {

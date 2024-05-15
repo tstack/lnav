@@ -25,6 +25,9 @@ Bug Fixes:
   overlay for log messages.
 
 Maintenance:
+* You can now do an `UPDATE` on the `lnav_top_view` SQL view.
+  This makes it easier to write queries that manipulate the
+  current view.
 * Upgrade to C++17
 
 

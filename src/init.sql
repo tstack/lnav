@@ -93,6 +93,22 @@ SELECT *
 FROM lnav_views
 WHERE name = (SELECT name FROM lnav_view_stack ORDER BY rowid DESC LIMIT 1);
 
+CREATE TRIGGER lnav_top_view_update
+INSTEAD OF UPDATE ON lnav_top_view
+BEGIN
+  UPDATE lnav_views
+     SET top = NEW.top,
+         left = NEW.left,
+         top_time = NEW.top_time,
+         paused = NEW.paused,
+         search = NEW.search,
+         filtering = NEW.filtering,
+         movement = NEW.movement,
+         selection = NEW.selection,
+         options = NEW.options
+   WHERE name = NEW.name;
+END;
+
 CREATE VIEW lnav_file_demux_metadata AS
 SELECT filepath, jget(content, '/demux_meta') AS metadata
 FROM lnav_file_metadata
