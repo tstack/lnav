@@ -29,6 +29,7 @@
 
 #include "breadcrumb_curses.hh"
 
+#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "itertools.similar.hh"
 
@@ -39,7 +40,8 @@ breadcrumb_curses::no_op_action(breadcrumb_curses&)
 {
 }
 
-breadcrumb_curses::breadcrumb_curses()
+breadcrumb_curses::
+breadcrumb_curses()
 {
     this->bc_match_search_overlay.sos_parent = this;
     this->bc_match_source.set_reverse_selection(true);
@@ -60,7 +62,6 @@ breadcrumb_curses::do_update()
         return false;
     }
 
-    size_t crumb_index = 0;
     size_t sel_crumb_offset = 0;
     auto width = static_cast<size_t>(getmaxx(this->bc_window));
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()
@@ -72,7 +73,8 @@ breadcrumb_curses::do_update()
     }
     this->bc_displayed_crumbs.clear();
     attr_line_t crumbs_line;
-    for (const auto& crumb : crumbs) {
+    for (const auto& [crumb_index, crumb] : lnav::itertools::enumerate(crumbs))
+    {
         auto accum_width = crumbs_line.column_width();
         auto elem_width = crumb.c_display_value.column_width();
         auto is_selected = this->bc_selected_crumb
@@ -99,7 +101,6 @@ breadcrumb_curses::do_update()
                        (int) (accum_width + elem_width),
                        line_range::unit::codepoint},
             crumb_index);
-        crumb_index += 1;
         crumbs_line.append(" \uff1a"_breadcrumb);
     }
 

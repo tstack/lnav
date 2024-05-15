@@ -30,6 +30,7 @@
 #include "md2attr_line.hh"
 
 #include "base/attr_line.builder.hh"
+#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/map_util.hh"
@@ -76,10 +77,11 @@ md2attr_line::flush_footnotes()
     auto longest_foot = this->ml_footnotes
         | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
         | lnav::itertools::max(0);
-    size_t index = 1;
 
     block_text.append("\n");
-    for (auto& foot : this->ml_footnotes) {
+    for (const auto& [index, foot] :
+         lnav::itertools::enumerate(this->ml_footnotes, 1))
+    {
         auto footline
             = attr_line_t(" ")
                   .append("\u258c"_footnote_border)
@@ -91,7 +93,6 @@ md2attr_line::flush_footnotes()
                   .with_attr_for_all(SA_PREFORMATTED.value());
 
         block_text.append(footline).append("\n");
-        index += 1;
     }
     this->ml_footnotes.clear();
 }

@@ -52,6 +52,7 @@ add_library(
         is_utf8.hh
         isc.hh
         itertools.hh
+        itertools.enumerate.hh
         keycodes.hh
         line_range.hh
         lnav.console.hh
