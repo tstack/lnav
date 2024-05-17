@@ -326,7 +326,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             attr_line_t replacement;
 
             if (md[1] == "NOTE") {
-                replacement.append("\u24d8 Note\n"_footnote_border);
+                replacement.append("\u24d8  Note\n"_footnote_border);
                 border_role = role_t::VCR_FOOTNOTE_BORDER;
             } else if (md[1] == "TIP") {
                 replacement.append(":bulb:"_emoji)

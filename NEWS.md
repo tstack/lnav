@@ -8,6 +8,7 @@ Features:
   so that you can manually set an opid on log messages that
   don't have one.  Setting an opid allows messages to show
   up in the gantt chart view.
+* Add support for GitHub Markdown Alerts.
 
 Interface Changes:
 * In the Gantt chart view, pressing `ENTER` will focus on

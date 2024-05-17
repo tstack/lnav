@@ -511,6 +511,8 @@ public:
                     break;
                 }
                 case DT_DIFF_FILE_HEADER: {
+                    this->drop_open_children();
+
                     auto sf = this->sw_scanner.to_string_fragment(inner_cap);
                     auto split_res = sf.split_pair(string_fragment::tag1{'\n'});
                     auto file1 = split_res->first.consume_n(4).value();
@@ -550,6 +552,7 @@ public:
                     break;
                 }
                 case DT_DIFF_HUNK_HEADING: {
+                    this->drop_open_children();
                     this->sw_line.get_attrs().emplace_back(
                         line_range{
                             this->sw_range.lr_start
@@ -763,6 +766,16 @@ private:
         std::string is_name;
     };
 
+    void drop_open_children()
+    {
+        while (this->sw_depth > 0) {
+            this->sw_depth -= 1;
+            this->sw_interval_state.pop_back();
+            this->sw_hier_nodes.pop_back();
+            this->sw_container_tokens.pop_back();
+        }
+    }
+
     std::optional<data_scanner::capture_t> flush_values()
     {
         std::optional<data_scanner::capture_t> last_key;
@@ -899,8 +912,8 @@ metadata::possibility_provider(const std::vector<section_key_t>& path)
 namespace fmt {
 auto
 formatter<lnav::document::section_key_t>::format(
-    const lnav::document::section_key_t& key,
-    fmt::format_context& ctx) -> decltype(ctx.out()) const
+    const lnav::document::section_key_t& key, fmt::format_context& ctx)
+    -> decltype(ctx.out()) const
 {
     return key.match(
         [this, &ctx](const std::string& str) {
