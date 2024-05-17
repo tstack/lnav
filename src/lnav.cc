@@ -2321,7 +2321,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 stmt.for_each_row<std::string>(
                     [&tables_to_drop](auto table_name) {
-                        tables_to_drop.emplace_back(table_name);
+                        tables_to_drop.emplace_back(fmt::format(
+                            FMT_STRING("DROP TABLE {}"), table_name));
                         return false;
                     });
             }

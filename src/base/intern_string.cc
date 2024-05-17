@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "fmt/ostream.h"
 #include "pcrepp/pcre2pp.hh"
 #include "ww898/cp_utf8.hpp"
 #include "xxHash/xxhash.h"
@@ -416,9 +417,14 @@ string_fragment::sub_cell_range(int cell_start, int cell_end) const
                         cell_index += 1;
                     } while (cell_index % 8);
                     break;
-                default:
-                    cell_index += wcwidth(read_res.unwrap());
+                default: {
+                    auto wcw_res = wcwidth(read_res.unwrap());
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+                    cell_index += wcw_res;
                     break;
+                }
             }
         }
     }
@@ -456,9 +462,14 @@ string_fragment::column_width() const
                         retval += 1;
                     } while (retval % 8);
                     break;
-                default:
-                    retval += wcwidth(read_res.unwrap());
+                default: {
+                    auto wcw_res = wcwidth(read_res.unwrap());
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+                    retval += wcw_res;
                     break;
+                }
             }
         }
     }

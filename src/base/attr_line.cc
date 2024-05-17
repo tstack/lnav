@@ -523,7 +523,7 @@ attr_line_t::erase(size_t pos, size_t len)
 attr_line_t&
 attr_line_t::pad_to(ssize_t size)
 {
-    const auto curr_len = this->utf8_length_or_length();
+    const auto curr_len = this->column_width();
 
     if (curr_len < size) {
         this->append((size - curr_len), ' ');

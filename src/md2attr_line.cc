@@ -75,7 +75,7 @@ md2attr_line::flush_footnotes()
 
     auto& block_text = this->ml_blocks.back();
     auto longest_foot = this->ml_footnotes
-        | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
+        | lnav::itertools::map(&attr_line_t::column_width)
         | lnav::itertools::max(0);
 
     block_text.append("\n");
@@ -292,12 +292,12 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
         auto code_lines = block_text.rtrim().split_lines();
         auto max_width = code_lines
-            | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
+            | lnav::itertools::map(&attr_line_t::column_width)
             | lnav::itertools::max(0);
         attr_line_t padded_text;
 
         for (auto& line : code_lines) {
-            line.pad_to(std::max(max_width + 4, ssize_t{40}))
+            line.pad_to(std::max(max_width + 4, size_t{40}))
                 .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
             padded_text.append(lnav::string::attrs::preformatted(" "))
                 .append("\u258c"_code_border)
@@ -309,23 +309,75 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             last_block.append("\n").append(padded_text);
         }
     } else if (bl.is<block_quote>()) {
+        const static auto ALERT_TYPE = lnav::pcre2pp::code::from_const(
+            R"(^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\])");
+
         text_wrap_settings tws = {0, 60};
         attr_line_t wrapped_text;
+        auto md = ALERT_TYPE.create_match_data();
+        std::optional<role_t> border_role;
 
-        wrapped_text.append(block_text.rtrim(), &tws);
+        block_text.rtrim();
+        if (ALERT_TYPE.capture_from(block_text.al_string)
+                .into(md)
+                .matches()
+                .ignore_error())
+        {
+            attr_line_t replacement;
+
+            if (md[1] == "NOTE") {
+                replacement.append("\u24d8 Note\n"_footnote_border);
+                border_role = role_t::VCR_FOOTNOTE_BORDER;
+            } else if (md[1] == "TIP") {
+                replacement.append(":bulb:"_emoji)
+                    .append(" Tip\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_OK));
+                border_role = role_t::VCR_OK;
+            } else if (md[1] == "IMPORTANT") {
+                replacement.append(":star2:"_emoji)
+                    .append(" Important\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_INFO));
+                border_role = role_t::VCR_INFO;
+            } else if (md[1] == "WARNING") {
+                replacement.append(":warning:"_emoji)
+                    .append(" Warning\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_WARNING));
+                border_role = role_t::VCR_WARNING;
+            } else if (md[1] == "CAUTION") {
+                replacement.append(":small_red_triangle:"_emoji)
+                    .append(" Caution\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_ERROR));
+                border_role = role_t::VCR_ERROR;
+            } else {
+                ensure(0);
+            }
+            block_text.erase(md[0]->sf_begin, md[0]->length());
+            block_text.insert(0, replacement);
+        }
+
+        wrapped_text.append(block_text, &tws);
         auto quoted_lines = wrapped_text.split_lines();
         auto max_width = quoted_lines
-            | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
+            | lnav::itertools::map(&attr_line_t::column_width)
             | lnav::itertools::max(0);
         attr_line_t padded_text;
 
         for (auto& line : quoted_lines) {
             line.pad_to(max_width + 1)
                 .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_TEXT));
-            padded_text.append(" ")
-                .append("\u258c"_quote_border)
-                .append(line)
-                .append("\n");
+            padded_text.append(" ");
+            auto start_index = padded_text.length();
+            padded_text.append("\u258c"_quote_border);
+            if (border_role) {
+                padded_text.with_attr(string_attr{
+                    line_range{
+                        (int) start_index,
+                        (int) padded_text.length(),
+                    },
+                    VC_ROLE_FG.value(border_role.value()),
+                });
+            }
+            padded_text.append(line).append("\n");
         }
         if (!padded_text.empty()) {
             padded_text.with_attr_for_all(SA_PREFORMATTED.value());
@@ -341,18 +393,19 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
         block_text.append("\n");
         max_col_sizes.resize(table_detail->col_count);
         for (size_t lpc = 0; lpc < table_detail->col_count; lpc++) {
-            if (lpc < tab.t_headers.size()) {
-                max_col_sizes[lpc] = tab.t_headers[lpc].utf8_length_or_length();
-                tab.t_headers[lpc].with_attr_for_all(
-                    VC_ROLE.value(role_t::VCR_TABLE_HEADER));
+            if (lpc >= tab.t_headers.size()) {
+                continue;
             }
+            max_col_sizes[lpc] = tab.t_headers[lpc].column_width();
+            tab.t_headers[lpc].with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_TABLE_HEADER));
         }
         for (const auto& row : tab.t_rows) {
             for (size_t lpc = 0; lpc < table_detail->col_count; lpc++) {
                 if (lpc >= row.r_columns.size()) {
                     continue;
                 }
-                auto col_len = row.r_columns[lpc].utf8_length_or_length();
+                auto col_len = row.r_columns[lpc].column_width();
                 if (col_len > max_col_sizes[lpc]) {
                     max_col_sizes[lpc] = col_len;
                 }
@@ -377,19 +430,17 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             }
         }
         for (size_t line_index = 0; line_index < max_cell_lines; line_index++) {
-            size_t col = 0;
-            for (const auto& cell : cells) {
+            for (const auto& [col, cell] : lnav::itertools::enumerate(cells)) {
                 block_text.append(" ");
                 if (line_index < cell.cl_lines.size()) {
                     block_text.append(cell.cl_lines[line_index]);
                     block_text.append(
                         col_sizes[col]
-                            - cell.cl_lines[line_index].utf8_length_or_length(),
+                            - cell.cl_lines[line_index].column_width(),
                         ' ');
                 } else {
                     block_text.append(col_sizes[col], ' ');
                 }
-                col += 1;
             }
             block_text.append("\n")
                 .append(lnav::roles::table_border(
@@ -420,8 +471,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                         if (col < col_sizes.size() - 1) {
                             block_text.append(
                                 col_sizes[col]
-                                    - cell.cl_lines[line_index]
-                                          .utf8_length_or_length(),
+                                    - cell.cl_lines[line_index].column_width(),
                                 ' ');
                         }
                     } else if (col < col_sizes.size() - 1) {

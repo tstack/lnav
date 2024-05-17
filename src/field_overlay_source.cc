@@ -370,7 +370,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                     al.append(":bar_chart:"_emoji).append(" ");
                     break;
             }
-            auto prefix_len = al.utf8_length_or_length();
+            auto prefix_len = al.column_width();
             hl_range.lr_start = al.get_string().length();
             al.append(field_name);
             hl_range.lr_end = al.get_string().length();

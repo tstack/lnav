@@ -15,4 +15,4 @@ Run [37m[40m ./autogen.sh [0m if compiling from a cloned repository.
 command-line. If you're familiar with the SumoLogic query language,
 you might find this tool more comfortable to work with.
 
- ▌[1] - https://github.com/rcoh/angle-grinder 
+ [34m▌[0m[1] - https://github.com/rcoh/angle-grinder 

@@ -69,7 +69,8 @@ noinst_HEADERS = \
     string_util.hh \
     strnatcmp.h \
     time_util.hh \
-    types.hh
+    types.hh \
+    wcwidth9.h
 
 libbase_a_SOURCES = \
     ansi_scrubber.cc \

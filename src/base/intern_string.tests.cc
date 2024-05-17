@@ -184,3 +184,17 @@ World!)");
         CHECK(all_sf2 == "Hello,\nWorld!");
     }
 }
+
+TEST_CASE("string_fragment::column_width")
+{
+    {
+        const auto sf = string_fragment::from_const("Key(s)\n");
+
+        CHECK(7 == sf.column_width());
+    }
+    {
+        const auto sf = string_fragment::from_const("\u26a0");
+
+        CHECK(1 == sf.column_width());
+    }
+}

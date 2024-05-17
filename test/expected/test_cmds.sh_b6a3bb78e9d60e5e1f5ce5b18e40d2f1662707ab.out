@@ -429,7 +429,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  ▌[1mNote[0m: The regular expression format used by lnav is ]8;;http://perldoc.perl.org/perlre.html\[4mPCRE[0m]8;;\[4m[1][0m  
  ▌(Perl-Compatible Regular Expressions).                       
  ▌                                                             
- ▌ ▌[1] - http://perldoc.perl.org/perlre.html                  
+ ▌ [34m▌[0m[1] - http://perldoc.perl.org/perlre.html                  
  ▌                                                             
  ▌If the search string is not valid PCRE, a search is done for 
  ▌the exact string instead of doing a regex search.            
@@ -584,7 +584,7 @@ interactively compared to SQL.  For example, lnav can provide previews
 of different stages of the pipeline and provide more accurate
 tab-completions for the columns in the result set.
 
- ▌[1] - https://prql-lang.org 
+ [34m▌[0m[1] - https://prql-lang.org 
 
 You can execute a PRQL query in the SQL prompt.  A PRQL query starts
 with the [37m[40m from [0m keyword that specifies the table to use as a data
@@ -593,7 +593,7 @@ symbol ([37m[40m | [0m) followed by a ]8;;https://prql-lang.org/book/referen
 in the prompt, lnav will display any relevant help and preview for the
 current and previous stages of the pipeline.
 
- ▌[1] - https://prql-lang.org/book/reference/stdlib/transforms/index.html 
+ [34m▌[0m[1] - https://prql-lang.org/book/reference/stdlib/transforms/index.html 
 
 Using the top ten URLs query from earlier as an example, the PRQL
 version would be as follows:

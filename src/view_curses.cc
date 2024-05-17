@@ -70,7 +70,9 @@ const struct itimerval ui_periodic_timer::INTERVAL = {
     {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
 };
 
-ui_periodic_timer::ui_periodic_timer() : upt_counter(0)
+ui_periodic_timer::
+ui_periodic_timer()
+    : upt_counter(0)
 {
     struct sigaction sa;
 
@@ -329,10 +331,14 @@ view_curses::mvwattrline(WINDOW* window,
                                                      1 - (lpc - lpc_start));
                     }
                     auto wch = read_res.unwrap();
-                    char_index += wcwidth(wch);
+                    auto wcw_res = wcwidth(wch);
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+                    char_index += wcw_res;
                     if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
                         lr_bytes.lr_end = exp_start_index;
-                        retval.mr_chars_out = char_index - wcwidth(wch);
+                        retval.mr_chars_out = char_index - wcw_res;
                     }
                 }
                 break;
@@ -631,7 +637,9 @@ view_colors::singleton()
     return s_vc;
 }
 
-view_colors::view_colors() : vc_dyn_pairs(0)
+view_colors::
+view_colors()
+    : vc_dyn_pairs(0)
 {
     size_t color_index = 0;
     for (int z = 0; z < 6; z++) {

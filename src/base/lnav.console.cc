@@ -409,7 +409,9 @@ println(FILE* file, const attr_line_t& al)
                         default:
                             break;
                     }
-                } else if (attr.sa_type == &VC_ROLE) {
+                } else if (attr.sa_type == &VC_ROLE
+                           || attr.sa_type == &VC_ROLE_FG)
+                {
                     auto saw = string_attr_wrapper<role_t>(&attr);
                     auto role = saw.get();
 
@@ -440,6 +442,9 @@ println(FILE* file, const attr_line_t& al)
                         case role_t::VCR_OK:
                             line_style |= fmt::emphasis::bold
                                 | fmt::fg(fmt::terminal_color::green);
+                            break;
+                        case role_t::VCR_FOOTNOTE_BORDER:
+                            line_style |= fmt::fg(fmt::terminal_color::blue);
                             break;
                         case role_t::VCR_INFO:
                         case role_t::VCR_STATUS:

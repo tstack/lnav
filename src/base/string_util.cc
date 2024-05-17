@@ -37,6 +37,7 @@
 #include "config.h"
 #include "is_utf8.hh"
 #include "lnav_log.hh"
+#include "wcwidth9.h"
 
 void
 scrub_to_utf8(char* buffer, size_t length)
@@ -422,3 +423,9 @@ quote(string_fragment str)
 
 }  // namespace pcre2pp
 }  // namespace lnav
+
+int
+wcwidth(wchar_t wc)
+{
+    return wcwidth9(wc);
+}
