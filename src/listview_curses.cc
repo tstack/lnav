@@ -45,7 +45,11 @@ using namespace std::chrono_literals;
 
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
-listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
+listview_curses::
+listview_curses()
+    : lv_scroll(noop_func{})
+{
+}
 
 bool
 listview_curses::contains(int x, int y) const
@@ -1109,6 +1113,13 @@ listview_curses::set_selection_without_context(vis_line_t sel)
 void
 listview_curses::set_selection(vis_line_t sel)
 {
+    if (!this->lv_selectable) {
+        if (sel >= 0_vl) {
+            this->set_top(sel);
+        }
+        return;
+    }
+
     auto dim = this->get_dimensions();
     auto diff = std::optional<vis_line_t>{};
 
