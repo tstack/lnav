@@ -7,23 +7,27 @@ Features:
 * The `log_opid` column on log vtables can now by `UPDATE`d
   so that you can manually set an opid on log messages that
   don't have one.  Setting an opid allows messages to show
-  up in the gantt chart view.
+  up in the Gantt chart view.
 * Add support for GitHub Markdown Alerts.
 
 Interface Changes:
 * In the Gantt chart view, pressing `ENTER` will focus on
-  the preview pane so you can scroll through messages
+  the preview pane, so you can scroll through messages
   with the selected Op ID.
 * With mouse mode enabled, `CTRL` can be used as an alternate
   to `SHIFT` when clicking/dragging in the main view to
   highlight lines.  A few terminals capture shift+clicks as a
   way to select text and do not pass them to the application.
+* Clicking on an internal link in a Markdown document will move 
+  to that section.
 
 Bug Fixes:
 * Log messages in formats with custom timestamp formats were
   not being converted to the local timezone.
 * The timezone offset is now shown in the parser details
   overlay for log messages.
+* If a theme does not define `cursor-line` or `selected-text`
+  styles, the styles from the default theme will be used.
 
 Maintenance:
 * You can now do an `UPDATE` on the `lnav_top_view` SQL view.

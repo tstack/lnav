@@ -49,7 +49,8 @@ to_text_line(const std::vector<attr_line_t>& lines)
            });
 }
 
-plain_text_source::plain_text_source(const std::string& text)
+plain_text_source::
+plain_text_source(const std::string& text)
 {
     size_t start = 0, end;
 
@@ -64,12 +65,14 @@ plain_text_source::plain_text_source(const std::string& text)
     this->tds_longest_line = this->compute_longest_line();
 }
 
-plain_text_source::plain_text_source(const std::vector<std::string>& text_lines)
+plain_text_source::
+plain_text_source(const std::vector<std::string>& text_lines)
 {
     this->replace_with(text_lines);
 }
 
-plain_text_source::plain_text_source(const std::vector<attr_line_t>& text_lines)
+plain_text_source::
+plain_text_source(const std::vector<attr_line_t>& text_lines)
     : tds_lines(to_text_line(text_lines))
 {
     this->tds_longest_line = this->compute_longest_line();
@@ -432,8 +435,7 @@ plain_text_source::row_for_anchor(const std::string& id)
         meta.m_sections_root.get(),
         [this, &id, &retval](const lnav::document::hier_node* node) {
             for (const auto& child_pair : node->hn_named_children) {
-                const auto& child_anchor
-                    = text_anchors::to_anchor_string(child_pair.first);
+                const auto& child_anchor = to_anchor_string(child_pair.first);
 
                 if (child_anchor != id) {
                     continue;
@@ -456,8 +458,7 @@ plain_text_source::get_anchors()
         this->tds_doc_sections.m_sections_root.get(),
         [&retval](const lnav::document::hier_node* node) {
             for (const auto& child_pair : node->hn_named_children) {
-                retval.emplace(
-                    text_anchors::to_anchor_string(child_pair.first));
+                retval.emplace(to_anchor_string(child_pair.first));
             }
         });
 
@@ -488,8 +489,7 @@ plain_text_source::anchor_for_row(vis_line_t vl)
          || this->tds_text_format == text_format_t::TF_MARKDOWN)
         && path_for_line.back().is<std::string>())
     {
-        return text_anchors::to_anchor_string(
-            path_for_line.back().get<std::string>());
+        return to_anchor_string(path_for_line.back().get<std::string>());
     }
 
     auto comps = path_for_line | lnav::itertools::map([](const auto& elem) {
@@ -505,7 +505,7 @@ plain_text_source::anchor_for_row(vis_line_t vl)
 }
 
 std::optional<vis_line_t>
-plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
+plain_text_source::adjacent_anchor(vis_line_t vl, direction dir)
 {
     if (vl > this->tds_lines.size()
         || this->tds_doc_sections.m_sections_root == nullptr)
@@ -525,14 +525,14 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
         }
 
         switch (dir) {
-            case text_anchors::direction::prev: {
+            case direction::prev: {
                 if (neighbors_res->cnr_previous) {
                     return this->line_for_offset(
                         neighbors_res->cnr_previous.value()->hn_start);
                 }
                 break;
             }
-            case text_anchors::direction::next: {
+            case direction::next: {
                 if (neighbors_res->cnr_next) {
                     return this->line_for_offset(
                         neighbors_res->cnr_next.value()->hn_start);
@@ -585,14 +585,14 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     }
 
     switch (dir) {
-        case text_anchors::direction::prev: {
+        case direction::prev: {
             if (neighbors_res->cnr_previous) {
                 return this->line_for_offset(
                     neighbors_res->cnr_previous.value()->hn_start);
             }
             break;
         }
-        case text_anchors::direction::next: {
+        case direction::next: {
             if (neighbors_res->cnr_next) {
                 return this->line_for_offset(
                     neighbors_res->cnr_next.value()->hn_start);

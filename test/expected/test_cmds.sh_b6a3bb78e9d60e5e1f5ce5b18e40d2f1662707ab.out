@@ -426,7 +426,7 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
  CTRL+], ESCAPE       Abort command-line entry started with [37m[40m / [0m, [37m[40m : [0m,
                       [37m[40m ; [0m, or [37m[40m | [0m.
 
- ▌[1mNote[0m: The regular expression format used by lnav is ]8;;http://perldoc.perl.org/perlre.html\[4mPCRE[0m]8;;\[4m[1][0m  
+ ▌[1mNote[0m: The regular expression format used by lnav is ]8;;http://perldoc.perl.org/perlre.html\[4mPCRE[0m]8;;\¹    
  ▌(Perl-Compatible Regular Expressions).                       
  ▌                                                             
  ▌ [34m▌[0m[1] - http://perldoc.perl.org/perlre.html                  
@@ -577,7 +577,7 @@ example of a top ten query into the "/tmp/topten.db" file, you can do:
 
 [4mPRQL Support[0m
 
-The Pipelined Relational Query Language ]8;;https://prql-lang.org\[4m(PRQL)[0m]8;;\[4m[1][0m is an alternative
+The Pipelined Relational Query Language ]8;;https://prql-lang.org\[4m(PRQL)[0m]8;;\¹ is an alternative
 database query language that compiles to SQL.  The main advantage of
 PRQL, in the context of lnav, is that it is easier to work with
 interactively compared to SQL.  For example, lnav can provide previews
@@ -589,8 +589,8 @@ tab-completions for the columns in the result set.
 You can execute a PRQL query in the SQL prompt.  A PRQL query starts
 with the [37m[40m from [0m keyword that specifies the table to use as a data
 source.  The next stage of a pipeline is started by entering a pipe
-symbol ([37m[40m | [0m) followed by a ]8;;https://prql-lang.org/book/reference/stdlib/transforms/index.html\[4mPRQL transform[0m]8;;\[4m[1][0m. As you build the query
-in the prompt, lnav will display any relevant help and preview for the
+symbol ([37m[40m | [0m) followed by a ]8;;https://prql-lang.org/book/reference/stdlib/transforms/index.html\[4mPRQL transform[0m]8;;\¹. As you build the query in
+the prompt, lnav will display any relevant help and preview for the
 current and previous stages of the pipeline.
 
  [34m▌[0m[1] - https://prql-lang.org/book/reference/stdlib/transforms/index.html 

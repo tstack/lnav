@@ -38,6 +38,7 @@
 #include "base/time_util.hh"
 #include "config.h"
 #include "data_scanner.hh"
+#include "date/solar_hijri.h"
 #include "fmt/format.h"
 #include "lnav_config.hh"
 #include "log_format_fwd.hh"
@@ -692,6 +693,29 @@ textview_curses::handle_mouse(mouse_event& me)
                     this->reload_data();
                 }
                 this->tc_selection_start = std::nullopt;
+            }
+            if (me.me_button == mouse_button_t::BUTTON_LEFT
+                && mouse_line.is<main_content>())
+            {
+                const auto& [mc_line] = mouse_line.get<main_content>();
+                attr_line_t al;
+
+                this->textview_value_for_row(mc_line, al);
+                auto get_res = get_string_attr(al.get_attrs(),
+                                               &VC_HYPERLINK,
+                                               this->lv_left + me.me_press_x);
+                if (get_res) {
+                    auto href = get_res.value()->sa_value.get<std::string>();
+
+                    if (startswith(href, "#")) {
+                        auto* ta
+                            = dynamic_cast<text_anchors*>(this->tc_sub_source);
+                        if (ta != nullptr) {
+                            ta->row_for_anchor(href) |
+                                [this](auto row) { this->set_selection(row); };
+                        }
+                    }
+                }
             }
             if (this->tc_delegate != nullptr) {
                 this->tc_delegate->text_handle_mouse(*this, mouse_line, me);

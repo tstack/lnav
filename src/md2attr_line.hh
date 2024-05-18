@@ -91,6 +91,7 @@ private:
     std::vector<std::pair<std::string, size_t>> ml_html_starts;
     std::vector<attr_line_t> ml_footnotes;
     int32_t ml_code_depth{0};
+    ssize_t ml_last_superscript_index{-1};
 };
 
 #endif

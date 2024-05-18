@@ -333,6 +333,36 @@ scrub_ws(const char* in, ssize_t len)
     return retval;
 }
 
+static constexpr const char* const SUPERSCRIPT_NUMS[] = {
+    "⁰",
+    "¹",
+    "²",
+    "³",
+    "⁴",
+    "⁵",
+    "⁶",
+    "⁷",
+    "⁸",
+    "⁹",
+};
+
+std::string
+to_superscript(const std::string& in)
+{
+    std::string retval;
+    for (const auto ch : in) {
+        if (isdigit(ch)) {
+            auto index = ch - '0';
+
+            retval.append(SUPERSCRIPT_NUMS[index]);
+        } else {
+            retval.push_back(ch);
+        }
+    }
+
+    return retval;
+}
+
 namespace fmt {
 auto
 formatter<lnav::tainted_string>::format(const lnav::tainted_string& ts,

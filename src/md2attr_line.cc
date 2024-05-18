@@ -573,7 +573,7 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
             VC_STYLE.value(text_attrs{A_UNDERLINE}),
         });
     } else if (sp.is<MD_SPAN_A_DETAIL*>()) {
-        auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
+        const auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
         auto href_str = std::string(a_detail->href.text, a_detail->href.size);
         line_range lr{
             static_cast<int>(this->ml_span_starts.back()),
@@ -585,8 +585,9 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
         });
         this->append_url_footnote(href_str);
     } else if (sp.is<MD_SPAN_IMG_DETAIL*>()) {
-        auto* img_detail = sp.get<MD_SPAN_IMG_DETAIL*>();
-        auto src_str = std::string(img_detail->src.text, img_detail->src.size);
+        const auto* img_detail = sp.get<MD_SPAN_IMG_DETAIL*>();
+        const auto src_str
+            = std::string(img_detail->src.text, img_detail->src.size);
 
         this->append_url_footnote(src_str);
     }
@@ -747,7 +748,7 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                     .append("  ")
                     .append(
                         lnav::string::attrs::href(link_label, src_href.value()))
-                    .appendf(FMT_STRING("[{}]"), this->ml_footnotes.size() + 1);
+                    .append(to_superscript(this->ml_footnotes.size() + 1));
 
                 auto href
                     = attr_line_t()
@@ -1014,7 +1015,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             std::string span_text;
 
             auto loop_res = REPL_RE.capture_from(sf).for_each(
-                [&span_text](lnav::pcre2pp::match_data& md) {
+                [&span_text](const lnav::pcre2pp::match_data& md) {
                     span_text += md.leading();
 
                     auto matched = *md[0];
@@ -1054,12 +1055,8 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
 void
 md2attr_line::append_url_footnote(std::string href_str)
 {
-    if (startswith(href_str, "#")) {
-        return;
-    }
-
+    auto is_internal = startswith(href_str, "#");
     auto& last_block = this->ml_blocks.back();
-    last_block.appendf(FMT_STRING("[{}]"), this->ml_footnotes.size() + 1);
     last_block.with_attr(string_attr{
         line_range{
             (int) this->ml_span_starts.back(),
@@ -1067,6 +1064,15 @@ md2attr_line::append_url_footnote(std::string href_str)
         },
         VC_STYLE.value(text_attrs{A_UNDERLINE}),
     });
+    if (is_internal) {
+        return;
+    }
+
+    if (this->ml_last_superscript_index == last_block.length()) {
+        last_block.append("\u02d2");
+    }
+    last_block.append(to_superscript(this->ml_footnotes.size() + 1));
+    this->ml_last_superscript_index = last_block.length();
     if (this->ml_source_path && href_str.find(':') == std::string::npos) {
         auto link_path = ghc::filesystem::absolute(
             this->ml_source_path.value().parent_path() / href_str);

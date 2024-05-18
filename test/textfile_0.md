@@ -2,6 +2,11 @@
    "comment": "This is JSON front-matter"
 }
 
+# Table of Contents
+
+- [Test](#test)
+- [Github Alerts](#github-alerts)
+
 ## Test
 
 * One
@@ -58,6 +63,8 @@ def hw(name):
    </book>
 </books>
 ```
+
+## Github Alerts
 
 > [!NOTE]
 > Useful information that users should know, even when skimming content.

@@ -292,6 +292,11 @@ private:
                         const positioned_property<style_config>& sc,
                         lnav_config_listener::error_reporter& reporter);
 
+    role_attrs& get_role_attrs(const role_t role)
+    {
+        return this->vc_role_attrs[lnav::enums::to_underlying(role)];
+    }
+
     role_attrs vc_level_attrs[LEVEL__MAX];
 
     /** Map of role IDs to attribute values. */
