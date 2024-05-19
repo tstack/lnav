@@ -484,6 +484,10 @@ looper::loop()
                         },
                         [](multiplex_matcher::not_found nf) { return true; },
                         [](multiplex_matcher::partial p) { return false; });
+                    if (!demux_attempted) {
+                        cap.last_range = li.li_file_range;
+                        continue;
+                    }
                 }
                 std::optional<log_level_t> demux_level;
                 if (curr_demux_def
@@ -514,6 +518,15 @@ looper::loop()
                         }
                     }
                 } else if (curr_demux_def) {
+                    if (curr_demux_def->dd_control_pattern.pp_value
+                        && curr_demux_def->dd_control_pattern.pp_value
+                               ->find_in(body_sf)
+                               .ignore_error())
+                    {
+                        cap.last_range = li.li_file_range;
+                        continue;
+                    }
+
                     demux_output = demux_output_t::invalid;
                     line_muxid_sf = OUT_OF_FRAME_ID;
                     demux_level = LEVEL_ERROR;
