@@ -32,6 +32,7 @@
 
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 
 #include <sys/time.h>
@@ -39,6 +40,7 @@
 #include "auto_mem.hh"
 #include "base/intern_string.hh"
 #include "ghc/filesystem.hpp"
+#include "mapbox/variant_io.hpp"
 #include "time_util.hh"
 
 namespace lnav {
@@ -81,7 +83,22 @@ extern const char HEADER_MAGIC[4];
 
 std::optional<auto_buffer> read_header(int fd, const char* first8);
 
-std::optional<std::string> multiplex_id_for_line(string_fragment line);
+class multiplex_matcher {
+public:
+    struct found {
+        std::string f_id;
+    };
+
+    struct partial {};
+    struct not_found {};
+
+    using match_result = mapbox::util::variant<found, partial, not_found>;
+
+    match_result match(const string_fragment& line);
+
+private:
+    std::set<std::string> mm_partial_match_ids;
+};
 
 }  // namespace piper
 }  // namespace lnav

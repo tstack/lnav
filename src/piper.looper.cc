@@ -120,7 +120,7 @@ public:
                     = ncap.get_index();
             }
 
-            dd.dd_enabled = true;
+            dd.dd_valid = true;
         }
     }
 };
@@ -267,6 +267,7 @@ looper::loop()
     struct timeval line_tv;
     struct exttm line_tm;
     auto file_timeout = 0ms;
+    multiplex_matcher mmatcher;
 
     log_info("starting loop to capture: %s (%d %d)",
              this->l_name.c_str(),
@@ -464,22 +465,25 @@ looper::loop()
                 auto body_sf = sbr.to_string_fragment();
                 auto ts_sf = string_fragment{};
                 if (!curr_demux_def && !demux_attempted) {
-                    log_trace("first input line: %s",
+                    log_trace("demux input line: %s",
                               fmt::format(FMT_STRING("{:?}"), body_sf).c_str());
 
-                    auto demux_id_opt = multiplex_id_for_line(body_sf);
-                    if (demux_id_opt) {
-                        curr_demux_def = cfg.c_demux_definitions
-                                             .find(demux_id_opt.value())
-                                             ->second;
-                        {
-                            safe::WriteAccess<safe_demux_id> di(
-                                this->l_demux_id);
+                    auto match_res = mmatcher.match(body_sf);
+                    demux_attempted = match_res.match(
+                        [this, &curr_demux_def, &cfg](
+                            multiplex_matcher::found f) {
+                            curr_demux_def
+                                = cfg.c_demux_definitions.find(f.f_id)->second;
+                            {
+                                safe::WriteAccess<safe_demux_id> di(
+                                    this->l_demux_id);
 
-                            di->assign(demux_id_opt.value());
-                        }
-                    }
-                    demux_attempted = true;
+                                di->assign(f.f_id);
+                            }
+                            return true;
+                        },
+                        [](multiplex_matcher::not_found nf) { return true; },
+                        [](multiplex_matcher::partial p) { return false; });
                 }
                 std::optional<log_level_t> demux_level;
                 if (curr_demux_def

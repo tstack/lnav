@@ -42,8 +42,10 @@ namespace lnav {
 namespace piper {
 
 struct demux_def {
-    bool dd_enabled{false};
-    factory_container<lnav::pcre2pp::code> dd_pattern;
+    bool dd_enabled{true};
+    bool dd_valid{false};
+    factory_container<pcre2pp::code> dd_control_pattern;
+    factory_container<pcre2pp::code> dd_pattern;
     int dd_timestamp_capture_index{-1};
     int dd_muxid_capture_index{-1};
     int dd_body_capture_index{-1};

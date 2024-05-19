@@ -910,9 +910,19 @@
                             "title": "/log/demux/<name>",
                             "type": "object",
                             "properties": {
+                                "enabled": {
+                                    "title": "/log/demux/<name>/enabled",
+                                    "description": "Indicates whether this demuxer will be used at the demuxing stage",
+                                    "type": "boolean"
+                                },
                                 "pattern": {
                                     "title": "/log/demux/<name>/pattern",
                                     "description": "A regular expression to match a line in a multiplexed file",
+                                    "type": "string"
+                                },
+                                "control-pattern": {
+                                    "title": "/log/demux/<name>/control-pattern",
+                                    "description": "A regular expression to match a control line in a multiplexed file",
                                     "type": "string"
                                 }
                             },

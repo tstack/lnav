@@ -384,11 +384,13 @@ update_installs_from_git()
                                         git_dir.string());
             int ret = system(pull_cmd.c_str());
             if (ret == -1) {
-                std::cerr << "Failed to spawn command " << "\"" << pull_cmd
-                          << "\": " << strerror(errno) << std::endl;
+                std::cerr << "Failed to spawn command "
+                          << "\"" << pull_cmd << "\": " << strerror(errno)
+                          << std::endl;
                 retval = false;
             } else if (ret > 0) {
-                std::cerr << "Command " << "\"" << pull_cmd
+                std::cerr << "Command "
+                          << "\"" << pull_cmd
                           << "\" failed: " << strerror(errno) << std::endl;
                 retval = false;
             }
@@ -1198,11 +1200,21 @@ static const struct json_path_container archive_handlers = {
 
 static const struct typed_json_path_container<lnav::piper::demux_def>
     demux_def_handlers = {
-    yajlpp::property_handler("pattern")
-        .with_synopsis("<regex>")
+    yajlpp::property_handler("enabled")
         .with_description(
-            "A regular expression to match a line in a multiplexed file")
-        .for_field(&lnav::piper::demux_def::dd_pattern),
+            "Indicates whether this demuxer will be used at the demuxing stage")
+        .for_field(&lnav::piper::demux_def::dd_enabled),
+        yajlpp::property_handler("pattern")
+            .with_synopsis("<regex>")
+            .with_description(
+                "A regular expression to match a line in a multiplexed file")
+            .for_field(&lnav::piper::demux_def::dd_pattern),
+        yajlpp::property_handler("control-pattern")
+            .with_synopsis("<regex>")
+            .with_description(
+                "A regular expression to match a control line in a multiplexed "
+                "file")
+            .for_field(&lnav::piper::demux_def::dd_control_pattern),
 };
 
 static const struct json_path_container demux_defs_handlers = {

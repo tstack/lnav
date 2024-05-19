@@ -79,8 +79,8 @@ read_header(int fd, const char* first8)
     return meta_buf;
 }
 
-std::optional<std::string>
-multiplex_id_for_line(string_fragment line)
+multiplex_matcher::match_result
+multiplex_matcher::match(const string_fragment& line)
 {
     const auto& cfg = injector::get<const config&>();
     auto md = lnav::pcre2pp::match_data::unitialized();
@@ -88,32 +88,55 @@ multiplex_id_for_line(string_fragment line)
     for (const auto& demux_pair : cfg.c_demux_definitions) {
         const auto& df = demux_pair.second;
 
-        if (!df.dd_enabled) {
+        if (!df.dd_valid || !df.dd_enabled) {
+            continue;
+        }
+
+        if (!this->mm_partial_match_ids.empty()
+            && this->mm_partial_match_ids.count(demux_pair.first) == 0)
+        {
             continue;
         }
 
         log_info("attempting to demux using: %s", demux_pair.first.c_str());
-        md = df.dd_pattern.pp_value->create_match_data();
-        if (df.dd_pattern.pp_value->capture_from(line)
-                .into(md)
-                .matches()
-                .ignore_error())
         {
-            log_info("  demuxer pattern matched");
-            if (!md[df.dd_muxid_capture_index].has_value()) {
-                log_info("    however, mux_id was not captured");
-                continue;
+            md = df.dd_pattern.pp_value->create_match_data();
+            if (df.dd_pattern.pp_value->capture_from(line)
+                    .into(md)
+                    .matches()
+                    .ignore_error())
+            {
+                log_info("  demuxer pattern matched");
+                if (!md[df.dd_muxid_capture_index].has_value()) {
+                    log_info("    however, mux_id was not captured");
+                    continue;
+                }
+                if (!md[df.dd_body_capture_index].has_value()) {
+                    log_info("    however, body was not captured");
+                    continue;
+                }
+                log_info("  and required captures were found, using demuxer");
+                return found{demux_pair.first};
             }
-            if (!md[df.dd_body_capture_index].has_value()) {
-                log_info("    however, body was not captured");
-                continue;
+        }
+        if (df.dd_control_pattern.pp_value) {
+            md = df.dd_control_pattern.pp_value->create_match_data();
+            if (df.dd_control_pattern.pp_value->capture_from(line)
+                    .into(md)
+                    .matches()
+                    .ignore_error())
+            {
+                log_info("  demuxer control pattern matched");
+                this->mm_partial_match_ids.emplace(demux_pair.first);
             }
-            log_info("  and required captures were found, using demuxer");
-            return demux_pair.first;
         }
     }
 
-    return std::nullopt;
+    if (this->mm_partial_match_ids.empty()) {
+        return not_found{};
+    }
+
+    return partial{};
 }
 
 }  // namespace piper
