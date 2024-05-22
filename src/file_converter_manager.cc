@@ -160,8 +160,7 @@ cleanup()
 {
     (void) std::async(std::launch::async, []() {
         const auto& cfg = injector::get<const lnav::piper::config&>();
-        auto now = std::filesystem::file_time_type{
-            std::chrono::system_clock::now().time_since_epoch()};
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = cache_dir();
         std::vector<std::filesystem::path> to_remove;
 

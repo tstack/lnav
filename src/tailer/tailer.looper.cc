@@ -579,8 +579,7 @@ tailer::looper::host_tailer::loop_body()
 
     this->ht_cycle_count += 1;
     if (this->ht_cycle_count % TOUCH_FREQ == 0) {
-        auto now = std::filesystem::file_time_type{
-            std::chrono::system_clock::now().time_since_epoch()};
+        auto now = std::filesystem::file_time_type::clock::now();
         std::filesystem::last_write_time(this->ht_local_path, now);
     }
 
@@ -1170,8 +1169,7 @@ void
 tailer::cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
-        auto now = std::filesystem::file_time_type{
-            std::chrono::system_clock::now().time_since_epoch()};
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = remote_cache_path();
         const auto& cfg = injector::get<const config&>();
         std::vector<std::filesystem::path> to_remove;

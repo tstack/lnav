@@ -724,8 +724,7 @@ cleanup()
 {
     (void) std::async(std::launch::async, []() {
         const auto& cfg = injector::get<const config&>();
-        auto now = std::filesystem::file_time_type{
-            std::chrono::system_clock::now().time_since_epoch()};
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = storage_path();
         std::vector<std::filesystem::path> to_remove;
 

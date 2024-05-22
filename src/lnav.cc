@@ -2135,8 +2135,7 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
 
     if (warning_count > 0 && !mf.mf_print_warnings
         && !(lnav_data.ld_flags & LNF_HEADLESS)
-        && (std::filesystem::file_time_type{
-                std::chrono::system_clock::now().time_since_epoch()}
+        && (std::filesystem::file_time_type::clock::now()
                 - lnav_data.ld_last_dot_lnav_time
             > 24h))
     {

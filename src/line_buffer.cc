@@ -1473,8 +1473,7 @@ void
 line_buffer::cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
-        auto now = std::filesystem::file_time_type{
-            std::chrono::system_clock::now().time_since_epoch()};
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = line_buffer_cache_path();
         std::vector<std::filesystem::path> to_remove;
         std::error_code ec;

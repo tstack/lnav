@@ -269,8 +269,7 @@ extract(const std::string& filename, const extract_cb& cb)
             }
         }
         if (file_count > 0) {
-            auto now = std::filesystem::file_time_type{
-                std::chrono::system_clock::now().time_since_epoch()};
+            auto now = fs::file_time_type::clock::now();
             fs::last_write_time(done_path, now);
             log_info("%s: archive has already been extracted!",
                      done_path.c_str());
@@ -401,8 +400,7 @@ void
 cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
-        auto now = std::filesystem::file_time_type{
-            std::chrono::system_clock::now().time_since_epoch()};
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = archive_cache_path();
         const auto& cfg = injector::get<const config&>();
         std::vector<fs::path> to_remove;
