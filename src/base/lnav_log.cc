@@ -328,20 +328,25 @@ log_msg(lnav_log_level_t level,
     gettimeofday(&curr_time, nullptr);
     localtime_r(&curr_time.tv_sec, &localtm);
     auto line = log_alloc();
-    prefix_size = snprintf(line,
-                           MAX_LOG_LINE_SIZE,
-                           "%4d-%02d-%02dT%02d:%02d:%02d.%03d %s t%u %s:%d ",
-                           localtm.tm_year + 1900,
-                           localtm.tm_mon + 1,
-                           localtm.tm_mday,
-                           localtm.tm_hour,
-                           localtm.tm_min,
-                           localtm.tm_sec,
-                           (int) (curr_time.tv_usec / 1000),
-                           LEVEL_NAMES[lnav::enums::to_underlying(level)],
-                           current_thid.t_id,
-                           src_file,
-                           line_number);
+    auto gmtoff = std::abs(localtm.tm_gmtoff) / 60;
+    prefix_size
+        = snprintf(line,
+                   MAX_LOG_LINE_SIZE,
+                   "%4d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d:%02d %s t%u %s:%d ",
+                   localtm.tm_year + 1900,
+                   localtm.tm_mon + 1,
+                   localtm.tm_mday,
+                   localtm.tm_hour,
+                   localtm.tm_min,
+                   localtm.tm_sec,
+                   (int) (curr_time.tv_usec / 1000),
+                   localtm.tm_gmtoff < 0 ? '-' : '+',
+                   (int) gmtoff / 60,
+                   (int) gmtoff % 60,
+                   LEVEL_NAMES[lnav::enums::to_underlying(level)],
+                   current_thid.t_id,
+                   src_file,
+                   line_number);
 #if 0
     if (!thread_log_prefix.empty()) {
         prefix_size += snprintf(
@@ -660,12 +665,14 @@ log_pipe_err(int fd)
     reader.detach();
 }
 
-log_state_dumper::log_state_dumper()
+log_state_dumper::
+log_state_dumper()
 {
     DUMPER_LIST().push_back(this);
 }
 
-log_state_dumper::~log_state_dumper()
+log_state_dumper::~
+log_state_dumper()
 {
     auto iter = std::find(DUMPER_LIST().begin(), DUMPER_LIST().end(), this);
     if (iter != DUMPER_LIST().end()) {
@@ -673,12 +680,14 @@ log_state_dumper::~log_state_dumper()
     }
 }
 
-log_crash_recoverer::log_crash_recoverer()
+log_crash_recoverer::
+log_crash_recoverer()
 {
     CRASH_LIST.push_back(this);
 }
 
-log_crash_recoverer::~log_crash_recoverer()
+log_crash_recoverer::~
+log_crash_recoverer()
 {
     auto iter = std::find(CRASH_LIST.begin(), CRASH_LIST.end(), this);
 

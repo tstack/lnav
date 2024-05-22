@@ -21,6 +21,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/java_log.json \
     $(srcdir)/%reldir%/journald_json_log.json \
     $(srcdir)/%reldir%/katello_log.json \
+    $(srcdir)/%reldir%/lnav_debug_log.json \
     $(srcdir)/%reldir%/nextcloud_log.json \
     $(srcdir)/%reldir%/nextflow_log.json \
     $(srcdir)/%reldir%/openam_log.json \

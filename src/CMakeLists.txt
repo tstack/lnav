@@ -154,8 +154,11 @@ set(FORMAT_FILES
         formats/access_log.json
         formats/alb_log.json
         formats/block_log.json
+        formats/bunyan_log.json
         formats/candlepin_log.json
         formats/choose_repo_log.json
+        formats/cloudflare_log.json
+        formats/cloudvm_ram_log.json
         formats/cups_log.json
         formats/dpkg_log.json
         formats/elb_log.json
@@ -163,11 +166,15 @@ set(FORMAT_FILES
         formats/error_log.json
         formats/esx_syslog_log.json
         formats/fsck_hfs_log.json
+        formats/github_events_log.json
         formats/glog_log.json
         formats/haproxy_log.json
         formats/java_log.json
         formats/journald_json_log.json
         formats/katello_log.json
+        formats/lnav_debug_log.json
+        formats/nextcloud_log.json
+        formats/nextflow_log.json
         formats/openam_log.json
         formats/openamdb_log.json
         formats/openstack_log.json
@@ -175,6 +182,7 @@ set(FORMAT_FILES
         formats/papertrail_log.json
         formats/pcap_log.json
         formats/procstate_log.json
+        formats/redis_log.json
         formats/snaplogic_log.json
         formats/sssd_log.json
         formats/strace_log.json
@@ -183,13 +191,17 @@ set(FORMAT_FILES
         formats/s3_log.json
         formats/tcf_log.json
         formats/tcsh_history.json
+        formats/unifi_log.json
         formats/uwsgi_log.json
         formats/vdsm_log.json
         formats/vmk_log.json
         formats/vmw_log.json
         formats/vmw_vc_svc_log.json
         formats/vmw_py_log.json
-        formats/xmlrpc_log.json)
+        formats/vpostgres_log.json
+        formats/xmlrpc_log.json
+        formats/zookeeper_log.json
+)
 
 set(FORMAT_FILE_PATHS ${FORMAT_FILES})
 
