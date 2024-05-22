@@ -258,6 +258,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_config.sh_a0907769aba112d628e7ebe39c4ec252e5e0bc69.out \
     $(srcdir)/%reldir%/test_config.sh_b08f7523659d1c12f0e59920cd40d17d4a83b72f.err \
     $(srcdir)/%reldir%/test_config.sh_b08f7523659d1c12f0e59920cd40d17d4a83b72f.out \
+    $(srcdir)/%reldir%/test_config.sh_d3df763c453c81ed3126337c643f9d9a1978119e.err \
+    $(srcdir)/%reldir%/test_config.sh_d3df763c453c81ed3126337c643f9d9a1978119e.out \
     $(srcdir)/%reldir%/test_config.sh_d622658dc98327b1b2fd346802d24bc633e34ac7.err \
     $(srcdir)/%reldir%/test_config.sh_d622658dc98327b1b2fd346802d24bc633e34ac7.out \
     $(srcdir)/%reldir%/test_config.sh_d708b6fd32d83ce0ee00ca5383388308ba5a06e1.err \

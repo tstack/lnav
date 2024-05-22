@@ -21,7 +21,9 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 # invalid min-free-space allowed?
-run_cap_test env TMPDIR=tmp ${lnav_test} -n \
+rm -rf config-tmp
+mkdir config-tmp
+run_cap_test env TMPDIR=config-tmp ${lnav_test} -n \
     -c ':config /tuning/archive-manager/min-free-space abc' \
     ${srcdir}/logfile_syslog.0
 
