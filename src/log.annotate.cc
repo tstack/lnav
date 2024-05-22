@@ -258,10 +258,10 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
                 nullptr,
             };
 
-            std::vector<ghc::filesystem::path> path_v;
+            std::vector<std::filesystem::path> path_v;
 
             auto src_path
-                = ghc::filesystem::path(
+                = std::filesystem::path(
                       iter->second.a_handler.pp_location.sl_source.to_string())
                       .parent_path();
             path_v.push_back(src_path);

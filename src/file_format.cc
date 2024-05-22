@@ -40,7 +40,7 @@
 #include "line_buffer.hh"
 
 file_format_t
-detect_file_format(const ghc::filesystem::path& filename)
+detect_file_format(const std::filesystem::path& filename)
 {
     auto describe_res = archive_manager::describe(filename);
     if (describe_res.isOk()

@@ -34,7 +34,7 @@
 #include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "config.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "line_buffer.hh"
 #include "tailerpp.hh"
 
@@ -102,7 +102,7 @@ main(int argc, char* const* argv)
     err_pipe.after_fork(child.in());
 
     if (child.in_child()) {
-        auto this_exe = ghc::filesystem::path(argv[0]);
+        auto this_exe = std::filesystem::path(argv[0]);
         auto exe_dir = this_exe.parent_path();
         auto tailer_exe = exe_dir / "tailer";
 
@@ -165,8 +165,8 @@ main(int argc, char* const* argv)
                        pe.pe_path.c_str(),
                        pe.pe_msg.c_str());
 
-                auto remote_path = ghc::filesystem::absolute(
-                                       ghc::filesystem::path(pe.pe_path))
+                auto remote_path = std::filesystem::absolute(
+                                       std::filesystem::path(pe.pe_path))
                                        .relative_path();
 
                 printf("removing %s\n", remote_path.c_str());
@@ -177,8 +177,8 @@ main(int argc, char* const* argv)
                        pob.pob_offset,
                        pob.pob_length);
 
-                auto remote_path = ghc::filesystem::absolute(
-                                       ghc::filesystem::path(pob.pob_path))
+                auto remote_path = std::filesystem::absolute(
+                                       std::filesystem::path(pob.pob_path))
                                        .relative_path();
 #if 0
                 auto local_path = tmppath / remote_path;
@@ -196,7 +196,7 @@ main(int argc, char* const* argv)
                 struct stat st;
 
                 if (fstat(fd, &st) == -1 || !S_ISREG(st.st_mode)) {
-                    ghc::filesystem::remove_all(local_path);
+                    std::filesystem::remove_all(local_path);
                     send_packet(to_child.get(),
                                 TPT_NEED_BLOCK,
                                 TPPT_STRING, pob.pob_path.c_str(),
@@ -222,7 +222,7 @@ main(int argc, char* const* argv)
                         return;
                     }
                 } else if (bytes_read == -1) {
-                    ghc::filesystem::remove_all(local_path);
+                    std::filesystem::remove_all(local_path);
                 }
                 send_packet(to_child.get(),
                             TPT_NEED_BLOCK,
@@ -234,11 +234,11 @@ main(int argc, char* const* argv)
 #if 0
                 //printf("got a tail: %s %lld %ld\n", ptb.ptb_path.c_str(),
                 //       ptb.ptb_offset, ptb.ptb_bits.size());
-                auto remote_path = ghc::filesystem::absolute(
-                    ghc::filesystem::path(ptb.ptb_path)).relative_path();
+                auto remote_path = std::filesystem::absolute(
+                    std::filesystem::path(ptb.ptb_path)).relative_path();
                 auto local_path = tmppath / remote_path;
 
-                ghc::filesystem::create_directories(local_path.parent_path());
+                std::filesystem::create_directories(local_path.parent_path());
                 auto fd = auto_fd(
                     open(local_path.c_str(), O_WRONLY | O_APPEND | O_CREAT,
                          0600));

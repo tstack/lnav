@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -640,9 +641,10 @@ readline_context::command_complete(int count, int key)
     return rl_insert(count, key);
 }
 
-readline_context::readline_context(std::string name,
-                                   readline_context::command_map_t* commands,
-                                   bool case_sensitive)
+readline_context::
+readline_context(std::string name,
+                 readline_context::command_map_t* commands,
+                 bool case_sensitive)
     : rc_name(std::move(name)), rc_case_sensitive(case_sensitive),
       rc_quote_chars("\"'"), rc_highlighter(nullptr)
 {
@@ -723,8 +725,8 @@ readline_context::save()
     hs = nullptr;
 }
 
-readline_curses::readline_curses(
-    std::shared_ptr<pollable_supervisor> supervisor)
+readline_curses::
+readline_curses(std::shared_ptr<pollable_supervisor> supervisor)
     : pollable(supervisor, pollable::category::interactive),
       rc_focus(noop_func{}), rc_change(noop_func{}), rc_perform(noop_func{}),
       rc_alt_perform(noop_func{}), rc_timeout(noop_func{}),
@@ -734,7 +736,8 @@ readline_curses::readline_curses(
 {
 }
 
-readline_curses::~readline_curses()
+readline_curses::~
+readline_curses()
 {
     this->rc_pty[RCF_MASTER].reset();
     this->rc_command_pipe[RCF_MASTER].reset();
@@ -849,16 +852,16 @@ readline_curses::start()
         throw error(errno);
     }
 
-    auto slave_path = ghc::filesystem::path(slave_path_str);
+    auto slave_path = std::filesystem::path(slave_path_str);
     std::error_code ec;
-    if (!ghc::filesystem::exists(slave_path, ec)) {
+    if (!std::filesystem::exists(slave_path, ec)) {
         log_warning("ptsname_r() result does not exist -- %s", slave_path_str);
 #ifdef TIOCGPTN
         int ptn = 0;
         if (ioctl(this->rc_pty[RCF_MASTER], TIOCGPTN, &ptn) == 0) {
             snprintf(
                 slave_path_str, sizeof(slave_path_str), "/dev/ttyp%d", ptn);
-            slave_path = ghc::filesystem::path(slave_path_str);
+            slave_path = std::filesystem::path(slave_path_str);
             log_warning("... trying %s", slave_path.c_str());
         }
 #endif

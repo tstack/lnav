@@ -168,9 +168,9 @@ ensure_dotlnav()
         if (glob(crash_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
             std::error_code ec;
             for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-                auto crash_file = ghc::filesystem::path(gl->gl_pathv[lpc]);
+                auto crash_file = std::filesystem::path(gl->gl_pathv[lpc]);
 
-                ghc::filesystem::rename(
+                std::filesystem::rename(
                     crash_file, crash_dir_path / crash_file.filename(), ec);
             }
         }
@@ -241,11 +241,11 @@ install_from_git(const std::string& repo)
 
     auto git_cmd = fork_res.unwrap();
     if (git_cmd.in_child()) {
-        if (ghc::filesystem::is_directory(local_formats_path)) {
+        if (std::filesystem::is_directory(local_formats_path)) {
             fmt::print("Updating format repo: {}\n", repo);
             log_perror(chdir(local_formats_path.c_str()));
             execlp("git", "git", "pull", nullptr);
-        } else if (ghc::filesystem::is_directory(local_configs_path)) {
+        } else if (std::filesystem::is_directory(local_configs_path)) {
             fmt::print("Updating config repo: {}\n", repo);
             log_perror(chdir(local_configs_path.c_str()));
             execlp("git", "git", "pull", nullptr);
@@ -266,12 +266,12 @@ install_from_git(const std::string& repo)
         return false;
     }
 
-    if (ghc::filesystem::is_directory(local_formats_path)
-        || ghc::filesystem::is_directory(local_configs_path))
+    if (std::filesystem::is_directory(local_formats_path)
+        || std::filesystem::is_directory(local_configs_path))
     {
         return false;
     }
-    if (!ghc::filesystem::is_directory(local_staging_path)) {
+    if (!std::filesystem::is_directory(local_staging_path)) {
         auto um
             = lnav::console::user_message::error(
                   attr_line_t("failed to install git repo: ")
@@ -293,7 +293,7 @@ install_from_git(const std::string& repo)
 
     if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-            auto file_path = ghc::filesystem::path{gl->gl_pathv[lpc]};
+            auto file_path = std::filesystem::path{gl->gl_pathv[lpc]};
 
             if (file_path.extension() == ".lnav") {
                 found_lnav_file += 1;
@@ -380,7 +380,7 @@ update_installs_from_git()
     if (glob(git_formats.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             auto git_dir
-                = ghc::filesystem::path(gl->gl_pathv[lpc]).parent_path();
+                = std::filesystem::path(gl->gl_pathv[lpc]).parent_path();
 
             printf("Updating formats in %s\n", git_dir.c_str());
             auto pull_cmd = fmt::format(FMT_STRING("cd '{}' && git pull"),
@@ -1723,7 +1723,7 @@ public:
 static active_key_map_listener KEYMAP_LISTENER;
 
 Result<config_file_type, std::string>
-detect_config_file_type(const ghc::filesystem::path& path)
+detect_config_file_type(const std::filesystem::path& path)
 {
     static const char* id_path[] = {"$schema", nullptr};
 
@@ -1758,7 +1758,7 @@ detect_config_file_type(const ghc::filesystem::path& path)
 
 static void
 load_config_from(_lnav_config& lconfig,
-                 const ghc::filesystem::path& path,
+                 const std::filesystem::path& path,
                  std::vector<lnav::console::user_message>& errors)
 {
     yajlpp_parse_context ypc(intern_string::lookup(path.string()),
@@ -1856,7 +1856,7 @@ load_default_configs(struct _lnav_config& config_obj,
 }
 
 void
-load_config(const std::vector<ghc::filesystem::path>& extra_paths,
+load_config(const std::vector<std::filesystem::path>& extra_paths,
             std::vector<lnav::console::user_message>& errors)
 {
     auto user_config = lnav::paths::dotlnav() / "config.json";

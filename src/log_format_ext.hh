@@ -322,7 +322,7 @@ public:
         GRAPH_ORDERED_FORMATS;
 
     std::set<std::string> elf_source_path;
-    std::vector<ghc::filesystem::path> elf_format_source_order;
+    std::vector<std::filesystem::path> elf_format_source_order;
     std::map<intern_string_t, int> elf_format_sources;
     std::list<intern_string_t> elf_collision;
     factory_container<lnav::pcre2pp::code> elf_filename_pcre;

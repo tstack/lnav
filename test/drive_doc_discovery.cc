@@ -42,7 +42,7 @@ main(int argc, char* argv[])
         fprintf(stderr, "error: expecting file to discover\n");
         retval = EXIT_FAILURE;
     } else {
-        const auto fn = ghc::filesystem::path(argv[1]);
+        const auto fn = std::filesystem::path(argv[1]);
         auto read_res = lnav::filesystem::read_file(fn);
         if (read_res.isErr()) {
             fprintf(stderr,

@@ -135,7 +135,8 @@ private:
 
 #define Z_BUFSIZE      65536U
 #define SYNCPOINT_SIZE (1024 * 1024)
-line_buffer::gz_indexed::gz_indexed()
+line_buffer::gz_indexed::
+gz_indexed()
 {
     if ((this->inbuf = auto_mem<Bytef>::malloc(Z_BUFSIZE)) == NULL) {
         throw std::bad_alloc();
@@ -364,12 +365,14 @@ line_buffer::gz_indexed::read(void* buf, size_t offset, size_t size)
     return bytes;
 }
 
-line_buffer::line_buffer()
+line_buffer::
+line_buffer()
 {
     ensure(this->invariant());
 }
 
-line_buffer::~line_buffer()
+line_buffer::~
+line_buffer()
 {
     if (this->lb_loader_future.valid()) {
         this->lb_loader_future.wait();
@@ -1312,8 +1315,8 @@ line_buffer::get_available()
             static_cast<file_ssize_t>(this->lb_buffer.size())};
 }
 
-line_buffer::gz_indexed::indexDict::indexDict(const z_stream& s,
-                                              const file_size_t size)
+line_buffer::gz_indexed::indexDict::
+indexDict(const z_stream& s, const file_size_t size)
 {
     assert((s.data_type & GZ_END_OF_BLOCK_MASK));
     assert(!(s.data_type & GZ_END_OF_FILE_MASK));
@@ -1374,7 +1377,7 @@ line_buffer::quiesce()
     }
 }
 
-static ghc::filesystem::path
+static std::filesystem::path
 line_buffer_cache_path()
 {
     return lnav::paths::workdir() / "buffer-cache";
@@ -1405,7 +1408,7 @@ line_buffer::enable_cache()
                                 .to_string();
     auto cache_dir = line_buffer_cache_path() / cached_base_name.substr(0, 2);
 
-    ghc::filesystem::create_directories(cache_dir);
+    std::filesystem::create_directories(cache_dir);
 
     auto cached_file_name = fmt::format(FMT_STRING("{}.bin"), cached_base_name);
     auto cached_file_path = cache_dir / cached_file_name;
@@ -1418,14 +1421,14 @@ line_buffer::enable_cache()
     auto fl = lnav::filesystem::file_lock(cached_file_path);
     auto guard = lnav::filesystem::file_lock::guard(&fl);
 
-    if (ghc::filesystem::exists(cached_done_path)) {
+    if (std::filesystem::exists(cached_done_path)) {
         log_info("%d:using existing cache file");
         auto open_res = lnav::filesystem::open_file(cached_file_path, O_RDWR);
         if (open_res.isOk()) {
             this->lb_cached_fd = open_res.unwrap();
             return;
         }
-        ghc::filesystem::remove(cached_done_path);
+        std::filesystem::remove(cached_done_path);
     }
 
     auto create_res = lnav::filesystem::create_file(
@@ -1470,18 +1473,19 @@ void
 line_buffer::cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
-        auto now = std::chrono::system_clock::now();
+        auto now = std::filesystem::file_time_type{
+            std::chrono::system_clock::now().time_since_epoch()};
         auto cache_path = line_buffer_cache_path();
-        std::vector<ghc::filesystem::path> to_remove;
+        std::vector<std::filesystem::path> to_remove;
         std::error_code ec;
 
         for (const auto& cache_subdir :
-             ghc::filesystem::directory_iterator(cache_path, ec))
+             std::filesystem::directory_iterator(cache_path, ec))
         {
             for (const auto& entry :
-                 ghc::filesystem::directory_iterator(cache_subdir, ec))
+                 std::filesystem::directory_iterator(cache_subdir, ec))
             {
-                auto mtime = ghc::filesystem::last_write_time(entry.path());
+                auto mtime = std::filesystem::last_write_time(entry.path());
                 auto exp_time = mtime + 1h;
                 if (now < exp_time) {
                     continue;
@@ -1493,7 +1497,7 @@ line_buffer::cleanup_cache()
 
         for (auto& entry : to_remove) {
             log_debug("removing compressed file cache: %s", entry.c_str());
-            ghc::filesystem::remove_all(entry, ec);
+            std::filesystem::remove_all(entry, ec);
         }
     });
 }

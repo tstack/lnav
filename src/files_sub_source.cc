@@ -268,7 +268,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
 
         if (line < errs->size()) {
             auto iter = std::next(errs->begin(), line);
-            auto path = ghc::filesystem::path(iter->first);
+            auto path = std::filesystem::path(iter->first);
             auto fn = fmt::to_string(path.filename());
 
             truncate_to(fn, filename_width);
@@ -293,7 +293,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
 
     if (line < fc.fc_other_files.size()) {
         auto iter = std::next(fc.fc_other_files.begin(), line);
-        auto path = ghc::filesystem::path(iter->first);
+        auto path = std::filesystem::path(iter->first);
         auto fn = fmt::to_string(path);
 
         truncate_to(fn, filename_width);
@@ -322,7 +322,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
 
     const auto& lf = fc.fc_files[line];
     auto ld_opt = lnav_data.ld_log_source.find_data(lf);
-    auto fn = fmt::to_string(ghc::filesystem::path(lf->get_unique_path()));
+    auto fn = fmt::to_string(std::filesystem::path(lf->get_unique_path()));
     char start_time[64] = "", end_time[64] = "";
     std::vector<std::string> file_notes;
 

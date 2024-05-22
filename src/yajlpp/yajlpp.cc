@@ -36,7 +36,7 @@
 
 #include "config.h"
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 
@@ -1592,8 +1592,8 @@ dump_schema_to(const json_path_container& jpc, const char* internals_dir)
 {
     yajlpp_gen genner;
     yajlpp_gen_context ygc(genner, jpc);
-    auto internals_dir_path = ghc::filesystem::path(internals_dir);
-    auto schema_file_name = ghc::filesystem::path(jpc.jpc_schema_id).filename();
+    auto internals_dir_path = std::filesystem::path(internals_dir);
+    auto schema_file_name = std::filesystem::path(jpc.jpc_schema_id).filename();
     auto schema_path = internals_dir_path / schema_file_name;
     auto file = std::unique_ptr<FILE, decltype(&fclose)>(
         fopen(schema_path.c_str(), "w+"), fclose);

@@ -189,7 +189,7 @@ environ_to_map()
 
 looper::
 looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd, options opts)
-    : l_name(std::move(name)), l_cwd(ghc::filesystem::current_path().string()),
+    : l_name(std::move(name)), l_cwd(std::filesystem::current_path().string()),
       l_env(environ_to_map()), l_stdout(std::move(stdout_fd)),
       l_stderr(std::move(stderr_fd)), l_options(opts)
 {
@@ -202,8 +202,8 @@ looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd, options opts)
                   hasher().update(getmstime()).update(l_name).to_string(),
                   count);
         count += 1;
-    } while (ghc::filesystem::exists(this->l_out_dir));
-    ghc::filesystem::create_directories(this->l_out_dir);
+    } while (std::filesystem::exists(this->l_out_dir));
+    std::filesystem::create_directories(this->l_out_dir);
     this->l_future = std::async(std::launch::async, [this]() { this->loop(); });
 }
 
@@ -638,7 +638,7 @@ looper::loop()
                         / fmt::format(FMT_STRING("out.{}.{}"),
                                       os.os_hash_id,
                                       rotate_count % cfg.c_rotations);
-                    ghc::filesystem::rename(tmp_path, out_path);
+                    std::filesystem::rename(tmp_path, out_path);
                 }
 
                 ssize_t wrc;
@@ -724,14 +724,15 @@ cleanup()
 {
     (void) std::async(std::launch::async, []() {
         const auto& cfg = injector::get<const config&>();
-        auto now = std::chrono::system_clock::now();
+        auto now = std::filesystem::file_time_type{
+            std::chrono::system_clock::now().time_since_epoch()};
         auto cache_path = storage_path();
-        std::vector<ghc::filesystem::path> to_remove;
+        std::vector<std::filesystem::path> to_remove;
 
         for (const auto& cache_subdir :
-             ghc::filesystem::directory_iterator(cache_path))
+             std::filesystem::directory_iterator(cache_path))
         {
-            auto mtime = ghc::filesystem::last_write_time(cache_subdir.path());
+            auto mtime = std::filesystem::last_write_time(cache_subdir.path());
             auto exp_time = mtime + cfg.c_ttl;
             if (now < exp_time) {
                 continue;
@@ -740,9 +741,9 @@ cleanup()
             bool is_recent = false;
 
             for (const auto& entry :
-                 ghc::filesystem::directory_iterator(cache_subdir))
+                 std::filesystem::directory_iterator(cache_subdir))
             {
-                auto mtime = ghc::filesystem::last_write_time(entry.path());
+                auto mtime = std::filesystem::last_write_time(entry.path());
                 auto exp_time = mtime + cfg.c_ttl;
                 if (now < exp_time) {
                     is_recent = true;
@@ -756,7 +757,7 @@ cleanup()
 
         for (auto& entry : to_remove) {
             log_debug("removing piper directory: %s", entry.c_str());
-            ghc::filesystem::remove_all(entry);
+            std::filesystem::remove_all(entry);
         }
     });
 }

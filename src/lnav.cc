@@ -319,7 +319,7 @@ static bool
 append_default_files()
 {
     bool retval = true;
-    auto cwd = ghc::filesystem::current_path();
+    auto cwd = std::filesystem::current_path();
 
     for (const auto& path : DEFAULT_FILES) {
         if (access(path.c_str(), R_OK) == 0) {
@@ -2135,7 +2135,9 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
 
     if (warning_count > 0 && !mf.mf_print_warnings
         && !(lnav_data.ld_flags & LNF_HEADLESS)
-        && (std::chrono::system_clock::now() - lnav_data.ld_last_dot_lnav_time
+        && (std::filesystem::file_time_type{
+                std::chrono::system_clock::now().time_since_epoch()}
+                - lnav_data.ld_last_dot_lnav_time
             > 24h))
     {
         lnav::console::print(
@@ -2239,7 +2241,7 @@ main(int argc, char* argv[])
                     curr_tz,
                 },
             };
-        options_hier->foh_path_to_collection.emplace(ghc::filesystem::path("/"),
+        options_hier->foh_path_to_collection.emplace(std::filesystem::path("/"),
                                                      options_coll);
     } catch (const std::runtime_error& e) {
         log_error("failed to setup tz: %s", e.what());
@@ -2260,7 +2262,7 @@ main(int argc, char* argv[])
     auto dot_lnav_path = lnav::paths::dotlnav();
     std::error_code last_write_ec;
     lnav_data.ld_last_dot_lnav_time
-        = ghc::filesystem::last_write_time(dot_lnav_path, last_write_ec);
+        = std::filesystem::last_write_time(dot_lnav_path, last_write_ec);
 
     ensure_dotlnav();
 
@@ -2625,7 +2627,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
 
             if (endswith(file_path, ".sql")) {
-                auto sql_path = ghc::filesystem::path(file_path);
+                auto sql_path = std::filesystem::path(file_path);
                 auto read_res = lnav::filesystem::read_file(sql_path);
                 if (read_res.isErr()) {
                     lnav::console::print(
@@ -2675,8 +2677,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
             auto file_type = file_type_result.unwrap();
 
-            auto src_path = ghc::filesystem::path(file_path);
-            ghc::filesystem::path dst_name;
+            auto src_path = std::filesystem::path(file_path);
+            std::filesystem::path dst_name;
             if (file_type == config_file_type::CONFIG) {
                 dst_name = src_path.filename();
             } else {
@@ -3031,7 +3033,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             file_loc = file_path_str.substr(hash_index);
             file_path_without_trailer = file_path_str.substr(0, hash_index);
         }
-        auto file_path = ghc::filesystem::path(
+        auto file_path = std::filesystem::path(
             stat(file_path_without_trailer.c_str(), &st) == 0
                 ? file_path_without_trailer
                 : file_path_str);
@@ -3207,7 +3209,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     std::optional<std::string> stdin_url;
-    ghc::filesystem::path stdin_dir;
+    std::filesystem::path stdin_dir;
     if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO)
         && !exec_stdin)
     {
@@ -3555,7 +3557,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         {
             file_size_t stdin_size = 0;
             for (const auto& ent :
-                 ghc::filesystem::directory_iterator(stdin_dir))
+                 std::filesystem::directory_iterator(stdin_dir))
             {
                 stdin_size += ent.file_size();
             }

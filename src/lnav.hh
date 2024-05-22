@@ -82,7 +82,7 @@ typedef enum {
 } lnav_status_t;
 
 using ppid_time_pair_t = std::pair<int, int>;
-using session_pair_t = std::pair<ppid_time_pair_t, ghc::filesystem::path>;
+using session_pair_t = std::pair<ppid_time_pair_t, std::filesystem::path>;
 
 class input_state_tracker : public log_state_dumper {
 public:
@@ -164,7 +164,7 @@ struct lnav_data_t {
     std::list<std::string> ld_commands;
     bool ld_cmd_init_done;
     bool ld_session_loaded;
-    std::vector<ghc::filesystem::path> ld_config_paths;
+    std::vector<std::filesystem::path> ld_config_paths;
     file_collection ld_active_files;
     std::list<child_poller> ld_child_pollers;
     std::list<std::pair<std::string, file_location_t>> ld_files_to_front;
@@ -261,7 +261,7 @@ struct lnav_data_t {
 
     lnav::func::scoped_cb ld_status_refresher;
 
-    ghc::filesystem::file_time_type ld_last_dot_lnav_time;
+    std::filesystem::file_time_type ld_last_dot_lnav_time;
 };
 
 struct static_service {};

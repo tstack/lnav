@@ -35,7 +35,7 @@
 #include "base/lnav.console.hh"
 #include "base/result.h"
 #include "date/tz.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "mapbox/variant.hpp"
 #include "safe/safe.h"
 #include "yajlpp/yajlpp.hh"
@@ -66,12 +66,12 @@ struct file_options_collection {
 };
 
 struct file_options_hier {
-    std::map<ghc::filesystem::path, file_options_collection>
+    std::map<std::filesystem::path, file_options_collection>
         foh_path_to_collection;
     size_t foh_generation{0};
 
     std::optional<std::pair<std::string, file_options>> match(
-        const ghc::filesystem::path& path) const;
+        const std::filesystem::path& path) const;
 };
 
 using safe_file_options_hier = safe::Safe<file_options_hier>;

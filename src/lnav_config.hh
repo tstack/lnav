@@ -45,7 +45,7 @@
 #include "base/result.h"
 #include "external_opener.cfg.hh"
 #include "file_vtab.cfg.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "lnav_config_fwd.hh"
 #include "log.annotate.cfg.hh"
 #include "log_level.hh"
@@ -144,9 +144,9 @@ enum class config_file_type {
 };
 
 Result<config_file_type, std::string> detect_config_file_type(
-    const ghc::filesystem::path& path);
+    const std::filesystem::path& path);
 
-void load_config(const std::vector<ghc::filesystem::path>& extra_paths,
+void load_config(const std::vector<std::filesystem::path>& extra_paths,
                  std::vector<lnav::console::user_message>& errors);
 
 void reset_config(const std::string& path);

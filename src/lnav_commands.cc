@@ -385,7 +385,7 @@ com_set_file_timezone(exec_context& ec,
             const auto* tz = date::locate_zone(split_args[1]);
             auto pattern = split_args.size() == 2
                 ? line_pair->first->get_filename()
-                : ghc::filesystem::path(split_args[2]);
+                : std::filesystem::path(split_args[2]);
 
             if (!ec.ec_dry_run) {
                 static auto& safe_options_hier
@@ -485,7 +485,7 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
             log_error("cannot get timezones: %s", e.what());
         }
     }
-    auto arg_path = ghc::filesystem::path(pattern_arg);
+    auto arg_path = std::filesystem::path(pattern_arg);
     auto arg_parent = lnav::filesystem::escape_path(arg_path.parent_path());
     if (!endswith(arg_parent, "/")) {
         arg_parent += "/";
@@ -3342,7 +3342,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                          fn_str);
                 }
             } else {
-                auto fn = ghc::filesystem::path(fn_str);
+                auto fn = std::filesystem::path(fn_str);
                 auto detect_res = detect_file_format(fn);
                 attr_line_t al;
                 attr_line_builder alb(al);
@@ -3542,7 +3542,7 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     auto* tc = *lnav_data.ld_view_stack.top();
-    std::vector<std::optional<ghc::filesystem::path>> actual_path_v;
+    std::vector<std::optional<std::filesystem::path>> actual_path_v;
     std::vector<std::string> fn_v;
 
     if (args.size() > 1) {

@@ -714,7 +714,7 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
             if (img_alt) {
                 link_label = img_alt.value();
             } else if (img_src) {
-                link_label = ghc::filesystem::path(img_src.value())
+                link_label = std::filesystem::path(img_src.value())
                                  .filename()
                                  .string();
             } else {
@@ -726,14 +726,14 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                 if (is_url(src_value)) {
                     src_href = src_value;
                 } else {
-                    auto src_path = ghc::filesystem::path(src_value);
+                    auto src_path = std::filesystem::path(src_value);
                     std::error_code ec;
 
                     if (src_path.is_relative() && this->ml_source_path) {
                         src_path = this->ml_source_path.value().parent_path()
                             / src_path;
                     }
-                    auto canon_path = ghc::filesystem::canonical(src_path, ec);
+                    auto canon_path = std::filesystem::canonical(src_path, ec);
                     if (!ec) {
                         src_path = canon_path;
                     }
@@ -1074,7 +1074,7 @@ md2attr_line::append_url_footnote(std::string href_str)
     last_block.append(to_superscript(this->ml_footnotes.size() + 1));
     this->ml_last_superscript_index = last_block.length();
     if (this->ml_source_path && href_str.find(':') == std::string::npos) {
-        auto link_path = ghc::filesystem::absolute(
+        auto link_path = std::filesystem::absolute(
             this->ml_source_path.value().parent_path() / href_str);
 
         href_str = fmt::format(FMT_STRING("file://{}"), link_path.string());

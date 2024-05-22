@@ -191,7 +191,9 @@ curl_request::complete(CURLcode result)
     return -1;
 }
 
-curl_looper::curl_looper() : cl_curl_multi(curl_multi_cleanup)
+curl_looper::
+curl_looper()
+    : cl_curl_multi(curl_multi_cleanup)
 {
     this->cl_curl_multi.reset(curl_multi_init());
 }

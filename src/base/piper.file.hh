@@ -39,7 +39,7 @@
 
 #include "auto_mem.hh"
 #include "base/intern_string.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "mapbox/variant_io.hpp"
 #include "time_util.hh"
 
@@ -76,7 +76,7 @@ struct header {
     }
 };
 
-const ghc::filesystem::path& storage_path();
+const std::filesystem::path& storage_path();
 
 constexpr size_t HEADER_SIZE = 8;
 extern const char HEADER_MAGIC[4];

@@ -115,9 +115,9 @@ file_options_collection::match(const std::string& path) const
 }
 
 std::optional<std::pair<std::string, file_options>>
-file_options_hier::match(const ghc::filesystem::path& path) const
+file_options_hier::match(const std::filesystem::path& path) const
 {
-    static const auto ROOT_PATH = ghc::filesystem::path("/");
+    static const auto ROOT_PATH = std::filesystem::path("/");
 
     auto lookup_path = path.parent_path();
 

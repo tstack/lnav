@@ -162,7 +162,7 @@ file_collection::regenerate_unique_file_names()
         safe::ReadAccess<safe_name_to_errors> errs(*this->fc_name_to_errors);
 
         for (const auto& pair : *errs) {
-            auto path = ghc::filesystem::path(pair.first).filename().string();
+            auto path = std::filesystem::path(pair.first).filename().string();
 
             if (path.length() > this->fc_largest_path_length) {
                 this->fc_largest_path_length = path.length();
@@ -182,7 +182,7 @@ file_collection::regenerate_unique_file_names()
             case file_format_t::ARCHIVE:
             case file_format_t::MULTIPLEXED:
             case file_format_t::SQLITE_DB: {
-                auto bn = ghc::filesystem::path(pair.first).filename().string();
+                auto bn = std::filesystem::path(pair.first).filename().string();
                 if (bn.length() > this->fc_largest_path_length) {
                     this->fc_largest_path_length = bn.length();
                 }
@@ -307,7 +307,9 @@ file_collection::watch_logfile(const std::string& filename,
     int rc;
 
     auto filename_key = loo.loo_filename.empty() ? filename : loo.loo_filename;
-    if (this->fc_closed_files.count(filename)) {
+    if (this->fc_closed_files.count(filename)
+        || this->fc_closed_files.count(filename_key))
+    {
         return std::nullopt;
     }
 
@@ -464,7 +466,7 @@ file_collection::watch_logfile(const std::string& filename,
                         },
                         [&filename, &retval](const auto& tmp_path,
                                              const auto& entry) {
-                            auto arc_path = ghc::filesystem::relative(
+                            auto arc_path = std::filesystem::relative(
                                 entry.path(), tmp_path);
                             auto custom_name = filename / arc_path;
                             bool is_visible = true;

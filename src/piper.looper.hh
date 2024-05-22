@@ -37,7 +37,7 @@
 #include "base/auto_fd.hh"
 #include "base/piper.file.hh"
 #include "base/result.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "safe/safe.h"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -79,9 +79,9 @@ public:
 
     std::string get_name() const { return this->l_name; }
 
-    ghc::filesystem::path get_out_dir() const { return this->l_out_dir; }
+    std::filesystem::path get_out_dir() const { return this->l_out_dir; }
 
-    ghc::filesystem::path get_out_pattern() const
+    std::filesystem::path get_out_pattern() const
     {
         return this->l_out_dir / "out.*";
     }
@@ -124,7 +124,7 @@ private:
     const std::string l_name;
     const std::string l_cwd;
     const std::map<std::string, std::string> l_env;
-    ghc::filesystem::path l_out_dir;
+    std::filesystem::path l_out_dir;
     auto_fd l_stdout;
     auto_fd l_stderr;
     options l_options;
@@ -144,12 +144,12 @@ public:
 
     std::string get_name() const { return this->h_looper->get_name(); }
 
-    ghc::filesystem::path get_out_dir() const
+    std::filesystem::path get_out_dir() const
     {
         return this->h_looper->get_out_dir();
     }
 
-    ghc::filesystem::path get_out_pattern() const
+    std::filesystem::path get_out_pattern() const
     {
         return this->h_looper->get_out_pattern();
     }

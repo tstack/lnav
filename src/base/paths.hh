@@ -30,7 +30,7 @@
 #ifndef lnav_paths_hh
 #define lnav_paths_hh
 
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 
 namespace lnav {
 namespace paths {
@@ -48,9 +48,9 @@ char* windows_to_unix_file_path(char* input);
  * @param  sub The path to the file in the '.lnav' directory.
  * @return     The full path
  */
-ghc::filesystem::path dotlnav();
+std::filesystem::path dotlnav();
 
-ghc::filesystem::path workdir();
+std::filesystem::path workdir();
 
 }  // namespace paths
 }  // namespace lnav

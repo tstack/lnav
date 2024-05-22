@@ -34,7 +34,7 @@
 #include "base/itertools.hh"
 #include "config.h"
 #include "curl_looper.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "yajlpp/yajlpp_def.hh"
 
 namespace regex101 {
@@ -80,7 +80,7 @@ static const typed_json_path_container<upsert_response> RESPONSE_HANDLERS = {
     yajlpp::property_handler("version").for_field(&upsert_response::cr_version),
 };
 
-static const ghc::filesystem::path REGEX101_BASE_URL
+static const std::filesystem::path REGEX101_BASE_URL
     = "https://regex101.com/api/regex";
 static const char* USER_AGENT = "lnav/" PACKAGE_VERSION;
 

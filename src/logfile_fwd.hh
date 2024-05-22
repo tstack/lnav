@@ -35,6 +35,8 @@
 #include <chrono>
 #include <string>
 
+#include <sys/stat.h>
+
 #include "base/auto_fd.hh"
 #include "file_format.hh"
 #include "piper.looper.hh"

@@ -42,7 +42,7 @@ namespace piper {
 
 const char HEADER_MAGIC[4] = {'L', 0, 'N', 1};
 
-const ghc::filesystem::path&
+const std::filesystem::path&
 storage_path()
 {
     static auto INSTANCE = lnav::paths::workdir() / "piper";

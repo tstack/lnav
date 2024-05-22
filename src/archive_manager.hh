@@ -39,28 +39,28 @@
 
 #include "base/file_range.hh"
 #include "base/result.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "mapbox/variant.hpp"
 
 namespace archive_manager {
 
 struct extract_progress {
-    extract_progress(ghc::filesystem::path path, ssize_t total)
+    extract_progress(std::filesystem::path path, ssize_t total)
         : ep_path(std::move(path)), ep_total_size(total)
     {
     }
 
-    const ghc::filesystem::path ep_path;
+    const std::filesystem::path ep_path;
     const ssize_t ep_total_size;
     std::atomic<size_t> ep_out_size{0};
 };
 
 using extract_cb
-    = std::function<extract_progress*(const ghc::filesystem::path&, ssize_t)>;
+    = std::function<extract_progress*(const std::filesystem::path&, ssize_t)>;
 
 struct archive_info {
     struct entry {
-        ghc::filesystem::path e_name;
+        std::filesystem::path e_name;
         const char* e_mode;
         time_t e_mtime;
         std::optional<file_ssize_t> e_size;
@@ -73,9 +73,9 @@ struct unknown_file {};
 using describe_result = mapbox::util::variant<archive_info, unknown_file>;
 
 Result<describe_result, std::string> describe(
-    const ghc::filesystem::path& filename);
+    const std::filesystem::path& filename);
 
-ghc::filesystem::path filename_to_tmp_path(const std::string& filename);
+std::filesystem::path filename_to_tmp_path(const std::string& filename);
 
 using walk_result_t = Result<void, std::string>;
 
@@ -90,8 +90,8 @@ using walk_result_t = Result<void, std::string>;
 walk_result_t walk_archive_files(
     const std::string& filename,
     const extract_cb& cb,
-    const std::function<void(const ghc::filesystem::path&,
-                             const ghc::filesystem::directory_entry&)>&);
+    const std::function<void(const std::filesystem::path&,
+                             const std::filesystem::directory_entry&)>&);
 
 void cleanup_cache();
 

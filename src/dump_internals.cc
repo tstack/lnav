@@ -61,7 +61,7 @@ dump_internals(const char* internals_dir)
 
     execute_examples();
 
-    auto cmd_ref_path = ghc::filesystem::path(internals_dir) / "cmd-ref.rst";
+    auto cmd_ref_path = std::filesystem::path(internals_dir) / "cmd-ref.rst";
     auto cmd_file = std::unique_ptr<FILE, decltype(&fclose)>(
         fopen(cmd_ref_path.c_str(), "w+"), fclose);
 
@@ -78,7 +78,7 @@ dump_internals(const char* internals_dir)
         }
     }
 
-    auto sql_ref_path = ghc::filesystem::path(internals_dir) / "sql-ref.rst";
+    auto sql_ref_path = std::filesystem::path(internals_dir) / "sql-ref.rst";
     auto sql_file = std::unique_ptr<FILE, decltype(&fclose)>(
         fopen(sql_ref_path.c_str(), "w+"), fclose);
     std::set<const help_text*> unique_sql_help;

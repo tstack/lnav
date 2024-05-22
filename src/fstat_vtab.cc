@@ -41,7 +41,7 @@
 #include "base/lnav_log.hh"
 #include "bound_tags.hh"
 #include "config.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -338,7 +338,7 @@ CREATE TABLE fstat (
                                     SQLITE_TRANSIENT);
                 break;
             case FSTAT_COL_DATA: {
-                auto fs_path = ghc::filesystem::path{path};
+                auto fs_path = std::filesystem::path{path};
                 if (!vc.c_error.empty()) {
                     sqlite3_result_null(ctx);
                 } else if (S_ISREG(vc.c_stat.st_mode)) {
@@ -370,7 +370,7 @@ CREATE TABLE fstat (
                         to_sqlite(ctx, blob_auto_buffer{std::move(buffer)});
                     }
                 } else if (S_ISLNK(vc.c_stat.st_mode)) {
-                    auto link_path = ghc::filesystem::read_symlink(fs_path);
+                    auto link_path = std::filesystem::read_symlink(fs_path);
 
                     to_sqlite(ctx, link_path.string());
                 } else {

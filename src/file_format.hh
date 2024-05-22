@@ -35,7 +35,7 @@
 #include <optional>
 
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 
 enum class file_format_t : int {
     UNKNOWN,
@@ -48,13 +48,13 @@ enum class file_format_t : int {
 struct external_file_format {
     std::string eff_format_name;
     std::string eff_converter;
-    ghc::filesystem::path eff_source_path;
+    std::filesystem::path eff_source_path;
 };
 
-file_format_t detect_file_format(const ghc::filesystem::path& filename);
+file_format_t detect_file_format(const std::filesystem::path& filename);
 
 std::optional<external_file_format> detect_mime_type(
-    const ghc::filesystem::path& filename);
+    const std::filesystem::path& filename);
 
 namespace fmt {
 template<>

@@ -38,7 +38,7 @@
 
 #include "base/intern_string.hh"
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 
 enum class text_format_t {
     TF_UNKNOWN,
@@ -131,7 +131,7 @@ struct formatter<text_format_t> : formatter<string_view> {
  * @return The detected format.
  */
 text_format_t detect_text_format(string_fragment sf,
-                                 std::optional<ghc::filesystem::path> path
+                                 std::optional<std::filesystem::path> path
                                  = std::nullopt);
 
 struct text_format_meta_t {

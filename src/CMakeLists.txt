@@ -647,12 +647,6 @@ add_library(
         mapbox/variant.hpp
         mapbox/variant_io.hpp
         mapbox/variant_visitor.hpp
-        ghc/filesystem.hpp
-        ghc/fs_fwd.hpp
-        ghc/fs_impl.hpp
-        ghc/fs_std.hpp
-        ghc/fs_std_fwd.hpp
-        ghc/fs_std_impl.hpp
         ww898/cp_utf8.hpp
         log_level_re.cc
 

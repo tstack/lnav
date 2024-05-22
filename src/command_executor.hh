@@ -41,7 +41,7 @@
 #include "base/lnav.console.hh"
 #include "db_sub_source.hh"
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "help_text.hh"
 #include "shlex.resolver.hh"
 #include "vis_line.hh"
@@ -301,7 +301,7 @@ struct exec_context {
     std::stack<std::map<std::string, scoped_value_t>> ec_local_vars;
     std::vector<provenance_t> ec_provenance;
     std::map<std::string, scoped_value_t> ec_global_vars;
-    std::vector<ghc::filesystem::path> ec_path_stack;
+    std::vector<std::filesystem::path> ec_path_stack;
     std::vector<lnav::console::snippet> ec_source;
     help_text* ec_current_help{nullptr};
 

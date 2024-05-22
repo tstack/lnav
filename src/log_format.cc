@@ -2632,7 +2632,7 @@ using safe_format_header_expressions = safe::Safe<format_header_expressions>;
 static safe_format_header_expressions format_header_exprs;
 
 std::optional<external_file_format>
-detect_mime_type(const ghc::filesystem::path& filename)
+detect_mime_type(const std::filesystem::path& filename)
 {
     uint8_t buffer[1024];
     size_t buffer_size = 0;

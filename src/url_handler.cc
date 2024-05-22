@@ -180,7 +180,7 @@ looper::open(std::string url)
             host_part_str = host_part;
         }
 
-        auto source_path = ghc::filesystem::path{
+        auto source_path = std::filesystem::path{
             proto_iter->second.p_handler.pp_location.sl_source.get()};
         auto new_path = lnav::filesystem::build_path({
             source_path.parent_path(),

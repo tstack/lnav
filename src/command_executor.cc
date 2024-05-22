@@ -603,10 +603,10 @@ multiline_executor::final()
 }
 
 static Result<std::string, lnav::console::user_message>
-execute_file_contents(exec_context& ec, const ghc::filesystem::path& path)
+execute_file_contents(exec_context& ec, const std::filesystem::path& path)
 {
-    static const ghc::filesystem::path stdin_path("-");
-    static const ghc::filesystem::path dev_stdin_path("/dev/stdin");
+    static const std::filesystem::path stdin_path("-");
+    static const std::filesystem::path dev_stdin_path("/dev/stdin");
 
     std::string retval;
     FILE* file;
@@ -715,13 +715,13 @@ execute_file(exec_context& ec, const std::string& path_and_args)
     } else if (errno != ENOENT) {
         open_error = strerror(errno);
     } else {
-        auto script_path = ghc::filesystem::path(script_name);
+        auto script_path = std::filesystem::path(script_name);
 
         if (!script_path.is_absolute()) {
             script_path = ec.ec_path_stack.back() / script_path;
         }
 
-        if (ghc::filesystem::is_regular_file(script_path)) {
+        if (std::filesystem::is_regular_file(script_path)) {
             struct script_metadata meta;
 
             meta.sm_path = script_path;
@@ -1066,7 +1066,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
         });
     }
     std::error_code errc;
-    ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
+    std::filesystem::create_directories(lnav::paths::workdir(), errc);
     auto open_temp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
                                                           / "exec.XXXXXX");
     if (open_temp_res.isErr()) {

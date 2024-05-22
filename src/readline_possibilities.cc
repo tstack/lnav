@@ -479,7 +479,7 @@ add_config_possibilities()
                     visited.insert(named_cap.get_name().to_string());
                 }
 
-                ghc::filesystem::path path_obj(path);
+                std::filesystem::path path_obj(path);
                 rc->add_possibility(ln_mode_t::COMMAND,
                                     named_cap.get_name().to_string(),
                                     path_obj.parent_path().filename().string());

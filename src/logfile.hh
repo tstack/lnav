@@ -49,7 +49,7 @@
 #include "bookmarks.hh"
 #include "byte_array.hh"
 #include "file_options.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
 #include "logfile_fwd.hh"
@@ -114,7 +114,7 @@ public:
      * descriptor needs to be seekable.
      */
     static Result<std::shared_ptr<logfile>, std::string> open(
-        ghc::filesystem::path filename,
+        std::filesystem::path filename,
         const logfile_open_options& loo,
         auto_fd fd = auto_fd{});
 
@@ -122,13 +122,13 @@ public:
 
     const logfile_activity& get_activity() const { return this->lf_activity; }
 
-    std::optional<ghc::filesystem::path> get_actual_path() const
+    std::optional<std::filesystem::path> get_actual_path() const
     {
         return this->lf_actual_path;
     }
 
     /** @return The filename as given in the constructor. */
-    const ghc::filesystem::path& get_filename() const
+    const std::filesystem::path& get_filename() const
     {
         return this->lf_filename;
     }
@@ -371,7 +371,7 @@ public:
         return true;
     }
 
-    ghc::filesystem::path get_path() const override;
+    std::filesystem::path get_path() const override;
 
     enum class note_type {
         indexing_disabled,
@@ -435,16 +435,16 @@ protected:
     void set_format_base_time(log_format* lf);
 
 private:
-    logfile(ghc::filesystem::path filename, const logfile_open_options& loo);
+    logfile(std::filesystem::path filename, const logfile_open_options& loo);
 
     bool file_options_have_changed();
 
-    ghc::filesystem::path lf_filename;
+    std::filesystem::path lf_filename;
     logfile_open_options lf_options;
     logfile_activity lf_activity;
     bool lf_named_file{true};
     bool lf_valid_filename{true};
-    std::optional<ghc::filesystem::path> lf_actual_path;
+    std::optional<std::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
     struct stat lf_stat {};

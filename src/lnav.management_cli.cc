@@ -669,7 +669,7 @@ struct subcmd_format_t {
                         auto ppath = regex101::patch_path(validate_res.unwrap(),
                                                           en.re_permalink);
 
-                        if (ghc::filesystem::exists(ppath)) {
+                        if (std::filesystem::exists(ppath)) {
                             return {
                                 console::user_message::error(
                                     attr_line_t("cannot delete regex101 entry "
@@ -772,7 +772,7 @@ struct subcmd_piper_t {
     static perform_result_t list_action(const subcmd_piper_t&)
     {
         static const intern_string_t SRC = intern_string::lookup("piper");
-        static const auto DOT_HEADER = ghc::filesystem::path(".header");
+        static const auto DOT_HEADER = std::filesystem::path(".header");
 
         struct item {
             lnav::piper::header i_header;
@@ -784,7 +784,7 @@ struct subcmd_piper_t {
         std::vector<item> items;
         std::error_code ec;
 
-        for (const auto& instance_dir : ghc::filesystem::directory_iterator(
+        for (const auto& instance_dir : std::filesystem::directory_iterator(
                  lnav::piper::storage_path(), ec))
         {
             if (!instance_dir.is_directory()) {
@@ -798,7 +798,7 @@ struct subcmd_piper_t {
                                    instance_dir.path().filename().string());
             file_size_t total_size{0};
             auto hdr_path = instance_dir / DOT_HEADER;
-            if (ghc::filesystem::exists(hdr_path)) {
+            if (std::filesystem::exists(hdr_path)) {
                 auto hdr_read_res = lnav::filesystem::read_file(hdr_path);
                 if (hdr_read_res.isOk()) {
                     auto parse_res
@@ -822,7 +822,7 @@ struct subcmd_piper_t {
             }
 
             for (const auto& entry :
-                 ghc::filesystem::directory_iterator(instance_dir.path()))
+                 std::filesystem::directory_iterator(instance_dir.path()))
             {
                 if (entry.path().filename() == DOT_HEADER) {
                     continue;
@@ -1007,7 +1007,7 @@ struct subcmd_piper_t {
     {
         std::error_code ec;
 
-        ghc::filesystem::remove_all(lnav::piper::storage_path(), ec);
+        std::filesystem::remove_all(lnav::piper::storage_path(), ec);
         if (ec) {
             return {
                 lnav::console::user_message::error(

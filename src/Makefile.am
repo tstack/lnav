@@ -379,12 +379,6 @@ noinst_HEADERS = \
 	xpath_vtab.hh \
 	xterm_mouse.hh \
 	spookyhash/SpookyV2.h \
-	ghc/filesystem.hpp \
-	ghc/fs_fwd.hpp \
-	ghc/fs_impl.hpp \
-	ghc/fs_std.hpp \
-	ghc/fs_std_fwd.hpp \
-	ghc/fs_std_impl.hpp \
     ww898/cp_utf8.hpp
 
 nodist_libdiag_a_SOURCES = \

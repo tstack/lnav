@@ -70,7 +70,7 @@ static const typed_json_path_container<lnav::gzip::header> file_header_handlers
 };
 
 Result<std::shared_ptr<logfile>, std::string>
-logfile::open(ghc::filesystem::path filename,
+logfile::open(std::filesystem::path filename,
               const logfile_open_options& loo,
               auto_fd fd)
 {
@@ -79,7 +79,7 @@ logfile::open(ghc::filesystem::path filename,
     auto lf = std::shared_ptr<logfile>(new logfile(std::move(filename), loo));
 
     memset(&lf->lf_stat, 0, sizeof(lf->lf_stat));
-    ghc::filesystem::path resolved_path;
+    std::filesystem::path resolved_path;
 
     if (!fd.has_value()) {
         auto rp_res = lnav::filesystem::realpath(lf->lf_filename);
@@ -196,7 +196,7 @@ logfile::open(ghc::filesystem::path filename,
     return Ok(lf);
 }
 
-logfile::logfile(ghc::filesystem::path filename,
+logfile::logfile(std::filesystem::path filename,
                  const logfile_open_options& loo)
     : lf_filename(std::move(filename)), lf_options(loo)
 {
@@ -1297,7 +1297,7 @@ logfile::reobserve_from(iterator iter)
     }
 }
 
-ghc::filesystem::path
+std::filesystem::path
 logfile::get_path() const
 {
     return this->lf_filename;
@@ -1420,7 +1420,7 @@ logfile::set_filename(const std::string& filename)
 {
     if (this->lf_filename != filename) {
         this->lf_filename = filename;
-        ghc::filesystem::path p(filename);
+        std::filesystem::path p(filename);
         this->lf_basename = p.filename();
     }
 }

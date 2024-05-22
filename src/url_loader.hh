@@ -45,7 +45,7 @@ public:
     url_loader(const std::string& url) : curl_request(url)
     {
         std::error_code errc;
-        ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
+        std::filesystem::create_directories(lnav::paths::workdir(), errc);
         auto tmp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
                                                         / "url.XXXXXX");
         if (tmp_res.isErr()) {
@@ -63,7 +63,7 @@ public:
         curl_easy_setopt(this->cr_handle, CURLOPT_BUFFERSIZE, 128L * 1024L);
     }
 
-    ghc::filesystem::path get_path() const { return this->ul_path; }
+    std::filesystem::path get_path() const { return this->ul_path; }
 
     long complete(CURLcode result)
     {
@@ -144,7 +144,7 @@ private:
         return retval;
     }
 
-    ghc::filesystem::path ul_path;
+    std::filesystem::path ul_path;
     auto_fd ul_fd;
     off_t ul_resume_offset{0};
 };

@@ -113,14 +113,14 @@ struct from_sqlite<log_file_session_state> {
 namespace lnav {
 namespace session {
 
-static std::optional<ghc::filesystem::path>
-find_container_dir(ghc::filesystem::path file_path)
+static std::optional<std::filesystem::path>
+find_container_dir(std::filesystem::path file_path)
 {
-    if (!ghc::filesystem::exists(file_path)) {
+    if (!std::filesystem::exists(file_path)) {
         return std::nullopt;
     }
 
-    std::optional<ghc::filesystem::path> dir_with_last_readme;
+    std::optional<std::filesystem::path> dir_with_last_readme;
 
     while (file_path.has_parent_path()
            && file_path != file_path.root_directory())
@@ -130,7 +130,7 @@ find_container_dir(ghc::filesystem::path file_path)
         std::error_code ec;
 
         for (const auto& entry :
-             ghc::filesystem::directory_iterator(parent, ec))
+             std::filesystem::directory_iterator(parent, ec))
         {
             if (!entry.is_regular_file()) {
                 continue;
@@ -281,12 +281,12 @@ SELECT content_id, format, time_offset FROM lnav_file
         }
 
         auto file_path_str = name_pair.first;
-        auto file_path = ghc::filesystem::path(file_path_str);
+        auto file_path = std::filesystem::path(file_path_str);
         auto container_path_opt = find_container_dir(file_path);
         if (container_path_opt) {
             auto container_parent = container_path_opt.value().parent_path();
             auto file_container_path
-                = ghc::filesystem::relative(file_path, container_parent)
+                = std::filesystem::relative(file_path, container_parent)
                       .string();
             file_containers[container_parent.string()].push_back(
                 file_container_path);
@@ -474,7 +474,7 @@ SELECT content_id, format, time_offset FROM lnav_file
                 }
                 auto container_parent
                     = container_path_opt.value().parent_path();
-                auto file_container_path = ghc::filesystem::relative(
+                auto file_container_path = std::filesystem::relative(
                     ld->get_file_ptr()->get_path(), container_parent);
                 fmt::print(file,
                            FMT_STRING(":hide-file */{}\n"),

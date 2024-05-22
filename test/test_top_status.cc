@@ -64,7 +64,7 @@ main(int argc, char* argv[])
     setenv("HOME", "/", 1);
 
     std::vector<lnav::console::user_message> errors;
-    std::vector<ghc::filesystem::path> paths;
+    std::vector<std::filesystem::path> paths;
 
     load_config(paths, errors);
 
