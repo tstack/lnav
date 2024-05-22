@@ -30,6 +30,7 @@
 #include "config.h"
 
 #ifdef __CYGWIN__
+#    include <algorithm>
 #    include <iostream>
 #    include <sstream>
 #endif

@@ -3121,6 +3121,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [ul](auto& clooper) { clooper.add_request(ul); });
                     lnav_data.ld_files_to_front.emplace_back(fn, file_loc);
+                    closed_files.push_back(fn);
                     retval = "info: opened URL";
                 } else {
                     retval = "";
@@ -3279,6 +3280,9 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 files_to_front.emplace_back(fn, file_loc);
 
                 closed_files.push_back(fn);
+                if (!loo.loo_filename.empty()) {
+                    closed_files.push_back(loo.loo_filename);
+                }
                 if (lnav_data.ld_rl_view != nullptr) {
                     lnav_data.ld_rl_view->set_alt_value(
                         HELP_MSG_1(X, "to close the file"));
@@ -3467,7 +3471,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                            files_to_front.begin(),
                                            files_to_front.end());
         for (const auto& fn : closed_files) {
-            fc.fc_closed_files.erase(fn);
+            lnav_data.ld_active_files.fc_closed_files.erase(fn);
         }
 
         lnav_data.ld_active_files.merge(fc);
