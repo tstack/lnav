@@ -1890,6 +1890,18 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mxopen[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m
+══════════════════════════════════════════════════════════════════════
+  Use an external command to open the given file(s)
+[4mParameter[0m
+  [4mpath[0m   The path to the file to open
+
+[4mExample[0m
+#1 To open the file '/path/to/file':
+   [37m[40m:[0m[1m[36m[40mxopen[0m[37m[40m /path/to/file                              [0m
+   
+
+
 [4m:[0m[1m[4mzoom-to[0m[4m [0m[4mzoom-level[0m
 ══════════════════════════════════════════════════════════════════════
   Zoom the histogram view to the given level

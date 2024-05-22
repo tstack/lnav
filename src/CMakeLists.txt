@@ -417,6 +417,7 @@ add_library(
         elem_to_json.cc
         environ_vtab.cc
         extension-functions.cc
+        external_opener.cc
         field_overlay_source.cc
         file_collection.cc
         file_converter_manager.cc
@@ -492,6 +493,7 @@ add_library(
         styling.cc
         text_anonymizer.cc
         text_format.cc
+        text_link_handler.cc
         text_overlay_menu.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
@@ -533,6 +535,8 @@ add_library(
         doc_status_source.hh
         dump_internals.hh
         elem_to_json.hh
+        external_opener.hh
+        external_opener.cfg.hh
         field_overlay_source.hh
         file_collection.hh
         file_converter_manager.hh
@@ -618,6 +622,7 @@ add_library(
         termios_guard.hh
         text_anonymizer.hh
         text_format.hh
+        text_link_handler.hh
         text_overlay_menu.hh
         textfile_highlighters.hh
         textfile_sub_source.hh

@@ -101,6 +101,9 @@ static auto tc = injector::bind<tailer::config>::to_instance(
 static auto scc = injector::bind<sysclip::config>::to_instance(
     +[]() { return &lnav_config.lc_sysclip; });
 
+static auto oc = injector::bind<lnav::external_opener::config>::to_instance(
+    +[]() { return &lnav_config.lc_opener; });
+
 static auto uh = injector::bind<lnav::url_handler::config>::to_instance(
     +[]() { return &lnav_config.lc_url_handlers; });
 
@@ -1347,7 +1350,8 @@ static const struct json_path_container sysclip_impl_cmd_handlers = json_path_co
 static const struct json_path_container sysclip_impl_handlers = {
     yajlpp::property_handler("test")
         .with_synopsis("<command>")
-        .with_description("The command that checks")
+        .with_description(
+            "The command that checks if a clipboard command is available")
         .with_example("command -v pbcopy")
         .for_field(&sysclip::clipboard::c_test_command),
     yajlpp::property_handler("general")
@@ -1384,6 +1388,44 @@ static const struct json_path_container sysclip_handlers = {
     yajlpp::property_handler("impls")
         .with_description("Clipboard implementations")
         .with_children(sysclip_impls_handlers),
+};
+
+static const json_path_container opener_impl_handlers = {
+    yajlpp::property_handler("test")
+        .with_synopsis("<command>")
+        .with_description(
+            "The command that checks if an external opener is available")
+        .with_example("command -v open")
+        .for_field(&lnav::external_opener::impl::i_test_command),
+    yajlpp::property_handler("command")
+        .with_description("The command used to open a file or URL")
+        .with_example("open")
+        .for_field(&lnav::external_opener::impl::i_command),
+};
+
+static const json_path_container opener_impls_handlers = {
+    yajlpp::pattern_property_handler("(?<opener_impl_name>[\\w\\-]+)")
+        .with_synopsis("<name>")
+        .with_description("External opener implementation")
+        .with_obj_provider<lnav::external_opener::impl, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto& retval = root->lc_opener
+                                   .c_impls[ypc.get_substr("opener_impl_name")];
+                return &retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_opener.c_impls) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(opener_impl_handlers),
+};
+
+static const struct json_path_container opener_handlers = {
+    yajlpp::property_handler("impls")
+        .with_description("External opener implementations")
+        .with_children(opener_impls_handlers),
 };
 
 static const struct json_path_container log_source_watch_expr_handlers = {
@@ -1531,6 +1573,9 @@ static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("clipboard")
         .with_description("Settings related to the clipboard")
         .with_children(sysclip_handlers),
+    yajlpp::property_handler("external-opener")
+        .with_description("Settings related to opening external files/URLs")
+        .with_children(opener_handlers),
     yajlpp::property_handler("url-scheme")
         .with_description("Settings related to custom URL handling")
         .with_children(url_handlers),

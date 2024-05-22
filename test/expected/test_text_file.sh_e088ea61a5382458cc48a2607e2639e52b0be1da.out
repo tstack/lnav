@@ -4,7 +4,7 @@ The following screenshot shows a mix of syslog and web access log
 files.  Failed requests are shown in red.  Identifiers, like IP
 address and PIDs are semantically highlighted.
 
-]8;;docs/assets/images/lnav-front-page.png\[4m🖼  Screenshot[0m]8;;\]8;;docs/assets/images/lnav-front-page.png\[4m¹[0m]8;;\˒²
+]8;;file://{top_srcdir}/docs/assets/images/lnav-front-page.png\[4m🖼  Screenshot[0m]8;;\]8;;file://{top_srcdir}/docs/assets/images/lnav-front-page.png\[4m¹[0m]8;;\˒²
 
  [34m▌[0m[1] - file://{top_srcdir}/docs/assets/images/lnav-front-page.png 
  [34m▌[0m[2] - file://{top_srcdir}/docs/assets/images/lnav-front-page.png 
@@ -128,7 +128,7 @@ The following alternatives are also available:
 
  [33m•[0m ]8;;https://lnav.org\[4mMain Site[0m]8;;\¹
  [33m•[0m ]8;;https://docs.lnav.org\[1m[4mDocumentation[0m]8;;\² on Read the Docs
- [33m•[0m ]8;;ARCHITECTURE.md\[4mInternal Architecture[0m]8;;\³
+ [33m•[0m ]8;;file://{top_srcdir}/ARCHITECTURE.md\[4mInternal Architecture[0m]8;;\³
 
  [34m▌[0m[1] - https://lnav.org                                 
  [34m▌[0m[2] - https://docs.lnav.org                            

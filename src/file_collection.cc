@@ -135,7 +135,8 @@ file_collection::close_files(const std::vector<std::shared_ptr<logfile>>& files)
         } else {
             this->fc_file_names.erase(lf->get_filename());
         }
-        auto file_iter = find(this->fc_files.begin(), this->fc_files.end(), lf);
+        auto file_iter
+            = std::find(this->fc_files.begin(), this->fc_files.end(), lf);
         if (file_iter != this->fc_files.end()) {
             this->fc_files.erase(file_iter);
         }
@@ -219,6 +220,9 @@ file_collection::merge(file_collection& other)
         safe::WriteAccess<safe_name_to_errors> errs(*this->fc_name_to_errors);
 
         errs->insert(new_errors.begin(), new_errors.end());
+    }
+    if (!other.fc_file_names.empty()) {
+        this->fc_files_generation += 1;
     }
     for (const auto& fn_pair : other.fc_file_names) {
         this->fc_file_names[fn_pair.first] = fn_pair.second;

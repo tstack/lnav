@@ -579,11 +579,11 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
             static_cast<int>(this->ml_span_starts.back()),
             static_cast<int>(last_block.length()),
         };
+        auto abs_href = this->append_url_footnote(href_str);
         last_block.with_attr({
             lr,
-            VC_HYPERLINK.value(href_str),
+            VC_HYPERLINK.value(abs_href),
         });
-        this->append_url_footnote(href_str);
     } else if (sp.is<MD_SPAN_IMG_DETAIL*>()) {
         const auto* img_detail = sp.get<MD_SPAN_IMG_DETAIL*>();
         const auto src_str
@@ -1052,7 +1052,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
     return Ok();
 }
 
-void
+std::string
 md2attr_line::append_url_footnote(std::string href_str)
 {
     auto is_internal = startswith(href_str, "#");
@@ -1065,7 +1065,7 @@ md2attr_line::append_url_footnote(std::string href_str)
         VC_STYLE.value(text_attrs{A_UNDERLINE}),
     });
     if (is_internal) {
-        return;
+        return href_str;
     }
 
     if (this->ml_last_superscript_index == last_block.length()) {
@@ -1085,4 +1085,6 @@ md2attr_line::append_url_footnote(std::string href_str)
     href.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT));
     href.with_attr_for_all(SA_PREFORMATTED.value());
     this->ml_footnotes.emplace_back(href);
+
+    return href_str;
 }

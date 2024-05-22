@@ -237,6 +237,8 @@ noinst_HEADERS = \
 	dump_internals.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
+	external_opener.hh \
+	external_opener.cfg.hh \
 	field_overlay_source.hh \
 	file_collection.hh \
 	file_converter_manager.hh \
@@ -348,6 +350,7 @@ noinst_HEADERS = \
 	term_extra.hh \
 	text_anonymizer.hh \
 	text_format.hh \
+	text_link_handler.hh \
 	text_overlay_menu.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
@@ -436,6 +439,7 @@ libdiag_a_SOURCES = \
 	elem_to_json.cc \
 	environ_vtab.cc \
 	extension-functions.cc \
+	external_opener.cc \
 	field_overlay_source.cc \
 	file_collection.cc \
 	file_converter_manager.cc \
@@ -506,6 +510,7 @@ libdiag_a_SOURCES = \
 	styling.cc \
 	text_anonymizer.cc \
 	text_format.cc \
+	text_link_handler.cc \
 	text_overlay_menu.cc \
 	textfile_sub_source.cc \
 	timer.cc \

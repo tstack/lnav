@@ -184,7 +184,7 @@
                                     "properties": {
                                         "test": {
                                             "title": "/tuning/clipboard/impls/<clipboard_impl_name>/test",
-                                            "description": "The command that checks",
+                                            "description": "The command that checks if a clipboard command is available",
                                             "type": "string",
                                             "examples": [
                                                 "command -v pbcopy"
@@ -199,6 +199,46 @@
                                             "description": "Commands to work with the find clipboard",
                                             "title": "/tuning/clipboard/impls/<clipboard_impl_name>/find",
                                             "$ref": "#/definitions/clip-commands"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "external-opener": {
+                    "description": "Settings related to opening external files/URLs",
+                    "title": "/tuning/external-opener",
+                    "type": "object",
+                    "properties": {
+                        "impls": {
+                            "description": "External opener implementations",
+                            "title": "/tuning/external-opener/impls",
+                            "type": "object",
+                            "patternProperties": {
+                                "^([\\w\\-]+)$": {
+                                    "description": "External opener implementation",
+                                    "title": "/tuning/external-opener/impls/<opener_impl_name>",
+                                    "type": "object",
+                                    "properties": {
+                                        "test": {
+                                            "title": "/tuning/external-opener/impls/<opener_impl_name>/test",
+                                            "description": "The command that checks if an external opener is available",
+                                            "type": "string",
+                                            "examples": [
+                                                "command -v open"
+                                            ]
+                                        },
+                                        "command": {
+                                            "title": "/tuning/external-opener/impls/<opener_impl_name>/command",
+                                            "description": "The command used to open a file or URL",
+                                            "type": "string",
+                                            "examples": [
+                                                "open"
+                                            ]
                                         }
                                     },
                                     "additionalProperties": false

@@ -1728,6 +1728,27 @@
 ----
 
 
+.. _xopen:
+
+:xopen *path*
+^^^^^^^^^^^^^
+
+  Use an external command to open the given file(s)
+
+  **Parameters**
+    * **path** --- The path to the file to open
+
+  **Examples**
+    To open the file '/path/to/file':
+
+    .. code-block::  lnav
+
+      :xopen /path/to/file
+
+
+----
+
+
 .. _zoom_to:
 
 :zoom-to *zoom-level*

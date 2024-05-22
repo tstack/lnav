@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022, Timothy Stack
+ * Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,31 +27,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <filesystem>
-#include <iostream>
+#ifndef lnav_text_link_handler_hh
+#define lnav_text_link_handler_hh
 
-#include "base/fs_util.hh"
+#include "textview_curses.hh"
 
-#include "config.h"
-#include "doctest/doctest.h"
+class text_link_handler : public text_sub_source {
+public:
+    void text_open_href(const std::string& href) override;
 
-TEST_CASE("fs_util::build_path")
-{
-    auto* old_path = getenv("PATH");
-    unsetenv("PATH");
+    std::optional<vis_line_t> tlh_href_line;
+    std::set<std::string> tlh_hrefs;
+};
 
-    CHECK("" == lnav::filesystem::build_path({}));
-
-    CHECK("/bin:/usr/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    setenv("PATH", "/usr/local/bin", 1);
-    CHECK("/bin:/usr/bin:/usr/local/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    setenv("PATH", "/usr/local/bin:/opt/bin", 1);
-    CHECK("/usr/local/bin:/opt/bin" == lnav::filesystem::build_path({}));
-    CHECK("/bin:/usr/bin:/usr/local/bin:/opt/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    if (old_path != nullptr) {
-        setenv("PATH", old_path, 1);
-    }
-}
+#endif

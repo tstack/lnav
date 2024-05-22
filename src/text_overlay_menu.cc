@@ -41,44 +41,79 @@ using namespace lnav::roles::literals;
 std::vector<attr_line_t>
 text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
 {
+    static const auto MENU_WIDTH = 25;
+
     const auto* tc = dynamic_cast<const textview_curses*>(&lv);
     std::vector<attr_line_t> retval;
 
-    if (!tc->tc_text_selection_active && tc->tc_selected_text) {
-        const auto& sti = tc->tc_selected_text.value();
+    if (tc->tc_text_selection_active || !tc->tc_selected_text) {
+        return retval;
+    }
 
-        if (sti.sti_line == row) {
-            auto title = " Filter   Other   "_status_title;
-            auto left = std::max(0, sti.sti_x - 2);
-            auto dim = lv.get_dimensions();
+    const auto& sti = tc->tc_selected_text.value();
 
-            if (left + title.first.length() >= dim.second) {
-                left = dim.second - title.first.length() - 2;
+    if (sti.sti_line == row) {
+        auto title = " Actions "_status_title;
+        auto left = std::max(0, sti.sti_x - 2);
+        auto dim = lv.get_dimensions();
+
+        if (left + MENU_WIDTH >= dim.second) {
+            left = dim.second - MENU_WIDTH;
+        }
+
+        this->tom_menu_items.clear();
+
+        auto is_link = !sti.sti_href.empty();
+        auto menu_line = vis_line_t{1};
+        if (is_link) {
+            auto ta = text_attrs{};
+
+            ta.ta_attrs |= A_UNDERLINE;
+            auto href_al
+                = attr_line_t(" Link: ")
+                      .append(lnav::roles::table_header(sti.sti_href))
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO))
+                      .with_attr_for_all(VC_STYLE.value(ta));
+            retval.emplace_back(href_al);
+            menu_line += 1_vl;
+        }
+
+        retval.emplace_back(attr_line_t().pad_to(left).append(title));
+        {
+            attr_line_t al;
+
+            int start = left;
+            if (is_link) {
+                al.append(":floppy_disk:"_emoji)
+                    .append(" Open in lnav")
+                    .append("  ");
+            } else {
+                al.append(" ").append("\u2714 Filter-in"_ok).append("   ");
             }
+            this->tom_menu_items.emplace_back(
+                menu_line,
+                line_range{start, start + (int) al.length()},
+                [is_link, sti](const std::string& value) {
+                    auto cmd = is_link
+                        ? ":open $href"
+                        : fmt::format(FMT_STRING(":filter-in {}"),
+                                      lnav::pcre2pp::quote(value));
+                    lnav_data.ld_exec_context
+                        .with_provenance(exec_context::mouse_input{})
+                        ->execute_with(cmd,
+                                       std::make_pair("href", sti.sti_href));
+                });
+            start += al.length();
 
-            this->tom_menu_items.clear();
-            retval.emplace_back(attr_line_t().pad_to(left).append(title));
-            {
-                attr_line_t al;
-
-                al.append(" ").append("\u2714 IN"_ok).append("   ");
-                int start = left;
+            if (is_link) {
+                al.append("      ");
+            } else {
+                al.append(":mag_right:"_emoji).append(" Search ");
+            }
+            al.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+            if (!is_link) {
                 this->tom_menu_items.emplace_back(
-                    1_vl,
-                    line_range{start, start + (int) al.length()},
-                    [](const std::string& value) {
-                        auto cmd = fmt::format(FMT_STRING(":filter-in {}"),
-                                               lnav::pcre2pp::quote(value));
-                        lnav_data.ld_exec_context
-                            .with_provenance(exec_context::mouse_input{})
-                            ->execute(cmd);
-                    });
-                start += al.length();
-                al.append(":mag_right:"_emoji)
-                    .append(" Search ")
-                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
-                this->tom_menu_items.emplace_back(
-                    1_vl,
+                    menu_line,
                     line_range{start, start + (int) al.length()},
                     [](const std::string& value) {
                         auto cmd = fmt::format(FMT_STRING("/{}"),
@@ -87,35 +122,43 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                             .with_provenance(exec_context::mouse_input{})
                             ->execute(cmd);
                     });
-                retval.emplace_back(attr_line_t().pad_to(left).append(al));
             }
-            {
-                attr_line_t al;
+            retval.emplace_back(attr_line_t().pad_to(left).append(al));
+        }
+        {
+            attr_line_t al;
 
-                al.append(" ").append("\u2718 OUT"_error).append("  ");
-                int start = left;
-                this->tom_menu_items.emplace_back(
-                    2_vl,
-                    line_range{start, start + (int) al.length()},
-                    [](const std::string& value) {
-                        auto cmd = fmt::format(FMT_STRING(":filter-out {}"),
-                                               lnav::pcre2pp::quote(value));
-                        lnav_data.ld_exec_context
-                            .with_provenance(exec_context::mouse_input{})
-                            ->execute(cmd);
-                    });
-                start += al.length();
-                al.append(":clipboard:"_emoji)
-                    .append(" Copy   ")
-                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
-                this->tom_menu_items.emplace_back(
-                    2_vl,
-                    line_range{start, start + (int) al.length()},
-                    [](const std::string& value) {
-                        lnav_data.ld_exec_context.execute("|lnav-copy-text");
-                    });
-                retval.emplace_back(attr_line_t().pad_to(left).append(al));
+            if (is_link) {
+                al.append(":globe_with_meridians:"_emoji).append(" Open   ");
+            } else {
+                al.append(" ").append("\u2718 Filter-out"_error).append("  ");
             }
+            menu_line += 1_vl;
+            int start = left;
+            this->tom_menu_items.emplace_back(
+                menu_line,
+                line_range{start, start + (int) al.length()},
+                [is_link, sti](const std::string& value) {
+                    auto cmd = is_link
+                        ? ":xopen $href"
+                        : fmt::format(FMT_STRING(":filter-out {}"),
+                                      lnav::pcre2pp::quote(value));
+                    lnav_data.ld_exec_context
+                        .with_provenance(exec_context::mouse_input{})
+                        ->execute_with(cmd,
+                                       std::make_pair("href", sti.sti_href));
+                });
+            start += al.length();
+            al.append(":clipboard:"_emoji)
+                .append(is_link ? " Copy link " : " Copy   ")
+                .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+            this->tom_menu_items.emplace_back(
+                menu_line,
+                line_range{start, start + (int) al.length()},
+                [](const std::string& value) {
+                    lnav_data.ld_exec_context.execute("|lnav-copy-text");
+                });
+            retval.emplace_back(attr_line_t().pad_to(left).append(al));
         }
     }
 

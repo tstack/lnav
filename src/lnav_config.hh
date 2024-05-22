@@ -43,6 +43,7 @@
 #include "base/file_range.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
+#include "external_opener.cfg.hh"
 #include "file_vtab.cfg.hh"
 #include "ghc/filesystem.hpp"
 #include "lnav_config_fwd.hh"
@@ -128,6 +129,7 @@ struct _lnav_config {
     lnav::url_handler::config lc_url_handlers;
     logfile_sub_source_ns::config lc_log_source;
     lnav::log::annotate::config lc_log_annotations;
+    lnav::external_opener::config lc_opener;
 };
 
 extern struct _lnav_config lnav_config;

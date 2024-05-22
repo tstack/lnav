@@ -79,7 +79,7 @@ private:
     using list_block_t
         = mapbox::util::variant<MD_BLOCK_UL_DETAIL*, MD_BLOCK_OL_DETAIL>;
 
-    void append_url_footnote(std::string href);
+    std::string append_url_footnote(std::string href);
     void flush_footnotes();
     attr_line_t to_attr_line(const pugi::xml_node& doc);
 

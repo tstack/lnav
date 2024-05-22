@@ -189,6 +189,8 @@ static const typed_json_path_container<textview_curses::selected_text_info>
             .with_children(line_range_handlers),
         yajlpp::property_handler("value").for_field(
             &textview_curses::selected_text_info::sti_value),
+        yajlpp::property_handler("href").for_field(
+            &textview_curses::selected_text_info::sti_href),
 };
 
 enum class row_details_t {
@@ -411,8 +413,7 @@ CREATE TABLE lnav_views (
                             | [](const auto wrapper) {
                                   auto lf = wrapper.get();
 
-                                  return std::make_optional(
-                                      lf->get_filename());
+                                  return std::make_optional(lf->get_filename());
                               };
                     });
                     for (const auto& crumb : crumbs) {

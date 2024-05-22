@@ -101,6 +101,18 @@
                 }
             }
         },
+        "external-opener": {
+            "impls": {
+                "MacOS": {
+                    "test": "command -v open",
+                    "command": "open"
+                },
+                "XDG": {
+                    "test": "command -v xdg-open",
+                    "command": "xdg-open"
+                }
+            }
+        },
         "url-scheme": {
             "docker": {
                 "handler": "docker-url-handler"

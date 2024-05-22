@@ -703,9 +703,8 @@ find_string_attr(const string_attrs_t& sa,
                  const string_attr_type_base* type,
                  int start)
 {
-    string_attrs_t::const_iterator iter;
-
-    for (iter = sa.begin(); iter != sa.end(); ++iter) {
+    auto iter = sa.begin();
+    for (; iter != sa.end(); ++iter) {
         if (iter->sa_type == type && iter->sa_range.lr_start >= start) {
             break;
         }

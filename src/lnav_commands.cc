@@ -58,6 +58,7 @@
 #include "curl_looper.hh"
 #include "date/tz.h"
 #include "db_sub_source.hh"
+#include "external_opener.hh"
 #include "field_overlay_source.hh"
 #include "fmt/printf.h"
 #include "hasher.hh"
@@ -3071,6 +3072,42 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             struct stat st;
             size_t url_index;
 
+#ifdef HAVE_LIBCURL
+            if (startswith(fn, "file:")) {
+                auto* cu = curl_url();
+                auto set_rc = curl_url_set(cu, CURLUPART_URL, fn.c_str(), 0);
+                if (set_rc != CURLUE_OK) {
+                    return Err(lnav::console::user_message::error(
+                                   attr_line_t("invalid URL: ")
+                                       .append(lnav::roles::file(fn)))
+                                   .with_reason(curl_url_strerror(set_rc)));
+                }
+
+                char* path_part;
+                auto get_rc = curl_url_get(cu, CURLUPART_PATH, &path_part, 0);
+                if (get_rc != CURLUE_OK) {
+                    return Err(lnav::console::user_message::error(
+                                   attr_line_t("cannot get path from URL: ")
+                                       .append(lnav::roles::file(fn)))
+                                   .with_reason(curl_url_strerror(get_rc)));
+                }
+                char* frag_part = nullptr;
+                get_rc = curl_url_get(cu, CURLUPART_FRAGMENT, &frag_part, 0);
+                if (get_rc != CURLUE_OK && get_rc != CURLUE_NO_FRAGMENT) {
+                    return Err(lnav::console::user_message::error(
+                                   attr_line_t("cannot get fragment from URL: ")
+                                       .append(lnav::roles::file(fn)))
+                                   .with_reason(curl_url_strerror(get_rc)));
+                }
+
+                if (frag_part != nullptr && frag_part[0]) {
+                    fn = fmt::format(FMT_STRING("{}#{}"), path_part, frag_part);
+                } else {
+                    fn = path_part;
+                }
+            }
+#endif
+
             if (is_url(fn.c_str())) {
 #ifndef HAVE_LIBCURL
                 retval = "error: lnav was not compiled with libcurl";
@@ -3434,6 +3471,60 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         }
 
         lnav_data.ld_active_files.merge(fc);
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_xopen(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
+{
+    static const intern_string_t SRC = intern_string::lookup("path");
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("filename");
+        return Ok(std::string());
+    }
+
+    if (lnav_data.ld_flags & LNF_SECURE_MODE) {
+        return ec.make_error("{} -- unavailable in secure mode", args[0]);
+    }
+
+    if (args.size() < 2) {
+        return ec.make_error("expecting file name to open");
+    }
+
+    std::vector<std::string> word_exp;
+    std::string pat;
+    file_collection fc;
+
+    pat = trim(remaining_args(cmdline, args));
+
+    shlex lexer(pat);
+    auto split_args_res = lexer.split(ec.create_resolver());
+    if (split_args_res.isErr()) {
+        auto split_err = split_args_res.unwrapErr();
+        auto um
+            = lnav::console::user_message::error("unable to parse file names")
+                  .with_reason(split_err.te_msg)
+                  .with_snippet(lnav::console::snippet::from(
+                      SRC, lexer.to_attr_line(split_err)));
+
+        return Err(um);
+    }
+
+    auto split_args = split_args_res.unwrap()
+        | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
+    for (auto fn : split_args) {
+        auto open_res = lnav::external_opener::for_href(fn);
+        if (open_res.isErr()) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("Unable to open file: ")
+                              .append(lnav::roles::file(fn)))
+                          .with_reason(open_res.unwrapErr());
+            return Err(um);
+        }
     }
 
     return Ok(retval);
@@ -6612,6 +6703,14 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_example({"To open the file '/path/to/file'", "/path/to/file"})
          .with_example({"To open the remote file '/var/log/syslog.log'",
                         "dean@host1.example.com:/var/log/syslog.log"})},
+    {"xopen",
+     com_xopen,
+
+     help_text(":xopen")
+         .with_summary("Use an external command to open the given file(s)")
+         .with_parameter(
+             help_text{"path", "The path to the file to open"}.one_or_more())
+         .with_example({"To open the file '/path/to/file'", "/path/to/file"})},
     {"hide-file",
      com_hide_file,
 

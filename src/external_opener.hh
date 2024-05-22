@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022, Timothy Stack
+ * Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,31 +27,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <filesystem>
-#include <iostream>
+#ifndef lnav_external_opener_hh
+#define lnav_external_opener_hh
 
-#include "base/fs_util.hh"
+#include <string>
 
-#include "config.h"
-#include "doctest/doctest.h"
+#include "base/result.h"
 
-TEST_CASE("fs_util::build_path")
-{
-    auto* old_path = getenv("PATH");
-    unsetenv("PATH");
+namespace lnav::external_opener {
 
-    CHECK("" == lnav::filesystem::build_path({}));
+Result<void, std::string> for_href(const std::string& href);
 
-    CHECK("/bin:/usr/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    setenv("PATH", "/usr/local/bin", 1);
-    CHECK("/bin:/usr/bin:/usr/local/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    setenv("PATH", "/usr/local/bin:/opt/bin", 1);
-    CHECK("/usr/local/bin:/opt/bin" == lnav::filesystem::build_path({}));
-    CHECK("/bin:/usr/bin:/usr/local/bin:/opt/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    if (old_path != nullptr) {
-        setenv("PATH", old_path, 1);
-    }
 }
+
+#endif

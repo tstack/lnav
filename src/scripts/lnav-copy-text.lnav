@@ -3,12 +3,17 @@
 # @description: Copy text from the top view
 #
 
-;SELECT jget(selected_text, '/value') AS content FROM lnav_top_view
+;SELECT
+    jget(selected_text, '/value') AS sel_value,
+    jget(selected_text, '/href') AS sel_href
+   FROM lnav_top_view
 ;SELECT CASE
-    WHEN $content IS NULL THEN
-        ':write-to -'
+    WHEN $sel_href IS NOT NULL AND $sel_href != '' THEN
+        ':echo -n ${sel_href}'
+    WHEN $sel_value IS NOT NULL AND $sel_value != '' THEN
+        ':echo -n ${sel_value}'
     ELSE
-        ':echo -n ${content}'
+        ':write-to -'
     END AS cmd
 
 :redirect-to /dev/clipboard

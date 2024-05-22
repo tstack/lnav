@@ -628,11 +628,9 @@ textview_curses::handle_mouse(mouse_event& me)
             } else {
                 if (this->tc_press_line.is<main_content>()) {
                     if (me.me_y < 0) {
-                        this->shift_selection(
-                            listview_curses::shift_amount_t::up_line);
+                        this->shift_selection(shift_amount_t::up_line);
                     } else if (me.me_y >= height) {
-                        this->shift_selection(
-                            listview_curses::shift_amount_t::down_line);
+                        this->shift_selection(shift_amount_t::down_line);
                     } else if (mouse_line.is<main_content>()) {
                         this->set_selection_without_context(
                             mouse_line.get<main_content>().mc_line);
@@ -658,12 +656,12 @@ textview_curses::handle_mouse(mouse_event& me)
         }
         case mouse_button_state_t::BUTTON_STATE_RELEASED: {
             auto* ov = this->get_overlay_source();
-            if (ov != nullptr && mouse_line.is<listview_curses::overlay_menu>()
+            if (ov != nullptr && mouse_line.is<overlay_menu>()
                 && this->tc_selected_text)
             {
                 auto* tom = dynamic_cast<text_overlay_menu*>(ov);
                 if (tom != nullptr) {
-                    auto& om = mouse_line.get<listview_curses::overlay_menu>();
+                    auto& om = mouse_line.get<overlay_menu>();
                     auto& sti = this->tc_selected_text.value();
 
                     for (const auto& mi : tom->tom_menu_items) {
@@ -701,20 +699,21 @@ textview_curses::handle_mouse(mouse_event& me)
                 attr_line_t al;
 
                 this->textview_value_for_row(mc_line, al);
-                auto get_res = get_string_attr(al.get_attrs(),
-                                               &VC_HYPERLINK,
-                                               this->lv_left + me.me_press_x);
-                if (get_res) {
-                    auto href = get_res.value()->sa_value.get<std::string>();
+                auto line_sf = string_fragment::from_str(al.get_string());
+                auto cursor_sf = line_sf.sub_cell_range(
+                    this->lv_left + me.me_x, this->lv_left + me.me_x);
+                auto attr_iter = find_string_attr_containing(
+                    al.get_attrs(), &VC_HYPERLINK, cursor_sf.sf_begin);
+                if (attr_iter != al.get_attrs().end()) {
+                    auto href = attr_iter->sa_value.get<std::string>();
 
-                    if (startswith(href, "#")) {
-                        auto* ta
-                            = dynamic_cast<text_anchors*>(this->tc_sub_source);
-                        if (ta != nullptr) {
-                            ta->row_for_anchor(href) |
-                                [this](auto row) { this->set_selection(row); };
-                        }
-                    }
+                    this->tc_selected_text = selected_text_info{
+                        me.me_x,
+                        mc_line,
+                        attr_iter->sa_range,
+                        al.to_string_fragment(attr_iter).to_string(),
+                        href,
+                    };
                 }
             }
             if (this->tc_delegate != nullptr) {

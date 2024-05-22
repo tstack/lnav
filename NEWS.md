@@ -9,6 +9,11 @@ Features:
   don't have one.  Setting an opid allows messages to show
   up in the Gantt chart view.
 * Add support for GitHub Markdown Alerts.
+* Added the `:xopen` command that will open the given paths
+  using an external opener like `open` or `xdg-open`.
+* Clicking on a link in a markdown file will open the Actions
+  with options for opening the link target in lnav, opening the
+  target with `:xopen`, or copying the link to a clipboard.
 
 Interface Changes:
 * In the Gantt chart view, pressing `ENTER` will focus on

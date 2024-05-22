@@ -316,19 +316,17 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
 void
 textfile_sub_source::to_front(const std::shared_ptr<logfile>& lf)
 {
-    auto iter = std::find(this->tss_files.begin(), this->tss_files.end(), lf);
-    if (iter != this->tss_files.end()) {
-        this->tss_files.erase(iter);
-    } else {
-        iter = std::find(
-            this->tss_hidden_files.begin(), this->tss_hidden_files.end(), lf);
-
-        if (iter != this->tss_hidden_files.end()) {
-            this->tss_hidden_files.erase(iter);
-        }
+    const auto iter
+        = std::find(this->tss_files.begin(), this->tss_files.end(), lf);
+    if (iter == this->tss_files.end()) {
+        return;
     }
-    this->tss_files.push_front(lf);
+    this->tss_files.front().save_from(*this->tss_view);
+    auto fvs = *iter;
+    this->tss_files.erase(iter);
+    this->tss_files.emplace_front(fvs);
     this->set_time_offset(false);
+    fvs.load_into(*this->tss_view);
     this->tss_view->reload_data();
 }
 
@@ -338,6 +336,8 @@ textfile_sub_source::rotate_left()
     if (this->tss_files.size() > 1) {
         this->tss_files.push_back(this->tss_files.front());
         this->tss_files.pop_front();
+        this->tss_files.back().save_from(*this->tss_view);
+        this->tss_files.front().load_into(*this->tss_view);
         this->set_time_offset(false);
         this->tss_view->reload_data();
         this->tss_view->redo_search();
@@ -348,8 +348,10 @@ void
 textfile_sub_source::rotate_right()
 {
     if (this->tss_files.size() > 1) {
-        this->tss_files.push_front(this->tss_files.back());
+        this->tss_files.front().save_from(*this->tss_view);
+        this->tss_files.emplace_front(this->tss_files.back());
         this->tss_files.pop_back();
+        this->tss_files.front().load_into(*this->tss_view);
         this->set_time_offset(false);
         this->tss_view->reload_data();
         this->tss_view->redo_search();
@@ -362,16 +364,13 @@ textfile_sub_source::remove(const std::shared_ptr<logfile>& lf)
     auto iter = std::find(this->tss_files.begin(), this->tss_files.end(), lf);
     if (iter != this->tss_files.end()) {
         this->tss_files.erase(iter);
-        detach_observer(lf);
-    } else {
-        iter = std::find(
-            this->tss_hidden_files.begin(), this->tss_hidden_files.end(), lf);
-        if (iter != this->tss_hidden_files.end()) {
-            this->tss_hidden_files.erase(iter);
-            detach_observer(lf);
-        }
+        this->detach_observer(lf);
     }
     this->set_time_offset(false);
+    if (!this->tss_files.empty()) {
+        this->tss_files.front().load_into(*this->tss_view);
+    }
+    this->tss_view->reload_data();
 }
 
 void
@@ -379,7 +378,7 @@ textfile_sub_source::push_back(const std::shared_ptr<logfile>& lf)
 {
     auto* lfo = new line_filter_observer(this->get_filters(), lf);
     lf->set_logline_observer(lfo);
-    this->tss_files.push_back(lf);
+    this->tss_files.emplace_back(lf);
 }
 
 void
@@ -449,7 +448,7 @@ textfile_sub_source::scroll_invoked(textview_curses* tc)
 int
 textfile_sub_source::get_filtered_count() const
 {
-    std::shared_ptr<logfile> lf = this->current_file();
+    auto lf = this->current_file();
     int retval = 0;
 
     if (lf != nullptr) {
@@ -482,7 +481,7 @@ textfile_sub_source::get_text_format() const
         return text_format_t::TF_UNKNOWN;
     }
 
-    return this->tss_files.front()->get_text_format();
+    return this->tss_files.front().fvs_file->get_text_format();
 }
 
 static attr_line_t
@@ -517,8 +516,8 @@ textfile_sub_source::text_crumbs_for_line(
         [this]() {
             return this->tss_files | lnav::itertools::map([](const auto& lf) {
                        return breadcrumb::possibility{
-                           lf->get_unique_path(),
-                           to_display(lf),
+                           lf.fvs_file->get_unique_path(),
+                           to_display(lf.fvs_file),
                        };
                    });
         },
@@ -526,7 +525,7 @@ textfile_sub_source::text_crumbs_for_line(
             auto lf_opt = this->tss_files
                 | lnav::itertools::find_if([&key](const auto& elem) {
                               return key.template get<std::string>()
-                                  == elem->get_unique_path();
+                                  == elem.fvs_file->get_unique_path();
                           })
                 | lnav::itertools::deref();
 
@@ -534,7 +533,7 @@ textfile_sub_source::text_crumbs_for_line(
                 return;
             }
 
-            this->to_front(lf_opt.value());
+            this->to_front(lf_opt.value().fvs_file);
             this->tss_view->reload_data();
         });
     if (lf->size() == 0) {
@@ -686,9 +685,8 @@ textfile_sub_source::text_crumbs_for_line(
 }
 
 textfile_sub_source::rescan_result_t
-textfile_sub_source::rescan_files(
-    textfile_sub_source::scan_callback& callback,
-    std::optional<ui_clock::time_point> deadline)
+textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
+                                  std::optional<ui_clock::time_point> deadline)
 {
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
@@ -709,7 +707,7 @@ textfile_sub_source::rescan_files(
             break;
         }
 
-        std::shared_ptr<logfile> lf = (*iter);
+        std::shared_ptr<logfile> lf = iter->fvs_file;
 
         if (lf->is_closed()) {
             iter = this->tss_files.erase(iter);
@@ -971,6 +969,10 @@ textfile_sub_source::rescan_files(
     }
     if (!closed_files.empty()) {
         callback.closed_files(closed_files);
+        if (!this->tss_files.empty()) {
+            this->tss_files.front().load_into(*this->tss_view);
+        }
+        this->tss_view->set_needs_update();
     }
 
     if (retval.rr_new_data) {
@@ -1005,7 +1007,7 @@ void
 textfile_sub_source::quiesce()
 {
     for (auto& lf : this->tss_files) {
-        lf->quiesce();
+        lf.fvs_file->quiesce();
     }
 }
 
@@ -1355,20 +1357,13 @@ textfile_sub_source::to_front(const std::string& filename)
 {
     auto lf_opt = this->tss_files
         | lnav::itertools::find_if([&filename](const auto& elem) {
-                      return elem->get_filename() == filename;
+                      return elem.fvs_file->get_filename() == filename;
                   });
-    if (!lf_opt) {
-        lf_opt = this->tss_hidden_files
-            | lnav::itertools::find_if([&filename](const auto& elem) {
-                     return elem->get_filename() == filename;
-                 });
-    }
-
     if (!lf_opt) {
         return false;
     }
 
-    this->to_front(*(lf_opt.value()));
+    this->to_front(lf_opt.value()->fvs_file);
 
     return true;
 }
@@ -1381,7 +1376,8 @@ textfile_sub_source::text_accel_get_line(vis_line_t vl)
     return (lf->begin() + lfo->lfo_filter_state.tfs_index[vl]).base();
 }
 
-textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src)
+textfile_header_overlay::
+textfile_header_overlay(textfile_sub_source* src)
     : tho_src(src)
 {
 }

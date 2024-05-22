@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2022, Timothy Stack
+ * Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,31 +27,30 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <filesystem>
-#include <iostream>
+#include "text_link_handler.hh"
 
-#include "base/fs_util.hh"
+#include <curl/curl.h>
 
-#include "config.h"
-#include "doctest/doctest.h"
+#include "base/injector.hh"
+#include "command_executor.hh"
 
-TEST_CASE("fs_util::build_path")
+void
+text_link_handler::text_open_href(const std::string& href)
 {
-    auto* old_path = getenv("PATH");
-    unsetenv("PATH");
+    static auto& ec = injector::get<exec_context&>();
 
-    CHECK("" == lnav::filesystem::build_path({}));
-
-    CHECK("/bin:/usr/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    setenv("PATH", "/usr/local/bin", 1);
-    CHECK("/bin:/usr/bin:/usr/local/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    setenv("PATH", "/usr/local/bin:/opt/bin", 1);
-    CHECK("/usr/local/bin:/opt/bin" == lnav::filesystem::build_path({}));
-    CHECK("/bin:/usr/bin:/usr/local/bin:/opt/bin"
-          == lnav::filesystem::build_path({"", "/bin", "/usr/bin", ""}));
-    if (old_path != nullptr) {
-        setenv("PATH", old_path, 1);
+    log_info("open link: %s", href.c_str());
+    if (startswith(href, "#")) {
+        auto* ta = dynamic_cast<text_anchors*>(this);
+        if (ta != nullptr) {
+            ta->row_for_anchor(href) |
+                [this](auto row) { this->tss_view->set_selection(row); };
+        }
+    } else if (!is_url(href) || startswith(href, "file:")) {
+        ec.execute_with(":open $href", std::make_pair("href", href));
+    } else {
+        this->tlh_hrefs.clear();
+        this->tlh_hrefs.emplace(href);
+        this->tlh_href_line = this->tss_view->get_selection();
     }
 }

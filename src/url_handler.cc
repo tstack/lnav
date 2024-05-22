@@ -125,7 +125,7 @@ looper::open(std::string url)
         return Err(lnav::console::user_message::error(
                        attr_line_t("cannot get scheme from URL: ")
                            .append(lnav::roles::file(url)))
-                       .with_reason(curl_url_strerror(set_rc)));
+                       .with_reason(curl_url_strerror(get_rc)));
     }
 
     auto proto_iter = cfg.c_schemes.find(scheme_part);
