@@ -32,6 +32,7 @@
 #include "fs_util.hh"
 
 #include <stdlib.h>
+#include <sys/param.h>
 
 #include "config.h"
 #include "fmt/format.h"
