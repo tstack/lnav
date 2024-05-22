@@ -882,6 +882,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     if ((st.st_mtime != ms_iter->second.ms_mtime
                          || st.st_size != ms_iter->second.ms_file_size)
                         && (st.st_size < 10 * 1024
+                            || ms_iter->second.ms_file_size == 0
                             || !ms_iter->second.ms_metadata.m_sections_tree
                                     .empty()))
                     {
@@ -921,7 +922,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         this->tss_doc_metadata[lf->get_filename()]
                             = metadata_state{
                                 st.st_mtime,
-                                static_cast<file_ssize_t>(lf->get_index_size()),
+                                lf->get_index_size(),
                                 lnav::document::discover_structure(
                                     content,
                                     line_range{0, -1},

@@ -3118,6 +3118,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     lnav_data.ld_active_files.fc_file_names[ul->get_path()]
                         .with_filename(fn)
                         .with_init_location(file_loc);
+                    lnav_data.ld_active_files.fc_files_generation += 1;
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [ul](auto& clooper) { clooper.add_request(ul); });
                     lnav_data.ld_files_to_front.emplace_back(fn, file_loc);
