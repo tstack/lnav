@@ -29,7 +29,7 @@
 
 #include <chrono>
 
-#include "gantt_source.hh"
+#include "timeline_source.hh"
 
 #include <time.h>
 
@@ -118,8 +118,8 @@ abbrev_ftime(char* datebuf,
 }
 
 std::vector<attr_line_t>
-gantt_preview_overlay::list_overlay_menu(const listview_curses& lv,
-                                         vis_line_t line)
+timeline_preview_overlay::list_overlay_menu(const listview_curses& lv,
+                                            vis_line_t line)
 {
     static constexpr auto MENU_WIDTH = 25;
 
@@ -174,17 +174,17 @@ gantt_preview_overlay::list_overlay_menu(const listview_curses& lv,
     return retval;
 }
 
-gantt_header_overlay::
-gantt_header_overlay(std::shared_ptr<gantt_source> src)
+timeline_header_overlay::
+timeline_header_overlay(std::shared_ptr<timeline_source> src)
     : gho_src(src)
 {
 }
 
 bool
-gantt_header_overlay::list_static_overlay(const listview_curses& lv,
-                                          int y,
-                                          int bottom,
-                                          attr_line_t& value_out)
+timeline_header_overlay::list_static_overlay(const listview_curses& lv,
+                                             int y,
+                                             int bottom,
+                                             attr_line_t& value_out)
 {
     if (y >= 3) {
         return false;
@@ -297,7 +297,7 @@ gantt_header_overlay::list_static_overlay(const listview_curses& lv,
     return true;
 }
 void
-gantt_header_overlay::list_value_for_overlay(
+timeline_header_overlay::list_value_for_overlay(
     const listview_curses& lv,
     vis_line_t line,
     std::vector<attr_line_t>& value_out)
@@ -384,8 +384,8 @@ gantt_header_overlay::list_value_for_overlay(
     }
 }
 std::optional<attr_line_t>
-gantt_header_overlay::list_header_for_overlay(const listview_curses& lv,
-                                              vis_line_t line)
+timeline_header_overlay::list_header_for_overlay(const listview_curses& lv,
+                                                 vis_line_t line)
 {
     if (lv.get_overlay_selection()) {
         return attr_line_t("\u258C Sub-operations: Press ")
@@ -397,13 +397,13 @@ gantt_header_overlay::list_header_for_overlay(const listview_curses& lv,
         .append(" to focus on this panel");
 }
 
-gantt_source::
-gantt_source(textview_curses& log_view,
-             logfile_sub_source& lss,
-             textview_curses& preview_view,
-             plain_text_source& preview_source,
-             statusview_curses& preview_status_view,
-             gantt_status_source& preview_status_source)
+timeline_source::
+timeline_source(textview_curses& log_view,
+                logfile_sub_source& lss,
+                textview_curses& preview_view,
+                plain_text_source& preview_source,
+                statusview_curses& preview_status_view,
+                timeline_status_source& preview_status_source)
     : gs_log_view(log_view), gs_lss(lss), gs_preview_view(preview_view),
       gs_preview_source(preview_source),
       gs_preview_status_view(preview_status_view),
@@ -414,7 +414,7 @@ gantt_source(textview_curses& log_view,
 }
 
 bool
-gantt_source::list_input_handle_key(listview_curses& lv, int ch)
+timeline_source::list_input_handle_key(listview_curses& lv, int ch)
 {
     log_debug("list input %x", ch);
     switch (ch) {
@@ -462,9 +462,10 @@ gantt_source::list_input_handle_key(listview_curses& lv, int ch)
 }
 
 bool
-gantt_source::text_handle_mouse(textview_curses& tc,
-                                const listview_curses::display_line_content_t&,
-                                mouse_event& me)
+timeline_source::text_handle_mouse(
+    textview_curses& tc,
+    const listview_curses::display_line_content_t&,
+    mouse_event& me)
 {
     if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{0, -1})) {
         this->list_input_handle_key(tc, '\r');
@@ -474,7 +475,7 @@ gantt_source::text_handle_mouse(textview_curses& tc,
 }
 
 std::pair<timeval, timeval>
-gantt_source::get_time_bounds_for(int line)
+timeline_source::get_time_bounds_for(int line)
 {
     auto low_index = this->tss_view->get_top();
     auto high_index
@@ -517,16 +518,16 @@ gantt_source::get_time_bounds_for(int line)
 }
 
 size_t
-gantt_source::text_line_count()
+timeline_source::text_line_count()
 {
     return this->gs_time_order.size();
 }
 
 void
-gantt_source::text_value_for_line(textview_curses& tc,
-                                  int line,
-                                  std::string& value_out,
-                                  text_sub_source::line_flags_t flags)
+timeline_source::text_value_for_line(textview_curses& tc,
+                                     int line,
+                                     std::string& value_out,
+                                     text_sub_source::line_flags_t flags)
 {
     if (line < this->gs_time_order.size()) {
         const auto& row = this->gs_time_order[line].get();
@@ -563,9 +564,9 @@ gantt_source::text_value_for_line(textview_curses& tc,
 }
 
 void
-gantt_source::text_attrs_for_line(textview_curses& tc,
-                                  int line,
-                                  string_attrs_t& value_out)
+timeline_source::text_attrs_for_line(textview_curses& tc,
+                                     int line,
+                                     string_attrs_t& value_out)
 {
     if (line < this->gs_time_order.size()) {
         const auto& row = this->gs_time_order[line].get();
@@ -623,15 +624,15 @@ gantt_source::text_attrs_for_line(textview_curses& tc,
 }
 
 size_t
-gantt_source::text_size_for_line(textview_curses& tc,
-                                 int line,
-                                 text_sub_source::line_flags_t raw)
+timeline_source::text_size_for_line(textview_curses& tc,
+                                    int line,
+                                    text_sub_source::line_flags_t raw)
 {
     return this->gs_total_width;
 }
 
 void
-gantt_source::rebuild_indexes()
+timeline_source::rebuild_indexes()
 {
     auto& bm = this->tss_view->get_bookmarks();
     auto& bm_errs = bm[&logfile_sub_source::BM_ERRORS];
@@ -861,7 +862,7 @@ gantt_source::rebuild_indexes()
 }
 
 std::optional<vis_line_t>
-gantt_source::row_for_time(struct timeval time_bucket)
+timeline_source::row_for_time(struct timeval time_bucket)
 {
     auto iter = this->gs_time_order.begin();
     while (true) {
@@ -908,7 +909,7 @@ gantt_source::row_for_time(struct timeval time_bucket)
 }
 
 std::optional<text_time_translator::row_info>
-gantt_source::time_for_row(vis_line_t row)
+timeline_source::time_for_row(vis_line_t row)
 {
     if (row >= this->gs_time_order.size()) {
         return std::nullopt;
@@ -939,13 +940,13 @@ gantt_source::time_for_row(vis_line_t row)
 }
 
 size_t
-gantt_source::text_line_width(textview_curses& curses)
+timeline_source::text_line_width(textview_curses& curses)
 {
     return this->gs_total_width;
 }
 
 void
-gantt_source::text_selection_changed(textview_curses& tc)
+timeline_source::text_selection_changed(textview_curses& tc)
 {
     static const size_t MAX_PREVIEW_LINES = 200;
 
@@ -1021,24 +1022,24 @@ gantt_source::text_selection_changed(textview_curses& tc)
     auto err_count = level_stats.lls_error_count;
     if (err_count == 0) {
         this->gs_preview_status_source
-            .statusview_value_for_field(gantt_status_source::TSF_ERRORS)
+            .statusview_value_for_field(timeline_status_source::TSF_ERRORS)
             .set_value("");
     } else if (err_count > 1) {
         this->gs_preview_status_source
-            .statusview_value_for_field(gantt_status_source::TSF_ERRORS)
+            .statusview_value_for_field(timeline_status_source::TSF_ERRORS)
             .set_value("%'d errors", err_count);
     } else {
         this->gs_preview_status_source
-            .statusview_value_for_field(gantt_status_source::TSF_ERRORS)
+            .statusview_value_for_field(timeline_status_source::TSF_ERRORS)
             .set_value("%'d error", err_count);
     }
     this->gs_preview_status_source
-        .statusview_value_for_field(gantt_status_source::TSF_TOTAL)
+        .statusview_value_for_field(timeline_status_source::TSF_TOTAL)
         .set_value("%'d messages ", level_stats.lls_total_count);
 }
 
 void
-gantt_source::text_filters_changed()
+timeline_source::text_filters_changed()
 {
     this->rebuild_indexes();
 
@@ -1049,13 +1050,13 @@ gantt_source::text_filters_changed()
 }
 
 int
-gantt_source::get_filtered_count() const
+timeline_source::get_filtered_count() const
 {
     return this->gs_filtered_count;
 }
 
 int
-gantt_source::get_filtered_count_for(size_t filter_index) const
+timeline_source::get_filtered_count_for(size_t filter_index) const
 {
     return this->gs_filter_hits[filter_index];
 }
@@ -1082,8 +1083,8 @@ timestamp_poss()
 }
 
 void
-gantt_source::text_crumbs_for_line(int line,
-                                   std::vector<breadcrumb::crumb>& crumbs)
+timeline_source::text_crumbs_for_line(int line,
+                                      std::vector<breadcrumb::crumb>& crumbs)
 {
     text_sub_source::text_crumbs_for_line(line, crumbs);
 

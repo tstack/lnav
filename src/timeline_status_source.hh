@@ -27,14 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_gantt_status_source_hh
-#define lnav_gantt_status_source_hh
+#ifndef lnav_timeline_status_source_hh
+#define lnav_timeline_status_source_hh
 
 #include <string>
 
 #include "statusview_curses.hh"
 
-class gantt_status_source : public status_data_source {
+class timeline_status_source : public status_data_source {
 public:
     typedef enum {
         TSF_TITLE,
@@ -46,7 +46,7 @@ public:
         TSF__MAX
     } field_t;
 
-    gantt_status_source()
+    timeline_status_source()
     {
         this->tss_fields[TSF_TITLE].set_width(16);
         this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);

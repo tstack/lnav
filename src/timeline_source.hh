@@ -27,34 +27,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_gantt_source_hh
-#define lnav_gantt_source_hh
+#ifndef lnav_timeline_source_hh
+#define lnav_timeline_source_hh
 
 #include "base/map_util.hh"
-#include "gantt_status_source.hh"
 #include "logfile_sub_source.hh"
 #include "plain_text_source.hh"
 #include "text_overlay_menu.hh"
 #include "textview_curses.hh"
+#include "timeline_status_source.hh"
 
-class gantt_preview_overlay : public list_overlay_source {
+class timeline_preview_overlay : public list_overlay_source {
 public:
     std::vector<attr_line_t> list_overlay_menu(const listview_curses& lv,
                                                vis_line_t line) override;
 };
 
-class gantt_source
+class timeline_source
     : public text_sub_source
     , public list_input_delegate
     , public text_time_translator
     , public text_delegate {
 public:
-    explicit gantt_source(textview_curses& log_view,
-                          logfile_sub_source& lss,
-                          textview_curses& preview_view,
-                          plain_text_source& preview_source,
-                          statusview_curses& preview_status_view,
-                          gantt_status_source& preview_status_source);
+    explicit timeline_source(textview_curses& log_view,
+                             logfile_sub_source& lss,
+                             textview_curses& preview_view,
+                             plain_text_source& preview_source,
+                             statusview_curses& preview_status_view,
+                             timeline_status_source& preview_status_source);
 
     bool list_input_handle_key(listview_curses& lv, int ch) override;
 
@@ -100,7 +100,7 @@ public:
     textview_curses& gs_preview_view;
     plain_text_source& gs_preview_source;
     statusview_curses& gs_preview_status_view;
-    gantt_status_source& gs_preview_status_source;
+    timeline_status_source& gs_preview_status_source;
     ArenaAlloc::Alloc<char> gs_allocator{64 * 1024};
 
     struct opid_description_def_key {
@@ -125,13 +125,13 @@ public:
             odd_defs;
     };
 
-    using gantt_subid_map
+    using timeline_subid_map
         = robin_hood::unordered_map<string_fragment,
                                     bool,
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
 
-    gantt_subid_map gs_subid_map;
+    timeline_subid_map gs_subid_map;
 
     struct opid_row {
         string_fragment or_name;
@@ -159,22 +159,22 @@ public:
         }
     };
 
-    using gantt_opid_row_map
+    using timeline_opid_row_map
         = robin_hood::unordered_map<string_fragment,
                                     opid_row,
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
-    using gantt_desc_map
+    using timeline_desc_map
         = robin_hood::unordered_set<string_fragment,
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
 
-    gantt_preview_overlay gs_preview_overlay;
+    timeline_preview_overlay gs_preview_overlay;
     attr_line_t gs_rendered_line;
     size_t gs_opid_width{0};
     size_t gs_total_width{0};
-    gantt_opid_row_map gs_active_opids;
-    gantt_desc_map gs_descriptions;
+    timeline_opid_row_map gs_active_opids;
+    timeline_desc_map gs_descriptions;
     std::vector<std::reference_wrapper<opid_row>> gs_time_order;
     struct timeval gs_lower_bound {};
     struct timeval gs_upper_bound {};
@@ -185,9 +185,9 @@ public:
     std::vector<text_time_translator::row_info> gs_preview_rows;
 };
 
-class gantt_header_overlay : public text_overlay_menu {
+class timeline_header_overlay : public text_overlay_menu {
 public:
-    explicit gantt_header_overlay(std::shared_ptr<gantt_source> src);
+    explicit timeline_header_overlay(std::shared_ptr<timeline_source> src);
 
     bool list_static_overlay(const listview_curses& lv,
                              int y,
@@ -213,7 +213,7 @@ public:
 
 private:
     bool gho_show_details{false};
-    std::shared_ptr<gantt_source> gho_src;
+    std::shared_ptr<timeline_source> gho_src;
 };
 
 #endif

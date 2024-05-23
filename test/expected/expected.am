@@ -306,26 +306,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_format_loader.sh_5992e2695b7e6cf1f3520dbb87af8fc2b8f27088.out \
     $(srcdir)/%reldir%/test_format_loader.sh_fca6c1fb9f3aaa69b3ffb2d1a8a86434b2f4a247.err \
     $(srcdir)/%reldir%/test_format_loader.sh_fca6c1fb9f3aaa69b3ffb2d1a8a86434b2f4a247.out \
-    $(srcdir)/%reldir%/test_gantt.sh_3af11588ee36bab7e2caea0f7a24d3c9cafd2310.err \
-    $(srcdir)/%reldir%/test_gantt.sh_3af11588ee36bab7e2caea0f7a24d3c9cafd2310.out \
-    $(srcdir)/%reldir%/test_gantt.sh_3c2669075d0636fab98e2a67a72613420f22c322.err \
-    $(srcdir)/%reldir%/test_gantt.sh_3c2669075d0636fab98e2a67a72613420f22c322.out \
-    $(srcdir)/%reldir%/test_gantt.sh_63500be50fc6743d8312133e2030cbbc39ca15ff.err \
-    $(srcdir)/%reldir%/test_gantt.sh_63500be50fc6743d8312133e2030cbbc39ca15ff.out \
-    $(srcdir)/%reldir%/test_gantt.sh_740f22814c5d856234c2450168dae22989c85d1e.err \
-    $(srcdir)/%reldir%/test_gantt.sh_740f22814c5d856234c2450168dae22989c85d1e.out \
-    $(srcdir)/%reldir%/test_gantt.sh_74a94ee9103eac5e8e78ca57bccf49efa3827a9d.err \
-    $(srcdir)/%reldir%/test_gantt.sh_74a94ee9103eac5e8e78ca57bccf49efa3827a9d.out \
-    $(srcdir)/%reldir%/test_gantt.sh_83db753dd2669f801810f311e2d7d74397e10f26.err \
-    $(srcdir)/%reldir%/test_gantt.sh_83db753dd2669f801810f311e2d7d74397e10f26.out \
-    $(srcdir)/%reldir%/test_gantt.sh_8fed8a7400042814ba13e50be5e3bd1741d82119.err \
-    $(srcdir)/%reldir%/test_gantt.sh_8fed8a7400042814ba13e50be5e3bd1741d82119.out \
-    $(srcdir)/%reldir%/test_gantt.sh_b013ab41c3cca76cf05a01ca1ba65888be247ada.err \
-    $(srcdir)/%reldir%/test_gantt.sh_b013ab41c3cca76cf05a01ca1ba65888be247ada.out \
-    $(srcdir)/%reldir%/test_gantt.sh_cde7947f361e5f3d4cd1bbc3f7458f426b6a8eb4.err \
-    $(srcdir)/%reldir%/test_gantt.sh_cde7947f361e5f3d4cd1bbc3f7458f426b6a8eb4.out \
-    $(srcdir)/%reldir%/test_gantt.sh_e6a4681a5a671c84c020dc91d7ce03c9d17fde07.err \
-    $(srcdir)/%reldir%/test_gantt.sh_e6a4681a5a671c84c020dc91d7ce03c9d17fde07.out \
     $(srcdir)/%reldir%/test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.err \
     $(srcdir)/%reldir%/test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.out \
     $(srcdir)/%reldir%/test_json_format.sh_1bb0fd243e916546aea22029245ac590dae17a86.err \
@@ -1330,4 +1310,24 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_text_file.sh_f586ef080a86dfe1f981b345bcf8d7a279b2b247.out \
     $(srcdir)/%reldir%/test_text_file.sh_f7522b0a99550a3ff91aae6582eb861547c535e1.err \
     $(srcdir)/%reldir%/test_text_file.sh_f7522b0a99550a3ff91aae6582eb861547c535e1.out \
+    $(srcdir)/%reldir%/test_timeline.sh_1a611c8752ca85361f436768a9982051530a5d2a.err \
+    $(srcdir)/%reldir%/test_timeline.sh_1a611c8752ca85361f436768a9982051530a5d2a.out \
+    $(srcdir)/%reldir%/test_timeline.sh_3c2669075d0636fab98e2a67a72613420f22c322.err \
+    $(srcdir)/%reldir%/test_timeline.sh_3c2669075d0636fab98e2a67a72613420f22c322.out \
+    $(srcdir)/%reldir%/test_timeline.sh_3fb943420cd43a6540bcac4702e257dcbbf00cc6.err \
+    $(srcdir)/%reldir%/test_timeline.sh_3fb943420cd43a6540bcac4702e257dcbbf00cc6.out \
+    $(srcdir)/%reldir%/test_timeline.sh_403bc375071bc26f955b317d751a7d65fb433bc7.err \
+    $(srcdir)/%reldir%/test_timeline.sh_403bc375071bc26f955b317d751a7d65fb433bc7.out \
+    $(srcdir)/%reldir%/test_timeline.sh_7f300bf5f67f7ac2b0929990ed2670eea74062d1.err \
+    $(srcdir)/%reldir%/test_timeline.sh_7f300bf5f67f7ac2b0929990ed2670eea74062d1.out \
+    $(srcdir)/%reldir%/test_timeline.sh_92bccfbb9fb45d7ab03934d662cc99ce50c77d8b.err \
+    $(srcdir)/%reldir%/test_timeline.sh_92bccfbb9fb45d7ab03934d662cc99ce50c77d8b.out \
+    $(srcdir)/%reldir%/test_timeline.sh_a3af66b778018a11f912ce81bf8b4437b0ffddd0.err \
+    $(srcdir)/%reldir%/test_timeline.sh_a3af66b778018a11f912ce81bf8b4437b0ffddd0.out \
+    $(srcdir)/%reldir%/test_timeline.sh_c54de09ae2633ee461ff92fdede81e2b36623c27.err \
+    $(srcdir)/%reldir%/test_timeline.sh_c54de09ae2633ee461ff92fdede81e2b36623c27.out \
+    $(srcdir)/%reldir%/test_timeline.sh_c59a35537a919d78245edf21b83f9c0f3e0693dc.err \
+    $(srcdir)/%reldir%/test_timeline.sh_c59a35537a919d78245edf21b83f9c0f3e0693dc.out \
+    $(srcdir)/%reldir%/test_timeline.sh_ced7291b2185772065e32d1add9ce5d4894482a0.err \
+    $(srcdir)/%reldir%/test_timeline.sh_ced7291b2185772065e32d1add9ce5d4894482a0.out \
     $()

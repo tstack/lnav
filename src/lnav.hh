@@ -49,7 +49,6 @@
 #include "file_collection.hh"
 #include "files_sub_source.hh"
 #include "filter_status_source.hh"
-#include "gantt_status_source.hh"
 #include "hist_source.hh"
 #include "input_dispatcher.hh"
 #include "log_vtab_impl.hh"
@@ -59,6 +58,7 @@
 #include "sqlitepp.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
+#include "timeline_status_source.hh"
 #include "view_helpers.hh"
 
 class spectrogram_source;
@@ -76,7 +76,7 @@ typedef enum {
     LNS_PREVIEW0,
     LNS_PREVIEW1,
     LNS_SPECTRO,
-    LNS_GANTT,
+    LNS_TIMELINE,
 
     LNS__MAX
 } lnav_status_t;
@@ -185,7 +185,7 @@ struct lnav_data_t {
     doc_status_source ld_doc_status_source;
     preview_status_source ld_preview_status_source[2];
     std::unique_ptr<spectro_status_source> ld_spectro_status_source;
-    gantt_status_source ld_gantt_status_source;
+    timeline_status_source ld_timeline_status_source;
     bool ld_preview_hidden;
     int64_t ld_preview_generation{0};
     action_broadcaster<listview_curses> ld_scroll_broadcaster;
@@ -211,8 +211,8 @@ struct lnav_data_t {
         ld_user_message_expiration;
     textview_curses ld_spectro_details_view;
     plain_text_source ld_spectro_no_details_source;
-    textview_curses ld_gantt_details_view;
-    plain_text_source ld_gantt_details_source;
+    textview_curses ld_timeline_details_view;
+    plain_text_source ld_timeline_details_source;
 
     view_stack<textview_curses> ld_view_stack;
     textview_curses* ld_last_view;

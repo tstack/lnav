@@ -207,7 +207,7 @@ dist_noinst_SCRIPTS = \
 	test_events.sh \
 	test_format_installer.sh \
 	test_format_loader.sh \
-	test_gantt.sh \
+	test_timeline.sh \
 	test_grep_proc.sh \
 	test_json_format.sh \
 	test_line_buffer.sh \
@@ -490,7 +490,7 @@ TESTS = \
 	test_listview.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \
-	test_gantt.sh \
+	test_timeline.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_json_format.sh \

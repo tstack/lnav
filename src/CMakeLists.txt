@@ -443,7 +443,6 @@ add_library(
         fs-extension-functions.cc
         fstat_vtab.cc
         fts_fuzzy_match.cc
-        gantt_source.cc
         help_text.cc
         help_text_formatter.cc
         highlighter.cc
@@ -510,6 +509,7 @@ add_library(
         textfile_highlighters.cc
         textfile_sub_source.cc
         textview_curses.cc
+        timeline_source.cc
         top_status_source.cc
         time-extension-functions.cc
         timer.cc
@@ -560,8 +560,6 @@ add_library(
         filter_sub_source.hh
         fstat_vtab.hh
         fts_fuzzy_match.hh
-        gantt_source.hh
-        gantt_status_source.hh
         grep_highlighter.hh
         hasher.hh
         help_text.hh
@@ -641,6 +639,8 @@ add_library(
         textview_curses.hh
         textview_curses_fwd.hh
         time_T.hh
+        timeline_source.hh
+        timeline_status_source.hh
         timer.hh
         top_status_source.hh
         url_handler.cfg.hh

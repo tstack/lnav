@@ -3770,8 +3770,8 @@ com_file_visibility(exec_context& ec,
             lnav_data.ld_views[LNV_LOG]
                 .get_sub_source()
                 ->text_filters_changed();
-            if (top_tc == &lnav_data.ld_views[LNV_GANTT]) {
-                lnav_data.ld_views[LNV_GANTT]
+            if (top_tc == &lnav_data.ld_views[LNV_TIMELINE]) {
+                lnav_data.ld_views[LNV_TIMELINE]
                     .get_sub_source()
                     ->text_filters_changed();
             }

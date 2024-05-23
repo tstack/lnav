@@ -373,10 +373,11 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     }
 
     lnav_data.ld_view_stack.top() | [&closed_files, &retval](auto tc) {
-        if (!closed_files.empty() && tc == &lnav_data.ld_views[LNV_GANTT]) {
-            auto* gantt_source = lnav_data.ld_views[LNV_GANTT].get_sub_source();
-            if (gantt_source != nullptr) {
-                gantt_source->text_filters_changed();
+        if (!closed_files.empty() && tc == &lnav_data.ld_views[LNV_TIMELINE]) {
+            auto* timeline_source
+                = lnav_data.ld_views[LNV_TIMELINE].get_sub_source();
+            if (timeline_source != nullptr) {
+                timeline_source->text_filters_changed();
             }
         }
 

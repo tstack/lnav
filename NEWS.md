@@ -7,7 +7,7 @@ Features:
 * The `log_opid` column on log vtables can now by `UPDATE`d
   so that you can manually set an opid on log messages that
   don't have one.  Setting an opid allows messages to show
-  up in the Gantt chart view.
+  up in the timeline view.
 * Add support for GitHub Markdown Alerts.
 * Added the `:xopen` command that will open the given paths
   using an external opener like `open` or `xdg-open`.
@@ -16,7 +16,8 @@ Features:
   target with `:xopen`, or copying the link to a clipboard.
 
 Interface Changes:
-* In the Gantt chart view, pressing `ENTER` will focus on
+* The "Gantt Chart" view has been renamed to "timeline".
+* In the timeline view, pressing `ENTER` will focus on
   the preview pane, so you can scroll through messages
   with the selected Op ID.
 * With mouse mode enabled, `CTRL` can be used as an alternate

@@ -251,8 +251,6 @@ noinst_HEADERS = \
 	filter_sub_source.hh \
 	fstat_vtab.hh \
 	fts_fuzzy_match.hh \
-	gantt_source.hh \
-	gantt_status_source.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
 	hasher.hh \
@@ -357,6 +355,8 @@ noinst_HEADERS = \
 	textview_curses.hh \
 	textview_curses_fwd.hh \
 	time_T.hh \
+	timeline_source.hh \
+	timeline_status_source.hh \
 	timer.hh \
 	top_status_source.hh \
 	top_status_source.cfg.hh \
@@ -446,7 +446,6 @@ libdiag_a_SOURCES = \
 	fstat_vtab.cc \
     fs-extension-functions.cc \
     fts_fuzzy_match.cc \
-    gantt_source.cc \
 	grep_proc.cc \
 	help_text.cc \
 	help_text_formatter.cc \
@@ -515,6 +514,7 @@ libdiag_a_SOURCES = \
 	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \
+	timeline_source.cc \
 	top_status_source.cc \
 	unique_path.cc \
 	view_curses.cc \

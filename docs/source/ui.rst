@@ -305,19 +305,19 @@ can also press :kbd:`Shift` + :kbd:`i` to toggle the histogram view
 while synchronizing the top time.  While in the histogram view,
 pressing :kbd:`z` / :kbd:`Shift` + :kbd:`z` will zoom in/out.
 
-GANTT
-^^^^^
+TIMELINE
+^^^^^^^^
 
 .. note:: This feature is available in v0.12.0+.
 
-.. figure:: lnav-gantt-1.png
+.. figure:: lnav-timeline-1.png
    :align: center
 
-   Screenshot of the Gantt chart view when viewing logs from the
+   Screenshot of the timeline view when viewing logs from the
    VMWare Update Manager.  Most rows show API requests as they
    are received and processed.
 
-The Gantt Chart view visualizes operations over time.  The operations
+The timeline view [#]_ visualizes operations over time.  The operations
 are identified by the "opid" field defined in the log format.  In the
 view, there is a header that shows the overall time span, the
 narrowed time span around the focused line, and the column headers.
@@ -346,7 +346,7 @@ The following hotkeys can be useful in this view:
   :code:`opid/subid` property, this will toggle an overlay panel
   that displays the sub-operation descriptions.
 
-  .. figure:: lnav-gantt-2.png
+  .. figure:: lnav-timeline-2.png
      :align: center
 
      Screenshot showing the same log as above after pressing
@@ -354,11 +354,13 @@ The following hotkeys can be useful in this view:
      sub-operations performed while processing the main operation.
 
 * :kbd:`Shift` + :kbd:`q` -- Return to the previous view and change
-  its focused line to match the time that was focused in the gantt
+  its focused line to match the time that was focused in the timeline
   view.
-* :kbd:`Shift` + :kbd:`a` -- After leaving the gantt view, pressing
-  these keys will return to the Gantt view while keeping the focused
+* :kbd:`Shift` + :kbd:`a` -- After leaving the timeline view, pressing
+  these keys will return to the timeline view while keeping the focused
   time in sync.
+
+.. [#] Formerly called the "Gantt Chart" view.
 
 PRETTY
 ^^^^^^
@@ -428,7 +430,7 @@ elements will respond to mouse inputs:
 
 * clicking on the main view will move the cursor to the given
   row and dragging will scroll the view as needed;
-* :bkd:`Shift` (or :kbd:`CTRL`) clicking/dragging in the main
+* :kbd:`Shift` (or :kbd:`CTRL`) clicking/dragging in the main
   view will highlight lines and then toggle their bookmark
   status on release;
 * double-clicking in the main view will select the underlying

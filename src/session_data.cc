@@ -1891,7 +1891,7 @@ lnav::session::restore_view_states()
                 lnav_data.ld_view_stack.pop_back();
                 lnav_data.ld_view_stack.top() | [](auto* tc) {
                     // XXX
-                    if (tc == &lnav_data.ld_views[LNV_GANTT]) {
+                    if (tc == &lnav_data.ld_views[LNV_TIMELINE]) {
                         auto tss = tc->get_sub_source();
                         tss->text_filters_changed();
                         tc->reload_data();

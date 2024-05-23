@@ -35,7 +35,6 @@
 #include "document.sections.hh"
 #include "environ_vtab.hh"
 #include "filter_sub_source.hh"
-#include "gantt_source.hh"
 #include "help-md.h"
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
@@ -47,6 +46,7 @@
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "static_file_vtab.hh"
+#include "timeline_source.hh"
 #include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
 #include "view_helpers.hist.hh"
@@ -64,7 +64,7 @@ const char* lnav_view_strings[LNV__MAX + 1] = {
     "schema",
     "pretty",
     "spectro",
-    "gantt",
+    "timeline",
 
     nullptr,
 };
@@ -78,7 +78,7 @@ const char* lnav_view_titles[LNV__MAX] = {
     "SCHEMA",
     "PRETTY",
     "SPECTRO",
-    "GANTT",
+    "TIMELINE",
 };
 
 std::optional<lnav_view_t>
@@ -128,14 +128,15 @@ open_schema_view()
 }
 
 static void
-open_gantt_view()
+open_timeline_view()
 {
-    auto* gantt_tc = &lnav_data.ld_views[LNV_GANTT];
-    auto* gantt_src = dynamic_cast<gantt_source*>(gantt_tc->get_sub_source());
+    auto* timeline_tc = &lnav_data.ld_views[LNV_TIMELINE];
+    auto* timeline_src
+        = dynamic_cast<timeline_source*>(timeline_tc->get_sub_source());
 
-    gantt_src->rebuild_indexes();
-    gantt_tc->reload_data();
-    gantt_tc->redo_search();
+    timeline_src->rebuild_indexes();
+    timeline_tc->reload_data();
+    timeline_tc->redo_search();
 }
 
 class pretty_sub_source : public plain_text_source {
@@ -617,7 +618,7 @@ handle_winch()
     lnav_data.ld_filter_view.set_needs_update();
     lnav_data.ld_files_view.set_needs_update();
     lnav_data.ld_spectro_details_view.set_needs_update();
-    lnav_data.ld_gantt_details_view.set_needs_update();
+    lnav_data.ld_timeline_details_view.set_needs_update();
     lnav_data.ld_user_message_view.set_needs_update();
 
     return true;
@@ -638,11 +639,11 @@ layout_views()
         = !lnav_data.ld_preview_status_source[1].get_description().empty();
     bool filters_supported = false;
     auto is_spectro = false;
-    auto is_gantt = false;
+    auto is_timeline = false;
 
     lnav_data.ld_view_stack.top() | [&](auto tc) {
         is_spectro = (tc == &lnav_data.ld_views[LNV_SPECTRO]);
-        is_gantt = (tc == &lnav_data.ld_views[LNV_GANTT]);
+        is_timeline = (tc == &lnav_data.ld_views[LNV_TIMELINE]);
 
         auto* tss = tc->get_sub_source();
 
@@ -785,19 +786,19 @@ layout_views()
     lnav_data.ld_status[LNS_DOC].set_width(width);
     lnav_data.ld_status[LNS_DOC].set_visible(has_doc && vis);
 
-    if (is_gantt) {
-        vis = bottom.try_consume(lnav_data.ld_gantt_details_view.get_height()
+    if (is_timeline) {
+        vis = bottom.try_consume(lnav_data.ld_timeline_details_view.get_height()
                                  + 1);
     } else {
         vis = false;
     }
-    lnav_data.ld_gantt_details_view.set_y(bottom + 1);
-    lnav_data.ld_gantt_details_view.set_width(width);
-    lnav_data.ld_gantt_details_view.set_visible(vis);
+    lnav_data.ld_timeline_details_view.set_y(bottom + 1);
+    lnav_data.ld_timeline_details_view.set_width(width);
+    lnav_data.ld_timeline_details_view.set_visible(vis);
 
-    lnav_data.ld_status[LNS_GANTT].set_y(bottom);
-    lnav_data.ld_status[LNS_GANTT].set_width(width);
-    lnav_data.ld_status[LNS_GANTT].set_visible(vis);
+    lnav_data.ld_status[LNS_TIMELINE].set_y(bottom);
+    lnav_data.ld_status[LNS_TIMELINE].set_width(width);
+    lnav_data.ld_status[LNS_TIMELINE].set_visible(vis);
 
     vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
                              + (filters_supported ? 1 : 0));
@@ -1091,7 +1092,7 @@ toggle_view(textview_curses* toggle_tc)
         lnav_data.ld_view_stack.pop_back();
         lnav_data.ld_view_stack.top() | [](auto* tc) {
             // XXX
-            if (tc == &lnav_data.ld_views[LNV_GANTT]) {
+            if (tc == &lnav_data.ld_views[LNV_TIMELINE]) {
                 auto tss = tc->get_sub_source();
                 tss->text_filters_changed();
                 tc->reload_data();
@@ -1107,8 +1108,8 @@ toggle_view(textview_curses* toggle_tc)
             open_schema_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
-        } else if (toggle_tc == &lnav_data.ld_views[LNV_GANTT]) {
-            open_gantt_view();
+        } else if (toggle_tc == &lnav_data.ld_views[LNV_TIMELINE]) {
+            open_timeline_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
             // Rebuild to reflect changes in marks.
             rebuild_hist();
@@ -1272,7 +1273,8 @@ get_textview_for_mode(ln_mode_t mode)
     }
 }
 
-hist_index_delegate::hist_index_delegate(hist_source2& hs, textview_curses& tc)
+hist_index_delegate::
+hist_index_delegate(hist_source2& hs, textview_curses& tc)
     : hid_source(hs), hid_view(tc)
 {
 }
@@ -1466,7 +1468,7 @@ all_views()
     retval.push_back(&lnav_data.ld_filter_view);
     retval.push_back(&lnav_data.ld_user_message_view);
     retval.push_back(&lnav_data.ld_spectro_details_view);
-    retval.push_back(&lnav_data.ld_gantt_details_view);
+    retval.push_back(&lnav_data.ld_timeline_details_view);
     retval.push_back(lnav_data.ld_rl_view);
 
     return retval;

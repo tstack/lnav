@@ -90,7 +90,6 @@
 #include "file_options.hh"
 #include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
-#include "gantt_source.hh"
 #include "hist_source.hh"
 #include "init-sql.h"
 #include "listview_curses.hh"
@@ -127,6 +126,7 @@
 #include "termios_guard.hh"
 #include "textfile_highlighters.hh"
 #include "textview_curses.hh"
+#include "timeline_source.hh"
 #include "top_status_source.hh"
 #include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
@@ -1370,17 +1370,17 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_data.ld_spectro_source->ss_exec_context
             = &lnav_data.ld_exec_context;
 
-        lnav_data.ld_gantt_details_view.set_title("gantt-details");
-        lnav_data.ld_gantt_details_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_gantt_details_view.set_selectable(true);
-        lnav_data.ld_gantt_details_view.set_show_scrollbar(true);
-        lnav_data.ld_gantt_details_view.set_height(5_vl);
-        lnav_data.ld_gantt_details_view.set_supports_marks(true);
-        lnav_data.ld_gantt_details_view.set_sub_source(
-            &lnav_data.ld_gantt_details_source);
-        lnav_data.ld_gantt_details_view.tc_cursor_role
+        lnav_data.ld_timeline_details_view.set_title("timeline-details");
+        lnav_data.ld_timeline_details_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_timeline_details_view.set_selectable(true);
+        lnav_data.ld_timeline_details_view.set_show_scrollbar(true);
+        lnav_data.ld_timeline_details_view.set_height(5_vl);
+        lnav_data.ld_timeline_details_view.set_supports_marks(true);
+        lnav_data.ld_timeline_details_view.set_sub_source(
+            &lnav_data.ld_timeline_details_source);
+        lnav_data.ld_timeline_details_view.tc_cursor_role
             = role_t::VCR_CURSOR_LINE;
-        lnav_data.ld_gantt_details_view.tc_disabled_cursor_role
+        lnav_data.ld_timeline_details_view.tc_disabled_cursor_role
             = role_t::VCR_DISABLED_CURSOR_LINE;
 
         auto top_status_lifetime
@@ -1438,9 +1438,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = std::make_unique<spectro_status_source>();
         lnav_data.ld_status[LNS_SPECTRO].set_data_source(
             lnav_data.ld_spectro_status_source.get());
-        lnav_data.ld_status[LNS_GANTT].set_enabled(false);
-        lnav_data.ld_status[LNS_GANTT].set_data_source(
-            &lnav_data.ld_gantt_status_source);
+        lnav_data.ld_status[LNS_TIMELINE].set_enabled(false);
+        lnav_data.ld_status[LNS_TIMELINE].set_data_source(
+            &lnav_data.ld_timeline_status_source);
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
         lnav_data.ld_user_message_view.set_show_bottom_border(true);
@@ -1650,7 +1650,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_preview_view[0].do_update();
             lnav_data.ld_preview_view[1].do_update();
             lnav_data.ld_spectro_details_view.do_update();
-            lnav_data.ld_gantt_details_view.do_update();
+            lnav_data.ld_timeline_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
                 echo_views_stmt.execute();
@@ -2851,26 +2851,26 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .add_input_delegate(*lnav_data.ld_spectro_source)
         .set_tail_space(4_vl);
     lnav_data.ld_views[LNV_SPECTRO].set_selectable(true);
-    auto gantt_view_source
-        = std::make_shared<gantt_source>(lnav_data.ld_views[LNV_LOG],
-                                         lnav_data.ld_log_source,
-                                         lnav_data.ld_gantt_details_view,
-                                         lnav_data.ld_gantt_details_source,
-                                         lnav_data.ld_status[LNS_GANTT],
-                                         lnav_data.ld_gantt_status_source);
-    gantt_view_source->gs_exec_context = &lnav_data.ld_exec_context;
-    auto gantt_header_source
-        = std::make_shared<gantt_header_overlay>(gantt_view_source);
-    lnav_data.ld_views[LNV_GANTT]
-        .set_sub_source(gantt_view_source.get())
-        .set_overlay_source(gantt_header_source.get())
-        .add_input_delegate(*gantt_view_source)
+    auto timeline_view_source = std::make_shared<timeline_source>(
+        lnav_data.ld_views[LNV_LOG],
+        lnav_data.ld_log_source,
+        lnav_data.ld_timeline_details_view,
+        lnav_data.ld_timeline_details_source,
+        lnav_data.ld_status[LNS_TIMELINE],
+        lnav_data.ld_timeline_status_source);
+    timeline_view_source->gs_exec_context = &lnav_data.ld_exec_context;
+    auto timeline_header_source
+        = std::make_shared<timeline_header_overlay>(timeline_view_source);
+    lnav_data.ld_views[LNV_TIMELINE]
+        .set_sub_source(timeline_view_source.get())
+        .set_overlay_source(timeline_header_source.get())
+        .add_input_delegate(*timeline_view_source)
         .set_tail_space(4_vl);
-    lnav_data.ld_views[LNV_GANTT].set_selectable(true);
+    lnav_data.ld_views[LNV_TIMELINE].set_selectable(true);
 
-    auto _gantt_cleanup = finally([] {
-        lnav_data.ld_views[LNV_GANTT].set_sub_source(nullptr);
-        lnav_data.ld_views[LNV_GANTT].set_overlay_source(nullptr);
+    auto _timeline_cleanup = finally([] {
+        lnav_data.ld_views[LNV_TIMELINE].set_sub_source(nullptr);
+        lnav_data.ld_views[LNV_TIMELINE].set_overlay_source(nullptr);
     });
 
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
