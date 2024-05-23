@@ -135,6 +135,20 @@ public:
     virtual void set_show_details_in_overlay(bool val) {}
 
     virtual bool get_show_details_in_overlay() const { return false; }
+
+    struct menu_item {
+        menu_item(vis_line_t line,
+                  line_range range,
+                  std::function<void(const std::string&)> action)
+            : mi_line(line), mi_range(range), mi_action(std::move(action))
+        {
+        }
+
+        vis_line_t mi_line;
+        line_range mi_range;
+        std::function<void(const std::string&)> mi_action;
+    };
+    std::vector<menu_item> los_menu_items;
 };
 
 class list_input_delegate {

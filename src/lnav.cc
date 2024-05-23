@@ -1375,6 +1375,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_data.ld_gantt_details_view.set_selectable(true);
         lnav_data.ld_gantt_details_view.set_show_scrollbar(true);
         lnav_data.ld_gantt_details_view.set_height(5_vl);
+        lnav_data.ld_gantt_details_view.set_supports_marks(true);
         lnav_data.ld_gantt_details_view.set_sub_source(
             &lnav_data.ld_gantt_details_source);
         lnav_data.ld_gantt_details_view.tc_cursor_role

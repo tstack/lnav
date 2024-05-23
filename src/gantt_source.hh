@@ -37,6 +37,12 @@
 #include "text_overlay_menu.hh"
 #include "textview_curses.hh"
 
+class gantt_preview_overlay : public list_overlay_source {
+public:
+    std::vector<attr_line_t> list_overlay_menu(const listview_curses& lv,
+                                               vis_line_t line) override;
+};
+
 class gantt_source
     : public text_sub_source
     , public list_input_delegate
@@ -163,6 +169,7 @@ public:
                                     frag_hasher,
                                     std::equal_to<string_fragment>>;
 
+    gantt_preview_overlay gs_preview_overlay;
     attr_line_t gs_rendered_line;
     size_t gs_opid_width{0};
     size_t gs_total_width{0};
@@ -173,7 +180,7 @@ public:
     struct timeval gs_upper_bound {};
     size_t gs_filtered_count{0};
     std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
-    exec_context* gs_exec_context;
+    exec_context* gs_exec_context{nullptr};
     bool gs_preview_focused{false};
     std::vector<text_time_translator::row_info> gs_preview_rows;
 };

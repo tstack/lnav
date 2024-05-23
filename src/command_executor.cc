@@ -801,7 +801,7 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
         if (ec.is_read_write() &&
             // only rebuild in a script or non-interactive mode so we don't
             // block the UI.
-            (lnav_data.ld_flags & LNF_HEADLESS || ec.ec_path_stack.size() > 1))
+            lnav_data.ld_flags & LNF_HEADLESS)
         {
             rescan_files();
             wait_for_pipers(std::nullopt);
@@ -1148,9 +1148,10 @@ exec_context::clear_output()
     this->ec_output_stack.back() = std::make_pair("default", std::nullopt);
 }
 
-exec_context::exec_context(logline_value_vector* line_values,
-                           sql_callback_t sql_callback,
-                           pipe_callback_t pipe_callback)
+exec_context::
+exec_context(logline_value_vector* line_values,
+             sql_callback_t sql_callback,
+             pipe_callback_t pipe_callback)
     : ec_line_values(line_values),
       ec_accumulator(std::make_unique<attr_line_t>()),
       ec_sql_callback(sql_callback), ec_pipe_callback(pipe_callback)
@@ -1237,9 +1238,10 @@ exec_context::enter_source(intern_string_t path,
     return {this};
 }
 
-exec_context::output_guard::output_guard(exec_context& context,
-                                         std::string name,
-                                         const std::optional<output_t>& file)
+exec_context::output_guard::
+output_guard(exec_context& context,
+             std::string name,
+             const std::optional<output_t>& file)
     : sg_context(context)
 {
     if (file) {
@@ -1248,7 +1250,8 @@ exec_context::output_guard::output_guard(exec_context& context,
     context.ec_output_stack.emplace_back(std::move(name), file);
 }
 
-exec_context::output_guard::~output_guard()
+exec_context::output_guard::~
+output_guard()
 {
     this->sg_context.clear_output();
     this->sg_context.ec_output_stack.pop_back();

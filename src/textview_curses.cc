@@ -44,7 +44,6 @@
 #include "log_format_fwd.hh"
 #include "logfile.hh"
 #include "shlex.hh"
-#include "text_overlay_menu.hh"
 #include "view_curses.hh"
 
 const auto REVERSE_SEARCH_OFFSET = 2000_vl;
@@ -659,12 +658,12 @@ textview_curses::handle_mouse(mouse_event& me)
             if (ov != nullptr && mouse_line.is<overlay_menu>()
                 && this->tc_selected_text)
             {
-                auto* tom = dynamic_cast<text_overlay_menu*>(ov);
-                if (tom != nullptr) {
+                auto* los = dynamic_cast<list_overlay_source*>(ov);
+                if (los != nullptr) {
                     auto& om = mouse_line.get<overlay_menu>();
                     auto& sti = this->tc_selected_text.value();
 
-                    for (const auto& mi : tom->tom_menu_items) {
+                    for (const auto& mi : los->los_menu_items) {
                         if (om.om_line == mi.mi_line
                             && me.is_click_in(mouse_button_t::BUTTON_LEFT,
                                               mi.mi_range))
