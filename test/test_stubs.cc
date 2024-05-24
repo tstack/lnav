@@ -70,7 +70,7 @@ rebuild_indexes_repeatedly()
 }
 
 void
-wait_for_pipers(std::optional<timeval>)
+wait_for_pipers(std::optional<ui_clock::time_point>)
 {
 }
 

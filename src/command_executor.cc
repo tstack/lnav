@@ -59,6 +59,7 @@
 #    include "prqlc.cxx.hh"
 #endif
 
+using namespace std::literals::chrono_literals;
 using namespace lnav::roles::literals;
 
 exec_context INIT_EXEC_CONTEXT;
@@ -903,10 +904,12 @@ execute_init_commands(
                 }
 
                 rescan_files();
-                auto deadline = current_timeval()
-                    + ((lnav_data.ld_flags & LNF_HEADLESS)
-                           ? timeval{5, 0}
-                           : timeval{0, 500000});
+                auto deadline = ui_clock::now();
+                if (lnav_data.ld_flags & LNF_HEADLESS) {
+                    deadline += 5s;
+                } else {
+                    deadline += 500ms;
+                }
                 wait_for_pipers(deadline);
                 rebuild_indexes_repeatedly();
             }

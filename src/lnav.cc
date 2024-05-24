@@ -867,9 +867,9 @@ gather_pipers()
 }
 
 void
-wait_for_pipers(std::optional<timeval> deadline)
+wait_for_pipers(std::optional<ui_clock::time_point> deadline)
 {
-    static const auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
+    static constexpr auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
     auto sleep_time = std::chrono::milliseconds(10);
 
     for (;;) {
@@ -879,7 +879,7 @@ wait_for_pipers(std::optional<timeval> deadline)
             log_debug("all pipers finished");
             break;
         }
-        if (deadline && (deadline.value() < current_timeval())) {
+        if (deadline && ui_clock::now() > deadline.value()) {
             break;
         }
         // Use usleep() since it is defined to be interruptable by a signal.
@@ -3340,10 +3340,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 && lnav_data.ld_active_files.fc_file_names.size() == 1)
             {
                 rescan_files(true);
-                gather_pipers();
+                wait_for_pipers(ui_clock::now() + 100ms);
                 auto rebuild_res = rebuild_indexes(ui_clock::now() + 15ms);
                 if (rebuild_res.rir_completed
-                    && lnav_data.ld_child_pollers.empty())
+                    && lnav_data.ld_child_pollers.empty()
+                    && lnav_data.ld_active_files.active_pipers() == 0)
                 {
                     rebuild_indexes_repeatedly();
                     if (lnav_data.ld_active_files.fc_files.empty()
