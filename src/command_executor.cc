@@ -609,7 +609,6 @@ execute_file_contents(exec_context& ec, const std::filesystem::path& path)
     static const std::filesystem::path stdin_path("-");
     static const std::filesystem::path dev_stdin_path("/dev/stdin");
 
-    std::string retval;
     FILE* file;
 
     if (path == stdin_path || path == dev_stdin_path) {
@@ -626,13 +625,14 @@ execute_file_contents(exec_context& ec, const std::filesystem::path& path)
     ssize_t line_size;
     multiline_executor me(ec, path.string());
 
+    ec.ec_local_vars.top()["0"] = path.string();
     ec.ec_path_stack.emplace_back(path.parent_path());
     exec_context::output_guard og(ec);
     while ((line_size = getline(line.out(), &line_max_size, file)) != -1) {
         TRY(me.push_back(string_fragment::from_bytes(line.in(), line_size)));
     }
 
-    retval = TRY(me.final());
+    auto retval = TRY(me.final());
 
     if (file == stdin) {
         if (isatty(STDOUT_FILENO)) {
@@ -677,18 +677,13 @@ execute_file(exec_context& ec, const std::string& path_and_args)
 
     auto script_name = split_args[0].se_value;
     auto& vars = ec.ec_local_vars.top();
-    char env_arg_name[32];
     std::string star, open_error = "file not found";
 
     add_ansi_vars(vars);
 
-    snprintf(
-        env_arg_name, sizeof(env_arg_name), "%d", (int) split_args.size() - 1);
-
-    vars["#"] = env_arg_name;
+    vars["#"] = fmt::to_string(split_args.size() - 1);
     for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
-        snprintf(env_arg_name, sizeof(env_arg_name), "%lu", lpc);
-        vars[env_arg_name] = split_args[lpc].se_value;
+        vars[fmt::to_string(lpc)] = split_args[lpc].se_value;
     }
     for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
         if (lpc > 1) {

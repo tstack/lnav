@@ -34,6 +34,8 @@ Bug Fixes:
   overlay for log messages.
 * If a theme does not define `cursor-line` or `selected-text`
   styles, the styles from the default theme will be used.
+* The first argument to a script is now the full path of the
+  script and not just the script name.
 
 Maintenance:
 * You can now do an `UPDATE` on the `lnav_top_view` SQL view.
