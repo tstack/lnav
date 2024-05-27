@@ -118,6 +118,14 @@ multiplex_matcher::match(const string_fragment& line)
                 log_info("  and required captures were found, using demuxer");
                 return found{demux_pair.first};
             }
+
+            auto partial_size = df.dd_pattern.pp_value->match_partial(line);
+            if (partial_size > 0) {
+                log_info("  only partial match by pattern: %s",
+                         df.dd_pattern.pp_value->get_pattern().c_str());
+                log_info("    %s",
+                         line.sub_range(0, partial_size).to_string().c_str());
+            }
         }
         if (df.dd_control_pattern.pp_value) {
             md = df.dd_control_pattern.pp_value->create_match_data();
