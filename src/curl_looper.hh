@@ -74,25 +74,7 @@ public:
 
 class curl_request {
 public:
-    curl_request(std::string name)
-        : cr_name(std::move(name)), cr_handle(curl_easy_cleanup)
-    {
-        this->cr_handle.reset(curl_easy_init());
-        curl_easy_setopt(this->cr_handle, CURLOPT_NOSIGNAL, 1);
-        curl_easy_setopt(
-            this->cr_handle, CURLOPT_ERRORBUFFER, this->cr_error_buffer);
-        curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGFUNCTION, debug_cb);
-        curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGDATA, this);
-        curl_easy_setopt(this->cr_handle, CURLOPT_VERBOSE, 1);
-        if (getenv("SSH_AUTH_SOCK") != nullptr) {
-            curl_easy_setopt(this->cr_handle,
-                             CURLOPT_SSH_AUTH_TYPES,
-#    ifdef CURLSSH_AUTH_AGENT
-                             CURLSSH_AUTH_AGENT |
-#    endif
-                                 CURLSSH_AUTH_PASSWORD);
-        }
-    }
+    explicit curl_request(std::string name);
 
     curl_request(const curl_request&) = delete;
     curl_request(curl_request&&) = delete;
@@ -114,20 +96,7 @@ public:
 
     virtual long complete(CURLcode result);
 
-    Result<std::string, CURLcode> perform()
-    {
-        std::string response;
-
-        curl_easy_setopt(this->get_handle(), CURLOPT_WRITEFUNCTION, string_cb);
-        curl_easy_setopt(this->get_handle(), CURLOPT_WRITEDATA, &response);
-
-        auto rc = curl_easy_perform(this->get_handle());
-        if (rc == CURLE_OK) {
-            return Ok(response);
-        }
-
-        return Err(rc);
-    }
+    Result<std::string, CURLcode> perform() const;
 
     long get_response_code() const
     {

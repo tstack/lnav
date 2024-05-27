@@ -174,6 +174,27 @@ curl_request::string_cb(void* data, size_t size, size_t nmemb, void* userp)
     return realsize;
 }
 
+curl_request::
+curl_request(std::string name)
+    : cr_name(std::move(name)), cr_handle(curl_easy_cleanup)
+{
+    this->cr_handle.reset(curl_easy_init());
+    curl_easy_setopt(this->cr_handle, CURLOPT_NOSIGNAL, 1);
+    curl_easy_setopt(
+        this->cr_handle, CURLOPT_ERRORBUFFER, this->cr_error_buffer);
+    curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGFUNCTION, debug_cb);
+    curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGDATA, this);
+    curl_easy_setopt(this->cr_handle, CURLOPT_VERBOSE, 1);
+    if (getenv("SSH_AUTH_SOCK") != nullptr) {
+        curl_easy_setopt(this->cr_handle,
+                         CURLOPT_SSH_AUTH_TYPES,
+#    ifdef CURLSSH_AUTH_AGENT
+                         CURLSSH_AUTH_AGENT |
+#    endif
+                             CURLSSH_AUTH_PASSWORD);
+    }
+}
+
 long
 curl_request::complete(CURLcode result)
 {
@@ -189,6 +210,22 @@ curl_request::complete(CURLcode result)
     log_debug("%s: download_speed=%f", this->cr_name.c_str(), download_speed);
 
     return -1;
+}
+
+Result<std::string, CURLcode>
+curl_request::perform() const
+{
+    std::string response;
+
+    curl_easy_setopt(this->get_handle(), CURLOPT_WRITEFUNCTION, string_cb);
+    curl_easy_setopt(this->get_handle(), CURLOPT_WRITEDATA, &response);
+
+    auto rc = curl_easy_perform(this->get_handle());
+    if (rc == CURLE_OK) {
+        return Ok(response);
+    }
+
+    return Err(rc);
 }
 
 curl_looper::

@@ -85,25 +85,14 @@
 #    error "SysV or X/Open-compatible Curses header file required"
 #endif
 
+#include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "enum_util.hh"
 #include "lnav_log.hh"
 #include "opt_util.hh"
 
-static const size_t BUFFER_SIZE = 256 * 1024;
-static const size_t MAX_LOG_LINE_SIZE = 2 * 1024;
-
-static const char* CRASH_MSG
-    = "\n"
-      "\n"
-      "==== GURU MEDITATION ====\n"
-      "Unfortunately, lnav has crashed, sorry for the inconvenience.\n"
-      "\n"
-      "You can help improve lnav by sending the following file "
-      "to " PACKAGE_BUGREPORT
-      " :\n"
-      "  %s\n"
-      "=========================\n";
+static constexpr size_t BUFFER_SIZE = 256 * 1024;
+static constexpr size_t MAX_LOG_LINE_SIZE = 2 * 1024;
 
 std::optional<FILE*> lnav_log_file;
 lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
@@ -546,7 +535,29 @@ sigabrt(int sig, siginfo_t* info, void* ctx)
         tcsetattr(STDOUT_FILENO, TCSAFLUSH, termios);
         dup2(STDOUT_FILENO, STDERR_FILENO);
     };
-    fprintf(stderr, CRASH_MSG, crash_path);
+    fmt::print(R"(
+
+{red_start}==== GURU MEDITATION ===={norm}
+
+Unfortunately, lnav has crashed, sorry for the inconvenience.
+
+You can help improve lnav by executing the following command
+to upload the crash logs to https://crash.lnav.org:
+
+  {green_start}${norm} {bold_start}lnav -m crash upload{norm}
+
+Or, you can send the following file to {PACKAGE_BUGREPORT}:
+
+  {crash_path}
+
+{red_start}========================={norm}
+)",
+               fmt::arg("red_start", ANSI_COLOR(1)),
+               fmt::arg("green_start", ANSI_COLOR(2)),
+               fmt::arg("bold_start", ANSI_BOLD_START),
+               fmt::arg("norm", ANSI_NORM),
+               fmt::arg("PACKAGE_BUGREPORT", PACKAGE_BUGREPORT),
+               fmt::arg("crash_path", crash_path));
 
 #ifndef ATTACH_ON_SIGNAL
     if (isatty(STDIN_FILENO)) {

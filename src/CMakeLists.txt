@@ -423,6 +423,7 @@ add_library(
         collation-functions.cc
         column_namer.cc
         command_executor.cc
+        crashd.client.cc
         curl_looper.cc
         db_sub_source.cc
         dump_internals.cc
@@ -543,6 +544,7 @@ add_library(
         byte_array.hh
         command_executor.hh
         column_namer.hh
+        crashd.client.hh
         curl_looper.hh
         doc_status_source.hh
         dump_internals.hh

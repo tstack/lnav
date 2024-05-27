@@ -7042,6 +7042,18 @@ static std::unordered_map<char const*, std::vector<char const*>> aliases = {
     {"write-table-to", {"write-cols-to"}},
 };
 
+static Result<std::string, lnav::console::user_message>
+com_crash(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
+{
+    if (args.empty()) {
+    } else if (!ec.ec_dry_run) {
+        int* nums = nullptr;
+
+        return ec.make_error(FMT_STRING("oops... {}"), nums[0]);
+    }
+    return Ok(std::string());
+}
+
 void
 init_lnav_commands(readline_context::command_map_t& cmd_map)
 {
@@ -7064,10 +7076,12 @@ init_lnav_commands(readline_context::command_map_t& cmd_map)
     }
     if (getenv("lnav_test") != nullptr) {
         static readline_context::command_t shexec(com_shexec),
-            poll_now(com_poll_now), test_comment(com_test_comment);
+            poll_now(com_poll_now), test_comment(com_test_comment),
+            crasher(com_crash);
 
         cmd_map["shexec"] = &shexec;
         cmd_map["poll-now"] = &poll_now;
         cmd_map["test-comment"] = &test_comment;
+        cmd_map["crash"] = &crasher;
     }
 }

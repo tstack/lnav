@@ -227,6 +227,7 @@ noinst_HEADERS = \
 	byte_array.hh \
 	column_namer.hh \
 	command_executor.hh \
+	crashd.client.hh \
 	curl_looper.hh \
 	data_scanner.hh \
 	data_scanner_re.re \
@@ -426,6 +427,7 @@ libdiag_a_SOURCES = \
 	collation-functions.cc \
 	column_namer.cc \
 	command_executor.cc \
+	crashd.client.cc \
 	curl_looper.cc \
 	db_sub_source.cc \
 	document.sections.cc \

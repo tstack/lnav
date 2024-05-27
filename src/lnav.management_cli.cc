@@ -29,6 +29,8 @@
 
 #include "lnav.management_cli.hh"
 
+#include <glob.h>
+
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
@@ -36,6 +38,7 @@
 #include "base/paths.hh"
 #include "base/result.h"
 #include "base/string_util.hh"
+#include "crashd.client.hh"
 #include "file_options.hh"
 #include "fmt/chrono.h"
 #include "fmt/format.h"
@@ -1109,11 +1112,100 @@ struct subcmd_regex101_t {
     }
 };
 
+struct subcmd_crash_t {
+    using action_t = std::function<perform_result_t(const subcmd_crash_t&)>;
+
+    CLI::App* sc_app{nullptr};
+    action_t sc_action;
+
+    subcmd_crash_t& set_action(action_t act)
+    {
+        if (!this->sc_action) {
+            this->sc_action = std::move(act);
+        }
+        return *this;
+    }
+
+    static perform_result_t default_action(const subcmd_crash_t& sc)
+    {
+        auto um = console::user_message::error(
+            "expecting an operation related to crash logs");
+        um.with_help(
+            sc.sc_app->get_subcommands({})
+            | lnav::itertools::fold(
+                subcmd_reducer, attr_line_t{"the available operations are:"}));
+
+        return {um};
+    }
+
+    static perform_result_t upload_action(const subcmd_crash_t&)
+    {
+        static constexpr char SPINNER_CHARS[] = "-\\|/";
+        constexpr size_t SPINNER_SIZE = sizeof(SPINNER_CHARS) - 1;
+
+        static_root_mem<glob_t, globfree> gl;
+        const auto path = lnav::paths::dotlnav() / "crash" / "crash-*.log";
+        perform_result_t retval;
+
+        auto glob_rc = glob(path.c_str(), 0, nullptr, gl.inout());
+        if (glob_rc == GLOB_NOMATCH) {
+            auto um = console::user_message::info("no crash logs to upload");
+            return {um};
+        }
+        if (glob_rc != 0) {
+            auto um = console::user_message::error("unable to find crash logs");
+            return {um};
+        }
+
+        for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
+            auto crash_file = std::filesystem::path(gl->gl_pathv[lpc]);
+            int spinner_index = 0;
+
+            log_info("uploading crash log: %s", crash_file.c_str());
+            printf("~");
+            fflush(stdout);
+            auto upload_res = crashd::client::upload(
+                crash_file,
+                [&spinner_index](double dltotal,
+                                 double dlnow,
+                                 double ultotal,
+                                 double ulnow) {
+                    printf("\b%c", SPINNER_CHARS[spinner_index % SPINNER_SIZE]);
+                    spinner_index += 1;
+                    fflush(stdout);
+                    return crashd::client::progress_result_t::ok;
+                });
+            if (spinner_index > 0) {
+                printf("\b");
+            }
+            printf(".");
+            fflush(stdout);
+            if (upload_res.isErr()) {
+                retval.push_back(upload_res.unwrapErr());
+            } else {
+                std::error_code ec;
+
+                std::filesystem::remove(crash_file, ec);
+            }
+        }
+
+        printf("\n");
+        auto um = console::user_message::ok(
+            attr_line_t("uploaded ")
+                .append(lnav::roles::number(fmt::to_string(gl->gl_pathc)))
+                .append(" crash logs, thank you!"));
+        retval.push_back(um);
+
+        return retval;
+    }
+};
+
 using operations_v = mapbox::util::variant<no_subcmd_t,
                                            subcmd_config_t,
                                            subcmd_format_t,
                                            subcmd_piper_t,
-                                           subcmd_regex101_t>;
+                                           subcmd_regex101_t,
+                                           subcmd_crash_t>;
 
 class operations {
 public:
@@ -1135,6 +1227,7 @@ describe_cli(CLI::App& app, int argc, char* argv[])
     subcmd_format_t format_args;
     subcmd_piper_t piper_args;
     subcmd_regex101_t regex101_args;
+    subcmd_crash_t crash_args;
 
     {
         auto* subcmd_config
@@ -1336,6 +1429,22 @@ describe_cli(CLI::App& app, int argc, char* argv[])
         }
     }
 
+    {
+        auto* subcmd_crash
+            = app.add_subcommand("crash", "manage crash logs")->callback([&]() {
+                  crash_args.set_action(subcmd_crash_t::default_action);
+                  retval->o_ops = crash_args;
+              });
+        crash_args.sc_app = subcmd_crash;
+
+        {
+            subcmd_crash->add_subcommand("upload", "upload crash logs")
+                ->callback([&]() {
+                    crash_args.set_action(subcmd_crash_t::upload_action);
+                });
+        }
+    }
+
     app.parse(argc, argv);
 
     return retval;
@@ -1358,7 +1467,8 @@ perform(std::shared_ptr<operations> opts)
         [](const subcmd_config_t& sc) { return sc.sc_action(sc); },
         [](const subcmd_format_t& sf) { return sf.sf_action(sf); },
         [](const subcmd_piper_t& sp) { return sp.sp_action(sp); },
-        [](const subcmd_regex101_t& sr) { return sr.sr_action(sr); });
+        [](const subcmd_regex101_t& sr) { return sr.sr_action(sr); },
+        [](const subcmd_crash_t& sc) { return sc.sc_action(sc); });
 }
 
 }  // namespace management
