@@ -4,7 +4,7 @@ Features:
 * Files that contain a mixture of log messages from separate
   services (e.g. docker logs) can now be automatically
   de-multiplexed into separate files that lnav can digest.
-* The `log_opid` column on log vtables can now by `UPDATE`d
+* The `log_opid` column on log vtables can now be `UPDATE`d
   so that you can manually set an opid on log messages that
   don't have one.  Setting an opid allows messages to show
   up in the timeline view.
@@ -14,6 +14,8 @@ Features:
 * Clicking on a link in a markdown file will open the Actions
   with options for opening the link target in lnav, opening the
   target with `:xopen`, or copying the link to a clipboard.
+* Added a `crash upload` command to the management CLI that will
+  upload crash logs to a server for analysis.
 
 Interface Changes:
 * The "Gantt Chart" view has been renamed to "timeline".
