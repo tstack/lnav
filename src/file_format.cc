@@ -96,7 +96,11 @@ detect_file_format(const std::filesystem::path& filename)
                                  filename.c_str());
                         break;
                     }
-                    auto li = load_res.unwrap();
+                    const auto li = load_res.unwrap();
+                    if (li.li_partial) {
+                        log_info("skipping demux match for partial line");
+                        break;
+                    }
                     auto read_res = lb.read_range(li.li_file_range);
                     if (read_res.isErr()) {
                         log_error(

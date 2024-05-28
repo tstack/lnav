@@ -119,15 +119,14 @@ multiplex_matcher::match(const string_fragment& line)
                 return found{demux_pair.first};
             }
 
-#if 0
-            auto partial_size = df.dd_pattern.pp_value->match_partial(line);
+            auto partial_size = df.dd_pattern.pp_value->match_partial(
+                line.sub_range(0, 1024));
             if (partial_size > 0) {
                 log_info("  only partial match by pattern: %s",
                          df.dd_pattern.pp_value->get_pattern().c_str());
                 log_info("    %s",
                          line.sub_range(0, partial_size).to_string().c_str());
             }
-#endif
         }
         if (df.dd_control_pattern.pp_value) {
             md = df.dd_control_pattern.pp_value->create_match_data();
