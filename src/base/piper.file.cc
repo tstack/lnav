@@ -35,7 +35,11 @@
 #include "base/injector.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
+#include "base/snippet_highlighters.hh"
 #include "piper.looper.cfg.hh"
+#include "readline_highlighters.hh"
+
+using namespace lnav::roles::literals;
 
 namespace lnav {
 namespace piper {
@@ -88,7 +92,7 @@ multiplex_matcher::match(const string_fragment& line)
     for (const auto& demux_pair : cfg.c_demux_definitions) {
         const auto& df = demux_pair.second;
 
-        if (!df.dd_valid || !df.dd_enabled) {
+        if (!df.dd_valid) {
             continue;
         }
 
@@ -109,24 +113,86 @@ multiplex_matcher::match(const string_fragment& line)
                 log_info("  demuxer pattern matched");
                 if (!md[df.dd_muxid_capture_index].has_value()) {
                     log_info("    however, mux_id was not captured");
+
+                    auto match_um = lnav::console::user_message::warning(
+                        attr_line_t("demuxer ")
+                            .append_quoted(demux_pair.first)
+                            .append(" matched, however the ")
+                            .append("mux_id"_symbol)
+                            .append(" was not captured"));
+                    this->mm_details.emplace_back(match_um);
                     continue;
                 }
                 if (!md[df.dd_body_capture_index].has_value()) {
                     log_info("    however, body was not captured");
+                    auto match_um = lnav::console::user_message::warning(
+                        attr_line_t("demuxer ")
+                            .append_quoted(demux_pair.first)
+                            .append(" matched, however the ")
+                            .append("body"_symbol)
+                            .append(" was not captured"));
+                    this->mm_details.emplace_back(match_um);
                     continue;
                 }
                 log_info("  and required captures were found, using demuxer");
-                return found{demux_pair.first};
+
+                if (df.dd_enabled) {
+                    auto match_um = lnav::console::user_message::ok(
+                        attr_line_t("demuxer ")
+                            .append_quoted(demux_pair.first)
+                            .append(" matched line ")
+                            .append(lnav::roles::number(
+                                fmt::to_string(this->mm_line_count))));
+                    this->mm_details.emplace_back(match_um);
+                    return found{demux_pair.first};
+                }
+                auto config_al = attr_line_t().append(
+                    fmt::format(FMT_STRING(":config /log/demux/{}/enabled "
+                                           "true"),
+                                demux_pair.first));
+                readline_lnav_highlighter(config_al, -1);
+                auto match_um
+                    = lnav::console::user_message::info(
+                          attr_line_t("demuxer ")
+                              .append_quoted(demux_pair.first)
+                              .append(" matched line ")
+                              .append(lnav::roles::number(
+                                  fmt::to_string(this->mm_line_count)))
+                              .append(", however, it is disabled"))
+                          .with_help(
+                              attr_line_t("Use ")
+                                  .append_quoted(
+                                      lnav::roles::quoted_code(config_al))
+                                  .append(" to enable this demuxer"));
+                this->mm_details.emplace_back(match_um);
             }
 
             auto partial_size = df.dd_pattern.pp_value->match_partial(
                 line.sub_range(0, 1024));
-            if (partial_size > 0) {
-                log_info("  only partial match by pattern: %s",
-                         df.dd_pattern.pp_value->get_pattern().c_str());
-                log_info("    %s",
-                         line.sub_range(0, partial_size).to_string().c_str());
+            auto regex_al = attr_line_t(df.dd_pattern.pp_value->get_pattern());
+            lnav::snippets::regex_highlighter(
+                regex_al, -1, line_range{0, (int) regex_al.length()});
+            auto in_line = line.sub_range(0, 1024).rtrim("\n").to_string();
+            auto esc_res
+                = fmt::v10::detail::find_escape(&in_line[0], &(*in_line.end()));
+            if (esc_res.end != nullptr) {
+                in_line = fmt::format(FMT_STRING("{:?}"), in_line);
             }
+            auto note = attr_line_t("pattern: ")
+                            .append(regex_al)
+                            .append("\n  ")
+                            .append(lnav::roles::quoted_code(in_line))
+                            .append("\n")
+                            .append(partial_size + 2, ' ')
+                            .append("^ matched up to here");
+            auto match_um = lnav::console::user_message::info(
+                                attr_line_t("demuxer ")
+                                    .append_quoted(demux_pair.first)
+                                    .append(" did not match line ")
+                                    .append(lnav::roles::number(
+                                        fmt::to_string(this->mm_line_count))))
+                                .with_note(note);
+            this->mm_details.emplace_back(match_um);
         }
         if (df.dd_control_pattern.pp_value) {
             md = df.dd_control_pattern.pp_value->create_match_data();
@@ -141,6 +207,7 @@ multiplex_matcher::match(const string_fragment& line)
         }
     }
 
+    this->mm_line_count += 1;
     if (this->mm_partial_match_ids.empty()) {
         return not_found{};
     }

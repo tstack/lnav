@@ -5256,7 +5256,7 @@
                 "control-pattern": ""
             },
             "container-with-type": {
-                "enabled": true,
+                "enabled": false,
                 "pattern": "^(?<mux_id>[a-zA-Z][\\w\\-]{3,}) (?<container_type>[a-zA-Z][\\w\\-]{3,}) (?<body>.*)",
                 "control-pattern": ""
             },

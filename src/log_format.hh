@@ -406,7 +406,19 @@ public:
      */
     virtual const intern_string_t get_name() const = 0;
 
-    virtual bool match_name(const std::string& filename) { return true; }
+    struct name_matched {};
+    struct name_mismatched {
+        size_t nm_partial;
+        std::string nm_pattern;
+    };
+
+    using match_name_result
+        = mapbox::util::variant<name_matched, name_mismatched>;
+
+    virtual match_name_result match_name(const std::string& filename)
+    {
+        return name_matched{};
+    }
 
     struct scan_match {
         uint32_t sm_quality;

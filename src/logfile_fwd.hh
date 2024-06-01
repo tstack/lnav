@@ -75,6 +75,7 @@ struct logfile_open_options_base {
     std::optional<text_format_t> loo_text_format;
     std::optional<lnav::piper::running_handle> loo_piper;
     file_location_t loo_init_location{mapbox::util::no_init{}};
+    std::vector<lnav::console::user_message> loo_match_details;
 };
 
 struct logfile_open_options : public logfile_open_options_base {

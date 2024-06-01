@@ -244,6 +244,13 @@ line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
                     hd.h_mtime.tv_sec = gz_hd.time;
                     hd.h_name = std::string((char*) name);
                     hd.h_comment = std::string((char*) comment);
+                    log_info(
+                        "%d: read gzip header (mtime=%d; name='%s'; "
+                        "comment='%s')",
+                        fd,
+                        hd.h_mtime.tv_sec,
+                        hd.h_name.c_str(),
+                        hd.h_comment.c_str());
                     break;
                 default:
                     log_error("%d: failed to read gzip header data", fd);

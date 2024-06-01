@@ -67,6 +67,7 @@ using safe_scan_progress = safe::Safe<scan_progress>;
 struct other_file_descriptor {
     file_format_t ofd_format;
     std::string ofd_description;
+    std::vector<lnav::console::user_message> ofd_details;
 
     other_file_descriptor(file_format_t format = file_format_t::UNKNOWN,
                           std::string description = "")
@@ -188,15 +189,7 @@ struct file_collection {
             && this->fc_other_files.empty();
     }
 
-    void clear()
-    {
-        this->fc_name_to_errors->writeAccess()->clear();
-        this->fc_file_names.clear();
-        this->fc_files.clear();
-        this->fc_closed_files.clear();
-        this->fc_other_files.clear();
-        this->fc_new_stats.clear();
-    }
+    void clear();
 
     bool is_below_open_file_limit() const
     {

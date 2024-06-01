@@ -30,6 +30,7 @@
 #ifndef piper_looper_hh
 #define piper_looper_hh
 
+#include <filesystem>
 #include <future>
 #include <memory>
 #include <string>
@@ -37,7 +38,6 @@
 #include "base/auto_fd.hh"
 #include "base/piper.file.hh"
 #include "base/result.h"
-#include <filesystem>
 #include "safe/safe.h"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -49,7 +49,12 @@ enum class state {
     finished,
 };
 
-using safe_demux_id = safe::Safe<std::string>;
+struct demux_info {
+    std::string di_name;
+    std::vector<lnav::console::user_message> di_details;
+};
+
+using safe_demux_info = safe::Safe<demux_info>;
 
 struct options {
     bool o_demux{false};
@@ -86,7 +91,10 @@ public:
         return this->l_out_dir / "out.*";
     }
 
-    std::string get_demux_id() const { return *this->l_demux_id.readAccess(); }
+    demux_info get_demux_info() const
+    {
+        return *this->l_demux_info.readAccess();
+    }
 
     std::string get_url() const
     {
@@ -94,10 +102,7 @@ public:
                            this->l_out_dir.filename().string());
     }
 
-    int get_loop_count() const
-    {
-        return this->l_loop_count.load();
-    }
+    int get_loop_count() const { return this->l_loop_count.load(); }
 
     bool is_finished() const
     {
@@ -120,6 +125,8 @@ public:
 private:
     void loop();
 
+    static auto_pipe& get_wakeup_pipe();
+
     std::atomic<bool> l_looping{true};
     const std::string l_name;
     const std::string l_cwd;
@@ -131,7 +138,7 @@ private:
     std::future<void> l_future;
     std::atomic<int> l_finished{0};
     std::atomic<int> l_loop_count{0};
-    safe_demux_id l_demux_id;
+    safe_demux_info l_demux_info;
 };
 
 template<state LooperState>
@@ -154,7 +161,15 @@ public:
         return this->h_looper->get_out_pattern();
     }
 
-    std::string get_demux_id() const { return this->h_looper->get_demux_id(); }
+    std::string get_demux_id() const
+    {
+        return this->h_looper->get_demux_info().di_name;
+    }
+
+    std::vector<lnav::console::user_message> get_demux_details() const
+    {
+        return this->h_looper->get_demux_info().di_details;
+    }
 
     std::string get_url() const { return this->h_looper->get_url(); }
 

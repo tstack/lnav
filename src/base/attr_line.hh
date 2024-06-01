@@ -301,7 +301,7 @@ public:
 
         size_t start_len = this->al_string.length();
 
-        this->al_string.append(std::move(value.first));
+        this->append(std::move(value.first));
 
         line_range lr{(int) start_len, (int) this->al_string.length()};
 

@@ -32,10 +32,11 @@
 #ifndef lnav_file_format_hh
 #define lnav_file_format_hh
 
+#include <filesystem>
 #include <optional>
 
+#include "base/lnav.console.hh"
 #include "fmt/format.h"
-#include <filesystem>
 
 enum class file_format_t : int {
     UNKNOWN,
@@ -51,7 +52,13 @@ struct external_file_format {
     std::filesystem::path eff_source_path;
 };
 
-file_format_t detect_file_format(const std::filesystem::path& filename);
+struct detect_file_format_result {
+    file_format_t dffr_file_format{file_format_t::UNKNOWN};
+    std::vector<lnav::console::user_message> dffr_details;
+};
+
+detect_file_format_result detect_file_format(
+    const std::filesystem::path& filename);
 
 std::optional<external_file_format> detect_mime_type(
     const std::filesystem::path& filename);

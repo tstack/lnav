@@ -104,14 +104,19 @@ To hide the panels again, press :kbd:`q`.
    Screenshot of the files panel showing the loaded files.
 
 The Files panel is open initially to display progress in loading files.
-The following information can be displayed for each file:
+The following information is displayed for each file:
 
-* the "unique" portion of the path relative to the other files;
-* the amount of data that has been indexed;
+* the "unique" portion of the path relative to the other files and
+* the amount of data that has been indexed.
+
+To the right of the file list is a panel that shows details for each
+file, such as:
+
 * the date range of log messages contained in the file;
 * the errors that were encountered while trying to index the file;
 * the notes recorded for files where some automatic action was taken,
-  like hiding the file if it was seen as a duplicate of another file.
+  like hiding the file if it was seen as a duplicate of another file;
+* the details of the demultiplexing and log format matching process.
 
 .. figure:: lnav-filters-panel.png
    :align: center

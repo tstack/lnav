@@ -462,7 +462,6 @@ textview_curses::handle_mouse(mouse_event& me)
 
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED: {
-            this->tc_text_selection_active = true;
             this->tc_press_line = mouse_line;
             this->tc_press_left = this->lv_left + me.me_press_x;
             if (!this->lv_selectable) {
@@ -470,6 +469,7 @@ textview_curses::handle_mouse(mouse_event& me)
             }
             mouse_line.match(
                 [this, &me, sub_delegate, &mouse_line](const main_content& mc) {
+                    this->tc_text_selection_active = true;
                     if (this->vc_enabled) {
                         if (this->tc_supports_marks
                             && me.me_button == mouse_button_t::BUTTON_LEFT
@@ -492,9 +492,7 @@ textview_curses::handle_mouse(mouse_event& me)
                     }
                 },
                 [](const overlay_menu& om) {},
-                [](const static_overlay_content& soc) {
-
-                },
+                [](const static_overlay_content& soc) {},
                 [this](const overlay_content& oc) {
                     this->set_overlay_selection(oc.oc_line);
                 },
@@ -574,15 +572,9 @@ textview_curses::handle_mouse(mouse_event& me)
                         sub_delegate->text_handle_mouse(*this, mouse_line, me);
                     }
                 },
-                [](const static_overlay_content& soc) {
-
-                },
-                [](const overlay_menu& om) {
-
-                },
-                [](const overlay_content& oc) {
-
-                },
+                [](const static_overlay_content& soc) {},
+                [](const overlay_menu& om) {},
+                [](const overlay_content& oc) {},
                 [](const empty_space& es) {});
             break;
         }
@@ -658,19 +650,16 @@ textview_curses::handle_mouse(mouse_event& me)
             if (ov != nullptr && mouse_line.is<overlay_menu>()
                 && this->tc_selected_text)
             {
-                auto* los = dynamic_cast<list_overlay_source*>(ov);
-                if (los != nullptr) {
-                    auto& om = mouse_line.get<overlay_menu>();
-                    auto& sti = this->tc_selected_text.value();
+                auto& om = mouse_line.get<overlay_menu>();
+                auto& sti = this->tc_selected_text.value();
 
-                    for (const auto& mi : los->los_menu_items) {
-                        if (om.om_line == mi.mi_line
-                            && me.is_click_in(mouse_button_t::BUTTON_LEFT,
-                                              mi.mi_range))
-                        {
-                            mi.mi_action(sti.sti_value);
-                            break;
-                        }
+                for (const auto& mi : ov->los_menu_items) {
+                    if (om.om_line == mi.mi_line
+                        && me.is_click_in(mouse_button_t::BUTTON_LEFT,
+                                          mi.mi_range))
+                    {
+                        mi.mi_action(sti.sti_value);
+                        break;
                     }
                 }
             }
@@ -848,11 +837,11 @@ void
 textview_curses::execute_search(const std::string& regex_orig)
 {
     std::string regex = regex_orig;
-    std::shared_ptr<lnav::pcre2pp::code> code;
 
     if ((this->tc_search_child == nullptr)
         || (regex != this->tc_current_search))
     {
+        std::shared_ptr<lnav::pcre2pp::code> code;
         this->match_reset();
 
         this->tc_search_child.reset();

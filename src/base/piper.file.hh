@@ -30,6 +30,7 @@
 #ifndef lnav_piper_file_hh
 #define lnav_piper_file_hh
 
+#include <filesystem>
 #include <map>
 #include <optional>
 #include <set>
@@ -39,7 +40,7 @@
 
 #include "auto_mem.hh"
 #include "base/intern_string.hh"
-#include <filesystem>
+#include "lnav.console.hh"
 #include "mapbox/variant_io.hpp"
 #include "time_util.hh"
 
@@ -96,8 +97,11 @@ public:
 
     match_result match(const string_fragment& line);
 
+    std::vector<lnav::console::user_message> mm_details;
+
 private:
     std::set<std::string> mm_partial_match_ids;
+    size_t mm_line_count{0};
 };
 
 }  // namespace piper

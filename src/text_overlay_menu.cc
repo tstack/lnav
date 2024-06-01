@@ -33,6 +33,7 @@
 #include "config.h"
 #include "lnav.hh"
 #include "md4cpp.hh"
+#include "sysclip.hh"
 #include "textview_curses.hh"
 
 using namespace md4cpp::literals;
@@ -50,7 +51,10 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
         return retval;
     }
 
+    const auto* tss = tc->get_sub_source();
     const auto& sti = tc->tc_selected_text.value();
+    const auto supports_filtering
+        = tss != nullptr && tss->tss_supports_filtering;
 
     if (sti.sti_line != row) {
         return retval;
@@ -85,25 +89,29 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
         attr_line_t al;
 
         int start = left;
-        if (is_link) {
-            al.append(":floppy_disk:"_emoji)
-                .append(" Open in lnav")
-                .append("  ");
-        } else {
-            al.append(" ").append("\u2714 Filter-in"_ok).append("   ");
+        if (is_link || supports_filtering) {
+            if (is_link) {
+                al.append(":floppy_disk:"_emoji)
+                    .append(" Open in lnav")
+                    .append("  ");
+            } else {
+                al.append(" ").append("\u2714 Filter-in"_ok).append("   ");
+            }
+            this->los_menu_items.emplace_back(
+                menu_line,
+                line_range{start, start + (int) al.length()},
+                [is_link, sti](const std::string& value) {
+                    const auto cmd = is_link
+                        ? ":open $href"
+                        : fmt::format(FMT_STRING(":filter-in {}"),
+                                      lnav::pcre2pp::quote(value));
+                    lnav_data.ld_exec_context
+                        .with_provenance(exec_context::mouse_input{})
+                        ->execute_with(cmd,
+                                       std::make_pair("href", sti.sti_href));
+                });
+            start += al.length();
         }
-        this->los_menu_items.emplace_back(
-            menu_line,
-            line_range{start, start + (int) al.length()},
-            [is_link, sti](const std::string& value) {
-                auto cmd = is_link ? ":open $href"
-                                   : fmt::format(FMT_STRING(":filter-in {}"),
-                                                 lnav::pcre2pp::quote(value));
-                lnav_data.ld_exec_context
-                    .with_provenance(exec_context::mouse_input{})
-                    ->execute_with(cmd, std::make_pair("href", sti.sti_href));
-            });
-        start += al.length();
 
         if (is_link) {
             al.append("      ");
@@ -125,28 +133,32 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
         }
         retval.emplace_back(attr_line_t().pad_to(left).append(al));
     }
+    menu_line += 1_vl;
     {
         attr_line_t al;
 
-        if (is_link) {
-            al.append(":globe_with_meridians:"_emoji).append(" Open   ");
-        } else {
-            al.append(" ").append("\u2718 Filter-out"_error).append("  ");
-        }
-        menu_line += 1_vl;
         int start = left;
-        this->los_menu_items.emplace_back(
-            menu_line,
-            line_range{start, start + (int) al.length()},
-            [is_link, sti](const std::string& value) {
-                auto cmd = is_link ? ":xopen $href"
-                                   : fmt::format(FMT_STRING(":filter-out {}"),
-                                                 lnav::pcre2pp::quote(value));
-                lnav_data.ld_exec_context
-                    .with_provenance(exec_context::mouse_input{})
-                    ->execute_with(cmd, std::make_pair("href", sti.sti_href));
-            });
-        start += al.length();
+        if (is_link || supports_filtering) {
+            if (is_link) {
+                al.append(":globe_with_meridians:"_emoji).append(" Open   ");
+            } else {
+                al.append(" ").append("\u2718 Filter-out"_error).append("  ");
+            }
+            this->los_menu_items.emplace_back(
+                menu_line,
+                line_range{start, start + (int) al.length()},
+                [is_link, sti](const std::string& value) {
+                    auto cmd = is_link
+                        ? ":xopen $href"
+                        : fmt::format(FMT_STRING(":filter-out {}"),
+                                      lnav::pcre2pp::quote(value));
+                    lnav_data.ld_exec_context
+                        .with_provenance(exec_context::mouse_input{})
+                        ->execute_with(cmd,
+                                       std::make_pair("href", sti.sti_href));
+                });
+            start += al.length();
+        }
         al.append(":clipboard:"_emoji)
             .append(is_link ? " Copy link " : " Copy   ")
             .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
@@ -154,7 +166,15 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
             menu_line,
             line_range{start, start + (int) al.length()},
             [](const std::string& value) {
-                lnav_data.ld_exec_context.execute("|lnav-copy-text");
+                auto clip_res = sysclip::open(sysclip::type_t::GENERAL);
+                if (clip_res.isErr()) {
+                    log_error("unable to open clipboard: %s",
+                              clip_res.unwrapErr().c_str());
+                    return;
+                }
+
+                auto clip_pipe = clip_res.unwrap();
+                fwrite(value.c_str(), 1, value.length(), clip_pipe.in());
             });
         retval.emplace_back(attr_line_t().pad_to(left).append(al));
     }

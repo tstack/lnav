@@ -617,6 +617,7 @@ handle_winch()
     lnav_data.ld_match_view.set_needs_update();
     lnav_data.ld_filter_view.set_needs_update();
     lnav_data.ld_files_view.set_needs_update();
+    lnav_data.ld_file_details_view.set_needs_update();
     lnav_data.ld_spectro_details_view.set_needs_update();
     lnav_data.ld_timeline_details_view.set_needs_update();
     lnav_data.ld_user_message_view.set_needs_update();
@@ -627,6 +628,9 @@ handle_winch()
 void
 layout_views()
 {
+    static constexpr auto FILES_FOCUSED_WIDTH = 40;
+    static constexpr auto FILES_BLURRED_WIDTH = 20;
+
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
     int width, height;
     getmaxyx(lnav_data.ld_window, height, width);
@@ -698,13 +702,31 @@ layout_views()
 
     auto config_panel_open = (lnav_data.ld_mode == ln_mode_t::FILTER
                               || lnav_data.ld_mode == ln_mode_t::FILES
+                              || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS
                               || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS
                               || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
     auto filters_open = (lnav_data.ld_mode == ln_mode_t::FILTER
                          || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS);
     auto files_open = (lnav_data.ld_mode == ln_mode_t::FILES
+                       || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS
                        || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
-    int filter_height = config_panel_open ? 5 : 0;
+    auto files_width = lnav_data.ld_mode == ln_mode_t::FILES
+        ? FILES_FOCUSED_WIDTH
+        : FILES_BLURRED_WIDTH;
+    int filter_height;
+
+    switch (lnav_data.ld_mode) {
+        case ln_mode_t::FILES:
+        case ln_mode_t::FILTER:
+            filter_height = 5;
+            break;
+        case ln_mode_t::FILE_DETAILS:
+            filter_height = 15;
+            break;
+        default:
+            filter_height = 0;
+            break;
+    }
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
@@ -809,8 +831,15 @@ layout_views()
 
     lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
     lnav_data.ld_files_view.set_y(bottom + 2);
-    lnav_data.ld_files_view.set_width(width);
+    lnav_data.ld_files_view.set_width(files_width);
     lnav_data.ld_files_view.set_visible(files_open && vis);
+
+    lnav_data.ld_file_details_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_file_details_view.set_y(bottom + 2);
+    lnav_data.ld_file_details_view.set_x(files_width);
+    lnav_data.ld_file_details_view.set_width(
+        std::clamp(width - files_width, 0, width));
+    lnav_data.ld_file_details_view.set_visible(files_open && vis);
 
     lnav_data.ld_status[LNS_FILTER_HELP].set_visible(config_panel_open && vis);
     lnav_data.ld_status[LNS_FILTER_HELP].set_y(bottom + 1);
@@ -1265,6 +1294,8 @@ get_textview_for_mode(ln_mode_t mode)
         case ln_mode_t::SEARCH_FILES:
         case ln_mode_t::FILES:
             return &lnav_data.ld_files_view;
+        case ln_mode_t::FILE_DETAILS:
+            return &lnav_data.ld_file_details_view;
         case ln_mode_t::SPECTRO_DETAILS:
         case ln_mode_t::SEARCH_SPECTRO_DETAILS:
             return &lnav_data.ld_spectro_details_view;
@@ -1435,12 +1466,23 @@ set_view_mode(ln_mode_t mode)
             lnav_data.ld_view_stack.set_needs_update();
             break;
         }
+        case ln_mode_t::FILE_DETAILS: {
+            lnav_data.ld_file_details_view.tc_cursor_role
+                = role_t::VCR_DISABLED_CURSOR_LINE;
+            break;
+        }
         default:
             break;
     }
     switch (mode) {
         case ln_mode_t::BREADCRUMBS: {
             breadcrumb_view->focus();
+            break;
+        }
+        case ln_mode_t::FILE_DETAILS: {
+            lnav_data.ld_status[LNS_FILTER].set_needs_update();
+            lnav_data.ld_file_details_view.tc_cursor_role
+                = role_t::VCR_CURSOR_LINE;
             break;
         }
         default:
@@ -1464,6 +1506,7 @@ all_views()
     retval.push_back(&lnav_data.ld_example_view);
     retval.push_back(&lnav_data.ld_preview_view[0]);
     retval.push_back(&lnav_data.ld_preview_view[1]);
+    retval.push_back(&lnav_data.ld_file_details_view);
     retval.push_back(&lnav_data.ld_files_view);
     retval.push_back(&lnav_data.ld_filter_view);
     retval.push_back(&lnav_data.ld_user_message_view);
@@ -1478,7 +1521,7 @@ void
 lnav_behavior::mouse_event(int button, bool release, int x, int y)
 {
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
-    static const std::vector<view_curses*> VIEWS = all_views();
+    static const auto VIEWS = all_views();
     static const auto CLICK_INTERVAL
         = std::chrono::milliseconds(mouseinterval(-1) * 2);
 
@@ -1552,6 +1595,7 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
                     case ln_mode_t::PAGING:
                         break;
                     case ln_mode_t::FILES:
+                    case ln_mode_t::FILE_DETAILS:
                     case ln_mode_t::FILTER:
                         // Clicking on the main view when the config panels are
                         // open should return us to paging.

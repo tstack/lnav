@@ -3352,7 +3352,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 attr_line_t al;
                 attr_line_builder alb(al);
 
-                switch (detect_res) {
+                switch (detect_res.dffr_file_format) {
                     case file_format_t::ARCHIVE: {
                         auto describe_res = archive_manager::describe(fn);
 
@@ -3450,7 +3450,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         break;
                     }
                     case file_format_t::SQLITE_DB: {
-                        alb.append(fmt::to_string(detect_res));
+                        alb.append(fmt::to_string(detect_res.dffr_file_format));
                         break;
                     }
                     case file_format_t::REMOTE: {

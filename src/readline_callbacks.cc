@@ -784,6 +784,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
         case ln_mode_t::PAGING:
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
+        case ln_mode_t::FILE_DETAILS:
         case ln_mode_t::EXEC:
         case ln_mode_t::USER:
         case ln_mode_t::SPECTRO_DETAILS:
@@ -876,6 +877,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case ln_mode_t::PAGING:
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
+        case ln_mode_t::FILE_DETAILS:
         case ln_mode_t::SPECTRO_DETAILS:
         case ln_mode_t::BUSY:
             require(0);

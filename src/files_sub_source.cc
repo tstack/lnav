@@ -34,6 +34,9 @@
 #include "base/fs_util.hh"
 #include "base/humanize.hh"
 #include "base/humanize.network.hh"
+#include "base/humanize.time.hh"
+#include "base/itertools.enumerate.hh"
+#include "base/itertools.hh"
 #include "base/opt_util.hh"
 #include "base/string_util.hh"
 #include "config.h"
@@ -48,7 +51,7 @@ files_list_selection
 from_selection(vis_line_t sel_vis)
 {
     auto& fc = lnav_data.ld_active_files;
-    int sel = (int) sel_vis;
+    int sel = sel_vis;
 
     {
         safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
@@ -57,7 +60,8 @@ from_selection(vis_line_t sel_vis)
             auto iter = errs->begin();
 
             std::advance(iter, sel);
-            return error_selection::build(sel, iter->first);
+            return error_selection::build(
+                sel, std::make_pair(iter->first, iter->second.fei_description));
         }
 
         sel -= errs->size();
@@ -83,7 +87,10 @@ from_selection(vis_line_t sel_vis)
 }
 }  // namespace files_model
 
-files_sub_source::files_sub_source() {}
+files_sub_source::
+files_sub_source()
+{
+}
 
 bool
 files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
@@ -181,11 +188,11 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                 [&](files_model::error_selection& es) {
                     auto& fc = lnav_data.ld_active_files;
 
-                    fc.fc_file_names.erase(es.sb_iter);
+                    fc.fc_file_names.erase(es.sb_iter.first);
 
                     auto name_iter = fc.fc_file_names.begin();
                     while (name_iter != fc.fc_file_names.end()) {
-                        if (name_iter->first == es.sb_iter) {
+                        if (name_iter->first == es.sb_iter.first) {
                             name_iter = fc.fc_file_names.erase(name_iter);
                             continue;
                         }
@@ -196,7 +203,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                         if (rp_opt) {
                             auto rp = *rp_opt;
 
-                            if (fmt::to_string(rp.home()) == es.sb_iter) {
+                            if (fmt::to_string(rp.home()) == es.sb_iter.first) {
                                 fc.fc_other_files.erase(name_iter->first);
                                 name_iter = fc.fc_file_names.erase(name_iter);
                                 continue;
@@ -205,7 +212,8 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                         ++name_iter;
                     }
 
-                    fc.fc_name_to_errors->writeAccess()->erase(es.sb_iter);
+                    fc.fc_name_to_errors->writeAccess()->erase(
+                        es.sb_iter.first);
                     fc.fc_invalidate_merge = true;
                     lv.reload_data();
                 },
@@ -246,8 +254,10 @@ files_sub_source::text_value_for_line(textview_curses& tc,
                                       std::string& value_out,
                                       text_sub_source::line_flags_t flags)
 {
-    bool selected
-        = lnav_data.ld_mode == ln_mode_t::FILES && line == tc.get_selection();
+    bool selected = line == tc.get_selection();
+    role_t cursor_role = lnav_data.ld_mode == ln_mode_t::FILES
+        ? role_t::VCR_CURSOR_LINE
+        : role_t::VCR_DISABLED_CURSOR_LINE;
     const auto dim = tc.get_dimensions();
     const auto& fc = lnav_data.ld_active_files;
     auto filename_width
@@ -280,8 +290,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
             }
             al.append("   ").append(iter->second.fei_description);
             if (selected) {
-                al.with_attr_for_all(
-                    VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
+                al.with_attr_for_all(VC_ROLE.value(cursor_role));
             }
 
             value_out = al.get_string();
@@ -308,7 +317,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
             .append("  ")
             .append(iter->second.ofd_description);
         if (selected) {
-            al.with_attr_for_all(VC_ROLE.value(role_t::VCR_DISABLED_FOCUSED));
+            al.with_attr_for_all(VC_ROLE.value(cursor_role));
         }
         if (line == fc.fc_other_files.size() - 1) {
             al.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
@@ -323,13 +332,8 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     const auto& lf = fc.fc_files[line];
     auto ld_opt = lnav_data.ld_log_source.find_data(lf);
     auto fn = fmt::to_string(std::filesystem::path(lf->get_unique_path()));
-    char start_time[64] = "", end_time[64] = "";
     std::vector<std::string> file_notes;
 
-    if (lf->get_format() != nullptr) {
-        sql_strftime(start_time, sizeof(start_time), lf->front().get_timeval());
-        sql_strftime(end_time, sizeof(end_time), lf->back().get_timeval());
-    }
     truncate_to(fn, filename_width);
     for (const auto& pair : lf->get_notes()) {
         file_notes.push_back(pair.second);
@@ -355,19 +359,13 @@ files_sub_source::text_value_for_line(textview_curses& tc,
                    humanize::file_size(lf->get_index_size(),
                                        humanize::alignment::columnar));
     }
-    al.append(" ")
-        .append(start_time)
-        .append(" \u2014 ")
-        .append(end_time)
-        .append(" ")
-        .appendf(FMT_STRING("{}"), fmt::join(file_notes, "; "));
+    al.append(" ").appendf(FMT_STRING("{}"), fmt::join(file_notes, "; "));
     if (selected) {
-        al.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOCUSED));
+        al.with_attr_for_all(VC_ROLE.value(cursor_role));
     }
 
     value_out = al.get_string();
-    this->fss_last_line_len
-        = filename_width + 23 + strlen(start_time) + strlen(end_time);
+    this->fss_last_line_len = value_out.length();
 }
 
 void
@@ -454,4 +452,180 @@ files_sub_source::text_handle_mouse(
     }
 
     return false;
+}
+
+void
+files_sub_source::text_selection_changed(textview_curses& tc)
+{
+    auto sel = files_model::from_selection(tc.get_selection());
+    std::vector<attr_line_t> details;
+
+    sel.match(
+        [](files_model::no_selection) {},
+
+        [&details](const files_model::error_selection& es) {
+            auto path = std::filesystem::path(es.sb_iter.first);
+
+            details.emplace_back(
+                attr_line_t().appendf(FMT_STRING("Full path: {}"), path));
+            details.emplace_back(attr_line_t("  ").append(
+                lnav::roles::error(es.sb_iter.second)));
+        },
+        [&details](const files_model::other_selection& os) {
+            auto path = std::filesystem::path(os.sb_iter->first);
+
+            details.emplace_back(
+                attr_line_t().appendf(FMT_STRING("Full path: {}"), path));
+            details.emplace_back(attr_line_t("  ").append("Match Details"_h3));
+            for (const auto& msg : os.sb_iter->second.ofd_details) {
+                auto msg_al = msg.to_attr_line();
+
+                for (auto& msg_line : msg_al.rtrim().split_lines()) {
+                    msg_line.insert(0, 4, ' ');
+                    details.emplace_back(msg_line);
+                }
+            }
+        },
+        [&details](const files_model::file_selection& fs) {
+            static constexpr auto NAME_WIDTH = 17;
+
+            auto lf = *fs.sb_iter;
+            auto path = lf->get_filename();
+            auto actual_path = lf->get_actual_path();
+            auto format = lf->get_format();
+
+            details.emplace_back(
+                attr_line_t()
+                    .appendf(FMT_STRING("{}"), path)
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_IDENTIFIER)));
+            const auto notes = lf->get_notes();
+            if (!notes.empty()) {
+                details.emplace_back(
+                    attr_line_t("  ").append("Notes"_h2).append(":"));
+                for (const auto& pair : notes) {
+                    details.emplace_back(attr_line_t("    ").append(
+                        lnav::roles::warning(pair.second)));
+                }
+            }
+            details.emplace_back(attr_line_t("  ").append("General"_h2));
+            if (actual_path) {
+                if (path != actual_path.value()) {
+                    auto line = attr_line_t()
+                                    .append("Actual Path"_h3)
+                                    .right_justify(NAME_WIDTH)
+                                    .append(": ")
+                                    .append(lnav::roles::file(
+                                        fmt::to_string(actual_path.value())));
+                    details.emplace_back(line);
+                }
+            } else {
+                details.emplace_back(attr_line_t().append("  Piped"));
+            }
+            details.emplace_back(
+                attr_line_t()
+                    .append("MIME Type"_h3)
+                    .right_justify(NAME_WIDTH)
+                    .append(": ")
+                    .append(fmt::to_string(lf->get_text_format())));
+            details.emplace_back(
+                attr_line_t()
+                    .append("Last Modified"_h3)
+                    .right_justify(NAME_WIDTH)
+                    .append(": ")
+                    .append(lnav::to_rfc3339_string(
+                        convert_log_time_to_local(lf->get_modified_time()),
+                        0,
+                        'T')));
+            details.emplace_back(
+                attr_line_t()
+                    .append("Size"_h3)
+                    .right_justify(NAME_WIDTH)
+                    .append(": ")
+                    .append(humanize::file_size(lf->get_index_size(),
+                                                humanize::alignment::none)));
+
+            details.emplace_back(attr_line_t()
+                                     .append("Lines"_h3)
+                                     .right_justify(NAME_WIDTH)
+                                     .append(": ")
+                                     .append(lnav::roles::number(fmt::format(
+                                         FMT_STRING("{:L}"), lf->size()))));
+            if (format != nullptr) {
+                details.emplace_back(attr_line_t()
+                                         .append("Time Range"_h3)
+                                         .right_justify(NAME_WIDTH)
+                                         .append(": ")
+                                         .append(lnav::to_rfc3339_string(
+                                             lf->front().get_timeval(), 'T'))
+                                         .append(" - ")
+                                         .append(lnav::to_rfc3339_string(
+                                             lf->back().get_timeval(), 'T')));
+                details.emplace_back(
+                    attr_line_t()
+                        .append("Duration"_h3)
+                        .right_justify(NAME_WIDTH)
+                        .append(": ")
+                        .append(humanize::time::duration::from_tv(
+                                    lf->back().get_timeval()
+                                    - lf->front().get_timeval())
+                                    .to_string()));
+            }
+            {
+                auto line
+                    = attr_line_t("  ").append("Log Format"_h2).append(": ");
+
+                if (format != nullptr) {
+                    line.append(lnav::roles::identifier(
+                        format->get_name().to_string()));
+                } else {
+                    line.append("(none)"_comment);
+                }
+                details.emplace_back(line);
+            }
+            auto match_msgs = lf->get_format_match_messages();
+
+            details.emplace_back(
+                attr_line_t("    ").append("Match Details"_h3));
+            for (const auto& msg : match_msgs) {
+                auto msg_al = msg.to_attr_line();
+
+                for (auto& msg_line : msg_al.rtrim().split_lines()) {
+                    msg_line.insert(0, 6, ' ');
+                    details.emplace_back(msg_line);
+                }
+            }
+
+            {
+                const auto& meta = lf->get_embedded_metadata();
+
+                if (!meta.empty()) {
+                    details.emplace_back(
+                        attr_line_t("  ").append("Embedded Metadata:"_h2));
+                    for (const auto& [index, meta_pair] :
+                         lnav::itertools::enumerate(meta))
+                    {
+                        details.emplace_back(
+                            attr_line_t("  ")
+                                .appendf(FMT_STRING("[{}]"), index)
+                                .append(" ")
+                                .append(lnav::roles::h3(meta_pair.first)));
+                        details.emplace_back(
+                            attr_line_t("      MIME Type: ")
+                                .append(lnav::roles::symbol(fmt::to_string(
+                                    meta_pair.second.m_format))));
+                        line_range lr{6, -1};
+                        details.emplace_back(attr_line_t().with_attr(
+                            string_attr{lr, VC_GRAPHIC.value(ACS_HLINE)}));
+                        const auto val_sf = string_fragment::from_str(
+                            meta_pair.second.m_value);
+                        for (const auto val_line : val_sf.split_lines()) {
+                            details.emplace_back(
+                                attr_line_t("      ").append(val_line));
+                        }
+                    }
+                }
+            }
+        });
+
+    this->fss_details_source->replace_with(details);
 }

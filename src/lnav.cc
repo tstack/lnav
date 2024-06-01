@@ -689,7 +689,21 @@ handle_config_ui_key(int ch, const char* keyseq)
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::FILES:
-            retval = lnav_data.ld_files_view.handle_key(ch);
+            if (ch == KEY_CTRL(']')) {
+                set_view_mode(ln_mode_t::FILE_DETAILS);
+                lnav_data.ld_mode = ln_mode_t::FILE_DETAILS;
+                retval = true;
+            } else {
+                retval = lnav_data.ld_files_view.handle_key(ch);
+            }
+            break;
+        case ln_mode_t::FILE_DETAILS:
+            if (ch == KEY_ESCAPE || ch == KEY_CTRL(']')) {
+                set_view_mode(ln_mode_t::FILES);
+                retval = true;
+            } else {
+                retval = lnav_data.ld_file_details_view.handle_key(ch);
+            }
             break;
         case ln_mode_t::FILTER:
             retval = lnav_data.ld_filter_view.handle_key(ch);
@@ -727,6 +741,7 @@ handle_config_ui_key(int ch, const char* keyseq)
         }
         lnav_data.ld_mode = new_mode.value();
         lnav_data.ld_files_view.reload_data();
+        lnav_data.ld_file_details_view.reload_data();
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_status[LNS_FILTER].set_needs_update();
     } else {
@@ -760,6 +775,7 @@ handle_key(int ch, const char* keyseq)
 
                 case ln_mode_t::FILTER:
                 case ln_mode_t::FILES:
+                case ln_mode_t::FILE_DETAILS:
                     return handle_config_ui_key(ch, keyseq);
 
                 case ln_mode_t::SPECTRO_DETAILS: {
@@ -1349,6 +1365,18 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             highlight_source_t::THEME);
         lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
 
+        lnav_data.ld_file_details_view.set_title("File Details");
+        lnav_data.ld_file_details_view.set_selectable(true);
+        lnav_data.ld_file_details_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_file_details_view.set_show_scrollbar(true);
+        lnav_data.ld_file_details_view.set_supports_marks(true);
+        lnav_data.ld_file_details_view.get_disabled_highlights().insert(
+            highlight_source_t::THEME);
+        lnav_data.ld_file_details_view.tc_cursor_role
+            = role_t::VCR_DISABLED_CURSOR_LINE;
+        lnav_data.ld_file_details_view.tc_disabled_cursor_role
+            = role_t::VCR_DISABLED_CURSOR_LINE;
+
         lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
 
         lnav_data.ld_spectro_details_view.set_title("spectro-details");
@@ -1674,8 +1702,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     break;
                 case ln_mode_t::SEARCH_FILES:
                 case ln_mode_t::FILES:
+                case ln_mode_t::FILE_DETAILS:
                     lnav_data.ld_files_view.set_needs_update();
+                    lnav_data.ld_file_details_view.set_needs_update();
                     lnav_data.ld_files_view.do_update();
+                    lnav_data.ld_file_details_view.do_update();
                     break;
                 default:
                     break;
@@ -1785,6 +1816,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         case ln_mode_t::PAGING:
                         case ln_mode_t::FILTER:
                         case ln_mode_t::FILES:
+                        case ln_mode_t::FILE_DETAILS:
                         case ln_mode_t::SPECTRO_DETAILS:
                         case ln_mode_t::BUSY:
                             if (old_gen
@@ -2054,6 +2086,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
             }
         }
+
+        if (rescan_future.valid()) {
+            rescan_future.get();
+        }
     } catch (readline_curses::error& e) {
         log_error("error: %s", strerror(e.e_err));
     }
@@ -2303,13 +2339,19 @@ main(int argc, char* argv[])
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
 
+        log_info("performing cleanup");
         lnav_data.ld_child_pollers.clear();
 
+        log_info("marking files as closed");
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
             lf->close();
         }
+        log_info("rebuilding after closures");
         rebuild_indexes(ui_clock::now());
+        log_info("clearing file collection");
+        lnav_data.ld_active_files.clear();
 
+        log_info("dropping tables");
         lnav_data.ld_vtab_manager = nullptr;
 
         std::vector<std::string> tables_to_drop;
@@ -2367,6 +2409,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 #endif
 
         lnav_data.ld_db.reset();
+
+        log_info("cleanup finished");
     });
 
 #ifdef HAVE_LIBCURL
@@ -2882,8 +2926,14 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .add_input_delegate(*filter_source);
     lnav_data.ld_files_view.set_sub_source(&lnav_data.ld_files_source)
         .add_input_delegate(lnav_data.ld_files_source);
+    lnav_data.ld_file_details_view.set_sub_source(
+        &lnav_data.ld_file_details_source);
+    lnav_data.ld_files_source.fss_details_source
+        = &lnav_data.ld_file_details_source;
     lnav_data.ld_user_message_view.set_sub_source(
         &lnav_data.ld_user_message_source);
+    auto overlay_menu = std::make_shared<text_overlay_menu>();
+    lnav_data.ld_file_details_view.set_overlay_source(overlay_menu.get());
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
@@ -3541,6 +3591,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 save_session();
             }
+
+            log_info("exiting main loop");
         } catch (const std::system_error& e) {
             if (e.code().value() != EPIPE) {
                 fprintf(stderr, "error: %s\n", e.what());

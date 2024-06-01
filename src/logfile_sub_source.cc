@@ -146,7 +146,8 @@ pretty_pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
     return retval;
 }
 
-logfile_sub_source::logfile_sub_source()
+logfile_sub_source::
+logfile_sub_source()
     : text_sub_source(1), lss_meta_grepper(*this), lss_location_history(*this)
 {
     this->tss_supports_filtering = true;
@@ -2007,6 +2008,7 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
 
         this->lss_force_rebuild = true;
     }
+    this->lss_token_file = nullptr;
 }
 
 std::optional<vis_line_t>
@@ -2303,7 +2305,8 @@ logline_window::end()
     return {this->lw_source, vl};
 }
 
-logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
+logline_window::logmsg_info::
+logmsg_info(logfile_sub_source& lss, vis_line_t vl)
     : li_source(lss), li_line(vl)
 {
     if (this->li_line < vis_line_t(this->li_source.text_line_count())) {
@@ -2394,7 +2397,8 @@ logline_window::logmsg_info::get_metadata() const
     return &bm_iter->second;
 }
 
-logline_window::logmsg_info::metadata_edit_guard::~metadata_edit_guard()
+logline_window::logmsg_info::metadata_edit_guard::~
+metadata_edit_guard()
 {
     auto line_number = std::distance(this->meg_logmsg_info.li_file->begin(),
                                      this->meg_logmsg_info.li_logline);

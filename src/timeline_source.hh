@@ -187,7 +187,8 @@ public:
 
 class timeline_header_overlay : public text_overlay_menu {
 public:
-    explicit timeline_header_overlay(std::shared_ptr<timeline_source> src);
+    explicit timeline_header_overlay(
+        const std::shared_ptr<timeline_source>& src);
 
     bool list_static_overlay(const listview_curses& lv,
                              int y,

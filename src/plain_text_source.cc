@@ -143,6 +143,7 @@ plain_text_source&
 plain_text_source::replace_with(const std::vector<attr_line_t>& text_lines)
 {
     file_off_t off = 0;
+    this->tds_lines.clear();
     for (const auto& al : text_lines) {
         this->tds_lines.emplace_back(off, al);
         off += al.length() + 1;

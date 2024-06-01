@@ -281,6 +281,12 @@ struct string_fragment {
 
     string_fragment sub_range(int begin, int end) const
     {
+        if (this->sf_begin + begin > this->sf_end) {
+            begin = this->sf_end - this->sf_begin;
+        }
+        if (this->sf_begin + end > this->sf_end) {
+            end = this->sf_end - this->sf_begin;
+        }
         return string_fragment{
             this->sf_string, this->sf_begin + begin, this->sf_begin + end};
     }
@@ -575,6 +581,7 @@ struct string_fragment {
     }
 
     string_fragment trim(const char* tokens) const;
+    string_fragment rtrim(const char* tokens) const;
     string_fragment trim() const;
 
     string_fragment prepend(const char* str, int amount) const

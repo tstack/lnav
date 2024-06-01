@@ -79,6 +79,16 @@ strftime_rfc3339(
     return index;
 }
 
+std::string
+to_rfc3339_string(time64_t tim, int millis, char sep)
+{
+    char buf[64];
+
+    strftime_rfc3339(buf, sizeof(buf), tim, millis, sep);
+
+    return buf;
+}
+
 static std::optional<Posix::time_zone>
 get_posix_zone(const char* name)
 {

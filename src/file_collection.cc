@@ -406,12 +406,15 @@ file_collection::watch_logfile(const std::string& filename,
                 }
             }
 
-            auto ff = detect_file_format(filename);
+            auto ff_res = detect_file_format(filename);
 
-            loo.loo_file_format = ff;
-            switch (ff) {
+            loo.loo_file_format = ff_res.dffr_file_format;
+            switch (ff_res.dffr_file_format) {
                 case file_format_t::SQLITE_DB:
-                    retval.fc_other_files[filename].ofd_format = ff;
+                    retval.fc_other_files[filename].ofd_format
+                        = ff_res.dffr_file_format;
+                    retval.fc_other_files[filename].ofd_details
+                        = ff_res.dffr_details;
                     break;
 
                 case file_format_t::MULTIPLEXED: {
@@ -430,7 +433,10 @@ file_collection::watch_logfile(const std::string& filename,
                                                          looper_options);
 
                         if (create_res.isOk()) {
-                            retval.fc_other_files[filename] = ff;
+                            auto& ofd = retval.fc_other_files[filename];
+
+                            ofd.ofd_format = ff_res.dffr_file_format;
+                            ofd.ofd_details = ff_res.dffr_details;
                             retval.fc_file_names[filename] = loo;
                             retval.fc_file_names[filename].with_piper(
                                 create_res.unwrap());
@@ -498,7 +504,9 @@ file_collection::watch_logfile(const std::string& filename,
                                 res.unwrapErr(),
                             });
                     } else {
-                        retval.fc_other_files[filename] = ff;
+                        auto& ofd = retval.fc_other_files[filename];
+                        ofd.ofd_format = ff_res.dffr_file_format;
+                        ofd.ofd_details = ff_res.dffr_details;
                     }
                     {
                         prog_iter_opt | [&prog](auto prog_iter) {
@@ -512,6 +520,7 @@ file_collection::watch_logfile(const std::string& filename,
                 default: {
                     auto filename_to_open = filename;
 
+                    loo.loo_match_details = ff_res.dffr_details;
                     auto eff = detect_mime_type(filename);
 
                     if (eff) {
@@ -790,6 +799,14 @@ file_collection::rescan_files(bool required)
                 pair.second.loo_piper->get_out_pattern().string(),
                 pair.second,
                 required);
+            if (!pair.second.loo_piper.value().get_demux_id().empty()
+                && this->fc_other_files.count(pair.first) == 0)
+            {
+                auto& ofd = retval.fc_other_files[pair.first];
+                ofd.ofd_format = file_format_t::MULTIPLEXED;
+                ofd.ofd_details
+                    = pair.second.loo_piper.value().get_demux_details();
+            }
         } else {
             this->expand_filename(fq, pair.first, pair.second, required);
             if (this->fc_rotated) {
@@ -870,6 +887,18 @@ file_collection::copy()
     retval.merge(*this);
     retval.fc_progress = this->fc_progress;
     return retval;
+}
+
+void
+file_collection::clear()
+{
+    this->fc_name_to_errors->writeAccess()->clear();
+    this->fc_file_names.clear();
+    this->fc_files.clear();
+    this->fc_renamed_files.clear();
+    this->fc_closed_files.clear();
+    this->fc_other_files.clear();
+    this->fc_new_stats.clear();
 }
 
 size_t

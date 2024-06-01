@@ -245,13 +245,11 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
 static void
 execute_search(const std::string& search_cmd)
 {
-    lnav_data.ld_view_stack.top() | [&search_cmd](auto tc) {
-        auto search_term
-            = string_fragment(search_cmd)
-                  .find_right_boundary(0, string_fragment::tag1{'\n'})
-                  .to_string();
-        tc->execute_search(search_term);
-    };
+    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto search_term = string_fragment(search_cmd)
+                           .find_right_boundary(0, string_fragment::tag1{'\n'})
+                           .to_string();
+    tc->execute_search(search_term);
 }
 
 Result<std::string, lnav::console::user_message>

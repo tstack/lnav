@@ -46,11 +46,16 @@ namespace lnav {
 
 using time64_t = uint64_t;
 
-ssize_t strftime_rfc3339(char* buffer,
-                         size_t buffer_size,
-                         lnav::time64_t tim,
-                         int millis,
-                         char sep = ' ');
+ssize_t strftime_rfc3339(
+    char* buffer, size_t buffer_size, time64_t tim, int millis, char sep = ' ');
+
+std::string to_rfc3339_string(time64_t tim, int millis, char sep = ' ');
+
+inline std::string
+to_rfc3339_string(struct timeval tv, char sep = ' ')
+{
+    return to_rfc3339_string(tv.tv_sec, tv.tv_usec / 1000, sep);
+}
 
 date::sys_info sys_time_to_info(date::sys_seconds secs);
 

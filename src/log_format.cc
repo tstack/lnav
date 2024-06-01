@@ -333,9 +333,10 @@ logline_value::origin_in_full_msg(const char* msg, ssize_t len) const
     return retval;
 }
 
-logline_value::logline_value(logline_value_meta lvm,
-                             shared_buffer_ref& sbr,
-                             struct line_range origin)
+logline_value::
+logline_value(logline_value_meta lvm,
+              shared_buffer_ref& sbr,
+              struct line_range origin)
     : lv_meta(std::move(lvm)), lv_origin(origin)
 {
     if (sbr.get_data() == nullptr) {
@@ -4028,16 +4029,24 @@ external_log_format::specialized(int fmt_lock)
     return retval;
 }
 
-bool
+log_format::match_name_result
 external_log_format::match_name(const std::string& filename)
 {
     if (this->elf_filename_pcre.pp_value == nullptr) {
-        return true;
+        return name_matched{};
     }
 
-    return this->elf_filename_pcre.pp_value->find_in(filename)
-        .ignore_error()
-        .has_value();
+    if (this->elf_filename_pcre.pp_value->find_in(filename)
+            .ignore_error()
+            .has_value())
+    {
+        return name_matched{};
+    }
+
+    return name_mismatched{
+        this->elf_filename_pcre.pp_value->match_partial(filename),
+        this->elf_filename_pcre.pp_value->get_pattern(),
+    };
 }
 
 auto
@@ -4294,8 +4303,8 @@ log_format::find_root_format(const char* name)
     return nullptr;
 }
 
-log_format::pattern_for_lines::pattern_for_lines(uint32_t pfl_line,
-                                                 uint32_t pfl_pat_index)
+log_format::pattern_for_lines::
+pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index)
     : pfl_line(pfl_line), pfl_pat_index(pfl_pat_index)
 {
 }

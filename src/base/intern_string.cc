@@ -180,6 +180,30 @@ string_fragment::trim() const
     return this->trim(" \t\r\n");
 }
 
+string_fragment
+string_fragment::rtrim(const char* tokens) const
+{
+    string_fragment retval = *this;
+
+    while (retval.sf_begin < retval.sf_end) {
+        bool found = false;
+
+        for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
+            if (retval.sf_string[retval.sf_end - 1] == tokens[lpc]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            break;
+        }
+
+        retval.sf_end -= 1;
+    }
+
+    return retval;
+}
+
 std::optional<string_fragment>
 string_fragment::consume_n(int amount) const
 {

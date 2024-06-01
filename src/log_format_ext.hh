@@ -140,7 +140,7 @@ public:
 
     const intern_string_t get_name() const override { return this->elf_name; }
 
-    bool match_name(const std::string& filename) override;
+    match_name_result match_name(const std::string& filename) override;
 
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
@@ -446,7 +446,6 @@ public:
     bool jlf_hide_extra{false};
     std::vector<json_format_element> jlf_line_format;
     int jlf_line_format_init_count{0};
-    shared_buffer jlf_share_manager;
     logline_value_vector jlf_line_values;
 
     off_t jlf_cached_offset{-1};
@@ -457,6 +456,7 @@ public:
     string_attrs_t jlf_line_attrs;
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
+    shared_buffer jlf_share_manager;
 
 private:
     const intern_string_t elf_name;

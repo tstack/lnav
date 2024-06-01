@@ -175,7 +175,7 @@ timeline_preview_overlay::list_overlay_menu(const listview_curses& lv,
 }
 
 timeline_header_overlay::
-timeline_header_overlay(std::shared_ptr<timeline_source> src)
+timeline_header_overlay(const std::shared_ptr<timeline_source>& src)
     : gho_src(src)
 {
 }

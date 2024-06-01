@@ -45,6 +45,7 @@
 #include "base/date_time_scanner.cfg.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
+#include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
 #include "config.h"
 #include "file_options.hh"
@@ -55,6 +56,8 @@
 #include "logfile.cfg.hh"
 #include "piper.looper.hh"
 #include "yajlpp/yajlpp_def.hh"
+
+using namespace lnav::roles::literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
@@ -140,6 +143,7 @@ logfile::open(std::filesystem::path filename,
     lf->lf_indexing = lf->lf_options.loo_is_visible;
     lf->lf_text_format
         = lf->lf_options.loo_text_format.value_or(text_format_t::TF_UNKNOWN);
+    lf->lf_format_match_messages = loo.loo_match_details;
 
     const auto& hdr = lf->lf_line_buffer.get_header_data();
     if (hdr.valid()) {
@@ -149,7 +153,9 @@ logfile::open(std::filesystem::path filename,
                 if (!gzhdr.empty()) {
                     lf->lf_embedded_metadata["net.zlib.gzip.header"] = {
                         text_format_t::TF_JSON,
-                        file_header_handlers.to_string(gzhdr),
+                        file_header_handlers.formatter_for(gzhdr)
+                            .with_config(yajl_gen_beautify, 1)
+                            .to_string(),
                     };
                 }
             },
@@ -159,7 +165,9 @@ logfile::open(std::filesystem::path filename,
 
                 lf->lf_embedded_metadata["org.lnav.piper.header"] = {
                     text_format_t::TF_JSON,
-                    lnav::piper::header_handlers.to_string(phdr),
+                    lnav::piper::header_handlers.formatter_for(phdr)
+                        .with_config(yajl_gen_beautify, 1)
+                        .to_string(),
                 };
                 log_info("setting file name from piper header: %s",
                          phdr.h_name.c_str());
@@ -196,14 +204,15 @@ logfile::open(std::filesystem::path filename,
     return Ok(lf);
 }
 
-logfile::logfile(std::filesystem::path filename,
-                 const logfile_open_options& loo)
+logfile::
+logfile(std::filesystem::path filename, const logfile_open_options& loo)
     : lf_filename(std::move(filename)), lf_options(loo)
 {
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
 }
 
-logfile::~logfile()
+logfile::~
+logfile()
 {
     log_info("destructing logfile: %s", this->lf_filename.c_str());
 }
@@ -360,12 +369,33 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 continue;
             }
 
-            if (!curr->match_name(this->lf_filename)) {
+            auto match_res = curr->match_name(this->lf_filename);
+            if (match_res.is<log_format::name_mismatched>()) {
+                auto nm = match_res.get<log_format::name_mismatched>();
                 if (li.li_file_range.fr_offset == 0) {
                     log_debug("(%s) does not match file name: %s",
                               curr->get_name().get(),
                               this->lf_filename.c_str());
                 }
+                auto regex_al = attr_line_t(nm.nm_pattern);
+                lnav::snippets::regex_highlighter(
+                    regex_al, -1, line_range{0, (int) regex_al.length()});
+                auto note = attr_line_t("pattern: ")
+                                .append(regex_al)
+                                .append("\n  ")
+                                .append(lnav::roles::quoted_code(
+                                    fmt::to_string(this->get_filename())))
+                                .append("\n")
+                                .append(nm.nm_partial + 2, ' ')
+                                .append("^ matched up to here"_snippet_border);
+                auto match_um = lnav::console::user_message::info(
+                                    attr_line_t()
+                                        .append(lnav::roles::identifier(
+                                            curr->get_name().to_string()))
+                                        .append(" file name pattern required "
+                                                "by format does not match"))
+                                    .with_note(note);
+                this->lf_format_match_messages.emplace_back(match_um);
                 this->lf_mismatched_formats.insert(curr->get_name());
                 continue;
             }
@@ -414,6 +444,20 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             "  scan with format (%s) matched with quality (%d)",
                             curr->get_name().c_str(),
                             sm.sm_quality);
+
+                        auto match_um
+                            = lnav::console::user_message::info(
+                                  attr_line_t()
+                                      .append(lnav::roles::identifier(
+                                          curr->get_name().to_string()))
+                                      .append(" matched line ")
+                                      .append(lnav::roles::number(
+                                          fmt::to_string(starting_index_size))))
+                                  .with_note(
+                                      attr_line_t("match quality is ")
+                                          .append(lnav::roles::number(
+                                              fmt::to_string(sm.sm_quality))));
+                        this->lf_format_match_messages.emplace_back(match_um);
                         if (best_match) {
                             auto starting_iter = std::next(
                                 this->lf_index.begin(), starting_index_size);
@@ -469,6 +513,14 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                      this->lf_index.size(),
                      curr->get_name().get());
 
+            auto match_um = lnav::console::user_message::ok(
+                attr_line_t()
+                    .append(lnav::roles::identifier(
+                        winner.first->get_name().to_string()))
+                    .append(" is the best match for line ")
+                    .append(lnav::roles::number(
+                        fmt::to_string(starting_index_size))));
+            this->lf_format_match_messages.emplace_back(match_um);
             this->lf_text_format = text_format_t::TF_LOG;
             this->lf_format = curr->specialized();
             this->lf_format_quality = winner.second.sm_quality;

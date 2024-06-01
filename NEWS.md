@@ -8,6 +8,10 @@ Features:
   so that you can manually set an opid on log messages that
   don't have one.  Setting an opid allows messages to show
   up in the timeline view.
+* The Files panel now has a details view on the right side
+  that shows extra information about the selected file.
+  You can look here for details of why lnav selected a
+  particular log format.
 * Add support for GitHub Markdown Alerts.
 * Added the `:xopen` command that will open the given paths
   using an external opener like `open` or `xdg-open`.

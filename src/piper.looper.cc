@@ -187,6 +187,14 @@ environ_to_map()
     return retval;
 }
 
+auto_pipe&
+looper::get_wakeup_pipe()
+{
+    static auto retval = auto_pipe::for_child_fd(-1).unwrap();
+
+    return retval;
+}
+
 looper::
 looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd, options opts)
     : l_name(std::move(name)), l_cwd(std::filesystem::current_path().string()),
@@ -210,8 +218,11 @@ looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd, options opts)
 looper::~
 looper()
 {
+    char ch = '\0';
+
     log_info("piper destructed, shutting down: %s", this->l_name.c_str());
     this->l_looping = false;
+    log_perror(write(get_wakeup_pipe().write_end(), &ch, 1));
     this->l_future.wait();
 }
 
@@ -231,7 +242,7 @@ looper::loop()
     static constexpr auto FILE_TIMEOUT_MAX = 1000ms;
 
     const auto& cfg = injector::get<const config&>();
-    struct pollfd pfd[2];
+    struct pollfd pfd[3];
     struct {
         line_buffer lb;
         file_range last_range;
@@ -311,6 +322,11 @@ looper::loop()
             break;
         }
 
+        auto& wakeup_pfd = pfd[used_pfds++];
+        wakeup_pfd.fd = get_wakeup_pipe().read_end().get();
+        wakeup_pfd.events = POLLIN;
+        wakeup_pfd.revents = 0;
+
         auto poll_rc = poll(pfd, used_pfds, poll_timeout);
         if (poll_rc == 0) {
             // update the timestamp to keep the file alive from any
@@ -328,6 +344,11 @@ looper::loop()
             }
         } else {
             last_write = std::chrono::system_clock::now();
+        }
+        if (!this->l_looping.load()) {
+            char ch;
+
+            read(get_wakeup_pipe().read_end(), &ch, 1);
         }
         for (auto& cap : captured_fds) {
             if (cap.lb.get_fd() == -1) {
@@ -469,16 +490,20 @@ looper::loop()
                               fmt::format(FMT_STRING("{:?}"), body_sf).c_str());
 
                     auto match_res = mmatcher.match(body_sf);
+                    if (!mmatcher.mm_details.empty()) {
+                        this->l_demux_info.writeAccess()->di_details
+                            = mmatcher.mm_details;
+                    }
                     demux_attempted = match_res.match(
                         [this, &curr_demux_def, &cfg](
                             multiplex_matcher::found f) {
                             curr_demux_def
                                 = cfg.c_demux_definitions.find(f.f_id)->second;
                             {
-                                safe::WriteAccess<safe_demux_id> di(
-                                    this->l_demux_id);
+                                safe::WriteAccess<safe_demux_info> di(
+                                    this->l_demux_info);
 
-                                di->assign(f.f_id);
+                                di->di_name = f.f_id;
                             }
                             return true;
                         },
@@ -755,7 +780,7 @@ cleanup()
         }
 
         for (auto& entry : to_remove) {
-            log_debug("removing piper directory: %s", entry.c_str());
+            log_info("removing piper directory: %s", entry.c_str());
             std::filesystem::remove_all(entry);
         }
     });

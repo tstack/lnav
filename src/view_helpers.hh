@@ -64,6 +64,7 @@ enum class ln_mode_t : int {
     BREADCRUMBS,
     FILTER,
     FILES,
+    FILE_DETAILS,
     SPECTRO_DETAILS,
     SEARCH_SPECTRO_DETAILS,
     COMMAND,
@@ -96,8 +97,8 @@ std::optional<vis_line_t> next_cluster(
         const,
     const bookmark_type_t* bt,
     vis_line_t top);
-bool moveto_cluster(std::optional<vis_line_t> (
-                        bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
+bool moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+                        vis_line_t) const,
                     const bookmark_type_t* bt,
                     vis_line_t top);
 vis_line_t search_forward_from(textview_curses* tc);
