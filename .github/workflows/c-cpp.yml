@@ -65,7 +65,6 @@ jobs:
           autoconf
           g++
           libpcre2-dev
-          libpcre3-dev
           libncurses-dev
           libsqlite3-dev
           libbz2-dev
