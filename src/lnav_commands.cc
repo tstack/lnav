@@ -3074,7 +3074,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
 #ifdef HAVE_LIBCURL
             if (startswith(fn, "file:")) {
-                auto* cu = curl_url();
+                auto_mem<CURLU> cu(curl_url_cleanup);
+                cu = curl_url();
                 auto set_rc = curl_url_set(cu, CURLUPART_URL, fn.c_str(), 0);
                 if (set_rc != CURLUE_OK) {
                     return Err(lnav::console::user_message::error(
@@ -3083,16 +3084,18 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                    .with_reason(curl_url_strerror(set_rc)));
                 }
 
-                char* path_part;
-                auto get_rc = curl_url_get(cu, CURLUPART_PATH, &path_part, 0);
+                auto_mem<char> path_part;
+                auto get_rc
+                    = curl_url_get(cu, CURLUPART_PATH, path_part.out(), 0);
                 if (get_rc != CURLUE_OK) {
                     return Err(lnav::console::user_message::error(
                                    attr_line_t("cannot get path from URL: ")
                                        .append(lnav::roles::file(fn)))
                                    .with_reason(curl_url_strerror(get_rc)));
                 }
-                char* frag_part = nullptr;
-                get_rc = curl_url_get(cu, CURLUPART_FRAGMENT, &frag_part, 0);
+                auto_mem<char> frag_part;
+                get_rc
+                    = curl_url_get(cu, CURLUPART_FRAGMENT, frag_part.out(), 0);
                 if (get_rc != CURLUE_OK && get_rc != CURLUE_NO_FRAGMENT) {
                     return Err(lnav::console::user_message::error(
                                    attr_line_t("cannot get fragment from URL: ")
@@ -3101,7 +3104,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 }
 
                 if (frag_part != nullptr && frag_part[0]) {
-                    fn = fmt::format(FMT_STRING("{}#{}"), path_part, frag_part);
+                    fn = fmt::format(
+                        FMT_STRING("{}#{}"), path_part.in(), frag_part.in());
                 } else {
                     fn = path_part;
                 }

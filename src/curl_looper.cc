@@ -198,16 +198,22 @@ curl_request(std::string name)
 long
 curl_request::complete(CURLcode result)
 {
-    double total_time = 0, download_size = 0, download_speed = 0;
+    double total_time = 0;
+    curl_off_t download_size = 0, download_speed = 0;
 
     this->cr_completions += 1;
     curl_easy_getinfo(this->cr_handle, CURLINFO_TOTAL_TIME, &total_time);
     log_debug("%s: total_time=%f", this->cr_name.c_str(), total_time);
-    curl_easy_getinfo(this->cr_handle, CURLINFO_SIZE_DOWNLOAD, &download_size);
-    log_debug("%s: download_size=%f", this->cr_name.c_str(), download_size);
     curl_easy_getinfo(
-        this->cr_handle, CURLINFO_SPEED_DOWNLOAD, &download_speed);
-    log_debug("%s: download_speed=%f", this->cr_name.c_str(), download_speed);
+        this->cr_handle, CURLINFO_SIZE_DOWNLOAD_T, &download_size);
+    log_debug("%s: download_size=%" CURL_FORMAT_CURL_OFF_T,
+              this->cr_name.c_str(),
+              download_size);
+    curl_easy_getinfo(
+        this->cr_handle, CURLINFO_SPEED_DOWNLOAD_T, &download_speed);
+    log_debug("%s: download_speed=%" CURL_FORMAT_CURL_OFF_T,
+              this->cr_name.c_str(),
+              download_speed);
 
     return -1;
 }

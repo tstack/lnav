@@ -310,7 +310,7 @@ struct string_fragment {
         return retval;
     }
 
-    std::optional<size_t> find(char ch) const
+    std::optional<int> find(char ch) const
     {
         for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
             if (this->sf_string[lpc] == ch) {
