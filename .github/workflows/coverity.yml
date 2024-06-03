@@ -15,6 +15,9 @@ on:
   # Allow for manual triggers from the web.
   workflow_dispatch:
 
+env:
+  COVERITY_SUPPRESS_ASSERT: 2564
+
 jobs:
   coverity:
     runs-on: ubuntu-latest
