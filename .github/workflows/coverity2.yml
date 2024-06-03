@@ -14,7 +14,7 @@ jobs:
         uses: synopsys-sig/synopsys-action@v1.9.0
         with:
           ### SCANNING: Required fields
-          coverity_url: https://scan.coverity.com/projects/tstack-lnav
+          coverity_url: https://scan.coverity.com/
           coverity_user: tstack
           coverity_passphrase: ${{ secrets.COVERITY_PASSPHRASE }}
           
