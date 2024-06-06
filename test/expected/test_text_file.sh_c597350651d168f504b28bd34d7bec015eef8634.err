@@ -1,0 +1,6 @@
+[1m[31m✘ error[0m: expecting a view mode of 'raw' or 'rendered'
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:set-text-view-mode                     [0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mset-text-view-mode[0m[4m [0m[4mmode[0m
+         ══════════════════════════════════════════════════════════════════════
+           Set the display mode for text files
