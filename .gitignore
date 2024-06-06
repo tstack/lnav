@@ -32,6 +32,7 @@ missing
 mkinstalldirs
 test-driver
 docs/build
+release/lnav.spec
 release/release-NEWS.md
 release/linux-pkg/
 release/osx-build-dir/

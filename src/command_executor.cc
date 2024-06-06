@@ -702,8 +702,16 @@ execute_file(exec_context& ec, const std::string& path_and_args)
         paths_to_exec.push_back({script_name, "", "", ""});
     } else if (access(script_name.c_str(), R_OK) == 0) {
         struct script_metadata meta;
+        auto rp_res = lnav::filesystem::realpath(script_name);
 
-        meta.sm_path = script_name;
+        if (rp_res.isErr()) {
+            log_error("unable to get realpath() of %s -- %s",
+                      script_name.c_str(),
+                      rp_res.unwrapErr().c_str());
+            meta.sm_path = script_name;
+        } else {
+            meta.sm_path = rp_res.unwrap();
+        }
         extract_metadata_from_file(meta);
         paths_to_exec.push_back(meta);
     } else if (errno != ENOENT) {

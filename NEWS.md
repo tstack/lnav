@@ -23,6 +23,8 @@ Features:
 * Added a `:set-text-view-mode` command that controls whether
   file contents, such as markdown, are rendered or shown in
   their raw state.
+* Added a `pretty_print()` SQL function that provides the same
+  functionality as the PRETTY view.
 
 Interface Changes:
 * The "Gantt Chart" view has been renamed to "timeline".

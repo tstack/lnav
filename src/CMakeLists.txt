@@ -179,7 +179,6 @@ set(FORMAT_FILES
         formats/openamdb_log.json
         formats/openstack_log.json
         formats/page_log.json
-        formats/papertrail_log.json
         formats/pcap_log.json
         formats/procstate_log.json
         formats/redis_log.json
