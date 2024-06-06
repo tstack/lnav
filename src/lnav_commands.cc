@@ -593,6 +593,39 @@ com_clear_file_timezone(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+com_set_text_view_mode(exec_context& ec,
+                       std::string cmdline,
+                       std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("text-view-modes");
+        return Ok(retval);
+    }
+
+    std::optional<textfile_sub_source::view_mode> vm_opt;
+
+    if (args.size() > 1) {
+        if (args[1] == "raw") {
+            vm_opt = textfile_sub_source::view_mode::raw;
+        } else if (args[1] == "rendered") {
+            vm_opt = textfile_sub_source::view_mode::rendered;
+        }
+    }
+
+    if (!vm_opt) {
+        return ec.make_error("expecting a view mode of 'raw' or 'rendered'");
+    }
+
+    if (!ec.ec_dry_run) {
+        lnav_data.ld_text_source.set_view_mode(vm_opt.value());
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
 com_convert_time_to(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -5693,10 +5726,14 @@ breadcrumb_prompt(std::vector<std::string>& args)
 static void
 command_prompt(std::vector<std::string>& args)
 {
+    static const char* TEXT_VIEW_MODES[] = {"raw", "rendered", nullptr};
+
     auto* tc = *lnav_data.ld_view_stack.top();
     auto* rlc = lnav_data.ld_rl_view;
 
     rlc->clear_possibilities(ln_mode_t::COMMAND, "move-args");
+    rlc->add_possibility(
+        ln_mode_t::COMMAND, "text-view-modes", TEXT_VIEW_MODES);
     if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
         static const char* MOVE_TIMES[]
             = {"here", "now", "today", "yesterday", nullptr};
@@ -6131,6 +6168,16 @@ readline_context::command_t STD_COMMANDS[] = {
                                       "no longer use this timezone"})
             .with_tags({"file-options"}),
         com_clear_file_timezone_prompt,
+    },
+    {
+        "set-text-view-mode",
+        com_set_text_view_mode,
+        help_text(":set-text-view-mode")
+            .with_summary("Set the display mode for text files")
+            .with_parameter(help_text{"mode"}
+                                .with_summary("The display mode")
+                                .with_enum_values({"raw", "rendered"})
+                                .with_tags({"display"})),
     },
     {"current-time",
      com_current_time,

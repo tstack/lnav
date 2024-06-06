@@ -43,6 +43,18 @@ public:
     struct metadata {
         bool m_valid_utf{true};
         bool m_has_ansi{false};
+
+        metadata& operator|=(const metadata& meta)
+        {
+            if (!meta.m_valid_utf) {
+                this->m_valid_utf = false;
+            }
+            if (meta.m_has_ansi) {
+                this->m_has_ansi = true;
+            }
+
+            return *this;
+        }
     };
 
     file_off_t fr_offset{0};

@@ -1535,6 +1535,14 @@ For support questions, email:
    
 
 
+[4m:[0m[1m[4mset-text-view-mode[0m[4m [0m[4mmode[0m
+══════════════════════════════════════════════════════════════════════
+  Set the display mode for text files
+[4mParameter[0m
+  [4mmode[0m   The display mode
+         [4mValues[0m: [1mraw[0m|[1mrendered[0m
+
+
 [4m:[0m[1m[4msh[0m[4m [0m[4m--name=<name>[0m[4m [0m[4mcmdline[0m
 ══════════════════════════════════════════════════════════════════════
   Execute the given command-line and display the captured output

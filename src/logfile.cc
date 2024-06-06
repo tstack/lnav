@@ -1232,27 +1232,30 @@ logfile::read_line(logfile::iterator ll)
     }
 }
 
-Result<std::string, std::string>
+Result<logfile::read_file_result, std::string>
 logfile::read_file()
 {
     if (this->lf_stat.st_size > line_buffer::MAX_LINE_BUFFER_SIZE) {
         return Err(std::string("file is too large to read"));
     }
 
-    auto retval = std::string();
-    retval.reserve(this->lf_stat.st_size);
+    auto retval = read_file_result{};
+    retval.rfr_content.reserve(this->lf_stat.st_size);
 
-    retval.append(this->lf_line_buffer.get_piper_header_size(), '\x16');
+    retval.rfr_content.append(this->lf_line_buffer.get_piper_header_size(),
+                              '\x16');
     for (auto iter = this->begin(); iter != this->end(); ++iter) {
-        auto fr = this->get_file_range(iter);
+        const auto fr = this->get_file_range(iter);
+        retval.rfr_range.fr_metadata |= fr.fr_metadata;
+        retval.rfr_range.fr_size = fr.next_offset();
         auto sbr = TRY(this->lf_line_buffer.read_range(fr));
 
         if (this->lf_line_buffer.is_piper()) {
-            retval.append(22, '\x16');
+            retval.rfr_content.append(22, '\x16');
         }
-        retval.append(sbr.get_data(), sbr.length());
-        if (retval.size() < this->lf_stat.st_size) {
-            retval.push_back('\n');
+        retval.rfr_content.append(sbr.get_data(), sbr.length());
+        if (retval.rfr_content.size() < this->lf_stat.st_size) {
+            retval.rfr_content.push_back('\n');
         }
     }
 
@@ -1260,7 +1263,7 @@ logfile::read_file()
 }
 
 Result<shared_buffer_ref, std::string>
-logfile::read_range(file_range fr)
+logfile::read_range(const file_range& fr)
 {
     return this->lf_line_buffer.read_range(fr);
 }

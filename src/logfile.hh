@@ -255,9 +255,14 @@ public:
 
     Result<shared_buffer_ref, std::string> read_line(iterator ll);
 
-    Result<std::string, std::string> read_file();
+    struct read_file_result {
+        file_range rfr_range;
+        std::string rfr_content;
+    };
 
-    Result<shared_buffer_ref, std::string> read_range(file_range fr);
+    Result<read_file_result, std::string> read_file();
+
+    Result<shared_buffer_ref, std::string> read_range(const file_range& fr);
 
     iterator line_base(iterator ll)
     {

@@ -168,6 +168,13 @@ public:
 
     void scroll_invoked(textview_curses* tc) override;
 
+    enum class view_mode {
+        raw,
+        rendered,
+    };
+
+    void set_view_mode(view_mode vm);
+
 private:
     void detach_observer(std::shared_ptr<logfile> lf)
     {
@@ -206,6 +213,7 @@ private:
 
     struct rendered_file {
         time_t rf_mtime;
+        file_off_t rf_file_indexed_size;
         file_ssize_t rf_file_size;
         std::unique_ptr<plain_text_source> rf_text_source;
     };
@@ -225,6 +233,7 @@ private:
     bool tss_completed_last_scan{true};
     attr_line_t tss_hex_line;
     int64_t tss_content_line{0};
+    view_mode tss_view_mode{view_mode::rendered};
 };
 
 class textfile_header_overlay : public text_overlay_menu {

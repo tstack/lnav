@@ -1280,6 +1280,20 @@
 ----
 
 
+.. _set_text_view_mode:
+
+:set-text-view-mode *mode*
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Set the display mode for text files
+
+  **Parameters**
+    * **mode\*** --- The display mode
+
+
+----
+
+
 .. _sh:
 
 :sh *--name=<name>* *cmdline*

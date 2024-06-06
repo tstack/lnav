@@ -20,6 +20,9 @@ Features:
   target with `:xopen`, or copying the link to a clipboard.
 * Added a `crash upload` command to the management CLI that will
   upload crash logs to a server for analysis.
+* Added a `:set-text-view-mode` command that controls whether
+  file contents, such as markdown, are rendered or shown in
+  their raw state.
 
 Interface Changes:
 * The "Gantt Chart" view has been renamed to "timeline".
