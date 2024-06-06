@@ -1126,6 +1126,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_str_func.sh_e68167bf5edc7a7b1defd06bdfb694ffa8b00df2.out \
     $(srcdir)/%reldir%/test_sql_str_func.sh_ec939e82da809965c61f1c00f68d7afaa4a88382.err \
     $(srcdir)/%reldir%/test_sql_str_func.sh_ec939e82da809965c61f1c00f68d7afaa4a88382.out \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_fa059d4738b2b5bd668360b1287f0245e452b9ef.err \
+    $(srcdir)/%reldir%/test_sql_str_func.sh_fa059d4738b2b5bd668360b1287f0245e452b9ef.out \
     $(srcdir)/%reldir%/test_sql_time_func.sh_028e99419eb1ac80b03b36148ef1d4ae1c38c44c.err \
     $(srcdir)/%reldir%/test_sql_time_func.sh_028e99419eb1ac80b03b36148ef1d4ae1c38c44c.out \
     $(srcdir)/%reldir%/test_sql_time_func.sh_123c85ff1178743f5cb78efeaf98b637bcbe55ff.err \

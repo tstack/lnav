@@ -29,6 +29,7 @@
 #include "libbase64.h"
 #include "mapbox/variant.hpp"
 #include "pcrepp/pcre2pp.hh"
+#include "pretty_printer.hh"
 #include "safe/safe.h"
 #include "scn/scn.h"
 #include "spookyhash/SpookyV2.h"
@@ -890,6 +891,18 @@ sql_humanize_id(string_fragment id)
                        id);
 }
 
+static std::string
+sql_pretty_print(string_fragment in)
+{
+    data_scanner ds(in);
+    pretty_printer pp(&ds, {});
+    attr_line_t retval;
+
+    pp.append_to(retval);
+
+    return std::move(retval.get_string());
+}
+
 int
 string_extension_functions(struct FuncDef** basic_funcs,
                            struct FuncDefAgg** agg_funcs)
@@ -1243,6 +1256,21 @@ string_extension_functions(struct FuncDef** basic_funcs,
                         "'{\"scheme\": \"https\", \"host\": \"example.com\"}'",
                         "SELECT "
                         "unparse_url('{\"scheme\": \"https\", \"host\": "
+                        "\"example.com\"}')",
+                    })),
+
+        sqlite_func_adapter<decltype(&sql_pretty_print), sql_pretty_print>::
+            builder(
+                help_text("pretty_print", "Pretty-print the given string")
+                    .sql_function()
+                    .with_prql_path({"text", "pretty"})
+                    .with_parameter(help_text("str", "The string to format"))
+                    .with_tags({"string"})
+                    .with_example({
+                        "To pretty-print the string "
+                        "'{\"scheme\": \"https\", \"host\": \"example.com\"}'",
+                        "SELECT "
+                        "pretty_print('{\"scheme\": \"https\", \"host\": "
                         "\"example.com\"}')",
                     })),
 
