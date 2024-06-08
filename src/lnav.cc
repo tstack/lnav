@@ -3389,7 +3389,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 && verbosity == verbosity_t::quiet && load_stdin
                 && lnav_data.ld_active_files.fc_file_names.size() == 1)
             {
+                // give the pipers a chance to run to create the files to be
+                // scanned.
+                wait_for_pipers(ui_clock::now() + 10ms);
                 rescan_files(true);
+                // wait for the piper to actually finish running
                 wait_for_pipers(ui_clock::now() + 100ms);
                 auto rebuild_res = rebuild_indexes(ui_clock::now() + 15ms);
                 if (rebuild_res.rir_completed
