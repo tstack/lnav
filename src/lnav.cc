@@ -3496,9 +3496,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     for (const auto& note : lf->get_notes()) {
                         switch (note.first) {
                             case logfile::note_type::not_utf: {
-                                auto um = lnav::console::user_message::error(
-                                    note.second);
-                                lnav::console::print(stderr, um);
+                                lnav::console::print(stderr, note.second);
                                 break;
                             }
 

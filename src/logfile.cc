@@ -908,14 +908,22 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                          this->lf_filename.c_str());
                 this->lf_indexing = false;
                 this->lf_options.loo_is_visible = false;
-                auto note_text = fmt::format(
-                    FMT_STRING("not indexing non-UTF-8 file -- line: "
-                               "{}; column: {}; error: {}"),
-                    this->lf_index.size() + 1,
-                    li.li_utf8_scan_result.usr_valid_frag.sf_end,
-                    li.li_utf8_scan_result.usr_message);
+                auto utf8_error_um
+                    = lnav::console::user_message::error("invalid UTF-8")
+                          .with_reason(
+                              attr_line_t(li.li_utf8_scan_result.usr_message)
+                                  .append(" at line ")
+                                  .append(lnav::roles::number(fmt::to_string(
+                                      this->lf_index.size() + 1)))
+                                  .append(" column ")
+                                  .append(lnav::roles::number(fmt::to_string(
+                                      li.li_utf8_scan_result.usr_valid_frag
+                                          .sf_end))));
+                auto note_um = lnav::console::user_message::warning(
+                                   "skipping indexing for file")
+                                   .with_reason(utf8_error_um);
                 this->lf_notes.writeAccess()->emplace(note_type::not_utf,
-                                                      note_text);
+                                                      note_um);
                 if (this->lf_logfile_observer != nullptr) {
                     this->lf_logfile_observer->logfile_indexing(
                         this->shared_from_this(), 0, 0);
@@ -1123,9 +1131,13 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             log_info("file has unknown format and is too large: %s",
                      this->lf_filename.c_str());
             this->lf_indexing = false;
-            this->lf_notes.writeAccess()->emplace(
-                note_type::indexing_disabled,
-                "not indexing large file with no discernible log format");
+            auto note_um
+                = lnav::console::user_message::warning(
+                      "skipping indexing for file")
+                      .with_reason(
+                          "file is large and has no discernible log format");
+            this->lf_notes.writeAccess()->emplace(note_type::indexing_disabled,
+                                                  note_um);
             if (this->lf_logfile_observer != nullptr) {
                 this->lf_logfile_observer->logfile_indexing(
                     this->shared_from_this(), 0, 0);
@@ -1436,15 +1448,19 @@ logfile::mark_as_duplicate(const std::string& name)
 {
     safe::WriteAccess<safe_notes> notes(this->lf_notes);
 
-    auto iter = notes->find(note_type::duplicate);
+    const auto iter = notes->find(note_type::duplicate);
     if (iter != notes->end()) {
         return false;
     }
 
     this->lf_indexing = false;
     this->lf_options.loo_is_visible = false;
-    notes->emplace(note_type::duplicate,
-                   fmt::format(FMT_STRING("hiding duplicate of {}"), name));
+    auto note_um
+        = lnav::console::user_message::warning("hiding duplicate file")
+              .with_reason(
+                  attr_line_t("this file appears to have the same content as ")
+                      .append(lnav::roles::file(name)));
+    notes->emplace(note_type::duplicate, note_um);
     return true;
 }
 

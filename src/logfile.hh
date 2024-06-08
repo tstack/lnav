@@ -384,7 +384,7 @@ public:
         not_utf,
     };
 
-    using note_map = std::map<note_type, std::string>;
+    using note_map = std::map<note_type, lnav::console::user_message>;
     using safe_notes = safe::Safe<note_map>;
 
     note_map get_notes() const { return *this->lf_notes.readAccess(); }
