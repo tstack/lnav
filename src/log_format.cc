@@ -1679,7 +1679,7 @@ external_log_format::module_scan(string_fragment body_cap,
                                  const intern_string_t& mod_name)
 {
     uint8_t mod_index;
-    body_cap.trim();
+    body_cap = body_cap.trim();
     auto& ext_fmts = GRAPH_ORDERED_FORMATS;
     module_format mf;
 

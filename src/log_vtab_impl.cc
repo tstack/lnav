@@ -703,7 +703,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::actual_time: {
-                        char buffer[64];
+                        char buffer[64] = "";
 
                         if (ll->is_time_skewed()) {
                             if (vc->line_values.lvv_values.empty()) {

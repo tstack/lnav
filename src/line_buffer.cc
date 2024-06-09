@@ -163,12 +163,6 @@ line_buffer::gz_indexed::init_stream()
     }
 
     // initialize inflate struct
-    this->strm.zalloc = Z_NULL;
-    this->strm.zfree = Z_NULL;
-    this->strm.opaque = Z_NULL;
-    this->strm.avail_in = 0;
-    this->strm.next_in = Z_NULL;
-    this->strm.avail_out = 0;
     int rc = inflateInit2(&strm, GZ_HEADER_MODE);
     if (rc != Z_OK) {
         throw(rc);  // FIXME: exception wrapper
@@ -1245,7 +1239,7 @@ line_buffer::load_next_line(file_range prev_line)
             (size_t) retval.li_file_range.fr_size,
         };
 
-        char level;
+        char level = '\0';
         auto scan_res = scn::scan(sv,
                                   "{}.{}:{};",
                                   retval.li_timestamp.tv_sec,

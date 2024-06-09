@@ -410,12 +410,9 @@ public:
             return;
         }
 
-        size_t old_size = this->jlf_cached_line.size();
-        if (len == -1) {
-            len = strlen(value);
-        }
+        const auto old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
-        memcpy(&(this->jlf_cached_line[old_size]), value, len);
+        memcpy(&this->jlf_cached_line[old_size], value, len);
     }
 
     void json_append_to_cache(const string_fragment& sf)
@@ -428,7 +425,7 @@ public:
         if (len <= 0) {
             return;
         }
-        size_t old_size = this->jlf_cached_line.size();
+        const size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memset(&this->jlf_cached_line[old_size], ' ', len);
     }

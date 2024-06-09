@@ -133,7 +133,7 @@ public:
         };
 
     private:
-        z_stream strm; /*< gzip streams structure */
+        z_stream strm{}; /*< gzip streams structure */
         std::vector<indexDict>
             syncpoints; /*< indexed dictionaries as discovered */
         auto_mem<Bytef> inbuf; /*< Compressed data buffer */

@@ -821,7 +821,7 @@ public:
                         fd.with_kind(value_kind_t::VALUE_BOOLEAN);
                     } else if (field_type == "addr") {
                         fd.with_kind(
-                            value_kind_t::VALUE_TEXT, true, "ipaddress");
+                            value_kind_t::VALUE_TEXT, true, false, "ipaddress");
                     } else if (field_type == "port") {
                         fd.with_kind(value_kind_t::VALUE_INTEGER, true);
                     } else if (field_type == "interval") {

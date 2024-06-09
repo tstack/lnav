@@ -2171,6 +2171,7 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
     }
 
     if (warning_count > 0 && !mf.mf_print_warnings
+        && verbosity != verbosity_t::quiet
         && !(lnav_data.ld_flags & LNF_HEADLESS)
         && (std::filesystem::file_time_type::clock::now()
                 - lnav_data.ld_last_dot_lnav_time
