@@ -1220,7 +1220,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
               lf->get_filename().c_str(),
               vl,
               dir == text_anchors::direction::prev ? "prev" : "next");
-    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    const auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
     if (this->tss_view_mode == view_mode::rendered
         && rend_iter != this->tss_rendered_files.end())
     {
@@ -1234,14 +1234,15 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     }
 
     auto& md = iter->second.ms_metadata;
-    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    const auto* lfo
+        = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     if (vl >= lfo->lfo_filter_state.tfs_index.size()
         || md.m_sections_root == nullptr)
     {
         return std::nullopt;
     }
-    auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
-    auto line_offsets = lf->get_file_range(ll_iter, false);
+    const auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[vl];
+    const auto line_offsets = lf->get_file_range(ll_iter, false);
     log_debug(
         "  range %d:%d", line_offsets.fr_offset, line_offsets.next_offset());
     auto path_for_line
@@ -1249,7 +1250,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
 
     if (path_for_line.empty()) {
         log_debug("  no path found");
-        auto neighbors_res = md.m_sections_root->line_neighbors(vl);
+        const auto neighbors_res = md.m_sections_root->line_neighbors(vl);
         if (!neighbors_res) {
             return std::nullopt;
         }
@@ -1277,19 +1278,19 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     }
 
     log_debug("  path for line: %s", fmt::to_string(path_for_line).c_str());
-    const auto& last_key = path_for_line.back();
+    const auto last_key = std::move(path_for_line.back());
     path_for_line.pop_back();
 
-    auto parent_opt = lnav::document::hier_node::lookup_path(
+    const auto parent_opt = lnav::document::hier_node::lookup_path(
         md.m_sections_root.get(), path_for_line);
     if (!parent_opt) {
         log_debug("  no parent for path: %s",
                   fmt::to_string(path_for_line).c_str());
         return std::nullopt;
     }
-    auto parent = parent_opt.value();
+    const auto parent = parent_opt.value();
 
-    auto child_hn = parent->lookup_child(last_key);
+    const auto child_hn = parent->lookup_child(last_key);
     if (!child_hn) {
         // XXX "should not happen"
         log_debug("  child not found");
