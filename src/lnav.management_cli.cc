@@ -101,7 +101,7 @@ struct subcmd_config_t {
             | lnav::itertools::fold(
                 subcmd_reducer, attr_line_t{"the available operations are:"}));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t get_action(const subcmd_config_t&)
@@ -109,7 +109,7 @@ struct subcmd_config_t {
         auto config_str = dump_config();
         auto um = console::user_message::raw(config_str);
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t blame_action(const subcmd_config_t&)
@@ -125,7 +125,7 @@ struct subcmd_config_t {
 
         auto um = console::user_message::raw(blame.rtrim());
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t file_options_action(const subcmd_config_t& sc)
@@ -137,7 +137,7 @@ struct subcmd_config_t {
             auto um = lnav::console::user_message::error(
                 "Expecting a file path to check for options");
 
-            return {um};
+            return {std::move(um)};
         }
 
         safe::ReadAccess<lnav::safe_file_options_hier> options_hier(
@@ -150,7 +150,7 @@ struct subcmd_config_t {
                               .append(lnav::roles::file(sc.sc_path)))
                           .with_reason(realpath_res.unwrapErr());
 
-            return {um};
+            return {std::move(um)};
         }
         auto full_path = realpath_res.unwrap();
         auto file_opts = options_hier->match(full_path);
@@ -176,7 +176,7 @@ struct subcmd_config_t {
                               " command to set the zone for messages in files "
                               "that do not include a zone in the timestamp"));
 
-        return {um};
+        return {std::move(um)};
     }
 
     subcmd_config_t& set_action(action_t act)
@@ -339,7 +339,7 @@ struct subcmd_format_t {
             | lnav::itertools::fold(
                 subcmd_reducer, attr_line_t{"the available operations are:"}));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t default_regex_action(const subcmd_format_t& sf)
@@ -359,7 +359,7 @@ struct subcmd_format_t {
             sf.sf_regex_app->get_subcommands({})
             | lnav::itertools::fold(subcmd_reducer, attr_line_t{})));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t get_action(const subcmd_format_t& sf)
@@ -378,7 +378,7 @@ struct subcmd_format_t {
                 .append(": ")
                 .append(on_blank(format->lf_description, "<no description>")));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t source_action(const subcmd_format_t& sf)
@@ -401,7 +401,7 @@ struct subcmd_format_t {
         auto um = console::user_message::raw(
             format->elf_format_source_order[0].string());
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t sources_action(const subcmd_format_t& sf)
@@ -426,7 +426,7 @@ struct subcmd_format_t {
                                VC_ROLE.value(role_t::VCR_TEXT),
                                "\n"));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t regex101_pull_action(const subcmd_format_t& sf)
@@ -557,7 +557,7 @@ struct subcmd_format_t {
                                             .string())));
                         }
 
-                        return {um};
+                        return {std::move(um)};
                     });
             });
     }
@@ -590,7 +590,7 @@ struct subcmd_format_t {
             sf.sf_regex101_app->get_subcommands({})
             | lnav::itertools::fold(subcmd_reducer, attr_line_t{})));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t regex101_push_action(const subcmd_format_t& sf)
@@ -769,7 +769,7 @@ struct subcmd_piper_t {
             | lnav::itertools::fold(
                 subcmd_reducer, attr_line_t{"the available operations are:"}));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t list_action(const subcmd_piper_t&)
@@ -892,7 +892,7 @@ struct subcmd_piper_t {
                               .append(lnav::roles::file(
                                   lnav::piper::storage_path().string())))
                           .with_reason(ec.message());
-            return {um};
+            return {std::move(um)};
         }
 
         if (items.empty()) {
@@ -909,7 +909,7 @@ struct subcmd_piper_t {
                                   .append(" or using the ")
                                   .append_quoted(lnav::roles::symbol(":sh"))
                                   .append(" command"));
-                return {um};
+                return {std::move(um)};
             }
 
             return {};
@@ -1049,7 +1049,7 @@ struct subcmd_regex101_t {
             | lnav::itertools::fold(
                 subcmd_reducer, attr_line_t{"the available operations are:"}));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t list_action(const subcmd_regex101_t&)
@@ -1081,7 +1081,7 @@ struct subcmd_regex101_t {
             entries.add_header("the following regex101 entries were found:\n")
                 .with_default("no regex101 entries found"));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t import_action(const subcmd_regex101_t& sr)
@@ -1135,7 +1135,7 @@ struct subcmd_crash_t {
             | lnav::itertools::fold(
                 subcmd_reducer, attr_line_t{"the available operations are:"}));
 
-        return {um};
+        return {std::move(um)};
     }
 
     static perform_result_t upload_action(const subcmd_crash_t&)
@@ -1150,11 +1150,11 @@ struct subcmd_crash_t {
         auto glob_rc = glob(path.c_str(), 0, nullptr, gl.inout());
         if (glob_rc == GLOB_NOMATCH) {
             auto um = console::user_message::info("no crash logs to upload");
-            return {um};
+            return {std::move(um)};
         }
         if (glob_rc != 0) {
             auto um = console::user_message::error("unable to find crash logs");
-            return {um};
+            return {std::move(um)};
         }
 
         for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
@@ -1462,7 +1462,7 @@ perform(std::shared_ptr<operations> opts)
                              subcmd_reducer,
                              attr_line_t{"the available operations are:"}));
 
-            return {um};
+            return {std::move(um)};
         },
         [](const subcmd_config_t& sc) { return sc.sc_action(sc); },
         [](const subcmd_format_t& sf) { return sf.sf_action(sf); },

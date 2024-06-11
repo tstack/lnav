@@ -155,7 +155,7 @@ find_container_dir(std::filesystem::path file_path)
 static std::string
 replace_home_dir(std::string path)
 {
-    auto home_dir_opt = getenv_opt("HOME");
+    const auto home_dir_opt = getenv_opt("HOME");
 
     if (!home_dir_opt) {
         return path;
@@ -280,7 +280,7 @@ SELECT content_id, format, time_offset FROM lnav_file
             continue;
         }
 
-        auto file_path_str = name_pair.first;
+        const auto& file_path_str = name_pair.first;
         auto file_path = std::filesystem::path(file_path_str);
         auto container_path_opt = find_container_dir(file_path);
         if (container_path_opt) {

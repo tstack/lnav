@@ -1277,7 +1277,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     }
 
     log_debug("  path for line: %s", fmt::to_string(path_for_line).c_str());
-    auto last_key = path_for_line.back();
+    const auto& last_key = path_for_line.back();
     path_for_line.pop_back();
 
     auto parent_opt = lnav::document::hier_node::lookup_path(

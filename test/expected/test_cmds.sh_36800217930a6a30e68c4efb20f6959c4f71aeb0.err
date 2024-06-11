@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: invalid filter expression: [37m[40m:sc_bytes[0m[37m[40m # [0m[37m[40mff[0m
+[1m[31m✘ error[0m: invalid filter expression: [37m[40m:sc_bytes # ff[0m
  [1m[31mreason[0m: unrecognized token: "#"
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m [0m[37m[40m:sc_bytes[0m[37m[40m # [0m[37m[40mff[0m[37m[40m             [0m

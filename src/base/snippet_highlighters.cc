@@ -156,7 +156,7 @@ safe_read(const std::string& str, std::string::size_type index)
 }
 
 void
-regex_highlighter(attr_line_t& al, int x, line_range sub)
+regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
 {
     static const char* brackets[] = {
         "[]",
@@ -336,7 +336,8 @@ regex_highlighter(attr_line_t& al, int x, line_range sub)
     }
 
     for (int lpc = 0; brackets[lpc]; lpc++) {
-        find_matching_bracket(al, x, sub, brackets[lpc][0], brackets[lpc][1]);
+        find_matching_bracket(
+            al, x.value_or(0), sub, brackets[lpc][0], brackets[lpc][1]);
     }
 }
 

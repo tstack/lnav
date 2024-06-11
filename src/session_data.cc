@@ -961,7 +961,7 @@ load_session()
         }
         session_data = complete_res.unwrap();
 
-        bool log_changes = false, text_changes = false;
+        bool log_changes = false;
 
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
             auto iter = session_data.sd_file_states.find(lf->get_filename());
@@ -986,9 +986,6 @@ load_session()
 
         if (log_changes) {
             lnav_data.ld_log_source.text_filters_changed();
-        }
-        if (text_changes) {
-            lnav_data.ld_text_source.text_filters_changed();
         }
     };
 

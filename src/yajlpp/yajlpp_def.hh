@@ -329,14 +329,14 @@ struct json_path_handler : public json_path_handler_base {
     struct LastIsEnum<U T::*> {
         using value_type = U;
 
-        static constexpr bool value = std::is_enum<U>::value;
+        static constexpr bool value = std::is_enum_v<U>;
     };
 
     template<typename T, typename U>
     struct LastIsEnum<std::optional<U> T::*> {
         using value_type = U;
 
-        static constexpr bool value = std::is_enum<U>::value;
+        static constexpr bool value = std::is_enum_v<U>;
     };
 
     template<typename T, typename... Args>
@@ -347,13 +347,13 @@ struct json_path_handler : public json_path_handler_base {
     template<typename T, typename U>
     struct LastIsInteger<U T::*> {
         static constexpr bool value
-            = std::is_integral<U>::value && !std::is_same<U, bool>::value;
+            = std::is_integral_v<U> && !std::is_same_v<U, bool>;
     };
 
     template<typename T, typename U>
     struct LastIsInteger<std::optional<U> T::*> {
         static constexpr bool value
-            = std::is_integral<U>::value && !std::is_same<U, bool>::value;
+            = std::is_integral_v<U> && !std::is_same_v<U, bool>;
     };
 
     template<typename T, typename... Args>
@@ -363,12 +363,12 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename T, typename U>
     struct LastIsFloat<U T::*> {
-        static constexpr bool value = std::is_same<U, double>::value;
+        static constexpr bool value = std::is_same_v<U, double>;
     };
 
     template<typename T, typename U>
     struct LastIsFloat<std::optional<U> T::*> {
-        static constexpr bool value = std::is_same<U, double>::value;
+        static constexpr bool value = std::is_same_v<U, double>;
     };
 
     template<typename T, typename... Args>
@@ -405,7 +405,7 @@ struct json_path_handler : public json_path_handler_base {
     struct LastIsIntegerVector<std::vector<U> T::*> {
         using value_type = U;
         static constexpr bool value
-            = std::is_integral<U>::value && !std::is_same<U, bool>::value;
+            = std::is_integral_v<U> && !std::is_same_v<U, bool>;
     };
 
     template<typename T, typename U>
@@ -547,8 +547,8 @@ struct json_path_handler : public json_path_handler_base {
     template<typename... Args,
              std::enable_if_t<LastIsVector<Args...>::value, bool> = true,
              std::enable_if_t<
-                 !std::is_same<typename LastIsVector<Args...>::value_type,
-                               std::string>::value
+                 !std::is_same_v<typename LastIsVector<Args...>::value_type,
+                                 std::string>
                      && !LastIsIntegerVector<Args...>::value,
                  bool>
              = true>
@@ -675,13 +675,13 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<typename... Args,
-             std::enable_if_t<LastIsMap<Args...>::value, bool> = true,
-             std::enable_if_t<
-                 std::is_same<intern_string_t,
-                              typename LastIsMap<Args...>::key_type>::value,
-                 bool>
-             = true>
+    template<
+        typename... Args,
+        std::enable_if_t<LastIsMap<Args...>::value, bool> = true,
+        std::enable_if_t<std::is_same_v<intern_string_t,
+                                        typename LastIsMap<Args...>::key_type>,
+                         bool>
+        = true>
     json_path_handler& for_field(Args... args)
     {
         this->jph_path_provider =
@@ -729,18 +729,15 @@ struct json_path_handler : public json_path_handler_base {
         typename... Args,
         std::enable_if_t<LastIsMap<Args...>::value, bool> = true,
         std::enable_if_t<
-            std::is_same<std::string,
-                         typename LastIsMap<Args...>::key_type>::value,
+            std::is_same_v<std::string, typename LastIsMap<Args...>::key_type>,
             bool>
         = true,
         std::enable_if_t<
-            !std::is_same<json_any_t,
-                          typename LastIsMap<Args...>::value_type>::value
-                && !std::is_same<std::string,
-                                 typename LastIsMap<Args...>::value_type>::value
-                && !std::is_same<
-                    std::optional<std::string>,
-                    typename LastIsMap<Args...>::value_type>::value,
+            !std::is_same_v<json_any_t, typename LastIsMap<Args...>::value_type>
+                && !std::is_same_v<std::string,
+                                   typename LastIsMap<Args...>::value_type>
+                && !std::is_same_v<std::optional<std::string>,
+                                   typename LastIsMap<Args...>::value_type>,
             bool>
         = true>
     json_path_handler& for_field(Args... args)

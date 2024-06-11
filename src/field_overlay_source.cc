@@ -385,7 +385,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             al.append(jget_str.in());
             hl_range.lr_end = al.get_string().length();
         }
-        readline_sqlite_highlighter_int(al, -1, hl_range);
+        readline_sqlite_highlighter_int(al, std::nullopt, hl_range);
 
         al.append(" = ").append(scrub_ws(value_str.c_str()));
 
@@ -420,7 +420,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         auto key_line = attr_line_t("   jget(log_raw_text, ")
                             .append(qname.in())
                             .append(")");
-        readline_sqlite_highlighter(key_line, 0);
+        readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(extra_pair.second));
         this->fos_lines.emplace_back(key_line);
@@ -433,7 +433,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
             auto key_line = attr_line_t("   ").append(
                 this->fos_log_helper.format_json_getter(jpairs_map.first, lpc));
-            readline_sqlite_highlighter(key_line, 0);
+            readline_sqlite_highlighter(key_line, std::nullopt);
             auto key_size = key_line.length();
             key_line.append(" = ").append(scrub_ws(jpairs[lpc].wt_value));
             this->fos_lines.emplace_back(key_line);
@@ -453,7 +453,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             this->fos_log_helper.ldh_file->get_format()->get_name().c_str(),
             qname.in());
         auto key_line = attr_line_t("   ").append(xp_call.in());
-        readline_sqlite_highlighter(key_line, 0);
+        readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(xml_pair.second));
         this->fos_lines.emplace_back(key_line);

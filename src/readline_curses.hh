@@ -36,7 +36,6 @@
 #include <exception>
 #include <functional>
 #include <map>
-#include <set>
 #include <stack>
 #include <string>
 #include <utility>
@@ -54,8 +53,6 @@
 
 #include "base/auto_fd.hh"
 #include "base/enum_util.hh"
-#include "base/func_util.hh"
-#include "base/result.h"
 #include "help_text_formatter.hh"
 #include "log_format.hh"
 #include "pollable.hh"
@@ -100,7 +97,7 @@ public:
 
     template<typename T,
              typename... Args,
-             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+             std::enable_if_t<std::is_enum_v<T>, bool> = true>
     void add_context(T context, Args&... args)
     {
         this->add_context(lnav::enums::to_underlying(context), args...);
@@ -161,7 +158,7 @@ public:
 
     template<typename T,
              typename... Args,
-             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+             std::enable_if_t<std::is_enum_v<T>, bool> = true>
     void focus(T context, const Args&... args)
     {
         this->focus(lnav::enums::to_underlying(context), args...);
@@ -204,13 +201,13 @@ public:
 
     template<typename T,
              typename... Args,
-             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+             std::enable_if_t<std::is_enum_v<T>, bool> = true>
     void add_prefix(T context, const Args&... args)
     {
         this->add_prefix(lnav::enums::to_underlying(context), args...);
     }
 
-    template<typename T, std::enable_if_t<std::is_enum<T>::value, bool> = true>
+    template<typename T, std::enable_if_t<std::is_enum_v<T>, bool> = true>
     void clear_prefixes(T context)
     {
         this->clear_prefixes(lnav::enums::to_underlying(context));
@@ -220,7 +217,7 @@ public:
                          const std::string& type,
                          const std::string& value);
 
-    void add_possibility(int context,
+    void add_possibility(const int context,
                          const std::string& type,
                          const char* values[])
     {
@@ -229,7 +226,7 @@ public:
         }
     }
 
-    void add_possibility(int context,
+    void add_possibility(const int context,
                          const std::string& type,
                          const char** first,
                          const char** last)
@@ -256,7 +253,7 @@ public:
 
     template<typename T,
              typename... Args,
-             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+             std::enable_if_t<std::is_enum_v<T>, bool> = true>
     void add_possibility(T context, Args... args)
     {
         this->add_possibility(lnav::enums::to_underlying(context), args...);
@@ -264,7 +261,7 @@ public:
 
     template<typename T,
              typename... Args,
-             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+             std::enable_if_t<std::is_enum_v<T>, bool> = true>
     void rem_possibility(T context, const Args&... args)
     {
         this->rem_possibility(lnav::enums::to_underlying(context), args...);
@@ -272,7 +269,7 @@ public:
 
     template<typename T,
              typename... Args,
-             std::enable_if_t<std::is_enum<T>::value, bool> = true>
+             std::enable_if_t<std::is_enum_v<T>, bool> = true>
     void clear_possibilities(T context, Args... args)
     {
         this->clear_possibilities(lnav::enums::to_underlying(context), args...);

@@ -159,7 +159,7 @@ format_sql_example(const char* sql_example_fmt)
         const auto* format_name = lf->get_format()->get_name().get();
 
         retval.with_ansi_string(sql_example_fmt, format_name, format_name);
-        readline_sqlite_highlighter(retval, 0);
+        readline_sqlite_highlighter(retval, std::nullopt);
     }
     return retval;
 }

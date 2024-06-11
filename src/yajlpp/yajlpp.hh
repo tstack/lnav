@@ -202,7 +202,7 @@ struct json_path_handler_base {
     struct enum_value_t {
         template<typename T>
         enum_value_t(const char* name, T value)
-            : first(name), second((unsigned int) value)
+            : first(name), second((int) value)
         {
         }
 

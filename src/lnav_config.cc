@@ -466,7 +466,7 @@ install_extra_formats()
             }
         }
         if (yajl_complete_parse(jhandle) != yajl_status_ok) {
-            auto* msg = yajl_get_error(jhandle, 1, buffer, rc);
+            auto* msg = yajl_get_error(jhandle, 0, nullptr, 0);
 
             fprintf(stderr, "Unable to parse remote-config.json -- %s", msg);
             yajl_free_error(jhandle, msg);

@@ -42,7 +42,8 @@
 
 using namespace lnav::roles::literals;
 
-filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
+filter_sub_source::
+filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
     this->fss_editor->set_x(25);
@@ -377,10 +378,10 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     attr_line_t content{tf->get_id()};
     switch (tf->get_lang()) {
         case filter_lang_t::REGEX:
-            readline_regex_highlighter(content, content.length());
+            readline_regex_highlighter(content, std::nullopt);
             break;
         case filter_lang_t::SQL:
-            readline_sqlite_highlighter(content, content.length());
+            readline_sqlite_highlighter(content, std::nullopt);
             break;
         case filter_lang_t::NONE:
             break;

@@ -1472,6 +1472,8 @@ readline_curses::focus(int context,
     char cwd[MAXPATHLEN + 1024];
     char buffer[8 + sizeof(cwd)];
 
+    require(this->rc_contexts.count(context) > 0);
+
     curs_set(1);
 
     this->rc_active_context = context;

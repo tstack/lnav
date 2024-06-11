@@ -65,7 +65,7 @@ connect(const char* hostname, const char* servname)
         return Err(fmt::format(FMT_STRING("unable to connect to {}:{} -- {}"),
                                hostname,
                                servname,
-                               strerror(rc)));
+                               strerror(errno)));
     }
 
     return Ok(std::move(retval));

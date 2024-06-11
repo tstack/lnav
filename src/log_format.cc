@@ -2995,7 +2995,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                   .with_attr_for_all(SA_PREFORMATTED.value())
                                   .with_attr_for_all(
                                       VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-                readline_sqlite_highlighter(sql_al, -1);
+                readline_sqlite_highlighter(sql_al, std::nullopt);
                 intern_string_t watch_expr_path = intern_string::lookup(
                     fmt::format(FMT_STRING("/{}/converter/header/expr/{}"),
                                 this->elf_name,

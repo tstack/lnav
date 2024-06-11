@@ -57,7 +57,7 @@ static void
 find_matching_bracket(
     attr_line_t& al, int x, line_range sub, char left, char right)
 {
-    bool is_lit = (left == 'Q');
+    const auto is_lit = left == 'Q';
     attr_line_builder alb(al);
     const auto& line = al.get_string();
     int depth = 0;
@@ -132,14 +132,16 @@ find_matching_bracket(
 }
 
 void
-readline_regex_highlighter(attr_line_t& al, int x)
+readline_regex_highlighter(attr_line_t& al, std::optional<int> x)
 {
     lnav::snippets::regex_highlighter(
         al, x, line_range{1, (int) al.get_string().size()});
 }
 
 void
-readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
+readline_command_highlighter_int(attr_line_t& al,
+                                 std::optional<int> x,
+                                 line_range sub)
 {
     static const auto RE_PREFIXES = lnav::pcre2pp::code::from_const(
         R"(^:(filter-in|filter-out|delete-filter|enable-filter|disable-filter|highlight|clear-highlight|create-search-table\s+[^\s]+\s+))");
@@ -209,7 +211,9 @@ readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
                 (int) start, (int) last
             };
 
-            if (lr.length() > 0 && !lr.contains(x) && !lr.contains(x - 1)) {
+            if (x && lr.length() > 0 && !lr.contains(x.value())
+                && !lr.contains(x.value() - 1))
+            {
                 std::string value(lr.substr(line), lr.sublen(line));
 
                 if ((command == ":tag" || command == ":untag"
@@ -227,21 +231,21 @@ readline_command_highlighter_int(attr_line_t& al, int x, line_range sub)
 }
 
 void
-readline_command_highlighter(attr_line_t& al, int x)
+readline_command_highlighter(attr_line_t& al, std::optional<int> x)
 {
     readline_command_highlighter_int(
         al, x, line_range{0, (int) al.get_string().length()});
 }
 
 void
-readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
+readline_sqlite_highlighter_int(attr_line_t& al,
+                                std::optional<int> x,
+                                line_range sub)
 {
     static const char* brackets[] = {
         "[]",
         "()",
         "{}",
-
-        nullptr,
     };
 
     attr_line_builder alb(al);
@@ -265,7 +269,9 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
         } else if (attr.sa_type == &SQL_IDENTIFIER_ATTR
                    || attr.sa_type == &lnav::sql::PRQL_IDENTIFIER_ATTR)
         {
-            if (!attr.sa_range.contains(x) && attr.sa_range.lr_end != x) {
+            if (x && !attr.sa_range.contains(x.value())
+                && attr.sa_range.lr_end != x.value())
+            {
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_IDENTIFIER));
             }
         } else if (attr.sa_type == &SQL_FUNCTION_ATTR) {
@@ -298,20 +304,23 @@ readline_sqlite_highlighter_int(attr_line_t& al, int x, line_range sub)
         }
     }
 
-    for (int lpc = 0; brackets[lpc]; lpc++) {
-        find_matching_bracket(al, x, sub, brackets[lpc][0], brackets[lpc][1]);
+    for (const auto& bracket : brackets) {
+        find_matching_bracket(
+            al, x.value_or(al.length()), sub, bracket[0], bracket[1]);
     }
 }
 
 void
-readline_sqlite_highlighter(attr_line_t& al, int x)
+readline_sqlite_highlighter(attr_line_t& al, std::optional<int> x)
 {
     readline_sqlite_highlighter_int(
         al, x, line_range{0, (int) al.get_string().length()});
 }
 
 void
-readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
+readline_shlex_highlighter_int(attr_line_t& al,
+                               std::optional<int> x,
+                               line_range sub)
 {
     attr_line_builder alb(al);
     const auto& str = al.get_string();
@@ -397,14 +406,16 @@ readline_shlex_highlighter_int(attr_line_t& al, int x, line_range sub)
 }
 
 void
-readline_shlex_highlighter(attr_line_t& al, int x)
+readline_shlex_highlighter(attr_line_t& al, std::optional<int> x)
 {
     readline_shlex_highlighter_int(
         al, x, line_range{0, (int) al.al_string.length()});
 }
 
 static void
-readline_lnav_highlighter_int(attr_line_t& al, int x, line_range sub)
+readline_lnav_highlighter_int(attr_line_t& al,
+                              std::optional<int> x,
+                              line_range sub)
 {
     switch (al.al_string[sub.lr_start]) {
         case ':':
@@ -432,7 +443,7 @@ readline_lnav_highlighter_int(attr_line_t& al, int x, line_range sub)
 }
 
 void
-readline_lnav_highlighter(attr_line_t& al, int x)
+readline_lnav_highlighter(attr_line_t& al, std::optional<int> x)
 {
     static const auto COMMENT_RE = lnav::pcre2pp::code::from_const(R"(^\s*#)");
 

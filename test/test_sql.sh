@@ -163,7 +163,6 @@ EOF
 
 run_test ${lnav_test} -n \
     -c ";SELECT * FROM access_log LIMIT 0" \
-    -c ':switch-to-view db' \
     ${test_dir}/logfile_access_log.0
 
 check_output "output generated for empty result set?" <<EOF

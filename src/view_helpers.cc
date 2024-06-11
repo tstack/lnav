@@ -881,11 +881,10 @@ update_hits(textview_curses* tc)
         lnav_data.ld_bottom_source.update_hits(tc);
 
         if (lnav_data.ld_mode == ln_mode_t::SEARCH) {
-            const auto MAX_MATCH_COUNT = 10_vl;
+            constexpr auto MAX_MATCH_COUNT = 10_vl;
             const auto PREVIEW_SIZE = MAX_MATCH_COUNT + 1_vl;
 
             int preview_count = 0;
-
             auto& bm = tc->get_bookmarks();
             const auto& bv = bm[&textview_curses::BM_SEARCH];
             auto vl = tc->get_top();
@@ -917,9 +916,6 @@ update_hits(textview_curses* tc)
                     attr_line_t al;
 
                     tc->textview_value_for_row(prev_vl.value(), al);
-                    if (preview_count > 0) {
-                        all_matches.append("\n");
-                    }
                     snprintf(linebuf,
                              sizeof(linebuf),
                              "L%*d: ",

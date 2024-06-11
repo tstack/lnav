@@ -92,7 +92,7 @@ struct expressions : public lnav_config_listener {
                                   .with_attr_for_all(SA_PREFORMATTED.value())
                                   .with_attr_for_all(
                                       VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-                readline_sqlite_highlighter(sql_al, -1);
+                readline_sqlite_highlighter(sql_al, std::nullopt);
                 intern_string_t cond_expr_path = intern_string::lookup(
                     fmt::format(FMT_STRING("/log/annotations/{}/condition"),
                                 pair.first));

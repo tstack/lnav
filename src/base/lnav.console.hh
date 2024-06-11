@@ -94,6 +94,13 @@ struct user_message {
 
     static user_message ok(const attr_line_t& al);
 
+    user_message() = default;
+    user_message(user_message&&) = default;
+    user_message(const user_message&) = default;
+
+    user_message& operator=(user_message&&) = default;
+    user_message& operator=(const user_message&) = default;
+
     user_message& with_reason(const attr_line_t& al)
     {
         this->um_reason = al;
