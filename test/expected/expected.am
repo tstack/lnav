@@ -1276,6 +1276,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_text_file.sh_4226123565a53b4e3f80e602c1f294721e8e07bf.out \
     $(srcdir)/%reldir%/test_text_file.sh_4dd174410d702a7b4be794fb6fa2c8889bd768d6.err \
     $(srcdir)/%reldir%/test_text_file.sh_4dd174410d702a7b4be794fb6fa2c8889bd768d6.out \
+    $(srcdir)/%reldir%/test_text_file.sh_56dff3ab530f95792c923d650a9aa7f06e69e736.err \
+    $(srcdir)/%reldir%/test_text_file.sh_56dff3ab530f95792c923d650a9aa7f06e69e736.out \
     $(srcdir)/%reldir%/test_text_file.sh_596b120fbea638472a27964444e262b4572afacc.err \
     $(srcdir)/%reldir%/test_text_file.sh_596b120fbea638472a27964444e262b4572afacc.out \
     $(srcdir)/%reldir%/test_text_file.sh_5b51b55dff7332c5bee2c9b797c401c5614d574a.err \

@@ -42,8 +42,10 @@
 #include "base/math_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "data_scanner.hh"
 #include "lnav.events.hh"
 #include "md2attr_line.hh"
+#include "pretty_printer.hh"
 #include "scn/scn.h"
 #include "sql_util.hh"
 #include "sqlitepp.hh"
@@ -885,8 +887,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         = lnav::pcre2pp::code::from_const(
                             R"((?:^---\n(.*)\n---\n|^\+\+\+\n(.*)\n\+\+\+\n))",
                             PCRE2_MULTILINE | PCRE2_DOTALL);
-                    static thread_local auto md
-                        = FRONT_MATTER_RE.create_match_data();
+                    thread_local auto md = FRONT_MATTER_RE.create_match_data();
 
                     auto read_file_res = read_res.unwrap();
                     auto content_sf
@@ -989,8 +990,45 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                               lf->get_filename().c_str(),
                               read_res.unwrapErr().c_str());
                 }
-            }
+            } else if (lf->get_longest_line_length() > 240) {
+                auto rend_iter
+                    = this->tss_rendered_files.find(lf->get_filename());
+                if (rend_iter != this->tss_rendered_files.end()) {
+                    if (rend_iter->second.rf_file_size == st.st_size
+                        && rend_iter->second.rf_file_indexed_size
+                            == lf->get_index_size()
+                        && rend_iter->second.rf_mtime == st.st_mtime)
+                    {
+                        ++iter;
+                        continue;
+                    }
+                    log_info("pretty file has been updated, re-rendering: %s",
+                             lf->get_filename().c_str());
+                    this->tss_rendered_files.erase(rend_iter);
+                }
 
+                auto read_res = lf->read_file();
+                if (read_res.isOk()) {
+                    auto read_file_res = read_res.unwrap();
+                    data_scanner ds(read_file_res.rfr_content);
+                    pretty_printer pp(&ds, {});
+                    attr_line_t pretty_al;
+
+                    pp.append_to(pretty_al);
+                    auto& rf = this->tss_rendered_files[lf->get_filename()];
+                    rf.rf_mtime = st.st_mtime;
+                    rf.rf_file_indexed_size = lf->get_index_size();
+                    rf.rf_file_size = st.st_size;
+                    rf.rf_text_source = std::make_unique<plain_text_source>();
+                    rf.rf_text_source->set_text_format(lf->get_text_format());
+                    rf.rf_text_source->register_view(this->tss_view);
+                    rf.rf_text_source->replace_with(pretty_al);
+                } else {
+                    log_error("unable to read file to pretty-print: %s -- %s",
+                              lf->get_filename().c_str(),
+                              read_res.unwrapErr().c_str());
+                }
+            }
         } catch (const line_buffer::error& e) {
             iter = this->tss_files.erase(iter);
             this->tss_rendered_files.erase(lf->get_filename());
@@ -1055,14 +1093,14 @@ textfile_sub_source::row_for_anchor(const std::string& id)
         return std::nullopt;
     }
 
-    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    const auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
     if (this->tss_view_mode == view_mode::rendered
         && rend_iter != this->tss_rendered_files.end())
     {
         return rend_iter->second.rf_text_source->row_for_anchor(id);
     }
 
-    auto iter = this->tss_doc_metadata.find(lf->get_filename());
+    const auto iter = this->tss_doc_metadata.find(lf->get_filename());
     if (iter == this->tss_doc_metadata.end()) {
         return std::nullopt;
     }
@@ -1149,9 +1187,9 @@ anchor_generator(std::unordered_set<std::string>& retval,
             }
         }
     } else {
-        for (const auto& child : hn->hn_named_children) {
-            comps.emplace_back(child.first);
-            anchor_generator(retval, comps, max_depth, child.second);
+        for (const auto& [child_name, child_node] : hn->hn_named_children) {
+            comps.emplace_back(child_name);
+            anchor_generator(retval, comps, max_depth, child_node);
             comps.pop_back();
         }
         if (max_depth > 1) {
@@ -1267,7 +1305,8 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
                 if (neighbors_res->cnr_next) {
                     return to_vis_line(
                         lf, neighbors_res->cnr_next.value()->hn_start);
-                } else if (!md.m_sections_root->hn_children.empty()) {
+                }
+                if (!md.m_sections_root->hn_children.empty()) {
                     return to_vis_line(
                         lf, md.m_sections_root->hn_children[0]->hn_start);
                 }
@@ -1428,6 +1467,25 @@ textfile_sub_source::set_view_mode(view_mode vm)
     this->tss_view->set_needs_update();
 }
 
+textfile_sub_source::view_mode
+textfile_sub_source::get_effective_view_mode() const
+{
+    auto retval = view_mode::raw;
+
+    const auto lf = this->current_file();
+    if (lf != nullptr) {
+        const auto rend_iter
+            = this->tss_rendered_files.find(lf->get_filename());
+        if (this->tss_view_mode == view_mode::rendered
+            && rend_iter != this->tss_rendered_files.end())
+        {
+            retval = view_mode::rendered;
+        }
+    }
+
+    return retval;
+}
+
 textfile_header_overlay::
 textfile_header_overlay(textfile_sub_source* src)
     : tho_src(src)
@@ -1444,9 +1502,25 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
         return false;
     }
 
-    auto lf = this->tho_src->current_file();
+    const auto lf = this->tho_src->current_file();
     if (lf == nullptr) {
         return false;
+    }
+
+    if (lf->get_text_format() != text_format_t::TF_MARKDOWN
+        && this->tho_src->get_effective_view_mode()
+            == textfile_sub_source::view_mode::rendered)
+    {
+        text_attrs ta;
+
+        ta.ta_attrs |= A_UNDERLINE;
+        value_out.append("\u24d8"_info)
+            .append(" The following is a rendered view of the content.  Use ")
+            .append(lnav::roles::quoted_code(":set-text-view-mode raw"))
+            .append(" to view the raw version of this text")
+            .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO))
+            .with_attr_for_all(VC_STYLE.value(ta));
+        return true;
     }
 
     if (lf->get_text_format() != text_format_t::TF_BINARY) {

@@ -930,7 +930,7 @@ read_json_number(yajlpp_parse_context* ypc,
         } else {
             jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
         }
-        jlu->jlu_exttm.et_nsec = jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
         jlu->jlu_base_line->set_time(tv);
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         uint64_t millis = 0;
@@ -1084,7 +1084,7 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
         } else {
             jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
         }
-        jlu->jlu_exttm.et_nsec = jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
         switch (jlu->jlu_format->lf_subsecond_unit.value()) {
@@ -1136,7 +1136,7 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
         } else {
             jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
         }
-        jlu->jlu_exttm.et_nsec = jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
         switch (jlu->jlu_format->lf_subsecond_unit.value()) {
@@ -1866,8 +1866,6 @@ external_log_format::annotate(logfile* lf,
             && mod_iter->second.mf_mod_format != nullptr)
         {
             auto& mf = mod_iter->second;
-
-            body_cap->trim();
             auto narrow_res
                 = line.narrow(body_cap->sf_begin, body_cap->length());
             auto pre_mod_values_size = values.lvv_values.size();

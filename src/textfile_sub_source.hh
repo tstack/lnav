@@ -175,6 +175,8 @@ public:
 
     void set_view_mode(view_mode vm);
 
+    view_mode get_effective_view_mode() const;
+
 private:
     void detach_observer(std::shared_ptr<logfile> lf)
     {

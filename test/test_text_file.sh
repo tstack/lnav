@@ -132,3 +132,6 @@ run_cap_test ${lnav_test} -nN \
 run_cap_test ${lnav_test} -n \
     -c ':set-text-view-mode raw' \
     ${top_srcdir}/README.md
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/textfile_json_long.0

@@ -416,7 +416,6 @@ timeline_source(textview_curses& log_view,
 bool
 timeline_source::list_input_handle_key(listview_curses& lv, int ch)
 {
-    log_debug("list input %x", ch);
     switch (ch) {
         case 'q':
         case KEY_ESCAPE: {
@@ -477,7 +476,7 @@ timeline_source::text_handle_mouse(
 std::pair<timeval, timeval>
 timeline_source::get_time_bounds_for(int line)
 {
-    auto low_index = this->tss_view->get_top();
+    const auto low_index = this->tss_view->get_top();
     auto high_index
         = std::min(this->tss_view->get_bottom(),
                    vis_line_t((int) this->gs_time_order.size() - 1));
@@ -1042,11 +1041,8 @@ void
 timeline_source::text_filters_changed()
 {
     this->rebuild_indexes();
-
-    if (this->tss_view != nullptr) {
-        this->tss_view->reload_data();
-        this->tss_view->redo_search();
-    }
+    this->tss_view->reload_data();
+    this->tss_view->redo_search();
 }
 
 int

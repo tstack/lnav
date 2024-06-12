@@ -406,6 +406,7 @@ dist_noinst_DATA = \
 	textfile_ansi.0 \
 	textfile_ansi_expanding.0 \
 	textfile_json_indented.0 \
+	textfile_json_long.0 \
 	textfile_json_one_line.0 \
 	textfile_nonl.txt \
 	textfile_plain.0 \
