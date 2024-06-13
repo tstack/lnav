@@ -2992,7 +2992,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 auto sql_al = attr_line_t(hpair.second)
                                   .with_attr_for_all(SA_PREFORMATTED.value())
                                   .with_attr_for_all(
-                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                                  .move();
                 readline_sqlite_highlighter(sql_al, std::nullopt);
                 intern_string_t watch_expr_path = intern_string::lookup(
                     fmt::format(FMT_STRING("/{}/converter/header/expr/{}"),
@@ -3004,7 +3005,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 auto um = lnav::console::user_message::error(
                               "SQL expression is invalid")
                               .with_reason(sqlite3_errmsg(hexprs->e_db.in()))
-                              .with_snippet(snippet);
+                              .with_snippet(snippet)
+                              .move();
 
                 errors.emplace_back(um);
                 continue;
@@ -3022,7 +3024,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                           .with_help(
                               "The converter command transforms the file "
                               "into a format that can be consumed by lnav")
-                          .with_snippets(this->get_snippets());
+                          .with_snippets(this->get_snippets())
+                          .move();
             errors.emplace_back(um);
         }
     }
@@ -3069,7 +3072,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     = attr_line_t("the following captures are available:\n  ")
                           .join(available_captures,
                                 VC_ROLE.value(role_t::VCR_SYMBOL),
-                                ", ");
+                                ", ")
+                          .move();
                 errors.emplace_back(
                     lnav::console::user_message::warning(
                         attr_line_t("invalid value ")
@@ -3298,7 +3302,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                               attr_line_t("timestamp was not fully matched: ")
                                   .append_quoted(ts_cap.value()))
                               .with_snippet(elf_sample.s_line.to_snippet())
-                              .with_note(notes);
+                              .with_note(notes)
+                              .move();
 
                     errors.emplace_back(um);
                 }
@@ -3439,7 +3444,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                   .append_quoted(lnav::roles::symbol(
                                       level_names[elf_sample.s_level])))
                           .with_snippet(elf_sample.s_line.to_snippet())
-                          .with_note(note_al);
+                          .with_note(note_al)
+                          .move();
                 if (!this->elf_level_patterns.empty()) {
                     um.with_help(
                         attr_line_t("Level regexes are not anchored to the "

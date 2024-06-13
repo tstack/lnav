@@ -221,7 +221,8 @@ handle_paging_key(int ch, const char* keyseq)
 
                 auto al = attr_line_t("mouse mode -- ")
                               .append(mouse_i.is_enabled() ? "enabled"_symbol
-                                                           : "disabled"_symbol);
+                                                           : "disabled"_symbol)
+                              .move();
                 if (mouse_i.is_enabled()
                     && lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled)
                 {

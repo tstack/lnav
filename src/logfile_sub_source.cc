@@ -2544,7 +2544,8 @@ logfile_sub_source::text_crumbs_for_line(int line,
         auto key = text_anchors::to_anchor_string(name);
         auto display = attr_line_t()
                            .append("\u2291 "_symbol)
-                           .append(lnav::roles::variable(name));
+                           .append(lnav::roles::variable(name))
+                           .move();
         crumbs.emplace_back(
             key,
             display,

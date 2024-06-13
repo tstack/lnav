@@ -166,7 +166,7 @@ protected:
 template<typename T>
 class service : public service_base {
 public:
-    explicit service(std::string sub_name = "")
+    explicit service(const std::string& sub_name = "")
         : service_base(std::string(__PRETTY_FUNCTION__) + " " + sub_name)
     {
     }
@@ -174,9 +174,11 @@ public:
     template<typename F>
     void send(F msg)
     {
-        this->s_port.send({[lifetime = this->shared_from_this(), this, msg]() {
-            msg(*(static_cast<T*>(this)));
-        }});
+        this->s_port.send({
+            [lifetime = this->shared_from_this(),
+             this,
+             msg2 = std::move(msg)]() { msg2(*(static_cast<T*>(this))); },
+        });
     }
 
     template<typename F, class Rep, class Period>
@@ -185,12 +187,16 @@ public:
     {
         msg_port reply_port;
 
-        this->s_port.send(
-            {[lifetime = this->shared_from_this(), this, &reply_port, msg]() {
-                msg(*(static_cast<T*>(this)));
+        this->s_port.send({
+            [lifetime = this->shared_from_this(),
+             this,
+             &reply_port,
+             msg2 = std::move(msg)]() {
+                msg2(*(static_cast<T*>(this)));
                 reply_port.send(empty_msg());
-            }});
-        reply_port.template process_for(rel_time);
+            },
+        });
+        reply_port.process_for(rel_time);
     }
 };
 
@@ -200,7 +206,7 @@ struct to {
     {
         auto& service = injector::get<T&, Service>();
 
-        service.send(cb);
+        service.send(std::move(cb));
     }
 
     template<class Rep, class Period>
@@ -209,14 +215,14 @@ struct to {
     {
         auto& service = injector::get<T&, Service>();
 
-        service.send_and_wait(cb, rel_time);
+        service.send_and_wait(std::move(cb), rel_time);
     }
 
     void send_and_wait(std::function<void(T)> cb)
     {
         using namespace std::literals::chrono_literals;
 
-        this->send_and_wait(cb, 48h);
+        this->send_and_wait(std::move(cb), 48h);
     }
 };
 

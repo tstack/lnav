@@ -100,7 +100,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                               line_range{1, 2}, VC_GRAPHIC.value(ACS_LLCORNER)))
                           .with_attr(string_attr(
                               line_range{0, 22},
-                              VC_ROLE.value(role_t::VCR_INVALID_MSG)));
+                              VC_ROLE.value(role_t::VCR_INVALID_MSG)))
+                          .move();
             this->fos_lines.emplace_back(al);
         }
     }
@@ -419,7 +420,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         auto qname = lnav::sql::mprintf("%Q", extra_pair.first.c_str());
         auto key_line = attr_line_t("   jget(log_raw_text, ")
                             .append(qname.in())
-                            .append(")");
+                            .append(")")
+                            .move();
         readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(extra_pair.second));
@@ -431,8 +433,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         const auto& jpairs = jpairs_map.second;
 
         for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
-            auto key_line = attr_line_t("   ").append(
-                this->fos_log_helper.format_json_getter(jpairs_map.first, lpc));
+            auto key_line = attr_line_t("   ")
+                                .append(this->fos_log_helper.format_json_getter(
+                                    jpairs_map.first, lpc))
+                                .move();
             readline_sqlite_highlighter(key_line, std::nullopt);
             auto key_size = key_line.length();
             key_line.append(" = ").append(scrub_ws(jpairs[lpc].wt_value));
@@ -452,7 +456,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             xml_pair.first.second.c_str(),
             this->fos_log_helper.ldh_file->get_format()->get_name().c_str(),
             qname.in());
-        auto key_line = attr_line_t("   ").append(xp_call.in());
+        auto key_line = attr_line_t("   ").append(xp_call.in()).move();
         readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(xml_pair.second));
@@ -526,8 +530,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                           .append(" to apply them")
                           .append(lv.get_selection() == row ? " to this line"
                                                             : "")
-                          .with_attr_for_all(
-                              VC_ROLE.value(role_t::VCR_COMMENT));
+                          .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT))
+                          .move();
 
                 dst.emplace_back(anno_msg);
             }
@@ -545,7 +549,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     if (!line_meta.bm_opid.empty()) {
         auto al = attr_line_t()
                       .append(" Op ID: "_table_header)
-                      .append(lnav::roles::identifier(line_meta.bm_opid));
+                      .append(lnav::roles::identifier(line_meta.bm_opid))
+                      .move();
 
         dst.emplace_back(al);
     }

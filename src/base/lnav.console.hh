@@ -193,6 +193,9 @@ struct user_message {
     attr_line_t to_attr_line(std::set<render_flags> flags
                              = {render_flags::prefix}) const;
 
+    user_message move() & { return std::move(*this); }
+    user_message move() && { return std::move(*this); }
+
     level um_level{level::ok};
     attr_line_t um_message;
     std::vector<snippet> um_snippets;

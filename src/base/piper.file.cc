@@ -114,7 +114,7 @@ multiplex_matcher::match(const string_fragment& line)
                 if (!md[df.dd_muxid_capture_index].has_value()) {
                     log_info("    however, mux_id was not captured");
 
-                    auto match_um = lnav::console::user_message::warning(
+                    const auto match_um = lnav::console::user_message::warning(
                         attr_line_t("demuxer ")
                             .append_quoted(demux_pair.first)
                             .append(" matched, however the ")
@@ -125,7 +125,7 @@ multiplex_matcher::match(const string_fragment& line)
                 }
                 if (!md[df.dd_body_capture_index].has_value()) {
                     log_info("    however, body was not captured");
-                    auto match_um = lnav::console::user_message::warning(
+                    const auto match_um = lnav::console::user_message::warning(
                         attr_line_t("demuxer ")
                             .append_quoted(demux_pair.first)
                             .append(" matched, however the ")
@@ -146,10 +146,13 @@ multiplex_matcher::match(const string_fragment& line)
                     this->mm_details.emplace_back(match_um);
                     return found{demux_pair.first};
                 }
-                auto config_al = attr_line_t().append(
-                    fmt::format(FMT_STRING(":config /log/demux/{}/enabled "
-                                           "true"),
-                                demux_pair.first));
+                auto config_al
+                    = attr_line_t()
+                          .append(fmt::format(
+                              FMT_STRING(":config /log/demux/{}/enabled "
+                                         "true"),
+                              demux_pair.first))
+                          .move();
                 readline_lnav_highlighter(config_al, -1);
                 auto match_um
                     = lnav::console::user_message::info(
@@ -163,7 +166,8 @@ multiplex_matcher::match(const string_fragment& line)
                               attr_line_t("Use ")
                                   .append_quoted(
                                       lnav::roles::quoted_code(config_al))
-                                  .append(" to enable this demuxer"));
+                                  .append(" to enable this demuxer"))
+                          .move();
                 this->mm_details.emplace_back(match_um);
             }
 
@@ -184,14 +188,16 @@ multiplex_matcher::match(const string_fragment& line)
                             .append(lnav::roles::quoted_code(in_line))
                             .append("\n")
                             .append(partial_size + 2, ' ')
-                            .append("^ matched up to here");
+                            .append("^ matched up to here")
+                            .move();
             auto match_um = lnav::console::user_message::info(
                                 attr_line_t("demuxer ")
                                     .append_quoted(demux_pair.first)
                                     .append(" did not match line ")
                                     .append(lnav::roles::number(
                                         fmt::to_string(this->mm_line_count))))
-                                .with_note(note);
+                                .with_note(note)
+                                .move();
             this->mm_details.emplace_back(match_um);
         }
         if (df.dd_control_pattern.pp_value) {
