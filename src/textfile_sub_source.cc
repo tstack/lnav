@@ -52,6 +52,20 @@
 
 using namespace lnav::roles::literals;
 
+static bool
+file_needs_reformatting(const std::shared_ptr<logfile> lf)
+{
+    switch (lf->get_text_format()) {
+        case text_format_t::TF_DIFF:
+            return false;
+        default:
+            if (lf->get_longest_line_length() > 240) {
+                return true;
+            }
+            return false;
+    }
+}
+
 size_t
 textfile_sub_source::text_line_count()
 {
@@ -990,7 +1004,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                               lf->get_filename().c_str(),
                               read_res.unwrapErr().c_str());
                 }
-            } else if (lf->get_longest_line_length() > 240) {
+            } else if (file_needs_reformatting(lf)) {
                 auto rend_iter
                     = this->tss_rendered_files.find(lf->get_filename());
                 if (rend_iter != this->tss_rendered_files.end()) {

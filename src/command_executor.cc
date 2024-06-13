@@ -914,7 +914,7 @@ execute_init_commands(
                 wait_for_pipers(deadline);
                 rebuild_indexes_repeatedly();
             }
-            if (dls.dls_rows.size() > 1 && lnav_data.ld_view_stack.size() == 1)
+            if (!dls.dls_headers.empty() && lnav_data.ld_view_stack.size() == 1)
             {
                 lnav_data.ld_views[LNV_DB].reload_data();
                 ensure_view(LNV_DB);
@@ -951,36 +951,38 @@ execute_init_commands(
 int
 sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
+    const auto& vc = view_colors::singleton();
     auto& dls = *(ec.ec_label_source_stack.back());
+    int ncols = sqlite3_column_count(stmt);
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();
 
+        for (int lpc = 0; lpc < ncols; lpc++) {
+            const int type = sqlite3_column_type(stmt, lpc);
+            std::string colname = sqlite3_column_name(stmt, lpc);
+
+            dls.push_header(colname, type, false);
+        }
         return 0;
     }
 
-    auto& vc = view_colors::singleton();
-    int ncols = sqlite3_column_count(stmt);
-    int row_number;
-    int lpc, retval = 0;
-    auto set_vars = false;
+    int retval = 0;
+    auto set_vars = dls.dls_rows.empty();
 
-    row_number = dls.dls_rows.size();
-    dls.dls_rows.resize(row_number + 1);
-    if (dls.dls_headers.empty()) {
-        for (lpc = 0; lpc < ncols; lpc++) {
+    if (dls.dls_rows.empty()) {
+        for (int lpc = 0; lpc < ncols; lpc++) {
             int type = sqlite3_column_type(stmt, lpc);
             std::string colname = sqlite3_column_name(stmt, lpc);
-            bool graphable;
 
-            graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT)
-                         && !binary_search(lnav_data.ld_db_key_names.begin(),
-                                           lnav_data.ld_db_key_names.end(),
-                                           colname));
-
-            dls.push_header(colname, type, graphable);
+            bool graphable = (type == SQLITE_INTEGER || type == SQLITE_FLOAT)
+                && !binary_search(lnav_data.ld_db_key_names.begin(),
+                                  lnav_data.ld_db_key_names.end(),
+                                  colname);
+            auto& hm = dls.dls_headers[lpc];
+            hm.hm_column_type = type;
+            hm.hm_graphable = graphable;
             if (graphable) {
-                auto& hm = dls.dls_headers.back();
                 auto name_for_ident_attrs = colname;
                 auto attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 for (size_t attempt = 0;
@@ -991,14 +993,17 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                     attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 }
                 hm.hm_chart.with_attrs_for_ident(colname, attrs);
-                dls.dls_headers.back().hm_title_attrs = attrs;
+                hm.hm_title_attrs = attrs;
+                hm.hm_column_size = std::max(hm.hm_column_size, size_t{10});
             }
         }
-        set_vars = true;
     }
-    for (lpc = 0; lpc < ncols; lpc++) {
+
+    auto row_number = dls.dls_rows.size();
+    dls.dls_rows.resize(row_number + 1);
+    for (int lpc = 0; lpc < ncols; lpc++) {
         auto* raw_value = sqlite3_column_value(stmt, lpc);
-        auto value_type = sqlite3_value_type(raw_value);
+        const auto value_type = sqlite3_value_type(raw_value);
         scoped_value_t value;
         auto& hm = dls.dls_headers[lpc];
 

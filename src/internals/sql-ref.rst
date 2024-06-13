@@ -337,6 +337,7 @@ SELECT *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grouping-expr* OR
     .. code-block::  custsqlite
 
       ;SELECT * FROM syslog_log
+      log_line log_time log_level log_hostname log_msgid log_pid log_pri log_procname log_struct log_syslog_tag syslog_version log_part log_idle_msecs log_mark log_comment log_tags log_annotations log_filters 
 
 
 ----

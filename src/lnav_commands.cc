@@ -4397,6 +4397,7 @@ com_summarize(exec_context& ec,
         } else {
             bool done = false;
 
+            ec.ec_sql_callback(ec, stmt.in());
             while (!done) {
                 retcode = sqlite3_step(stmt.in());
 
