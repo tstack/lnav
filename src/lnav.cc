@@ -986,11 +986,11 @@ check_for_file_zones()
         }
     }
     if (with_tz_count > 0 && !without_tz_files.empty()) {
-        auto note
+        const auto note
             = attr_line_t("The file(s) without a zone: ")
-                  .join(
-                      without_tz_files, VC_ROLE.value(role_t::VCR_FILE), ", ");
-        auto um
+                  .join(without_tz_files, VC_ROLE.value(role_t::VCR_FILE), ", ")
+                  .move();
+        const auto um
             = lnav::console::user_message::warning(
                   "Some messages may not be sorted by time correctly")
                   .with_reason(
@@ -1003,7 +1003,8 @@ check_for_file_zones()
                           .append(":set-file-timezone"_symbol)
                           .append(
                               " command to set the zone for messages in files "
-                              "that do not include a zone in the timestamp"));
+                              "that do not include a zone in the timestamp"))
+                  .move();
 
         lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
     }
@@ -2644,7 +2645,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                           "definition "
                           "files to install in your lnav "
                           "configuration "
-                          "directory");
+                          "directory")
+                      .move();
             const auto install_help
                 = attr_line_t(
                       "log format definitions are JSON files that "
@@ -2653,7 +2655,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                       .append(
                           "See: "
                           "https://docs.lnav.org/en/latest/"
-                          "formats.html");
+                          "formats.html")
+                      .move();
 
             lnav::console::print(stderr,
                                  lnav::console::user_message::error(
@@ -2759,7 +2762,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto um = lnav::console::user_message::error(
                               attr_line_t("cannot read file to install -- ")
                                   .append(lnav::roles::file(file_path)))
-                              .with_reason(read_res.unwrap());
+                              .with_reason(read_res.unwrap())
+                              .move();
 
                 lnav::console::print(stderr, um);
                 return EXIT_FAILURE;
@@ -2790,7 +2794,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto um = lnav::console::user_message::error(
                               attr_line_t("failed to install file to -- ")
                                   .append(lnav::roles::file(dst_path)))
-                              .with_reason(write_res.unwrapErr());
+                              .with_reason(write_res.unwrapErr())
+                              .move();
 
                 lnav::console::print(stderr, um);
                 return EXIT_FAILURE;

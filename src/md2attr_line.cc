@@ -90,7 +90,8 @@ md2attr_line::flush_footnotes()
                   .append(lnav::roles::footnote_text(
                       fmt::format(FMT_STRING("[{}] - "), index)))
                   .append(foot.pad_to(longest_foot))
-                  .with_attr_for_all(SA_PREFORMATTED.value());
+                  .with_attr_for_all(SA_PREFORMATTED.value())
+                  .move();
 
         block_text.append(footline).append("\n");
     }
@@ -165,7 +166,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
     } else if (bl.is<block_hr>()) {
         block_text = attr_line_t()
                          .append(lnav::roles::hr(repeat("\u2501", 70)))
-                         .with_attr_for_all(SA_PREFORMATTED.value());
+                         .with_attr_for_all(SA_PREFORMATTED.value())
+                         .move();
         last_block.append("\n").append(block_text).append("\n");
     } else if (bl.is<MD_BLOCK_UL_DETAIL*>() || bl.is<MD_BLOCK_OL_DETAIL*>()) {
         this->ml_list_stack.pop_back();
@@ -287,7 +289,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                     new_block_text.append(line).append("\n");
                 }
             }
-            block_text = new_block_text;
+            block_text = new_block_text.move();
         }
 
         auto code_lines = block_text.rtrim().split_lines();
@@ -753,10 +755,11 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                 auto href
                     = attr_line_t()
                           .append(lnav::roles::hyperlink(src_href.value()))
-                          .append(" ");
-                href.with_attr_for_all(
-                    VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT));
-                href.with_attr_for_all(SA_PREFORMATTED.value());
+                          .append(" ")
+                          .with_attr_for_all(
+                              VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT))
+                          .with_attr_for_all(SA_PREFORMATTED.value())
+                          .move();
                 this->ml_footnotes.emplace_back(href);
             } else {
                 retval.append(link_label);
@@ -1080,10 +1083,12 @@ md2attr_line::append_url_footnote(std::string href_str)
         href_str = fmt::format(FMT_STRING("file://{}"), link_path.string());
     }
 
-    auto href
-        = attr_line_t().append(lnav::roles::hyperlink(href_str)).append(" ");
-    href.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT));
-    href.with_attr_for_all(SA_PREFORMATTED.value());
+    auto href = attr_line_t()
+                    .append(lnav::roles::hyperlink(href_str))
+                    .append(" ")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT))
+                    .with_attr_for_all(SA_PREFORMATTED.value())
+                    .move();
     this->ml_footnotes.emplace_back(href);
 
     return href_str;

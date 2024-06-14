@@ -94,12 +94,15 @@ struct subcmd_config_t {
 
     static perform_result_t default_action(const subcmd_config_t& sc)
     {
-        auto um = console::user_message::error(
-            "expecting an operation related to the regex101.com integration");
-        um.with_help(
-            sc.sc_config_app->get_subcommands({})
-            | lnav::itertools::fold(
-                subcmd_reducer, attr_line_t{"the available operations are:"}));
+        auto um
+            = console::user_message::error(
+                  "expecting an operation related to the regex101.com "
+                  "integration")
+                  .with_help(sc.sc_config_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
 
         return {std::move(um)};
     }
@@ -148,7 +151,8 @@ struct subcmd_config_t {
             auto um = lnav::console::user_message::error(
                           attr_line_t("Unable to get full path for file: ")
                               .append(lnav::roles::file(sc.sc_path)))
-                          .with_reason(realpath_res.unwrapErr());
+                          .with_reason(realpath_res.unwrapErr())
+                          .move();
 
             return {std::move(um)};
         }
@@ -176,7 +180,8 @@ struct subcmd_config_t {
                           .append(":set-file-timezone"_symbol)
                           .append(
                               " command to set the zone for messages in files "
-                              "that do not include a zone in the timestamp"));
+                              "that do not include a zone in the timestamp"))
+                  .move();
 
         return {std::move(um)};
     }
@@ -212,33 +217,41 @@ struct subcmd_format_t {
         const
     {
         if (this->sf_name.empty()) {
-            auto um = console::user_message::error(
-                "expecting a format name to operate on");
-            um.with_note(
-                (log_format::get_root_formats()
-                 | lnav::itertools::map(&log_format::get_name)
-                 | lnav::itertools::sort_with(intern_string_t::case_lt)
-                 | lnav::itertools::map(&intern_string_t::to_string)
-                 | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                    .add_header("the available formats are: ")
-                    .wrap_with(&DEFAULT_WRAPPING));
+            auto um
+                = console::user_message::error(
+                      "expecting a format name to operate on")
+                      .with_note(
+                          (log_format::get_root_formats()
+                           | lnav::itertools::map(&log_format::get_name)
+                           | lnav::itertools::sort_with(
+                               intern_string_t::case_lt)
+                           | lnav::itertools::map(&intern_string_t::to_string)
+                           | lnav::itertools::fold(symbol_reducer,
+                                                   attr_line_t{}))
+                              .add_header("the available formats are: ")
+                              .wrap_with(&DEFAULT_WRAPPING))
+                      .move();
 
             return Err(um);
         }
 
         auto lformat = log_format::find_root_format(this->sf_name.c_str());
         if (lformat == nullptr) {
-            auto um = console::user_message::error(
-                attr_line_t("unknown format: ")
-                    .append(lnav::roles::symbol(this->sf_name)));
-            um.with_note(
-                (log_format::get_root_formats()
-                 | lnav::itertools::map(&log_format::get_name)
-                 | lnav::itertools::similar_to(this->sf_name)
-                 | lnav::itertools::map(&intern_string_t::to_string)
-                 | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                    .add_header("did you mean one of the following?\n")
-                    .wrap_with(&DEFAULT_WRAPPING));
+            auto um
+                = console::user_message::error(
+                      attr_line_t("unknown format: ")
+                          .append(lnav::roles::symbol(this->sf_name)))
+                      .with_note(
+                          (log_format::get_root_formats()
+                           | lnav::itertools::map(&log_format::get_name)
+                           | lnav::itertools::similar_to(this->sf_name)
+                           | lnav::itertools::map(&intern_string_t::to_string)
+                           | lnav::itertools::fold(symbol_reducer,
+                                                   attr_line_t{}))
+                              .add_header(
+                                  "did you mean one of the following?\n")
+                              .wrap_with(&DEFAULT_WRAPPING))
+                      .move();
 
             return Err(um);
         }
@@ -271,15 +284,18 @@ struct subcmd_format_t {
         auto* ext_lformat = TRY(this->validate_external_format());
 
         if (this->sf_regex_name.empty()) {
-            auto um = console::user_message::error(
-                "expecting a regex name to operate on");
-            um.with_note(
-                ext_lformat->elf_pattern_order
-                | lnav::itertools::map(&external_log_format::pattern::p_name)
-                | lnav::itertools::map(&intern_string_t::to_string)
-                | lnav::itertools::fold(
-                    symbol_reducer,
-                    attr_line_t{"the available regexes are: "}));
+            auto um
+                = console::user_message::error(
+                      "expecting a regex name to operate on")
+                      .with_note(
+                          ext_lformat->elf_pattern_order
+                          | lnav::itertools::map(
+                              &external_log_format::pattern::p_name)
+                          | lnav::itertools::map(&intern_string_t::to_string)
+                          | lnav::itertools::fold(
+                              symbol_reducer,
+                              attr_line_t{"the available regexes are: "}))
+                      .move();
 
             return Err(um);
         }
@@ -290,16 +306,19 @@ struct subcmd_format_t {
             }
         }
 
-        auto um = console::user_message::error(
-            attr_line_t("unknown regex: ")
-                .append(lnav::roles::symbol(this->sf_regex_name)));
-        um.with_note(
-            (ext_lformat->elf_pattern_order
-             | lnav::itertools::map(&external_log_format::pattern::p_name)
-             | lnav::itertools::map(&intern_string_t::to_string)
-             | lnav::itertools::similar_to(this->sf_regex_name)
-             | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
-                .add_header("did you mean one of the following?\n"));
+        auto um
+            = console::user_message::error(
+                  attr_line_t("unknown regex: ")
+                      .append(lnav::roles::symbol(this->sf_regex_name)))
+                  .with_note(
+                      (ext_lformat->elf_pattern_order
+                       | lnav::itertools::map(
+                           &external_log_format::pattern::p_name)
+                       | lnav::itertools::map(&intern_string_t::to_string)
+                       | lnav::itertools::similar_to(this->sf_regex_name)
+                       | lnav::itertools::fold(symbol_reducer, attr_line_t{}))
+                          .add_header("did you mean one of the following?\n"))
+                  .move();
 
         return Err(um);
     }
@@ -327,19 +346,21 @@ struct subcmd_format_t {
                       ", ");
         }
 
-        auto um = console::user_message::error(
-            attr_line_t("expecting an operation to perform on the ")
-                .append(lnav::roles::symbol(sf.sf_name))
-                .append(" format"));
-        um.with_note(attr_line_t()
-                         .append(lnav::roles::symbol(sf.sf_name))
-                         .append(": ")
-                         .append(lformat->lf_description)
-                         .append(ext_details));
-        um.with_help(
-            sf.sf_format_app->get_subcommands({})
-            | lnav::itertools::fold(
-                subcmd_reducer, attr_line_t{"the available operations are:"}));
+        auto um
+            = console::user_message::error(
+                  attr_line_t("expecting an operation to perform on the ")
+                      .append(lnav::roles::symbol(sf.sf_name))
+                      .append(" format"))
+                  .with_note(attr_line_t()
+                                 .append(lnav::roles::symbol(sf.sf_name))
+                                 .append(": ")
+                                 .append(lformat->lf_description)
+                                 .append(ext_details))
+                  .with_help(sf.sf_format_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
 
         return {std::move(um)};
     }
@@ -353,13 +374,15 @@ struct subcmd_format_t {
         }
 
         auto um = console::user_message::error(
-            attr_line_t("expecting an operation to perform on the ")
-                .append(lnav::roles::symbol(sf.sf_regex_name))
-                .append(" regular expression"));
-
-        um.with_help(attr_line_t{"the available subcommands are:"}.append(
-            sf.sf_regex_app->get_subcommands({})
-            | lnav::itertools::fold(subcmd_reducer, attr_line_t{})));
+                      attr_line_t("expecting an operation to perform on the ")
+                          .append(lnav::roles::symbol(sf.sf_regex_name))
+                          .append(" regular expression"))
+                      .with_help(
+                          attr_line_t{"the available subcommands are:"}.append(
+                              sf.sf_regex_app->get_subcommands({})
+                              | lnav::itertools::fold(subcmd_reducer,
+                                                      attr_line_t{})))
+                      .move();
 
         return {std::move(um)};
     }
@@ -764,12 +787,14 @@ struct subcmd_piper_t {
 
     static perform_result_t default_action(const subcmd_piper_t& sp)
     {
-        auto um = console::user_message::error(
-            "expecting an operation related to piper storage");
-        um.with_help(
-            sp.sp_app->get_subcommands({})
-            | lnav::itertools::fold(
-                subcmd_reducer, attr_line_t{"the available operations are:"}));
+        auto um
+            = console::user_message::error(
+                  "expecting an operation related to piper storage")
+                  .with_help(sp.sp_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
 
         return {std::move(um)};
     }
@@ -893,7 +918,8 @@ struct subcmd_piper_t {
                           attr_line_t("unable to access piper directory: ")
                               .append(lnav::roles::file(
                                   lnav::piper::storage_path().string())))
-                          .with_reason(ec.message());
+                          .with_reason(ec.message())
+                          .move();
             return {std::move(um)};
         }
 
@@ -910,7 +936,8 @@ struct subcmd_piper_t {
                                   .append(lnav::roles::file("lnav"))
                                   .append(" or using the ")
                                   .append_quoted(lnav::roles::symbol(":sh"))
-                                  .append(" command"));
+                                  .append(" command"))
+                          .move();
                 return {std::move(um)};
             }
 
@@ -1000,7 +1027,8 @@ struct subcmd_piper_t {
                                       "associated metadata."))
                       .with_help(
                           "You can reopen a capture by passing the piper URL "
-                          "to lnav");
+                          "to lnav")
+                      .move();
             retval.emplace_back(extra_um);
         }
         retval.emplace_back(lnav::console::user_message::raw(txt));
@@ -1044,12 +1072,15 @@ struct subcmd_regex101_t {
 
     static perform_result_t default_action(const subcmd_regex101_t& sr)
     {
-        auto um = console::user_message::error(
-            "expecting an operation related to the regex101.com integration");
-        um.with_help(
-            sr.sr_app->get_subcommands({})
-            | lnav::itertools::fold(
-                subcmd_reducer, attr_line_t{"the available operations are:"}));
+        auto um
+            = console::user_message::error(
+                  "expecting an operation related to the regex101.com "
+                  "integration")
+                  .with_help(sr.sr_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
 
         return {std::move(um)};
     }
@@ -1130,12 +1161,14 @@ struct subcmd_crash_t {
 
     static perform_result_t default_action(const subcmd_crash_t& sc)
     {
-        auto um = console::user_message::error(
-            "expecting an operation related to crash logs");
-        um.with_help(
-            sc.sc_app->get_subcommands({})
-            | lnav::itertools::fold(
-                subcmd_reducer, attr_line_t{"the available operations are:"}));
+        auto um
+            = console::user_message::error(
+                  "expecting an operation related to crash logs")
+                  .with_help(sc.sc_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
 
         return {std::move(um)};
     }
@@ -1458,11 +1491,13 @@ perform(std::shared_ptr<operations> opts)
     return opts->o_ops.match(
         [](const no_subcmd_t& ns) -> perform_result_t {
             auto um = console::user_message::error(
-                attr_line_t("expecting an operation to perform"));
-            um.with_help(ns.ns_root_app->get_subcommands({})
-                         | lnav::itertools::fold(
-                             subcmd_reducer,
-                             attr_line_t{"the available operations are:"}));
+                          attr_line_t("expecting an operation to perform"))
+                          .with_help(
+                              ns.ns_root_app->get_subcommands({})
+                              | lnav::itertools::fold(
+                                  subcmd_reducer,
+                                  attr_line_t{"the available operations are:"}))
+                          .move();
 
             return {std::move(um)};
         },

@@ -588,7 +588,8 @@ CREATE TABLE lnav_views (
                                   .append(" value"))
                               .with_reason(
                                   attr_line_t("Unrecognized time value: ")
-                                      .append(lnav::roles::string(top_time)));
+                                      .append(lnav::roles::string(top_time)))
+                              .move();
                 set_vtable_errmsg(tab, um);
                 return SQLITE_ERROR;
             }
@@ -620,7 +621,8 @@ CREATE TABLE lnav_views (
                                   .append(" value"))
                               .with_reason(attr_line_t("Unknown text file: ")
                                                .append(lnav::roles::file(
-                                                   tlm.tlm_file.value())));
+                                                   tlm.tlm_file.value())))
+                              .move();
                     set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
                 }
@@ -646,7 +648,8 @@ CREATE TABLE lnav_views (
                                   .append(" value"))
                               .with_reason(
                                   attr_line_t("Unknown anchor: ")
-                                      .append(lnav::roles::symbol(req_anchor)));
+                                      .append(lnav::roles::symbol(req_anchor)))
+                              .move();
                     set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
                 }

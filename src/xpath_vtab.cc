@@ -317,7 +317,8 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 
         auto attr_xmldoc
             = attr_line_t(pCur->c_value)
-                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                  .move();
         auto um = lnav::console::user_message::error("Invalid XML document")
                       .with_reason(parse_res.description())
                       .with_snippet(
@@ -325,7 +326,8 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
                               ARG1,
                               attr_xmldoc,
                               parse_res.offset,
-                              parse_res.description()));
+                              parse_res.description()))
+                      .move();
         set_vtable_errmsg(pVtabCursor->pVtab, um);
         return SQLITE_ERROR;
     }
@@ -338,12 +340,14 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
         const auto& res = pCur->c_query.result();
         auto attr_xpath
             = attr_line_t(pCur->c_xpath)
-                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                  .move();
         auto um = lnav::console::user_message::error("Invalid XPath expression")
                       .with_reason(res.description())
                       .with_snippet(
                           lnav::console::snippet::from_content_with_offset(
-                              ARG0, attr_xpath, res.offset, res.description()));
+                              ARG0, attr_xpath, res.offset, res.description()))
+                      .move();
         set_vtable_errmsg(pVtabCursor->pVtab, um);
         return SQLITE_ERROR;
     }

@@ -514,9 +514,10 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
                     flags_json);
 
             if (parse_res.isErr()) {
-                auto um = lnav::console::user_message::error(
-                              "unable to parse flags")
-                              .with_reason(parse_res.unwrapErr()[0]);
+                const auto um = lnav::console::user_message::error(
+                                    "unable to parse flags")
+                                    .with_reason(parse_res.unwrapErr()[0])
+                                    .move();
 
                 set_vtable_errmsg(pVtabCursor->pVtab, um);
                 return SQLITE_ERROR;

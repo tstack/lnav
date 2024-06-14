@@ -1061,8 +1061,10 @@ com_mark_expr(exec_context& ec,
 #endif
         if (retcode != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
-            auto expr_al = attr_line_t(expr).with_attr_for_all(
-                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+            auto expr_al
+                = attr_line_t(expr)
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                      .move();
             readline_sqlite_highlighter(expr_al, std::nullopt);
             auto um
                 = lnav::console::user_message::error(
@@ -2626,8 +2628,10 @@ com_filter_expr(exec_context& ec,
 #endif
         if (retcode != SQLITE_OK) {
             const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
-            auto expr_al = attr_line_t(expr).with_attr_for_all(
-                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+            auto expr_al
+                = attr_line_t(expr)
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                      .move();
             readline_sqlite_highlighter(expr_al, std::nullopt);
             auto um = lnav::console::user_message::error(
                           attr_line_t("invalid filter expression: ")

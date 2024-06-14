@@ -1056,16 +1056,16 @@ execute_examples()
 
     auto old_width = dls.dls_max_column_width;
     dls.dls_max_column_width = 15;
-    for (auto help_pair : sqlite_function_help) {
+    for (const auto& help_pair : sqlite_function_help) {
         execute_example(*help_pair.second);
     }
-    for (auto help_pair : lnav::sql::prql_functions) {
+    for (const auto& help_pair : lnav::sql::prql_functions) {
         if (help_pair.second->ht_context != help_context_t::HC_PRQL_FUNCTION) {
             continue;
         }
         execute_example(*help_pair.second);
     }
-    for (auto cmd_pair : *sql_cmd_map) {
+    for (const auto& cmd_pair : *sql_cmd_map) {
         if (cmd_pair.second->c_help.ht_context
                 != help_context_t::HC_PRQL_TRANSFORM
             && cmd_pair.second->c_help.ht_context

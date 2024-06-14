@@ -79,7 +79,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
             = attr_line_t(" Link: ")
                   .append(lnav::roles::table_header(sti.sti_href))
                   .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO))
-                  .with_attr_for_all(VC_STYLE.value(ta));
+                  .with_attr_for_all(VC_STYLE.value(ta))
+                  .move();
         retval.emplace_back(href_al);
         menu_line += 1_vl;
     }

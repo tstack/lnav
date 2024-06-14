@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
 #include <map>
 
 #include "static_file_vtab.hh"
@@ -37,7 +38,6 @@
 #include "base/fs_util.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
-#include <filesystem>
 #include "lnav.hh"
 #include "vtab_module.hh"
 
@@ -232,7 +232,8 @@ sfvt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
             if (read_res.isErr()) {
                 auto um = lnav::console::user_message::error(
                               "unable to read static file")
-                              .with_reason(read_res.unwrapErr());
+                              .with_reason(read_res.unwrapErr())
+                              .move();
 
                 to_sqlite(ctx, um);
             } else {

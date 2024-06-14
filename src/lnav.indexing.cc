@@ -457,8 +457,8 @@ update_active_files(file_collection& new_files)
                   .with_help(
                       attr_line_t("Use ")
                           .append("ulimit -n"_quoted_code)
-                          .append(
-                              " to increase the limit before running lnav"));
+                          .append(" to increase the limit before running lnav"))
+                  .move();
 
         lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
     }

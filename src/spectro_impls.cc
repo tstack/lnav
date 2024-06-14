@@ -105,7 +105,8 @@ public:
     std::vector<vis_line_t> fss_lines;
 };
 
-log_spectro_value_source::log_spectro_value_source(intern_string_t colname)
+log_spectro_value_source::
+log_spectro_value_source(intern_string_t colname)
     : lsvs_colname(colname)
 {
     this->update_stats();
@@ -330,7 +331,8 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     }
 }
 
-db_spectro_value_source::db_spectro_value_source(std::string colname)
+db_spectro_value_source::
+db_spectro_value_source(std::string colname)
     : dsvs_colname(std::move(colname))
 {
     this->update_stats();
@@ -354,7 +356,8 @@ db_spectro_value_source::update_stats()
                                                   .append(" ")
                                                   .append("log_time"_variable)
                                                   .append(" ")
-                                                  .append("ASC"_keyword);
+                                                  .append("ASC"_keyword)
+                                                  .move();
 
             this->dsvs_error_msg
                 = lnav::console::user_message::error(
@@ -378,7 +381,8 @@ db_spectro_value_source::update_stats()
                                      .append_quoted(order_by_help)
                                      .append(" clause to your ")
                                      .append("SELECT"_keyword)
-                                     .append(" statement"));
+                                     .append(" statement"))
+                      .move();
         } else {
             this->dsvs_error_msg
                 = lnav::console::user_message::error(
@@ -400,7 +404,8 @@ db_spectro_value_source::update_stats()
                               .append(" statement. Use an ")
                               .append("AS"_keyword)
                               .append(
-                                  " directive to alias a computed timestamp"));
+                                  " directive to alias a computed timestamp"))
+                      .move();
         }
         return;
     }
@@ -412,7 +417,8 @@ db_spectro_value_source::update_stats()
                   .with_reason(attr_line_t("unknown column -- ")
                                    .append_quoted(lnav::roles::variable(
                                        this->dsvs_colname)))
-                  .with_help("Expecting a numeric column to visualize");
+                  .with_help("Expecting a numeric column to visualize")
+                  .move();
         return;
     }
 
@@ -424,7 +430,8 @@ db_spectro_value_source::update_stats()
                                    .append_quoted(lnav::roles::variable(
                                        this->dsvs_colname))
                                    .append(" is not a numeric column"))
-                  .with_help("Only numeric columns can be visualized");
+                  .with_help("Only numeric columns can be visualized")
+                  .move();
         return;
     }
 
@@ -432,7 +439,8 @@ db_spectro_value_source::update_stats()
         this->dsvs_error_msg
             = lnav::console::user_message::error(
                   "Cannot generate spectrogram for database results")
-                  .with_reason("Result set is empty");
+                  .with_reason("Result set is empty")
+                  .move();
         return;
     }
 

@@ -279,7 +279,8 @@ install_from_git(const std::string& repo)
                   .with_reason(
                       attr_line_t("git failed to create the local directory ")
                           .append(
-                              lnav::roles::file(local_staging_path.string())));
+                              lnav::roles::file(local_staging_path.string())))
+                  .move();
         lnav::console::print(stderr, um);
         return false;
     }
@@ -330,7 +331,8 @@ install_from_git(const std::string& repo)
         auto um = lnav::console::user_message::error(
                       attr_line_t("invalid lnav repo: ")
                           .append(lnav::roles::file(repo)))
-                      .with_reason("no .json, .sql, or .lnav files were found");
+                      .with_reason("no .json, .sql, or .lnav files were found")
+                      .move();
         lnav::console::print(stderr, um);
         return false;
     }
@@ -364,7 +366,8 @@ install_from_git(const std::string& repo)
     auto um = lnav::console::user_message::ok(
                   attr_line_t("installed lnav repo at: ")
                       .append(lnav::roles::file(local_configs_path.string())))
-                  .with_note(notes);
+                  .with_note(notes)
+                  .move();
     lnav::console::print(stdout, um);
 
     return true;
@@ -2056,7 +2059,8 @@ reload_config(std::vector<lnav::console::user_message>& errors)
                     um.um_message
                         = attr_line_t()
                               .append("missing value for property ")
-                              .append_quoted(lnav::roles::symbol(path));
+                              .append_quoted(lnav::roles::symbol(path))
+                              .move();
                 }
 
                 errors.emplace_back(um);

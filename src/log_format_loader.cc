@@ -1287,8 +1287,8 @@ load_format_file(const std::filesystem::path& filename,
                       .append(
                           fmt::format(FMT_STRING("    \"$schema\": \"{}\","),
                                       *SUPPORTED_FORMAT_SCHEMAS.begin()))
-                      .with_attr_for_all(
-                          VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                      .move();
 
             errors.emplace_back(
                 lnav::console::user_message::warning(
@@ -1588,14 +1588,14 @@ static void
 find_format_in_path(const std::filesystem::path& path,
                     available_scripts& scripts)
 {
-    for (auto format_path :
+    for (const auto& format_path :
          {path / "formats/*/*.lnav", path / "configs/*/*.lnav"})
     {
         static_root_mem<glob_t, globfree> gl;
 
         log_debug("Searching for script in path: %s", format_path.c_str());
         if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
-            for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
+            for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                 const char* filename = basename(gl->gl_pathv[lpc]);
                 auto script_name = std::string(filename, strlen(filename) - 5);
                 struct script_metadata meta;
@@ -1605,7 +1605,7 @@ find_format_in_path(const std::filesystem::path& path,
                 extract_metadata_from_file(meta);
                 scripts.as_scripts[script_name].push_back(meta);
 
-                log_debug("  found script: %s", meta.sm_path.c_str());
+                log_info("  found script: %s", meta.sm_path.c_str());
             }
         }
     }
