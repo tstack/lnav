@@ -115,7 +115,8 @@ sql_cmd_read(exec_context& ec,
             = lnav::console::user_message::error("unable to parse file name")
                   .with_reason(split_err.te_msg)
                   .with_snippet(lnav::console::snippet::from(
-                      SRC, lexer.to_attr_line(split_err)));
+                      SRC, lexer.to_attr_line(split_err)))
+                  .move();
 
         return Err(um);
     }

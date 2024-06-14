@@ -72,13 +72,13 @@ textfile_sub_source::text_line_count()
     size_t retval = 0;
 
     if (!this->tss_files.empty()) {
-        auto lf = this->current_file();
+        const auto lf = this->current_file();
         auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
         if (this->tss_view_mode == view_mode::raw
             || rend_iter == this->tss_rendered_files.end())
         {
             if (lf->get_text_format() == text_format_t::TF_BINARY) {
-                auto fsize = lf->get_stat().st_size;
+                const auto fsize = lf->get_stat().st_size;
                 retval = fsize / 16;
                 if (fsize % 16) {
                     retval += 1;
@@ -109,7 +109,7 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     const auto lf = this->current_file();
-    auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
+    const auto rend_iter = this->tss_rendered_files.find(lf->get_filename());
     if (this->tss_view_mode == view_mode::rendered
         && rend_iter != this->tss_rendered_files.end())
     {

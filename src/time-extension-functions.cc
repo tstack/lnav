@@ -216,9 +216,10 @@ sql_timezone(std::string tz_str, string_fragment ts_str)
                   .with_note(attr_line_t("input matched time format ")
                                  .append_quoted(
                                      PTIMEC_FORMATS[dts.dts_fmt_lock].pf_fmt))
-                  .with_help("fix the timestamp or remove the trailing text");
+                  .with_help("fix the timestamp or remove the trailing text")
+                  .move();
 
-        auto ts_attr = attr_line_t().append(ts_str);
+        auto ts_attr = attr_line_t().append(ts_str).move();
         attr_line_builder alb(ts_attr);
 
         alb.append("\n").append(matched_size, ' ');

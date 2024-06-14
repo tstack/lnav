@@ -161,7 +161,8 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
                           "are supported")
                       .with_help(
                           "named parameters start with a dollar-sign "
-                          "($) or colon (:) followed by the variable name");
+                          "($) or colon (:) followed by the variable name")
+                      .move();
             ec.add_error_context(um);
 
             return Err(um);
@@ -359,7 +360,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             auto um = lnav::console::user_message::error(
                           "failed to compile SQL statement")
                           .with_reason(errmsg)
-                          .with_snippets(ec.ec_source);
+                          .with_snippets(ec.ec_source)
+                          .move();
 
             auto annotated_sql = annotate_sql_with_error(
                 lnav_data.ld_db.in(), curr_stmt, tail);
@@ -442,7 +444,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     log_error("sqlite3_step error code: %d", retcode);
                     auto um = sqlite3_error_to_user_message(lnav_data.ld_db)
                                   .with_context_snippets(ec.ec_source)
-                                  .with_note(bound_note);
+                                  .with_note(bound_note)
+                                  .move();
 
                     return Err(um);
                 }
@@ -662,7 +665,8 @@ execute_file(exec_context& ec, const std::string& path_and_args)
                       "unable to parse script command-line")
                       .with_reason(split_err.te_msg)
                       .with_snippet(lnav::console::snippet::from(
-                          SRC, lexer.to_attr_line(split_err)));
+                          SRC, lexer.to_attr_line(split_err)))
+                      .move();
 
         return Err(um);
     }
@@ -791,7 +795,8 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
         auto um = lnav::console::user_message::error("empty command")
                       .with_help(
                           "a command should start with ':', ';', '/', '|' and "
-                          "followed by the operation to perform");
+                          "followed by the operation to perform")
+                      .move();
         if (!ec.ec_source.empty()) {
             um.with_snippet(ec.ec_source.back());
         }

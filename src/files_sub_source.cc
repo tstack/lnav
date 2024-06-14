@@ -513,7 +513,8 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                     .right_justify(NAME_WIDTH)
                                     .append(": ")
                                     .append(lnav::roles::file(
-                                        fmt::to_string(actual_path.value())));
+                                        fmt::to_string(actual_path.value())))
+                                    .move();
                     details.emplace_back(line);
                 }
             } else {
@@ -569,8 +570,10 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                     .to_string()));
             }
             {
-                auto line
-                    = attr_line_t("  ").append("Log Format"_h2).append(": ");
+                auto line = attr_line_t("  ")
+                                .append("Log Format"_h2)
+                                .append(": ")
+                                .move();
 
                 if (format != nullptr) {
                     line.append(lnav::roles::identifier(

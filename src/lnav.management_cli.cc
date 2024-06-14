@@ -155,8 +155,10 @@ struct subcmd_config_t {
         auto full_path = realpath_res.unwrap();
         auto file_opts = options_hier->match(full_path);
         if (file_opts) {
-            auto content = attr_line_t().append(
-                file_opts->second.to_json_string().to_string_fragment());
+            auto content = attr_line_t()
+                               .append(file_opts->second.to_json_string()
+                                           .to_string_fragment())
+                               .move();
             auto um = lnav::console::user_message::raw(content);
             perform_result_t retval;
 

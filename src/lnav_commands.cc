@@ -372,7 +372,8 @@ com_set_file_timezone(exec_context& ec,
                           "unable to parse arguments")
                           .with_reason(split_err.te_msg)
                           .with_snippet(lnav::console::snippet::from(
-                              SRC, lexer.to_attr_line(split_err)));
+                              SRC, lexer.to_attr_line(split_err)))
+                          .move();
 
             return Err(um);
         }
@@ -425,7 +426,8 @@ com_set_file_timezone(exec_context& ec,
                               .append_quoted(split_args[1])
                               .append(" is not a valid timezone"))
                           .with_reason(e.what())
-                          .with_note(note);
+                          .with_note(note)
+                          .move();
             return Err(um);
         }
     } else {
@@ -846,7 +848,8 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                   .append_quoted(
                                       PTIMEC_FORMATS[dts.dts_fmt_lock].pf_fmt))
                           .with_help(
-                              "fix the timestamp or remove the trailing text");
+                              "fix the timestamp or remove the trailing text")
+                          .move();
 
                 auto unmatched_size = all_args.size() - matched_size;
                 auto& snippet_copy = um.um_snippets.back();
@@ -907,7 +910,8 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                           attr_line_t("invalid argument: ").append(args[1]))
                           .with_reason(
                               "expecting line number/percentage, timestamp, or "
-                              "relative time");
+                              "relative time")
+                          .move();
             ec.add_error_context(um);
             return Err(um);
         }
@@ -1064,7 +1068,8 @@ com_mark_expr(exec_context& ec,
                 = lnav::console::user_message::error(
                       attr_line_t("invalid mark expression: ").append(expr_al))
                       .with_reason(errmsg)
-                      .with_snippets(ec.ec_source);
+                      .with_snippets(ec.ec_source)
+                      .move();
 
             return Err(um);
         }
@@ -1157,7 +1162,8 @@ com_goto_mark(exec_context& ec,
                                                 | lnav::itertools::map(
                                                     &bookmark_type_t::get_name)
                                                 | lnav::itertools::sorted(),
-                                            ", "));
+                                            ", "))
+                              .move();
                     return Err(um);
                 }
                 mark_types.insert(bt_opt.value());
@@ -1490,7 +1496,8 @@ com_save_to(exec_context& ec,
             = lnav::console::user_message::error("unable to parse file name")
                   .with_reason(split_err.te_msg)
                   .with_snippet(lnav::console::snippet::from(
-                      SRC, lexer.to_attr_line(split_err)));
+                      SRC, lexer.to_attr_line(split_err)))
+                  .move();
 
         return Err(um);
     }
@@ -2208,7 +2215,8 @@ com_redirect_to(exec_context& ec,
             = lnav::console::user_message::error("unable to parse file name")
                   .with_reason(split_err.te_msg)
                   .with_snippet(lnav::console::snippet::from(
-                      SRC, lexer.to_attr_line(split_err)));
+                      SRC, lexer.to_attr_line(split_err)))
+                  .move();
 
         return Err(um);
     }
@@ -2625,7 +2633,8 @@ com_filter_expr(exec_context& ec,
                           attr_line_t("invalid filter expression: ")
                               .append(expr_al))
                           .with_reason(errmsg)
-                          .with_snippets(ec.ec_source);
+                          .with_snippets(ec.ec_source)
+                          .move();
 
             return Err(um);
         }
@@ -3044,7 +3053,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             = lnav::console::user_message::error("unable to parse file names")
                   .with_reason(split_err.te_msg)
                   .with_snippet(lnav::console::snippet::from(
-                      SRC, lexer.to_attr_line(split_err)));
+                      SRC, lexer.to_attr_line(split_err)))
+                  .move();
 
         return Err(um);
     }
@@ -3237,7 +3247,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                   .with_snippets(ec.ec_source)
                                   .with_help(
                                       "make sure the file exists and is "
-                                      "accessible");
+                                      "accessible")
+                                  .move();
                     return Err(um);
                 }
             } else if (is_dev_null(st)) {
@@ -3250,7 +3261,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                   attr_line_t("cannot open FIFO: ")
                                       .append(lnav::roles::file(fn)))
                                   .with_errno_reason()
-                                  .with_snippets(ec.ec_source);
+                                  .with_snippets(ec.ec_source)
+                                  .move();
                     return Err(um);
                 } else if (ec.ec_dry_run) {
                     retval = "";
@@ -3267,7 +3279,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                       attr_line_t("cannot create piper: ")
                                           .append(lnav::roles::file(fn)))
                                       .with_reason(create_piper_res.unwrapErr())
-                                      .with_snippets(ec.ec_source);
+                                      .with_snippets(ec.ec_source)
+                                      .move();
                         return Err(um);
                     }
                     lnav_data.ld_active_files.fc_file_names[desc].with_piper(
@@ -3281,7 +3294,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                               .with_snippets(ec.ec_source)
                               .with_help(
                                   "make sure the file exists and is "
-                                  "accessible");
+                                  "accessible")
+                              .move();
                 return Err(um);
             } else if (S_ISDIR(st.st_mode)) {
                 std::string dir_wild(abspath.in());
@@ -3299,7 +3313,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                               .with_snippets(ec.ec_source)
                               .with_help(
                                   "only regular files, directories, and FIFOs "
-                                  "can be opened");
+                                  "can be opened")
+                              .move();
                 return Err(um);
             } else if (access(fn.c_str(), R_OK) == -1) {
                 auto um = lnav::console::user_message::error(
@@ -3309,7 +3324,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                               .with_snippets(ec.ec_source)
                               .with_help(
                                   "make sure the file exists and is "
-                                  "accessible");
+                                  "accessible")
+                              .move();
                 return Err(um);
             } else {
                 fn = abspath.in();
@@ -3551,7 +3567,8 @@ com_xopen(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             = lnav::console::user_message::error("unable to parse file names")
                   .with_reason(split_err.te_msg)
                   .with_snippet(lnav::console::snippet::from(
-                      SRC, lexer.to_attr_line(split_err)));
+                      SRC, lexer.to_attr_line(split_err)))
+                  .move();
 
         return Err(um);
     }
@@ -3564,7 +3581,8 @@ com_xopen(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             auto um = lnav::console::user_message::error(
                           attr_line_t("Unable to open file: ")
                               .append(lnav::roles::file(fn)))
-                          .with_reason(open_res.unwrapErr());
+                          .with_reason(open_res.unwrapErr())
+                          .move();
             return Err(um);
         }
     }
@@ -3597,7 +3615,8 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                           "unable to parse file name")
                           .with_reason(split_err.te_msg)
                           .with_snippet(lnav::console::snippet::from(
-                              SRC, lexer.to_attr_line(split_err)));
+                              SRC, lexer.to_attr_line(split_err)))
+                          .move();
 
             return Err(um);
         }
@@ -3760,7 +3779,8 @@ com_file_visibility(exec_context& ec,
                           "unable to parse file name")
                           .with_reason(split_err.te_msg)
                           .with_snippet(lnav::console::snippet::from(
-                              SRC, lexer.to_attr_line(split_err)));
+                              SRC, lexer.to_attr_line(split_err)))
+                          .move();
 
             return Err(um);
         }
@@ -4602,7 +4622,8 @@ com_zoom_to(exec_context& ec,
                               .append(lnav::roles::symbol(args[1])))
                           .with_snippets(ec.ec_source)
                           .with_help(attr_line_t("available levels: ")
-                                         .join(lnav_zoom_strings, ", "));
+                                         .join(lnav_zoom_strings, ", "))
+                          .move();
             return Err(um);
         }
     }
@@ -5041,7 +5062,8 @@ com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             = lnav::console::user_message::error("unable to parse file name")
                   .with_reason(split_err.te_msg)
                   .with_snippet(lnav::console::snippet::from(
-                      SRC, lexer.to_attr_line(split_err)));
+                      SRC, lexer.to_attr_line(split_err)))
+                  .move();
 
         return Err(um);
     }
@@ -5112,7 +5134,8 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (child_fds_res.isErr()) {
             auto um = lnav::console::user_message::error(
                           "unable to create child pipes")
-                          .with_reason(child_fds_res.unwrapErr());
+                          .with_reason(child_fds_res.unwrapErr())
+                          .move();
             ec.add_error_context(um);
             return Err(um);
         }
@@ -5120,7 +5143,8 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (child_res.isErr()) {
             auto um
                 = lnav::console::user_message::error("unable to fork() child")
-                      .with_reason(child_res.unwrapErr());
+                      .with_reason(child_res.unwrapErr())
+                      .move();
             ec.add_error_context(um);
             return Err(um);
         }
@@ -5202,7 +5226,8 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (create_piper_res.isErr()) {
             auto um
                 = lnav::console::user_message::error("unable to create piper")
-                      .with_reason(create_piper_res.unwrapErr());
+                      .with_reason(create_piper_res.unwrapErr())
+                      .move();
             ec.add_error_context(um);
             return Err(um);
         }
@@ -6046,7 +6071,8 @@ com_prompt(exec_context& ec,
                 = lnav::console::user_message::error("unable to parse prompt")
                       .with_reason(split_err.te_msg)
                       .with_snippet(lnav::console::snippet::from(
-                          SRC, lexer.to_attr_line(split_err)));
+                          SRC, lexer.to_attr_line(split_err)))
+                      .move();
 
             return Err(um);
         }
