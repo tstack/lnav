@@ -602,6 +602,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_0d46ee142f80f262c8c14a22751571cc567df525.out \
     $(srcdir)/%reldir%/test_sql.sh_13429aed81d7edfd47b57e9cdb8a25c43aff35c4.err \
     $(srcdir)/%reldir%/test_sql.sh_13429aed81d7edfd47b57e9cdb8a25c43aff35c4.out \
+    $(srcdir)/%reldir%/test_sql.sh_179abe70ea4f072199dda850a8e1c5565ce37829.err \
+    $(srcdir)/%reldir%/test_sql.sh_179abe70ea4f072199dda850a8e1c5565ce37829.out \
     $(srcdir)/%reldir%/test_sql.sh_19c92996bcc884bfdb70e3d24606cf5070556a74.err \
     $(srcdir)/%reldir%/test_sql.sh_19c92996bcc884bfdb70e3d24606cf5070556a74.out \
     $(srcdir)/%reldir%/test_sql.sh_1cbb81cfe40ee16332c5c775a74d06b945aa65c2.err \
@@ -652,6 +654,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_57edc93426e6767aa44ab2356c55327553dcdc8d.out \
     $(srcdir)/%reldir%/test_sql.sh_5801770f3e0ecc1d62c7a97116d6da1981bbc7bd.err \
     $(srcdir)/%reldir%/test_sql.sh_5801770f3e0ecc1d62c7a97116d6da1981bbc7bd.out \
+    $(srcdir)/%reldir%/test_sql.sh_59a1d3c9cdc302c3f9ddfe4d8cf05fb40ffd3b56.err \
+    $(srcdir)/%reldir%/test_sql.sh_59a1d3c9cdc302c3f9ddfe4d8cf05fb40ffd3b56.out \
     $(srcdir)/%reldir%/test_sql.sh_5fe26fe4fc22f23f8dbe3a6aab394602886f2971.err \
     $(srcdir)/%reldir%/test_sql.sh_5fe26fe4fc22f23f8dbe3a6aab394602886f2971.out \
     $(srcdir)/%reldir%/test_sql.sh_61471583c5e2f8ede3a8adefce682c27bf3924c8.err \
