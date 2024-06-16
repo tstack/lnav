@@ -30,6 +30,7 @@
 #ifndef LNAV_COMMAND_EXECUTOR_H
 #define LNAV_COMMAND_EXECUTOR_H
 
+#include <filesystem>
 #include <future>
 #include <optional>
 #include <stack>
@@ -41,7 +42,6 @@
 #include "base/lnav.console.hh"
 #include "db_sub_source.hh"
 #include "fmt/format.h"
-#include <filesystem>
 #include "help_text.hh"
 #include "shlex.resolver.hh"
 #include "vis_line.hh"
@@ -165,9 +165,9 @@ struct exec_context {
 
         source_guard(const source_guard&) = delete;
 
-        source_guard(source_guard&& other) : sg_context(other.sg_context)
+        source_guard(source_guard&& other)
+            : sg_context(std::exchange(other.sg_context, nullptr))
         {
-            other.sg_context = nullptr;
         }
 
         ~source_guard()
@@ -200,9 +200,9 @@ struct exec_context {
 
         db_source_guard(const source_guard&) = delete;
 
-        db_source_guard(source_guard&& other) : dsg_context(other.sg_context)
+        db_source_guard(source_guard&& other)
+            : dsg_context(std::exchange(other.sg_context, nullptr))
         {
-            other.sg_context = nullptr;
         }
 
         ~db_source_guard()
@@ -255,30 +255,34 @@ struct exec_context {
         };
     }
 
-    void execute(const std::string& cmdline);
+    Result<std::string, lnav::console::user_message> execute(
+        const std::string& cmdline);
 
     using kv_pair_t = std::pair<std::string, std::string>;
 
-    void execute_with_int(const std::string& cmdline)
+    Result<std::string, lnav::console::user_message> execute_with_int(
+        const std::string& cmdline)
     {
-        this->execute(cmdline);
+        return this->execute(cmdline);
     }
 
     template<typename... Args>
-    void execute_with_int(const std::string& cmdline,
-                          kv_pair_t pair,
-                          Args... args)
+    Result<std::string, lnav::console::user_message> execute_with_int(
+        const std::string& cmdline, kv_pair_t pair, Args... args)
     {
         this->ec_local_vars.top().template emplace(pair);
-        this->execute(cmdline, args...);
+        return this->execute(cmdline, args...);
     }
 
     template<typename... Args>
-    void execute_with(const std::string& cmdline, Args... args)
+    Result<std::string, lnav::console::user_message> execute_with(
+        const std::string& cmdline, Args... args)
     {
         this->ec_local_vars.push({});
-        this->execute_with_int(cmdline, args...);
+        auto retval = this->execute_with_int(cmdline, args...);
         this->ec_local_vars.pop();
+
+        return retval;
     }
 
     template<typename T>

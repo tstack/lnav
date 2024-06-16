@@ -40,6 +40,7 @@
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "curl_looper.hh"
 #include "db_sub_source.hh"
 #include "help_text_formatter.hh"
 #include "lnav.hh"
@@ -702,6 +703,33 @@ execute_file(exec_context& ec, const std::string& path_and_args)
     if (iter != scripts.as_scripts.end()) {
         paths_to_exec = iter->second;
     }
+    if (is_url(script_name)) {
+        auto_mem<CURLU> cu(curl_url_cleanup);
+        cu = curl_url();
+        auto set_rc = curl_url_set(cu, CURLUPART_URL, script_name.c_str(), 0);
+        if (set_rc == CURLUE_OK) {
+            auto_mem<char> scheme_part(curl_free);
+            auto get_rc
+                = curl_url_get(cu, CURLUPART_SCHEME, scheme_part.out(), 0);
+            if (get_rc == CURLUE_OK
+                && string_fragment::from_c_str(scheme_part.in()) == "file")
+            {
+                auto_mem<char> path_part;
+                auto get_rc
+                    = curl_url_get(cu, CURLUPART_PATH, path_part.out(), 0);
+                if (get_rc == CURLUE_OK) {
+                    auto rp_res = lnav::filesystem::realpath(path_part.in());
+                    if (rp_res.isOk()) {
+                        struct script_metadata meta;
+
+                        meta.sm_path = rp_res.unwrap();
+                        extract_metadata_from_file(meta);
+                        paths_to_exec.push_back(meta);
+                    }
+                }
+            }
+        }
+    }
     if (script_name == "-" || script_name == "/dev/stdin") {
         paths_to_exec.push_back({script_name, "", "", ""});
     } else if (access(script_name.c_str(), R_OK) == 0) {
@@ -1181,7 +1209,7 @@ exec_context(logline_value_vector* line_values,
         [](const auto& um) { lnav::console::print(stderr, um); });
 }
 
-void
+Result<std::string, lnav::console::user_message>
 exec_context::execute(const std::string& cmdline)
 {
     if (this->get_provenance<mouse_input>()) {
@@ -1210,6 +1238,8 @@ exec_context::execute(const std::string& cmdline)
     if (exec_res.isErr()) {
         this->ec_error_callback_stack.back()(exec_res.unwrapErr());
     }
+
+    return exec_res;
 }
 
 void

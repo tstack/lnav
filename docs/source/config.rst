@@ -194,10 +194,11 @@ bottom-right section of the UI will be updated with the help text.
 Key Sequence Encoding
 ^^^^^^^^^^^^^^^^^^^^^
 
-Key presses are converted into a hex-encoded string that is used to lookup an
-entry in the keymap.  Each byte of the keypress value is formatted as an
+Key presses are converted into a string that is used to lookup an
+entry in the keymap.  Function keys are encoded as an :code:`f` followed by
+the key number.  Other keys are encoded as UTF-8 bytes and formatted as an
 :code:`x` followed by the hex-encoding in lowercase.  For example, the encoding
-for the £ key would be :code:`xc2xa3`.  To make it easier to discover the
+for the :code:`£` key would be :code:`xc2xa3`.  To make it easier to discover the
 encoding for unassigned keys, **lnav** will print in the command prompt the
 :code:`:config` command and
 `JSON-Pointer <https://tools.ietf.org/html/rfc6901>`_ for assigning a command

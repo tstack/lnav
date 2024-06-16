@@ -16,8 +16,11 @@ Features:
 * Added the `:xopen` command that will open the given paths
   using an external opener like `open` or `xdg-open`.
 * Clicking on a link in a markdown file will open the Actions
-  with options for opening the link target in lnav, opening the
-  target with `:xopen`, or copying the link to a clipboard.
+  with the following options:
+  - opening the link target in lnav or, if it's an lnav script,
+    executing the script;
+  - opening the target with `:xopen`;
+  - or, copying the link to the clipboard.
 * Added a `crash upload` command to the management CLI that will
   upload crash logs to a server for analysis.
 * Added a `:set-text-view-mode` command that controls whether
@@ -28,6 +31,9 @@ Features:
   using the `:set-text-view-mode` command.
 * Added a `pretty_print()` SQL function that provides the same
   functionality as the PRETTY view.
+* Keymap definitions can now bind to a function key using an
+  identifier that starts with `f` followed by the number of the
+  function key.
 
 Interface Changes:
 * The "Gantt Chart" view has been renamed to "timeline".

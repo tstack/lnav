@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <thread>
+
 #include "external_opener.hh"
 
 #include <fcntl.h>
@@ -72,12 +74,14 @@ for_href(const std::string& href)
         return Err(MSG);
     }
 
+    auto err_pipe = TRY(auto_pipe::for_child_fd(STDERR_FILENO));
     auto child_pid_res = lnav::pid::from_fork();
     if (child_pid_res.isErr()) {
         return Err(child_pid_res.unwrapErr());
     }
 
     auto child_pid = child_pid_res.unwrap();
+    err_pipe.after_fork(child_pid.in());
     if (child_pid.in_child()) {
         auto open_res
             = lnav::filesystem::open_file("/dev/null", O_RDONLY | O_CLOEXEC);
@@ -91,6 +95,33 @@ for_href(const std::string& href)
                href.c_str(),
                nullptr);
         _exit(EXIT_FAILURE);
+    }
+
+    std::string error_queue;
+    std::thread err_reader(
+        [err = std::move(err_pipe.read_end()), &error_queue]() mutable {
+            while (true) {
+                char buffer[1024];
+                auto rc = read(err.get(), buffer, sizeof(buffer));
+                if (rc <= 0) {
+                    break;
+                }
+
+                error_queue.append(buffer, rc);
+            }
+        });
+
+    auto finished_child = std::move(child_pid).wait_for_child();
+    err_reader.join();
+    if (!finished_child.was_normal_exit()) {
+        return Err(fmt::format(FMT_STRING("opener failed with signal {}"),
+                               finished_child.term_signal()));
+    }
+    auto exit_status = finished_child.exit_status();
+    if (exit_status != 0) {
+        return Err(fmt::format(FMT_STRING("opener failed with status {} -- {}"),
+                               exit_status,
+                               error_queue));
     }
 
     return Ok();
