@@ -583,8 +583,26 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 }
                 details.emplace_back(line);
             }
-            auto match_msgs = lf->get_format_match_messages();
 
+            if (lf->get_format_ptr() != nullptr) {
+                const auto um = lnav::console::user_message::info(
+                    attr_line_t("The file contents matched this log format and "
+                                "will be shown in the LOG view"));
+                um.to_attr_line().rtrim().split_lines()
+                    | lnav::itertools::for_each([&details](const auto& al) {
+                          details.emplace_back(attr_line_t("    ").append(al));
+                      });
+            } else {
+                const auto um = lnav::console::user_message::info(attr_line_t(
+                    "The file contents did not match any log "
+                    "formats and can be accessed in the TEXT view"));
+                um.to_attr_line().rtrim().split_lines()
+                    | lnav::itertools::for_each([&details](const auto& al) {
+                          details.emplace_back(attr_line_t("    ").append(al));
+                      });
+            }
+
+            const auto& match_msgs = lf->get_format_match_messages();
             details.emplace_back(
                 attr_line_t("    ").append("Match Details"_h3));
             for (const auto& msg : match_msgs) {

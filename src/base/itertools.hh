@@ -602,11 +602,23 @@ template<typename T,
          typename F,
          std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
 void
-operator|(std::vector<std::shared_ptr<T>>& in,
+operator|(const std::vector<std::shared_ptr<T>>& in,
           const lnav::itertools::details::for_eacher<F>& eacher)
 {
     for (auto& elem : in) {
         lnav::func::invoke(eacher.fe_func, *elem);
+    }
+}
+
+template<typename T,
+         typename F,
+         std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
+void
+operator|(const std::vector<T>& in,
+          const lnav::itertools::details::for_eacher<F>& eacher)
+{
+    for (auto& elem : in) {
+        lnav::func::invoke(eacher.fe_func, elem);
     }
 }
 
