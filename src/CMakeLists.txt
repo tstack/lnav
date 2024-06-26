@@ -41,6 +41,7 @@ set(TIME_FORMATS
         "%Y-%m-%d %H:%M:%S,%L"
         "%Y-%m-%d %H:%M:%S.%L"
         "%Y-%m-%d %H:%M:%S%z"
+        "%Y-%m-%d %H:%M:%S %Z"
         "%Y-%m-%d %H:%M:%S %z"
         "%Y-%m-%d %H:%M:%S:%L"
         "%Y-%m-%d %H:%M:%S"
