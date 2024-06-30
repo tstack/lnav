@@ -1,0 +1,39 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "rails_log": {
+        "title": "Ruby on Rails",
+        "description": "Format for ruby on rails",
+        "regex": {
+            "std": {
+                "pattern": "^(?<level_char>[A-Z]),\\s\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}(?:T| )\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{6})?) #(?<pid>\\d+)\\]\\s+(?<level>\\w+) --\\s(?<module>[^:]+)?:\\s(?:\\[(?<reqid>\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12})\\]\\s)?(?<body>.*)"
+            }
+        },
+        "value": {
+            "level": {
+                "kind": "string"
+            },
+            "level_char": {
+                "kind": "string"
+            },
+            "pid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "reqid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "I, [2024-06-26T17:00:04.497736 #126554]  INFO -- : [4eebb5e2-2f13-42f8-8644-d6c9a9e244f0] Completed 200 OK in 180ms (Views: 0.4ms | ActiveRecord: 143.3ms | Allocations: 10027)"
+            },
+            {
+                "line": "I, [2019-01-04 05:14:33 #123] INFO -- Main: Hello Logs!"
+            }
+        ]
+    }
+}

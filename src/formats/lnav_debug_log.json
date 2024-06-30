@@ -5,7 +5,7 @@
         "description": "Log format for lnav's own debug log",
         "regex": {
             "std": {
-                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(-|\\+)\\d{2}:\\d{2}) (?<level>\\w) (?<thread>\\w+) (?<srcfile>[^:]+):(?<srcline>\\d+) (?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(-|\\+)\\d{2}:\\d{2}) (?<level>\\w) (?<thread>\\w+) (?<srcfile>[^:]+):(?<srcline>\\d+) (?<body>.*)"
             }
         },
         "value": {

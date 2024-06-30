@@ -4,7 +4,7 @@
         "title": "Cloudflare Access Log",
         "description": "Cloudflare Enterprise detailed logs of metadata",
         "url": "https://developers.cloudflare.com/logs/",
-        "json": true,
+        "file-type": "json",
         "hide-extra": true,
         "ordered-by-time": false,
         "level-field": "CacheCacheStatus",

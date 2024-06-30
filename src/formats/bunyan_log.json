@@ -4,7 +4,7 @@
         "title": "Bunyan log",
         "url": "https://github.com/trentm/node-bunyan",
         "description": "Bunyan JSON logging library for node.js",
-        "json": true,
+        "file-type": "json",
         "line-format": [
             {
                 "field": "time"

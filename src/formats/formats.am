@@ -31,6 +31,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/page_log.json \
     $(srcdir)/%reldir%/pcap_log.json \
     $(srcdir)/%reldir%/procstate_log.json \
+    $(srcdir)/%reldir%/rails_log.json \
     $(srcdir)/%reldir%/redis_log.json \
     $(srcdir)/%reldir%/snaplogic_log.json \
     $(srcdir)/%reldir%/sssd_log.json \
