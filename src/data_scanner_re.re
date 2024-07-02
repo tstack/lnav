@@ -201,9 +201,14 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
            goto yyc_dbldocstring;
        }
 
-       <dbldocstring> ([\x00]|'"""') {
+       <dbldocstring> '"""' {
            CAPTURE(DT_QUOTED_STRING);
            cap_inner.c_end -= 3;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <dbldocstring> [\x00] {
+           CAPTURE(DT_QUOTED_STRING);
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }
 

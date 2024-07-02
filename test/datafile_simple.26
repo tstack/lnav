@@ -1,0 +1,20 @@
+             a=1 b=2 """
+ key   0:1   ^            a
+ num   2:3     ^          1
+ val   2:3     ^          1
+pair   0:3   ^-^          a=1
+ key   4:5       ^        b
+ num   6:7         ^      2
+ val   6:7         ^      2
+pair   4:7       ^-^      b=2
+ key  11:11            ^  
+quot  11:12             ^  
+ val  11:12             ^  
+pair  11:12             ^  
+msg         :a=1 b=2 """
+format      :a=# b=# ""#
+{
+    "a": 1,
+    "b": 2,
+    "col_0": "\u0000"
+}

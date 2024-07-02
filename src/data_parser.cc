@@ -37,7 +37,8 @@ data_format data_parser::FORMAT_COMMA("comma", DT_INVALID, DT_COMMA);
 data_format data_parser::FORMAT_EMDASH("emdash", DT_INVALID, DT_EMDASH);
 data_format data_parser::FORMAT_PLAIN("plain", DT_INVALID, DT_INVALID);
 
-data_parser::data_parser(data_scanner* ds)
+data_parser::
+data_parser(data_scanner* ds)
     : dp_errors("dp_errors", __FILE__, __LINE__),
       dp_pairs("dp_pairs", __FILE__, __LINE__), dp_msg_format(nullptr),
       dp_msg_format_begin(ds->get_init_offset()), dp_scanner(ds)
@@ -580,6 +581,7 @@ data_parser::discover_format()
 
         require(elem.e_capture.c_begin >= 0);
         require(elem.e_capture.c_end >= 0);
+        require(elem.e_capture.c_begin <= elem.e_capture.c_end);
 
         state_stack.top().update_for_element(elem);
         switch (elem.e_token) {
@@ -1164,14 +1166,16 @@ dfs_comma_next(data_format_state_t state, data_token_t next_token)
     return retval;
 }
 
-data_parser::element::element()
+data_parser::element::
+element()
     : e_capture(-1, -1), e_token(DT_INVALID), e_sub_elements(nullptr)
 {
 }
 
-data_parser::element::element(data_parser::element_list_t& subs,
-                              data_token_t token,
-                              bool assign_subs_elements)
+data_parser::element::
+element(data_parser::element_list_t& subs,
+        data_token_t token,
+        bool assign_subs_elements)
     : e_capture(subs.front().e_capture.c_begin, subs.back().e_capture.c_end),
       e_token(token), e_sub_elements(nullptr)
 {
@@ -1180,7 +1184,8 @@ data_parser::element::element(data_parser::element_list_t& subs,
     }
 }
 
-data_parser::element::element(const data_parser::element& other)
+data_parser::element::
+element(const data_parser::element& other)
 {
     /* require(other.e_sub_elements == nullptr); */
 
@@ -1192,7 +1197,8 @@ data_parser::element::element(const data_parser::element& other)
     }
 }
 
-data_parser::element::~element()
+data_parser::element::~
+element()
 {
     delete this->e_sub_elements;
     this->e_sub_elements = nullptr;
@@ -1346,7 +1352,8 @@ data_parser::element::is_value() const
     }
 }
 
-data_parser::discover_format_state::discover_format_state()
+data_parser::discover_format_state::
+discover_format_state()
     : dfs_prefix_state(DFS_INIT), dfs_semi_state(DFS_INIT),
       dfs_comma_state(DFS_INIT)
 {
