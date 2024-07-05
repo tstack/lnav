@@ -1,0 +1,33 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "env_logger_log": {
+        "title": "env_logger format",
+        "description": "Format file for Rust's env_logger crate",
+        "url": [
+            "https://docs.rs/env_logger/latest/env_logger/"
+        ],
+        "regex": {
+            "std": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[^ ]+) (?<level>\\w+) (?<module>[^\\]]+)\\]\\s+(?<body>.*)"
+            }
+        },
+        "value": {
+            "level": {
+                "kind": "string"
+            },
+            "module": {
+                "kind": "string",
+                "identifier": true
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "[2017-11-09T02:12:24Z ERROR main] this is printed by default",
+                "level": "error"
+            }
+        ]
+    }
+}
