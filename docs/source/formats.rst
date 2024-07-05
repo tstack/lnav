@@ -84,7 +84,7 @@ Creating a Format Using Regex101.com (v0.11.0+)
 For plain-text log files, the easiest way to create a log format definition is
 to create the regular expression that recognizes log messages using
 https://regex101.com .  Simply copy a log line into the test string input box
-on the site and then start editing the regular expression.  When building the
+on the site and then start editing a PCRE2 regular expression.  When building the
 regular expression, you'll want to use named captures for the structured parts
 of the log message.  Any raw message text should be matched by a captured named
 "body".  Once you have a regex that matches the whole log message, you can use

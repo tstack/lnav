@@ -13,6 +13,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/dpkg_log.json \
     $(srcdir)/%reldir%/elb_log.json \
     $(srcdir)/%reldir%/engine_log.json \
+    $(srcdir)/%reldir%/env_logger_log.json \
     $(srcdir)/%reldir%/error_log.json \
     $(srcdir)/%reldir%/esx_syslog_log.json \
     $(srcdir)/%reldir%/fsck_hfs_log.json \
@@ -33,6 +34,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/procstate_log.json \
     $(srcdir)/%reldir%/rails_log.json \
     $(srcdir)/%reldir%/redis_log.json \
+    $(srcdir)/%reldir%/simple_rs_log.json \
     $(srcdir)/%reldir%/snaplogic_log.json \
     $(srcdir)/%reldir%/sssd_log.json \
     $(srcdir)/%reldir%/strace_log.json \

@@ -34,9 +34,11 @@ Features:
 * Keymap definitions can now bind to a function key using an
   identifier that starts with `f` followed by the number of the
   function key.
+* Added log formats for the `env_logger` and `simple_logger` Rust
+  crates.
 
 Interface Changes:
-* The "Gantt Chart" view has been renamed to "timeline".
+* The "Gantt Chart" view has been renamed to "timeline."
 * In the timeline view, pressing `ENTER` will focus on
   the preview pane, so you can scroll through messages
   with the selected Op ID.
