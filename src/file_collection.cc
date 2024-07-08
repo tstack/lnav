@@ -259,7 +259,11 @@ file_collection::merge(file_collection& other)
  * Functor used to compare files based on their device and inode number.
  */
 struct same_file {
-    explicit same_file(const struct stat& stat) : sf_stat(stat) {}
+    explicit same_file(const std::filesystem::path& filename,
+                       const struct stat& stat)
+        : sf_filename(filename), sf_stat(stat)
+    {
+    }
 
     /**
      * Compare the given log file against the 'stat' given in the constructor.
@@ -271,6 +275,12 @@ struct same_file {
     {
         if (lf->is_closed()) {
             return false;
+        }
+
+        if (lf->get_actual_path()
+            && lf->get_actual_path().value() == this->sf_filename)
+        {
+            return true;
         }
 
         const auto& lf_loo = lf->get_open_options();
@@ -286,6 +296,7 @@ struct same_file {
             && this->sf_stat.st_ino == lf->get_stat().st_ino;
     }
 
+    const std::filesystem::path& sf_filename;
     const struct stat& sf_stat;
 };
 
@@ -380,8 +391,9 @@ file_collection::watch_logfile(const std::string& filename,
 
     this->fc_new_stats.emplace_back(st);
 
-    auto file_iter = std::find_if(
-        this->fc_files.begin(), this->fc_files.end(), same_file(st));
+    const auto fn_path = std::filesystem::path(filename);
+    const auto file_iter = std::find_if(
+        this->fc_files.begin(), this->fc_files.end(), same_file(fn_path, st));
 
     if (file_iter == this->fc_files.end()) {
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {

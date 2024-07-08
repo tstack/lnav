@@ -115,7 +115,14 @@ DUMPER_LIST()
 
     return *retval;
 }
-static std::vector<log_crash_recoverer*> CRASH_LIST;
+
+static std::vector<log_crash_recoverer*>&
+CRASH_LIST()
+{
+    static auto* retval = new std::vector<log_crash_recoverer*>();
+
+    return *retval;
+}
 
 struct thid {
     static uint32_t COUNTER;
@@ -528,7 +535,7 @@ sigabrt(int sig, siginfo_t* info, void* ctx)
     }
 
     lnav_log_orig_termios | [](auto termios) {
-        for (auto lcr : CRASH_LIST) {
+        for (const auto lcr : CRASH_LIST()) {
             lcr->log_crash_recover();
         }
 
@@ -694,15 +701,15 @@ log_state_dumper()
 log_crash_recoverer::
 log_crash_recoverer()
 {
-    CRASH_LIST.push_back(this);
+    CRASH_LIST().push_back(this);
 }
 
 log_crash_recoverer::~
 log_crash_recoverer()
 {
-    auto iter = std::find(CRASH_LIST.begin(), CRASH_LIST.end(), this);
+    auto iter = std::find(CRASH_LIST().begin(), CRASH_LIST().end(), this);
 
-    if (iter != CRASH_LIST.end()) {
-        CRASH_LIST.erase(iter);
+    if (iter != CRASH_LIST().end()) {
+        CRASH_LIST().erase(iter);
     }
 }

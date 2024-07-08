@@ -658,6 +658,7 @@ looper::loop()
                         break;
                     }
                     os.os_woff += prc;
+                    log_info("  header size: %d", os.os_woff);
 
                     auto out_path = this->l_out_dir
                         / fmt::format(FMT_STRING("out.{}.{}"),

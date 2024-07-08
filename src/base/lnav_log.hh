@@ -79,7 +79,7 @@ public:
 
     virtual ~log_state_dumper();
 
-    virtual void log_state() {
+    virtual void log_state(){
 
     };
 

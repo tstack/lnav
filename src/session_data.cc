@@ -490,6 +490,9 @@ load_time_bookmarks()
          ++file_iter)
     {
         auto lf = (*file_iter)->get_file();
+        if (lf == nullptr) {
+            continue;
+        }
         const auto* format = lf->get_format_ptr();
         content_line_t base_content_line;
 

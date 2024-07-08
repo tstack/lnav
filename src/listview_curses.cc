@@ -83,10 +83,22 @@ listview_curses::update_top_from_selection()
     unsigned long width;
 
     this->get_dimensions(height, width);
+    const auto inner_height = this->get_inner_height();
+
+    if (this->lv_selection >= inner_height) {
+        if (inner_height == 0_vl) {
+            this->lv_selection = -1_vl;
+        } else {
+            this->lv_selection = inner_height - 1_vl;
+        }
+    }
 
     if (this->lv_selection < 0_vl) {
         this->set_top(0_vl);
-    } else if (this->lv_sync_selection_and_top) {
+        return;
+    }
+
+    if (this->lv_sync_selection_and_top) {
         this->set_top(this->lv_selection);
     } else if (height <= this->lv_tail_space) {
         this->set_top(this->lv_selection);
