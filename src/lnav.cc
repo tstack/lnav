@@ -3077,9 +3077,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     = file_path_str.substr(0, colon_index);
                 file_loc = vis_line_t(scan_res.value());
             } else {
-                log_warning(
-                    "failed to parse line number from file path "
-                    "with colon: %s",
+                log_info(
+                    "did not parse line number from file path with colon: %s",
                     file_path_str.c_str());
             }
         }

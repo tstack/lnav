@@ -82,6 +82,17 @@ error: unable to open file: nonexistent-host: -- failed to ssh to host: ...
 EOF
 
 run_test ${lnav_test} -d /tmp/lnav.err -n \
+    nonexistent-host:${test_dir}/logfile_access_log.*
+
+sed -e "s|ssh:.*|...|g" `test_err_filename` | head -1 \
+    > test_remote.err
+
+mv test_remote.err `test_err_filename`
+check_error_output "no error for nonexistent-host?" <<EOF
+error: unable to open file: nonexistent-host: -- failed to ssh to host: ...
+EOF
+
+run_test ${lnav_test} -d /tmp/lnav.err -n \
     localhost:nonexistent-file
 
 cat remote/sshd.log
