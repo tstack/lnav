@@ -138,7 +138,7 @@ private:
 line_buffer::gz_indexed::
 gz_indexed()
 {
-    if ((this->inbuf = auto_mem<Bytef>::malloc(Z_BUFSIZE)) == NULL) {
+    if ((this->inbuf = auto_mem<Bytef>::malloc(Z_BUFSIZE)) == nullptr) {
         throw std::bad_alloc();
     }
 }
@@ -163,7 +163,8 @@ line_buffer::gz_indexed::init_stream()
     }
 
     // initialize inflate struct
-    int rc = inflateInit2(&strm, GZ_HEADER_MODE);
+    int rc = inflateInit2(&this->strm, GZ_HEADER_MODE);
+    this->strm.avail_in = 0;
     if (rc != Z_OK) {
         throw(rc);  // FIXME: exception wrapper
     }
@@ -222,7 +223,6 @@ line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
 
             inflate(&this->strm, Z_BLOCK);
             inflateEnd(&this->strm);
-
             this->strm.next_out = Z_NULL;
             this->strm.next_in = Z_NULL;
             this->strm.next_in = Z_NULL;
@@ -240,11 +240,12 @@ line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
                     hd.h_comment = std::string((char*) comment);
                     log_info(
                         "%d: read gzip header (mtime=%d; name='%s'; "
-                        "comment='%s')",
+                        "comment='%s'; crc=%x)",
                         fd,
                         hd.h_mtime.tv_sec,
                         hd.h_name.c_str(),
-                        hd.h_comment.c_str());
+                        hd.h_comment.c_str(),
+                        gz_hd.hcrc);
                     break;
                 default:
                     log_error("%d: failed to read gzip header data", fd);
@@ -285,7 +286,8 @@ line_buffer::gz_indexed::stream_data(void* buf, size_t size)
                 // stream
                 continue_stream();
             } else if (err != Z_OK) {
-                log_error(" inflate-error: %d  %s",
+                log_error(" inflate-error at %d: %d  %s",
+                          this->strm.total_in,
                           (int) err,
                           this->strm.msg ? this->strm.msg : "");
                 break;

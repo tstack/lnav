@@ -549,7 +549,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                      .append(": ")
                                      .append(lnav::roles::number(fmt::format(
                                          FMT_STRING("{:L}"), lf->size()))));
-            if (format != nullptr) {
+            if (format != nullptr && lf->size() > 0) {
                 details.emplace_back(attr_line_t()
                                          .append("Time Range"_h3)
                                          .right_justify(NAME_WIDTH)
