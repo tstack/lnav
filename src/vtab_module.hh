@@ -582,7 +582,7 @@ struct vtab_module : public vtab_module_base {
     struct vtab {
         explicit vtab(sqlite3* db, T& impl) : v_db(db), v_impl(impl) {}
 
-        explicit operator sqlite3_vtab*() { return &this->base; }
+        explicit operator sqlite3_vtab*() { return &this->v_base; }
 
         sqlite3_vtab v_base{};
         sqlite3* v_db;
