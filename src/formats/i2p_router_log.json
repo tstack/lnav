@@ -7,21 +7,14 @@
         "multiline": true,
         "regex": {
             "std": {
-                "pattern": "^(?J:(?:(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:(?<level>[A-Z]+)  \\[(?<module>[\\w \\/]+)\\] (?<component>[\\w.]+): (?<body>.*)|(?:(?:\\^){3} \\d+ similar messages omitted (?:\\^){3})))|(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\u0009at)) .*))$",
-                "comments": [
-                    "The I2P router uses several log line variants that largely differ in their formats.",
-                    "editing a variant should be done below in subformats for better readability and understandability,",
-                    "and then merged into the pattern above."
-                ],
-                "subformats": {
-                    "variant_normal": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?<level>[A-Z]+)  \\[(?<module>[\\w \\\/]+)\\] (?<component>[\\w.]+): (?<body>.*)$",
-                    "variant_omit": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:\\^){3} \\d+ similar messages omitted (?:\\^){3}$",
-                    "variant_exception": "^(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\0009at)) .*)$"
-                }
-            },
-            "teszt": {
-                "pattern": "(Exception)|(\\s+handler 1/1)|(\\sat [\\w.]+)|(similar messages omitted)",
-                "module-format": true
+                "pattern": "^(?J:(?:(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:(?<level>[A-Z]+)  \\[(?<module>[\\w \\/]+)\\] (?<component>[\\w.]+): (?<body>.*)|(?:(?:\\^){3} \\d+ similar messages omitted (?:\\^){3})))|(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\u0009at)) .*))$"
+                // The I2P router uses several log line variants that largely differ in their formats.
+                //   Editing a variant should be done below in subformats for better readability and understandability,
+                //   and then merged into the pattern above.
+                // subformats:
+                //    "variant_normal": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?<level>[A-Z]+)  \\[(?<module>[\\w \\\/]+)\\] (?<component>[\\w.]+): (?<body>.*)$"
+                //    "variant_omit": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:\\^){3} \\d+ similar messages omitted (?:\\^){3}$"
+                //    "variant_exception": "^(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\0009at)) .*)$"
             }
         },
         "value": {
@@ -47,12 +40,12 @@
                 "level": "warning"
             },
             {
-                "line": "2023-10-25 03:33:42.121 ^^^ 2 similar messages omitted ^^^",
-                "comment": "when lines are repated, the replacmeent line does not have a log level"
+                "line": "2023-10-25 03:33:42.121 ^^^ 2 similar messages omitted ^^^"
+                // when lines are repated, the replacmeent line does not have a log level
             },
             {
-                "line": "java.io.IOException: Peer is dead: F~UzS1mTN3XYlnOfidMBv5Z4lHI7dsCZ8N5mxpyc-OU=\\n",
-                "comment": "handle exception lines"
+                "line": "java.io.IOException: Peer is dead: F~UzS1mTN3XYlnOfidMBv5Z4lHI7dsCZ8N5mxpyc-OU=\\n"
+                // handle exception lines
             },
             {
                 "line": "\\u0009at net.i2p.router.transport.udp.PeerState2.getNextPacketNumber(PeerState2.java:326)\\n"

@@ -38,8 +38,8 @@
             },
             {
                 "line": "[2024-07-20T14:21:58Z DEBUG virtiofsd::server] Received request: opcode=Lookup (1), inode=1111, unique=2222, pid=3333",
-                "level": "debug",
-                "comment": ") at the end of opcode gets dropped by field recognition, but highlights highlight it as expected"
+                "level": "debug"
+                // ')' at the end of opcode gets dropped by field recognition, but highlights highlight it as expected
             }
         ]
     }
