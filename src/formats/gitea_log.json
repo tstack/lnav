@@ -10,7 +10,6 @@
                 "pattern": "^(\\^.*m)?(?<timestamp>\\d{4}\/\\d{2}\/\\d{2} \\d{2}:\\d{2}:\\d{2}) (?<component>(\\^.*m)?.*(\\^.*m)?) (\\^.*m)?\\[(?<level>\\w+)](\\^.*m)? (?<body>.*)?$"
             }
         },
-        "opid-field": "component",
         "value": {
             "component": {
                 "kind": "string",
