@@ -1,0 +1,61 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "logcat_log" : {
+        "title" : "logcat",
+        "description" : "The system logger format of the Android operating system.",
+        "url" : "https://developer.android.com/studio/command-line/logcat.html",
+        "regex" : {
+            "logcat_format_threadtime" : {
+                "pattern" : "^(?<timestamp>\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}.\\d{3})\\s+(?<log_pid>\\d+)\\s+(?<log_tid>\\d+)\\s+(?<level>\\w)\\s+(?:\\[@@\\s+\\]\\s)?(?<log_tag>.*)(?:\\s+)?:\\s+(?<body>.*)$",
+                "comment:": "threadtime is a format accepted by the `logcat -v <format>` command"
+            }
+        },
+        "timestamp-format" : ["%m-%d %H:%M:%S.%L"],
+        "level-field" : "level",
+        "level" : {
+            "trace" : "V",
+            "debug" : "D",
+            "info": "I",
+            "warning" : "W",
+            "error" : "E",
+            "fatal": "F"
+        },
+        "opid-field" : "log_pid",
+        "value" : {
+            "log_pid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "log_tid" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "log_tag" : {
+                "kind" : "string",
+                "identifier" : true
+            }
+        },
+        "sample" : [
+            {
+                "line": "01-01 02:50:25.351  1310  1502 V WindowManager: handleMessage: exit",
+                "level": "trace"
+            },
+            {
+                "line": "01-14 17:00:04.817   701  2042 I android.hardware.usb@1.0-service: canChangeMode: 1 canChagedata: 1 canChangePower:1",
+                "level": "info"
+            },
+            {
+                "line": "01-14 17:00:03.978 24312 24778 D OffsetFinder: findOffsetCustom: found value 268959769 at 4 (with arg: 25)",
+                "level": "debug"
+            },
+            {
+                "line": "01-14 17:00:04.052  4453  4453 V com.jarsilio.android.waveup (ProximitySensorHandler): Proximity sensor changed: FAR (current sensor value: 5.0 - max. sensor value: 5.0)",
+                "level": "trace"
+            },
+            {
+                "line": "01-14 17:00:04.835   516   516 W Binder:516_1: type=1400 audit(0.0:1361): avc: denied { read } for name=\"wakeup8\" dev=\"sysfs\" ino=46048 scontext=u:r:system_suspend:s0 tcontext=u:object_r:sysfs:s0 tclass=dir permissive=0",
+                "level": "warning"
+            }
+        ]
+    }
+}
