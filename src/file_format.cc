@@ -37,18 +37,19 @@
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
+#include "line_buffer.hh"
 
-file_format_t
-detect_file_format(const ghc::filesystem::path& filename)
+detect_file_format_result
+detect_file_format(const std::filesystem::path& filename)
 {
+    detect_file_format_result retval = {file_format_t::UNKNOWN};
     auto describe_res = archive_manager::describe(filename);
     if (describe_res.isOk()
         && describe_res.unwrap().is<archive_manager::archive_info>())
     {
-        return file_format_t::ARCHIVE;
+        return {file_format_t::ARCHIVE};
     }
 
-    file_format_t retval = file_format_t::UNKNOWN;
     auto open_res = lnav::filesystem::open_file(filename, O_RDONLY);
     if (open_res.isErr()) {
         log_error("unable to open file for format detection: %s -- %s",
@@ -68,7 +69,69 @@ detect_file_format(const ghc::filesystem::path& filename)
             auto header_frag = string_fragment::from_bytes(buffer, rc);
 
             if (header_frag.startswith(SQLITE3_HEADER)) {
-                retval = file_format_t::SQLITE_DB;
+                log_info("%s: appears to be a SQLite DB", filename.c_str());
+                retval.dffr_file_format = file_format_t::SQLITE_DB;
+            } else {
+                auto looping = true;
+                lnav::piper::multiplex_matcher mm;
+                file_range next_range;
+                line_buffer lb;
+                lb.set_fd(fd);
+
+                while (looping) {
+                    auto load_res = lb.load_next_line(next_range);
+                    if (load_res.isErr()) {
+                        log_error(
+                            "unable to load line for demux matching: %s -- %s",
+                            filename.c_str(),
+                            load_res.unwrapErr().c_str());
+                        break;
+                    }
+                    if (!lb.is_header_utf8()) {
+                        log_info("file is not UTF-8: %s", filename.c_str());
+                        break;
+                    }
+                    if (lb.is_piper()) {
+                        log_info("skipping demux match for piper file: %s",
+                                 filename.c_str());
+                        break;
+                    }
+                    const auto li = load_res.unwrap();
+                    if (li.li_partial) {
+                        log_info("skipping demux match for partial line");
+                        break;
+                    }
+                    auto read_res = lb.read_range(li.li_file_range);
+                    if (read_res.isErr()) {
+                        log_error(
+                            "unable to read line for demux matching: %s -- %s",
+                            filename.c_str(),
+                            read_res.unwrapErr().c_str());
+                        break;
+                    }
+                    auto sbr = read_res.unwrap();
+                    auto match_res = mm.match(sbr.to_string_fragment());
+
+                    looping = match_res.match(
+                        [&retval,
+                         &filename](lnav::piper::multiplex_matcher::found f) {
+                            log_info("%s: is multiplexed using %s",
+                                     filename.c_str(),
+                                     f.f_id.c_str());
+                            retval.dffr_file_format
+                                = file_format_t::MULTIPLEXED;
+                            return false;
+                        },
+                        [](lnav::piper::multiplex_matcher::not_found nf) {
+                            return false;
+                        },
+                        [](lnav::piper::multiplex_matcher::partial p) {
+                            return true;
+                        });
+
+                    next_range = li.li_file_range;
+                }
+                retval.dffr_details = std::move(mm.mm_details);
             }
         }
     }

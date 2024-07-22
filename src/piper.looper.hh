@@ -30,6 +30,7 @@
 #ifndef piper_looper_hh
 #define piper_looper_hh
 
+#include <filesystem>
 #include <future>
 #include <memory>
 #include <string>
@@ -37,7 +38,7 @@
 #include "base/auto_fd.hh"
 #include "base/piper.file.hh"
 #include "base/result.h"
-#include "ghc/filesystem.hpp"
+#include "safe/safe.h"
 #include "yajlpp/yajlpp_def.hh"
 
 namespace lnav {
@@ -48,19 +49,51 @@ enum class state {
     finished,
 };
 
+struct demux_info {
+    std::string di_name;
+    std::vector<lnav::console::user_message> di_details;
+};
+
+using safe_demux_info = safe::Safe<demux_info>;
+
+struct options {
+    bool o_demux{false};
+    bool o_tail{true};
+
+    options& with_demux(bool v)
+    {
+        this->o_demux = v;
+        return *this;
+    }
+
+    options& with_tail(bool v)
+    {
+        this->o_tail = v;
+        return *this;
+    }
+};
+
 class looper {
 public:
-    looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd);
+    looper(std::string name,
+           auto_fd stdout_fd,
+           auto_fd stderr_fd,
+           options opts);
 
     ~looper();
 
     std::string get_name() const { return this->l_name; }
 
-    ghc::filesystem::path get_out_dir() const { return this->l_out_dir; }
+    std::filesystem::path get_out_dir() const { return this->l_out_dir; }
 
-    ghc::filesystem::path get_out_pattern() const
+    std::filesystem::path get_out_pattern() const
     {
         return this->l_out_dir / "out.*";
+    }
+
+    demux_info get_demux_info() const
+    {
+        return *this->l_demux_info.readAccess();
     }
 
     std::string get_url() const
@@ -68,6 +101,8 @@ public:
         return fmt::format(FMT_STRING("piper://{}"),
                            this->l_out_dir.filename().string());
     }
+
+    int get_loop_count() const { return this->l_loop_count.load(); }
 
     bool is_finished() const
     {
@@ -90,15 +125,20 @@ public:
 private:
     void loop();
 
+    static auto_pipe& get_wakeup_pipe();
+
     std::atomic<bool> l_looping{true};
     const std::string l_name;
     const std::string l_cwd;
     const std::map<std::string, std::string> l_env;
-    ghc::filesystem::path l_out_dir;
+    std::filesystem::path l_out_dir;
     auto_fd l_stdout;
     auto_fd l_stderr;
+    options l_options;
     std::future<void> l_future;
     std::atomic<int> l_finished{0};
+    std::atomic<int> l_loop_count{0};
+    safe_demux_info l_demux_info;
 };
 
 template<state LooperState>
@@ -111,17 +151,29 @@ public:
 
     std::string get_name() const { return this->h_looper->get_name(); }
 
-    ghc::filesystem::path get_out_dir() const
+    std::filesystem::path get_out_dir() const
     {
         return this->h_looper->get_out_dir();
     }
 
-    ghc::filesystem::path get_out_pattern() const
+    std::filesystem::path get_out_pattern() const
     {
         return this->h_looper->get_out_pattern();
     }
 
+    std::string get_demux_id() const
+    {
+        return this->h_looper->get_demux_info().di_name;
+    }
+
+    std::vector<lnav::console::user_message> get_demux_details() const
+    {
+        return this->h_looper->get_demux_info().di_details;
+    }
+
     std::string get_url() const { return this->h_looper->get_url(); }
+
+    int get_loop_count() const { return this->h_looper->get_loop_count(); }
 
     bool is_finished() const { return this->h_looper->is_finished(); }
 
@@ -142,7 +194,8 @@ using running_handle = handle<state::running>;
 
 Result<handle<state::running>, std::string> create_looper(std::string name,
                                                           auto_fd stdout_fd,
-                                                          auto_fd stderr_fd);
+                                                          auto_fd stderr_fd,
+                                                          options opts = {});
 
 void cleanup();
 

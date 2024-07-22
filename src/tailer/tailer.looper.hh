@@ -38,7 +38,7 @@
 #include "base/auto_pid.hh"
 #include "base/isc.hh"
 #include "base/network.tcp.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "mapbox/variant.hpp"
 
 namespace tailer {
@@ -101,7 +101,7 @@ private:
             mstime_t current_time) const override;
 
     private:
-        static ghc::filesystem::path tmp_path();
+        static std::filesystem::path tmp_path();
 
         std::string get_display_path(const std::string& remote_path) const;
 
@@ -125,8 +125,8 @@ private:
 
         const std::string ht_netloc;
         std::string ht_uname;
-        const ghc::filesystem::path ht_local_path;
-        std::set<ghc::filesystem::path> ht_active_files;
+        const std::filesystem::path ht_local_path;
+        std::set<std::filesystem::path> ht_active_files;
         std::vector<std::string> ht_error_queue;
         std::thread ht_error_reader;
         state_v ht_state{disconnected()};

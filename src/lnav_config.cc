@@ -101,6 +101,9 @@ static auto tc = injector::bind<tailer::config>::to_instance(
 static auto scc = injector::bind<sysclip::config>::to_instance(
     +[]() { return &lnav_config.lc_sysclip; });
 
+static auto oc = injector::bind<lnav::external_opener::config>::to_instance(
+    +[]() { return &lnav_config.lc_opener; });
+
 static auto uh = injector::bind<lnav::url_handler::config>::to_instance(
     +[]() { return &lnav_config.lc_url_handlers; });
 
@@ -165,9 +168,9 @@ ensure_dotlnav()
         if (glob(crash_glob.c_str(), GLOB_NOCHECK, nullptr, gl.inout()) == 0) {
             std::error_code ec;
             for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-                auto crash_file = ghc::filesystem::path(gl->gl_pathv[lpc]);
+                auto crash_file = std::filesystem::path(gl->gl_pathv[lpc]);
 
-                ghc::filesystem::rename(
+                std::filesystem::rename(
                     crash_file, crash_dir_path / crash_file.filename(), ec);
             }
         }
@@ -238,11 +241,11 @@ install_from_git(const std::string& repo)
 
     auto git_cmd = fork_res.unwrap();
     if (git_cmd.in_child()) {
-        if (ghc::filesystem::is_directory(local_formats_path)) {
+        if (std::filesystem::is_directory(local_formats_path)) {
             fmt::print("Updating format repo: {}\n", repo);
             log_perror(chdir(local_formats_path.c_str()));
             execlp("git", "git", "pull", nullptr);
-        } else if (ghc::filesystem::is_directory(local_configs_path)) {
+        } else if (std::filesystem::is_directory(local_configs_path)) {
             fmt::print("Updating config repo: {}\n", repo);
             log_perror(chdir(local_configs_path.c_str()));
             execlp("git", "git", "pull", nullptr);
@@ -263,12 +266,12 @@ install_from_git(const std::string& repo)
         return false;
     }
 
-    if (ghc::filesystem::is_directory(local_formats_path)
-        || ghc::filesystem::is_directory(local_configs_path))
+    if (std::filesystem::is_directory(local_formats_path)
+        || std::filesystem::is_directory(local_configs_path))
     {
         return false;
     }
-    if (!ghc::filesystem::is_directory(local_staging_path)) {
+    if (!std::filesystem::is_directory(local_staging_path)) {
         auto um
             = lnav::console::user_message::error(
                   attr_line_t("failed to install git repo: ")
@@ -276,7 +279,8 @@ install_from_git(const std::string& repo)
                   .with_reason(
                       attr_line_t("git failed to create the local directory ")
                           .append(
-                              lnav::roles::file(local_staging_path.string())));
+                              lnav::roles::file(local_staging_path.string())))
+                  .move();
         lnav::console::print(stderr, um);
         return false;
     }
@@ -290,7 +294,7 @@ install_from_git(const std::string& repo)
 
     if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-            auto file_path = ghc::filesystem::path{gl->gl_pathv[lpc]};
+            auto file_path = std::filesystem::path{gl->gl_pathv[lpc]};
 
             if (file_path.extension() == ".lnav") {
                 found_lnav_file += 1;
@@ -327,7 +331,8 @@ install_from_git(const std::string& repo)
         auto um = lnav::console::user_message::error(
                       attr_line_t("invalid lnav repo: ")
                           .append(lnav::roles::file(repo)))
-                      .with_reason("no .json, .sql, or .lnav files were found");
+                      .with_reason("no .json, .sql, or .lnav files were found")
+                      .move();
         lnav::console::print(stderr, um);
         return false;
     }
@@ -361,7 +366,8 @@ install_from_git(const std::string& repo)
     auto um = lnav::console::user_message::ok(
                   attr_line_t("installed lnav repo at: ")
                       .append(lnav::roles::file(local_configs_path.string())))
-                  .with_note(notes);
+                  .with_note(notes)
+                  .move();
     lnav::console::print(stdout, um);
 
     return true;
@@ -377,18 +383,20 @@ update_installs_from_git()
     if (glob(git_formats.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
             auto git_dir
-                = ghc::filesystem::path(gl->gl_pathv[lpc]).parent_path();
+                = std::filesystem::path(gl->gl_pathv[lpc]).parent_path();
 
             printf("Updating formats in %s\n", git_dir.c_str());
             auto pull_cmd = fmt::format(FMT_STRING("cd '{}' && git pull"),
                                         git_dir.string());
             int ret = system(pull_cmd.c_str());
             if (ret == -1) {
-                std::cerr << "Failed to spawn command " << "\"" << pull_cmd
-                          << "\": " << strerror(errno) << std::endl;
+                std::cerr << "Failed to spawn command "
+                          << "\"" << pull_cmd << "\": " << strerror(errno)
+                          << std::endl;
                 retval = false;
             } else if (ret > 0) {
-                std::cerr << "Command " << "\"" << pull_cmd
+                std::cerr << "Command "
+                          << "\"" << pull_cmd
                           << "\" failed: " << strerror(errno) << std::endl;
                 retval = false;
             }
@@ -461,7 +469,7 @@ install_extra_formats()
             }
         }
         if (yajl_complete_parse(jhandle) != yajl_status_ok) {
-            auto* msg = yajl_get_error(jhandle, 1, buffer, rc);
+            auto* msg = yajl_get_error(jhandle, 0, nullptr, 0);
 
             fprintf(stderr, "Unable to parse remote-config.json -- %s", msg);
             yajl_free_error(jhandle, msg);
@@ -509,7 +517,8 @@ static const struct json_path_container key_command_handlers = {
 };
 
 static const struct json_path_container keymap_def_handlers = {
-    yajlpp::pattern_property_handler("(?<key_seq>(?:x[0-9a-f]{2})+)")
+    yajlpp::pattern_property_handler(
+        "(?<key_seq>(?:x[0-9a-f]{2}|f[0-9]{1,2})+)")
         .with_synopsis("<utf8-key-code-in-hex>")
         .with_description(
             "Map of key codes to commands to execute.  The field names are "
@@ -523,6 +532,7 @@ static const struct json_path_container keymap_def_handlers = {
                 if (ypc.ypc_parse_context != nullptr) {
                     retval.kc_cmd.pp_path
                         = ypc.ypc_parse_context->get_full_path();
+
                     retval.kc_cmd.pp_location.sl_source
                         = ypc.ypc_parse_context->ypc_source;
                     retval.kc_cmd.pp_location.sl_line_number
@@ -1195,6 +1205,33 @@ static const struct json_path_container archive_handlers = {
                    &archive_manager::config::amc_cache_ttl),
 };
 
+static const struct typed_json_path_container<lnav::piper::demux_def>
+    demux_def_handlers = {
+    yajlpp::property_handler("enabled")
+        .with_description(
+            "Indicates whether this demuxer will be used at the demuxing stage")
+        .for_field(&lnav::piper::demux_def::dd_enabled),
+        yajlpp::property_handler("pattern")
+            .with_synopsis("<regex>")
+            .with_description(
+                "A regular expression to match a line in a multiplexed file")
+            .for_field(&lnav::piper::demux_def::dd_pattern),
+        yajlpp::property_handler("control-pattern")
+            .with_synopsis("<regex>")
+            .with_description(
+                "A regular expression to match a control line in a multiplexed "
+                "file")
+            .for_field(&lnav::piper::demux_def::dd_control_pattern),
+};
+
+static const struct json_path_container demux_defs_handlers = {
+    yajlpp::pattern_property_handler("(?<name>[\\w\\-\\.]+)")
+        .with_description("The definition of a demultiplexer")
+        .with_children(demux_def_handlers)
+        .for_field(&_lnav_config::lc_piper,
+                   &lnav::piper::config::c_demux_definitions),
+};
+
 static const struct json_path_container piper_handlers = {
     yajlpp::property_handler("max-size")
         .with_synopsis("<bytes>")
@@ -1317,7 +1354,8 @@ static const struct json_path_container sysclip_impl_cmd_handlers = json_path_co
 static const struct json_path_container sysclip_impl_handlers = {
     yajlpp::property_handler("test")
         .with_synopsis("<command>")
-        .with_description("The command that checks")
+        .with_description(
+            "The command that checks if a clipboard command is available")
         .with_example("command -v pbcopy")
         .for_field(&sysclip::clipboard::c_test_command),
     yajlpp::property_handler("general")
@@ -1354,6 +1392,44 @@ static const struct json_path_container sysclip_handlers = {
     yajlpp::property_handler("impls")
         .with_description("Clipboard implementations")
         .with_children(sysclip_impls_handlers),
+};
+
+static const json_path_container opener_impl_handlers = {
+    yajlpp::property_handler("test")
+        .with_synopsis("<command>")
+        .with_description(
+            "The command that checks if an external opener is available")
+        .with_example("command -v open")
+        .for_field(&lnav::external_opener::impl::i_test_command),
+    yajlpp::property_handler("command")
+        .with_description("The command used to open a file or URL")
+        .with_example("open")
+        .for_field(&lnav::external_opener::impl::i_command),
+};
+
+static const json_path_container opener_impls_handlers = {
+    yajlpp::pattern_property_handler("(?<opener_impl_name>[\\w\\-]+)")
+        .with_synopsis("<name>")
+        .with_description("External opener implementation")
+        .with_obj_provider<lnav::external_opener::impl, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto& retval = root->lc_opener
+                                   .c_impls[ypc.get_substr("opener_impl_name")];
+                return &retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_opener.c_impls) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(opener_impl_handlers),
+};
+
+static const struct json_path_container opener_handlers = {
+    yajlpp::property_handler("impls")
+        .with_description("External opener implementations")
+        .with_children(opener_impls_handlers),
 };
 
 static const struct json_path_container log_source_watch_expr_handlers = {
@@ -1450,6 +1526,9 @@ static const struct json_path_container log_source_handlers = {
         .with_description("Log message watch expressions")
         .with_children(log_source_watch_handlers),
     yajlpp::property_handler("annotations").with_children(annotations_handlers),
+    yajlpp::property_handler("demux")
+        .with_description("Demultiplexer definitions")
+        .with_children(demux_defs_handlers),
 };
 
 static const struct json_path_container url_scheme_handlers = {
@@ -1498,6 +1577,9 @@ static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("clipboard")
         .with_description("Settings related to the clipboard")
         .with_children(sysclip_handlers),
+    yajlpp::property_handler("external-opener")
+        .with_description("Settings related to opening external files/URLs")
+        .with_children(opener_handlers),
     yajlpp::property_handler("url-scheme")
         .with_description("Settings related to custom URL handling")
         .with_children(url_handlers),
@@ -1645,7 +1727,7 @@ public:
 static active_key_map_listener KEYMAP_LISTENER;
 
 Result<config_file_type, std::string>
-detect_config_file_type(const ghc::filesystem::path& path)
+detect_config_file_type(const std::filesystem::path& path)
 {
     static const char* id_path[] = {"$schema", nullptr};
 
@@ -1680,7 +1762,7 @@ detect_config_file_type(const ghc::filesystem::path& path)
 
 static void
 load_config_from(_lnav_config& lconfig,
-                 const ghc::filesystem::path& path,
+                 const std::filesystem::path& path,
                  std::vector<lnav::console::user_message>& errors)
 {
     yajlpp_parse_context ypc(intern_string::lookup(path.string()),
@@ -1778,7 +1860,7 @@ load_default_configs(struct _lnav_config& config_obj,
 }
 
 void
-load_config(const std::vector<ghc::filesystem::path>& extra_paths,
+load_config(const std::vector<std::filesystem::path>& extra_paths,
             std::vector<lnav::console::user_message>& errors)
 {
     auto user_config = lnav::paths::dotlnav() / "config.json";
@@ -1819,15 +1901,23 @@ load_config(const std::vector<ghc::filesystem::path>& extra_paths,
             }
         }
         for (const auto& extra_path : extra_paths) {
-            auto config_path = extra_path / "formats/*/config.*.json";
-            static_root_mem<glob_t, globfree> gl;
+            for (const auto& pat :
+                 {"formats/*/config.json", "formats/*/config.*.json"})
+            {
+                auto config_path = extra_path / pat;
+                static_root_mem<glob_t, globfree> gl;
 
-            if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
-                for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
-                    load_config_from(lnav_config, gl->gl_pathv[lpc], errors);
-                    if (errors.empty()) {
+                log_info(
+                    "loading configuration files in format directories: %s",
+                    config_path.c_str());
+                if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
+                    for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                         load_config_from(
-                            lnav_default_config, gl->gl_pathv[lpc], errors);
+                            lnav_config, gl->gl_pathv[lpc], errors);
+                        if (errors.empty()) {
+                            load_config_from(
+                                lnav_default_config, gl->gl_pathv[lpc], errors);
+                        }
                     }
                 }
             }
@@ -1886,6 +1976,7 @@ reset_config(const std::string& path)
             yajlpp_provider_context provider_ctx{&md, static_cast<size_t>(-1)};
             jph->jph_regex->capture_from(path_frag).into(md).matches();
 
+            ypc.ypc_obj_stack.pop();
             jph->jph_obj_deleter(provider_ctx, ypc.ypc_obj_stack.top());
         }
     }
@@ -1977,7 +2068,8 @@ reload_config(std::vector<lnav::console::user_message>& errors)
                     um.um_message
                         = attr_line_t()
                               .append("missing value for property ")
-                              .append_quoted(lnav::roles::symbol(path));
+                              .append_quoted(lnav::roles::symbol(path))
+                              .move();
                 }
 
                 errors.emplace_back(um);

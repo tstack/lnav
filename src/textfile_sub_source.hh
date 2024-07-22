@@ -36,17 +36,16 @@
 #include "filter_observer.hh"
 #include "logfile.hh"
 #include "plain_text_source.hh"
+#include "text_link_handler.hh"
 #include "text_overlay_menu.hh"
 #include "textview_curses.hh"
 
 class textfile_sub_source
-    : public text_sub_source
+    : public text_link_handler
     , public vis_location_history
     , public text_accel_source
     , public text_anchors {
 public:
-    using file_iterator = std::deque<std::shared_ptr<logfile>>::iterator;
-
     textfile_sub_source() { this->tss_supports_filtering = true; }
 
     bool empty() const { return this->tss_files.empty(); }
@@ -81,7 +80,7 @@ public:
             return nullptr;
         }
 
-        return this->tss_files.front();
+        return this->tss_files.front().fvs_file;
     }
 
     std::string text_source_name(const textview_curses& tv) override
@@ -90,7 +89,7 @@ public:
             return "";
         }
 
-        return this->tss_files.front()->get_filename();
+        return this->tss_files.front().fvs_file->get_filename();
     }
 
     void to_front(const std::shared_ptr<logfile>& lf);
@@ -125,8 +124,8 @@ public:
     };
 
     rescan_result_t rescan_files(scan_callback& callback,
-                                 nonstd::optional<ui_clock::time_point> deadline
-                                 = nonstd::nullopt);
+                                 std::optional<ui_clock::time_point> deadline
+                                 = std::nullopt);
 
     void text_filters_changed() override;
 
@@ -136,7 +135,7 @@ public:
 
     text_format_t get_text_format() const override;
 
-    nonstd::optional<location_history*> get_location_history() override
+    std::optional<location_history*> get_location_history() override
     {
         return this;
     }
@@ -144,12 +143,12 @@ public:
     void text_crumbs_for_line(int line,
                               std::vector<breadcrumb::crumb>& crumbs) override;
 
-    nonstd::optional<vis_line_t> row_for_anchor(const std::string& id) override;
+    std::optional<vis_line_t> row_for_anchor(const std::string& id) override;
 
-    nonstd::optional<std::string> anchor_for_row(vis_line_t vl) override;
+    std::optional<std::string> anchor_for_row(vis_line_t vl) override;
 
-    nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
-                                                 direction dir) override;
+    std::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
+                                              direction dir) override;
 
     std::unordered_set<std::string> get_anchors() override;
 
@@ -169,6 +168,15 @@ public:
 
     void scroll_invoked(textview_curses* tc) override;
 
+    enum class view_mode {
+        raw,
+        rendered,
+    };
+
+    void set_view_mode(view_mode vm);
+
+    view_mode get_effective_view_mode() const;
+
 private:
     void detach_observer(std::shared_ptr<logfile> lf)
     {
@@ -177,8 +185,37 @@ private:
         delete lfo;
     }
 
+    struct file_view_state {
+        explicit file_view_state(const std::shared_ptr<logfile>& f)
+            : fvs_file(f)
+        {
+        }
+
+        bool operator==(const std::shared_ptr<logfile>& lf) const
+        {
+            return this->fvs_file == lf;
+        }
+
+        void save_from(const textview_curses& tc)
+        {
+            this->fvs_top = tc.get_top();
+            this->fvs_selection = tc.get_selection();
+        }
+
+        void load_into(textview_curses& tc) const
+        {
+            tc.set_selection(this->fvs_selection);
+            tc.set_top(this->fvs_top);
+        }
+
+        std::shared_ptr<logfile> fvs_file;
+        vis_line_t fvs_top{0};
+        vis_line_t fvs_selection{0};
+    };
+
     struct rendered_file {
         time_t rf_mtime;
+        file_off_t rf_file_indexed_size;
         file_ssize_t rf_file_size;
         std::unique_ptr<plain_text_source> rf_text_source;
     };
@@ -189,14 +226,16 @@ private:
         lnav::document::metadata ms_metadata;
     };
 
-    std::deque<std::shared_ptr<logfile>> tss_files;
-    std::deque<std::shared_ptr<logfile>> tss_hidden_files;
+    using file_iterator = std::deque<file_view_state>::iterator;
+
+    std::deque<file_view_state> tss_files;
     std::unordered_map<std::string, rendered_file> tss_rendered_files;
     std::unordered_map<std::string, metadata_state> tss_doc_metadata;
     size_t tss_line_indent_size{0};
     bool tss_completed_last_scan{true};
     attr_line_t tss_hex_line;
     int64_t tss_content_line{0};
+    view_mode tss_view_mode{view_mode::rendered};
 };
 
 class textfile_header_overlay : public text_overlay_menu {

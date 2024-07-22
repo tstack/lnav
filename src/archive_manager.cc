@@ -52,7 +52,7 @@
 #include "fmt/format.h"
 #include "hasher.hh"
 
-namespace fs = ghc::filesystem;
+namespace fs = std::filesystem;
 
 namespace archive_manager {
 
@@ -124,8 +124,8 @@ describe(const fs::path& filename)
                     archive_entry_strmode(entry),
                     archive_entry_mtime(entry),
                     archive_entry_size_is_set(entry)
-                        ? nonstd::make_optional(archive_entry_size(entry))
-                        : nonstd::nullopt,
+                        ? std::make_optional(archive_entry_size(entry))
+                        : std::nullopt,
                 });
             } while (archive_read_next_header(arc, &entry) == ARCHIVE_OK);
 
@@ -269,7 +269,8 @@ extract(const std::string& filename, const extract_cb& cb)
             }
         }
         if (file_count > 0) {
-            fs::last_write_time(done_path, std::chrono::system_clock::now());
+            auto now = fs::file_time_type::clock::now();
+            fs::last_write_time(done_path, now);
             log_info("%s: archive has already been extracted!",
                      done_path.c_str());
             return Ok();
@@ -399,7 +400,7 @@ void
 cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
-        auto now = std::chrono::system_clock::now();
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = archive_cache_path();
         const auto& cfg = injector::get<const config&>();
         std::vector<fs::path> to_remove;

@@ -411,9 +411,9 @@ public:
         return 0;
     }
 
-    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
+    std::optional<row_info> time_for_row(vis_line_t row) override;
 
-    nonstd::optional<vis_line_t> row_for_time(
+    std::optional<vis_line_t> row_for_time(
         struct timeval tv_bucket) override;
 
 private:

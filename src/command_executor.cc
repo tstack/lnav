@@ -40,6 +40,7 @@
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "curl_looper.hh"
 #include "db_sub_source.hh"
 #include "help_text_formatter.hh"
 #include "lnav.hh"
@@ -59,6 +60,7 @@
 #    include "prqlc.cxx.hh"
 #endif
 
+using namespace std::literals::chrono_literals;
 using namespace lnav::roles::literals;
 
 exec_context INIT_EXEC_CONTEXT;
@@ -160,7 +162,8 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
                           "are supported")
                       .with_help(
                           "named parameters start with a dollar-sign "
-                          "($) or colon (:) followed by the variable name");
+                          "($) or colon (:) followed by the variable name")
+                      .move();
             ec.add_error_context(um);
 
             return Err(um);
@@ -244,13 +247,11 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
 static void
 execute_search(const std::string& search_cmd)
 {
-    lnav_data.ld_view_stack.top() | [&search_cmd](auto tc) {
-        auto search_term
-            = string_fragment(search_cmd)
-                  .find_right_boundary(0, string_fragment::tag1{'\n'})
-                  .to_string();
-        tc->execute_search(search_term);
-    };
+    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto search_term = string_fragment(search_cmd)
+                           .find_right_boundary(0, string_fragment::tag1{'\n'})
+                           .to_string();
+    tc->execute_search(search_term);
 }
 
 Result<std::string, lnav::console::user_message>
@@ -360,7 +361,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             auto um = lnav::console::user_message::error(
                           "failed to compile SQL statement")
                           .with_reason(errmsg)
-                          .with_snippets(ec.ec_source);
+                          .with_snippets(ec.ec_source)
+                          .move();
 
             auto annotated_sql = annotate_sql_with_error(
                 lnav_data.ld_db.in(), curr_stmt, tail);
@@ -443,7 +445,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     log_error("sqlite3_step error code: %d", retcode);
                     auto um = sqlite3_error_to_user_message(lnav_data.ld_db)
                                   .with_context_snippets(ec.ec_source)
-                                  .with_note(bound_note);
+                                  .with_note(bound_note)
+                                  .move();
 
                     return Err(um);
                 }
@@ -603,12 +606,11 @@ multiline_executor::final()
 }
 
 static Result<std::string, lnav::console::user_message>
-execute_file_contents(exec_context& ec, const ghc::filesystem::path& path)
+execute_file_contents(exec_context& ec, const std::filesystem::path& path)
 {
-    static const ghc::filesystem::path stdin_path("-");
-    static const ghc::filesystem::path dev_stdin_path("/dev/stdin");
+    static const std::filesystem::path stdin_path("-");
+    static const std::filesystem::path dev_stdin_path("/dev/stdin");
 
-    std::string retval;
     FILE* file;
 
     if (path == stdin_path || path == dev_stdin_path) {
@@ -625,13 +627,14 @@ execute_file_contents(exec_context& ec, const ghc::filesystem::path& path)
     ssize_t line_size;
     multiline_executor me(ec, path.string());
 
+    ec.ec_local_vars.top()["0"] = path.string();
     ec.ec_path_stack.emplace_back(path.parent_path());
     exec_context::output_guard og(ec);
     while ((line_size = getline(line.out(), &line_max_size, file)) != -1) {
         TRY(me.push_back(string_fragment::from_bytes(line.in(), line_size)));
     }
 
-    retval = TRY(me.final());
+    auto retval = TRY(me.final());
 
     if (file == stdin) {
         if (isatty(STDOUT_FILENO)) {
@@ -663,7 +666,8 @@ execute_file(exec_context& ec, const std::string& path_and_args)
                       "unable to parse script command-line")
                       .with_reason(split_err.te_msg)
                       .with_snippet(lnav::console::snippet::from(
-                          SRC, lexer.to_attr_line(split_err)));
+                          SRC, lexer.to_attr_line(split_err)))
+                      .move();
 
         return Err(um);
     }
@@ -676,18 +680,13 @@ execute_file(exec_context& ec, const std::string& path_and_args)
 
     auto script_name = split_args[0].se_value;
     auto& vars = ec.ec_local_vars.top();
-    char env_arg_name[32];
     std::string star, open_error = "file not found";
 
     add_ansi_vars(vars);
 
-    snprintf(
-        env_arg_name, sizeof(env_arg_name), "%d", (int) split_args.size() - 1);
-
-    vars["#"] = env_arg_name;
+    vars["#"] = fmt::to_string(split_args.size() - 1);
     for (size_t lpc = 0; lpc < split_args.size(); lpc++) {
-        snprintf(env_arg_name, sizeof(env_arg_name), "%lu", lpc);
-        vars[env_arg_name] = split_args[lpc].se_value;
+        vars[fmt::to_string(lpc)] = split_args[lpc].se_value;
     }
     for (size_t lpc = 1; lpc < split_args.size(); lpc++) {
         if (lpc > 1) {
@@ -704,24 +703,59 @@ execute_file(exec_context& ec, const std::string& path_and_args)
     if (iter != scripts.as_scripts.end()) {
         paths_to_exec = iter->second;
     }
+    if (is_url(script_name)) {
+        auto_mem<CURLU> cu(curl_url_cleanup);
+        cu = curl_url();
+        auto set_rc = curl_url_set(cu, CURLUPART_URL, script_name.c_str(), 0);
+        if (set_rc == CURLUE_OK) {
+            auto_mem<char> scheme_part(curl_free);
+            auto get_rc
+                = curl_url_get(cu, CURLUPART_SCHEME, scheme_part.out(), 0);
+            if (get_rc == CURLUE_OK
+                && string_fragment::from_c_str(scheme_part.in()) == "file")
+            {
+                auto_mem<char> path_part;
+                auto get_rc
+                    = curl_url_get(cu, CURLUPART_PATH, path_part.out(), 0);
+                if (get_rc == CURLUE_OK) {
+                    auto rp_res = lnav::filesystem::realpath(path_part.in());
+                    if (rp_res.isOk()) {
+                        struct script_metadata meta;
+
+                        meta.sm_path = rp_res.unwrap();
+                        extract_metadata_from_file(meta);
+                        paths_to_exec.push_back(meta);
+                    }
+                }
+            }
+        }
+    }
     if (script_name == "-" || script_name == "/dev/stdin") {
         paths_to_exec.push_back({script_name, "", "", ""});
     } else if (access(script_name.c_str(), R_OK) == 0) {
         struct script_metadata meta;
+        auto rp_res = lnav::filesystem::realpath(script_name);
 
-        meta.sm_path = script_name;
+        if (rp_res.isErr()) {
+            log_error("unable to get realpath() of %s -- %s",
+                      script_name.c_str(),
+                      rp_res.unwrapErr().c_str());
+            meta.sm_path = script_name;
+        } else {
+            meta.sm_path = rp_res.unwrap();
+        }
         extract_metadata_from_file(meta);
         paths_to_exec.push_back(meta);
     } else if (errno != ENOENT) {
         open_error = strerror(errno);
     } else {
-        auto script_path = ghc::filesystem::path(script_name);
+        auto script_path = std::filesystem::path(script_name);
 
         if (!script_path.is_absolute()) {
             script_path = ec.ec_path_stack.back() / script_path;
         }
 
-        if (ghc::filesystem::is_regular_file(script_path)) {
+        if (std::filesystem::is_regular_file(script_path)) {
             struct script_metadata meta;
 
             meta.sm_path = script_path;
@@ -789,7 +823,8 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
         auto um = lnav::console::user_message::error("empty command")
                       .with_help(
                           "a command should start with ':', ';', '/', '|' and "
-                          "followed by the operation to perform");
+                          "followed by the operation to perform")
+                      .move();
         if (!ec.ec_source.empty()) {
             um.with_snippet(ec.ec_source.back());
         }
@@ -801,10 +836,10 @@ execute_any(exec_context& ec, const std::string& cmdline_with_mode)
         if (ec.is_read_write() &&
             // only rebuild in a script or non-interactive mode so we don't
             // block the UI.
-            (lnav_data.ld_flags & LNF_HEADLESS || ec.ec_path_stack.size() > 1))
+            lnav_data.ld_flags & LNF_HEADLESS)
         {
             rescan_files();
-            wait_for_pipers(nonstd::nullopt);
+            wait_for_pipers(std::nullopt);
             rebuild_indexes_repeatedly();
         }
     });
@@ -842,7 +877,7 @@ execute_init_commands(
         return;
     }
 
-    nonstd::optional<exec_context::output_t> ec_out;
+    std::optional<exec_context::output_t> ec_out;
     auto_fd fd_copy;
 
     if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
@@ -903,14 +938,16 @@ execute_init_commands(
                 }
 
                 rescan_files();
-                auto deadline = current_timeval()
-                    + ((lnav_data.ld_flags & LNF_HEADLESS)
-                           ? timeval{5, 0}
-                           : timeval{0, 500000});
+                auto deadline = ui_clock::now();
+                if (lnav_data.ld_flags & LNF_HEADLESS) {
+                    deadline += 5s;
+                } else {
+                    deadline += 500ms;
+                }
                 wait_for_pipers(deadline);
                 rebuild_indexes_repeatedly();
             }
-            if (dls.dls_rows.size() > 1 && lnav_data.ld_view_stack.size() == 1)
+            if (!dls.dls_headers.empty() && lnav_data.ld_view_stack.size() == 1)
             {
                 lnav_data.ld_views[LNV_DB].reload_data();
                 ensure_view(LNV_DB);
@@ -947,36 +984,38 @@ execute_init_commands(
 int
 sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
+    const auto& vc = view_colors::singleton();
     auto& dls = *(ec.ec_label_source_stack.back());
+    int ncols = sqlite3_column_count(stmt);
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();
 
+        for (int lpc = 0; lpc < ncols; lpc++) {
+            const int type = sqlite3_column_type(stmt, lpc);
+            std::string colname = sqlite3_column_name(stmt, lpc);
+
+            dls.push_header(colname, type, false);
+        }
         return 0;
     }
 
-    auto& vc = view_colors::singleton();
-    int ncols = sqlite3_column_count(stmt);
-    int row_number;
-    int lpc, retval = 0;
-    auto set_vars = false;
+    int retval = 0;
+    auto set_vars = dls.dls_rows.empty();
 
-    row_number = dls.dls_rows.size();
-    dls.dls_rows.resize(row_number + 1);
-    if (dls.dls_headers.empty()) {
-        for (lpc = 0; lpc < ncols; lpc++) {
+    if (dls.dls_rows.empty()) {
+        for (int lpc = 0; lpc < ncols; lpc++) {
             int type = sqlite3_column_type(stmt, lpc);
             std::string colname = sqlite3_column_name(stmt, lpc);
-            bool graphable;
 
-            graphable = ((type == SQLITE_INTEGER || type == SQLITE_FLOAT)
-                         && !binary_search(lnav_data.ld_db_key_names.begin(),
-                                           lnav_data.ld_db_key_names.end(),
-                                           colname));
-
-            dls.push_header(colname, type, graphable);
+            bool graphable = (type == SQLITE_INTEGER || type == SQLITE_FLOAT)
+                && !binary_search(lnav_data.ld_db_key_names.begin(),
+                                  lnav_data.ld_db_key_names.end(),
+                                  colname);
+            auto& hm = dls.dls_headers[lpc];
+            hm.hm_column_type = type;
+            hm.hm_graphable = graphable;
             if (graphable) {
-                auto& hm = dls.dls_headers.back();
                 auto name_for_ident_attrs = colname;
                 auto attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 for (size_t attempt = 0;
@@ -987,14 +1026,17 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                     attrs = vc.attrs_for_ident(name_for_ident_attrs);
                 }
                 hm.hm_chart.with_attrs_for_ident(colname, attrs);
-                dls.dls_headers.back().hm_title_attrs = attrs;
+                hm.hm_title_attrs = attrs;
+                hm.hm_column_size = std::max(hm.hm_column_size, size_t{10});
             }
         }
-        set_vars = true;
     }
-    for (lpc = 0; lpc < ncols; lpc++) {
+
+    auto row_number = dls.dls_rows.size();
+    dls.dls_rows.resize(row_number + 1);
+    for (int lpc = 0; lpc < ncols; lpc++) {
         auto* raw_value = sqlite3_column_value(stmt, lpc);
-        auto value_type = sqlite3_value_type(raw_value);
+        const auto value_type = sqlite3_value_type(raw_value);
         scoped_value_t value;
         auto& hm = dls.dls_headers[lpc];
 
@@ -1066,7 +1108,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
         });
     }
     std::error_code errc;
-    ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
+    std::filesystem::create_directories(lnav::paths::workdir(), errc);
     auto open_temp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
                                                           / "exec.XXXXXX");
     if (open_temp_res.isErr()) {
@@ -1090,7 +1132,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 
     static int exec_count = 0;
     auto desc
-        = fmt::format(FMT_STRING("[{}] Output of {}"), exec_count++, cmdline);
+        = fmt::format(FMT_STRING("exec-{}-output {}"), exec_count++, cmdline);
     lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
         .with_filename(desc)
         .with_include_in_session(false)
@@ -1145,12 +1187,13 @@ exec_context::clear_output()
             out.second(out.first);
         }
     };
-    this->ec_output_stack.back() = std::make_pair("default", nonstd::nullopt);
+    this->ec_output_stack.back() = std::make_pair("default", std::nullopt);
 }
 
-exec_context::exec_context(logline_value_vector* line_values,
-                           sql_callback_t sql_callback,
-                           pipe_callback_t pipe_callback)
+exec_context::
+exec_context(logline_value_vector* line_values,
+             sql_callback_t sql_callback,
+             pipe_callback_t pipe_callback)
     : ec_line_values(line_values),
       ec_accumulator(std::make_unique<attr_line_t>()),
       ec_sql_callback(sql_callback), ec_pipe_callback(pipe_callback)
@@ -1161,12 +1204,12 @@ exec_context::exec_context(logline_value_vector* line_values,
     this->ec_path_stack.emplace_back(".");
     this->ec_source.emplace_back(
         lnav::console::snippet::from(COMMAND_SRC, "").with_line(1));
-    this->ec_output_stack.emplace_back("screen", nonstd::nullopt);
+    this->ec_output_stack.emplace_back("screen", std::nullopt);
     this->ec_error_callback_stack.emplace_back(
         [](const auto& um) { lnav::console::print(stderr, um); });
 }
 
-void
+Result<std::string, lnav::console::user_message>
 exec_context::execute(const std::string& cmdline)
 {
     if (this->get_provenance<mouse_input>()) {
@@ -1195,6 +1238,8 @@ exec_context::execute(const std::string& cmdline)
     if (exec_res.isErr()) {
         this->ec_error_callback_stack.back()(exec_res.unwrapErr());
     }
+
+    return exec_res;
 }
 
 void
@@ -1237,9 +1282,10 @@ exec_context::enter_source(intern_string_t path,
     return {this};
 }
 
-exec_context::output_guard::output_guard(exec_context& context,
-                                         std::string name,
-                                         const nonstd::optional<output_t>& file)
+exec_context::output_guard::
+output_guard(exec_context& context,
+             std::string name,
+             const std::optional<output_t>& file)
     : sg_context(context)
 {
     if (file) {
@@ -1248,7 +1294,8 @@ exec_context::output_guard::output_guard(exec_context& context,
     context.ec_output_stack.emplace_back(std::move(name), file);
 }
 
-exec_context::output_guard::~output_guard()
+exec_context::output_guard::~
+output_guard()
 {
     this->sg_context.clear_output();
     this->sg_context.ec_output_stack.pop_back();

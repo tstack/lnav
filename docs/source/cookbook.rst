@@ -101,3 +101,12 @@ can use the following commands to generate customized output for a report:
    :language: custsqlite
    :caption: report-demo.lnav
    :linenos:
+
+
+Creating a Runbook
+^^^^^^^^^^^^^^^^^^
+
+If you have a collection of lnav scripts, you can create a markdown file
+that links to the scripts and use it as a runbook.  Clicking on a link to
+a :file:`.lnav` file will open an "Actions" menu with an "Execute" menu
+item.  Clicking on "Execute" will launch the script.

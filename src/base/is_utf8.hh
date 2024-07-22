@@ -32,13 +32,12 @@
 #include <sys/types.h>
 
 #include "intern_string.hh"
-#include "optional.hpp"
 
 struct utf8_scan_result {
     const char* usr_message{nullptr};
     size_t usr_faulty_bytes{0};
     string_fragment usr_valid_frag{string_fragment::invalid()};
-    nonstd::optional<string_fragment> usr_remaining;
+    std::optional<string_fragment> usr_remaining;
     bool usr_has_ansi{false};
     size_t usr_column_width_guess{0};
 
@@ -54,7 +53,7 @@ struct utf8_scan_result {
 };
 
 utf8_scan_result is_utf8(string_fragment frag,
-                         nonstd::optional<unsigned char> terminator
-                         = nonstd::nullopt);
+                         std::optional<unsigned char> terminator
+                         = std::nullopt);
 
 #endif /* _IS_UTF8_H */

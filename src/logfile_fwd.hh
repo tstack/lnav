@@ -35,6 +35,8 @@
 #include <chrono>
 #include <string>
 
+#include <sys/stat.h>
+
 #include "base/auto_fd.hh"
 #include "file_format.hh"
 #include "piper.looper.hh"
@@ -69,10 +71,11 @@ struct logfile_open_options_base {
     ssize_t loo_visible_size_limit{-1};
     bool loo_tail{true};
     file_format_t loo_file_format{file_format_t::UNKNOWN};
-    nonstd::optional<std::string> loo_format_name;
-    nonstd::optional<text_format_t> loo_text_format;
-    nonstd::optional<lnav::piper::running_handle> loo_piper;
+    std::optional<std::string> loo_format_name;
+    std::optional<text_format_t> loo_text_format;
+    std::optional<lnav::piper::running_handle> loo_piper;
     file_location_t loo_init_location{mapbox::util::no_init{}};
+    std::vector<lnav::console::user_message> loo_match_details;
 };
 
 struct logfile_open_options : public logfile_open_options_base {

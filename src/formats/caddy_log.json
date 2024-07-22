@@ -1,0 +1,110 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "caddy_log": {
+        "title": "Caddy log format",
+        "description": "",
+        "file-type": "json",
+        "timestamp-field": "ts",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            {
+                "prefix": " ",
+                "field": "request/client_ip"
+            },
+            {
+                "prefix": " ",
+                "field": "user_id",
+                "default-value": ""
+            },
+            {
+                "prefix": " \"",
+                "field": "request/method"
+            },
+            {
+                "prefix": " ",
+                "field": "request/host"
+            },
+            {
+                "field": "request/uri"
+            },
+            {
+                "prefix": " ",
+                "field": "request/proto",
+                "suffix": "\""
+            },
+            {
+                "prefix": " ",
+                "field": "status"
+            },
+            {
+                "prefix": " ",
+                "field": "size"
+            },
+            {
+                "prefix": " ",
+                "field": "msg"
+            }
+        ],
+        "value": {
+            "bytes_read": {
+                "kind": "integer"
+            },
+            "duration": {
+                "kind": "integer"
+            },
+            "level": {
+                "kind": "string",
+                "hidden": true
+            },
+            "logger": {
+                "kind": "string",
+                "hidden": true
+            },
+            "request": {
+                "kind": "json",
+                "hidden": true
+            },
+            "request/client_ip": {
+                "kind": "string",
+                "collate": "ipaddress",
+                "identifier": true
+            },
+            "request/host": {
+                "kind": "string",
+                "identifier": true
+            },
+            "request/method": {
+                "kind": "string",
+                "identifier": true
+            },
+            "request/proto": {
+                "kind": "string",
+                "identifier": true
+            },
+            "request/uri": {
+                "kind": "string",
+                "identifier": true
+            },
+            "resp_headers": {
+                "kind": "json",
+                "hidden": true
+            },
+            "msg": {
+                "kind": "string"
+            },
+            "size": {
+                "kind": "integer"
+            },
+            "status": {
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "user_id": {
+                "kind": "string",
+                "identifier": true
+            }
+        }
+    }
+}

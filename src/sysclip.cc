@@ -45,7 +45,7 @@
 
 namespace sysclip {
 
-static nonstd::optional<clipboard>
+static std::optional<clipboard>
 get_commands()
 {
     const auto& cfg = injector::get<const config&>();
@@ -63,7 +63,7 @@ get_commands()
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 static int

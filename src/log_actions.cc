@@ -134,10 +134,10 @@ action_delegate::execute_action(const std::string& action_name)
                     std::move(out_pipe.read_end()),
                     false,
                     lnav::filesystem::open_temp_file(
-                        ghc::filesystem::temp_directory_path()
+                        std::filesystem::temp_directory_path()
                         / "lnav.action.XXXXXX")
                         .map([](auto pair) {
-                            ghc::filesystem::remove(pair.first);
+                            std::filesystem::remove(pair.first);
 
                             return pair;
                         })

@@ -1,3 +1,71 @@
+## lnav v0.12.3
+
+Features:
+* Files that contain a mixture of log messages from separate
+  services (e.g. docker logs) can now be automatically
+  de-multiplexed into separate files that lnav can digest.
+* The `log_opid` column on log vtables can now be `UPDATE`d
+  so that you can manually set an opid on log messages that
+  don't have one.  Setting an opid allows messages to show
+  up in the timeline view.
+* The Files panel now has a details view on the right side
+  that shows extra information about the selected file.
+  You can look here for details of why lnav selected a
+  particular log format.
+* Add support for GitHub Markdown Alerts.
+* Added the `:xopen` command that will open the given paths
+  using an external opener like `open` or `xdg-open`.
+* Clicking on a link in a markdown file will open the Actions
+  with the following options:
+  - opening the link target in lnav or, if it's an lnav script,
+    executing the script;
+  - opening the target with `:xopen`;
+  - or, copying the link to the clipboard.
+* Added a `crash upload` command to the management CLI that will
+  upload crash logs to a server for analysis.
+* Added a `:set-text-view-mode` command that controls whether
+  file contents, such as markdown, are rendered or shown in
+  their raw state.
+* Text files with lines longer than 240 characters will be
+  automatically pretty-printed.  You can revert to the raw view
+  using the `:set-text-view-mode` command.
+* Added a `pretty_print()` SQL function that provides the same
+  functionality as the PRETTY view.
+* Keymap definitions can now bind to a function key using an
+  identifier that starts with `f` followed by the number of the
+  function key.
+* Added log formats for the `env_logger` and `simple_logger` Rust
+  crates.
+
+Interface Changes:
+* The "Gantt Chart" view has been renamed to "timeline."
+* In the timeline view, pressing `ENTER` will focus on
+  the preview pane, so you can scroll through messages
+  with the selected Op ID.
+* With mouse mode enabled, `CTRL` can be used as an alternate
+  to `SHIFT` when clicking/dragging in the main view to
+  highlight lines.  A few terminals capture shift+clicks as a
+  way to select text and do not pass them to the application.
+* Clicking on an internal link in a Markdown document will move 
+  to that section.
+
+Bug Fixes:
+* Log messages in formats with custom timestamp formats were
+  not being converted to the local timezone.
+* The timezone offset is now shown in the parser details
+  overlay for log messages.
+* If a theme does not define `cursor-line` or `selected-text`
+  styles, the styles from the default theme will be used.
+* The first argument to a script is now the full path of the
+  script and not just the script name.
+
+Maintenance:
+* You can now do an `UPDATE` on the `lnav_top_view` SQL view.
+  This makes it easier to write queries that manipulate the
+  current view.
+* Upgrade to C++17
+
+
 ## lnav v0.12.2
 
 Features:

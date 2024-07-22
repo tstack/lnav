@@ -1280,6 +1280,20 @@
 ----
 
 
+.. _set_text_view_mode:
+
+:set-text-view-mode *mode*
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Set the display mode for text files
+
+  **Parameters**
+    * **mode\*** --- The display mode
+
+
+----
+
+
 .. _sh:
 
 :sh *--name=<name>* *cmdline*
@@ -1724,6 +1738,27 @@
 
   **See Also**
     :ref:`alt_msg`, :ref:`append_to`, :ref:`cd`, :ref:`create_logline_table`, :ref:`create_search_table`, :ref:`dot_dump`, :ref:`dot_read`, :ref:`echo`, :ref:`echo`, :ref:`echoln`, :ref:`eval`, :ref:`export_session_to`, :ref:`export_session_to`, :ref:`pipe_line_to`, :ref:`pipe_to`, :ref:`rebuild`, :ref:`redirect_to`, :ref:`redirect_to`, :ref:`sh`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_csv_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_json_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_jsonlines_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_raw_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_screen_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_table_to`, :ref:`write_to`, :ref:`write_to`
+
+----
+
+
+.. _xopen:
+
+:xopen *path*
+^^^^^^^^^^^^^
+
+  Use an external command to open the given file(s)
+
+  **Parameters**
+    * **path** --- The path to the file to open
+
+  **Examples**
+    To open the file '/path/to/file':
+
+    .. code-block::  lnav
+
+      :xopen /path/to/file
+
 
 ----
 

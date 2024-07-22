@@ -304,7 +304,7 @@ add_filter_expr_possibilities(readline_curses* rlc,
 
         lf->read_full_message(ll, values.lvv_sbr);
         values.lvv_sbr.erase_ansi();
-        format->annotate(cl, sa, values);
+        format->annotate(lf.get(), cl, sa, values);
         for (auto& lv : values.lvv_values) {
             if (!lv.lv_meta.lvm_struct_name.empty()) {
                 continue;
@@ -479,7 +479,7 @@ add_config_possibilities()
                     visited.insert(named_cap.get_name().to_string());
                 }
 
-                ghc::filesystem::path path_obj(path);
+                std::filesystem::path path_obj(path);
                 rc->add_possibility(ln_mode_t::COMMAND,
                                     named_cap.get_name().to_string(),
                                     path_obj.parent_path().filename().string());

@@ -35,6 +35,7 @@ logfmt_parser_test_LDADD = \
     liblogfmt.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/pcrepp/libpcrepp.a \
+    $(top_builddir)/src/fmtlib/libcppfmt.a \
     $(top_builddir)/src/third-party/scnlib/src/libscnlib.a
 
 TESTS = \

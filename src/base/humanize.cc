@@ -77,7 +77,7 @@ file_size(file_ssize_t value, alignment align)
 }
 
 const std::string&
-sparkline(double value, nonstd::optional<double> upper_opt)
+sparkline(double value, std::optional<double> upper_opt)
 {
     static const std::string ZERO = " ";
     static const std::string BARS[] = {

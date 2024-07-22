@@ -99,7 +99,9 @@ EOF
 fi
 
 if test x"${LIBARCHIVE_LIBS}" != x""; then
-    run_test env TMPDIR=tmp ${lnav_test} -n \
+    rm -rf logfile-tmp
+    mkdir logfile-tmp
+    run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
       -c ':config /tuning/archive-manager/min-free-space -1' \
       ${srcdir}/logfile_syslog.0
 
@@ -113,16 +115,16 @@ if test x"${LIBARCHIVE_LIBS}" != x""; then
            The minimum free space, in bytes, to maintain when unpacking archives
 EOF
 
-    rm -rf tmp/lnav-*
+    rm -rf logfile-tmp/lnav-*
     if test x"${XZ_CMD}" != x""; then
         ${XZ_CMD} -z -c ${srcdir}/logfile_syslog.1 > logfile_syslog.1.xz
 
-        run_test env TMPDIR=tmp ${lnav_test} -n \
+        run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
             -c ':config /tuning/archive-manager/min-free-space 1125899906842624' \
             -c ':config /tuning/archive-manager/cache-ttl 1d' \
             ${srcdir}/logfile_syslog.0
 
-        run_test env TMPDIR=tmp ${lnav_test} -d /tmp/lnav.err -n \
+        run_test env TMPDIR=logfile-tmp ${lnav_test} -d /tmp/lnav.err -n \
             logfile_syslog.1.xz
 
         sed -e "s|lnav-user-[0-9]*-work|lnav-user-NNN-work|g" \
@@ -133,14 +135,14 @@ EOF
         mv test_logfile.big.out `test_err_filename`
         check_error_output "decompression worked?" <<EOF
 ✘ error: unable to open file: /logfile_syslog.1.xz
- reason: available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
+ reason: available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'logfile-tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
 EOF
 
-        run_test env TMPDIR=tmp ${lnav_test} -n \
+        run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
             -c ':config /tuning/archive-manager/min-free-space 33554432' \
             ${srcdir}/logfile_syslog.0
 
-        run_test env TMPDIR=tmp ${lnav_test} -n \
+        run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
             logfile_syslog.1.xz
 
         check_output "decompression not working" <<EOF
@@ -155,8 +157,8 @@ EOF
 
     dd if=test-logs.tgz of=test-logs-trunc.tgz bs=4096 count=20
 
-    mkdir -p tmp
-    run_test env TMPDIR=tmp ${lnav_test} \
+    mkdir -p logfile-tmp
+    run_test env TMPDIR=logfile-tmp ${lnav_test} \
         -c ':config /tuning/archive-manager/cache-ttl 1d' \
         -n test-logs.tgz
 
@@ -167,26 +169,26 @@ EOF
 10.112.81.15 - - [15/Feb/2013:06:00:31 +0000] "-" 400 0 "-" "-"
 EOF
 
-    if ! test -f tmp/*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
+    if ! test -f logfile-tmp/*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archived file not unpacked"
         exit 1
     fi
 
-    if test -w tmp/*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
+    if test -w logfile-tmp/*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archived file is writable"
         exit 1
     fi
 
-    env TMPDIR=tmp ${lnav_test} -d /tmp/lnav.err \
+    env TMPDIR=logfile-tmp ${lnav_test} -d /tmp/lnav.err \
         -c ':config /tuning/archive-manager/cache-ttl 0d' \
         -n -q ${srcdir}/logfile_syslog.0
 
-    if test -f tmp/lnav*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
+    if test -f logfile-tmp/lnav*/archives/*-test-logs.tgz/test/logfile_access_log.0; then
         echo "archive cache not deleted?"
         exit 1
     fi
 
-    run_test env TMPDIR=tmp ${lnav_test} -n\
+    run_test env TMPDIR=logfile-tmp ${lnav_test} -n\
         -c ';SELECT view_name, basename(filepath), visible FROM lnav_view_files' \
         test-logs.tgz
 
@@ -196,7 +198,7 @@ log       logfile_access_log.0       1
 log       logfile_access_log.1       1
 EOF
 
-    run_test env TMPDIR=tmp ${lnav_test} -n \
+    run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
         test-logs-trunc.tgz
 
     sed -e "s|${builddir}||g" `test_err_filename` | head -2 \

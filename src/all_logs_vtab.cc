@@ -83,7 +83,7 @@ all_logs_vtab::extract(logfile* lf,
 
     this->vi_attrs.clear();
     sub_values.lvv_sbr = line.clone();
-    format->annotate(line_number, this->vi_attrs, sub_values, false);
+    format->annotate(lf, line_number, this->vi_attrs, sub_values, false);
 
     auto body = find_string_attr_range(this->vi_attrs, &SA_BODY);
     if (body.lr_start == -1) {
@@ -111,6 +111,7 @@ all_logs_vtab::extract(logfile* lf,
         this->alv_values_meta,
         json_string(gen).to_string_fragment().to_string());
     values.lvv_opid_value = std::move(sub_values.lvv_opid_value);
+    values.lvv_opid_provenance = sub_values.lvv_opid_provenance;
 }
 
 bool

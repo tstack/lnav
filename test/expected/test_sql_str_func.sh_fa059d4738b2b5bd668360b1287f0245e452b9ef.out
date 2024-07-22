@@ -1,0 +1,5 @@
+Row 0:
+  Column pretty_print('{a: 1, b:2}'): {
+    a: 1,
+    b:2
+}

@@ -76,13 +76,12 @@ public:
               });
     }
 
-    nonstd::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket) override
+    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override
     {
         return this->fss_time_delegate->row_for_time(time_bucket);
     }
 
-    nonstd::optional<row_info> time_for_row(vis_line_t row) override
+    std::optional<row_info> time_for_row(vis_line_t row) override
     {
         return this->fss_lines | lnav::itertools::nth(row)
             | lnav::itertools::flat_map([this](const auto row) {
@@ -106,7 +105,8 @@ public:
     std::vector<vis_line_t> fss_lines;
 };
 
-log_spectro_value_source::log_spectro_value_source(intern_string_t colname)
+log_spectro_value_source::
+log_spectro_value_source(intern_string_t colname)
     : lsvs_colname(colname)
 {
     this->update_stats();
@@ -190,8 +190,8 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
 {
     auto& lss = lnav_data.ld_log_source;
     auto begin_line = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
-    auto end_line
-        = lss.find_from_time(sr.sr_end_time).value_or(lss.text_line_count());
+    auto end_line = lss.find_from_time(sr.sr_end_time)
+                        .value_or(vis_line_t(lss.text_line_count()));
 
     for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
         const auto& ll = msg_info.get_logline();
@@ -226,7 +226,7 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
         auto retval = std::make_unique<filtered_sub_source>();
         auto begin_line = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
         auto end_line = lss.find_from_time(sr.sr_end_time)
-                            .value_or(lss.text_line_count());
+                            .value_or(vis_line_t(lss.text_line_count()));
 
         retval->fss_delegate = &lss;
         retval->fss_time_delegate = &lss;
@@ -281,8 +281,8 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     auto& log_tc = lnav_data.ld_views[LNV_LOG];
     auto& lss = lnav_data.ld_log_source;
     vis_line_t begin_line = lss.find_from_time(begin_time).value_or(0_vl);
-    vis_line_t end_line
-        = lss.find_from_time(end_time).value_or(lss.text_line_count());
+    vis_line_t end_line = lss.find_from_time(end_time).value_or(
+        vis_line_t(lss.text_line_count()));
     logline_value_vector values;
     string_attrs_t sa;
 
@@ -300,7 +300,7 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
         lf->read_full_message(ll, values.lvv_sbr);
         values.lvv_sbr.erase_ansi();
         sa.clear();
-        format->annotate(cl, sa, values, false);
+        format->annotate(lf.get(), cl, sa, values, false);
 
         auto lv_iter = find_if(values.lvv_values.begin(),
                                values.lvv_values.end(),
@@ -331,7 +331,8 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     }
 }
 
-db_spectro_value_source::db_spectro_value_source(std::string colname)
+db_spectro_value_source::
+db_spectro_value_source(std::string colname)
     : dsvs_colname(std::move(colname))
 {
     this->update_stats();
@@ -355,7 +356,8 @@ db_spectro_value_source::update_stats()
                                                   .append(" ")
                                                   .append("log_time"_variable)
                                                   .append(" ")
-                                                  .append("ASC"_keyword);
+                                                  .append("ASC"_keyword)
+                                                  .move();
 
             this->dsvs_error_msg
                 = lnav::console::user_message::error(
@@ -379,7 +381,8 @@ db_spectro_value_source::update_stats()
                                      .append_quoted(order_by_help)
                                      .append(" clause to your ")
                                      .append("SELECT"_keyword)
-                                     .append(" statement"));
+                                     .append(" statement"))
+                      .move();
         } else {
             this->dsvs_error_msg
                 = lnav::console::user_message::error(
@@ -401,7 +404,8 @@ db_spectro_value_source::update_stats()
                               .append(" statement. Use an ")
                               .append("AS"_keyword)
                               .append(
-                                  " directive to alias a computed timestamp"));
+                                  " directive to alias a computed timestamp"))
+                      .move();
         }
         return;
     }
@@ -413,7 +417,8 @@ db_spectro_value_source::update_stats()
                   .with_reason(attr_line_t("unknown column -- ")
                                    .append_quoted(lnav::roles::variable(
                                        this->dsvs_colname)))
-                  .with_help("Expecting a numeric column to visualize");
+                  .with_help("Expecting a numeric column to visualize")
+                  .move();
         return;
     }
 
@@ -425,7 +430,8 @@ db_spectro_value_source::update_stats()
                                    .append_quoted(lnav::roles::variable(
                                        this->dsvs_colname))
                                    .append(" is not a numeric column"))
-                  .with_help("Only numeric columns can be visualized");
+                  .with_help("Only numeric columns can be visualized")
+                  .move();
         return;
     }
 
@@ -433,7 +439,8 @@ db_spectro_value_source::update_stats()
         this->dsvs_error_msg
             = lnav::console::user_message::error(
                   "Cannot generate spectrogram for database results")
-                  .with_reason("Result set is empty");
+                  .with_reason("Result set is empty")
+                  .move();
         return;
     }
 
@@ -478,8 +485,8 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
 {
     auto& dls = lnav_data.ld_db_row_source;
     auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
-    auto end_row
-        = dls.row_for_time({sr.sr_end_time, 0}).value_or(dls.dls_rows.size());
+    auto end_row = dls.row_for_time({sr.sr_end_time, 0})
+                       .value_or(vis_line_t(dls.dls_rows.size()));
 
     for (auto lpc = begin_row; lpc < end_row; ++lpc) {
         auto scan_res = scn::scan_value<double>(scn::string_view{
@@ -501,7 +508,7 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
         retval->fss_overlay_delegate = &lnav_data.ld_db_overlay;
         auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
         auto end_row = dls.row_for_time({sr.sr_end_time, 0})
-                           .value_or(dls.dls_rows.size());
+                           .value_or(vis_line_t(dls.dls_rows.size()));
 
         for (auto lpc = begin_row; lpc < end_row; ++lpc) {
             auto scan_res = scn::scan_value<double>(scn::string_view{

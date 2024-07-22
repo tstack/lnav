@@ -30,12 +30,17 @@
 #ifndef lnav_fs_util_hh
 #define lnav_fs_util_hh
 
+#include <filesystem>
+#include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "auto_fd.hh"
-#include "ghc/filesystem.hpp"
 #include "intern_string.hh"
 #include "result.h"
 
@@ -50,55 +55,57 @@ is_glob(const std::string& fn)
             || fn.find('[') != std::string::npos);
 }
 
+std::string escape_path(const std::filesystem::path& p);
+
 inline int
-statp(const ghc::filesystem::path& path, struct stat* buf)
+statp(const std::filesystem::path& path, struct stat* buf)
 {
     return stat(path.c_str(), buf);
 }
 
 inline int
-openp(const ghc::filesystem::path& path, int flags)
+openp(const std::filesystem::path& path, int flags)
 {
     return open(path.c_str(), flags);
 }
 
 inline int
-openp(const ghc::filesystem::path& path, int flags, mode_t mode)
+openp(const std::filesystem::path& path, int flags, mode_t mode)
 {
     return open(path.c_str(), flags, mode);
 }
 
-Result<ghc::filesystem::path, std::string> realpath(
-    const ghc::filesystem::path& path);
+Result<std::filesystem::path, std::string> realpath(
+    const std::filesystem::path& path);
 
-Result<auto_fd, std::string> create_file(const ghc::filesystem::path& path,
+Result<auto_fd, std::string> create_file(const std::filesystem::path& path,
                                          int flags,
                                          mode_t mode);
 
-Result<auto_fd, std::string> open_file(const ghc::filesystem::path& path,
+Result<auto_fd, std::string> open_file(const std::filesystem::path& path,
                                        int flags);
 
-Result<struct stat, std::string> stat_file(const ghc::filesystem::path& path);
+Result<struct stat, std::string> stat_file(const std::filesystem::path& path);
 
-Result<std::pair<ghc::filesystem::path, auto_fd>, std::string> open_temp_file(
-    const ghc::filesystem::path& pattern);
+Result<std::pair<std::filesystem::path, auto_fd>, std::string> open_temp_file(
+    const std::filesystem::path& pattern);
 
-Result<std::string, std::string> read_file(const ghc::filesystem::path& path);
+Result<std::string, std::string> read_file(const std::filesystem::path& path);
 
 enum class write_file_options {
     backup_existing,
 };
 
 struct write_file_result {
-    nonstd::optional<ghc::filesystem::path> wfr_backup_path;
+    std::optional<std::filesystem::path> wfr_backup_path;
 };
 
 Result<write_file_result, std::string> write_file(
-    const ghc::filesystem::path& path,
+    const std::filesystem::path& path,
     const string_fragment& content,
     std::set<write_file_options> options = {});
 
-std::string build_path(const std::vector<ghc::filesystem::path>& paths);
+std::string build_path(const std::vector<std::filesystem::path>& paths);
 
 class file_lock {
 public:
@@ -133,7 +140,7 @@ public:
 
     void unlock() const { lockf(this->lh_fd, F_ULOCK, 0); }
 
-    explicit file_lock(const ghc::filesystem::path& archive_path);
+    explicit file_lock(const std::filesystem::path& archive_path);
 
     auto_fd lh_fd;
 };
@@ -143,8 +150,8 @@ public:
 
 namespace fmt {
 template<>
-struct formatter<ghc::filesystem::path> : formatter<string_view> {
-    auto format(const ghc::filesystem::path& p, format_context& ctx)
+struct formatter<std::filesystem::path> : formatter<string_view> {
+    auto format(const std::filesystem::path& p, format_context& ctx)
         -> decltype(ctx.out()) const;
 };
 }  // namespace fmt

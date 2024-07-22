@@ -1,0 +1,9 @@
+[
+    {
+        "filepath": "sh-0 echo hi",
+        "descriptor": "org.lnav.piper.header",
+        "mimetype": "application/json",
+        "ctime": "2013-06-06T19:13:20.000",
+        "cwd": "{test_dir}"
+    }
+]

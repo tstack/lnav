@@ -47,8 +47,10 @@ static auto DELETE_HELP = ANSI_BOLD("D") ": Delete";
 static auto FILTERING_HELP = ANSI_BOLD("f") ": ";
 static auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
 static auto CLOSE_HELP = ANSI_BOLD("X") ": Close";
+static auto FOCUS_DETAILS_HELP = ANSI_BOLD("CTRL-]") ": Focus on details view";
 
-filter_status_source::filter_status_source()
+filter_status_source::
+filter_status_source()
 {
     this->tss_fields[TSF_TITLE].set_width(14);
     this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
@@ -102,6 +104,7 @@ filter_status_source::statusview_fields()
             break;
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
+        case ln_mode_t::FILE_DETAILS:
             this->tss_fields[TSF_HELP].set_value(EXIT_MSG);
             break;
         default:
@@ -110,6 +113,7 @@ filter_status_source::statusview_fields()
     }
 
     if (lnav_data.ld_mode == ln_mode_t::FILES
+        || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS
         || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES)
     {
         this->tss_fields[TSF_FILES_TITLE].set_value(
@@ -231,7 +235,8 @@ filter_status_source::update_filtered(text_sub_source* tss)
     }
 }
 
-filter_help_status_source::filter_help_status_source()
+filter_help_status_source::
+filter_help_status_source()
 {
     this->fss_help.set_min_width(10);
     this->fss_help.set_share(1);
@@ -292,10 +297,11 @@ filter_help_status_source::statusview_fields()
                     tss->tss_apply_filters ? "Disable Filtering"
                                            : "Enable Filtering");
             }
-        } else if (lnav_data.ld_mode == ln_mode_t::FILES
+        } else if ((lnav_data.ld_mode == ln_mode_t::FILES
+                    || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS)
                    && lnav_data.ld_session_loaded)
         {
-            auto& lv = lnav_data.ld_files_view;
+            const auto& lv = lnav_data.ld_files_view;
             auto sel = files_model::from_selection(lv.get_selection());
 
             sel.match(
@@ -313,9 +319,16 @@ filter_help_status_source::statusview_fields()
                     if (ld_opt && !ld_opt.value()->ld_visible) {
                         vis_help = "Show";
                     }
+                    const auto* focus_details_help
+                        = lnav_data.ld_mode == ln_mode_t::FILES
+                        ? FOCUS_DETAILS_HELP
+                        : "";
 
-                    this->fss_help.set_value(
-                        "  %s%s  %s", ENABLE_HELP, vis_help, JUMP_HELP);
+                    this->fss_help.set_value("  %s%s  %s  %s",
+                                             ENABLE_HELP,
+                                             vis_help,
+                                             JUMP_HELP,
+                                             focus_details_help);
                 });
         }
     };

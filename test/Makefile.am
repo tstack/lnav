@@ -203,10 +203,11 @@ dist_noinst_SCRIPTS = \
 	test_config.sh \
 	test_curl.sh \
 	test_data_parser.sh \
+	test_demux.sh \
 	test_events.sh \
 	test_format_installer.sh \
 	test_format_loader.sh \
-	test_gantt.sh \
+	test_timeline.sh \
 	test_grep_proc.sh \
 	test_json_format.sh \
 	test_line_buffer.sh \
@@ -292,9 +293,11 @@ dist_noinst_DATA = \
 	datafile_simple.20 \
 	datafile_simple.21 \
 	datafile_simple.22 \
+	datafile_simple.26 \
 	datafile_xml.0 \
 	dhcp.pcapng \
 	dhcp-trunc.pcapng \
+	empty-result.lnav \
 	example.patch \
 	example.toml \
 	expected_help.txt \
@@ -330,6 +333,9 @@ dist_noinst_DATA = \
 	logfile_crlf.0 \
 	logfile_cloudflare.json \
 	logfile_cxx.0 \
+	logfile_docker_compose.0 \
+	logfile_docker_compose_with_noise.0 \
+	logfile_docker_compose_with_ts.0 \
 	logfile_empty.0 \
 	logfile_epoch.0 \
 	logfile_epoch.1 \
@@ -345,6 +351,7 @@ dist_noinst_DATA = \
 	logfile_invalid_json.json \
 	logfile_invalid_json2.json \
 	logfile_mixed_json2.json \
+	logfile_mux_zookeeper.0 \
 	logfile_journald.json \
 	logfile_json.json \
 	logfile_json2.json \
@@ -401,6 +408,7 @@ dist_noinst_DATA = \
 	textfile_ansi.0 \
 	textfile_ansi_expanding.0 \
 	textfile_json_indented.0 \
+	textfile_json_long.0 \
 	textfile_json_one_line.0 \
 	textfile_nonl.txt \
 	textfile_plain.0 \
@@ -479,11 +487,13 @@ TESTS = \
 	test_cli.sh \
 	test_cmds.sh \
 	test_config.sh \
+	test_data_parser.sh \
+	test_demux.sh \
 	test_events.sh \
 	test_listview.sh \
 	test_meta.sh \
 	test_mvwattrline.sh \
-	test_gantt.sh \
+	test_timeline.sh \
 	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_json_format.sh \
@@ -509,7 +519,6 @@ TESTS = \
 	test_text_anonymizer \
 	test_text_file.sh \
 	test_tui.sh \
-	test_data_parser.sh \
 	test_pretty_print.sh \
     test_view_colors.sh \
 	test_vt52_curses.sh
@@ -579,6 +588,8 @@ test_remote.sh.log: remote/ssh_host_dsa_key remote/ssh_host_rsa_key remote/id_rs
 distclean-local:
 	$(RM_V)rm -rf remote remote-tmp not:a:remote:dir
 	$(RM_V)rm -rf sessions
+	$(RM_V)rm -rf cfg
+	$(RM_V)rm -rf file-tz
 	$(RM_V)rm -rf tmp
 	$(RM_V)rm -rf piper-tmp
 	$(RM_V)rm -rf rotmp

@@ -40,9 +40,10 @@ struct log_message_session_state {
     int64_t lmss_time_msecs;
     std::string lmss_format;
     bool lmss_mark;
-    nonstd::optional<std::string> lmss_comment;
-    nonstd::optional<std::string> lmss_tags;
-    nonstd::optional<std::string> lmss_annotations;
+    std::optional<std::string> lmss_comment;
+    std::optional<std::string> lmss_tags;
+    std::optional<std::string> lmss_annotations;
+    std::optional<std::string> lmss_opid;
     std::string lmss_hash;
 };
 
@@ -56,10 +57,11 @@ struct from_sqlite<log_message_session_state> {
             from_sqlite<int64_t>()(argc, argv, argi + 0),
             from_sqlite<std::string>()(argc, argv, argi + 1),
             from_sqlite<bool>()(argc, argv, argi + 2),
-            from_sqlite<nonstd::optional<std::string>>()(argc, argv, argi + 3),
-            from_sqlite<nonstd::optional<std::string>>()(argc, argv, argi + 4),
-            from_sqlite<nonstd::optional<std::string>>()(argc, argv, argi + 5),
-            from_sqlite<std::string>()(argc, argv, argi + 6),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 3),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 4),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 5),
+            from_sqlite<std::optional<std::string>>()(argc, argv, argi + 6),
+            from_sqlite<std::string>()(argc, argv, argi + 7),
         };
     }
 };
@@ -111,14 +113,14 @@ struct from_sqlite<log_file_session_state> {
 namespace lnav {
 namespace session {
 
-static nonstd::optional<ghc::filesystem::path>
-find_container_dir(ghc::filesystem::path file_path)
+static std::optional<std::filesystem::path>
+find_container_dir(std::filesystem::path file_path)
 {
-    if (!ghc::filesystem::exists(file_path)) {
-        return nonstd::nullopt;
+    if (!std::filesystem::exists(file_path)) {
+        return std::nullopt;
     }
 
-    nonstd::optional<ghc::filesystem::path> dir_with_last_readme;
+    std::optional<std::filesystem::path> dir_with_last_readme;
 
     while (file_path.has_parent_path()
            && file_path != file_path.root_directory())
@@ -128,7 +130,7 @@ find_container_dir(ghc::filesystem::path file_path)
         std::error_code ec;
 
         for (const auto& entry :
-             ghc::filesystem::directory_iterator(parent, ec))
+             std::filesystem::directory_iterator(parent, ec))
         {
             if (!entry.is_regular_file()) {
                 continue;
@@ -147,13 +149,13 @@ find_container_dir(ghc::filesystem::path file_path)
         file_path = parent;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 static std::string
 replace_home_dir(std::string path)
 {
-    auto home_dir_opt = getenv_opt("HOME");
+    const auto home_dir_opt = getenv_opt("HOME");
 
     if (!home_dir_opt) {
         return path;
@@ -180,12 +182,13 @@ export_to(FILE* file)
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     static const char* BOOKMARK_QUERY = R"(
-SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_annotations, log_line_hash
+SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_annotations, log_user_opid, log_line_hash
    FROM all_logs
    WHERE log_mark = 1 OR
          log_comment IS NOT NULL OR
          log_tags IS NOT NULL OR
-         log_annotations IS NOT NULL
+         log_annotations IS NOT NULL OR
+         (log_user_opid IS NOT NULL AND log_user_opid != '')
 )";
 
     static const char* FILTER_QUERY = R"(
@@ -277,13 +280,13 @@ SELECT content_id, format, time_offset FROM lnav_file
             continue;
         }
 
-        auto file_path_str = name_pair.first;
-        auto file_path = ghc::filesystem::path(file_path_str);
+        const auto& file_path_str = name_pair.first;
+        auto file_path = std::filesystem::path(file_path_str);
         auto container_path_opt = find_container_dir(file_path);
         if (container_path_opt) {
             auto container_parent = container_path_opt.value().parent_path();
             auto file_container_path
-                = ghc::filesystem::relative(file_path, container_parent)
+                = std::filesystem::relative(file_path, container_parent)
                       .string();
             file_containers[container_parent.string()].push_back(
                 file_container_path);
@@ -325,7 +328,8 @@ SELECT content_id, format, time_offset FROM lnav_file
                                       "SET log_mark = {}, "
                                       "log_comment = {}, "
                                       "log_tags = {}, "
-                                      "log_annotations = {} "
+                                      "log_annotations = {}, "
+                                      "log_opid = {} "
                                       "WHERE log_time_msecs = {} AND "
                                       "log_format = {} AND "
                                       "log_line_hash = {}\n"),
@@ -333,6 +337,7 @@ SELECT content_id, format, time_offset FROM lnav_file
                            sqlitepp::quote(lmss.lmss_comment).in(),
                            sqlitepp::quote(lmss.lmss_tags).in(),
                            sqlitepp::quote(lmss.lmss_annotations).in(),
+                           sqlitepp::quote(lmss.lmss_opid).in(),
                            lmss.lmss_time_msecs,
                            sqlitepp::quote(lmss.lmss_format).in(),
                            sqlitepp::quote(lmss.lmss_hash).in());
@@ -469,7 +474,7 @@ SELECT content_id, format, time_offset FROM lnav_file
                 }
                 auto container_parent
                     = container_path_opt.value().parent_path();
-                auto file_container_path = ghc::filesystem::relative(
+                auto file_container_path = std::filesystem::relative(
                     ld->get_file_ptr()->get_path(), container_parent);
                 fmt::print(file,
                            FMT_STRING(":hide-file */{}\n"),

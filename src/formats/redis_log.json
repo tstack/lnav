@@ -9,13 +9,13 @@
         "description": "The Redis database",
         "regex": {
             "v2.x": {
-                "pattern": "\\[(?<pid>\\d+)\\]\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\-\\*\\#])\\s+(?<body>.*)"
+                "pattern": "^\\[(?<pid>\\d+)\\]\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\-\\*\\#])\\s+(?<body>.*)"
             },
             "v3.x": {
-                "pattern": "(?<pid>\\d+):(?<role>[XCSM])\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\*\\#\\-])\\s+(?<body>.*)"
+                "pattern": "^(?<pid>\\d+):(?<role>[XCSM])\\s+(?<timestamp>\\d{1,2} [a-zA-Z]{3} \\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?<level>[\\.\\*\\#\\-])\\s+(?<body>.*)"
             },
             "sig": {
-                "pattern": "(?<pid>\\d+):(?<role>signal-handler) \\((?<timestamp>\\d+)\\) (?<body>.*)"
+                "pattern": "^(?<pid>\\d+):(?<role>signal-handler) \\((?<timestamp>\\d+)\\) (?<body>.*)"
             }
         },
         "timestamp-format": [

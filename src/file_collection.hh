@@ -67,6 +67,7 @@ using safe_scan_progress = safe::Safe<scan_progress>;
 struct other_file_descriptor {
     file_format_t ofd_format;
     std::string ofd_description;
+    std::vector<lnav::console::user_message> ofd_details;
 
     other_file_descriptor(file_format_t format = file_format_t::UNKNOWN,
                           std::string description = "")
@@ -92,7 +93,7 @@ enum class child_poll_result_t {
 class child_poller {
 public:
     explicit child_poller(
-        nonstd::optional<std::string> filename,
+        std::optional<std::string> filename,
         auto_pid<process_state::running> child,
         std::function<void(file_collection&,
                            auto_pid<process_state::finished>&)> finalizer)
@@ -126,7 +127,7 @@ public:
 
     child_poller& operator=(const child_poller&) = delete;
 
-    const nonstd::optional<std::string>& get_filename() const
+    const std::optional<std::string>& get_filename() const
     {
         return this->cp_filename;
     }
@@ -136,8 +137,8 @@ public:
     child_poll_result_t poll(file_collection& fc);
 
 private:
-    nonstd::optional<std::string> cp_filename;
-    nonstd::optional<auto_pid<process_state::running>> cp_child;
+    std::optional<std::string> cp_filename;
+    std::optional<auto_pid<process_state::running>> cp_child;
     std::function<void(file_collection&, auto_pid<process_state::finished>&)>
         cp_finalizer;
 };
@@ -188,15 +189,7 @@ struct file_collection {
             && this->fc_other_files.empty();
     }
 
-    void clear()
-    {
-        this->fc_name_to_errors->writeAccess()->clear();
-        this->fc_file_names.clear();
-        this->fc_files.clear();
-        this->fc_closed_files.clear();
-        this->fc_other_files.clear();
-        this->fc_new_stats.clear();
-    }
+    void clear();
 
     bool is_below_open_file_limit() const
     {
@@ -212,7 +205,7 @@ struct file_collection {
                          logfile_open_options& loo,
                          bool required);
 
-    nonstd::optional<std::future<file_collection>> watch_logfile(
+    std::optional<std::future<file_collection>> watch_logfile(
         const std::string& filename, logfile_open_options& loo, bool required);
 
     void merge(file_collection& other);
@@ -222,6 +215,8 @@ struct file_collection {
     void close_files(const std::vector<std::shared_ptr<logfile>>& files);
 
     void regenerate_unique_file_names();
+
+    size_t initial_indexing_pipers() const;
 
     size_t active_pipers() const;
 

@@ -1,0 +1,93 @@
+[1m[4m[35mⓘ[0m[4m The following is a rendered view of the content.  Use [0m[4m[37m[40m:set-text-view-mode raw[0m[4m to view the raw version of this text[0m
+{
+    [35m"$schema"[0m:[35m"https://lnav.org/schemas/format-v1.schema.json"[0m,
+    [35m"syslog_log"[0m:{
+        [35m"title"[0m:[35m"Syslog"[0m,
+        [35m"description"[0m:[35m"The system logger format found on most posix systems."[0m,
+        [35m"url"[0m:[35m"http://en.wikipedia.org/wiki/Syslog"[0m,
+        [35m"regex"[0m:{
+            [35m"std"[0m:{[35m"pattern"[0m:[35m""[0m
+                ^(?<timestamp>(?:\S{
+                            [1m3[0m,
+                            [1m8[0m
+                        }\s+\d{
+                            [1m1[0m,
+                            [1m2[0m
+                        } \d{[1m2[0m}:\d{[1m2[0m}:\d{[1m2[0m}|\d{[1m4[0m}-\d{[1m2[0m}-\d{[1m2[0m}T\d{[1m2[0m}:\d{[1m2[0m}:\d{[1m2[0m}(?:\.\d{
+                                [1m3[0m,
+                                [1m6[0m
+                            }
+                        )?(?:Z|(?:\+|-)\d{[1m2[0m}:\d{[1m2[0m})
+                    )
+                )(?: (?<log_hostname>[a-zA-Z[1m0[0m[1m-9[0m:][^ ]+[a-zA-Z[1m0[0m[1m-9[0m]))?(?: \[CLOUDINIT\])?(?:(?: syslogd [\d\.]+|(?: (?<log_syslog_tag>(?<log_procname>(?:[^\[: ]+|[^ :]+))(?:\[(?<log_pid>\d+)\](?: \([^\)]+\))?)?))):\s*(?<body>.*)$|:?(?:(?: ---)? last message repeated \d+ times?(?: ---)?))
+[35m""[0m},
+            [35m"rfc5424"[0m:{[35m"pattern"[0m:[35m""[0m
+                ^<(?<log_pri>\d+)>(?<syslog_version>\d+) (?<timestamp>\d{[1m4[0m}-\d{[1m2[0m}-\d{[1m2[0m}T\d{[1m2[0m}:\d{[1m2[0m}:\d{[1m2[0m}(?:\.\d{[1m6[0m})?(?:[^ ]+)?) (?<log_hostname>[^ ]+|-) (?<log_syslog_tag>(?<log_procname>[^ ]+|-) (?<log_pid>[^ ]+|-) (?<log_msgid>[^ ]+|-)) (?<log_struct>\[(?:[
+                            ^\][35m"]|"[0m(?:\.|[^[35m"])+"[0m)*\]|-|)\s+(?<body>.*)
+[35m""[0m}
+        },
+        [35m"level-field"[0m:[35m"body"[0m,
+        [35m"level"[0m:{
+            [35m"error"[0m:[35m"(?:(?:(?<![a-zA-Z]))(?:(?i)error(?:s)?)(?:(?![a-zA-Z]))|failed|failure)"[0m,
+            [35m"warning"[0m:[35m"(?:(?:(?i)warn)|not responding|init: cannot execute)"[0m
+        },
+        [35m"opid-field"[0m:[35m"log_syslog_tag"[0m,
+        [35m"multiline"[0m:[1m[36mtrue[0m,
+        [35m"module-field"[0m:[35m"log_procname"[0m,
+        [35m"value"[0m:{
+            [35m"log_pri"[0m:{
+                [35m"kind"[0m:[35m"integer"[0m,
+                [35m"foreign-key"[0m:[1m[36mtrue[0m,
+                [35m"description"[0m:[35m"The priority level of the message"[0m
+            },
+            [35m"syslog_version"[0m:{
+                [35m"kind"[0m:[35m"integer"[0m,
+                [35m"foreign-key"[0m:[1m[36mtrue[0m,
+                [35m"description"[0m:[35m"The version of the syslog format used for this message"[0m
+            },
+            [35m"log_hostname"[0m:{
+                [35m"kind"[0m:[35m"string"[0m,
+                [35m"collate"[0m:[35m"ipaddress"[0m,
+                [35m"identifier"[0m:[1m[36mtrue[0m,
+                [35m"description"[0m:[35m"The name of the host that generated the message"[0m
+            },
+            [35m"log_procname"[0m:{
+                [35m"kind"[0m:[35m"string"[0m,
+                [35m"identifier"[0m:[1m[36mtrue[0m,
+                [35m"description"[0m:[35m"The name of the process that generated the message"[0m
+            },
+            [35m"log_pid"[0m:{
+                [35m"kind"[0m:[35m"string"[0m,
+                [35m"identifier"[0m:[1m[36mtrue[0m,
+                [35m"action-list"[0m:[[35m"dump_pid"[0m],
+                [35m"description"[0m:[35m"The ID of the process that generated the message"[0m
+            },
+            [35m"log_syslog_tag"[0m:{
+                [35m"kind"[0m:[35m"string"[0m,
+                [35m"identifier"[0m:[1m[36mtrue[0m,
+                [35m"description"[0m:[35m"The combination of the procname and pid"[0m
+            },
+            [35m"log_msgid"[0m:{
+                [35m"kind"[0m:[35m"string"[0m,
+                [35m"identifier"[0m:[1m[36mtrue[0m
+            },
+            [35m"log_struct"[0m:{[35m"kind"[0m:[35m"struct"[0m}
+        },
+        [35m"action"[0m:{
+            [35m"dump_pid"[0m:{
+                [35m"label"[0m:[35m"Show Process Info"[0m,
+                [35m"capture-output"[0m:[1m[36mtrue[0m,
+                [35m"cmd"[0m:[[35m"dump-pid.sh"[0m]
+            }
+        },
+        [35m"sample"[0m:[
+                {[35m"line"[0m:[35m"Apr 28 04:02:03 tstack-centos5 syslogd 1.4.1: restart."[0m},
+                {[35m"line"[0m:"Jun [1m27[0m [1m01[0m:[1m47[0m:[1m20[0m Tims-MacBook-Air.local configd[[1m17[0m]: network changed: v[1m4[0m(en[1m0[0m-:192.168.1.8) DNS- Proxy- SMB"},
+                {[35m"line"[0m:[35m"Jun 20 17:26:13 ip-10-188-149-5 [CLOUDINIT] util.py[DEBUG]: Restoring selinux mode for /var/lib/cloud (recursive=False)"[0m},
+                {[35m"line"[0m:"<46>[1m1[0m [1m2017[0m[1m-04[0m[1m-27[0mT[1m07[0m:[1m50[0m:[1m47.381967[0m+[1m02[0m:[1m00[0m logserver rsyslogd - - [origin [4msoftware[0m=\"rsyslogd\" [4mswVersion[0m=\"[1m8.4[0m.[1m2[0m\" [4mx-pid[0m=\"[1m900[0m\" [4mx-info[0m=\"http://www.rsyslog.com\"] start"},
+                {[35m"line"[0m:"<30>[1m1[0m [1m2017[0m[1m-04[0m[1m-27[0mT[1m07[0m:[1m59[0m:[1m12[0m+[1m02[0m:[1m00[0m nextcloud dhclient - - -  DHCPREQUEST on eth[1m0[0m to 192.168.1.1 port [1m67[0m"},
+                {[35m"line"[0m:"<78>[1m1[0m [1m2017[0m[1m-04[0m[1m-27[0mT[1m08[0m:[1m09[0m:[1m01[0m+[1m02[0m:[1m00[0m nextcloud CRON [1m1472[0m - -  (root) CMD (  [ -x /usr/lib/php[1m5[0m/sessionclean ] && /usr/lib/php[1m5[0m/sessionclean)"},
+                {[35m"line"[0m:[35m"Aug  1 00:00:03 Tim-Stacks-iMac com.apple.xpc.launchd[1] (com.apple.mdworker.shared.0C000000-0700-0000-0000-000000000000[50989]): Service exited due to SIGKILL | sent by mds[198]"[0m}
+        ]
+    }
+}

@@ -30,9 +30,12 @@
 #include "config.h"
 
 #ifdef __CYGWIN__
+#    include <algorithm>
 #    include <iostream>
 #    include <sstream>
 #endif
+
+#include <unistd.h>
 
 #include "fmt/format.h"
 #include "paths.hh"
@@ -76,7 +79,7 @@ windows_to_unix_file_path(char* input)
 }
 #endif
 
-ghc::filesystem::path
+std::filesystem::path
 dotlnav()
 {
 #ifdef __CYGWIN__
@@ -87,26 +90,26 @@ dotlnav()
     auto xdg_config_home = getenv("XDG_CONFIG_HOME");
 
     if (home_env != nullptr) {
-        auto home_path = ghc::filesystem::path(home_env);
+        auto home_path = std::filesystem::path(home_env);
 
-        if (ghc::filesystem::is_directory(home_path)) {
+        if (std::filesystem::is_directory(home_path)) {
             auto home_lnav = home_path / ".lnav";
 
-            if (ghc::filesystem::is_directory(home_lnav)) {
+            if (std::filesystem::is_directory(home_lnav)) {
                 return home_lnav;
             }
 
             if (xdg_config_home != nullptr) {
-                auto xdg_path = ghc::filesystem::path(xdg_config_home);
+                auto xdg_path = std::filesystem::path(xdg_config_home);
 
-                if (ghc::filesystem::is_directory(xdg_path)) {
+                if (std::filesystem::is_directory(xdg_path)) {
                     return xdg_path / "lnav";
                 }
             }
 
             auto home_config = home_path / ".config";
 
-            if (ghc::filesystem::is_directory(home_config)) {
+            if (std::filesystem::is_directory(home_config)) {
                 return home_config / "lnav";
             }
 
@@ -114,16 +117,16 @@ dotlnav()
         }
     }
 
-    return ghc::filesystem::current_path();
+    return std::filesystem::current_path();
 }
 
-ghc::filesystem::path
+std::filesystem::path
 workdir()
 {
     auto subdir_name = fmt::format(FMT_STRING("lnav-user-{}-work"), getuid());
-    auto tmp_path = ghc::filesystem::temp_directory_path();
+    auto tmp_path = std::filesystem::temp_directory_path();
 
-    return tmp_path / ghc::filesystem::path(subdir_name);
+    return tmp_path / std::filesystem::path(subdir_name);
 }
 
 }  // namespace paths

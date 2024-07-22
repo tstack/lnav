@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -101,7 +102,7 @@ std::set<std::string>* readline_context::arg_possibilities;
 static std::string last_match_str;
 static bool last_match_str_valid;
 static bool arg_needs_shlex;
-static nonstd::optional<std::string> rewrite_line_start;
+static std::optional<std::string> rewrite_line_start;
 static std::string rc_local_suggestion;
 
 static void
@@ -640,9 +641,10 @@ readline_context::command_complete(int count, int key)
     return rl_insert(count, key);
 }
 
-readline_context::readline_context(std::string name,
-                                   readline_context::command_map_t* commands,
-                                   bool case_sensitive)
+readline_context::
+readline_context(std::string name,
+                 readline_context::command_map_t* commands,
+                 bool case_sensitive)
     : rc_name(std::move(name)), rc_case_sensitive(case_sensitive),
       rc_quote_chars("\"'"), rc_highlighter(nullptr)
 {
@@ -723,8 +725,8 @@ readline_context::save()
     hs = nullptr;
 }
 
-readline_curses::readline_curses(
-    std::shared_ptr<pollable_supervisor> supervisor)
+readline_curses::
+readline_curses(std::shared_ptr<pollable_supervisor> supervisor)
     : pollable(supervisor, pollable::category::interactive),
       rc_focus(noop_func{}), rc_change(noop_func{}), rc_perform(noop_func{}),
       rc_alt_perform(noop_func{}), rc_timeout(noop_func{}),
@@ -734,7 +736,8 @@ readline_curses::readline_curses(
 {
 }
 
-readline_curses::~readline_curses()
+readline_curses::~
+readline_curses()
 {
     this->rc_pty[RCF_MASTER].reset();
     this->rc_command_pipe[RCF_MASTER].reset();
@@ -849,16 +852,16 @@ readline_curses::start()
         throw error(errno);
     }
 
-    auto slave_path = ghc::filesystem::path(slave_path_str);
+    auto slave_path = std::filesystem::path(slave_path_str);
     std::error_code ec;
-    if (!ghc::filesystem::exists(slave_path, ec)) {
+    if (!std::filesystem::exists(slave_path, ec)) {
         log_warning("ptsname_r() result does not exist -- %s", slave_path_str);
 #ifdef TIOCGPTN
         int ptn = 0;
         if (ioctl(this->rc_pty[RCF_MASTER], TIOCGPTN, &ptn) == 0) {
             snprintf(
                 slave_path_str, sizeof(slave_path_str), "/dev/ttyp%d", ptn);
-            slave_path = ghc::filesystem::path(slave_path_str);
+            slave_path = std::filesystem::path(slave_path_str);
             log_warning("... trying %s", slave_path.c_str());
         }
 #endif
@@ -1006,7 +1009,7 @@ readline_curses::start()
                         }
                         rl_redisplay();
                     }
-                    rewrite_line_start = nonstd::nullopt;
+                    rewrite_line_start = std::nullopt;
 
                     SpookyHash::Hash128(rl_line_buffer, rl_end, &h1, &h2);
 
@@ -1468,6 +1471,8 @@ readline_curses::focus(int context,
 {
     char cwd[MAXPATHLEN + 1024];
     char buffer[8 + sizeof(cwd)];
+
+    require(this->rc_contexts.count(context) > 0);
 
     curs_set(1);
 

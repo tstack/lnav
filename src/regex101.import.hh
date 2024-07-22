@@ -33,21 +33,21 @@
 #include <map>
 
 #include "base/lnav.console.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "log_format_ext.hh"
 #include "regex101.client.hh"
 
 namespace regex101 {
 
-Result<ghc::filesystem::path, lnav::console::user_message> import(
+Result<std::filesystem::path, lnav::console::user_message> import(
     const std::string& url,
     const std::string& name,
     const std::string& pat_name);
 
-ghc::filesystem::path patch_path(const external_log_format* format,
+std::filesystem::path patch_path(const external_log_format* format,
                                  const std::string& permalink);
 
-Result<ghc::filesystem::path, lnav::console::user_message> patch(
+Result<std::filesystem::path, lnav::console::user_message> patch(
     const external_log_format* format,
     const std::string& pat_name,
     const regex101::client::entry& entry);

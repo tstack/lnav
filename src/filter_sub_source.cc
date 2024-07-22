@@ -42,7 +42,8 @@
 
 using namespace lnav::roles::literals;
 
-filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
+filter_sub_source::
+filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
     this->fss_editor->set_x(25);
@@ -290,14 +291,14 @@ size_t
 filter_sub_source::text_line_count()
 {
     return (lnav_data.ld_view_stack.top() |
-                [](auto tc) -> nonstd::optional<size_t> {
+                [](auto tc) -> std::optional<size_t> {
                text_sub_source* tss = tc->get_sub_source();
 
                if (tss == nullptr) {
-                   return nonstd::nullopt;
+                   return std::nullopt;
                }
                auto& fs = tss->get_filters();
-               return nonstd::make_optional(fs.size());
+               return std::make_optional(fs.size());
            })
         .value_or(0);
 }
@@ -377,10 +378,10 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     attr_line_t content{tf->get_id()};
     switch (tf->get_lang()) {
         case filter_lang_t::REGEX:
-            readline_regex_highlighter(content, content.length());
+            readline_regex_highlighter(content, std::nullopt);
             break;
         case filter_lang_t::SQL:
-            readline_sqlite_highlighter(content, content.length());
+            readline_sqlite_highlighter(content, std::nullopt);
             break;
         case filter_lang_t::NONE:
             break;

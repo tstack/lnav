@@ -32,6 +32,7 @@
 #ifndef lnav_injector_hh
 #define lnav_injector_hh
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <type_traits>

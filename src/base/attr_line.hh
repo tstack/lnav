@@ -33,6 +33,7 @@
 #define attr_line_hh
 
 #include <new>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -97,11 +98,11 @@ using string_attrs_t = std::vector<string_attr>;
 string_attrs_t::const_iterator find_string_attr(
     const string_attrs_t& sa, const string_attr_type_base* type, int start = 0);
 
-nonstd::optional<const string_attr*> get_string_attr(
+std::optional<const string_attr*> get_string_attr(
     const string_attrs_t& sa, const string_attr_type_base* type, int start = 0);
 
 template<typename T>
-inline nonstd::optional<string_attr_wrapper<T>>
+inline std::optional<string_attr_wrapper<T>>
 get_string_attr(const string_attrs_t& sa,
                 const string_attr_type<T>& type,
                 int start = 0)
@@ -109,10 +110,10 @@ get_string_attr(const string_attrs_t& sa,
     auto iter = find_string_attr(sa, &type, start);
 
     if (iter == sa.end()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional(string_attr_wrapper<T>(&(*iter)));
+    return std::make_optional(string_attr_wrapper<T>(&(*iter)));
 }
 
 template<typename T>
@@ -300,7 +301,7 @@ public:
 
         size_t start_len = this->al_string.length();
 
-        this->al_string.append(std::move(value.first));
+        this->append(std::move(value.first));
 
         line_range lr{(int) start_len, (int) this->al_string.length()};
 
@@ -482,7 +483,7 @@ public:
 
     attr_line_t& erase(size_t pos, size_t len = std::string::npos);
 
-    attr_line_t& rtrim(nonstd::optional<const char*> chars = nonstd::nullopt);
+    attr_line_t& rtrim(std::optional<const char*> chars = std::nullopt);
 
     attr_line_t& erase_utf8_chars(size_t start)
     {
@@ -579,7 +580,12 @@ public:
 
     size_t nearest_text(size_t x) const;
 
+    attr_line_t& wrap_with(text_wrap_settings* tws);
+
     void apply_hide();
+
+    attr_line_t move() & { return std::move(*this); }
+    attr_line_t move() && { return std::move(*this); }
 
     std::string al_string;
     string_attrs_t al_attrs;

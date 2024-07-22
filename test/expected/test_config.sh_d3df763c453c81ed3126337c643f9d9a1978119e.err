@@ -1,0 +1,6 @@
+[1m[31m✘ error[0m: expecting an integer, found: abc
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m:[0m[1m[36m[40mconfig[0m[37m[40m /tuning/archive-manager/min-free-space abc[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mconfig[0m[4m [0m[4moption[0m[4m [[0m[4mvalue[0m[4m][0m
+         ══════════════════════════════════════════════════════════════════════
+           Read or write a configuration option

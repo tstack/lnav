@@ -48,6 +48,7 @@ run_cap_test ${lnav_test} -m -I ${test_dir} config blame
 
 export TMPDIR="piper-tmp"
 rm -rf ./piper-tmp
+mkdir piper-tmp
 run_cap_test ${lnav_test} -n -e 'echo hi'
 
 run_cap_test ${lnav_test} -m piper list

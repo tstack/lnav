@@ -39,7 +39,6 @@
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/types.hh"
-#include "optional.hpp"
 
 /* XXX figure out how to do this with the template */
 void sqlite_close_wrapper(void* mem);
@@ -49,7 +48,7 @@ using auto_sqlite3 = auto_mem<sqlite3, sqlite_close_wrapper>;
 namespace sqlitepp {
 
 inline auto_mem<char>
-quote(const nonstd::optional<std::string>& str)
+quote(const std::optional<std::string>& str)
 {
     auto_mem<char> retval(sqlite3_free);
 

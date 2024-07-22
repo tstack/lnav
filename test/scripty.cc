@@ -71,6 +71,7 @@
 #endif
 
 #include <algorithm>
+#include <filesystem>
 #include <map>
 #include <queue>
 #include <sstream>
@@ -81,7 +82,6 @@
 #include "base/auto_mem.hh"
 #include "base/string_util.hh"
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
 #include "styling.hh"
 #include "termios_guard.hh"
 #include "ww898/cp_utf8.hpp"
@@ -268,9 +268,9 @@ static struct {
 
     pid_t sd_child_pid{-1};
 
-    ghc::filesystem::path sd_actual_name;
+    std::filesystem::path sd_actual_name;
     auto_mem<FILE> sd_from_child{fclose};
-    ghc::filesystem::path sd_expected_name;
+    std::filesystem::path sd_expected_name;
 
     deque<struct command> sd_replay;
 } scripty_data;
@@ -1123,8 +1123,8 @@ main(int argc, char* argv[])
                            scripty_data.sd_expected_name.c_str());
 
                     auto options
-                        = ghc::filesystem::copy_options::overwrite_existing;
-                    ghc::filesystem::copy_file(scripty_data.sd_actual_name,
+                        = std::filesystem::copy_options::overwrite_existing;
+                    std::filesystem::copy_file(scripty_data.sd_actual_name,
                                                scripty_data.sd_expected_name,
                                                options);
                 } else {

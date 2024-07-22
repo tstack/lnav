@@ -15,6 +15,9 @@ on:
   # Allow for manual triggers from the web.
   workflow_dispatch:
 
+env:
+  COVERITY_SUPPRESS_ASSERT: 2564
+
 jobs:
   coverity:
     runs-on: ubuntu-latest
@@ -29,14 +32,17 @@ jobs:
           automake
           autoconf
           g++
-          libpcre3-dev
+          libpcre2-dev
           libncurses-dev
           libsqlite3-dev
           libbz2-dev
           libcurl4-openssl-dev
           libreadline-dev
+          pipx
           tshark
           zlib1g-dev
+      - name: Install python packages
+        run: pipx install check-jsonschema
       - name: autogen
         run: ./autogen.sh
       - name: configure
@@ -46,3 +52,10 @@ jobs:
           command: make -j$(getconf _NPROCESSORS_CONF)
           email: ${{ secrets.COVERITY_SCAN_EMAIL }}
           token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          # Artifact name
+          name: lnav-cov-int.zip
+          # A file, directory or wildcard pattern that describes what to upload
+          path: cov-int/build-log.txt

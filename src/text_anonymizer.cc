@@ -37,7 +37,7 @@
 #include "config.h"
 #include "data_scanner.hh"
 #include "diseases-json.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "hasher.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "words-json.h"
@@ -205,8 +205,8 @@ text_anonymizer::next(string_fragment line)
                             cu, CURLUPART_PATH, url_part.out(), CURLU_URLDECODE)
                         == CURLUE_OK)
                     {
-                        ghc::filesystem::path url_path(url_part.in());
-                        ghc::filesystem::path anon_path;
+                        std::filesystem::path url_path(url_part.in());
+                        std::filesystem::path anon_path;
 
                         for (const auto& comp : url_path) {
                             if (comp == comp.root_path()) {
@@ -290,8 +290,8 @@ text_anonymizer::next(string_fragment line)
                 break;
             }
             case DT_PATH: {
-                ghc::filesystem::path inp_path(tok_res->to_string());
-                ghc::filesystem::path anon_path;
+                std::filesystem::path inp_path(tok_res->to_string());
+                std::filesystem::path anon_path;
 
                 for (const auto& comp : inp_path) {
                     auto comp_str = comp.string();
@@ -343,14 +343,14 @@ text_anonymizer::next(string_fragment line)
                         });
 
                         return anon_mac.to_string(
-                            nonstd::make_optional(inp[2]));
+                            std::make_optional(inp[2]));
                     });
                 break;
             }
             case DT_HEX_DUMP: {
                 auto hex_str = tok_res->to_string();
                 auto hash_str = hasher().update(hex_str).to_array().to_string(
-                    nonstd::make_optional(hex_str[2]));
+                    std::make_optional(hex_str[2]));
                 std::string anon_hex;
 
                 while (anon_hex.size() < hex_str.size()) {

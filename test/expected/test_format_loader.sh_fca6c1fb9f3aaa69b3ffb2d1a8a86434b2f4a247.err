@@ -54,17 +54,17 @@
            The value to divide a numeric timestamp by in a JSON log.
 [1m[31m✘ error[0m: “[1mfoobar_log[0m” is not a valid log format
  [1m[31mreason[0m: no regexes specified
-[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m:3
+[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m:2
 [1m[31m✘ error[0m: “[1mfoobar_log[0m” is not a valid log format
  [1m[31mreason[0m: log message samples must be included in a format definition
-[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m:3
+[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m:2
 [1m[31m✘ error[0m: invalid pattern: “[1m/invalid_key_log/regex/foo[0m”
  [1m[31mreason[0m: no timestamp capture found in the pattern
-[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:3
 [36m =[0m [36mhelp[0m: all log messages need a timestamp
 [1m[31m✘ error[0m: “[1minvalid_key_log[0m” is not a valid log format
  [1m[31mreason[0m: structured logs cannot have regexes
-[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:4
+[36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:3
 [1m[31m✘ error[0m: invalid line format element “[1m/invalid_key_log/line-format/0/field[0m”
  [1m[31mreason[0m: “non-existent” is not a defined value
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:22

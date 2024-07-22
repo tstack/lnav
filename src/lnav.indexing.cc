@@ -200,11 +200,11 @@ public:
 };
 
 rebuild_indexes_result_t
-rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
+rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 {
-    logfile_sub_source& lss = lnav_data.ld_log_source;
-    textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
-    textview_curses& text_view = lnav_data.ld_views[LNV_TEXT];
+    auto& lss = lnav_data.ld_log_source;
+    auto& log_view = lnav_data.ld_views[LNV_LOG];
+    auto& text_view = lnav_data.ld_views[LNV_TEXT];
     bool scroll_downs[LNV__MAX];
     rebuild_indexes_result_t retval;
 
@@ -247,7 +247,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
                 tss->to_front(cb.front_file);
             }
 
-            nonstd::optional<vis_line_t> new_top_opt;
+            std::optional<vis_line_t> new_top_opt;
             cb.front_top.match(
                 [&new_top_opt](vis_line_t vl) {
                     log_info("file open request to jump to line: %d", (int) vl);
@@ -289,7 +289,7 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
 
     std::vector<std::shared_ptr<logfile>> closed_files;
     for (auto& lf : lnav_data.ld_active_files.fc_files) {
-        if ((!lf->exists() || lf->is_closed())) {
+        if (!lf->exists() || lf->is_closed()) {
             log_info("closed log file: %s", lf->get_filename().c_str());
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
@@ -373,10 +373,11 @@ rebuild_indexes(nonstd::optional<ui_clock::time_point> deadline)
     }
 
     lnav_data.ld_view_stack.top() | [&closed_files, &retval](auto tc) {
-        if (!closed_files.empty() && tc == &lnav_data.ld_views[LNV_GANTT]) {
-            auto* gantt_source = lnav_data.ld_views[LNV_GANTT].get_sub_source();
-            if (gantt_source != nullptr) {
-                gantt_source->text_filters_changed();
+        if (!closed_files.empty() && tc == &lnav_data.ld_views[LNV_TIMELINE]) {
+            auto* timeline_source
+                = lnav_data.ld_views[LNV_TIMELINE].get_sub_source();
+            if (timeline_source != nullptr) {
+                timeline_source->text_filters_changed();
             }
         }
 
@@ -456,8 +457,8 @@ update_active_files(file_collection& new_files)
                   .with_help(
                       attr_line_t("Use ")
                           .append("ulimit -n"_quoted_code)
-                          .append(
-                              " to increase the limit before running lnav"));
+                          .append(" to increase the limit before running lnav"))
+                  .move();
 
         lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
     }

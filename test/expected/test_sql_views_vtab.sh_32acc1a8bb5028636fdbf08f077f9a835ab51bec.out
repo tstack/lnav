@@ -11,8 +11,8 @@ Run [37m[40m ./autogen.sh [0m if compiling from a cloned repository.
 
 [1mSee Also[0m
 
-]8;;https://github.com/rcoh/angle-grinder\[4mAngle-grinder[0m]8;;\[4m[1][0m is a tool to slice and dice log files on the
+]8;;https://github.com/rcoh/angle-grinder\[4mAngle-grinder[0m]8;;\¹ is a tool to slice and dice log files on the
 command-line. If you're familiar with the SumoLogic query language,
 you might find this tool more comfortable to work with.
 
- ▌[1] - https://github.com/rcoh/angle-grinder 
+ [34m▌[0m[1] - https://github.com/rcoh/angle-grinder 

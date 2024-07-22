@@ -80,8 +80,9 @@ struct expressions : public lnav_config_listener {
                 auto sql_al = attr_line_t(pair.second.we_expr)
                                   .with_attr_for_all(SA_PREFORMATTED.value())
                                   .with_attr_for_all(
-                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-                readline_sqlite_highlighter(sql_al, -1);
+                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                                  .move();
+                readline_sqlite_highlighter(sql_al, std::nullopt);
                 intern_string_t watch_expr_path = intern_string::lookup(
                     fmt::format(FMT_STRING("/log/watch-expressions/{}/expr"),
                                 pair.first));
@@ -91,7 +92,8 @@ struct expressions : public lnav_config_listener {
                 auto um = lnav::console::user_message::error(
                               "SQL expression is invalid")
                               .with_reason(sqlite3_errmsg(lnav_db))
-                              .with_snippet(snippet);
+                              .with_snippet(snippet)
+                              .move();
 
                 reporter(&pair.second.we_expr, um);
                 continue;
@@ -128,7 +130,7 @@ eval_with(logfile& lf, logfile::iterator ll)
     auto format = lf.get_format();
     string_attrs_t sa;
     auto line_number = std::distance(lf.begin(), ll);
-    format->annotate(line_number, sa, values);
+    format->annotate(&lf, line_number, sa, values);
 
     for (auto& watch_pair : exprs.e_watch_exprs) {
         if (!watch_pair.second.cwe_enabled) {

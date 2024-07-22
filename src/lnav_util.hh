@@ -54,7 +54,6 @@
 #include "base/result.h"
 #include "config.h"
 #include "fmt/format.h"
-#include "optional.hpp"
 
 #if SIZEOF_OFF_T == 8
 #    define FORMAT_OFF_T "%lld"

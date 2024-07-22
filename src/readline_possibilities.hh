@@ -51,7 +51,7 @@ void add_view_text_possibilities(readline_curses* rlc,
 
 template<typename T,
          typename... Args,
-         std::enable_if_t<std::is_enum<T>::value, bool> = true>
+         std::enable_if_t<std::is_enum_v<T>, bool> = true>
 void
 add_view_text_possibilities(readline_curses* rlc, T context, Args... args)
 {
@@ -65,7 +65,7 @@ void add_filter_expr_possibilities(readline_curses* rlc,
 
 template<typename T,
          typename... Args,
-         std::enable_if_t<std::is_enum<T>::value, bool> = true>
+         std::enable_if_t<std::is_enum_v<T>, bool> = true>
 void
 add_filter_expr_possibilities(readline_curses* rlc, T context, Args... args)
 {

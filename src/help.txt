@@ -747,14 +747,6 @@ COMMANDS
                     type of action to perform (command, SQL query, execute
                     script).
 
-  pt-min-time [<date>|<relative-time>]
-                    Set/get the minimum time range for any papertrail queries.
-                    Absolute or relative time values can be specified.
-
-  pt-max-time [<date>|<relative-time>]
-                    Set/get the maximum time range for any papertrail queries.
-                    Absolute or relative time values can be specified.
-
   config <option> [value]
                     Set/get the value of a configuration option.
 
@@ -955,38 +947,6 @@ A delete will unset the environment variable:
 
 The table allows you to easily use the results of a SQL query in lnav
 commands, which is especially useful when scripting lnav.
-
-
-PAPERTRAIL INTEGRATION
-======================
-
-Papertrail is a log management service with free and paid plans at:
-
-  http://papertrailapp.com
-
-To configure lnav to communicate with the papertrail service, you will
-need to set the PAPERTRAIL_API_TOKEN environment variable.  You can
-get your API token from your user profile, available here:
-
-  https://papertrailapp.com/user/edit
-
-Searching papertrail using lnav can be done by prefixing the search terms
-with "pt:" and passing the value as a file name.  For example, to search
-for log messages with the string 'Critical Error' when starting lnav you
-can do the following:
-
-  \$ setenv PAPERTRAIL_API_TOKEN xxxxxxxxx
-  \$ lnav "pt:'Critical Error'"
-
-If lnav is already started, you can use the ':open' command like so:
-
-  :open pt:'Critical Error'
-
-If you just want to tail your logs in papertrail, you can pass an empty
-search string (i.e. "pt:").
-
-Only one papertrail search can be active at a time.  So, if an ':open'
-is done with a new query, the previous query will be closed first.
 
 
 CONTACT

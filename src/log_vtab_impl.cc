@@ -71,7 +71,8 @@ static const char* LOG_FOOTER_COLUMNS = R"(
   log_tags         TEXT,                              -- A JSON list of tags for this message
   log_annotations  TEXT,                              -- A JSON object of annotations for this messages
   log_filters      TEXT,                              -- A JSON list of filter IDs that matched this message
-  log_opid         TEXT HIDDEN,                       -- The message's OPID
+  log_opid         TEXT HIDDEN,                       -- The message's OPID from the log message or user
+  log_user_opid    TEXT HIDDEN,                       -- The message's OPID as set by the user
   log_format       TEXT HIDDEN,                       -- The name of the log file format
   log_format_regex TEXT HIDDEN,                       -- The name of the regex used to parse this log message
   log_time_msecs   INTEGER HIDDEN,                    -- The adjusted timestamp for the log message as the number of milliseconds from the epoch
@@ -93,6 +94,7 @@ enum class log_footer_columns : uint32_t {
     annotations,
     filters,
     opid,
+    user_opid,
     format,
     format_regex,
     time_msecs,
@@ -226,7 +228,7 @@ log_vtab_impl::extract(logfile* lf,
     auto format = lf->get_format();
 
     this->vi_attrs.clear();
-    format->annotate(line_number, this->vi_attrs, values, false);
+    format->annotate(lf, line_number, this->vi_attrs, values, false);
 }
 
 bool
@@ -321,6 +323,12 @@ struct vtab_cursor {
         this->log_msg_line = this->log_cursor.lc_curr_line;
     }
 
+    void invalidate()
+    {
+        this->line_values.clear();
+        this->log_msg_line = -1_vl;
+    }
+
     sqlite3_vtab_cursor base;
     struct log_cursor log_cursor;
     vis_line_t log_msg_line{-1_vl};
@@ -409,7 +417,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     *pp_cursor = (sqlite3_vtab_cursor*) p_cur;
 
     p_cur->base.pVtab = p_svt;
-    p_cur->log_cursor.lc_opid = nonstd::nullopt;
+    p_cur->log_cursor.lc_opid = std::nullopt;
     p_cur->log_cursor.lc_curr_line = 0_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
@@ -510,7 +518,7 @@ vt_next(sqlite3_vtab_cursor* cur)
     auto* vt = (log_vtab*) cur->pVtab;
     auto done = false;
 
-    vc->line_values.clear();
+    vc->invalidate();
     if (!vc->log_cursor.lc_indexed_lines.empty()) {
         vc->log_cursor.lc_curr_line = vc->log_cursor.lc_indexed_lines.back();
         vc->log_cursor.lc_indexed_lines.pop_back();
@@ -562,7 +570,7 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
     auto* vt = (log_vtab*) cur->pVtab;
     auto done = false;
 
-    vc->line_values.lvv_values.clear();
+    vc->invalidate();
     do {
         log_cursor_latest = vc->log_cursor;
         if (((log_cursor_latest.lc_curr_line % 1024) == 0)
@@ -695,7 +703,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::actual_time: {
-                        char buffer[64];
+                        char buffer[64] = "";
 
                         if (ll->is_time_skewed()) {
                             if (vc->line_values.lvv_values.empty()) {
@@ -867,6 +875,25 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         }
 
                         if (vc->line_values.lvv_opid_value) {
+                            to_sqlite(ctx,
+                                      vc->line_values.lvv_opid_value.value());
+                        } else {
+                            sqlite3_result_null(ctx);
+                        }
+                        break;
+                    }
+                    case log_footer_columns::user_opid: {
+                        if (vc->line_values.lvv_values.empty()) {
+                            vc->cache_msg(lf, ll);
+                            require(vc->line_values.lvv_sbr.get_data()
+                                    != nullptr);
+                            vt->vi->extract(lf, line_number, vc->line_values);
+                        }
+
+                        if (vc->line_values.lvv_opid_value
+                            && vc->line_values.lvv_opid_provenance
+                                == logline_value_vector::opid_provenance::user)
+                        {
                             to_sqlite(ctx,
                                       vc->line_values.lvv_opid_value.value());
                         } else {
@@ -1238,8 +1265,8 @@ log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
     }
 }
 
-log_cursor::string_constraint::string_constraint(unsigned char op,
-                                                 std::string value)
+log_cursor::string_constraint::
+string_constraint(unsigned char op, std::string value)
     : sc_op(op), sc_value(std::move(value))
 {
     if (op == SQLITE_INDEX_CONSTRAINT_REGEXP) {
@@ -1295,8 +1322,8 @@ log_cursor::string_constraint::matches(const std::string& sf) const
 }
 
 struct vtab_time_range {
-    nonstd::optional<timeval> vtr_begin;
-    nonstd::optional<timeval> vtr_end;
+    std::optional<timeval> vtr_begin;
+    std::optional<timeval> vtr_end;
 
     bool empty() const { return !this->vtr_begin && !this->vtr_end; }
 
@@ -1342,8 +1369,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 #endif
     p_cur->log_cursor.lc_format_name.clear();
     p_cur->log_cursor.lc_pattern_name.clear();
-    p_cur->log_cursor.lc_opid = nonstd::nullopt;
-    p_cur->log_cursor.lc_level_constraint = nonstd::nullopt;
+    p_cur->log_cursor.lc_opid = std::nullopt;
+    p_cur->log_cursor.lc_level_constraint = std::nullopt;
     p_cur->log_cursor.lc_log_path.clear();
     p_cur->log_cursor.lc_indexed_columns.clear();
     p_cur->log_cursor.lc_last_log_path_match = nullptr;
@@ -1354,8 +1381,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_curr_line = 0_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
 
-    nonstd::optional<vtab_time_range> log_time_range;
-    nonstd::optional<log_cursor::opid_hash> opid_val;
+    std::optional<vtab_time_range> log_time_range;
+    std::optional<log_cursor::opid_hash> opid_val;
     std::vector<log_cursor::string_constraint> log_path_constraints;
     std::vector<log_cursor::string_constraint> log_unique_path_constraints;
 
@@ -1492,7 +1519,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                             }
                             break;
                         }
-                        case log_footer_columns::opid: {
+                        case log_footer_columns::opid:
+                        case log_footer_columns::user_opid: {
                             if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
                                 continue;
                             }
@@ -1634,7 +1662,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     }
 
     if (!p_cur->log_cursor.lc_indexed_columns.empty()) {
-        nonstd::optional<vis_line_t> max_indexed_line;
+        std::optional<vis_line_t> max_indexed_line;
 
         for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
             auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
@@ -1688,10 +1716,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
             && max_indexed_line.value() < vt->lss->text_line_count())
         {
             log_debug("max indexed out of sync, clearing other indexes");
-            p_cur->log_cursor.lc_level_constraint = nonstd::nullopt;
+            p_cur->log_cursor.lc_level_constraint = std::nullopt;
             p_cur->log_cursor.lc_curr_line = 0_vl;
-            opid_val = nonstd::nullopt;
-            log_time_range = nonstd::nullopt;
+            opid_val = std::nullopt;
+            log_time_range = std::nullopt;
             p_cur->log_cursor.lc_indexed_lines.clear();
             log_path_constraints.clear();
             log_unique_path_constraints.clear();
@@ -1856,7 +1884,8 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                             }
                             break;
                         }
-                        case log_footer_columns::opid: {
+                        case log_footer_columns::opid:
+                        case log_footer_columns::user_opid: {
                             if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
                                 argvInUse += 1;
                                 indexes.push_back(constraint);
@@ -1977,17 +2006,27 @@ vt_update(sqlite3_vtab* tab,
         int val = sqlite3_value_int(
             argv[2 + vt->footer_index(log_footer_columns::mark)]);
         vis_line_t vrowid(rowid);
-
+        const auto msg_info = *vt->lss->window_at(vrowid).begin();
         const auto* part_name = sqlite3_value_text(
             argv[2 + vt->footer_index(log_footer_columns::partition)]);
         const auto* log_comment = sqlite3_value_text(
             argv[2 + vt->footer_index(log_footer_columns::comment)]);
-        const auto log_tags = from_sqlite<nonstd::optional<string_fragment>>()(
+        const auto log_tags = from_sqlite<std::optional<string_fragment>>()(
             argc, argv, 2 + vt->footer_index(log_footer_columns::tags));
-        const auto log_annos = from_sqlite<nonstd::optional<string_fragment>>()(
+        const auto log_annos = from_sqlite<std::optional<string_fragment>>()(
             argc, argv, 2 + vt->footer_index(log_footer_columns::annotations));
+        auto log_opid = from_sqlite<std::optional<string_fragment>>()(
+            argc, argv, 2 + vt->footer_index(log_footer_columns::opid));
+        const auto log_user_opid
+            = from_sqlite<std::optional<string_fragment>>()(
+                argc,
+                argv,
+                2 + vt->footer_index(log_footer_columns::user_opid));
         bookmark_metadata tmp_bm;
 
+        if (log_user_opid) {
+            log_opid = log_user_opid;
+        }
         if (log_tags) {
             std::vector<lnav::console::user_message> errors;
             yajlpp_parse_context ypc(vt->vi->get_tags_name(), &tags_handler);
@@ -2012,7 +2051,8 @@ vt_update(sqlite3_vtab* tab,
                                          .append(" column of table ")
                                          .append_quoted(lnav::roles::symbol(
                                              vt->vi->get_name().to_string())))
-                                     .with_reason(errors[0].to_attr_line({}));
+                                     .with_reason(errors[0].to_attr_line({}))
+                                     .move();
                 set_vtable_errmsg(tab, top_error);
                 return SQLITE_ERROR;
             }
@@ -2042,7 +2082,11 @@ vt_update(sqlite3_vtab* tab,
             vt->lss->set_line_meta_changed();
         }
 
-        if (!has_meta && part_name == nullptr) {
+        if (!has_meta && part_name == nullptr
+            && (!log_opid
+                || msg_info.get_values().lvv_opid_provenance
+                    == logline_value_vector::opid_provenance::file))
+        {
             vt->lss->erase_bookmark_metadata(vrowid);
         }
 
@@ -2053,6 +2097,23 @@ vt_update(sqlite3_vtab* tab,
         } else {
             vt->tc->set_user_mark(
                 &textview_curses::BM_PARTITION, vrowid, false);
+        }
+
+        if (log_opid) {
+            auto& lvv = msg_info.get_values();
+            if (!lvv.lvv_opid_value
+                || lvv.lvv_opid_provenance
+                    == logline_value_vector::opid_provenance::user)
+            {
+                msg_info.get_file_ptr()->set_logline_opid(
+                    msg_info.get_file_line_number(), log_opid.value());
+                vt->lss->set_line_meta_changed();
+            }
+        } else if (msg_info.get_values().lvv_opid_provenance
+                   == logline_value_vector::opid_provenance::user)
+        {
+            msg_info.get_file_ptr()->clear_logline_opid(
+                msg_info.get_file_line_number());
         }
 
         if (has_meta) {
@@ -2088,7 +2149,6 @@ vt_update(sqlite3_vtab* tab,
             {
                 line_meta.bm_annotations.la_pairs.clear();
             }
-
             vt->lss->set_line_meta_changed();
         }
 
@@ -2096,8 +2156,8 @@ vt_update(sqlite3_vtab* tab,
         rowid += 1;
         while ((size_t) rowid < vt->lss->text_line_count()) {
             vis_line_t vl(rowid);
-            content_line_t cl = vt->lss->at(vl);
-            logline* ll = vt->lss->find_line(cl);
+            auto cl = vt->lss->at(vl);
+            auto* ll = vt->lss->find_line(cl);
             if (ll->is_message()) {
                 break;
             }
@@ -2172,9 +2232,8 @@ progress_callback(void* ptr)
     return retval;
 }
 
-log_vtab_manager::log_vtab_manager(sqlite3* memdb,
-                                   textview_curses& tc,
-                                   logfile_sub_source& lss)
+log_vtab_manager::
+log_vtab_manager(sqlite3* memdb, textview_curses& tc, logfile_sub_source& lss)
     : vm_db(memdb), vm_textview(tc), vm_source(lss)
 {
     sqlite3_create_module(
@@ -2184,7 +2243,8 @@ log_vtab_manager::log_vtab_manager(sqlite3* memdb,
     sqlite3_progress_handler(memdb, 32, progress_callback, nullptr);
 }
 
-log_vtab_manager::~log_vtab_manager()
+log_vtab_manager::~
+log_vtab_manager()
 {
     while (!this->vm_impls.empty()) {
         auto first_name = this->vm_impls.begin()->first;

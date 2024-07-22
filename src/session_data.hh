@@ -38,7 +38,6 @@
 #include <vector>
 
 #include "mapbox/variant.hpp"
-#include "optional.hpp"
 #include "view_helpers.hh"
 
 struct file_state {
@@ -47,7 +46,7 @@ struct file_state {
 
 struct view_state {
     int64_t vs_top{0};
-    nonstd::optional<int64_t> vs_selection;
+    std::optional<int64_t> vs_selection;
     std::string vs_search;
     bool vs_word_wrap{false};
     bool vs_filtering{true};

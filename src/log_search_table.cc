@@ -47,6 +47,10 @@ log_search_table::log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
 void
 log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
 {
+    if (!this->lst_cols.empty()) {
+        return;
+    }
+
     column_namer cn{column_namer::language::SQL};
 
     if (this->lst_format != nullptr) {
@@ -175,7 +179,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
     lf->read_full_message(lf_iter, sbr);
     sbr.erase_ansi();
     lf->get_format()->annotate(
-        cl, this->vi_attrs, this->lst_line_values_cache, false);
+        lf, cl, this->vi_attrs, this->lst_line_values_cache, false);
     this->lst_content
         = this->lst_line_values_cache.lvv_sbr.to_string_fragment();
 

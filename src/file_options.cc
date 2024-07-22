@@ -89,7 +89,7 @@ file_options_collection::to_json() const
         .to_string();
 }
 
-nonstd::optional<std::pair<std::string, file_options>>
+std::optional<std::pair<std::string, file_options>>
 file_options_collection::match(const std::string& path) const
 {
     auto iter = this->foc_pattern_to_options.find(path);
@@ -111,13 +111,13 @@ file_options_collection::match(const std::string& path) const
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<std::pair<std::string, file_options>>
-file_options_hier::match(const ghc::filesystem::path& path) const
+std::optional<std::pair<std::string, file_options>>
+file_options_hier::match(const std::filesystem::path& path) const
 {
-    static const auto ROOT_PATH = ghc::filesystem::path("/");
+    static const auto ROOT_PATH = std::filesystem::path("/");
 
     auto lookup_path = path.parent_path();
 
@@ -138,7 +138,7 @@ file_options_hier::match(const ghc::filesystem::path& path) const
         }
         lookup_path = next_lookup_path;
     }
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 }  // namespace lnav

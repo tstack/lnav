@@ -69,7 +69,7 @@ static log_formats_map_t LOG_FORMATS;
 struct loader_userdata {
     yajlpp_parse_context* ud_parse_context{nullptr};
     std::string ud_file_schema;
-    ghc::filesystem::path ud_format_path;
+    std::filesystem::path ud_format_path;
     std::vector<intern_string_t>* ud_format_names{nullptr};
     std::vector<lnav::console::user_message>* ud_errors{nullptr};
 };
@@ -1221,7 +1221,7 @@ format_error_reporter(const yajlpp_parse_context& ypc,
 }
 
 std::vector<intern_string_t>
-load_format_file(const ghc::filesystem::path& filename,
+load_format_file(const std::filesystem::path& filename,
                  std::vector<lnav::console::user_message>& errors)
 {
     std::vector<intern_string_t> retval;
@@ -1287,8 +1287,8 @@ load_format_file(const ghc::filesystem::path& filename,
                       .append(
                           fmt::format(FMT_STRING("    \"$schema\": \"{}\","),
                                       *SUPPORTED_FORMAT_SCHEMAS.begin()))
-                      .with_attr_for_all(
-                          VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                      .move();
 
             errors.emplace_back(
                 lnav::console::user_message::warning(
@@ -1310,7 +1310,7 @@ load_format_file(const ghc::filesystem::path& filename,
 }
 
 static void
-load_from_path(const ghc::filesystem::path& path,
+load_from_path(const std::filesystem::path& path,
                std::vector<lnav::console::user_message>& errors)
 {
     auto format_path = path / "formats/*/*.json";
@@ -1319,7 +1319,7 @@ load_from_path(const ghc::filesystem::path& path,
     log_info("loading formats from path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
-            auto filepath = ghc::filesystem::path(gl->gl_pathv[lpc]);
+            auto filepath = std::filesystem::path(gl->gl_pathv[lpc]);
 
             if (startswith(filepath.filename().string(), "config.")) {
                 log_info("  not loading config as format: %s",
@@ -1343,7 +1343,7 @@ load_from_path(const ghc::filesystem::path& path,
 }
 
 void
-load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
+load_formats(const std::vector<std::filesystem::path>& extra_paths,
              std::vector<lnav::console::user_message>& errors)
 {
     auto default_source = lnav::paths::dotlnav() / "default";
@@ -1479,7 +1479,7 @@ load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
 static void
 exec_sql_in_path(sqlite3* db,
                  const std::map<std::string, scoped_value_t>& global_vars,
-                 const ghc::filesystem::path& path,
+                 const std::filesystem::path& path,
                  std::vector<lnav::console::user_message>& errors)
 {
     auto format_path = path / "formats/*/*.sql";
@@ -1488,7 +1488,7 @@ exec_sql_in_path(sqlite3* db,
     log_info("executing SQL files in path: %s", format_path.c_str());
     if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
         for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
-            auto filename = ghc::filesystem::path(gl->gl_pathv[lpc]);
+            auto filename = std::filesystem::path(gl->gl_pathv[lpc]);
             auto read_res = lnav::filesystem::read_file(filename);
 
             if (read_res.isOk()) {
@@ -1511,7 +1511,7 @@ exec_sql_in_path(sqlite3* db,
 void
 load_format_extra(sqlite3* db,
                   const std::map<std::string, scoped_value_t>& global_vars,
-                  const std::vector<ghc::filesystem::path>& extra_paths,
+                  const std::vector<std::filesystem::path>& extra_paths,
                   std::vector<lnav::console::user_message>& errors)
 {
     for (const auto& extra_path : extra_paths) {
@@ -1585,17 +1585,17 @@ extract_metadata_from_file(struct script_metadata& meta_inout)
 }
 
 static void
-find_format_in_path(const ghc::filesystem::path& path,
+find_format_in_path(const std::filesystem::path& path,
                     available_scripts& scripts)
 {
-    for (auto format_path :
+    for (const auto& format_path :
          {path / "formats/*/*.lnav", path / "configs/*/*.lnav"})
     {
         static_root_mem<glob_t, globfree> gl;
 
         log_debug("Searching for script in path: %s", format_path.c_str());
         if (glob(format_path.c_str(), 0, nullptr, gl.inout()) == 0) {
-            for (int lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
+            for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                 const char* filename = basename(gl->gl_pathv[lpc]);
                 auto script_name = std::string(filename, strlen(filename) - 5);
                 struct script_metadata meta;
@@ -1605,14 +1605,14 @@ find_format_in_path(const ghc::filesystem::path& path,
                 extract_metadata_from_file(meta);
                 scripts.as_scripts[script_name].push_back(meta);
 
-                log_debug("  found script: %s", meta.sm_path.c_str());
+                log_info("  found script: %s", meta.sm_path.c_str());
             }
         }
     }
 }
 
 void
-find_format_scripts(const std::vector<ghc::filesystem::path>& extra_paths,
+find_format_scripts(const std::vector<std::filesystem::path>& extra_paths,
                     available_scripts& scripts)
 {
     for (const auto& extra_path : extra_paths) {

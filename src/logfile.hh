@@ -32,6 +32,7 @@
 #ifndef logfile_hh
 #define logfile_hh
 
+#include <filesystem>
 #include <set>
 #include <string>
 #include <utility>
@@ -49,7 +50,6 @@
 #include "bookmarks.hh"
 #include "byte_array.hh"
 #include "file_options.hh"
-#include "ghc/filesystem.hpp"
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
 #include "logfile_fwd.hh"
@@ -114,7 +114,7 @@ public:
      * descriptor needs to be seekable.
      */
     static Result<std::shared_ptr<logfile>, std::string> open(
-        ghc::filesystem::path filename,
+        std::filesystem::path filename,
         const logfile_open_options& loo,
         auto_fd fd = auto_fd{});
 
@@ -122,13 +122,13 @@ public:
 
     const logfile_activity& get_activity() const { return this->lf_activity; }
 
-    nonstd::optional<ghc::filesystem::path> get_actual_path() const
+    std::optional<std::filesystem::path> get_actual_path() const
     {
         return this->lf_actual_path;
     }
 
     /** @return The filename as given in the constructor. */
-    const ghc::filesystem::path& get_filename() const
+    const std::filesystem::path& get_filename() const
     {
         return this->lf_filename;
     }
@@ -160,7 +160,7 @@ public:
 
     file_off_t get_index_size() const { return this->lf_index_size; }
 
-    nonstd::optional<const_iterator> line_for_offset(file_off_t off) const;
+    std::optional<const_iterator> line_for_offset(file_off_t off) const;
 
     /**
      * @return The detected format, rebuild_index() must be called before this
@@ -235,7 +235,7 @@ public:
     /** @return The number of lines in the index. */
     size_t size() const { return this->lf_index.size(); }
 
-    nonstd::optional<const_iterator> find_from_time(
+    std::optional<const_iterator> find_from_time(
         const struct timeval& tv) const;
 
     logline& operator[](int index) { return this->lf_index[index]; }
@@ -255,9 +255,14 @@ public:
 
     Result<shared_buffer_ref, std::string> read_line(iterator ll);
 
-    Result<std::string, std::string> read_file();
+    struct read_file_result {
+        file_range rfr_range;
+        std::string rfr_content;
+    };
 
-    Result<shared_buffer_ref, std::string> read_range(file_range fr);
+    Result<read_file_result, std::string> read_file();
+
+    Result<shared_buffer_ref, std::string> read_range(const file_range& fr);
 
     iterator line_base(iterator ll)
     {
@@ -327,8 +332,8 @@ public:
      * indexing.
      * @return True if any new lines were indexed.
      */
-    rebuild_result_t rebuild_index(
-        nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
+    rebuild_result_t rebuild_index(std::optional<ui_clock::time_point> deadline
+                                   = std::nullopt);
 
     void reobserve_from(iterator iter);
 
@@ -371,7 +376,7 @@ public:
         return true;
     }
 
-    ghc::filesystem::path get_path() const override;
+    std::filesystem::path get_path() const override;
 
     enum class note_type {
         indexing_disabled,
@@ -379,7 +384,7 @@ public:
         not_utf,
     };
 
-    using note_map = std::map<note_type, std::string>;
+    using note_map = std::map<note_type, lnav::console::user_message>;
     using safe_notes = safe::Safe<note_map>;
 
     note_map get_notes() const { return *this->lf_notes.readAccess(); }
@@ -387,6 +392,10 @@ public:
     using safe_opid_state = safe::Safe<log_opid_state>;
 
     safe_opid_state& get_opids() { return this->lf_opids; }
+
+    void set_logline_opid(uint32_t line_number, string_fragment opid);
+
+    void clear_logline_opid(uint32_t line_number);
 
     void quiesce() { this->lf_line_buffer.quiesce(); }
 
@@ -410,10 +419,20 @@ public:
         return this->lf_embedded_metadata;
     }
 
-    nonstd::optional<std::pair<std::string, lnav::file_options>>
-    get_file_options() const
+    std::optional<std::pair<std::string, lnav::file_options>> get_file_options()
+        const
     {
         return this->lf_file_options;
+    }
+
+    const std::set<intern_string_t>& get_mismatched_formats()
+    {
+        return this->lf_mismatched_formats;
+    }
+
+    const std::vector<lnav::console::user_message>& get_format_match_messages()
+    {
+        return this->lf_format_match_messages;
     }
 
 protected:
@@ -431,20 +450,21 @@ protected:
     void set_format_base_time(log_format* lf);
 
 private:
-    logfile(ghc::filesystem::path filename, const logfile_open_options& loo);
+    logfile(std::filesystem::path filename, const logfile_open_options& loo);
 
     bool file_options_have_changed();
 
-    ghc::filesystem::path lf_filename;
+    std::filesystem::path lf_filename;
     logfile_open_options lf_options;
     logfile_activity lf_activity;
     bool lf_named_file{true};
     bool lf_valid_filename{true};
-    nonstd::optional<ghc::filesystem::path> lf_actual_path;
+    std::optional<std::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
     struct stat lf_stat {};
     std::shared_ptr<log_format> lf_format;
+    uint32_t lf_format_quality{0};
     std::vector<logline> lf_index;
     time_t lf_index_time{0};
     file_off_t lf_index_size{0};
@@ -458,6 +478,10 @@ private:
     bool lf_indexing{true};
     bool lf_partial_line{false};
     bool lf_zoned_to_local_state{true};
+    robin_hood::unordered_set<string_fragment,
+                              frag_hasher,
+                              std::equal_to<string_fragment>>
+        lf_invalidated_opids;
     logline_observer* lf_logline_observer{nullptr};
     logfile_observer* lf_logfile_observer{nullptr};
     size_t lf_longest_line{0};
@@ -467,10 +491,10 @@ private:
     safe_opid_state lf_opids;
     size_t lf_watch_count{0};
     ArenaAlloc::Alloc<char> lf_allocator{64 * 1024};
-    nonstd::optional<time_t> lf_cached_base_time;
-    nonstd::optional<tm> lf_cached_base_tm;
+    std::optional<time_t> lf_cached_base_time;
+    std::optional<tm> lf_cached_base_tm;
 
-    nonstd::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
+    std::optional<std::pair<file_off_t, size_t>> lf_next_line_cache;
     std::set<intern_string_t> lf_mismatched_formats;
     robin_hood::unordered_map<uint32_t, bookmark_metadata> lf_bookmark_metadata;
 
@@ -479,8 +503,8 @@ private:
         lf_applicable_partitioners;
     std::map<std::string, metadata> lf_embedded_metadata;
     size_t lf_file_options_generation{0};
-    nonstd::optional<std::pair<std::string, lnav::file_options>>
-        lf_file_options;
+    std::optional<std::pair<std::string, lnav::file_options>> lf_file_options;
+    std::vector<lnav::console::user_message> lf_format_match_messages;
 };
 
 class logline_observer {

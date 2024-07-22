@@ -81,7 +81,10 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_line_values.clear();
         this->ldh_file->read_full_message(ll, this->ldh_line_values.lvv_sbr);
         this->ldh_line_values.lvv_sbr.erase_ansi();
-        format->annotate(this->ldh_line_index, sa, this->ldh_line_values);
+        format->annotate(this->ldh_file.get(),
+                         this->ldh_line_index,
+                         sa,
+                         this->ldh_line_values);
 
         body = find_string_attr_range(sa, &SA_BODY);
         if (body.lr_start == -1) {

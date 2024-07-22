@@ -55,7 +55,7 @@ public:
         this->fos_meta_lines.clear();
     }
 
-    nonstd::optional<attr_line_t> list_header_for_overlay(
+    std::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t vl) override;
 
     void list_value_for_overlay(const listview_curses& lv,

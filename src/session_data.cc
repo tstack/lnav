@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     comment text DEFAULT '',
     tags text DEFAULT '',
     annotations text DEFAULT NULL,
+    log_opid text DEFAULT NULL,
 
     PRIMARY KEY (log_time, log_format, log_hash, session_time)
 );
@@ -129,6 +130,7 @@ static const char* UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN comment text DEFAULT '';)",
     R"(ALTER TABLE bookmarks ADD COLUMN tags text DEFAULT '';)",
     R"(ALTER TABLE bookmarks ADD COLUMN annotations text DEFAULT NULL;)",
+    R"(ALTER TABLE bookmarks ADD COLUMN log_opid text DEFAULT NULL;)",
 };
 
 static const size_t MAX_SESSIONS = 8;
@@ -302,7 +304,7 @@ init_session()
     session_data.sd_view_states[LNV_LOG].vs_top = -1;
 }
 
-static nonstd::optional<std::string>
+static std::optional<std::string>
 compute_session_id()
 {
     bool has_files = false;
@@ -327,13 +329,13 @@ compute_session_id()
         h.update(lf->get_filename());
     }
     if (!has_files) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return h.to_string();
 }
 
-nonstd::optional<session_pair_t>
+std::optional<session_pair_t>
 scan_sessions()
 {
     static_root_mem<glob_t, globfree> view_info_list;
@@ -342,7 +344,7 @@ scan_sessions()
 
     const auto session_id = compute_session_id();
     if (!session_id) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     std::list<session_pair_t>& session_file_names
         = lnav_data.ld_session_id[session_id.value()];
@@ -394,10 +396,10 @@ scan_sessions()
     }
 
     if (session_file_names.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    return nonstd::make_optional(session_file_names.back());
+    return std::make_optional(session_file_names.back());
 }
 
 void
@@ -414,6 +416,7 @@ load_time_bookmarks()
          comment,
          tags,
          annotations,
+         log_opid,
          session_time=? AS same_session
        FROM bookmarks WHERE
          log_time BETWEEN ? AND ? AND
@@ -421,7 +424,7 @@ load_time_bookmarks()
        ORDER BY same_session DESC, session_time DESC
 )";
 
-    logfile_sub_source& lss = lnav_data.ld_log_source;
+    auto& lss = lnav_data.ld_log_source;
     auto_sqlite3 db;
     auto db_path = lnav::paths::dotlnav() / LOG_METADATA_NAME;
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
@@ -487,12 +490,14 @@ load_time_bookmarks()
          ++file_iter)
     {
         auto lf = (*file_iter)->get_file();
-        const auto* format = lf->get_format_ptr();
-        content_line_t base_content_line;
-
         if (lf == nullptr) {
             continue;
         }
+        if (lf->size() == 0) {
+            continue;
+        }
+        const auto* format = lf->get_format_ptr();
+        content_line_t base_content_line;
 
         base_content_line = lss.get_file_base_content_line(file_iter);
 
@@ -529,6 +534,7 @@ load_time_bookmarks()
                         = (const char*) sqlite3_column_text(stmt.in(), 0);
                     const char* log_hash
                         = (const char*) sqlite3_column_text(stmt.in(), 2);
+                    int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
                     const char* part_name
                         = (const char*) sqlite3_column_text(stmt.in(), 4);
                     const char* comment
@@ -536,7 +542,7 @@ load_time_bookmarks()
                     const char* tags
                         = (const char*) sqlite3_column_text(stmt.in(), 7);
                     const auto annotations = sqlite3_column_text(stmt.in(), 8);
-                    int64_t mark_time = sqlite3_column_int64(stmt.in(), 3);
+                    const auto log_opid = sqlite3_column_text(stmt.in(), 9);
                     struct timeval log_tv;
                     struct exttm log_tm;
 
@@ -669,6 +675,12 @@ load_time_bookmarks()
                                 meta = true;
                             }
                         }
+                        if (log_opid != nullptr && log_opid[0] != '\0') {
+                            auto opid_sf
+                                = string_fragment::from_c_str(log_opid);
+                            lf->set_logline_opid(line_number, opid_sf);
+                            meta = true;
+                        }
                         if (!meta) {
                             marked_session_lines.emplace_back(
                                 lf->original_line_time(line_iter),
@@ -720,6 +732,9 @@ load_time_bookmarks()
         content_line_t base_content_line;
 
         if (lf == nullptr) {
+            continue;
+        }
+        if (lf->size() == 0) {
             continue;
         }
 
@@ -863,7 +878,11 @@ static const struct json_path_container view_handlers = {
                 if (view_index < LNV__MAX) {
                     return &root->sd_view_states[view_index];
                 }
-                return (view_state*) nullptr;
+
+                log_error("unknown view name: %s",
+                          ypc.get_substr("view_name").c_str());
+                static view_state dummy;
+                return &dummy;
             })
         .with_children(view_def_handlers),
 };
@@ -947,7 +966,7 @@ load_session()
         }
         session_data = complete_res.unwrap();
 
-        bool log_changes = false, text_changes = false;
+        bool log_changes = false;
 
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
             auto iter = session_data.sd_file_states.find(lf->get_filename());
@@ -972,9 +991,6 @@ load_session()
 
         if (log_changes) {
             lnav_data.ld_log_source.text_filters_changed();
-        }
-        if (text_changes) {
-            lnav_data.ld_text_source.text_filters_changed();
         }
     };
 
@@ -1001,7 +1017,6 @@ save_user_bookmarks(sqlite3* db,
 
     for (auto iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
         content_line_t cl = *iter;
-        auto line_meta_opt = lss.find_bookmark_metadata(cl);
         auto lf = lss.find(cl);
         if (lf == nullptr) {
             continue;
@@ -1035,85 +1050,134 @@ save_user_bookmarks(sqlite3* db,
             continue;
         }
 
-        if (!line_meta_opt) {
-            if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT)
+        if (sqlite3_bind_text(stmt, 5, "", 0, SQLITE_TRANSIENT) != SQLITE_OK) {
+            log_error("could not bind log hash -- %s", sqlite3_errmsg(db));
+            return;
+        }
+
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            log_error("could not execute bookmark insert statement -- %s",
+                      sqlite3_errmsg(db));
+            return;
+        }
+
+        marked_session_lines.emplace_back(lf->original_line_time(line_iter),
+                                          lf->get_format_ptr()->get_name(),
+                                          line_hash);
+
+        sqlite3_reset(stmt);
+    }
+}
+
+static void
+save_meta_bookmarks(sqlite3* db, sqlite3_stmt* stmt, logfile* lf)
+{
+    for (const auto& bm_pair : lf->get_bookmark_metadata()) {
+        auto cl = content_line_t(bm_pair.first);
+        sqlite3_clear_bindings(stmt);
+
+        auto line_iter = lf->begin() + cl;
+        auto read_result = lf->read_line(line_iter);
+
+        if (read_result.isErr()) {
+            continue;
+        }
+
+        auto line_hash = read_result
+                             .map([cl](auto sbr) {
+                                 return hasher()
+                                     .update(sbr.get_data(), sbr.length())
+                                     .update(cl)
+                                     .to_string();
+                             })
+                             .unwrap();
+
+        if (bind_values(stmt,
+                        lf->original_line_time(line_iter),
+                        lf->get_format()->get_name(),
+                        line_hash,
+                        lnav_data.ld_session_time)
+            != SQLITE_OK)
+        {
+            continue;
+        }
+
+        const auto& line_meta = bm_pair.second;
+        if (line_meta.empty(bookmark_metadata::categories::any)) {
+            continue;
+        }
+
+        if (sqlite3_bind_text(stmt,
+                              5,
+                              line_meta.bm_name.c_str(),
+                              line_meta.bm_name.length(),
+                              SQLITE_TRANSIENT)
+            != SQLITE_OK)
+        {
+            log_error("could not bind part name -- %s", sqlite3_errmsg(db));
+            return;
+        }
+
+        if (sqlite3_bind_text(stmt,
+                              6,
+                              line_meta.bm_comment.c_str(),
+                              line_meta.bm_comment.length(),
+                              SQLITE_TRANSIENT)
+            != SQLITE_OK)
+        {
+            log_error("could not bind comment -- %s", sqlite3_errmsg(db));
+            return;
+        }
+
+        std::string tags;
+
+        if (!line_meta.bm_tags.empty()) {
+            yajlpp_gen gen;
+
+            yajl_gen_config(gen, yajl_gen_beautify, false);
+
+            {
+                yajlpp_array arr(gen);
+
+                for (const auto& str : line_meta.bm_tags) {
+                    arr.gen(str);
+                }
+            }
+
+            tags = gen.to_string_fragment().to_string();
+        }
+
+        if (sqlite3_bind_text(
+                stmt, 7, tags.c_str(), tags.length(), SQLITE_TRANSIENT)
+            != SQLITE_OK)
+        {
+            log_error("could not bind tags -- %s", sqlite3_errmsg(db));
+            return;
+        }
+
+        if (!line_meta.bm_annotations.la_pairs.empty()) {
+            auto anno_str = logmsg_annotations_handlers.to_string(
+                line_meta.bm_annotations);
+
+            if (sqlite3_bind_text(stmt,
+                                  8,
+                                  anno_str.c_str(),
+                                  anno_str.length(),
+                                  SQLITE_TRANSIENT)
                 != SQLITE_OK)
             {
-                log_error("could not bind log hash -- %s", sqlite3_errmsg(db));
+                log_error("could not bind annotations -- %s",
+                          sqlite3_errmsg(db));
                 return;
             }
         } else {
-            const auto& line_meta = *(line_meta_opt.value());
-            if (line_meta.empty(bookmark_metadata::categories::any)) {
-                continue;
-            }
+            sqlite3_bind_null(stmt, 8);
+        }
 
-            if (sqlite3_bind_text(stmt,
-                                  5,
-                                  line_meta.bm_name.c_str(),
-                                  line_meta.bm_name.length(),
-                                  SQLITE_TRANSIENT)
-                != SQLITE_OK)
-            {
-                log_error("could not bind part name -- %s", sqlite3_errmsg(db));
-                return;
-            }
-
-            if (sqlite3_bind_text(stmt,
-                                  6,
-                                  line_meta.bm_comment.c_str(),
-                                  line_meta.bm_comment.length(),
-                                  SQLITE_TRANSIENT)
-                != SQLITE_OK)
-            {
-                log_error("could not bind comment -- %s", sqlite3_errmsg(db));
-                return;
-            }
-
-            std::string tags;
-
-            if (!line_meta.bm_tags.empty()) {
-                yajlpp_gen gen;
-
-                yajl_gen_config(gen, yajl_gen_beautify, false);
-
-                {
-                    yajlpp_array arr(gen);
-
-                    for (const auto& str : line_meta.bm_tags) {
-                        arr.gen(str);
-                    }
-                }
-
-                tags = gen.to_string_fragment().to_string();
-            }
-
-            if (sqlite3_bind_text(
-                    stmt, 7, tags.c_str(), tags.length(), SQLITE_TRANSIENT)
-                != SQLITE_OK)
-            {
-                log_error("could not bind tags -- %s", sqlite3_errmsg(db));
-                return;
-            }
-
-            if (!line_meta.bm_annotations.la_pairs.empty()) {
-                auto anno_str = logmsg_annotations_handlers.to_string(
-                    line_meta.bm_annotations);
-
-                if (sqlite3_bind_text(stmt,
-                                      8,
-                                      anno_str.c_str(),
-                                      anno_str.length(),
-                                      SQLITE_TRANSIENT)
-                    != SQLITE_OK)
-                {
-                    log_error("could not bind annotations -- %s",
-                              sqlite3_errmsg(db));
-                    return;
-                }
-            } else {
-                sqlite3_bind_null(stmt, 8);
-            }
+        if (line_meta.bm_opid.empty()) {
+            sqlite3_bind_null(stmt, 9);
+        } else {
+            bind_to_sqlite(stmt, 9, line_meta.bm_opid);
         }
 
         if (sqlite3_step(stmt) != SQLITE_DONE) {
@@ -1190,8 +1254,8 @@ save_time_bookmarks()
         recent_refs.rr_netlocs.insert(netlocs.begin(), netlocs.end());
     }
 
-    logfile_sub_source& lss = lnav_data.ld_log_source;
-    bookmarks<content_line_t>::type& bm = lss.get_user_bookmarks();
+    auto& lss = lnav_data.ld_log_source;
+    auto& bm = lss.get_user_bookmarks();
 
     if (sqlite3_prepare_v2(db.in(),
                            "DELETE FROM bookmarks WHERE "
@@ -1234,8 +1298,8 @@ save_time_bookmarks()
     if (sqlite3_prepare_v2(db.in(),
                            "REPLACE INTO bookmarks"
                            " (log_time, log_format, log_hash, session_time, "
-                           "part_name, comment, tags, annotations)"
-                           " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                           "part_name, comment, tags, annotations, log_opid)"
+                           " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                            -1,
                            stmt.out(),
                            nullptr)
@@ -1247,15 +1311,16 @@ save_time_bookmarks()
     }
 
     {
-        logfile_sub_source::iterator file_iter;
-
-        for (file_iter = lnav_data.ld_log_source.begin();
+        for (auto file_iter = lnav_data.ld_log_source.begin();
              file_iter != lnav_data.ld_log_source.end();
              ++file_iter)
         {
             auto lf = (*file_iter)->get_file();
 
             if (lf == nullptr) {
+                continue;
+            }
+            if (lf->size() == 0) {
                 continue;
             }
 
@@ -1289,11 +1354,14 @@ save_time_bookmarks()
     }
 
     save_user_bookmarks(db.in(), stmt.in(), bm[&textview_curses::BM_USER]);
-    auto all_meta_marks = bm[&textview_curses::BM_META];
-    const auto& bm_parts = bm[&textview_curses::BM_PARTITION];
-    all_meta_marks.insert(
-        all_meta_marks.end(), bm_parts.begin(), bm_parts.end());
-    save_user_bookmarks(db.in(), stmt.in(), all_meta_marks);
+    for (const auto& ldd : lss) {
+        auto* lf = ldd->get_file_ptr();
+        if (lf == nullptr) {
+            continue;
+        }
+
+        save_meta_bookmarks(db.in(), stmt.in(), lf);
+    }
 
     if (sqlite3_prepare_v2(db.in(),
                            "DELETE FROM time_offset WHERE "
@@ -1359,6 +1427,9 @@ save_time_bookmarks()
             content_line_t base_content_line;
 
             if (lf == nullptr) {
+                continue;
+            }
+            if (lf->size() == 0) {
                 continue;
             }
 
@@ -1744,7 +1815,7 @@ reset_session()
         bool changed = false;
         for (const auto& vd : elf->elf_value_defs) {
             if (vd.second->vd_meta.lvm_user_hidden) {
-                vd.second->vd_meta.lvm_user_hidden = nonstd::nullopt;
+                vd.second->vd_meta.lvm_user_hidden = std::nullopt;
                 changed = true;
             }
         }
@@ -1826,7 +1897,7 @@ lnav::session::restore_view_states()
                 lnav_data.ld_view_stack.pop_back();
                 lnav_data.ld_view_stack.top() | [](auto* tc) {
                     // XXX
-                    if (tc == &lnav_data.ld_views[LNV_GANTT]) {
+                    if (tc == &lnav_data.ld_views[LNV_TIMELINE]) {
                         auto tss = tc->get_sub_source();
                         tss->text_filters_changed();
                         tc->reload_data();

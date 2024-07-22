@@ -1,4 +1,4 @@
-AC_INIT([lnav],[0.12.2],[lnav@googlegroups.com],[lnav],[http://lnav.org])
+AC_INIT([lnav],[0.12.3],[lnav@googlegroups.com],[lnav],[http://lnav.org])
 AC_CONFIG_SRCDIR([src/lnav.cc])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -17,7 +17,7 @@ CXX="$PTHREAD_CXX"
 CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
 
 AC_LANG(C++)
-AX_CXX_COMPILE_STDCXX_14([noext], [mandatory])
+AX_CXX_COMPILE_STDCXX_17([noext], [mandatory])
 
 dnl abssrcdir is the absolute path to the source base (regardless of where
 dnl you are building it)

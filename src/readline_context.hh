@@ -44,7 +44,8 @@
 class attr_line_t;
 struct exec_context;
 
-using readline_highlighter_t = void (*)(attr_line_t& line, int x);
+using readline_highlighter_t
+    = void (*)(attr_line_t& line, std::optional<int> x);
 
 /**
  * Container for information related to different readline contexts.  Since

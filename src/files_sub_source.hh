@@ -31,6 +31,7 @@
 #define files_sub_source_hh
 
 #include "file_collection.hh"
+#include "plain_text_source.hh"
 #include "textview_curses.hh"
 
 class files_sub_source
@@ -65,8 +66,11 @@ public:
                            const listview_curses::display_line_content_t&,
                            mouse_event& me) override;
 
+    void text_selection_changed(textview_curses& tc) override;
+
     size_t fss_last_line_len{0};
     attr_line_t fss_curr_line;
+    plain_text_source* fss_details_source{nullptr};
 };
 
 struct files_overlay_source : public list_overlay_source {
@@ -95,7 +99,9 @@ struct selection_base {
     }
 };
 
-struct error_selection : public selection_base<error_selection, std::string> {};
+struct error_selection
+    : public selection_base<error_selection,
+                            std::pair<std::string, std::string>> {};
 
 struct other_selection
     : public selection_base<

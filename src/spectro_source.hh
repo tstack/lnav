@@ -93,7 +93,7 @@ struct spectrogram_row {
         }
     }
 
-    nonstd::optional<size_t> nearest_column(size_t current) const;
+    std::optional<size_t> nearest_column(size_t current) const;
 };
 
 class spectrogram_value_source {
@@ -126,7 +126,7 @@ public:
     {
         this->ss_cached_bounds.sb_count = 0;
         this->ss_row_cache.clear();
-        this->ss_cursor_column = nonstd::nullopt;
+        this->ss_cursor_column = std::nullopt;
     }
 
     bool list_input_handle_key(listview_curses& lv, int ch) override;
@@ -159,9 +159,9 @@ public:
 
     void text_selection_changed(textview_curses& tc) override;
 
-    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
+    std::optional<row_info> time_for_row(vis_line_t row) override;
 
-    nonstd::optional<vis_line_t> row_for_time(
+    std::optional<vis_line_t> row_for_time(
         struct timeval time_bucket) override;
 
     void text_value_for_line(textview_curses& tc,
@@ -175,7 +175,7 @@ public:
 
     void cache_bounds();
 
-    nonstd::optional<row_info> time_for_row_int(vis_line_t row);
+    std::optional<row_info> time_for_row_int(vis_line_t row);
 
     const spectrogram_row& load_row(const listview_curses& lv, int row);
 
@@ -191,7 +191,7 @@ public:
     spectrogram_thresholds ss_cached_thresholds;
     size_t ss_cached_line_count{0};
     std::unordered_map<time_t, spectrogram_row> ss_row_cache;
-    nonstd::optional<size_t> ss_cursor_column;
+    std::optional<size_t> ss_cursor_column;
 };
 
 class spectro_status_source : public status_data_source {

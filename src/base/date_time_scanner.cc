@@ -195,7 +195,6 @@ date_time_scanner::scan(const char* time_dest,
                 {
                     const auto sec_diff = tm_out->et_tm.tm_sec - last_tm.tm_sec;
 
-                    // log_debug("diff %d", sec_diff);
                     tv_out = this->dts_last_tv;
                     tv_out.tv_sec += sec_diff;
                     tm_out->et_tm.tm_wday = last_tm.tm_wday;
@@ -231,20 +230,43 @@ date_time_scanner::scan(const char* time_dest,
                 if (convert_local
                     && (this->dts_local_time
                         || tm_out->et_flags & ETF_EPOCH_TIME
-                        || (tm_out->et_flags & ETF_ZONE_SET
+                        || ((tm_out->et_flags & ETF_ZONE_SET
+                             || this->dts_default_zone != nullptr)
                             && this->dts_zoned_to_local)))
                 {
                     time_t gmt = tm_out->to_timeval().tv_sec;
 
+                    if (!(tm_out->et_flags & ETF_ZONE_SET)
+                        && !(tm_out->et_flags & ETF_EPOCH_TIME)
+                        && this->dts_default_zone != nullptr)
+                    {
+                        date::local_seconds stime;
+                        stime += std::chrono::seconds{gmt};
+                        auto ztime
+                            = date::make_zoned(this->dts_default_zone, stime);
+                        gmt = std::chrono::duration_cast<std::chrono::seconds>(
+                                  ztime.get_sys_time().time_since_epoch())
+                                  .count();
+                    }
                     this->to_localtime(gmt, *tm_out);
-#ifdef HAVE_STRUCT_TM_TM_ZONE
-                    tm_out->et_tm.tm_zone = nullptr;
-#endif
-                    tm_out->et_tm.tm_isdst = 0;
                 }
+                const auto& last_tm = this->dts_last_tm.et_tm;
+                if (last_tm.tm_year == tm_out->et_tm.tm_year
+                    && last_tm.tm_mon == tm_out->et_tm.tm_mon
+                    && last_tm.tm_mday == tm_out->et_tm.tm_mday
+                    && last_tm.tm_hour == tm_out->et_tm.tm_hour
+                    && last_tm.tm_min == tm_out->et_tm.tm_min)
+                {
+                    const auto sec_diff = tm_out->et_tm.tm_sec - last_tm.tm_sec;
 
-                tv_out = tm_out->to_timeval();
-                secs2wday(tv_out, &tm_out->et_tm);
+                    tv_out = this->dts_last_tv;
+                    tv_out.tv_sec += sec_diff;
+                    tm_out->et_tm.tm_wday = last_tm.tm_wday;
+                } else {
+                    tv_out = tm_out->to_timeval();
+                    secs2wday(tv_out, &tm_out->et_tm);
+                }
+                tv_out.tv_usec = tm_out->et_nsec / 1000;
 
                 this->dts_fmt_lock = curr_time_fmt;
                 this->dts_fmt_len = retval - time_dest;

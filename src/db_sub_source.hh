@@ -31,6 +31,7 @@
 #define db_sub_source_hh
 
 #include <iterator>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -83,13 +84,11 @@ public:
 
     void clear();
 
-    nonstd::optional<size_t> column_name_to_index(
-        const std::string& name) const;
+    std::optional<size_t> column_name_to_index(const std::string& name) const;
 
-    nonstd::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket) override;
+    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
 
-    nonstd::optional<row_info> time_for_row(vis_line_t row) override;
+    std::optional<row_info> time_for_row(vis_line_t row) override;
 
     struct header_meta {
         explicit header_meta(std::string name) : hm_name(std::move(name)) {}
@@ -114,7 +113,7 @@ public:
     std::vector<struct timeval> dls_time_column;
     std::vector<size_t> dls_cell_width;
     int dls_time_column_index{-1};
-    nonstd::optional<size_t> dls_time_column_invalidated_at;
+    std::optional<size_t> dls_time_column_invalidated_at;
     std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator{
         std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024)};
     string_attrs_t dls_ansi_attrs;
@@ -133,7 +132,7 @@ public:
                                 vis_line_t line,
                                 std::vector<attr_line_t>& value_out) override;
 
-    nonstd::optional<attr_line_t> list_header_for_overlay(
+    std::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t line) override;
 
     void set_show_details_in_overlay(bool val) override

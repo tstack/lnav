@@ -29,6 +29,7 @@
 
 #include "breadcrumb_curses.hh"
 
+#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "itertools.similar.hh"
 
@@ -39,7 +40,8 @@ breadcrumb_curses::no_op_action(breadcrumb_curses&)
 {
 }
 
-breadcrumb_curses::breadcrumb_curses()
+breadcrumb_curses::
+breadcrumb_curses()
 {
     this->bc_match_search_overlay.sos_parent = this;
     this->bc_match_source.set_reverse_selection(true);
@@ -60,7 +62,6 @@ breadcrumb_curses::do_update()
         return false;
     }
 
-    size_t crumb_index = 0;
     size_t sel_crumb_offset = 0;
     auto width = static_cast<size_t>(getmaxx(this->bc_window));
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()
@@ -72,7 +73,8 @@ breadcrumb_curses::do_update()
     }
     this->bc_displayed_crumbs.clear();
     attr_line_t crumbs_line;
-    for (const auto& crumb : crumbs) {
+    for (const auto& [crumb_index, crumb] : lnav::itertools::enumerate(crumbs))
+    {
         auto accum_width = crumbs_line.column_width();
         auto elem_width = crumb.c_display_value.column_width();
         auto is_selected = this->bc_selected_crumb
@@ -99,7 +101,6 @@ breadcrumb_curses::do_update()
                        (int) (accum_width + elem_width),
                        line_range::unit::codepoint},
             crumb_index);
-        crumb_index += 1;
         crumbs_line.append(" \uff1a"_breadcrumb);
     }
 
@@ -126,7 +127,7 @@ breadcrumb_curses::reload_data()
         = this->bc_focused_crumbs[this->bc_selected_crumb.value()];
     this->bc_possible_values = selected_crumb_ref.c_possibility_provider();
 
-    nonstd::optional<size_t> selected_value;
+    std::optional<size_t> selected_value;
     this->bc_similar_values = this->bc_possible_values
         | lnav::itertools::similar_to(
                                   [](const auto& elem) { return elem.p_key; },
@@ -151,10 +152,12 @@ breadcrumb_curses::reload_data()
         }
     }
 
-    auto matches = attr_line_t().join(
-        this->bc_similar_values
-            | lnav::itertools::map(&breadcrumb::possibility::p_display_value),
-        "\n");
+    auto matches = attr_line_t()
+                       .join(this->bc_similar_values
+                                 | lnav::itertools::map(
+                                     &breadcrumb::possibility::p_display_value),
+                             "\n")
+                       .move();
     this->bc_match_source.replace_with(matches);
     auto width = this->bc_possible_values
         | lnav::itertools::fold(
@@ -210,7 +213,7 @@ breadcrumb_curses::blur()
 {
     this->bc_last_selected_crumb = this->bc_selected_crumb;
     this->bc_focused_crumbs.clear();
-    this->bc_selected_crumb = nonstd::nullopt;
+    this->bc_selected_crumb = std::nullopt;
     this->bc_current_search.clear();
     this->bc_match_view.set_height(0_vl);
     this->bc_match_view.set_selection(-1_vl);

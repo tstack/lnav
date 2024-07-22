@@ -30,7 +30,9 @@
 #ifndef LNAV_COMMAND_EXECUTOR_H
 #define LNAV_COMMAND_EXECUTOR_H
 
+#include <filesystem>
 #include <future>
+#include <optional>
 #include <stack>
 #include <string>
 
@@ -40,9 +42,7 @@
 #include "base/lnav.console.hh"
 #include "db_sub_source.hh"
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
 #include "help_text.hh"
-#include "optional.hpp"
 #include "shlex.resolver.hh"
 #include "vis_line.hh"
 
@@ -103,7 +103,7 @@ struct exec_context {
         return Err(this->make_error_msg(format_str, args...));
     }
 
-    nonstd::optional<FILE*> get_output()
+    std::optional<FILE*> get_output()
     {
         for (auto iter = this->ec_output_stack.rbegin();
              iter != this->ec_output_stack.rend();
@@ -114,7 +114,7 @@ struct exec_context {
             }
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     void set_output(const std::string& name, FILE* file, int (*closer)(FILE*));
@@ -165,9 +165,9 @@ struct exec_context {
 
         source_guard(const source_guard&) = delete;
 
-        source_guard(source_guard&& other) : sg_context(other.sg_context)
+        source_guard(source_guard&& other)
+            : sg_context(std::exchange(other.sg_context, nullptr))
         {
-            other.sg_context = nullptr;
         }
 
         ~source_guard()
@@ -183,8 +183,8 @@ struct exec_context {
     struct output_guard {
         explicit output_guard(exec_context& context,
                               std::string name = "default",
-                              const nonstd::optional<output_t>& file
-                              = nonstd::nullopt);
+                              const std::optional<output_t>& file
+                              = std::nullopt);
 
         ~output_guard();
 
@@ -200,9 +200,9 @@ struct exec_context {
 
         db_source_guard(const source_guard&) = delete;
 
-        db_source_guard(source_guard&& other) : dsg_context(other.sg_context)
+        db_source_guard(source_guard&& other)
+            : dsg_context(std::exchange(other.sg_context, nullptr))
         {
-            other.sg_context = nullptr;
         }
 
         ~db_source_guard()
@@ -255,34 +255,38 @@ struct exec_context {
         };
     }
 
-    void execute(const std::string& cmdline);
+    Result<std::string, lnav::console::user_message> execute(
+        const std::string& cmdline);
 
     using kv_pair_t = std::pair<std::string, std::string>;
 
-    void execute_with_int(const std::string& cmdline)
+    Result<std::string, lnav::console::user_message> execute_with_int(
+        const std::string& cmdline)
     {
-        this->execute(cmdline);
+        return this->execute(cmdline);
     }
 
     template<typename... Args>
-    void execute_with_int(const std::string& cmdline,
-                          kv_pair_t pair,
-                          Args... args)
+    Result<std::string, lnav::console::user_message> execute_with_int(
+        const std::string& cmdline, kv_pair_t pair, Args... args)
     {
         this->ec_local_vars.top().template emplace(pair);
-        this->execute(cmdline, args...);
+        return this->execute(cmdline, args...);
     }
 
     template<typename... Args>
-    void execute_with(const std::string& cmdline, Args... args)
+    Result<std::string, lnav::console::user_message> execute_with(
+        const std::string& cmdline, Args... args)
     {
         this->ec_local_vars.push({});
-        this->execute_with_int(cmdline, args...);
+        auto retval = this->execute_with_int(cmdline, args...);
         this->ec_local_vars.pop();
+
+        return retval;
     }
 
     template<typename T>
-    nonstd::optional<T> get_provenance() const
+    std::optional<T> get_provenance() const
     {
         for (const auto& elem : this->ec_provenance) {
             if (elem.is<T>()) {
@@ -290,7 +294,7 @@ struct exec_context {
             }
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     vis_line_t ec_top_line{0_vl};
@@ -301,11 +305,11 @@ struct exec_context {
     std::stack<std::map<std::string, scoped_value_t>> ec_local_vars;
     std::vector<provenance_t> ec_provenance;
     std::map<std::string, scoped_value_t> ec_global_vars;
-    std::vector<ghc::filesystem::path> ec_path_stack;
+    std::vector<std::filesystem::path> ec_path_stack;
     std::vector<lnav::console::snippet> ec_source;
     help_text* ec_current_help{nullptr};
 
-    std::vector<std::pair<std::string, nonstd::optional<output_t>>>
+    std::vector<std::pair<std::string, std::optional<output_t>>>
         ec_output_stack;
 
     std::unique_ptr<attr_line_t> ec_accumulator;
@@ -326,7 +330,7 @@ class multiline_executor {
 public:
     exec_context& me_exec_context;
     std::string me_source;
-    nonstd::optional<std::string> me_cmdline;
+    std::optional<std::string> me_cmdline;
     int me_line_number{0};
     int me_starting_line_number{0};
     std::string me_last_result;

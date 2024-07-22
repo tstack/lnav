@@ -65,7 +65,7 @@ log_data_table::get_columns_int()
     }
     lf->read_full_message(lf->begin() + cl_copy, line_values.lvv_sbr);
     line_values.lvv_sbr.erase_ansi();
-    format->annotate(cl_copy, sa, line_values, false);
+    format->annotate(lf.get(), cl_copy, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
         this->ldt_schema_id.clear();
@@ -142,7 +142,7 @@ log_data_table::next(log_cursor& lc, logfile_sub_source& lss)
 
     lf->read_full_message(lf_iter, line_values.lvv_sbr);
     line_values.lvv_sbr.erase_ansi();
-    lf->get_format()->annotate(cl, sa, line_values, false);
+    lf->get_format()->annotate(lf, cl, sa, line_values, false);
     body = find_string_attr_range(sa, &SA_BODY);
     if (body.lr_end == -1) {
         return false;

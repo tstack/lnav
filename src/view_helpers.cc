@@ -35,7 +35,6 @@
 #include "document.sections.hh"
 #include "environ_vtab.hh"
 #include "filter_sub_source.hh"
-#include "gantt_source.hh"
 #include "help-md.h"
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
@@ -47,6 +46,7 @@
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "static_file_vtab.hh"
+#include "timeline_source.hh"
 #include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
 #include "view_helpers.hist.hh"
@@ -64,7 +64,7 @@ const char* lnav_view_strings[LNV__MAX + 1] = {
     "schema",
     "pretty",
     "spectro",
-    "gantt",
+    "timeline",
 
     nullptr,
 };
@@ -78,14 +78,14 @@ const char* lnav_view_titles[LNV__MAX] = {
     "SCHEMA",
     "PRETTY",
     "SPECTRO",
-    "GANTT",
+    "TIMELINE",
 };
 
-nonstd::optional<lnav_view_t>
+std::optional<lnav_view_t>
 view_from_string(const char* name)
 {
     if (name == nullptr) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto* view_name_iter
@@ -96,7 +96,7 @@ view_from_string(const char* name)
                        });
 
     if (view_name_iter == std::end(lnav_view_strings)) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return lnav_view_t(view_name_iter - lnav_view_strings);
@@ -128,14 +128,15 @@ open_schema_view()
 }
 
 static void
-open_gantt_view()
+open_timeline_view()
 {
-    auto* gantt_tc = &lnav_data.ld_views[LNV_GANTT];
-    auto* gantt_src = dynamic_cast<gantt_source*>(gantt_tc->get_sub_source());
+    auto* timeline_tc = &lnav_data.ld_views[LNV_TIMELINE];
+    auto* timeline_src
+        = dynamic_cast<timeline_source*>(timeline_tc->get_sub_source());
 
-    gantt_src->rebuild_indexes();
-    gantt_tc->reload_data();
-    gantt_tc->redo_search();
+    timeline_src->rebuild_indexes();
+    timeline_tc->reload_data();
+    timeline_tc->redo_search();
 }
 
 class pretty_sub_source : public plain_text_source {
@@ -616,8 +617,9 @@ handle_winch()
     lnav_data.ld_match_view.set_needs_update();
     lnav_data.ld_filter_view.set_needs_update();
     lnav_data.ld_files_view.set_needs_update();
+    lnav_data.ld_file_details_view.set_needs_update();
     lnav_data.ld_spectro_details_view.set_needs_update();
-    lnav_data.ld_gantt_details_view.set_needs_update();
+    lnav_data.ld_timeline_details_view.set_needs_update();
     lnav_data.ld_user_message_view.set_needs_update();
 
     return true;
@@ -626,6 +628,9 @@ handle_winch()
 void
 layout_views()
 {
+    static constexpr auto FILES_FOCUSED_WIDTH = 40;
+    static constexpr auto FILES_BLURRED_WIDTH = 20;
+
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
     int width, height;
     getmaxyx(lnav_data.ld_window, height, width);
@@ -638,11 +643,11 @@ layout_views()
         = !lnav_data.ld_preview_status_source[1].get_description().empty();
     bool filters_supported = false;
     auto is_spectro = false;
-    auto is_gantt = false;
+    auto is_timeline = false;
 
     lnav_data.ld_view_stack.top() | [&](auto tc) {
         is_spectro = (tc == &lnav_data.ld_views[LNV_SPECTRO]);
-        is_gantt = (tc == &lnav_data.ld_views[LNV_GANTT]);
+        is_timeline = (tc == &lnav_data.ld_views[LNV_TIMELINE]);
 
         auto* tss = tc->get_sub_source();
 
@@ -697,13 +702,31 @@ layout_views()
 
     auto config_panel_open = (lnav_data.ld_mode == ln_mode_t::FILTER
                               || lnav_data.ld_mode == ln_mode_t::FILES
+                              || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS
                               || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS
                               || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
     auto filters_open = (lnav_data.ld_mode == ln_mode_t::FILTER
                          || lnav_data.ld_mode == ln_mode_t::SEARCH_FILTERS);
     auto files_open = (lnav_data.ld_mode == ln_mode_t::FILES
+                       || lnav_data.ld_mode == ln_mode_t::FILE_DETAILS
                        || lnav_data.ld_mode == ln_mode_t::SEARCH_FILES);
-    int filter_height = config_panel_open ? 5 : 0;
+    auto files_width = lnav_data.ld_mode == ln_mode_t::FILES
+        ? FILES_FOCUSED_WIDTH
+        : FILES_BLURRED_WIDTH;
+    int filter_height;
+
+    switch (lnav_data.ld_mode) {
+        case ln_mode_t::FILES:
+        case ln_mode_t::FILTER:
+            filter_height = 5;
+            break;
+        case ln_mode_t::FILE_DETAILS:
+            filter_height = 15;
+            break;
+        default:
+            filter_height = 0;
+            break;
+    }
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
@@ -785,19 +808,19 @@ layout_views()
     lnav_data.ld_status[LNS_DOC].set_width(width);
     lnav_data.ld_status[LNS_DOC].set_visible(has_doc && vis);
 
-    if (is_gantt) {
-        vis = bottom.try_consume(lnav_data.ld_gantt_details_view.get_height()
+    if (is_timeline) {
+        vis = bottom.try_consume(lnav_data.ld_timeline_details_view.get_height()
                                  + 1);
     } else {
         vis = false;
     }
-    lnav_data.ld_gantt_details_view.set_y(bottom + 1);
-    lnav_data.ld_gantt_details_view.set_width(width);
-    lnav_data.ld_gantt_details_view.set_visible(vis);
+    lnav_data.ld_timeline_details_view.set_y(bottom + 1);
+    lnav_data.ld_timeline_details_view.set_width(width);
+    lnav_data.ld_timeline_details_view.set_visible(vis);
 
-    lnav_data.ld_status[LNS_GANTT].set_y(bottom);
-    lnav_data.ld_status[LNS_GANTT].set_width(width);
-    lnav_data.ld_status[LNS_GANTT].set_visible(vis);
+    lnav_data.ld_status[LNS_TIMELINE].set_y(bottom);
+    lnav_data.ld_status[LNS_TIMELINE].set_width(width);
+    lnav_data.ld_status[LNS_TIMELINE].set_visible(vis);
 
     vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
                              + (filters_supported ? 1 : 0));
@@ -808,8 +831,15 @@ layout_views()
 
     lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
     lnav_data.ld_files_view.set_y(bottom + 2);
-    lnav_data.ld_files_view.set_width(width);
+    lnav_data.ld_files_view.set_width(files_width);
     lnav_data.ld_files_view.set_visible(files_open && vis);
+
+    lnav_data.ld_file_details_view.set_height(vis_line_t(filter_height));
+    lnav_data.ld_file_details_view.set_y(bottom + 2);
+    lnav_data.ld_file_details_view.set_x(files_width);
+    lnav_data.ld_file_details_view.set_width(
+        std::clamp(width - files_width, 0, width));
+    lnav_data.ld_file_details_view.set_visible(files_open && vis);
 
     lnav_data.ld_status[LNS_FILTER_HELP].set_visible(config_panel_open && vis);
     lnav_data.ld_status[LNS_FILTER_HELP].set_y(bottom + 1);
@@ -851,11 +881,10 @@ update_hits(textview_curses* tc)
         lnav_data.ld_bottom_source.update_hits(tc);
 
         if (lnav_data.ld_mode == ln_mode_t::SEARCH) {
-            const auto MAX_MATCH_COUNT = 10_vl;
+            constexpr auto MAX_MATCH_COUNT = 10_vl;
             const auto PREVIEW_SIZE = MAX_MATCH_COUNT + 1_vl;
 
             int preview_count = 0;
-
             auto& bm = tc->get_bookmarks();
             const auto& bv = bm[&textview_curses::BM_SEARCH];
             auto vl = tc->get_top();
@@ -887,9 +916,6 @@ update_hits(textview_curses* tc)
                     attr_line_t al;
 
                     tc->textview_value_for_row(prev_vl.value(), al);
-                    if (preview_count > 0) {
-                        all_matches.append("\n");
-                    }
                     snprintf(linebuf,
                              sizeof(linebuf),
                              "L%*d: ",
@@ -900,7 +926,7 @@ update_hits(textview_curses* tc)
                 }
             }
 
-            nonstd::optional<vis_line_t> next_vl;
+            std::optional<vis_line_t> next_vl;
             while ((next_vl = bv.next(vl)) && preview_count < MAX_MATCH_COUNT) {
                 if (next_vl.value() < 0_vl
                     || next_vl.value() >= tc->get_inner_height())
@@ -1030,16 +1056,16 @@ execute_examples()
 
     auto old_width = dls.dls_max_column_width;
     dls.dls_max_column_width = 15;
-    for (auto help_pair : sqlite_function_help) {
+    for (const auto& help_pair : sqlite_function_help) {
         execute_example(*help_pair.second);
     }
-    for (auto help_pair : lnav::sql::prql_functions) {
+    for (const auto& help_pair : lnav::sql::prql_functions) {
         if (help_pair.second->ht_context != help_context_t::HC_PRQL_FUNCTION) {
             continue;
         }
         execute_example(*help_pair.second);
     }
-    for (auto cmd_pair : *sql_cmd_map) {
+    for (const auto& cmd_pair : *sql_cmd_map) {
         if (cmd_pair.second->c_help.ht_context
                 != help_context_t::HC_PRQL_TRANSFORM
             && cmd_pair.second->c_help.ht_context
@@ -1091,7 +1117,7 @@ toggle_view(textview_curses* toggle_tc)
         lnav_data.ld_view_stack.pop_back();
         lnav_data.ld_view_stack.top() | [](auto* tc) {
             // XXX
-            if (tc == &lnav_data.ld_views[LNV_GANTT]) {
+            if (tc == &lnav_data.ld_views[LNV_TIMELINE]) {
                 auto tss = tc->get_sub_source();
                 tss->text_filters_changed();
                 tc->reload_data();
@@ -1107,8 +1133,8 @@ toggle_view(textview_curses* toggle_tc)
             open_schema_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
-        } else if (toggle_tc == &lnav_data.ld_views[LNV_GANTT]) {
-            open_gantt_view();
+        } else if (toggle_tc == &lnav_data.ld_views[LNV_TIMELINE]) {
+            open_timeline_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
             // Rebuild to reflect changes in marks.
             rebuild_hist();
@@ -1155,8 +1181,8 @@ ensure_view(lnav_view_t expected)
     return ensure_view(&lnav_data.ld_views[expected]);
 }
 
-nonstd::optional<vis_line_t>
-next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+std::optional<vis_line_t>
+next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
                  vis_line_t) const,
              const bookmark_type_t* bt,
              const vis_line_t top)
@@ -1166,7 +1192,7 @@ next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     auto& bv = bm[bt];
     bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
     vis_line_t last_top(top), tc_height;
-    nonstd::optional<vis_line_t> new_top = top;
+    std::optional<vis_line_t> new_top = top;
     unsigned long tc_width;
     int hit_count = 0;
 
@@ -1202,11 +1228,11 @@ next_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
         return last_top;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 bool
-moveto_cluster(nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
                    vis_line_t) const,
                const bookmark_type_t* bt,
                vis_line_t top)
@@ -1264,6 +1290,8 @@ get_textview_for_mode(ln_mode_t mode)
         case ln_mode_t::SEARCH_FILES:
         case ln_mode_t::FILES:
             return &lnav_data.ld_files_view;
+        case ln_mode_t::FILE_DETAILS:
+            return &lnav_data.ld_file_details_view;
         case ln_mode_t::SPECTRO_DETAILS:
         case ln_mode_t::SEARCH_SPECTRO_DETAILS:
             return &lnav_data.ld_spectro_details_view;
@@ -1272,7 +1300,8 @@ get_textview_for_mode(ln_mode_t mode)
     }
 }
 
-hist_index_delegate::hist_index_delegate(hist_source2& hs, textview_curses& tc)
+hist_index_delegate::
+hist_index_delegate(hist_source2& hs, textview_curses& tc)
     : hid_source(hs), hid_view(tc)
 {
 }
@@ -1328,7 +1357,7 @@ view_title_poss()
 
     for (int view_index = 0; view_index < LNV__MAX; view_index++) {
         attr_line_t display_value{lnav_view_titles[view_index]};
-        nonstd::optional<size_t> quantity;
+        std::optional<size_t> quantity;
         std::string units;
 
         switch (view_index) {
@@ -1430,6 +1459,12 @@ set_view_mode(ln_mode_t mode)
     switch (lnav_data.ld_mode) {
         case ln_mode_t::BREADCRUMBS: {
             breadcrumb_view->blur();
+            lnav_data.ld_view_stack.set_needs_update();
+            break;
+        }
+        case ln_mode_t::FILE_DETAILS: {
+            lnav_data.ld_file_details_view.tc_cursor_role
+                = role_t::VCR_DISABLED_CURSOR_LINE;
             break;
         }
         default:
@@ -1438,6 +1473,12 @@ set_view_mode(ln_mode_t mode)
     switch (mode) {
         case ln_mode_t::BREADCRUMBS: {
             breadcrumb_view->focus();
+            break;
+        }
+        case ln_mode_t::FILE_DETAILS: {
+            lnav_data.ld_status[LNS_FILTER].set_needs_update();
+            lnav_data.ld_file_details_view.tc_cursor_role
+                = role_t::VCR_CURSOR_LINE;
             break;
         }
         default:
@@ -1461,11 +1502,12 @@ all_views()
     retval.push_back(&lnav_data.ld_example_view);
     retval.push_back(&lnav_data.ld_preview_view[0]);
     retval.push_back(&lnav_data.ld_preview_view[1]);
+    retval.push_back(&lnav_data.ld_file_details_view);
     retval.push_back(&lnav_data.ld_files_view);
     retval.push_back(&lnav_data.ld_filter_view);
     retval.push_back(&lnav_data.ld_user_message_view);
     retval.push_back(&lnav_data.ld_spectro_details_view);
-    retval.push_back(&lnav_data.ld_gantt_details_view);
+    retval.push_back(&lnav_data.ld_timeline_details_view);
     retval.push_back(lnav_data.ld_rl_view);
 
     return retval;
@@ -1475,7 +1517,7 @@ void
 lnav_behavior::mouse_event(int button, bool release, int x, int y)
 {
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
-    static const std::vector<view_curses*> VIEWS = all_views();
+    static const auto VIEWS = all_views();
     static const auto CLICK_INTERVAL
         = std::chrono::milliseconds(mouseinterval(-1) * 2);
 
@@ -1549,6 +1591,7 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
                     case ln_mode_t::PAGING:
                         break;
                     case ln_mode_t::FILES:
+                    case ln_mode_t::FILE_DETAILS:
                     case ln_mode_t::FILTER:
                         // Clicking on the main view when the config panels are
                         // open should return us to paging.

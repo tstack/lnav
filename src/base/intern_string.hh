@@ -32,6 +32,7 @@
 #ifndef intern_string_hh
 #define intern_string_hh
 
+#include <optional>
 #include <ostream>
 #include <vector>
 
@@ -40,10 +41,11 @@
 #include <sys/types.h>
 
 #include "fmt/format.h"
-#include "optional.hpp"
 #include "result.h"
 #include "scn/util/string_view.h"
 #include "strnatcmp.h"
+
+unsigned long hash_str(const char* str, size_t len);
 
 struct string_fragment {
     using iterator = const char*;
@@ -279,6 +281,12 @@ struct string_fragment {
 
     string_fragment sub_range(int begin, int end) const
     {
+        if (this->sf_begin + begin > this->sf_end) {
+            begin = this->sf_end - this->sf_begin;
+        }
+        if (this->sf_begin + end > this->sf_end) {
+            end = this->sf_end - this->sf_begin;
+        }
         return string_fragment{
             this->sf_string, this->sf_begin + begin, this->sf_begin + end};
     }
@@ -302,7 +310,7 @@ struct string_fragment {
         return retval;
     }
 
-    nonstd::optional<size_t> find(char ch) const
+    std::optional<int> find(char ch) const
     {
         for (int lpc = this->sf_begin; lpc < this->sf_end; lpc++) {
             if (this->sf_string[lpc] == ch) {
@@ -310,7 +318,7 @@ struct string_fragment {
             }
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     template<typename P>
@@ -374,21 +382,21 @@ struct string_fragment {
             start - left.sf_begin, predicate, count);
     }
 
-    nonstd::optional<std::pair<uint32_t, string_fragment>> consume_codepoint()
+    std::optional<std::pair<uint32_t, string_fragment>> consume_codepoint()
         const
     {
         auto cp = this->front_codepoint();
         auto index_res = this->codepoint_to_byte_index(1);
 
         if (index_res.isErr()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return std::make_pair(cp, this->substr(index_res.unwrap()));
     }
 
     template<typename P>
-    nonstd::optional<string_fragment> consume(P predicate) const
+    std::optional<string_fragment> consume(P predicate) const
     {
         int consumed = 0;
         while (consumed < this->length()) {
@@ -400,7 +408,7 @@ struct string_fragment {
         }
 
         if (consumed == 0) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return string_fragment{
@@ -410,7 +418,7 @@ struct string_fragment {
         };
     }
 
-    nonstd::optional<string_fragment> consume_n(int amount) const;
+    std::optional<string_fragment> consume_n(int amount) const;
 
     template<typename P>
     string_fragment skip(P predicate) const
@@ -428,7 +436,7 @@ struct string_fragment {
     }
 
     using split_result
-        = nonstd::optional<std::pair<string_fragment, string_fragment>>;
+        = std::optional<std::pair<string_fragment, string_fragment>>;
 
     template<typename P>
     split_result split_while(P&& predicate) const
@@ -443,7 +451,7 @@ struct string_fragment {
         }
 
         if (consumed == 0) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return std::make_pair(
@@ -500,7 +508,7 @@ struct string_fragment {
         }
 
         if (consumed == this->length()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return std::make_pair(
@@ -573,6 +581,7 @@ struct string_fragment {
     }
 
     string_fragment trim(const char* tokens) const;
+    string_fragment rtrim(const char* tokens) const;
     string_fragment trim() const;
 
     string_fragment prepend(const char* str, int amount) const
@@ -636,6 +645,11 @@ struct string_fragment {
     case_style detect_text_case_style() const;
 
     std::string to_string_with_case_style(case_style style) const;
+
+    unsigned long hash() const
+    {
+        return hash_str(this->data(), this->length());
+    }
 
     const char* sf_string;
     int sf_begin;
@@ -804,8 +818,6 @@ public:
 private:
     const intern_string* ist_interned_string;
 };
-
-unsigned long hash_str(const char* str, size_t len);
 
 namespace fmt {
 template<>

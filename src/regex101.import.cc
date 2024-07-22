@@ -47,7 +47,7 @@ static const std::set<std::string> SUPPORTED_FLAVORS = {
     "pcre2",
 };
 
-Result<ghc::filesystem::path, lnav::console::user_message>
+Result<std::filesystem::path, lnav::console::user_message>
 regex101::import(const std::string& url,
                  const std::string& name,
                  const std::string& pat_name)
@@ -124,7 +124,7 @@ regex101::import(const std::string& url,
     auto format_path
         = lnav::paths::dotlnav() / "formats" / "installed" / format_filename;
 
-    if (ghc::filesystem::exists(format_path)) {
+    if (std::filesystem::exists(format_path)) {
         return Err(lnav::console::user_message::error(
                        attr_line_t("unable to import: ")
                            .append(lnav::roles::file(url)))
@@ -270,7 +270,7 @@ regex101::import(const std::string& url,
     return Ok(format_path);
 }
 
-ghc::filesystem::path
+std::filesystem::path
 regex101::patch_path(const external_log_format* format,
                      const std::string& permalink)
 {
@@ -287,7 +287,7 @@ regex101::patch_path(const external_log_format* format,
         fmt::format(FMT_STRING("regex101-{}.json"), permalink));
 }
 
-Result<ghc::filesystem::path, lnav::console::user_message>
+Result<std::filesystem::path, lnav::console::user_message>
 regex101::patch(const external_log_format* format,
                 const std::string& pat_name,
                 const regex101::client::entry& entry)

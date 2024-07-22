@@ -74,7 +74,7 @@ to_key_seq(A& dst, const char* src)
 void
 input_dispatcher::new_input(const struct timeval& current_time, int ch)
 {
-    nonstd::optional<bool> handled = nonstd::nullopt;
+    std::optional<bool> handled = std::nullopt;
     std::array<char, 32 * 3 + 1> keyseq{0};
 
     switch (ch) {

@@ -13,7 +13,12 @@ add_library(
 
 target_include_directories(yajlpp PUBLIC . .. ../fmtlib
         ${CMAKE_CURRENT_BINARY_DIR}/..)
-target_link_libraries(yajlpp pcrepp yajl ncurses::libcurses datepp)
+target_link_libraries(yajlpp
+        pcrepp
+        yajl
+        ${CURSES_LIBRARIES}
+        datepp
+)
 
 add_executable(test_yajlpp test_yajlpp.cc)
 target_link_libraries(test_yajlpp yajlpp base ${lnav_LIBS})

@@ -448,18 +448,18 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
                                             std::move(err_pipe.read_end())));
 }
 
-static ghc::filesystem::path
+static std::filesystem::path
 remote_cache_path()
 {
     return lnav::paths::workdir() / "remotes";
 }
 
-ghc::filesystem::path
+std::filesystem::path
 tailer::looper::host_tailer::tmp_path()
 {
     auto local_path = remote_cache_path();
 
-    ghc::filesystem::create_directories(local_path);
+    std::filesystem::create_directories(local_path);
     auto_mem<char> resolved_path;
 
     resolved_path = realpath(local_path.c_str(), nullptr);
@@ -478,11 +478,12 @@ scrub_netloc(const std::string& netloc)
     return std::regex_replace(netloc, TO_SCRUB, "_");
 }
 
-tailer::looper::host_tailer::host_tailer(const std::string& netloc,
-                                         auto_pid<process_state::running> child,
-                                         auto_fd to_child,
-                                         auto_fd from_child,
-                                         auto_fd err_from_child)
+tailer::looper::host_tailer::
+host_tailer(const std::string& netloc,
+            auto_pid<process_state::running> child,
+            auto_fd to_child,
+            auto_fd from_child,
+            auto_fd err_from_child)
     : isc::service<host_tailer>(netloc), ht_netloc(netloc),
       ht_local_path(tmp_path() / scrub_netloc(netloc)),
       ht_error_reader([netloc,
@@ -578,9 +579,8 @@ tailer::looper::host_tailer::loop_body()
 
     this->ht_cycle_count += 1;
     if (this->ht_cycle_count % TOUCH_FREQ == 0) {
-        auto now
-            = ghc::filesystem::file_time_type{std::chrono::system_clock::now()};
-        ghc::filesystem::last_write_time(this->ht_local_path, now);
+        auto now = std::filesystem::file_time_type::clock::now();
+        std::filesystem::last_write_time(this->ht_local_path, now);
     }
 
     auto& conn = this->ht_state.get<connected>();
@@ -648,14 +648,14 @@ tailer::looper::host_tailer::loop_body()
                     }
                 }
 
-                auto remote_path = ghc::filesystem::absolute(
-                                       ghc::filesystem::path(pe.pe_path))
+                auto remote_path = std::filesystem::absolute(
+                                       std::filesystem::path(pe.pe_path))
                                        .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
 
                 log_debug("removing %s", local_path.c_str());
                 this->ht_active_files.erase(local_path);
-                ghc::filesystem::remove_all(local_path);
+                std::filesystem::remove_all(local_path);
 
                 if (conn.c_desired_paths.empty() && conn.c_child_paths.empty())
                 {
@@ -706,8 +706,8 @@ tailer::looper::host_tailer::loop_body()
                 update_tailer_description(
                     this->ht_netloc, conn.c_desired_paths, this->ht_uname);
 
-                auto remote_path = ghc::filesystem::absolute(
-                                       ghc::filesystem::path(pob.pob_path))
+                auto remote_path = std::filesystem::absolute(
+                                       std::filesystem::path(pob.pob_path))
                                        .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
                 auto open_res
@@ -769,7 +769,7 @@ tailer::looper::host_tailer::loop_body()
 
                 if (fstat(fd, &st) == -1 || !S_ISREG(st.st_mode)) {
                     log_debug("path changed, sending need block");
-                    ghc::filesystem::remove_all(local_path);
+                    std::filesystem::remove_all(local_path);
                     send_packet(conn.ht_to_child.get(),
                                 TPT_NEED_BLOCK,
                                 TPPT_STRING,
@@ -808,7 +808,7 @@ tailer::looper::host_tailer::loop_body()
                         log_debug(
                             "unable to read file, sending need block -- %s",
                             strerror(errno));
-                        ghc::filesystem::remove_all(local_path);
+                        std::filesystem::remove_all(local_path);
                         break;
                     }
                     if (bytes_read == 0) {
@@ -847,8 +847,8 @@ tailer::looper::host_tailer::loop_body()
                 return std::move(this->ht_state);
             },
             [&](const tailer::packet_tail_block& ptb) {
-                auto remote_path = ghc::filesystem::absolute(
-                                       ghc::filesystem::path(ptb.ptb_path))
+                auto remote_path = std::filesystem::absolute(
+                                       std::filesystem::path(ptb.ptb_path))
                                        .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
 
@@ -856,7 +856,7 @@ tailer::looper::host_tailer::loop_body()
                           ptb.ptb_offset,
                           ptb.ptb_bits.size(),
                           local_path.c_str());
-                ghc::filesystem::create_directories(local_path.parent_path());
+                std::filesystem::create_directories(local_path.parent_path());
                 auto create_res = lnav::filesystem::create_file(
                     local_path, O_WRONLY | O_APPEND | O_CREAT, 0600);
 
@@ -869,10 +869,10 @@ tailer::looper::host_tailer::loop_body()
                            ptb.ptb_bits.data(),
                            ptb.ptb_bits.size(),
                            ptb.ptb_offset);
-                    auto mtime = ghc::filesystem::file_time_type{
+                    auto mtime = std::filesystem::file_time_type{
                         std::chrono::seconds{ptb.ptb_mtime}};
                     // XXX This isn't atomic with the write...
-                    ghc::filesystem::last_write_time(local_path, mtime);
+                    std::filesystem::last_write_time(local_path, mtime);
                 }
                 return std::move(this->ht_state);
             },
@@ -935,11 +935,11 @@ tailer::looper::host_tailer::loop_body()
                 return std::move(this->ht_state);
             },
             [&](const tailer::packet_link& pl) {
-                auto remote_path = ghc::filesystem::absolute(
-                                       ghc::filesystem::path(pl.pl_path))
+                auto remote_path = std::filesystem::absolute(
+                                       std::filesystem::path(pl.pl_path))
                                        .relative_path();
                 auto local_path = this->ht_local_path / remote_path;
-                auto remote_link_path = ghc::filesystem::path(pl.pl_link_value);
+                auto remote_link_path = std::filesystem::path(pl.pl_link_value);
                 std::string link_path;
 
                 if (remote_link_path.is_absolute()) {
@@ -954,8 +954,8 @@ tailer::looper::host_tailer::loop_body()
                 log_debug("symlinking %s -> %s",
                           local_path.c_str(),
                           link_path.c_str());
-                ghc::filesystem::create_directories(local_path.parent_path());
-                ghc::filesystem::remove_all(local_path);
+                std::filesystem::create_directories(local_path.parent_path());
+                std::filesystem::remove_all(local_path);
                 if (symlink(link_path.c_str(), local_path.c_str()) < 0) {
                     log_error("symlink failed: %s", strerror(errno));
                 }
@@ -1169,16 +1169,16 @@ void
 tailer::cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
-        auto now = std::chrono::system_clock::now();
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = remote_cache_path();
         const auto& cfg = injector::get<const config&>();
-        std::vector<ghc::filesystem::path> to_remove;
+        std::vector<std::filesystem::path> to_remove;
 
         log_debug("cache-ttl %d", cfg.c_cache_ttl.count());
         for (const auto& entry :
-             ghc::filesystem::directory_iterator(cache_path))
+             std::filesystem::directory_iterator(cache_path))
         {
-            auto mtime = ghc::filesystem::last_write_time(entry.path());
+            auto mtime = std::filesystem::last_write_time(entry.path());
             auto exp_time = mtime + cfg.c_cache_ttl;
             if (now < exp_time) {
                 continue;
@@ -1189,7 +1189,7 @@ tailer::cleanup_cache()
 
         for (auto& entry : to_remove) {
             log_debug("removing cached remote: %s", entry.c_str());
-            ghc::filesystem::remove_all(entry);
+            std::filesystem::remove_all(entry);
         }
     });
 }

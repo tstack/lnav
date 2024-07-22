@@ -66,7 +66,7 @@ child_poller::poll(file_collection& fc)
     }
 
     auto poll_res = std::move(this->cp_child.value()).poll();
-    this->cp_child = nonstd::nullopt;
+    this->cp_child = std::nullopt;
     return poll_res.match(
         [this](auto_pid<process_state::running>& alive) {
             this->cp_child = std::move(alive);
@@ -80,7 +80,8 @@ child_poller::poll(file_collection& fc)
         });
 }
 
-file_collection::limits_t::limits_t()
+file_collection::limits_t::
+limits_t()
 {
     static constexpr rlim_t RESERVED_FDS = 32;
 
@@ -134,7 +135,8 @@ file_collection::close_files(const std::vector<std::shared_ptr<logfile>>& files)
         } else {
             this->fc_file_names.erase(lf->get_filename());
         }
-        auto file_iter = find(this->fc_files.begin(), this->fc_files.end(), lf);
+        auto file_iter
+            = std::find(this->fc_files.begin(), this->fc_files.end(), lf);
         if (file_iter != this->fc_files.end()) {
             this->fc_files.erase(file_iter);
         }
@@ -160,7 +162,7 @@ file_collection::regenerate_unique_file_names()
         safe::ReadAccess<safe_name_to_errors> errs(*this->fc_name_to_errors);
 
         for (const auto& pair : *errs) {
-            auto path = ghc::filesystem::path(pair.first).filename().string();
+            auto path = std::filesystem::path(pair.first).filename().string();
 
             if (path.length() > this->fc_largest_path_length) {
                 this->fc_largest_path_length = path.length();
@@ -178,8 +180,9 @@ file_collection::regenerate_unique_file_names()
         switch (pair.second.ofd_format) {
             case file_format_t::UNKNOWN:
             case file_format_t::ARCHIVE:
+            case file_format_t::MULTIPLEXED:
             case file_format_t::SQLITE_DB: {
-                auto bn = ghc::filesystem::path(pair.first).filename().string();
+                auto bn = std::filesystem::path(pair.first).filename().string();
                 if (bn.length() > this->fc_largest_path_length) {
                     this->fc_largest_path_length = bn.length();
                 }
@@ -218,8 +221,12 @@ file_collection::merge(file_collection& other)
 
         errs->insert(new_errors.begin(), new_errors.end());
     }
-    this->fc_file_names.insert(other.fc_file_names.begin(),
-                               other.fc_file_names.end());
+    if (!other.fc_file_names.empty()) {
+        this->fc_files_generation += 1;
+    }
+    for (const auto& fn_pair : other.fc_file_names) {
+        this->fc_file_names[fn_pair.first] = fn_pair.second;
+    }
     if (!other.fc_files.empty()) {
         for (const auto& lf : other.fc_files) {
             this->fc_name_to_errors->writeAccess()->erase(lf->get_filename());
@@ -252,7 +259,11 @@ file_collection::merge(file_collection& other)
  * Functor used to compare files based on their device and inode number.
  */
 struct same_file {
-    explicit same_file(const struct stat& stat) : sf_stat(stat) {}
+    explicit same_file(const std::filesystem::path& filename,
+                       const struct stat& stat)
+        : sf_filename(filename), sf_stat(stat)
+    {
+    }
 
     /**
      * Compare the given log file against the 'stat' given in the constructor.
@@ -264,6 +275,12 @@ struct same_file {
     {
         if (lf->is_closed()) {
             return false;
+        }
+
+        if (lf->get_actual_path()
+            && lf->get_actual_path().value() == this->sf_filename)
+        {
+            return true;
         }
 
         const auto& lf_loo = lf->get_open_options();
@@ -279,6 +296,7 @@ struct same_file {
             && this->sf_stat.st_ino == lf->get_stat().st_ino;
     }
 
+    const std::filesystem::path& sf_filename;
     const struct stat& sf_stat;
 };
 
@@ -291,7 +309,7 @@ struct same_file {
  * @param fd       An already-opened descriptor for 'filename'.
  * @param required Specifies whether or not the file must exist and be valid.
  */
-nonstd::optional<std::future<file_collection>>
+std::optional<std::future<file_collection>>
 file_collection::watch_logfile(const std::string& filename,
                                logfile_open_options& loo,
                                bool required)
@@ -300,8 +318,10 @@ file_collection::watch_logfile(const std::string& filename,
     int rc;
 
     auto filename_key = loo.loo_filename.empty() ? filename : loo.loo_filename;
-    if (this->fc_closed_files.count(filename)) {
-        return nonstd::nullopt;
+    if (this->fc_closed_files.count(filename)
+        || this->fc_closed_files.count(filename_key))
+    {
+        return std::nullopt;
     }
 
     rc = stat(filename.c_str(), &st);
@@ -321,14 +341,14 @@ file_collection::watch_logfile(const std::string& filename,
                         .with_visible_size_limit(256 * 1024));
                 return lnav::futures::make_ready_future(std::move(retval));
             }
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         if (!S_ISREG(st.st_mode)) {
             if (required) {
                 rc = -1;
                 errno = EINVAL;
             } else {
-                return nonstd::nullopt;
+                return std::nullopt;
             }
         }
         {
@@ -357,7 +377,7 @@ file_collection::watch_logfile(const std::string& filename,
                 });
             return lnav::futures::make_ready_future(std::move(retval));
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     if (this->fc_new_stats | lnav::itertools::find_if([&st](const auto& elem) {
@@ -366,17 +386,18 @@ file_collection::watch_logfile(const std::string& filename,
     {
         // this file is probably a link that we have already scanned in this
         // pass.
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     this->fc_new_stats.emplace_back(st);
 
-    auto file_iter = std::find_if(
-        this->fc_files.begin(), this->fc_files.end(), same_file(st));
+    const auto fn_path = std::filesystem::path(filename);
+    const auto file_iter = std::find_if(
+        this->fc_files.begin(), this->fc_files.end(), same_file(fn_path, st));
 
     if (file_iter == this->fc_files.end()) {
         if (this->fc_other_files.find(filename) != this->fc_other_files.end()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         require(this->fc_progress.get() != nullptr);
@@ -397,16 +418,47 @@ file_collection::watch_logfile(const std::string& filename,
                 }
             }
 
-            auto ff = detect_file_format(filename);
+            auto ff_res = detect_file_format(filename);
 
-            loo.loo_file_format = ff;
-            switch (ff) {
+            loo.loo_file_format = ff_res.dffr_file_format;
+            switch (ff_res.dffr_file_format) {
                 case file_format_t::SQLITE_DB:
-                    retval.fc_other_files[filename].ofd_format = ff;
+                    retval.fc_other_files[filename].ofd_format
+                        = ff_res.dffr_file_format;
+                    retval.fc_other_files[filename].ofd_details
+                        = ff_res.dffr_details;
                     break;
 
+                case file_format_t::MULTIPLEXED: {
+                    log_info("%s: file is multiplexed, creating piper",
+                             filename.c_str());
+
+                    auto open_res
+                        = lnav::filesystem::open_file(filename, O_RDONLY);
+                    if (open_res.isOk()) {
+                        auto looper_options = lnav::piper::options{};
+                        looper_options.with_tail(loo.loo_tail);
+                        auto create_res
+                            = lnav::piper::create_looper(filename,
+                                                         open_res.unwrap(),
+                                                         auto_fd{-1},
+                                                         looper_options);
+
+                        if (create_res.isOk()) {
+                            auto& ofd = retval.fc_other_files[filename];
+
+                            ofd.ofd_format = ff_res.dffr_file_format;
+                            ofd.ofd_details = ff_res.dffr_details;
+                            retval.fc_file_names[filename] = loo;
+                            retval.fc_file_names[filename].with_piper(
+                                create_res.unwrap());
+                        }
+                    }
+                    break;
+                }
+
                 case file_format_t::ARCHIVE: {
-                    nonstd::optional<
+                    std::optional<
                         std::list<archive_manager::extract_progress>::iterator>
                         prog_iter_opt;
 
@@ -432,7 +484,7 @@ file_collection::watch_logfile(const std::string& filename,
                         },
                         [&filename, &retval](const auto& tmp_path,
                                              const auto& entry) {
-                            auto arc_path = ghc::filesystem::relative(
+                            auto arc_path = std::filesystem::relative(
                                 entry.path(), tmp_path);
                             auto custom_name = filename / arc_path;
                             bool is_visible = true;
@@ -464,7 +516,9 @@ file_collection::watch_logfile(const std::string& filename,
                                 res.unwrapErr(),
                             });
                     } else {
-                        retval.fc_other_files[filename] = ff;
+                        auto& ofd = retval.fc_other_files[filename];
+                        ofd.ofd_format = ff_res.dffr_file_format;
+                        ofd.ofd_details = ff_res.dffr_details;
                     }
                     {
                         prog_iter_opt | [&prog](auto prog_iter) {
@@ -478,6 +532,7 @@ file_collection::watch_logfile(const std::string& filename,
                 default: {
                     auto filename_to_open = filename;
 
+                    loo.loo_match_details = ff_res.dffr_details;
                     auto eff = detect_mime_type(filename);
 
                     if (eff) {
@@ -563,7 +618,7 @@ file_collection::watch_logfile(const std::string& filename,
         return lnav::futures::make_ready_future(std::move(retval));
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 /**
@@ -594,10 +649,9 @@ file_collection::expand_filename(
     }
 
     auto filename_key = loo.loo_filename.empty() ? path : loo.loo_filename;
-    auto glob_flags = lnav::filesystem::is_glob(path) ? 0 : GLOB_NOCHECK;
-    if (glob(path.c_str(), glob_flags, nullptr, gl.inout()) == 0) {
-        int lpc;
-
+    auto glob_flags = lnav::filesystem::is_glob(path) ? GLOB_NOCHECK : 0;
+    auto glob_rc = glob(path.c_str(), glob_flags, nullptr, gl.inout());
+    if (glob_rc == 0) {
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
             /* It's a pattern that doesn't match any files
              * yet, allow it through since we'll load it in
@@ -641,7 +695,7 @@ file_collection::expand_filename(
         }
 
         std::lock_guard<std::mutex> lg(REALPATH_CACHE_MUTEX);
-        for (lpc = 0; lpc < (int) gl->gl_pathc; lpc++) {
+        for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
             auto path_str = std::string(gl->gl_pathv[lpc]);
             auto iter = REALPATH_CACHE.find(path_str);
 
@@ -713,6 +767,8 @@ file_collection::expand_filename(
                 }
             }
         }
+    } else if (glob_rc != GLOB_NOMATCH) {
+        log_error("glob(%s) failed -- %s", path.c_str(), strerror(errno));
     }
 }
 
@@ -756,6 +812,14 @@ file_collection::rescan_files(bool required)
                 pair.second.loo_piper->get_out_pattern().string(),
                 pair.second,
                 required);
+            if (!pair.second.loo_piper.value().get_demux_id().empty()
+                && this->fc_other_files.count(pair.first) == 0)
+            {
+                auto& ofd = retval.fc_other_files[pair.first];
+                ofd.ofd_format = file_format_t::MULTIPLEXED;
+                ofd.ofd_details
+                    = pair.second.loo_piper.value().get_demux_details();
+            }
         } else {
             this->expand_filename(fq, pair.first, pair.second, required);
             if (this->fc_rotated) {
@@ -783,6 +847,22 @@ file_collection::request_close(const std::shared_ptr<logfile>& lf)
 {
     lf->close();
     this->fc_files_generation += 1;
+}
+
+size_t
+file_collection::initial_indexing_pipers() const
+{
+    size_t retval = 0;
+
+    for (const auto& pair : this->fc_file_names) {
+        if (pair.second.loo_piper
+            && pair.second.loo_piper->get_loop_count() == 0)
+        {
+            retval += 1;
+        }
+    }
+
+    return retval;
 }
 
 size_t
@@ -820,6 +900,18 @@ file_collection::copy()
     retval.merge(*this);
     retval.fc_progress = this->fc_progress;
     return retval;
+}
+
+void
+file_collection::clear()
+{
+    this->fc_name_to_errors->writeAccess()->clear();
+    this->fc_file_names.clear();
+    this->fc_files.clear();
+    this->fc_renamed_files.clear();
+    this->fc_closed_files.clear();
+    this->fc_other_files.clear();
+    this->fc_new_stats.clear();
 }
 
 size_t

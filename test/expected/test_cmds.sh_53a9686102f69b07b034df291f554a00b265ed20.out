@@ -1,2 +1,2 @@
 toplevel here 123 456
-nested here nested.lnav abc 789
+nested here {test_dir}/nested.lnav abc 789

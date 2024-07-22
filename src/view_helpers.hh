@@ -53,7 +53,7 @@ typedef enum {
     LNV_SCHEMA,
     LNV_PRETTY,
     LNV_SPECTRO,
-    LNV_GANTT,
+    LNV_TIMELINE,
 
     LNV__MAX
 } lnav_view_t;
@@ -64,6 +64,7 @@ enum class ln_mode_t : int {
     BREADCRUMBS,
     FILTER,
     FILES,
+    FILE_DETAILS,
     SPECTRO_DETAILS,
     SEARCH_SPECTRO_DETAILS,
     COMMAND,
@@ -80,7 +81,7 @@ enum class ln_mode_t : int {
 extern const char* lnav_view_strings[LNV__MAX + 1];
 extern const char* lnav_view_titles[LNV__MAX];
 
-nonstd::optional<lnav_view_t> view_from_string(const char* name);
+std::optional<lnav_view_t> view_from_string(const char* name);
 
 bool ensure_view(textview_curses* expected_tc);
 bool ensure_view(lnav_view_t expected);
@@ -91,13 +92,13 @@ void update_hits(textview_curses* tc);
 void clear_preview();
 void set_view_mode(ln_mode_t mode);
 
-nonstd::optional<vis_line_t> next_cluster(
-    nonstd::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
+std::optional<vis_line_t> next_cluster(
+    std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(vis_line_t)
         const,
     const bookmark_type_t* bt,
     vis_line_t top);
-bool moveto_cluster(nonstd::optional<vis_line_t> (
-                        bookmark_vector<vis_line_t>::*f)(vis_line_t) const,
+bool moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
+                        vis_line_t) const,
                     const bookmark_type_t* bt,
                     vis_line_t top);
 vis_line_t search_forward_from(textview_curses* tc);

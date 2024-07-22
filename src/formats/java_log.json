@@ -37,6 +37,12 @@
             },
             "vmw-sps": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+-\\s+(?<body>.*)$"
+            },
+            "level-thread-class": {
+                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{3}) (?<level>\\w+)\\s+\\[(?<thread>[^\\]]+)\\] (?<class>[^:]+): (?<body>.*)"
+            },
+            "level-class-src": {
+                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{3}) (?<level>\\w+)\\s+(?<class>[\\.\\w]+) \\((?<srcfile>[^:]+):(?<function>[^(]+)\\((?<srcline>\\d+)\\)\\) - (?<body>.*)"
             }
         },
         "level-field": "level",
@@ -160,6 +166,12 @@
             },
             {
                 "line": "2023-07-19T03:05:51.879Z invocation-vmomi-executor-1 operationID=4e543097-1a  DEBUG vim.vmomi.server.impl.InvocationTask Invoking com.vmware.vim.binding.vim.LicenseManager.getEvaluation"
+            },
+            {
+                "line": "2024-04-23 09:17:27,871 INFO  [main] server.Server: jetty-9.4.50.v20221201; built: 2022-12-01T22:07:03.915Z; git: da9a0b30691a45daf90a9f17b5defa2f1434f882; jvm 11.0.21+9-LTS"
+            },
+            {
+                "line": "2024-04-23 09:17:33,457 INFO  namenode.NameNode (LogAdapter.java:info(51)) - registered UNIX signal handlers for [TERM, HUP, INT]"
             }
         ]
     }

@@ -122,3 +122,16 @@ ${test_dir}/naughty_files.py
 run_cap_test ${lnav_test} -n naughty/file-with-hidden-text.txt
 
 run_cap_test ${lnav_test} -n naughty/file-with-terminal-controls.txt
+
+run_cap_test ${lnav_test} -nN \
+    -c ':set-text-view-mode'
+
+run_cap_test ${lnav_test} -nN \
+    -c ':set-text-view-mode blah'
+
+run_cap_test ${lnav_test} -n \
+    -c ':set-text-view-mode raw' \
+    ${top_srcdir}/README.md
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/textfile_json_long.0

@@ -65,7 +65,7 @@ public:
 
     void resize(size_t newsize);
 
-    nonstd::optional<size_t> content_line_to_vis_line(uint32_t line);
+    std::optional<size_t> content_line_to_vis_line(uint32_t line);
 
     const static int MAX_FILTERS = 32;
 
@@ -124,7 +124,7 @@ public:
         logfile_const_iterator ls_line;
     };
 
-    virtual bool matches(nonstd::optional<line_source> ls,
+    virtual bool matches(std::optional<line_source> ls,
                          const shared_buffer_ref& line)
         = 0;
 
@@ -149,7 +149,7 @@ public:
     {
     }
 
-    bool matches(nonstd::optional<line_source> ls,
+    bool matches(std::optional<line_source> ls,
                  const shared_buffer_ref& line) override;
 
     std::string to_command() const override;
@@ -168,7 +168,7 @@ public:
 
     ~pcre_filter() override = default;
 
-    bool matches(nonstd::optional<line_source> ls,
+    bool matches(std::optional<line_source> ls,
                  const shared_buffer_ref& line) override
     {
         return this->pf_pcre->find_in(line.to_string_fragment())
@@ -214,7 +214,7 @@ public:
             == logfile_filter_state::MAX_FILTERS;
     }
 
-    nonstd::optional<size_t> next_index();
+    std::optional<size_t> next_index();
 
     void add_filter(const std::shared_ptr<text_filter>& filter);
 
@@ -251,6 +251,10 @@ private:
 class text_time_translator {
 public:
     struct row_info {
+        row_info() = default;
+
+        row_info(struct timeval tv, int64_t id) : ri_time(tv), ri_id(id) {}
+
         struct timeval ri_time {
             0, 0
         };
@@ -259,23 +263,22 @@ public:
 
     virtual ~text_time_translator() = default;
 
-    virtual nonstd::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket)
+    virtual std::optional<vis_line_t> row_for_time(struct timeval time_bucket)
         = 0;
 
-    virtual nonstd::optional<vis_line_t> row_for(const row_info& ri)
+    virtual std::optional<vis_line_t> row_for(const row_info& ri)
     {
         return this->row_for_time(ri.ri_time);
     }
 
-    virtual nonstd::optional<row_info> time_for_row(vis_line_t row) = 0;
+    virtual std::optional<row_info> time_for_row(vis_line_t row) = 0;
 
     void data_reloaded(textview_curses* tc);
 
     void ttt_scroll_invoked(textview_curses* tc);
 
 protected:
-    nonstd::optional<row_info> ttt_top_row_info;
+    std::optional<row_info> ttt_top_row_info;
 };
 
 class text_accel_source {
@@ -321,21 +324,20 @@ public:
 
     static std::string to_anchor_string(const std::string& raw);
 
-    virtual nonstd::optional<vis_line_t> row_for_anchor(const std::string& id)
-        = 0;
+    virtual std::optional<vis_line_t> row_for_anchor(const std::string& id) = 0;
 
     enum class direction {
         prev,
         next,
     };
 
-    virtual nonstd::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
-                                                         direction dir)
+    virtual std::optional<vis_line_t> adjacent_anchor(vis_line_t vl,
+                                                      direction dir)
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    virtual nonstd::optional<std::string> anchor_for_row(vis_line_t vl) = 0;
+    virtual std::optional<std::string> anchor_for_row(vis_line_t vl) = 0;
 
     virtual std::unordered_set<std::string> get_anchors() = 0;
 };
@@ -346,11 +348,10 @@ public:
 
     virtual void loc_history_append(vis_line_t top) = 0;
 
-    virtual nonstd::optional<vis_line_t> loc_history_back(
-        vis_line_t current_top)
+    virtual std::optional<vis_line_t> loc_history_back(vis_line_t current_top)
         = 0;
 
-    virtual nonstd::optional<vis_line_t> loc_history_forward(
+    virtual std::optional<vis_line_t> loc_history_forward(
         vis_line_t current_top)
         = 0;
 
@@ -487,16 +488,16 @@ public:
         return text_format_t::TF_UNKNOWN;
     }
 
-    virtual nonstd::optional<
+    virtual std::optional<
         std::pair<grep_proc_source<vis_line_t>*, grep_proc_sink<vis_line_t>*>>
     get_grepper()
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    virtual nonstd::optional<location_history*> get_location_history()
+    virtual std::optional<location_history*> get_location_history()
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     void toggle_apply_filters();
@@ -507,6 +508,8 @@ public:
     virtual void quiesce() {}
 
     virtual void scroll_invoked(textview_curses* tc);
+
+    virtual void text_open_href(const std::string& href) {}
 
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
@@ -526,10 +529,9 @@ public:
 
     void loc_history_append(vis_line_t top) override;
 
-    nonstd::optional<vis_line_t> loc_history_back(
-        vis_line_t current_top) override;
+    std::optional<vis_line_t> loc_history_back(vis_line_t current_top) override;
 
-    nonstd::optional<vis_line_t> loc_history_forward(
+    std::optional<vis_line_t> loc_history_forward(
         vis_line_t current_top) override;
 
     nonstd::ring_span<vis_line_t> vlh_history;
@@ -627,9 +629,9 @@ public:
         return this->tc_delegate;
     }
 
-    nonstd::optional<std::pair<int, int>> horiz_shift(vis_line_t start,
-                                                      vis_line_t end,
-                                                      int off_start);
+    std::optional<std::pair<int, int>> horiz_shift(vis_line_t start,
+                                                   vis_line_t end,
+                                                   int off_start);
 
     void set_search_action(action sa)
     {
@@ -800,17 +802,18 @@ public:
 
     std::function<void(textview_curses&)> tc_state_event_handler;
 
-    nonstd::optional<role_t> tc_cursor_role;
-    nonstd::optional<role_t> tc_disabled_cursor_role;
+    std::optional<role_t> tc_cursor_role;
+    std::optional<role_t> tc_disabled_cursor_role;
 
     struct selected_text_info {
         int sti_x;
         int64_t sti_line;
         line_range sti_range;
         std::string sti_value;
+        std::string sti_href;
     };
 
-    nonstd::optional<selected_text_info> tc_selected_text;
+    std::optional<selected_text_info> tc_selected_text;
     bool tc_text_selection_active{false};
     display_line_content_t tc_press_line;
     int tc_press_left{0};
@@ -861,7 +864,7 @@ protected:
     highlight_map_t tc_highlights;
     std::set<highlight_source_t> tc_disabled_highlights;
 
-    nonstd::optional<vis_line_t> tc_selection_start;
+    std::optional<vis_line_t> tc_selection_start;
     mouse_event tc_press_event;
     bool tc_hide_fields{true};
     bool tc_paused{false};

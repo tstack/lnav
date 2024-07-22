@@ -1,0 +1,202 @@
+[32m<!-- This is a comment for testing purposes -->[0m
+
+[![Build](https://github.com/tstack/lnav/workflows/ci-build/badge.svg)](https://github.com/tstack/lnav/actions?[4mquery[0m=workflow%3Aci-build)
+[![Docs](https://readthedocs.org/projects/lnav/badge/?[4mversion[0m=latest&[4mstyle[0m=plastic)](https://docs.lnav.org)
+[![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?[4mbranch[0m=master)](https://coveralls.io/github/tstack/lnav?[4mbranch[0m=master)
+[![lnav](https://snapcraft.io/lnav/badge.svg)](https://snapcraft.io/lnav)
+
+[<img [4msrc[0m=[35m"https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg"[0m [4mheight[0m=[35m"20"[0m [4malt[0m=[35m"Discord Logo"[0m/>](https://discord.gg/erBPnKwz7R)
+
+_This is the source repository for **lnav**, visit [https://lnav.org](https://lnav.org) for a high level overview._
+
+# LNAV -- The Logfile Navigator
+
+The Logfile Navigator is a log file viewer for the terminal.  Given a
+set of files/directories, **lnav** will:
+
+- decompress as needed;
+- detect their format;
+- merge the files together by time into a single view;
+- tail the files, follow renames, find new files in directories;
+- build an index of errors and warnings;
+- [pretty-print JSON-lines](https://docs.lnav.org/en/latest/formats.html#json-lines).
+
+Then, in the **lnav** TUI, you can:
+
+- jump quickly to the previous/next error ([press [35m`e`[0m/[35m`E`[0m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
+- search using regular expressions ([press [35m`/`[0m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
+- highlight text with a regular expression ([[35m`:highlight`[0m](https://docs.lnav.org/en/latest/commands.html#highlight-pattern) command);
+- filter messages using [regular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions](https://docs.lnav.org/en/latest/usage.html#sqlite-expression);
+- pretty-print structured text ([press [35m`P`[0m](https://docs.lnav.org/en/latest/ui.html#pretty));
+- view a histogram of messages over time ([press [35m`i`[0m](https://docs.lnav.org/en/latest/ui.html#hist));
+- query messages using SQLite ([press [35m`;`[0m](https://docs.lnav.org/en/latest/sqlext.html))
+
+## Screenshot
+
+The following screenshot shows a mix of syslog and web access log
+files.  Failed requests are shown in red.  Identifiers, like IP
+address and PIDs are semantically highlighted.
+
+[![Screenshot](docs/assets/images/lnav-front-page.png)](docs/assets/images/lnav-front-page.png)
+
+## Why not **just** use [35m`tail`[0m/[35m`grep`[0m/[35m`less`[0m?
+
+The standard Unix utilities are great for processing raw text lines,
+however, they do not understand log messages.  Tail can watch
+multiple files at a time, but it won't display messages in order by
+time and you can't scroll backwards.  Grep will only find matching
+lines, but won't return a full multi-line log message.  Less can only
+display a single file at a time.  Also, none of these basic tools 
+handle compressed files.
+
+## Try online before installing
+
+You can SSH into a demo node to play with lnav before installing.
+
+The [35m"playground"[0m account starts lnav with a couple of log files as
+an example:
+
+[[35m`$ ssh playground@demo.lnav.org`[0m](ssh://playground@demo.lnav.org)
+
+The [35m"tutorial 1"[0m account is an interactive tutorial that can teach 
+you the basics of operation:
+
+[[35m`$ ssh tutorial1@demo.lnav.org`[0m](ssh://tutorial1@demo.lnav.org)
+
+## Installation
+
+[Download a statically-linked binary for Linux/MacOS from the release page](https://github.com/tstack/lnav/releases/latest#release-artifacts)
+
+### Brew on MacOS
+
+[35m``[0m`console
+$ brew install lnav
+[35m``[0m`
+
+## Usage
+
+Simply point **lnav** at the files or directories you want to
+monitor, it will figure out the rest:
+
+[35m``[0m`console
+$ lnav /path/to/file1 /path/to/dir ...
+[35m``[0m`
+
+The **lnav** TUI will pop up right away and begin indexing the 
+files. Progress is displayed in the [35m"Files"[0m panel at the 
+bottom. Once the indexing has finished, the LOG view will display 
+the log messages that were recognized[^1]. You can then use the 
+usual hotkeys to move around the view (arrow keys or
+[35m`j`[0m/[35m`k`[0m/[35m`h`[0m/[35m`l`[0m to move down/up/left/right).
+
+See the [Usage section](https://docs.lnav.org/en/latest/usage.html)
+of the online documentation for more information.
+
+[^1]: Files that do not contain log messages can be seen in the 
+      TEXT view (reachable by pressing [35m`t`[0m).
+
+### Usage with [35m`systemd-journald`[0m
+
+On systems running [35m`systemd-journald`[0m, you can use [35m`lnav`[0m as the pager:
+
+[35m``[0m`
+$ journalctl | lnav
+[35m``[0m`
+
+or in follow mode:
+
+[35m``[0m`
+$ journalctl -f | lnav
+[35m``[0m`
+
+Since [35m`journalctl`[0m's default output format omits the year, if you are
+viewing logs which span multiple years you will need to change the
+output format to include the year, otherwise [35m`lnav`[0m gets confused:
+
+[35m``[0m`
+$ journalctl -o short-iso | lnav
+[35m``[0m`
+
+It is also possible to use [35m`journalctl`[0m's json output format and [35m`lnav`[0m
+will make use of additional fields such as PRIORITY and \_SYSTEMD_UNIT:
+
+[35m``[0m`
+$ journalctl -o json | lnav
+[35m``[0m`
+
+In case some MESSAGE fields contain special characters such as
+ANSI color codes which are considered as unprintable by journalctl,
+specifying [35m`journalctl`[0m's [35m`-a`[0m option might be preferable in order
+to output those messages still in a non-binary representation:
+
+[35m``[0m`
+$ journalctl -a -o json | lnav
+[35m``[0m`
+
+If using systemd v236 or newer, the output fields can be limited to
+the ones actually recognized by [35m`lnav`[0m for increased efficiency:
+
+[35m``[0m`
+$ journalctl -o json [4m--output-fields[0m=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT | lnav
+[35m``[0m`
+
+If your system has been running for a long time, for increased
+efficiency you may want to limit the number of log lines fed into
+[35m`lnav`[0m, e.g. via [35m`journalctl`[0m's [35m`-n`[0m or [35m`--since=...`[0m options.
+
+In case of a persistent journal, you may want to limit the number
+of log lines fed into [35m`lnav`[0m via [35m`journalctl`[0m's [35m`-b`[0m option.
+
+## Support
+
+Please file issues on this repository or use the discussions section.
+The following alternatives are also available:
+
+- [support@lnav.org](mailto:support@lnav.org)
+- [Discord](https://discord.gg/erBPnKwz7R)
+- [Google Groups](https://groups.google.com/g/lnav)
+
+## Links
+
+- [Main Site](https://lnav.org)
+- [**Documentation**](https://docs.lnav.org) on Read the Docs
+- [Internal Architecture](ARCHITECTURE.md)
+
+## Contributing
+
+- [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
+
+### Building From Source
+
+#### Prerequisites
+
+The following software packages are required to build lnav:
+
+- gcc/clang  - A C++14-compatible compiler.
+- libpcre2   - The Perl Compatible Regular Expression v2 (PCRE2) library.
+- sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.
+- ncurses    - The ncurses text UI library.
+- readline   - The readline line editing library.
+- zlib       - The zlib compression library.
+- bz2        - The bzip2 compression library.
+- libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
+- libarchive - The libarchive library for opening archive files, like zip/tgz.
+- wireshark  - The [35m'tshark'[0m program is used to interpret pcap files.
+- cargo/rust - The Rust language is used to build the PRQL compiler.
+
+#### Build
+
+Lnav follows the usual GNU style for configuring and installing software:
+
+Run [35m`./autogen.sh`[0m if compiling from a cloned repository.
+
+[35m``[0m`console
+$ ./configure
+$ make
+$ sudo make install
+[35m``[0m`
+
+## See Also
+
+[Angle-grinder](https://github.com/rcoh/angle-grinder) is a tool to slice and dice log files on the command-line.
+If you're familiar with the SumoLogic query language, you might find this tool more comfortable to work with.

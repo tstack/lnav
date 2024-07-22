@@ -76,6 +76,8 @@
 #elif defined HAVE_NCURSES_H
 #    include <ncurses.h>
 #    include <termcap.h>
+#elif defined HAVE_CURSESW_H
+#    include <cursesw.h>
 #elif defined HAVE_CURSES_H
 #    include <curses.h>
 #    include <termcap.h>
@@ -83,30 +85,19 @@
 #    error "SysV or X/Open-compatible Curses header file required"
 #endif
 
+#include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "enum_util.hh"
 #include "lnav_log.hh"
 #include "opt_util.hh"
 
-static const size_t BUFFER_SIZE = 256 * 1024;
-static const size_t MAX_LOG_LINE_SIZE = 2 * 1024;
+static constexpr size_t BUFFER_SIZE = 256 * 1024;
+static constexpr size_t MAX_LOG_LINE_SIZE = 2 * 1024;
 
-static const char* CRASH_MSG
-    = "\n"
-      "\n"
-      "==== GURU MEDITATION ====\n"
-      "Unfortunately, lnav has crashed, sorry for the inconvenience.\n"
-      "\n"
-      "You can help improve lnav by sending the following file "
-      "to " PACKAGE_BUGREPORT
-      " :\n"
-      "  %s\n"
-      "=========================\n";
-
-nonstd::optional<FILE*> lnav_log_file;
+std::optional<FILE*> lnav_log_file;
 lnav_log_level_t lnav_log_level = lnav_log_level_t::DEBUG;
 const char* lnav_log_crash_dir;
-nonstd::optional<const struct termios*> lnav_log_orig_termios;
+std::optional<const struct termios*> lnav_log_orig_termios;
 // NOTE: This mutex is leaked so that it is not destroyed during exit.
 // Otherwise, any attempts to log will fail.
 static std::mutex*
@@ -124,7 +115,14 @@ DUMPER_LIST()
 
     return *retval;
 }
-static std::vector<log_crash_recoverer*> CRASH_LIST;
+
+static std::vector<log_crash_recoverer*>&
+CRASH_LIST()
+{
+    static auto* retval = new std::vector<log_crash_recoverer*>();
+
+    return *retval;
+}
 
 struct thid {
     static uint32_t COUNTER;
@@ -326,20 +324,25 @@ log_msg(lnav_log_level_t level,
     gettimeofday(&curr_time, nullptr);
     localtime_r(&curr_time.tv_sec, &localtm);
     auto line = log_alloc();
-    prefix_size = snprintf(line,
-                           MAX_LOG_LINE_SIZE,
-                           "%4d-%02d-%02dT%02d:%02d:%02d.%03d %s t%u %s:%d ",
-                           localtm.tm_year + 1900,
-                           localtm.tm_mon + 1,
-                           localtm.tm_mday,
-                           localtm.tm_hour,
-                           localtm.tm_min,
-                           localtm.tm_sec,
-                           (int) (curr_time.tv_usec / 1000),
-                           LEVEL_NAMES[lnav::enums::to_underlying(level)],
-                           current_thid.t_id,
-                           src_file,
-                           line_number);
+    auto gmtoff = std::abs(localtm.tm_gmtoff) / 60;
+    prefix_size
+        = snprintf(line,
+                   MAX_LOG_LINE_SIZE,
+                   "%4d-%02d-%02dT%02d:%02d:%02d.%03d%c%02d:%02d %s t%u %s:%d ",
+                   localtm.tm_year + 1900,
+                   localtm.tm_mon + 1,
+                   localtm.tm_mday,
+                   localtm.tm_hour,
+                   localtm.tm_min,
+                   localtm.tm_sec,
+                   (int) (curr_time.tv_usec / 1000),
+                   localtm.tm_gmtoff < 0 ? '-' : '+',
+                   (int) gmtoff / 60,
+                   (int) gmtoff % 60,
+                   LEVEL_NAMES[lnav::enums::to_underlying(level)],
+                   current_thid.t_id,
+                   src_file,
+                   line_number);
 #if 0
     if (!thread_log_prefix.empty()) {
         prefix_size += snprintf(
@@ -532,14 +535,36 @@ sigabrt(int sig, siginfo_t* info, void* ctx)
     }
 
     lnav_log_orig_termios | [](auto termios) {
-        for (auto lcr : CRASH_LIST) {
+        for (const auto lcr : CRASH_LIST()) {
             lcr->log_crash_recover();
         }
 
         tcsetattr(STDOUT_FILENO, TCSAFLUSH, termios);
         dup2(STDOUT_FILENO, STDERR_FILENO);
     };
-    fprintf(stderr, CRASH_MSG, crash_path);
+    fmt::print(R"(
+
+{red_start}==== GURU MEDITATION ===={norm}
+
+Unfortunately, lnav has crashed, sorry for the inconvenience.
+
+You can help improve lnav by executing the following command
+to upload the crash logs to https://crash.lnav.org:
+
+  {green_start}${norm} {bold_start}lnav -m crash upload{norm}
+
+Or, you can send the following file to {PACKAGE_BUGREPORT}:
+
+  {crash_path}
+
+{red_start}========================={norm}
+)",
+               fmt::arg("red_start", ANSI_COLOR(1)),
+               fmt::arg("green_start", ANSI_COLOR(2)),
+               fmt::arg("bold_start", ANSI_BOLD_START),
+               fmt::arg("norm", ANSI_NORM),
+               fmt::arg("PACKAGE_BUGREPORT", PACKAGE_BUGREPORT),
+               fmt::arg("crash_path", crash_path));
 
 #ifndef ATTACH_ON_SIGNAL
     if (isatty(STDIN_FILENO)) {
@@ -658,12 +683,14 @@ log_pipe_err(int fd)
     reader.detach();
 }
 
-log_state_dumper::log_state_dumper()
+log_state_dumper::
+log_state_dumper()
 {
     DUMPER_LIST().push_back(this);
 }
 
-log_state_dumper::~log_state_dumper()
+log_state_dumper::~
+log_state_dumper()
 {
     auto iter = std::find(DUMPER_LIST().begin(), DUMPER_LIST().end(), this);
     if (iter != DUMPER_LIST().end()) {
@@ -671,16 +698,18 @@ log_state_dumper::~log_state_dumper()
     }
 }
 
-log_crash_recoverer::log_crash_recoverer()
+log_crash_recoverer::
+log_crash_recoverer()
 {
-    CRASH_LIST.push_back(this);
+    CRASH_LIST().push_back(this);
 }
 
-log_crash_recoverer::~log_crash_recoverer()
+log_crash_recoverer::~
+log_crash_recoverer()
 {
-    auto iter = std::find(CRASH_LIST.begin(), CRASH_LIST.end(), this);
+    auto iter = std::find(CRASH_LIST().begin(), CRASH_LIST().end(), this);
 
-    if (iter != CRASH_LIST.end()) {
-        CRASH_LIST.erase(iter);
+    if (iter != CRASH_LIST().end()) {
+        CRASH_LIST().erase(iter);
     }
 }

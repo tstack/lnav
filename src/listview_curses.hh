@@ -120,10 +120,10 @@ public:
         return {};
     }
 
-    virtual nonstd::optional<attr_line_t> list_header_for_overlay(
+    virtual std::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t line)
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     virtual void list_value_for_overlay(const listview_curses& lv,
@@ -135,6 +135,20 @@ public:
     virtual void set_show_details_in_overlay(bool val) {}
 
     virtual bool get_show_details_in_overlay() const { return false; }
+
+    struct menu_item {
+        menu_item(vis_line_t line,
+                  line_range range,
+                  std::function<void(const std::string&)> action)
+            : mi_line(line), mi_range(range), mi_action(std::move(action))
+        {
+        }
+
+        vis_line_t mi_line;
+        line_range mi_range;
+        std::function<void(const std::string&)> mi_action;
+    };
+    std::vector<menu_item> los_menu_items;
 };
 
 class list_input_delegate {
@@ -250,16 +264,16 @@ public:
         return this->lv_top;
     }
 
-    nonstd::optional<vis_line_t> get_overlay_selection() const
+    std::optional<vis_line_t> get_overlay_selection() const
     {
         if (this->lv_overlay_focused) {
             return this->lv_focused_overlay_selection;
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    void set_overlay_selection(nonstd::optional<vis_line_t> sel);
+    void set_overlay_selection(std::optional<vis_line_t> sel);
 
     void set_sync_selection_and_top(bool value)
     {
@@ -296,10 +310,10 @@ public:
 
     template<typename F>
     auto map_top_row(F func) const ->
-        typename std::result_of<F(const attr_line_t&)>::type
+        typename std::invoke_result<F, const attr_line_t&>::type
     {
         if (this->lv_top >= this->get_inner_height()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         std::vector<attr_line_t> top_line{1};
@@ -328,10 +342,10 @@ public:
     /** @return The line number that is displayed at the top. */
     vis_line_t get_top() const { return this->lv_top; }
 
-    nonstd::optional<vis_line_t> get_top_opt() const
+    std::optional<vis_line_t> get_top_opt() const
     {
         if (this->get_inner_height() == 0_vl) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         return this->lv_top;
@@ -432,7 +446,7 @@ public:
      */
     void get_dimensions(vis_line_t& height_out, unsigned long& width_out) const
     {
-        unsigned long height;
+        int height;
 
         if (this->lv_window == nullptr) {
             height_out = std::max(this->lv_height, 1_vl);
@@ -442,7 +456,9 @@ public:
                 width_out = 80;
             }
         } else {
-            getmaxyx(this->lv_window, height, width_out);
+            int width_tmp;
+            getmaxyx(this->lv_window, height, width_tmp);
+            width_out = width_tmp;
             if (this->lv_height < 0) {
                 height_out = vis_line_t(height) + this->lv_height
                     - vis_line_t(this->vc_y);

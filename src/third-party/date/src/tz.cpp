@@ -347,6 +347,11 @@ static
 std::string
 discover_tz_dir()
 {
+    auto tz_dir_env = getenv("TZDIR");
+    if (tz_dir_env != nullptr && tz_dir_env[0]) {
+        return tz_dir_env;
+    }
+
     struct stat sb;
     using namespace std;
 #  ifndef __APPLE__

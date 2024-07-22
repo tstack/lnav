@@ -100,7 +100,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                               line_range{1, 2}, VC_GRAPHIC.value(ACS_LLCORNER)))
                           .with_attr(string_attr(
                               line_range{0, 22},
-                              VC_ROLE.value(role_t::VCR_INVALID_MSG)));
+                              VC_ROLE.value(role_t::VCR_INVALID_MSG)))
+                          .move();
             this->fos_lines.emplace_back(al);
         }
     }
@@ -110,12 +111,22 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     attr_line_t time_line;
     auto& time_str = time_line.get_string();
     struct line_range time_lr;
+    off_t ts_len = sql_strftime(curr_timestamp,
+                                sizeof(curr_timestamp),
+                                ll->get_time(),
+                                ll->get_millis(),
+                                'T');
+    {
+        exttm tmptm;
 
-    sql_strftime(curr_timestamp,
-                 sizeof(curr_timestamp),
-                 ll->get_time(),
-                 ll->get_millis(),
-                 'T');
+        tmptm.et_flags |= ETF_ZONE_SET;
+        tmptm.et_gmtoff
+            = lnav::local_time_to_info(
+                  date::local_seconds{std::chrono::seconds{ll->get_time()}})
+                  .first.offset.count();
+        ftime_z(curr_timestamp, ts_len, sizeof(curr_timestamp), tmptm);
+        curr_timestamp[ts_len] = '\0';
+    }
 
     if (ll->is_time_skewed()) {
         time_lr.lr_start = 1;
@@ -212,11 +223,19 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
         time_line.append("  Format: ")
             .append(lnav::roles::symbol(
-                ts_formats[format->lf_date_time.dts_fmt_lock]));
+                ts_formats[format->lf_date_time.dts_fmt_lock]))
+            .append("  Default Zone: ");
         if (format->lf_date_time.dts_default_zone != nullptr) {
-            time_line.append("  Default Zone: ")
-                .append(lnav::roles::symbol(
-                    format->lf_date_time.dts_default_zone->name()));
+            time_line.append(lnav::roles::symbol(
+                format->lf_date_time.dts_default_zone->name()));
+        } else {
+            time_line.append("none"_comment);
+        }
+
+        auto file_opts = file->get_file_options();
+        if (file_opts) {
+            time_line.append("  File Options: ")
+                .append(lnav::roles::file(file_opts->first));
         }
     }
 
@@ -352,7 +371,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                     al.append(":bar_chart:"_emoji).append(" ");
                     break;
             }
-            auto prefix_len = al.utf8_length_or_length();
+            auto prefix_len = al.column_width();
             hl_range.lr_start = al.get_string().length();
             al.append(field_name);
             hl_range.lr_end = al.get_string().length();
@@ -367,7 +386,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             al.append(jget_str.in());
             hl_range.lr_end = al.get_string().length();
         }
-        readline_sqlite_highlighter_int(al, -1, hl_range);
+        readline_sqlite_highlighter_int(al, std::nullopt, hl_range);
 
         al.append(" = ").append(scrub_ws(value_str.c_str()));
 
@@ -401,8 +420,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         auto qname = lnav::sql::mprintf("%Q", extra_pair.first.c_str());
         auto key_line = attr_line_t("   jget(log_raw_text, ")
                             .append(qname.in())
-                            .append(")");
-        readline_sqlite_highlighter(key_line, 0);
+                            .append(")")
+                            .move();
+        readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(extra_pair.second));
         this->fos_lines.emplace_back(key_line);
@@ -413,9 +433,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         const auto& jpairs = jpairs_map.second;
 
         for (size_t lpc = 0; lpc < jpairs.size(); lpc++) {
-            auto key_line = attr_line_t("   ").append(
-                this->fos_log_helper.format_json_getter(jpairs_map.first, lpc));
-            readline_sqlite_highlighter(key_line, 0);
+            auto key_line = attr_line_t("   ")
+                                .append(this->fos_log_helper.format_json_getter(
+                                    jpairs_map.first, lpc))
+                                .move();
+            readline_sqlite_highlighter(key_line, std::nullopt);
             auto key_size = key_line.length();
             key_line.append(" = ").append(scrub_ws(jpairs[lpc].wt_value));
             this->fos_lines.emplace_back(key_line);
@@ -434,8 +456,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             xml_pair.first.second.c_str(),
             this->fos_log_helper.ldh_file->get_format()->get_name().c_str(),
             qname.in());
-        auto key_line = attr_line_t("   ").append(xp_call.in());
-        readline_sqlite_highlighter(key_line, 0);
+        auto key_line = attr_line_t("   ").append(xp_call.in()).move();
+        readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(xml_pair.second));
         this->fos_lines.emplace_back(key_line);
@@ -508,8 +530,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                           .append(" to apply them")
                           .append(lv.get_selection() == row ? " to this line"
                                                             : "")
-                          .with_attr_for_all(
-                              VC_ROLE.value(role_t::VCR_COMMENT));
+                          .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT))
+                          .move();
 
                 dst.emplace_back(anno_msg);
             }
@@ -523,6 +545,15 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     auto& vc = view_colors::singleton();
     const auto& line_meta = *(line_meta_opt.value());
     size_t filename_width = this->fos_lss.get_filename_offset();
+
+    if (!line_meta.bm_opid.empty()) {
+        auto al = attr_line_t()
+                      .append(" Op ID: "_table_header)
+                      .append(lnav::roles::identifier(line_meta.bm_opid))
+                      .move();
+
+        dst.emplace_back(al);
+    }
 
     if (!line_meta.bm_comment.empty()) {
         const auto* lead = line_meta.bm_tags.empty() ? " \u2514 " : " \u251c ";
@@ -672,7 +703,7 @@ field_overlay_source::list_value_for_overlay(
     this->build_meta_line(lv, value_out, row);
 }
 
-nonstd::optional<attr_line_t>
+std::optional<attr_line_t>
 field_overlay_source::list_header_for_overlay(const listview_curses& lv,
                                               vis_line_t vl)
 {

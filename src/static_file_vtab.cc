@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
 #include <map>
 
 #include "static_file_vtab.hh"
@@ -37,7 +38,6 @@
 #include "base/fs_util.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
-#include "ghc/filesystem.hpp"
 #include "lnav.hh"
 #include "vtab_module.hh"
 
@@ -49,7 +49,7 @@ struct static_file_vtab {
 };
 
 struct static_file_info {
-    ghc::filesystem::path sfi_path;
+    std::filesystem::path sfi_path;
 };
 
 struct sf_vtab_cursor {
@@ -124,13 +124,13 @@ sfvt_destroy(sqlite3_vtab* p_vt)
 static int sfvt_next(sqlite3_vtab_cursor* cur);
 
 static void
-find_static_files(sf_vtab_cursor* p_cur, const ghc::filesystem::path& dir)
+find_static_files(sf_vtab_cursor* p_cur, const std::filesystem::path& dir)
 {
     auto& file_map = p_cur->vc_files;
     std::error_code ec;
 
     for (const auto& format_dir_entry :
-         ghc::filesystem::directory_iterator(dir, ec))
+         std::filesystem::directory_iterator(dir, ec))
     {
         if (!format_dir_entry.is_directory()) {
             continue;
@@ -138,10 +138,10 @@ find_static_files(sf_vtab_cursor* p_cur, const ghc::filesystem::path& dir)
         auto format_static_files_dir = format_dir_entry.path() / "static-files";
         log_debug("format static files: %s", format_static_files_dir.c_str());
         for (const auto& static_file_entry :
-             ghc::filesystem::recursive_directory_iterator(
+             std::filesystem::recursive_directory_iterator(
                  format_static_files_dir, ec))
         {
-            auto rel_path = ghc::filesystem::relative(static_file_entry.path(),
+            auto rel_path = std::filesystem::relative(static_file_entry.path(),
                                                       format_static_files_dir);
 
             file_map[rel_path.string()] = {static_file_entry.path()};
@@ -232,7 +232,8 @@ sfvt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
             if (read_res.isErr()) {
                 auto um = lnav::console::user_message::error(
                               "unable to read static file")
-                              .with_reason(read_res.unwrapErr());
+                              .with_reason(read_res.unwrapErr())
+                              .move();
 
                 to_sqlite(ctx, um);
             } else {

@@ -20,7 +20,6 @@
             "critical": "C",
             "fatal": "F"
         },
-        "opid-field": "thread",
         "value": {
             "thread": {
                 "kind": "integer",

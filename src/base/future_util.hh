@@ -74,7 +74,7 @@ public:
     explicit future_queue(
         std::function<processor_result_t(std::future<T>&)> processor,
         size_t max_queue_size = 8)
-        : fq_processor(processor), fq_max_queue_size(max_queue_size)
+        : fq_processor(std::move(processor)), fq_max_queue_size(max_queue_size)
     {
     }
 

@@ -25,9 +25,9 @@ URL:            https://lnav.org
 # Source:       https://github.com/tstack/%{name}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source:         /github/home/rpmbuild/SOURCES/%{name}-%{version}.tar.gz
 # Source1:      lnav.desktop
-BuildRequires:  gcc-toolset-12
-BuildRequires:  gcc-toolset-12-annobin-plugin-gcc
-BuildRequires:  gcc-toolset-12-annobin-annocheck
+BuildRequires:  gcc-toolset-13
+BuildRequires:  gcc-toolset-13-annobin-plugin-gcc
+BuildRequires:  gcc-toolset-13-annobin-annocheck
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  cargo
@@ -64,8 +64,7 @@ quickly and efficiently focus on problems.
 %autosetup -p1
 
 %build
-source /opt/rh/gcc-toolset-12/enable
-(cd /opt/rh/gcc-toolset-12/root/usr/lib/gcc/x86_64-redhat-linux/12/plugin/ && ln -s annobin.so gcc-annobin.so)
+source /opt/rh/gcc-toolset-13/enable
 autoreconf -fiv
 %configure \
      --disable-silent-rules \

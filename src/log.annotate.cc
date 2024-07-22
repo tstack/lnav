@@ -71,7 +71,8 @@ struct expressions : public lnav_config_listener {
                 auto um
                     = lnav::console::user_message::error(
                           "no handler specified for annotation")
-                          .with_reason("Every annotation requires a handler");
+                          .with_reason("Every annotation requires a handler")
+                          .move();
                 reporter(&pair.second.a_handler, um);
                 continue;
             }
@@ -91,8 +92,9 @@ struct expressions : public lnav_config_listener {
                 auto sql_al = attr_line_t(pair.second.a_condition)
                                   .with_attr_for_all(SA_PREFORMATTED.value())
                                   .with_attr_for_all(
-                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-                readline_sqlite_highlighter(sql_al, -1);
+                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                                  .move();
+                readline_sqlite_highlighter(sql_al, std::nullopt);
                 intern_string_t cond_expr_path = intern_string::lookup(
                     fmt::format(FMT_STRING("/log/annotations/{}/condition"),
                                 pair.first));
@@ -102,7 +104,8 @@ struct expressions : public lnav_config_listener {
                 auto um = lnav::console::user_message::error(
                               "SQL expression is invalid")
                               .with_reason(sqlite3_errmsg(lnav_db))
-                              .with_snippet(snippet);
+                              .with_snippet(snippet)
+                              .move();
 
                 reporter(&pair.second.a_condition, um);
                 continue;
@@ -232,7 +235,8 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
         if (child_fds_res.isErr()) {
             auto um
                 = lnav::console::user_message::error("unable to create pipes")
-                      .with_reason(child_fds_res.unwrapErr());
+                      .with_reason(child_fds_res.unwrapErr())
+                      .move();
             return Err(um);
         }
 
@@ -240,7 +244,8 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
         if (child_res.isErr()) {
             auto um
                 = lnav::console::user_message::error("unable to fork() child")
-                      .with_reason(child_res.unwrapErr());
+                      .with_reason(child_res.unwrapErr())
+                      .move();
             return Err(um);
         }
 
@@ -258,10 +263,10 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
                 nullptr,
             };
 
-            std::vector<ghc::filesystem::path> path_v;
+            std::vector<std::filesystem::path> path_v;
 
             auto src_path
-                = ghc::filesystem::path(
+                = std::filesystem::path(
                       iter->second.a_handler.pp_location.sl_source.to_string())
                       .parent_path();
             path_v.push_back(src_path);

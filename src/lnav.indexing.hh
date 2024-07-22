@@ -32,7 +32,6 @@
 
 #include "file_collection.hh"
 #include "logfile_fwd.hh"
-#include "optional.hpp"
 
 void rebuild_hist();
 
@@ -42,7 +41,7 @@ struct rebuild_indexes_result_t {
 };
 
 rebuild_indexes_result_t rebuild_indexes(
-    nonstd::optional<ui_clock::time_point> deadline = nonstd::nullopt);
+    std::optional<ui_clock::time_point> deadline = std::nullopt);
 void rebuild_indexes_repeatedly();
 bool rescan_files(bool required = false);
 bool update_active_files(file_collection& new_files);

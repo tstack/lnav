@@ -267,7 +267,7 @@ pretty_printer::append_indent()
 bool
 pretty_printer::flush_values(bool start_on_depth)
 {
-    nonstd::optional<data_scanner::capture_t> last_key;
+    std::optional<data_scanner::capture_t> last_key;
     bool retval = false;
 
     while (!this->pp_values.empty()) {
@@ -292,7 +292,7 @@ pretty_printer::flush_values(bool start_on_depth)
                             this->pp_interval_state.back().is_start
                                 = static_cast<ssize_t>(this->pp_stream.tellp());
                         }
-                        last_key = nonstd::nullopt;
+                        last_key = std::nullopt;
                     }
                     break;
                 default:
@@ -416,6 +416,6 @@ pretty_printer::append_child_node()
         });
     }
     top_node->hn_children.emplace_back(std::move(new_node));
-    ivstate.is_start = nonstd::nullopt;
+    ivstate.is_start = std::nullopt;
     ivstate.is_name.clear();
 }

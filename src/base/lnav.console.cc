@@ -51,13 +51,13 @@ snippet::from_content_with_offset(intern_string_t src,
                                   size_t offset,
                                   const std::string& errmsg)
 {
-    auto content_sf = string_fragment::from_str(content.get_string());
-    auto line_with_error = content_sf.find_boundaries_around(
+    const auto content_sf = string_fragment::from_str(content.get_string());
+    const auto line_with_error = content_sf.find_boundaries_around(
         offset, string_fragment::tag1{'\n'});
-    auto line_with_context = content_sf.find_boundaries_around(
+    const auto line_with_context = content_sf.find_boundaries_around(
         offset, string_fragment::tag1{'\n'}, 3);
-    auto line_number = content_sf.sub_range(0, offset).count('\n');
-    auto erroff_in_line = offset - line_with_error.sf_begin;
+    const auto line_number = content_sf.sub_range(0, offset).count('\n');
+    const auto erroff_in_line = offset - line_with_error.sf_begin;
 
     attr_line_t pointer;
 
@@ -252,7 +252,7 @@ user_message::to_attr_line(std::set<render_flags> flags) const
     return retval;
 }
 
-static nonstd::optional<fmt::terminal_color>
+static std::optional<fmt::terminal_color>
 curses_color_to_terminal_color(int curses_color)
 {
     switch (curses_color) {
@@ -273,7 +273,7 @@ curses_color_to_terminal_color(int curses_color)
         case COLOR_RED:
             return fmt::terminal_color::red;
         default:
-            return nonstd::nullopt;
+            return std::nullopt;
     }
 }
 
@@ -326,7 +326,7 @@ println(FILE* file, const attr_line_t& al)
         }
     }
 
-    nonstd::optional<size_t> last_point;
+    std::optional<size_t> last_point;
     for (const auto& point : points) {
         if (!last_point) {
             last_point = point;
@@ -337,7 +337,7 @@ println(FILE* file, const attr_line_t& al)
         auto line_style = fmt::text_style{};
         auto fg_style = fmt::text_style{};
         auto start = last_point.value();
-        nonstd::optional<std::string> href;
+        std::optional<std::string> href;
 
         for (const auto& attr : al.get_attrs()) {
             if (!attr.sa_range.contains(start)
@@ -409,7 +409,9 @@ println(FILE* file, const attr_line_t& al)
                         default:
                             break;
                     }
-                } else if (attr.sa_type == &VC_ROLE) {
+                } else if (attr.sa_type == &VC_ROLE
+                           || attr.sa_type == &VC_ROLE_FG)
+                {
                     auto saw = string_attr_wrapper<role_t>(&attr);
                     auto role = saw.get();
 
@@ -440,6 +442,9 @@ println(FILE* file, const attr_line_t& al)
                         case role_t::VCR_OK:
                             line_style |= fmt::emphasis::bold
                                 | fmt::fg(fmt::terminal_color::green);
+                            break;
+                        case role_t::VCR_FOOTNOTE_BORDER:
+                            line_style |= fmt::fg(fmt::terminal_color::blue);
                             break;
                         case role_t::VCR_INFO:
                         case role_t::VCR_STATUS:

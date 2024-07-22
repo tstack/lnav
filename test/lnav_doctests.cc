@@ -30,6 +30,8 @@
 #include "config.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <data_parser.hh>
+
 #include "base/from_trait.hh"
 #include "byte_array.hh"
 #include "data_scanner.hh"
@@ -210,11 +212,11 @@ TEST_CASE("ptime_roundtrip")
 
 class my_path_source : public unique_path_source {
 public:
-    explicit my_path_source(ghc::filesystem::path p) : mps_path(std::move(p)) {}
+    explicit my_path_source(std::filesystem::path p) : mps_path(std::move(p)) {}
 
-    ghc::filesystem::path get_path() const override { return this->mps_path; }
+    std::filesystem::path get_path() const override { return this->mps_path; }
 
-    ghc::filesystem::path mps_path;
+    std::filesystem::path mps_path;
 };
 
 TEST_CASE("unique_path")
@@ -291,4 +293,30 @@ TEST_CASE("data_scanner CSI")
     tok_res = ds.tokenize2();
     CHECK(tok_res->tr_token == DT_CSI);
     CHECK(tok_res->to_string() == "\x1b[0m");
+}
+
+TEST_CASE("data_scanner quote")
+{
+    static const char INPUT[] = "abc \"\"\"\n";
+
+    {
+        data_scanner ds(string_fragment::from_const(INPUT));
+
+        auto tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_WORD);
+        CHECK(tok_res->to_string() == "abc");
+        tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_WHITE);
+        tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_QUOTED_STRING);
+        tok_res = ds.tokenize2();
+        CHECK_FALSE(tok_res.has_value());
+    }
+
+    {
+        data_scanner ds(string_fragment::from_const(INPUT));
+        data_parser dp(&ds);
+
+        dp.parse();
+    }
 }

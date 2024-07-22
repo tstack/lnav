@@ -62,6 +62,13 @@ bind_to_sqlite(sqlite3_stmt* stmt, int index, intern_string_t ist)
 }
 
 inline int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, string_fragment sf)
+{
+    return sqlite3_bind_text(
+        stmt, index, sf.data(), sf.length(), SQLITE_TRANSIENT);
+}
+
+inline int
 bind_to_sqlite(sqlite3_stmt* stmt, int index, const std::string& str)
 {
     return sqlite3_bind_text(
@@ -163,7 +170,7 @@ struct prepared_stmt {
     template<typename T, typename F>
     Result<void, fetch_error> for_each_row(F func)
     {
-        nonstd::optional<fetch_error> err;
+        std::optional<fetch_error> err;
         auto done = false;
 
         while (!done) {

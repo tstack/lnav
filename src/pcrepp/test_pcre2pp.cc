@@ -84,11 +84,21 @@ TEST_CASE("match")
 
 TEST_CASE("partial")
 {
-    static const char INPUT[] = "key1=1234";
-
     auto co = lnav::pcre2pp::code::from_const(R"([a-z]+=.*)");
-    auto matched = co.match_partial(string_fragment::from_const(INPUT));
-    CHECK(matched == 3);
+
+    {
+        static const char INPUT[] = "key1=1234";
+
+        auto matched = co.match_partial(string_fragment::from_const(INPUT));
+        CHECK(matched == 3);
+    }
+
+    {
+        static const char INPUT[] = "key";
+
+        auto matched = co.match_partial(string_fragment::from_const(INPUT));
+        CHECK(matched == 3);
+    }
 }
 
 TEST_CASE("capture_name")

@@ -40,16 +40,26 @@
 
 #include "config.h"
 #include "date/date.h"
+#include "date/tz.h"
 
 namespace lnav {
 
 using time64_t = uint64_t;
 
-ssize_t strftime_rfc3339(char* buffer,
-                         size_t buffer_size,
-                         lnav::time64_t tim,
-                         int millis,
-                         char sep = ' ');
+ssize_t strftime_rfc3339(
+    char* buffer, size_t buffer_size, time64_t tim, int millis, char sep = ' ');
+
+std::string to_rfc3339_string(time64_t tim, int millis, char sep = ' ');
+
+inline std::string
+to_rfc3339_string(struct timeval tv, char sep = ' ')
+{
+    return to_rfc3339_string(tv.tv_sec, tv.tv_usec / 1000, sep);
+}
+
+date::sys_info sys_time_to_info(date::sys_seconds secs);
+
+date::local_info local_time_to_info(date::local_seconds secs);
 
 date::sys_seconds to_sys_time(date::local_seconds secs);
 
@@ -249,6 +259,16 @@ hour_num(time_t ti)
 struct time_range {
     struct timeval tr_begin;
     struct timeval tr_end;
+
+    bool valid() const { return this->tr_end.tv_sec == 0; }
+
+    void invalidate()
+    {
+        this->tr_begin.tv_sec = INT_MAX;
+        this->tr_begin.tv_usec = 0;
+        this->tr_end.tv_sec = 0;
+        this->tr_end.tv_usec = 0;
+    }
 
     bool operator<(const time_range& rhs) const
     {

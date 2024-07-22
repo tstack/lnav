@@ -36,7 +36,7 @@
 
 #include "config.h"
 #include "fmt/format.h"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 
@@ -461,19 +461,23 @@ json_path_handler_base::walk(
         this->jph_path_provider(root, local_paths);
 
         for (const auto& lpath : local_paths) {
+            const void* field = nullptr;
+            if (this->jph_field_getter) {
+                field = this->jph_field_getter(root, lpath);
+            }
             cb(*this,
                fmt::format(FMT_STRING("{}{}{}"),
                            base,
                            json_ptr::encode_str(lpath),
                            this->jph_children ? "/" : ""),
-               nullptr);
+               field);
         }
         if (this->jph_obj_deleter) {
             local_paths.clear();
             this->jph_path_provider(root, local_paths);
         }
         if (this->jph_field_getter) {
-            const auto* field = this->jph_field_getter(root, nonstd::nullopt);
+            const auto* field = this->jph_field_getter(root, std::nullopt);
             if (field != nullptr) {
                 cb(*this, base, field);
             }
@@ -484,9 +488,13 @@ json_path_handler_base::walk(
         std::string full_path = base + this->jph_property;
         if (this->jph_children) {
             full_path += "/";
-        }
 
-        cb(*this, full_path, nullptr);
+            const void* field = nullptr;
+            if (this->jph_field_getter) {
+                field = this->jph_field_getter(root, this->jph_property);
+            }
+            cb(*this, full_path, field);
+        }
     }
 
     if (this->jph_children) {
@@ -544,7 +552,7 @@ json_path_handler_base::walk(
     }
 }
 
-nonstd::optional<int>
+std::optional<int>
 json_path_handler_base::to_enum_value(const string_fragment& sf) const
 {
     for (int lpc = 0; this->jph_enum_values[lpc].first; lpc++) {
@@ -555,7 +563,7 @@ json_path_handler_base::to_enum_value(const string_fragment& sf) const
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 const char*
@@ -736,7 +744,8 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
                     ? static_cast<size_t>(-1)
                     : this->ypc_array_index[this->ypc_array_handler_count - 1];
 
-                if ((cap.sf_end != (int) this->ypc_path.size() - 1)
+                if ((!jph.is_array()
+                     || cap.sf_end != (int) this->ypc_path.size() - 1)
                     && (!jph.is_array()
                         || index != yajlpp_provider_context::nindex))
                 {
@@ -1583,8 +1592,8 @@ dump_schema_to(const json_path_container& jpc, const char* internals_dir)
 {
     yajlpp_gen genner;
     yajlpp_gen_context ygc(genner, jpc);
-    auto internals_dir_path = ghc::filesystem::path(internals_dir);
-    auto schema_file_name = ghc::filesystem::path(jpc.jpc_schema_id).filename();
+    auto internals_dir_path = std::filesystem::path(internals_dir);
+    auto schema_file_name = std::filesystem::path(jpc.jpc_schema_id).filename();
     auto schema_path = internals_dir_path / schema_file_name;
     auto file = std::unique_ptr<FILE, decltype(&fclose)>(
         fopen(schema_path.c_str(), "w+"), fclose);

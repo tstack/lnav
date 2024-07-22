@@ -41,6 +41,7 @@
 #include "config.h"
 #include "formats/logfmt/logfmt.parser.hh"
 #include "log_vtab_impl.hh"
+#include "ptimec.hh"
 #include "scn/scn.h"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
@@ -72,24 +73,42 @@ public:
         return scan_no_match{""};
     }
 
-    void annotate(uint64_t line_number,
+    void annotate(logfile* lf,
+                  uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module) const override
     {
         auto lr = line_range{0, 0};
         sa.emplace_back(lr, logline::L_TIMESTAMP.value());
+        log_format::annotate(lf, line_number, sa, values, annotate_module);
     }
 
     void get_subline(const logline& ll,
                      shared_buffer_ref& sbr,
                      bool full_message) override
     {
-        this->plf_cached_line.resize(23);
-        sql_strftime(this->plf_cached_line.data(),
-                     this->plf_cached_line.size(),
-                     ll.get_timeval(),
-                     'T');
+        this->plf_cached_line.resize(32);
+        auto tlen = sql_strftime(this->plf_cached_line.data(),
+                                 this->plf_cached_line.size(),
+                                 ll.get_timeval(),
+                                 'T');
+        this->plf_cached_line.resize(tlen);
+        {
+            char zone_str[16];
+            exttm tmptm;
+
+            tmptm.et_flags |= ETF_ZONE_SET;
+            tmptm.et_gmtoff
+                = lnav::local_time_to_info(
+                      date::local_seconds{std::chrono::seconds{ll.get_time()}})
+                      .first.offset.count();
+            off_t zone_len = 0;
+            ftime_z(zone_str, zone_len, sizeof(zone_str), tmptm);
+            for (off_t lpc = 0; lpc < zone_len; lpc++) {
+                this->plf_cached_line.push_back(zone_str[lpc]);
+            }
+        }
         this->plf_cached_line.push_back(' ');
         const auto prefix_len = this->plf_cached_line.size();
         this->plf_cached_line.resize(this->plf_cached_line.size()
@@ -107,6 +126,7 @@ public:
         auto retval = std::make_shared<piper_log_format>(*this);
 
         retval->lf_specialized = true;
+        retval->lf_timestamp_flags |= ETF_ZONE_SET;
         return retval;
     }
 
@@ -123,7 +143,7 @@ public:
             pcre_format(
                 "^(?:\\*\\*\\*\\s+)?(?<timestamp>@[0-9a-zA-Z]{16,24})(.*)"),
             pcre_format(
-                R"(^(?:\*\*\*\s+)?(?<timestamp>(?:\s|\d{4}[\-\/]\d{2}[\-\/]\d{2}|T|\d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,6})?)?|Z|[+\-]\d{2}:?\d{2}|(?!ERR|INFO|WARN)[A-Z]{3,4})+)(?:\s+|[:|])([^:]+))"),
+                R"(^(?:\*\*\*\s+)?(?<timestamp>(?:\s|\d{4}[\-\/]\d{2}[\-\/]\d{2}|T|\d{1,2}:\d{2}(?::\d{2}(?:[\.,]\d{1,6})?)?|Z|[+\-]\d{2}:?\d{2}|(?!DBG|ERR|INFO|WARN|NONE)[A-Z]{3,4})+)(?:\s+|[:|])([^:]+))"),
             pcre_format(
                 "^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:+/\\.-]+) \\[\\w (.*)"),
             pcre_format("^(?:\\*\\*\\*\\s+)?(?<timestamp>[\\w:,/\\.-]+) (.*)"),
@@ -175,7 +195,7 @@ public:
         struct exttm log_time;
         struct timeval log_tv;
         string_fragment ts;
-        nonstd::optional<string_fragment> level;
+        std::optional<string_fragment> level;
         const char* last_pos;
 
         if (dst.empty()) {
@@ -237,7 +257,8 @@ public:
         return scan_no_match{"no patterns matched"};
     }
 
-    void annotate(uint64_t line_number,
+    void annotate(logfile* lf,
+                  uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module) const override
@@ -284,6 +305,8 @@ public:
         lr.lr_start = prefix_len;
         lr.lr_end = line.length();
         sa.emplace_back(lr, SA_BODY.value());
+
+        log_format::annotate(lf, line_number, sa, values, annotate_module);
     }
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override
@@ -356,7 +379,7 @@ from_escaped_string(const char* str, size_t len)
     return retval;
 }
 
-nonstd::optional<const char*>
+std::optional<const char*>
 lnav_strnstr(const char* s, const char* find, size_t slen)
 {
     char c, sc;
@@ -367,13 +390,13 @@ lnav_strnstr(const char* s, const char* find, size_t slen)
         do {
             do {
                 if (slen < 1 || (sc = *s) == '\0') {
-                    return nonstd::nullopt;
+                    return std::nullopt;
                 }
                 --slen;
                 ++s;
             } while (sc != c);
             if (len > slen) {
-                return nonstd::nullopt;
+                return std::nullopt;
             }
         } while (strncmp(s, find, len) != 0);
         s--;
@@ -474,7 +497,7 @@ public:
         logline_value_meta fd_meta;
         logline_value_meta* fd_root_meta;
         std::string fd_collator;
-        nonstd::optional<size_t> fd_numeric_index;
+        std::optional<size_t> fd_numeric_index;
 
         explicit field_def(const intern_string_t name,
                            size_t col,
@@ -567,7 +590,7 @@ public:
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
             if (iter.index() == 0 && *iter == "#close") {
-                return scan_match{0};
+                return scan_match{2000};
             }
 
             if (iter.index() >= this->blf_field_defs.size()) {
@@ -625,18 +648,8 @@ public:
             }
 
             if (opid_cap.is_valid()) {
-                auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(opid_cap);
-
-                if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
-                    auto opid_copy = opid_cap.to_owned(sbc.sbc_allocator);
-                    auto otr = opid_time_range{time_range{tv, tv}};
-                    auto emplace_res
-                        = sbc.sbc_opids.los_opid_ranges.emplace(opid_copy, otr);
-                    opid_iter = emplace_res.first;
-                } else {
-                    opid_iter->second.otr_range.extend_to(tv);
-                }
-
+                auto opid_iter
+                    = sbc.sbc_opids.insert_op(sbc.sbc_allocator, opid_cap, tv);
                 opid_iter->second.otr_level_stats.update_msg_count(level);
 
                 auto& otr = opid_iter->second;
@@ -649,7 +662,7 @@ public:
                 }
             }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
-            return scan_match{0};
+            return scan_match{2000};
         }
         return scan_no_match{};
     }
@@ -808,7 +821,7 @@ public:
                         fd.with_kind(value_kind_t::VALUE_BOOLEAN);
                     } else if (field_type == "addr") {
                         fd.with_kind(
-                            value_kind_t::VALUE_TEXT, true, "ipaddress");
+                            value_kind_t::VALUE_TEXT, true, false, "ipaddress");
                     } else if (field_type == "port") {
                         fd.with_kind(value_kind_t::VALUE_INTEGER, true);
                     } else if (field_type == "interval") {
@@ -836,7 +849,8 @@ public:
         return scan_no_match{};
     }
 
-    void annotate(uint64_t line_number,
+    void annotate(logfile* lf,
+                  uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module) const override
@@ -879,6 +893,8 @@ public:
             values.lvv_values.back().lv_meta.lvm_user_hidden
                 = fd.fd_root_meta->lvm_user_hidden;
         }
+
+        log_format::annotate(lf, line_number, sa, values, annotate_module);
     }
 
     const logline_value_stats* stats_for_value(
@@ -1115,7 +1131,7 @@ public:
         logline_value_meta fd_meta;
         logline_value_meta* fd_root_meta{nullptr};
         std::string fd_collator;
-        nonstd::optional<size_t> fd_numeric_index;
+        std::optional<size_t> fd_numeric_index;
 
         explicit field_def(const intern_string_t name)
             : fd_name(name), fd_meta(intern_string::lookup(sql_safe_ident(
@@ -1262,7 +1278,7 @@ public:
                 }
                 dst.emplace_back(
                     li.li_file_range.fr_offset, 0, 0, LEVEL_IGNORE, 0);
-                return scan_match{0};
+                return scan_match{2000};
             }
 
             sf = sf.trim("\" \t");
@@ -1328,7 +1344,7 @@ public:
                 }
             }
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0);
-            return scan_match{0};
+            return scan_match{2000};
         }
 
         return scan_no_match{};
@@ -1476,7 +1492,7 @@ public:
                         }
                     }
                     auto& fd = this->wlf_field_defs.back();
-                    fd.fd_meta.lvm_format = nonstd::make_optional(this);
+                    fd.fd_meta.lvm_format = std::make_optional(this);
                     switch (fd.fd_meta.lvm_kind) {
                         case value_kind_t::VALUE_FLOAT:
                         case value_kind_t::VALUE_INTEGER:
@@ -1505,7 +1521,8 @@ public:
         return scan_no_match{};
     }
 
-    void annotate(uint64_t line_number,
+    void annotate(logfile* lf,
+                  uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module) const override
@@ -1549,6 +1566,7 @@ public:
                     = fd.fd_root_meta->lvm_user_hidden;
             }
         }
+        log_format::annotate(lf, line_number, sa, values, annotate_module);
     }
 
     const logline_value_stats* stats_for_value(
@@ -1953,13 +1971,14 @@ public:
         if (lph.lph_found_time) {
             dst.emplace_back(
                 li.li_file_range.fr_offset, lph.lph_tv, lph.lph_level);
-            retval = scan_match{0};
+            retval = scan_match{2000};
         }
 
         return retval;
     }
 
-    void annotate(uint64_t line_number,
+    void annotate(logfile* lf,
+                  uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module) const override
@@ -2060,6 +2079,8 @@ public:
                     return true;
                 });
         }
+
+        log_format::annotate(lf, line_number, sa, values, annotate_module);
     }
 
     std::shared_ptr<log_format> specialized(int fmt_lock) override

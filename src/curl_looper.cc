@@ -174,24 +174,69 @@ curl_request::string_cb(void* data, size_t size, size_t nmemb, void* userp)
     return realsize;
 }
 
+curl_request::
+curl_request(std::string name)
+    : cr_name(std::move(name)), cr_handle(curl_easy_cleanup)
+{
+    this->cr_handle.reset(curl_easy_init());
+    curl_easy_setopt(this->cr_handle, CURLOPT_NOSIGNAL, 1);
+    curl_easy_setopt(
+        this->cr_handle, CURLOPT_ERRORBUFFER, this->cr_error_buffer);
+    curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGFUNCTION, debug_cb);
+    curl_easy_setopt(this->cr_handle, CURLOPT_DEBUGDATA, this);
+    curl_easy_setopt(this->cr_handle, CURLOPT_VERBOSE, 1);
+    if (getenv("SSH_AUTH_SOCK") != nullptr) {
+        curl_easy_setopt(this->cr_handle,
+                         CURLOPT_SSH_AUTH_TYPES,
+#    ifdef CURLSSH_AUTH_AGENT
+                         CURLSSH_AUTH_AGENT |
+#    endif
+                             CURLSSH_AUTH_PASSWORD);
+    }
+}
+
 long
 curl_request::complete(CURLcode result)
 {
-    double total_time = 0, download_size = 0, download_speed = 0;
+    double total_time = 0;
+    curl_off_t download_size = 0, download_speed = 0;
 
     this->cr_completions += 1;
     curl_easy_getinfo(this->cr_handle, CURLINFO_TOTAL_TIME, &total_time);
     log_debug("%s: total_time=%f", this->cr_name.c_str(), total_time);
-    curl_easy_getinfo(this->cr_handle, CURLINFO_SIZE_DOWNLOAD, &download_size);
-    log_debug("%s: download_size=%f", this->cr_name.c_str(), download_size);
     curl_easy_getinfo(
-        this->cr_handle, CURLINFO_SPEED_DOWNLOAD, &download_speed);
-    log_debug("%s: download_speed=%f", this->cr_name.c_str(), download_speed);
+        this->cr_handle, CURLINFO_SIZE_DOWNLOAD_T, &download_size);
+    log_debug("%s: download_size=%" CURL_FORMAT_CURL_OFF_T,
+              this->cr_name.c_str(),
+              download_size);
+    curl_easy_getinfo(
+        this->cr_handle, CURLINFO_SPEED_DOWNLOAD_T, &download_speed);
+    log_debug("%s: download_speed=%" CURL_FORMAT_CURL_OFF_T,
+              this->cr_name.c_str(),
+              download_speed);
 
     return -1;
 }
 
-curl_looper::curl_looper() : cl_curl_multi(curl_multi_cleanup)
+Result<std::string, CURLcode>
+curl_request::perform() const
+{
+    std::string response;
+
+    curl_easy_setopt(this->get_handle(), CURLOPT_WRITEFUNCTION, string_cb);
+    curl_easy_setopt(this->get_handle(), CURLOPT_WRITEDATA, &response);
+
+    auto rc = curl_easy_perform(this->get_handle());
+    if (rc == CURLE_OK) {
+        return Ok(response);
+    }
+
+    return Err(rc);
+}
+
+curl_looper::
+curl_looper()
+    : cl_curl_multi(curl_multi_cleanup)
 {
     this->cl_curl_multi.reset(curl_multi_init());
 }

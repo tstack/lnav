@@ -50,15 +50,11 @@ compress(const void* input, size_t len)
 {
     auto retval = auto_buffer::alloc(len + 4096);
 
-    z_stream zs;
-    zs.zalloc = Z_NULL;
-    zs.zfree = Z_NULL;
-    zs.opaque = Z_NULL;
+    z_stream zs = {};
     zs.avail_in = (uInt) len;
     zs.next_in = (Bytef*) input;
     zs.avail_out = (uInt) retval.capacity();
     zs.next_out = (Bytef*) retval.in();
-    zs.total_out = 0;
 
     auto rc = deflateInit2(
         &zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
@@ -83,16 +79,11 @@ Result<auto_buffer, std::string>
 uncompress(const std::string& src, const void* buffer, size_t size)
 {
     auto uncomp = auto_buffer::alloc(size * 2);
-    z_stream strm;
+    z_stream strm = {};
     int err;
 
     strm.next_in = (Bytef*) buffer;
-    strm.msg = Z_NULL;
     strm.avail_in = size;
-    strm.total_in = 0;
-    strm.total_out = 0;
-    strm.zalloc = Z_NULL;
-    strm.zfree = Z_NULL;
 
     if ((err = inflateInit2(&strm, (16 + MAX_WBITS))) != Z_OK) {
         return Err(fmt::format(FMT_STRING("invalid gzip data: {} -- {}"),

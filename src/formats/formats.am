@@ -4,6 +4,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/alb_log.json \
     $(srcdir)/%reldir%/block_log.json \
     $(srcdir)/%reldir%/bunyan_log.json \
+    $(srcdir)/%reldir%/caddy_log.json \
     $(srcdir)/%reldir%/candlepin_log.json \
     $(srcdir)/%reldir%/choose_repo_log.json \
     $(srcdir)/%reldir%/cloudflare_log.json \
@@ -12,6 +13,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/dpkg_log.json \
     $(srcdir)/%reldir%/elb_log.json \
     $(srcdir)/%reldir%/engine_log.json \
+    $(srcdir)/%reldir%/env_logger_log.json \
     $(srcdir)/%reldir%/error_log.json \
     $(srcdir)/%reldir%/esx_syslog_log.json \
     $(srcdir)/%reldir%/fsck_hfs_log.json \
@@ -21,16 +23,18 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/java_log.json \
     $(srcdir)/%reldir%/journald_json_log.json \
     $(srcdir)/%reldir%/katello_log.json \
+    $(srcdir)/%reldir%/lnav_debug_log.json \
     $(srcdir)/%reldir%/nextcloud_log.json \
     $(srcdir)/%reldir%/nextflow_log.json \
     $(srcdir)/%reldir%/openam_log.json \
     $(srcdir)/%reldir%/openamdb_log.json \
     $(srcdir)/%reldir%/openstack_log.json \
     $(srcdir)/%reldir%/page_log.json \
-    $(srcdir)/%reldir%/papertrail_log.json \
     $(srcdir)/%reldir%/pcap_log.json \
     $(srcdir)/%reldir%/procstate_log.json \
+    $(srcdir)/%reldir%/rails_log.json \
     $(srcdir)/%reldir%/redis_log.json \
+    $(srcdir)/%reldir%/simple_rs_log.json \
     $(srcdir)/%reldir%/snaplogic_log.json \
     $(srcdir)/%reldir%/sssd_log.json \
     $(srcdir)/%reldir%/strace_log.json \
@@ -48,4 +52,5 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/vmw_py_log.json \
     $(srcdir)/%reldir%/vpostgres_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
+    $(srcdir)/%reldir%/zookeeper_log.json \
     $()

@@ -32,6 +32,7 @@
 #ifndef xterm_mouse_hh
 #define xterm_mouse_hh
 
+#include "base/lnav_log.hh"
 #include "config.h"
 
 #if defined HAVE_NCURSESW_CURSES_H
@@ -40,6 +41,8 @@
 #    include <ncursesw.h>
 #elif defined HAVE_NCURSES_CURSES_H
 #    include <ncurses/curses.h>
+#elif defined HAVE_CURSESW_H
+#    include <cursesw.h>
 #elif defined HAVE_NCURSES_H
 #    include <ncurses.h>
 #elif defined HAVE_CURSES_H
@@ -70,7 +73,7 @@ public:
 /**
  * Class that handles xterm mouse events coming through the ncurses interface.
  */
-class xterm_mouse {
+class xterm_mouse : public log_crash_recoverer {
 public:
     static const int XT_BUTTON1 = 0;
     static const int XT_BUTTON2 = 1;
@@ -99,7 +102,7 @@ public:
      */
     static bool is_available();
 
-    ~xterm_mouse()
+    ~xterm_mouse() override
     {
         if (this->is_enabled()) {
             set_enabled(false);
@@ -129,6 +132,8 @@ public:
      * @param ch unused
      */
     void handle_mouse();
+
+    void log_crash_recover() override;
 
 private:
     bool xm_enabled{false};

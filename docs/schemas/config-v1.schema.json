@@ -184,7 +184,7 @@
                                     "properties": {
                                         "test": {
                                             "title": "/tuning/clipboard/impls/<clipboard_impl_name>/test",
-                                            "description": "The command that checks",
+                                            "description": "The command that checks if a clipboard command is available",
                                             "type": "string",
                                             "examples": [
                                                 "command -v pbcopy"
@@ -199,6 +199,46 @@
                                             "description": "Commands to work with the find clipboard",
                                             "title": "/tuning/clipboard/impls/<clipboard_impl_name>/find",
                                             "$ref": "#/definitions/clip-commands"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "external-opener": {
+                    "description": "Settings related to opening external files/URLs",
+                    "title": "/tuning/external-opener",
+                    "type": "object",
+                    "properties": {
+                        "impls": {
+                            "description": "External opener implementations",
+                            "title": "/tuning/external-opener/impls",
+                            "type": "object",
+                            "patternProperties": {
+                                "^([\\w\\-]+)$": {
+                                    "description": "External opener implementation",
+                                    "title": "/tuning/external-opener/impls/<opener_impl_name>",
+                                    "type": "object",
+                                    "properties": {
+                                        "test": {
+                                            "title": "/tuning/external-opener/impls/<opener_impl_name>/test",
+                                            "description": "The command that checks if an external opener is available",
+                                            "type": "string",
+                                            "examples": [
+                                                "command -v open"
+                                            ]
+                                        },
+                                        "command": {
+                                            "title": "/tuning/external-opener/impls/<opener_impl_name>/command",
+                                            "description": "The command used to open a file or URL",
+                                            "type": "string",
+                                            "examples": [
+                                                "open"
+                                            ]
                                         }
                                     },
                                     "additionalProperties": false
@@ -789,7 +829,7 @@
                             "title": "/ui/keymap-defs/<keymap_name>",
                             "type": "object",
                             "patternProperties": {
-                                "^((?:x[0-9a-f]{2})+)$": {
+                                "^((?:x[0-9a-f]{2}|f[0-9]{1,2})+)$": {
                                     "description": "Map of key codes to commands to execute.  The field names are the keys to be mapped using as a hexadecimal representation of the UTF-8 encoding.  Each byte of the UTF-8 should start with an 'x' followed by the hexadecimal representation of the byte.",
                                     "title": "/ui/keymap-defs/<keymap_name>/<key_seq>",
                                     "type": "object",
@@ -893,6 +933,37 @@
                                     "description": "The script to execute to generate the annotation content. A JSON object with the log message content will be sent to the script on the standard input",
                                     "type": "string",
                                     "minLength": 1
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "demux": {
+                    "description": "Demultiplexer definitions",
+                    "title": "/log/demux",
+                    "type": "object",
+                    "patternProperties": {
+                        "^([\\w\\-\\.]+)$": {
+                            "description": "The definition of a demultiplexer",
+                            "title": "/log/demux/<name>",
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "title": "/log/demux/<name>/enabled",
+                                    "description": "Indicates whether this demuxer will be used at the demuxing stage",
+                                    "type": "boolean"
+                                },
+                                "pattern": {
+                                    "title": "/log/demux/<name>/pattern",
+                                    "description": "A regular expression to match a line in a multiplexed file",
+                                    "type": "string"
+                                },
+                                "control-pattern": {
+                                    "title": "/log/demux/<name>/control-pattern",
+                                    "description": "A regular expression to match a control line in a multiplexed file",
+                                    "type": "string"
                                 }
                             },
                             "additionalProperties": false

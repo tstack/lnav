@@ -1,0 +1,66 @@
+#
+# @synopsis: zk-set-ops
+# @description: Set Op IDs for zookeeper-related logs
+#
+
+# Drop the table used to store election starts/finishes
+;DROP TABLE IF EXISTS zk_elections
+# Create a table of the lines where an election is started/finished.
+;CREATE TABLE zk_elections AS
+   SELECT log_line, log_body, log_path,
+          CASE json_contains(log_tags, '#zk-election-started')
+               WHEN 1 THEN 'start'
+               WHEN 0 THEN 'finish'
+          END AS msg_type
+     FROM zookeeper_log
+    WHERE json_contains(log_tags, '#zk-election-started') OR json_contains(log_tags, '#zk-election-finished')
+    ORDER BY log_line ASC
+
+# Create a table of the start of an election and either the end
+# or another start of an election.  We'll use these bounds to
+# assign opids to election-related log messages.
+;DROP TABLE IF EXISTS zk_election_ops
+;CREATE TABLE zk_election_ops AS SELECT log_line AS low_mark,
+        (SELECT zk_finishes.log_line
+         FROM zk_elections AS zk_finishes
+         WHERE zk_finishes.log_line > zk_elections.log_line AND zk_finishes.log_path = zk_elections.log_path
+         ORDER BY log_line ASC
+         LIMIT 1) AS high_mark,
+        log_path,
+        'zk-election-#' || row_number() OVER (PARTITION BY log_path ORDER BY log_line) || '-' || basename(log_path) AS opid
+   FROM zk_elections
+   WHERE msg_type = 'start'
+
+# Use the SQLite `UPDATE FROM` syntax to assign the opids based
+# on the table we just created.
+;UPDATE zookeeper_log
+   SET log_opid = zk_ops.opid
+   FROM (SELECT * FROM zk_election_ops) AS zk_ops
+   WHERE
+       zookeeper_log.log_path = zk_ops.log_path AND
+       zookeeper_log.log_line IN (zk_ops.low_mark, zk_ops.high_mark)
+
+;UPDATE zookeeper_log
+   SET log_opid = zk_ops.opid
+   FROM (SELECT * FROM zk_election_ops) AS zk_ops
+   WHERE
+       zookeeper_log.log_path = zk_ops.log_path AND
+       zookeeper_log.log_line BETWEEN zk_ops.low_mark AND zk_ops.high_mark AND
+       (zookeeper_log.log_body LIKE '%Quorum%' OR
+        zookeeper_log.thread LIKE '%Quorum%' OR
+        zookeeper_log.logger LIKE '%Quorum%')
+
+# Use the search table that found the creation of the session
+# IDs and assign an opid wherever we find the session ID in a
+# log message.
+;UPDATE all_logs
+    SET log_opid = session_opid
+    FROM (
+        SELECT
+            log_line,
+            printf('zk--session-0x%x',
+                   regexp_match((SELECT printf('(%s)', group_concat(session_id, '|')) FROM zk_session_ids), log_body)) AS session_opid
+        FROM all_logs
+        WHERE log_body REGEXP (SELECT printf('(%s)', group_concat(session_id, '|')) FROM zk_session_ids)
+    ) AS zk_session_tab
+    WHERE all_logs.log_line = zk_session_tab.log_line

@@ -107,7 +107,7 @@ protected:
     /** @return The absolute Y position of this view. */
     int get_actual_y()
     {
-        unsigned long width, height;
+        int width, height;
         int retval;
 
         getmaxyx(this->vc_window, height, width);

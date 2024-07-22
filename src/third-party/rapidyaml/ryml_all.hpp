@@ -498,6 +498,11 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
    #endif
    #define C4_BYTE_ORDER _C4EL
 
+#elif defined(mips) || defined(__mips__) || defined(__mips)
+
+    #define C4_WORDSIZE 8
+    #define C4_BYTE_ORDER _C4EL
+
 #elif defined(__EMSCRIPTEN__)
 #   define C4_BYTE_ORDER _C4EL
 #   define C4_WORDSIZE 4

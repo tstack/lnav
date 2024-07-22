@@ -30,13 +30,14 @@
 #include "humanize.network.hh"
 
 #include "config.h"
+#include "itertools.hh"
 #include "pcrepp/pcre2pp.hh"
 
 namespace humanize {
 namespace network {
 namespace path {
 
-nonstd::optional<::network::path>
+std::optional<::network::path>
 from_str(string_fragment sf)
 {
     static const auto REMOTE_PATTERN = lnav::pcre2pp::code::from_const(
@@ -52,11 +53,11 @@ from_str(string_fragment sf)
                          .ignore_error();
 
     if (!match_res) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
-    const auto username = REMOTE_MATCH_DATA["username"].map(
-        [](auto sf) { return sf.to_string(); });
+    const auto username = REMOTE_MATCH_DATA["username"]
+        | lnav::itertools::map([](auto sf) { return sf.to_string(); });
     const auto ipv6 = REMOTE_MATCH_DATA["ipv6"];
     const auto hostname = REMOTE_MATCH_DATA["hostname"];
     const auto locality_hostname = ipv6 ? ipv6.value() : hostname.value();
@@ -66,7 +67,7 @@ from_str(string_fragment sf)
         path = string_fragment::from_const(".");
     }
     return ::network::path{
-        {username, locality_hostname.to_string(), nonstd::nullopt},
+        {username, locality_hostname.to_string(), std::nullopt},
         path.to_string(),
     };
 }

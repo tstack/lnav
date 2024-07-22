@@ -983,7 +983,7 @@ relative_time::adjust(const exttm& tm) const
     return retval;
 }
 
-nonstd::optional<exttm>
+std::optional<exttm>
 relative_time::window_start(const struct exttm& tm) const
 {
     auto retval = tm;
@@ -1009,7 +1009,7 @@ relative_time::window_start(const struct exttm& tm) const
 
     if (this->rt_field[RTF_YEARS].is_set) {
         if (this->rt_field[RTF_YEARS].value > tm.et_tm.tm_year) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         retval.et_tm.tm_year = this->rt_field[RTF_YEARS].value;
         clear = true;
@@ -1017,7 +1017,7 @@ relative_time::window_start(const struct exttm& tm) const
 
     if (this->rt_field[RTF_MONTHS].is_set) {
         if (this->rt_field[RTF_MONTHS].value > tm.et_tm.tm_mon) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         retval.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
         clear = true;
@@ -1027,7 +1027,7 @@ relative_time::window_start(const struct exttm& tm) const
 
     if (this->rt_field[RTF_DAYS].is_set) {
         if (this->rt_field[RTF_DAYS].value > tm.et_tm.tm_mday) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         retval.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
         clear = true;
@@ -1040,14 +1040,14 @@ relative_time::window_start(const struct exttm& tm) const
             (token_t) (RTT_SUNDAY + tm.et_tm.tm_wday));
 
         if (iter == this->rt_included_days.end()) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         clear = true;
     }
 
     if (this->rt_field[RTF_HOURS].is_set) {
         if (this->rt_field[RTF_HOURS].value > tm.et_tm.tm_hour) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         retval.et_tm.tm_hour = this->rt_field[RTF_HOURS].value;
         clear = true;
@@ -1057,7 +1057,7 @@ relative_time::window_start(const struct exttm& tm) const
 
     if (this->rt_field[RTF_MINUTES].is_set) {
         if (this->rt_field[RTF_MINUTES].value > tm.et_tm.tm_min) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         retval.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
         clear = true;
@@ -1067,7 +1067,7 @@ relative_time::window_start(const struct exttm& tm) const
 
     if (this->rt_field[RTF_SECONDS].is_set) {
         if (this->rt_field[RTF_SECONDS].value > tm.et_tm.tm_sec) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         retval.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
         clear = true;
@@ -1077,7 +1077,7 @@ relative_time::window_start(const struct exttm& tm) const
 
     if (this->rt_field[RTF_MICROSECONDS].is_set) {
         if (this->rt_field[RTF_MICROSECONDS].value > tm.et_nsec / 1000) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         retval.et_nsec = this->rt_field[RTF_MICROSECONDS].value * 1000ULL;
         clear = true;
@@ -1092,7 +1092,7 @@ relative_time::window_start(const struct exttm& tm) const
                         .to_timeval();
 
     if (tv < start_time || end_time < tv) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return retval;

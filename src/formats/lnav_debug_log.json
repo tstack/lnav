@@ -1,0 +1,37 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "lnav_debug_log": {
+        "title": "lnav debug log",
+        "description": "Log format for lnav's own debug log",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(-|\\+)\\d{2}:\\d{2}) (?<level>\\w) (?<thread>\\w+) (?<srcfile>[^:]+):(?<srcline>\\d+) (?<body>.*)"
+            }
+        },
+        "value": {
+            "srcfile": {
+                "kind": "string",
+                "identifier": true
+            },
+            "level": {
+                "kind": "string"
+            },
+            "srcline": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "thread": {
+                "kind": "string",
+                "identifier": true
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "2024-05-22T14:55:40.160-07:00 D t0 pollable.cc:47 pollable detach 0x146605550 from 0x6000008c82d8"
+            }
+        ]
+    }
+}

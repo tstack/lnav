@@ -29,6 +29,7 @@
 #ifndef byte_array_hh
 #define byte_array_hh
 
+#include <optional>
 #include <ostream>
 #include <string>
 
@@ -38,7 +39,6 @@
 
 #include "base/lnav_log.hh"
 #include "fmt/format.h"
-#include "optional.hpp"
 
 template<size_t COUNT, typename T = unsigned char>
 struct byte_array {
@@ -82,7 +82,7 @@ struct byte_array {
 
     template<typename OutputIt>
     void to_string(OutputIt out,
-                   nonstd::optional<char> separator = nonstd::nullopt) const
+                   std::optional<char> separator = std::nullopt) const
     {
         for (size_t lpc = 0; lpc < BYTE_COUNT; lpc++) {
             if (lpc > 0 && separator) {
@@ -115,8 +115,7 @@ struct byte_array {
             this->ba_data[15 % BYTE_COUNT]);
     }
 
-    std::string to_string(nonstd::optional<char> separator
-                          = nonstd::nullopt) const
+    std::string to_string(std::optional<char> separator = std::nullopt) const
     {
         std::string retval;
 

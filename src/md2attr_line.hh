@@ -31,7 +31,7 @@
 #define lnav_md2attr_line_hh
 
 #include "base/attr_line.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "md4cpp.hh"
 
 namespace pugi {
@@ -42,7 +42,7 @@ class md2attr_line : public md4cpp::typed_event_handler<attr_line_t> {
 public:
     md2attr_line() { this->ml_blocks.resize(1); }
 
-    md2attr_line& with_source_path(nonstd::optional<ghc::filesystem::path> path)
+    md2attr_line& with_source_path(std::optional<std::filesystem::path> path)
     {
         this->ml_source_path = path;
         return *this;
@@ -79,11 +79,11 @@ private:
     using list_block_t
         = mapbox::util::variant<MD_BLOCK_UL_DETAIL*, MD_BLOCK_OL_DETAIL>;
 
-    void append_url_footnote(std::string href);
+    std::string append_url_footnote(std::string href);
     void flush_footnotes();
     attr_line_t to_attr_line(const pugi::xml_node& doc);
 
-    nonstd::optional<ghc::filesystem::path> ml_source_path;
+    std::optional<std::filesystem::path> ml_source_path;
     std::vector<attr_line_t> ml_blocks;
     std::vector<list_block_t> ml_list_stack;
     std::vector<table_t> ml_tables;
@@ -91,6 +91,7 @@ private:
     std::vector<std::pair<std::string, size_t>> ml_html_starts;
     std::vector<attr_line_t> ml_footnotes;
     int32_t ml_code_depth{0};
+    ssize_t ml_last_superscript_index{-1};
 };
 
 #endif

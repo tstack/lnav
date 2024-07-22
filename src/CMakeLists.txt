@@ -41,20 +41,28 @@ set(TIME_FORMATS
         "%Y-%m-%d %H:%M:%S,%L"
         "%Y-%m-%d %H:%M:%S.%L"
         "%Y-%m-%d %H:%M:%S%z"
+        "%Y-%m-%d %H:%M:%S %Z"
         "%Y-%m-%d %H:%M:%S %z"
         "%Y-%m-%d %H:%M:%S:%L"
         "%Y-%m-%d %H:%M:%S"
         "%Y-%m-%d %H:%M"
+        "%Y-%m-%dT%H:%M:%S %p %Z"
+        "%Y-%m-%dT%H:%M:%S.%N%z"
+        "%y-%m-%dT%H:%M:%S.%N%z"
         "%Y-%m-%dT%H:%M:%S.%f%z"
         "%y-%m-%dT%H:%M:%S.%f%z"
         "%Y-%m-%dT%H:%M:%S.%L%z"
         "%y-%m-%dT%H:%M:%S.%L%z"
         "%Y-%m-%dT%H:%M:%S%z"
-        "%Y-%m-%dT%H:%M:%S"
         "%Y-%m-%dT%H:%M:%S%z"
+        "%Y-%m-%dT%H:%M:%S"
         "%Y-%m-%dT%H:%M"
         "%Y/%m/%d %H:%M:%S %z"
         "%Y/%m/%d %H:%M:%S%z"
+        "%Y/%m/%d %H:%M:%S.%f%z"
+        "%Y/%m/%d %H:%M:%S.%f%Z"
+        "%Y/%m/%d %H:%M:%S.%f %z"
+        "%Y/%m/%d %H:%M:%S.%f %Z"
         "%Y/%m/%d %H:%M:%S.%f"
         "%Y/%m/%d %H:%M:%S.%L"
         "%Y/%m/%d %H:%M:%S"
@@ -64,6 +72,7 @@ set(TIME_FORMATS
         "%Y %b %d %H:%M:%S"
         "%a %b %d %H:%M:%S %Y"
         "%a %b %d %H:%M:%S.%f %Y"
+        "%a %b %d %H:%M:%S:%f %Y"
         "%a %b %d %H:%M:%S %Z %Y"
         "%a %b %d %I:%M:%S %p %Z %Y"
         "%a %b %d %H:%M:%S "
@@ -79,6 +88,7 @@ set(TIME_FORMATS
         "%d %b %Y %H:%M:%S.%L"
         "%d %b %Y %H:%M:%S,%L"
         "%d %b %Y %H:%M"
+        "%b-%d %H:%M:%S"
         "%b %d %H:%M:%S"
         "%b %d %k:%M:%S"
         "%b %d %l:%M:%S"
@@ -110,6 +120,7 @@ set(TIME_FORMATS
         "%Y/%m/%d"
         "%Y/%m"
         "%s.%f"
+
 )
 
 set(GEN_SRCS "")
@@ -144,8 +155,11 @@ set(FORMAT_FILES
         formats/access_log.json
         formats/alb_log.json
         formats/block_log.json
+        formats/bunyan_log.json
         formats/candlepin_log.json
         formats/choose_repo_log.json
+        formats/cloudflare_log.json
+        formats/cloudvm_ram_log.json
         formats/cups_log.json
         formats/dpkg_log.json
         formats/elb_log.json
@@ -153,18 +167,22 @@ set(FORMAT_FILES
         formats/error_log.json
         formats/esx_syslog_log.json
         formats/fsck_hfs_log.json
+        formats/github_events_log.json
         formats/glog_log.json
         formats/haproxy_log.json
         formats/java_log.json
         formats/journald_json_log.json
         formats/katello_log.json
+        formats/lnav_debug_log.json
+        formats/nextcloud_log.json
+        formats/nextflow_log.json
         formats/openam_log.json
         formats/openamdb_log.json
         formats/openstack_log.json
         formats/page_log.json
-        formats/papertrail_log.json
         formats/pcap_log.json
         formats/procstate_log.json
+        formats/redis_log.json
         formats/snaplogic_log.json
         formats/sssd_log.json
         formats/strace_log.json
@@ -173,13 +191,17 @@ set(FORMAT_FILES
         formats/s3_log.json
         formats/tcf_log.json
         formats/tcsh_history.json
+        formats/unifi_log.json
         formats/uwsgi_log.json
         formats/vdsm_log.json
         formats/vmk_log.json
         formats/vmw_log.json
         formats/vmw_vc_svc_log.json
         formats/vmw_py_log.json
-        formats/xmlrpc_log.json)
+        formats/vpostgres_log.json
+        formats/xmlrpc_log.json
+        formats/zookeeper_log.json
+)
 
 set(FORMAT_FILE_PATHS ${FORMAT_FILES})
 
@@ -401,12 +423,14 @@ add_library(
         collation-functions.cc
         column_namer.cc
         command_executor.cc
+        crashd.client.cc
         curl_looper.cc
         db_sub_source.cc
         dump_internals.cc
         elem_to_json.cc
         environ_vtab.cc
         extension-functions.cc
+        external_opener.cc
         field_overlay_source.cc
         file_collection.cc
         file_converter_manager.cc
@@ -420,7 +444,6 @@ add_library(
         fs-extension-functions.cc
         fstat_vtab.cc
         fts_fuzzy_match.cc
-        gantt_source.cc
         help_text.cc
         help_text_formatter.cc
         highlighter.cc
@@ -482,10 +505,12 @@ add_library(
         styling.cc
         text_anonymizer.cc
         text_format.cc
+        text_link_handler.cc
         text_overlay_menu.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
         textview_curses.cc
+        timeline_source.cc
         top_status_source.cc
         time-extension-functions.cc
         timer.cc
@@ -519,10 +544,13 @@ add_library(
         byte_array.hh
         command_executor.hh
         column_namer.hh
+        crashd.client.hh
         curl_looper.hh
         doc_status_source.hh
         dump_internals.hh
         elem_to_json.hh
+        external_opener.hh
+        external_opener.cfg.hh
         field_overlay_source.hh
         file_collection.hh
         file_converter_manager.hh
@@ -534,8 +562,6 @@ add_library(
         filter_sub_source.hh
         fstat_vtab.hh
         fts_fuzzy_match.hh
-        gantt_source.hh
-        gantt_status_source.hh
         grep_highlighter.hh
         hasher.hh
         help_text.hh
@@ -570,7 +596,6 @@ add_library(
         logfile_stats.hh
         md2attr_line.hh
         md4cpp.hh
-        optional.hpp
         file_converter_manager.hh
         plain_text_source.hh
         pretty_printer.hh
@@ -609,12 +634,15 @@ add_library(
         termios_guard.hh
         text_anonymizer.hh
         text_format.hh
+        text_link_handler.hh
         text_overlay_menu.hh
         textfile_highlighters.hh
         textfile_sub_source.hh
         textview_curses.hh
         textview_curses_fwd.hh
         time_T.hh
+        timeline_source.hh
+        timeline_status_source.hh
         timer.hh
         top_status_source.hh
         url_handler.cfg.hh
@@ -633,12 +661,6 @@ add_library(
         mapbox/variant.hpp
         mapbox/variant_io.hpp
         mapbox/variant_visitor.hpp
-        ghc/filesystem.hpp
-        ghc/fs_fwd.hpp
-        ghc/fs_impl.hpp
-        ghc/fs_std.hpp
-        ghc/fs_std_fwd.hpp
-        ghc/fs_std_impl.hpp
         ww898/cp_utf8.hpp
         log_level_re.cc
 
@@ -690,7 +712,9 @@ target_include_directories(diag PUBLIC . fmtlib ${CMAKE_CURRENT_BINARY_DIR}
         third-party/date/include
         third-party/prqlc-c
         third-party/rapidyaml
+        ${CURSES_INCLUDE_DIRS}
 )
+target_compile_options(diag PRIVATE ${CURSES_CFLAGS})
 
 target_link_libraries(
         diag

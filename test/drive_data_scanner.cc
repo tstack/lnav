@@ -74,7 +74,7 @@ main(int argc, char* argv[])
     }
 
     {
-        std::vector<ghc::filesystem::path> paths;
+        std::vector<std::filesystem::path> paths;
         std::vector<lnav::console::user_message> errors;
 
         load_formats(paths, errors);
@@ -194,7 +194,7 @@ main(int argc, char* argv[])
                 string_attrs_t sa;
 
                 if (format.get() != nullptr) {
-                    format->annotate(0, sa, ll_values, false);
+                    format->annotate(nullptr, 0, sa, ll_values, false);
                     body = find_string_attr_range(sa, &SA_BODY);
                 }
 

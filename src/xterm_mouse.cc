@@ -97,3 +97,9 @@ xterm_mouse::is_available()
 {
     return isatty(STDOUT_FILENO);
 }
+
+void
+xterm_mouse::log_crash_recover()
+{
+    this->set_enabled(false);
+}

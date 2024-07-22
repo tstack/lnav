@@ -160,9 +160,9 @@ static const typed_json_path_container<resolved_crumb> breadcrumb_crumb_handlers
 };
 
 struct top_line_meta {
-    nonstd::optional<std::string> tlm_time;
-    nonstd::optional<std::string> tlm_file;
-    nonstd::optional<std::string> tlm_anchor;
+    std::optional<std::string> tlm_time;
+    std::optional<std::string> tlm_file;
+    std::optional<std::string> tlm_anchor;
     std::vector<resolved_crumb> tlm_crumbs;
 };
 
@@ -189,6 +189,8 @@ static const typed_json_path_container<textview_curses::selected_text_info>
             .with_children(line_range_handlers),
         yajlpp::property_handler("value").for_field(
             &textview_curses::selected_text_info::sti_value),
+        yajlpp::property_handler("href").for_field(
+            &textview_curses::selected_text_info::sti_href),
 };
 
 enum class row_details_t {
@@ -202,11 +204,11 @@ enum class word_wrap_t {
 };
 
 struct view_options {
-    nonstd::optional<row_details_t> vo_row_details;
-    nonstd::optional<row_details_t> vo_row_time_offset;
-    nonstd::optional<int32_t> vo_overlay_focus;
-    nonstd::optional<word_wrap_t> vo_word_wrap;
-    nonstd::optional<row_details_t> vo_hidden_fields;
+    std::optional<row_details_t> vo_row_details;
+    std::optional<row_details_t> vo_row_time_offset;
+    std::optional<int32_t> vo_overlay_focus;
+    std::optional<word_wrap_t> vo_word_wrap;
+    std::optional<row_details_t> vo_hidden_fields;
 
     bool empty() const
     {
@@ -343,7 +345,7 @@ CREATE TABLE lnav_views (
                         [](const auto wrapper) {
                             auto lf = wrapper.get();
 
-                            return nonstd::make_optional(lf->get_filename());
+                            return std::make_optional(lf->get_filename());
                         };
                 }));
                 break;
@@ -411,8 +413,7 @@ CREATE TABLE lnav_views (
                             | [](const auto wrapper) {
                                   auto lf = wrapper.get();
 
-                                  return nonstd::make_optional(
-                                      lf->get_filename());
+                                  return std::make_optional(lf->get_filename());
                               };
                     });
                     for (const auto& crumb : crumbs) {
@@ -517,8 +518,8 @@ CREATE TABLE lnav_views (
                    string_fragment movement,
                    const char* top_meta,
                    int64_t selection,
-                   nonstd::optional<string_fragment> options,
-                   nonstd::optional<string_fragment> selected_text)
+                   std::optional<string_fragment> options,
+                   std::optional<string_fragment> selected_text)
     {
         auto& tc = lnav_data.ld_views[index];
         auto* time_source
@@ -587,7 +588,8 @@ CREATE TABLE lnav_views (
                                   .append(" value"))
                               .with_reason(
                                   attr_line_t("Unrecognized time value: ")
-                                      .append(lnav::roles::string(top_time)));
+                                      .append(lnav::roles::string(top_time)))
+                              .move();
                 set_vtable_errmsg(tab, um);
                 return SQLITE_ERROR;
             }
@@ -619,7 +621,8 @@ CREATE TABLE lnav_views (
                                   .append(" value"))
                               .with_reason(attr_line_t("Unknown text file: ")
                                                .append(lnav::roles::file(
-                                                   tlm.tlm_file.value())));
+                                                   tlm.tlm_file.value())))
+                              .move();
                     set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
                 }
@@ -645,7 +648,8 @@ CREATE TABLE lnav_views (
                                   .append(" value"))
                               .with_reason(
                                   attr_line_t("Unknown anchor: ")
-                                      .append(lnav::roles::symbol(req_anchor)));
+                                      .append(lnav::roles::symbol(req_anchor)))
+                              .move();
                     set_vtable_errmsg(tab, um);
                     return SQLITE_ERROR;
                 }
@@ -922,10 +926,10 @@ CREATE TABLE lnav_view_filters (
     int insert_row(sqlite3_vtab* tab,
                    sqlite3_int64& rowid_out,
                    lnav_view_t view_index,
-                   nonstd::optional<int64_t> _filter_id,
-                   nonstd::optional<bool> enabled,
-                   nonstd::optional<text_filter::type_t> type,
-                   nonstd::optional<filter_lang_t> lang,
+                   std::optional<int64_t> _filter_id,
+                   std::optional<bool> enabled,
+                   std::optional<text_filter::type_t> type,
+                   std::optional<filter_lang_t> lang,
                    sqlite3_value* pattern_str)
     {
         auto* mod_vt = (vtab_module<lnav_view_filters>::vtab*) tab;
@@ -935,7 +939,7 @@ CREATE TABLE lnav_view_filters (
         auto filter_index
             = lang.value_or(filter_lang_t::REGEX) == filter_lang_t::REGEX
             ? fs.next_index()
-            : nonstd::make_optional(size_t{0});
+            : std::make_optional(size_t{0});
         if (!filter_index) {
             throw sqlite_func_error("Too many filters");
         }

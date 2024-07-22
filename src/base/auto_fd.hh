@@ -146,6 +146,8 @@ public:
         return retval;
     }
 
+    void copy_to(int fd) const;
+
     /**
      * @return The file descriptor.
      */

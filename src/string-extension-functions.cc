@@ -28,8 +28,8 @@
 #include "formats/logfmt/logfmt.parser.hh"
 #include "libbase64.h"
 #include "mapbox/variant.hpp"
-#include "optional.hpp"
 #include "pcrepp/pcre2pp.hh"
+#include "pretty_printer.hh"
 #include "safe/safe.h"
 #include "scn/scn.h"
 #include "spookyhash/SpookyV2.h"
@@ -394,7 +394,7 @@ sparkline_final(sqlite3_context* context)
     sc->~sparkline_context();
 }
 
-nonstd::optional<util::variant<blob_auto_buffer, sqlite3_int64, double>>
+std::optional<util::variant<blob_auto_buffer, sqlite3_int64, double>>
 sql_gunzip(sqlite3_value* val)
 {
     switch (sqlite3_value_type(val)) {
@@ -423,10 +423,10 @@ sql_gunzip(sqlite3_value* val)
             return sqlite3_value_double(val);
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
-nonstd::optional<blob_auto_buffer>
+std::optional<blob_auto_buffer>
 sql_gzip(sqlite3_value* val)
 {
     switch (sqlite3_value_type(val)) {
@@ -458,7 +458,7 @@ sql_gzip(sqlite3_value* val)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 #if defined(HAVE_LIBCURL)
@@ -764,15 +764,15 @@ sql_parse_url(std::string url)
 }
 
 struct url_parts {
-    nonstd::optional<std::string> up_scheme;
-    nonstd::optional<std::string> up_username;
-    nonstd::optional<std::string> up_password;
-    nonstd::optional<std::string> up_host;
-    nonstd::optional<std::string> up_port;
-    nonstd::optional<std::string> up_path;
-    nonstd::optional<std::string> up_query;
-    std::map<std::string, nonstd::optional<std::string>> up_parameters;
-    nonstd::optional<std::string> up_fragment;
+    std::optional<std::string> up_scheme;
+    std::optional<std::string> up_username;
+    std::optional<std::string> up_password;
+    std::optional<std::string> up_host;
+    std::optional<std::string> up_port;
+    std::optional<std::string> up_path;
+    std::optional<std::string> up_query;
+    std::map<std::string, std::optional<std::string>> up_parameters;
+    std::optional<std::string> up_fragment;
 };
 
 static const json_path_container url_params_handlers = {
@@ -889,6 +889,18 @@ sql_humanize_id(string_fragment id)
     return fmt::format(FMT_STRING("\x1b[38;5;{}m{}\x1b[0m"),
                        attrs.ta_fg_color.value_or(COLOR_CYAN),
                        id);
+}
+
+static std::string
+sql_pretty_print(string_fragment in)
+{
+    data_scanner ds(in);
+    pretty_printer pp(&ds, {});
+    attr_line_t retval;
+
+    pp.append_to(retval);
+
+    return std::move(retval.get_string());
 }
 
 int
@@ -1244,6 +1256,21 @@ string_extension_functions(struct FuncDef** basic_funcs,
                         "'{\"scheme\": \"https\", \"host\": \"example.com\"}'",
                         "SELECT "
                         "unparse_url('{\"scheme\": \"https\", \"host\": "
+                        "\"example.com\"}')",
+                    })),
+
+        sqlite_func_adapter<decltype(&sql_pretty_print), sql_pretty_print>::
+            builder(
+                help_text("pretty_print", "Pretty-print the given string")
+                    .sql_function()
+                    .with_prql_path({"text", "pretty"})
+                    .with_parameter(help_text("str", "The string to format"))
+                    .with_tags({"string"})
+                    .with_example({
+                        "To pretty-print the string "
+                        "'{\"scheme\": \"https\", \"host\": \"example.com\"}'",
+                        "SELECT "
+                        "pretty_print('{\"scheme\": \"https\", \"host\": "
                         "\"example.com\"}')",
                     })),
 

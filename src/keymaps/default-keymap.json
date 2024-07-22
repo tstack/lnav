@@ -71,13 +71,13 @@
                     "command": ":reset-session"
                 },
                 "x18": {
-                    "command": ";UPDATE lnav_views SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_top_view SET movement = (CASE movement WHEN 'top' THEN 'cursor' ELSE 'top' END)"
                 },
                 "x04": {
-                    "command": ";UPDATE lnav_views SET top = top + (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top + (height / 2) + (selection - top) END) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_top_view SET top = top + (height / 2), selection = (CASE movement WHEN 'top' THEN selection ELSE top + (height / 2) + (selection - top) END)"
                 },
                 "x15": {
-                    "command": ";UPDATE lnav_views SET top = max(0, top - (height / 2)), selection = (CASE movement WHEN 'top' THEN selection ELSE max(0, top - (height / 2) + (selection - top)) END) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_top_view SET top = max(0, top - (height / 2)), selection = (CASE movement WHEN 'top' THEN selection ELSE max(0, top - (height / 2) + (selection - top)) END)"
                 },
                 "x3d": {
                     "command": ";UPDATE lnav_views SET paused = 1 - paused"
@@ -117,9 +117,6 @@
                     "command": "|lnav-copy-text",
                     "alt-msg": "${keymap_def_clear}"
                 },
-                "x67": {
-                    "command": ":goto 0"
-                },
                 "x6d": {
                     "command": ":mark",
                     "alt-msg": "${keymap_def_next_user_mark}"
@@ -133,17 +130,17 @@
                     "alt-msg": "${keymap_def_scroll_horiz}"
                 },
                 "x54": {
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.row-time-offset', CASE jget(options, '/row-time-offset', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)",
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.row-time-offset', CASE jget(options, '/row-time-offset', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END)",
                     "alt-msg": "${keymap_def_time_offset}"
                 },
                 "x70": {
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.row-details', CASE jget(options, '/row-details', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.row-details', CASE jget(options, '/row-details', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END)"
                 },
                 "x78": {
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.hidden-fields', CASE jget(options, '/hidden-fields', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.hidden-fields', CASE jget(options, '/hidden-fields', 'hide') WHEN 'hide' THEN 'show' ELSE 'hide' END)"
                 },
                 "x17": {
-                    "command": ";UPDATE lnav_views SET options = json_set(options, '$.word-wrap', CASE jget(options, '/word-wrap', 'none') WHEN 'none' THEN 'normal' ELSE 'none' END) WHERE name = (SELECT name FROM lnav_top_view)"
+                    "command": ";UPDATE lnav_top_view SET options = json_set(options, '$.word-wrap', CASE jget(options, '/word-wrap', 'none') WHEN 'none' THEN 'normal' ELSE 'none' END)"
                 },
                 "x75": {
                     "command": ":next-mark",

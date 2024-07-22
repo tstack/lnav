@@ -36,20 +36,6 @@ class text_overlay_menu : public list_overlay_source {
 public:
     std::vector<attr_line_t> list_overlay_menu(const listview_curses& lv,
                                                vis_line_t line) override;
-
-    struct menu_item {
-        menu_item(vis_line_t line,
-                  line_range range,
-                  std::function<void(const std::string&)> action)
-            : mi_line(line), mi_range(range), mi_action(std::move(action))
-        {
-        }
-
-        vis_line_t mi_line;
-        line_range mi_range;
-        std::function<void(const std::string&)> mi_action;
-    };
-    std::vector<menu_item> tom_menu_items;
 };
 
 #endif

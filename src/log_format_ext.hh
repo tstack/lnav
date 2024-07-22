@@ -140,7 +140,7 @@ public:
 
     const intern_string_t get_name() const override { return this->elf_name; }
 
-    bool match_name(const std::string& filename) override;
+    match_name_result match_name(const std::string& filename) override;
 
     scan_result_t scan(logfile& lf,
                        std::vector<logline>& dst,
@@ -151,7 +151,8 @@ public:
     bool scan_for_partial(shared_buffer_ref& sbr,
                           size_t& len_out) const override;
 
-    void annotate(uint64_t line_number,
+    void annotate(logfile* lf,
+                  uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module = true) const override;
@@ -287,8 +288,8 @@ public:
 
     value_line_count_result value_line_count(const intern_string_t ist,
                                              bool top_level,
-                                             nonstd::optional<double> val
-                                             = nonstd::nullopt,
+                                             std::optional<double> val
+                                             = std::nullopt,
                                              const unsigned char* str = nullptr,
                                              ssize_t len = -1);
 
@@ -321,7 +322,7 @@ public:
         GRAPH_ORDERED_FORMATS;
 
     std::set<std::string> elf_source_path;
-    std::vector<ghc::filesystem::path> elf_format_source_order;
+    std::vector<std::filesystem::path> elf_format_source_order;
     std::map<intern_string_t, int> elf_format_sources;
     std::list<intern_string_t> elf_collision;
     factory_container<lnav::pcre2pp::code> elf_filename_pcre;
@@ -409,12 +410,9 @@ public:
             return;
         }
 
-        size_t old_size = this->jlf_cached_line.size();
-        if (len == -1) {
-            len = strlen(value);
-        }
+        const auto old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
-        memcpy(&(this->jlf_cached_line[old_size]), value, len);
+        memcpy(&this->jlf_cached_line[old_size], value, len);
     }
 
     void json_append_to_cache(const string_fragment& sf)
@@ -427,7 +425,7 @@ public:
         if (len <= 0) {
             return;
         }
-        size_t old_size = this->jlf_cached_line.size();
+        const size_t old_size = this->jlf_cached_line.size();
         this->jlf_cached_line.resize(old_size + len);
         memset(&this->jlf_cached_line[old_size], ' ', len);
     }
@@ -445,7 +443,6 @@ public:
     bool jlf_hide_extra{false};
     std::vector<json_format_element> jlf_line_format;
     int jlf_line_format_init_count{0};
-    shared_buffer jlf_share_manager;
     logline_value_vector jlf_line_values;
 
     off_t jlf_cached_offset{-1};
@@ -456,6 +453,7 @@ public:
     string_attrs_t jlf_line_attrs;
     std::shared_ptr<yajlpp_parse_context> jlf_parse_context;
     std::shared_ptr<yajl_handle_t> jlf_yajl_handle;
+    shared_buffer jlf_share_manager;
 
 private:
     const intern_string_t elf_name;

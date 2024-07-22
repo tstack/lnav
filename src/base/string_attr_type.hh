@@ -164,8 +164,8 @@ struct text_attrs {
     }
 
     int32_t ta_attrs{0};
-    nonstd::optional<short> ta_fg_color;
-    nonstd::optional<short> ta_bg_color;
+    std::optional<short> ta_fg_color;
+    std::optional<short> ta_bg_color;
 };
 
 struct block_elem_t {

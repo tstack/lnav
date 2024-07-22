@@ -27,9 +27,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <fstream>
+
 #include "fs_util.hh"
 
 #include <stdlib.h>
+#include <sys/param.h>
 
 #include "config.h"
 #include "fmt/format.h"
@@ -40,8 +43,38 @@
 namespace lnav {
 namespace filesystem {
 
-Result<ghc::filesystem::path, std::string>
-realpath(const ghc::filesystem::path& path)
+std::string
+escape_path(const std::filesystem::path& p)
+{
+    auto p_str = p.string();
+    std::string retval;
+
+    for (const auto ch : p_str) {
+        switch (ch) {
+            case ' ':
+            case '$':
+            case '\\':
+            case ';':
+            case '&':
+            case '<':
+            case '>':
+            case '\'':
+            case '"':
+            case '*':
+            case '[':
+            case ']':
+            case '?':
+                retval.push_back('\\');
+                break;
+        }
+        retval.push_back(ch);
+    }
+
+    return retval;
+}
+
+Result<std::filesystem::path, std::string>
+realpath(const std::filesystem::path& path)
 {
     char resolved[PATH_MAX];
     auto rc = ::realpath(path.c_str(), resolved);
@@ -50,11 +83,11 @@ realpath(const ghc::filesystem::path& path)
         return Err(std::string(strerror(errno)));
     }
 
-    return Ok(ghc::filesystem::path(resolved));
+    return Ok(std::filesystem::path(resolved));
 }
 
 Result<auto_fd, std::string>
-create_file(const ghc::filesystem::path& path, int flags, mode_t mode)
+create_file(const std::filesystem::path& path, int flags, mode_t mode)
 {
     auto fd = openp(path, flags | O_CREAT, mode);
 
@@ -68,7 +101,7 @@ create_file(const ghc::filesystem::path& path, int flags, mode_t mode)
 }
 
 Result<auto_fd, std::string>
-open_file(const ghc::filesystem::path& path, int flags)
+open_file(const std::filesystem::path& path, int flags)
 {
     auto fd = openp(path, flags);
 
@@ -81,8 +114,8 @@ open_file(const ghc::filesystem::path& path, int flags)
     return Ok(auto_fd(fd));
 }
 
-Result<std::pair<ghc::filesystem::path, auto_fd>, std::string>
-open_temp_file(const ghc::filesystem::path& pattern)
+Result<std::pair<std::filesystem::path, auto_fd>, std::string>
+open_temp_file(const std::filesystem::path& pattern)
 {
     auto pattern_str = pattern.string();
     char pattern_copy[pattern_str.size() + 1];
@@ -96,14 +129,14 @@ open_temp_file(const ghc::filesystem::path& pattern)
                         strerror(errno)));
     }
 
-    return Ok(std::make_pair(ghc::filesystem::path(pattern_copy), auto_fd(fd)));
+    return Ok(std::make_pair(std::filesystem::path(pattern_copy), auto_fd(fd)));
 }
 
 Result<std::string, std::string>
-read_file(const ghc::filesystem::path& path)
+read_file(const std::filesystem::path& path)
 {
     try {
-        ghc::filesystem::ifstream file_stream(path);
+        std::ifstream file_stream(path);
 
         if (!file_stream) {
             return Err(std::string(strerror(errno)));
@@ -119,7 +152,7 @@ read_file(const ghc::filesystem::path& path)
 }
 
 Result<write_file_result, std::string>
-write_file(const ghc::filesystem::path& path,
+write_file(const std::filesystem::path& path,
            const string_fragment& content,
            std::set<write_file_options> options)
 {
@@ -145,11 +178,11 @@ write_file(const ghc::filesystem::path& path,
 
     std::error_code ec;
     if (options.count(write_file_options::backup_existing)) {
-        if (ghc::filesystem::exists(path, ec)) {
+        if (std::filesystem::exists(path, ec)) {
             auto backup_path = path;
 
             backup_path += ".bak";
-            ghc::filesystem::rename(path, backup_path, ec);
+            std::filesystem::rename(path, backup_path, ec);
             if (ec) {
                 return Err(
                     fmt::format(FMT_STRING("unable to backup file {}: {}"),
@@ -161,7 +194,7 @@ write_file(const ghc::filesystem::path& path,
         }
     }
 
-    ghc::filesystem::rename(tmp_pair.first, path, ec);
+    std::filesystem::rename(tmp_pair.first, path, ec);
     if (ec) {
         return Err(
             fmt::format(FMT_STRING("unable to move temporary file {}: {}"),
@@ -173,7 +206,7 @@ write_file(const ghc::filesystem::path& path,
 }
 
 std::string
-build_path(const std::vector<ghc::filesystem::path>& paths)
+build_path(const std::vector<std::filesystem::path>& paths)
 {
     return paths
         | lnav::itertools::map([](const auto& path) { return path.string(); })
@@ -190,7 +223,7 @@ build_path(const std::vector<ghc::filesystem::path>& paths)
 }
 
 Result<struct stat, std::string>
-stat_file(const ghc::filesystem::path& path)
+stat_file(const std::filesystem::path& path)
 {
     struct stat retval;
 
@@ -203,7 +236,8 @@ stat_file(const ghc::filesystem::path& path)
                            strerror(errno)));
 }
 
-file_lock::file_lock(const ghc::filesystem::path& archive_path)
+file_lock::
+file_lock(const std::filesystem::path& archive_path)
 {
     auto lock_path = archive_path;
 
@@ -222,7 +256,7 @@ file_lock::file_lock(const ghc::filesystem::path& archive_path)
 namespace fmt {
 
 auto
-formatter<ghc::filesystem::path>::format(const ghc::filesystem::path& p,
+formatter<std::filesystem::path>::format(const std::filesystem::path& p,
                                          format_context& ctx)
     -> decltype(ctx.out()) const
 {

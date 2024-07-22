@@ -188,6 +188,8 @@ run_cap_test env TEST_COMMENT=unparse_url11 ./drive_sql <<'EOF'
 SELECT unparse_url('{}')
 EOF
 
+run_cap_test ./drive_sql "SELECT pretty_print('{a: 1, b:2}')"
+
 run_cap_test ${lnav_test} -n \
     -c ';SELECT log_body, extract(log_body) from vmw_log' \
     -c ':write-json-to -' \

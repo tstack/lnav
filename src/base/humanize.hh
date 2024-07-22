@@ -51,7 +51,7 @@ enum class alignment {
  */
 std::string file_size(file_ssize_t value, alignment align);
 
-const std::string& sparkline(double value, nonstd::optional<double> upper);
+const std::string& sparkline(double value, std::optional<double> upper);
 
 }  // namespace humanize
 

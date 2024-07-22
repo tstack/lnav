@@ -56,7 +56,6 @@
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
 #include "log_level.hh"
-#include "optional.hpp"
 #include "pcrepp/pcre2pp.hh"
 #include "shared_buffer.hh"
 
@@ -136,8 +135,7 @@ struct logline_value_meta {
     logline_value_meta(intern_string_t name,
                        value_kind_t kind,
                        column_t col = external_column{},
-                       const nonstd::optional<log_format*>& format
-                       = nonstd::nullopt)
+                       const std::optional<log_format*>& format = std::nullopt)
         : lvm_name(name), lvm_kind(kind), lvm_column(col), lvm_format(format)
     {
     }
@@ -161,14 +159,14 @@ struct logline_value_meta {
     intern_string_t lvm_name;
     value_kind_t lvm_kind;
     column_t lvm_column{external_column{}};
-    nonstd::optional<size_t> lvm_values_index;
+    std::optional<size_t> lvm_values_index;
     bool lvm_identifier{false};
     bool lvm_foreign_key{false};
     bool lvm_hidden{false};
-    nonstd::optional<bool> lvm_user_hidden;
+    std::optional<bool> lvm_user_hidden;
     bool lvm_from_module{false};
     intern_string_t lvm_struct_name;
-    nonstd::optional<log_format*> lvm_format;
+    std::optional<log_format*> lvm_format;
 };
 
 class logline_value {
@@ -269,7 +267,7 @@ public:
         value_u(int64_t i) : i(i) {}
         value_u(double d) : d(d) {}
     } lv_value;
-    nonstd::optional<std::string> lv_str;
+    std::optional<std::string> lv_str;
     string_fragment lv_frag;
     int lv_sub_offset{0};
     intern_string_t lv_intern_string;
@@ -277,18 +275,26 @@ public:
 };
 
 struct logline_value_vector {
+    enum class opid_provenance {
+        none,
+        file,
+        user,
+    };
+
     void clear()
     {
         this->lvv_values.clear();
         this->lvv_sbr.disown();
-        this->lvv_opid_value = nonstd::nullopt;
+        this->lvv_opid_value = std::nullopt;
+        this->lvv_opid_provenance = opid_provenance::none;
     }
 
-    logline_value_vector() {}
+    logline_value_vector() = default;
 
     logline_value_vector(const logline_value_vector& other)
         : lvv_sbr(other.lvv_sbr.clone()), lvv_values(other.lvv_values),
-          lvv_opid_value(other.lvv_opid_value)
+          lvv_opid_value(other.lvv_opid_value),
+          lvv_opid_provenance(other.lvv_opid_provenance)
     {
     }
 
@@ -297,13 +303,15 @@ struct logline_value_vector {
         this->lvv_sbr = other.lvv_sbr.clone();
         this->lvv_values = other.lvv_values;
         this->lvv_opid_value = other.lvv_opid_value;
+        this->lvv_opid_provenance = other.lvv_opid_provenance;
 
         return *this;
     }
 
     shared_buffer_ref lvv_sbr;
     std::vector<logline_value> lvv_values;
-    nonstd::optional<std::string> lvv_opid_value;
+    std::optional<std::string> lvv_opid_value;
+    opid_provenance lvv_opid_provenance{opid_provenance::none};
 };
 
 struct logline_value_stats {
@@ -330,9 +338,9 @@ struct logline_value_stats {
 };
 
 struct logline_value_cmp {
-    explicit logline_value_cmp(
-        const intern_string_t* name = nullptr,
-        nonstd::optional<logline_value_meta::column_t> col = nonstd::nullopt)
+    explicit logline_value_cmp(const intern_string_t* name = nullptr,
+                               std::optional<logline_value_meta::column_t> col
+                               = std::nullopt)
         : lvc_name(name), lvc_column(col)
     {
     }
@@ -353,7 +361,7 @@ struct logline_value_cmp {
     }
 
     const intern_string_t* lvc_name;
-    nonstd::optional<logline_value_meta::column_t> lvc_column;
+    std::optional<logline_value_meta::column_t> lvc_column;
 };
 
 class log_vtab_impl;
@@ -398,7 +406,19 @@ public:
      */
     virtual const intern_string_t get_name() const = 0;
 
-    virtual bool match_name(const std::string& filename) { return true; }
+    struct name_matched {};
+    struct name_mismatched {
+        size_t nm_partial;
+        std::string nm_pattern;
+    };
+
+    using match_name_result
+        = mapbox::util::variant<name_matched, name_mismatched>;
+
+    virtual match_name_result match_name(const std::string& filename)
+    {
+        return name_matched{};
+    }
 
     struct scan_match {
         uint32_t sm_quality;
@@ -444,12 +464,11 @@ public:
      */
     virtual void scrub(std::string& line) {}
 
-    virtual void annotate(uint64_t line_number,
+    virtual void annotate(logfile* lf,
+                          uint64_t line_number,
                           string_attrs_t& sa,
                           logline_value_vector& values,
-                          bool annotate_module = true) const
-    {
-    }
+                          bool annotate_module = true) const;
 
     virtual void rewrite(exec_context& ec,
                          shared_buffer_ref& line,
@@ -568,6 +587,7 @@ public:
     };
 
     std::string lf_description;
+    log_format* lf_root_format{this};
     uint8_t lf_mod_index{0};
     bool lf_multiline{true};
     bool lf_structured{false};
@@ -577,7 +597,7 @@ public:
     std::vector<pattern_for_lines> lf_pattern_locks;
     intern_string_t lf_timestamp_field{intern_string::lookup("timestamp", -1)};
     intern_string_t lf_subsecond_field;
-    nonstd::optional<subsecond_unit> lf_subsecond_unit;
+    std::optional<subsecond_unit> lf_subsecond_unit;
     intern_string_t lf_time_field;
     std::vector<const char*> lf_timestamp_format;
     unsigned int lf_timestamp_flags{0};
@@ -587,7 +607,7 @@ public:
     bool lf_is_self_describing{false};
     bool lf_time_ordered{true};
     bool lf_specialized{false};
-    nonstd::optional<int64_t> lf_max_unrecognized_lines;
+    std::optional<int64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;
 
@@ -601,7 +621,7 @@ public:
         std::string od_suffix;
         std::string od_joiner{", "};
 
-        nonstd::optional<std::string> matches(const string_fragment& sf) const;
+        std::optional<std::string> matches(const string_fragment& sf) const;
     };
 
     struct opid_descriptors {
@@ -666,7 +686,7 @@ protected:
                           struct timeval* tv_out,
 
                           string_fragment* ts_out,
-                          nonstd::optional<string_fragment>* level_out);
+                          std::optional<string_fragment>* level_out);
 };
 
 #endif

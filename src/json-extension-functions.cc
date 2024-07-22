@@ -293,7 +293,8 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
             err = yajl_get_error(
                 handle.in(), 1, json_in.udata(), json_in.length());
             auto um = lnav::console::user_message::error("invalid JSON")
-                          .with_reason((const char*) err);
+                          .with_reason((const char*) err)
+                          .move();
 
             to_sqlite(context, um);
             yajl_free_error(handle.in(), err);
@@ -318,7 +319,8 @@ sql_jget(sqlite3_context* context, int argc, sqlite3_value** argv)
             err = yajl_get_error(
                 handle.in(), 1, json_in.udata(), json_in.length());
             auto um = lnav::console::user_message::error("invalid JSON")
-                          .with_reason((const char*) err);
+                          .with_reason((const char*) err)
+                          .move();
 
             to_sqlite(context, um);
             yajl_free_error(handle.in(), err);
@@ -490,7 +492,7 @@ concat_gen_elements(yajl_gen gen, const unsigned char* text, size_t len)
 }
 
 static json_string
-json_concat(nonstd::optional<const char*> json_in,
+json_concat(std::optional<const char*> json_in,
             const std::vector<sqlite3_value*>& values)
 {
     yajlpp_gen gen;

@@ -1462,7 +1462,7 @@ annotate_prql_statement(attr_line_t& al)
     auto stages = std::vector<int>{};
     std::vector<std::pair<char, int>> groups;
     std::vector<line_range> fqids;
-    nonstd::optional<line_range> id_start;
+    std::optional<line_range> id_start;
     bool saw_id_dot = false;
     for (const auto& attr : sa) {
         if (groups.empty() && attr.sa_type == &PRQL_PIPE_ATTR) {
@@ -1478,7 +1478,7 @@ annotate_prql_statement(attr_line_t& al)
                 saw_id_dot = true;
             } else {
                 fqids.emplace_back(id_start.value());
-                id_start = nonstd::nullopt;
+                id_start = std::nullopt;
                 saw_id_dot = false;
             }
         } else {
@@ -1488,7 +1488,7 @@ annotate_prql_statement(attr_line_t& al)
                     attr.sa_range.lr_end,
                 };
             } else {
-                id_start = nonstd::nullopt;
+                id_start = std::nullopt;
             }
             saw_id_dot = false;
         }

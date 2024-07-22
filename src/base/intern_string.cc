@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "fmt/ostream.h"
 #include "pcrepp/pcre2pp.hh"
 #include "ww898/cp_utf8.hpp"
 #include "xxHash/xxhash.h"
@@ -179,11 +180,35 @@ string_fragment::trim() const
     return this->trim(" \t\r\n");
 }
 
-nonstd::optional<string_fragment>
+string_fragment
+string_fragment::rtrim(const char* tokens) const
+{
+    string_fragment retval = *this;
+
+    while (retval.sf_begin < retval.sf_end) {
+        bool found = false;
+
+        for (int lpc = 0; tokens[lpc] != '\0'; lpc++) {
+            if (retval.sf_string[retval.sf_end - 1] == tokens[lpc]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            break;
+        }
+
+        retval.sf_end -= 1;
+    }
+
+    return retval;
+}
+
+std::optional<string_fragment>
 string_fragment::consume_n(int amount) const
 {
     if (amount > this->length()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return string_fragment{
@@ -197,7 +222,7 @@ string_fragment::split_result
 string_fragment::split_n(int amount) const
 {
     if (amount > this->length()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     return std::make_pair(
@@ -391,8 +416,8 @@ string_fragment
 string_fragment::sub_cell_range(int cell_start, int cell_end) const
 {
     int byte_index = this->sf_begin;
-    nonstd::optional<int> byte_start;
-    nonstd::optional<int> byte_end;
+    std::optional<int> byte_start;
+    std::optional<int> byte_end;
     int cell_index = 0;
 
     while (byte_index < this->sf_end) {
@@ -416,9 +441,14 @@ string_fragment::sub_cell_range(int cell_start, int cell_end) const
                         cell_index += 1;
                     } while (cell_index % 8);
                     break;
-                default:
-                    cell_index += wcwidth(read_res.unwrap());
+                default: {
+                    auto wcw_res = wcwidth(read_res.unwrap());
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+                    cell_index += wcw_res;
                     break;
+                }
             }
         }
     }
@@ -456,9 +486,14 @@ string_fragment::column_width() const
                         retval += 1;
                     } while (retval % 8);
                     break;
-                default:
-                    retval += wcwidth(read_res.unwrap());
+                default: {
+                    auto wcw_res = wcwidth(read_res.unwrap());
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+                    retval += wcw_res;
                     break;
+                }
             }
         }
     }

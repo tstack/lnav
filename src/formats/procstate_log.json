@@ -5,7 +5,7 @@
         "description": "Periodic dumps of process state",
         "regex": {
             "std": {
-                "pattern": "========== Start of system state dump at (?<timestamp>[^=]+) ==========(?<body>.*)"
+                "pattern": "^========== Start of system state dump at (?<timestamp>[^=]+) ==========(?<body>.*)"
             }
         },
         "sample": [

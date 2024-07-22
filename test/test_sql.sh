@@ -161,13 +161,13 @@ Wed May 19 12:00:04 +0000 2021 line 4
 EOF
 
 
-run_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM access_log LIMIT 0" \
-    -c ':switch-to-view db' \
     ${test_dir}/logfile_access_log.0
 
-check_output "output generated for empty result set?" <<EOF
-EOF
+run_cap_test ${lnav_test} -n \
+    -c "|${test_dir}/empty-result.lnav" \
+    ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
     -c ":goto 2" \
@@ -390,6 +390,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 check_output "log_time collation failed on null" <<EOF
+log_line,log_time,log_level,log_hostname,log_msgid,log_pid,log_pri,log_procname,log_struct,log_syslog_tag,syslog_version,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
 EOF
 
 
@@ -550,6 +551,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "delete from environ table does not work" <<EOF
+name,value
 EOF
 
 
@@ -560,6 +562,7 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 check_output "delete environ table does not work" <<EOF
+name,value
 EOF
 
 
@@ -778,6 +781,9 @@ run_test ${lnav_test} -n \
     ${test_dir}/logfile_multiline.0
 
 check_output "able to select a continued line?" <<EOF
+[
+
+]
 EOF
 
 

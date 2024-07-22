@@ -5,7 +5,7 @@
         "description": "Periodic dumps of ram sizes",
         "regex": {
             "std": {
-                "pattern": "========== Start of cloudvm ram size dump at (?<timestamp>[^=]+) ==========(?<body>.*)"
+                "pattern": "^========== Start of cloudvm ram size dump at (?<timestamp>[^=]+) ==========(?<body>.*)"
             }
         },
         "sample": [

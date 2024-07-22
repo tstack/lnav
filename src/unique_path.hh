@@ -37,7 +37,7 @@
 #include <string>
 #include <vector>
 
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 
 /**
  * A source of a path for the unique_path_generator.
@@ -51,26 +51,26 @@ public:
         this->ups_unique_path = path;
     }
 
-    const ghc::filesystem::path& get_unique_path() const
+    const std::filesystem::path& get_unique_path() const
     {
         return this->ups_unique_path;
     }
 
-    virtual ghc::filesystem::path get_path() const = 0;
+    virtual std::filesystem::path get_path() const = 0;
 
-    const ghc::filesystem::path& get_path_prefix() const
+    const std::filesystem::path& get_path_prefix() const
     {
         return this->ups_prefix;
     }
 
-    void set_path_prefix(const ghc::filesystem::path& prefix)
+    void set_path_prefix(const std::filesystem::path& prefix)
     {
         this->ups_prefix = prefix;
     }
 
 private:
-    ghc::filesystem::path ups_prefix;
-    ghc::filesystem::path ups_unique_path;
+    std::filesystem::path ups_prefix;
+    std::filesystem::path ups_unique_path;
 };
 
 /**

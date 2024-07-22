@@ -135,9 +135,10 @@ private:
 
 #define Z_BUFSIZE      65536U
 #define SYNCPOINT_SIZE (1024 * 1024)
-line_buffer::gz_indexed::gz_indexed()
+line_buffer::gz_indexed::
+gz_indexed()
 {
-    if ((this->inbuf = auto_mem<Bytef>::malloc(Z_BUFSIZE)) == NULL) {
+    if ((this->inbuf = auto_mem<Bytef>::malloc(Z_BUFSIZE)) == nullptr) {
         throw std::bad_alloc();
     }
 }
@@ -162,13 +163,8 @@ line_buffer::gz_indexed::init_stream()
     }
 
     // initialize inflate struct
-    this->strm.zalloc = Z_NULL;
-    this->strm.zfree = Z_NULL;
-    this->strm.opaque = Z_NULL;
+    int rc = inflateInit2(&this->strm, GZ_HEADER_MODE);
     this->strm.avail_in = 0;
-    this->strm.next_in = Z_NULL;
-    this->strm.avail_out = 0;
-    int rc = inflateInit2(&strm, GZ_HEADER_MODE);
     if (rc != Z_OK) {
         throw(rc);  // FIXME: exception wrapper
     }
@@ -227,7 +223,6 @@ line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
 
             inflate(&this->strm, Z_BLOCK);
             inflateEnd(&this->strm);
-
             this->strm.next_out = Z_NULL;
             this->strm.next_in = Z_NULL;
             this->strm.next_in = Z_NULL;
@@ -243,6 +238,14 @@ line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
                     hd.h_mtime.tv_sec = gz_hd.time;
                     hd.h_name = std::string((char*) name);
                     hd.h_comment = std::string((char*) comment);
+                    log_info(
+                        "%d: read gzip header (mtime=%d; name='%s'; "
+                        "comment='%s'; crc=%x)",
+                        fd,
+                        hd.h_mtime.tv_sec,
+                        hd.h_name.c_str(),
+                        hd.h_comment.c_str(),
+                        gz_hd.hcrc);
                     break;
                 default:
                     log_error("%d: failed to read gzip header data", fd);
@@ -283,7 +286,8 @@ line_buffer::gz_indexed::stream_data(void* buf, size_t size)
                 // stream
                 continue_stream();
             } else if (err != Z_OK) {
-                log_error(" inflate-error: %d  %s",
+                log_error(" inflate-error at %d: %d  %s",
+                          this->strm.total_in,
                           (int) err,
                           this->strm.msg ? this->strm.msg : "");
                 break;
@@ -364,13 +368,19 @@ line_buffer::gz_indexed::read(void* buf, size_t offset, size_t size)
     return bytes;
 }
 
-line_buffer::line_buffer()
+line_buffer::
+line_buffer()
 {
     ensure(this->invariant());
 }
 
-line_buffer::~line_buffer()
+line_buffer::~
+line_buffer()
 {
+    if (this->lb_loader_future.valid()) {
+        this->lb_loader_future.wait();
+    }
+
     auto empty_fd = auto_fd();
 
     // Make sure any shared refs take ownership of the data.
@@ -768,13 +778,12 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
                   start,
                   this->lb_loader_file_offset.value());
 #endif
-        nonstd::optional<std::chrono::system_clock::time_point> wait_start;
+        std::optional<std::chrono::system_clock::time_point> wait_start;
 
         if (this->lb_loader_future.wait_for(std::chrono::seconds(0))
             != std::future_status::ready)
         {
-            wait_start
-                = nonstd::make_optional(std::chrono::system_clock::now());
+            wait_start = std::make_optional(std::chrono::system_clock::now());
         }
         retval = this->lb_loader_future.get();
         if (false && wait_start) {
@@ -785,7 +794,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         this->lb_loader_future = {};
         this->lb_share_manager.invalidate_refs();
         this->lb_file_offset = this->lb_loader_file_offset.value();
-        this->lb_loader_file_offset = nonstd::nullopt;
+        this->lb_loader_file_offset = std::nullopt;
         this->lb_buffer.swap(this->lb_alt_buffer.value());
         this->lb_alt_buffer.value().clear();
         this->lb_line_starts = std::move(this->lb_alt_line_starts);
@@ -1232,7 +1241,7 @@ line_buffer::load_next_line(file_range prev_line)
             (size_t) retval.li_file_range.fr_size,
         };
 
-        char level;
+        char level = '\0';
         auto scan_res = scn::scan(sv,
                                   "{}.{}:{};",
                                   retval.li_timestamp.tv_sec,
@@ -1309,8 +1318,8 @@ line_buffer::get_available()
             static_cast<file_ssize_t>(this->lb_buffer.size())};
 }
 
-line_buffer::gz_indexed::indexDict::indexDict(const z_stream& s,
-                                              const file_size_t size)
+line_buffer::gz_indexed::indexDict::
+indexDict(const z_stream& s, const file_size_t size)
 {
     assert((s.data_type & GZ_END_OF_BLOCK_MASK));
     assert(!(s.data_type & GZ_END_OF_FILE_MASK));
@@ -1371,7 +1380,7 @@ line_buffer::quiesce()
     }
 }
 
-static ghc::filesystem::path
+static std::filesystem::path
 line_buffer_cache_path()
 {
     return lnav::paths::workdir() / "buffer-cache";
@@ -1402,7 +1411,7 @@ line_buffer::enable_cache()
                                 .to_string();
     auto cache_dir = line_buffer_cache_path() / cached_base_name.substr(0, 2);
 
-    ghc::filesystem::create_directories(cache_dir);
+    std::filesystem::create_directories(cache_dir);
 
     auto cached_file_name = fmt::format(FMT_STRING("{}.bin"), cached_base_name);
     auto cached_file_path = cache_dir / cached_file_name;
@@ -1415,14 +1424,14 @@ line_buffer::enable_cache()
     auto fl = lnav::filesystem::file_lock(cached_file_path);
     auto guard = lnav::filesystem::file_lock::guard(&fl);
 
-    if (ghc::filesystem::exists(cached_done_path)) {
-        log_info("%d:using existing cache file");
+    if (std::filesystem::exists(cached_done_path)) {
+        log_info("%d:using existing cache file", this->lb_fd.get());
         auto open_res = lnav::filesystem::open_file(cached_file_path, O_RDWR);
         if (open_res.isOk()) {
             this->lb_cached_fd = open_res.unwrap();
             return;
         }
-        ghc::filesystem::remove(cached_done_path);
+        std::filesystem::remove(cached_done_path);
     }
 
     auto create_res = lnav::filesystem::create_file(
@@ -1437,7 +1446,7 @@ line_buffer::enable_cache()
     auto write_fd = create_res.unwrap();
     auto done = false;
 
-    static const ssize_t FILL_LENGTH = 1024 * 1024;
+    static constexpr ssize_t FILL_LENGTH = 1024 * 1024;
     auto off = file_off_t{0};
     while (!done) {
         log_debug("%d: caching file content at %d", this->lb_fd.get(), off);
@@ -1467,18 +1476,18 @@ void
 line_buffer::cleanup_cache()
 {
     (void) std::async(std::launch::async, []() {
-        auto now = std::chrono::system_clock::now();
+        auto now = std::filesystem::file_time_type::clock::now();
         auto cache_path = line_buffer_cache_path();
-        std::vector<ghc::filesystem::path> to_remove;
+        std::vector<std::filesystem::path> to_remove;
         std::error_code ec;
 
         for (const auto& cache_subdir :
-             ghc::filesystem::directory_iterator(cache_path, ec))
+             std::filesystem::directory_iterator(cache_path, ec))
         {
             for (const auto& entry :
-                 ghc::filesystem::directory_iterator(cache_subdir, ec))
+                 std::filesystem::directory_iterator(cache_subdir, ec))
             {
-                auto mtime = ghc::filesystem::last_write_time(entry.path());
+                auto mtime = std::filesystem::last_write_time(entry.path());
                 auto exp_time = mtime + 1h;
                 if (now < exp_time) {
                     continue;
@@ -1490,7 +1499,7 @@ line_buffer::cleanup_cache()
 
         for (auto& entry : to_remove) {
             log_debug("removing compressed file cache: %s", entry.c_str());
-            ghc::filesystem::remove_all(entry, ec);
+            std::filesystem::remove_all(entry, ec);
         }
     });
 }

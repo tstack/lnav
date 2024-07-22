@@ -79,12 +79,18 @@ auto_fd::openpt(int flags)
     return Ok(auto_fd{rc});
 }
 
-auto_fd::auto_fd(int fd) : af_fd(fd)
+auto_fd::
+auto_fd(int fd)
+    : af_fd(fd)
 {
     require(fd >= -1);
 }
 
-auto_fd::auto_fd(auto_fd&& af) noexcept : af_fd(af.release()) {}
+auto_fd::
+auto_fd(auto_fd&& af) noexcept
+    : af_fd(af.release())
+{
+}
 
 auto_fd
 auto_fd::dup() const
@@ -98,9 +104,16 @@ auto_fd::dup() const
     return auto_fd{new_fd};
 }
 
-auto_fd::~auto_fd()
+auto_fd::~
+auto_fd()
 {
     this->reset();
+}
+
+void
+auto_fd::copy_to(int fd) const
+{
+    dup2(this->get(), fd);
 }
 
 void
@@ -184,7 +197,8 @@ auto_pipe::for_child_fd(int child_fd)
     return Ok(std::move(retval));
 }
 
-auto_pipe::auto_pipe(int child_fd, int child_flags)
+auto_pipe::
+auto_pipe(int child_fd, int child_flags)
     : ap_child_flags(child_flags), ap_child_fd(child_fd)
 {
     switch (child_fd) {

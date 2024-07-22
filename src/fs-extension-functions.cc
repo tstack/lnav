@@ -101,18 +101,18 @@ sql_dirname(const char* path_in)
     return path_in[0] == '/' ? "/" : ".";
 }
 
-static nonstd::optional<std::string>
+static std::optional<std::string>
 sql_joinpath(const std::vector<const char*>& paths)
 {
     std::string full_path;
 
     if (paths.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     for (auto& path_in : paths) {
         if (path_in == nullptr) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         if (path_in[0] == '/' || path_in[0] == '\\') {
@@ -168,7 +168,7 @@ sql_realpath(const char* path)
 }
 
 struct shell_exec_options {
-    std::map<std::string, nonstd::optional<std::string>> po_env;
+    std::map<std::string, std::optional<std::string>> po_env;
 };
 
 static const json_path_container shell_exec_env_handlers = {
@@ -183,8 +183,8 @@ static const typed_json_path_container<shell_exec_options>
 
 static blob_auto_buffer
 sql_shell_exec(const char* cmd,
-               nonstd::optional<string_fragment> input,
-               nonstd::optional<string_fragment> opts_json)
+               std::optional<string_fragment> input,
+               std::optional<string_fragment> opts_json)
 {
     static const intern_string_t SRC = intern_string::lookup("options");
 

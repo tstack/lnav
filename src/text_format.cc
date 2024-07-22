@@ -40,16 +40,16 @@
 
 text_format_t
 detect_text_format(string_fragment sf,
-                   nonstd::optional<ghc::filesystem::path> path)
+                   std::optional<std::filesystem::path> path)
 {
-    static const std::set<ghc::filesystem::path> FILTER_EXTS = {
+    static const std::set<std::filesystem::path> FILTER_EXTS = {
         ".bz2",
         ".gz",
         ".lzma",
         ".xz",
         ".zst",
     };
-    static const auto C_EXTS = std::set<ghc::filesystem::path>{
+    static const auto C_EXTS = std::set<std::filesystem::path>{
         ".h",
         ".hh",
         ".hpp",
@@ -58,17 +58,17 @@ detect_text_format(string_fragment sf,
         ".cpp",
         ".tpp",
     };
-    static const auto PY_EXT = ghc::filesystem::path(".py");
-    static const auto RS_EXT = ghc::filesystem::path(".rs");
-    static const auto JAVA_EXT = ghc::filesystem::path(".java");
-    static const auto TOML_EXT = ghc::filesystem::path(".toml");
-    static const auto XML_EXT = ghc::filesystem::path(".xml");
-    static const auto YAML_EXT = ghc::filesystem::path(".yaml");
-    static const auto YML_EXT = ghc::filesystem::path(".yml");
-    static const auto MAKEFILE_STEM = ghc::filesystem::path("Makefile");
-    static const auto MD_EXT = ghc::filesystem::path(".md");
-    static const auto MARKDOWN_EXT = ghc::filesystem::path(".markdown");
-    static const auto SH_EXT = ghc::filesystem::path(".sh");
+    static const auto PY_EXT = std::filesystem::path(".py");
+    static const auto RS_EXT = std::filesystem::path(".rs");
+    static const auto JAVA_EXT = std::filesystem::path(".java");
+    static const auto TOML_EXT = std::filesystem::path(".toml");
+    static const auto XML_EXT = std::filesystem::path(".xml");
+    static const auto YAML_EXT = std::filesystem::path(".yaml");
+    static const auto YML_EXT = std::filesystem::path(".yml");
+    static const auto MAKEFILE_STEM = std::filesystem::path("Makefile");
+    static const auto MD_EXT = std::filesystem::path(".md");
+    static const auto MARKDOWN_EXT = std::filesystem::path(".markdown");
+    static const auto SH_EXT = std::filesystem::path(".sh");
 
     static const auto DIFF_MATCHERS = lnav::pcre2pp::code::from_const(
         R"(^--- .*\n\+\+\+ .*\n)", PCRE2_MULTILINE);
@@ -230,7 +230,7 @@ detect_text_format(string_fragment sf,
     return text_format_t::TF_UNKNOWN;
 }
 
-nonstd::optional<text_format_meta_t>
+std::optional<text_format_meta_t>
 extract_text_meta(string_fragment sf, text_format_t tf)
 {
     static const auto MAN_NAME = lnav::pcre2pp::code::from_const(
@@ -255,5 +255,5 @@ extract_text_meta(string_fragment sf, text_format_t tf)
             break;
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }

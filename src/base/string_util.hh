@@ -246,6 +246,15 @@ on_blank(const std::string& str, const std::string& def)
     return str;
 }
 
+std::string to_superscript(const std::string& in);
+
+template<typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
+inline std::string
+to_superscript(T in)
+{
+    return to_superscript(fmt::to_string(in));
+}
+
 namespace lnav {
 class tainted_string {
 public:
@@ -282,8 +291,8 @@ private:
 namespace fmt {
 template<>
 struct formatter<lnav::tainted_string> : formatter<string_view> {
-    auto format(const lnav::tainted_string& ts,
-                format_context& ctx) -> decltype(ctx.out()) const;
+    auto format(const lnav::tainted_string& ts, format_context& ctx)
+        -> decltype(ctx.out()) const;
 };
 }  // namespace fmt
 

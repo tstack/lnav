@@ -30,6 +30,7 @@
 #include "md2attr_line.hh"
 
 #include "base/attr_line.builder.hh"
+#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/map_util.hh"
@@ -74,12 +75,13 @@ md2attr_line::flush_footnotes()
 
     auto& block_text = this->ml_blocks.back();
     auto longest_foot = this->ml_footnotes
-        | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
+        | lnav::itertools::map(&attr_line_t::column_width)
         | lnav::itertools::max(0);
-    size_t index = 1;
 
     block_text.append("\n");
-    for (auto& foot : this->ml_footnotes) {
+    for (const auto& [index, foot] :
+         lnav::itertools::enumerate(this->ml_footnotes, 1))
+    {
         auto footline
             = attr_line_t(" ")
                   .append("\u258c"_footnote_border)
@@ -88,10 +90,10 @@ md2attr_line::flush_footnotes()
                   .append(lnav::roles::footnote_text(
                       fmt::format(FMT_STRING("[{}] - "), index)))
                   .append(foot.pad_to(longest_foot))
-                  .with_attr_for_all(SA_PREFORMATTED.value());
+                  .with_attr_for_all(SA_PREFORMATTED.value())
+                  .move();
 
         block_text.append(footline).append("\n");
-        index += 1;
     }
     this->ml_footnotes.clear();
 }
@@ -164,7 +166,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
     } else if (bl.is<block_hr>()) {
         block_text = attr_line_t()
                          .append(lnav::roles::hr(repeat("\u2501", 70)))
-                         .with_attr_for_all(SA_PREFORMATTED.value());
+                         .with_attr_for_all(SA_PREFORMATTED.value())
+                         .move();
         last_block.append("\n").append(block_text).append("\n");
     } else if (bl.is<MD_BLOCK_UL_DETAIL*>() || bl.is<MD_BLOCK_OL_DETAIL*>()) {
         this->ml_list_stack.pop_back();
@@ -286,17 +289,17 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                     new_block_text.append(line).append("\n");
                 }
             }
-            block_text = new_block_text;
+            block_text = new_block_text.move();
         }
 
         auto code_lines = block_text.rtrim().split_lines();
         auto max_width = code_lines
-            | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
+            | lnav::itertools::map(&attr_line_t::column_width)
             | lnav::itertools::max(0);
         attr_line_t padded_text;
 
         for (auto& line : code_lines) {
-            line.pad_to(std::max(max_width + 4, ssize_t{40}))
+            line.pad_to(std::max(max_width + 4, size_t{40}))
                 .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
             padded_text.append(lnav::string::attrs::preformatted(" "))
                 .append("\u258c"_code_border)
@@ -308,23 +311,75 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             last_block.append("\n").append(padded_text);
         }
     } else if (bl.is<block_quote>()) {
+        const static auto ALERT_TYPE = lnav::pcre2pp::code::from_const(
+            R"(^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\])");
+
         text_wrap_settings tws = {0, 60};
         attr_line_t wrapped_text;
+        auto md = ALERT_TYPE.create_match_data();
+        std::optional<role_t> border_role;
 
-        wrapped_text.append(block_text.rtrim(), &tws);
+        block_text.rtrim();
+        if (ALERT_TYPE.capture_from(block_text.al_string)
+                .into(md)
+                .matches()
+                .ignore_error())
+        {
+            attr_line_t replacement;
+
+            if (md[1] == "NOTE") {
+                replacement.append("\u24d8  Note\n"_footnote_border);
+                border_role = role_t::VCR_FOOTNOTE_BORDER;
+            } else if (md[1] == "TIP") {
+                replacement.append(":bulb:"_emoji)
+                    .append(" Tip\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_OK));
+                border_role = role_t::VCR_OK;
+            } else if (md[1] == "IMPORTANT") {
+                replacement.append(":star2:"_emoji)
+                    .append(" Important\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_INFO));
+                border_role = role_t::VCR_INFO;
+            } else if (md[1] == "WARNING") {
+                replacement.append(":warning:"_emoji)
+                    .append(" Warning\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_WARNING));
+                border_role = role_t::VCR_WARNING;
+            } else if (md[1] == "CAUTION") {
+                replacement.append(":small_red_triangle:"_emoji)
+                    .append(" Caution\n")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_ERROR));
+                border_role = role_t::VCR_ERROR;
+            } else {
+                ensure(0);
+            }
+            block_text.erase(md[0]->sf_begin, md[0]->length());
+            block_text.insert(0, replacement);
+        }
+
+        wrapped_text.append(block_text, &tws);
         auto quoted_lines = wrapped_text.split_lines();
         auto max_width = quoted_lines
-            | lnav::itertools::map(&attr_line_t::utf8_length_or_length)
+            | lnav::itertools::map(&attr_line_t::column_width)
             | lnav::itertools::max(0);
         attr_line_t padded_text;
 
         for (auto& line : quoted_lines) {
             line.pad_to(max_width + 1)
                 .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_TEXT));
-            padded_text.append(" ")
-                .append("\u258c"_quote_border)
-                .append(line)
-                .append("\n");
+            padded_text.append(" ");
+            auto start_index = padded_text.length();
+            padded_text.append("\u258c"_quote_border);
+            if (border_role) {
+                padded_text.with_attr(string_attr{
+                    line_range{
+                        (int) start_index,
+                        (int) padded_text.length(),
+                    },
+                    VC_ROLE_FG.value(border_role.value()),
+                });
+            }
+            padded_text.append(line).append("\n");
         }
         if (!padded_text.empty()) {
             padded_text.with_attr_for_all(SA_PREFORMATTED.value());
@@ -340,18 +395,19 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
         block_text.append("\n");
         max_col_sizes.resize(table_detail->col_count);
         for (size_t lpc = 0; lpc < table_detail->col_count; lpc++) {
-            if (lpc < tab.t_headers.size()) {
-                max_col_sizes[lpc] = tab.t_headers[lpc].utf8_length_or_length();
-                tab.t_headers[lpc].with_attr_for_all(
-                    VC_ROLE.value(role_t::VCR_TABLE_HEADER));
+            if (lpc >= tab.t_headers.size()) {
+                continue;
             }
+            max_col_sizes[lpc] = tab.t_headers[lpc].column_width();
+            tab.t_headers[lpc].with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_TABLE_HEADER));
         }
         for (const auto& row : tab.t_rows) {
             for (size_t lpc = 0; lpc < table_detail->col_count; lpc++) {
                 if (lpc >= row.r_columns.size()) {
                     continue;
                 }
-                auto col_len = row.r_columns[lpc].utf8_length_or_length();
+                auto col_len = row.r_columns[lpc].column_width();
                 if (col_len > max_col_sizes[lpc]) {
                     max_col_sizes[lpc] = col_len;
                 }
@@ -376,19 +432,17 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             }
         }
         for (size_t line_index = 0; line_index < max_cell_lines; line_index++) {
-            size_t col = 0;
-            for (const auto& cell : cells) {
+            for (const auto& [col, cell] : lnav::itertools::enumerate(cells)) {
                 block_text.append(" ");
                 if (line_index < cell.cl_lines.size()) {
                     block_text.append(cell.cl_lines[line_index]);
                     block_text.append(
                         col_sizes[col]
-                            - cell.cl_lines[line_index].utf8_length_or_length(),
+                            - cell.cl_lines[line_index].column_width(),
                         ' ');
                 } else {
                     block_text.append(col_sizes[col], ' ');
                 }
-                col += 1;
             }
             block_text.append("\n")
                 .append(lnav::roles::table_border(
@@ -419,8 +473,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                         if (col < col_sizes.size() - 1) {
                             block_text.append(
                                 col_sizes[col]
-                                    - cell.cl_lines[line_index]
-                                          .utf8_length_or_length(),
+                                    - cell.cl_lines[line_index].column_width(),
                                 ' ');
                         }
                     } else if (col < col_sizes.size() - 1) {
@@ -522,20 +575,21 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
             VC_STYLE.value(text_attrs{A_UNDERLINE}),
         });
     } else if (sp.is<MD_SPAN_A_DETAIL*>()) {
-        auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
+        const auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
         auto href_str = std::string(a_detail->href.text, a_detail->href.size);
         line_range lr{
             static_cast<int>(this->ml_span_starts.back()),
             static_cast<int>(last_block.length()),
         };
+        auto abs_href = this->append_url_footnote(href_str);
         last_block.with_attr({
             lr,
-            VC_HYPERLINK.value(href_str),
+            VC_HYPERLINK.value(abs_href),
         });
-        this->append_url_footnote(href_str);
     } else if (sp.is<MD_SPAN_IMG_DETAIL*>()) {
-        auto* img_detail = sp.get<MD_SPAN_IMG_DETAIL*>();
-        auto src_str = std::string(img_detail->src.text, img_detail->src.size);
+        const auto* img_detail = sp.get<MD_SPAN_IMG_DETAIL*>();
+        const auto src_str
+            = std::string(img_detail->src.text, img_detail->src.size);
 
         this->append_url_footnote(src_str);
     }
@@ -655,14 +709,14 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
     }
     for (const auto& child : doc.children()) {
         if (child.name() == NAME_IMG) {
-            nonstd::optional<std::string> src_href;
+            std::optional<std::string> src_href;
             std::string link_label;
             auto img_src = child.attribute("src");
             auto img_alt = child.attribute("alt");
             if (img_alt) {
                 link_label = img_alt.value();
             } else if (img_src) {
-                link_label = ghc::filesystem::path(img_src.value())
+                link_label = std::filesystem::path(img_src.value())
                                  .filename()
                                  .string();
             } else {
@@ -674,14 +728,14 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                 if (is_url(src_value)) {
                     src_href = src_value;
                 } else {
-                    auto src_path = ghc::filesystem::path(src_value);
+                    auto src_path = std::filesystem::path(src_value);
                     std::error_code ec;
 
                     if (src_path.is_relative() && this->ml_source_path) {
                         src_path = this->ml_source_path.value().parent_path()
                             / src_path;
                     }
-                    auto canon_path = ghc::filesystem::canonical(src_path, ec);
+                    auto canon_path = std::filesystem::canonical(src_path, ec);
                     if (!ec) {
                         src_path = canon_path;
                     }
@@ -696,22 +750,23 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                     .append("  ")
                     .append(
                         lnav::string::attrs::href(link_label, src_href.value()))
-                    .appendf(FMT_STRING("[{}]"), this->ml_footnotes.size() + 1);
+                    .append(to_superscript(this->ml_footnotes.size() + 1));
 
                 auto href
                     = attr_line_t()
                           .append(lnav::roles::hyperlink(src_href.value()))
-                          .append(" ");
-                href.with_attr_for_all(
-                    VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT));
-                href.with_attr_for_all(SA_PREFORMATTED.value());
+                          .append(" ")
+                          .with_attr_for_all(
+                              VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT))
+                          .with_attr_for_all(SA_PREFORMATTED.value())
+                          .move();
                 this->ml_footnotes.emplace_back(href);
             } else {
                 retval.append(link_label);
             }
         } else if (child.name() == NAME_SPAN) {
-            nonstd::optional<attr_line_t> left_border;
-            nonstd::optional<attr_line_t> right_border;
+            std::optional<attr_line_t> left_border;
+            std::optional<attr_line_t> right_border;
             auto styled_span = attr_line_t(child.text().get());
 
             auto span_class = child.attribute("class");
@@ -963,7 +1018,7 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             std::string span_text;
 
             auto loop_res = REPL_RE.capture_from(sf).for_each(
-                [&span_text](lnav::pcre2pp::match_data& md) {
+                [&span_text](const lnav::pcre2pp::match_data& md) {
                     span_text += md.leading();
 
                     auto matched = *md[0];
@@ -1000,15 +1055,11 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
     return Ok();
 }
 
-void
+std::string
 md2attr_line::append_url_footnote(std::string href_str)
 {
-    if (startswith(href_str, "#")) {
-        return;
-    }
-
+    auto is_internal = startswith(href_str, "#");
     auto& last_block = this->ml_blocks.back();
-    last_block.appendf(FMT_STRING("[{}]"), this->ml_footnotes.size() + 1);
     last_block.with_attr(string_attr{
         line_range{
             (int) this->ml_span_starts.back(),
@@ -1016,16 +1067,29 @@ md2attr_line::append_url_footnote(std::string href_str)
         },
         VC_STYLE.value(text_attrs{A_UNDERLINE}),
     });
+    if (is_internal) {
+        return href_str;
+    }
+
+    if (this->ml_last_superscript_index == last_block.length()) {
+        last_block.append("\u02d2");
+    }
+    last_block.append(to_superscript(this->ml_footnotes.size() + 1));
+    this->ml_last_superscript_index = last_block.length();
     if (this->ml_source_path && href_str.find(':') == std::string::npos) {
-        auto link_path = ghc::filesystem::absolute(
+        auto link_path = std::filesystem::absolute(
             this->ml_source_path.value().parent_path() / href_str);
 
         href_str = fmt::format(FMT_STRING("file://{}"), link_path.string());
     }
 
-    auto href
-        = attr_line_t().append(lnav::roles::hyperlink(href_str)).append(" ");
-    href.with_attr_for_all(VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT));
-    href.with_attr_for_all(SA_PREFORMATTED.value());
+    auto href = attr_line_t()
+                    .append(lnav::roles::hyperlink(href_str))
+                    .append(" ")
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT))
+                    .with_attr_for_all(SA_PREFORMATTED.value())
+                    .move();
     this->ml_footnotes.emplace_back(href);
+
+    return href_str;
 }

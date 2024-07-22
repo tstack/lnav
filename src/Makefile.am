@@ -227,6 +227,7 @@ noinst_HEADERS = \
 	byte_array.hh \
 	column_namer.hh \
 	command_executor.hh \
+	crashd.client.hh \
 	curl_looper.hh \
 	data_scanner.hh \
 	data_scanner_re.re \
@@ -237,6 +238,8 @@ noinst_HEADERS = \
 	dump_internals.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
+	external_opener.hh \
+	external_opener.cfg.hh \
 	field_overlay_source.hh \
 	file_collection.hh \
 	file_converter_manager.hh \
@@ -249,8 +252,6 @@ noinst_HEADERS = \
 	filter_sub_source.hh \
 	fstat_vtab.hh \
 	fts_fuzzy_match.hh \
-	gantt_source.hh \
-	gantt_status_source.hh \
 	grep_highlighter.hh \
 	grep_proc.hh \
 	hasher.hh \
@@ -302,7 +303,6 @@ noinst_HEADERS = \
 	mapbox/variant_visitor.hpp \
 	md2attr_line.hh \
 	md4cpp.hh \
-	optional.hpp \
 	piper.looper.hh \
 	piper.looper.cfg.hh \
 	plain_text_source.hh \
@@ -349,12 +349,15 @@ noinst_HEADERS = \
 	term_extra.hh \
 	text_anonymizer.hh \
 	text_format.hh \
+	text_link_handler.hh \
 	text_overlay_menu.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
 	textview_curses.hh \
 	textview_curses_fwd.hh \
 	time_T.hh \
+	timeline_source.hh \
+	timeline_status_source.hh \
 	timer.hh \
 	top_status_source.hh \
 	top_status_source.cfg.hh \
@@ -377,12 +380,6 @@ noinst_HEADERS = \
 	xpath_vtab.hh \
 	xterm_mouse.hh \
 	spookyhash/SpookyV2.h \
-	ghc/filesystem.hpp \
-	ghc/fs_fwd.hpp \
-	ghc/fs_impl.hpp \
-	ghc/fs_std.hpp \
-	ghc/fs_std_fwd.hpp \
-	ghc/fs_std_impl.hpp \
     ww898/cp_utf8.hpp
 
 nodist_libdiag_a_SOURCES = \
@@ -430,6 +427,7 @@ libdiag_a_SOURCES = \
 	collation-functions.cc \
 	column_namer.cc \
 	command_executor.cc \
+	crashd.client.cc \
 	curl_looper.cc \
 	db_sub_source.cc \
 	document.sections.cc \
@@ -437,6 +435,7 @@ libdiag_a_SOURCES = \
 	elem_to_json.cc \
 	environ_vtab.cc \
 	extension-functions.cc \
+	external_opener.cc \
 	field_overlay_source.cc \
 	file_collection.cc \
 	file_converter_manager.cc \
@@ -449,7 +448,6 @@ libdiag_a_SOURCES = \
 	fstat_vtab.cc \
     fs-extension-functions.cc \
     fts_fuzzy_match.cc \
-    gantt_source.cc \
 	grep_proc.cc \
 	help_text.cc \
 	help_text_formatter.cc \
@@ -507,6 +505,7 @@ libdiag_a_SOURCES = \
 	styling.cc \
 	text_anonymizer.cc \
 	text_format.cc \
+	text_link_handler.cc \
 	text_overlay_menu.cc \
 	textfile_sub_source.cc \
 	timer.cc \
@@ -517,6 +516,7 @@ libdiag_a_SOURCES = \
 	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \
+	timeline_source.cc \
 	top_status_source.cc \
 	unique_path.cc \
 	view_curses.cc \

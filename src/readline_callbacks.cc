@@ -159,7 +159,7 @@ format_sql_example(const char* sql_example_fmt)
         const auto* format_name = lf->get_format()->get_name().get();
 
         retval.with_ansi_string(sql_example_fmt, format_name, format_name);
-        readline_sqlite_highlighter(retval, 0);
+        readline_sqlite_highlighter(retval, std::nullopt);
     }
     return retval;
 }
@@ -784,6 +784,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
         case ln_mode_t::PAGING:
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
+        case ln_mode_t::FILE_DETAILS:
         case ln_mode_t::EXEC:
         case ln_mode_t::USER:
         case ln_mode_t::SPECTRO_DETAILS:
@@ -876,6 +877,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
         case ln_mode_t::PAGING:
         case ln_mode_t::FILTER:
         case ln_mode_t::FILES:
+        case ln_mode_t::FILE_DETAILS:
         case ln_mode_t::SPECTRO_DETAILS:
         case ln_mode_t::BUSY:
             require(0);
@@ -935,7 +937,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                             return false;
                         }
 
-                        nonstd::optional<vis_line_t> first_hit;
+                        std::optional<vis_line_t> first_hit;
 
                         if (is_alt) {
                             first_hit = bm[&textview_curses::BM_SEARCH].prev(
@@ -1015,7 +1017,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 
         case ln_mode_t::EXEC: {
             std::error_code errc;
-            ghc::filesystem::create_directories(lnav::paths::workdir(), errc);
+            std::filesystem::create_directories(lnav::paths::workdir(), errc);
             auto open_temp_res = lnav::filesystem::open_temp_file(
                 lnav::paths::workdir() / "exec.XXXXXX");
 

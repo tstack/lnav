@@ -49,7 +49,8 @@ to_text_line(const std::vector<attr_line_t>& lines)
            });
 }
 
-plain_text_source::plain_text_source(const std::string& text)
+plain_text_source::
+plain_text_source(const std::string& text)
 {
     size_t start = 0, end;
 
@@ -64,12 +65,14 @@ plain_text_source::plain_text_source(const std::string& text)
     this->tds_longest_line = this->compute_longest_line();
 }
 
-plain_text_source::plain_text_source(const std::vector<std::string>& text_lines)
+plain_text_source::
+plain_text_source(const std::vector<std::string>& text_lines)
 {
     this->replace_with(text_lines);
 }
 
-plain_text_source::plain_text_source(const std::vector<attr_line_t>& text_lines)
+plain_text_source::
+plain_text_source(const std::vector<attr_line_t>& text_lines)
     : tds_lines(to_text_line(text_lines))
 {
     this->tds_longest_line = this->compute_longest_line();
@@ -140,6 +143,7 @@ plain_text_source&
 plain_text_source::replace_with(const std::vector<attr_line_t>& text_lines)
 {
     file_off_t off = 0;
+    this->tds_lines.clear();
     for (const auto& al : text_lines) {
         this->tds_lines.emplace_back(off, al);
         off += al.length() + 1;
@@ -251,7 +255,7 @@ plain_text_source::compute_longest_line()
     return retval;
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 plain_text_source::line_for_offset(file_off_t off) const
 {
     struct cmper {
@@ -267,24 +271,24 @@ plain_text_source::line_for_offset(file_off_t off) const
     };
 
     if (this->tds_lines.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto iter = std::lower_bound(
         this->tds_lines.begin(), this->tds_lines.end(), off, cmper{});
     if (iter == this->tds_lines.end()) {
         if (this->tds_lines.back().contains_offset(off)) {
-            return nonstd::make_optional(
+            return std::make_optional(
                 vis_line_t(std::distance(this->tds_lines.end() - 1, iter)));
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     if (!iter->contains_offset(off) && iter != this->tds_lines.begin()) {
         --iter;
     }
 
-    return nonstd::make_optional(
+    return std::make_optional(
         vis_line_t(std::distance(this->tds_lines.begin(), iter)));
 }
 
@@ -391,10 +395,10 @@ plain_text_source::text_crumbs_for_line(int line,
     }
 }
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 plain_text_source::row_for_anchor(const std::string& id)
 {
-    nonstd::optional<vis_line_t> retval;
+    std::optional<vis_line_t> retval;
 
     if (this->tds_doc_sections.m_sections_root == nullptr) {
         return retval;
@@ -432,8 +436,7 @@ plain_text_source::row_for_anchor(const std::string& id)
         meta.m_sections_root.get(),
         [this, &id, &retval](const lnav::document::hier_node* node) {
             for (const auto& child_pair : node->hn_named_children) {
-                const auto& child_anchor
-                    = text_anchors::to_anchor_string(child_pair.first);
+                const auto& child_anchor = to_anchor_string(child_pair.first);
 
                 if (child_anchor != id) {
                     continue;
@@ -456,18 +459,17 @@ plain_text_source::get_anchors()
         this->tds_doc_sections.m_sections_root.get(),
         [&retval](const lnav::document::hier_node* node) {
             for (const auto& child_pair : node->hn_named_children) {
-                retval.emplace(
-                    text_anchors::to_anchor_string(child_pair.first));
+                retval.emplace(to_anchor_string(child_pair.first));
             }
         });
 
     return retval;
 }
 
-nonstd::optional<std::string>
+std::optional<std::string>
 plain_text_source::anchor_for_row(vis_line_t vl)
 {
-    nonstd::optional<std::string> retval;
+    std::optional<std::string> retval;
 
     if (vl > this->tds_lines.size()
         || this->tds_doc_sections.m_sections_root == nullptr)
@@ -481,15 +483,14 @@ plain_text_source::anchor_for_row(vis_line_t vl)
         tl.tl_offset, tl.tl_offset + tl.tl_value.al_string.length());
 
     if (path_for_line.empty()) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     if ((path_for_line.size() == 1
          || this->tds_text_format == text_format_t::TF_MARKDOWN)
         && path_for_line.back().is<std::string>())
     {
-        return text_anchors::to_anchor_string(
-            path_for_line.back().get<std::string>());
+        return to_anchor_string(path_for_line.back().get<std::string>());
     }
 
     auto comps = path_for_line | lnav::itertools::map([](const auto& elem) {
@@ -504,13 +505,13 @@ plain_text_source::anchor_for_row(vis_line_t vl)
                        fmt::join(comps.begin(), comps.end(), "/"));
 }
 
-nonstd::optional<vis_line_t>
-plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
+std::optional<vis_line_t>
+plain_text_source::adjacent_anchor(vis_line_t vl, direction dir)
 {
     if (vl > this->tds_lines.size()
         || this->tds_doc_sections.m_sections_root == nullptr)
     {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     const auto& tl = this->tds_lines[vl];
@@ -521,18 +522,18 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     if (path_for_line.empty()) {
         auto neighbors_res = md.m_sections_root->line_neighbors(vl);
         if (!neighbors_res) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         switch (dir) {
-            case text_anchors::direction::prev: {
+            case direction::prev: {
                 if (neighbors_res->cnr_previous) {
                     return this->line_for_offset(
                         neighbors_res->cnr_previous.value()->hn_start);
                 }
                 break;
             }
-            case text_anchors::direction::next: {
+            case direction::next: {
                 if (neighbors_res->cnr_next) {
                     return this->line_for_offset(
                         neighbors_res->cnr_next.value()->hn_start);
@@ -543,7 +544,7 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
                 break;
             }
         }
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto last_key = path_for_line.back();
@@ -552,20 +553,20 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     auto parent_opt = lnav::document::hier_node::lookup_path(
         md.m_sections_root.get(), path_for_line);
     if (!parent_opt) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     auto parent = parent_opt.value();
 
     auto child_hn = parent->lookup_child(last_key);
     if (!child_hn) {
         // XXX "should not happen"
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     auto neighbors_res = parent->child_neighbors(
         child_hn.value(), tl.tl_offset + tl.tl_value.al_string.length() + 1);
     if (!neighbors_res) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     if (neighbors_res->cnr_previous && last_key.is<std::string>()) {
@@ -585,14 +586,14 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
     }
 
     switch (dir) {
-        case text_anchors::direction::prev: {
+        case direction::prev: {
             if (neighbors_res->cnr_previous) {
                 return this->line_for_offset(
                     neighbors_res->cnr_previous.value()->hn_start);
             }
             break;
         }
-        case text_anchors::direction::next: {
+        case direction::next: {
             if (neighbors_res->cnr_next) {
                 return this->line_for_offset(
                     neighbors_res->cnr_next.value()->hn_start);
@@ -601,5 +602,5 @@ plain_text_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }

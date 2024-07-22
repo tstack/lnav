@@ -33,7 +33,7 @@
 #include "config.h"
 #include "fmt/chrono.h"
 
-nonstd::optional<vis_line_t>
+std::optional<vis_line_t>
 hist_source2::row_for_time(struct timeval tv_bucket)
 {
     std::map<int64_t, struct bucket_block>::iterator iter;
@@ -176,11 +176,11 @@ hist_source2::end_of_row()
     }
 }
 
-nonstd::optional<text_time_translator::row_info>
+std::optional<text_time_translator::row_info>
 hist_source2::time_for_row(vis_line_t row)
 {
     if (row < 0 || row > this->hs_line_count) {
-        return nonstd::nullopt;
+        return std::nullopt;
     }
 
     bucket_t& bucket = this->find_bucket(row);

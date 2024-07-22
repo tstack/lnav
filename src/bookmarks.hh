@@ -51,6 +51,7 @@ struct bookmark_metadata {
         any = 0,
         partition = 0x01,
         notes = 0x02,
+        opid = 0x04,
     };
 
     bool has(categories props) const
@@ -71,10 +72,15 @@ struct bookmark_metadata {
             return true;
         }
 
+        if (props == categories::opid && !this->bm_opid.empty()) {
+            return true;
+        }
+
         return false;
     }
 
     std::string bm_name;
+    std::string bm_opid;
     std::string bm_comment;
     logmsg_annotations bm_annotations;
     std::vector<std::string> bm_tags;
@@ -153,7 +159,7 @@ public:
      * the next bookmark is returned.  If the 'start' value is not a
      * bookmark, the next highest value in the vector is returned.
      */
-    nonstd::optional<LineType> next(LineType start) const;
+    std::optional<LineType> next(LineType start) const;
 
     /**
      * @param start The value to start the search for the previous
@@ -162,7 +168,7 @@ public:
      * are no more prior bookmarks.
      * @see next
      */
-    nonstd::optional<LineType> prev(LineType start) const;
+    std::optional<LineType> prev(LineType start) const;
 };
 
 /**
@@ -177,8 +183,7 @@ public:
 
     static type_iterator type_end() { return get_all_types().end(); }
 
-    static nonstd::optional<bookmark_type_t*> find_type(
-        const std::string& name);
+    static std::optional<bookmark_type_t*> find_type(const std::string& name);
 
     static std::vector<bookmark_type_t*>& get_all_types();
 
@@ -194,10 +199,10 @@ private:
 };
 
 template<typename LineType>
-nonstd::optional<LineType>
+std::optional<LineType>
 bookmark_vector<LineType>::next(LineType start) const
 {
-    nonstd::optional<LineType> retval;
+    std::optional<LineType> retval;
 
     require(start >= -1);
 
@@ -212,10 +217,10 @@ bookmark_vector<LineType>::next(LineType start) const
 }
 
 template<typename LineType>
-nonstd::optional<LineType>
+std::optional<LineType>
 bookmark_vector<LineType>::prev(LineType start) const
 {
-    nonstd::optional<LineType> retval;
+    std::optional<LineType> retval;
 
     require(start >= 0);
 

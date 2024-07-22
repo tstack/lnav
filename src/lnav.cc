@@ -90,7 +90,6 @@
 #include "file_options.hh"
 #include "filter_sub_source.hh"
 #include "fstat_vtab.hh"
-#include "gantt_source.hh"
 #include "hist_source.hh"
 #include "init-sql.h"
 #include "listview_curses.hh"
@@ -127,6 +126,7 @@
 #include "termios_guard.hh"
 #include "textfile_highlighters.hh"
 #include "textview_curses.hh"
+#include "timeline_source.hh"
 #include "top_status_source.hh"
 #include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
@@ -319,7 +319,7 @@ static bool
 append_default_files()
 {
     bool retval = true;
-    auto cwd = ghc::filesystem::current_path();
+    auto cwd = std::filesystem::current_path();
 
     for (const auto& path : DEFAULT_FILES) {
         if (access(path.c_str(), R_OK) == 0) {
@@ -689,7 +689,21 @@ handle_config_ui_key(int ch, const char* keyseq)
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::FILES:
-            retval = lnav_data.ld_files_view.handle_key(ch);
+            if (ch == KEY_CTRL(']')) {
+                set_view_mode(ln_mode_t::FILE_DETAILS);
+                lnav_data.ld_mode = ln_mode_t::FILE_DETAILS;
+                retval = true;
+            } else {
+                retval = lnav_data.ld_files_view.handle_key(ch);
+            }
+            break;
+        case ln_mode_t::FILE_DETAILS:
+            if (ch == KEY_ESCAPE || ch == KEY_CTRL(']')) {
+                set_view_mode(ln_mode_t::FILES);
+                retval = true;
+            } else {
+                retval = lnav_data.ld_file_details_view.handle_key(ch);
+            }
             break;
         case ln_mode_t::FILTER:
             retval = lnav_data.ld_filter_view.handle_key(ch);
@@ -702,7 +716,7 @@ handle_config_ui_key(int ch, const char* keyseq)
         return retval;
     }
 
-    nonstd::optional<ln_mode_t> new_mode;
+    std::optional<ln_mode_t> new_mode;
 
     lnav_data.ld_filter_help_status_source.fss_error.clear();
     if (ch == 'F') {
@@ -727,6 +741,7 @@ handle_config_ui_key(int ch, const char* keyseq)
         }
         lnav_data.ld_mode = new_mode.value();
         lnav_data.ld_files_view.reload_data();
+        lnav_data.ld_file_details_view.reload_data();
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_status[LNS_FILTER].set_needs_update();
     } else {
@@ -753,14 +768,14 @@ handle_key(int ch, const char* keyseq)
 
                 case ln_mode_t::BREADCRUMBS:
                     if (ch == '`' || !breadcrumb_view->handle_key(ch)) {
-                        lnav_data.ld_mode = ln_mode_t::PAGING;
-                        lnav_data.ld_view_stack.set_needs_update();
+                        set_view_mode(ln_mode_t::PAGING);
                         return true;
                     }
                     return true;
 
                 case ln_mode_t::FILTER:
                 case ln_mode_t::FILES:
+                case ln_mode_t::FILE_DETAILS:
                     return handle_config_ui_key(ch, keyseq);
 
                 case ln_mode_t::SPECTRO_DETAILS: {
@@ -868,9 +883,9 @@ gather_pipers()
 }
 
 void
-wait_for_pipers(nonstd::optional<timeval> deadline)
+wait_for_pipers(std::optional<ui_clock::time_point> deadline)
 {
-    static const auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
+    static constexpr auto MAX_SLEEP_TIME = std::chrono::milliseconds(300);
     auto sleep_time = std::chrono::milliseconds(10);
 
     for (;;) {
@@ -880,7 +895,7 @@ wait_for_pipers(nonstd::optional<timeval> deadline)
             log_debug("all pipers finished");
             break;
         }
-        if (deadline && (deadline.value() < current_timeval())) {
+        if (deadline && ui_clock::now() > deadline.value()) {
             break;
         }
         // Use usleep() since it is defined to be interruptable by a signal.
@@ -971,11 +986,11 @@ check_for_file_zones()
         }
     }
     if (with_tz_count > 0 && !without_tz_files.empty()) {
-        auto note
+        const auto note
             = attr_line_t("The file(s) without a zone: ")
-                  .join(
-                      without_tz_files, VC_ROLE.value(role_t::VCR_FILE), ", ");
-        auto um
+                  .join(without_tz_files, VC_ROLE.value(role_t::VCR_FILE), ", ")
+                  .move();
+        const auto um
             = lnav::console::user_message::warning(
                   "Some messages may not be sorted by time correctly")
                   .with_reason(
@@ -988,7 +1003,8 @@ check_for_file_zones()
                           .append(":set-file-timezone"_symbol)
                           .append(
                               " command to set the zone for messages in files "
-                              "that do not include a zone in the timestamp"));
+                              "that do not include a zone in the timestamp"))
+                  .move();
 
         lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
     }
@@ -1350,6 +1366,18 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             highlight_source_t::THEME);
         lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
 
+        lnav_data.ld_file_details_view.set_title("File Details");
+        lnav_data.ld_file_details_view.set_selectable(true);
+        lnav_data.ld_file_details_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_file_details_view.set_show_scrollbar(true);
+        lnav_data.ld_file_details_view.set_supports_marks(true);
+        lnav_data.ld_file_details_view.get_disabled_highlights().insert(
+            highlight_source_t::THEME);
+        lnav_data.ld_file_details_view.tc_cursor_role
+            = role_t::VCR_DISABLED_CURSOR_LINE;
+        lnav_data.ld_file_details_view.tc_disabled_cursor_role
+            = role_t::VCR_DISABLED_CURSOR_LINE;
+
         lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
 
         lnav_data.ld_spectro_details_view.set_title("spectro-details");
@@ -1371,12 +1399,18 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_data.ld_spectro_source->ss_exec_context
             = &lnav_data.ld_exec_context;
 
-        lnav_data.ld_gantt_details_view.set_title("gantt-details");
-        lnav_data.ld_gantt_details_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_gantt_details_view.set_show_scrollbar(false);
-        lnav_data.ld_gantt_details_view.set_height(5_vl);
-        lnav_data.ld_gantt_details_view.set_sub_source(
-            &lnav_data.ld_gantt_details_source);
+        lnav_data.ld_timeline_details_view.set_title("timeline-details");
+        lnav_data.ld_timeline_details_view.set_window(lnav_data.ld_window);
+        lnav_data.ld_timeline_details_view.set_selectable(true);
+        lnav_data.ld_timeline_details_view.set_show_scrollbar(true);
+        lnav_data.ld_timeline_details_view.set_height(5_vl);
+        lnav_data.ld_timeline_details_view.set_supports_marks(true);
+        lnav_data.ld_timeline_details_view.set_sub_source(
+            &lnav_data.ld_timeline_details_source);
+        lnav_data.ld_timeline_details_view.tc_cursor_role
+            = role_t::VCR_CURSOR_LINE;
+        lnav_data.ld_timeline_details_view.tc_disabled_cursor_role
+            = role_t::VCR_DISABLED_CURSOR_LINE;
 
         auto top_status_lifetime
             = injector::bind<top_status_source>::to_scoped_singleton();
@@ -1433,9 +1467,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = std::make_unique<spectro_status_source>();
         lnav_data.ld_status[LNS_SPECTRO].set_data_source(
             lnav_data.ld_spectro_status_source.get());
-        lnav_data.ld_status[LNS_GANTT].set_enabled(false);
-        lnav_data.ld_status[LNS_GANTT].set_data_source(
-            &lnav_data.ld_gantt_status_source);
+        lnav_data.ld_status[LNS_TIMELINE].set_enabled(false);
+        lnav_data.ld_status[LNS_TIMELINE].set_data_source(
+            &lnav_data.ld_timeline_status_source);
 
         lnav_data.ld_match_view.set_show_bottom_border(true);
         lnav_data.ld_user_message_view.set_show_bottom_border(true);
@@ -1543,7 +1577,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             {
                 auto ui_now = ui_clock::now();
                 auto new_files = rescan_future.get();
-                if (!initial_rescan_completed && new_files.empty()) {
+                auto indexing_pipers
+                    = lnav_data.ld_active_files.initial_indexing_pipers();
+                if (!initial_rescan_completed && new_files.empty()
+                    && indexing_pipers == 0)
+                {
                     initial_rescan_completed = true;
 
                     log_debug("initial rescan rebuild");
@@ -1641,7 +1679,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_preview_view[0].do_update();
             lnav_data.ld_preview_view[1].do_update();
             lnav_data.ld_spectro_details_view.do_update();
-            lnav_data.ld_gantt_details_view.do_update();
+            lnav_data.ld_timeline_details_view.do_update();
             lnav_data.ld_user_message_view.do_update();
             if (ui_clock::now() >= next_status_update_time) {
                 echo_views_stmt.execute();
@@ -1665,8 +1703,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     break;
                 case ln_mode_t::SEARCH_FILES:
                 case ln_mode_t::FILES:
+                case ln_mode_t::FILE_DETAILS:
                     lnav_data.ld_files_view.set_needs_update();
+                    lnav_data.ld_file_details_view.set_needs_update();
                     lnav_data.ld_files_view.do_update();
+                    lnav_data.ld_file_details_view.do_update();
                     break;
                 default:
                     break;
@@ -1717,7 +1758,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             {
                 poll_to = 15ms;
             }
-            // log_debug("poll %d %d", changes, poll_to.count());
             rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
 
             gettimeofday(&current_time, nullptr);
@@ -1776,6 +1816,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         case ln_mode_t::PAGING:
                         case ln_mode_t::FILTER:
                         case ln_mode_t::FILES:
+                        case ln_mode_t::FILE_DETAILS:
                         case ln_mode_t::SPECTRO_DETAILS:
                         case ln_mode_t::BUSY:
                             if (old_gen
@@ -2045,6 +2086,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
             }
         }
+
+        if (rescan_future.valid()) {
+            rescan_future.get();
+        }
     } catch (readline_curses::error& e) {
         log_error("error: %s", strerror(e.e_err));
     }
@@ -2126,8 +2171,10 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
     }
 
     if (warning_count > 0 && !mf.mf_print_warnings
+        && verbosity != verbosity_t::quiet
         && !(lnav_data.ld_flags & LNF_HEADLESS)
-        && (std::chrono::system_clock::now() - lnav_data.ld_last_dot_lnav_time
+        && (std::filesystem::file_time_type::clock::now()
+                - lnav_data.ld_last_dot_lnav_time
             > 24h))
     {
         lnav::console::print(
@@ -2231,7 +2278,7 @@ main(int argc, char* argv[])
                     curr_tz,
                 },
             };
-        options_hier->foh_path_to_collection.emplace(ghc::filesystem::path("/"),
+        options_hier->foh_path_to_collection.emplace(std::filesystem::path("/"),
                                                      options_coll);
     } catch (const std::runtime_error& e) {
         log_error("failed to setup tz: %s", e.what());
@@ -2252,7 +2299,7 @@ main(int argc, char* argv[])
     auto dot_lnav_path = lnav::paths::dotlnav();
     std::error_code last_write_ec;
     lnav_data.ld_last_dot_lnav_time
-        = ghc::filesystem::last_write_time(dot_lnav_path, last_write_ec);
+        = std::filesystem::last_write_time(dot_lnav_path, last_write_ec);
 
     ensure_dotlnav();
 
@@ -2293,38 +2340,37 @@ main(int argc, char* argv[])
 SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
 
+        log_info("performing cleanup");
         lnav_data.ld_child_pollers.clear();
 
+        log_info("marking files as closed");
         for (auto& lf : lnav_data.ld_active_files.fc_files) {
             lf->close();
         }
+        log_info("rebuilding after closures");
         rebuild_indexes(ui_clock::now());
+        log_info("clearing file collection");
+        lnav_data.ld_active_files.clear();
 
+        log_info("dropping tables");
         lnav_data.ld_vtab_manager = nullptr;
 
         std::vector<std::string> tables_to_drop;
         {
-            auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-            bool done = false;
+            auto prep_res = prepare_stmt(lnav_data.ld_db.in(), VIRT_TABLES);
+            if (prep_res.isErr()) {
+                log_error("unable to prepare VIRT_TABLES: %s",
+                          prep_res.unwrapErr().c_str());
+            } else {
+                auto stmt = prep_res.unwrap();
 
-            sqlite3_prepare_v2(
-                lnav_data.ld_db.in(), VIRT_TABLES, -1, stmt.out(), nullptr);
-            do {
-                auto ret = sqlite3_step(stmt.in());
-
-                switch (ret) {
-                    case SQLITE_OK:
-                    case SQLITE_DONE:
-                        done = true;
-                        break;
-                    case SQLITE_ROW:
+                stmt.for_each_row<std::string>(
+                    [&tables_to_drop](auto table_name) {
                         tables_to_drop.emplace_back(fmt::format(
-                            FMT_STRING("DROP TABLE {}"),
-                            reinterpret_cast<const char*>(
-                                sqlite3_column_text(stmt.in(), 0))));
-                        break;
-                }
-            } while (!done);
+                            FMT_STRING("DROP TABLE {}"), table_name));
+                        return false;
+                    });
+            }
         }
 
         // XXX
@@ -2348,17 +2394,24 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
 
         for (auto& drop_stmt : tables_to_drop) {
-            sqlite3_exec(lnav_data.ld_db.in(),
-                         drop_stmt.c_str(),
-                         nullptr,
-                         nullptr,
-                         nullptr);
+            auto prep_res
+                = prepare_stmt(lnav_data.ld_db.in(), drop_stmt.c_str());
+            if (prep_res.isErr()) {
+                log_error("unable to prepare DROP statement: %s",
+                          prep_res.unwrapErr().c_str());
+                continue;
+            }
+
+            auto stmt = prep_res.unwrap();
+            stmt.execute();
         }
 #if defined(HAVE_SQLITE3_DROP_MODULES)
         sqlite3_drop_modules(lnav_data.ld_db.in(), nullptr);
 #endif
 
         lnav_data.ld_db.reset();
+
+        log_info("cleanup finished");
     });
 
 #ifdef HAVE_LIBCURL
@@ -2591,7 +2644,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                           "definition "
                           "files to install in your lnav "
                           "configuration "
-                          "directory");
+                          "directory")
+                      .move();
             const auto install_help
                 = attr_line_t(
                       "log format definitions are JSON files that "
@@ -2600,7 +2654,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                       .append(
                           "See: "
                           "https://docs.lnav.org/en/latest/"
-                          "formats.html");
+                          "formats.html")
+                      .move();
 
             lnav::console::print(stderr,
                                  lnav::console::user_message::error(
@@ -2619,7 +2674,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
 
             if (endswith(file_path, ".sql")) {
-                auto sql_path = ghc::filesystem::path(file_path);
+                auto sql_path = std::filesystem::path(file_path);
                 auto read_res = lnav::filesystem::read_file(sql_path);
                 if (read_res.isErr()) {
                     lnav::console::print(
@@ -2669,8 +2724,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }
             auto file_type = file_type_result.unwrap();
 
-            auto src_path = ghc::filesystem::path(file_path);
-            ghc::filesystem::path dst_name;
+            auto src_path = std::filesystem::path(file_path);
+            std::filesystem::path dst_name;
             if (file_type == config_file_type::CONFIG) {
                 dst_name = src_path.filename();
             } else {
@@ -2706,7 +2761,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto um = lnav::console::user_message::error(
                               attr_line_t("cannot read file to install -- ")
                                   .append(lnav::roles::file(file_path)))
-                              .with_reason(read_res.unwrap());
+                              .with_reason(read_res.unwrap())
+                              .move();
 
                 lnav::console::print(stderr, um);
                 return EXIT_FAILURE;
@@ -2737,7 +2793,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 auto um = lnav::console::user_message::error(
                               attr_line_t("failed to install file to -- ")
                                   .append(lnav::roles::file(dst_path)))
-                              .with_reason(write_res.unwrapErr());
+                              .with_reason(write_res.unwrapErr())
+                              .move();
 
                 lnav::console::print(stderr, um);
                 return EXIT_FAILURE;
@@ -2763,8 +2820,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
-        if ((sqlite3_set_authorizer(
-                lnav_data.ld_db.in(), sqlite_authorizer, nullptr))
+        if (sqlite3_set_authorizer(
+                lnav_data.ld_db.in(), sqlite_authorizer, nullptr)
             != SQLITE_OK)
         {
             fprintf(stderr, "error: unable to attach sqlite authorizer\n");
@@ -2843,23 +2900,26 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .add_input_delegate(*lnav_data.ld_spectro_source)
         .set_tail_space(4_vl);
     lnav_data.ld_views[LNV_SPECTRO].set_selectable(true);
-    auto gantt_view_source
-        = std::make_shared<gantt_source>(lnav_data.ld_views[LNV_LOG],
-                                         lnav_data.ld_log_source,
-                                         lnav_data.ld_gantt_details_source,
-                                         lnav_data.ld_gantt_status_source);
-    gantt_view_source->gs_exec_context = &lnav_data.ld_exec_context;
-    auto gantt_header_source
-        = std::make_shared<gantt_header_overlay>(gantt_view_source);
-    lnav_data.ld_views[LNV_GANTT]
-        .set_sub_source(gantt_view_source.get())
-        .set_overlay_source(gantt_header_source.get())
+    auto timeline_view_source = std::make_shared<timeline_source>(
+        lnav_data.ld_views[LNV_LOG],
+        lnav_data.ld_log_source,
+        lnav_data.ld_timeline_details_view,
+        lnav_data.ld_timeline_details_source,
+        lnav_data.ld_status[LNS_TIMELINE],
+        lnav_data.ld_timeline_status_source);
+    timeline_view_source->gs_exec_context = &lnav_data.ld_exec_context;
+    auto timeline_header_source
+        = std::make_shared<timeline_header_overlay>(timeline_view_source);
+    lnav_data.ld_views[LNV_TIMELINE]
+        .set_sub_source(timeline_view_source.get())
+        .set_overlay_source(timeline_header_source.get())
+        .add_input_delegate(*timeline_view_source)
         .set_tail_space(4_vl);
-    lnav_data.ld_views[LNV_GANTT].set_selectable(true);
+    lnav_data.ld_views[LNV_TIMELINE].set_selectable(true);
 
-    auto _gantt_cleanup = finally([] {
-        lnav_data.ld_views[LNV_GANTT].set_sub_source(nullptr);
-        lnav_data.ld_views[LNV_GANTT].set_overlay_source(nullptr);
+    auto _timeline_cleanup = finally([] {
+        lnav_data.ld_views[LNV_TIMELINE].set_sub_source(nullptr);
+        lnav_data.ld_views[LNV_TIMELINE].set_overlay_source(nullptr);
     });
 
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
@@ -2871,8 +2931,14 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .add_input_delegate(*filter_source);
     lnav_data.ld_files_view.set_sub_source(&lnav_data.ld_files_source)
         .add_input_delegate(lnav_data.ld_files_source);
+    lnav_data.ld_file_details_view.set_sub_source(
+        &lnav_data.ld_file_details_source);
+    lnav_data.ld_files_source.fss_details_source
+        = &lnav_data.ld_file_details_source;
     lnav_data.ld_user_message_view.set_sub_source(
         &lnav_data.ld_user_message_source);
+    auto overlay_menu = std::make_shared<text_overlay_menu>();
+    lnav_data.ld_file_details_view.set_overlay_source(overlay_menu.get());
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
@@ -3011,9 +3077,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     = file_path_str.substr(0, colon_index);
                 file_loc = vis_line_t(scan_res.value());
             } else {
-                log_warning(
-                    "failed to parse line number from file path "
-                    "with colon: %s",
+                log_info(
+                    "did not parse line number from file path with colon: %s",
                     file_path_str.c_str());
             }
         }
@@ -3022,7 +3087,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             file_loc = file_path_str.substr(hash_index);
             file_path_without_trailer = file_path_str.substr(0, hash_index);
         }
-        auto file_path = ghc::filesystem::path(
+        auto file_path = std::filesystem::path(
             stat(file_path_without_trailer.c_str(), &st) == 0
                 ? file_path_without_trailer
                 : file_path_str);
@@ -3108,7 +3173,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         } else {
             lnav_data.ld_active_files.fc_file_names.emplace(
                 abspath.in(),
-                logfile_open_options().with_init_location(file_loc));
+                logfile_open_options().with_init_location(file_loc).with_tail(
+                    !(lnav_data.ld_flags & LNF_HEADLESS)));
             if (file_loc.valid()) {
                 lnav_data.ld_files_to_front.emplace_back(abspath.in(),
                                                          file_loc);
@@ -3196,8 +3262,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         retval = EXIT_FAILURE;
     }
 
-    nonstd::optional<std::string> stdin_url;
-    ghc::filesystem::path stdin_dir;
+    std::optional<std::string> stdin_url;
+    std::filesystem::path stdin_dir;
     if (load_stdin && !isatty(STDIN_FILENO) && !is_dev_null(STDIN_FILENO)
         && !exec_stdin)
     {
@@ -3327,11 +3393,16 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 && verbosity == verbosity_t::quiet && load_stdin
                 && lnav_data.ld_active_files.fc_file_names.size() == 1)
             {
+                // give the pipers a chance to run to create the files to be
+                // scanned.
+                wait_for_pipers(ui_clock::now() + 10ms);
                 rescan_files(true);
-                gather_pipers();
+                // wait for the piper to actually finish running
+                wait_for_pipers(ui_clock::now() + 100ms);
                 auto rebuild_res = rebuild_indexes(ui_clock::now() + 15ms);
                 if (rebuild_res.rir_completed
-                    && lnav_data.ld_child_pollers.empty())
+                    && lnav_data.ld_child_pollers.empty()
+                    && lnav_data.ld_active_files.active_pipers() == 0)
                 {
                     rebuild_indexes_repeatedly();
                     if (lnav_data.ld_active_files.fc_files.empty()
@@ -3433,9 +3504,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     for (const auto& note : lf->get_notes()) {
                         switch (note.first) {
                             case logfile::note_type::not_utf: {
-                                auto um = lnav::console::user_message::error(
-                                    note.second);
-                                lnav::console::print(stderr, um);
+                                lnav::console::print(stderr, note.second);
                                 break;
                             }
 
@@ -3528,6 +3597,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
                 save_session();
             }
+
+            log_info("exiting main loop");
         } catch (const std::system_error& e) {
             if (e.code().value() != EPIPE) {
                 fprintf(stderr, "error: %s\n", e.what());
@@ -3545,7 +3616,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         {
             file_size_t stdin_size = 0;
             for (const auto& ent :
-                 ghc::filesystem::directory_iterator(stdin_dir))
+                 std::filesystem::directory_iterator(stdin_dir))
             {
                 stdin_size += ent.file_size();
             }

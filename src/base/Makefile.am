@@ -48,6 +48,7 @@ noinst_HEADERS = \
     is_utf8.hh \
     isc.hh \
     itertools.hh \
+    itertools.enumerate.hh \
     keycodes.hh \
     line_range.hh \
     lnav_log.hh \
@@ -68,7 +69,8 @@ noinst_HEADERS = \
     string_util.hh \
     strnatcmp.h \
     time_util.hh \
-    types.hh
+    types.hh \
+    wcwidth9.h
 
 libbase_a_SOURCES = \
     ansi_scrubber.cc \

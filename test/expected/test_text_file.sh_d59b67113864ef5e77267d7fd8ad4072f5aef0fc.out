@@ -1,16 +1,21 @@
 
+[1m[35mTable of Contents[0m
+
+ [33m•[0m ]8;;#test\[4mTest[0m]8;;\
+ [33m•[0m ]8;;#github-alerts\[4mGithub Alerts[0m]8;;\
+
 [1mTest[0m
 
  [33m•[0m One
  [33m•[0m Two
  [33m•[0m Three
 
-🖼  ]8;;file://{top_srcdir}/docs/lnav-tui.png\lnav-tui.png]8;;\[1]
+🖼  ]8;;file://{top_srcdir}/docs/lnav-tui.png\lnav-tui.png]8;;\¹
 
-🖼  ]8;;file://{top_srcdir}/docs/lnav-architecture.png\The internal architecture of lnav]8;;\[2]
+🖼  ]8;;file://{top_srcdir}/docs/lnav-architecture.png\The internal architecture of lnav]8;;\²
 
- ▌[1] - file://{top_srcdir}/docs/lnav-tui.png          
- ▌[2] - file://{top_srcdir}/docs/lnav-architecture.png 
+ [34m▌[0m[1] - file://{top_srcdir}/docs/lnav-tui.png          
+ [34m▌[0m[2] - file://{top_srcdir}/docs/lnav-architecture.png 
 
 [1m[31mBold red[0m
 
@@ -49,3 +54,22 @@ Goodbye, [36m▌[0mWorld[32m╏[0m!
  ▌[37m[40m      <author>Finnegan</author>            [0m
  ▌[37m[40m   </book>                                 [0m
  ▌[37m[40m</books>                                   [0m
+
+[1mGithub Alerts[0m
+
+ [34m▌[0m[34mⓘ  Note[0m                                              
+ [34m▌[0mUseful information that users should know, even when 
+ [34m▌[0mskimming content.                                    
+
+ [1m[32m▌[0m[1m[32m💡 Tip[0m                                                 
+ [1m[32m▌[0mHelpful advice for doing things better or more easily. 
+
+ [1m[35m▌[0m[1m[35m🌟 Important[0m                                              
+ [1m[35m▌[0mKey information users need to know to achieve their goal. 
+
+ [33m▌[0m[33m⚠️ Warning[0m                                               
+ [33m▌[0mUrgent info that needs immediate user attention to avoid 
+ [33m▌[0mproblems.                                                
+
+ [1m[31m▌[0m[1m[31m🔺 Caution[0m                                                   
+ [1m[31m▌[0mAdvises about risks or negative outcomes of certain actions. 

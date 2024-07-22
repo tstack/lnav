@@ -39,16 +39,16 @@
 
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 #include "shlex.resolver.hh"
 
 class log_vtab_manager;
 
 std::vector<intern_string_t> load_format_file(
-    const ghc::filesystem::path& filename,
+    const std::filesystem::path& filename,
     std::vector<lnav::console::user_message>& errors);
 
-void load_formats(const std::vector<ghc::filesystem::path>& extra_paths,
+void load_formats(const std::vector<std::filesystem::path>& extra_paths,
                   std::vector<lnav::console::user_message>& errors);
 
 void load_format_vtabs(log_vtab_manager* vtab_manager,
@@ -56,11 +56,11 @@ void load_format_vtabs(log_vtab_manager* vtab_manager,
 
 void load_format_extra(sqlite3* db,
                        const std::map<std::string, scoped_value_t>& global_vars,
-                       const std::vector<ghc::filesystem::path>& extra_paths,
+                       const std::vector<std::filesystem::path>& extra_paths,
                        std::vector<lnav::console::user_message>& errors);
 
 struct script_metadata {
-    ghc::filesystem::path sm_path;
+    std::filesystem::path sm_path;
     std::string sm_name;
     std::string sm_synopsis;
     std::string sm_description;
@@ -72,7 +72,7 @@ struct available_scripts {
     std::map<std::string, std::vector<script_metadata>> as_scripts;
 };
 
-void find_format_scripts(const std::vector<ghc::filesystem::path>& extra_paths,
+void find_format_scripts(const std::vector<std::filesystem::path>& extra_paths,
                          available_scripts& scripts);
 
 extern const struct json_path_container format_handlers;

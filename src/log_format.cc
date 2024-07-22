@@ -98,6 +98,14 @@ log_op_description::operator|=(const log_op_description& rhs)
     return *this;
 }
 
+void
+opid_time_range::clear()
+{
+    this->otr_range.invalidate();
+    this->otr_sub_ops.clear();
+    this->otr_level_stats = {};
+}
+
 opid_time_range&
 opid_time_range::operator|=(const opid_time_range& rhs)
 {
@@ -123,21 +131,21 @@ opid_time_range::operator|=(const opid_time_range& rhs)
 }
 
 void
-log_level_stats::update_msg_count(log_level_t lvl)
+log_level_stats::update_msg_count(log_level_t lvl, int32_t amount)
 {
     switch (lvl) {
         case LEVEL_FATAL:
         case LEVEL_CRITICAL:
         case LEVEL_ERROR:
-            this->lls_error_count += 1;
+            this->lls_error_count += amount;
             break;
         case LEVEL_WARNING:
-            this->lls_warning_count += 1;
+            this->lls_warning_count += amount;
             break;
         default:
             break;
     }
-    this->lls_total_count += 1;
+    this->lls_total_count += amount;
 }
 
 void
@@ -148,6 +156,24 @@ opid_time_range::close_sub_ops(const string_fragment& subid)
             other_sub.ostr_open = false;
         }
     }
+}
+
+log_opid_map::iterator
+log_opid_state::insert_op(ArenaAlloc::Alloc<char>& alloc,
+                          const string_fragment& opid,
+                          const struct timeval& log_tv)
+{
+    auto retval = this->los_opid_ranges.find(opid);
+    if (retval == this->los_opid_ranges.end()) {
+        auto opid_copy = opid.to_owned(alloc);
+        auto otr = opid_time_range{time_range{log_tv, log_tv}};
+        auto emplace_res = this->los_opid_ranges.emplace(opid_copy, otr);
+        retval = emplace_res.first;
+    } else {
+        retval->second.otr_range.extend_to(log_tv);
+    }
+
+    return retval;
 }
 
 opid_sub_time_range*
@@ -198,7 +224,7 @@ log_opid_state::sub_op_in_use(ArenaAlloc::Alloc<char>& alloc,
     }
 }
 
-nonstd::optional<std::string>
+std::optional<std::string>
 log_format::opid_descriptor::matches(const string_fragment& sf) const
 {
     if (this->od_extractor.pp_value) {
@@ -213,7 +239,7 @@ log_format::opid_descriptor::matches(const string_fragment& sf) const
             return desc_md.to_string();
         }
 
-        return nonstd::nullopt;
+        return std::nullopt;
     }
     return sf.to_string();
 }
@@ -307,9 +333,10 @@ logline_value::origin_in_full_msg(const char* msg, ssize_t len) const
     return retval;
 }
 
-logline_value::logline_value(logline_value_meta lvm,
-                             shared_buffer_ref& sbr,
-                             struct line_range origin)
+logline_value::
+logline_value(logline_value_meta lvm,
+              shared_buffer_ref& sbr,
+              struct line_range origin)
     : lv_meta(std::move(lvm)), lv_origin(origin)
 {
     if (sbr.get_data() == nullptr) {
@@ -461,7 +488,7 @@ external_log_format::update_op_description(
     const pattern* fpat,
     const lnav::pcre2pp::match_data& md)
 {
-    nonstd::optional<std::string> desc_elem_str;
+    std::optional<std::string> desc_elem_str;
     if (!lod.lod_id) {
         for (const auto& desc_def_pair : desc_defs) {
             if (lod.lod_id) {
@@ -529,7 +556,7 @@ external_log_format::update_op_description(
                     found_desc->second.append(desc_elem_str.value());
                 }
             }
-            desc_elem_str = nonstd::nullopt;
+            desc_elem_str = std::nullopt;
         }
     }
 }
@@ -539,7 +566,7 @@ external_log_format::update_op_description(
     const std::map<intern_string_t, opid_descriptors>& desc_defs,
     log_op_description& lod)
 {
-    nonstd::optional<std::string> desc_elem_str;
+    std::optional<std::string> desc_elem_str;
     if (!lod.lod_id) {
         for (const auto& desc_def_pair : desc_defs) {
             if (lod.lod_id) {
@@ -594,7 +621,7 @@ external_log_format::update_op_description(
                         found_desc->second.append(desc_elem_str.value());
                     }
                 }
-                desc_elem_str = nonstd::nullopt;
+                desc_elem_str = std::nullopt;
             }
         }
     }
@@ -650,7 +677,7 @@ log_format::log_scanf(uint32_t line_number,
                       struct timeval* tv_out,
 
                       string_fragment* ts_out,
-                      nonstd::optional<string_fragment>* level_out)
+                      std::optional<string_fragment>* level_out)
 {
     int curr_fmt = -1;
     const char* retval = nullptr;
@@ -724,6 +751,24 @@ log_format::log_scanf(uint32_t line_number,
 }
 
 void
+log_format::annotate(logfile* lf,
+                     uint64_t line_number,
+                     string_attrs_t& sa,
+                     logline_value_vector& values,
+                     bool annotate_module) const
+{
+    if (lf != nullptr && !values.lvv_opid_value) {
+        const auto& bm = lf->get_bookmark_metadata();
+        auto bm_iter = bm.find(line_number);
+        if (bm_iter != bm.end() && !bm_iter->second.bm_opid.empty()) {
+            values.lvv_opid_value = bm_iter->second.bm_opid;
+            values.lvv_opid_provenance
+                = logline_value_vector::opid_provenance::user;
+        }
+    }
+}
+
+void
 log_format::check_for_new_year(std::vector<logline>& dst,
                                exttm etm,
                                struct timeval log_tv)
@@ -794,7 +839,7 @@ struct json_log_userdata {
 
     void add_sub_lines_for(const intern_string_t ist,
                            bool top_level,
-                           nonstd::optional<double> val = nonstd::nullopt,
+                           std::optional<double> val = std::nullopt,
                            const unsigned char* str = nullptr,
                            ssize_t len = -1)
     {
@@ -821,8 +866,8 @@ struct json_log_userdata {
     uint32_t jlu_quality{0};
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
-    nonstd::optional<string_fragment> jlu_opid_frag;
-    nonstd::optional<std::string> jlu_subid;
+    std::optional<string_fragment> jlu_opid_frag;
+    std::optional<std::string> jlu_subid;
     struct exttm jlu_exttm;
 };
 
@@ -885,7 +930,7 @@ read_json_number(yajlpp_parse_context* ypc,
         } else {
             jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
         }
-        jlu->jlu_exttm.et_nsec = jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
         jlu->jlu_base_line->set_time(tv);
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         uint64_t millis = 0;
@@ -1039,7 +1084,7 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
         } else {
             jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
         }
-        jlu->jlu_exttm.et_nsec = jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
         switch (jlu->jlu_format->lf_subsecond_unit.value()) {
@@ -1091,7 +1136,7 @@ rewrite_json_double(yajlpp_parse_context* ypc, double val)
         } else {
             jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
         }
-        jlu->jlu_exttm.et_nsec = jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
         jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
         switch (jlu->jlu_format->lf_subsecond_unit.value()) {
@@ -1249,19 +1294,12 @@ external_log_format::scan(logfile& lf,
             if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value
                     = jlu.jlu_opid_frag->to_string();
-                auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(
-                    jlu.jlu_opid_frag.value());
-                if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
-                    auto otr = opid_time_range{
-                        time_range{ll.get_timeval(), ll.get_timeval()},
-                    };
-                    auto emplace_res = sbc.sbc_opids.los_opid_ranges.emplace(
-                        jlu.jlu_opid_frag.value(), otr);
-                    opid_iter = emplace_res.first;
-                } else {
-                    opid_iter->second.otr_range.extend_to(ll.get_timeval());
-                }
-
+                this->jlf_line_values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
+                auto opid_iter
+                    = sbc.sbc_opids.insert_op(sbc.sbc_allocator,
+                                              jlu.jlu_opid_frag.value(),
+                                              ll.get_timeval());
                 opid_iter->second.otr_level_stats.update_msg_count(
                     ll.get_msg_level());
 
@@ -1293,7 +1331,7 @@ external_log_format::scan(logfile& lf,
                 this->update_op_description(*this->lf_opid_description_def,
                                             otr.otr_description);
             } else {
-                this->jlf_line_values.lvv_opid_value = nonstd::nullopt;
+                this->jlf_line_values.lvv_opid_value = std::nullopt;
             }
 
             jlu.jlu_sub_line_count += this->jlf_line_format_init_count;
@@ -1456,19 +1494,8 @@ external_log_format::scan(logfile& lf,
         }
 
         if (opid_cap && !opid_cap->empty()) {
-            auto opid_iter
-                = sbc.sbc_opids.los_opid_ranges.find(opid_cap.value());
-
-            if (opid_iter == sbc.sbc_opids.los_opid_ranges.end()) {
-                auto opid_copy = opid_cap->to_owned(sbc.sbc_allocator);
-                auto otr = opid_time_range{time_range{log_tv, log_tv}};
-                auto emplace_res
-                    = sbc.sbc_opids.los_opid_ranges.emplace(opid_copy, otr);
-                opid_iter = emplace_res.first;
-            } else {
-                opid_iter->second.otr_range.extend_to(log_tv);
-            }
-
+            auto opid_iter = sbc.sbc_opids.insert_op(
+                sbc.sbc_allocator, opid_cap.value(), log_tv);
             auto& otr = opid_iter->second;
 
             otr.otr_level_stats.update_msg_count(level);
@@ -1493,7 +1520,7 @@ external_log_format::scan(logfile& lf,
             }
             this->update_op_description(
                 *this->lf_opid_description_def, otr.otr_description, fpat, md);
-            opid = hash_str(opid_cap->data(), opid_cap->length());
+            opid = opid_cap->hash();
         }
 
         if (mod_cap) {
@@ -1579,7 +1606,7 @@ external_log_format::scan(logfile& lf,
                     }
                 }
 
-                nonstd::optional<double> dvalue_opt;
+                std::optional<double> dvalue_opt;
                 switch (vd.vd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER: {
                         auto scan_res = scn::scan_value<int64_t>(
@@ -1630,7 +1657,7 @@ external_log_format::scan(logfile& lf,
             }
             this->lf_pattern_locks.emplace_back(lock_line, curr_fmt);
         }
-        return log_format::scan_match{0};
+        return log_format::scan_match{1000};
     }
 
     if (this->lf_specialized && !this->lf_multiline) {
@@ -1652,7 +1679,7 @@ external_log_format::module_scan(string_fragment body_cap,
                                  const intern_string_t& mod_name)
 {
     uint8_t mod_index;
-    body_cap.trim();
+    body_cap = body_cap.trim();
     auto& ext_fmts = GRAPH_ORDERED_FORMATS;
     module_format mf;
 
@@ -1697,7 +1724,8 @@ external_log_format::module_scan(string_fragment body_cap,
 }
 
 void
-external_log_format::annotate(uint64_t line_number,
+external_log_format::annotate(logfile* lf,
+                              uint64_t line_number,
                               string_attrs_t& sa,
                               logline_value_vector& values,
                               bool annotate_module) const
@@ -1730,7 +1758,11 @@ external_log_format::annotate(uint64_t line_number,
                         -this->jlf_cached_sub_range.lr_start);
                 }
             }
+            values.lvv_opid_value = this->jlf_line_values.lvv_opid_value;
+            values.lvv_opid_provenance
+                = this->jlf_line_values.lvv_opid_provenance;
         }
+        log_format::annotate(lf, line_number, sa, values, annotate_module);
         return;
     }
 
@@ -1764,7 +1796,7 @@ external_log_format::annotate(uint64_t line_number,
         return;
     }
 
-    nonstd::optional<string_fragment> module_cap;
+    std::optional<string_fragment> module_cap;
     if (!pat.p_module_format) {
         auto ts_cap = md[pat.p_timestamp_field_index];
         if (ts_cap) {
@@ -1785,6 +1817,8 @@ external_log_format::annotate(uint64_t line_number,
             sa.emplace_back(to_line_range(opid_cap.value()),
                             logline::L_OPID.value());
             values.lvv_opid_value = opid_cap->to_string();
+            values.lvv_opid_provenance
+                = logline_value_vector::opid_provenance::file;
         }
     }
 
@@ -1832,13 +1866,11 @@ external_log_format::annotate(uint64_t line_number,
             && mod_iter->second.mf_mod_format != nullptr)
         {
             auto& mf = mod_iter->second;
-
-            body_cap->trim();
             auto narrow_res
                 = line.narrow(body_cap->sf_begin, body_cap->length());
             auto pre_mod_values_size = values.lvv_values.size();
             auto pre_mod_sa_size = sa.size();
-            mf.mf_mod_format->annotate(line_number, sa, values, false);
+            mf.mf_mod_format->annotate(lf, line_number, sa, values, false);
             for (size_t lpc = pre_mod_values_size;
                  lpc < values.lvv_values.size();
                  lpc++)
@@ -1861,6 +1893,8 @@ external_log_format::annotate(uint64_t line_number,
         }
         sa.emplace_back(lr, SA_BODY.value());
     }
+
+    log_format::annotate(lf, line_number, sa, values, annotate_module);
 }
 
 void
@@ -2027,7 +2061,7 @@ read_json_field(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
     }
 
     jlu->add_sub_lines_for(
-        field_name, ypc->is_level(1), nonstd::nullopt, str, len);
+        field_name, ypc->is_level(1), std::nullopt, str, len);
 
     return 1;
 }
@@ -2044,6 +2078,8 @@ rewrite_json_field(yajlpp_parse_context* ypc,
     if (jlu->jlu_format->elf_opid_field == field_name) {
         auto frag = string_fragment::from_bytes(str, len);
         jlu->jlu_format->jlf_line_values.lvv_opid_value = frag.to_string();
+        jlu->jlu_format->jlf_line_values.lvv_opid_provenance
+            = logline_value_vector::opid_provenance::file;
     }
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         char time_buf[64];
@@ -2235,6 +2271,8 @@ external_log_format::get_subline(const logline& ll,
             if (jlu.jlu_opid_frag) {
                 this->jlf_line_values.lvv_opid_value
                     = jlu.jlu_opid_frag->to_string();
+                this->jlf_line_values.lvv_opid_provenance
+                    = logline_value_vector::opid_provenance::file;
             }
 
             int sub_offset = this->jlf_line_format_init_count;
@@ -2592,8 +2630,8 @@ using safe_format_header_expressions = safe::Safe<format_header_expressions>;
 
 static safe_format_header_expressions format_header_exprs;
 
-nonstd::optional<external_file_format>
-detect_mime_type(const ghc::filesystem::path& filename)
+std::optional<external_file_format>
+detect_mime_type(const std::filesystem::path& filename)
 {
     uint8_t buffer[1024];
     size_t buffer_size = 0;
@@ -2602,13 +2640,13 @@ detect_mime_type(const ghc::filesystem::path& filename)
         auto_fd fd;
 
         if ((fd = lnav::filesystem::openp(filename, O_RDONLY)) == -1) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
 
         ssize_t rc;
 
         if ((rc = read(fd, buffer, sizeof(buffer))) == -1) {
-            return nonstd::nullopt;
+            return std::nullopt;
         }
         buffer_size = rc;
     }
@@ -2713,7 +2751,7 @@ detect_mime_type(const ghc::filesystem::path& filename)
         }
     }
 
-    return nonstd::nullopt;
+    return std::nullopt;
 }
 
 void
@@ -2954,8 +2992,9 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 auto sql_al = attr_line_t(hpair.second)
                                   .with_attr_for_all(SA_PREFORMATTED.value())
                                   .with_attr_for_all(
-                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-                readline_sqlite_highlighter(sql_al, -1);
+                                      VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                                  .move();
+                readline_sqlite_highlighter(sql_al, std::nullopt);
                 intern_string_t watch_expr_path = intern_string::lookup(
                     fmt::format(FMT_STRING("/{}/converter/header/expr/{}"),
                                 this->elf_name,
@@ -2966,7 +3005,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 auto um = lnav::console::user_message::error(
                               "SQL expression is invalid")
                               .with_reason(sqlite3_errmsg(hexprs->e_db.in()))
-                              .with_snippet(snippet);
+                              .with_snippet(snippet)
+                              .move();
 
                 errors.emplace_back(um);
                 continue;
@@ -2984,7 +3024,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                           .with_help(
                               "The converter command transforms the file "
                               "into a format that can be consumed by lnav")
-                          .with_snippets(this->get_snippets());
+                          .with_snippets(this->get_snippets())
+                          .move();
             errors.emplace_back(um);
         }
     }
@@ -3031,7 +3072,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                     = attr_line_t("the following captures are available:\n  ")
                           .join(available_captures,
                                 VC_ROLE.value(role_t::VCR_SYMBOL),
-                                ", ");
+                                ", ")
+                          .move();
                 errors.emplace_back(
                     lnav::console::user_message::warning(
                         attr_line_t("invalid value ")
@@ -3260,7 +3302,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                               attr_line_t("timestamp was not fully matched: ")
                                   .append_quoted(ts_cap.value()))
                               .with_snippet(elf_sample.s_line.to_snippet())
-                              .with_note(notes);
+                              .with_note(notes)
+                              .move();
 
                     errors.emplace_back(um);
                 }
@@ -3401,7 +3444,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                   .append_quoted(lnav::roles::symbol(
                                       level_names[elf_sample.s_level])))
                           .with_snippet(elf_sample.s_line.to_snippet())
-                          .with_note(note_al);
+                          .with_note(note_al)
+                          .move();
                 if (!this->elf_level_patterns.empty()) {
                     um.with_help(
                         attr_line_t("Level regexes are not anchored to the "
@@ -3604,7 +3648,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     size_t value_def_index = 0;
     for (auto& elf_value_def : this->elf_value_def_order) {
         elf_value_def->vd_meta.lvm_values_index
-            = nonstd::make_optional(value_def_index++);
+            = std::make_optional(value_def_index++);
 
         if (elf_value_def->vd_meta.lvm_foreign_key
             || elf_value_def->vd_meta.lvm_identifier)
@@ -3884,14 +3928,14 @@ public:
             auto format = lf->get_format();
 
             return lf->read_line(lf_iter)
-                .map([this, format, cl](auto line) {
+                .map([this, format, cl, lf](auto line) {
                     logline_value_vector values;
                     struct line_range mod_name_range;
                     intern_string_t mod_name;
 
                     this->vi_attrs.clear();
                     values.lvv_sbr = line.clone();
-                    format->annotate(cl, this->vi_attrs, values, false);
+                    format->annotate(lf, cl, this->vi_attrs, values, false);
                     this->elt_container_body
                         = find_string_attr_range(this->vi_attrs, &SA_BODY);
                     if (!this->elt_container_body.is_valid()) {
@@ -3940,11 +3984,11 @@ public:
                                         this->elt_container_body.length());
             values.lvv_values.clear();
             this->elt_module_format.mf_mod_format->annotate(
-                line_number, this->vi_attrs, values, false);
+                lf, line_number, this->vi_attrs, values, false);
             values.lvv_sbr.widen(narrow_res);
         } else {
             this->vi_attrs.clear();
-            format->annotate(line_number, this->vi_attrs, values, false);
+            format->annotate(lf, line_number, this->vi_attrs, values, false);
         }
     }
 
@@ -3989,22 +4033,30 @@ external_log_format::specialized(int fmt_lock)
     return retval;
 }
 
-bool
+log_format::match_name_result
 external_log_format::match_name(const std::string& filename)
 {
     if (this->elf_filename_pcre.pp_value == nullptr) {
-        return true;
+        return name_matched{};
     }
 
-    return this->elf_filename_pcre.pp_value->find_in(filename)
-        .ignore_error()
-        .has_value();
+    if (this->elf_filename_pcre.pp_value->find_in(filename)
+            .ignore_error()
+            .has_value())
+    {
+        return name_matched{};
+    }
+
+    return name_mismatched{
+        this->elf_filename_pcre.pp_value->match_partial(filename),
+        this->elf_filename_pcre.pp_value->get_pattern(),
+    };
 }
 
 auto
 external_log_format::value_line_count(const intern_string_t ist,
                                       bool top_level,
-                                      nonstd::optional<double> val,
+                                      std::optional<double> val,
                                       const unsigned char* str,
                                       ssize_t len) -> value_line_count_result
 {
@@ -4255,8 +4307,8 @@ log_format::find_root_format(const char* name)
     return nullptr;
 }
 
-log_format::pattern_for_lines::pattern_for_lines(uint32_t pfl_line,
-                                                 uint32_t pfl_pat_index)
+log_format::pattern_for_lines::
+pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index)
     : pfl_line(pfl_line), pfl_pat_index(pfl_pat_index)
 {
 }

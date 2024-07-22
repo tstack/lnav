@@ -53,7 +53,20 @@ service_base::run()
         mstime_t current_time = getmstime();
         auto timeout = this->compute_timeout(current_time);
 
-        this->s_port.process_for(timeout);
+        try {
+            this->s_port.process_for(timeout);
+        } catch (const std::exception& e) {
+            log_error("%s: message failed with -- %s",
+                      this->s_name.c_str(),
+                      e.what());
+            this->s_looping = false;
+            continue;
+        } catch (...) {
+            log_error("%s: message failed with non-standard exception",
+                      this->s_name.c_str());
+            this->s_looping = false;
+            continue;
+        }
         this->s_children.cleanup_children();
 
         try {

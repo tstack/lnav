@@ -1,0 +1,12 @@
+{
+    "dependencies": [
+        "curl",
+        "libarchive",
+        "sqlite3",
+        "bzip2",
+        "pcre2",
+        "ncurses",
+        "readline",
+        "zlib"
+    ]
+}

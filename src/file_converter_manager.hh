@@ -37,13 +37,13 @@
 #include "base/auto_pid.hh"
 #include "base/result.h"
 #include "file_format.hh"
-#include "ghc/filesystem.hpp"
+#include <filesystem>
 
 namespace file_converter_manager {
 
 struct convert_result {
     auto_pid<process_state::running> cr_child;
-    ghc::filesystem::path cr_destination;
+    std::filesystem::path cr_destination;
     std::shared_ptr<std::vector<std::string>> cr_error_queue;
 };
 
