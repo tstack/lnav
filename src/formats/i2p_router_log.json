@@ -1,0 +1,64 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "i2p_router_log": {
+        "title": "I2P Router logs",
+        "description": "The format used by the original I2P Router.",
+        "url": "https://geti2p.net/",
+        "multiline": true,
+        "regex": {
+            "std": {
+                "pattern": "^(?J:(?:(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:(?<level>[A-Z]+)  \\[(?<module>[\\w \\/]+)\\] (?<component>[\\w.]+): (?<body>.*)|(?:(?:\\^){3} \\d+ similar messages omitted (?:\\^){3})))|(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\u0009at)) .*))$",
+                "module-format": true,
+                "comments": [
+                    "The I2P router uses several log line variants that largely differ in their formats.",
+                    "editing a variant should be done below in subformats for better readability and understandability,",
+                    "and then merged into the pattern above."
+                ],
+                "subformats": {
+                    "variant_normal": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?<level>[A-Z]+)  \\[(?<module>[\\w \\\/]+)\\] (?<component>[\\w.]+): (?<body>.*)$",
+                    "variant_omit": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:\\^){3} \\d+ similar messages omitted (?:\\^){3}$",
+                    "variant_exception": "^(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\0009at)) .*)$"
+                }
+            },
+            "teszt": {
+                "pattern": "(Exception)|(\\s+handler 1/1)|(\\sat [\\w.]+)|(similar messages omitted)",
+                "module-format": true
+            }
+        },
+        "opid-field": "component",
+        "value": {
+            "component": {
+                "kind": "string",
+                "identifier": true
+            }
+        },
+        "level": {
+            "critical": "CRIT",
+            "error": "(ERROR)|(Exception)",
+            "warning": "WARN",
+            "info": "INFO",
+            "debug": "DEBUG"
+        },
+        "sample": [
+            {
+                "line": "2023-10-25 03:33:41.702 WARN  [ handler 1/1] er.transport.udp.PacketHandler: Migrated 91 byte packet from 11.111.111.111:22222 for 11.11.111.111:22222 nTyr4s IB2  recvAge: 60ms sendAge: 3m sendAttemptAge: 60ms sendACKAge: 60ms lifetime: 4m RTT: 60 RTTdev: 16 RTO: 60000 MTU: 1280 LMTU: 1484 cwin: 1500 acwin: 1771 SST: 2560 FRTX? false consecFail: 0 msgs rcvd: 3 msgs sent: 3 pkts rcvd OK/Dup: 7933/0 pkts sent OK/Dup: 3/0 IBM: 0 OBQ: 0 OBL: 0\\n",
+                "level": "warning"
+            },
+            {
+                "line": "2023-10-25 03:33:41.764 WARN  [ handler 1/1] outer.transport.udp.PeerState2: Dead: 11.111.11.11:22222 F~UzS1 IB2  recvAge: 5s sendAge: 5s sendAttemptAge: 5s sendACKAge: 0ms lifetime: 5s RTT: 50 RTTdev: 19 RTO: 1000 MTU: 1280 LMTU: 1500 cwin: 7315 acwin: 4535 SST: 524288 FRTX? false consecFail: 0 msgs rcvd: 1 msgs sent: 1 pkts rcvd OK/Dup: 2/0 pkts sent OK/Dup: 1/0 IBM: 0 OBQ: 0 OBL: 0\\n",
+                "level": "warning"
+            },
+            {
+                "line": "2023-10-25 03:33:42.121 ^^^ 2 similar messages omitted ^^^",
+                "comment": "when lines are repated, the replacmeent line does not have a log level"
+            },
+            {
+                "line": "java.io.IOException: Peer is dead: F~UzS1mTN3XYlnOfidMBv5Z4lHI7dsCZ8N5mxpyc-OU=\\n",
+                "comment": "handle exception lines"
+            },
+            {
+                "line": "\\u0009at net.i2p.router.transport.udp.PeerState2.getNextPacketNumber(PeerState2.java:326)\\n"
+            }
+        ]
+    }
+}
