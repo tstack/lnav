@@ -5,9 +5,8 @@
         "description" : "The system logger format of the Android operating system.",
         "url" : "https://developer.android.com/studio/command-line/logcat.html",
         "regex" : {
-            "logcat_format_threadtime" : {
-                "pattern" : "^(?<timestamp>\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}.\\d{3})\\s+(?<log_pid>\\d+)\\s+(?<log_tid>\\d+)\\s+(?<level>\\w)\\s+(?:\\[@@\\s+\\]\\s)?(?<log_tag>.*)(?:\\s+)?:\\s+(?<body>.*)$",
-                "comment:": "threadtime is a format accepted by the `logcat -v <format>` command"
+            "logcat_format_threadtime" : { // threadtime is a format accepted by the `logcat -v <format>` command
+                "pattern" : "^(?<timestamp>\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}.\\d{3})\\s+(?<log_pid>\\d+)\\s+(?<log_tid>\\d+)\\s+(?<level>\\w)\\s+(?:\\[@@\\s+\\]\\s)?(?<log_tag>.*)(?:\\s+)?:\\s+(?<body>.*)$"
             }
         },
         "timestamp-format" : ["%m-%d %H:%M:%S.%L"],

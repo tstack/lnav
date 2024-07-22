@@ -47,8 +47,8 @@
             },
             {
                 "line": "^[[36m2023/09/24 22:16:01 ^[[0m^[[32mcmd/web.go:175:^[[32mserveInstalled()^[[0m ^[[1;32m[I]^[[0m PING DATABASE mysql",
-                "level": "info",
-                "comment": "log line stored with terminal color codes"
+                "level": "info"
+                // log line stored with terminal color codes
             }
         ]
     }
