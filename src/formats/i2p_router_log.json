@@ -7,7 +7,7 @@
         "multiline": true,
         "regex": {
             "std": {
-                "pattern": "^(?J:(?:(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:(?<level>[A-Z]+)  \\[(?<module>[\\w \\/]+)\\] (?<component>[\\w.]+): (?<body>.*)|(?:(?:\\^){3} \\d+ similar messages omitted (?:\\^){3})))|(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\u0009at)) .*))$"
+                "pattern": "^(?J:(?:(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:(?<level>[A-Z]+)  \\[(?<module>[\\w \\/]+)\\] (?<component>[\\w.]+): (?<body>.*)|(?:(?:\\^){3} \\d+ similar messages omitted (?:\\^){3})))|(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\tat)) .*)|(?:(?:\\*{3} .*)|(?:Starting I2P.*)|(?:\\[startapp].*)))$"
                 // The I2P router uses several log line variants that largely differ in their formats.
                 //   Editing a variant should be done below in subformats for better readability and understandability,
                 //   and then merged into the pattern above.
@@ -15,6 +15,7 @@
                 //    "variant_normal": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?<level>[A-Z]+)  \\[(?<module>[\\w \\\/]+)\\] (?<component>[\\w.]+): (?<body>.*)$"
                 //    "variant_omit": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d+) (?:\\^){3} \\d+ similar messages omitted (?:\\^){3}$"
                 //    "variant_exception": "^(?:(?:(?:[\\w.]+(?<level>Exception):)|(?:\\\\0009at)) .*)$"
+                //    "variant_startup_lines": "^(?:(?:\*{3} .*)|(?:Starting I2P.*)|(?:\[startapp].*))$"
             }
         },
         "value": {
