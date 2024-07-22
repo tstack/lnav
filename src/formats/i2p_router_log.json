@@ -24,7 +24,6 @@
                 "module-format": true
             }
         },
-        "opid-field": "component",
         "value": {
             "component": {
                 "kind": "string",
