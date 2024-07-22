@@ -13,12 +13,12 @@
         "timestamp-format" : ["%m-%d %H:%M:%S.%L"],
         "level-field" : "level",
         "level" : {
-            "trace" : "V",
-            "debug" : "D",
-            "info": "I",
-            "warning" : "W",
-            "error" : "E",
-            "fatal": "F"
+            "trace" : "^V",
+            "debug" : "^D",
+            "info": "^I",
+            "warning" : "^W",
+            "error" : "^E",
+            "fatal": "^F"
         },
         "opid-field" : "log_pid",
         "value" : {

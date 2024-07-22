@@ -32,11 +32,11 @@
             }
         },
         "level": {
-            "critical": "CRIT",
-            "error": "(ERROR)|(Exception)",
-            "warning": "WARN",
-            "info": "INFO",
-            "debug": "DEBUG"
+            "critical": "^CRIT",
+            "error": "^(ERROR)|(Exception)",
+            "warning": "^WARN",
+            "info": "^INFO",
+            "debug": "^DEBUG"
         },
         "sample": [
             {
