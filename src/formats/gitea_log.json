@@ -18,12 +18,12 @@
             }
         },
         "level": {
-            "critical": "C(RITICAL)?",
-            "error": "E(RROR)?",
-            "warning": "W(ARNING)?",
-            "info": "I(NFO)?",
-            "debug": "D(EBUG)?",
-            "trace": "T(RACE)?"
+            "critical": "^C(RITICAL)?",
+            "error": "^E(RROR)?",
+            "warning": "^W(ARNING)?",
+            "info": "^I(NFO)?",
+            "debug": "^D(EBUG)?",
+            "trace": "^T(RACE)?"
         },
         "sample": [
             {
