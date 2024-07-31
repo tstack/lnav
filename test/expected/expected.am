@@ -1138,6 +1138,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_time_func.sh_123c85ff1178743f5cb78efeaf98b637bcbe55ff.out \
     $(srcdir)/%reldir%/test_sql_time_func.sh_14737ee9597b7d22519d23fbe34c0eb7d6c09ff2.err \
     $(srcdir)/%reldir%/test_sql_time_func.sh_14737ee9597b7d22519d23fbe34c0eb7d6c09ff2.out \
+    $(srcdir)/%reldir%/test_sql_time_func.sh_1804a2824c5e7dee903ef7500a3b60a123b7de01.err \
+    $(srcdir)/%reldir%/test_sql_time_func.sh_1804a2824c5e7dee903ef7500a3b60a123b7de01.out \
     $(srcdir)/%reldir%/test_sql_time_func.sh_1fbeb1ba69a95284eb1d4d052f5068ede7968704.err \
     $(srcdir)/%reldir%/test_sql_time_func.sh_1fbeb1ba69a95284eb1d4d052f5068ede7968704.out \
     $(srcdir)/%reldir%/test_sql_time_func.sh_20477acc218c96f1385dc97e4d28c80a05c93709.err \

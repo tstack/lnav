@@ -560,8 +560,12 @@ add_tz_possibilities(ln_mode_t context)
     auto* rc = lnav_data.ld_rl_view;
 
     rc->clear_possibilities(context, "timezone");
-    for (const auto& tz : date::get_tzdb().zones) {
-        rc->add_possibility(context, "timezone", tz.name());
+    try {
+        for (const auto& tz : date::get_tzdb().zones) {
+            rc->add_possibility(context, "timezone", tz.name());
+        }
+    } catch (const std::runtime_error& e) {
+        log_error("unable to get tzdb -- %s", e.what());
     }
 
     {

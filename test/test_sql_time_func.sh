@@ -82,4 +82,4 @@ run_cap_test ./drive_sql "SELECT timezone('UTC', '2022-03-02T10:20:30.400-0700')
 
 run_cap_test ${lnav_test} -nN -c ";SELECT timezone('bad-zone', '2022-03-02T10:20:30.400-0700')"
 
-run_cap_test ${lnav_test} -nN -c ";SELECT timezone('UTC', '2022-03-02T10:20:30.400bad')"
+run_cap_test ${lnav_test} -nN -c ";SELECT timezone('UTC', '2022-03-02T10:20:30+')"

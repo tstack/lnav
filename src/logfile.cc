@@ -182,8 +182,14 @@ logfile::open(std::filesystem::path filename,
                 if (!phdr.h_timezone.empty()) {
                     log_info("setting default time zone from piper header: %s",
                              phdr.h_timezone.c_str());
-                    fo.fo_default_zone.pp_value
-                        = date::locate_zone(phdr.h_timezone);
+                    try {
+                        fo.fo_default_zone.pp_value
+                            = date::locate_zone(phdr.h_timezone);
+                    } catch (const std::runtime_error& e) {
+                        log_error("unable to get tz from piper header %s -- %s",
+                                  phdr.h_timezone.c_str(),
+                                  e.what());
+                    }
                 }
                 if (!fo.empty()) {
                     safe::WriteAccess<lnav::safe_file_options_hier>

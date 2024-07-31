@@ -1,8 +1,0 @@
-✘ error: invalid timestamp: 2022-03-02T10:20:30.400bad
- reason: the leading part of the timestamp was matched, however, the trailing text “bad” was not
- --> command-option:1
- | ;SELECT timezone('UTC', '2022-03-02T10:20:30.400bad')
- = note: input matched time format “%Y-%m-%dT%H:%M:%S”
- = note: 2022-03-02T10:20:30.400bad
-                                ^-^ unrecognized input
- = help: fix the timestamp or remove the trailing text

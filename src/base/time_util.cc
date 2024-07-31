@@ -104,18 +104,26 @@ get_posix_zone(const char* name)
     }
 }
 
-static const date::time_zone*
+static std::optional<const date::time_zone*>
 get_date_zone(const char* name)
 {
     if (name == nullptr) {
-        return date::current_zone();
+        try {
+            return date::current_zone();
+        } catch (const std::runtime_error& e) {
+            return std::nullopt;
+        }
     }
 
     try {
         return date::locate_zone(name);
     } catch (const std::runtime_error& e) {
         log_error("invalid TZ value: %s -- %s", name, e.what());
-        return date::current_zone();
+        try {
+            return date::current_zone();
+        } catch (const std::runtime_error& e) {
+            return std::nullopt;
+        }
     }
 }
 
@@ -124,15 +132,21 @@ to_sys_time(date::local_seconds secs)
 {
     static const auto* TZ = getenv("TZ");
     static const auto TZ_POSIX_ZONE = get_posix_zone(TZ);
-    static const auto* TZ_DATE_ZONE = get_date_zone(TZ);
-
     if (TZ_POSIX_ZONE) {
         return TZ_POSIX_ZONE.value().to_sys(secs);
     }
 
-    auto inf = TZ_DATE_ZONE->get_info(secs);
+    static const auto TZ_DATE_ZONE = get_date_zone(TZ);
 
-    return TZ_DATE_ZONE->to_sys(secs);
+    if (TZ_DATE_ZONE) {
+        auto inf = TZ_DATE_ZONE.value()->get_info(secs);
+
+        return TZ_DATE_ZONE.value()->to_sys(secs);
+    }
+
+    static const auto TZ_POSIX_UTC = get_posix_zone("UTC0");
+
+    return TZ_POSIX_UTC.value().to_sys(secs);
 }
 
 date::local_seconds
@@ -140,13 +154,20 @@ to_local_time(date::sys_seconds secs)
 {
     static const auto* TZ = getenv("TZ");
     static const auto TZ_POSIX_ZONE = get_posix_zone(TZ);
-    static const auto* TZ_DATE_ZONE = get_date_zone(TZ);
 
     if (TZ_POSIX_ZONE) {
         return TZ_POSIX_ZONE.value().to_local(secs);
     }
 
-    return TZ_DATE_ZONE->to_local(secs);
+    static const auto TZ_DATE_ZONE = get_date_zone(TZ);
+
+    if (TZ_DATE_ZONE) {
+        return TZ_DATE_ZONE.value()->to_local(secs);
+    }
+
+    static const auto TZ_POSIX_UTC = get_posix_zone("UTC0");
+
+    return TZ_POSIX_UTC.value().to_local(secs);
 }
 
 date::sys_info
@@ -154,13 +175,19 @@ sys_time_to_info(date::sys_seconds secs)
 {
     static const auto* TZ = getenv("TZ");
     static const auto TZ_POSIX_ZONE = get_posix_zone(TZ);
-    static const auto* TZ_DATE_ZONE = get_date_zone(TZ);
 
     if (TZ_POSIX_ZONE) {
         return TZ_POSIX_ZONE.value().get_info(secs);
     }
 
-    return TZ_DATE_ZONE->get_info(secs);
+    static const auto TZ_DATE_ZONE = get_date_zone(TZ);
+    if (TZ_DATE_ZONE) {
+        return TZ_DATE_ZONE.value()->get_info(secs);
+    }
+
+    static const auto TZ_POSIX_UTC = get_posix_zone("UTC0");
+
+    return TZ_POSIX_UTC.value().get_info(secs);
 }
 
 date::local_info
@@ -168,13 +195,19 @@ local_time_to_info(date::local_seconds secs)
 {
     static const auto* TZ = getenv("TZ");
     static const auto TZ_POSIX_ZONE = get_posix_zone(TZ);
-    static const auto* TZ_DATE_ZONE = get_date_zone(TZ);
 
     if (TZ_POSIX_ZONE) {
         return TZ_POSIX_ZONE.value().get_info(secs);
     }
 
-    return TZ_DATE_ZONE->get_info(secs);
+    static const auto TZ_DATE_ZONE = get_date_zone(TZ);
+    if (TZ_DATE_ZONE) {
+        return TZ_DATE_ZONE.value()->get_info(secs);
+    }
+
+    static const auto TZ_POSIX_UTC = get_posix_zone("UTC0");
+
+    return TZ_POSIX_UTC.value().get_info(secs);
 }
 
 }  // namespace lnav
