@@ -1539,7 +1539,7 @@ external_log_format::scan(logfile& lf,
                     mod_iter->second.mf_mod_format);
 
                 if (mod_elf) {
-                    static thread_local auto mod_md
+                    thread_local auto mod_md
                         = lnav::pcre2pp::match_data::unitialized();
 
                     shared_buffer_ref body_ref;
