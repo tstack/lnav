@@ -1523,7 +1523,7 @@ external_log_format::scan(logfile& lf,
             opid = opid_cap->hash();
         }
 
-        if (mod_cap) {
+        if (mod_cap && body_cap) {
             intern_string_t mod_name = intern_string::lookup(mod_cap.value());
             auto mod_iter = MODULE_FORMATS.find(mod_name);
 
