@@ -39,10 +39,10 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+-\\s+(?<body>.*)$"
             },
             "level-thread-class": {
-                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{3}) (?<level>\\w+)\\s+\\[(?<thread>[^\\]]+)\\] (?<class>[^:]+): (?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) (?<level>\\w+)\\s+\\[(?<thread>[^\\]]+)\\] (?<class>[^:]+): (?<body>.*)"
             },
             "level-class-src": {
-                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{3}) (?<level>\\w+)\\s+(?<class>[\\.\\w]+) \\((?<srcfile>[^:]+):(?<function>[^(]+)\\((?<srcline>\\d+)\\)\\) - (?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) (?<level>\\w+)\\s+(?<class>[\\.\\w]+) \\((?<srcfile>[^:]+):(?<function>[^(]+)\\((?<srcline>\\d+)\\)\\) - (?<body>.*)"
             }
         },
         "level-field": "level",
