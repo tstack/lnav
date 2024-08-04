@@ -83,3 +83,12 @@ Q: Why isn't a file being displayed?
 
 :Details: If a file being monitored by lnav does not match a known log file
   format, it is treated as plaintext and will be displayed in the TEXT view.
+
+Q: How can I search for an exact word?
+--------------------------------------
+
+:Solution: Surround the word to search for with :code:`\b`.
+
+:Details: The :code:`\b` means "word break" and matches a position where a
+  "word" ends.  That is, right before a space character, punctuation, etc,
+  or at EOL.
