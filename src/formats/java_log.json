@@ -115,6 +115,16 @@
                 "kind": "string"
             }
         },
+        "search-table": {
+            "hdfs_finalized_blocks": {
+                "level": "info",
+                "pattern": "src: (?<blk_src>[^,]+), dest: (?<blk_dest>[^,]+), bytes: (?<blk_bytes>\\d+), op: (?<blk_op>[^,]+), cliID: (?<blk_cliid>[^,]+), offset: (?<blk_offset>[^,]+), srvID: (?<blk_srvid>[^,]+), blockid: (?<blk_id>[^,]+), duration\\(ns\\): (?<blk_duration>\\d+)"
+            },
+            "zk_established_session_id": {
+                "level": "info",
+                "pattern": "Session establishment complete on server .*, session ?id = (?<session_id>0x[a-zA-Z0-9]+), "
+            }
+        },
         "sample": [
             {
                 "line": "INFO   | jvm 1    | 2015/04/28 18:40:00 | 2015-04-28 18:40:00,077 [DefaultQuartzScheduler_Worker-8] INFO  com.redhat.rhn.taskomatic.TaskoJob - errata-queue-default: bunch errata-queue-bunch STARTED"

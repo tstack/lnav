@@ -37,8 +37,9 @@
 const static std::string MATCH_INDEX = "match_index";
 static auto match_index_name = intern_string::lookup("match_index");
 
-log_search_table::log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
-                                   intern_string_t table_name)
+log_search_table::
+log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
+                 intern_string_t table_name)
     : log_vtab_impl(table_name), lst_regex(code),
       lst_match_data(this->lst_regex->create_match_data())
 {
@@ -59,15 +60,17 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
         cols.resize(this->lst_column_metas.size());
         for (const auto& meta : this->lst_column_metas) {
             if (!meta.lvm_column.is<logline_value_meta::table_column>()) {
+                cols.pop_back();
                 continue;
             }
             auto col
                 = meta.lvm_column.get<logline_value_meta::table_column>().value;
-            auto type_pair
-                = log_vtab_impl::logline_value_to_sqlite_type(meta.lvm_kind);
+            auto type_pair = logline_value_to_sqlite_type(meta.lvm_kind);
             cols[col].vc_name = meta.lvm_name.to_string();
             cols[col].vc_type = type_pair.first;
             cols[col].vc_subtype = type_pair.second;
+
+            ensure(!cols[col].vc_name.empty());
         }
     }
 
