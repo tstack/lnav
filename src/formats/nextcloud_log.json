@@ -47,6 +47,12 @@
             }
         },
         "line-format": [
+            "[",
+            {
+                "field": "__level__",
+                "text-transform": "uppercase"
+            },
+            "] ",
             {
                 "field": "__timestamp__"
             },
@@ -59,16 +65,16 @@
             " ",
             {
                 "field": "remoteAddr",
-                "min-width": 15
+                "min-width": 9,
+                "max-width": 9,
+                "overflow": "dot-dot"
             },
             " ",
             {
-                "field": "__level__",
-                "text-transform": "uppercase"
-            },
-            " ",
-            {
-                "field": "app"
+                "field": "app",
+                "min-width": 12,
+                "max-width": 12,
+                "overflow": "truncate"
             },
             " ",
             {
