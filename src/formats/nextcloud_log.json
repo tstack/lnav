@@ -21,7 +21,15 @@
         "multiline": false,
         "value": {
             "exception": {
-                "kind": "json"
+                "kind": "json",
+                "hidden": true
+            },
+            "exception/Exception": {
+                "kind": "string",
+                "identifier": true
+            },
+            "exception/Message": {
+                "kind": "string"
             },
             "app": {
                 "kind": "string",
@@ -36,17 +44,38 @@
                 "identifier": true
             },
             "url": {
-                "kind": "string"
+                "kind": "string",
+                "hidden": true
             },
             "method": {
-                "kind": "string"
+                "kind": "string",
+                "hidden": true
             },
             "user": {
                 "kind": "string",
-                "identifier": true
+                "identifier": true,
+                "hidden": true
+            },
+            "userAgent": {
+                "kind": "string",
+                "hidden": true
+            },
+            "version": {
+                "kind": "string",
+                "hidden": true
+            },
+            "data": {
+                "kind": "json",
+                "hidden": true
             }
         },
         "line-format": [
+            "[",
+            {
+                "field": "__level__",
+                "text-transform": "uppercase"
+            },
+            "] ",
             {
                 "field": "__timestamp__"
             },
@@ -59,20 +88,36 @@
             " ",
             {
                 "field": "remoteAddr",
-                "min-width": 15
+                "min-width": 9,
+                "max-width": 9,
+                "overflow": "dot-dot"
             },
             " ",
             {
-                "field": "__level__",
-                "text-transform": "uppercase"
-            },
-            " ",
-            {
-                "field": "app"
+                "field": "app",
+                "min-width": 12,
+                "max-width": 12,
+                "overflow": "truncate"
             },
             " ",
             {
                 "field": "message"
+            },
+            {
+                "field": "exception/Exception",
+                "prefix": "\t\t",
+                "suffix": "",
+                "default-value": ""
+            },
+            {
+                "field": "exception/Message",
+                "prefix": ": \u201c",
+                "suffix": "\u201d",
+                "default-value": ""
+            },
+            {
+                "field": "data",
+                "default-value": ""
             }
         ]
     }
