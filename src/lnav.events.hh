@@ -34,8 +34,7 @@
 
 #include "yajlpp/yajlpp_def.hh"
 
-namespace lnav {
-namespace events {
+namespace lnav::events {
 
 namespace file {
 
@@ -122,7 +121,6 @@ publish(sqlite3* db, const T& container, F func)
     }
 }
 
-}  // namespace events
-}  // namespace lnav
+}  // namespace lnav::events
 
 #endif

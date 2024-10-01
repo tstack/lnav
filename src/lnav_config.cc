@@ -1890,6 +1890,8 @@ load_config(const std::vector<std::filesystem::path>& extra_paths,
             auto config_path = extra_path / "configs/*/*.json";
             static_root_mem<glob_t, globfree> gl;
 
+            log_info("loading configuration files in configs directories: %s",
+                     config_path.c_str());
             if (glob(config_path.c_str(), 0, nullptr, gl.inout()) == 0) {
                 for (size_t lpc = 0; lpc < gl->gl_pathc; lpc++) {
                     load_config_from(lnav_config, gl->gl_pathv[lpc], errors);
