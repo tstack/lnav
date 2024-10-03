@@ -84,7 +84,7 @@ jobs:
       - name: make distcheck
         run: make distcheck -j4 || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           # Artifact name
           name: lnav-tot-linux-64bit.zip
@@ -169,7 +169,7 @@ jobs:
         export PREFIX=$PWD/lnav
         $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
     - name: '⬆️ Upload a Build Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: lnav-${{ github.ref_name }}-windows-amd64.zip
         path: lnav-${{ github.ref_name }}-windows-amd64.zip

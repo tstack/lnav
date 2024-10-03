@@ -48,7 +48,7 @@ jobs:
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           # Artifact name
           name: lnav-linux-musl-x86_64.zip
@@ -101,7 +101,7 @@ jobs:
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           # Artifact name
           name: ${{ env.LNAV_ARTIFACT }}
@@ -154,7 +154,7 @@ jobs:
           cd .. &&
           zip -r ${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           # Artifact name
