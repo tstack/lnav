@@ -61,6 +61,12 @@ AC_PATH_PROG(CHECK_JSONSCHEMA, [check-jsonschema])
 AC_CHECK_SIZEOF(off_t)
 AC_CHECK_SIZEOF(size_t)
 
+AC_CHECK_FUNC(mkostemp,
+    AC_DEFINE([HAVE_MKOSTEMP], [1],
+        [Have the mkostemp() function]
+    )
+)
+
 AC_STRUCT_TIMEZONE
 
 AC_ARG_ENABLE([static],

@@ -122,7 +122,15 @@ open_temp_file(const std::filesystem::path& pattern)
     int fd;
 
     strcpy(pattern_copy, pattern_str.c_str());
-    if ((fd = mkostemp(pattern_copy, O_CLOEXEC)) == -1) {
+#if HAVE_MKOSTEMP
+    fd = mkostemp(pattern_copy, O_CLOEXEC);
+#else
+    fd = mkstemp(pattern_copy);
+    if (fd != -1) {
+        fcntl(fd, F_SETFD, FD_CLOEXEC);
+    }
+#endif
+    if (fd == -1) {
         return Err(
             fmt::format(FMT_STRING("unable to create temporary file: {} -- {}"),
                         pattern.string(),
