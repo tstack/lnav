@@ -3,28 +3,36 @@
 Configuration
 =============
 
-The configuration for **lnav** is stored in the following JSON files
-where :file:`<lnav-home>` refers to the location in the :envvar:`HOME`
-directory where files are stored, either (:file:`~/.lnav` or
-:file:`~/.config/lnav`):
+The configuration for **lnav** is stored in JSON files that are read on
+startup.  Files are consumed from multiple locations and update the
+internal configuration state as they are processed.  File names must
+end with :file:`.json` if they are in a :file:`configs` directory or,
+if they are in a :file:`formats` directory [#]_, start with :file:`config.`
+and end with :file:`.json`.  The following enumerates the order in
+which files are processed (where :file:`<lnav-home>` refers to the
+location in the :envvar:`HOME` directory where files are stored,
+either: :file:`~/.lnav` or :file:`~/.config/lnav`):
 
 #. Builtin -- The default configuration is shipped inside the **lnav** binary.
 
-#. :file:`/etc/lnav/configs/*/*.json` -- System-wide configuration files can
-   be installed here to make it available to all users.
+#. :file:`/etc/lnav/configs/*/*.json`,
+   :file:`/etc/lnav/formats/*/config.*.json` -- System-wide configuration files
+   can be installed in these locations to make it available to all users.
 
 #. :file:`<lnav-home>/configs/default/*.json` -- The default configuration
    files that are built into lnav are written to this directory with :file:`.sample`
    appended. Removing the :file:`.sample` extension and editing the file will
    allow you to do basic customizations.
 
-#. :file:`<lnav-home>/configs/*/*.json` -- Other directories that contain :file:`*.json`
-   files will be loaded on startup.  This structure is convenient for installing
+#. :file:`<lnav-home>/configs/*/*.json`,
+   :file:`<lnav-home>/formats/*/config.*.json` -- Other directories under
+   home will be scanned for JSON files. This structure is convenient for installing
    **lnav** configurations, like from a git repository.  The :file:`configs/installed`
    directory is reserved for files that are installed using the :option:`-i`
    flag (e.g. :code:`$ lnav -i /path/to/config.json`).
 
-#. :file:`-I <path>/configs/*/*.json` -- Include directories passed on the
+#. :file:`-I <path>/configs/*/*.json`,
+   :file:`-I <path>/formats/*/*.json` -- Include directories passed on the
    command-line can have a :file:`configs` directory that will also be searched.
 
 #. :file:`<lnav-home>/config.json` -- Contains local customizations that were
@@ -53,6 +61,10 @@ A valid **lnav** configuration file must contain an object with the
   use the :ref:`Management CLI<management_cli>` to get the final
   configuration and where the value came from for a particular
   configuration option.
+
+.. [#] Putting log format files and configuration files in the same directory
+  can be convenient for organizations that wish to have a single git repository
+  that contains all of the files needed for folks to do their work.
 
 Options
 -------
