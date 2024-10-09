@@ -20,7 +20,10 @@ test = false
 doc = false
 
 [dependencies]
-prqlc = { git = "https://github.com/PRQL/prql.git" }
+# Build latest: 
+# prqlc = { git = "https://github.com/PRQL/prql.git" }
+# Build deterministic:
+prqlc = "0.13.0"
 cxx = "1.0"
 
 [build-dependencies]
