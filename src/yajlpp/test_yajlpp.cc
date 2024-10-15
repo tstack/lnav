@@ -32,6 +32,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <view_curses.hh>
+
 #include "yajlpp.hh"
 #include "yajlpp_def.hh"
 
@@ -66,6 +68,25 @@ static int
 dummy_string_handler(void* ctx, const unsigned char* s, size_t len)
 {
     return 1;
+}
+
+view_colors::
+view_colors()
+    : vc_dyn_pairs(0)
+{
+}
+
+view_colors&
+view_colors::singleton()
+{
+    static view_colors vc;
+    return vc;
+}
+
+block_elem_t
+view_colors::wchar_for_icon(ui_icon_t ic) const
+{
+    return this->vc_icons[lnav::enums::to_underlying(ic)];
 }
 
 int

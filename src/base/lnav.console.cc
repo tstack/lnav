@@ -295,6 +295,100 @@ get_fd_tty(int fd)
     return isatty(fd);
 }
 
+static void
+role_to_style(const role_t role,
+              fmt::text_style& default_bg_style,
+              fmt::text_style& default_fg_style,
+              fmt::text_style& line_style)
+{
+    switch (role) {
+        case role_t::VCR_TEXT:
+        case role_t::VCR_IDENTIFIER:
+            break;
+        case role_t::VCR_ALT_ROW:
+            line_style |= fmt::emphasis::bold;
+            break;
+        case role_t::VCR_SEARCH:
+            line_style |= fmt::emphasis::reverse;
+            break;
+        case role_t::VCR_ERROR:
+            line_style
+                |= fmt::fg(fmt::terminal_color::red) | fmt::emphasis::bold;
+            break;
+        case role_t::VCR_WARNING:
+        case role_t::VCR_RE_REPEAT:
+            line_style |= fmt::fg(fmt::terminal_color::yellow);
+            break;
+        case role_t::VCR_COMMENT:
+            line_style |= fmt::fg(fmt::terminal_color::green);
+            break;
+        case role_t::VCR_SNIPPET_BORDER:
+            line_style |= fmt::fg(fmt::terminal_color::cyan);
+            break;
+        case role_t::VCR_OK:
+            line_style
+                |= fmt::emphasis::bold | fmt::fg(fmt::terminal_color::green);
+            break;
+        case role_t::VCR_FOOTNOTE_BORDER:
+            line_style |= fmt::fg(fmt::terminal_color::blue);
+            break;
+        case role_t::VCR_INFO:
+        case role_t::VCR_STATUS:
+            line_style
+                |= fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta);
+            break;
+        case role_t::VCR_KEYWORD:
+        case role_t::VCR_RE_SPECIAL:
+            line_style
+                |= fmt::emphasis::bold | fmt::fg(fmt::terminal_color::cyan);
+            break;
+        case role_t::VCR_STRING:
+            line_style |= fmt::fg(fmt::terminal_color::magenta);
+            break;
+        case role_t::VCR_VARIABLE:
+            line_style |= fmt::emphasis::underline;
+            break;
+        case role_t::VCR_SYMBOL:
+        case role_t::VCR_NUMBER:
+        case role_t::VCR_FILE:
+            line_style |= fmt::emphasis::bold;
+            break;
+        case role_t::VCR_H1:
+            line_style
+                |= fmt::emphasis::bold | fmt::fg(fmt::terminal_color::magenta);
+            break;
+        case role_t::VCR_H2:
+            line_style |= fmt::emphasis::bold;
+            break;
+        case role_t::VCR_H3:
+        case role_t::VCR_H4:
+        case role_t::VCR_H5:
+        case role_t::VCR_H6:
+            line_style |= fmt::emphasis::underline;
+            break;
+        case role_t::VCR_LIST_GLYPH:
+            line_style |= fmt::fg(fmt::terminal_color::yellow);
+            break;
+        case role_t::VCR_INLINE_CODE:
+        case role_t::VCR_QUOTED_CODE:
+            default_fg_style = fmt::fg(fmt::terminal_color::white);
+            default_bg_style = fmt::bg(fmt::terminal_color::black);
+            break;
+        case role_t::VCR_LOW_THRESHOLD:
+            line_style |= fmt::bg(fmt::terminal_color::green);
+            break;
+        case role_t::VCR_MED_THRESHOLD:
+            line_style |= fmt::bg(fmt::terminal_color::yellow);
+            break;
+        case role_t::VCR_HIGH_THRESHOLD:
+            line_style |= fmt::bg(fmt::terminal_color::red);
+            break;
+        default:
+            // log_debug("missing role handler %d", (int) role);
+            break;
+    }
+}
+
 void
 println(FILE* file, const attr_line_t& al)
 {
@@ -302,6 +396,7 @@ println(FILE* file, const attr_line_t& al)
     static const auto IS_YES_COLOR = get_yes_color();
     static const auto IS_STDOUT_TTY = get_fd_tty(STDOUT_FILENO);
     static const auto IS_STDERR_TTY = get_fd_tty(STDERR_FILENO);
+    static auto& vc = view_colors::singleton();
 
     const auto& str = al.get_string();
 
@@ -314,7 +409,7 @@ println(FILE* file, const attr_line_t& al)
         return;
     }
 
-    std::set<size_t> points = {0, static_cast<size_t>(al.length())};
+    auto points = std::set<size_t>{0, static_cast<size_t>(al.length())};
 
     for (const auto& attr : al.get_attrs()) {
         if (!attr.sa_range.is_valid()) {
@@ -338,6 +433,7 @@ println(FILE* file, const attr_line_t& al)
         auto fg_style = fmt::text_style{};
         auto start = last_point.value();
         std::optional<std::string> href;
+        auto replaced = false;
 
         for (const auto& attr : al.get_attrs()) {
             if (!attr.sa_range.contains(start)
@@ -347,7 +443,22 @@ println(FILE* file, const attr_line_t& al)
             }
 
             try {
-                if (attr.sa_type == &VC_HYPERLINK) {
+                if (attr.sa_type == &VC_ICON) {
+                    auto ic = attr.sa_value.get<ui_icon_t>();
+                    auto be = vc.wchar_for_icon(ic);
+                    auto icon_fg_style = default_fg_style;
+                    auto icon_bg_style = default_bg_style;
+                    auto icon_style = line_style;
+                    std::string utf8_out;
+
+                    role_to_style(
+                        be.role, icon_bg_style, icon_fg_style, icon_style);
+                    ww898::utf::utf8::write(
+                        be.value,
+                        [&utf8_out](const char ch) { utf8_out.push_back(ch); });
+                    fmt::print(file, icon_style, FMT_STRING("{}"), utf8_out);
+                    replaced = true;
+                } else if (attr.sa_type == &VC_HYPERLINK) {
                     auto saw = string_attr_wrapper<std::string>(&attr);
                     href = saw.get();
                 } else if (attr.sa_type == &VC_BACKGROUND) {
@@ -415,94 +526,8 @@ println(FILE* file, const attr_line_t& al)
                     auto saw = string_attr_wrapper<role_t>(&attr);
                     auto role = saw.get();
 
-                    switch (role) {
-                        case role_t::VCR_TEXT:
-                        case role_t::VCR_IDENTIFIER:
-                            break;
-                        case role_t::VCR_ALT_ROW:
-                            line_style |= fmt::emphasis::bold;
-                            break;
-                        case role_t::VCR_SEARCH:
-                            line_style |= fmt::emphasis::reverse;
-                            break;
-                        case role_t::VCR_ERROR:
-                            line_style |= fmt::fg(fmt::terminal_color::red)
-                                | fmt::emphasis::bold;
-                            break;
-                        case role_t::VCR_WARNING:
-                        case role_t::VCR_RE_REPEAT:
-                            line_style |= fmt::fg(fmt::terminal_color::yellow);
-                            break;
-                        case role_t::VCR_COMMENT:
-                            line_style |= fmt::fg(fmt::terminal_color::green);
-                            break;
-                        case role_t::VCR_SNIPPET_BORDER:
-                            line_style |= fmt::fg(fmt::terminal_color::cyan);
-                            break;
-                        case role_t::VCR_OK:
-                            line_style |= fmt::emphasis::bold
-                                | fmt::fg(fmt::terminal_color::green);
-                            break;
-                        case role_t::VCR_FOOTNOTE_BORDER:
-                            line_style |= fmt::fg(fmt::terminal_color::blue);
-                            break;
-                        case role_t::VCR_INFO:
-                        case role_t::VCR_STATUS:
-                            line_style |= fmt::emphasis::bold
-                                | fmt::fg(fmt::terminal_color::magenta);
-                            break;
-                        case role_t::VCR_KEYWORD:
-                        case role_t::VCR_RE_SPECIAL:
-                            line_style |= fmt::emphasis::bold
-                                | fmt::fg(fmt::terminal_color::cyan);
-                            break;
-                        case role_t::VCR_STRING:
-                            line_style |= fmt::fg(fmt::terminal_color::magenta);
-                            break;
-                        case role_t::VCR_VARIABLE:
-                            line_style |= fmt::emphasis::underline;
-                            break;
-                        case role_t::VCR_SYMBOL:
-                        case role_t::VCR_NUMBER:
-                        case role_t::VCR_FILE:
-                            line_style |= fmt::emphasis::bold;
-                            break;
-                        case role_t::VCR_H1:
-                            line_style |= fmt::emphasis::bold
-                                | fmt::fg(fmt::terminal_color::magenta);
-                            break;
-                        case role_t::VCR_H2:
-                            line_style |= fmt::emphasis::bold;
-                            break;
-                        case role_t::VCR_H3:
-                        case role_t::VCR_H4:
-                        case role_t::VCR_H5:
-                        case role_t::VCR_H6:
-                            line_style |= fmt::emphasis::underline;
-                            break;
-                        case role_t::VCR_LIST_GLYPH:
-                            line_style |= fmt::fg(fmt::terminal_color::yellow);
-                            break;
-                        case role_t::VCR_INLINE_CODE:
-                        case role_t::VCR_QUOTED_CODE:
-                            default_fg_style
-                                = fmt::fg(fmt::terminal_color::white);
-                            default_bg_style
-                                = fmt::bg(fmt::terminal_color::black);
-                            break;
-                        case role_t::VCR_LOW_THRESHOLD:
-                            line_style |= fmt::bg(fmt::terminal_color::green);
-                            break;
-                        case role_t::VCR_MED_THRESHOLD:
-                            line_style |= fmt::bg(fmt::terminal_color::yellow);
-                            break;
-                        case role_t::VCR_HIGH_THRESHOLD:
-                            line_style |= fmt::bg(fmt::terminal_color::red);
-                            break;
-                        default:
-                            // log_debug("missing role handler %d", (int) role);
-                            break;
-                    }
+                    role_to_style(
+                        role, default_bg_style, default_fg_style, line_style);
                 }
             } catch (const fmt::format_error& e) {
                 log_error("style error: %s", e.what());
@@ -544,7 +569,7 @@ println(FILE* file, const attr_line_t& al)
         if (href) {
             fmt::print(file, FMT_STRING("\x1b]8;;{}\x1b\\"), href.value());
         }
-        if (start < str.size()) {
+        if (!replaced && start < str.size()) {
             auto actual_end = std::min(str.size(), static_cast<size_t>(point));
             auto sub = std::string{};
 

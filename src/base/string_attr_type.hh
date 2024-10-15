@@ -41,6 +41,10 @@
 class logfile;
 struct bookmark_metadata;
 
+enum class ui_icon_t : int32_t {
+    hidden,
+};
+
 /** Roles that can be mapped to curses attributes using attrs_for_role() */
 enum class role_t : int32_t {
     VCR_NONE = -1,
@@ -182,7 +186,8 @@ using string_attr_value = mapbox::util::variant<int64_t,
                                                 bookmark_metadata*,
                                                 timespec,
                                                 string_fragment,
-                                                block_elem_t>;
+                                                block_elem_t,
+                                                ui_icon_t>;
 
 class string_attr_type_base {
 public:
@@ -239,6 +244,7 @@ extern string_attr_type<block_elem_t> VC_BLOCK_ELEM;
 extern string_attr_type<int64_t> VC_FOREGROUND;
 extern string_attr_type<int64_t> VC_BACKGROUND;
 extern string_attr_type<std::string> VC_HYPERLINK;
+extern string_attr_type<ui_icon_t> VC_ICON;
 
 namespace lnav {
 

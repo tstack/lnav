@@ -330,6 +330,19 @@
                                     },
                                     "additionalProperties": false
                                 },
+                                "icons": {
+                                    "description": "Icons for UI elements.",
+                                    "title": "/ui/theme-defs/<theme_name>/icons",
+                                    "type": "object",
+                                    "properties": {
+                                        "hidden": {
+                                            "description": "Icon for hidden fields",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/hidden",
+                                            "$ref": "#/definitions/icon"
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                },
                                 "styles": {
                                     "description": "Styles for log messages.",
                                     "title": "/ui/theme-defs/<theme_name>/styles",
@@ -1011,6 +1024,19 @@
                     "examples": [
                         "pbpaste"
                     ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "icon": {
+            "title": "icon",
+            "type": "object",
+            "$$target": "#/definitions/icon",
+            "properties": {
+                "value": {
+                    "title": "/value",
+                    "description": "The icon.",
+                    "type": "string"
                 }
             },
             "additionalProperties": false

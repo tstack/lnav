@@ -70,6 +70,7 @@
 #include "base/opt_util.hh"
 #include "lnav_config_fwd.hh"
 #include "log_level.hh"
+#include "logfile_fwd.hh"
 #include "styling.hh"
 
 class view_curses;
@@ -271,6 +272,8 @@ public:
 
     std::unordered_map<std::string, string_attr_pair> vc_class_to_role;
 
+    block_elem_t wchar_for_icon(ui_icon_t ic) const;
+
     static bool initialized;
     static term_color_palette* vc_active_palette;
 
@@ -305,6 +308,7 @@ private:
     short vc_highlight_colors[HI_COLOR_COUNT];
     int vc_color_pair_end{0};
     cache::lru_cache<std::pair<short, short>, dyn_pair> vc_dyn_pairs;
+    block_elem_t vc_icons[lnav::enums::to_underlying(ui_icon_t::hidden) + 1];
 };
 
 enum class mouse_button_t {

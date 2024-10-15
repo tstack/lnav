@@ -462,8 +462,8 @@ attr_line_t::apply_hide()
 
             this->al_string.replace(lr.lr_start, lr.length(), "\xE2\x8B\xAE");
             shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
-            sattr.sa_type = &VC_ROLE;
-            sattr.sa_value = role_t::VCR_HIDDEN;
+            sattr.sa_type = &VC_ICON;
+            sattr.sa_value = ui_icon_t::hidden;
             lr.lr_end = lr.lr_start + 3;
         }
     }

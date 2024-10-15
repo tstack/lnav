@@ -104,8 +104,13 @@ struct highlighter_config {
     style_config hc_style;
 };
 
+struct icon_config {
+    std::optional<std::string> ic_value;
+};
+
 struct lnav_theme {
     std::map<std::string, std::string> lt_vars;
+    positioned_property<icon_config> lt_icon_hidden;
     positioned_property<style_config> lt_style_identifier;
     positioned_property<style_config> lt_style_text;
     positioned_property<style_config> lt_style_alt_text;

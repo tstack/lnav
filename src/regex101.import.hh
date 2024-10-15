@@ -30,10 +30,9 @@
 #ifndef regex101_import_hh
 #define regex101_import_hh
 
-#include <map>
+#include <filesystem>
 
 #include "base/lnav.console.hh"
-#include <filesystem>
 #include "log_format_ext.hh"
 #include "regex101.client.hh"
 
@@ -50,9 +49,9 @@ std::filesystem::path patch_path(const external_log_format* format,
 Result<std::filesystem::path, lnav::console::user_message> patch(
     const external_log_format* format,
     const std::string& pat_name,
-    const regex101::client::entry& entry);
+    const client::entry& entry);
 
-regex101::client::entry convert_format_pattern(
+client::entry convert_format_pattern(
     const external_log_format* format,
     std::shared_ptr<external_log_format::pattern> pat);
 

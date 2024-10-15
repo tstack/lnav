@@ -3,6 +3,11 @@
     "ui": {
         "theme-defs": {
             "default": {
+                "icons": {
+                    "hidden": {
+                        "value": "\u22EE"
+                    }
+                },
                 "vars": {
                     "semantic_highlight_color": "semantic()"
                 },

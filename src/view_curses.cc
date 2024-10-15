@@ -22,7 +22,7 @@
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 'OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -392,7 +392,7 @@ view_curses::mvwattrline(WINDOW* window,
               || iter->sa_type == &VC_STYLE || iter->sa_type == &VC_GRAPHIC
               || iter->sa_type == &SA_LEVEL || iter->sa_type == &VC_FOREGROUND
               || iter->sa_type == &VC_BACKGROUND
-              || iter->sa_type == &VC_BLOCK_ELEM))
+              || iter->sa_type == &VC_BLOCK_ELEM || iter->sa_type == &VC_ICON))
         {
             continue;
         }
@@ -466,6 +466,12 @@ view_curses::mvwattrline(WINDOW* window,
                 attrs = text_attrs{};
             } else if (iter->sa_type == &VC_BLOCK_ELEM) {
                 auto be = iter->sa_value.get<block_elem_t>();
+                block_elem = be.value;
+                attrs = vc.attrs_for_role(be.role);
+            } else if (iter->sa_type == &VC_ICON) {
+                auto ic = iter->sa_value.get<ui_icon_t>();
+                auto be = vc.wchar_for_icon(ic);
+
                 block_elem = be.value;
                 attrs = vc.attrs_for_role(be.role);
             } else if (iter->sa_type == &VC_STYLE) {
@@ -653,6 +659,12 @@ view_colors()
     }
 }
 
+block_elem_t
+view_colors::wchar_for_icon(ui_icon_t ic) const
+{
+    return this->vc_icons[lnav::enums::to_underlying(ic)];
+}
+
 bool view_colors::initialized = false;
 
 static const std::string COLOR_NAMES[] = {
@@ -682,7 +694,8 @@ public:
             vc.init_roles(pair.second, reporter);
         }
 
-        auto iter = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
+        const auto iter
+            = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
 
         if (iter == lnav_config.lc_ui_theme_defs.end()) {
             auto theme_names
@@ -851,6 +864,23 @@ view_colors::init_roles(const lnav_theme& lt,
     const auto& default_theme = lnav_config.lc_ui_theme_defs["default"];
     rgb_color fg, bg;
     std::string err;
+
+    {
+        size_t index = 0;
+        if (lt.lt_icon_hidden.pp_value.ic_value) {
+            auto read_res = ww898::utf::utf8::read([&lt, &index]() {
+                return lt.lt_icon_hidden.pp_value.ic_value.value()[index++];
+            });
+            if (read_res.isErr()) {
+                reporter(&lt.lt_icon_hidden,
+                         lnav::console::user_message::error("bad"));
+            } else if (read_res.unwrap() != 0) {
+                this->vc_icons[lnav::enums::to_underlying(ui_icon_t::hidden)]
+                    = block_elem_t{(wchar_t) read_res.unwrap(),
+                                   role_t::VCR_HIDDEN};
+            }
+        }
+    }
 
     /* Setup the mappings from roles to actual colors. */
     this->get_role_attrs(role_t::VCR_TEXT)

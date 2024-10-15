@@ -145,6 +145,11 @@
                 "vars": {
                     "semantic_highlight_color": "semantic()"
                 },
+                "icons": {
+                    "hidden": {
+                        "value": "⋮"
+                    }
+                },
                 "styles": {
                     "identifier": {
                         "color": "semantic()",
@@ -747,6 +752,11 @@
                     "white": "#F8F8F2",
                     "yellow": "#F1FA8C"
                 },
+                "icons": {
+                    "hidden": {
+
+                    }
+                },
                 "styles": {
                     "identifier": {
                         "color": "semantic()",
@@ -1312,6 +1322,11 @@
                     "white": "#ffffff",
                     "yellow": "#fce94f"
                 },
+                "icons": {
+                    "hidden": {
+
+                    }
+                },
                 "styles": {
                     "identifier": {
                         "color": "semantic()",
@@ -1875,6 +1890,11 @@
                     "red": "#f92772",
                     "white": "#f6f6f6",
                     "yellow": "#fe9720"
+                },
+                "icons": {
+                    "hidden": {
+
+                    }
                 },
                 "styles": {
                     "identifier": {
@@ -2441,6 +2461,11 @@
                     "white": "#808080",
                     "yellow": "#fe9720"
                 },
+                "icons": {
+                    "hidden": {
+
+                    }
+                },
                 "styles": {
                     "identifier": {
                         "color": "semantic()",
@@ -3004,6 +3029,11 @@
                     "semantic_highlight_color": "semantic()",
                     "white": "#d6deeb",
                     "yellow": "#cdcd00"
+                },
+                "icons": {
+                    "hidden": {
+
+                    }
                 },
                 "styles": {
                     "identifier": {
@@ -3578,6 +3608,11 @@
                     "violet": "#6c71c4",
                     "yellow": "#b58900"
                 },
+                "icons": {
+                    "hidden": {
+
+                    }
+                },
                 "styles": {
                     "identifier": {
                         "color": "semantic()",
@@ -4150,6 +4185,11 @@
                     "semantic_highlight_color": "semantic()",
                     "violet": "#6c71c4",
                     "yellow": "#b58900"
+                },
+                "icons": {
+                    "hidden": {
+
+                    }
                 },
                 "styles": {
                     "identifier": {

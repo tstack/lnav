@@ -646,6 +646,20 @@ static const struct json_path_container style_config_handlers =
     }
         .with_definition_id("style");
 
+static const auto icon_config_handlers
+    = json_path_container{
+        yajlpp::property_handler("value")
+            .with_description("The icon.")
+            .for_field(&icon_config::ic_value),
+    }.with_definition_id("icon");
+
+static const json_path_container theme_icons_handlers = {
+    yajlpp::property_handler("hidden")
+        .with_description("Icon for hidden fields")
+        .for_child(&lnav_theme::lt_icon_hidden)
+        .with_children(icon_config_handlers),
+};
+
 static const struct json_path_container theme_styles_handlers = {
     yajlpp::property_handler("identifier")
         .with_description("Styling for identifiers in logs")
@@ -1096,6 +1110,10 @@ static const struct json_path_container theme_def_handlers = {
     yajlpp::property_handler("vars")
         .with_description("Variables definitions that are used in this theme.")
         .with_children(theme_vars_handlers),
+
+    yajlpp::property_handler("icons")
+        .with_description("Icons for UI elements.")
+        .with_children(theme_icons_handlers),
 
     yajlpp::property_handler("styles")
         .with_description("Styles for log messages.")
