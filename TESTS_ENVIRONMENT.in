@@ -75,7 +75,7 @@ export HAVE_SQLITE3_ERROR_OFFSET
 
 LAST_TEST=""
 
-LAST_CAP_TEST=()
+LAST_CAP_TEST=""
 
 has_errors=""
 

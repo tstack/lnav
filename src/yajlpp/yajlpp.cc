@@ -1191,7 +1191,7 @@ yajlpp_parse_context::get_path_fragment(int offset,
     } else {
         end = this->ypc_path.size() - 1;
     }
-    if (this->ypc_handlers) {
+    if (this->ypc_handlers != nullptr) {
         len_out
             = json_ptr::decode(frag_in, &this->ypc_path[start], end - start);
         retval = frag_in;
