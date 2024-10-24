@@ -245,7 +245,8 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                 } while (key_iter != key_comps.begin() && !found);
             }
             if (!mixed_queue.empty()) {
-                if (el_stack.back().e_token == DNT_KEY
+                if (!el_stack.empty() &&
+                    el_stack.back().e_token == DNT_KEY
                     && mixed_queue.front().e_token == DNT_KEY)
                 {
                     el_stack.POP_BACK();
