@@ -1,8 +1,8 @@
 
 include $(top_srcdir)/aminclude_static.am
 
-TESTS_ENVIRONMENT = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
-LOG_COMPILER = $(SHELL) $(top_builddir)/TESTS_ENVIRONMENT
+TESTS_ENVIRONMENT = $(BASH) $(top_builddir)/TESTS_ENVIRONMENT
+LOG_COMPILER = $(BASH) $(top_builddir)/TESTS_ENVIRONMENT
 
 AM_CPPFLAGS = \
 	$(CODE_COVERAGE_CPPFLAGS) \
