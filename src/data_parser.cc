@@ -819,7 +819,8 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
         } while (key_iter != key_comps.begin() && !found);
     }
     if (!mixed_queue.empty()) {
-        if (el_stack.back().e_token == DNT_KEY
+        if (!el_stack.empty() &&
+            el_stack.back().e_token == DNT_KEY
             && mixed_queue.front().e_token == DNT_KEY)
         {
             el_stack.POP_BACK();
@@ -855,6 +856,7 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
             && (value.front().e_token == DT_WORD
                 || value.front().e_token == DT_SYMBOL
                 || value.front().e_token == DT_ID)
+            && !el_stack.empty()
             && el_stack.back().e_token != DNT_KEY)
         {
             element_list_t ELEMENT_LIST_T(mixed_key);
