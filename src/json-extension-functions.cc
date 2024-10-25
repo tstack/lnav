@@ -57,7 +57,7 @@ public:
     double sjo_float{0.0};
 };
 
-static void
+void
 null_or_default(sqlite3_context* context, int argc, sqlite3_value* argv[])
 {
     if (argc > 2) {
@@ -74,7 +74,7 @@ struct contains_userdata {
     bool cu_result{false};
 };
 
-static int
+int
 contains_string(void* ctx, const unsigned char* str, size_t len)
 {
     auto sf = string_fragment::from_bytes(str, len);
@@ -87,7 +87,7 @@ contains_string(void* ctx, const unsigned char* str, size_t len)
     return 1;
 }
 
-static int
+int
 contains_integer(void* ctx, long long value)
 {
     auto& cu = *((contains_userdata*) ctx);
@@ -99,7 +99,7 @@ contains_integer(void* ctx, long long value)
     return 1;
 }
 
-static int
+int
 contains_null(void* ctx)
 {
     auto& cu = *((contains_userdata*) ctx);
@@ -109,7 +109,7 @@ contains_null(void* ctx)
     return 1;
 }
 
-static bool
+bool
 json_contains(vtab_types::nullable<const char> nullable_json_in,
               sqlite3_value* value)
 {
@@ -179,7 +179,7 @@ json_contains(vtab_types::nullable<const char> nullable_json_in,
     return cu.cu_result;
 }
 
-static int
+int
 gen_handle_null(void* ctx)
 {
     sql_json_op* sjo = (sql_json_op*) ctx;
@@ -655,7 +655,7 @@ sql_json_group_object_step(sqlite3_context* context,
     }
 }
 
-static void
+void
 sql_json_group_object_final(sqlite3_context* context)
 {
     auto* jac = (json_agg_context*) sqlite3_aggregate_context(context, 0);
@@ -676,7 +676,7 @@ sql_json_group_object_final(sqlite3_context* context)
     }
 }
 
-static void
+void
 sql_json_group_array_step(sqlite3_context* context,
                           int argc,
                           sqlite3_value** argv)
@@ -793,7 +793,8 @@ json_extension_functions(struct FuncDef** basic_funcs,
                 .with_example({
                     "To concatenate two arrays together",
                     "SELECT json_concat('[1, 2, 3]', json('[4, 5]'))",
-                })),
+                }))
+            .with_result_subtype(),
 
         sqlite_func_adapter<decltype(&json_contains), json_contains>::builder(
             help_text("json_contains",
@@ -816,7 +817,7 @@ json_extension_functions(struct FuncDef** basic_funcs,
         {
             "jget",
             -1,
-            SQLITE_UTF8,
+            SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_RESULT_SUBTYPE,
             0,
             sql_jget,
             help_text("jget",

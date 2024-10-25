@@ -47,8 +47,6 @@
 #    include <curl/curl.h>
 #endif
 
-using namespace mapbox;
-
 enum class encode_algo {
     base64,
     hex,
@@ -117,7 +115,7 @@ find_re(string_fragment re)
     return &iter->second;
 }
 
-static bool
+bool
 regexp(string_fragment re, string_fragment str)
 {
     auto* reobj = find_re(re);
@@ -125,8 +123,9 @@ regexp(string_fragment re, string_fragment str)
     return reobj->re2->find_in(str).ignore_error().has_value();
 }
 
-static util::variant<int64_t, double, const char*, string_fragment, json_string>
-regexp_match(string_fragment re, string_fragment str)
+mapbox::util::
+    variant<int64_t, double, const char*, string_fragment, json_string>
+    regexp_match(string_fragment re, string_fragment str)
 {
     auto* reobj = find_re(re);
     auto& extractor = *reobj->re2;
@@ -272,7 +271,7 @@ logfmt2json(string_fragment line)
     return json_string(gen);
 }
 
-static std::string
+std::string
 regexp_replace(string_fragment str, string_fragment re, const char* repl)
 {
     auto* reobj = find_re(re);
@@ -280,7 +279,7 @@ regexp_replace(string_fragment str, string_fragment re, const char* repl)
     return reobj->re2->replace(str, repl);
 }
 
-static std::string
+std::string
 spooky_hash(const std::vector<const char*>& args)
 {
     byte_array<2, uint64> hash;
@@ -301,7 +300,7 @@ spooky_hash(const std::vector<const char*>& args)
     return hash.to_string();
 }
 
-static void
+void
 sql_spooky_hash_step(sqlite3_context* context, int argc, sqlite3_value** argv)
 {
     auto* hasher
@@ -394,7 +393,7 @@ sparkline_final(sqlite3_context* context)
     sc->~sparkline_context();
 }
 
-std::optional<util::variant<blob_auto_buffer, sqlite3_int64, double>>
+std::optional<mapbox::util::variant<blob_auto_buffer, sqlite3_int64, double>>
 sql_gunzip(sqlite3_value* val)
 {
     switch (sqlite3_value_type(val)) {
@@ -620,7 +619,7 @@ const char* curl_url_strerror(CURLUcode error);
 }
 #endif
 
-static json_string
+json_string
 sql_parse_url(std::string url)
 {
     static auto* CURL_HANDLE = get_curl_easy();
@@ -943,7 +942,8 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     "named properties 'num' and 'str'",
                     "SELECT regexp_match('(?<num>\\d+) (?<str>\\w+)', '123 "
                     "four')",
-                })),
+                }))
+            .with_result_subtype(),
 
         sqlite_func_adapter<decltype(&regexp_replace), regexp_replace>::builder(
             help_text("regexp_replace",
@@ -1057,7 +1057,8 @@ string_extension_functions(struct FuncDef** basic_funcs,
                 .with_example({
                     "To extract columnar data from a string",
                     "SELECT extract('1.0 abc 2.0')",
-                })),
+                }))
+            .with_result_subtype(),
 
         sqlite_func_adapter<decltype(&logfmt2json), logfmt2json>::builder(
             help_text("logfmt2json",
@@ -1069,7 +1070,8 @@ string_extension_functions(struct FuncDef** basic_funcs,
                 .with_example({
                     "To extract key/value pairs from a log message",
                     "SELECT logfmt2json('foo=1 bar=2 name=\"Rolo Tomassi\"')",
-                })),
+                }))
+            .with_result_subtype(),
 
         sqlite_func_adapter<
             decltype(static_cast<bool (*)(const char*, const char*)>(
@@ -1240,7 +1242,8 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     "'https://alice@[fe80::14ff:4ee5:1215:2fb2]'",
                     "SELECT "
                     "parse_url('https://alice@[fe80::14ff:4ee5:1215:2fb2]')",
-                })),
+                }))
+            .with_result_subtype(),
 
         sqlite_func_adapter<decltype(&sql_unparse_url), sql_unparse_url>::
             builder(

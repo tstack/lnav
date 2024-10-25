@@ -57,6 +57,12 @@ struct FuncDef {
         this->eTextRep = flags;
         return *this;
     }
+
+    FuncDef with_result_subtype() &&
+    {
+        this->eTextRep |= SQLITE_RESULT_SUBTYPE;
+        return *this;
+    }
 };
 
 struct FuncDefAgg {
