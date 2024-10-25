@@ -2672,13 +2672,13 @@ common_extension_functions(struct FuncDef** basic_funcs,
 
     /* Aggregate functions */
     static struct FuncDefAgg aAggs[] = {
-        {"stdev", 1, 0, varianceStep, stdevFinalize},
-        {"stddev", 1, 0, varianceStep, stdevFinalize},
-        {"variance", 1, 0, varianceStep, varianceFinalize},
-        {"mode", 1, 0, modeStep, modeFinalize},
-        {"median", 1, 0, modeStep, medianFinalize},
-        {"lower_quartile", 1, 0, modeStep, lower_quartileFinalize},
-        {"upper_quartile", 1, 0, modeStep, upper_quartileFinalize},
+        {"stdev", 1, SQLITE_UTF8, 0, varianceStep, stdevFinalize},
+        {"stddev", 1, SQLITE_UTF8, 0, varianceStep, stdevFinalize},
+        {"variance", 1, SQLITE_UTF8, 0, varianceStep, varianceFinalize},
+        {"mode", 1, SQLITE_UTF8, 0, modeStep, modeFinalize},
+        {"median", 1, SQLITE_UTF8, 0, modeStep, medianFinalize},
+        {"lower_quartile", 1, SQLITE_UTF8, 0, modeStep, lower_quartileFinalize},
+        {"upper_quartile", 1, SQLITE_UTF8, 0, modeStep, upper_quartileFinalize},
 
         {nullptr},
     };

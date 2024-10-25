@@ -190,7 +190,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             sqlite3_create_function(db,
                                     agg_funcs[i].zName,
                                     agg_funcs[i].nArg,
-                                    SQLITE_UTF8,
+                                    agg_funcs[i].eTextRep,
                                     (void*) &agg_funcs[i],
                                     nullptr,
                                     agg_funcs[i].xStep,
