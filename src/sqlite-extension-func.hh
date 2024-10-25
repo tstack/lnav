@@ -60,7 +60,9 @@ struct FuncDef {
 
     FuncDef with_result_subtype() &&
     {
+#ifdef SQLITE_RESULT_SUBTYPE
         this->eTextRep |= SQLITE_RESULT_SUBTYPE;
+#endif
         return *this;
     }
 };

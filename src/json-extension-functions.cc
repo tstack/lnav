@@ -817,7 +817,11 @@ json_extension_functions(struct FuncDef** basic_funcs,
         {
             "jget",
             -1,
-            SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_RESULT_SUBTYPE,
+            SQLITE_UTF8 | SQLITE_DETERMINISTIC
+#ifdef SQLITE_RESULT_SUBTYPE
+                | SQLITE_RESULT_SUBTYPE
+#endif
+            ,
             0,
             sql_jget,
             help_text("jget",
@@ -860,7 +864,11 @@ json_extension_functions(struct FuncDef** basic_funcs,
         {
             "json_group_object",
             -1,
-            SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_RESULT_SUBTYPE,
+            SQLITE_UTF8 | SQLITE_DETERMINISTIC
+#ifdef SQLITE_RESULT_SUBTYPE
+                | SQLITE_RESULT_SUBTYPE
+#endif
+            ,
             0,
             sql_json_group_object_step,
             sql_json_group_object_final,
@@ -886,7 +894,11 @@ json_extension_functions(struct FuncDef** basic_funcs,
         {
             "json_group_array",
             -1,
-            SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_RESULT_SUBTYPE,
+            SQLITE_UTF8 | SQLITE_DETERMINISTIC
+#ifdef SQLITE_RESULT_SUBTYPE
+                | SQLITE_RESULT_SUBTYPE
+#endif
+            ,
             0,
             sql_json_group_array_step,
             sql_json_group_array_final,
