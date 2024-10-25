@@ -466,7 +466,7 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ';SELECT name,value FROM environ WHERE name = "SQL_ENV_VALUE"' \
+    -c ";SELECT name,value FROM environ WHERE name = 'SQL_ENV_VALUE'" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 
@@ -485,20 +485,20 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ';INSERT INTO environ (name, value) VALUES ("", null)' \
+    -c ";INSERT INTO environ (name, value) VALUES ('', null)" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ';INSERT INTO environ (name, value) VALUES ("foo=bar", "bar")' \
+    -c ";INSERT INTO environ (name, value) VALUES ('foo=bar', 'bar')" \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ';INSERT INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
+    -c ";INSERT INTO environ (name, value) VALUES ('SQL_ENV_VALUE', 'bar')" \
     ${test_dir}/logfile_access_log.0
 
 run_test ${lnav_test} -n \
-    -c ';INSERT OR IGNORE INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
-    -c ';SELECT * FROM environ WHERE name = "SQL_ENV_VALUE"' \
+    -c ";INSERT OR IGNORE INTO environ (name, value) VALUES ('SQL_ENV_VALUE', 'bar')" \
+    -c ";SELECT * FROM environ WHERE name = 'SQL_ENV_VALUE'" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 
@@ -509,8 +509,8 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ';REPLACE INTO environ (name, value) VALUES ("SQL_ENV_VALUE", "bar")' \
-    -c ';SELECT * FROM environ WHERE name = "SQL_ENV_VALUE"' \
+    -c ";REPLACE INTO environ (name, value) VALUES ('SQL_ENV_VALUE', 'bar')" \
+    -c ";SELECT * FROM environ WHERE name = 'SQL_ENV_VALUE'" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 
@@ -521,7 +521,7 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ';INSERT INTO environ (name, value) VALUES ("foo_env", "bar")' \
+    -c ";INSERT INTO environ (name, value) VALUES ('foo_env', 'bar')" \
     -c ';SELECT $foo_env as val' \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
@@ -533,7 +533,7 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ';UPDATE environ SET name="NEW_ENV_VALUE" WHERE name="SQL_ENV_VALUE"' \
+    -c ";UPDATE environ SET name='NEW_ENV_VALUE' WHERE name='SQL_ENV_VALUE'" \
     -c ";SELECT * FROM environ WHERE name like '%ENV_VALUE'" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
@@ -545,8 +545,8 @@ EOF
 
 
 run_test ${lnav_test} -n \
-    -c ';DELETE FROM environ WHERE name="SQL_ENV_VALUE"' \
-    -c ';SELECT * FROM environ WHERE name like "%ENV_VALUE"' \
+    -c ";DELETE FROM environ WHERE name='SQL_ENV_VALUE'" \
+    -c ";SELECT * FROM environ WHERE name like '%ENV_VALUE'" \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 

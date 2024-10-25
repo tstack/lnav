@@ -1,0 +1,2 @@
+[1m[4m$id[0m[1m[4m [0m[1m[4m[7m $parent  [0m[1m[4m [0m[1m[4m                   replace($detail, 'SCAN TABLE', 'SCAN')                    [0m[1m[4m [0m
+  2 [1m         0[0m SCAN access_log VIRTUAL TABLE INDEX 1:SEARCH access_log USING log_path GLOB ? 
