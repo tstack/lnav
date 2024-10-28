@@ -238,9 +238,13 @@ tm2sec(const struct tm* t)
     }
 
     /* Find number of days since 1st March 1900 (in the Gregorian calendar). */
-
     days = year * 365 + year / 4 - year / 100 + (year / 100 + 3) / 4;
-    days += dayoffset[t->tm_mon] + t->tm_mday - 1;
+    if(t->tm_yday >= 1){
+      days += t->tm_yday;
+    }
+    else {
+      days += dayoffset[t->tm_mon] + t->tm_mday - 1;
+    }
     days -= 25508; /* 1 jan 1970 is 25508 days since 1 mar 1900 */
 
     secs = ((days * 24 + t->tm_hour) * 60 + t->tm_min) * 60 + t->tm_sec;
