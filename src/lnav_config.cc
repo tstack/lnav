@@ -365,7 +365,7 @@ install_from_git(const std::string& repo)
     rename(local_staging_path.c_str(), dest_path.c_str());
     auto um = lnav::console::user_message::ok(
                   attr_line_t("installed lnav repo at: ")
-                      .append(lnav::roles::file(local_configs_path.string())))
+                      .append(lnav::roles::file(dest_path.string())))
                   .with_note(notes)
                   .move();
     lnav::console::print(stdout, um);
