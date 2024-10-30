@@ -212,14 +212,14 @@ public:
     }
 
     template<typename U = T>
-    std::enable_if_t<!std::is_void<U>::value, string_attr_pair> value(
+    std::enable_if_t<!std::is_void_v<U>, string_attr_pair> value(
         const U& val) const
     {
         return std::make_pair(this, val);
     }
 
     template<typename U = T>
-    std::enable_if_t<std::is_void<U>::value, string_attr_pair> value() const
+    std::enable_if_t<std::is_void_v<U>, string_attr_pair> value() const
     {
         return std::make_pair(this, string_attr_value{});
     }
@@ -255,15 +255,14 @@ template<typename S>
 inline std::pair<S, string_attr_pair>
 preformatted(S str)
 {
-    return std::make_pair(std::move(str), SA_PREFORMATTED.template value());
+    return std::make_pair(std::move(str), SA_PREFORMATTED.value());
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 href(S str, std::string href)
 {
-    return std::make_pair(std::move(str),
-                          VC_HYPERLINK.template value(std::move(href)));
+    return std::make_pair(std::move(str), VC_HYPERLINK.value(std::move(href)));
 }
 
 }  // namespace attrs
@@ -275,24 +274,21 @@ template<typename S>
 inline std::pair<S, string_attr_pair>
 error(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_ERROR));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_ERROR));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 warning(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_WARNING));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_WARNING));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 status(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_STATUS));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_STATUS));
 }
 
 template<typename S>
@@ -300,7 +296,7 @@ inline std::pair<S, string_attr_pair>
 inactive_status(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_INACTIVE_STATUS));
+                          VC_ROLE.value(role_t::VCR_INACTIVE_STATUS));
 }
 
 template<typename S>
@@ -308,71 +304,63 @@ inline std::pair<S, string_attr_pair>
 status_title(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_STATUS_TITLE));
+                          VC_ROLE.value(role_t::VCR_STATUS_TITLE));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 ok(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_OK));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_OK));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 hidden(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_HIDDEN));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_HIDDEN));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 file(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_FILE));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_FILE));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 symbol(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_SYMBOL));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_SYMBOL));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 keyword(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_KEYWORD));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_KEYWORD));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 variable(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_VARIABLE));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_VARIABLE));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 number(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_NUMBER));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_NUMBER));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 comment(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_COMMENT));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_COMMENT));
 }
 
 template<typename S>
@@ -380,31 +368,28 @@ inline std::pair<S, string_attr_pair>
 identifier(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_IDENTIFIER));
+                          VC_ROLE.value(role_t::VCR_IDENTIFIER));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 string(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_STRING));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_STRING));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 hr(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_HR));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_HR));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 hyperlink(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_HYPERLINK));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_HYPERLINK));
 }
 
 template<typename S>
@@ -412,7 +397,7 @@ inline std::pair<S, string_attr_pair>
 list_glyph(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_LIST_GLYPH));
+                          VC_ROLE.value(role_t::VCR_LIST_GLYPH));
 }
 
 template<typename S>
@@ -420,7 +405,7 @@ inline std::pair<S, string_attr_pair>
 breadcrumb(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_BREADCRUMB));
+                          VC_ROLE.value(role_t::VCR_BREADCRUMB));
 }
 
 template<typename S>
@@ -428,7 +413,7 @@ inline std::pair<S, string_attr_pair>
 quoted_code(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_QUOTED_CODE));
+                          VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 }
 
 template<typename S>
@@ -436,7 +421,7 @@ inline std::pair<S, string_attr_pair>
 code_border(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_CODE_BORDER));
+                          VC_ROLE.value(role_t::VCR_CODE_BORDER));
 }
 
 template<typename S>
@@ -444,7 +429,7 @@ inline std::pair<S, string_attr_pair>
 snippet_border(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_SNIPPET_BORDER));
+                          VC_ROLE.value(role_t::VCR_SNIPPET_BORDER));
 }
 
 template<typename S>
@@ -452,7 +437,7 @@ inline std::pair<S, string_attr_pair>
 table_border(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_TABLE_BORDER));
+                          VC_ROLE.value(role_t::VCR_TABLE_BORDER));
 }
 
 template<typename S>
@@ -460,7 +445,7 @@ inline std::pair<S, string_attr_pair>
 table_header(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_TABLE_HEADER));
+                          VC_ROLE.value(role_t::VCR_TABLE_HEADER));
 }
 
 template<typename S>
@@ -468,7 +453,7 @@ inline std::pair<S, string_attr_pair>
 quote_border(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_QUOTE_BORDER));
+                          VC_ROLE.value(role_t::VCR_QUOTE_BORDER));
 }
 
 template<typename S>
@@ -476,7 +461,7 @@ inline std::pair<S, string_attr_pair>
 quoted_text(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_QUOTED_TEXT));
+                          VC_ROLE.value(role_t::VCR_QUOTED_TEXT));
 }
 
 template<typename S>
@@ -484,7 +469,7 @@ inline std::pair<S, string_attr_pair>
 footnote_border(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_FOOTNOTE_BORDER));
+                          VC_ROLE.value(role_t::VCR_FOOTNOTE_BORDER));
 }
 
 template<typename S>
@@ -492,55 +477,49 @@ inline std::pair<S, string_attr_pair>
 footnote_text(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_FOOTNOTE_TEXT));
+                          VC_ROLE.value(role_t::VCR_FOOTNOTE_TEXT));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 h1(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_H1));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H1));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 h2(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_H2));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H2));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 h3(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_H3));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H3));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 h4(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_H4));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H4));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 h5(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_H5));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H5));
 }
 
 template<typename S>
 inline std::pair<S, string_attr_pair>
 h6(S str)
 {
-    return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_H6));
+    return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H6));
 }
 
 template<typename S>
@@ -548,7 +527,7 @@ inline std::pair<S, string_attr_pair>
 suggestion(S str)
 {
     return std::make_pair(std::move(str),
-                          VC_ROLE.template value(role_t::VCR_SUGGESTION));
+                          VC_ROLE.value(role_t::VCR_SUGGESTION));
 }
 
 namespace literals {
@@ -556,204 +535,197 @@ namespace literals {
 inline std::pair<std::string, string_attr_pair> operator"" _ok(const char* str,
                                                                std::size_t len)
 {
-    return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_OK));
+    return std::make_pair(std::string(str, len), VC_ROLE.value(role_t::VCR_OK));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _error(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_ERROR));
+                          VC_ROLE.value(role_t::VCR_ERROR));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _warning(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_WARNING));
+                          VC_ROLE.value(role_t::VCR_WARNING));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _info(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_INFO));
+                          VC_ROLE.value(role_t::VCR_INFO));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _status_title(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_STATUS_TITLE));
+                          VC_ROLE.value(role_t::VCR_STATUS_TITLE));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _symbol(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_SYMBOL));
+                          VC_ROLE.value(role_t::VCR_SYMBOL));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _keyword(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_KEYWORD));
+                          VC_ROLE.value(role_t::VCR_KEYWORD));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _variable(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_VARIABLE));
+                          VC_ROLE.value(role_t::VCR_VARIABLE));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _comment(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_COMMENT));
+                          VC_ROLE.value(role_t::VCR_COMMENT));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _hotkey(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_STATUS_HOTKEY));
+                          VC_ROLE.value(role_t::VCR_STATUS_HOTKEY));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _h1(const char* str,
                                                                std::size_t len)
 {
-    return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_H1));
+    return std::make_pair(std::string(str, len), VC_ROLE.value(role_t::VCR_H1));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _h2(const char* str,
                                                                std::size_t len)
 {
-    return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_H2));
+    return std::make_pair(std::string(str, len), VC_ROLE.value(role_t::VCR_H2));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _h3(const char* str,
                                                                std::size_t len)
 {
-    return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_H3));
+    return std::make_pair(std::string(str, len), VC_ROLE.value(role_t::VCR_H3));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _h4(const char* str,
                                                                std::size_t len)
 {
-    return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_H4));
+    return std::make_pair(std::string(str, len), VC_ROLE.value(role_t::VCR_H4));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _h5(const char* str,
                                                                std::size_t len)
 {
-    return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_H5));
+    return std::make_pair(std::string(str, len), VC_ROLE.value(role_t::VCR_H5));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _hr(const char* str,
                                                                std::size_t len)
 {
-    return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_HR));
+    return std::make_pair(std::string(str, len), VC_ROLE.value(role_t::VCR_HR));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _hyperlink(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_HYPERLINK));
+                          VC_ROLE.value(role_t::VCR_HYPERLINK));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _list_glyph(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_LIST_GLYPH));
+                          VC_ROLE.value(role_t::VCR_LIST_GLYPH));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _breadcrumb(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_BREADCRUMB));
+                          VC_ROLE.value(role_t::VCR_BREADCRUMB));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _quoted_code(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_QUOTED_CODE));
+                          VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _code_border(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_CODE_BORDER));
+                          VC_ROLE.value(role_t::VCR_CODE_BORDER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _table_header(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_TABLE_HEADER));
+                          VC_ROLE.value(role_t::VCR_TABLE_HEADER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _table_border(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_TABLE_BORDER));
+                          VC_ROLE.value(role_t::VCR_TABLE_BORDER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _quote_border(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_QUOTE_BORDER));
+                          VC_ROLE.value(role_t::VCR_QUOTE_BORDER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _quoted_text(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_QUOTED_TEXT));
+                          VC_ROLE.value(role_t::VCR_QUOTED_TEXT));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _footnote_border(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_FOOTNOTE_BORDER));
+                          VC_ROLE.value(role_t::VCR_FOOTNOTE_BORDER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _footnote_text(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_FOOTNOTE_BORDER));
+                          VC_ROLE.value(role_t::VCR_FOOTNOTE_BORDER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _snippet_border(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_ROLE.template value(role_t::VCR_SNIPPET_BORDER));
+                          VC_ROLE.value(role_t::VCR_SNIPPET_BORDER));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _link(
     const char* str, std::size_t len)
 {
     return std::make_pair(std::string(str, len),
-                          VC_HYPERLINK.template value(std::string(str, len)));
+                          VC_HYPERLINK.value(std::string(str, len)));
 }
 
 }  // namespace literals
