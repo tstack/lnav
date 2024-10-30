@@ -7,4 +7,4 @@ Jinja2==3.1.4
 MarkupSafe==2.1.5
 packaging==24.0
 spookyhash==2.1.0
-Werkzeug==3.0.3
+Werkzeug==3.0.6
