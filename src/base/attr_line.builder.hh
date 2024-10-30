@@ -90,15 +90,15 @@ public:
     template<typename... Args>
     attr_line_builder& overlay_attr(Args... args)
     {
-        this->alb_line.al_attrs.template emplace_back(args...);
+        this->alb_line.al_attrs.emplace_back(args...);
         return *this;
     }
 
     template<typename... Args>
     attr_line_builder& overlay_attr_for_char(int index, Args... args)
     {
-        this->alb_line.al_attrs.template emplace_back(
-            line_range{index, index + 1}, args...);
+        this->alb_line.al_attrs.emplace_back(line_range{index, index + 1},
+                                             args...);
         return *this;
     }
 
