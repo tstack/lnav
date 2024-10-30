@@ -719,9 +719,9 @@ ptime_j(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 inline void
 ftime_j(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
-    PTIME_APPEND('0' + (((tm.et_tm.tm_yday) / 100) % 100));
-    PTIME_APPEND('0' + (((tm.et_tm.tm_yday) / 10) % 10));
-    PTIME_APPEND('0' + (((tm.et_tm.tm_yday) / 1) % 10));
+    PTIME_APPEND('0' + (((tm.et_tm.tm_yday + 1) / 100) % 100));
+    PTIME_APPEND('0' + (((tm.et_tm.tm_yday + 1) / 10) % 10));
+    PTIME_APPEND('0' + (((tm.et_tm.tm_yday + 1) / 1) % 10));
 }
 
 inline bool

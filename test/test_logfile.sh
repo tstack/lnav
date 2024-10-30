@@ -738,3 +738,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ':set-file-timezone bad' \
     ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ';SELECT log_time FROM all_logs' \
+    ${test_dir}/logfile_yday.0
