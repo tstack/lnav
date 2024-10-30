@@ -931,6 +931,7 @@ relative_time::adjust(const exttm& tm) const
         retval.et_tm.tm_min += this->rt_field[RTF_MINUTES].value;
     }
     if (this->rt_field[RTF_HOURS].is_set && this->is_absolute(RTF_HOURS)) {
+        retval.et_tm.tm_yday = -1;
         if (this->rt_next
             && this->rt_field[RTF_HOURS].value <= tm.et_tm.tm_hour)
         {
@@ -955,8 +956,10 @@ relative_time::adjust(const exttm& tm) const
         {
             retval.et_tm.tm_mon -= 1;
         }
+        retval.et_tm.tm_yday = -1;
         retval.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
     } else {
+        retval.et_tm.tm_yday = -1;
         retval.et_tm.tm_mday += this->rt_field[RTF_DAYS].value;
     }
     if (this->rt_field[RTF_MONTHS].is_set && this->is_absolute(RTF_MONTHS)) {
@@ -1019,9 +1022,11 @@ relative_time::window_start(const struct exttm& tm) const
         if (this->rt_field[RTF_MONTHS].value > tm.et_tm.tm_mon) {
             return std::nullopt;
         }
+        retval.et_tm.tm_yday = -1;
         retval.et_tm.tm_mon = this->rt_field[RTF_MONTHS].value;
         clear = true;
     } else if (clear) {
+        retval.et_tm.tm_yday = -1;
         retval.et_tm.tm_mon = 0;
     }
 
@@ -1029,9 +1034,11 @@ relative_time::window_start(const struct exttm& tm) const
         if (this->rt_field[RTF_DAYS].value > tm.et_tm.tm_mday) {
             return std::nullopt;
         }
+        retval.et_tm.tm_yday = -1;
         retval.et_tm.tm_mday = this->rt_field[RTF_DAYS].value;
         clear = true;
     } else if (clear) {
+        retval.et_tm.tm_yday = -1;
         retval.et_tm.tm_mday = 1;
     }
 
@@ -1114,6 +1121,7 @@ relative_time::to_microseconds() const
         } else {
             etm.et_tm.tm_mday = 1;
         }
+        etm.et_tm.tm_yday = -1;
         etm.et_tm.tm_min = this->rt_field[RTF_MINUTES].value;
         etm.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
 
