@@ -2747,7 +2747,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 auto curr_node = lnav::document::hier_node::lookup_path(
                     meta->m_sections_root.get(), path);
 
-                crumbs.template emplace_back(
+                crumbs.emplace_back(
                     iv.value,
                     [meta, path]() { return meta->possibility_provider(path); },
                     [this, curr_node, path, line_from_top](const auto& key) {
@@ -2758,7 +2758,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                         if (parent_node == nullptr) {
                             return;
                         }
-                        key.template match(
+                        key.match(
                             [parent_node](const std::string& str) {
                                 return parent_node->find_line_number(str);
                             },
@@ -2797,14 +2797,14 @@ logfile_sub_source::text_crumbs_for_line(int line,
             auto poss_provider = [curr_node = node.value()]() {
                 std::vector<breadcrumb::possibility> retval;
                 for (const auto& child : curr_node->hn_named_children) {
-                    retval.template emplace_back(child.first);
+                    retval.emplace_back(child.first);
                 }
                 return retval;
             };
             auto path_performer
                 = [this, curr_node = node.value(), line_from_top](
                       const breadcrumb::crumb::key_t& value) {
-                      value.template match(
+                      value.match(
                           [curr_node](const std::string& str) {
                               return curr_node->find_line_number(str);
                           },

@@ -306,7 +306,7 @@ plain_text_source::text_crumbs_for_line(int line,
             auto path = crumbs | lnav::itertools::skip(initial_size)
                 | lnav::itertools::map(&breadcrumb::crumb::c_key)
                 | lnav::itertools::append(iv.value);
-            crumbs.template emplace_back(
+            crumbs.emplace_back(
                 iv.value,
                 [meta, path]() { return meta->possibility_provider(path); },
                 [this, meta, path](const auto& key) {
@@ -320,7 +320,7 @@ plain_text_source::text_crumbs_for_line(int line,
                     if (parent_node == nullptr) {
                         return;
                     }
-                    key.template match(
+                    key.match(
                         [this, parent_node](const std::string& str) {
                             auto sib_iter
                                 = parent_node->hn_named_children.find(str);
@@ -363,13 +363,13 @@ plain_text_source::text_crumbs_for_line(int line,
         auto poss_provider = [curr_node = node.value()]() {
             std::vector<breadcrumb::possibility> retval;
             for (const auto& child : curr_node->hn_named_children) {
-                retval.template emplace_back(child.first);
+                retval.emplace_back(child.first);
             }
             return retval;
         };
         auto path_performer = [this, curr_node = node.value()](
                                   const breadcrumb::crumb::key_t& value) {
-            value.template match(
+            value.match(
                 [this, curr_node](const std::string& str) {
                     auto child_iter = curr_node->hn_named_children.find(str);
                     if (child_iter != curr_node->hn_named_children.end()) {

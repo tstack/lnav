@@ -899,7 +899,7 @@ metadata::possibility_provider(const std::vector<section_key_t>& path)
 
         if (parent_node != nullptr) {
             for (const auto& sibling : parent_node->hn_named_children) {
-                retval.template emplace_back(sibling.first);
+                retval.emplace_back(sibling.first);
             }
         }
     }

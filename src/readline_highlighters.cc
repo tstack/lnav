@@ -188,11 +188,11 @@ readline_command_highlighter_int(attr_line_t& al,
                     .then([&](const auto& rgb_fg) {
                         auto color
                             = view_colors::singleton().match_color(rgb_fg);
-                        alb.template overlay_attr(to_line_range(md[0].value()),
-                                                  VC_STYLE.value(text_attrs{
-                                                      A_BOLD,
-                                                      color,
-                                                  }));
+                        alb.overlay_attr(to_line_range(md[0].value()),
+                                         VC_STYLE.value(text_attrs{
+                                             A_BOLD,
+                                             color,
+                                         }));
                     });
             });
     }

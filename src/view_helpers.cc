@@ -164,7 +164,7 @@ public:
         const auto initial_size = crumbs.size();
         lnav::document::hier_node* root_node{nullptr};
 
-        this->pss_hier_tree->template visit_overlapping(
+        this->pss_hier_tree->visit_overlapping(
             tl.tl_offset,
             [&root_node](const auto& hier_iv) { root_node = hier_iv.value; });
         this->pss_interval_tree->visit_overlapping(
@@ -185,7 +185,7 @@ public:
                             for (const auto& sibling :
                                  parent_node->hn_named_children)
                             {
-                                retval.template emplace_back(sibling.first);
+                                retval.emplace_back(sibling.first);
                             }
                         }
                     }
@@ -204,7 +204,7 @@ public:
                         if (parent_node == nullptr) {
                             return;
                         }
-                        value.template match(
+                        value.match(
                             [this, parent_node](const std::string& str) {
                                 auto sib_iter
                                     = parent_node->hn_named_children.find(str);
@@ -231,9 +231,9 @@ public:
                                     };
                             });
                     };
-                crumbs.template emplace_back(iv.value,
-                                             std::move(poss_provider),
-                                             std::move(path_performer));
+                crumbs.emplace_back(iv.value,
+                                    std::move(poss_provider),
+                                    std::move(path_performer));
                 auto curr_node
                     = lnav::document::hier_node::lookup_path(root_node, path);
                 if (curr_node
@@ -265,13 +265,13 @@ public:
             auto poss_provider = [curr_node = node.value()]() {
                 std::vector<breadcrumb::possibility> retval;
                 for (const auto& child : curr_node->hn_named_children) {
-                    retval.template emplace_back(child.first);
+                    retval.emplace_back(child.first);
                 }
                 return retval;
             };
             auto path_performer = [this, curr_node = node.value()](
                                       const breadcrumb::crumb::key_t& value) {
-                value.template match(
+                value.match(
                     [this, curr_node](const std::string& str) {
                         auto child_iter
                             = curr_node->hn_named_children.find(str);

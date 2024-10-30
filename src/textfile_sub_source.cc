@@ -616,7 +616,7 @@ textfile_sub_source::text_crumbs_for_line(
                     | lnav::itertools::append(iv.value);
                 auto curr_node = lnav::document::hier_node::lookup_path(
                     meta->m_sections_root.get(), path);
-                crumbs.template emplace_back(
+                crumbs.emplace_back(
                     iv.value,
                     [meta, path]() { return meta->possibility_provider(path); },
                     [this, curr_node, path, lf](const auto& key) {
@@ -627,7 +627,7 @@ textfile_sub_source::text_crumbs_for_line(
                         if (parent_node == nullptr) {
                             return;
                         }
-                        key.template match(
+                        key.match(
                             [this, parent_node](const std::string& str) {
                                 auto sib_iter
                                     = parent_node->hn_named_children.find(str);
@@ -677,13 +677,13 @@ textfile_sub_source::text_crumbs_for_line(
             auto poss_provider = [curr_node = node.value()]() {
                 std::vector<breadcrumb::possibility> retval;
                 for (const auto& child : curr_node->hn_named_children) {
-                    retval.template emplace_back(child.first);
+                    retval.emplace_back(child.first);
                 }
                 return retval;
             };
             auto path_performer = [this, curr_node = node.value()](
                                       const breadcrumb::crumb::key_t& value) {
-                value.template match(
+                value.match(
                     [this, curr_node](const std::string& str) {
                         auto child_iter
                             = curr_node->hn_named_children.find(str);
@@ -739,7 +739,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             this->tss_rendered_files.erase(lf->get_filename());
             this->tss_doc_metadata.erase(lf->get_filename());
             this->detach_observer(lf);
-            closed_files.template emplace_back(lf);
+            closed_files.emplace_back(lf);
             continue;
         }
 
@@ -1049,7 +1049,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             this->tss_doc_metadata.erase(lf->get_filename());
             lf->close();
             this->detach_observer(lf);
-            closed_files.template emplace_back(lf);
+            closed_files.emplace_back(lf);
             continue;
         }
 
