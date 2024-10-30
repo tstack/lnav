@@ -32,8 +32,11 @@
 #include "config.h"
 
 #ifdef HAVE_EXECINFO_H
-#    include <execinfo.h>
+// clang-format off
 #    include <sys/types.h>
+// clang-format on
+
+#    include <execinfo.h>
 #endif
 
 #include <algorithm>
