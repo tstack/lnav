@@ -77,7 +77,7 @@ read_err_pipe(const std::string& netloc,
                         = string_fragment(sbr.get_data(), 0, sbr.length())
                               .trim("\n");
                     if (eq.size() < 10) {
-                        eq.template emplace_back(line_str.to_string());
+                        eq.emplace_back(line_str.to_string());
                     }
 
                     auto level = line_str.startswith("error:")
