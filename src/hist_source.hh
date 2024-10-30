@@ -201,7 +201,7 @@ public:
         }
 
         for (size_t lpc = 0; lpc < this->sbc_idents.size(); lpc++) {
-            if (this->sbc_show_state.is<show_all>()
+            if (this->sbc_show_state.template is<show_all>()
                 || lpc == (size_t) ident_to_show)
             {
                 overall_stats.merge(this->sbc_idents[lpc].ci_stats);
@@ -214,7 +214,7 @@ public:
             overall_stats.bs_max_value = this->sbc_row_sum;
         }
 
-        if (this->sbc_show_state.is<show_all>()) {
+        if (this->sbc_show_state.template is<show_all>()) {
             if (this->sbc_idents.size() == 1) {
                 avail_width = width;
             } else if (width < this->sbc_max_row_items) {
