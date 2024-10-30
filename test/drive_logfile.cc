@@ -87,7 +87,7 @@ main(int argc, char* argv[])
         vector<std::filesystem::path> paths;
 
         getenv_opt("test_dir") |
-            [&paths](auto value) { paths.template emplace_back(value); };
+            [&paths](auto value) { paths.emplace_back(value); };
         load_formats(paths, errors);
     }
 
