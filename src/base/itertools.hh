@@ -726,7 +726,7 @@ operator|(const T& in, const lnav::itertools::details::mapper<F>& mapper)
 
     retval.reserve(in.size());
     for (const auto& elem : in) {
-        retval.template emplace_back((elem.*mapper.m_func)());
+        retval.emplace_back((elem.*mapper.m_func)());
     }
 
     return retval;

@@ -1445,8 +1445,8 @@ struct json_path_handler : public json_path_handler_base {
                 return 1;
             }
 
-            json_path_handler::get_field(obj, args...) = std::chrono::seconds(
-                parse_res.template unwrap().to_timeval().tv_sec);
+            json_path_handler::get_field(obj, args...)
+                = std::chrono::seconds(parse_res.unwrap().to_timeval().tv_sec);
 
             return 1;
         };
@@ -1590,13 +1590,13 @@ public:
                                      nullptr,
                                      &this->yp_parse_context);
         this->yp_parse_context.with_handle(this->yp_handle);
-        this->yp_parse_context.template with_obj(this->yp_obj);
+        this->yp_parse_context.with_obj(this->yp_obj);
         this->yp_parse_context.ypc_userdata = this;
         this->yp_parse_context.with_error_reporter(
             [](const auto& ypc, const auto& um) {
                 auto* yp = static_cast<yajlpp_parser<T>*>(ypc.ypc_userdata);
 
-                yp->yp_errors.template emplace_back(um);
+                yp->yp_errors.emplace_back(um);
             });
     }
 
@@ -1667,7 +1667,7 @@ struct yajlpp_formatter {
     std::string to_string() &&
     {
         yajlpp_gen_context ygc(this->yf_gen, this->yf_container);
-        ygc.template with_obj(this->yf_obj);
+        ygc.with_obj(this->yf_obj);
         ygc.ygc_depth = 1;
         ygc.gen();
 
@@ -1708,7 +1708,7 @@ struct typed_json_path_container : public json_path_container {
     {
         yajlpp_gen gen;
         yajlpp_gen_context ygc(gen, *this);
-        ygc.template with_obj(obj);
+        ygc.with_obj(obj);
         ygc.ygc_depth = 1;
         ygc.gen();
 
@@ -1719,7 +1719,7 @@ struct typed_json_path_container : public json_path_container {
     {
         yajlpp_gen gen;
         yajlpp_gen_context ygc(gen, *this);
-        ygc.template with_obj(obj);
+        ygc.with_obj(obj);
         ygc.ygc_depth = 1;
         ygc.gen();
 

@@ -270,7 +270,7 @@ struct exec_context {
     Result<std::string, lnav::console::user_message> execute_with_int(
         const std::string& cmdline, kv_pair_t pair, Args... args)
     {
-        this->ec_local_vars.top().template emplace(pair);
+        this->ec_local_vars.top().emplace(pair);
         return this->execute(cmdline, args...);
     }
 

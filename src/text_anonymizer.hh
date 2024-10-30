@@ -53,8 +53,8 @@ private:
     {
         auto iter = mapping.find(input);
         if (iter == mapping.end()) {
-            auto emp_res = mapping.template emplace(
-                input, provider(mapping.size(), input));
+            auto emp_res
+                = mapping.emplace(input, provider(mapping.size(), input));
 
             iter = emp_res.first;
         }

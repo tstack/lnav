@@ -122,7 +122,7 @@ operator|(const T& in, const lnav::itertools::details::similar_to<F>& st)
     }
 
     while (!pq.empty()) {
-        retval.template emplace_back(pq.top().second);
+        retval.emplace_back(pq.top().second);
         pq.pop();
     }
     std::reverse(retval.begin(), retval.end());
