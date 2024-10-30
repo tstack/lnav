@@ -93,7 +93,7 @@ breadcrumb_curses::do_update()
         if (is_selected) {
             sel_crumb_offset = accum_width;
             crumbs_line.get_attrs().emplace_back(
-                crumb_range, VC_STYLE.template value(text_attrs{A_REVERSE}));
+                crumb_range, VC_STYLE.value(text_attrs{A_REVERSE}));
         }
 
         this->bc_displayed_crumbs.emplace_back(
@@ -105,7 +105,7 @@ breadcrumb_curses::do_update()
     }
 
     line_range lr{0, static_cast<int>(width)};
-    view_curses::mvwattrline(
+    mvwattrline(
         this->bc_window, this->vc_y, 0, crumbs_line, lr, role_t::VCR_STATUS);
 
     if (this->bc_selected_crumb) {
