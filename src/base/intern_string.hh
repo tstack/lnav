@@ -376,7 +376,7 @@ struct string_fragment {
                                            P&& predicate,
                                            size_t count = 1) const
     {
-        auto left = this->template find_left_boundary(start, predicate, count);
+        auto left = this->find_left_boundary(start, predicate, count);
 
         return left.find_right_boundary(
             start - left.sf_begin, predicate, count);
@@ -624,7 +624,7 @@ struct string_fragment {
     string_fragment to_owned(A allocator) const
     {
         return string_fragment{
-            this->template to_c_str(allocator),
+            this->to_c_str(allocator),
             0,
             this->length(),
         };
