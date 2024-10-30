@@ -43,10 +43,7 @@ public:
 
     bus(const bus<T>&) = delete;
 
-    void attach(T* component)
-    {
-        this->b_components.template emplace_back(component);
-    }
+    void attach(T* component) { this->b_components.emplace_back(component); }
 
     void detach(T* component)
     {
