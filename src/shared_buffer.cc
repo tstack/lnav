@@ -33,6 +33,7 @@
 
 #ifdef HAVE_EXECINFO_H
 #    include <execinfo.h>
+#    include <sys/types.h>
 #endif
 
 #include <algorithm>
@@ -84,7 +85,8 @@ shared_buffer_ref::subset(shared_buffer_ref& other, off_t offset, size_t len)
     return true;
 }
 
-shared_buffer_ref::shared_buffer_ref(shared_buffer_ref&& other) noexcept
+shared_buffer_ref::
+shared_buffer_ref(shared_buffer_ref&& other) noexcept
 {
     if (other.sb_data == nullptr) {
         this->sb_owner = nullptr;
