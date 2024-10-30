@@ -792,7 +792,7 @@ operator|(const std::vector<std::shared_ptr<T>>& in,
 
     retval.reserve(in.size());
     for (const auto& elem : in) {
-        retval.template emplace_back(((*elem).*mapper.m_func));
+        retval.emplace_back(((*elem).*mapper.m_func));
     }
 
     return retval;
@@ -815,7 +815,7 @@ operator|(const std::vector<T>& in,
 
     retval.reserve(in.size());
     for (const auto& elem : in) {
-        retval.template emplace_back(elem.*mapper.m_func);
+        retval.emplace_back(elem.*mapper.m_func);
     }
 
     return retval;

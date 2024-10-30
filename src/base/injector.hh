@@ -124,7 +124,7 @@ struct multiple_storage {
         std::vector<std::shared_ptr<T>> retval;
 
         for (const auto& pair : get_factories()) {
-            retval.template emplace_back(pair.second());
+            retval.emplace_back(pair.second());
         }
         return retval;
     }
