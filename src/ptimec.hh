@@ -619,6 +619,7 @@ inline bool
 ptime_d(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     PTIME_CONSUME(2, {
+        dst->et_tm.tm_yday = -1;
         if (str[off_inout] == ' ') {
             dst->et_tm.tm_mday = 0;
         } else {
@@ -647,6 +648,7 @@ ftime_d(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 inline bool
 ptime_e(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
+    dst->et_tm.tm_yday = -1;
     dst->et_tm.tm_mday = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '0' || str[off_inout] > '9') {
@@ -678,6 +680,48 @@ ftime_e(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
         PTIME_APPEND('0' + ((tm.et_tm.tm_mday / 10) % 10));
     }
     PTIME_APPEND('0' + ((tm.et_tm.tm_mday / 1) % 10));
+}
+
+inline bool
+ptime_j(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+{
+    dst->et_tm.tm_yday = -1;
+    PTIME_CONSUME(1, {
+        if (str[off_inout] < '0' || str[off_inout] > '9') {
+            return false;
+        }
+        dst->et_tm.tm_yday = str[off_inout] - '0';
+    });
+    if (off_inout < len) {
+        if (str[off_inout] >= '0' && str[off_inout] <= '9') {
+            dst->et_tm.tm_yday *= 10;
+            dst->et_tm.tm_yday += str[off_inout] - '0';
+            off_inout += 1;
+        }
+    }
+    if (off_inout < len) {
+        if (str[off_inout] >= '0' && str[off_inout] <= '9') {
+            dst->et_tm.tm_yday *= 10;
+            dst->et_tm.tm_yday += str[off_inout] - '0';
+            off_inout += 1;
+        }
+    }
+
+    if (dst->et_tm.tm_yday >= 1 && dst->et_tm.tm_yday <= 366) {
+        dst->et_tm.tm_yday -= 1;
+        dst->et_flags |= ETF_YDAY_SET;
+        return true;
+    }
+    dst->et_tm.tm_yday = -1;
+    return false;
+}
+
+inline void
+ftime_j(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
+{
+    PTIME_APPEND('0' + (((tm.et_tm.tm_yday + 1) / 100) % 100));
+    PTIME_APPEND('0' + (((tm.et_tm.tm_yday + 1) / 10) % 10));
+    PTIME_APPEND('0' + (((tm.et_tm.tm_yday + 1) / 1) % 10));
 }
 
 inline bool

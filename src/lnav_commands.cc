@@ -875,6 +875,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             }
 
             if (!(tm.et_flags & ETF_DAY_SET)) {
+                tm.et_tm.tm_yday = -1;
                 tm.et_tm.tm_mday = 1;
             }
             if (!(tm.et_flags & ETF_HOUR_SET)) {

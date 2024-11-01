@@ -119,6 +119,7 @@ date_time_scanner::scan(const char* time_dest,
     this->dts_zoned_to_local = cfg.c_zoned_to_local;
     while (next_format(time_fmt, curr_time_fmt, this->dts_fmt_lock)) {
         *tm_out = this->dts_base_tm;
+        tm_out->et_tm.tm_yday = -1;
         tm_out->et_flags = 0;
         if (time_len > 1 && time_dest[0] == '+' && isdigit(time_dest[1])) {
             retval = nullptr;

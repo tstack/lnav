@@ -399,6 +399,7 @@ dist_noinst_DATA = \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \
 	logfile_with_zones.0 \
 	logfile_xml_msg.0 \
+	logfile_yday.0 \
 	man_echo.txt \
 	multiline.lnav \
 	mvwattrline_output.0 \

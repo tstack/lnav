@@ -41,6 +41,8 @@
 
 namespace lnav {
 
+#define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
+
 ssize_t
 strftime_rfc3339(
     char* buffer, size_t buffer_size, lnav::time64_t tim, int millis, char sep)
@@ -233,14 +235,30 @@ tm2sec(const struct tm* t)
 
     /* shift new year to 1st March in order to make leap year calc easy */
 
-    if (t->tm_mon < 2) {
+    if (t->tm_yday >= 1) {
+        if (t->tm_yday <= 59) {
+            year--;
+        }
+    } else if (t->tm_mon < 2) {
         year--;
     }
 
     /* Find number of days since 1st March 1900 (in the Gregorian calendar). */
-
     days = year * 365 + year / 4 - year / 100 + (year / 100 + 3) / 4;
-    days += dayoffset[t->tm_mon] + t->tm_mday - 1;
+    if (t->tm_yday >= 1) {
+        int yday_diff = 0;
+        if (t->tm_yday > 59) {
+            yday_diff = t->tm_yday - 59;
+            if (isleap(year)) {
+                yday_diff -= 1;
+            }
+        } else {
+            yday_diff = 306 + t->tm_yday;
+        }
+        days += yday_diff;
+    } else {
+        days += dayoffset[t->tm_mon] + t->tm_mday - 1;
+    }
     days -= 25508; /* 1 jan 1970 is 25508 days since 1 mar 1900 */
 
     secs = ((days * 24 + t->tm_hour) * 60 + t->tm_min) * 60 + t->tm_sec;
@@ -267,15 +285,14 @@ static const int EPOCH_WDAY = 4;
 static const int DAYSPERWEEK = 7;
 static const int EPOCH_YEAR = 1970;
 
-#define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
-
 static const int year_lengths[2] = {365, 366};
 
 const unsigned short int mon_yday[2][13] = {
     /* Normal years.  */
     {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365},
     /* Leap years.  */
-    {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}};
+    {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366},
+};
 
 void
 secs2wday(const struct timeval& tv, struct tm* res)
@@ -302,17 +319,14 @@ secs2wday(const struct timeval& tv, struct tm* res)
 struct tm*
 secs2tm(lnav::time64_t tim, struct tm* res)
 {
-    long days, rem;
-    lnav::time64_t lcltime;
-    int y;
     int yleap;
     const unsigned short int* ip;
 
     /* base decision about std/dst time on current time */
-    lcltime = tim;
+    lnav::time64_t lcltime = tim;
 
-    days = ((long) lcltime) / SECSPERDAY;
-    rem = ((long) lcltime) % SECSPERDAY;
+    long days = ((long) lcltime) / SECSPERDAY;
+    long rem = ((long) lcltime) % SECSPERDAY;
     while (rem < 0) {
         rem += SECSPERDAY;
         --days;
@@ -329,12 +343,13 @@ secs2tm(lnav::time64_t tim, struct tm* res)
         res->tm_wday += DAYSPERWEEK;
 
     /* compute year & day of year */
-    y = EPOCH_YEAR;
+    int y = EPOCH_YEAR;
     if (days >= 0) {
         for (;;) {
             yleap = isleap(y);
-            if (days < year_lengths[yleap])
+            if (days < year_lengths[yleap]) {
                 break;
+            }
             y++;
             days -= year_lengths[yleap];
         }

@@ -810,6 +810,7 @@ log_format::check_for_new_year(std::vector<logline>& dst,
         struct tm otm;
 
         gmtime_r(&ot, &otm);
+        otm.tm_yday = -1;
         if (otm.tm_year < off_year) {
             otm.tm_year = 0;
         } else {
