@@ -49,12 +49,12 @@ RUN curl -sSL https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz | tar xvzC /ex
     make install PREFIX=/fake.root && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://github.com/lz4/lz4/archive/refs/tags/v1.9.4.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz | tar xvzC /extract/ && \
     cd /extract/lz4* && \
     make install PREFIX=/fake.root && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://github.com/facebook/zstd/releases/download/v1.5.5/zstd-1.5.5.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://github.com/facebook/zstd/releases/download/v1.5.6/zstd-1.5.6.tar.gz | tar xvzC /extract/ && \
     cd /extract/zstd* && \
     make install PREFIX=/fake.root && \
     cd /extract && rm -rf *
@@ -65,7 +65,7 @@ RUN curl -sSL https://www.zlib.net/zlib-1.3.1.tar.gz | tar xvzC /extract/ && \
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://tukaani.org/xz/xz-5.4.3.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://github.com/tukaani-project/xz/releases/download/v5.6.3/xz-5.6.3.tar.gz | tar xvzC /extract/ && \
     cd /extract/xz-* && \
     ./configure --prefix=/fake.root \
         --disable-shared \
@@ -76,7 +76,7 @@ RUN curl -sSL https://tukaani.org/xz/xz-5.4.3.tar.gz | tar xvzC /extract/ && \
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.44/pcre2-10.44.tar.gz | tar xvzC /extract/ && \
     cd /extract/pcre2-* && \
     ./configure --prefix=/fake.root \
         --enable-jit \
@@ -110,7 +110,7 @@ RUN curl -sSL https://www.openssl.org/source/openssl-1.0.2n.tar.gz | tar xvzC /e
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://www.libssh2.org/download/libssh2-1.11.0.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://www.libssh2.org/download/libssh2-1.11.1.tar.gz | tar xvzC /extract/ && \
     cd /extract/libssh2-* && \
     ./configure --prefix=/fake.root \
         --with-libssl-prefix=/fake.root \
@@ -129,7 +129,7 @@ RUN curl -sSL https://ftp.gnu.org/gnu/readline/readline-8.2.tar.gz | tar xvzC /e
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://www.libarchive.org/downloads/libarchive-3.7.2.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://www.libarchive.org/downloads/libarchive-3.7.7.tar.gz | tar xvzC /extract/ && \
     cd /extract/libarchive-* && \
     ./configure --prefix=/fake.root \
         --disable-shared \
@@ -140,7 +140,7 @@ RUN curl -sSL https://www.libarchive.org/downloads/libarchive-3.7.2.tar.gz | tar
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://curl.se/download/curl-8.6.0.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://curl.se/download/curl-8.10.1.tar.gz | tar xvzC /extract/ && \
     cd /extract/curl-* && \
     ./configure --prefix=/fake.root \
         --disable-shared \
@@ -152,7 +152,7 @@ RUN curl -sSL https://curl.se/download/curl-8.6.0.tar.gz | tar xvzC /extract/ &&
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://www.sqlite.org/2024/sqlite-autoconf-3450100.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://www.sqlite.org/2024/sqlite-autoconf-3470000.tar.gz | tar xvzC /extract/ && \
     cd /extract/sqlite-* && \
     ./configure --disable-editline \
         --disable-shared \
