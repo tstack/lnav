@@ -742,3 +742,9 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ';SELECT log_time FROM all_logs' \
     ${test_dir}/logfile_yday.0
+
+touch -t 202411030000 ${test_dir}/logfile_dst.0
+
+run_cap_test env TZ=America/Los_Angeles ${lnav_test} -n \
+    -c ':set-file-timezone America/Los_Angeles' \
+    ${test_dir}/logfile_dst.0

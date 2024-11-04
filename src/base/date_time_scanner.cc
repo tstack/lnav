@@ -177,13 +177,22 @@ date_time_scanner::scan(const char* time_dest,
                         && !(tm_out->et_flags & ETF_EPOCH_TIME)
                         && this->dts_default_zone != nullptr)
                     {
-                        date::local_seconds stime;
-                        stime += std::chrono::seconds{gmt};
-                        auto ztime
-                            = date::make_zoned(this->dts_default_zone, stime);
-                        gmt = std::chrono::duration_cast<std::chrono::seconds>(
-                                  ztime.get_sys_time().time_since_epoch())
-                                  .count();
+                        try {
+                            date::local_seconds stime;
+                            stime += std::chrono::seconds{gmt};
+                            auto ztime
+                                = date::make_zoned(this->dts_default_zone,
+                                                   stime,
+                                                   date::choose::earliest);
+                            gmt = std::chrono::duration_cast<
+                                      std::chrono::seconds>(
+                                      ztime.get_sys_time().time_since_epoch())
+                                      .count();
+                        } catch (const std::exception& e) {
+                            log_error("failed to convert time %d -- %s",
+                                      gmt,
+                                      e.what());
+                        }
                     }
                     this->to_localtime(gmt, *tm_out);
                 }
