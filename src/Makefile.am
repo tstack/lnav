@@ -353,6 +353,7 @@ noinst_HEADERS = \
 	text_overlay_menu.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
+	textfile_sub_source.cfg.hh \
 	textview_curses.hh \
 	textview_curses_fwd.hh \
 	time_T.hh \

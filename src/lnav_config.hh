@@ -32,6 +32,7 @@
 #ifndef lnav_config_hh
 #define lnav_config_hh
 
+#include <filesystem>
 #include <functional>
 #include <map>
 #include <set>
@@ -45,7 +46,6 @@
 #include "base/result.h"
 #include "external_opener.cfg.hh"
 #include "file_vtab.cfg.hh"
-#include <filesystem>
 #include "lnav_config_fwd.hh"
 #include "log.annotate.cfg.hh"
 #include "log_level.hh"
@@ -55,6 +55,7 @@
 #include "styling.hh"
 #include "sysclip.cfg.hh"
 #include "tailer/tailer.looper.cfg.hh"
+#include "textfile_sub_source.cfg.hh"
 #include "top_status_source.cfg.hh"
 #include "url_handler.cfg.hh"
 
@@ -130,6 +131,7 @@ struct _lnav_config {
     logfile_sub_source_ns::config lc_log_source;
     lnav::log::annotate::config lc_log_annotations;
     lnav::external_opener::config lc_opener;
+    lnav::textfile::config lc_textfile;
 };
 
 extern struct _lnav_config lnav_config;

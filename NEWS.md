@@ -26,9 +26,12 @@ Features:
 * Added a `:set-text-view-mode` command that controls whether
   file contents, such as markdown, are rendered or shown in
   their raw state.
-* Text files with lines longer than 240 characters will be
+* Text files with lines longer than 1024 characters will be
   automatically pretty-printed.  You can revert to the raw view
-  using the `:set-text-view-mode` command.
+  using the `:set-text-view-mode` command.  The character limit
+  can be adjusted with the
+  `/tuning/textfile/max-unformatted-line-length` configuration
+  setting.
 * Added a `pretty_print()` SQL function that provides the same
   functionality as the PRETTY view.
 * Keymap definitions can now bind to a function key using an

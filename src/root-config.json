@@ -120,6 +120,9 @@
                 }
             }
         },
+        "textfile": {
+            "max-unformatted-line-length": 1024
+        },
         "url-scheme": {
             "docker": {
                 "handler": "docker-url-handler"

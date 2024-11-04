@@ -49,17 +49,22 @@
 #include "scn/scn.h"
 #include "sql_util.hh"
 #include "sqlitepp.hh"
+#include "textfile_sub_source.cfg.hh"
 
 using namespace lnav::roles::literals;
 
 static bool
 file_needs_reformatting(const std::shared_ptr<logfile> lf)
 {
+    static const auto& cfg = injector::get<const lnav::textfile::config&>();
+
     switch (lf->get_text_format()) {
         case text_format_t::TF_DIFF:
             return false;
         default:
-            if (lf->get_longest_line_length() > 240) {
+            if (lf->get_longest_line_length()
+                > cfg.c_max_unformatted_line_length)
+            {
                 return true;
             }
             return false;
