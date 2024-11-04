@@ -651,10 +651,13 @@ ptime_e(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
     dst->et_tm.tm_yday = -1;
     dst->et_tm.tm_mday = 0;
     PTIME_CONSUME(1, {
-        if (str[off_inout] < '0' || str[off_inout] > '9') {
+        if (str[off_inout] == ' ') {
+            dst->et_tm.tm_mday = 0;
+        } else if (str[off_inout] < '0' || str[off_inout] > '9') {
             return false;
+        } else {
+            dst->et_tm.tm_mday = str[off_inout] - '0';
         }
-        dst->et_tm.tm_mday = str[off_inout] - '0';
     });
     if (off_inout < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
