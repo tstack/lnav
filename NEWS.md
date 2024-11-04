@@ -36,6 +36,7 @@ Features:
   function key.
 * Added log formats for the `env_logger` and `simple_logger` Rust
   crates.
+* Timestamp formats can now use `%j` to capture day-of-year values.
 
 Interface Changes:
 * The "Gantt Chart" view has been renamed to "timeline."
