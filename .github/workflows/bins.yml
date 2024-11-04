@@ -119,7 +119,7 @@ jobs:
           asset_content_type: application/octet-stream
 
   build-macos:
-    runs-on: macos-12
+    runs-on: macos-13
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
       LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-x86_64-macos.zip
