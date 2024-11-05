@@ -505,6 +505,11 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ":mark-expr :log_body LIKE '%service%'" \
+    ${test_dir}/logfile_json2.json
+
+run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
     -c ":mark" \
     -c ":switch-to-view histogram" \

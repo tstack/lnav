@@ -122,6 +122,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cmds.sh_6a6031113aca32fabc5a3da64b7be46f5ce5a312.out \
     $(srcdir)/%reldir%/test_cmds.sh_6e016c0ed61fc652be1a79b864875ffede64f281.err \
     $(srcdir)/%reldir%/test_cmds.sh_6e016c0ed61fc652be1a79b864875ffede64f281.out \
+    $(srcdir)/%reldir%/test_cmds.sh_725b298187f54f00949edff341d63915dc2aeb8d.err \
+    $(srcdir)/%reldir%/test_cmds.sh_725b298187f54f00949edff341d63915dc2aeb8d.out \
     $(srcdir)/%reldir%/test_cmds.sh_7270e37dab4549cfa7c5232451c031e1e04b4aef.err \
     $(srcdir)/%reldir%/test_cmds.sh_7270e37dab4549cfa7c5232451c031e1e04b4aef.out \
     $(srcdir)/%reldir%/test_cmds.sh_73ea99c84fb1d4570e8bcd45c423b4a28fe41e81.err \
