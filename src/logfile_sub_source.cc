@@ -1604,7 +1604,7 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
             continue;
         }
         auto ll = (*ld)->get_file()->begin() + cl;
-        if (ll->is_continued()) {
+        if (ll->is_continued() || ll->is_ignored()) {
             continue;
         }
         auto eval_res
