@@ -201,12 +201,15 @@ EOF
     run_test env TMPDIR=logfile-tmp ${lnav_test} -n \
         test-logs-trunc.tgz
 
-    sed -e "s|${builddir}||g" `test_err_filename` | head -2 \
+    sed -e "s|${builddir}||g" \
+        -e 's/truncated gzip input/truncated/g' \
+        -e 's/Truncated tar archive detected while reading data/truncated/g' \
+        `test_err_filename` | head -2 \
         > test_logfile.trunc.out
     mv test_logfile.trunc.out `test_err_filename`
     check_error_output "truncated tgz not reported correctly" <<EOF
 ✘ error: unable to open file: /test-logs-trunc.tgz
- reason: failed to extract 'src/lnav' from archive '/test-logs-trunc.tgz' -- truncated gzip input
+ reason: failed to extract 'src/lnav' from archive '/test-logs-trunc.tgz' -- truncated
 EOF
 
     mkdir -p rotmp
