@@ -1216,6 +1216,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_28e23f4e98b1acd6478e39844fd9306b444550c3.out \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_32acc1a8bb5028636fdbf08f077f9a835ab51bec.err \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_32acc1a8bb5028636fdbf08f077f9a835ab51bec.out \
+    $(srcdir)/%reldir%/test_sql_views_vtab.sh_362e2302a2ccec4438d822a909c04f810d6d86f6.err \
+    $(srcdir)/%reldir%/test_sql_views_vtab.sh_362e2302a2ccec4438d822a909c04f810d6d86f6.out \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_4363d60040424a573ed79ee4260a32e3cd72f62c.err \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_4363d60040424a573ed79ee4260a32e3cd72f62c.out \
     $(srcdir)/%reldir%/test_sql_views_vtab.sh_45dbef06572b43cb997682436e753a13e003f792.err \

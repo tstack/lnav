@@ -1140,6 +1140,9 @@ CREATE TABLE lnav_view_filters (
             auto conflict_mode = sqlite3_vtab_on_conflict(mod_vt->v_db);
             auto new_cmd = pf->to_command();
             for (auto& filter : fs) {
+                if (filter->get_index() == filter_index) {
+                    continue;
+                }
                 if (filter->to_command() == new_cmd) {
                     switch (conflict_mode) {
                         case SQLITE_FAIL:

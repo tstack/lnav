@@ -95,6 +95,11 @@ run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_view_filters SET pattern = 'vmkboot'" \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out vmk" \
+    -c ";UPDATE lnav_view_filters SET enabled = 0" \
+    ${test_dir}/logfile_access_log.0
+
 run_test ${lnav_test} -n \
     -c ":filter-out vmk" \
     -c ";SELECT * FROM lnav_view_filter_stats" \
