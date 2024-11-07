@@ -1,5 +1,9 @@
 #! /bin/bash
 
+export TZ=UTC
+export YES_COLOR=1
+unset XDG_CONFIG_HOME
+
 run_cap_test ./drive_sql "select readlink('non-existent-link')"
 
 ln -sf sql_fs_readlink_test sql_fs_readlink_test.lnk
@@ -53,6 +57,13 @@ run_cap_test ./drive_sql "select joinpath('foo', 'bar', 'baz')"
 run_cap_test ./drive_sql "select joinpath('foo', 'bar', 'baz', '/root')"
 
 run_cap_test ${lnav_test} -Nn -c ";SELECT shell_exec('echo hi')"
+
+run_cap_test ${lnav_test} -Nn -c ";SELECT shell_exec('cat', 'hi')"
+
+run_cap_test ${lnav_test} -Nn -c ";SELECT shell_exec('echo hi', NULL, '{ 1')"
+
+run_cap_test ${lnav_test} -Nn \
+    -c ";SELECT shell_exec('echo \$msg', NULL, json_object('env', json_object('msg', 'hi')))"
 
 run_cap_test ${lnav_test} -Nn -c ";SELECT * FROM fstat('/non-existent')"
 

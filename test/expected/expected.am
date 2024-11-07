@@ -846,12 +846,16 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_7b5d7dd8d0003ab83e3e5cb0a5ce802fe9a0e3b3.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_917ffde411c1425e8a6addae0170900dcd553986.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_917ffde411c1425e8a6addae0170900dcd553986.out \
+    $(srcdir)/%reldir%/test_sql_fs_func.sh_91ccbc117494c1d3ed7d5763e66823d1f3c5f25a.err \
+    $(srcdir)/%reldir%/test_sql_fs_func.sh_91ccbc117494c1d3ed7d5763e66823d1f3c5f25a.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_9234a453403934587bbbdde355281a956d1fbe5f.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_9234a453403934587bbbdde355281a956d1fbe5f.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_9e2c0a90ce333365ff7354375f2c609bc27135c8.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_9e2c0a90ce333365ff7354375f2c609bc27135c8.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_a247b137e71124e496f1beab56c7fe85717c4199.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_a247b137e71124e496f1beab56c7fe85717c4199.out \
+    $(srcdir)/%reldir%/test_sql_fs_func.sh_ab1f31086229b1dbb399b72cb6f6e0810806e438.err \
+    $(srcdir)/%reldir%/test_sql_fs_func.sh_ab1f31086229b1dbb399b72cb6f6e0810806e438.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_b66242975fd6ecb7260cd96ac29accaf4f4af6ae.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_b66242975fd6ecb7260cd96ac29accaf4f4af6ae.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_c5d78cfbf5594cc27590277353c08a92e2497622.err \
@@ -866,6 +870,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_d51ad77cd67a2a691838c9d95142638df1c07360.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_e24cf3f35643f945392e7d7a4ca82fea98b4519e.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_e24cf3f35643f945392e7d7a4ca82fea98b4519e.out \
+    $(srcdir)/%reldir%/test_sql_fs_func.sh_ea02b3a385f12798b768098fb7ad80178e652d03.err \
+    $(srcdir)/%reldir%/test_sql_fs_func.sh_ea02b3a385f12798b768098fb7ad80178e652d03.out \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_f31f240313ddec806aa6f353ceed707dfd9aaf16.err \
     $(srcdir)/%reldir%/test_sql_fs_func.sh_f31f240313ddec806aa6f353ceed707dfd9aaf16.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_026dd9752b6101e0791689d3a2026f7e517e36f5.err \
