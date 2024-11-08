@@ -2025,6 +2025,17 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         continue;
                     }
 
+                    if (WIFEXITED(child_stat)) {
+                        log_info("child %d exited with status %d",
+                                 *iter,
+                                 WEXITSTATUS(child_stat));
+                    } else if (WTERMSIG(child_stat)) {
+                        log_error("child %d terminated with signal %d",
+                                  *iter,
+                                  WTERMSIG(child_stat));
+                    } else {
+                        log_info("child %d exited");
+                    }
                     iter = lnav_data.ld_children.erase(iter);
                 }
 
@@ -2101,6 +2112,31 @@ wait_for_children()
     std::vector<struct pollfd> pollfds;
     struct timeval to = {0, 333000};
     static auto* ps = injector::get<pollable_supervisor*>();
+
+    for (auto iter = lnav_data.ld_children.begin();
+         iter != lnav_data.ld_children.end();
+         ++iter)
+    {
+        int rc, child_stat;
+
+        rc = waitpid(*iter, &child_stat, WNOHANG);
+        if (rc == -1 || rc == 0) {
+            continue;
+        }
+
+        if (WIFEXITED(child_stat)) {
+            log_info("child %d exited with status %d",
+                     *iter,
+                     WEXITSTATUS(child_stat));
+        } else if (WTERMSIG(child_stat)) {
+            log_error("child %d terminated with signal %d",
+                      *iter,
+                      WTERMSIG(child_stat));
+        } else {
+            log_info("child %d exited");
+        }
+        iter = lnav_data.ld_children.erase(iter);
+    }
 
     do {
         pollfds.clear();

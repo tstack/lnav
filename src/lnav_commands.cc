@@ -2117,7 +2117,7 @@ com_pipe_to(exec_context& ec,
             break;
         }
 
-        default:
+        default: {
             bookmark_vector<vis_line_t>::iterator iter;
             std::string line;
 
@@ -2161,7 +2161,7 @@ com_pipe_to(exec_context& ec,
                     log_perror(write(child_fds[0].write_end(), "\n", 1));
                 }
             } else {
-                for (iter = bv.begin(); iter != bv.end(); iter++) {
+                for (iter = bv.begin(); iter != bv.end(); ++iter) {
                     tc->grep_value_for_line(*iter, line);
                     if (write(
                             child_fds[0].write_end(), line.c_str(), line.size())
@@ -2182,6 +2182,7 @@ com_pipe_to(exec_context& ec,
                 retval = "";
             }
             break;
+        }
     }
 
     return Ok(retval);
