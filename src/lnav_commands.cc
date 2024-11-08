@@ -2121,6 +2121,7 @@ com_pipe_to(exec_context& ec,
             bookmark_vector<vis_line_t>::iterator iter;
             std::string line;
 
+            log_info("spawned pipe child %d -- %s", child_pid, cmd.c_str());
             lnav_data.ld_children.push_back(child_pid);
 
             std::future<std::string> reader;
