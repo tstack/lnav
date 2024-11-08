@@ -35,6 +35,9 @@ run_cap_test ${lnav_test} -n \
     -c ";DELETE FROM lnav_view_stack WHERE name = 'log'" \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test ${lnav_test} -nN \
+    -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'bad', '')"
+
 run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters VALUES ('log', 0, 1, 'out', 'regex', '')" \
     ${test_dir}/logfile_access_log.0
@@ -197,3 +200,8 @@ run_cap_test ${lnav_test} -n -I ${test_dir} \
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top_meta = json_object('file', 'bad') WHERE name = 'text'" \
     ${test_dir}/textfile_ansi.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_views" \
+    -c ":write-json-to -" \
+    ${test_dir}/logfile_access_log.0

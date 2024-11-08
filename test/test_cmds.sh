@@ -411,13 +411,13 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     -c ":goto 0" \
-    -c ":pipe-line-to echo \$cs_uri_stem \$sc_status" \
+    -c ":pipe-line-to xargs echo \$cs_uri_stem \$sc_status - " \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     -c ":goto 5" \
-    -c ":pipe-line-to echo \$log_raw_text \$log_level \$user" \
+    -c ":pipe-line-to xargs echo \$log_raw_text \$log_level \$user - " \
     ${test_dir}/logfile_json.json
 
 run_cap_test ${lnav_test} -n \
