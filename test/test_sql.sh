@@ -9,6 +9,8 @@ unset XDG_CONFIG_HOME
 run_cap_test ${lnav_test} -nN \
     -c ";SELECT 1 = ?"
 
+# XXX The timestamp on the file is used to determine the year for syslog files.
+touch -t 200711030923 ${test_dir}/logfile_syslog.0
 run_cap_test ${lnav_test} -n \
     -c ";.dump syslog_log.sql syslog_log" \
     ${test_dir}/logfile_syslog.0
@@ -383,8 +385,6 @@ run_cap_test ${lnav_test} -n \
     -c ':write-csv-to -' \
     ${test_dir}/logfile_access_log.0
 
-# XXX The timestamp on the file is used to determine the year for syslog files.
-touch -t 200711030923 ${test_dir}/logfile_syslog.0
 run_cap_test ${lnav_test} -n \
     -c ";select * from syslog_log" \
     -c ':write-csv-to -' \
