@@ -1,0 +1,7 @@
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+INSERT INTO syslog_log VALUES(0,'2007-11-03 09:23:38.000','error','veridian',NULL,'7998',NULL,'automount',NULL,'automount[7998]',NULL,NULL,0,0,NULL,NULL,NULL,NULL);
+INSERT INTO syslog_log VALUES(1,'2007-11-03 09:23:38.000','info','veridian',NULL,'16442',NULL,'automount',NULL,'automount[16442]',NULL,NULL,0,0,NULL,NULL,NULL,NULL);
+INSERT INTO syslog_log VALUES(2,'2007-11-03 09:23:38.000','error','veridian',NULL,'7999',NULL,'automount',NULL,'automount[7999]',NULL,NULL,0,0,NULL,NULL,NULL,NULL);
+INSERT INTO syslog_log VALUES(3,'2007-11-03 09:47:02.000','info','veridian',NULL,NULL,NULL,'sudo',NULL,'sudo',NULL,NULL,1404000,0,NULL,NULL,NULL,NULL);
+COMMIT;

@@ -63,6 +63,10 @@ sql_cmd_dump(exec_context& ec,
         return ec.make_error("expecting a file name to write to");
     }
 
+    if (args.size() < 3) {
+        return ec.make_error("expecting a table name to dump");
+    }
+
     if (lnav_flags & LNF_SECURE_MODE) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
@@ -410,6 +414,8 @@ static readline_context::command_t sql_commands[] = {
         help_text(".dump", "Dump the contents of the database")
             .sql_command()
             .with_parameter({"path", "The path to the file to write"})
+            .with_parameter(help_text{"table", "The name of the table to dump"}
+                                .one_or_more())
             .with_tags({
                 "io",
             }),

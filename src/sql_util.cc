@@ -1053,7 +1053,7 @@ annotate_sql_statement(attr_line_t& al)
     };
 
     static const auto cmd_pattern
-        = lnav::pcre2pp::code::from_const(R"(^(\.\w+))");
+        = lnav::pcre2pp::code::from_const(R"(^;?(\.\w+))");
     static const auto ws_pattern = lnav::pcre2pp::code::from_const(R"(\A\s+)");
 
     auto& line = al.get_string();

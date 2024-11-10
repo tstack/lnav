@@ -1,5 +1,7 @@
 #! /bin/bash
 
+run_cap_test ./drive_sql_anno ".dump /foo/bar abc"
+
 # basic query
 run_cap_test ./drive_sql_anno "SELECT * FROM FOO"
 

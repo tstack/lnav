@@ -10,6 +10,12 @@ run_cap_test ${lnav_test} -nN \
     -c ";SELECT 1 = ?"
 
 run_cap_test ${lnav_test} -n \
+    -c ";.dump syslog_log.sql syslog_log" \
+    ${test_dir}/logfile_syslog.0
+
+run_cap_test cat syslog_log.sql
+
+run_cap_test ${lnav_test} -n \
     -c ";.read nonexistent-file" \
     ${test_dir}/logfile_empty.0
 

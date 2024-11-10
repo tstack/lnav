@@ -638,6 +638,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_2ed3f3b18ef4ecc68e4dd3cc8041b61fcf2a59af.out \
     $(srcdir)/%reldir%/test_sql.sh_2f15b8a38673ac4db45dc6ed2eafe609c332575b.err \
     $(srcdir)/%reldir%/test_sql.sh_2f15b8a38673ac4db45dc6ed2eafe609c332575b.out \
+    $(srcdir)/%reldir%/test_sql.sh_2f7db04079096a63bde294527cdfeb2385221a39.err \
+    $(srcdir)/%reldir%/test_sql.sh_2f7db04079096a63bde294527cdfeb2385221a39.out \
     $(srcdir)/%reldir%/test_sql.sh_31df37f254255115611fc321b63374a2fa4a1cd5.err \
     $(srcdir)/%reldir%/test_sql.sh_31df37f254255115611fc321b63374a2fa4a1cd5.out \
     $(srcdir)/%reldir%/test_sql.sh_3445b783808f174b76f55dc6b998f721a1aae271.err \
@@ -652,10 +654,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_4629b626c65a85d7a5595571e195b67afca272ba.out \
     $(srcdir)/%reldir%/test_sql.sh_4a13356ccbdeb5f73fa063e292b5a6cb25e6c23e.err \
     $(srcdir)/%reldir%/test_sql.sh_4a13356ccbdeb5f73fa063e292b5a6cb25e6c23e.out \
-    $(srcdir)/%reldir%/test_sql.sh_50c0b2c93b646b848a017764bde8a4282c556e2d.err \
-    $(srcdir)/%reldir%/test_sql.sh_50c0b2c93b646b848a017764bde8a4282c556e2d.out \
-    $(srcdir)/%reldir%/test_sql.sh_528e48a03cdfa7cfbe263a6e22a65606247a8a95.err \
-    $(srcdir)/%reldir%/test_sql.sh_528e48a03cdfa7cfbe263a6e22a65606247a8a95.out \
     $(srcdir)/%reldir%/test_sql.sh_5532c7a21e3f6b7df3aad10d7bdfbb7a812ae6c7.err \
     $(srcdir)/%reldir%/test_sql.sh_5532c7a21e3f6b7df3aad10d7bdfbb7a812ae6c7.out \
     $(srcdir)/%reldir%/test_sql.sh_57427f3c4b4ec785ffff7c5802c10db0d3e547cf.err \
@@ -694,6 +692,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_9a209f3ee1b1f543ca2587b695d2eb0e63e74c51.out \
     $(srcdir)/%reldir%/test_sql.sh_9aaaa810f883f5dcf8a4d5cda4051fdf4640a65c.err \
     $(srcdir)/%reldir%/test_sql.sh_9aaaa810f883f5dcf8a4d5cda4051fdf4640a65c.out \
+    $(srcdir)/%reldir%/test_sql.sh_9be1bc2ebc2c9f54af02801fb8d0241b90be58d1.err \
+    $(srcdir)/%reldir%/test_sql.sh_9be1bc2ebc2c9f54af02801fb8d0241b90be58d1.out \
     $(srcdir)/%reldir%/test_sql.sh_9ceccab07fbf7130bffe3c201c710719e4a3e9af.err \
     $(srcdir)/%reldir%/test_sql.sh_9ceccab07fbf7130bffe3c201c710719e4a3e9af.out \
     $(srcdir)/%reldir%/test_sql.sh_9e1d05b821822ee40e13fadb24ec558f4bfcff10.err \
@@ -724,8 +724,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql.sh_be440e41ea2ce474e2d776efad0674979a2cdb88.out \
     $(srcdir)/%reldir%/test_sql.sh_c17933125df910588b806a9d07c2655bc71198ef.err \
     $(srcdir)/%reldir%/test_sql.sh_c17933125df910588b806a9d07c2655bc71198ef.out \
-    $(srcdir)/%reldir%/test_sql.sh_c20b0320096342c180146a5d18a6de82319d70b2.err \
-    $(srcdir)/%reldir%/test_sql.sh_c20b0320096342c180146a5d18a6de82319d70b2.out \
     $(srcdir)/%reldir%/test_sql.sh_c353ef036c505b75996252138fbd4c8d22e8149c.err \
     $(srcdir)/%reldir%/test_sql.sh_c353ef036c505b75996252138fbd4c8d22e8149c.out \
     $(srcdir)/%reldir%/test_sql.sh_c5b8da04734fadf3b9eea80e0af997e38e0fb811.err \
@@ -788,6 +786,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_anno.sh_ce0506ee7a12eb0f7b970522cc6a79180ecb20cc.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_de46094b6e005285dc0921ef9979e36240c5042d.err \
     $(srcdir)/%reldir%/test_sql_anno.sh_de46094b6e005285dc0921ef9979e36240c5042d.out \
+    $(srcdir)/%reldir%/test_sql_anno.sh_e02dc902e91f99da7c7682e8d9ce3a40dd05b908.err \
+    $(srcdir)/%reldir%/test_sql_anno.sh_e02dc902e91f99da7c7682e8d9ce3a40dd05b908.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_e7dae4ba18c42c416ed03afd8819200f63e89ac8.err \
     $(srcdir)/%reldir%/test_sql_anno.sh_e7dae4ba18c42c416ed03afd8819200f63e89ac8.out \
     $(srcdir)/%reldir%/test_sql_anno.sh_f3c64191d6016767a5857fbb1bad26548586bb96.err \
