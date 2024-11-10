@@ -576,6 +576,7 @@ DISTCLEANFILES = \
 	textfile_long_lines.0 \
 	not:a:remote:file \
 	rollover_in.0 \
+	syslog_log.sql \
 	test-logs.tgz \
 	test-logs-trunc.tgz \
 	test_pretty_in.* \
