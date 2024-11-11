@@ -649,8 +649,7 @@ file_collection::expand_filename(
     }
 
     auto filename_key = loo.loo_filename.empty() ? path : loo.loo_filename;
-    auto glob_flags = lnav::filesystem::is_glob(path) ? GLOB_NOCHECK : 0;
-    auto glob_rc = glob(path.c_str(), glob_flags, nullptr, gl.inout());
+    auto glob_rc = glob(path.c_str(), GLOB_NOCHECK, nullptr, gl.inout());
     if (glob_rc == 0) {
         if (gl->gl_pathc == 1 /*&& gl.gl_matchc == 0*/) {
             /* It's a pattern that doesn't match any files
