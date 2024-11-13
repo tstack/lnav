@@ -602,7 +602,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
 
         case 'o':
         case 'O':
-            if (lss != nullptr) {
+            if (lss != nullptr && lss->text_line_count() > 0) {
                 auto start_win = lss->window_at(tc->get_selection());
                 auto start_win_iter = start_win.begin();
                 const auto& opid_opt
@@ -803,9 +803,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
         case KEY_BTAB:
             if (tc == &lnav_data.ld_views[LNV_DB]) {
             } else if (tc == &lnav_data.ld_views[LNV_SPECTRO]) {
-                lnav_data.ld_mode = ln_mode_t::SPECTRO_DETAILS;
+                set_view_mode(ln_mode_t::SPECTRO_DETAILS);
             } else if (tc_tss != nullptr && tc_tss->tss_supports_filtering) {
-                lnav_data.ld_mode = lnav_data.ld_last_config_mode;
+                set_view_mode(lnav_data.ld_last_config_mode);
                 lnav_data.ld_filter_view.reload_data();
                 lnav_data.ld_files_view.reload_data();
                 if (tc->get_inner_height() > 0_vl) {

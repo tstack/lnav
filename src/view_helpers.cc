@@ -81,6 +81,26 @@ const char* lnav_view_titles[LNV__MAX] = {
     "TIMELINE",
 };
 
+const char* lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1]
+    = {
+        "PAGING",
+        "BREADCRUMBS",
+        "FILTER",
+        "FILES",
+        "FILE_DETAILS",
+        "SPECTRO_DETAILS",
+        "SEARCH_SPECTRO_DETAILS",
+        "COMMAND",
+        "SEARCH",
+        "SEARCH_FILTERS",
+        "SEARCH_FILES",
+        "CAPTURE",
+        "SQL",
+        "EXEC",
+        "USER",
+        "BUSY",
+};
+
 std::optional<lnav_view_t>
 view_from_string(const char* name)
 {
@@ -1484,6 +1504,9 @@ set_view_mode(ln_mode_t mode)
         default:
             break;
     }
+    log_info("changing mode from %s to %s",
+             lnav_mode_strings[lnav::enums::to_underlying(lnav_data.ld_mode)],
+             lnav_mode_strings[lnav::enums::to_underlying(mode)]);
     lnav_data.ld_mode = mode;
 }
 

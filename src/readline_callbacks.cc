@@ -837,7 +837,7 @@ lnav_rl_abort(readline_curses* rc)
             break;
     }
     lnav_data.ld_rl_view->set_value("");
-    lnav_data.ld_mode = ln_mode_t::PAGING;
+    set_view_mode(ln_mode_t::PAGING);
 }
 
 static void

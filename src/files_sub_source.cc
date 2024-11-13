@@ -131,7 +131,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
                     }
 
                     lv.reload_data();
-                    lnav_data.ld_mode = ln_mode_t::PAGING;
+                    set_view_mode(ln_mode_t::PAGING);
                 });
 
             return true;
@@ -228,7 +228,7 @@ files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
 void
 files_sub_source::list_input_handle_scroll_out(listview_curses& lv)
 {
-    lnav_data.ld_mode = ln_mode_t::PAGING;
+    set_view_mode(ln_mode_t::PAGING);
     lnav_data.ld_filter_view.reload_data();
 }
 

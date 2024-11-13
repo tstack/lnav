@@ -691,7 +691,6 @@ handle_config_ui_key(int ch, const char* keyseq)
         case ln_mode_t::FILES:
             if (ch == KEY_CTRL(']')) {
                 set_view_mode(ln_mode_t::FILE_DETAILS);
-                lnav_data.ld_mode = ln_mode_t::FILE_DETAILS;
                 retval = true;
             } else {
                 retval = lnav_data.ld_files_view.handle_key(ch);
@@ -739,7 +738,7 @@ handle_config_ui_key(int ch, const char* keyseq)
         {
             lnav_data.ld_last_config_mode = new_mode.value();
         }
-        lnav_data.ld_mode = new_mode.value();
+        set_view_mode(new_mode.value());
         lnav_data.ld_files_view.reload_data();
         lnav_data.ld_file_details_view.reload_data();
         lnav_data.ld_filter_view.reload_data();
@@ -780,7 +779,7 @@ handle_key(int ch, const char* keyseq)
 
                 case ln_mode_t::SPECTRO_DETAILS: {
                     if (ch == '\t' || ch == 'q') {
-                        lnav_data.ld_mode = ln_mode_t::PAGING;
+                        set_view_mode(ln_mode_t::PAGING);
                         return true;
                     }
                     if (lnav_data.ld_spectro_details_view.handle_key(ch)) {
@@ -1533,7 +1532,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         static sig_atomic_t index_counter;
 
-        lnav_data.ld_mode = ln_mode_t::FILES;
+        set_view_mode(ln_mode_t::FILES);
 
         timer.start_fade(index_counter, 1);
 
@@ -1734,6 +1733,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         case ln_mode_t::USER:
                             if (rlc->consume_ready_for_input()) {
                                 // log_debug("waiting for readline input")
+                                view_curses::awaiting_user_input();
+                            }
+                            break;
+                        case ln_mode_t::FILTER:
+                            if (!filter_source->fss_editing
+                                || filter_source->fss_editor
+                                       ->consume_ready_for_input())
+                            {
                                 view_curses::awaiting_user_input();
                             }
                             break;
@@ -1992,7 +1999,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                                 ->empty())
                         {
                             log_info("switching to paging!");
-                            lnav_data.ld_mode = ln_mode_t::PAGING;
+                            set_view_mode(ln_mode_t::PAGING);
                             lnav_data.ld_active_files.fc_files
                                 | lnav::itertools::for_each(
                                     &logfile::dump_stats);
@@ -3058,7 +3065,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     init_lnav_commands(lnav_commands);
 
     lnav_data.ld_looping = true;
-    lnav_data.ld_mode = ln_mode_t::PAGING;
+    set_view_mode(ln_mode_t::PAGING);
 
     if ((isatty(STDIN_FILENO) || is_dev_null(STDIN_FILENO)) && file_args.empty()
         && lnav_data.ld_active_files.fc_file_names.empty()

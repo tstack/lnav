@@ -1455,10 +1455,9 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
 void
 readline_curses::handle_key(int ch)
 {
-    const char* bch;
     int len;
 
-    bch = this->map_input(ch, len);
+    const char* bch = this->map_input(ch, len);
     if (write(this->rc_pty[RCF_MASTER], bch, len) == -1) {
         perror("handle_key: write failed");
     }

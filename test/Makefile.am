@@ -475,6 +475,7 @@ dist_noinst_DATA = \
 	remote-log-dir/logfile_access_log.1 \
     tui-captures/tui_echo.0 \
     tui-captures/tui_filters.0 \
+    tui-captures/tui_filters.1 \
 	tui-captures/tui_help.0
 
 TESTS = \

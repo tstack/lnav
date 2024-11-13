@@ -80,6 +80,8 @@ enum class ln_mode_t : int {
 
 extern const char* lnav_view_strings[LNV__MAX + 1];
 extern const char* lnav_view_titles[LNV__MAX];
+extern const char*
+    lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1];
 
 std::optional<lnav_view_t> view_from_string(const char* name);
 

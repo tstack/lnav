@@ -682,7 +682,7 @@ filter_sub_source::rl_display_next(readline_curses* rc)
 void
 filter_sub_source::list_input_handle_scroll_out(listview_curses& lv)
 {
-    lnav_data.ld_mode = ln_mode_t::PAGING;
+    set_view_mode(ln_mode_t::PAGING);
     lnav_data.ld_filter_view.reload_data();
 }
 
