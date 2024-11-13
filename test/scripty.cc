@@ -100,7 +100,7 @@ public:
         int e_err;
     };
 
-    explicit child_term(bool passin)
+    explicit child_term(bool passin, const char* term_type)
     {
         struct winsize ws;
         auto_fd slave;
@@ -139,11 +139,12 @@ public:
             }
             dup2(slave, STDOUT_FILENO);
 
-            setenv("TERM", "xterm-color", 1);
+            setenv("IN_SCRIPTY", "1", 1);
+            setenv("TERM", term_type, 1);
         } else {
             slave.reset();
         }
-    };
+    }
 
     virtual ~child_term()
     {
@@ -159,7 +160,7 @@ public:
         {
             perror("ioctl");
         }
-    };
+    }
 
     int wait_for_child()
     {
@@ -174,7 +175,7 @@ public:
         }
 
         return retval;
-    };
+    }
 
     bool is_child() const { return this->ct_child == 0; };
 
@@ -642,6 +643,17 @@ struct term_machine {
                                 this->tm_cursor_y += count;
                                 break;
                             }
+                            case 'd': {
+                                auto params = this->get_m_params();
+                                int pos = 0;
+
+                                if (!params.empty()) {
+                                    pos = params[0];
+                                }
+                                this->flush_line();
+                                this->tm_cursor_y = pos;
+                                break;
+                            }
                             case 'C': {
                                 auto amount = this->get_m_params();
                                 int count = 1;
@@ -650,6 +662,16 @@ struct term_machine {
                                     count = amount[0];
                                 }
                                 this->tm_cursor_x += count;
+                                break;
+                            }
+                            case 'G': {
+                                auto params = this->get_m_params();
+                                int pos = 0;
+
+                                if (!params.empty()) {
+                                    pos = params[0];
+                                }
+                                this->tm_cursor_x = pos;
                                 break;
                             }
                             case 'J': {
@@ -877,6 +899,7 @@ usage()
           "Options:\n"
           "  -h         Print this message, then exit.\n"
           "  -n         Do not pass the output to the console.\n"
+          "  -X         Set TERM to xterm-256color.\n"
           "  -i         Pass stdin to the child process instead of connecting\n"
           "             the child to the tty.\n"
           "  -a <file>  The file where the actual I/O from/to the child "
@@ -885,6 +908,7 @@ usage()
           "  -e <file>  The file containing the expected I/O from/to the "
           "child\n"
           "             process.\n"
+          "  -p         Prompt to update the file if there is a difference.\n"
           "\n"
           "Examples:\n"
           "  To record a session for playback later:\n"
@@ -901,12 +925,13 @@ main(int argc, char* argv[])
 {
     int c, fd, retval = EXIT_SUCCESS;
     bool passout = true, passin = false, prompt = false;
+    const char* term_type = "xterm-color";
     auto_mem<FILE> file(fclose);
 
     scripty_data.sd_program_name = argv[0];
     scripty_data.sd_looping = true;
 
-    while ((c = getopt(argc, argv, "ha:e:nip")) != -1) {
+    while ((c = getopt(argc, argv, "ha:e:nipX")) != -1) {
         switch (c) {
             case 'h':
                 usage();
@@ -943,6 +968,9 @@ main(int argc, char* argv[])
                 break;
             case 'p':
                 prompt = true;
+                break;
+            case 'X':
+                term_type = "xterm-256color";
                 break;
             default:
                 fprintf(stderr, "%s:error: unknown flag -- %c\n", tstamp(), c);
@@ -985,7 +1013,7 @@ main(int argc, char* argv[])
         close(fd);
         fprintf(stderr, "%s:startup\n", tstamp());
 
-        child_term ct(passin);
+        child_term ct(passin, term_type);
 
         if (ct.is_child()) {
             execvp(argv[0], argv);

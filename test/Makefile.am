@@ -474,6 +474,7 @@ dist_noinst_DATA = \
 	remote-log-dir/logfile_access_log.0 \
 	remote-log-dir/logfile_access_log.1 \
     tui-captures/tui_echo.0 \
+    tui-captures/tui_filters.0 \
 	tui-captures/tui_help.0
 
 TESTS = \
@@ -606,6 +607,7 @@ distclean-local:
 	$(RM_V)rm -rf regex101-home
 	$(RM_V)rm -rf events-home
 	$(RM_V)rm -rf support-dump
+	$(RM_V)rm -rf tui-home
 	$(RM_V)rm -rf ../installer-test-home
 
 expected:

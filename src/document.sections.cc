@@ -476,7 +476,9 @@ public:
                     break;
                 case DT_XML_CLOSE_TAG: {
                     auto term = this->flush_values();
-                    if (this->sw_depth > 0) {
+                    if (this->sw_depth > 0
+                        && !this->sw_container_tokens.empty())
+                    {
                         auto found = false;
                         do {
                             if (this->sw_container_tokens.back() == dt) {
@@ -491,7 +493,7 @@ public:
                                 = std::move(this->sw_hier_nodes.back());
                             this->sw_hier_nodes.pop_back();
                             this->sw_container_tokens.pop_back();
-                        } while (!found);
+                        } while (!found && !this->sw_container_tokens.empty());
                     }
                     this->append_child_node(el.e_capture);
                     if (this->sw_depth > 0) {

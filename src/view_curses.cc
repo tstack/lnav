@@ -221,7 +221,7 @@ view_curses::contains(int x, int y) const
 void
 view_curses::awaiting_user_input()
 {
-    static const bool enabled = getenv("lnav_test") != nullptr;
+    static const bool enabled = getenv("IN_SCRIPTY") != nullptr;
     static const char OSC_INPUT[] = "\x1b]999;send-input\a";
 
     if (enabled) {

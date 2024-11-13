@@ -55,3 +55,14 @@ TEST_CASE("fs_util::build_path")
         setenv("PATH", old_path, 1);
     }
 }
+
+TEST_CASE("fs_util::escape_path")
+{
+    auto p1 = std::filesystem::path{"/abc/def"};
+
+    CHECK("/abc/def" == lnav::filesystem::escape_path(p1));
+
+    auto p2 = std::filesystem::path{"$abc"};
+
+    CHECK("\\$abc" == lnav::filesystem::escape_path(p2));
+}
