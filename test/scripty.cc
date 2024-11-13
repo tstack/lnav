@@ -160,6 +160,9 @@ public:
         {
             perror("ioctl");
         }
+
+        // reset scrolling region
+        printf("\x1b[r");
     }
 
     int wait_for_child()
@@ -737,10 +740,15 @@ struct term_machine {
                                 auto region = this->get_m_params();
 
                                 this->flush_line();
-                                fprintf(scripty_data.sd_from_child,
-                                        "CSI set scrolling region %d-%d\n",
-                                        region[0],
-                                        region[1]);
+                                if (region.empty()) {
+                                    fprintf(scripty_data.sd_from_child,
+                                            "CSI reset scrolling region\n");
+                                } else {
+                                    fprintf(scripty_data.sd_from_child,
+                                            "CSI set scrolling region %d-%d\n",
+                                            region[0],
+                                            region[1]);
+                                }
                                 break;
                             }
                             case 'm': {
