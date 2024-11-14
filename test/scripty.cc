@@ -88,6 +88,20 @@
 
 using namespace std;
 
+static const char*
+tstamp()
+{
+    static char buf[64];
+
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S.", localtime(&tv.tv_sec));
+    auto dlen = strlen(buf);
+    snprintf(&buf[dlen], sizeof(buf) - dlen, "%.06d", tv.tv_usec);
+
+    return buf;
+}
+
 /**
  * An RAII class for opening a PTY and forking a child process.
  */
@@ -127,6 +141,8 @@ public:
         {
             throw error(errno);
         }
+        fprintf(stderr, "%s:master-fd %d\n", tstamp(), this->ct_master.get());
+        fprintf(stderr, "%s:slave-fd %d\n", tstamp(), slave.get());
 
         if ((this->ct_child = fork()) == -1)
             throw error(errno);
@@ -180,11 +196,11 @@ public:
         return retval;
     }
 
-    bool is_child() const { return this->ct_child == 0; };
+    bool is_child() const { return this->ct_child == 0; }
 
-    pid_t get_child_pid() const { return this->ct_child; };
+    pid_t get_child_pid() const { return this->ct_child; }
 
-    int get_fd() const { return this->ct_master; };
+    int get_fd() const { return this->ct_master; }
 
 protected:
     pid_t ct_child;
@@ -204,8 +220,9 @@ tty_raw(int fd)
 
     assert(fd >= 0);
 
-    if (tcgetattr(fd, attr) == -1)
+    if (tcgetattr(fd, attr) == -1) {
         return -1;
+    }
 
     attr->c_lflag &= ~(ECHO | ICANON | IEXTEN);
     attr->c_iflag &= ~(ICRNL | INPCK | ISTRIP | IXON);
@@ -221,9 +238,7 @@ tty_raw(int fd)
 static void
 dump_memory(FILE* dst, const char* src, int len)
 {
-    int lpc;
-
-    for (lpc = 0; lpc < len; lpc++) {
+    for (int lpc = 0; lpc < len; lpc++) {
         fprintf(dst, "%02x", src[lpc] & 0xff);
     }
 }
@@ -241,20 +256,6 @@ hex2bits(const char* src)
     }
 
     return retval;
-}
-
-static const char*
-tstamp()
-{
-    static char buf[64];
-
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S.", localtime(&tv.tv_sec));
-    auto dlen = strlen(buf);
-    snprintf(&buf[dlen], sizeof(buf) - dlen, "%.06d", tv.tv_usec);
-
-    return buf;
 }
 
 typedef enum {
@@ -397,10 +398,12 @@ struct term_machine {
 
     void flush_line()
     {
-        if (std::exchange(this->tm_waiting_on_input, false)
-            && !this->tm_user_input.empty())
+        if (!this->tm_user_input.empty()
+            && std::exchange(this->tm_waiting_on_input, false))
         {
-            fprintf(stderr, "%s:flush keys\n", tstamp());
+            fprintf(stderr, "%s:flush keys: ", tstamp());
+            dump_memory(stderr, this->tm_user_input.data(), 1);
+            fprintf(stderr, "\n");
             fprintf(scripty_data.sd_from_child, "K ");
             dump_memory(
                 scripty_data.sd_from_child, this->tm_user_input.data(), 1);
@@ -514,15 +517,15 @@ struct term_machine {
                       }).unwrap();
             }
             return;
-        } else {
-            auto utfsize = ww898::utf::utf8::char_size(
-                [ch]() { return std::make_pair(ch, 16); });
+        }
 
-            if (utfsize.unwrap() > 1) {
-                this->tm_unicode_remaining = utfsize.unwrap() - 1;
-                this->tm_unicode_buffer.push_back(ch);
-                return;
-            }
+        auto utfsize = ww898::utf::utf8::char_size(
+            [ch]() { return std::make_pair(ch, 16); });
+
+        if (utfsize.unwrap() > 1) {
+            this->tm_unicode_remaining = utfsize.unwrap() - 1;
+            this->tm_unicode_buffer.push_back(ch);
+            return;
         }
 
         switch (this->tm_state) {
@@ -594,7 +597,7 @@ struct term_machine {
                 if (this->tm_escape_buffer.size()
                     == this->tm_escape_expected_size)
                 {
-                    auto iter = CSI_TO_DESC.find(
+                    const auto iter = CSI_TO_DESC.find(
                         std::string(this->tm_escape_buffer.data(),
                                     this->tm_escape_buffer.size()));
                     this->flush_line();
@@ -615,7 +618,7 @@ struct term_machine {
             case state::ESCAPE_VARIABLE_LENGTH: {
                 this->tm_escape_buffer.push_back(ch);
                 if (isalpha(ch)) {
-                    auto iter = CSI_TO_DESC.find(
+                    const auto iter = CSI_TO_DESC.find(
                         std::string(this->tm_escape_buffer.data(),
                                     this->tm_escape_buffer.size()));
                     if (iter == CSI_TO_DESC.end()) {
@@ -827,8 +830,8 @@ struct term_machine {
                 if (ch == '\a') {
                     this->tm_escape_buffer.push_back('\0');
 
-                    auto num = this->get_m_params();
-                    auto semi_index
+                    const auto num = this->get_m_params();
+                    const auto semi_index
                         = strchr(this->tm_escape_buffer.data(), ';');
 
                     switch (num[0]) {
@@ -840,6 +843,9 @@ struct term_machine {
                             break;
                         }
                         case 999: {
+                            fprintf(stderr,
+                                    "%s:child waiting for input\n",
+                                    tstamp());
                             this->flush_line();
                             this->tm_waiting_on_input = true;
                             if (!scripty_data.sd_replay.empty()) {
@@ -934,7 +940,6 @@ main(int argc, char* argv[])
     int c, fd, retval = EXIT_SUCCESS;
     bool passout = true, passin = false, prompt = false;
     const char* term_type = "xterm-color";
-    auto_mem<FILE> file(fclose);
 
     scripty_data.sd_program_name = argv[0];
     scripty_data.sd_looping = true;
@@ -948,7 +953,9 @@ main(int argc, char* argv[])
             case 'a':
                 scripty_data.sd_actual_name = optarg;
                 break;
-            case 'e':
+            case 'e': {
+                auto_mem<FILE> file(fclose);
+
                 scripty_data.sd_expected_name = optarg;
                 if ((file = fopen(optarg, "r")) == nullptr) {
                     fprintf(
@@ -968,6 +975,7 @@ main(int argc, char* argv[])
                     }
                 }
                 break;
+            }
             case 'n':
                 passout = false;
                 break;
@@ -1020,6 +1028,16 @@ main(int argc, char* argv[])
         dup2(fd, STDERR_FILENO);
         close(fd);
         fprintf(stderr, "%s:startup\n", tstamp());
+        fprintf(stderr,
+                "%s:replay size %zu\n",
+                tstamp(),
+                scripty_data.sd_replay.size());
+        if (scripty_data.sd_from_child.in() != nullptr) {
+            fprintf(stderr,
+                    "%s:from child %d\n",
+                    tstamp(),
+                    fileno(scripty_data.sd_from_child));
+        }
 
         child_term ct(passin, term_type);
 
@@ -1047,7 +1065,7 @@ main(int argc, char* argv[])
             FD_SET(STDIN_FILENO, &read_fds);
             FD_SET(ct.get_fd(), &read_fds);
 
-            fprintf(stderr, "%s:goin in the loop\n", tstamp());
+            fprintf(stderr, "%s:going in the loop\n", tstamp());
 
             tty_raw(STDIN_FILENO);
 
@@ -1062,7 +1080,7 @@ main(int argc, char* argv[])
                 rc = select(maxfd + 1, &ready_rfds, nullptr, nullptr, &to);
                 gettimeofday(&now, nullptr);
                 timersub(&now, &last, &diff);
-                if (diff.tv_sec > 10) {
+                if (diff.tv_sec > 60) {
                     fprintf(stderr, "%s:replay timed out!\n", tstamp());
                     scripty_data.sd_looping = false;
                     kill(ct.get_child_pid(), SIGKILL);
@@ -1070,6 +1088,10 @@ main(int argc, char* argv[])
                     break;
                 }
                 if (rc == 0) {
+                    if (diff.tv_sec >= 1 && tm.tm_waiting_on_input) {
+                        fprintf(stderr, "%s:forcing flush\n", tstamp());
+                        tm.flush_line();
+                    }
                 } else if (rc < 0) {
                     switch (errno) {
                         case EINTR:
@@ -1087,6 +1109,19 @@ main(int argc, char* argv[])
                     char buffer[1024];
 
                     fprintf(stderr, "%s:fds ready %d\n", tstamp(), rc);
+                    for (int fd_index = 0; fd_index < maxfd + 1; fd_index++) {
+                        if (FD_ISSET(fd_index, &ready_rfds)) {
+                            fprintf(stderr,
+                                    "%s:fd(%d) ready\n",
+                                    tstamp(),
+                                    fd_index);
+                        } else {
+                            fprintf(stderr,
+                                    "%s:fd(%d) not ready\n",
+                                    tstamp(),
+                                    fd_index);
+                        }
+                    }
                     if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
                         rc = read(STDIN_FILENO, buffer, sizeof(buffer));
                         if (rc < 0) {
@@ -1108,7 +1143,11 @@ main(int argc, char* argv[])
                     }
                     if (FD_ISSET(ct.get_fd(), &ready_rfds)) {
                         rc = read(ct.get_fd(), buffer, sizeof(buffer));
-                        fprintf(stderr, "%s:read rc %d\n", tstamp(), rc);
+                        fprintf(stderr,
+                                "%s:read(%d) rc %d\n",
+                                tstamp(),
+                                ct.get_fd(),
+                                rc);
                         if (rc <= 0) {
                             scripty_data.sd_looping = false;
                         } else {
