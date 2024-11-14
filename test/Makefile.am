@@ -473,6 +473,7 @@ dist_noinst_DATA = \
     naughty_files.py \
 	remote-log-dir/logfile_access_log.0 \
 	remote-log-dir/logfile_access_log.1 \
+    tui-captures/tui_crumbs.0 \
     tui-captures/tui_echo.0 \
     tui-captures/tui_filters.0 \
     tui-captures/tui_filters.1 \
