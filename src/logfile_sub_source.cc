@@ -2666,7 +2666,6 @@ logfile_sub_source::text_crumbs_for_line(int line,
     if (sbr.get_metadata().m_has_ansi) {
         // bleh
         scrub_ansi_string(al.get_string(), &al.al_attrs);
-        sbr.erase_ansi();
     }
     format->annotate(lf.get(), file_line_number, al.get_attrs(), values);
 
@@ -2704,7 +2703,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
             });
     }
 
-    auto sf = sbr.to_string_fragment();
+    auto sf = string_fragment::from_str(al.get_string());
     auto body_opt = get_string_attr(al.get_attrs(), SA_BODY);
     auto nl_pos_opt = sf.find('\n');
     auto msg_line_number = std::distance(msg_start_iter, line_pair.second);

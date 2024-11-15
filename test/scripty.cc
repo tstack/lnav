@@ -405,10 +405,11 @@ struct term_machine {
             dump_memory(stderr, this->tm_user_input.data(), 1);
             fprintf(stderr, "\n");
             fprintf(scripty_data.sd_from_child, "K ");
-            dump_memory(
-                scripty_data.sd_from_child, this->tm_user_input.data(), 1);
+            dump_memory(scripty_data.sd_from_child,
+                        this->tm_user_input.data(),
+                        this->tm_user_input.size());
             fprintf(scripty_data.sd_from_child, "\n");
-            this->tm_user_input.erase(this->tm_user_input.begin());
+            this->tm_user_input.clear();
         }
         if (this->tm_new_data || !this->tm_line_attrs.empty()) {
             // fprintf(scripty_data.sd_from_child, "flush %d\n",
@@ -1124,6 +1125,7 @@ main(int argc, char* argv[])
                     }
                     if (FD_ISSET(STDIN_FILENO, &ready_rfds)) {
                         rc = read(STDIN_FILENO, buffer, sizeof(buffer));
+                        fprintf(stderr, "%s:stdin bytes %d\n", tstamp(), rc);
                         if (rc < 0) {
                             scripty_data.sd_looping = false;
                         } else if (rc == 0) {

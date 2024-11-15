@@ -701,33 +701,44 @@ A      └ [39;49m
 CTRL (B
 S  24 ┋                                                                                ┋
 A      └ normal
-K 1b
-K 4f
+K 1b4f43
 CTRL (B
-S   2 ┋ HELP                                                                           ┋
+S   2 ┋ HELP  ：                                                                        ┋
 A      └ [0;1m, fg(#eeeeee), bg(#5f87d7)
+A      ······└ fg(#ff875f), bg(#3a3a3a)
+CTRL (B
+S   2 ┋        ⋯                                                                       ┋
+A      ········└ [0;7m, fg(#eeeeee), bg(#3a3a3a)
+S   3 ┋                                                                                ┋
+A      ·········└ backspace
+A      ········└ backspace
 CTRL (B
 S   3 ┋                                                                                ┋
-A      ··············································································└ [0m, fg(#eeeeee), bg(#262626)
+A      ·······└ [0m, fg(#eeeeee), bg(#262626)
 CSI Erase to Left
 S   3 ┋                                                                                ┋
-CTRL (0
-S   3 ┋                                                                               x┋
-A      ···············································································└ [0m, fg(#262626), bg(#878787)
-A      ················································································└ [39;49m
 CTRL (B
+S   3 ┋        lnav                                                                    ┋
+A      ········└ [0;7m, [90m, bg(#00d7ff)
+CTRL (0
+S   3 ┋              x                                                                 ┋
+A      ··············└ [0m, fg(#262626), bg(#878787)
 CTRL (B
 S   3 ┋                                                                                ┋
-A      ················································································└ normal
-CTRL (0
-S   4 ┋                                                                                ┋
-A      └ [0m, fg(#262626), bg(#878787)
+A      ···············└ [0m, fg(#eeeeee), bg(#262626)
+A      ·····················└ carriage-return
 CTRL (B
 S   4 ┋lnav                                                                            ┋
 A      └ [0;1m, fg(#af87ff), bg(#262626)
 CTRL (B
 S   4 ┋                                                                                ┋
-A      ····└ [0m, fg(#eeeeee), bg(#262626), [18X
+A      ····└ [0m, fg(#eeeeee), bg(#262626)
+CTRL (0
+S   4 ┋                x                                                               ┋
+A      ················└ [0m, fg(#262626), bg(#878787)
+CTRL (B
+S   4 ┋                                                                                ┋
+A      ·················└ [0m, fg(#eeeeee), bg(#262626)
 CSI Erase to Left
 S   5 ┋                                                                                ┋
 CTRL (0
@@ -745,56 +756,36 @@ CTRL (B
 S   6 ┋A fancy log file viewe                                                          ┋
 A      └ [0m, fg(#eeeeee), bg(#262626)
 A      ······················└ carriage-return
-S  23 ┋ L0          0%                                                                 ┋
-A      └ fg(#eeeeee), bg(#3a3a3a)
-A      ···············└ [41X
-S  23 ┋                                                        ?:View Help             ┋
-CSI Erase to Right
-S  23 ┋                                                                                ┋
-A      ···································································└ carriage-return
 S  24 ┋                                                                                ┋
-A      └ [39;49m
-CTRL (B
-S  24 ┋                                                                                ┋
-A      └ normal
-K 43
-CTRL (B
-S  24 ┋✔                                                                               ┋
-A      └ [0;1m, fg(#afd700), bg(#262626)
-CTRL (B
-S  24 ┋  Cleared bookmarks                                                             ┋
-A      ··└ [0m, fg(#eeeeee), bg(#262626)
-A      ···················└ carriage-return
 A      └ [39;49m
 CTRL (B
 S  24 ┋                                                                                ┋
 A      └ normal
 K 0d
-CSI set scrolling region 3-22
+CSI set scrolling region 3-23
 CSI set scrolling region 1-24
+S   2 ┋         lnav                                                                   ┋
+A      ·········└ fg(#eeeeee), bg(#3a3a3a)
 CTRL (B
-S   2 ┋       ：                                                                        ┋
-A      ······└ [0;1m, fg(#ff875f), bg(#3a3a3a)
+S   2 ┋              ：                                                                 ┋
+A      ·············└ [0;1m, fg(#ff875f), bg(#3a3a3a)
 CTRL (B
-S   2 ┋        lnav                                                                    ┋
-A      ········└ [0m, fg(#eeeeee), bg(#3a3a3a)
+S   2 ┋               ⋯                                                                ┋
+A      ···············└ [0m, fg(#eeeeee), bg(#3a3a3a)
 CTRL (B
-S   2 ┋             ：                                                                  ┋
-A      ············└ [0;1m, fg(#ff875f), bg(#3a3a3a)
+S   2 ┋                 ：                                                              ┋
+A      ················└ [0;1m, fg(#ff875f), bg(#3a3a3a)
 CTRL (B
-S   2 ┋              ⋯                                                                 ┋
-A      ··············└ [0m, fg(#eeeeee), bg(#3a3a3a)
-CTRL (B
-S   2 ┋                ：                                                               ┋
-A      ···············└ [0;1m, fg(#ff875f), bg(#3a3a3a)
+S   3 ┋                                                                                ┋
+A      ·········└ [0m, fg(#eeeeee), bg(#262626)
 CTRL (0
-S   3 ┋                                                                               x┋
-A      ···············································································└ [0m, fg(#262626), bg(#878787)
-A      ················································································└ [39;49m
+S   3 ┋                                                                                ┋
+A      ················································································└ [0m, fg(#262626), bg(#878787)
+A      ·················································································└ [39;49m
 CTRL (B
 CTRL (B
 S   3 ┋                                                                                ┋
-A      ················································································└ normal
+A      ·················································································└ normal
 CTRL (0
 S  22 ┋                                                                                ┋
 A      └ [0m, fg(#262626), bg(#878787)
@@ -811,11 +802,15 @@ S  22 ┋                                                                       
 A      ················································································└ normal
 CTRL (0
 S  23 ┋                                                                                ┋
-A      ··└ [0m, fg(#eeeeee), bg(#262626)
+A      └ [0m, fg(#eeeeee), bg(#262626)
 CTRL (B
-S  23 ┋  1                                                                             ┋
-A      ··└ [0m, fg(#eeeeee), bg(#3a3a3a)
-A      ···└ carriage-return
+S  23 ┋ L1          0%                                                                 ┋
+A      └ [0m, fg(#eeeeee), bg(#3a3a3a)
+A      ···············└ [41X
+S  23 ┋                                                        ?:View Help             ┋
+CSI Erase to Right
+S  23 ┋                                                                                ┋
+A      ···································································└ carriage-return
 S  24 ┋                                                                                ┋
 A      └ [39;49m
 CTRL (B
@@ -896,26 +891,197 @@ A      └ [0m, fg(#585858), bg(#303030)
 A      ···············└ [41X
 S  23 ┋                                                        ?:View Help             ┋
 CSI Erase to Right
+S  23 ┋                                                                                ┋
+A      ···································································└ carriage-return
 S  24 ┋                                                                                ┋
-A      ·······································└ fg(#eeeeee), bg(#262626)
-CSI Erase to Left
-S  24 ┋                                        P                                       ┋
-A      ·········································└ carriage-return
 A      └ [39;49m
 CTRL (B
 S  24 ┋                                                                                ┋
 A      └ normal
-K 1b
-K 4f
+K 1b4f43
 CTRL (B
-S   2 ┋ HELP                                                                           ┋
+S   2 ┋ HELP  ：                                                                        ┋
 A      └ [0;1m, fg(#eeeeee), bg(#5f87d7)
-A      ······└ carriage-return
+A      ······└ fg(#ff875f), bg(#3a3a3a)
+CTRL (B
+S   2 ┋        lnav                                                                    ┋
+A      ········└ [0;7m, fg(#eeeeee), bg(#3a3a3a)
+A      ············└ carriage-return
+CTRL (B
 S   3 ┋lnav                                                                            ┋
-A      └ fg(#af87ff), bg(#262626)
+A      └ [0;1m, fg(#af87ff), bg(#262626)
 CTRL (B
 S   3 ┋                                                                                ┋
-A      ····└ [0m, fg(#eeeeee), bg(#262626), [18X
+A      ····└ [0m, fg(#eeeeee), bg(#262626)
+CTRL (B
+S   3 ┋         lnav                                                                   ┋
+A      ·········└ [0;7m, [90m, bg(#00d7ff)
+CTRL (0
+S   3 ┋               x                                                                ┋
+A      ···············└ [0m, fg(#262626), bg(#878787)
+CTRL (B
+S   3 ┋                                                                                ┋
+A      ················└ [0m, fg(#eeeeee), bg(#262626)
+CSI Erase to Left
+S   4 ┋                                                                                ┋
+CTRL (0
+S   4 ┋                x                                                               ┋
+A      ················└ [0m, fg(#262626), bg(#878787)
+CTRL (B
+S   4 ┋                                                                                ┋
+A      ·················└ [0m, fg(#eeeeee), bg(#262626)
+A      ·······················└ carriage-return
+S   5 ┋A fancy log file viewe                                                          ┋
+CSI Erase to Left
+S   6 ┋                                                                                ┋
+CTRL (0
+S   6 ┋                                                                               x┋
+A      ···············································································└ [0m, fg(#eeeeee), bg(#262626)
+A      ················································································└ [39;49m
+CTRL (B
+CTRL (B
+S   6 ┋                                                                                ┋
+A      ················································································└ normal
+CTRL (0
+S  24 ┋                                                                                ┋
+A      └ [0m, fg(#eeeeee), bg(#262626), [39;49m
+CTRL (B
+CTRL (B
+S  24 ┋                                                                                ┋
+A      └ normal
+K 1b4f43
+S   2 ┋         lnav                                                                   ┋
+A      ·········└ fg(#eeeeee), bg(#3a3a3a)
+CTRL (B
+S   2 ┋              ：                                                                 ┋
+A      ·············└ [0;1m, fg(#ff875f), bg(#3a3a3a)
+CTRL (B
+S   2 ┋               ⋯                                                                ┋
+A      ···············└ [0;7m, fg(#eeeeee), bg(#3a3a3a)
+CTRL (B
+S   3 ┋                                                                                ┋
+A      ·········└ [0m, fg(#eeeeee), bg(#262626)
+CTRL (B
+S   3 ┋                Command Reference                                               ┋
+A      ················└ [0;7m, [90m, bg(#00d7ff)
+CTRL (0
+S   3 ┋                                                      x                         ┋
+A      ······················································└ [0m, fg(#262626), bg(#878787)
+A      ·······················································└ [39;49m
+CTRL (B
+CTRL (B
+S   3 ┋                                                                                ┋
+A      ·······················································└ normal
+CTRL (0
+S   4 ┋                                                                                ┋
+A      ···············└ [0m, fg(#262626), bg(#878787)
+CTRL (B
+S   4 ┋                                                                                ┋
+A      ···············└ [0m, fg(#eeeeee), bg(#262626)
+CSI Erase to Left
+S   4 ┋                Contact                                                         ┋
+A      ················└ [90m, bg(#00d7ff)
+A      ·······················└ [31X
+CTRL (0
+S   4 ┋                                                      x                         ┋
+A      ······················································└ [0m, fg(#262626), bg(#878787)
+A      ·······················································└ [39;49m
+CTRL (B
+CTRL (B
+S   4 ┋                                                                                ┋
+A      ·······················································└ normal
+CTRL (0
+S   5 ┋                                                                                ┋
+A      ················└ [0m, fg(#262626), bg(#878787)
+CTRL (B
+S   5 ┋                Default Key Bindings                                            ┋
+A      ················└ [0m, [90m, bg(#00d7ff)
+A      ····································└ [18X
+CTRL (0
+S   5 ┋                                                      x                         ┋
+A      ······················································└ [0m, [90m, bg(#00d7ff)
+A      ·······················································└ [39;49m
+CTRL (B
+CTRL (B
+S   5 ┋                                                                                ┋
+A      ·······················································└ normal
+CTRL (0
+S   6 ┋                                                                                ┋
+A      ················└ [0m, [90m, bg(#00d7ff)
+CTRL (B
+S   6 ┋                Display                                                         ┋
+A      ················└ [0m, [90m, bg(#00d7ff)
+A      ·······················└ [31X
+CTRL (0
+S   6 ┋                                                      x                         ┋
+A      ······················································└ [0m, [90m, bg(#00d7ff)
+A      ·······················································└ [39;49m
+CTRL (B
+CTRL (B
+S   6 ┋                                                                                ┋
+A      ·······················································└ normal, carriage-return
+CTRL (0
+S  24 ┋                                                                                ┋
+A      └ [0m, [90m, bg(#00d7ff), [39;49m
+CTRL (B
+CTRL (B
+S  24 ┋                                                                                ┋
+A      └ normal
+K 1b4f42
+S   3 ┋                Command Reference                                               ┋
+A      ················└ [90m, bg(#00d7ff)
+A      ·································└ [21X
+CTRL (B
+S   4 ┋                Contact                                                         ┋
+A      ················└ [0;7m, [90m, bg(#00d7ff)            │
+A      ······················································└ carriage-return
+S  24 ┋                                                                                ┋
+A      └ [39;49m
+CTRL (B
+S  24 ┋                                                                                ┋
+A      └ normal
+K 1b4f42
+S   4 ┋                Contact                                                         ┋
+A      ················└ [90m, bg(#00d7ff)
+A      ·······················└ [31X
+CTRL (B
+S   5 ┋                Default Key Bindings                                            ┋
+A      ················└ [0;7m, [90m, bg(#00d7ff)            │
+A      ······················································└ carriage-return
+S  24 ┋                                                                                ┋
+A      └ [39;49m
+CTRL (B
+S  24 ┋                                                                                ┋
+A      └ normal
+K 1b4f42
+S   3 ┋                  ntact                                                         ┋
+A      ··················└ [90m, bg(#00d7ff)
+S   4 ┋                Default Key Bindings                                            ┋
+CTRL (B
+S   5 ┋                 isplay                                                         ┋
+A      ·················└ [0;7m, [90m, bg(#00d7ff)
+CTRL (B
+S   6 ┋                 ynamic logline Table (experimental)                            ┋
+A      ·················└ [0m, [90m, bg(#00d7ff)           │
+A      ····················································└ carriage-return
+S  24 ┋                                                                                ┋
+A      └ [39;49m
+CTRL (B
+S  24 ┋                                                                                ┋
+A      └ normal
+K 0d
+S   2 ┋                Display                                                         ┋
+A      ················└ fg(#eeeeee), bg(#3a3a3a)
+CTRL (B
+S   2 ┋                        ：                                                       ┋
+A      ·······················└ [0;1m, fg(#ff875f), bg(#3a3a3a)
+A      ·························└ carriage-return
+CTRL (B
+S   3 ┋Display                                                                         ┋
+A      └ [0;4m, fg(#af87ff), bg(#262626)
+CTRL (B
+S   3 ┋                                                                                ┋
+A      ················└ [0m, fg(#eeeeee), bg(#262626), [39X
 CSI Erase to Left
 S   4 ┋                                                                                ┋
 CTRL (0
@@ -930,24 +1096,101 @@ CTRL (0
 S   5 ┋                                                                                ┋
 A      └ [0m, fg(#eeeeee), bg(#262626)
 CTRL (B
-S   5 ┋A fancy log file viewe                                                          ┋
-A      └ [0m, fg(#eeeeee), bg(#262626)
+S   5 ┋The main part of the display shows the log lines from the files                 ┋
+A      └ [0m, fg(#eeeeee), bg(#262626)                                │
+A      ·······························································└ carriage-return
+S   6 ┋interleaved based on time-of-day. New lines are automatically loaded            ┋
+A      ····································································└ carriage-return
+S   7 ┋as they are appended to the files and, if you are viewing the bottom            ┋
+A      ····································································└ carriage-return
+S   8 ┋of the files, lnav will scroll down to display the new lines, much              ┋
+A      ··································································└ carriage-return
+S   9 ┋like  tail -f .                                                                 ┋
+A      ·····└ fg(#ff005f), bg(#121212)
+A      ··············└ fg(#eeeeee), bg(#262626)
+A      ···············└ [55X
 CSI Erase to Left
-S   6 ┋                                                                                ┋
+S  10 ┋                                                                                ┋
 CTRL (0
-S   6 ┋                                                                               x┋
+S  10 ┋                                                                               x┋
 A      ···············································································└ [0m, fg(#eeeeee), bg(#262626)
 A      ················································································└ [39;49m
 CTRL (B
 CTRL (B
-S   6 ┋                                                                                ┋
+S  10 ┋                                                                                ┋
 A      ················································································└ normal
 CTRL (0
-S  23 ┋                                                                                ┋
+S  11 ┋                                                                                ┋
 A      └ [0m, fg(#eeeeee), bg(#262626)
 CTRL (B
-S  23 ┋ L1          0%                                                                 ┋
-A      └ [0m, fg(#eeeeee), bg(#3a3a3a)
+S  11 ┋On color displays, the lines will be highlighted as follows:                    ┋
+A      └ [0m, fg(#eeeeee), bg(#262626)
+CSI Erase to Left
+S  12 ┋                                                                                ┋
+CTRL (0
+S  12 ┋                                                                               x┋
+A      ···············································································└ [0m, fg(#eeeeee), bg(#262626)
+A      ················································································└ [39;49m
+CTRL (B
+CTRL (B
+S  12 ┋                                                                                ┋
+A      ················································································└ normal
+CTRL (0
+S  13 ┋                                                                                ┋
+A      └ [0m, fg(#eeeeee), bg(#262626)
+CTRL (B
+S  13 ┋ • Errors will be colored in red;                                               ┋
+A      └ [0m, fg(#eeeeee), bg(#262626) ││
+A      ·└ fg(#ff8700), bg(#262626)  │  ││
+A      ··└ fg(#eeeeee), bg(#262626) │  ││
+A      ·····························└ fg(#ff005f), bg(#262626)
+A      ································└ fg(#eeeeee), bg(#262626)
+A      ·································└ [34X, carriage-return
+S  14 ┋ • warnings will be yellow;                                                     ┋
+A      ·└ fg(#ff8700), bg(#262626)│
+A      ··└ fg(#eeeeee), bg(#262626)
+A      ····················└ fg(#ff8700), bg(#262626)
+A      ··························└ fg(#eeeeee), bg(#262626)
+A      ···························└ [39X, carriage-return
+S  15 ┋ • boundaries between days will be                                              ┋
+A      ·└ fg(#ff8700), bg(#262626)
+A      ··└ fg(#eeeeee), bg(#262626)
+CTRL (B
+S  15 ┋                                   underlined                                   ┋
+A      ···································└ [0;4m, fg(#eeeeee), bg(#262626)
+CTRL (B
+S  15 ┋                                             ;                                  ┋
+A      ·············································└ [0m, fg(#eeeeee), bg(#262626)
+A      ··············································└ [14X, carriage-return
+S  16 ┋   and                                                                          ┋
+A      ······└ [26X, carriage-return
+S  17 ┋ • various color highlights will be applied to: IP                              ┋
+A      ·└ fg(#ff8700), bg(#262626)                       │
+A      ··└ fg(#eeeeee), bg(#262626)                      │
+A      ··················································└ carriage-return
+S  18 ┋   addresses, SQL keywords, XML tags, file and line numbers                     ┋
+S  19 ┋   in Java backtraces, and quoted strings.                                      ┋
+CSI Erase to Left
+S  20 ┋                                                                                ┋
+CTRL (0
+S  20 ┋                                                                               x┋
+A      ···············································································└ [0m, fg(#eeeeee), bg(#262626)
+A      ················································································└ [39;49m
+CTRL (B
+CTRL (B
+S  20 ┋                                                                                ┋
+A      ················································································└ normal
+CTRL (0
+S  21 ┋                                                                                ┋
+A      └ [0m, fg(#eeeeee), bg(#262626)
+CTRL (B
+S  21 ┋To give you an idea of where you are spatially, the right side of the           ┋
+A      └ [0m, fg(#eeeeee), bg(#262626)                                      │
+A      ·····································································└ carriage-return
+S  22 ┋display has a proportionally sized 'scroll bar' that indicates your             ┋
+A      ···································································└ carriage-return
+S  23 ┋ L95         2%                                                                 ┋
+A      └ fg(#eeeeee), bg(#3a3a3a)
 A      ···············└ [41X
 S  23 ┋                                                        ?:View Help             ┋
 CSI Erase to Right
@@ -958,132 +1201,12 @@ A      └ [39;49m
 CTRL (B
 S  24 ┋                                                                                ┋
 A      └ normal
-K 43
-CTRL (B
-S  24 ┋✔                                                                               ┋
-A      └ [0;1m, fg(#afd700), bg(#262626)
-CTRL (B
-S  24 ┋  Cleared bookmarks                                                             ┋
-A      ··└ [0m, fg(#eeeeee), bg(#262626)
-A      ···················└ carriage-return
-A      └ [39;49m
-CTRL (B
-S  24 ┋                                                                                ┋
-A      └ normal
-K 1b
-K 4f
-K 43
-K 1b
-K 4f
-K 42
-CSI set scrolling region 3-22
-CTRL M
-CSI set scrolling region 1-24
-S   2 ┋                                                                                ┋
-A      ······└ fg(#eeeeee), bg(#3a3a3a), [7P
-S   3 ┋                                                                                ┋
-A      ··············································································└ fg(#eeeeee), bg(#262626)
-CSI Erase to Left
-S   3 ┋                                                                                ┋
-CTRL (0
-S   3 ┋                                                                               x┋
-A      ···············································································└ [0m, fg(#262626), bg(#878787)
-A      ················································································└ [39;49m
-CTRL (B
-CTRL (B
-S   3 ┋                                                                                ┋
-A      ················································································└ normal
-CTRL (0
-S   4 ┋                                                                               x┋
-A      ···············································································└ [0m, fg(#262626), bg(#878787), fg(#eeeeee), bg(#262626)
-A      ················································································└ [39;49m
-CTRL (B
-CTRL (B
-S   4 ┋                                                                                ┋
-A      ················································································└ normal
-CTRL (0
-S  23 ┋                                                                                ┋
-A      ··└ [0m, fg(#eeeeee), bg(#262626)
-CTRL (B
-S  23 ┋  0                                                                             ┋
-A      ··└ [0m, fg(#eeeeee), bg(#3a3a3a)
-A      ···└ carriage-return
-S  24 ┋                                                                                ┋
-A      └ [39;49m
-CTRL (B
-S  24 ┋                                                                                ┋
-A      └ normal
-K 1b
-K 4f
-K 42
-S  24 ┋                                                                                ┋
-A      └ [?5h, [?5l
-K 0d
-CSI set scrolling region 3-22
-CSI set scrolling region 1-24
-CTRL (B
-S   2 ┋       ：                                                                        ┋
-A      ······└ [0;1m, fg(#ff875f), bg(#3a3a3a)
-CTRL (B
-S   2 ┋        lnav                                                                    ┋
-A      ········└ [0m, fg(#eeeeee), bg(#3a3a3a)
-CTRL (B
-S   2 ┋             ：                                                                  ┋
-A      ············└ [0;1m, fg(#ff875f), bg(#3a3a3a)
-CTRL (B
-S   2 ┋              ⋯                                                                 ┋
-A      ··············└ [0m, fg(#eeeeee), bg(#3a3a3a)
-CTRL (B
-S   2 ┋                ：                                                               ┋
-A      ···············└ [0;1m, fg(#ff875f), bg(#3a3a3a)
-CTRL (0
-S   3 ┋                                                                               x┋
-A      ···············································································└ [0m, fg(#262626), bg(#878787)
-A      ················································································└ [39;49m
-CTRL (B
-CTRL (B
-S   3 ┋                                                                                ┋
-A      ················································································└ normal
-CTRL (0
-S  22 ┋                                                                                ┋
-A      └ [0m, fg(#262626), bg(#878787)
-CTRL (B
-S  22 ┋default syslog file for your system will be opened. These arguments             ┋
-A      └ [0m, fg(#eeeeee), bg(#262626)
-CTRL (0
-S  22 ┋                                                                               x┋
-A      ···············································································└ [0m, fg(#eeeeee), bg(#262626)
-A      ················································································└ [39;49m
-CTRL (B
-CTRL (B
-S  22 ┋                                                                                ┋
-A      ················································································└ normal
-CTRL (0
-S  23 ┋                                                                                ┋
-A      ··└ [0m, fg(#eeeeee), bg(#262626)
-CTRL (B
-S  23 ┋  1                                                                             ┋
-A      ··└ [0m, fg(#eeeeee), bg(#3a3a3a)
-A      ···└ carriage-return
-S  24 ┋                                                                                ┋
-A      └ [39;49m
-CTRL (B
-S  24 ┋                                                                                ┋
-A      └ normal
 K 71
-S  24 ┋                                                                                ┋
-A      ·······································└ fg(#eeeeee), bg(#262626)
-CSI Erase to Left
-S  24 ┋                                        P                                       ┋
-A      ·········································└ carriage-return
-A      └ [39;49m
-CTRL (B
-S  24 ┋                                                                                ┋
-A      └ normal
 OSC Set window title: LOG
 S  23 ┋  0                                                                             ┋
 A      ··└ fg(#eeeeee), bg(#3a3a3a)
-A      ···└ carriage-return
+S  23 ┋             0                                                                  ┋
+A      ··············└ carriage-return
 S  24 ┋                                                                                ┋
 A      └ [39;49m
 CTRL (B

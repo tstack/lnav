@@ -164,7 +164,6 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             line_range bold_range;
             line_range ul_range;
             auto sub_sf = sf;
-            auto mid_sf = string_fragment();
 
             while (!sub_sf.empty()) {
                 auto lhs_opt = sub_sf.consume_codepoint();
@@ -228,7 +227,6 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         return;
                     }
                 } else {
-                    mid_sf = mid_pair.second;
                     break;
                 }
                 sub_sf = rhs_pair.second;
