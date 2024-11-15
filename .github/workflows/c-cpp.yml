@@ -12,15 +12,15 @@ on:
 
 jobs:
   coverage:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-#    - name: Update apt
-#      run: sudo apt-get update
-#    - name: Install packages
-#      run: sudo apt-get install libncursesw5-dev libpcre++-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev libreadline-dev zlib1g-dev lcov
-#    - name: install cpp-coveralls
-#      run: pip install --user cpp-coveralls
+    - name: Update apt
+      run: sudo apt-get update
+    - name: Install packages
+      run: sudo apt-get install libncursesw5-dev libpcre++-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev libreadline-dev zlib1g-dev lcov
+    - name: install cpp-coveralls
+      run: pip install --user cpp-coveralls
     - name: autogen
       run: ./autogen.sh
     - name: configure
