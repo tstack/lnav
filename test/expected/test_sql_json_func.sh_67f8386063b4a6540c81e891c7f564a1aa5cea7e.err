@@ -1,0 +1,1 @@
+error: sqlite3_exec failed -- lnav-error:{"level":"error","message":{"str":"invalid JSON","attrs":[]},"reason":{"str":"lexical error: invalid char in json text.\n                                       #\n                     (right here) ------^","attrs":[]},"snippets":[],"notes":[],"help":{"str":"","attrs":[]}}

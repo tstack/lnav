@@ -135,3 +135,9 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_json_long.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view help' \
+    -c ':next-section' \
+    -c ':next-section' \
+    -c ";SELECT top FROM lnav_views WHERE name = 'help'"

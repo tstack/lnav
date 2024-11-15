@@ -44,6 +44,8 @@ EOF
 
 run_cap_test ./drive_sql "select jget()"
 
+run_cap_test ./drive_sql "select jget('#', '/0')"
+
 run_cap_test ./drive_sql "select jget('[123, true', '/0')"
 
 run_cap_test ./drive_sql "select jget('4', '')"

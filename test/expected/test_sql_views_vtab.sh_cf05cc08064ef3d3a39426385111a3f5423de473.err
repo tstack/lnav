@@ -1,0 +1,4 @@
+[1m[31m✘ error[0m: SQL statement failed
+ [1m[31mreason[0m: Rows cannot be inserted into the lnav_view_files table
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[37m[40mlnav_view_files[0m[37m[40m [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'log'[0m[37m[40m, [0m[35m[40m'/abc/def'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m)[0m

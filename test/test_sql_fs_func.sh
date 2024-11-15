@@ -68,3 +68,7 @@ run_cap_test ${lnav_test} -Nn \
 run_cap_test ${lnav_test} -Nn -c ";SELECT * FROM fstat('/non-existent')"
 
 run_cap_test ${lnav_test} -Nn -c ";SELECT * FROM fstat('/*.non-existent')"
+
+echo "Hello, World!" > fstat-hw.dat
+touch -t 200711030923 fstat-hw.dat
+run_cap_test ${lnav_test} -Nn -c ";SELECT st_name,st_type,st_mode,st_nlink,st_size,st_mtime,error,data FROM fstat('fstat-hw.dat')"

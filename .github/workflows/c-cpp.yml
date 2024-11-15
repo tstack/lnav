@@ -44,9 +44,14 @@ jobs:
         --exclude src/base/result.h
         --exclude src/safe
         --exclude src/spookyhash
+        --exclude src/tailer/drive_tailer.cc
         --exclude src/third-party
         --exclude src/ww898
         --exclude src/yajl
+        --exclude src/yajlpp/drive_json_op.cc
+        --exclude src/yajlpp/drive_json_ptr_walk.cc
+        --exclude src/yajlpp/test_yajlpp.cc
+        --exclude src/yajlpp/test_json_ptr.cc
         --exclude test
         --exclude src/data_scanner_re.cc
         --gcov-options '\-lp'

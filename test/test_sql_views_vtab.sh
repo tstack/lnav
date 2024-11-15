@@ -19,6 +19,14 @@ run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_view_files SET visible=0 WHERE endswith(filepath, 'log.0')" \
     ${test_dir}/logfile_access_log.*
 
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_files VALUES ('log', '/abc/def', 1)" \
+    ${test_dir}/logfile_access_log.*
+
+run_cap_test ${lnav_test} -n \
+    -c ";DELETE FROM lnav_view_files" \
+    ${test_dir}/logfile_access_log.*
+
 run_test ${lnav_test} -n \
     -c ";DELETE FROM lnav_view_stack" \
     ${test_dir}/logfile_access_log.0
@@ -208,4 +216,12 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM lnav_views" \
     -c ":write-json-to -" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters (view_name, language, pattern) VALUES ('text', 'sql', ':sc_bytes = 134')" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";INSERT INTO lnav_view_filters (view_name, language, pattern) VALUES ('log', 'sql', ':sc_bytes # 134')" \
     ${test_dir}/logfile_access_log.0
