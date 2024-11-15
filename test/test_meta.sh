@@ -29,6 +29,18 @@ if test -d meta-sessions/.lnav; then
     exit 1
 fi
 
+# tag was saved and search finds comment
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c "/Hello, World" \
+    ${test_dir}/logfile_access_log.0
+
+# tag was saved and search finds tag
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c "/foo" \
+    ${test_dir}/logfile_access_log.0
+
 # tag was saved and :write-to displays the comments/tags
 run_cap_test ${lnav_test} -n \
     -c ":load-session" \

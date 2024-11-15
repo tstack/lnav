@@ -198,6 +198,10 @@ run_cap_test ${lnav_test} -n -I ${test_dir} \
     ${test_dir}/logfile_bunyan.0
 
 run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_views SET options = json_object('row-time-offset', 'show') WHERE name = 'log'" \
+    ${test_dir}/logfile_w3c_big.0
+
+run_cap_test ${lnav_test} -n \
     -c ";UPDATE lnav_views SET top_meta = json_object('file', 'bad') WHERE name = 'text'" \
     ${test_dir}/textfile_ansi.0
 

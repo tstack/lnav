@@ -1291,7 +1291,7 @@ com_next_section(exec_context& ec,
         }
 
         tc->set_selection(adj_opt.value());
-        if (tc->is_selectable()) {
+        if (tc->is_selectable() && adj_opt.value() >= 2_vl) {
             tc->set_top(adj_opt.value() - 2_vl, false);
         }
     }
@@ -1322,7 +1322,7 @@ com_prev_section(exec_context& ec,
         }
 
         tc->set_selection(adj_opt.value());
-        if (tc->is_selectable()) {
+        if (tc->is_selectable() && adj_opt.value() >= 2_vl) {
             tc->set_top(adj_opt.value() - 2_vl, false);
         }
     }

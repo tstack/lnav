@@ -312,6 +312,7 @@ role_to_style(const role_t role,
             line_style |= fmt::emphasis::reverse;
             break;
         case role_t::VCR_ERROR:
+        case role_t::VCR_DIFF_DELETE:
             line_style
                 |= fmt::fg(fmt::terminal_color::red) | fmt::emphasis::bold;
             break;
@@ -320,6 +321,7 @@ role_to_style(const role_t role,
             line_style |= fmt::fg(fmt::terminal_color::yellow);
             break;
         case role_t::VCR_COMMENT:
+        case role_t::VCR_DIFF_ADD:
             line_style |= fmt::fg(fmt::terminal_color::green);
             break;
         case role_t::VCR_SNIPPET_BORDER:

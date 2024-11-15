@@ -14,22 +14,22 @@ _This is the source repository for **lnav**, visit [https://lnav.org](https://ln
 The Logfile Navigator is a log file viewer for the terminal.  Given a
 set of files/directories, **lnav** will:
 
-- decompress as needed;
-- detect their format;
-- merge the files together by time into a single view;
-- tail the files, follow renames, find new files in directories;
-- build an index of errors and warnings;
-- [pretty-print JSON-lines](https://docs.lnav.org/en/latest/formats.html#json-lines).
+[1m[31m- decompress as needed;[0m
+[1m[31m- detect their format;[0m
+[1m[31m- merge the files together by time into a single view;[0m
+[1m[31m- tail the files, follow renames, find new files in directories;[0m
+[1m[31m- build an index of errors and warnings;[0m
+[1m[31m- [pretty-print JSON-lines](https://docs.lnav.org/en/latest/formats.html#json-lines).[0m
 
 Then, in the **lnav** TUI, you can:
 
-- jump quickly to the previous/next error ([press [35m`e`[0m/[35m`E`[0m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
-- search using regular expressions ([press [35m`/`[0m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
-- highlight text with a regular expression ([[35m`:highlight`[0m](https://docs.lnav.org/en/latest/commands.html#highlight-pattern) command);
-- filter messages using [regular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions](https://docs.lnav.org/en/latest/usage.html#sqlite-expression);
-- pretty-print structured text ([press [35m`P`[0m](https://docs.lnav.org/en/latest/ui.html#pretty));
-- view a histogram of messages over time ([press [35m`i`[0m](https://docs.lnav.org/en/latest/ui.html#hist));
-- query messages using SQLite ([press [35m`;`[0m](https://docs.lnav.org/en/latest/sqlext.html))
+[1m[31m- jump quickly to the previous/next error ([press [0m[35m`e`[0m[1m[31m/[0m[35m`E`[0m[1m[31m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));[0m
+[1m[31m- search using regular expressions ([press [0m[35m`/`[0m[1m[31m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));[0m
+[1m[31m- highlight text with a regular expression ([[0m[35m`:highlight`[0m[1m[31m](https://docs.lnav.org/en/latest/commands.html#highlight-pattern) command);[0m
+[1m[31m- filter messages using [regular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions](https://docs.lnav.org/en/latest/usage.html#sqlite-expression);[0m
+[1m[31m- pretty-print structured text ([press [0m[35m`P`[0m[1m[31m](https://docs.lnav.org/en/latest/ui.html#pretty));[0m
+[1m[31m- view a histogram of messages over time ([press [0m[35m`i`[0m[1m[31m](https://docs.lnav.org/en/latest/ui.html#hist));[0m
+[1m[31m- query messages using SQLite ([press [0m[35m`;`[0m[1m[31m](https://docs.lnav.org/en/latest/sqlext.html))[0m
 
 ## Screenshot
 
@@ -152,19 +152,19 @@ of log lines fed into [35m`lnav`[0m via [35m`journalctl`[0m's [35m`-b`[0m 
 Please file issues on this repository or use the discussions section.
 The following alternatives are also available:
 
-- [support@lnav.org](mailto:support@lnav.org)
-- [Discord](https://discord.gg/erBPnKwz7R)
-- [Google Groups](https://groups.google.com/g/lnav)
+[1m[31m- [support@lnav.org](mailto:support@lnav.org)[0m
+[1m[31m- [Discord](https://discord.gg/erBPnKwz7R)[0m
+[1m[31m- [Google Groups](https://groups.google.com/g/lnav)[0m
 
 ## Links
 
-- [Main Site](https://lnav.org)
-- [**Documentation**](https://docs.lnav.org) on Read the Docs
-- [Internal Architecture](ARCHITECTURE.md)
+[1m[31m- [Main Site](https://lnav.org)[0m
+[1m[31m- [**Documentation**](https://docs.lnav.org) on Read the Docs[0m
+[1m[31m- [Internal Architecture](ARCHITECTURE.md)[0m
 
 ## Contributing
 
-- [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
+[1m[31m- [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)[0m
 
 ### Building From Source
 
@@ -172,17 +172,17 @@ The following alternatives are also available:
 
 The following software packages are required to build lnav:
 
-- gcc/clang  - A C++14-compatible compiler.
-- libpcre2   - The Perl Compatible Regular Expression v2 (PCRE2) library.
-- sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.
-- ncurses    - The ncurses text UI library.
-- readline   - The readline line editing library.
-- zlib       - The zlib compression library.
-- bz2        - The bzip2 compression library.
-- libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
-- libarchive - The libarchive library for opening archive files, like zip/tgz.
-- wireshark  - The [35m'tshark'[0m program is used to interpret pcap files.
-- cargo/rust - The Rust language is used to build the PRQL compiler.
+[1m[31m- gcc/clang  - A C++14-compatible compiler.[0m
+[1m[31m- libpcre2   - The Perl Compatible Regular Expression v2 (PCRE2) library.[0m
+[1m[31m- sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.[0m
+[1m[31m- ncurses    - The ncurses text UI library.[0m
+[1m[31m- readline   - The readline line editing library.[0m
+[1m[31m- zlib       - The zlib compression library.[0m
+[1m[31m- bz2        - The bzip2 compression library.[0m
+[1m[31m- libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.[0m
+[1m[31m- libarchive - The libarchive library for opening archive files, like zip/tgz.[0m
+[1m[31m- wireshark  - The [0m[35m'tshark'[0m[1m[31m program is used to interpret pcap files.[0m
+[1m[31m- cargo/rust - The Rust language is used to build the PRQL compiler.[0m
 
 #### Build
 

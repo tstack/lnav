@@ -632,6 +632,21 @@ log_line,log_part,log_time
 22,end,2015-04-07 07:32:56.000
 EOF
 
+run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":partition-name middle" \
+    -c ":goto 21" \
+    -c ":partition-name end" \
+    -c ":goto 0" \
+    -c ":next-section" \
+    -c ";SELECT log_top_line()" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c ":next-section" \
+    -c ";SELECT log_top_line()" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_pretty.0
+
 run_test ${lnav_test} -n \
     -c ":goto 1" \
     -c ":partition-name middle" \
