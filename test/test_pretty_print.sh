@@ -43,3 +43,10 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ":switch-to-view pretty" \
     ${test_dir}/textfile_ansi.0
+
+run_cap_test ${lnav_test} -n \
+    -c ':switch-to-view pretty' \
+    -c ':goto 2' \
+    -c ';SELECT * FROM lnav_views' \
+    -c ':write-json-to -' \
+    ${test_dir}/textfile_json_one_line.0

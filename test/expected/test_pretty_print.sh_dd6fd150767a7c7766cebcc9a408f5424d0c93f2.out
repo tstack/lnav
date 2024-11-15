@@ -1,0 +1,233 @@
+[
+    {
+        "name": "log",
+        "top": 0,
+        "left": 0,
+        "height": 24,
+        "inner_height": 0,
+        "top_time": null,
+        "top_file": null,
+        "paused": 0,
+        "search": "",
+        "filtering": 1,
+        "movement": "top",
+        "top_meta": null,
+        "selection": 0,
+        "options": {
+            "row-details": "hide",
+            "row-time-offset": "hide",
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "text",
+        "top": 0,
+        "left": 0,
+        "height": 1,
+        "inner_height": 1,
+        "top_time": null,
+        "top_file": "{test_dir}/textfile_json_one_line.0",
+        "paused": 0,
+        "search": "",
+        "filtering": 1,
+        "movement": "top",
+        "top_meta": {
+            "file": "{test_dir}/textfile_json_one_line.0",
+            "breadcrumbs": [
+                {
+                    "display_value": "textfile_json_one_line.0",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "textfile_json_one_line.0"
+                        }
+                    ]
+                }
+            ]
+        },
+        "selection": 0,
+        "options": {
+            "row-details": "hide",
+            "row-time-offset": "hide",
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "help",
+        "top": 0,
+        "left": 0,
+        "height": 1,
+        "inner_height": 0,
+        "top_time": null,
+        "top_file": null,
+        "paused": 0,
+        "search": "",
+        "filtering": 0,
+        "movement": "top",
+        "top_meta": null,
+        "selection": 0,
+        "options": {
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "histogram",
+        "top": 0,
+        "left": 0,
+        "height": 1,
+        "inner_height": 0,
+        "top_time": null,
+        "top_file": null,
+        "paused": 0,
+        "search": "",
+        "filtering": 0,
+        "movement": "top",
+        "top_meta": null,
+        "selection": 0,
+        "options": {
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "db",
+        "top": 0,
+        "left": 0,
+        "height": 1,
+        "inner_height": 4,
+        "top_time": null,
+        "top_file": null,
+        "paused": 0,
+        "search": "",
+        "filtering": 0,
+        "movement": "top",
+        "top_meta": {
+            "breadcrumbs": [
+
+            ]
+        },
+        "selection": 0,
+        "options": {
+            "row-details": "hide",
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "schema",
+        "top": 0,
+        "left": 0,
+        "height": 1,
+        "inner_height": 0,
+        "top_time": null,
+        "top_file": null,
+        "paused": 0,
+        "search": "",
+        "filtering": 0,
+        "movement": "top",
+        "top_meta": null,
+        "selection": 0,
+        "options": {
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "pretty",
+        "top": 2,
+        "left": 0,
+        "height": 1,
+        "inner_height": 12,
+        "top_time": null,
+        "top_file": "{test_dir}/textfile_json_one_line.0",
+        "paused": 0,
+        "search": "",
+        "filtering": 0,
+        "movement": "top",
+        "top_meta": {
+            "file": "{test_dir}/textfile_json_one_line.0",
+            "anchor": "#array",
+            "breadcrumbs": [
+                {
+                    "display_value": "\"array\"",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "\"array\""
+                        },
+                        {
+                            "display_value": "\"foo bar\""
+                        },
+                        {
+                            "display_value": "\"obj\""
+                        }
+                    ]
+                },
+                {
+                    "display_value": "[0]",
+                    "search_placeholder": "(Enter a number from 0 to 2)",
+                    "possibilities": [
+
+                    ]
+                }
+            ]
+        },
+        "selection": 2,
+        "options": {
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "spectro",
+        "top": 0,
+        "left": 0,
+        "height": 1,
+        "inner_height": 0,
+        "top_time": null,
+        "top_file": null,
+        "paused": 0,
+        "search": "",
+        "filtering": 0,
+        "movement": "cursor",
+        "top_meta": null,
+        "selection": 0,
+        "options": {
+            "row-details": "hide",
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    },
+    {
+        "name": "timeline",
+        "top": 0,
+        "left": 0,
+        "height": 1,
+        "inner_height": 0,
+        "top_time": null,
+        "top_file": null,
+        "paused": 0,
+        "search": "",
+        "filtering": 1,
+        "movement": "cursor",
+        "top_meta": null,
+        "selection": 0,
+        "options": {
+            "row-details": "hide",
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null
+    }
+]

@@ -474,6 +474,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_pretty_print.sh_a6d9042e5e95f2a49194bd80c1eed154813ddf41.out \
     $(srcdir)/%reldir%/test_pretty_print.sh_cd361eeca7e91bfab942b75d6c3422c7a456a111.err \
     $(srcdir)/%reldir%/test_pretty_print.sh_cd361eeca7e91bfab942b75d6c3422c7a456a111.out \
+    $(srcdir)/%reldir%/test_pretty_print.sh_dd6fd150767a7c7766cebcc9a408f5424d0c93f2.err \
+    $(srcdir)/%reldir%/test_pretty_print.sh_dd6fd150767a7c7766cebcc9a408f5424d0c93f2.out \
     $(srcdir)/%reldir%/test_pretty_print.sh_f8feb52a321026d9562b271eb37a2c56dfaed329.err \
     $(srcdir)/%reldir%/test_pretty_print.sh_f8feb52a321026d9562b271eb37a2c56dfaed329.out \
     $(srcdir)/%reldir%/test_prql.sh_06900fac5c2e854b1208320b753fcd43d4ba63a3.err \
