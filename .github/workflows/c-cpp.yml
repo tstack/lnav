@@ -27,7 +27,7 @@ jobs:
       run: ./configure --disable-static --enable-code-coverage --enable-debug CFLAGS=-g3 CXXFLAGS=-g3
     - name: make
       run: make -j3
-    - name: make check
+    - name: make check || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
       run: env TEST_GIT_INSTALL=1 make check
     - name: upload cover
       env:
