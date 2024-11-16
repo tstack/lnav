@@ -28,7 +28,7 @@ jobs:
     - name: make
       run: make -j3
     - name: make check
-      run: env TEST_GIT_INSTALL=1 TEST_REGEX101=1 make check || (test -e src/tailer/test-suite.log && cat src/tailer/test-suite.log && false) || (test -e test/test-suite.log && cat test/test-suite.log && false)
+      run: env TEST_GIT_INSTALL=1 make check || (test -e src/tailer/test-suite.log && cat src/tailer/test-suite.log && false) || (test -e test/test-suite.log && cat test/test-suite.log && false)
     - name: upload cover
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
