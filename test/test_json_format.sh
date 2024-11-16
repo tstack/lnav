@@ -161,3 +161,8 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     ${test_dir}/gharchive_log.jsonl
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':goto 9' \
+    ${test_dir}/logfile_json_invalid.json

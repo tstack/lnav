@@ -1,0 +1,16 @@
+                 from access_log | stats.count_by { c_ip }
+      prql_stage ----------------
+  prql_transform ----
+      prql_ident      ----------
+       prql_fqid      ----------
+      prql_stage                 -------------------------
+       prql_pipe                 -
+       prql_fqid                   --------------
+      prql_ident                   -----
+        prql_dot                        -
+      prql_ident                         --------
+      prql_paren                                  -
+      prql_ident                                    ----
+       prql_fqid                                    ----
+      prql_paren                                         -
+stats.count_by: Partition rows and count the number of rows in each partition

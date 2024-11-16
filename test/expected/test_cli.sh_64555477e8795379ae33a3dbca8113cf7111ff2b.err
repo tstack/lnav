@@ -1,0 +1,66 @@
+[1m[35musage[0m: [1m../src/lnav-test[0m [[4moptions[0m] [[4mlogfile1[0m [4mlogfile2[0m [4m...[0m]
+
+A log file viewer for the terminal that indexes log messages to
+make it easier to navigate through files quickly.
+
+[1mKey Bindings[0m
+[1m  ?[0m    View/leave the online help text.
+[1m  q[0m    Quit the program.
+
+[1mOptions[0m
+  [1m-h[0m         Print this message, then exit.
+  [1m-H[0m         Display the internal help text.
+
+  [1m-I[0m [4mdir[0m     An additional configuration directory.
+  [1m-W[0m         Print warnings related to lnav's configuration.
+  [1m-u[0m         Update formats installed from git repositories.
+  [1m-d[0m [4mfile[0m    Write debug messages to the given file.
+  [1m-V[0m         Print version information.
+
+  [1m-r[0m         Recursively load files from the given directory hierarchies.
+  [1m-R[0m         Load older rotated log files as well.
+  [1m-c[0m [4mcmd[0m     Execute a command after the files have been loaded.
+  [1m-f[0m [4mfile[0m    Execute the commands in the given file.
+  [1m-e[0m [4mcmd[0m     Execute a shell command-line.
+  [1m-t[0m         Treat data piped into standard in as a log file.
+  [1m-n[0m         Run without the curses UI. (headless mode)
+  [1m-N[0m         Do not open the default syslog file if no files are given.
+  [1m-q[0m         Do not print informational messages.
+
+[1mOptional arguments[0m
+  [4mlogfileN[0m   The log files, directories, or remote paths to view.
+             If a directory is given, all of the files in the
+             directory will be loaded.
+
+[1mManagement-Mode Options[0m
+  [1m-i[0m         Install the given format files and exit.  Pass 'extra'
+             to install the default set of third-party formats.
+  [1m-m[0m         Switch to the management command-line mode.  This mode
+             is used to work with lnav's configuration.
+
+[1mExamples[0m
+ [33m•[0m To load and follow the syslog file:
+     [1m[32m[40m$[0m[37m[40m [0m[1m[37m[40mlnav[0m[37m[40m                                  [0m
+
+ [33m•[0m To load all of the files in [1m/var/log[0m:
+     [1m[32m[40m$[0m[37m[40m [0m[1m[37m[40mlnav[0m[37m[40m [0m[1m[37m[40m/var/log[0m[37m[40m                         [0m
+
+ [33m•[0m To watch the output of [1mmake[0m:
+     [1m[32m[40m$[0m[37m[40m [0m[1m[37m[40mlnav[0m[37m[40m [0m[1m[37m[40m-e[0m[37m[40m '[0m[1m[37m[40mmake[0m[37m[40m [0m[1m[37m[40m-j4[0m[37m[40m'                    [0m
+
+[1mPaths[0m
+ [33m•[0m Format files are read from:
+    📂 [1m/etc/lnav[0m
+    📂 [1m/usr/local/etc/lnav[0m
+ [33m•[0m Configuration, session, and format files are stored in:
+    📂 [1m../test/cfg/test_cli.sh/.lnav[0m
+
+ [33m•[0m Local copies of remote files, files extracted from
+   archives, execution output, and so on are stored in:
+    📂 [1m{TMPDIR}lnav-user-{uid}-work[0m
+
+[1m[35mDocumentation[0m: https://docs.lnav.org
+[1m[35mContact[0m
+  💬 https://github.com/tstack/lnav/discussions
+  📫 lnav@googlegroups.com
+[1m[35mVersion[0m: lnav 0.12.3-beta2-30-gaf786bf

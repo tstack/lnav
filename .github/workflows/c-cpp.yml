@@ -28,7 +28,7 @@ jobs:
     - name: make
       run: make -j3
     - name: make check
-      run: make check
+      run: env TEST_GIT_INSTALL=1 make check
     - name: upload cover
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}

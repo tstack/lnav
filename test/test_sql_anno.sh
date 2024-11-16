@@ -55,4 +55,6 @@ run_cap_test ./drive_sql_anno "SELECT json_object('abc', 'def') ->> '$.abc'"
 
 run_cap_test ./drive_sql_anno "SELECT 0x77, 123, 123e4"
 
-run_cap_test ./drive_sql_anno "from access_log | filter cs_method == 'GET' || cs_method == 'PUT'"
+run_cap_test ./drive_sql_anno "from access_log | filter cs_method == 'GET' || cs_method == 'PUT'" 2
+
+run_cap_test ./drive_sql_anno "from access_log | stats.count_by { c_ip }" 23
