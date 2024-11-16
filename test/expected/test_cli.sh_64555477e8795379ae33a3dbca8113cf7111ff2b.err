@@ -51,7 +51,7 @@ make it easier to navigate through files quickly.
 [1mPaths[0m
  [33m•[0m Format files are read from:
     📂 [1m/etc/lnav[0m
-    📂 [1m/usr/local/etc/lnav[0m
+    📂 [1m{prefix}/etc/lnav[0m
  [33m•[0m Configuration, session, and format files are stored in:
     📂 [1m../test/cfg/test_cli.sh/.lnav[0m
 
@@ -63,4 +63,4 @@ make it easier to navigate through files quickly.
 [1m[35mContact[0m
   💬 https://github.com/tstack/lnav/discussions
   📫 lnav@googlegroups.com
-[1m[35mVersion[0m: lnav 0.12.3-beta2-30-gaf786bf
+[1m[35mVersion[0m: {LNAV_VERSION}

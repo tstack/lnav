@@ -1,6 +1,6 @@
 [1m[31m✘ error[0m: write-json-to -- unavailable in secure mode
 [36m --> [0m[1mcommand-option[0m:2
-[36m | [0m[37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m /tmp/bad                 [0m
+[36m | [0m[37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m {TMPDIR}bad                 [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mwrite-json-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
          ══════════════════════════════════════════════════════════════════════
            Write SQL results to the given file in JSON format

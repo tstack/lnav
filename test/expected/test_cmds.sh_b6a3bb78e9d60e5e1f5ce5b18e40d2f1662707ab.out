@@ -568,9 +568,9 @@ These tables are created dynamically and not stored in memory or on
 disk. If you would like to persist some information from the tables,
 you can attach another database and create tables in that database.
 For example, if you wanted to save the results from the earlier
-example of a top ten query into the "/tmp/topten.db" file, you can do:
+example of a top ten query into the "{TMPDIR}topten.db" file, you can do:
 
- ▌[37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'/tmp/topten.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m;                         [0m
+ ▌[37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'{TMPDIR}topten.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m;                         [0m
  ▌[37m[40m;[0m[1m[36m[40mCREATE[0m[37m[40m [0m[1m[36m[40mTABLE[0m[37m[40m [0m[37m[40mtopten[0m[37m[40m.[0m[37m[40mfoo[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m    [0m
  ▌[37m[40m   [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mtotal[0m[37m[40m [0m[1m[36m[40mDESC[0m[37m[40m          [0m
  ▌[37m[40m   [0m[1m[36m[40mLIMIT[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m;                                                         [0m
@@ -755,8 +755,8 @@ For support questions, email:
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
-#1 To append marked lines to the file /tmp/interesting-lines.txt:
-   [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m /tmp/interesting-lines.txt             [0m
+#1 To append marked lines to the file {TMPDIR}interesting-lines.txt:
+   [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m {TMPDIR}interesting-lines.txt             [0m
    
 
 
@@ -1447,8 +1447,8 @@ For support questions, email:
   [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
   [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
-#1 To write the output of lnav commands to the file /tmp/script-output.txt:
-   [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m /tmp/script-output.txt               [0m
+#1 To write the output of lnav commands to the file {TMPDIR}script-output.txt:
+   [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m {TMPDIR}script-output.txt               [0m
    
 
 
@@ -1713,8 +1713,8 @@ For support questions, email:
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
   [1mecholn()[0m
 [4mExample[0m
-#1 To write SQL results as text to /tmp/table.txt:
-   [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
+#1 To write SQL results as text to {TMPDIR}table.txt:
+   [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m {TMPDIR}table.txt                    [0m
    
 
 
@@ -1735,8 +1735,8 @@ For support questions, email:
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
   [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
-#1 To write SQL results as CSV to /tmp/table.csv:
-   [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m /tmp/table.csv                      [0m
+#1 To write SQL results as CSV to {TMPDIR}table.csv:
+   [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m {TMPDIR}table.csv                      [0m
    
 
 
@@ -1757,8 +1757,8 @@ For support questions, email:
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
   [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
-#1 To write SQL results as JSON to /tmp/table.json:
-   [37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m /tmp/table.json                    [0m
+#1 To write SQL results as JSON to {TMPDIR}table.json:
+   [37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m {TMPDIR}table.json                    [0m
    
 
 
@@ -1779,8 +1779,8 @@ For support questions, email:
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
   [1mecholn()[0m
 [4mExample[0m
-#1 To write SQL results as JSON Lines to /tmp/table.json:
-   [37m[40m:[0m[1m[36m[40mwrite-jsonlines-to[0m[37m[40m /tmp/table.json               [0m
+#1 To write SQL results as JSON Lines to {TMPDIR}table.json:
+   [37m[40m:[0m[1m[36m[40mwrite-jsonlines-to[0m[37m[40m {TMPDIR}table.json               [0m
    
 
 
@@ -1805,8 +1805,8 @@ For support questions, email:
   [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
   [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
-#1 To write the marked lines in the log view to /tmp/table.txt:
-   [37m[40m:[0m[1m[36m[40mwrite-raw-to[0m[37m[40m /tmp/table.txt                      [0m
+#1 To write the marked lines in the log view to {TMPDIR}table.txt:
+   [37m[40m:[0m[1m[36m[40mwrite-raw-to[0m[37m[40m {TMPDIR}table.txt                      [0m
    
 
 
@@ -1828,8 +1828,8 @@ For support questions, email:
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
   [1mecholn()[0m
 [4mExample[0m
-#1 To write only the displayed text to /tmp/table.txt:
-   [37m[40m:[0m[1m[36m[40mwrite-screen-to[0m[37m[40m /tmp/table.txt                   [0m
+#1 To write only the displayed text to {TMPDIR}table.txt:
+   [37m[40m:[0m[1m[36m[40mwrite-screen-to[0m[37m[40m {TMPDIR}table.txt                   [0m
    
 
 
@@ -1850,8 +1850,8 @@ For support questions, email:
   [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
   [1mecholn()[0m
 [4mExample[0m
-#1 To write SQL results as text to /tmp/table.txt:
-   [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m /tmp/table.txt                    [0m
+#1 To write SQL results as text to {TMPDIR}table.txt:
+   [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m {TMPDIR}table.txt                    [0m
    
 
 
@@ -1870,8 +1870,8 @@ For support questions, email:
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, 
   [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
-#1 To write marked lines to the file /tmp/interesting-lines.txt:
-   [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m /tmp/interesting-lines.txt              [0m
+#1 To write marked lines to the file {TMPDIR}interesting-lines.txt:
+   [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m {TMPDIR}interesting-lines.txt              [0m
    
 
 
@@ -1893,8 +1893,8 @@ For support questions, email:
   [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
   [1m:write-to[0m, [1mecholn()[0m
 [4mExample[0m
-#1 To write the top view to /tmp/table.txt:
-   [37m[40m:[0m[1m[36m[40mwrite-view-to[0m[37m[40m /tmp/table.txt                     [0m
+#1 To write the top view to {TMPDIR}table.txt:
+   [37m[40m:[0m[1m[36m[40mwrite-view-to[0m[37m[40m {TMPDIR}table.txt                     [0m
    
 
 
@@ -4941,8 +4941,8 @@ For support questions, email:
                 database.
 
 [4mExample[0m
-#1 To attach the database file '/tmp/customers.db' with the name customers:
-   [37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'/tmp/customers.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m customers  [0m
+#1 To attach the database file '{TMPDIR}customers.db' with the name customers:
+   [37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'{TMPDIR}customers.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m customers  [0m
    
 
 
