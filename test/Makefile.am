@@ -357,6 +357,7 @@ dist_noinst_DATA = \
 	logfile_json.json \
 	logfile_json2.json \
 	logfile_json3.json \
+	logfile_json_invalid.json \
 	logfile_json_subsec.json \
 	logfile_leveltest.0 \
 	logfile_logfmt.0 \
