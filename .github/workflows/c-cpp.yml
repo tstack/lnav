@@ -24,11 +24,11 @@ jobs:
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --disable-static --enable-code-coverage --enable-debug CFLAGS=-g3 CXXFLAGS=-g3
+      run: ./configure --disable-static --enable-code-coverage --enable-debug --prefix=/usr/local CFLAGS=-g3 CXXFLAGS=-g3
     - name: make
       run: make -j3
     - name: make check
-      run: env TEST_GIT_INSTALL=1 make check || (test -e src/tailer/test-suite.log && cat src/tailer/test-suite.log && false) || (test -e test/test-suite.log && cat test/test-suite.log && false)
+      run: env TEST_GIT_INSTALL=1 TEST_REGEX101=1 make check || (test -e src/tailer/test-suite.log && cat src/tailer/test-suite.log && false) || (test -e test/test-suite.log && cat test/test-suite.log && false)
     - name: upload cover
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}

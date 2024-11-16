@@ -2,6 +2,11 @@
 
 export YES_COLOR=1
 
+if test x"${TEST_REGEX101}" = x""; then
+    # Hitting the git repos frequently is slow/noisy
+    exit 0
+fi
+
 rm -rf regex101-home
 mkdir -p regex101-home
 export HOME=regex101-home

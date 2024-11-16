@@ -505,6 +505,7 @@ TESTS = \
 	test_json_format.sh \
 	test_log_accel \
 	test_logfile.sh \
+    test_regex101.sh \
 	test_reltime \
 	test_scripts.sh \
 	test_sessions.sh \
@@ -534,7 +535,6 @@ TESTS += test_prql.sh
 endif
 
 DISABLED_TESTS = \
-    test_regex101.sh \
 	test_remote.sh \
 	test_top_status \
 	test_line_buffer2 \
