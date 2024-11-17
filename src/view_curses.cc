@@ -380,7 +380,10 @@ view_curses::mvwattrline(WINDOW* window,
     memset(fg_color, -1, sizeof(fg_color));
     memset(bg_color, -1, sizeof(bg_color));
 
-    mvwin_wchnstr(window, y, x, row_ch, line_width_chars);
+    if (line_width_chars > 0) {
+        auto curses_rc = mvwin_wchnstr(window, y, x, row_ch, line_width_chars);
+        require(curses_rc == OK);
+    }
     std::stable_sort(sa.begin(), sa.end());
     for (auto iter = sa.cbegin(); iter != sa.cend(); ++iter) {
         auto attr_range = iter->sa_range;
