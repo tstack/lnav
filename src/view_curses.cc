@@ -557,8 +557,11 @@ view_curses::mvwattrline(WINDOW* window,
         short cur_fg, cur_bg;
         pair_content(cur_pair, &cur_fg, &cur_bg);
 
+        require_ge(cur_fg, -100);
+
         auto desired_fg = fg_color[lpc] != -1 ? fg_color[lpc] : cur_fg;
         auto desired_bg = bg_color[lpc] != -1 ? bg_color[lpc] : cur_bg;
+        require_ge(desired_fg, -100);
         if (desired_fg >= COLOR_BLACK && desired_fg <= COLOR_WHITE) {
             desired_fg = vc.ansi_to_theme_color(desired_fg);
         }
@@ -618,6 +621,7 @@ view_curses::mvwattrline(WINDOW* window,
             bg_color[lpc] = cur_bg;
         }
 
+        require_ge(fg_color[lpc], -100);
         int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
 
         row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
@@ -1257,8 +1261,8 @@ view_colors::init_roles(const lnav_theme& lt,
 int
 view_colors::ensure_color_pair(short fg, short bg)
 {
-    require(fg >= -100);
-    require(bg >= -100);
+    require_ge(fg, -100);
+    require_ge(bg, -100);
 
     if (fg >= COLOR_BLACK && fg <= COLOR_WHITE) {
         fg = this->ansi_to_theme_color(fg);

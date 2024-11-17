@@ -175,8 +175,8 @@ from(string_fragment sf)
         sf));
 }
 
-term_color_palette::term_color_palette(const char* name,
-                                       const string_fragment& json)
+term_color_palette::
+term_color_palette(const char* name, const string_fragment& json)
 {
     intern_string_t iname = intern_string::lookup(name);
     auto parse_res
@@ -202,7 +202,7 @@ term_color_palette::match_color(const lab_color& to_match) const
     double lowest = 1000.0;
     short lowest_id = -1;
 
-    for (auto& xc : this->tc_palette) {
+    for (const auto& xc : this->tc_palette) {
         double xc_delta = xc.xc_lab_color.deltaE(to_match);
 
         if (lowest_id == -1) {
@@ -216,6 +216,8 @@ term_color_palette::match_color(const lab_color& to_match) const
             lowest_id = xc.xc_id;
         }
     }
+
+    require_ge(lowest_id, -100);
 
     return lowest_id;
 }
