@@ -558,6 +558,8 @@ view_curses::mvwattrline(WINDOW* window,
         auto cur_pair = PAIR_NUMBER(row_ch[lpc].attr);
 #endif
         short cur_fg, cur_bg;
+        require_ge(cur_pair, 1);
+        require_lt(cur_pair, COLOR_PAIRS);
         pair_content(cur_pair, &cur_fg, &cur_bg);
 
         require_ge(cur_fg, -100);
