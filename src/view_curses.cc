@@ -250,6 +250,17 @@ view_curses::mvwattrline(WINDOW* window,
     line_range lr_bytes;
     int char_index = 0;
 
+    {
+        int rows, cols;
+        getmaxyx(window, rows, cols);
+
+        if (y < 0 || y >= rows || x < 0 || x >= cols) {
+            line_width_chars = 0;
+        } else if ((x + line_width_chars) > cols) {
+            line_width_chars = cols - x;
+        }
+    }
+
     for (size_t lpc = 0; lpc < line.size();) {
         int exp_start_index = expanded_line.size();
         auto ch = static_cast<unsigned char>(line[lpc]);
@@ -557,9 +568,10 @@ view_curses::mvwattrline(WINDOW* window,
 #else
         auto cur_pair = PAIR_NUMBER(row_ch[lpc].attr);
 #endif
+        if (cur_pair < 0 || cur_pair >= COLOR_PAIRS) {
+            cur_pair = 1;  // XXX ncurses is a giant pile of dogshit
+        }
         short cur_fg, cur_bg;
-        require_ge(cur_pair, 1);
-        require_lt(cur_pair, COLOR_PAIRS);
         pair_content(cur_pair, &cur_fg, &cur_bg);
 
         require_ge(cur_fg, -100);
