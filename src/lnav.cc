@@ -1190,9 +1190,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         errpipe[0].close_on_exec();
         errpipe[1].close_on_exec();
-        dup2(errpipe[1], STDERR_FILENO);
-        errpipe[1].reset();
-        log_pipe_err(errpipe[0]);
+        auto pipe_err_handle
+            = log_pipe_err(errpipe[0].release(), errpipe[1].release());
         lnav_behavior lb;
 
         ui_periodic_timer::singleton();
@@ -3647,9 +3646,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 fprintf(stderr, "error: %s\n", e.what());
             }
         } catch (const line_buffer::error& e) {
-            fprintf(stderr, "error: %s\n", strerror(e.e_err));
+            auto um = lnav::console::user_message::error("internal error")
+                          .with_reason(strerror(e.e_err));
+            lnav::console::print(stderr, um);
         } catch (const std::exception& e) {
-            fprintf(stderr, "error: %s\n", e.what());
+            auto um = lnav::console::user_message::error("internal error")
+                          .with_reason(e.what());
+            lnav::console::print(stderr, um);
         }
 
         // When reading from stdin, tell the user where the capture

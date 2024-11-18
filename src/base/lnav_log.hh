@@ -69,7 +69,25 @@ void log_msg_extra(const char* fmt, ...);
 void log_msg_extra_complete();
 void log_install_handlers();
 void log_abort() lnav_dead2;
-void log_pipe_err(int fd);
+
+class log_pipe_err_handle {
+public:
+    log_pipe_err_handle(int fd) : h_old_stderr_fd(fd) {}
+
+    log_pipe_err_handle(const log_pipe_err_handle&) = delete;
+
+    log_pipe_err_handle(log_pipe_err_handle&& other) noexcept
+    {
+        this->h_old_stderr_fd = std::exchange(other.h_old_stderr_fd, -1);
+    }
+
+    ~log_pipe_err_handle();
+
+private:
+    int h_old_stderr_fd{-1};
+};
+
+log_pipe_err_handle log_pipe_err(int readfd, int writefd);
 void log_set_thread_prefix(std::string prefix);
 void log_backtrace(lnav_log_level_t level);
 
