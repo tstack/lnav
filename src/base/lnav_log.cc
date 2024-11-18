@@ -54,6 +54,7 @@
 #include <algorithm>
 #include <mutex>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -650,6 +651,12 @@ log_abort()
 {
     raise(SIGABRT);
     _exit(1);
+}
+
+log_pipe_err_handle::
+log_pipe_err_handle(log_pipe_err_handle&& other) noexcept
+{
+    this->h_old_stderr_fd = std::exchange(other.h_old_stderr_fd, -1);
 }
 
 log_pipe_err_handle::~
