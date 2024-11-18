@@ -742,17 +742,24 @@ view_colors::init(bool headless)
 {
     vc_active_palette = ansi_colors();
     if (!headless && has_colors()) {
-        start_color();
+        log_info("calling start_color()");
+        if (start_color() == ERR) {
+            log_error("start_color() failed");
+        }
 
         if (lnav_config.lc_ui_default_colors) {
             use_default_colors();
         }
         if (COLORS >= 256) {
+            log_info("using xterm palette");
             vc_active_palette = xterm_colors();
         }
-    }
+        log_info("COLOR_PAIRS = %d", COLOR_PAIRS);
 
-    log_debug("COLOR_PAIRS = %d", COLOR_PAIRS);
+        if (COLOR_PAIRS == 0) {
+            throw std::runtime_error("ncurses COLOR_PAIRS is zero");
+        }
+    }
 
     initialized = true;
 
@@ -1393,7 +1400,9 @@ screen_curses::create()
         }
     }
 
-    newterm(nullptr, stdout, stdin);
+    if (newterm(nullptr, stdout, stdin) == nullptr) {
+        return Err(std::string("ncurses function newterm() failed"));
+    }
 
     auto& mouse_i = injector::get<xterm_mouse&>();
     mouse_i.set_enabled(check_experimental("mouse")
