@@ -67,7 +67,7 @@ public:
         {
             dst.emplace_back(
                 li.li_file_range.fr_offset, li.li_timestamp, li.li_level);
-            return scan_match{100};
+            return scan_match{1};
         }
 
         return scan_no_match{""};

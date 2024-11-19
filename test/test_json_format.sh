@@ -8,6 +8,10 @@ run_cap_test env TZ=UTC ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_journald.json
 
+cat ${test_dir}/logfile_journald.json | \
+    run_cap_test env TZ=UTC ${lnav_test} -n \
+    -c ':test-comment json format on stdin'
+
 # json log format is not working"
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \

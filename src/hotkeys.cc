@@ -48,48 +48,6 @@
 
 using namespace lnav::roles::literals;
 
-static int
-key_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
-{
-    if (!sqlite3_stmt_busy(stmt)) {
-        return 0;
-    }
-
-    int ncols = sqlite3_column_count(stmt);
-
-    auto& vars = ec.ec_local_vars.top();
-
-    for (int lpc = 0; lpc < ncols; lpc++) {
-        const char* column_name = sqlite3_column_name(stmt, lpc);
-
-        if (sql_ident_needs_quote(column_name)) {
-            continue;
-        }
-
-        auto* raw_value = sqlite3_column_value(stmt, lpc);
-        auto value_type = sqlite3_column_type(stmt, lpc);
-        scoped_value_t value;
-        switch (value_type) {
-            case SQLITE_INTEGER:
-                value = (int64_t) sqlite3_value_int64(raw_value);
-                break;
-            case SQLITE_FLOAT:
-                value = sqlite3_value_double(raw_value);
-                break;
-            case SQLITE_NULL:
-                value = null_value_t{};
-                break;
-            default:
-                value = std::string((const char*) sqlite3_value_text(raw_value),
-                                    sqlite3_value_bytes(raw_value));
-                break;
-        }
-        vars[column_name] = value;
-    }
-
-    return 0;
-}
-
 bool
 handle_keyseq(const char* keyseq)
 {
@@ -100,7 +58,7 @@ handle_keyseq(const char* keyseq)
     }
 
     logline_value_vector values;
-    exec_context ec(&values, key_sql_callback, pipe_callback);
+    exec_context ec(&values, internal_sql_callback, pipe_callback);
     auto& var_stack = ec.ec_local_vars;
 
     ec.ec_label_source_stack.push_back(&lnav_data.ld_db_row_source);

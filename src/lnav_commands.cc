@@ -206,7 +206,7 @@ com_adjust_log_time(exec_context& ec,
     if (args.empty()) {
         args.emplace_back("line-time");
     } else if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
-        return ec.make_error("no log messages");
+        return ec.make_error("no logp messages");
     } else if (args.size() >= 2) {
         auto& lss = lnav_data.ld_log_source;
         struct timeval top_time, time_diff;
@@ -3230,6 +3230,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
                 exec_context::provenance_guard pg(&ec,
                                                   exec_context::file_open{fn});
+
+                auto cb_guard = ec.push_callback(internal_sql_callback);
 
                 auto exec_res = execute_file(ec, path_and_args);
                 if (exec_res.isErr()) {

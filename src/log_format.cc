@@ -1243,7 +1243,7 @@ external_log_format::scan(logfile& lf,
             ll.set_time(dst.back().get_timeval());
             ll.set_level(LEVEL_INVALID);
             dst.emplace_back(ll);
-            return log_format::scan_match{0};
+            return scan_match{0};
         }
 
         auto& ypc = *(this->jlf_parse_context);
@@ -1257,7 +1257,7 @@ external_log_format::scan(logfile& lf,
                 ll.set_level(LEVEL_INVALID);
                 dst.emplace_back(ll);
             }
-            return log_format::scan_incomplete{};
+            return scan_incomplete{};
         }
 
         const auto* line_data = (const unsigned char*) sbr.get_data();
@@ -1669,10 +1669,10 @@ external_log_format::scan(logfile& lf,
                          last_line.get_timeval(),
                          log_level_t::LEVEL_INVALID);
 
-        return log_format::scan_match{0};
+        return scan_match{0};
     }
 
-    return log_format::scan_no_match{"no patterns matched"};
+    return scan_no_match{"no patterns matched"};
 }
 
 uint8_t

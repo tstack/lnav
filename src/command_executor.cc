@@ -1084,6 +1084,48 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     return retval;
 }
 
+int
+internal_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
+{
+    if (!sqlite3_stmt_busy(stmt)) {
+        return 0;
+    }
+
+    const int ncols = sqlite3_column_count(stmt);
+
+    auto& vars = ec.ec_local_vars.top();
+
+    for (int lpc = 0; lpc < ncols; lpc++) {
+        const char* column_name = sqlite3_column_name(stmt, lpc);
+
+        if (sql_ident_needs_quote(column_name)) {
+            continue;
+        }
+
+        auto* raw_value = sqlite3_column_value(stmt, lpc);
+        auto value_type = sqlite3_column_type(stmt, lpc);
+        scoped_value_t value;
+        switch (value_type) {
+            case SQLITE_INTEGER:
+                value = (int64_t) sqlite3_value_int64(raw_value);
+                break;
+            case SQLITE_FLOAT:
+                value = sqlite3_value_double(raw_value);
+                break;
+            case SQLITE_NULL:
+                value = null_value_t{};
+                break;
+            default:
+                value = std::string((const char*) sqlite3_value_text(raw_value),
+                                    sqlite3_value_bytes(raw_value));
+                break;
+        }
+        vars[column_name] = value;
+    }
+
+    return 0;
+}
+
 std::future<std::string>
 pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 {
@@ -1269,6 +1311,11 @@ exec_context::add_error_context(lnav::console::user_message& um)
     }
 }
 
+exec_context::sql_callback_guard
+exec_context::push_callback(sql_callback_t cb)
+{
+    return sql_callback_guard(*this, cb);
+}
 exec_context::source_guard
 exec_context::enter_source(intern_string_t path,
                            int line_number,
@@ -1299,4 +1346,23 @@ output_guard()
 {
     this->sg_context.clear_output();
     this->sg_context.ec_output_stack.pop_back();
+}
+exec_context::sql_callback_guard::
+sql_callback_guard(exec_context& context, sql_callback_t cb)
+    : scg_context(context), scg_old_callback(context.ec_sql_callback)
+{
+    context.ec_sql_callback = cb;
+}
+exec_context::sql_callback_guard::
+sql_callback_guard(sql_callback_guard&& other)
+    : scg_context(other.scg_context),
+      scg_old_callback(std::exchange(other.scg_old_callback, nullptr))
+{
+}
+exec_context::sql_callback_guard::~
+sql_callback_guard()
+{
+    if (this->scg_old_callback != nullptr) {
+        this->scg_context.ec_sql_callback = this->scg_old_callback;
+    }
 }

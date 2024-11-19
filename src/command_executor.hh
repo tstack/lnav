@@ -53,6 +53,7 @@ struct logline_value_vector;
 
 using sql_callback_t = int (*)(exec_context&, sqlite3_stmt*);
 int sql_callback(exec_context& ec, sqlite3_stmt* stmt);
+int internal_sql_callback(exec_context& ec, sqlite3_stmt* stmt);
 
 using pipe_callback_t
     = std::future<std::string> (*)(exec_context&, const std::string&, auto_fd&);
@@ -190,6 +191,21 @@ struct exec_context {
 
         exec_context& sg_context;
     };
+
+    struct sql_callback_guard {
+        sql_callback_guard(exec_context& context, sql_callback_t cb);
+
+        sql_callback_guard(const sql_callback_guard&) = delete;
+
+        sql_callback_guard(sql_callback_guard&& other);
+
+        ~sql_callback_guard();
+
+        exec_context& scg_context;
+        sql_callback_t scg_old_callback;
+    };
+
+    sql_callback_guard push_callback(sql_callback_t cb);
 
     source_guard enter_source(intern_string_t path,
                               int line_number,
