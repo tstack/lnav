@@ -103,6 +103,8 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
     _YYCURSOR yyt3;
     _YYCURSOR yyt4;
     _YYCURSOR hunk_heading;
+    _YYCURSOR table_start;
+    _YYCURSOR table_end;
     const YYCTYPE *YYLIMIT = (const unsigned char *) this->ds_input.end();
     const YYCTYPE *YYMARKER = YYCURSOR;
     class _yycond {
@@ -349,6 +351,14 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
        <bol> "diff --git "[^\x00\n]+"\n" {
            CAPTURE(DT_H1);
            cap_inner.c_end = cap_inner.c_begin;
+           this->ds_bol = true;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <bol> "CREATE TABLE" " IF NOT EXISTS"? [ \t]+ @table_start [a-zA-Z_][_a-zA-Z0-9]+ @table_end [^\x00\n]* "\n" {
+           CAPTURE(DT_H1);
+           cap_inner.c_begin = table_start.val - this->ds_input.udata();
+           cap_inner.c_end = table_end.val - this->ds_input.udata();
            this->ds_bol = true;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
        }

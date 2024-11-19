@@ -194,6 +194,65 @@ index 718a2d4..10f5580 100644
     CHECK(meta.m_sections_root->hn_named_children.size() == 2);
 }
 
+TEST_CASE("lnav::document::sections::doc for SQL")
+{
+    attr_line_t INPUT = R"(
+CREATE TABLE IF NOT EXISTS http_status_codes
+(
+    status  INTEGER PRIMARY KEY,
+    message TEXT,
+
+    FOREIGN KEY (status) REFERENCES access_log (sc_status)
+);
+
+CREATE TABLE lnav_example_log
+(
+    log_line        INTEGER PRIMARY KEY,
+    log_part        TEXT COLLATE naturalnocase,
+    log_time        DATETIME,
+    log_actual_time DATETIME hidden,
+    log_idle_msecs  int,
+    log_level       TEXT collate loglevel,
+    log_mark        boolean,
+    log_comment     TEXT,
+    log_tags        TEXT,
+    log_filters     TEXT,
+
+    ex_procname     TEXT collate 'BINARY',
+    ex_duration     INTEGER,
+
+    log_time_msecs  int hidden,
+    log_path        TEXT hidden collate naturalnocase,
+    log_text        TEXT hidden,
+    log_body        TEXT hidden
+);
+)";
+
+    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+
+    for (const auto& sa : INPUT.al_attrs) {
+        printf("attr %d:%d %s\n",
+               sa.sa_range.lr_start,
+               sa.sa_range.lr_end,
+               sa.sa_type->sat_name);
+    }
+    meta.m_sections_tree.visit_all([](const auto& intv) {
+        auto ser = intv.value.match(
+            [](const std::string& name) { return name; },
+            [](const size_t index) { return fmt::format("{}", index); });
+        printf("interval %d:%d %s\n", intv.start, intv.stop, ser.c_str());
+    });
+    lnav::document::hier_node::depth_first(
+        meta.m_sections_root.get(), [](const auto* node) {
+            printf("node %p %d\n", node, node->hn_start);
+            for (const auto& pair : node->hn_named_children) {
+                printf("  child: %p %s\n", pair.second, pair.first.c_str());
+            }
+        });
+
+    CHECK(meta.m_sections_root->hn_named_children.size() == 2);
+}
+
 TEST_CASE("lnav::document::sections::sql")
 {
     attr_line_t INPUT

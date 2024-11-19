@@ -542,6 +542,13 @@ public:
                                iter->sa_range.end_for_string(this->al_string));
     }
 
+    string_fragment to_string_fragment(const string_attr& sa) const
+    {
+        return string_fragment(this->al_string.c_str(),
+                               sa.sa_range.lr_start,
+                               sa.sa_range.end_for_string(this->al_string));
+    }
+
     string_attrs_t::const_iterator find_attr(size_t near) const
     {
         near = std::min(near, this->al_string.length() - 1);

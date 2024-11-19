@@ -104,6 +104,7 @@ plain_text_source&
 plain_text_source::replace_with_mutable(attr_line_t& text_lines,
                                         text_format_t tf)
 {
+    this->tds_text_format = tf;
     this->tds_lines.clear();
     this->tds_doc_sections
         = lnav::document::discover_structure(text_lines, line_range{0, -1}, tf);
@@ -518,7 +519,7 @@ plain_text_source::adjacent_anchor(vis_line_t vl, direction dir)
     auto path_for_line = this->tds_doc_sections.path_for_range(
         tl.tl_offset, tl.tl_offset + tl.tl_value.al_string.length());
 
-    auto& md = this->tds_doc_sections;
+    const auto& md = this->tds_doc_sections;
     if (path_for_line.empty()) {
         auto neighbors_res = md.m_sections_root->line_neighbors(vl);
         if (!neighbors_res) {

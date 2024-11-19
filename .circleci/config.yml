@@ -14,6 +14,7 @@ jobs:
       - run: ./autogen.sh
       - run: >-
           ./configure \
+            --prefix=/usr/local \
             --with-libcurl=$(brew --prefix curl) \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \

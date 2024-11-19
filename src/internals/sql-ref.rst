@@ -4577,10 +4577,13 @@ zeroblob(*N*)
 
 .. _dot_schema:
 
-;.schema
-^^^^^^^^
+;.schema *name*
+^^^^^^^^^^^^^^^
 
   Switch to the SCHEMA view that contains a dump of the current database schema
+
+  **Parameters**
+    * **name\*** --- The name of a table to jump to
 
 
 ----

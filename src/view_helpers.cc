@@ -125,7 +125,7 @@ view_from_string(const char* name)
 static void
 open_schema_view()
 {
-    textview_curses* schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
+    auto* schema_tc = &lnav_data.ld_views[LNV_SCHEMA];
     std::string schema;
 
     dump_sqlite_schema(lnav_data.ld_db, schema);
@@ -140,8 +140,9 @@ open_schema_view()
 
     delete schema_tc->get_sub_source();
 
-    auto* pts = new plain_text_source(schema);
-    pts->set_text_format(text_format_t::TF_SQL);
+    auto* pts = new plain_text_source();
+    auto schema_al = attr_line_t(schema);
+    pts->replace_with_mutable(schema_al, text_format_t::TF_SQL);
 
     schema_tc->set_sub_source(pts);
     schema_tc->redo_search();

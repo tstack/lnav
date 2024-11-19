@@ -32,9 +32,11 @@
 #include "base/injector.bind.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
+#include "base/opt_util.hh"
 #include "bound_tags.hh"
 #include "command_executor.hh"
 #include "config.h"
+#include "fmt/chrono.h"
 #include "lnav.hh"
 #include "readline_context.hh"
 #include "shlex.hh"
@@ -176,10 +178,19 @@ sql_cmd_schema(exec_context& ec,
     std::string retval;
 
     if (args.empty()) {
+        args.emplace_back("sql-table");
         return Ok(retval);
     }
 
     ensure_view(LNV_SCHEMA);
+    if (args.size() == 2) {
+        const auto id = text_anchors::to_anchor_string(args[1]);
+        auto* tss = lnav_data.ld_views[LNV_SCHEMA].get_sub_source();
+        if (auto* ta = dynamic_cast<text_anchors*>(tss); ta != nullptr) {
+            ta->row_for_anchor(id) |
+                [](auto row) { lnav_data.ld_views[LNV_SCHEMA].set_top(row); };
+        }
+    }
 
     return Ok(retval);
 }
@@ -444,7 +455,8 @@ static readline_context::command_t sql_commands[] = {
         help_text(".schema",
                   "Switch to the SCHEMA view that contains a dump of the "
                   "current database schema")
-            .sql_command(),
+            .sql_command()
+            .with_parameter({"name", "The name of a table to jump to"}),
     },
     {
         "ATTACH",

@@ -235,7 +235,7 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
                            return false;
                        }
 
-                       auto role = attr.sa_value.get<role_t>();
+                       const auto role = attr.sa_value.get<role_t>();
                        switch (role) {
                            case role_t::VCR_H1:
                            case role_t::VCR_H2:
@@ -276,7 +276,7 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
     auto root_node = std::make_unique<hier_node>();
 
     for (const auto& hdr_attr : headers) {
-        auto role = hdr_attr.sa_value.get<role_t>();
+        const auto role = hdr_attr.sa_value.get<role_t>();
         auto role_num = lnav::enums::to_underlying(role)
             - lnav::enums::to_underlying(role_t::VCR_H1);
         std::vector<open_interval_t> new_open_intervals;
@@ -284,8 +284,13 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
         for (auto& oi : open_intervals) {
             if (oi.oi_level >= role_num) {
                 // close out this section
-                intervals.emplace_back(
-                    oi.oi_start, hdr_attr.sa_range.lr_start - 1, oi.oi_id);
+                auto sf = string_fragment::from_str(al.get_string());
+                auto left_sf = sf.find_left_boundary(
+                    hdr_attr.sa_range.lr_start, string_fragment::tag1{'\n'});
+                if (left_sf.sf_begin > 0) {
+                    left_sf.sf_begin -= 1;
+                }
+                intervals.emplace_back(oi.oi_start, left_sf.sf_begin, oi.oi_id);
                 auto* node_ptr = oi.oi_node.get();
                 auto* parent_node = oi.oi_node->hn_parent;
                 if (parent_node != nullptr) {
@@ -304,13 +309,15 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
             auto* parent_node = new_open_intervals.empty()
                 ? root_node.get()
                 : new_open_intervals.back().oi_node.get();
+            auto sf = string_fragment::from_str(al.get_string());
+            auto left_sf = sf.find_left_boundary(hdr_attr.sa_range.lr_start,
+                                                 string_fragment::tag1{'\n'});
             new_open_intervals.emplace_back(
                 role_num,
-                hdr_attr.sa_range.lr_start,
+                left_sf.sf_begin,
                 al.get_substring(hdr_attr.sa_range));
             new_open_intervals.back().oi_node->hn_parent = parent_node;
-            new_open_intervals.back().oi_node->hn_start
-                = hdr_attr.sa_range.lr_start;
+            new_open_intervals.back().oi_node->hn_start = left_sf.sf_begin;
         }
         open_intervals = std::move(new_open_intervals);
     }

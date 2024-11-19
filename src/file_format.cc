@@ -38,6 +38,7 @@
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "line_buffer.hh"
+#include "text_format.hh"
 
 detect_file_format_result
 detect_file_format(const std::filesystem::path& filename)
@@ -72,7 +73,24 @@ detect_file_format(const std::filesystem::path& filename)
                 log_info("%s: appears to be a SQLite DB", filename.c_str());
                 retval.dffr_file_format = file_format_t::SQLITE_DB;
             } else {
+                auto tf = detect_text_format(header_frag, filename);
                 auto looping = true;
+
+                switch (tf) {
+                    case text_format_t::TF_UNKNOWN:
+                    case text_format_t::TF_BINARY:
+                    case text_format_t::TF_LOG:
+                        log_info("file does not have a known text format: %s",
+                                 filename.c_str());
+                        break;
+                    default:
+                        log_info("file has text format: %s -> %d",
+                                 filename.c_str(),
+                                 tf);
+                        looping = false;
+                        break;
+                }
+
                 lnav::piper::multiplex_matcher mm;
                 file_range next_range;
                 line_buffer lb;

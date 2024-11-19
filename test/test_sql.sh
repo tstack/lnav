@@ -596,11 +596,11 @@ CREATE VIRTUAL TABLE regexp_capture USING regexp_capture_impl();
 CREATE VIRTUAL TABLE regexp_capture_into_json USING regexp_capture_into_json_impl();
 CREATE VIRTUAL TABLE xpath USING xpath_impl();
 CREATE VIRTUAL TABLE fstat USING fstat_impl();
-CREATE TABLE lnav_events (
+CREATE TABLE [1m[35mlnav_events[0m (
    ts TEXT NOT NULL DEFAULT(strftime('%Y-%m-%dT%H:%M:%f', 'now')),
    content TEXT
 );
-CREATE TABLE http_status_codes
+CREATE TABLE [1m[35mhttp_status_codes[0m
 EOF
 
 

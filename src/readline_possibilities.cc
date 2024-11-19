@@ -122,6 +122,10 @@ handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
                 ln_mode_t::SQL, "*", table_name);
             lnav_data.ld_rl_view->add_possibility(
                 ln_mode_t::SQL,
+                "sql-table",
+                sql_quote_ident(table_name.c_str()).in());
+            lnav_data.ld_rl_view->add_possibility(
+                ln_mode_t::SQL,
                 "prql-table",
                 lnav::prql::quote_ident(std::move(table_name)));
         }
@@ -136,9 +140,7 @@ static int
 handle_table_info(void* ptr, int ncols, char** colvalues, char** colnames)
 {
     if (lnav_data.ld_rl_view != nullptr) {
-        auto_mem<char, sqlite3_free> quoted_name;
-
-        quoted_name = sql_quote_ident(colvalues[1]);
+        auto quoted_name = sql_quote_ident(colvalues[1]);
         lnav_data.ld_rl_view->add_possibility(
             ln_mode_t::SQL, "*", std::string(quoted_name));
     }

@@ -60,6 +60,7 @@ detect_text_format(string_fragment sf,
     };
     static const auto PY_EXT = std::filesystem::path(".py");
     static const auto RS_EXT = std::filesystem::path(".rs");
+    static const auto SQL_EXT = std::filesystem::path(".sql");
     static const auto JAVA_EXT = std::filesystem::path(".java");
     static const auto TOML_EXT = std::filesystem::path(".toml");
     static const auto XML_EXT = std::filesystem::path(".xml");
@@ -118,6 +119,7 @@ detect_text_format(string_fragment sf,
 
     static const auto SQL_MATCHERS = lnav::pcre2pp::code::from_const(
         "(?:"
+        "create\\s+table\\s+|"
         "select\\s+.+\\s+from\\s+|"
         "insert\\s+into\\s+.+\\s+"
         "values"
@@ -155,6 +157,10 @@ detect_text_format(string_fragment sf,
 
         if (ext == RS_EXT) {
             return text_format_t::TF_RUST;
+        }
+
+        if (ext == SQL_EXT) {
+            return text_format_t::TF_SQL;
         }
 
         if (ext == TOML_EXT) {
