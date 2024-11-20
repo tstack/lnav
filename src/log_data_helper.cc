@@ -74,7 +74,7 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
         this->ldh_line_attrs.clear();
     } else {
         auto format = this->ldh_file->get_format();
-        struct line_range body;
+        line_range body;
         auto& sa = this->ldh_line_attrs;
 
         this->ldh_line_attrs.clear();
@@ -98,7 +98,9 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
             = std::make_unique<data_parser>(this->ldh_scanner.get());
         this->ldh_msg_format.clear();
         this->ldh_parser->dp_msg_format = &this->ldh_msg_format;
-        this->ldh_parser->parse();
+        if (body.length() < 128 * 1024) {
+            this->ldh_parser->parse();
+        }
         this->ldh_namer
             = std::make_unique<column_namer>(column_namer::language::SQL);
         this->ldh_extra_json.clear();

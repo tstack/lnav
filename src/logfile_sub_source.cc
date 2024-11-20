@@ -2712,8 +2712,12 @@ logfile_sub_source::text_crumbs_for_line(int line,
         if (this->lss_token_meta_line != file_line_number
             || this->lss_token_meta_size != sf.length())
         {
-            this->lss_token_meta = lnav::document::discover_structure(
-                al, body_opt.value().saw_string_attr->sa_range);
+            if (body_opt->saw_string_attr->sa_range.length() < 128 * 1024) {
+                this->lss_token_meta = lnav::document::discover_structure(
+                    al, body_opt.value().saw_string_attr->sa_range);
+            } else {
+                this->lss_token_meta = lnav::document::metadata{};
+            }
             this->lss_token_meta_line = file_line_number;
             this->lss_token_meta_size = sf.length();
         }
