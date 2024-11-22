@@ -203,6 +203,7 @@ TEST_CASE("date_time_scanner")
     {
         const char* en_date = "Jan  1 12:00:00";
         const char* fr_date = "août 19 11:08:37";
+        const char* fr_date2 = "nov. 29 20:23:37";
         struct timeval en_tv, fr_tv;
         struct exttm en_tm, fr_tm;
         date_time_scanner dts;
@@ -212,6 +213,9 @@ TEST_CASE("date_time_scanner")
                    != nullptr);
             dts.clear();
             assert(dts.scan(fr_date, strlen(fr_date), nullptr, &fr_tm, fr_tv)
+                   != nullptr);
+            dts.clear();
+            assert(dts.scan(fr_date2, strlen(fr_date), nullptr, &fr_tm, fr_tv)
                    != nullptr);
         }
     }

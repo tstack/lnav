@@ -95,7 +95,17 @@ bool ptime_b_slow(struct exttm* dst,
 inline bool
 ptime_b(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    if (off_inout + 3 < len) {
+    // fast path to detect english abbreviated months
+    //
+    // only detect english abbreviated months if they end at a word boundary.
+    // if the abbreviated month in the current locale is longer than 3 letters,
+    // and starts with the same letters as an english locale month abbreviation,
+    // then the computation of off_inout is incorrect.
+    //
+    // Ex: in fr_FR november is `nov.`. Parsing `nov. 29` as `%b %d` fails if
+    // this fast path is taken as later we will attempt to parse `. 29` as
+    // ` %d`.
+    if (off_inout + 3 < len && isspace(str[off_inout+3])) {
         auto month_start = (unsigned char*) &str[off_inout];
         uint32_t month_int = ABR_TO_INT(month_start[0] & ~0x20UL,
                                         month_start[1] & ~0x20UL,
