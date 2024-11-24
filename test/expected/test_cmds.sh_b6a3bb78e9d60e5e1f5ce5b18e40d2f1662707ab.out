@@ -78,7 +78,7 @@ you can pass the [37m[40m -n [0m option. This combination of options allows y
 to write scripts for processing logs with lnav. For example, to get a
 list of IP addresses that dhclient has bound to in CSV format:
 
- ▌[32m[40m#! /usr/bin/lnav -nf                                                                            [0m
+ ▌[32m[40m#! {prefix}/bin/lnav -nf                                                                            [0m
  ▌[37m[40m                                                                                                [0m
  ▌[32m[40m# Usage: dhcp_ip.lnav /var/log/messages                                                         [0m
  ▌[32m[40m# Only include lines that look like:                                                            [0m

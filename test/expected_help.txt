@@ -84,7 +84,7 @@ UI, you can pass the  -n  option. This combination of options allows
 you to write scripts for processing logs with lnav. For example, to 
 get a list of IP addresses that dhclient has bound to in CSV format:
 
- ┃#! /usr/bin/lnav -nf                                                                            
+ ┃#! {prefix}/bin/lnav -nf                                                                            
  ┃                                                                                                
  ┃# Usage: dhcp_ip.lnav /var/log/messages                                                         
  ┃# Only include lines that look like:                                                            
