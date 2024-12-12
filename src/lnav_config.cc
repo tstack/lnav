@@ -1230,7 +1230,8 @@ static const struct typed_json_path_container<lnav::piper::demux_def>
     demux_def_handlers = {
     yajlpp::property_handler("enabled")
         .with_description(
-            "Indicates whether this demuxer will be used at the demuxing stage")
+            "Indicates whether this demuxer will be used at the demuxing stage "
+            "(defaults to 'true')")
         .for_field(&lnav::piper::demux_def::dd_enabled),
         yajlpp::property_handler("pattern")
             .with_synopsis("<regex>")
