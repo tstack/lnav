@@ -287,6 +287,8 @@ From there, you can create a SQLite trigger on the :code:`lnav_events` table
 that will examine the event contents and perform an action.  See the
 :ref:`Events` section for more information on handling events.
 
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/watch-expressions/patternProperties/^([\w\.\-]+)$
+
 Annotations (v0.12.0+)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -319,18 +321,21 @@ standard input.  The handler should then generate the annotation
 content on the standard output.  The output is treated as Markdown,
 so the content can be styled as desired.
 
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/annotations/patternProperties/^([\w\.\-]+)$
+
 Demultiplexing (v0.12.3+)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Files that are a mix of content from different sources, like
+Files that contain a mix of content from different sources, like
 the output of :code:`docker compose logs`, can be automatically
-demultiplexed so that *lnav* can process them correctly.  Each
-line of the input file must have a unique identifier that can
-be used to determine which service the line belongs to.  The
-lines are then distributed to separate files based on the
-identifier.  A demultiplexer is a regular expression that
+demultiplexed so that *lnav* can process them correctly.
+
+Each line of the input file must include a unique identifier that can
+be used to determine which service the line belongs to.
+A demultiplexer is a regular expression that
 extracts the identifier, the log message, and an optional
-timestamp.
+timestamp.  Once extracted, lines are distributed to separate files
+based on the identifier.
 
 Demultiplexers are defined in the main configuration under
 the :code:`/log/demux` path.  The pattern for the demuxer
@@ -341,7 +346,7 @@ has the following known capture names:
 :body: (required) Captures the body of the log message
   that should be written to the file.
 
-:timestamp: (optional) The timestamp for the log message.
+:timestamp: (optional) Captures the timestamp for the log message.
   If this is available and the log message does not have
   it's own timestamp, this will be used instead.
 
@@ -350,13 +355,75 @@ in the file metadata that can be accessed by the
 :code:`lnav_file_demux_metadata` view of the
 :code:`lnav_file_metadata` table.
 
-Reference
-^^^^^^^^^
+Example
++++++++
 
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/watch-expressions/patternProperties/^([\w\.\-]+)$
-.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/annotations/patternProperties/^([\w\.\-]+)$
+.. code-block:: json
+
+  {
+      "$schema": "https://lnav.org/schemas/config-v1.schema.json",
+      "log": {
+          "demux": {
+               "recv-with-pod": {
+                   "control-pattern": "^===== (?:START|END) =====$",
+                   "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+\\-]\\d{2}:\\d{2})) source=[a-zA-Z0-9][a-zA-Z0-9_\\.\\-]* (?<body>.*) kubernetes_host=(?<k8s_host>[a-zA-Z0-9][a-zA-Z0-9_\\.\\-]*) kubernetes_pod_name=(?<mux_id>[a-zA-Z0-9][a-zA-Z0-9_\\.\\-]*)"
+               }
+          }
+      }
+  }
+
+Sample Input Document:
+-----------------------
+
+.. code-block:: text
+
+  ===== START =====
+  2024-12-12T08:00:00.123Z source=service-a This is a log message kubernetes_host=host-a kubernetes_pod_name=pod-1
+  2024-12-12T08:01:00.456Z source=service-b Another log message kubernetes_host=host-b kubernetes_pod_name=pod-2
+  ===== END =====
+
+Demuxed Output Files:
+----------------------
+
+File: `pod-1`
+
+.. code-block:: text
+
+  2024-12-12T08:00:00.123Z This is a log message
+
+File: `pod-2`
+
+.. code-block:: text
+
+  2024-12-12T08:01:00.456Z Another log message
+
+
+Behavior Details
+++++++++++++++++
+
+Control Lines:
+
+* Control lines match the control-pattern and are used to separate
+  sections of the file. These lines are ignored for matching log
+  patterns but are placed into an _out_of_frame_ sub-file.
+* If the log file contains control lines at the beginning, only
+  demultiplexers with a matching control-pattern will attempt to
+  process the subsequent lines.
+
+Demuxing Process:
+
+* For each non-control line, lnav checks against all defined demultiplexers.
+* The first demultiplexer whose pattern matches the line is applied.
+* If a match occurs, the captured `mux_id` and `body` fields are required.
+  If either is missing, the match is discarded.
+* Matched lines are written to sub-files corresponding to their `mux_id` values.
+* Sub-files created by demultiplexing are treated as standalone files for
+  further processing. They will not undergo additional demuxing.
+
+JSON Schema Reference
++++++++++++++++++++++
+
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/demux/patternProperties/^([\w\-\.]+)$
-
 
 .. _tuning:
 
