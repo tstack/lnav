@@ -979,7 +979,7 @@
                             "properties": {
                                 "enabled": {
                                     "title": "/log/demux/<name>/enabled",
-                                    "description": "Indicates whether this demuxer will be used at the demuxing stage",
+                                    "description": "Indicates whether this demuxer will be used at the demuxing stage (defaults to 'true')",
                                     "type": "boolean"
                                 },
                                 "pattern": {
