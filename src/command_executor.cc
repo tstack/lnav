@@ -128,17 +128,25 @@ execute_command(exec_context& ec, const std::string& cmdline)
         }
 
         ec.ec_current_help = &iter->second->c_help;
-        auto retval = iter->second->c_func(ec, cmdline, args);
-        if (retval.isErr()) {
-            auto um = retval.unwrapErr();
+        try {
+            auto retval = iter->second->c_func(ec, cmdline, args);
+            if (retval.isErr()) {
+                auto um = retval.unwrapErr();
 
-            ec.add_error_context(um);
+                ec.add_error_context(um);
+                ec.ec_current_help = nullptr;
+                return Err(um);
+            }
             ec.ec_current_help = nullptr;
+
+            return retval;
+        } catch (const std::exception& e) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("unexpected error while executing: ")
+                              .append(lnav::roles::quoted_code(cmdline)))
+                          .with_reason(e.what());
             return Err(um);
         }
-        ec.ec_current_help = nullptr;
-
-        return retval;
     }
 
     return ec.make_error("no command to execute");
@@ -178,9 +186,9 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
 
             if (lnav_data.ld_window) {
                 char buf[32];
-                int lines, cols;
+                unsigned int lines, cols;
 
-                getmaxyx(lnav_data.ld_window, lines, cols);
+                ncplane_dim_yx(lnav_data.ld_window, &lines, &cols);
                 if (strcmp(name, "$LINES") == 0) {
                     snprintf(buf, sizeof(buf), "%d", lines);
                     sqlite3_bind_text(stmt, lpc + 1, buf, -1, SQLITE_TRANSIENT);
@@ -272,13 +280,16 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
         auto tree = sqlite_extension_prql;
         for (const auto& mod : lnav_prql_modules) {
+            log_debug("prqlc adding mod %s", mod.get_name());
             tree.emplace_back(prqlc::SourceTreeElement{
                 mod.get_name(),
                 mod.to_string_fragment().to_string(),
             });
         }
         tree.emplace_back(prqlc::SourceTreeElement{"", stmt_str});
+        log_debug("BEGIN compiling tree");
         auto cr = prqlc::compile_tree(tree, opts);
+        log_debug("END compiling tree");
 
         for (const auto& msg : cr.messages) {
             if (msg.kind != prqlc::MessageKind::Error) {
@@ -302,6 +313,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             }
             return Err(um);
         }
+        log_debug("done!");
         stmt_str = (std::string) cr.output;
 #else
         auto um = lnav::console::user_message::error(
@@ -1232,10 +1244,9 @@ exec_context::clear_output()
     this->ec_output_stack.back() = std::make_pair("default", std::nullopt);
 }
 
-exec_context::
-exec_context(logline_value_vector* line_values,
-             sql_callback_t sql_callback,
-             pipe_callback_t pipe_callback)
+exec_context::exec_context(logline_value_vector* line_values,
+                           sql_callback_t sql_callback,
+                           pipe_callback_t pipe_callback)
     : ec_line_values(line_values),
       ec_accumulator(std::make_unique<attr_line_t>()),
       ec_sql_callback(sql_callback), ec_pipe_callback(pipe_callback)
@@ -1329,10 +1340,9 @@ exec_context::enter_source(intern_string_t path,
     return {this};
 }
 
-exec_context::output_guard::
-output_guard(exec_context& context,
-             std::string name,
-             const std::optional<output_t>& file)
+exec_context::output_guard::output_guard(exec_context& context,
+                                         std::string name,
+                                         const std::optional<output_t>& file)
     : sg_context(context)
 {
     if (file) {
@@ -1341,26 +1351,23 @@ output_guard(exec_context& context,
     context.ec_output_stack.emplace_back(std::move(name), file);
 }
 
-exec_context::output_guard::~
-output_guard()
+exec_context::output_guard::~output_guard()
 {
     this->sg_context.clear_output();
     this->sg_context.ec_output_stack.pop_back();
 }
-exec_context::sql_callback_guard::
-sql_callback_guard(exec_context& context, sql_callback_t cb)
+exec_context::sql_callback_guard::sql_callback_guard(exec_context& context,
+                                                     sql_callback_t cb)
     : scg_context(context), scg_old_callback(context.ec_sql_callback)
 {
     context.ec_sql_callback = cb;
 }
-exec_context::sql_callback_guard::
-sql_callback_guard(sql_callback_guard&& other)
+exec_context::sql_callback_guard::sql_callback_guard(sql_callback_guard&& other)
     : scg_context(other.scg_context),
       scg_old_callback(std::exchange(other.scg_old_callback, nullptr))
 {
 }
-exec_context::sql_callback_guard::~
-sql_callback_guard()
+exec_context::sql_callback_guard::~sql_callback_guard()
 {
     if (this->scg_old_callback != nullptr) {
         this->scg_context.ec_sql_callback = this->scg_old_callback;

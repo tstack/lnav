@@ -32,35 +32,18 @@
 #ifndef view_curses_hh
 #define view_curses_hh
 
-#include <limits.h>
-#include <signal.h>
-#include <stdint.h>
-#include <sys/time.h>
-#include <zlib.h>
-
-#include "config.h"
-
-#if defined HAVE_NCURSESW_CURSES_H
-#    include <ncursesw/curses.h>
-#elif defined HAVE_NCURSESW_H
-#    include <ncursesw.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#    include <ncurses/curses.h>
-#elif defined HAVE_NCURSES_H
-#    include <ncurses.h>
-#elif defined HAVE_CURSESW_H
-#    include <cursesw.h>
-#elif defined HAVE_CURSES_H
-#    include <curses.h>
-#else
-#    error "SysV or X/Open-compatible Curses header file required"
-#endif
-
 #include <functional>
-#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include <limits.h>
+#include <notcurses/notcurses.h>
+#include <signal.h>
+#include <spookyhash/SpookyV2.h>
+#include <stdint.h>
+#include <sys/time.h>
+#include <zlib.h>
 
 #include "base/attr_line.hh"
 #include "base/enum_util.hh"
@@ -68,6 +51,7 @@
 #include "base/lnav_log.hh"
 #include "base/lrucache.hpp"
 #include "base/opt_util.hh"
+#include "config.h"
 #include "lnav_config_fwd.hh"
 #include "log_level.hh"
 #include "logfile_fwd.hh"
@@ -80,24 +64,27 @@ class view_curses;
  */
 class screen_curses : public log_crash_recoverer {
 public:
-    static Result<screen_curses, std::string> create();
-
     void log_crash_recover() override
     {
-        if (this->sc_main_window != nullptr) {
-            endwin();
+        if (this->sc_notcurses != nullptr) {
+            notcurses_stop(this->sc_notcurses);
+            this->sc_notcurses = nullptr;
         }
     }
 
-    virtual ~screen_curses()
+    static Result<screen_curses, std::string> create(
+        const notcurses_options& options);
+
+    ~screen_curses() override
     {
-        if (this->sc_main_window != nullptr) {
-            endwin();
+        if (this->sc_notcurses != nullptr) {
+            notcurses_stop(this->sc_notcurses);
+            this->sc_notcurses = nullptr;
         }
     }
 
-    screen_curses(screen_curses&& other)
-        : sc_main_window(std::exchange(other.sc_main_window, nullptr))
+    screen_curses(screen_curses&& other) noexcept
+        : sc_notcurses(std::exchange(other.sc_notcurses, nullptr))
     {
     }
 
@@ -105,16 +92,21 @@ public:
 
     screen_curses& operator=(screen_curses&& other)
     {
-        this->sc_main_window = std::exchange(other.sc_main_window, nullptr);
+        this->sc_notcurses = std::exchange(other.sc_notcurses, nullptr);
         return *this;
     }
 
-    WINDOW* get_window() { return this->sc_main_window; }
+    notcurses* get_notcurses() const { return this->sc_notcurses; }
+
+    ncplane* get_std_plane() const
+    {
+        return notcurses_stdplane(this->sc_notcurses);
+    }
 
 private:
-    screen_curses(WINDOW* win) : sc_main_window(win) {}
+    screen_curses(notcurses* nc) : sc_notcurses(nc) {}
 
-    WINDOW* sc_main_window;
+    notcurses* sc_notcurses;
 };
 
 template<typename T>
@@ -172,18 +164,18 @@ public:
 
     bool chime(std::string msg);
 
-    void new_input(int ch)
+    void new_input(const ncinput& ch)
     {
-        if (this->a_last_input != ch) {
+        if (this->a_last_input != ch.id) {
             this->a_do_flash = true;
         }
-        this->a_last_input = ch;
+        this->a_last_input = ch.id;
     }
 
 private:
     bool a_enabled{true};
     bool a_do_flash{true};
-    int a_last_input{-1};
+    uint32_t a_last_input{0};
 };
 
 /**
@@ -196,6 +188,8 @@ public:
     /** @return A reference to the singleton. */
     static view_colors& singleton();
 
+    static uint64_t to_channels(const text_attrs& ta);
+
     view_colors(const view_colors&) = delete;
     view_colors(view_colors&&) = delete;
     view_colors& operator=(const view_colors&) = delete;
@@ -206,7 +200,7 @@ public:
      * called before this method, but the returned attributes cannot be used
      * with curses code until this method is called.
      */
-    static void init(bool headless);
+    static void init(notcurses* nc);
 
     void init_roles(const lnav_theme& lt,
                     lnav_config_listener::error_reporter& reporter);
@@ -229,9 +223,9 @@ public:
             : this->vc_role_attrs[lnav::enums::to_underlying(role)].ra_normal;
     }
 
-    std::optional<short> color_for_ident(const char* str, size_t len) const;
+    styling::color_unit color_for_ident(const char* str, size_t len) const;
 
-    std::optional<short> color_for_ident(const string_fragment& sf) const
+    styling::color_unit color_for_ident(const string_fragment& sf) const
     {
         return this->color_for_ident(sf.data(), sf.length());
     }
@@ -253,26 +247,13 @@ public:
         return this->vc_level_attrs[level].ra_normal;
     }
 
-    int ensure_color_pair(short fg, short bg);
-
-    int ensure_color_pair(std::optional<short> fg, std::optional<short> bg);
-
-    int ensure_color_pair(const styling::color_unit& fg,
-                          const styling::color_unit& bg);
-
-    static constexpr short MATCH_COLOR_DEFAULT = -1;
-    static constexpr short MATCH_COLOR_SEMANTIC = -10;
-
-    std::optional<short> match_color(const styling::color_unit& color) const;
-
-    short ansi_to_theme_color(short ansi_fg) const
-    {
-        return this->vc_ansi_to_theme[ansi_fg];
-    }
+    styling::color_unit ansi_to_theme_color(styling::color_unit ansi_fg) const;
 
     std::unordered_map<std::string, string_attr_pair> vc_class_to_role;
 
     block_elem_t wchar_for_icon(ui_icon_t ic) const;
+
+    styling::color_unit match_color(styling::color_unit cu) const;
 
     static bool initialized;
     static term_color_palette* vc_active_palette;
@@ -280,10 +261,6 @@ public:
 private:
     /** Private constructor that initializes the member fields. */
     view_colors();
-
-    struct dyn_pair {
-        int dp_color_pair;
-    };
 
     struct role_attrs {
         text_attrs ra_normal;
@@ -300,14 +277,13 @@ private:
         return this->vc_role_attrs[lnav::enums::to_underlying(role)];
     }
 
+    notcurses* vc_notcurses{nullptr};
     role_attrs vc_level_attrs[LEVEL__MAX];
 
     /** Map of role IDs to attribute values. */
     role_attrs vc_role_attrs[lnav::enums::to_underlying(role_t::VCR__MAX)];
-    short vc_ansi_to_theme[8];
+    styling::color_unit vc_ansi_to_theme[8];
     short vc_highlight_colors[HI_COLOR_COUNT];
-    int vc_color_pair_end{0};
-    cache::lru_cache<std::pair<short, short>, dyn_pair> vc_dyn_pairs;
     block_elem_t vc_icons[lnav::enums::to_underlying(ui_icon_t::hidden) + 1];
 };
 
@@ -365,7 +341,7 @@ struct mouse_event {
     mouse_button_t me_button;
     mouse_button_state_t me_state;
     uint8_t me_modifiers;
-    struct timeval me_time {};
+    struct timeval me_time{};
     int me_x;
     int me_y;
     int me_press_x{-1};
@@ -464,7 +440,7 @@ public:
         string_fragment mr_selected_text;
     };
 
-    static mvwattrline_result mvwattrline(WINDOW* window,
+    static mvwattrline_result mvwattrline(ncplane* window,
                                           int y,
                                           int x,
                                           attr_line_t& al,

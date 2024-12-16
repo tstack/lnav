@@ -174,7 +174,7 @@ struct lnav_data_t {
     sig_atomic_t ld_winched;
     sig_atomic_t ld_child_terminated;
     unsigned long ld_flags;
-    WINDOW* ld_window;
+    ncplane* ld_window;
     ln_mode_t ld_mode;
     ln_mode_t ld_last_config_mode{ln_mode_t::FILTER};
 

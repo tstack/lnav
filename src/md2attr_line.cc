@@ -563,7 +563,7 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
         };
         last_block.with_attr({
             lr,
-            VC_STYLE.value(text_attrs{A_BOLD}),
+            VC_STYLE.value(text_attrs::with_bold()),
         });
     } else if (sp.is<span_u>()) {
         line_range lr{
@@ -572,7 +572,7 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
         };
         last_block.with_attr({
             lr,
-            VC_STYLE.value(text_attrs{A_UNDERLINE}),
+            VC_STYLE.value(text_attrs::with_underline()),
         });
     } else if (sp.is<MD_SPAN_A_DETAIL*>()) {
         const auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
@@ -822,7 +822,7 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
                             }
                         } else if (key == NAME_FONT_WEIGHT) {
                             if (value == "bold" || value == "bolder") {
-                                ta.ta_attrs |= A_BOLD;
+                                ta |= text_attrs::style::bold;
                             }
                         } else if (key == NAME_TEXT_DECO) {
                             auto deco_sf = value;
@@ -833,7 +833,7 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
 
                                 if (deco_split_res.first.trim() == "underline")
                                 {
-                                    ta.ta_attrs |= A_UNDERLINE;
+                                    ta |= text_attrs::style::underline;
                                 }
 
                                 deco_sf = deco_split_res.second;
@@ -1065,7 +1065,7 @@ md2attr_line::append_url_footnote(std::string href_str)
             (int) this->ml_span_starts.back(),
             (int) last_block.length(),
         },
-        VC_STYLE.value(text_attrs{A_UNDERLINE}),
+        VC_STYLE.value(text_attrs::with_underline()),
     });
     if (is_internal) {
         return href_str;

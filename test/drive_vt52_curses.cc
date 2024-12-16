@@ -42,25 +42,6 @@
 #include "vt52_curses.hh"
 #include "xterm_mouse.hh"
 
-#if defined HAVE_NCURSESW_CURSES_H
-#    include <ncursesw/curses.h>
-#    include <ncursesw/term.h>
-#elif defined HAVE_NCURSESW_H
-#    include <ncursesw.h>
-#    include <term.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#    include <ncurses/curses.h>
-#    include <ncurses/term.h>
-#elif defined HAVE_NCURSES_H
-#    include <ncurses.h>
-#    include <term.h>
-#elif defined HAVE_CURSES_H
-#    include <curses.h>
-#    include <term.h>
-#else
-#    error "SysV or X/Open-compatible Curses header file required"
-#endif
-
 #undef set_window
 
 static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
@@ -88,18 +69,19 @@ main(int argc, char* argv[])
     }
 
     for (lpc = 0; lpc < 1000; lpc++) {
-        int len;
+        ncinput nci;
 
-        assert(vt.map_input(random(), len) != nullptr);
-        assert(len > 0);
+        nci.id = random() & 0xff;
+        nci.utf8[0] = nci.id;
+        nci.utf8[1] = '\0';
+        assert(!vt.map_input(nci).empty());
     }
 
-    tgetent(nullptr, "vt52");
     {
         static const char* CANNED_INPUT[] = {
             "Gru\xC3\x9F",
             "\r",
-            tgetstr((char*) "ce", nullptr),
+            "\x1bK",
             "de",
             "\n",
             "1",
@@ -112,21 +94,24 @@ main(int argc, char* argv[])
             "ab\bcdef",
         };
 
-        auto sc = screen_curses::create().unwrap();
-        noecho();
-        vt.set_window(sc.get_window());
+        auto nco = notcurses_options{};
+        nco.flags |= NCOPTION_SUPPRESS_BANNERS;
+        auto sc = screen_curses::create(nco).unwrap();
+        vt.set_window(sc.get_std_plane());
         vt.set_width(10);
+
+        ncinput nci;
 
         for (const auto* canned : CANNED_INPUT) {
             vt.map_output(canned, strlen(canned));
             vt.do_update();
-            refresh();
+            notcurses_render(sc.get_notcurses());
             view_curses::awaiting_user_input();
-            getch();
+            notcurses_get_blocking(sc.get_notcurses(), &nci);
         }
 
         view_curses::awaiting_user_input();
-        getch();
+        notcurses_get_blocking(sc.get_notcurses(), &nci);
     }
 
     return retval;

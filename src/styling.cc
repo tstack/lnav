@@ -196,14 +196,14 @@ term_color_palette(const char* name, const string_fragment& json)
     }
 }
 
-short
+uint8_t
 term_color_palette::match_color(const lab_color& to_match) const
 {
     double lowest = 1000.0;
     short lowest_id = -1;
 
     for (const auto& xc : this->tc_palette) {
-        double xc_delta = xc.xc_lab_color.deltaE(to_match);
+        const double xc_delta = xc.xc_lab_color.deltaE(to_match);
 
         if (lowest_id == -1) {
             lowest = xc_delta;
@@ -223,6 +223,7 @@ term_color_palette::match_color(const lab_color& to_match) const
 }
 
 namespace styling {
+
 Result<color_unit, std::string>
 color_unit::from_str(const string_fragment& sf)
 {
@@ -231,6 +232,9 @@ color_unit::from_str(const string_fragment& sf)
     }
 
     auto retval = TRY(from<rgb_color>(sf));
+    if (retval.empty()) {
+        return Ok(make_empty());
+    }
 
     return Ok(color_unit{retval});
 }

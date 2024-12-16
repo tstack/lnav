@@ -216,7 +216,7 @@ plain_text_source::text_attrs_for_line(textview_curses& tc,
         && tc.get_selection() == line)
     {
         value_out.emplace_back(line_range{0, -1},
-                               VC_STYLE.value(text_attrs{A_REVERSE}));
+                               VC_STYLE.value(text_attrs::with_reverse()));
     }
     for (const auto& indent : this->tds_doc_sections.m_indents) {
         if (indent < this->tds_line_indent_size) {

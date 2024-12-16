@@ -88,7 +88,7 @@ std::optional<lnav_view_t> view_from_string(const char* name);
 bool ensure_view(textview_curses* expected_tc);
 bool ensure_view(lnav_view_t expected);
 bool toggle_view(textview_curses* toggle_tc);
-bool handle_winch();
+bool handle_winch(screen_curses* sc);
 void layout_views();
 void update_hits(textview_curses* tc);
 void clear_preview();
@@ -108,7 +108,7 @@ textview_curses* get_textview_for_mode(ln_mode_t mode);
 
 class lnav_behavior : public mouse_behavior {
 public:
-    void mouse_event(int button, bool release, int x, int y) override;
+    void mouse_event(notcurses* nc, int button, bool release, int x, int y) override;
 
     view_curses* lb_last_view{nullptr};
     struct mouse_event lb_last_event;

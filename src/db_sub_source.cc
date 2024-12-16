@@ -109,7 +109,7 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
         }
         lr.lr_start += this->dls_cell_width[lpc];
         lr.lr_end = lr.lr_start + 1;
-        sa.emplace_back(lr, VC_GRAPHIC.value(ACS_VLINE));
+        sa.emplace_back(lr, VC_GRAPHIC.value(NCACS_VLINE));
         lr.lr_start += 1;
     }
 
@@ -399,10 +399,10 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                 auto& sa = value_out.back().get_attrs();
                 struct line_range lr(1, 2);
 
-                sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LTEE));
+                sa.emplace_back(lr, VC_GRAPHIC.value(NCACS_LTEE));
                 lr.lr_start = 3 + jpw_value.wt_ptr.size() + 3;
                 lr.lr_end = -1;
-                sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD}));
+                sa.emplace_back(lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD}));
 
                 if (jpw_value.wt_type == yajl_t_number) {
                     auto num_scan_res
@@ -451,10 +451,10 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
         string_attrs_t& sa = value_out.back().get_attrs();
         struct line_range lr(1, 2);
 
-        sa.emplace_back(lr, VC_GRAPHIC.value(ACS_LLCORNER));
+        sa.emplace_back(lr, VC_GRAPHIC.value(NCACS_LLCORNER));
         lr.lr_start = 2;
         lr.lr_end = -1;
-        sa.emplace_back(lr, VC_GRAPHIC.value(ACS_HLINE));
+        sa.emplace_back(lr, VC_GRAPHIC.value(NCACS_HLINE));
 
         retval += 1;
     }
@@ -502,9 +502,9 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         text_attrs attrs;
         if (this->dos_labels->dls_headers[lpc].hm_graphable) {
             attrs
-                = dls->dls_headers[lpc].hm_title_attrs | text_attrs{A_REVERSE};
+                = dls->dls_headers[lpc].hm_title_attrs | text_attrs::with_reverse();
         } else {
-            attrs.ta_attrs = A_UNDERLINE;
+            attrs |= text_attrs::style::underline;
         }
         sa.emplace_back(header_range, VC_STYLE.value(attrs));
         sa.insert(sa.end(), cell_attrs.begin(), cell_attrs.end());
@@ -512,6 +512,6 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
 
     struct line_range lr(0);
 
-    sa.emplace_back(lr, VC_STYLE.value(text_attrs{A_BOLD | A_UNDERLINE}));
+    sa.emplace_back(lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD | NCSTYLE_UNDERLINE}));
     return true;
 }

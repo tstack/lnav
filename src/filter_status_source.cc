@@ -224,7 +224,7 @@ filter_status_source::update_filtered(text_sub_source* tss)
             if (timer.fade_diff(this->bss_filter_counter) == 0) {
                 this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_STATUS);
                 al.with_attr(string_attr(line_range{0, -1},
-                                         VC_STYLE.value(text_attrs{A_BOLD})));
+                                         VC_STYLE.value(text_attrs{NCSTYLE_BOLD})));
             }
         } else {
             this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_ALERT_STATUS);

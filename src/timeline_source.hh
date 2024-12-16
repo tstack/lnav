@@ -56,7 +56,7 @@ public:
                              statusview_curses& preview_status_view,
                              timeline_status_source& preview_status_source);
 
-    bool list_input_handle_key(listview_curses& lv, int ch) override;
+    bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
 
     bool text_handle_mouse(textview_curses& tc,
                            const listview_curses::display_line_content_t&,

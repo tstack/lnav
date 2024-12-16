@@ -35,15 +35,14 @@
 #include "fmt/color.h"
 #include "itertools.hh"
 #include "lnav.console.into.hh"
+#include "lnav_log.hh"
 #include "log_level_enum.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "snippet_highlighters.hh"
-#include "view_curses.hh"
 
 using namespace lnav::roles::literals;
 
-namespace lnav {
-namespace console {
+namespace lnav::console {
 
 snippet
 snippet::from_content_with_offset(intern_string_t src,
@@ -253,28 +252,58 @@ user_message::to_attr_line(std::set<render_flags> flags) const
 }
 
 static std::optional<fmt::terminal_color>
-curses_color_to_terminal_color(int curses_color)
+color_to_terminal_color(const styling::color_unit& curses_color)
 {
-    switch (curses_color) {
-        case COLOR_BLACK:
-            return fmt::terminal_color::black;
-        case COLOR_CYAN:
-            return fmt::terminal_color::cyan;
-        case COLOR_WHITE:
-            return fmt::terminal_color::white;
-        case COLOR_MAGENTA:
-            return fmt::terminal_color::magenta;
-        case COLOR_BLUE:
-            return fmt::terminal_color::blue;
-        case COLOR_YELLOW:
-            return fmt::terminal_color::yellow;
-        case COLOR_GREEN:
-            return fmt::terminal_color::green;
-        case COLOR_RED:
-            return fmt::terminal_color::red;
-        default:
+    return curses_color.cu_value.match(
+        [](const styling::semantic& s) -> std::optional<fmt::terminal_color> {
             return std::nullopt;
-    }
+        },
+        [](const styling::transparent& s)
+            -> std::optional<fmt::terminal_color> { return std::nullopt; },
+        [](const palette_color& pc) -> std::optional<fmt::terminal_color> {
+            switch (pc) {
+                case COLOR_BLACK:
+                    return fmt::terminal_color::black;
+                case COLOR_RED:
+                    return fmt::terminal_color::red;
+                case COLOR_GREEN:
+                    return fmt::terminal_color::green;
+                case COLOR_YELLOW:
+                    return fmt::terminal_color::yellow;
+                case COLOR_BLUE:
+                    return fmt::terminal_color::blue;
+                case COLOR_MAGENTA:
+                    return fmt::terminal_color::magenta;
+                case COLOR_CYAN:
+                    return fmt::terminal_color::cyan;
+                case COLOR_WHITE:
+                    return fmt::terminal_color::white;
+                default:
+                    return std::nullopt;
+            }
+        },
+        [](const rgb_color& rgb) -> std::optional<fmt::terminal_color> {
+            switch (to_ansi_color(rgb)) {
+                case ansi_color::black:
+                    return fmt::terminal_color::black;
+                case ansi_color::cyan:
+                    return fmt::terminal_color::cyan;
+                case ansi_color::white:
+                    return fmt::terminal_color::white;
+                case ansi_color::magenta:
+                    return fmt::terminal_color::magenta;
+                case ansi_color::blue:
+                    return fmt::terminal_color::blue;
+                case ansi_color::yellow:
+                    return fmt::terminal_color::yellow;
+                case ansi_color::green:
+                    return fmt::terminal_color::green;
+                case ansi_color::red:
+                    return fmt::terminal_color::red;
+                default:
+                    return std::nullopt;
+            }
+        });
 }
 
 static bool
@@ -391,6 +420,17 @@ role_to_style(const role_t role,
     }
 }
 
+static block_elem_t
+wchar_for_icon(ui_icon_t ic)
+{
+    switch (ic) {
+        case ui_icon_t::hidden:
+            return {L'\u22ee', role_t::VCR_HIDDEN};
+    }
+
+    ensure(false);
+}
+
 void
 println(FILE* file, const attr_line_t& al)
 {
@@ -398,7 +438,6 @@ println(FILE* file, const attr_line_t& al)
     static const auto IS_YES_COLOR = get_yes_color();
     static const auto IS_STDOUT_TTY = get_fd_tty(STDOUT_FILENO);
     static const auto IS_STDERR_TTY = get_fd_tty(STDERR_FILENO);
-    static auto& vc = view_colors::singleton();
 
     const auto& str = al.get_string();
 
@@ -447,7 +486,7 @@ println(FILE* file, const attr_line_t& al)
             try {
                 if (attr.sa_type == &VC_ICON) {
                     auto ic = attr.sa_value.get<ui_icon_t>();
-                    auto be = vc.wchar_for_icon(ic);
+                    auto be = wchar_for_icon(ic);
                     auto icon_fg_style = default_fg_style;
                     auto icon_bg_style = default_bg_style;
                     auto icon_style = line_style;
@@ -464,15 +503,15 @@ println(FILE* file, const attr_line_t& al)
                     auto saw = string_attr_wrapper<std::string>(&attr);
                     href = saw.get();
                 } else if (attr.sa_type == &VC_BACKGROUND) {
-                    auto saw = string_attr_wrapper<int64_t>(&attr);
-                    auto color_opt = curses_color_to_terminal_color(saw.get());
+                    auto saw = string_attr_wrapper<styling::color_unit>(&attr);
+                    auto color_opt = color_to_terminal_color(saw.get());
 
                     if (color_opt) {
                         line_style |= fmt::bg(color_opt.value());
                     }
                 } else if (attr.sa_type == &VC_FOREGROUND) {
-                    auto saw = string_attr_wrapper<int64_t>(&attr);
-                    auto color_opt = curses_color_to_terminal_color(saw.get());
+                    auto saw = string_attr_wrapper<styling::color_unit>(&attr);
+                    auto color_opt = color_to_terminal_color(saw.get());
 
                     if (color_opt) {
                         fg_style = fmt::fg(color_opt.value());
@@ -481,26 +520,26 @@ println(FILE* file, const attr_line_t& al)
                     auto saw = string_attr_wrapper<text_attrs>(&attr);
                     auto style = saw.get();
 
-                    if (style.ta_attrs & A_REVERSE) {
+                    if (style.has_style(text_attrs::style::reverse)) {
                         line_style |= fmt::emphasis::reverse;
                     }
-                    if (style.ta_attrs & A_BOLD) {
+                    if (style.has_style(text_attrs::style::bold)) {
                         line_style |= fmt::emphasis::bold;
                     }
-                    if (style.ta_attrs & A_UNDERLINE) {
+                    if (style.has_style(text_attrs::style::underline)) {
                         line_style |= fmt::emphasis::underline;
                     }
-                    if (style.ta_fg_color) {
-                        auto color_opt = curses_color_to_terminal_color(
-                            style.ta_fg_color.value());
+                    if (!style.ta_fg_color.empty()) {
+                        auto color_opt
+                            = color_to_terminal_color(style.ta_fg_color);
 
                         if (color_opt) {
                             fg_style = fmt::fg(color_opt.value());
                         }
                     }
-                    if (style.ta_bg_color) {
-                        auto color_opt = curses_color_to_terminal_color(
-                            style.ta_bg_color.value());
+                    if (!style.ta_bg_color.empty()) {
+                        auto color_opt
+                            = color_to_terminal_color(style.ta_bg_color);
 
                         if (color_opt) {
                             line_style |= fmt::bg(color_opt.value());
@@ -651,5 +690,4 @@ to_user_message(intern_string_t src, const lnav::pcre2pp::compile_error& ce)
         .with_snippet(lnav::console::snippet::from(src, pcre_error_content));
 }
 
-}  // namespace console
-}  // namespace lnav
+}  // namespace lnav::console

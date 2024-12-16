@@ -54,37 +54,10 @@ struct term_color {
 struct term_color_palette {
     term_color_palette(const char* name, const string_fragment& json);
 
-    short match_color(const lab_color& to_match) const;
+    uint8_t match_color(const lab_color& to_match) const;
 
     std::vector<term_color> tc_palette;
 };
-
-namespace styling {
-
-struct semantic {};
-
-class color_unit {
-public:
-    static Result<color_unit, std::string> from_str(const string_fragment& sf);
-
-    static color_unit make_empty() { return color_unit{rgb_color{}}; }
-
-    bool empty() const
-    {
-        return this->cu_value.match(
-            [](semantic) { return false; },
-            [](const rgb_color& rc) { return rc.empty(); });
-    }
-
-    using variants_t = mapbox::util::variant<semantic, rgb_color>;
-
-    variants_t cu_value;
-
-private:
-    explicit color_unit(variants_t value) : cu_value(std::move(value)) {}
-};
-
-}  // namespace styling
 
 struct style_config {
     std::string sc_color;

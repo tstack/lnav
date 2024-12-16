@@ -39,26 +39,6 @@
 #include "json_ptr.hh"
 #include "yajl/api/yajl_gen.h"
 #include "yajlpp.hh"
-#include "view_curses.hh"
-
-view_colors::
-view_colors()
-    : vc_dyn_pairs(0)
-{
-}
-
-view_colors&
-view_colors::singleton()
-{
-    static view_colors vc;
-    return vc;
-}
-
-block_elem_t
-view_colors::wchar_for_icon(ui_icon_t ic) const
-{
-    return this->vc_icons[lnav::enums::to_underlying(ic)];
-}
 
 int
 main(int argc, char* argv[])

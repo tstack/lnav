@@ -1598,8 +1598,6 @@ save_session_with_id(const std::string& session_id)
 
                 for (int lpc = 0; lpc < LNV__MAX; lpc++) {
                     auto& tc = lnav_data.ld_views[lpc];
-                    unsigned long width;
-                    vis_line_t height;
 
                     top_view_map.gen(lnav_view_strings[lpc]);
 
@@ -1607,7 +1605,6 @@ save_session_with_id(const std::string& session_id)
 
                     view_map.gen("top_line");
 
-                    tc.get_dimensions(height, width);
                     if (tc.get_top() >= tc.get_top_for_last_row()) {
                         view_map.gen(-1LL);
                     } else {

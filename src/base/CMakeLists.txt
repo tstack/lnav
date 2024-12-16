@@ -78,16 +78,17 @@ add_library(
 
 target_include_directories(base PUBLIC . .. ../third-party
         ../third-party/date/include
-        ${CURSES_INCLUDE_DIRS}
-        ${CMAKE_CURRENT_BINARY_DIR}/..)
+        ${CMAKE_CURRENT_BINARY_DIR}/..
+)
 target_link_libraries(base
         cppfmt
         cppscnlib
         pcrepp
-        ${CURSES_LIBRARIES}
         pthread
         lnavdt
-        datepp)
+        lnavnotcurses
+        datepp
+)
 
 add_executable(
         test_base

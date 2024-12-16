@@ -70,7 +70,7 @@ status_field::do_cylon()
     const auto& vc = view_colors::singleton();
 
     auto attrs = vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS);
-    attrs.ta_attrs |= A_REVERSE;
+    attrs |= text_attrs::style::reverse;
     sa.emplace_back(lr, VC_STYLE.value(attrs));
 
     this->sf_cylon_pos += 1;
@@ -93,28 +93,29 @@ status_field::set_stitch_value(role_t left, role_t right)
 bool
 statusview_curses::do_update()
 {
-    int top, left = 0, right;
+    int left = 0;
     auto& vc = view_colors::singleton();
-    unsigned long width, height;
+    unsigned int width, height;
 
     this->sc_displayed_fields.clear();
     if (!this->vc_visible || this->sc_window == nullptr) {
         return false;
     }
 
-    getmaxyx(this->sc_window, height, width);
+    ncplane_dim_yx(this->sc_window, &height, &width);
     this->window_change();
 
-    top = this->vc_y < 0 ? height + this->vc_y : this->vc_y;
-    right = width;
-    auto attrs = vc.attrs_for_role(
+    int top = this->vc_y < 0 ? height + this->vc_y : this->vc_y;
+    int right = width;
+    const auto attrs = vc.attrs_for_role(
         this->sc_enabled ? this->sc_default_role : role_t::VCR_INACTIVE_STATUS);
 
-    auto pair = vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color);
-    wattr_set(this->sc_window, attrs.ta_attrs, pair, nullptr);
-    wmove(this->sc_window, top, 0);
-    wclrtoeol(this->sc_window);
-    whline(this->sc_window, ' ', width);
+    nccell clear_cell;
+    nccell_init(&clear_cell);
+    nccell_prime(this->sc_window, &clear_cell, " ", 0, view_colors::to_channels(attrs));
+    ncplane_cursor_move_yx(this->sc_window, top, 0);
+    ncplane_hline(this->sc_window, &clear_cell, width);
+    nccell_release(this->sc_window, &clear_cell);
 
     if (this->sc_source != nullptr) {
         auto field_count = this->sc_source->statusview_fields();
@@ -131,9 +132,9 @@ statusview_curses::do_update()
                 for (auto& sa : val.get_attrs()) {
                     if (sa.sa_type == &VC_STYLE) {
                         auto sa_attrs = sa.sa_value.get<text_attrs>();
-                        sa_attrs.ta_attrs &= ~(A_REVERSE | A_COLOR);
-                        sa_attrs.ta_fg_color = std::nullopt;
-                        sa_attrs.ta_bg_color = std::nullopt;
+                        sa_attrs.clear_style(text_attrs::style::reverse);
+                        sa_attrs.ta_fg_color = styling::color_unit::make_empty();
+                        sa_attrs.ta_bg_color = styling::color_unit::make_empty();
                         sa.sa_value = sa_attrs;
                     } else if (sa.sa_type == &VC_ROLE) {
                         if (sa.sa_value.get<role_t>()
@@ -191,7 +192,6 @@ statusview_curses::do_update()
                 field);
         }
     }
-    wmove(this->sc_window, top + 1, 0);
 
     return true;
 }
@@ -205,13 +205,10 @@ statusview_curses::window_change()
 
     int field_count = this->sc_source->statusview_fields();
     int total_shares = 0;
-    unsigned long width, height;
     double remaining = 0;
     std::vector<status_field*> resizable;
 
-    getmaxyx(this->sc_window, height, width);
-    // Silence the compiler. Remove this if height is used at a later stage.
-    (void) height;
+    auto width = ncplane_dim_x(this->sc_window);
     remaining = width - 2;
 
     for (int field = 0; field < field_count; field++) {

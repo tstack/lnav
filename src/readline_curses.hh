@@ -148,7 +148,7 @@ public:
 
     void update_poll_set(std::vector<struct pollfd>& pollfds) override;
 
-    void handle_key(int ch);
+    void handle_key(const ncinput& ch);
 
     void check_poll_set(const std::vector<struct pollfd>& pollfds) override;
 

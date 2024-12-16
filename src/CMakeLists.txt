@@ -393,6 +393,48 @@ target_include_directories(base64 PRIVATE third-party/base64/lib)
 target_include_directories(base64 PUBLIC third-party/base64/include)
 
 add_library(
+        lnavnotcurses STATIC
+        third-party/notcurses/src/lib/automaton.c
+        third-party/notcurses/src/lib/blit.c
+        third-party/notcurses/src/lib/debug.c
+        third-party/notcurses/src/lib/direct.c
+        third-party/notcurses/src/lib/fade.c
+        third-party/notcurses/src/lib/fd.c
+        third-party/notcurses/src/lib/fill.c
+        third-party/notcurses/src/lib/gpm.c
+        third-party/notcurses/src/lib/in.c
+        third-party/notcurses/src/lib/kitty.c
+        third-party/notcurses/src/lib/layout.c
+        third-party/notcurses/src/lib/linux.c
+        third-party/notcurses/src/lib/menu.c
+        third-party/notcurses/src/lib/metric.c
+        third-party/notcurses/src/lib/mice.c
+        third-party/notcurses/src/lib/notcurses.c
+        third-party/notcurses/src/lib/plot.c
+        third-party/notcurses/src/lib/progbar.c
+        third-party/notcurses/src/lib/reader.c
+        third-party/notcurses/src/lib/reel.c
+        third-party/notcurses/src/lib/render.c
+        third-party/notcurses/src/lib/selector.c
+        third-party/notcurses/src/lib/sixel.c
+        third-party/notcurses/src/lib/sprite.c
+        third-party/notcurses/src/lib/stats.c
+        third-party/notcurses/src/lib/tabbed.c
+        third-party/notcurses/src/lib/termdesc.c
+        third-party/notcurses/src/lib/tree.c
+        third-party/notcurses/src/lib/unixsig.c
+        third-party/notcurses/src/lib/util.c
+        third-party/notcurses/src/lib/visual.c
+        third-party/notcurses/src/lib/windows.c
+)
+target_include_directories(lnavnotcurses PRIVATE
+        third-party/notcurses/src/lib
+        third-party/notcurses/src/
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include
+)
+target_include_directories(lnavnotcurses PUBLIC third-party/notcurses/include)
+
+add_library(
         spookyhash STATIC
         spookyhash/SpookyV2.cpp
 )
@@ -730,6 +772,7 @@ target_link_libraries(
         datepp
         lnavdt
         lnavfileio
+        lnavnotcurses
         pcrepp
         tailerservice
         tailerpp

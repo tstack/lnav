@@ -609,7 +609,7 @@ build_all_help_text()
 }
 
 bool
-handle_winch()
+handle_winch(screen_curses* sc)
 {
     static auto* filter_source = injector::get<filter_sub_source*>();
 
@@ -617,13 +617,14 @@ handle_winch()
         return false;
     }
 
-    struct winsize size;
+    log_info("winched");
+    if (sc) {
+        notcurses_refresh(sc->get_notcurses(), nullptr, nullptr);
+        notcurses_render(sc->get_notcurses());
+        notcurses_refresh(sc->get_notcurses(), nullptr, nullptr);
+    }
 
     lnav_data.ld_winched = false;
-
-    if (ioctl(fileno(stdout), TIOCGWINSZ, &size) == 0) {
-        resizeterm(size.ws_row, size.ws_col);
-    }
     if (lnav_data.ld_rl_view != nullptr) {
         lnav_data.ld_rl_view->do_update();
         lnav_data.ld_rl_view->window_change();
@@ -649,12 +650,13 @@ handle_winch()
 void
 layout_views()
 {
-    static constexpr auto FILES_FOCUSED_WIDTH = 40;
-    static constexpr auto FILES_BLURRED_WIDTH = 20;
+    static constexpr auto FILES_FOCUSED_WIDTH = 40U;
+    static constexpr auto FILES_BLURRED_WIDTH = 20U;
 
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
-    int width, height;
-    getmaxyx(lnav_data.ld_window, height, width);
+
+    unsigned int width, height;
+    ncplane_dim_yx(lnav_data.ld_window, &height, &width);
 
     int doc_height;
     bool doc_side_by_side = width > (90 + 60);
@@ -707,7 +709,7 @@ layout_views()
     }
 
     int match_rows = lnav_data.ld_match_source.text_line_count();
-    int match_height = std::min(match_rows, (height - 4) / 2);
+    int match_height = std::min(match_rows, (int) (height - 4) / 2);
     lnav_data.ld_match_view.set_height(vis_line_t(match_height));
 
     int um_rows = lnav_data.ld_user_message_source.text_line_count();
@@ -718,7 +720,7 @@ layout_views()
         lnav_data.ld_user_message_source.clear();
         um_rows = 0;
     }
-    auto um_height = std::min(um_rows, (height - 4) / 2);
+    auto um_height = std::min(um_rows, (int) (height - 4) / 2);
     lnav_data.ld_user_message_view.set_height(vis_line_t(um_height));
 
     auto config_panel_open = (lnav_data.ld_mode == ln_mode_t::FILTER
@@ -751,7 +753,7 @@ layout_views()
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
-    auto bottom_min = std::min(2 + 3, height);
+    auto bottom_min = std::min(2U + 3U, height);
     auto bottom = clamped<int>::from(height, bottom_min, height);
 
     lnav_data.ld_rl_view->set_y(height - 1);
@@ -859,7 +861,7 @@ layout_views()
     lnav_data.ld_file_details_view.set_y(bottom + 2);
     lnav_data.ld_file_details_view.set_x(files_width);
     lnav_data.ld_file_details_view.set_width(
-        std::clamp(width - files_width, 0, width));
+        std::clamp(width - files_width, 0U, width));
     lnav_data.ld_file_details_view.set_visible(files_open && vis);
 
     lnav_data.ld_status[LNS_FILTER_HELP].set_visible(config_panel_open && vis);
@@ -892,9 +894,11 @@ layout_views()
 void
 update_hits(textview_curses* tc)
 {
+#if 0
     if (isendwin()) {
         return;
     }
+#endif
 
     auto top_tc = lnav_data.ld_view_stack.top();
 
@@ -1321,8 +1325,7 @@ get_textview_for_mode(ln_mode_t mode)
     }
 }
 
-hist_index_delegate::
-hist_index_delegate(hist_source2& hs, textview_curses& tc)
+hist_index_delegate::hist_index_delegate(hist_source2& hs, textview_curses& tc)
     : hid_source(hs), hid_view(tc)
 {
 }
@@ -1492,6 +1495,10 @@ set_view_mode(ln_mode_t mode)
             break;
     }
     switch (mode) {
+        case ln_mode_t::SEARCH: {
+            lnav_data.ld_status[LNS_DOC].set_needs_update();
+            break;
+        }
         case ln_mode_t::BREADCRUMBS: {
             breadcrumb_view->focus();
             break;
@@ -1538,12 +1545,12 @@ all_views()
 }
 
 void
-lnav_behavior::mouse_event(int button, bool release, int x, int y)
+lnav_behavior::mouse_event(
+    notcurses* nc, int button, bool release, int x, int y)
 {
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
     static const auto VIEWS = all_views();
-    static const auto CLICK_INTERVAL
-        = std::chrono::milliseconds(mouseinterval(-1) * 2);
+    static const auto CLICK_INTERVAL = 333ms;
 
     struct mouse_event me;
 
@@ -1582,7 +1589,7 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
         me.me_state = mouse_button_state_t::BUTTON_STATE_PRESSED;
     }
 
-    auto width = getmaxx(lnav_data.ld_window);
+    auto width = ncplane_dim_x(lnav_data.ld_window);
 
     me.me_press_x = this->lb_last_event.me_press_x;
     me.me_press_y = this->lb_last_event.me_press_y;
@@ -1592,7 +1599,8 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
     }
     me.me_y = y - 1;
 
-    switch (me.me_state) {
+    switch (me.me_state)
+    {
         case mouse_button_state_t::BUTTON_STATE_PRESSED:
         case mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK: {
             if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS) {
@@ -1649,13 +1657,12 @@ lnav_behavior::mouse_event(int button, bool release, int x, int y)
         me.me_y -= this->lb_last_view->get_y();
         me.me_x -= this->lb_last_view->get_x();
         this->lb_last_view->handle_mouse(me);
-    }
-    this->lb_last_event = me;
-    if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
-        || me.me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
-        || me.me_button == mouse_button_t::BUTTON_SCROLL_UP
-        || me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN)
-    {
-        this->lb_last_view = nullptr;
-    }
+    } this->lb_last_event
+        = me;
+        if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+            || me.me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
+            || me.me_button == mouse_button_t::BUTTON_SCROLL_UP
+            || me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN) {
+            this->lb_last_view = nullptr;
+        }
 }

@@ -36,6 +36,8 @@
 #include <stdint.h>
 
 #include "base/intern_string.hh"
+#include "color_spaces.hh"
+#include "enum_util.hh"
 #include "mapbox/variant.hpp"
 
 class logfile;
@@ -146,18 +148,123 @@ enum class role_t : int32_t {
 };
 
 struct text_attrs {
+    enum class style : uint32_t {
+        none = 0x0000,
+        struck = 0x0001u,
+        bold = 0x0002u,
+        undercurl = 0x0004u,
+        underline = 0x0008u,
+        italic = 0x0010u,
+        altcharset = 0x0020u,
+        blink = 0x0040u,
+        reverse = 0x1000u,
+    };
+
+    static text_attrs with_struck()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::struck),
+        };
+    }
+
+    static text_attrs with_bold()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::bold),
+        };
+    }
+
+    static text_attrs with_undercurl()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::undercurl),
+        };
+    }
+
+    static text_attrs with_underline()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::underline),
+        };
+    }
+
+    static text_attrs with_italic()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::italic),
+        };
+    }
+
+    static text_attrs with_reverse()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::reverse),
+        };
+    }
+
+    static text_attrs with_altcharset()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::altcharset),
+        };
+    }
+
+    static text_attrs with_blink()
+    {
+        return text_attrs{
+            lnav::enums::to_underlying(style::blink),
+        };
+    }
+
+    template<typename... Args>
+    static text_attrs with_styles(Args... args)
+    {
+        auto retval = text_attrs{};
+
+        for (auto arg : {args...}) {
+            retval.ta_attrs |= lnav::enums::to_underlying(arg);
+        }
+        return retval;
+    }
+
     bool empty() const
     {
-        return this->ta_attrs == 0 && !this->ta_fg_color && !this->ta_bg_color;
+        return this->ta_attrs == 0 && this->ta_fg_color.empty()
+            && this->ta_bg_color.empty();
     }
 
     text_attrs operator|(const text_attrs& other) const
     {
         return text_attrs{
             this->ta_attrs | other.ta_attrs,
-            this->ta_fg_color ? this->ta_fg_color : other.ta_fg_color,
-            this->ta_bg_color ? this->ta_bg_color : other.ta_bg_color,
+            !this->ta_fg_color.empty() ? this->ta_fg_color : other.ta_fg_color,
+            !this->ta_bg_color.empty() ? this->ta_bg_color : other.ta_bg_color,
         };
+    }
+
+    text_attrs operator|(const style other) const
+    {
+        return text_attrs{
+            this->ta_attrs | lnav::enums::to_underlying(other),
+            this->ta_fg_color,
+            this->ta_bg_color,
+        };
+    }
+
+    text_attrs& operator|=(const style other)
+    {
+        this->ta_attrs |= lnav::enums::to_underlying(other);
+        return *this;
+    }
+
+    void clear_style(style other)
+    {
+        this->ta_attrs &= ~lnav::enums::to_underlying(other);
+    }
+
+    bool has_style(style other) const
+    {
+        return this->ta_attrs & lnav::enums::to_underlying(other);
     }
 
     bool operator==(const text_attrs& other) const
@@ -167,9 +274,9 @@ struct text_attrs {
             && this->ta_bg_color == other.ta_bg_color;
     }
 
-    int32_t ta_attrs{0};
-    std::optional<short> ta_fg_color;
-    std::optional<short> ta_bg_color;
+    uint32_t ta_attrs{0};
+    styling::color_unit ta_fg_color{styling::color_unit::make_empty()};
+    styling::color_unit ta_bg_color{styling::color_unit::make_empty()};
 };
 
 struct block_elem_t {
@@ -187,7 +294,9 @@ using string_attr_value = mapbox::util::variant<int64_t,
                                                 timespec,
                                                 string_fragment,
                                                 block_elem_t,
-                                                ui_icon_t>;
+                                                styling::color_unit,
+                                                ui_icon_t,
+                                                const char*>;
 
 class string_attr_type_base {
 public:
@@ -212,16 +321,28 @@ public:
     }
 
     template<typename U = T>
-    std::enable_if_t<!std::is_void_v<U>, string_attr_pair> value(
-        const U& val) const
-    {
-        return std::make_pair(this, val);
-    }
-
-    template<typename U = T>
     std::enable_if_t<std::is_void_v<U>, string_attr_pair> value() const
     {
         return std::make_pair(this, string_attr_value{});
+    }
+
+    template<std::size_t N>
+    std::enable_if_t<(N > 0) && std::is_same_v<std::string, T>,
+                     string_attr_pair>
+    value(const char (&val)[N]) const
+    {
+        return std::make_pair(this, std::string(val));
+    }
+
+    template<typename U = T>
+    std::enable_if_t<!std::is_void_v<U>, string_attr_pair> value(U&& val) const
+    {
+        if constexpr (std::is_same_v<const char*, U>
+                      && std::is_same_v<std::string, T>)
+        {
+            return std::make_pair(this, std::string(val));
+        }
+        return std::make_pair(this, val);
     }
 };
 
@@ -239,60 +360,58 @@ extern string_attr_type<int64_t> SA_ORIGIN_OFFSET;
 extern string_attr_type<role_t> VC_ROLE;
 extern string_attr_type<role_t> VC_ROLE_FG;
 extern string_attr_type<text_attrs> VC_STYLE;
-extern string_attr_type<int64_t> VC_GRAPHIC;
+extern string_attr_type<const char*> VC_GRAPHIC;
 extern string_attr_type<block_elem_t> VC_BLOCK_ELEM;
-extern string_attr_type<int64_t> VC_FOREGROUND;
-extern string_attr_type<int64_t> VC_BACKGROUND;
+extern string_attr_type<styling::color_unit> VC_FOREGROUND;
+extern string_attr_type<styling::color_unit> VC_BACKGROUND;
 extern string_attr_type<std::string> VC_HYPERLINK;
 extern string_attr_type<ui_icon_t> VC_ICON;
 
 namespace lnav {
 
-namespace string {
-namespace attrs {
+namespace string::attrs {
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 preformatted(S str)
 {
     return std::make_pair(std::move(str), SA_PREFORMATTED.value());
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 href(S str, std::string href)
 {
     return std::make_pair(std::move(str), VC_HYPERLINK.value(std::move(href)));
 }
 
-}  // namespace attrs
-}  // namespace string
+}  // namespace string::attrs
 
 namespace roles {
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 error(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_ERROR));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 warning(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_WARNING));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 status(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_STATUS));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 inactive_status(S str)
 {
     return std::make_pair(std::move(str),
@@ -300,7 +419,7 @@ inactive_status(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 status_title(S str)
 {
     return std::make_pair(std::move(str),
@@ -308,63 +427,63 @@ status_title(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 ok(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_OK));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 hidden(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_HIDDEN));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 file(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_FILE));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 symbol(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_SYMBOL));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 keyword(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_KEYWORD));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 variable(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_VARIABLE));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 number(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_NUMBER));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 comment(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_COMMENT));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 identifier(S str)
 {
     return std::make_pair(std::move(str),
@@ -372,28 +491,28 @@ identifier(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 string(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_STRING));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 hr(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_HR));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 hyperlink(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_HYPERLINK));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 list_glyph(S str)
 {
     return std::make_pair(std::move(str),
@@ -401,7 +520,7 @@ list_glyph(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 breadcrumb(S str)
 {
     return std::make_pair(std::move(str),
@@ -409,7 +528,7 @@ breadcrumb(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 quoted_code(S str)
 {
     return std::make_pair(std::move(str),
@@ -417,7 +536,7 @@ quoted_code(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 code_border(S str)
 {
     return std::make_pair(std::move(str),
@@ -425,7 +544,7 @@ code_border(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 snippet_border(S str)
 {
     return std::make_pair(std::move(str),
@@ -433,7 +552,7 @@ snippet_border(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 table_border(S str)
 {
     return std::make_pair(std::move(str),
@@ -441,7 +560,7 @@ table_border(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 table_header(S str)
 {
     return std::make_pair(std::move(str),
@@ -449,7 +568,7 @@ table_header(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 quote_border(S str)
 {
     return std::make_pair(std::move(str),
@@ -457,7 +576,7 @@ quote_border(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 quoted_text(S str)
 {
     return std::make_pair(std::move(str),
@@ -465,7 +584,7 @@ quoted_text(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 footnote_border(S str)
 {
     return std::make_pair(std::move(str),
@@ -473,7 +592,7 @@ footnote_border(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 footnote_text(S str)
 {
     return std::make_pair(std::move(str),
@@ -481,49 +600,49 @@ footnote_text(S str)
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 h1(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H1));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 h2(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H2));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 h3(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H3));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 h4(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H4));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 h5(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H5));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 h6(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_H6));
 }
 
 template<typename S>
-inline std::pair<S, string_attr_pair>
+std::pair<S, string_attr_pair>
 suggestion(S str)
 {
     return std::make_pair(std::move(str),

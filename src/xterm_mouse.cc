@@ -39,67 +39,63 @@ const char* xterm_mouse::XT_TERMCAP_TRACKING = "\033[?1002%?%p1%{1}%=%th%el%;";
 const char* xterm_mouse::XT_TERMCAP_SGR = "\033[?1006%?%p1%{1}%=%th%el%;";
 
 void
-xterm_mouse::handle_mouse()
+xterm_mouse::handle_mouse(notcurses* nc, const ncinput& nci)
 {
-    bool release = false;
-    size_t index = 0;
-    int bstate, x, y;
-    char buffer[64];
-    bool done = false;
-
-    while (!done) {
-        if (index >= sizeof(buffer) - 1) {
-            break;
-        }
-        auto ch = getch();
-        switch (ch) {
-            case 'm':
-                release = true;
-                done = true;
+    if (this->xm_behavior) {
+        int bstate = XT_BUTTON1;
+        auto release = nci.evtype == NCTYPE_RELEASE;
+        switch (nci.id) {
+            case NCKEY_BUTTON1:
+                bstate = XT_BUTTON1;
                 break;
-            case 'M':
-                done = true;
+            case NCKEY_BUTTON2:
+                bstate = XT_BUTTON2;
+                break;
+            case NCKEY_BUTTON3:
+                bstate = XT_BUTTON3;
+                break;
+            case NCKEY_SCROLL_UP:
+                bstate = XT_SCROLL_UP;
+                break;
+            case NCKEY_SCROLL_DOWN:
+                bstate = XT_SCROLL_DOWN;
                 break;
             default:
-                buffer[index++] = (char) ch;
-                break;
+                // XXX ignore other stuff
+                return;
         }
-    }
-    buffer[index] = '\0';
-
-    if (sscanf(buffer, "%d;%d;%d", &bstate, &x, &y) == 3) {
-        if (this->xm_behavior) {
-            this->xm_behavior->mouse_event(bstate, release, x, y);
+        if (ncinput_alt_p(&nci)) {
+            bstate |= XT_MODIFIER_META;
         }
-    } else {
-        log_error("bad mouse escape sequence: %s", buffer);
+        if (ncinput_ctrl_p(&nci)) {
+            bstate |= XT_MODIFIER_CTRL;
+        }
+        if (ncinput_shift_p(&nci)) {
+            bstate |= XT_MODIFIER_SHIFT;
+        }
+        if (nci.modifiers & NCKEY_MOD_MOTION) {
+            bstate |= XT_DRAG_FLAG;
+        }
+        this->xm_behavior->mouse_event(nc, bstate, release, nci.x, nci.y + 1);
     }
 }
 
 void
-xterm_mouse::set_enabled(bool enabled)
+xterm_mouse::set_enabled(notcurses* nc, bool enable)
 {
-    if (is_available()) {
-        if (this->xm_enabled != enabled) {
-            putp(tparm((char*) XT_TERMCAP, enabled ? 1 : 0));
-            putp(tparm((char*) XT_TERMCAP_TRACKING, enabled ? 1 : 0));
-            putp(tparm((char*) XT_TERMCAP_SGR, enabled ? 1 : 0));
-            fflush(stdout);
-            this->xm_enabled = enabled;
+    if (enable) {
+        if (!this->xm_enabled) {
+            if (notcurses_mice_enable(nc,
+                                      NCMICE_BUTTON_EVENT | NCMICE_DRAG_EVENT)
+                == 0)
+            {
+                this->xm_enabled = true;
+            } else {
+                log_warning("unable to enable mouse support");
+            }
         }
-    } else {
-        log_warning("mouse support is not available");
+    } else if (this->xm_enabled) {
+        notcurses_mice_disable(nc);
+        this->xm_enabled = false;
     }
-}
-
-bool
-xterm_mouse::is_available()
-{
-    return isatty(STDOUT_FILENO);
-}
-
-void
-xterm_mouse::log_crash_recover()
-{
-    this->set_enabled(false);
 }

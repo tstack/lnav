@@ -1,2 +1,2 @@
 [1m[4mhumanize_id('foo')[0m[1m[4m [0m[1m[4mhumanize_id('bar')[0m[1m[4m [0m
-foo                bar                
+[36mfoo[0m                [36mbar[0m                

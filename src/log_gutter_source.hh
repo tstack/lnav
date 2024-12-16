@@ -38,11 +38,11 @@ public:
     void listview_gutter_value_for_range(const listview_curses& lv,
                                          int start,
                                          int end,
-                                         chtype& ch,
+                                         const char *& ch,
                                          role_t& role_out,
                                          role_t& bar_role_out)
     {
-        textview_curses* tc = (textview_curses*) &lv;
+        auto tc = (textview_curses*) &lv;
         vis_bookmarks& bm = tc->get_bookmarks();
         bool search_hit = false;
 
@@ -56,9 +56,9 @@ public:
             next = bm[&textview_curses::BM_META].next(vis_line_t(start));
         }
         if (next && next.value() <= end) {
-            ch = search_hit ? ACS_PLUS : ACS_LTEE;
+             ch = search_hit ? NCACS_PLUS : NCACS_LTEE;
         } else {
-            ch = search_hit ? ACS_RTEE : ACS_VLINE;
+             ch = search_hit ? NCACS_RTEE : NCACS_VLINE;
         }
         next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
         if (next && next.value() <= end) {

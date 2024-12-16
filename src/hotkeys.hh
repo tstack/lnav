@@ -30,7 +30,9 @@
 #ifndef LNAV_HOTKEYS_H
 #define LNAV_HOTKEYS_H
 
+#include <notcurses/notcurses.h>
+
 bool handle_keyseq(const char* keyseq);
-bool handle_paging_key(int ch, const char* keyseq);
+bool handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq);
 
 #endif  // LNAV_HOTKEYS_H

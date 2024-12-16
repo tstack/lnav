@@ -50,6 +50,7 @@
 #define ANSI_UNDERLINE(msg) ANSI_UNDERLINE_START msg ANSI_NORM
 
 #define ANSI_ROLE(msg)        ANSI_CSI "%dO" msg ANSI_NORM
+#define ANSI_ROLE_FMT(msg)    ANSI_CSI "{}O" msg ANSI_NORM
 #define XANSI_COLOR(col)      "3" #col
 #define ANSI_COLOR_PARAM(col) XANSI_COLOR(col)
 #define ANSI_COLOR(col)       ANSI_CSI XANSI_COLOR(col) "m"

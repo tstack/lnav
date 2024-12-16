@@ -81,12 +81,12 @@ filter_sub_source::register_view(textview_curses* tc)
 }
 
 bool
-filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
+filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
     if (this->fss_editing) {
-        switch (ch) {
-            case KEY_ESCAPE:
-            case KEY_CTRL(']'):
+        switch (ch.eff_text[0]) {
+            case NCKEY_ESC:
+            case NCKEY_GS:
                 this->fss_editor->abort();
                 return true;
             default:
@@ -95,7 +95,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
         }
     }
 
-    switch (ch) {
+    switch (ch.eff_text[0]) {
         case 'f': {
             auto* top_view = *lnav_data.ld_view_stack.top();
             auto* tss = top_view->get_sub_source();
@@ -233,7 +233,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, int ch)
             return true;
         }
         case '\r':
-        case KEY_ENTER: {
+        case NCKEY_ENTER: {
             textview_curses* top_view = *lnav_data.ld_view_stack.top();
             text_sub_source* tss = top_view->get_sub_source();
             filter_stack& fs = tss->get_filters();
@@ -336,7 +336,7 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     attr_line_builder alb(al);
 
     if (selected) {
-        al.append(" ", VC_GRAPHIC.value(ACS_RARROW));
+        al.append(" ", VC_GRAPHIC.value(NCACS_RARROW));
     } else {
         al.append(" ");
     }
@@ -373,7 +373,7 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
         }
     }
 
-    al.append(" hits ").append("|", VC_GRAPHIC.value(ACS_VLINE)).append(" ");
+    al.append(" hits ").append("|", VC_GRAPHIC.value(NCACS_VLINE)).append(" ");
 
     attr_line_t content{tf->get_id()};
     switch (tf->get_lang()) {
@@ -457,8 +457,7 @@ filter_sub_source::rl_change(readline_curses* rc)
                         ? role_t::VCR_DIFF_DELETE
                         : role_t::VCR_DIFF_ADD;
                     hl.with_role(role);
-                    hl.with_attrs(text_attrs{A_BLINK | A_REVERSE});
-
+                    hl.with_attrs(text_attrs::with_styles(text_attrs::style::blink, text_attrs::style::reverse));
                     hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                     top_view->set_needs_update();
                     lnav_data.ld_filter_help_status_source.fss_error.clear();
@@ -643,7 +642,7 @@ filter_sub_source::rl_display_matches(readline_curses* rc)
 
         for (const auto& match : matches) {
             if (match == current_match) {
-                al.append(match, VC_STYLE.value(text_attrs{A_REVERSE}));
+                al.append(match, VC_STYLE.value(text_attrs::with_reverse()));
                 selected_line = line;
             } else {
                 al.append(match);
@@ -696,14 +695,13 @@ filter_sub_source::text_handle_mouse(
         return true;
     }
     if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
-        this->list_input_handle_key(tc, ' ');
+        this->list_input_handle_key(tc, {' '});
     }
     if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 4, 7)) {
-        this->list_input_handle_key(tc, 't');
+        this->list_input_handle_key(tc, {'t'});
     }
-    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{25, -1}))
-    {
-        this->list_input_handle_key(tc, '\r');
+    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{25, -1})) {
+        this->list_input_handle_key(tc, {'\r'});
     }
     return true;
 }

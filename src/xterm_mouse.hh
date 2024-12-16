@@ -32,24 +32,10 @@
 #ifndef xterm_mouse_hh
 #define xterm_mouse_hh
 
+#include <notcurses/notcurses.h>
+
 #include "base/lnav_log.hh"
 #include "config.h"
-
-#if defined HAVE_NCURSESW_CURSES_H
-#    include <ncursesw/curses.h>
-#elif defined HAVE_NCURSESW_H
-#    include <ncursesw.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#    include <ncurses/curses.h>
-#elif defined HAVE_CURSESW_H
-#    include <cursesw.h>
-#elif defined HAVE_NCURSES_H
-#    include <ncurses.h>
-#elif defined HAVE_CURSES_H
-#    include <curses.h>
-#else
-#    error "SysV or X/Open-compatible Curses header file required"
-#endif
 
 /**
  * Base class for delegates of the xterm_mouse class.
@@ -67,13 +53,13 @@ public:
      * @param x      The X coordinate where the event occurred.
      * @param y      The Y coordinate where the event occurred.
      */
-    virtual void mouse_event(int button, bool release, int x, int y) = 0;
+    virtual void mouse_event(notcurses* nc, int button, bool release, int x, int y) = 0;
 };
 
 /**
  * Class that handles xterm mouse events coming through the ncurses interface.
  */
-class xterm_mouse : public log_crash_recoverer {
+class xterm_mouse {
 public:
     static const int XT_BUTTON1 = 0;
     static const int XT_BUTTON2 = 1;
@@ -98,22 +84,10 @@ public:
     static const char* XT_TERMCAP_SGR;
 
     /**
-     * @return True if the user's terminal supports xterm-mouse events.
-     */
-    static bool is_available();
-
-    ~xterm_mouse() override
-    {
-        if (this->is_enabled()) {
-            set_enabled(false);
-        }
-    }
-
-    /**
      * @param enabled True if xterm mouse support should be enabled in the
      *   terminal.
      */
-    void set_enabled(bool enabled);
+    void set_enabled(notcurses* nc, bool enable);
 
     /**
      * @return True if xterm mouse support is enabled, false otherwise.
@@ -125,15 +99,13 @@ public:
      */
     void set_behavior(mouse_behavior* mb) { this->xm_behavior = mb; }
 
-    mouse_behavior* get_behavior() { return this->xm_behavior; }
+    mouse_behavior* get_behavior() const { return this->xm_behavior; }
 
     /**
      * Handle a KEY_MOUSE character from ncurses.
      * @param ch unused
      */
-    void handle_mouse();
-
-    void log_crash_recover() override;
+    void handle_mouse(notcurses* nc, const ncinput& nci);
 
 private:
     bool xm_enabled{false};

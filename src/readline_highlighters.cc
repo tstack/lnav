@@ -73,7 +73,10 @@ find_matching_bracket(
             } else if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
                     alb.overlay_attr_for_char(
-                        lpc, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
+                        lpc,
+                        VC_STYLE.value(text_attrs ::with_styles(
+                            text_attrs::style::bold,
+                            text_attrs::style::reverse)));
                     alb.overlay_attr_for_char(lpc,
                                               VC_ROLE.value(role_t::VCR_OK));
                     break;
@@ -90,7 +93,10 @@ find_matching_bracket(
             } else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
                 if (depth == 0) {
                     alb.overlay_attr_for_char(
-                        lpc, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
+                        lpc,
+                        VC_STYLE.value(text_attrs ::with_styles(
+                            text_attrs::style::bold,
+                            text_attrs::style::reverse)));
                     alb.overlay_attr_for_char(lpc,
                                               VC_ROLE.value(role_t::VCR_OK));
                     break;
@@ -116,7 +122,9 @@ find_matching_bracket(
             } else {
                 auto lr = line_range(is_lit ? lpc - 1 : lpc, lpc + 1);
                 alb.overlay_attr(
-                    lr, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
+                    lr,
+                    VC_STYLE.value(text_attrs ::with_styles(
+                        text_attrs::style::bold, text_attrs::style::reverse)));
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
             }
         }
@@ -126,7 +134,10 @@ find_matching_bracket(
         auto lr
             = line_range(is_lit ? first_left.value() - 1 : first_left.value(),
                          first_left.value() + 1);
-        alb.overlay_attr(lr, VC_STYLE.value(text_attrs{A_BOLD | A_REVERSE}));
+        alb.overlay_attr(
+            lr,
+            VC_STYLE.value(text_attrs ::with_styles(
+                text_attrs::style::bold, text_attrs::style::reverse)));
         alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
     }
 }
@@ -190,7 +201,7 @@ readline_command_highlighter_int(attr_line_t& al,
                             = view_colors::singleton().match_color(rgb_fg);
                         alb.overlay_attr(to_line_range(md[0].value()),
                                          VC_STYLE.value(text_attrs{
-                                             A_BOLD,
+                                             NCSTYLE_BOLD,
                                              color,
                                          }));
                     });
@@ -207,9 +218,7 @@ readline_command_highlighter_int(attr_line_t& al,
             for (last = start; last < sub.length() && !isspace(line[last]);
                  last++)
                 ;
-            struct line_range lr {
-                (int) start, (int) last
-            };
+            struct line_range lr{(int) start, (int) last};
 
             if (x && lr.length() > 0 && !lr.contains(x.value())
                 && !lr.contains(x.value() - 1))
@@ -287,7 +296,7 @@ readline_sqlite_highlighter_int(attr_line_t& al,
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_STRING));
             } else {
                 alb.overlay_attr_for_char(
-                    lr.lr_start, VC_STYLE.value(text_attrs{A_REVERSE}));
+                    lr.lr_start, VC_STYLE.value(text_attrs::with_reverse()));
                 alb.overlay_attr_for_char(lr.lr_start,
                                           VC_ROLE.value(role_t::VCR_ERROR));
             }
@@ -335,7 +344,7 @@ readline_shlex_highlighter_int(attr_line_t& al,
 
             alb.overlay_attr(line_range(sub.lr_start + te.te_source.sf_begin,
                                         sub.lr_start + te.te_source.sf_end),
-                             VC_STYLE.value(text_attrs{A_REVERSE}));
+                             VC_STYLE.value(text_attrs::with_reverse()));
             alb.overlay_attr(line_range(sub.lr_start + te.te_source.sf_begin,
                                         sub.lr_start + te.te_source.sf_end),
                              VC_ROLE.value(role_t::VCR_ERROR));

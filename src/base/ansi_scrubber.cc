@@ -186,8 +186,9 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     if (sa != nullptr && bold_range.is_valid()) {
                         shift_string_attrs(
                             *sa, bold_range.lr_start, -bold_range.length() * 2);
-                        tmp_sa.emplace_back(bold_range,
-                                            VC_STYLE.value(text_attrs{A_BOLD}));
+                        tmp_sa.emplace_back(
+                            bold_range,
+                            VC_STYLE.value(text_attrs{NCSTYLE_BOLD}));
                         bold_range.clear();
                     }
                     if (ul_range.is_valid()) {
@@ -208,7 +209,8 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         shift_string_attrs(
                             *sa, ul_range.lr_start, -ul_range.length() * 2);
                         tmp_sa.emplace_back(
-                            ul_range, VC_STYLE.value(text_attrs{A_UNDERLINE}));
+                            ul_range,
+                            VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
                         ul_range.clear();
                     }
                     if (bold_range.is_valid()) {
@@ -236,15 +238,15 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             if (sa != nullptr && ul_range.is_valid()) {
                 shift_string_attrs(
                     *sa, ul_range.lr_start, -ul_range.length() * 2);
-                tmp_sa.emplace_back(ul_range,
-                                    VC_STYLE.value(text_attrs{A_UNDERLINE}));
+                tmp_sa.emplace_back(
+                    ul_range, VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
                 ul_range.clear();
             }
             if (sa != nullptr && bold_range.is_valid()) {
                 shift_string_attrs(
                     *sa, bold_range.lr_start, -bold_range.length() * 2);
                 tmp_sa.emplace_back(bold_range,
-                                    VC_STYLE.value(text_attrs{A_BOLD}));
+                                    VC_STYLE.value(text_attrs{NCSTYLE_BOLD}));
                 bold_range.clear();
             }
             if (sa != nullptr && output_size > 0 && cp_dst > 0) {
@@ -305,7 +307,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 case 'm':
                     while (!seq.empty()) {
                         auto ansi_code_res
-                            = scn::scan_value<int>(seq.to_string_view());
+                            = scn::scan_value<uint8_t>(seq.to_string_view());
 
                         if (!ansi_code_res) {
                             break;
@@ -313,13 +315,15 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         auto ansi_code = ansi_code_res.value();
                         if (90 <= ansi_code && ansi_code <= 97) {
                             ansi_code -= 60;
-                            attrs.ta_attrs |= A_STANDOUT;
+                            // XXX attrs.ta_attrs |= A_STANDOUT;
                         }
                         if (30 <= ansi_code && ansi_code <= 37) {
-                            attrs.ta_fg_color = ansi_code - 30;
+                            attrs.ta_fg_color = palette_color{
+                                static_cast<uint8_t>(ansi_code - 30)};
                         }
                         if (40 <= ansi_code && ansi_code <= 47) {
-                            attrs.ta_bg_color = ansi_code - 40;
+                            attrs.ta_bg_color = palette_color{
+                                static_cast<uint8_t>(ansi_code - 40)};
                         }
                         if (ansi_code == 38 || ansi_code == 48) {
                             auto color_code_pair
@@ -347,28 +351,34 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                                     break;
                                 }
                                 if (ansi_code == 38) {
-                                    attrs.ta_fg_color = color_index.value();
+                                    attrs.ta_fg_color = palette_color{
+                                        (uint8_t) color_index.value()};
                                 } else {
-                                    attrs.ta_bg_color = color_index.value();
+                                    attrs.ta_bg_color = palette_color{
+                                        (uint8_t) color_index.value()};
                                 }
                                 seq = color_index_pair.second;
                             }
                         }
                         switch (ansi_code) {
                             case 1:
-                                attrs.ta_attrs |= A_BOLD;
+                                attrs |= text_attrs::style::bold;
                                 break;
 
                             case 2:
-                                attrs.ta_attrs |= A_DIM;
+                                // XXX attrs.ta_attrs |= A_DIM;
+                                break;
+
+                            case 3:
+                                attrs |= text_attrs::style::italic;
                                 break;
 
                             case 4:
-                                attrs.ta_attrs |= A_UNDERLINE;
+                                attrs |= text_attrs::style::underline;
                                 break;
 
                             case 7:
-                                attrs.ta_attrs |= A_REVERSE;
+                                attrs |= text_attrs::style::reverse;
                                 break;
                         }
                         auto split_pair = seq.split_when(semi_pred);

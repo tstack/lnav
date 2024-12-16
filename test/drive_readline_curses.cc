@@ -101,14 +101,11 @@ main(int argc, char* argv[])
 
     drive_data.dd_rl_view = &rlc;
 
-    auto sc = screen_curses::create().unwrap();
-    keypad(stdscr, TRUE);
-    nonl();
-    cbreak();
-    noecho();
-    nodelay(sc.get_window(), 1);
+    notcurses_options nco;
+    memset(&nco, 0, sizeof(nco));
+    auto sc = screen_curses::create(nco).unwrap();
 
-    rlc.set_window(sc.get_window());
+    rlc.set_window(sc.get_std_plane());
     rlc.set_y(-1);
     rlc.set_perform_action(rl_callback);
     rlc.set_timeout_action(rl_timeout);
@@ -118,30 +115,21 @@ main(int argc, char* argv[])
         vector<struct pollfd> pollfds;
         int rc;
 
-        pollfds.push_back((struct pollfd){STDIN_FILENO, POLLIN, 0});
+        pollfds.push_back((struct pollfd) {STDIN_FILENO, POLLIN, 0});
         psuperv->update_poll_set(pollfds);
 
         rlc.do_update();
-        refresh();
+        notcurses_render(sc.get_notcurses());
         rc = poll(&pollfds[0], pollfds.size(), -1);
         if (rc > 0) {
             if (pollfd_ready(pollfds, STDIN_FILENO)) {
-                int ch;
-
-                while ((ch = getch()) != ERR) {
-                    switch (ch) {
-                        case CEOF:
-                        case KEY_RESIZE:
-                            break;
-
-                        default:
-                            if (drive_data.dd_active) {
-                                rlc.handle_key(ch);
-                            } else if (ch == ':') {
-                                rlc.focus(1, ":");
-                                drive_data.dd_active = true;
-                            }
-                            break;
+                ncinput nci;
+                while (notcurses_get_blocking(sc.get_notcurses(), &nci) > 0) {
+                    if (drive_data.dd_active) {
+                        rlc.handle_key(nci);
+                    } else if (nci.id == ':') {
+                        rlc.focus(1, ":");
+                        drive_data.dd_active = true;
                     }
                 }
             }

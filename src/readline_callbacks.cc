@@ -1103,14 +1103,11 @@ rl_display_matches(readline_curses* rc)
 {
     const auto& matches = rc->get_matches();
     auto& tc = lnav_data.ld_match_view;
-    unsigned long width;
-    __attribute((unused)) unsigned long height;
-    int max_len, cols;
+    int cols;
 
-    getmaxyx(lnav_data.ld_window, height, width);
-
-    max_len = rc->get_max_match_length() + 2;
-    cols = std::max(1UL, width / max_len);
+    auto width = ncplane_dim_x(lnav_data.ld_window);
+    auto max_len = rc->get_max_match_length() + 2;
+    cols = std::max(1U, width / max_len);
 
     if (matches.empty()) {
         lnav_data.ld_match_source.clear();
@@ -1126,7 +1123,7 @@ rl_display_matches(readline_curses* rc)
                 add_nl = false;
             }
             if (match == current_match) {
-                al.append(match, VC_STYLE.value(text_attrs{A_REVERSE}));
+                al.append(match, VC_STYLE.value(text_attrs::with_reverse()));
             } else {
                 al.append(match);
             }
@@ -1189,6 +1186,7 @@ rl_blur(readline_curses* rc)
                    .get_overlay_source();
 
     fos->fos_contexts.pop();
+    ensure(!fos->fos_contexts.empty());
     for (auto& tc : lnav_data.ld_views) {
         tc.set_sync_selection_and_top(false);
     }

@@ -29,33 +29,18 @@
  * @file vt52_curses.cc
  */
 
-#include <map>
+#include <term.h>
 
-#include "vt52_curses.hh"
+#undef lines
+#undef set_window
+
+#include <map>
 
 #include <string.h>
 
 #include "base/lnav_log.hh"
 #include "config.h"
-
-#if defined HAVE_NCURSESW_CURSES_H
-#    include <ncursesw/curses.h>
-#    include <ncursesw/term.h>
-#elif defined HAVE_NCURSESW_H
-#    include <ncursesw.h>
-#    include <term.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#    include <ncurses/curses.h>
-#    include <ncurses/term.h>
-#elif defined HAVE_NCURSES_H
-#    include <ncurses.h>
-#    include <term.h>
-#elif defined HAVE_CURSES_H
-#    include <curses.h>
-#    include <term.h>
-#else
-#    error "SysV or X/Open-compatible Curses header file required"
-#endif
+#include "vt52_curses.hh"
 
 /**
  * Singleton used to hold the mapping of ncurses keycodes to VT52 escape
@@ -75,29 +60,15 @@ public:
      * @param ch The ncurses keycode.
      * @return The null terminated VT52 escape sequence.
      */
-    const char* operator[](int ch) const
+    std::optional<string_fragment> operator[](int ch) const
     {
-        auto iter = this->vem_map.find(ch);
-        const char* retval = nullptr;
+        const auto iter = this->vem_map.find(ch);
 
         if (iter == this->vem_map.end()) {
-            if (ch > KEY_MAX) {
-                auto name = keyname(ch);
-
-                if (name != nullptr) {
-                    auto seq = tigetstr(name);
-
-                    if (seq != nullptr) {
-                        this->vem_map[ch] = seq;
-                        retval = seq;
-                    }
-                }
-            }
-        } else {
-            retval = iter->second;
+            return std::nullopt;
         }
 
-        return retval;
+        return iter->second;
     };
 
     const char* operator[](const char* seq) const
@@ -122,33 +93,26 @@ private:
         static char area_buffer[1024];
         char* area = area_buffer;
 
-        if (tgetent(nullptr, "vt52") == ERR) {
+        if (tgetent(nullptr, "vt52") <= 0) {
             perror("tgetent");
         }
-        this->vem_map[KEY_UP] = tgetstr((char*) "ku", &area);
-        this->vem_map[KEY_DOWN] = tgetstr((char*) "kd", &area);
-        this->vem_map[KEY_RIGHT] = tgetstr((char*) "kr", &area);
-        this->vem_map[KEY_LEFT] = tgetstr((char*) "kl", &area);
-        this->vem_map[KEY_HOME] = tgetstr((char*) "kh", &area);
-        if (this->vem_map[KEY_HOME] == nullptr) {
-            this->vem_map[KEY_HOME] = "\x01";
+        this->vem_map[NCKEY_UP]
+            = string_fragment::from_c_str(tgetstr((char*) "ku", &area));
+        this->vem_map[NCKEY_DOWN]
+            = string_fragment::from_c_str(tgetstr((char*) "kd", &area));
+        this->vem_map[NCKEY_RIGHT]
+            = string_fragment::from_c_str(tgetstr((char*) "kr", &area));
+        this->vem_map[NCKEY_LEFT]
+            = string_fragment::from_c_str(tgetstr((char*) "kl", &area));
+        this->vem_map[NCKEY_HOME]
+            = string_fragment::from_c_str(tgetstr((char*) "kh", &area));
+        if (this->vem_map[NCKEY_HOME].empty()) {
+            this->vem_map[NCKEY_HOME] = string_fragment::from_const("\x01");
         }
-        this->vem_map[KEY_BACKSPACE] = "\010";
-        this->vem_map[KEY_DC] = "\x04";
-
-        this->vem_map[KEY_BEG] = "\x01";
-        this->vem_map[KEY_END] = "\x05";
-
-        this->vem_map[KEY_SLEFT] = tgetstr((char*) "#4", &area);
-        if (this->vem_map[KEY_SLEFT] == nullptr) {
-            this->vem_map[KEY_SLEFT] = "\033b";
-        }
-        this->vem_map[KEY_SRIGHT] = tgetstr((char*) "%i", &area);
-        if (this->vem_map[KEY_SRIGHT] == nullptr) {
-            this->vem_map[KEY_SRIGHT] = "\033f";
-        }
-
-        this->vem_map[KEY_BTAB] = "\033[Z";
+        this->vem_map[NCKEY_BACKSPACE] = string_fragment::from_const("\010");
+        this->vem_map[NCKEY_HOME] = string_fragment::from_const("\x01");
+        this->vem_map[NCKEY_END] = string_fragment::from_const("\x05");
+        this->vem_map[NCKEY_ENTER] = string_fragment::from_const("\r");
 
         this->vem_input_map[tgetstr((char*) "ce", &area)] = "ce";
         this->vem_input_map[tgetstr((char*) "kl", &area)] = "kl";
@@ -160,44 +124,44 @@ private:
     };
 
     /** Map of ncurses keycodes to VT52 escape sequences. */
-    mutable std::map<int, const char*> vem_map;
+    mutable std::map<int, string_fragment> vem_map;
     std::map<std::string, const char*> vem_input_map;
 };
 
-const char*
-vt52_curses::map_input(int ch, int& len_out)
+string_fragment
+vt52_curses::map_input(const ncinput& ch)
 {
-    const char *esc, *retval;
-
     /* Check for an escape sequence, otherwise just return the char. */
-    if ((esc = vt52_escape_map::singleton()[ch]) != nullptr) {
-        retval = esc;
-        len_out = strlen(retval);
-    } else {
-        switch (ch) {
-            case 0x7f:
-                ch = BACKSPACE;
-                break;
-        }
-        this->vc_map_buffer = (char) ch;
-        retval = &this->vc_map_buffer; /* XXX probably shouldn't do this. */
-        len_out = 1;
+    auto esc = vt52_escape_map::singleton()[ch.id];
+    if (esc) {
+        return esc.value();
+    }
+    if (ch.id == 0x7f) {
+        this->vc_map_buffer = static_cast<char>(ch.id);
+        return string_fragment::from_c_str(&this->vc_map_buffer);
     }
 
-    ensure(retval != nullptr);
-    ensure(len_out > 0);
+    if (ncinput_shift_p(&ch) && ch.id == NCKEY_LEFT) {
+        return string_fragment::from_const("\033b");
+    }
 
-    return retval;
+    if (ncinput_shift_p(&ch) && ch.id == NCKEY_RIGHT) {
+        return string_fragment::from_const("\033f");
+    }
+
+    if (ncinput_shift_p(&ch) && ch.id == NCKEY_TAB) {
+        return string_fragment::from_const("\033[Z");
+    }
+
+    return string_fragment::from_c_str(ch.utf8);
 }
 
 void
 vt52_curses::map_output(const char* output, int len)
 {
-    int lpc;
-
     require(this->vc_window != nullptr);
 
-    for (lpc = 0; lpc < len; lpc++) {
+    for (int lpc = 0; lpc < len; lpc++) {
         if (this->vc_escape_len > 0) {
             const char* cap;
 
@@ -261,7 +225,7 @@ vt52_curses::map_output(const char* output, int len)
                     break;
 
                 case BELL:
-                    flash();
+                    write(STDIN_FILENO, &next_ch, 1);
                     break;
 
                 case BACKSPACE:
@@ -305,12 +269,10 @@ bool
 vt52_curses::do_update()
 {
     auto actual_width = this->get_actual_width();
-    view_curses::mvwattrline(this->vc_window,
-                             this->get_actual_y(),
-                             this->vc_x,
-                             this->vc_line,
-                             line_range{0, (int) actual_width});
-    wmove(
-        this->vc_window, this->get_actual_y(), this->vc_x + this->vc_cursor_x);
+    mvwattrline(this->vc_window,
+                this->get_actual_y(),
+                this->vc_x,
+                this->vc_line,
+                line_range{0, (int) actual_width});
     return true;
 }

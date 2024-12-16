@@ -886,7 +886,8 @@ sql_humanize_id(string_fragment id)
     auto attrs = vc.attrs_for_ident(id.data(), id.length());
 
     return fmt::format(FMT_STRING("\x1b[38;5;{}m{}\x1b[0m"),
-                       attrs.ta_fg_color.value_or(COLOR_CYAN),
+                       // XXX attrs.ta_fg_color.value_or(COLOR_CYAN),
+                       (int8_t) ansi_color::cyan,
                        id);
 }
 

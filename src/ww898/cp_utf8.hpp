@@ -191,8 +191,9 @@ struct utf8 final {
         {
             write_fn(static_cast<char_type>(0xFC | cp >> 30));
             goto _5;
-        } else
-            throw std::runtime_error("Tool large UTF8 code point");
+        } else {
+            throw std::runtime_error("Too large UTF8 code point");
+        }
         return;
     _5:
         write_fn(static_cast<char_type>(0x80 | (cp >> 24 & 0x3F)));

@@ -74,7 +74,7 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
     if (is_link) {
         auto ta = text_attrs{};
 
-        ta.ta_attrs |= A_UNDERLINE;
+        ta.ta_attrs |= NCSTYLE_UNDERLINE;
         auto href_al
             = attr_line_t(" Link: ")
                   .append(lnav::roles::table_header(sti.sti_href))

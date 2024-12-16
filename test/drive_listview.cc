@@ -32,12 +32,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "base/injector.bind.hh"
 #include "config.h"
 #include "listview_curses.hh"
+#include "xterm_mouse.hh"
 
 using namespace std;
 
 static listview_curses lv;
+
+static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
+
 
 class my_source : public list_data_source {
 public:
@@ -54,9 +59,20 @@ public:
                                                                           : "";
 
             if (row == 0) {
-                value_out.al_string += "Hello";
+                value_out.al_string += " Hello";
+                value_out.with_attr(string_attr(line_range{1, 3},
+                    VC_STYLE.value(text_attrs::with_bold())));
             } else if (row == 1) {
+                auto mixed_style = text_attrs::with_italic();
+                mixed_style.ta_fg_color = rgb_color{255, 0, 0};
+                mixed_style.ta_bg_color = rgb_color{0, 255, 0};
+                mixed_style.ta_bg_color = palette_color{COLOR_GREEN};
+                if (mixed_style.ta_bg_color.cu_value.is<palette_color>()) {
+                    log_debug("wtf!");
+                }
                 value_out.al_string += "World!";
+                value_out.with_attr(string_attr(line_range{1, 3},
+                    VC_STYLE.value(mixed_style)));
             } else if (row < this->ms_rows) {
                 value_out.al_string += std::to_string(static_cast<int>(row));
             } else {
@@ -89,16 +105,27 @@ main(int argc, char* argv[])
     bool wait_for_input = false, set_height = false;
     const char* keys = nullptr;
     my_source ms;
-    WINDOW* win;
 
     setenv("DUMP_CRASH", "1", 1);
+    setlocale(LC_ALL, "");
     log_install_handlers();
     lnav_log_crash_dir = "/tmp";
+    lnav_log_file = fopen("/tmp/drive_listview.log", "w+");
 
-    win = initscr();
+    auto_fd errpipe[2];
+    auto_fd::pipe(errpipe);
+
+    errpipe[0].close_on_exec();
+    errpipe[1].close_on_exec();
+    auto pipe_err_handle
+        = log_pipe_err(errpipe[0].release(), errpipe[1].release());
+
+    auto nco = notcurses_options{};
+    nco.flags |= NCOPTION_SUPPRESS_BANNERS;
+    nco.loglevel = NCLOGLEVEL_DEBUG;
+    auto sc = screen_curses::create(nco).unwrap();
     lv.set_data_source(&ms);
-    lv.set_window(win);
-    noecho();
+    lv.set_window(sc.get_std_plane());
 
     while ((c = getopt(argc, argv, "cy:t:k:l:r:h:w")) != -1) {
         switch (c) {
@@ -132,30 +159,33 @@ main(int argc, char* argv[])
     }
 
     if (!set_height) {
-        unsigned long height, width;
-        getmaxyx(win, height, width);
+        auto height = ncplane_dim_y(sc.get_std_plane());
         lv.set_height(vis_line_t(height - lv.get_y()));
     }
 
+    ncinput nci;
     if (keys != nullptr) {
-        // Treats the string argument as sequence of key presses (only
+        // Treats the string argument as a sequence of key presses (only
         // individual characters supported as key input)
         for (const char* ptr = keys; ptr != nullptr && *ptr != '\0'; ++ptr) {
             lv.do_update();
             if (wait_for_input) {
-                getch();
-                refresh();
+                notcurses_render(sc.get_notcurses());
+                notcurses_get_blocking(sc.get_notcurses(), &nci);
             }
-            lv.handle_key(static_cast<int>(*ptr));
+            ncinput nci;
+            nci.id = static_cast<uint32_t>(*ptr);
+            nci.eff_text[0] = *ptr;
+            nci.eff_text[1] = '\0';
+            lv.handle_key(nci);
         }
     }
 
     lv.do_update();
-    refresh();
+    notcurses_render(sc.get_notcurses());
     if (wait_for_input) {
-        getch();
+        notcurses_get_blocking(sc.get_notcurses(), &nci);
     }
-    endwin();
 
     return retval;
 }

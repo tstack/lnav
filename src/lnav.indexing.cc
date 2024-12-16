@@ -44,7 +44,7 @@ using namespace lnav::roles::literals;
  */
 class loading_observer : public logfile_observer {
 public:
-    loading_observer() : lo_last_offset(0){};
+    loading_observer() : lo_last_offset(0) {}
 
     indexing_result logfile_indexing(const std::shared_ptr<logfile>& lf,
                                      file_off_t off,
@@ -85,15 +85,11 @@ public:
 void
 do_observer_update(const std::shared_ptr<logfile>& lf)
 {
-    if (isendwin()) {
-        return;
-    }
-    lnav_data.ld_status_refresher();
     if (lf && lnav_data.ld_mode == ln_mode_t::FILES
         && lnav_data.ld_exec_phase < lnav_exec_phase::INTERACTIVE)
     {
         auto& fc = lnav_data.ld_active_files;
-        auto iter = std::find(fc.fc_files.begin(), fc.fc_files.end(), lf);
+        const auto iter = std::find(fc.fc_files.begin(), fc.fc_files.end(), lf);
 
         if (iter != fc.fc_files.end()) {
             auto index = std::distance(fc.fc_files.begin(), iter);
@@ -103,11 +99,11 @@ do_observer_update(const std::shared_ptr<logfile>& lf)
             lnav_data.ld_files_view.do_update();
         }
     }
-    if (handle_winch()) {
+    if (handle_winch(nullptr)) {
         layout_views();
         lnav_data.ld_view_stack.do_update();
     }
-    refresh();
+    lnav_data.ld_status_refresher();
 }
 
 void

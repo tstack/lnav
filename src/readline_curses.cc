@@ -641,10 +641,9 @@ readline_context::command_complete(int count, int key)
     return rl_insert(count, key);
 }
 
-readline_context::
-readline_context(std::string name,
-                 readline_context::command_map_t* commands,
-                 bool case_sensitive)
+readline_context::readline_context(std::string name,
+                                   readline_context::command_map_t* commands,
+                                   bool case_sensitive)
     : rc_name(std::move(name)), rc_case_sensitive(case_sensitive),
       rc_quote_chars("\"'"), rc_highlighter(nullptr)
 {
@@ -725,8 +724,8 @@ readline_context::save()
     hs = nullptr;
 }
 
-readline_curses::
-readline_curses(std::shared_ptr<pollable_supervisor> supervisor)
+readline_curses::readline_curses(
+    std::shared_ptr<pollable_supervisor> supervisor)
     : pollable(supervisor, pollable::category::interactive),
       rc_focus(noop_func{}), rc_change(noop_func{}), rc_perform(noop_func{}),
       rc_alt_perform(noop_func{}), rc_timeout(noop_func{}),
@@ -736,8 +735,7 @@ readline_curses(std::shared_ptr<pollable_supervisor> supervisor)
 {
 }
 
-readline_curses::~
-readline_curses()
+readline_curses::~readline_curses()
 {
     this->rc_pty[RCF_MASTER].reset();
     this->rc_command_pipe[RCF_MASTER].reset();
@@ -822,6 +820,9 @@ readline_curses::start()
     this->rc_command_pipe[RCF_SLAVE] = sp[RCF_SLAVE];
     this->rc_command_pipe[RCF_SLAVE].close_on_exec();
 
+    log_info("readline command pair (%d, %d)",
+             this->rc_command_pipe[RCF_MASTER].get(),
+             this->rc_command_pipe[RCF_SLAVE].get());
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
         throw error(errno);
     }
@@ -841,6 +842,7 @@ readline_curses::start()
     }
 
     this->rc_pty[RCF_MASTER] = openpt_res.unwrap();
+    log_info("readline master pty %d", this->rc_pty[RCF_MASTER].get());
     log_perror(grantpt(this->rc_pty[RCF_MASTER]));
     log_perror(unlockpt(this->rc_pty[RCF_MASTER]));
     char slave_path_str[PATH_MAX];
@@ -874,6 +876,7 @@ readline_curses::start()
         throw error(errno);
     }
     this->rc_pty[RCF_SLAVE] = slave_open_res.unwrap();
+    log_info("readline slave pty %d", this->rc_pty[RCF_SLAVE].get());
 
     if (ioctl(this->rc_pty[RCF_SLAVE], TIOCSWINSZ, &ws) == -1) {
         throw error(errno);
@@ -888,6 +891,7 @@ readline_curses::start()
     }
 
     if (this->rc_child != 0) {
+        log_info("spawned readline child: %d", this->rc_child);
         this->rc_command_pipe[RCF_SLAVE].reset();
         this->rc_pty[RCF_SLAVE].reset();
         return;
@@ -1397,13 +1401,16 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
                 }
                 switch (msg[0]) {
                     case 'a':
-                        curs_set(0);
-                        this->vc_line.clear();
-                        this->rc_active_context = -1;
-                        this->rc_matches.clear();
-                        this->rc_abort(this);
-                        this->rc_display_match(this);
-                        this->rc_blur(this);
+                        if (this->rc_active_context != -1) {
+                            notcurses_cursor_disable(
+                                ncplane_notcurses(this->vc_window));
+                            this->vc_line.clear();
+                            this->rc_active_context = -1;
+                            this->rc_matches.clear();
+                            this->rc_abort(this);
+                            this->rc_display_match(this);
+                            this->rc_blur(this);
+                        }
                         break;
 
                     case 't':
@@ -1412,16 +1419,19 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
 
                     case 'd':
                     case 'D':
-                        curs_set(0);
-                        this->rc_active_context = -1;
-                        this->rc_matches.clear();
-                        if (msg[0] == 'D' || this->rc_is_alt_focus) {
-                            this->rc_alt_perform(this);
-                        } else {
-                            this->rc_perform(this);
+                        if (this->rc_active_context != -1) {
+                            notcurses_cursor_disable(
+                                ncplane_notcurses(this->vc_window));
+                            this->rc_active_context = -1;
+                            this->rc_matches.clear();
+                            if (msg[0] == 'D' || this->rc_is_alt_focus) {
+                                this->rc_alt_perform(this);
+                            } else {
+                                this->rc_perform(this);
+                            }
+                            this->rc_display_match(this);
+                            this->rc_blur(this);
                         }
-                        this->rc_display_match(this);
-                        this->rc_blur(this);
                         break;
 
                     case 'l': {
@@ -1453,12 +1463,10 @@ readline_curses::check_poll_set(const std::vector<struct pollfd>& pollfds)
 }
 
 void
-readline_curses::handle_key(int ch)
+readline_curses::handle_key(const ncinput& ch)
 {
-    int len;
-
-    const char* bch = this->map_input(ch, len);
-    if (write(this->rc_pty[RCF_MASTER], bch, len) == -1) {
+    const auto bch = this->map_input(ch);
+    if (write(this->rc_pty[RCF_MASTER], bch.data(), bch.length()) == -1) {
         perror("handle_key: write failed");
     }
 }
@@ -1471,9 +1479,8 @@ readline_curses::focus(int context,
     char cwd[MAXPATHLEN + 1024];
     char buffer[8 + sizeof(cwd)];
 
+    log_info("focusing context %d", context);
     require(this->rc_contexts.count(context) > 0);
-
-    curs_set(1);
 
     this->rc_active_context = context;
 
@@ -1659,14 +1666,17 @@ readline_curses::do_update()
         struct line_range lr(0, 0);
         attr_line_t alt_al;
         auto& vc = view_colors::singleton();
-
-        wmove(this->vc_window, this->get_actual_y(), this->vc_x);
         auto attrs = vc.attrs_for_role(role_t::VCR_TEXT);
-        wattr_set(this->vc_window,
-                  attrs.ta_attrs,
-                  vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
-                  nullptr);
-        whline(this->vc_window, ' ', actual_width);
+        nccell clear_cell;
+        nccell_init(&clear_cell);
+        nccell_prime(this->vc_window,
+                     &clear_cell,
+                     " ",
+                     0,
+                     view_colors::to_channels(attrs));
+        ncplane_cursor_move_yx(
+            this->vc_window, this->get_actual_y(), this->vc_x);
+        ncplane_hline(this->vc_window, &clear_cell, actual_width);
 
         if (time(nullptr) > this->rc_value_expiration) {
             this->rc_value.clear();
@@ -1676,7 +1686,8 @@ readline_curses::do_update()
             alt_al.get_string() = this->rc_alt_value;
             scrub_ansi_string(alt_al.get_string(), &alt_al.get_attrs());
 
-            alt_start = getmaxx(this->vc_window) - alt_al.get_string().size();
+            alt_start
+                = ncplane_dim_x(this->vc_window) - alt_al.get_string().size();
         }
 
         if (alt_start >= (int) (this->rc_value.length() + 5)) {
@@ -1703,15 +1714,15 @@ readline_curses::do_update()
             hl(al, this->vc_x + this->vc_cursor_x);
         }
         al.append(lnav::roles::suggestion(this->rc_suggestion));
-        view_curses::mvwattrline(this->vc_window,
-                                 this->get_actual_y(),
-                                 this->vc_x,
-                                 al,
-                                 line_range{0, (int) actual_width});
+        mvwattrline(this->vc_window,
+                    this->get_actual_y(),
+                    this->vc_x,
+                    al,
+                    line_range{0, (int) actual_width});
 
-        wmove(this->vc_window,
-              this->get_actual_y(),
-              this->vc_x + this->vc_cursor_x);
+        notcurses_cursor_enable(ncplane_notcurses(this->vc_window),
+                                this->get_actual_y(),
+                                this->vc_x + this->vc_cursor_x);
     }
 
     return true;
@@ -1782,11 +1793,12 @@ void
 readline_curses::update_poll_set(std::vector<struct pollfd>& pollfds)
 {
     if (this->rc_pty[RCF_MASTER] != -1) {
-        pollfds.push_back((struct pollfd){this->rc_pty[RCF_MASTER], POLLIN, 0});
+        pollfds.push_back(
+            (struct pollfd) {this->rc_pty[RCF_MASTER], POLLIN, 0});
     }
     if (this->rc_command_pipe[RCF_MASTER] != -1) {
         pollfds.push_back(
-            (struct pollfd){this->rc_command_pipe[RCF_MASTER], POLLIN, 0});
+            (struct pollfd) {this->rc_command_pipe[RCF_MASTER], POLLIN, 0});
     }
 }
 

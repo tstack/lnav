@@ -57,15 +57,16 @@ main(int argc, char* argv[])
     setlocale(LC_ALL, "");
 
     {
-        auto sc = screen_curses::create().unwrap();
-        WINDOW* win = sc.get_window();
+        notcurses_options nco;
+        memset(&nco, 0, sizeof(nco));
+        nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
+        auto sc = screen_curses::create(nco).unwrap();
         struct line_range lr(0, 40);
         attr_line_t al;
         int y = 0;
+        auto win = sc.get_std_plane();
 
-        curs_set(0);
-        noecho();
-        view_colors::singleton().init(false);
+        view_colors::singleton().init(sc.get_notcurses());
 
         al.with_string("Plain text");
         view_curses::mvwattrline(win, y++, 0, al, lr);
@@ -73,49 +74,53 @@ main(int argc, char* argv[])
         al.clear()
             .with_string("\tLeading tab")
             .with_attr(string_attr(line_range(0, 1),
-                                   VC_STYLE.value(text_attrs{A_REVERSE})));
+                                   VC_STYLE.value(text_attrs::with_reverse())));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         al.clear()
             .with_string("Tab\twith text")
             .with_attr(string_attr(line_range(1, 4),
-                                   VC_STYLE.value(text_attrs{A_REVERSE})));
+                                   VC_STYLE.value(text_attrs::with_reverse())));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         al.clear()
             .with_string("Tab\twith text #2")
             .with_attr(string_attr(line_range(3, 4),
-                                   VC_STYLE.value(text_attrs{A_REVERSE})));
+                                   VC_STYLE.value(text_attrs::with_reverse())));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         al.clear()
             .with_string("Two\ttabs\twith text")
             .with_attr(string_attr(line_range(4, 6),
-                                   VC_STYLE.value(text_attrs{A_REVERSE})))
+                                   VC_STYLE.value(text_attrs::with_reverse())))
             .with_attr(string_attr(line_range(9, 13),
-                                   VC_STYLE.value(text_attrs{A_REVERSE})));
+                                   VC_STYLE.value(text_attrs::with_reverse())));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
+        auto mixed_style = text_attrs{};
+        mixed_style.ta_fg_color = palette_color{COLOR_RED};
+        mixed_style.ta_bg_color = palette_color{COLOR_BLACK};
         al.clear()
             .with_string("Text with mixed attributes.")
             .with_attr(string_attr(
                 line_range(5, 9),
-                VC_STYLE.value(text_attrs{0, COLOR_RED, COLOR_BLACK})))
+                VC_STYLE.value(mixed_style)))
             .with_attr(string_attr(line_range(7, 12),
-                                   VC_STYLE.value(text_attrs{A_REVERSE})));
+                                   VC_STYLE.value(text_attrs::with_reverse())));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
         const char* text = u8"Text with unicode ▶ characters";
         int offset = strstr(text, "char") - text;
         al.clear().with_string(text).with_attr(
             string_attr(line_range(offset, offset + 4),
-                        VC_STYLE.value(text_attrs{A_REVERSE})));
+                        VC_STYLE.value(text_attrs::with_reverse())));
         view_curses::mvwattrline(win, y++, 0, al, lr);
 
-        wmove(win, y, 0);
-        refresh();
+        notcurses_render(sc.get_notcurses());
+
         if (wait_for_input) {
-            getch();
+            ncinput nci;
+            notcurses_get_blocking(sc.get_notcurses(), &nci);
         }
     }
 

@@ -65,27 +65,6 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 
-#if defined HAVE_NCURSESW_CURSES_H
-#    include <ncursesw/curses.h>
-#    include <ncursesw/termcap.h>
-#elif defined HAVE_NCURSESW_H
-#    include <ncursesw.h>
-#    include <termcap.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#    include <ncurses/curses.h>
-#    include <ncurses/termcap.h>
-#elif defined HAVE_NCURSES_H
-#    include <ncurses.h>
-#    include <termcap.h>
-#elif defined HAVE_CURSESW_H
-#    include <cursesw.h>
-#elif defined HAVE_CURSES_H
-#    include <curses.h>
-#    include <termcap.h>
-#else
-#    error "SysV or X/Open-compatible Curses header file required"
-#endif
-
 #include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "enum_util.hh"

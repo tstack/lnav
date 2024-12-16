@@ -92,11 +92,11 @@ public:
     virtual void listview_gutter_value_for_range(const listview_curses& lv,
                                                  int start,
                                                  int end,
-                                                 chtype& ch_out,
+                                                 const char*& ch_out,
                                                  role_t& role_out,
                                                  role_t& bar_role_out)
     {
-        ch_out = ACS_VLINE;
+        ch_out = NCACS_VLINE;
     }
 };
 
@@ -155,7 +155,7 @@ class list_input_delegate {
 public:
     virtual ~list_input_delegate() = default;
 
-    virtual bool list_input_handle_key(listview_curses& lv, int ch) = 0;
+    virtual bool list_input_handle_key(listview_curses& lv, const ncinput& ch) = 0;
 
     virtual void list_input_handle_scroll_out(listview_curses& lv) {}
 };
@@ -324,10 +324,10 @@ public:
     }
 
     /** @param win The curses window this view is attached to. */
-    void set_window(WINDOW* win) { this->lv_window = win; }
+    void set_window(ncplane* win) { this->lv_window = win; }
 
     /** @return The curses window this view is attached to. */
-    WINDOW* get_window() const { return this->lv_window; }
+    ncplane* get_window() const { return this->lv_window; }
 
     /**
      * Set the line number to be displayed at the top of the view.  If the
@@ -446,7 +446,7 @@ public:
      */
     void get_dimensions(vis_line_t& height_out, unsigned long& width_out) const
     {
-        int height;
+        unsigned int height;
 
         if (this->lv_window == nullptr) {
             height_out = std::max(this->lv_height, 1_vl);
@@ -456,8 +456,9 @@ public:
                 width_out = 80;
             }
         } else {
-            int width_tmp;
-            getmaxyx(this->lv_window, height, width_tmp);
+            unsigned int width_tmp;
+
+            ncplane_dim_yx(this->lv_window, &height, &width_tmp);
             width_out = width_tmp;
             if (this->lv_height < 0) {
                 height_out = vis_line_t(height) + this->lv_height
@@ -492,7 +493,7 @@ public:
      * @param ch The input to be handled.
      * @return True if the key was eaten by this view.
      */
-    bool handle_key(int ch);
+    bool handle_key(const ncinput& ch);
 
     /**
      * Query the data source and draw the visible lines on the display.
@@ -575,7 +576,7 @@ protected:
     std::list<list_input_delegate*> lv_input_delegates;
     list_overlay_source* lv_overlay_source{nullptr};
     action lv_scroll; /*< The scroll action. */
-    WINDOW* lv_window{nullptr}; /*< The window that contains this view. */
+    ncplane* lv_window{nullptr}; /*< The window that contains this view. */
     vis_line_t lv_top{0}; /*< The line at the top of the view. */
     int lv_left{0}; /*< The column at the left of the view. */
     vis_line_t lv_height{0}; /*< The abs/rel height of the view. */

@@ -152,6 +152,7 @@ to_json(yajlpp_gen& gen, const attr_line_t& al)
                     [&](const timespec& ts) { elem_map.gen(""); },
                     [&](const string_fragment& sf) { elem_map.gen(sf); },
                     [&](const block_elem_t& be) { elem_map.gen(""); },
+                    [&](const styling::color_unit& rgb) { elem_map.gen(""); },
                     [&](const ui_icon_t& ic) { elem_map.gen(""); });
             }
         }
@@ -262,7 +263,7 @@ read_string_attr_int_value(yajlpp_parse_context* ypc, long long in)
         sa->sa_value = static_cast<role_t>(in);
     } else if (sa->sa_type == &VC_STYLE) {
         sa->sa_value = text_attrs{
-            static_cast<int32_t>(in),
+            static_cast<uint32_t>(in),
         };
     }
     return 1;

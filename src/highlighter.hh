@@ -82,15 +82,6 @@ struct highlighter {
         return *this;
     }
 
-    highlighter& with_color(const styling::color_unit& fg,
-                            const styling::color_unit& bg)
-    {
-        this->h_fg = fg;
-        this->h_bg = bg;
-
-        return *this;
-    }
-
     highlighter& with_name(std::string name)
     {
         this->h_name = std::move(name);
@@ -111,8 +102,6 @@ struct highlighter {
 
     std::string h_name;
     role_t h_role{role_t::VCR_NONE};
-    styling::color_unit h_fg{styling::color_unit::make_empty()};
-    styling::color_unit h_bg{styling::color_unit::make_empty()};
     std::shared_ptr<lnav::pcre2pp::code> h_regex;
     text_attrs h_attrs;
     std::set<text_format_t> h_text_formats;

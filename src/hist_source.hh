@@ -250,8 +250,7 @@ public:
         lr.lr_end = left = lr.lr_start + amount;
 
         if (!ci.ci_attrs.empty() && !lr.empty()) {
-            auto rev_attrs = ci.ci_attrs;
-            rev_attrs.ta_attrs |= A_REVERSE;
+            const auto rev_attrs = ci.ci_attrs | text_attrs::style::reverse;
             value_out.emplace_back(lr, VC_STYLE.value(rev_attrs));
         }
     }

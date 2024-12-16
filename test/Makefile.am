@@ -28,6 +28,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/fmtlib \
 	-I$(top_srcdir)/src/third-party \
 	-I$(top_srcdir)/src/third-party/date/include \
+	-I$(top_srcdir)/src/third-party/notcurses/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	$(CODE_COVERAGE_CPPFLAGS) \
 	$(LIBARCHIVE_CFLAGS) \
@@ -87,7 +88,6 @@ check_PROGRAMS = \
 	test_grep_proc2 \
 	test_line_buffer2 \
 	test_log_accel \
-	test_ncurses_unicode \
 	test_reltime \
 	test_text_anonymizer \
 	test_top_status
@@ -127,6 +127,7 @@ LDADD = \
     $(top_builddir)/src/pugixml/libpugixml.a \
     $(top_builddir)/src/third-party/base64/lib/libbase64.a \
     $(top_builddir)/src/third-party/date/src/libdatepp.a \
+	$(top_builddir)/src/third-party/notcurses/src/lib/liblnavnotcurses.a \
     $(top_builddir)/src/third-party/scnlib/src/libscnlib.a \
     $(READLINE_LIBS) \
     $(CURSES_LIB) \
@@ -134,7 +135,8 @@ LDADD = \
     $(SQLITE3_LIBS) \
     $(PCRE_LIBS) \
     $(LIBCURL) \
-    $(RUST_DEPS_LIBS)
+    $(RUST_DEPS_LIBS) \
+    -lunistring
 
 test_ansi_scrubber_SOURCES = test_ansi_scrubber.cc
 
@@ -159,8 +161,6 @@ test_top_status_SOURCES = test_top_status.cc
 test_abbrev_SOURCES = test_abbrev.cc
 
 test_reltime_SOURCES = test_reltime.cc
-
-test_ncurses_unicode_SOURCES = test_ncurses_unicode.cc
 
 lnav_doctests_SOURCES = lnav_doctests.cc
 
@@ -525,10 +525,8 @@ TESTS = \
 	test_sql_yaml_func.sh \
 	test_text_anonymizer \
 	test_text_file.sh \
-	test_tui.sh \
 	test_pretty_print.sh \
-    test_view_colors.sh \
-	test_vt52_curses.sh
+    test_view_colors.sh
 
 if HAVE_CARGO
 TESTS += test_prql.sh
@@ -537,8 +535,10 @@ endif
 DISABLED_TESTS = \
 	test_remote.sh \
 	test_top_status \
+	test_tui.sh \
 	test_line_buffer2 \
-    test_line_buffer.sh
+    test_line_buffer.sh \
+    test_vt52_curses.sh
 
 if HAVE_LIBCURL
 TESTS += \

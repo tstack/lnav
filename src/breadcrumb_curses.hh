@@ -44,7 +44,7 @@ public:
 
     breadcrumb_curses();
 
-    void set_window(WINDOW* win)
+    void set_window(ncplane* win)
     {
         this->bc_window = win;
         this->bc_match_view.set_window(win);
@@ -60,7 +60,7 @@ public:
     void focus();
     void blur();
 
-    bool handle_key(int ch);
+    bool handle_key(const ncinput& ch);
 
     bool do_update() override;
 
@@ -89,7 +89,7 @@ private:
 
     void perform_selection(perform_behavior_t behavior);
 
-    WINDOW* bc_window{nullptr};
+    ncplane* bc_window{nullptr};
     std::function<std::vector<breadcrumb::crumb>()> bc_line_source;
     std::vector<breadcrumb::crumb> bc_focused_crumbs;
     std::optional<size_t> bc_selected_crumb;

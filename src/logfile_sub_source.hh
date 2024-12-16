@@ -317,7 +317,7 @@ public:
 
     void clear_min_max_log_times();
 
-    bool list_input_handle_key(listview_curses& lv, int ch);
+    bool list_input_handle_key(listview_curses& lv, const ncinput& ch);
 
     void set_marked_only(bool val)
     {

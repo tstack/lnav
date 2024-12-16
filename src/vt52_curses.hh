@@ -54,10 +54,10 @@
 class vt52_curses : public view_curses {
 public:
     /** @param win The curses window this view is attached to. */
-    void set_window(WINDOW* win) { this->vc_window = win; }
+    void set_window(ncplane* win) { this->vc_window = win; }
 
     /** @return The curses window this view is attached to. */
-    WINDOW* get_window() { return this->vc_window; }
+    ncplane* get_window() { return this->vc_window; }
 
     /** @param x The X position of the cursor on the curses display. */
     void set_cursor_x(int x) { this->vc_cursor_x = x; }
@@ -83,7 +83,7 @@ public:
      * @param len_out The length of the returned sequence.
      * @return The vt52 sequence to send to the child.
      */
-    const char* map_input(int ch, int& len_out);
+    string_fragment map_input(const ncinput& ch);
 
     /**
      * Map VT52 output to ncurses calls.
@@ -107,10 +107,10 @@ protected:
     /** @return The absolute Y position of this view. */
     int get_actual_y()
     {
-        int width, height;
+        unsigned int width, height;
         int retval;
 
-        getmaxyx(this->vc_window, height, width);
+        ncplane_dim_yx(this->vc_window, &height, &width);
         if (this->vc_y < 0) {
             retval = height + this->vc_y;
         } else {
@@ -122,7 +122,7 @@ protected:
 
     int get_actual_width()
     {
-        auto retval = getmaxx(this->vc_window);
+        auto retval = ncplane_dim_x(this->vc_window);
 
         if (this->vc_width < 0) {
             retval -= this->vc_x;
@@ -135,7 +135,7 @@ protected:
         return retval;
     }
 
-    WINDOW* vc_window{nullptr}; /*< The window that contains this view. */
+    ncplane* vc_window{nullptr}; /*< The window that contains this view. */
     int vc_cursor_x{0}; /*< The X position of the cursor. */
     int vc_max_height{0};
     char vc_escape[16]; /*< Storage for escape sequences. */

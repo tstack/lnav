@@ -228,17 +228,17 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
                 value_out.emplace_back(lr,
                                        VC_ROLE.value(role_t::VCR_OFFSET_TIME));
                 value_out.emplace_back(line_range(12, 13),
-                                       VC_GRAPHIC.value(ACS_VLINE));
+                                       VC_GRAPHIC.value(NCACS_VLINE));
 
-                role_t bar_role = role_t::VCR_NONE;
+                auto bar_role = role_t::VCR_NONE;
 
                 switch (this->get_line_accel_direction(vis_line_t(row))) {
-                    case log_accel::A_STEADY:
+                    case log_accel::direction_t::A_STEADY:
                         break;
-                    case log_accel::A_DECEL:
+                    case log_accel::direction_t::A_DECEL:
                         bar_role = role_t::VCR_DIFF_DELETE;
                         break;
-                    case log_accel::A_ACCEL:
+                    case log_accel::direction_t::A_ACCEL:
                         bar_role = role_t::VCR_DIFF_ADD;
                         break;
                 }
@@ -1532,7 +1532,7 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
     {
         text_attrs ta;
 
-        ta.ta_attrs |= A_UNDERLINE;
+        ta.ta_attrs |= NCSTYLE_UNDERLINE;
         value_out.append("\u24d8"_info)
             .append(" The following is a rendered view of the content.  Use ")
             .append(lnav::roles::quoted_code(":set-text-view-mode raw"))
@@ -1566,6 +1566,6 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
             alb.appendf(FMT_STRING("  {:^17}"), "ASCII");
         }
     }
-    value_out.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
+    value_out.with_attr_for_all(VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
     return true;
 }

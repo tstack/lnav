@@ -184,15 +184,13 @@ const bookmark_type_t textview_curses::BM_SEARCH("search");
 const bookmark_type_t textview_curses::BM_META("meta");
 const bookmark_type_t textview_curses::BM_PARTITION("partition");
 
-textview_curses::
-textview_curses()
+textview_curses::textview_curses()
     : lnav_config_listener(__FILE__), tc_search_action(noop_func{})
 {
     this->set_data_source(this);
 }
 
-textview_curses::~
-textview_curses()
+textview_curses::~textview_curses()
 {
     this->tc_search_action = noop_func{};
 }
@@ -201,6 +199,7 @@ void
 textview_curses::reload_config(error_reporter& reporter)
 {
     const static auto DEFAULT_THEME_NAME = std::string("default");
+    const auto& vc = view_colors::singleton();
 
     for (auto iter = this->tc_highlights.begin();
          iter != this->tc_highlights.end();)
@@ -245,40 +244,41 @@ textview_curses::reload_config(error_reporter& reporter)
             shlex(fg1).eval(fg_color, scoped_resolver{&vars});
             shlex(bg1).eval(bg_color, scoped_resolver{&vars});
 
-            auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
-                [&](const auto& msg) {
-                    reporter(&sc.sc_color,
-                             lnav::console::user_message::error(
-                                 attr_line_t("invalid color -- ")
-                                     .append_quoted(sc.sc_color))
-                                 .with_reason(msg));
-                    invalid = true;
-                    return styling::color_unit::make_empty();
-                });
-            auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse(
-                [&](const auto& msg) {
-                    reporter(&sc.sc_background_color,
-                             lnav::console::user_message::error(
-                                 attr_line_t("invalid background color -- ")
-                                     .append_quoted(sc.sc_background_color))
-                                 .with_reason(msg));
-                    invalid = true;
-                    return styling::color_unit::make_empty();
-                });
+            attrs.ta_fg_color = vc.match_color(
+                styling::color_unit::from_str(fg_color).unwrapOrElse(
+                    [&](const auto& msg) {
+                        reporter(&sc.sc_color,
+                                 lnav::console::user_message::error(
+                                     attr_line_t("invalid color -- ")
+                                         .append_quoted(sc.sc_color))
+                                     .with_reason(msg));
+                        invalid = true;
+                        return styling::color_unit::make_empty();
+                    }));
+            attrs.ta_bg_color = vc.match_color(
+                styling::color_unit::from_str(bg_color).unwrapOrElse(
+                    [&](const auto& msg) {
+                        reporter(&sc.sc_background_color,
+                                 lnav::console::user_message::error(
+                                     attr_line_t("invalid background color -- ")
+                                         .append_quoted(sc.sc_background_color))
+                                     .with_reason(msg));
+                        invalid = true;
+                        return styling::color_unit::make_empty();
+                    }));
             if (invalid) {
                 continue;
             }
 
             if (sc.sc_bold) {
-                attrs.ta_attrs |= A_BOLD;
+                attrs |= text_attrs::style::bold;
             }
             if (sc.sc_underline) {
-                attrs.ta_attrs |= A_UNDERLINE;
+                attrs |= text_attrs::style::underline;
             }
             this->tc_highlights[{highlight_source_t::THEME, hl_pair.first}]
                 = highlighter(hl_pair.second.hc_regex.pp_value)
                       .with_attrs(attrs)
-                      .with_color(fg, bg)
                       .with_nestable(false);
         }
     }
@@ -305,15 +305,14 @@ textview_curses::reload_data()
     this->tc_selected_text = std::nullopt;
     if (this->tc_sub_source != nullptr) {
         this->tc_sub_source->text_update_marks(this->tc_bookmarks);
-    }
-    if (this->tc_sub_source != nullptr) {
+
         auto* ttt = dynamic_cast<text_time_translator*>(this->tc_sub_source);
 
         if (ttt != nullptr) {
             ttt->data_reloaded(this);
         }
+        listview_curses::reload_data();
     }
-    listview_curses::reload_data();
 }
 
 void
@@ -821,7 +820,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
             user_expr_marks.begin(), user_expr_marks.end(), row))
     {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
-                        VC_STYLE.value(text_attrs{A_REVERSE}));
+                        VC_STYLE.value(text_attrs::with_reverse()));
     }
 
     if (this->tc_selected_text) {
@@ -1311,8 +1310,7 @@ text_sub_source::text_crumbs_for_line(int line,
 {
 }
 
-logfile_filter_state::
-logfile_filter_state(std::shared_ptr<logfile> lf)
+logfile_filter_state::logfile_filter_state(std::shared_ptr<logfile> lf)
     : tfs_logfile(std::move(lf))
 {
     memset(this->tfs_filter_count, 0, sizeof(this->tfs_filter_count));

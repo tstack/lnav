@@ -148,6 +148,7 @@
 #include "archive_manager.hh"
 #include "command_executor.hh"
 #include "field_overlay_source.hh"
+#include "fmt/compile.h"
 #include "hotkeys.hh"
 #include "readline_callbacks.hh"
 #include "readline_possibilities.hh"
@@ -176,6 +177,37 @@ const int ZOOM_LEVELS[] = {
     8 * 60 * 60,
     24 * 60 * 60,
     7 * 24 * 60 * 60,
+};
+
+template<std::intmax_t N>
+class to_string_t {
+    constexpr static auto buflen() noexcept
+    {
+        unsigned int len = N > 0 ? 1 : 2;
+        for (auto n = N; n; len++, n /= 10)
+            ;
+        return len;
+    }
+
+    char buf[buflen()] = {};
+
+public:
+    constexpr to_string_t() noexcept
+    {
+        auto ptr = buf + buflen();
+        *--ptr = '\0';
+
+        if (N != 0) {
+            for (auto n = N; n; n /= 10)
+                *--ptr = "0123456789"[(N < 0 ? -1 : 1) * (n % 10)];
+            if (N < 0)
+                *--ptr = '-';
+        } else {
+            buf[0] = '0';
+        }
+    }
+
+    constexpr operator const char*() const { return buf; }
 };
 
 const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
@@ -367,27 +399,31 @@ sigchld(int sig)
 }
 
 static void
-handle_rl_key(int ch, const char* keyseq)
+handle_rl_key(notcurses* nc, const ncinput& ch, const char* keyseq)
 {
-    switch (ch) {
-        case KEY_F(2):
-            if (xterm_mouse::is_available()) {
-                auto& mouse_i = injector::get<xterm_mouse&>();
-                mouse_i.set_enabled(!mouse_i.is_enabled());
-            }
+    switch (ch.eff_text[0]) {
+        case NCKEY_F02: {
+            auto& mouse_i = injector::get<xterm_mouse&>();
+            mouse_i.set_enabled(nc, !mouse_i.is_enabled());
             break;
-        case KEY_PPAGE:
-        case KEY_NPAGE:
-        case KEY_CTRL('p'):
-            handle_paging_key(ch, keyseq);
+        }
+        case NCKEY_PGUP:
+        case NCKEY_PGDOWN:
+            handle_paging_key(nc, ch, keyseq);
             break;
-
-        case KEY_CTRL(']'):
+        case NCKEY_ESC:
+        case NCKEY_GS:
             lnav_data.ld_rl_view->abort();
             break;
 
         default:
-            lnav_data.ld_rl_view->handle_key(ch);
+            if (ch.id == 'P' && ncinput_ctrl_p(&ch)) {
+                handle_paging_key(nc, ch, keyseq);
+            } else if (ch.id == ']' && ncinput_ctrl_p(&ch)) {
+                lnav_data.ld_rl_view->abort();
+            } else {
+                lnav_data.ld_rl_view->handle_key(ch);
+            }
             break;
     }
 }
@@ -675,21 +711,21 @@ update_view_position(listview_curses* lv)
 }
 
 static bool
-handle_config_ui_key(int ch, const char* keyseq)
+handle_config_ui_key(notcurses* nc, const ncinput& ch, const char* keyseq)
 {
     bool retval = false;
 
-    if (ch == KEY_F(2)) {
-        if (xterm_mouse::is_available()) {
-            auto& mouse_i = injector::get<xterm_mouse&>();
-            mouse_i.set_enabled(!mouse_i.is_enabled());
-        }
+    if (ch.id == NCKEY_F02) {
+        auto& mouse_i = injector::get<xterm_mouse&>();
+        mouse_i.set_enabled(nc, !mouse_i.is_enabled());
         return retval;
     }
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::FILES:
-            if (ch == KEY_CTRL(']')) {
+            if (ch.eff_text[0] == NCKEY_GS
+                || (ch.id == ']' && ncinput_ctrl_p(&ch)))
+            {
                 set_view_mode(ln_mode_t::FILE_DETAILS);
                 retval = true;
             } else {
@@ -697,7 +733,9 @@ handle_config_ui_key(int ch, const char* keyseq)
             }
             break;
         case ln_mode_t::FILE_DETAILS:
-            if (ch == KEY_ESCAPE || ch == KEY_CTRL(']')) {
+            if (ch.id == NCKEY_ESC || ch.eff_text[0] == NCKEY_GS
+                || (ch.id == ']' && ncinput_ctrl_p(&ch)))
+            {
                 set_view_mode(ln_mode_t::FILES);
                 retval = true;
             } else {
@@ -718,17 +756,19 @@ handle_config_ui_key(int ch, const char* keyseq)
     std::optional<ln_mode_t> new_mode;
 
     lnav_data.ld_filter_help_status_source.fss_error.clear();
-    if (ch == 'F') {
+    if (ch.id == 'F') {
         new_mode = ln_mode_t::FILES;
-    } else if (ch == 'T') {
+    } else if (ch.id == 'T') {
         new_mode = ln_mode_t::FILTER;
-    } else if (ch == '\t' || ch == KEY_BTAB) {
+    } else if (ch.id == '\t'
+               || (ch.id == NCKEY_TAB && ch.modifiers & NCKEY_MOD_SHIFT))
+    {
         if (lnav_data.ld_mode == ln_mode_t::FILES) {
             new_mode = ln_mode_t::FILTER;
         } else {
             new_mode = ln_mode_t::FILES;
         }
-    } else if (ch == 'q' || ch == KEY_ESCAPE) {
+    } else if (ch.id == 'q' || ch.id == NCKEY_ESC) {
         new_mode = ln_mode_t::PAGING;
     }
 
@@ -744,29 +784,29 @@ handle_config_ui_key(int ch, const char* keyseq)
         lnav_data.ld_filter_view.reload_data();
         lnav_data.ld_status[LNS_FILTER].set_needs_update();
     } else {
-        return handle_paging_key(ch, keyseq);
+        return handle_paging_key(nc, ch, keyseq);
     }
 
     return true;
 }
 
 static bool
-handle_key(int ch, const char* keyseq)
+handle_key(notcurses* nc, const ncinput& ch, const char* keyseq)
 {
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
 
-    lnav_data.ld_input_state.push_back(ch);
+    lnav_data.ld_input_state.push_back(ch.id);
 
-    switch (ch) {
-        case KEY_RESIZE:
+    switch (ch.id) {
+        case NCKEY_RESIZE:
             break;
         default: {
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::PAGING:
-                    return handle_paging_key(ch, keyseq);
+                    return handle_paging_key(nc, ch, keyseq);
 
                 case ln_mode_t::BREADCRUMBS:
-                    if (ch == '`' || !breadcrumb_view->handle_key(ch)) {
+                    if (ch.id == '`' || !breadcrumb_view->handle_key(ch)) {
                         set_view_mode(ln_mode_t::PAGING);
                         return true;
                     }
@@ -775,17 +815,17 @@ handle_key(int ch, const char* keyseq)
                 case ln_mode_t::FILTER:
                 case ln_mode_t::FILES:
                 case ln_mode_t::FILE_DETAILS:
-                    return handle_config_ui_key(ch, keyseq);
+                    return handle_config_ui_key(nc, ch, keyseq);
 
                 case ln_mode_t::SPECTRO_DETAILS: {
-                    if (ch == '\t' || ch == 'q') {
+                    if (ch.id == '\t' || ch.id == 'q') {
                         set_view_mode(ln_mode_t::PAGING);
                         return true;
                     }
                     if (lnav_data.ld_spectro_details_view.handle_key(ch)) {
                         return true;
                     }
-                    switch (ch) {
+                    switch (ch.eff_text[0]) {
                         case 'n': {
                             execute_command(lnav_data.ld_exec_context,
                                             "next-mark search");
@@ -814,17 +854,17 @@ handle_key(int ch, const char* keyseq)
                 case ln_mode_t::SQL:
                 case ln_mode_t::EXEC:
                 case ln_mode_t::USER:
-                    handle_rl_key(ch, keyseq);
+                    handle_rl_key(nc, ch, keyseq);
                     break;
 
-                case ln_mode_t::BUSY:
-                    switch (ch) {
-                        case KEY_ESCAPE:
-                        case KEY_CTRL(']'):
-                            log_vtab_data.lvd_looping = false;
-                            break;
+                case ln_mode_t::BUSY: {
+                    if (ch.id == NCKEY_ESC || ch.eff_text[0] == NCKEY_GS
+                        || (ch.id == ']' && ncinput_ctrl_p(&ch)))
+                    {
+                        log_vtab_data.lvd_looping = false;
                     }
                     break;
+                }
 
                 default:
                     require(0);
@@ -926,19 +966,21 @@ struct refresh_status_bars {
 
     void doit() const
     {
-        struct timeval current_time {};
-        int ch;
+        struct timeval current_time{};
+        ncinput ch;
 
         gettimeofday(&current_time, nullptr);
-        while ((ch = getch()) != ERR) {
+        while (notcurses_get_nblock(this->rsb_screen->get_notcurses(), &ch) > 0)
+        {
             lnav_data.ld_user_message_source.clear();
 
             alerter::singleton().new_input(ch);
 
-            lnav_data.ld_input_dispatcher.new_input(current_time, ch);
+            lnav_data.ld_input_dispatcher.new_input(
+                current_time, this->rsb_screen->get_notcurses(), ch);
 
             lnav_data.ld_view_stack.top() | [ch](auto tc) {
-                lnav_data.ld_key_repeat_history.update(ch, tc->get_top());
+                lnav_data.ld_key_repeat_history.update(ch.id, tc->get_top());
             };
 
             if (!lnav_data.ld_looping) {
@@ -954,13 +996,15 @@ struct refresh_status_bars {
             sc.do_update();
         }
         lnav_data.ld_rl_view->do_update();
-        if (handle_winch()) {
+        if (handle_winch(this->rsb_screen)) {
             layout_views();
             lnav_data.ld_view_stack.do_update();
         }
-        refresh();
+
+        notcurses_render(this->rsb_screen->get_notcurses());
     }
 
+    screen_curses* rsb_screen;
     std::shared_ptr<top_status_source> rsb_top_source;
 };
 
@@ -1146,9 +1190,7 @@ looper()
         }
         auto echo_views_stmt = echo_views_stmt_res.unwrap();
 
-        if (xterm_mouse::is_available()
-            && lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled)
-        {
+        if (lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled) {
             auto mouse_note = prepare_stmt(lnav_data.ld_db, R"(
 INSERT INTO lnav_user_notifications (id, priority, expiration, message)
 VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
@@ -1170,8 +1212,24 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         (void) signal(SIGINT, sigint);
         (void) signal(SIGTERM, sigint);
         (void) signal(SIGWINCH, sigwinch);
+        auto _ign_signal = finally([] {
+            signal(SIGWINCH, SIG_IGN);
+            lnav_data.ld_winched = false;
+        });
 
-        auto create_screen_res = screen_curses::create();
+        auto_fd errpipe[2];
+        auto_fd::pipe(errpipe);
+
+        errpipe[0].close_on_exec();
+        errpipe[1].close_on_exec();
+        auto pipe_err_handle
+            = log_pipe_err(errpipe[0].release(), errpipe[1].release());
+
+        notcurses_options nco;
+        memset(&nco, 0, sizeof(nco));
+        nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
+        nco.loglevel = NCLOGLEVEL_PANIC;
+        auto create_screen_res = screen_curses::create(nco);
 
         if (create_screen_res.isErr()) {
             log_error("create screen failed with: %s",
@@ -1184,14 +1242,36 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
 
         auto sc = create_screen_res.unwrap();
+        auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());
 
-        auto_fd errpipe[2];
-        auto_fd::pipe(errpipe);
+        ec.ec_ui_callbacks.uc_pre_stdout_write = [&sc]() {
+            notcurses_leave_alternate_screen(sc.get_notcurses());
 
-        errpipe[0].close_on_exec();
-        errpipe[1].close_on_exec();
-        auto pipe_err_handle
-            = log_pipe_err(errpipe[0].release(), errpipe[1].release());
+            // notcurses sets stdio to non-blocking, which can cause an issue
+            // when writing since there is a chance of an EAGAIN happening
+            const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
+            fcntl(STDOUT_FILENO, F_SETFL, fl & ~O_NONBLOCK);
+        };
+        ec.ec_ui_callbacks.uc_post_stdout_write = [&sc]() {
+            const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
+            fcntl(STDOUT_FILENO, F_SETFL, fl | O_NONBLOCK);
+
+            auto nci = ncinput{};
+            do {
+                notcurses_get_blocking(sc.get_notcurses(), &nci);
+            } while (nci.evtype == NCTYPE_RELEASE || ncinput_lock_p(&nci)
+                     || ncinput_modifier_p(&nci));
+            notcurses_enter_alternate_screen(sc.get_notcurses());
+            notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
+            // XXX doing this refresh twice since it doesn't seem to be enough
+            // to do it once...
+            notcurses_render(sc.get_notcurses());
+            notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
+        };
+        ec.ec_ui_callbacks.uc_redraw = [&sc]() {
+            notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
+        };
+
         lnav_behavior lb;
 
         ui_periodic_timer::singleton();
@@ -1199,16 +1279,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         auto& mouse_i = injector::get<xterm_mouse&>();
 
         mouse_i.set_behavior(&lb);
-        mouse_i.set_enabled(check_experimental("mouse")
-                            || lnav_config.lc_mouse_mode
-                                == lnav_mouse_mode::enabled);
+        mouse_i.set_enabled(
+            sc.get_notcurses(),
+            check_experimental("mouse")
+                || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
 
-        lnav_data.ld_window = sc.get_window();
-        keypad(stdscr, TRUE);
-        (void) nonl();
-        (void) cbreak();
-        (void) noecho();
-        (void) nodelay(lnav_data.ld_window, 1);
+        lnav_data.ld_window = sc.get_std_plane();
 
 #ifdef VDSUSP
         {
@@ -1220,11 +1296,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
 #endif
 
-        define_key("\033Od", KEY_BEG);
-        define_key("\033Oc", KEY_END);
-
-        view_colors& vc = view_colors::singleton();
-        view_colors::init(false);
+        auto& vc = view_colors::singleton();
+        view_colors::init(sc.get_notcurses());
 
         auto ecb_guard
             = lnav_data.ld_exec_context.add_error_callback([](const auto& um) {
@@ -1252,11 +1325,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
             for (const auto& format : log_format::get_root_formats()) {
                 for (auto& hl : format->lf_highlighters) {
-                    if (hl.h_fg.empty() && hl.h_bg.empty()
-                        && hl.h_attrs.empty())
-                    {
-                        hl.with_attrs(hl.h_attrs
-                                      | vc.attrs_for_ident(hl.h_name));
+                    if (hl.h_attrs.empty()) {
+                        hl.with_attrs(vc.attrs_for_ident(hl.h_name));
                     }
 
                     lnav_data.ld_views[LNV_LOG].get_highlights()[{
@@ -1281,12 +1351,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         rlc->set_blur_action(rl_blur);
         rlc->set_completion_request_action(rl_completion_request);
         rlc->set_alt_value(
-            HELP_MSG_2(e,
-                       E,
-                       "to move forward/backward through " ANSI_COLOR(
-                           COLOR_RED) "error" ANSI_NORM " messages"));
-
-        (void) curs_set(0);
+            fmt::format(FMT_STRING(HELP_MSG_2(
+                            e,
+                            E,
+                            "to move forward/backward through " ANSI_ROLE_FMT(
+                                "error") " messages")),
+                        lnav::enums::to_underlying(role_t::VCR_ERROR)));
 
         lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
 
@@ -1412,7 +1482,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         auto top_status_lifetime
             = injector::bind<top_status_source>::to_scoped_singleton();
-
         auto top_source = injector::get<std::shared_ptr<top_status_source>>();
 
         lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
@@ -1492,8 +1561,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             id.id_escape_matcher = match_escape_seq;
             id.id_escape_handler = handle_keyseq;
             id.id_key_handler = handle_key;
-            id.id_mouse_handler
-                = std::bind(&xterm_mouse::handle_mouse, &mouse_i);
+            id.id_mouse_handler = [&mouse_i](notcurses* nc, const ncinput& ch) {
+                mouse_i.handle_mouse(nc, ch);
+            };
             id.id_unhandled_handler = [](const char* keyseq) {
                 auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
                 auto encoded_name = (char*) alloca(enc_len);
@@ -1522,6 +1592,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = injector::bind<refresh_status_bars>::to_scoped_singleton();
 
         auto refresher = injector::get<std::shared_ptr<refresh_status_bars>>();
+        refresher->rsb_screen = &sc;
 
         auto refresh_guard = lnav_data.ld_status_refresher.install(
             [refresher]() { refresher->doit(); });
@@ -1668,6 +1739,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             {
                 lnav_data.ld_view_stack.set_needs_update();
             }
+            ncplane_resize_maximize(sc.get_std_plane());
             if (lnav_data.ld_view_stack.do_update()) {
                 breadcrumb_view->set_needs_update();
             }
@@ -1715,11 +1787,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             {
                 rlc->do_update();
             }
-            refresh();
+            notcurses_render(sc.get_notcurses());
 
             if (lnav_data.ld_session_loaded) {
                 // Only take input from the user after everything has loaded.
-                pollfds.push_back((struct pollfd){STDIN_FILENO, POLLIN, 0});
+                pollfds.push_back((struct pollfd) {inputready_fd, POLLIN, 0});
                 if (lnav_data.ld_initial_build) {
                     switch (lnav_data.ld_mode) {
                         case ln_mode_t::COMMAND:
@@ -1759,16 +1831,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                       loop_deadline - ui_now)
                 : 0ms;
 
-            if (initial_rescan_completed
-                && lnav_data.ld_input_dispatcher.in_escape() && poll_to > 15ms)
-            {
-                poll_to = 15ms;
-            }
+            // log_debug("poll");
             rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
 
             gettimeofday(&current_time, nullptr);
-            lnav_data.ld_input_dispatcher.poll(current_time);
-
             if (lb.lb_last_view != nullptr) {
                 lb.lb_last_event.me_time = current_time;
                 lb.lb_last_view->handle_mouse(lb.lb_last_event);
@@ -1786,27 +1852,26 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         break;
                 }
             } else {
-                auto in_revents = pollfd_revents(pollfds, STDIN_FILENO);
+                auto in_revents = pollfd_revents(pollfds, inputready_fd);
 
                 if (in_revents & (POLLHUP | POLLNVAL)) {
                     log_info("stdin has been closed, exiting...");
                     lnav_data.ld_looping = false;
                 } else if (in_revents & POLLIN) {
-                    int ch;
-
+                    ncinput nci;
                     auto old_gen
                         = lnav_data.ld_active_files.fc_files_generation;
-                    while ((ch = getch()) != ERR) {
+                    while (notcurses_get_nblock(sc.get_notcurses(), &nci) > 0) {
                         lnav_data.ld_user_message_source.clear();
 
-                        alerter::singleton().new_input(ch);
+                        alerter::singleton().new_input(nci);
 
-                        lnav_data.ld_input_dispatcher.new_input(current_time,
-                                                                ch);
+                        lnav_data.ld_input_dispatcher.new_input(
+                            current_time, sc.get_notcurses(), nci);
 
-                        lnav_data.ld_view_stack.top() | [ch](auto tc) {
+                        lnav_data.ld_view_stack.top() | [nci](auto tc) {
                             lnav_data.ld_key_repeat_history.update(
-                                ch, tc->get_top());
+                                nci.id, tc->get_top());
                         };
 
                         if (!lnav_data.ld_looping) {
@@ -2014,7 +2079,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
             }
 
-            handle_winch();
+            if (handle_winch(&sc)) {
+                layout_views();
+            }
 
             if (lnav_data.ld_child_terminated) {
                 lnav_data.ld_child_terminated = false;
@@ -2107,6 +2174,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (rescan_future.valid()) {
             rescan_future.get();
         }
+
+        save_session();
     } catch (readline_curses::error& e) {
         log_error("error: %s", strerror(e.e_err));
     }
@@ -2383,6 +2452,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 )";
 
         log_info("performing cleanup");
+
+        for (auto& tv : lnav_data.ld_views) {
+            tv.set_window(nullptr);
+        }
+
         lnav_data.ld_child_pollers.clear();
 
         log_info("marking files as closed");
@@ -3408,7 +3482,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             log_info("  libarchive=%d", ARCHIVE_VERSION_NUMBER);
             log_info("    details=%s", archive_version_details());
 #endif
-            log_info("  ncurses=%s", NCURSES_VERSION);
+            log_info("  notcurses=%s", notcurses_version());
             log_info("  pcre2=%s", pcre2_version);
             log_info("  readline=%s", rl_library_version);
             log_info("  sqlite=%s", sqlite3_version);
@@ -3467,7 +3541,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 log_fos->fos_contexts.top().c_show_applicable_annotations
                     = false;
 
-                view_colors::init(true);
+                view_colors::init(nullptr);
                 rescan_files(true);
                 wait_for_pipers();
                 rescan_files(true);
@@ -3636,8 +3710,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 dup2(STDOUT_FILENO, STDERR_FILENO);
 
                 signal(SIGINT, SIG_DFL);
-
-                save_session();
             }
 
             log_info("exiting main loop");

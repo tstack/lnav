@@ -93,10 +93,10 @@ files_sub_source()
 }
 
 bool
-files_sub_source::list_input_handle_key(listview_curses& lv, int ch)
+files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
-    switch (ch) {
-        case KEY_ENTER:
+    switch (ch.eff_text[0]) {
+        case NCKEY_ENTER:
         case '\r': {
             auto sel = files_model::from_selection(lv.get_selection());
 
@@ -269,7 +269,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     attr_line_builder alb(al);
 
     if (selected) {
-        al.append(" ", VC_GRAPHIC.value(ACS_RARROW));
+        al.append(" ", VC_GRAPHIC.value(NCACS_RARROW));
     } else {
         al.append(" ");
     }
@@ -320,7 +320,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
             al.with_attr_for_all(VC_ROLE.value(cursor_role));
         }
         if (line == fc.fc_other_files.size() - 1) {
-            al.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
+            al.with_attr_for_all(VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
         }
 
         value_out = al.get_string();
@@ -439,10 +439,10 @@ files_sub_source::text_handle_mouse(
     mouse_event& me)
 {
     if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
-        this->list_input_handle_key(tc, ' ');
+        this->list_input_handle_key(tc, {' '});
     }
     if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{4, -1})) {
-        this->list_input_handle_key(tc, '\r');
+        this->list_input_handle_key(tc, {'\r'});
     }
 
     return false;
@@ -634,7 +634,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                     meta_pair.second.m_format))));
                         line_range lr{6, -1};
                         details.emplace_back(attr_line_t().with_attr(
-                            string_attr{lr, VC_GRAPHIC.value(ACS_HLINE)}));
+                            string_attr{lr, VC_GRAPHIC.value(NCACS_HLINE)}));
                         const auto val_sf = string_fragment::from_str(
                             meta_pair.second.m_value);
                         for (const auto val_line : val_sf.split_lines()) {

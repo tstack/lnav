@@ -30,7 +30,35 @@
 #ifndef color_spaces_hh
 #define color_spaces_hh
 
+#include "result.h"
+#include "intern_string.hh"
+#include "mapbox/variant.hpp"
+
+using palette_color = uint8_t;
+
+enum class ansi_color : uint8_t {
+    black,
+    red,
+    green,
+    yellow,
+    blue,
+    magenta,
+    cyan,
+    white,
+};
+
+#define COLOR_BLACK 0
+#define COLOR_RED 1
+#define COLOR_GREEN 2
+#define COLOR_YELLOW 3
+#define COLOR_BLUE 4
+#define COLOR_MAGENTA 5
+#define COLOR_CYAN 6
+#define COLOR_WHITE 7
+
 struct rgb_color {
+    static rgb_color from(ansi_color color);
+
     explicit rgb_color(short r = -1, short g = -1, short b = -1)
         : rc_r(r), rc_g(g), rc_b(b)
     {
@@ -92,5 +120,75 @@ struct lab_color {
     double lc_a;
     double lc_b;
 };
+
+ansi_color to_ansi_color(const rgb_color& rgb);
+
+namespace styling {
+
+struct semantic {
+    bool operator==(const semantic& rhs) const
+    {
+        return true;
+    }
+};
+
+struct transparent {
+    bool operator==(const transparent& rhs) const
+    {
+        return true;
+    }
+};
+
+class color_unit {
+public:
+    static Result<color_unit, std::string> from_str(const string_fragment& sf);
+
+    static color_unit make_empty() { return color_unit{transparent{}}; }
+
+    static color_unit from_rgb(const rgb_color& rgb)
+    {
+        return color_unit{rgb};
+    }
+
+    static color_unit from_palette(const palette_color& indexed)
+    {
+        return color_unit{indexed};
+    }
+
+    color_unit& operator=(const rgb_color& rhs)
+    {
+        this->cu_value = rhs;
+        return *this;
+    }
+
+    color_unit& operator=(const palette_color& rhs)
+    {
+        this->cu_value = rhs;
+        return *this;
+    }
+
+    bool operator==(const color_unit& rhs) const
+    {
+        return this->cu_value == rhs.cu_value;
+    }
+
+    bool empty() const
+    {
+        return this->cu_value.match(
+            [](transparent) { return true; },
+            [](semantic) { return false; },
+            [](const palette_color& pc) { return false; },
+            [](const rgb_color& rc) { return rc.empty(); });
+    }
+
+    using variants_t = mapbox::util::variant<transparent, semantic, palette_color, rgb_color>;
+
+    variants_t cu_value;
+
+private:
+    explicit color_unit(variants_t value) : cu_value(std::move(value)) {}
+};
+
+}  // namespace styling
 
 #endif

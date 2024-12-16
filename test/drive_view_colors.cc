@@ -31,8 +31,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "base/injector.bind.hh"
 #include "config.h"
 #include "view_curses.hh"
+#include "xterm_mouse.hh"
+
+static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
 
 class test_colors : public view_curses {
 public:
@@ -62,17 +66,19 @@ public:
         attr_line_t al;
         line_range lr{0, 40};
 
+        auto mixed_style = text_attrs{};
+        mixed_style.ta_fg_color = palette_color{COLOR_CYAN};
+        mixed_style.ta_bg_color = palette_color{COLOR_BLACK};
         al = "before <123> after";
-        al.with_attr({line_range{8, 11},
-                      VC_STYLE.value(text_attrs{0, COLOR_CYAN, COLOR_BLACK})});
+        al.with_attr({line_range{8, 11}, VC_STYLE.value(mixed_style)});
         al.with_attr(
-            {line_range{8, 11}, VC_STYLE.value(text_attrs{A_REVERSE})});
+            {line_range{8, 11}, VC_STYLE.value(text_attrs::with_reverse())});
         test_colors::mvwattrline(this->tc_window, lpc, 0, al, lr);
 
         return true;
     }
 
-    WINDOW* tc_window;
+    ncplane* tc_window;
 };
 
 int
@@ -80,11 +86,11 @@ main(int argc, char* argv[])
 {
     int c, retval = EXIT_SUCCESS;
     bool wait_for_input = false;
-    WINDOW* win;
     test_colors tc;
 
-    win = initscr();
-    noecho();
+    auto nco = notcurses_options{};
+    nco.flags |= NCOPTION_SUPPRESS_BANNERS;
+    auto sc = screen_curses::create(nco).unwrap();
 
     while ((c = getopt(argc, argv, "w")) != -1) {
         switch (c) {
@@ -94,15 +100,14 @@ main(int argc, char* argv[])
         }
     }
 
-    view_colors::init(false);
-    curs_set(0);
-    tc.tc_window = win;
+    view_colors::init(sc.get_notcurses());
+    tc.tc_window = sc.get_std_plane();
     tc.do_update();
-    refresh();
+    notcurses_render(sc.get_notcurses());
     if (wait_for_input) {
-        getch();
+        ncinput nci;
+        notcurses_get_blocking(sc.get_notcurses(), &nci);
     }
-    endwin();
 
     return retval;
 }

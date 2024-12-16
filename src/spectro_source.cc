@@ -57,9 +57,9 @@ spectrogram_row::nearest_column(size_t current) const
 }
 
 bool
-spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
+spectrogram_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
-    switch (ch) {
+    switch (ch.eff_text[0]) {
         case 'm': {
             auto sel = lv.get_selection();
             if (sel < 0 || (size_t) sel >= this->text_line_count()
@@ -120,8 +120,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             return true;
         }
 
-        case KEY_LEFT:
-        case KEY_RIGHT: {
+        case NCKEY_LEFT:
+        case NCKEY_RIGHT: {
             auto sel = lv.get_selection();
             unsigned long width;
             vis_line_t height;
@@ -146,7 +146,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             auto current = find_string_attr(sa, lr);
 
             if (current != sa.end()) {
-                if (ch == KEY_LEFT) {
+                if (ch.id == NCKEY_LEFT) {
                     if (current == sa.begin()) {
                         current = sa.end();
                     } else {
@@ -158,7 +158,7 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, int ch)
             }
 
             if (current == sa.end()) {
-                if (ch == KEY_LEFT) {
+                if (ch.id == NCKEY_LEFT) {
                     current = sa.end();
                     --current;
                 } else {
@@ -634,7 +634,7 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     line.append(buf);
 
     value_out.with_attr(string_attr(line_range(0, -1),
-                                    VC_STYLE.value(text_attrs{A_UNDERLINE})));
+                                    VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE})));
 
     return true;
 }

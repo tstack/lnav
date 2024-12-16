@@ -27,9 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <array>
 #include <cmath>
 
 #include "color_spaces.hh"
+#include "from_trait.hh"
 
 #include "config.h"
 
@@ -63,6 +65,31 @@ bool
 rgb_color::operator>=(const rgb_color& rhs) const
 {
     return !(*this < rhs);
+}
+
+rgb_color
+rgb_color::from(const ansi_color color)
+{
+    switch (color) {
+        case ansi_color::black:
+            return rgb_color(0, 0, 0);
+        case ansi_color::red:
+            return rgb_color(255, 0, 0);
+        case ansi_color::green:
+            return rgb_color(0, 255, 0);
+        case ansi_color::yellow:
+            return rgb_color(255, 255, 0);
+        case ansi_color::blue:
+            return rgb_color(0, 0, 255);
+        case ansi_color::magenta:
+            return rgb_color(175, 0, 175);
+        case ansi_color::cyan:
+            return rgb_color(0, 255, 255);
+        case ansi_color::white:
+            return rgb_color(255, 255, 255);
+        default:
+            return rgb_color(0, 0, 0);
+    }
 }
 
 bool
@@ -150,6 +177,34 @@ bool
 lab_color::operator>=(const lab_color& rhs) const
 {
     return !(*this < rhs);
+}
+
+ansi_color
+to_ansi_color(const rgb_color& color)
+{
+    static const auto term_colors = std::array<lab_color, 8>{
+        lab_color{rgb_color::from(ansi_color::black)},
+        lab_color{rgb_color::from(ansi_color::red)},
+        lab_color{rgb_color::from(ansi_color::green)},
+        lab_color{rgb_color::from(ansi_color::yellow)},
+        lab_color{rgb_color::from(ansi_color::blue)},
+        lab_color{rgb_color::from(ansi_color::magenta)},
+        lab_color{rgb_color::from(ansi_color::cyan)},
+        lab_color{rgb_color::from(ansi_color::white)},
+    };
+
+    const auto desired = lab_color{color};
+    auto retval = ansi_color::white;
+    double lowest_delta = std::numeric_limits<double>::max();
+    for (uint8_t lpc = 0; lpc < term_colors.size(); ++lpc) {
+        if (const auto this_delta = term_colors[lpc].deltaE(desired);
+            this_delta < lowest_delta) {
+            lowest_delta = this_delta;
+            retval = ansi_color{lpc};
+        }
+    }
+
+    return retval;
 }
 
 bool

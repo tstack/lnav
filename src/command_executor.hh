@@ -212,12 +212,12 @@ struct exec_context {
                               const std::string& content);
 
     struct db_source_guard {
-        db_source_guard(exec_context* context) : dsg_context(context) {}
+        explicit db_source_guard(exec_context* context) : dsg_context(context) {}
 
-        db_source_guard(const source_guard&) = delete;
+        db_source_guard(const db_source_guard&) = delete;
 
-        db_source_guard(source_guard&& other)
-            : dsg_context(std::exchange(other.sg_context, nullptr))
+        db_source_guard(db_source_guard&& other) noexcept
+            : dsg_context(std::exchange(other.dsg_context, nullptr))
         {
         }
 
@@ -239,10 +239,11 @@ struct exec_context {
     }
 
     struct error_cb_guard {
-        error_cb_guard(exec_context* context) : sg_context(context) {}
+        explicit error_cb_guard(exec_context* context) : sg_context(context) {}
 
         error_cb_guard(const error_cb_guard&) = delete;
-        error_cb_guard(error_cb_guard&& other) : sg_context(other.sg_context)
+        error_cb_guard(error_cb_guard&& other) noexcept
+            : sg_context(other.sg_context)
         {
             other.sg_context = nullptr;
         }
@@ -260,7 +261,7 @@ struct exec_context {
     error_cb_guard add_error_callback(error_callback_t cb)
     {
         this->ec_error_callback_stack.emplace_back(std::move(cb));
-        return {this};
+        return error_cb_guard{this};
     }
 
     scoped_resolver create_resolver()
@@ -334,6 +335,13 @@ struct exec_context {
     pipe_callback_t ec_pipe_callback;
     std::vector<error_callback_t> ec_error_callback_stack;
     std::vector<db_label_source*> ec_label_source_stack;
+
+    struct ui_callbacks {
+        std::function<void()> uc_pre_stdout_write;
+        std::function<void()> uc_post_stdout_write;
+        std::function<void()> uc_redraw;
+    };
+    ui_callbacks ec_ui_callbacks;
 };
 
 Result<std::string, lnav::console::user_message> execute_command(

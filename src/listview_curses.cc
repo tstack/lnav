@@ -45,11 +45,7 @@ using namespace std::chrono_literals;
 
 list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
-listview_curses::
-listview_curses()
-    : lv_scroll(noop_func{})
-{
-}
+listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
 
 bool
 listview_curses::contains(int x, int y) const
@@ -166,7 +162,7 @@ listview_curses::reload_data()
 }
 
 bool
-listview_curses::handle_key(int ch)
+listview_curses::handle_key(const ncinput& ch)
 {
     for (auto& lv_input_delegate : this->lv_input_delegates) {
         if (lv_input_delegate->list_input_handle_key(*this, ch)) {
@@ -180,33 +176,40 @@ listview_curses::handle_key(int ch)
     bool retval = true;
 
     this->get_dimensions(height, width);
-    switch (ch) {
+    switch (ch.eff_text[0]) {
         case 'l':
-        case KEY_RIGHT:
-            this->shift_left(width / 2);
+        case NCKEY_RIGHT:
+            if (ncinput_shift_p(&ch)) {
+                this->shift_left(10);
+            } else {
+                this->shift_left(width / 2);
+            }
             break;
 
         case 'h':
-        case KEY_LEFT:
-            this->shift_left(-(width / 2));
+        case NCKEY_LEFT:
+            if (ncinput_shift_p(&ch)) {
+                this->shift_left(-10);
+            } else {
+                this->shift_left(-(width / 2));
+            }
             break;
         case 'L':
-        case KEY_SRIGHT:
             this->shift_left(10);
             break;
         case 'H':
-        case KEY_SLEFT:
             this->shift_left(-10);
             break;
 
         case '\r':
         case 'j':
-        case KEY_DOWN:
+        case NCKEY_DOWN:
+        case NCKEY_ENTER:
             this->shift_selection(shift_amount_t::down_line);
             break;
 
         case 'k':
-        case KEY_UP:
+        case NCKEY_UP:
             this->shift_selection(shift_amount_t::up_line);
             break;
 
@@ -238,8 +241,8 @@ listview_curses::handle_key(int ch)
             break;
 
         case 'b':
-        case KEY_BACKSPACE:
-        case KEY_PPAGE:
+        case NCKEY_BACKSPACE:
+        case NCKEY_PGUP:
             if (this->lv_overlay_focused) {
                 this->shift_selection(shift_amount_t::up_page);
                 break;
@@ -257,7 +260,7 @@ listview_curses::handle_key(int ch)
             break;
 
         case ' ':
-        case KEY_NPAGE: {
+        case NCKEY_PGDOWN: {
             if (this->lv_overlay_source != nullptr) {
                 std::vector<attr_line_t> overlay_content;
                 this->lv_overlay_source->list_value_for_overlay(
@@ -299,7 +302,7 @@ listview_curses::handle_key(int ch)
         }
 
         case 'g':
-        case KEY_HOME:
+        case NCKEY_HOME:
             if (this->lv_overlay_focused) {
                 this->lv_focused_overlay_top = 0_vl;
                 this->lv_focused_overlay_selection = 0_vl;
@@ -316,7 +319,7 @@ listview_curses::handle_key(int ch)
             break;
 
         case 'G':
-        case KEY_END: {
+        case NCKEY_END: {
             if (this->lv_overlay_focused) {
                 std::vector<attr_line_t> overlay_content;
                 this->lv_overlay_source->list_value_for_overlay(
@@ -471,10 +474,11 @@ listview_curses::do_update()
                 }
 
                 this->lv_display_lines.push_back(main_content{row});
-                view_curses::mvwattrline_result write_res;
+                mvwattrline_result write_res;
                 do {
                     if (this->lv_word_wrap) {
-                        mvwhline(this->lv_window, y, this->vc_x, ' ', width);
+                        // XXX mvwhline(this->lv_window, y, this->vc_x, ' ',
+                        // width);
                     }
                     write_res = mvwattrline(this->lv_window,
                                             y,
@@ -529,7 +533,7 @@ listview_curses::do_update()
                                 *this, row);
                         if (hdr) {
                             auto ov_hdr_attrs = text_attrs{};
-                            ov_hdr_attrs.ta_attrs |= A_UNDERLINE;
+                            ov_hdr_attrs.ta_attrs |= NCSTYLE_UNDERLINE;
                             auto ov_hdr = hdr.value().with_attr_for_all(
                                 VC_STYLE.value(ov_hdr_attrs));
                             this->lv_display_lines.push_back(
@@ -594,11 +598,11 @@ listview_curses::do_update()
                             auto role = this->vc_default_role;
                             auto bar_role = role_t::VCR_SCROLLBAR;
                             text_attrs attrs;
-                            chtype ch = gutter_y == overlay_y
-                                ? ACS_URCORNER
+                            auto ch = gutter_y == overlay_y
+                                ? NCACS_URCORNER
                                 : (gutter_y == (overlay_y + overlay_height - 1)
-                                       ? ACS_LRCORNER
-                                       : ACS_VLINE);
+                                       ? NCACS_LRCORNER
+                                       : NCACS_VLINE);
 
                             if (gutter_y >= (unsigned int) scroll_y
                                 && gutter_y <= (unsigned int) lines)
@@ -606,28 +610,34 @@ listview_curses::do_update()
                                 role = bar_role;
                             }
                             attrs = vc.attrs_for_role(role);
-                            wattr_set(this->lv_window,
-                                      attrs.ta_attrs,
-                                      vc.ensure_color_pair(attrs.ta_fg_color,
-                                                           attrs.ta_bg_color),
-                                      nullptr);
-                            mvwaddch(this->lv_window,
-                                     gutter_y,
-                                     this->vc_x + width - 2,
-                                     ch);
+                            ncplane_putstr_yx(this->lv_window,
+                                              gutter_y,
+                                              this->vc_x + width - 2,
+                                              ch);
+                            ncplane_set_cell_yx(
+                                this->lv_window,
+                                gutter_y,
+                                this->vc_x + width - 2,
+                                attrs.ta_attrs | NCSTYLE_ALTCHARSET,
+                                view_colors::to_channels(attrs));
                         }
                     }
                 }
 
                 ++row;
             } else {
-                wattr_set(this->lv_window,
-                          role_attrs.ta_attrs,
-                          vc.ensure_color_pair(role_attrs.ta_fg_color,
-                                               role_attrs.ta_bg_color),
-                          nullptr);
+                nccell clear_cell;
+                nccell_init(&clear_cell);
+                nccell_prime(this->lv_window,
+                             &clear_cell,
+                             " ",
+                             0,
+                             view_colors::to_channels(role_attrs));
+                ncplane_cursor_move_yx(this->lv_window, y, this->vc_x);
+                ncplane_hline(this->lv_window, &clear_cell, width);
+                nccell_release(this->lv_window, &clear_cell);
+
                 this->lv_display_lines.push_back(empty_space{});
-                mvwhline(this->lv_window, y, this->vc_x, ' ', width);
                 ++y;
             }
         }
@@ -658,10 +668,10 @@ listview_curses::do_update()
                  gutter_y++)
             {
                 int range_start = 0, range_end;
-                role_t role = this->vc_default_role;
-                role_t bar_role = role_t::VCR_SCROLLBAR;
+                auto role = this->vc_default_role;
+                auto bar_role = role_t::VCR_SCROLLBAR;
                 text_attrs attrs;
-                chtype ch = ACS_VLINE;
+                const char* ch;
 
                 if (row_count > 0) {
                     range_start
@@ -677,27 +687,24 @@ listview_curses::do_update()
                     role = bar_role;
                 }
                 attrs = vc.attrs_for_role(role);
-                wattr_set(
-                    this->lv_window,
-                    attrs.ta_attrs,
-                    vc.ensure_color_pair(attrs.ta_fg_color, attrs.ta_bg_color),
-                    nullptr);
-                mvwaddch(this->lv_window, gutter_y, this->vc_x + width - 1, ch);
+                ncplane_putstr_yx(
+                    this->lv_window, gutter_y, this->vc_x + width - 1, ch);
+                ncplane_set_cell_yx(this->lv_window,
+                                    gutter_y,
+                                    this->vc_x + width - 1,
+                                    attrs.ta_attrs | NCSTYLE_ALTCHARSET,
+                                    view_colors::to_channels(attrs));
             }
-            wmove(this->lv_window, this->vc_y + height - 1, this->vc_x);
         }
 
         if (this->lv_show_bottom_border) {
-            cchar_t row_ch[width];
             int bottom_y = this->vc_y + height - 1;
-
-            mvwin_wchnstr(
-                this->lv_window, bottom_y, this->vc_x, row_ch, width - 1);
-            for (unsigned long lpc = 0; lpc < width - 1; lpc++) {
-                row_ch[lpc].attr |= A_UNDERLINE;
+            for (int lpc = 0; lpc < width - 1; lpc++) {
+                ncplane_on_styles_yx(this->lv_window,
+                                     bottom_y,
+                                     this->vc_x + lpc,
+                                     NCSTYLE_UNDERLINE);
             }
-            mvwadd_wchnstr(
-                this->lv_window, bottom_y, this->vc_x, row_ch, width - 1);
         }
 
         this->vc_needs_update = false;

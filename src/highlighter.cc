@@ -41,8 +41,6 @@ highlighter::operator=(const highlighter& other)
     }
 
     this->h_name = other.h_name;
-    this->h_fg = other.h_fg;
-    this->h_bg = other.h_bg;
     this->h_role = other.h_role;
     this->h_regex = other.h_regex;
     this->h_format_name = other.h_format_name;
@@ -56,7 +54,6 @@ highlighter::operator=(const highlighter& other)
 void
 highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
 {
-    auto& vc = view_colors::singleton();
     auto& sa = al.get_attrs();
 
     if (lr.lr_end <= lr.lr_start) {
@@ -79,18 +76,6 @@ highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
         }
     }
 
-    if (!this->h_fg.empty()) {
-        sa.emplace_back(lr,
-                        VC_FOREGROUND.value(
-                            vc.match_color(this->h_fg)
-                                .value_or(view_colors::MATCH_COLOR_DEFAULT)));
-    }
-    if (!this->h_bg.empty()) {
-        sa.emplace_back(lr,
-                        VC_BACKGROUND.value(
-                            vc.match_color(this->h_bg)
-                                .value_or(view_colors::MATCH_COLOR_DEFAULT)));
-    }
     if (this->h_role != role_t::VCR_NONE) {
         sa.emplace_back(lr, VC_ROLE.value(this->h_role));
     }
@@ -109,12 +94,16 @@ highlighter::annotate(attr_line_t& al, int start) const
     auto& vc = view_colors::singleton();
     const auto& str = al.get_string();
     auto& sa = al.get_attrs();
-    auto sf = string_fragment::from_str_range(
+    const auto sf = string_fragment::from_str_range(
         str, start, std::min(size_t{8192}, str.size()));
 
     if (!sf.is_valid()) {
         return;
     }
+
+    timeval tstart, tend, tdiff;
+
+    gettimeofday(&tstart, nullptr);
 
     this->h_regex->capture_from(sf).for_each(
         [&](lnav::pcre2pp::match_data& md) {
@@ -145,4 +134,10 @@ highlighter::annotate(attr_line_t& al, int start) const
                 }
             }
         });
+    gettimeofday(&tend, nullptr);
+    timersub(&tend, &tstart, &tdiff);
+    if (tdiff.tv_usec > 10000) {
+        log_debug("slow highlight %s %s", this->h_name.c_str(),
+            this->h_regex->get_pattern().c_str());
+    }
 }

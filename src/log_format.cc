@@ -333,10 +333,9 @@ logline_value::origin_in_full_msg(const char* msg, ssize_t len) const
     return retval;
 }
 
-logline_value::
-logline_value(logline_value_meta lvm,
-              shared_buffer_ref& sbr,
-              struct line_range origin)
+logline_value::logline_value(logline_value_meta lvm,
+                             shared_buffer_ref& sbr,
+                             struct line_range origin)
     : lv_meta(std::move(lvm)), lv_origin(origin)
 {
     if (sbr.get_data() == nullptr) {
@@ -2758,10 +2757,12 @@ detect_mime_type(const std::filesystem::path& filename)
 void
 external_log_format::build(std::vector<lnav::console::user_message>& errors)
 {
+    auto& vc = view_colors::singleton();
+
     if (!this->lf_timestamp_field.empty()) {
         auto& vd = this->elf_value_defs[this->lf_timestamp_field];
         if (vd.get() == nullptr) {
-            vd = std::make_shared<external_log_format::value_def>(
+            vd = std::make_shared<value_def>(
                 this->lf_timestamp_field,
                 value_kind_t::VALUE_TEXT,
                 logline_value_meta::internal_column{},
@@ -2782,7 +2783,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     {
         auto& vd = this->elf_value_defs[this->elf_level_field];
         if (vd.get() == nullptr) {
-            vd = std::make_shared<external_log_format::value_def>(
+            vd = std::make_shared<value_def>(
                 this->elf_level_field,
                 value_kind_t::VALUE_TEXT,
                 logline_value_meta::internal_column{},
@@ -2796,7 +2797,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     if (!this->elf_body_field.empty()) {
         auto& vd = this->elf_value_defs[this->elf_body_field];
         if (vd.get() == nullptr) {
-            vd = std::make_shared<external_log_format::value_def>(
+            vd = std::make_shared<value_def>(
                 this->elf_body_field,
                 value_kind_t::VALUE_TEXT,
                 logline_value_meta::internal_column{},
@@ -3749,53 +3750,53 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     }
 
     for (auto& hd_pair : this->elf_highlighter_patterns) {
-        external_log_format::highlighter_def& hd = hd_pair.second;
-        auto fg = styling::color_unit::make_empty();
-        auto bg = styling::color_unit::make_empty();
+        auto& hd = hd_pair.second;
         text_attrs attrs;
 
         if (!hd.hd_color.pp_value.empty()) {
-            fg = styling::color_unit::from_str(hd.hd_color.pp_value)
-                     .unwrapOrElse([&](const auto& msg) {
-                         errors.emplace_back(
-                             lnav::console::user_message::error(
-                                 attr_line_t()
-                                     .append_quoted(hd.hd_color.pp_value)
-                                     .append(" is not a valid color value for "
-                                             "property ")
-                                     .append_quoted(lnav::roles::symbol(
-                                         hd.hd_color.pp_path.to_string())))
-                                 .with_reason(msg)
-                                 .with_snippet(hd.hd_color.to_snippet()));
-                         return styling::color_unit::make_empty();
-                     });
+            attrs.ta_fg_color = vc.match_color(
+                styling::color_unit::from_str(hd.hd_color.pp_value)
+                    .unwrapOrElse([&](const auto& msg) {
+                        errors.emplace_back(
+                            lnav::console::user_message::error(
+                                attr_line_t()
+                                    .append_quoted(hd.hd_color.pp_value)
+                                    .append(" is not a valid color value for "
+                                            "property ")
+                                    .append_quoted(lnav::roles::symbol(
+                                        hd.hd_color.pp_path.to_string())))
+                                .with_reason(msg)
+                                .with_snippet(hd.hd_color.to_snippet()));
+                        return styling::color_unit::make_empty();
+                    }));
         }
 
         if (!hd.hd_background_color.pp_value.empty()) {
-            bg = styling::color_unit::from_str(hd.hd_background_color.pp_value)
-                     .unwrapOrElse([&](const auto& msg) {
-                         errors.emplace_back(
-                             lnav::console::user_message::error(
-                                 attr_line_t()
-                                     .append_quoted(
-                                         hd.hd_background_color.pp_value)
-                                     .append(" is not a valid color value for "
-                                             "property ")
-                                     .append_quoted(lnav::roles::symbol(
-                                         hd.hd_background_color.pp_path
-                                             .to_string())))
-                                 .with_reason(msg)
-                                 .with_snippet(
-                                     hd.hd_background_color.to_snippet()));
-                         return styling::color_unit::make_empty();
-                     });
+            attrs.ta_bg_color = vc.match_color(
+                styling::color_unit::from_str(hd.hd_background_color.pp_value)
+                    .unwrapOrElse([&](const auto& msg) {
+                        errors.emplace_back(
+                            lnav::console::user_message::error(
+                                attr_line_t()
+                                    .append_quoted(
+                                        hd.hd_background_color.pp_value)
+                                    .append(" is not a valid color value for "
+                                            "property ")
+                                    .append_quoted(lnav::roles::symbol(
+                                        hd.hd_background_color.pp_path
+                                            .to_string())))
+                                .with_reason(msg)
+                                .with_snippet(
+                                    hd.hd_background_color.to_snippet()));
+                        return styling::color_unit::make_empty();
+                    }));
         }
 
         if (hd.hd_underline) {
-            attrs.ta_attrs |= A_UNDERLINE;
+            attrs |= text_attrs::style::underline;
         }
         if (hd.hd_blink) {
-            attrs.ta_attrs |= A_BLINK;
+            attrs |= text_attrs::style::blink;
         }
 
         if (hd.hd_pattern.pp_value != nullptr) {
@@ -3803,7 +3804,6 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             this->lf_highlighters.back()
                 .with_name(hd_pair.first.to_string())
                 .with_format_name(this->elf_name)
-                .with_color(fg, bg)
                 .with_attrs(attrs);
         }
     }
@@ -4308,8 +4308,8 @@ log_format::find_root_format(const char* name)
     return nullptr;
 }
 
-log_format::pattern_for_lines::
-pattern_for_lines(uint32_t pfl_line, uint32_t pfl_pat_index)
+log_format::pattern_for_lines::pattern_for_lines(uint32_t pfl_line,
+                                                 uint32_t pfl_pat_index)
     : pfl_line(pfl_line), pfl_pat_index(pfl_pat_index)
 {
 }

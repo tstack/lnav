@@ -63,7 +63,7 @@ breadcrumb_curses::do_update()
     }
 
     size_t sel_crumb_offset = 0;
-    auto width = static_cast<size_t>(getmaxx(this->bc_window));
+    auto width = ncplane_dim_x(this->bc_window);
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()
                                                   : this->bc_focused_crumbs;
     if (this->bc_last_selected_crumb
@@ -93,7 +93,7 @@ breadcrumb_curses::do_update()
         if (is_selected) {
             sel_crumb_offset = accum_width;
             crumbs_line.get_attrs().emplace_back(
-                crumb_range, VC_STYLE.value(text_attrs{A_REVERSE}));
+                crumb_range, VC_STYLE.value(text_attrs::with_reverse()));
         }
 
         this->bc_displayed_crumbs.emplace_back(
@@ -222,11 +222,15 @@ breadcrumb_curses::blur()
 }
 
 bool
-breadcrumb_curses::handle_key(int ch)
+breadcrumb_curses::handle_key(const ncinput& ch)
 {
     bool retval = false;
+    auto mapped_id = ch.id;
 
-    switch (ch) {
+    if (mapped_id == NCKEY_TAB && ncinput_shift_p(&ch)) {
+        mapped_id = NCKEY_LEFT;
+    }
+    switch (mapped_id) {
         case KEY_CTRL('a'):
             if (this->bc_selected_crumb) {
                 this->bc_selected_crumb = 0;
@@ -243,8 +247,7 @@ breadcrumb_curses::handle_key(int ch)
             }
             retval = true;
             break;
-        case KEY_BTAB:
-        case KEY_LEFT:
+        case NCKEY_LEFT:
             if (this->bc_selected_crumb) {
                 if (this->bc_selected_crumb.value() > 0) {
                     this->bc_selected_crumb
@@ -258,8 +261,8 @@ breadcrumb_curses::handle_key(int ch)
             }
             retval = true;
             break;
-        case '\t':
-        case KEY_RIGHT:
+        case NCKEY_TAB:
+        case NCKEY_RIGHT:
             if (this->bc_selected_crumb) {
                 this->perform_selection(perform_behavior_t::if_different);
                 this->blur();
@@ -278,52 +281,52 @@ breadcrumb_curses::handle_key(int ch)
                 retval = true;
             }
             break;
-        case KEY_HOME:
+        case NCKEY_HOME:
             this->bc_match_view.set_selection(0_vl);
             retval = true;
             break;
-        case KEY_END:
+        case NCKEY_END:
             this->bc_match_view.set_selection(
                 this->bc_match_view.get_inner_height() - 1_vl);
             retval = true;
             break;
-        case KEY_NPAGE:
+        case NCKEY_PGDOWN:
             this->bc_match_view.shift_selection(
                 listview_curses::shift_amount_t::down_page);
             retval = true;
             break;
-        case KEY_PPAGE:
+        case NCKEY_PGUP:
             this->bc_match_view.shift_selection(
                 listview_curses::shift_amount_t::up_page);
             retval = true;
             break;
-        case KEY_UP:
+        case NCKEY_UP:
             this->bc_match_view.shift_selection(
                 listview_curses::shift_amount_t::up_line);
             retval = true;
             break;
-        case KEY_DOWN:
+        case NCKEY_DOWN:
             this->bc_match_view.shift_selection(
                 listview_curses::shift_amount_t::down_line);
             retval = true;
             break;
         case KEY_DELETE:
-        case KEY_BACKSPACE:
+        case NCKEY_BACKSPACE:
             if (!this->bc_current_search.empty()) {
                 this->bc_current_search.pop_back();
                 this->reload_data();
             }
             retval = true;
             break;
-        case KEY_ENTER:
+        case NCKEY_ENTER:
         case '\r':
             this->perform_selection(perform_behavior_t::always);
             break;
         case KEY_ESCAPE:
             break;
         default:
-            if (isprint(ch)) {
-                this->bc_current_search.push_back(ch);
+            if (isprint(ch.id)) {
+                this->bc_current_search.push_back(ch.id);
                 this->reload_data();
                 retval = true;
             }
@@ -401,7 +404,7 @@ breadcrumb_curses::search_overlay_source::list_static_overlay(
         | lnav::itertools::unwrap_or(
                          breadcrumb::crumb::expected_input_t::exact);
 
-    value_out.with_attr_for_all(VC_STYLE.value(text_attrs{A_UNDERLINE}));
+    value_out.with_attr_for_all(VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
 
     if (!parent->bc_current_search.empty()) {
         value_out = parent->bc_current_search;

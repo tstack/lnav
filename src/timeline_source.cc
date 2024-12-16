@@ -174,8 +174,8 @@ timeline_preview_overlay::list_overlay_menu(const listview_curses& lv,
     return retval;
 }
 
-timeline_header_overlay::
-timeline_header_overlay(const std::shared_ptr<timeline_source>& src)
+timeline_header_overlay::timeline_header_overlay(
+    const std::shared_ptr<timeline_source>& src)
     : gho_src(src)
 {
 }
@@ -280,15 +280,15 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
         value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_CURSOR_LINE));
     } else {
         value_out.append("   Duration   "_h1)
-            .append("|", VC_GRAPHIC.value(ACS_VLINE))
+            .append("|", VC_GRAPHIC.value(NCACS_VLINE))
             .append(" ")
             .append("\u2718"_error)
             .append("\u25b2"_warning)
             .append(" ")
-            .append("|", VC_GRAPHIC.value(ACS_VLINE))
+            .append("|", VC_GRAPHIC.value(NCACS_VLINE))
             .append(" Operation"_h1);
         auto hdr_attrs = text_attrs{};
-        hdr_attrs.ta_attrs = A_UNDERLINE;
+        hdr_attrs.ta_attrs = NCSTYLE_UNDERLINE;
         value_out.get_attrs().emplace_back(line_range{0, -1},
                                            VC_STYLE.value(hdr_attrs));
         value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));
@@ -371,16 +371,12 @@ timeline_header_overlay::list_value_for_overlay(
             lr.lr_end += 1;
         }
 
-        auto block_attrs = text_attrs{};
-        block_attrs.ta_attrs = A_REVERSE;
+        auto block_attrs = text_attrs::with_reverse();
         attrs.emplace_back(lr, VC_STYLE.value(block_attrs));
     }
     if (!value_out.empty()) {
-        text_attrs ta_under;
-
-        ta_under.ta_attrs = A_UNDERLINE;
-        value_out.back().get_attrs().emplace_back(line_range{0, -1},
-                                                  VC_STYLE.value(ta_under));
+        value_out.back().get_attrs().emplace_back(
+            line_range{0, -1}, VC_STYLE.value(text_attrs::with_underline()));
     }
 }
 std::optional<attr_line_t>
@@ -397,13 +393,12 @@ timeline_header_overlay::list_header_for_overlay(const listview_curses& lv,
         .append(" to focus on this panel");
 }
 
-timeline_source::
-timeline_source(textview_curses& log_view,
-                logfile_sub_source& lss,
-                textview_curses& preview_view,
-                plain_text_source& preview_source,
-                statusview_curses& preview_status_view,
-                timeline_status_source& preview_status_source)
+timeline_source::timeline_source(textview_curses& log_view,
+                                 logfile_sub_source& lss,
+                                 textview_curses& preview_view,
+                                 plain_text_source& preview_source,
+                                 statusview_curses& preview_status_view,
+                                 timeline_status_source& preview_status_source)
     : gs_log_view(log_view), gs_lss(lss), gs_preview_view(preview_view),
       gs_preview_source(preview_source),
       gs_preview_status_view(preview_status_view),
@@ -414,9 +409,9 @@ timeline_source(textview_curses& log_view,
 }
 
 bool
-timeline_source::list_input_handle_key(listview_curses& lv, int ch)
+timeline_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
-    switch (ch) {
+    switch (ch.eff_text[0]) {
         case 'q':
         case KEY_ESCAPE: {
             if (this->gs_preview_focused) {
@@ -431,7 +426,7 @@ timeline_source::list_input_handle_key(listview_curses& lv, int ch)
         }
         case '\n':
         case '\r':
-        case KEY_ENTER: {
+        case NCKEY_ENTER: {
             this->gs_preview_focused = !this->gs_preview_focused;
             this->gs_preview_status_view.set_enabled(this->gs_preview_focused);
             if (this->gs_preview_focused) {
@@ -467,7 +462,7 @@ timeline_source::text_handle_mouse(
     mouse_event& me)
 {
     if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{0, -1})) {
-        this->list_input_handle_key(tc, '\r');
+        this->list_input_handle_key(tc, {'\r'});
     }
 
     return false;
@@ -609,8 +604,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                     }
                 }
 
-                auto block_attrs = text_attrs{};
-                block_attrs.ta_attrs = A_REVERSE;
+                auto block_attrs = text_attrs::with_reverse();
                 value_out.emplace_back(lr, VC_STYLE.value(block_attrs));
             }
         }

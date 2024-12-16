@@ -49,20 +49,6 @@
 #include "view_curses.hh"
 #include "xterm_mouse.hh"
 
-#if defined HAVE_NCURSESW_CURSES_H
-#    include <ncursesw/term.h>
-#elif defined HAVE_NCURSESW_H
-#    include <term.h>
-#elif defined HAVE_NCURSES_CURSES_H
-#    include <ncurses/term.h>
-#elif defined HAVE_NCURSES_H
-#    include <term.h>
-#elif defined HAVE_CURSES_H
-#    include <term.h>
-#else
-#    error "SysV or X/Open-compatible Curses header file required"
-#endif
-
 using namespace std::chrono_literals;
 
 const struct itimerval ui_periodic_timer::INTERVAL = {
@@ -70,9 +56,7 @@ const struct itimerval ui_periodic_timer::INTERVAL = {
     {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
 };
 
-ui_periodic_timer::
-ui_periodic_timer()
-    : upt_counter(0)
+ui_periodic_timer::ui_periodic_timer() : upt_counter(0)
 {
     struct sigaction sa;
 
@@ -116,8 +100,9 @@ alerter::chime(std::string msg)
 
     bool retval = this->a_do_flash;
     if (this->a_do_flash) {
+        static const auto BELL = "\a";
         log_warning("chime message: %s", msg.c_str());
-        ::flash();
+        write(STDIN_FILENO, BELL, 1);
     }
     this->a_do_flash = false;
     return retval;
@@ -230,7 +215,7 @@ view_curses::awaiting_user_input()
 }
 
 view_curses::mvwattrline_result
-view_curses::mvwattrline(WINDOW* window,
+view_curses::mvwattrline(ncplane* window,
                          int y,
                          const int x,
                          attr_line_t& al,
@@ -251,8 +236,8 @@ view_curses::mvwattrline(WINDOW* window,
     int char_index = 0;
 
     {
-        int rows, cols;
-        getmaxyx(window, rows, cols);
+        unsigned rows, cols;
+        ncplane_dim_yx(window, &rows, &cols);
 
         if (y < 0 || y >= rows || x < 0 || x >= cols) {
             line_width_chars = 0;
@@ -337,14 +322,14 @@ view_curses::mvwattrline(WINDOW* window,
                     char_index += 1;
                     lpc = lpc_start + 1;
                 } else {
-                    if (lpc > (lpc_start + 1)) {
-                        utf_adjustments.emplace_back(lpc_start,
-                                                     1 - (lpc - lpc_start));
-                    }
                     auto wch = read_res.unwrap();
                     auto wcw_res = wcwidth(wch);
                     if (wcw_res < 0) {
                         wcw_res = 1;
+                    }
+                    if (lpc > (lpc_start + 1)) {
+                        utf_adjustments.emplace_back(
+                            lpc_start, wcw_res - (lpc - lpc_start));
                     }
                     char_index += wcw_res;
                     if (lr_bytes.lr_end == -1 && char_index > lr_chars.lr_end) {
@@ -368,33 +353,27 @@ view_curses::mvwattrline(WINDOW* window,
     retval.mr_bytes_remaining = expanded_line.size() - lr_bytes.lr_end;
 
     full_line = expanded_line;
+    if (line_width_chars > retval.mr_chars_out) {
+        for (size_t fill_index = 0;
+             fill_index < (line_width_chars - retval.mr_chars_out);
+             fill_index++)
+        {
+            full_line.push_back(' ');
+        }
+    }
 
     auto& vc = view_colors::singleton();
     auto base_attrs = vc.attrs_for_role(base_role);
-    wmove(window, y, x);
-    wattr_set(
-        window,
-        base_attrs.ta_attrs,
-        vc.ensure_color_pair(base_attrs.ta_fg_color, base_attrs.ta_bg_color),
-        nullptr);
-    if (lr_bytes.lr_start < (int) full_line.size()) {
-        waddnstr(
-            window, &full_line.c_str()[lr_bytes.lr_start], lr_bytes.length());
-    }
-    if (lr_chars.lr_end > char_index) {
-        whline(window, ' ', lr_chars.lr_end - char_index);
+    if (lr_chars.length() > 0) {
+        ncplane_erase_region(window, y, x, 1, lr_chars.length());
+        if (lr_bytes.lr_start < (int) full_line.size()) {
+            ncplane_putstr_yx(
+                window, y, x, &full_line.c_str()[lr_bytes.lr_start]);
+        }
     }
 
-    cchar_t row_ch[line_width_chars + 1];
-    short fg_color[line_width_chars + 1];
-    short bg_color[line_width_chars + 1];
-    memset(fg_color, -1, sizeof(fg_color));
-    memset(bg_color, -1, sizeof(bg_color));
+    text_attrs resolved_line_attrs[line_width_chars + 1];
 
-    if (line_width_chars > 0) {
-        auto curses_rc = mvwin_wchnstr(window, y, x, row_ch, line_width_chars);
-        require(curses_rc == OK);
-    }
     std::stable_sort(sa.begin(), sa.end());
     for (auto iter = sa.cbegin(); iter != sa.cend(); ++iter) {
         auto attr_range = iter->sa_range;
@@ -445,39 +424,36 @@ view_curses::mvwattrline(WINDOW* window,
             = std::min(line_width_chars, attr_range.lr_end - lr_chars.lr_start);
 
         if (iter->sa_type == &VC_FOREGROUND) {
-            short attr_fg = iter->sa_value.get<int64_t>();
-            if (attr_fg == view_colors::MATCH_COLOR_SEMANTIC) {
-                attr_fg = vc.color_for_ident(al.to_string_fragment(iter))
-                              .value_or(view_colors::MATCH_COLOR_DEFAULT);
-            } else if (attr_fg < 8) {
-                attr_fg = vc.ansi_to_theme_color(attr_fg);
+            auto attr_fg = iter->sa_value.get<styling::color_unit>();
+            for (auto lpc = attr_range.lr_start; lpc < attr_range.lr_end; ++lpc)
+            {
+                resolved_line_attrs[lpc].ta_fg_color = attr_fg;
             }
-            std::fill(&fg_color[attr_range.lr_start],
-                      &fg_color[attr_range.lr_end],
-                      attr_fg);
             continue;
         }
 
         if (iter->sa_type == &VC_BACKGROUND) {
-            short attr_bg = iter->sa_value.get<int64_t>();
-            if (attr_bg == view_colors::MATCH_COLOR_SEMANTIC) {
-                attr_bg = vc.color_for_ident(al.to_string_fragment(iter))
-                              .value_or(view_colors::MATCH_COLOR_DEFAULT);
+            auto attr_bg = iter->sa_value.get<styling::color_unit>();
+            for (auto lpc = attr_range.lr_start; lpc < attr_range.lr_end; ++lpc)
+            {
+                resolved_line_attrs[lpc].ta_bg_color = attr_bg;
             }
-            std::fill(bg_color + attr_range.lr_start,
-                      bg_color + attr_range.lr_end,
-                      attr_bg);
             continue;
         }
 
         if (attr_range.lr_start < attr_range.lr_end) {
             auto attrs = text_attrs{};
-            std::optional<char> graphic;
+            std::optional<const char*> graphic;
             std::optional<wchar_t> block_elem;
 
             if (iter->sa_type == &VC_GRAPHIC) {
-                graphic = iter->sa_value.get<int64_t>();
-                attrs = text_attrs{};
+                graphic = iter->sa_value.get<const char*>();
+                attrs = text_attrs::with_altcharset();
+                for (auto lpc = attr_range.lr_start; lpc < attr_range.lr_end;
+                     ++lpc)
+                {
+                    ncplane_putstr_yx(window, y, x + lpc, graphic.value());
+                }
             } else if (iter->sa_type == &VC_BLOCK_ELEM) {
                 auto be = iter->sa_value.get<block_elem_t>();
                 block_elem = be.value;
@@ -509,29 +485,21 @@ view_curses::mvwattrline(WINDOW* window,
             }
 
             if (graphic || block_elem || !attrs.empty()) {
-                if (attrs.ta_attrs & (A_LEFT | A_RIGHT)) {
-                    if (attrs.ta_attrs & A_LEFT) {
-                        attrs.ta_fg_color
-                            = vc.color_for_ident(al.to_string_fragment(iter));
-                    }
-                    if (attrs.ta_attrs & A_RIGHT) {
-                        attrs.ta_bg_color
-                            = vc.color_for_ident(al.to_string_fragment(iter));
-                    }
-                    attrs.ta_attrs &= ~(A_LEFT | A_RIGHT);
+                if (attrs.ta_fg_color.cu_value.is<styling::semantic>()) {
+                    attrs.ta_fg_color
+                        = vc.color_for_ident(al.to_string_fragment(iter));
+                }
+                if (attrs.ta_bg_color.cu_value.is<styling::semantic>()) {
+                    attrs.ta_bg_color
+                        = vc.color_for_ident(al.to_string_fragment(iter));
                 }
 
-                if (attrs.ta_fg_color) {
-                    std::fill(&fg_color[attr_range.lr_start],
-                              &fg_color[attr_range.lr_end],
-                              attrs.ta_fg_color.value());
+                for (auto lpc = attr_range.lr_start; lpc < attr_range.lr_end;
+                     ++lpc)
+                {
+                    resolved_line_attrs[lpc] = attrs | resolved_line_attrs[lpc];
                 }
-                if (attrs.ta_bg_color) {
-                    std::fill(&bg_color[attr_range.lr_start],
-                              &bg_color[attr_range.lr_end],
-                              attrs.ta_bg_color.value());
-                }
-
+#if 0
                 for (int lpc = attr_range.lr_start;
                      lpc < attr_range.lr_end && lpc < line_width_chars;
                      lpc++)
@@ -555,36 +523,22 @@ view_curses::mvwattrline(WINDOW* window,
                         row_ch[lpc].attr &= ~A_REVERSE;
                     }
                 }
+#endif
             }
         }
     }
 
     for (int lpc = 0; lpc < line_width_chars; lpc++) {
-        if (fg_color[lpc] == -1 && bg_color[lpc] == -1) {
-            continue;
-        }
-#ifdef NCURSES_EXT_COLORS
-        auto cur_pair = row_ch[lpc].ext_color;
-#else
-        auto cur_pair = PAIR_NUMBER(row_ch[lpc].attr);
-#endif
-        if (cur_pair < 0 || cur_pair >= COLOR_PAIRS) {
-            cur_pair = 1;  // XXX ncurses is a giant pile of dogshit
-        }
-        short cur_fg, cur_bg;
-        pair_content(cur_pair, &cur_fg, &cur_bg);
+        auto cell_attrs = resolved_line_attrs[lpc] | base_attrs;
 
-        require_ge(cur_fg, -100);
-
-        auto desired_fg = fg_color[lpc] != -1 ? fg_color[lpc] : cur_fg;
-        auto desired_bg = bg_color[lpc] != -1 ? bg_color[lpc] : cur_bg;
-        require_ge(desired_fg, -100);
-        if (desired_fg >= COLOR_BLACK && desired_fg <= COLOR_WHITE) {
-            desired_fg = vc.ansi_to_theme_color(desired_fg);
-        }
-        if (desired_bg >= COLOR_BLACK && desired_bg <= COLOR_WHITE) {
-            desired_bg = vc.ansi_to_theme_color(desired_bg);
-        }
+        cell_attrs.ta_fg_color = vc.ansi_to_theme_color(cell_attrs.ta_fg_color);
+        cell_attrs.ta_bg_color = vc.ansi_to_theme_color(cell_attrs.ta_bg_color);
+        ncplane_set_cell_yx(window,
+                            y,
+                            x + lpc,
+                            cell_attrs.ta_attrs,
+                            view_colors::to_channels(cell_attrs));
+#if 0
         if (desired_fg == desired_bg) {
             if (desired_bg >= 0
                 && desired_bg
@@ -637,24 +591,11 @@ view_curses::mvwattrline(WINDOW* window,
         if (bg_color[lpc] == -1) {
             bg_color[lpc] = cur_bg;
         }
-
-        require_ge(fg_color[lpc], -100);
-        int color_pair = vc.ensure_color_pair(fg_color[lpc], bg_color[lpc]);
-
-        row_ch[lpc].attr = row_ch[lpc].attr & ~A_COLOR;
-#ifdef NCURSES_EXT_COLORS
-        row_ch[lpc].ext_color = color_pair;
-#else
-        row_ch[lpc].attr |= COLOR_PAIR(color_pair);
 #endif
     }
-    mvwadd_wchnstr(window, y, x, row_ch, line_width_chars);
 
     return retval;
 }
-
-constexpr short view_colors::MATCH_COLOR_DEFAULT;
-constexpr short view_colors::MATCH_COLOR_SEMANTIC;
 
 view_colors&
 view_colors::singleton()
@@ -664,9 +605,17 @@ view_colors::singleton()
     return s_vc;
 }
 
-view_colors::
-view_colors()
-    : vc_dyn_pairs(0)
+view_colors::view_colors()
+    : vc_ansi_to_theme{
+          styling::color_unit::from_palette({0}),
+          styling::color_unit::from_palette({1}),
+          styling::color_unit::from_palette({2}),
+          styling::color_unit::from_palette({3}),
+          styling::color_unit::from_palette({4}),
+          styling::color_unit::from_palette({5}),
+          styling::color_unit::from_palette({6}),
+          styling::color_unit::from_palette({7}),
+      }
 {
     size_t color_index = 0;
     for (int z = 0; z < 6; z++) {
@@ -678,6 +627,12 @@ view_colors()
             }
         }
     }
+
+    auto text_default = text_attrs{};
+    text_default.ta_fg_color = styling::color_unit::from_palette(COLOR_WHITE);
+    text_default.ta_bg_color = styling::color_unit::from_palette(COLOR_BLACK);
+    this->vc_role_attrs[lnav::enums::to_underlying(role_t::VCR_TEXT)]
+        = role_attrs{text_default, text_default};
 }
 
 block_elem_t
@@ -735,44 +690,66 @@ public:
 
         if (view_colors::initialized) {
             vc.init_roles(iter->second, reporter);
-
-            if (stdscr) {
-                auto& mouse_i = injector::get<xterm_mouse&>();
-                mouse_i.set_enabled(check_experimental("mouse")
-                                    || lnav_config.lc_mouse_mode
-                                        == lnav_mouse_mode::enabled);
-            }
         }
     }
 };
+
+uint64_t
+view_colors::to_channels(const text_attrs& ta)
+{
+    uint64_t retval = 0;
+    ta.ta_fg_color.cu_value.match(
+        [&retval](styling::transparent) {
+            ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
+        },
+        [&retval](styling::semantic) {
+            ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
+        },
+        [&retval](const palette_color& pc) {
+            ncchannels_set_fg_palindex(&retval, pc);
+        },
+        [&retval](const rgb_color& rc) {
+            ncchannels_set_fg_rgb8(&retval, rc.rc_r, rc.rc_g, rc.rc_b);
+        });
+    ta.ta_bg_color.cu_value.match(
+        [&retval](styling::transparent) {
+            ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
+        },
+        [&retval](styling::semantic) {
+            ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
+        },
+        [&retval](const palette_color& pc) {
+            ncchannels_set_bg_palindex(&retval, pc);
+        },
+        [&retval](const rgb_color& rc) {
+            ncchannels_set_bg_rgb8(&retval, rc.rc_r, rc.rc_g, rc.rc_b);
+        });
+
+    if (ta.has_style(text_attrs::style::reverse)) {
+        retval = ncchannels_reverse(retval);
+    }
+
+    return retval;
+}
 
 static ui_listener _UI_LISTENER;
 term_color_palette* view_colors::vc_active_palette;
 
 void
-view_colors::init(bool headless)
+view_colors::init(notcurses* nc)
 {
     vc_active_palette = ansi_colors();
-    if (!headless && has_colors()) {
-        log_info("calling start_color()");
-        if (start_color() == ERR) {
-            log_error("start_color() failed");
-        }
-
-        if (lnav_config.lc_ui_default_colors) {
-            use_default_colors();
-        }
-        if (COLORS >= 256) {
-            log_info("using xterm palette");
-            vc_active_palette = xterm_colors();
-        }
-        log_info("COLOR_PAIRS = %d", COLOR_PAIRS);
-
-        if (COLOR_PAIRS == 0) {
-            throw std::runtime_error("ncurses COLOR_PAIRS is zero");
+    if (nc != nullptr) {
+        vc_active_palette = xterm_colors();
+        const auto* caps = notcurses_capabilities(nc);
+        if (caps->rgb) {
+            log_info("terminal supports RGB colors");
+        } else {
+            log_info("terminal supports %d colors", caps->colors);
         }
     }
 
+    singleton().vc_notcurses = nc;
     initialized = true;
 
     {
@@ -783,39 +760,29 @@ view_colors::init(bool headless)
     }
 }
 
-inline text_attrs
-attr_for_colors(std::optional<short> fg, std::optional<short> bg)
+styling::color_unit
+view_colors::match_color(styling::color_unit cu) const
 {
-    if (fg && fg.value() == -1) {
-        fg = COLOR_WHITE;
-    }
-    if (bg && bg.value() == -1) {
-        bg = COLOR_BLACK;
+    if (this->vc_notcurses == nullptr) {
+        log_warning("no notcurses");
+        return cu;
     }
 
-    if (lnav_config.lc_ui_default_colors) {
-        if (fg && fg.value() == COLOR_WHITE) {
-            fg = -1;
-        }
-        if (bg && bg.value() == COLOR_BLACK) {
-            bg = -1;
-        }
+    const auto* caps = notcurses_capabilities(this->vc_notcurses);
+
+    if (caps->rgb) {
+        return cu;
     }
 
-    text_attrs retval;
+    if (cu.cu_value.is<rgb_color>()) {
+        log_info("matching RGB to palette");
+        auto lab = lab_color{cu.cu_value.get<rgb_color>()};
 
-    if (fg && fg.value() == view_colors::MATCH_COLOR_SEMANTIC) {
-        retval.ta_attrs |= A_LEFT;
-    } else {
-        retval.ta_fg_color = fg;
-    }
-    if (bg && bg.value() == view_colors::MATCH_COLOR_SEMANTIC) {
-        retval.ta_attrs |= A_RIGHT;
-    } else {
-        retval.ta_bg_color = bg;
+        return styling::color_unit::from_palette(
+            palette_color{vc_active_palette->match_color(lab)});
     }
 
-    return retval;
+    return cu;
 }
 
 view_colors::role_attrs
@@ -869,17 +836,35 @@ view_colors::to_attrs(const lnav_theme& lt,
             return styling::color_unit::make_empty();
         });
 
-    text_attrs retval1
-        = attr_for_colors(this->match_color(fg), this->match_color(bg));
+    fg = this->match_color(fg);
+    bg = this->match_color(bg);
+
+    log_debug("pp %s fg color %s", pp_sc.pp_path.c_str(), fg_color.c_str());
+    fg.cu_value.match(
+        [](styling::transparent) { log_debug("  trans"); },
+        [](styling::semantic) { log_debug("  semantic"); },
+        [](const palette_color& pc) { log_debug("  palette %d", pc); },
+        [](const rgb_color& rc) {
+            log_debug("  rgb %d %d %d", rc.rc_r, rc.rc_g, rc.rc_b);
+        });
+    log_debug("pp %s bg color %s", pp_sc.pp_path.c_str(), bg_color.c_str());
+    bg.cu_value.match(
+        [](styling::transparent) { log_debug("  trans"); },
+        [](styling::semantic) { log_debug("  semantic"); },
+        [](const palette_color& pc) { log_debug("  palette %d", pc); },
+        [](const rgb_color& rc) {
+            log_debug("  rgb %d %d %d", rc.rc_r, rc.rc_g, rc.rc_b);
+        });
+    auto retval1 = text_attrs{0, fg, bg};
     text_attrs retval2;
 
     if (sc.sc_underline) {
-        retval1.ta_attrs |= A_UNDERLINE;
-        retval2.ta_attrs |= A_UNDERLINE;
+        retval1 |= text_attrs::style::underline;
+        retval2 |= text_attrs::style::underline;
     }
     if (sc.sc_bold) {
-        retval1.ta_attrs |= A_BOLD;
-        retval2.ta_attrs |= A_BOLD;
+        retval1 |= text_attrs::style::bold;
+        retval2 |= text_attrs::style::bold;
     }
 
     return {retval1, retval2, role_class};
@@ -914,64 +899,37 @@ view_colors::init_roles(const lnav_theme& lt,
     this->get_role_attrs(role_t::VCR_TEXT)
         = this->to_attrs(lt, lt.lt_style_text, reporter);
 
-    for (int ansi_fg = 0; ansi_fg < 8; ansi_fg++) {
-        for (int ansi_bg = 0; ansi_bg < 8; ansi_bg++) {
-            if (ansi_fg == 0 && ansi_bg == 0) {
-                continue;
-            }
+    for (int ansi_fg = 1; ansi_fg < 8; ansi_fg++) {
+        auto fg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_fg]);
+        auto fg_str = fg_iter == lt.lt_vars.end() ? "" : fg_iter->second;
 
-            auto fg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_fg]);
-            auto bg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_bg]);
-            auto fg_str = fg_iter == lt.lt_vars.end() ? "" : fg_iter->second;
-            auto bg_str = bg_iter == lt.lt_vars.end() ? "" : bg_iter->second;
+        auto rgb_fg = from<rgb_color>(string_fragment::from_str(fg_str))
+                          .unwrapOrElse([&](const auto& msg) {
+                              reporter(&fg_str,
+                                       lnav::console::user_message::error(
+                                           attr_line_t("invalid color -- ")
+                                               .append_quoted(fg_str))
+                                           .with_reason(msg));
+                              return rgb_color{};
+                          });
 
-            auto rgb_fg = from<rgb_color>(string_fragment::from_str(fg_str))
-                              .unwrapOrElse([&](const auto& msg) {
-                                  reporter(&fg_str,
-                                           lnav::console::user_message::error(
-                                               attr_line_t("invalid color -- ")
-                                                   .append_quoted(fg_str))
-                                               .with_reason(msg));
-                                  return rgb_color{};
-                              });
-            auto rgb_bg
-                = from<rgb_color>(string_fragment::from_str(bg_str))
-                      .unwrapOrElse([&](const auto& msg) {
-                          reporter(
-                              &bg_str,
-                              lnav::console::user_message::error(
-                                  attr_line_t("invalid background color -- ")
-                                      .append_quoted(bg_str))
-                                  .with_reason(msg));
-                          return rgb_color{};
-                      });
+        auto fg = vc_active_palette->match_color(lab_color(rgb_fg));
 
-            short fg = vc_active_palette->match_color(lab_color(rgb_fg));
-            short bg = vc_active_palette->match_color(lab_color(rgb_bg));
-
-            if (rgb_fg.empty()) {
-                fg = ansi_fg;
-            }
-            if (rgb_bg.empty()) {
-                bg = ansi_bg;
-            }
-
-            this->vc_ansi_to_theme[ansi_fg] = fg;
-            if (lnav_config.lc_ui_default_colors && bg == COLOR_BLACK) {
-                bg = -1;
-                if (fg == COLOR_WHITE) {
-                    fg = -1;
-                }
-            }
+        if (rgb_fg.empty()) {
+            fg = ansi_fg;
         }
+
+        this->vc_ansi_to_theme[ansi_fg] = palette_color{fg};
     }
 
+#if 0
     if (lnav_config.lc_ui_dim_text) {
         this->get_role_attrs(role_t::VCR_TEXT).ra_normal.ta_attrs |= A_DIM;
         this->get_role_attrs(role_t::VCR_TEXT).ra_reverse.ta_attrs |= A_DIM;
     }
+#endif
     this->get_role_attrs(role_t::VCR_SEARCH)
-        = role_attrs{text_attrs{A_REVERSE}, text_attrs{A_REVERSE}};
+        = role_attrs{text_attrs::with_reverse(), text_attrs::with_reverse()};
     this->get_role_attrs(role_t::VCR_SEARCH).ra_class_name
         = intern_string::lookup("-lnav_styles_search");
     this->get_role_attrs(role_t::VCR_IDENTIFIER)
@@ -1028,9 +986,9 @@ view_colors::init_roles(const lnav_theme& lt,
         this->get_role_attrs(role_t::VCR_ACTIVE_STATUS).ra_reverse,
     };
     this->get_role_attrs(role_t::VCR_ACTIVE_STATUS2).ra_normal.ta_attrs
-        |= A_BOLD;
+        |= NCSTYLE_BOLD;
     this->get_role_attrs(role_t::VCR_ACTIVE_STATUS2).ra_reverse.ta_attrs
-        |= A_BOLD;
+        |= NCSTYLE_BOLD;
     this->get_role_attrs(role_t::VCR_STATUS_TITLE)
         = this->to_attrs(lt, lt.lt_style_status_title, reporter);
     this->get_role_attrs(role_t::VCR_STATUS_SUBTITLE)
@@ -1254,11 +1212,6 @@ view_colors::init_roles(const lnav_theme& lt,
         }
     }
 
-    if (initialized && this->vc_color_pair_end == 0) {
-        this->vc_color_pair_end = 1;
-    }
-    this->vc_dyn_pairs.clear();
-
     for (int32_t role_index = 0;
          role_index < lnav::enums::to_underlying(role_t::VCR__MAX);
          role_index++)
@@ -1280,95 +1233,32 @@ view_colors::init_roles(const lnav_theme& lt,
         this->vc_class_to_role[ra.ra_class_name.to_string()]
             = SA_LEVEL.value(level_index);
     }
-}
 
-int
-view_colors::ensure_color_pair(short fg, short bg)
-{
-    require_ge(fg, -100);
-    require_ge(bg, -100);
-
-    if (fg >= COLOR_BLACK && fg <= COLOR_WHITE) {
-        fg = this->ansi_to_theme_color(fg);
+    if (this->vc_notcurses) {
+        auto& mouse_i = injector::get<xterm_mouse&>();
+        mouse_i.set_enabled(
+            this->vc_notcurses,
+            check_experimental("mouse")
+                || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
     }
-    if (bg >= COLOR_BLACK && bg <= COLOR_WHITE) {
-        bg = this->ansi_to_theme_color(bg);
-    }
-
-    auto index_pair = std::make_pair(fg, bg);
-    auto existing = this->vc_dyn_pairs.get(index_pair);
-
-    if (existing) {
-        auto retval = existing.value().dp_color_pair;
-
-        return retval;
-    }
-
-    auto def_attrs = this->attrs_for_role(role_t::VCR_TEXT);
-    int retval = this->vc_color_pair_end + this->vc_dyn_pairs.size();
-    auto attrs
-        = attr_for_colors(fg == -1 ? def_attrs.ta_fg_color.value_or(-1) : fg,
-                          bg == -1 ? def_attrs.ta_bg_color.value_or(-1) : bg);
-    init_pair(retval, attrs.ta_fg_color.value(), attrs.ta_bg_color.value());
-
-    if (initialized) {
-        struct dyn_pair dp = {retval};
-
-        this->vc_dyn_pairs.set_max_size(256 - this->vc_color_pair_end);
-        this->vc_dyn_pairs.put(index_pair, dp);
-    }
-
-    return retval;
 }
 
-int
-view_colors::ensure_color_pair(std::optional<short> fg, std::optional<short> bg)
-{
-    return this->ensure_color_pair(fg.value_or(-1), bg.value_or(-1));
-}
-
-int
-view_colors::ensure_color_pair(const styling::color_unit& rgb_fg,
-                               const styling::color_unit& rgb_bg)
-{
-    auto fg = this->match_color(rgb_fg);
-    auto bg = this->match_color(rgb_bg);
-
-    return this->ensure_color_pair(fg, bg);
-}
-
-std::optional<short>
-view_colors::match_color(const styling::color_unit& color) const
-{
-    return color.cu_value.match(
-        [](styling::semantic) -> std::optional<short> {
-            return MATCH_COLOR_SEMANTIC;
-        },
-        [](const rgb_color& color) -> std::optional<short> {
-            if (color.empty()) {
-                return std::nullopt;
-            }
-
-            return vc_active_palette->match_color(lab_color(color));
-        });
-}
-
-std::optional<short>
+styling::color_unit
 view_colors::color_for_ident(const char* str, size_t len) const
 {
     auto index = crc32(1, (const Bytef*) str, len);
-    int retval;
 
     if (str[0] == '#' && (len == 4 || len == 7)) {
         auto fg_res
             = styling::color_unit::from_str(string_fragment(str, 0, len));
         if (fg_res.isOk()) {
-            return this->match_color(fg_res.unwrap());
+            return fg_res.unwrap();
         }
     }
 
-    auto offset = index % HI_COLOR_COUNT;
-    retval = this->vc_highlight_colors[offset];
+    const auto offset = index % HI_COLOR_COUNT;
+    auto retval = styling::color_unit::from_palette(
+        palette_color{static_cast<uint8_t>(this->vc_highlight_colors[offset])});
 
     return retval;
 }
@@ -1378,48 +1268,48 @@ view_colors::attrs_for_ident(const char* str, size_t len) const
 {
     auto retval = this->attrs_for_role(role_t::VCR_IDENTIFIER);
 
-    if (retval.ta_attrs & (A_LEFT | A_RIGHT)) {
-        if (retval.ta_attrs & A_LEFT) {
-            retval.ta_fg_color = this->color_for_ident(str, len);
-        }
-        if (retval.ta_attrs & A_RIGHT) {
-            retval.ta_bg_color = this->color_for_ident(str, len);
-        }
-        retval.ta_attrs &= ~(A_COLOR | A_LEFT | A_RIGHT);
+    if (retval.ta_fg_color.cu_value.is<styling::semantic>()) {
+        retval.ta_fg_color = this->color_for_ident(str, len);
+    }
+    if (retval.ta_bg_color.cu_value.is<styling::semantic>()) {
+        retval.ta_bg_color = this->color_for_ident(str, len);
     }
 
     return retval;
 }
 
-Result<screen_curses, std::string>
-screen_curses::create()
+styling::color_unit
+view_colors::ansi_to_theme_color(styling::color_unit ansi_fg) const
 {
-    int errret = 0;
-    if (setupterm(nullptr, STDIN_FILENO, &errret) == ERR) {
-        switch (errret) {
-            case 1:
-                return Err(std::string("the terminal is a hardcopy, da fuq?!"));
-            case 0:
-                return Err(
-                    fmt::format(FMT_STRING("the TERM environment variable is "
-                                           "set to an unknown value: {}"),
-                                getenv("TERM")));
-            case -1:
-                return Err(
-                    std::string("the terminfo database could not be found"));
-            default:
-                return Err(std::string("setupterm() failed unexpectedly"));
+    if (ansi_fg.cu_value.is<palette_color>()) {
+        auto pal
+            = static_cast<ansi_color>(ansi_fg.cu_value.get<palette_color>());
+
+        if (pal >= ansi_color::black && pal <= ansi_color::white) {
+            return this->vc_ansi_to_theme[lnav::enums::to_underlying(pal)];
         }
     }
 
-    if (newterm(nullptr, stdout, stdin) == nullptr) {
-        return Err(std::string("ncurses function newterm() failed"));
+    return ansi_fg;
+}
+
+Result<screen_curses, std::string>
+screen_curses::create(const notcurses_options& options)
+{
+    auto* nc = notcurses_core_init(&options, stdout);
+    if (nc == nullptr) {
+        return Err(fmt::format(FMT_STRING("unable to initialize notcurses {}"),
+                               strerror(errno)));
     }
 
     auto& mouse_i = injector::get<xterm_mouse&>();
-    mouse_i.set_enabled(check_experimental("mouse")
-                        || lnav_config.lc_mouse_mode
-                            == lnav_mouse_mode::enabled);
+    mouse_i.set_enabled(
+        nc,
+        check_experimental("mouse")
+            || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
 
-    return Ok(screen_curses{stdscr});
+    log_info("notcurses detected terminal: %s",
+             notcurses_detected_terminal(nc));
+
+    return Ok(screen_curses(nc));
 }

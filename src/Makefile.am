@@ -7,6 +7,7 @@ SUBDIRS = \
     fmtlib \
     third-party/base64/lib \
     third-party/date/src \
+    third-party/notcurses/src/lib \
     third-party/scnlib/src \
     pcrepp \
     base \
@@ -152,6 +153,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party \
 	-I$(srcdir)/third-party/base64/include \
 	-I$(srcdir)/third-party/date/include \
+	-I$(srcdir)/third-party/notcurses/include \
 	-I$(srcdir)/third-party/prqlc-c \
 	-I$(srcdir)/third-party/rapidyaml \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
@@ -180,12 +182,14 @@ LDADD = \
 	yajl/libyajl.a \
 	yajlpp/libyajlpp.a \
 	third-party/base64/lib/libbase64.a \
+	third-party/notcurses/src/lib/liblnavnotcurses.a \
     $(RUST_DEPS_LIBS) \
 	$(READLINE_LIBS) \
 	$(CURSES_LIB) \
 	$(SQLITE3_LIBS) \
 	$(LIBARCHIVE_LIBS) \
-	$(LIBCURL)
+	$(LIBCURL) \
+	-lunistring
 
 # emojis.json is from https://gist.github.com/oliveratgithub/0bf11a9aff0d6da7b46f1490f86a71eb/
 # xml-entities.json is from https://html.spec.whatwg.org/entities.json

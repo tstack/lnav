@@ -168,8 +168,8 @@ public:
     void set_data_source(status_data_source* src) { this->sc_source = src; }
     status_data_source* get_data_source() { return this->sc_source; }
 
-    void set_window(WINDOW* win) { this->sc_window = win; }
-    WINDOW* get_window() { return this->sc_window; }
+    void set_window(ncplane* win) { this->sc_window = win; }
+    ncplane* get_window() { return this->sc_window; }
 
     void set_enabled(bool value) { this->sc_enabled = value; }
     bool get_enabled() const { return this->sc_enabled; }
@@ -185,7 +185,7 @@ public:
 
 private:
     status_data_source* sc_source{nullptr};
-    WINDOW* sc_window{nullptr};
+    ncplane* sc_window{nullptr};
     bool sc_enabled{true};
     role_t sc_default_role{role_t::VCR_STATUS};
 
