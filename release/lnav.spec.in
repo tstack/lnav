@@ -33,6 +33,7 @@ BuildRequires:  automake
 BuildRequires:  cargo
 BuildRequires:  libarchive-devel
 BuildRequires:  libcurl-devel
+BuildRequires:  libunistring-devel
 BuildRequires:  ncurses-devel
 # Only needed for the tests to run
 BuildRequires:  openssh
