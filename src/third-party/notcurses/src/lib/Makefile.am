@@ -29,6 +29,7 @@ noinst_HEADERS = \
     sprite.h \
     termdesc.h \
     unixsig.h \
+    ../version.h \
     visual-details.h \
     windows.h
 
