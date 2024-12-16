@@ -7,6 +7,13 @@ AM_CPPFLAGS = \
 noinst_LIBRARIES = liblnavnotcurses.a
 
 noinst_HEADERS = \
+    ../compat/compat.h \
+    ../../include/notcurses/direct.h \
+    ../../include/notcurses/nckeys.h \
+    ../../include/notcurses/ncport.h \
+    ../../include/notcurses/ncseqs.h \
+    ../../include/notcurses/notcurses.h \
+    ../../include/notcurses/version.h \
     automaton.h \
     base64.h \
     blit.h \
