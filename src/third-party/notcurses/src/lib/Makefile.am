@@ -1,8 +1,7 @@
 
 AM_CPPFLAGS = \
     -I$(srcdir)/.. \
-    -I$(srcdir)/../../include \
-    -I$(top_builddir)/src/third-party/libunistring-1.3/
+    -I$(srcdir)/../../include
 
 noinst_LIBRARIES = liblnavnotcurses.a
 
