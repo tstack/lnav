@@ -17,6 +17,7 @@ noinst_HEADERS = \
     base64.h \
     blit.h \
     blitset.h \
+    builddef.h \
     egcpool.h \
     fbuf.h \
     gpm.h \
