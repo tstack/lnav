@@ -178,6 +178,7 @@ RUN apk add --no-cache \
     build-base \
     cargo \
     git \
+    libunistring-dev \
     rust \
     zip
 
