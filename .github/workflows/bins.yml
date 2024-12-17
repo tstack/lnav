@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
+      - name: list
+        run: find /fake.root
       - name: make
         run: /entrypoint.sh
       - name: Build musl package
