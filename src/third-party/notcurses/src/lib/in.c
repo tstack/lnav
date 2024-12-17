@@ -837,7 +837,6 @@ kitty_kbd_txt(inputctx* ictx, int val, int mods, uint32_t *txt, int evtype){
   //note: if we don't set eff_text here, it will be set to .id later.
   if(txt && txt[0]!=0){
     for(int i=0 ; i<NCINPUT_MAX_EFF_TEXT_CODEPOINTS ; i++){
-        logdebug("eff_text[%d] = %d", i, txt[i]);
       tni.eff_text[i] = txt[i];
     }
       if (ncinput_ctrl_p(&tni) && txt[0] < 127 && txt[1] == 0) {
@@ -2754,15 +2753,18 @@ internal_get(inputctx* ictx, const struct timespec* ts, ncinput* ni){
   id = ictx->inputs[ictx->iread].id;
   if(ni){
     memcpy(ni, &ictx->inputs[ictx->iread], sizeof(*ni));
-    if(notcurses_ucs32_to_utf8(&ni->id, 1, (unsigned char*)ni->utf8, sizeof(ni->utf8)) < 0){
+
+      if (ncinput_ctrl_p(ni) && ni->id < 127) {
+          ni->utf8[0] = ni->id & 0x1f;
+          ni->utf8[1] = '\0';
+          ni->eff_text[0] = ni->id & 0x1f;
+          ni->eff_text[1] = '\0';
+      }
+    else if(notcurses_ucs32_to_utf8(&ni->id, 1, (unsigned char*)ni->utf8, sizeof(ni->utf8)) < 0){
       ni->utf8[0] = 0;
     }
     if (ni->eff_text[0]==0) {
-        logdebug("overriding eff_text");
         ni->eff_text[0]=ni->id;
-        if (ncinput_ctrl_p(ni) && ni->id < 127) {
-            ni->eff_text[0] &= 0x1f;
-        }
     }
   }
   if(++ictx->iread == ictx->isize){

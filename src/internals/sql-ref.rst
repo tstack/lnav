@@ -182,10 +182,6 @@ DETACH DATABASE *schema-name*
     .. code-block::  custsqlite
 
       ;DETACH DATABASE customers
-      ✘ error: SQL statement failed
-       reason: no such database: customers
-       --> command:1
-      
 
 
 ----
@@ -332,12 +328,16 @@ SELECT *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grouping-expr* OR
     * **limit-expr** --- The maximum number of rows to return.
 
   **Examples**
-    To select all of the columns from the table 'syslog_log':
+    To select all of the columns from the table 'lnav_example_log':
 
     .. code-block::  custsqlite
 
-      ;SELECT * FROM syslog_log
-      log_line log_time log_level log_hostname log_msgid log_pid log_pri log_procname log_struct log_syslog_tag syslog_version log_part log_idle_msecs log_mark log_comment log_tags log_annotations log_filters 
+      ;SELECT * FROM lnav_example_log
+       log_line  log_part    log_time     log_actual_time log_idle_msecs log_level  log_mark  log_comment log_tags log_filters ex_procname ex_duration log_time_msecs log_path    log_text        log_body     
+               0 <NULL>   2017-02⋯:06.100 2017-02⋯:06.100              0 info               0      <NULL>   <NULL>      <NULL> hw                    2  1486094706000 /tmp/log 2017-02⋯ World! Hello, World!   
+               1 <NULL>   2017-02⋯:06.200 2017-02⋯:06.200            100 error              0      <NULL>   <NULL>      <NULL> gw                    4  1486094706000 /tmp/log 2017-02⋯ World! Goodbye, World! 
+               2 new      2017-02⋯:06.200 2017-02⋯:06.200        1200000 warn               0      <NULL>   <NULL>      <NULL> gw                    1  1486095906000 /tmp/log 2017-02⋯ World! Goodbye, World! 
+               3 new      2017-02⋯:06.200 2017-02⋯:06.200        1800000 debug              0      <NULL>   <NULL>      <NULL> gw                   10  1486097706000 /tmp/log 2017-02⋯ World! Goodbye, World! 
 
 
 ----

@@ -602,8 +602,7 @@ format_example_text_for_term(const help_text& ht,
 
         ex_line.pad_to(50).with_attr_for_all(
             VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-        auto ex_result
-            = eval(ht, ex).with_attr_for_all(SA_PREFORMATTED.value());
+        const auto& ex_result = eval(ht, ex);
         alb.append("#")
             .append(fmt::to_string(count))
             .append(" ")

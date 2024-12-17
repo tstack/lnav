@@ -40,8 +40,7 @@ breadcrumb_curses::no_op_action(breadcrumb_curses&)
 {
 }
 
-breadcrumb_curses::
-breadcrumb_curses()
+breadcrumb_curses::breadcrumb_curses()
 {
     this->bc_match_search_overlay.sos_parent = this;
     this->bc_match_source.set_reverse_selection(true);
@@ -229,6 +228,18 @@ breadcrumb_curses::handle_key(const ncinput& ch)
 
     if (mapped_id == NCKEY_TAB && ncinput_shift_p(&ch)) {
         mapped_id = NCKEY_LEFT;
+    } else if (ncinput_ctrl_p(&ch)) {
+        switch (mapped_id) {
+            case 'a':
+            case 'A':
+                mapped_id = KEY_CTRL('a');
+            break;
+            break;
+            case 'e':
+            case 'E':
+                mapped_id = KEY_CTRL('e');
+                break;
+        }
     }
     switch (mapped_id) {
         case KEY_CTRL('a'):

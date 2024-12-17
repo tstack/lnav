@@ -36,6 +36,6 @@
 #include "help_text.hh"
 
 void execute_examples();
-attr_line_t eval_example(const help_text& ht, const help_example& ex);
+const attr_line_t& eval_example(const help_text& ht, const help_example& ex);
 
 #endif

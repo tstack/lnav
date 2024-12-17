@@ -132,7 +132,7 @@ string_fragment
 vt52_curses::map_input(const ncinput& ch)
 {
     /* Check for an escape sequence, otherwise just return the char. */
-    auto esc = vt52_escape_map::singleton()[ch.id];
+    const auto esc = vt52_escape_map::singleton()[ch.id];
     if (esc) {
         return esc.value();
     }

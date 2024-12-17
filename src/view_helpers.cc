@@ -617,7 +617,6 @@ handle_winch(screen_curses* sc)
         return false;
     }
 
-    log_info("winched");
     if (sc) {
         notcurses_refresh(sc->get_notcurses(), nullptr, nullptr);
         notcurses_render(sc->get_notcurses());
@@ -630,8 +629,8 @@ handle_winch(screen_curses* sc)
         lnav_data.ld_rl_view->window_change();
     }
     filter_source->fss_editor->window_change();
-    for (auto& sc : lnav_data.ld_status) {
-        sc.window_change();
+    for (auto& stat : lnav_data.ld_status) {
+        stat.window_change();
     }
     lnav_data.ld_view_stack.set_needs_update();
     lnav_data.ld_doc_view.set_needs_update();
@@ -993,12 +992,15 @@ update_hits(textview_curses* tc)
     }
 }
 
-static std::unordered_map<std::string, attr_line_t> EXAMPLE_RESULTS;
+using safe_example_results
+    = safe::Safe<std::unordered_map<std::string, attr_line_t>>;
+
+static safe_example_results EXAMPLE_RESULTS;
 
 static void
-execute_example(const help_text& ht)
+execute_example(std::unordered_map<std::string, attr_line_t>& res_map, const help_text& ht)
 {
-    static const std::set<std::string> IGNORED_NAMES = {"ATTACH"};
+    static const std::set<std::string> IGNORED_NAMES = {"ATTACH", "DETACH"};
 
     if (IGNORED_NAMES.count(ht.ht_name)) {
         return;
@@ -1016,7 +1018,7 @@ execute_example(const help_text& ht)
             continue;
         }
 
-        if (EXAMPLE_RESULTS.count(ex.he_cmd)) {
+        if (res_map.count(ex.he_cmd)) {
             continue;
         }
 
@@ -1057,11 +1059,11 @@ execute_example(const help_text& ht)
                         result.append("\n").append(al);
                     }
                 }
-
-                EXAMPLE_RESULTS[ex.he_cmd] = result;
-
+                result.with_attr_for_all(SA_PREFORMATTED.value());
                 log_trace("example: %s", ex.he_cmd);
                 log_trace("example result: %s", result.get_string().c_str());
+
+                res_map.emplace(ex.he_cmd, std::move(result));
                 break;
             }
             default:
@@ -1074,6 +1076,7 @@ execute_example(const help_text& ht)
 void
 execute_examples()
 {
+#if 0
     static const auto* sql_cmd_map
         = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
 
@@ -1103,18 +1106,34 @@ execute_examples()
     dls.dls_max_column_width = old_width;
 
     dls.clear();
+#endif
 }
 
-attr_line_t
+const attr_line_t&
 eval_example(const help_text& ht, const help_example& ex)
 {
-    auto iter = EXAMPLE_RESULTS.find(ex.he_cmd);
+    static const auto EMPTY = attr_line_t();
+    auto res_map = EXAMPLE_RESULTS.writeAccess();
 
-    if (iter != EXAMPLE_RESULTS.end()) {
-        return iter->second;
+    for (auto _attempt : {0, 1}) {
+        const auto iter = res_map->find(ex.he_cmd);
+        if (iter != res_map->end()) {
+            return iter->second;
+        }
+
+        switch (ht.ht_context) {
+            default: {
+                auto& dls = lnav_data.ld_db_row_source;
+                auto old_width = dls.dls_max_column_width;
+                dls.dls_max_column_width = 15;
+                execute_example(*res_map, ht);
+                dls.dls_max_column_width = old_width;
+                break;
+            }
+        }
     }
 
-    return "";
+    return EMPTY;
 }
 
 bool
@@ -1599,8 +1618,7 @@ lnav_behavior::mouse_event(
     }
     me.me_y = y - 1;
 
-    switch (me.me_state)
-    {
+    switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED:
         case mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK: {
             if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS) {
@@ -1657,12 +1675,13 @@ lnav_behavior::mouse_event(
         me.me_y -= this->lb_last_view->get_y();
         me.me_x -= this->lb_last_view->get_x();
         this->lb_last_view->handle_mouse(me);
-    } this->lb_last_event
-        = me;
-        if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
-            || me.me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
-            || me.me_button == mouse_button_t::BUTTON_SCROLL_UP
-            || me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN) {
-            this->lb_last_view = nullptr;
-        }
+    }
+    this->lb_last_event = me;
+    if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+        || me.me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK
+        || me.me_button == mouse_button_t::BUTTON_SCROLL_UP
+        || me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN)
+    {
+        this->lb_last_view = nullptr;
+    }
 }

@@ -1413,8 +1413,8 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                     .with_flag_name("LIMIT")
                     .zero_or_more())
             .with_example(
-                {"To select all of the columns from the table 'syslog_log'",
-                 "SELECT * FROM syslog_log"}),
+                {"To select all of the columns from the table 'lnav_example_log'",
+                 "SELECT * FROM lnav_example_log"}),
 
         help_text("WITH",
                   "Create a temporary view that exists only for the duration "

@@ -36,7 +36,7 @@
 #include "help_text.hh"
 
 using help_example_to_attr_line_fun_t
-    = std::function<attr_line_t(const help_text&, const help_example&)>;
+    = std::function<const attr_line_t&(const help_text&, const help_example&)>;
 
 enum class help_text_content {
     synopsis,
