@@ -156,6 +156,7 @@ public:
             }
             dup2(slave, STDOUT_FILENO);
 
+            unsetenv("TERM_PROGRAM");
             setenv("IN_SCRIPTY", "1", 1);
             setenv("TERM", term_type, 1);
         } else {
@@ -1041,6 +1042,7 @@ main(int argc, char* argv[])
     int c, fd, retval = EXIT_SUCCESS;
     bool passout = true, passin = false, prompt = false;
     const char* term_type = "xterm";
+    auto force_update = getenv("SCRIPTY_FORCE_UPDATE") != nullptr;
 
     scripty_data.sd_program_name = argv[0];
     scripty_data.sd_looping = true;
@@ -1297,6 +1299,7 @@ main(int argc, char* argv[])
                                scripty_data.sd_actual_name.string());
         auto rc = system(cmd.c_str());
         if (rc != 0) {
+            auto do_update = force_update;
             if (prompt) {
                 char resp[4];
 
@@ -1304,18 +1307,21 @@ main(int argc, char* argv[])
                 fflush(stdout);
                 log_perror(scanf("%3s", resp));
                 if (strcasecmp(resp, "y") == 0) {
-                    printf("Updating: %s -> %s\n",
-                           scripty_data.sd_actual_name.c_str(),
-                           scripty_data.sd_expected_name.c_str());
-
-                    auto options
-                        = std::filesystem::copy_options::overwrite_existing;
-                    std::filesystem::copy_file(scripty_data.sd_actual_name,
-                                               scripty_data.sd_expected_name,
-                                               options);
+                    do_update = true;
                 } else {
-                    retval = EXIT_FAILURE;
+                    do_update = false;
                 }
+            }
+            if (do_update) {
+                printf("Updating: %s -> %s\n",
+                       scripty_data.sd_actual_name.c_str(),
+                       scripty_data.sd_expected_name.c_str());
+
+                auto options
+                    = std::filesystem::copy_options::overwrite_existing;
+                std::filesystem::copy_file(scripty_data.sd_actual_name,
+                                           scripty_data.sd_expected_name,
+                                           options);
             } else {
                 fprintf(stderr, "%s:error: mismatch\n", tstamp());
                 retval = EXIT_FAILURE;
