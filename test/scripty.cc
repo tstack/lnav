@@ -318,7 +318,6 @@ static const std::map<std::string, std::string> CSI_TO_DESC = {
     {"[?47h", "Use alternate screen buffer"},
     {"[?1049h", "Use alternate screen buffer"},
     {"[?47l", "Use normal screen buffer"},
-    {"[?1049l", "Use normal screen buffer"},
     {"[2h", "Set Keyboard Action mode"},
     {"[4h", "Set Replace mode"},
     {"[12h", "Set Send/Receive mode"},
@@ -806,6 +805,20 @@ struct term_machine {
                                 }
                                 break;
                             }
+                            case 'l': {
+                                auto ps = this->get_m_params();
+
+                                if (!ps.empty()) {
+                                    if (ps[0] == 1049) {
+                                        this->tm_rmcup1 = true;
+                                    } else {
+                                        fprintf(scripty_data.sd_from_child,
+                                                "CSI %s\n",
+                                                this->tm_escape_buffer.data());
+                                    }
+                                }
+                                break;
+                            }
                             case 'm': {
                                 auto attrs = this->get_m_params();
 
@@ -873,6 +886,21 @@ struct term_machine {
                                         write(this->tm_child_term.get_fd(),
                                               CPR,
                                               sizeof(CPR));
+                                    }
+                                }
+                                break;
+                            }
+                            case 't': {
+                                auto winops = this->get_m_params();
+
+                                if (!winops.empty()) {
+                                    if (winops.size() == 3 && winops[0] == 23
+                                        && winops[1] == 0 && winops[2] == 0)
+                                    {
+                                    } else {
+                                        fprintf(scripty_data.sd_from_child,
+                                                "CSI %s\n",
+                                                this->tm_escape_buffer.data());
                                     }
                                 }
                                 break;
@@ -991,6 +1019,8 @@ struct term_machine {
     std::vector<char> tm_user_input;
 
     size_t tm_flush_count{0};
+
+    bool tm_rmcup1{false};
 };
 
 static void
@@ -1047,7 +1077,7 @@ main(int argc, char* argv[])
     scripty_data.sd_program_name = argv[0];
     scripty_data.sd_looping = true;
 
-    while ((c = getopt(argc, argv, "ha:e:nipX")) != -1) {
+    while ((c = getopt(argc, argv, "ha:e:nipSX")) != -1) {
         switch (c) {
             case 'h':
                 usage();
@@ -1088,6 +1118,13 @@ main(int argc, char* argv[])
             case 'p':
                 prompt = true;
                 break;
+            case 'S': {
+                char b;
+                if (isatty(STDIN_FILENO) && read(STDIN_FILENO, &b, 1) == -1) {
+                    perror("Read key from STDIN");
+                }
+                break;
+            }
             case 'X':
                 term_type = "xterm-256color";
                 break;
