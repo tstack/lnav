@@ -13,7 +13,7 @@
 #endif
 #if (defined(__linux__))
 #include <sys/wait.h>
-#include <asm/unistd.h>
+#include <unistd.h>
 // #include <linux/sched.h>
 #define NCPOLLEVENTS (POLLIN | POLLRDHUP)
 #if (defined(__NR_clone3) && defined(P_PIDFD) && defined(CLONE_CLEAR_SIGHAND))
