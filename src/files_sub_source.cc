@@ -87,10 +87,7 @@ from_selection(vis_line_t sel_vis)
 }
 }  // namespace files_model
 
-files_sub_source::
-files_sub_source()
-{
-}
+files_sub_source::files_sub_source() {}
 
 bool
 files_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
@@ -532,7 +529,10 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                     .right_justify(NAME_WIDTH)
                     .append(": ")
                     .append(lnav::to_rfc3339_string(
-                        convert_log_time_to_local(lf->get_modified_time()),
+                        convert_log_time_to_local(
+                            std::chrono::duration_cast<std::chrono::seconds>(
+                                lf->get_modified_time())
+                                .count()),
                         0,
                         'T')));
             details.emplace_back(

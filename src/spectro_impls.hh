@@ -45,15 +45,15 @@ public:
                      spectrogram_row& row_out) override;
 
     void spectro_mark(textview_curses& tc,
-                      time_t begin_time,
-                      time_t end_time,
+                      std::chrono::microseconds begin_time,
+                      std::chrono::microseconds end_time,
                       double range_min,
                       double range_max) override;
 
     intern_string_t lsvs_colname;
     logline_value_stats lsvs_stats;
-    time_t lsvs_begin_time{0};
-    time_t lsvs_end_time{0};
+    std::chrono::microseconds lsvs_begin_time{0};
+    std::chrono::microseconds lsvs_end_time{0};
     bool lsvs_found{false};
 };
 
@@ -69,8 +69,8 @@ public:
                      spectrogram_row& row_out) override;
 
     void spectro_mark(textview_curses& tc,
-                      time_t begin_time,
-                      time_t end_time,
+                      std::chrono::microseconds begin_time,
+                      std::chrono::microseconds end_time,
                       double range_min,
                       double range_max) override
     {
@@ -78,8 +78,8 @@ public:
 
     std::string dsvs_colname;
     logline_value_stats dsvs_stats;
-    time_t dsvs_begin_time{0};
-    time_t dsvs_end_time{0};
+    std::chrono::microseconds dsvs_begin_time{0};
+    std::chrono::microseconds dsvs_end_time{0};
     std::optional<size_t> dsvs_column_index;
     std::optional<lnav::console::user_message> dsvs_error_msg;
 };

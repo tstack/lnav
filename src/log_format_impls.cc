@@ -101,7 +101,7 @@ public:
             tmptm.et_flags |= ETF_ZONE_SET;
             tmptm.et_gmtoff
                 = lnav::local_time_to_info(
-                      date::local_seconds{std::chrono::seconds{ll.get_time()}})
+                      date::local_seconds{ll.get_time<std::chrono::seconds>()})
                       .first.offset.count();
             off_t zone_len = 0;
             ftime_z(zone_str, zone_len, sizeof(zone_str), tmptm);
@@ -234,11 +234,14 @@ public:
 
             if (!(this->lf_timestamp_flags
                   & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
-                && !dst.empty() && dst.back().get_time() == log_tv.tv_sec
-                && dst.back().get_millis() != 0)
+                && !dst.empty()
+                && dst.back().get_time<std::chrono::seconds>().count()
+                    == log_tv.tv_sec
+                && dst.back().get_subsecond_time<std::chrono::microseconds>().count() != 0)
             {
                 auto log_ms
-                    = std::chrono::milliseconds(dst.back().get_millis());
+                    = dst.back()
+                          .get_subsecond_time<std::chrono::microseconds>();
 
                 log_time.et_nsec
                     = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -1236,9 +1239,7 @@ public:
             = intern_string::lookup("sc-status");
 
         ws_separated_string ss(sbr.get_data(), sbr.length());
-        struct timeval date_tv {
-            0, 0
-        }, time_tv{0, 0};
+        struct timeval date_tv{0, 0}, time_tv{0, 0};
         struct exttm date_tm, time_tm;
         bool found_date = false, found_time = false;
         log_level_t level = LEVEL_INFO;
@@ -1276,8 +1277,10 @@ public:
                         }
                     }
                 }
-                dst.emplace_back(
-                    li.li_file_range.fr_offset, 0, 0, LEVEL_IGNORE, 0);
+                dst.emplace_back(li.li_file_range.fr_offset,
+                                 std::chrono::microseconds{0},
+                                 LEVEL_IGNORE,
+                                 0);
                 return scan_match{2000};
             }
 
@@ -1844,10 +1847,8 @@ struct logfmt_pair_handler {
 
     date_time_scanner& lph_dt_scanner;
     bool lph_found_time{false};
-    struct exttm lph_time_tm {};
-    struct timeval lph_tv {
-        0, 0
-    };
+    struct exttm lph_time_tm{};
+    struct timeval lph_tv{0, 0};
     log_level_t lph_level{log_level_t::LEVEL_INFO};
     string_fragment lph_key_frag{""};
 };

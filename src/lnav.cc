@@ -166,17 +166,17 @@ using namespace md4cpp::literals;
 static std::vector<std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-const int ZOOM_LEVELS[] = {
-    1,
-    30,
-    60,
-    5 * 60,
-    15 * 60,
-    60 * 60,
-    4 * 60 * 60,
-    8 * 60 * 60,
-    24 * 60 * 60,
-    7 * 24 * 60 * 60,
+const std::chrono::microseconds ZOOM_LEVELS[] = {
+    1s,
+    30s,
+    60s,
+    5min,
+    15min,
+    1h,
+    4h,
+    8h,
+    24h,
+    7 * 24h,
 };
 
 template<std::intmax_t N>
@@ -210,7 +210,7 @@ public:
     constexpr operator const char*() const { return buf; }
 };
 
-const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(int);
+const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(decltype(ZOOM_LEVELS[0]));
 
 const std::vector<std::string> lnav_zoom_strings = {
     "1-second",

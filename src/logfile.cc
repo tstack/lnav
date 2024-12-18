@@ -210,15 +210,14 @@ logfile::open(std::filesystem::path filename,
     return Ok(lf);
 }
 
-logfile::
-logfile(std::filesystem::path filename, const logfile_open_options& loo)
+logfile::logfile(std::filesystem::path filename,
+                 const logfile_open_options& loo)
     : lf_filename(std::move(filename)), lf_options(loo)
 {
     this->lf_opids.writeAccess()->los_opid_ranges.reserve(64);
 }
 
-logfile::~
-logfile()
+logfile::~logfile()
 {
     log_info("destructing logfile: %s", this->lf_filename.c_str());
 }
@@ -335,7 +334,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
     log_format::scan_result_t found = log_format::scan_no_match{};
     size_t prescan_size = this->lf_index.size();
-    time_t prescan_time = 0;
+    auto prescan_time = std::chrono::microseconds{0};
     bool retval = false;
 
     if (this->lf_options.loo_detect_format
@@ -590,14 +589,14 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             require_lt(starting_index_size, this->lf_index.size());
             for (size_t lpc = 0; lpc < starting_index_size; lpc++) {
                 if (this->lf_format->lf_multiline) {
-                    this->lf_index[lpc].set_time(last_line.get_time());
-                    this->lf_index[lpc].set_millis(last_line.get_millis());
+                    this->lf_index[lpc].set_time(
+                        last_line.get_time<std::chrono::microseconds>());
                     if (this->lf_format->lf_structured) {
                         this->lf_index[lpc].set_ignore(true);
                     }
                 } else {
-                    this->lf_index[lpc].set_time(last_line.get_time());
-                    this->lf_index[lpc].set_millis(last_line.get_millis());
+                    this->lf_index[lpc].set_time(
+                        last_line.get_time<std::chrono::microseconds>());
                     this->lf_index[lpc].set_level(LEVEL_INVALID);
                 }
                 retval = true;
@@ -607,7 +606,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         }
     } else if (this->lf_format.get() != nullptr) {
         if (!this->lf_index.empty()) {
-            prescan_time = this->lf_index[prescan_size - 1].get_time();
+            prescan_time = this->lf_index[prescan_size - 1]
+                               .get_time<std::chrono::microseconds>();
         }
         /* We've locked onto a format, just use that scanner. */
         found = this->lf_format->scan(*this, this->lf_index, li, sbr, sbc);
@@ -623,7 +623,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                    || li.li_utf8_scan_result.usr_has_ansi);
         }
         if (prescan_size > 0 && this->lf_index.size() >= prescan_size
-            && prescan_time != this->lf_index[prescan_size - 1].get_time())
+            && prescan_time != this->lf_index[prescan_size - 1].get_time<std::chrono::microseconds>())
         {
             retval = true;
         }
@@ -640,8 +640,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         auto& line_to_update = this->lf_index[lpc];
 
                         line_to_update.set_time_skew(true);
-                        line_to_update.set_time(second_to_last.get_time());
-                        line_to_update.set_millis(second_to_last.get_millis());
+                        line_to_update.set_time(
+                            second_to_last
+                                .get_time<std::chrono::microseconds>());
                     }
                 } else {
                     retval = true;
@@ -650,16 +651,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         }
     } else if (found.is<log_format::scan_no_match>()) {
         log_level_t last_level = LEVEL_UNKNOWN;
-        time_t last_time = this->lf_index_time;
-        short last_millis = 0;
+        auto last_time = this->lf_index_time;
         uint8_t last_mod = 0, last_opid = 0;
 
         if (this->lf_format == nullptr && li.li_timestamp.tv_sec != 0) {
-            last_time = li.li_timestamp.tv_sec;
-            last_millis
-                = std::chrono::duration_cast<std::chrono::milliseconds>(
-                      std::chrono::microseconds(li.li_timestamp.tv_usec))
-                      .count();
+            last_time = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::seconds{li.li_timestamp.tv_sec})
+                + std::chrono::microseconds(li.li_timestamp.tv_usec);
             last_level = li.li_level;
         } else if (!this->lf_index.empty()) {
             const auto& ll = this->lf_index.back();
@@ -668,8 +666,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
              * Assume this line is part of the previous one(s) and copy the
              * metadata over.
              */
-            last_time = ll.get_time();
-            last_millis = ll.get_millis();
+            last_time = ll.get_time<std::chrono::microseconds>();
             if (this->lf_format.get() != nullptr) {
                 last_level = (log_level_t) (ll.get_level_and_flags()
                                             | LEVEL_CONTINUED);
@@ -679,7 +676,6 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         }
         this->lf_index.emplace_back(li.li_file_range.fr_offset,
                                     last_time,
-                                    last_millis,
                                     last_level,
                                     last_mod,
                                     last_opid);
@@ -1216,9 +1212,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lf_sort_needed = false;
     }
 
-    this->lf_index_time = this->lf_line_buffer.get_file_time();
-    if (!this->lf_index_time) {
-        this->lf_index_time = st.st_mtime;
+    this->lf_index_time = std::chrono::seconds{this->lf_line_buffer.get_file_time()};
+    if (this->lf_index_time.count() == 0) {
+        this->lf_index_time = std::chrono::seconds{st.st_mtime};
     }
 
     if (this->lf_out_of_time_order_count) {

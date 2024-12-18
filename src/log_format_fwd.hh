@@ -145,14 +145,13 @@ public:
      * @param l The logging level.
      */
     logline(file_off_t off,
-            time_t t,
-            uint16_t millis,
+            std::chrono::microseconds t,
             log_level_t lev,
             uint8_t mod = 0,
             uint8_t opid = 0)
-        : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_millis(millis),
-          ll_opid(opid), ll_sub_offset(0), ll_valid_utf(1), ll_level(lev),
-          ll_module_id(mod), ll_meta_mark(0), ll_expr_mark(0)
+        : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_opid(opid),
+          ll_sub_offset(0), ll_valid_utf(1), ll_level(lev), ll_module_id(mod),
+          ll_meta_mark(0), ll_expr_mark(0)
     {
         memset(this->ll_schema, 0, sizeof(this->ll_schema));
     }
@@ -177,38 +176,56 @@ public:
 
     void set_sub_offset(uint16_t suboff) { this->ll_sub_offset = suboff; }
 
-    /** @return The timestamp for the line. */
-    time_t get_time() const { return this->ll_time; }
+    template<typename S>
+    S get_time() const
+    {
+        return std::chrono::duration_cast<S>(this->ll_time);
+    }
+
+    template<typename S>
+    S get_subsecond_time() const
+    {
+        static constexpr auto ONE_SEC = std::chrono::seconds(1);
+
+        return std::chrono::duration_cast<S>(this->ll_time % ONE_SEC);
+    }
 
     void to_exttm(struct exttm& tm_out) const
     {
-        tm_out.et_tm = *gmtime(&this->ll_time);
-        tm_out.et_nsec = this->ll_millis * 1000 * 1000;
+        auto secs = static_cast<time_t>(
+            this->get_time<std::chrono::seconds>().count());
+
+        tm_out.et_tm = *gmtime(&secs);
+        tm_out.et_nsec
+            = this->get_subsecond_time<std::chrono::nanoseconds>().count();
     }
 
-    void set_time(time_t t) { this->ll_time = t; }
-
-    /** @return The millisecond timestamp for the line. */
-    uint16_t get_millis() const { return this->ll_millis; }
-
-    void set_millis(uint16_t m) { this->ll_millis = m; }
-
-    uint64_t get_time_in_millis() const
+    template<typename T>
+    void set_time(T t)
     {
-        return (this->ll_time * 1000ULL + (uint64_t) this->ll_millis);
+        this->ll_time
+            = std::chrono::duration_cast<std::chrono::microseconds>(t);
     }
 
-    struct timeval get_timeval() const
+    timeval get_timeval() const
     {
-        struct timeval retval = {this->ll_time, this->ll_millis * 1000};
-
-        return retval;
+        return timeval{
+            this->get_time<std::chrono::seconds>().count(),
+            static_cast<decltype(timeval::tv_usec)>(
+                this->get_subsecond_time<std::chrono::microseconds>().count()),
+        };
     }
 
-    void set_time(const struct timeval& tv)
+    void set_time(const timeval& tv)
     {
-        this->ll_time = tv.tv_sec;
-        this->ll_millis = tv.tv_usec / 1000;
+        this->ll_time = to_us(tv);
+    }
+
+    template<typename T>
+    void set_subsecond_time(T sub)
+    {
+        this->ll_time
+            += std::chrono::duration_cast<std::chrono::microseconds>(sub);
     }
 
     void set_ignore(bool val)
@@ -345,35 +362,30 @@ public:
     bool operator<(const logline& rhs) const
     {
         return (this->ll_time < rhs.ll_time)
-            || (this->ll_time == rhs.ll_time && this->ll_millis < rhs.ll_millis)
-            || (this->ll_time == rhs.ll_time && this->ll_millis == rhs.ll_millis
-                && this->ll_offset < rhs.ll_offset)
-            || (this->ll_time == rhs.ll_time && this->ll_millis == rhs.ll_millis
-                && this->ll_offset == rhs.ll_offset
+            || (this->ll_time == rhs.ll_time && this->ll_offset < rhs.ll_offset)
+            || (this->ll_time == rhs.ll_time && this->ll_offset == rhs.ll_offset
                 && this->ll_sub_offset < rhs.ll_sub_offset);
     }
 
-    bool operator<(const time_t& rhs) const { return this->ll_time < rhs; }
+    bool operator<(const std::chrono::microseconds& rhs) const
+    {
+        return this->ll_time < rhs;
+    }
 
     bool operator<(const struct timeval& rhs) const
     {
-        return ((this->ll_time < rhs.tv_sec)
-                || ((this->ll_time == rhs.tv_sec)
-                    && (this->ll_millis < (rhs.tv_usec / 1000))));
+        return this->get_timeval() < rhs;
     }
 
     bool operator<=(const struct timeval& rhs) const
     {
-        return ((this->ll_time < rhs.tv_sec)
-                || ((this->ll_time == rhs.tv_sec)
-                    && (this->ll_millis <= (rhs.tv_usec / 1000))));
+        return this->get_timeval() <= rhs;
     }
 
 private:
     file_off_t ll_offset : 63;
     uint8_t ll_has_ansi : 1;
-    time_t ll_time;
-    unsigned int ll_millis : 10;
+    std::chrono::microseconds ll_time;
     unsigned int ll_opid : 6;
     unsigned int ll_sub_offset : 15;
     unsigned int ll_valid_utf : 1;

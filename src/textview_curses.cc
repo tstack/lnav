@@ -139,7 +139,9 @@ text_accel_source::get_line_accel_direction(vis_line_t vl)
             continue;
         }
 
-        if (!la.add_point(curr_line->get_time_in_millis())) {
+        if (!la.add_point(
+                curr_line->get_time<std::chrono::milliseconds>().count()))
+        {
             break;
         }
 

@@ -574,7 +574,11 @@ load_time_bookmarks()
                     while (line_iter != lf->end()) {
                         const auto line_tv = line_iter->get_timeval();
 
-                        if (line_tv != log_tv) {
+                        // NB: only milliseconds were stored in the DB, but the
+                        // internal rep stores micros now.
+                        if (line_tv.tv_sec != log_tv.tv_sec
+                            || line_tv.tv_usec / 1000 != log_tv.tv_usec / 1000)
+                        {
                             if (format->lf_time_ordered) {
                                 break;
                             }
@@ -801,10 +805,11 @@ load_time_bookmarks()
                     auto line_iter
                         = lower_bound(lf->begin(), lf->end(), log_tv);
                     while (line_iter != lf->end()) {
-                        struct timeval line_tv = line_iter->get_timeval();
+                        auto line_tv = line_iter->get_timeval();
 
                         if ((line_tv.tv_sec != log_tv.tv_sec)
-                            || (line_tv.tv_usec != log_tv.tv_usec))
+                            || (line_tv.tv_usec / 1000
+                                != log_tv.tv_usec / 1000))
                         {
                             break;
                         }

@@ -57,7 +57,8 @@ spectrogram_row::nearest_column(size_t current) const
 }
 
 bool
-spectrogram_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
+spectrogram_source::list_input_handle_key(listview_curses& lv,
+                                          const ncinput& ch)
 {
     switch (ch.eff_text[0]) {
         case 'm': {
@@ -82,9 +83,9 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, const ncinput& ch
                 return true;
             }
             auto begin_time = begin_time_opt.value();
-            struct timeval end_time = begin_time.ri_time;
+            auto end_time = to_us(begin_time.ri_time);
 
-            end_time.tv_sec += this->ss_granularity;
+            end_time += this->ss_granularity;
             double range_min, range_max, column_size;
 
             column_size = (sb.sb_max_value_out - sb.sb_min_value_out)
@@ -93,8 +94,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, const ncinput& ch
                 + this->ss_cursor_column.value_or(0) * column_size;
             range_max = range_min + column_size;
             this->ss_value_source->spectro_mark((textview_curses&) lv,
-                                                begin_time.ri_time.tv_sec,
-                                                end_time.tv_sec,
+                                                to_us(begin_time.ri_time),
+                                                end_time,
                                                 range_min,
                                                 range_max);
             this->invalidate();
@@ -140,8 +141,8 @@ spectrogram_source::list_input_handle_key(listview_curses& lv, const ncinput& ch
             if (!this->ss_cursor_column) {
                 lv.set_selection(0_vl);
             }
-            struct line_range lr(this->ss_cursor_column.value(),
-                                 this->ss_cursor_column.value() + 1);
+            line_range lr(this->ss_cursor_column.value(),
+                          this->ss_cursor_column.value() + 1);
 
             auto current = find_string_attr(sa, lr);
 
@@ -227,7 +228,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
         attr_line_t retval;
 
         auto sel_time = rounddown(sb.sb_begin_time, this->ss_granularity)
-            + sel * this->ss_granularity;
+            + (sel * this->ss_granularity);
         sr.sr_width = width;
         sr.sr_begin_time = sel_time;
         sr.sr_end_time = sel_time + this->ss_granularity;
@@ -338,37 +339,33 @@ spectrogram_source::time_for_row(vis_line_t row)
 std::optional<text_time_translator::row_info>
 spectrogram_source::time_for_row_int(vis_line_t row)
 {
-    struct timeval retval {
-        0, 0
-    };
+    timeval retval{0, 0};
 
     this->cache_bounds();
-    retval.tv_sec
-        = rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity)
-        + row * this->ss_granularity;
+    retval.tv_sec = to_time_t(
+        rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity)
+        + row * this->ss_granularity);
 
     return row_info{retval, row};
 }
 
 std::optional<vis_line_t>
-spectrogram_source::row_for_time(struct timeval time_bucket)
+spectrogram_source::row_for_time(timeval time_bucket)
 {
     if (this->ss_value_source == nullptr) {
         return std::nullopt;
     }
 
-    time_t diff;
-    int retval;
-
     this->cache_bounds();
-    auto grain_begin_time
+    const auto tb_us = to_us(time_bucket);
+    const auto grain_begin_time
         = rounddown(this->ss_cached_bounds.sb_begin_time, this->ss_granularity);
-    if (time_bucket.tv_sec < grain_begin_time) {
+    if (tb_us < grain_begin_time) {
         return 0_vl;
     }
 
-    diff = time_bucket.tv_sec - grain_begin_time;
-    retval = diff / this->ss_granularity;
+    const auto diff = tb_us - grain_begin_time;
+    const auto retval = diff / this->ss_granularity;
 
     return vis_line_t(retval);
 }
@@ -456,7 +453,8 @@ spectrogram_source::cache_bounds()
 {
     if (this->ss_value_source == nullptr) {
         this->ss_cached_bounds.sb_count = 0;
-        this->ss_cached_bounds.sb_begin_time = 0;
+        this->ss_cached_bounds.sb_begin_time
+            = std::chrono::microseconds::zero();
         this->ss_cursor_column = std::nullopt;
         this->reset_details_source();
         return;
@@ -479,12 +477,14 @@ spectrogram_source::cache_bounds()
         return;
     }
 
-    time_t grain_begin_time = rounddown(sb.sb_begin_time, this->ss_granularity);
-    time_t grain_end_time = roundup_size(sb.sb_end_time, this->ss_granularity);
+    auto grain_begin_time = rounddown(sb.sb_begin_time, this->ss_granularity);
+    auto grain_end_time = roundup_size(sb.sb_end_time, this->ss_granularity);
 
-    time_t diff = std::max((time_t) 1, grain_end_time - grain_begin_time);
+    auto diff = std::max(std::chrono::microseconds{1},
+                         grain_end_time - grain_begin_time);
     this->ss_cached_line_count
-        = (diff + this->ss_granularity - 1) / this->ss_granularity;
+        = (diff + this->ss_granularity - std::chrono::microseconds{1})
+        / this->ss_granularity;
 
     int64_t samples_per_row = sb.sb_count / this->ss_cached_line_count;
     auto& st = this->ss_cached_thresholds;
@@ -633,8 +633,8 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     }
     line.append(buf);
 
-    value_out.with_attr(string_attr(line_range(0, -1),
-                                    VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE})));
+    value_out.with_attr(string_attr(
+        line_range(0, -1), VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE})));
 
     return true;
 }

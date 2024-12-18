@@ -34,15 +34,15 @@
 #include "fmt/chrono.h"
 
 std::optional<vis_line_t>
-hist_source2::row_for_time(struct timeval tv_bucket)
+hist_source2::row_for_time(timeval tv_bucket)
 {
-    std::map<int64_t, struct bucket_block>::iterator iter;
     int retval = 0;
-    time_t time_bucket = rounddown(tv_bucket.tv_sec, this->hs_time_slice);
+    auto time_bucket = rounddown(to_us(tv_bucket), this->hs_time_slice);
 
-    for (iter = this->hs_blocks.begin(); iter != this->hs_blocks.end(); ++iter)
+    for (auto iter = this->hs_blocks.begin(); iter != this->hs_blocks.end();
+         ++iter)
     {
-        struct bucket_block& bb = iter->second;
+        auto& bb = iter->second;
 
         if (time_bucket < bb.bb_buckets[0].b_time) {
             break;
@@ -75,7 +75,8 @@ hist_source2::text_value_for_line(textview_curses& tc,
     }
 
     value_out.clear();
-    if (gmtime_r(&bucket.b_time, &bucket_tm) != nullptr) {
+    auto secs = to_time_t(bucket.b_time);
+    if (gmtime_r(&secs, &bucket_tm) != nullptr) {
         fmt::format_to(std::back_inserter(value_out),
                        FMT_STRING(" {:%a %b %d %H:%M:%S}  "),
                        bucket_tm);
@@ -117,11 +118,11 @@ hist_source2::text_attrs_for_line(textview_curses& tc,
 }
 
 void
-hist_source2::add_value(time_t row,
-                        hist_source2::hist_type_t htype,
+hist_source2::add_value(std::chrono::microseconds row,
+                        hist_type_t htype,
                         double value)
 {
-    require_ge(row, this->hs_last_row);
+    // XXX require_ge(row, this->hs_last_row);
 
     row = rounddown(row, this->hs_time_slice);
     if (row != this->hs_last_row) {
@@ -156,7 +157,7 @@ hist_source2::clear()
 {
     this->hs_line_count = 0;
     this->hs_last_bucket = -1;
-    this->hs_last_row = -1;
+    this->hs_last_row = std::chrono::microseconds::zero();
     this->hs_blocks.clear();
     this->hs_chart.clear();
     this->init();
@@ -185,7 +186,7 @@ hist_source2::time_for_row(vis_line_t row)
 
     bucket_t& bucket = this->find_bucket(row);
 
-    return row_info{timeval{bucket.b_time, 0}, row};
+    return row_info{timeval{to_time_t(bucket.b_time), 0}, row};
 }
 
 hist_source2::bucket_t&

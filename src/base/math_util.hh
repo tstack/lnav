@@ -42,14 +42,14 @@
  * @param step The granularity.
  */
 template<typename Size, typename Step>
-inline int
+auto
 rounddown(Size size, Step step)
 {
     return size - (size % step);
 }
 
 template<typename Size, typename Step>
-inline auto
+auto
 roundup(Size size, Step step)
 {
     auto retval = size + (step - 1);
@@ -65,10 +65,11 @@ rounddown_offset(size_t size, int step, int offset)
     return size - ((size - offset) % step);
 }
 
-inline size_t
-roundup_size(size_t size, int step)
+template<typename Size, typename Step>
+auto
+roundup_size(Size size, Step step)
 {
-    size_t retval = size + step;
+    auto retval = size + step;
 
     retval -= (retval % step);
 

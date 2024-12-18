@@ -655,14 +655,18 @@ com_convert_time_to(exec_context& ec,
         try {
             auto* dst_tz = date::locate_zone(args[1]);
             auto utime = date::local_time<std::chrono::seconds>{
-                std::chrono::seconds{ll->get_time()}};
+                ll->get_time<std::chrono::seconds>()};
             auto cz_time = lnav::to_sys_time(utime);
             auto dz_time = date::make_zoned(dst_tz, cz_time);
             auto etime = std::chrono::duration_cast<std::chrono::seconds>(
                 dz_time.get_local_time().time_since_epoch());
             char ftime[128];
             sql_strftime(
-                ftime, sizeof(ftime), etime.count(), ll->get_millis(), 'T');
+                ftime,
+                sizeof(ftime),
+                etime.count(),
+                ll->get_subsecond_time<std::chrono::milliseconds>().count(),
+                'T');
             retval = ftime;
 
             off_t off = 0;
@@ -2436,7 +2440,8 @@ com_filter(exec_context& ec,
                                                       : role_t::VCR_DIFF_ADD;
 
                 hl.with_role(role);
-                hl.with_attrs(text_attrs::with_styles(text_attrs::style::blink, text_attrs::style::reverse));
+                hl.with_attrs(text_attrs::with_styles(
+                    text_attrs::style::blink, text_attrs::style::reverse));
 
                 hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                 tc->reload_data();
@@ -5841,16 +5846,11 @@ command_prompt(std::vector<std::string>& args)
             struct timeval tv = lf->get_time_offset();
             char buffer[64];
 
-            sql_strftime(
-                buffer, sizeof(buffer), ll->get_time(), ll->get_millis(), 'T');
+            sql_strftime(buffer, sizeof(buffer), ll->get_timeval(), 'T');
             rlc->add_possibility(ln_mode_t::COMMAND, "line-time", buffer);
             rlc->add_possibility(ln_mode_t::COMMAND, "move-args", buffer);
             rlc->add_possibility(ln_mode_t::COMMAND, "move-time", buffer);
-            sql_strftime(buffer,
-                         sizeof(buffer),
-                         ll->get_time() - tv.tv_sec,
-                         ll->get_millis() - (tv.tv_usec / 1000),
-                         'T');
+            sql_strftime(buffer, sizeof(buffer), ll->get_timeval() - tv, 'T');
             rlc->add_possibility(ln_mode_t::COMMAND, "line-time", buffer);
             rlc->add_possibility(ln_mode_t::COMMAND, "move-args", buffer);
             rlc->add_possibility(ln_mode_t::COMMAND, "move-time", buffer);

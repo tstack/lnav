@@ -157,13 +157,12 @@ logfile_sub_source::logfile_sub_source()
 std::shared_ptr<logfile>
 logfile_sub_source::find(const char* fn, content_line_t& line_base)
 {
-    iterator iter;
     std::shared_ptr<logfile> retval = nullptr;
 
     line_base = content_line_t(0);
-    for (iter = this->lss_files.begin();
+    for (auto iter = this->lss_files.begin();
          iter != this->lss_files.end() && retval == nullptr;
-         iter++)
+         ++iter)
     {
         auto& ld = *(*iter);
         auto* lf = ld.get_file_ptr();
@@ -349,10 +348,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 || !(format->lf_timestamp_flags & ETF_MONTH_SET))
             {
                 adjusted_time = this->lss_token_line->get_timeval();
-                if (format->lf_timestamp_flags
-                    & (ETF_MICROS_SET | ETF_NANOS_SET))
-                {
-                    fmt = "%Y-%m-%d %H:%M:%S.%f";
+                if (format->lf_timestamp_flags & ETF_NANOS_SET) {
+                    fmt = "%Y-%m-%d %H:%M:%S.%N";
                     struct timeval actual_tv;
                     struct exttm tm;
                     if (format->lf_date_time.scan(
@@ -365,6 +362,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                     {
                         adjusted_time.tv_usec = actual_tv.tv_usec;
                     }
+                } else if (format->lf_timestamp_flags & ETF_MICROS_SET) {
+                    fmt = "%Y-%m-%d %H:%M:%S.%f";
                 } else if (format->lf_timestamp_flags & ETF_MILLIS_SET) {
                     fmt = "%Y-%m-%d %H:%M:%S.%L";
                 } else {
@@ -462,8 +461,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     }
 
     if (next_line != nullptr
-        && (day_num(next_line->get_time())
-            > day_num(this->lss_token_line->get_time())))
+        && (day_num(next_line->get_time<std::chrono::seconds>().count())
+            > day_num(this->lss_token_line->get_time<std::chrono::seconds>()
+                          .count())))
     {
         attrs.ta_attrs |= NCSTYLE_UNDERLINE;
     }
@@ -586,7 +586,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         shift_string_attrs(value_out, 0, time_offset_end);
 
         value_out.emplace_back(lr, VC_ROLE.value(role_t::VCR_OFFSET_TIME));
-        value_out.emplace_back(line_range(12, 13), VC_GRAPHIC.value(NCACS_VLINE));
+        value_out.emplace_back(line_range(12, 13),
+                               VC_GRAPHIC.value(NCACS_VLINE));
 
         role_t bar_role = role_t::VCR_NONE;
 
@@ -676,8 +677,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                 } else {
                     color = palette_color{
                         lnav::enums::to_underlying(ansi_color::red)};
-                    value_out.emplace_back(line_range{0, 1},
-                                           VC_STYLE.value(text_attrs::with_blink()));
+                    value_out.emplace_back(
+                        line_range{0, 1},
+                        VC_STYLE.value(text_attrs::with_blink()));
                 }
             }
             value_out.emplace_back(line_range{0, 1},
@@ -735,12 +737,14 @@ struct logline_cmp {
         }
 #endif
 
+#if 0
     bool operator()(const content_line_t& lhs, const time_t& rhs) const
     {
         logline* ll_lhs = this->llss_controller.find_line(lhs);
 
         return *ll_lhs < rhs;
     }
+#endif
 
     bool operator()(const content_line_t& lhs, const struct timeval& rhs) const
     {
@@ -853,11 +857,15 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                     lf->get_filename().c_str(),
                                     ld.ld_lines_indexed,
                                     last_indexed_line,
-                                    new_file_line.get_time_in_millis(),
+                                    new_file_line
+                                        .get_time<std::chrono::microseconds>()
+                                        .count(),
                                     last_indexed_line == nullptr
                                         ? (uint64_t) -1
                                         : last_indexed_line
-                                              ->get_time_in_millis());
+                                              ->get_time<
+                                                  std::chrono::microseconds>()
+                                              .count());
                                 if (retval
                                     <= rebuild_result::rr_partial_rebuild)
                                 {
@@ -1707,7 +1715,10 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
             continue;
         }
         if (strcmp(name, ":log_time_msecs") == 0) {
-            sqlite3_bind_int64(stmt, lpc + 1, ll->get_time_in_millis());
+            sqlite3_bind_int64(
+                stmt,
+                lpc + 1,
+                ll->get_time<std::chrono::milliseconds>().count());
             continue;
         }
         if (strcmp(name, ":log_mark") == 0) {

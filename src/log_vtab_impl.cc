@@ -650,8 +650,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
         case VT_COL_LOG_TIME: {
             char buffer[64];
 
-            sql_strftime(
-                buffer, sizeof(buffer), ll->get_time(), ll->get_millis());
+            sql_strftime(buffer, sizeof(buffer), ll->get_timeval());
             sqlite3_result_text(ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
             break;
         }
@@ -736,10 +735,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 sql_strftime(buffer, sizeof(buffer), actual_tv);
                             }
                         } else {
-                            sql_strftime(buffer,
-                                         sizeof(buffer),
-                                         ll->get_time(),
-                                         ll->get_millis());
+                            sql_strftime(
+                                buffer, sizeof(buffer), ll->get_timeval());
                         }
                         sqlite3_result_text(
                             ctx, buffer, strlen(buffer), SQLITE_TRANSIENT);
@@ -753,15 +750,16 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                 vis_line_t(vc->log_cursor.lc_curr_line - 1)));
                             auto prev_lf = vt->lss->find(prev_cl);
                             auto prev_ll = prev_lf->begin() + prev_cl;
-                            uint64_t prev_time, curr_line_time;
 
-                            prev_time = prev_ll->get_time() * 1000ULL;
-                            prev_time += prev_ll->get_millis();
-                            curr_line_time = ll->get_time() * 1000ULL;
-                            curr_line_time += ll->get_millis();
+                            auto prev_time
+                                = prev_ll
+                                      ->get_time<std::chrono::milliseconds>();
+                            auto curr_line_time
+                                = ll->get_time<std::chrono::milliseconds>();
                             // require(curr_line_time >= prev_time);
-                            sqlite3_result_int64(ctx,
-                                                 curr_line_time - prev_time);
+                            sqlite3_result_int64(
+                                ctx,
+                                curr_line_time.count() - prev_time.count());
                         }
                         break;
                     }
@@ -919,7 +917,9 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::time_msecs: {
-                        sqlite3_result_int64(ctx, ll->get_time_in_millis());
+                        sqlite3_result_int64(
+                            ctx,
+                            ll->get_time<std::chrono::milliseconds>().count());
                         break;
                     }
                     case log_footer_columns::path: {
@@ -1265,8 +1265,8 @@ log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
     }
 }
 
-log_cursor::string_constraint::
-string_constraint(unsigned char op, std::string value)
+log_cursor::string_constraint::string_constraint(unsigned char op,
+                                                 std::string value)
     : sc_op(op), sc_value(std::move(value))
 {
     if (op == SQLITE_INDEX_CONSTRAINT_REGEXP) {
@@ -2232,8 +2232,9 @@ progress_callback(void* ptr)
     return retval;
 }
 
-log_vtab_manager::
-log_vtab_manager(sqlite3* memdb, textview_curses& tc, logfile_sub_source& lss)
+log_vtab_manager::log_vtab_manager(sqlite3* memdb,
+                                   textview_curses& tc,
+                                   logfile_sub_source& lss)
     : vm_db(memdb), vm_textview(tc), vm_source(lss)
 {
     sqlite3_create_module(
@@ -2243,8 +2244,7 @@ log_vtab_manager(sqlite3* memdb, textview_curses& tc, logfile_sub_source& lss)
     sqlite3_progress_handler(memdb, 32, progress_callback, nullptr);
 }
 
-log_vtab_manager::~
-log_vtab_manager()
+log_vtab_manager::~log_vtab_manager()
 {
     while (!this->vm_impls.empty()) {
         auto first_name = this->vm_impls.begin()->first;

@@ -764,7 +764,6 @@ styling::color_unit
 view_colors::match_color(styling::color_unit cu) const
 {
     if (this->vc_notcurses == nullptr) {
-        log_warning("no notcurses");
         return cu;
     }
 

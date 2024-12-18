@@ -169,7 +169,10 @@ eval_with(logfile& lf, logfile::iterator ll)
                 continue;
             }
             if (strcmp(name, ":log_time_msecs") == 0) {
-                sqlite3_bind_int64(stmt, lpc + 1, ll->get_time_in_millis());
+                sqlite3_bind_int64(
+                    stmt,
+                    lpc + 1,
+                    ll->get_time<std::chrono::milliseconds>().count());
                 continue;
             }
             if (strcmp(name, ":log_format") == 0) {

@@ -150,7 +150,10 @@ main(int argc, char* argv[])
             assert(lf->get_format()->get_name().to_string() == expected_format);
         }
         if (!lf->is_compressed()) {
-            assert(lf->get_modified_time() == st.st_mtime);
+            assert(std::chrono::duration_cast<std::chrono::seconds>(
+                       lf->get_modified_time())
+                       .count()
+                   == st.st_mtime);
         }
 
         switch (mode) {
@@ -173,14 +176,15 @@ main(int argc, char* argv[])
                     }
 
                     char buffer[1024];
-                    time_t lt;
-
-                    lt = iter.get_time();
+                    auto lt = to_time_t(iter.get_time<std::chrono::seconds>());
                     strftime(buffer,
                              sizeof(buffer),
                              "%b %d %H:%M:%S %Y",
                              gmtime(&lt));
-                    printf("%s -- %03d\n", buffer, iter.get_millis());
+                    printf("%s -- %03lld\n",
+                           buffer,
+                           iter.get_subsecond_time<std::chrono::milliseconds>()
+                               .count());
                 }
                 break;
             case MODE_LEVELS:

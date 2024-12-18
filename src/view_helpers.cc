@@ -998,7 +998,8 @@ using safe_example_results
 static safe_example_results EXAMPLE_RESULTS;
 
 static void
-execute_example(std::unordered_map<std::string, attr_line_t>& res_map, const help_text& ht)
+execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
+                const help_text& ht)
 {
     static const std::set<std::string> IGNORED_NAMES = {"ATTACH", "DETACH"};
 
@@ -1360,7 +1361,10 @@ hist_index_delegate::index_line(logfile_sub_source& lss,
                                 logfile* lf,
                                 logfile::iterator ll)
 {
-    if (ll->is_continued() || ll->get_time() == 0) {
+    if (ll->is_continued()
+        || ll->get_time<std::chrono::microseconds>()
+            == std::chrono::microseconds::zero())
+    {
         return;
     }
 
@@ -1380,9 +1384,10 @@ hist_index_delegate::index_line(logfile_sub_source& lss,
             break;
     }
 
-    this->hid_source.add_value(ll->get_time(), ht);
+    this->hid_source.add_value(ll->get_time<std::chrono::microseconds>(), ht);
     if (ll->is_marked() || ll->is_expr_marked()) {
-        this->hid_source.add_value(ll->get_time(), hist_source2::HT_MARK);
+        this->hid_source.add_value(ll->get_time<std::chrono::microseconds>(),
+                                   hist_source2::HT_MARK);
     }
 }
 

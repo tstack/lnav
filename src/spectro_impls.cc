@@ -105,8 +105,7 @@ public:
     std::vector<vis_line_t> fss_lines;
 };
 
-log_spectro_value_source::
-log_spectro_value_source(intern_string_t colname)
+log_spectro_value_source::log_spectro_value_source(intern_string_t colname)
     : lsvs_colname(colname)
 {
     this->update_stats();
@@ -117,8 +116,8 @@ log_spectro_value_source::update_stats()
 {
     auto& lss = lnav_data.ld_log_source;
 
-    this->lsvs_begin_time = 0;
-    this->lsvs_end_time = 0;
+    this->lsvs_begin_time = std::chrono::microseconds::zero();
+    this->lsvs_end_time = std::chrono::microseconds::zero();
     this->lsvs_stats.clear();
     for (auto& ls : lss) {
         auto* lf = ls->get_file_ptr();
@@ -136,26 +135,28 @@ log_spectro_value_source::update_stats()
 
         auto ll = lf->begin();
 
-        if (this->lsvs_begin_time == 0
-            || ll->get_time() < this->lsvs_begin_time)
+        if (this->lsvs_begin_time == std::chrono::microseconds::zero()
+            || ll->get_time<std::chrono::microseconds>()
+                < this->lsvs_begin_time)
         {
-            this->lsvs_begin_time = ll->get_time();
+            this->lsvs_begin_time = ll->get_time<std::chrono::microseconds>();
         }
         ll = lf->end();
         --ll;
-        if (ll->get_time() > this->lsvs_end_time) {
-            this->lsvs_end_time = ll->get_time();
+        if (ll->get_time<std::chrono::microseconds>() > this->lsvs_end_time) {
+            this->lsvs_end_time = ll->get_time<std::chrono::microseconds>();
         }
 
         this->lsvs_found = true;
         this->lsvs_stats.merge(*stats);
     }
 
-    if (this->lsvs_begin_time) {
-        time_t filtered_begin_time = lss.find_line(lss.at(0_vl))->get_time();
-        time_t filtered_end_time
+    if (this->lsvs_begin_time > std::chrono::microseconds::zero()) {
+        auto filtered_begin_time = lss.find_line(lss.at(0_vl))
+                                       ->get_time<std::chrono::microseconds>();
+        auto filtered_end_time
             = lss.find_line(lss.at(vis_line_t(lss.text_line_count() - 1)))
-                  ->get_time();
+                  ->get_time<std::chrono::microseconds>();
 
         if (filtered_begin_time > this->lsvs_begin_time) {
             this->lsvs_begin_time = filtered_begin_time;
@@ -189,13 +190,15 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
                                       spectrogram_row& row_out)
 {
     auto& lss = lnav_data.ld_log_source;
-    auto begin_line = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
-    auto end_line = lss.find_from_time(sr.sr_end_time)
+    auto begin_line
+        = lss.find_from_time(timeval{to_time_t(sr.sr_begin_time), 0})
+              .value_or(0_vl);
+    auto end_line = lss.find_from_time(timeval{to_time_t(sr.sr_end_time), 0})
                         .value_or(vis_line_t(lss.text_line_count()));
 
     for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
         const auto& ll = msg_info.get_logline();
-        if (ll.get_time() >= sr.sr_end_time) {
+        if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
             break;
         }
 
@@ -224,16 +227,19 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
                                                 double range_max) {
         auto& lss = lnav_data.ld_log_source;
         auto retval = std::make_unique<filtered_sub_source>();
-        auto begin_line = lss.find_from_time(sr.sr_begin_time).value_or(0_vl);
-        auto end_line = lss.find_from_time(sr.sr_end_time)
-                            .value_or(vis_line_t(lss.text_line_count()));
+        auto begin_line
+            = lss.find_from_time(timeval{to_time_t(sr.sr_begin_time), 0})
+                  .value_or(0_vl);
+        auto end_line
+            = lss.find_from_time(timeval{to_time_t(sr.sr_end_time), 0})
+                  .value_or(vis_line_t(lss.text_line_count()));
 
         retval->fss_delegate = &lss;
         retval->fss_time_delegate = &lss;
         retval->fss_overlay_delegate = nullptr;
         for (const auto& msg_info : lss.window_at(begin_line, end_line)) {
             const auto& ll = msg_info.get_logline();
-            if (ll.get_time() >= sr.sr_end_time) {
+            if (ll.get_time<std::chrono::microseconds>() >= sr.sr_end_time) {
                 break;
             }
 
@@ -272,17 +278,18 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
 
 void
 log_spectro_value_source::spectro_mark(textview_curses& tc,
-                                       time_t begin_time,
-                                       time_t end_time,
+                                       std::chrono::microseconds begin_time,
+                                       std::chrono::microseconds end_time,
                                        double range_min,
                                        double range_max)
 {
     // XXX need to refactor this and the above method
     auto& log_tc = lnav_data.ld_views[LNV_LOG];
     auto& lss = lnav_data.ld_log_source;
-    vis_line_t begin_line = lss.find_from_time(begin_time).value_or(0_vl);
-    vis_line_t end_line = lss.find_from_time(end_time).value_or(
-        vis_line_t(lss.text_line_count()));
+    auto begin_line
+        = lss.find_from_time(timeval{to_time_t(begin_time), 0}).value_or(0_vl);
+    auto end_line = lss.find_from_time(timeval{to_time_t(end_time), 0})
+                        .value_or(vis_line_t(lss.text_line_count()));
     logline_value_vector values;
     string_attrs_t sa;
 
@@ -331,8 +338,7 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
     }
 }
 
-db_spectro_value_source::
-db_spectro_value_source(std::string colname)
+db_spectro_value_source::db_spectro_value_source(std::string colname)
     : dsvs_colname(std::move(colname))
 {
     this->update_stats();
@@ -341,8 +347,8 @@ db_spectro_value_source(std::string colname)
 void
 db_spectro_value_source::update_stats()
 {
-    this->dsvs_begin_time = 0;
-    this->dsvs_end_time = 0;
+    this->dsvs_begin_time = std::chrono::microseconds::zero();
+    this->dsvs_end_time = std::chrono::microseconds::zero();
     this->dsvs_stats.clear();
 
     auto& dls = lnav_data.ld_db_row_source;
@@ -444,8 +450,8 @@ db_spectro_value_source::update_stats()
         return;
     }
 
-    this->dsvs_begin_time = dls.dls_time_column.front().tv_sec;
-    this->dsvs_end_time = dls.dls_time_column.back().tv_sec;
+    this->dsvs_begin_time = to_us(dls.dls_time_column.front());
+    this->dsvs_end_time = to_us(dls.dls_time_column.back());
 
     auto find_res
         = dls.dls_headers | lnav::itertools::find_if([this](const auto& elem) {
@@ -484,8 +490,9 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
                                      spectrogram_row& row_out)
 {
     auto& dls = lnav_data.ld_db_row_source;
-    auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
-    auto end_row = dls.row_for_time({sr.sr_end_time, 0})
+    auto begin_row
+        = dls.row_for_time({to_time_t(sr.sr_begin_time), 0}).value_or(0_vl);
+    auto end_row = dls.row_for_time({to_time_t(sr.sr_end_time), 0})
                        .value_or(vis_line_t(dls.dls_rows.size()));
 
     for (auto lpc = begin_row; lpc < end_row; ++lpc) {
@@ -506,8 +513,9 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
         retval->fss_delegate = &dls;
         retval->fss_time_delegate = &dls;
         retval->fss_overlay_delegate = &lnav_data.ld_db_overlay;
-        auto begin_row = dls.row_for_time({sr.sr_begin_time, 0}).value_or(0_vl);
-        auto end_row = dls.row_for_time({sr.sr_end_time, 0})
+        auto begin_row
+            = dls.row_for_time({to_time_t(sr.sr_begin_time), 0}).value_or(0_vl);
+        auto end_row = dls.row_for_time({to_time_t(sr.sr_end_time), 0})
                            .value_or(vis_line_t(dls.dls_rows.size()));
 
         for (auto lpc = begin_row; lpc < end_row; ++lpc) {

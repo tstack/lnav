@@ -776,7 +776,8 @@ log_format::check_for_new_year(std::vector<logline>& dst,
         return;
     }
 
-    time_t diff = dst.back().get_time() - log_tv.tv_sec;
+    time_t diff
+        = dst.back().get_time<std::chrono::seconds>().count() - log_tv.tv_sec;
     int off_year = 0, off_month = 0, off_day = 0, off_hour = 0;
     bool do_change = true;
 
@@ -805,7 +806,7 @@ log_format::check_for_new_year(std::vector<logline>& dst,
               off_day,
               off_hour);
     for (auto& ll : dst) {
-        time_t ot = ll.get_time();
+        time_t ot = ll.get_time<std::chrono::seconds>().count();
         struct tm otm;
 
         gmtime_r(&ot, &otm);
@@ -824,7 +825,9 @@ log_format::check_for_new_year(std::vector<logline>& dst,
             continue;
         }
         new_time -= (off_day * 24 * 60 * 60) + (off_hour * 60 * 60);
-        ll.set_time(new_time);
+        auto old_sub = ll.get_subsecond_time<std::chrono::microseconds>();
+        ll.set_time(std::chrono::seconds{new_time});
+        ll.set_subsecond_time(old_sub);
     }
 }
 
@@ -957,7 +960,8 @@ read_json_number(yajlpp_parse_context* ypc,
                 break;
         }
         jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
-        jlu->jlu_base_line->set_millis(millis);
+        jlu->jlu_base_line->set_subsecond_time(
+            std::chrono::milliseconds(millis));
     } else if (jlu->jlu_format->elf_level_field == field_name) {
         if (jlu->jlu_format->elf_level_pairs.empty()) {
             jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
@@ -1231,7 +1235,9 @@ external_log_format::scan(logfile& lf,
     }
 
     if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
-        logline ll(li.li_file_range.fr_offset, 0, 0, LEVEL_INFO);
+        logline ll(li.li_file_range.fr_offset,
+                   std::chrono::microseconds{0},
+                   LEVEL_INFO);
         auto line_frag = sbr.to_string_fragment();
 
         if (!line_frag.startswith("{")) {
@@ -1280,7 +1286,7 @@ external_log_format::scan(logfile& lf,
         if (yajl_parse(handle, line_data, sbr.length()) == yajl_status_ok
             && yajl_complete_parse(handle) == yajl_status_ok)
         {
-            if (ll.get_time() == 0) {
+            if (ll.get_time<std::chrono::microseconds>().count() == 0) {
                 if (this->lf_specialized) {
                     ll.set_ignore(true);
                     dst.emplace_back(ll);
@@ -1473,10 +1479,13 @@ external_log_format::scan(logfile& lf,
 
         if (!(this->lf_timestamp_flags
               & (ETF_MILLIS_SET | ETF_MICROS_SET | ETF_NANOS_SET))
-            && !dst.empty() && dst.back().get_time() == log_tv.tv_sec
-            && dst.back().get_millis() != 0)
+            && !dst.empty()
+            && dst.back().get_time<std::chrono::seconds>().count()
+                == log_tv.tv_sec
+            && dst.back().get_subsecond_time<std::chrono::milliseconds>().count() != 0)
         {
-            auto log_ms = std::chrono::milliseconds(dst.back().get_millis());
+            auto log_ms
+                = dst.back().get_subsecond_time<std::chrono::microseconds>();
 
             log_time_tm.et_nsec
                 = std::chrono::duration_cast<std::chrono::nanoseconds>(log_ms)
@@ -1657,11 +1666,11 @@ external_log_format::scan(logfile& lf,
             }
             this->lf_pattern_locks.emplace_back(lock_line, curr_fmt);
         }
-        return log_format::scan_match{1000};
+        return scan_match{1000};
     }
 
     if (this->lf_specialized && !this->lf_multiline) {
-        auto& last_line = dst.back();
+        const auto& last_line = dst.back();
 
         log_debug("invalid line %d %d", dst.size(), li.li_file_range.fr_offset);
         dst.emplace_back(li.li_file_range.fr_offset,
@@ -2406,7 +2415,7 @@ external_log_format::get_subline(const logline& ll,
                             struct exttm et;
 
                             ll.to_exttm(et);
-                            et.et_nsec += jlu.jlu_exttm.et_nsec % 1000000;
+                            et.et_nsec += jlu.jlu_exttm.et_nsec % 1000;
                             et.et_gmtoff = jlu.jlu_exttm.et_gmtoff;
                             et.et_flags |= jlu.jlu_exttm.et_flags;
                             if (!jfe.jfe_prefix.empty()) {

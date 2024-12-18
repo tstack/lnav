@@ -41,6 +41,7 @@
 #include "config.h"
 #include "date/date.h"
 #include "date/tz.h"
+#include "humanize.time.hh"
 
 namespace lnav {
 
@@ -64,6 +65,14 @@ date::local_info local_time_to_info(date::local_seconds secs);
 date::sys_seconds to_sys_time(date::local_seconds secs);
 
 date::local_seconds to_local_time(date::sys_seconds secs);
+
+struct duration_hasher {
+    template<class D>
+    std::size_t operator()(const D& d) const
+    {
+        return std::hash<uint64_t>()(d.count());
+    }
+};
 
 }  // namespace lnav
 
@@ -137,7 +146,7 @@ enum exttm_flags_t {
 struct exttm {
     static exttm from_tv(const timeval& tv);
 
-    struct tm et_tm {};
+    struct tm et_tm{};
     int32_t et_nsec{0};
     unsigned int et_flags{0};
     long et_gmtoff{0};
@@ -284,5 +293,21 @@ struct time_range {
     void extend_to(const timeval& tv);
     std::chrono::milliseconds duration() const;
 };
+
+template<typename T>
+time_t
+to_time_t(T dur)
+{
+    return static_cast<time_t>(
+        std::chrono::duration_cast<std::chrono::seconds>(dur).count());
+}
+
+inline std::chrono::microseconds
+to_us(const timeval& tv)
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::seconds{tv.tv_sec})
+        + std::chrono::microseconds{tv.tv_usec};
+}
 
 #endif

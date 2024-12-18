@@ -180,7 +180,7 @@ public:
      * @return The last modified time of the file when the file was last
      * indexed.
      */
-    time_t get_modified_time() const { return this->lf_index_time; }
+    std::chrono::microseconds get_modified_time() const { return this->lf_index_time; }
 
     int get_time_offset_line() const { return this->lf_time_offset_line; }
 
@@ -358,7 +358,7 @@ public:
         } else if (rhs.lf_index.empty()) {
             retval = false;
         } else {
-            retval = this->lf_index[0].get_time() < rhs.lf_index[0].get_time();
+            retval = this->lf_index[0] < rhs.lf_index[0];
         }
 
         return retval;
@@ -466,7 +466,7 @@ private:
     std::shared_ptr<log_format> lf_format;
     uint32_t lf_format_quality{0};
     std::vector<logline> lf_index;
-    time_t lf_index_time{0};
+    std::chrono::microseconds lf_index_time{0};
     file_off_t lf_index_size{0};
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;

@@ -44,8 +44,8 @@
 struct exec_context;
 
 struct spectrogram_bounds {
-    time_t sb_begin_time{0};
-    time_t sb_end_time{0};
+    std::chrono::microseconds sb_begin_time{0};
+    std::chrono::microseconds sb_end_time{0};
     double sb_min_value_out{0.0};
     double sb_max_value_out{0.0};
     int64_t sb_count{0};
@@ -61,8 +61,8 @@ struct spectrogram_request {
 
     spectrogram_bounds& sr_bounds;
     unsigned long sr_width{0};
-    time_t sr_begin_time{0};
-    time_t sr_end_time{0};
+    std::chrono::microseconds sr_begin_time{0};
+    std::chrono::microseconds sr_end_time{0};
     double sr_column_size{0};
 };
 
@@ -106,8 +106,8 @@ public:
         = 0;
 
     virtual void spectro_mark(textview_curses& tc,
-                              time_t begin_time,
-                              time_t end_time,
+                              std::chrono::microseconds begin_time,
+                              std::chrono::microseconds end_time,
                               double range_min,
                               double range_max)
         = 0;
@@ -161,8 +161,7 @@ public:
 
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
-    std::optional<vis_line_t> row_for_time(
-        struct timeval time_bucket) override;
+    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
 
     void text_value_for_line(textview_curses& tc,
                              int row,
@@ -185,12 +184,17 @@ public:
     text_sub_source* ss_no_details_source;
     exec_context* ss_exec_context;
     std::unique_ptr<text_sub_source> ss_details_source;
-    int ss_granularity{60};
+    std::chrono::microseconds ss_granularity
+        = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::seconds{60});
     spectrogram_value_source* ss_value_source{nullptr};
     spectrogram_bounds ss_cached_bounds;
     spectrogram_thresholds ss_cached_thresholds;
     size_t ss_cached_line_count{0};
-    std::unordered_map<time_t, spectrogram_row> ss_row_cache;
+    std::unordered_map<std::chrono::microseconds,
+                       spectrogram_row,
+                       lnav::duration_hasher>
+        ss_row_cache;
     std::optional<size_t> ss_cursor_column;
 };
 

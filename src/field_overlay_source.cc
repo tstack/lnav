@@ -95,13 +95,14 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             auto emsg = fmt::format(
                 FMT_STRING("   Invalid log message: {}"),
                 sattr.sa_value.get<decltype(SA_INVALID)::value_type>());
-            auto al = attr_line_t(emsg)
-            .with_attr(string_attr(
-                              line_range{1, 2}, VC_GRAPHIC.value(NCACS_LLCORNER)))
-                          .with_attr(string_attr(
-                              line_range{0, 22},
-                              VC_ROLE.value(role_t::VCR_INVALID_MSG)))
-                          .move();
+            auto al
+                = attr_line_t(emsg)
+                      .with_attr(string_attr(line_range{1, 2},
+                                             VC_GRAPHIC.value(NCACS_LLCORNER)))
+                      .with_attr(
+                          string_attr(line_range{0, 22},
+                                      VC_ROLE.value(role_t::VCR_INVALID_MSG)))
+                      .move();
             this->fos_lines.emplace_back(al);
         }
     }
@@ -111,18 +112,15 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     attr_line_t time_line;
     auto& time_str = time_line.get_string();
     struct line_range time_lr;
-    off_t ts_len = sql_strftime(curr_timestamp,
-                                sizeof(curr_timestamp),
-                                ll->get_time(),
-                                ll->get_millis(),
-                                'T');
+    off_t ts_len = sql_strftime(
+        curr_timestamp, sizeof(curr_timestamp), ll->get_timeval(), 'T');
     {
         exttm tmptm;
 
         tmptm.et_flags |= ETF_ZONE_SET;
         tmptm.et_gmtoff
             = lnav::local_time_to_info(
-                  date::local_seconds{std::chrono::seconds{ll->get_time()}})
+                  date::local_seconds{ll->get_time<std::chrono::seconds>()})
                   .first.offset.count();
         ftime_z(curr_timestamp, ts_len, sizeof(curr_timestamp), tmptm);
         curr_timestamp[ts_len] = '\0';
