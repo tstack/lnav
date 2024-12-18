@@ -12,16 +12,18 @@ A      ····················└ [?u, [?2026$p, [?1016$p, [?1;
 CTRL _
 S  -1 ┋                    Gi=1,a=q;                                                   ┋
 CTRL \
+CSI [14t
+CSI [18t
 CSI send device attributes
 S  -1 ┋                                                                                ┋
-A      ·····························└ [?2;1;0S, [?1;1;0S, [14t, [18t
+A      ·····························└ [?2;1;0S, [?1;1;0S
 CSI Application cursor keys
 CTRL =
 S  -1 ┋                                                                                ┋
 A      ·····························└ normal, normal, [39;49m
 CTRL (B
 S  -1 ┋                                                                                ┋
-A      ·····························└ normal, [?25l
+A      ·····························└ normal
 CSI Erase all
 S   1 ┋World!                                                                          ┋
 A      └ fg(#c0c0c0), bg(#000000)
@@ -55,5 +57,4 @@ A      └ normal
 CSI Normal cursor keys
 CTRL Normal keypad
 S   6 ┋                                                                                ┋
-A      └ [?12l, [?25h, normal, normal
-CSI Use normal screen buffer
+A      └ [?25h, normal, normal
