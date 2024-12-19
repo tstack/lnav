@@ -210,7 +210,8 @@ public:
     constexpr operator const char*() const { return buf; }
 };
 
-const ssize_t ZOOM_COUNT = sizeof(ZOOM_LEVELS) / sizeof(decltype(ZOOM_LEVELS[0]));
+const ssize_t ZOOM_COUNT
+    = sizeof(ZOOM_LEVELS) / sizeof(decltype(ZOOM_LEVELS[0]));
 
 const std::vector<std::string> lnav_zoom_strings = {
     "1-second",
@@ -3078,9 +3079,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     {
         auto_mem<char, sqlite3_free> errmsg;
+        auto init_sql_str = init_sql.to_string_fragment_producer()->to_string();
 
         if (sqlite3_exec(lnav_data.ld_db.in(),
-                         init_sql.to_string_fragment().data(),
+                         init_sql_str.data(),
                          nullptr,
                          nullptr,
                          errmsg.out())

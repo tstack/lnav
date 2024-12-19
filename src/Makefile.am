@@ -426,6 +426,7 @@ libdiag_a_SOURCES = \
 	$(THIRD_PARTY_SRCS) \
 	all_logs_vtab.cc \
 	archive_manager.cc \
+	bin2c_rt.cc \
 	bookmarks.cc \
 	bottom_status_source.cc \
 	breadcrumb_curses.cc \

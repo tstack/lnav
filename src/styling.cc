@@ -84,9 +84,10 @@ get_css_color_names()
 {
     static const intern_string_t iname
         = intern_string::lookup(css_color_names_json.get_name());
+    auto sfp = css_color_names_json.to_string_fragment_producer();
     static const auto INSTANCE
         = css_color_names_handlers.parser_for(iname)
-              .of(css_color_names_json.to_string_fragment())
+              .of(*sfp)
               .unwrap();
 
     return INSTANCE;
@@ -95,8 +96,9 @@ get_css_color_names()
 term_color_palette*
 xterm_colors()
 {
-    static term_color_palette retval(xterm_palette_json.get_name(),
-                                     xterm_palette_json.to_string_fragment());
+    static term_color_palette retval(
+        xterm_palette_json.get_name(),
+        *xterm_palette_json.to_string_fragment_producer());
 
     return &retval;
 }
@@ -104,8 +106,9 @@ xterm_colors()
 term_color_palette*
 ansi_colors()
 {
-    static term_color_palette retval(ansi_palette_json.get_name(),
-                                     ansi_palette_json.to_string_fragment());
+    static term_color_palette retval(
+        ansi_palette_json.get_name(),
+        *ansi_palette_json.to_string_fragment_producer());
 
     return &retval;
 }
@@ -175,8 +178,8 @@ from(string_fragment sf)
         sf));
 }
 
-term_color_palette::
-term_color_palette(const char* name, const string_fragment& json)
+term_color_palette::term_color_palette(const char* name,
+                                       string_fragment_producer& json)
 {
     intern_string_t iname = intern_string::lookup(name);
     auto parse_res

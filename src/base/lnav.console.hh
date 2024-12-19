@@ -131,17 +131,6 @@ struct user_message {
         this->um_snippets.insert(this->um_snippets.begin(),
                                  std::make_move_iterator(std::begin(snippets)),
                                  std::make_move_iterator(std::end(snippets)));
-        if (this->um_snippets.size() > 1) {
-            for (auto iter = this->um_snippets.begin();
-                 iter != this->um_snippets.end();)
-            {
-                if (iter->s_content.empty()) {
-                    iter = this->um_snippets.erase(iter);
-                } else {
-                    ++iter;
-                }
-            }
-        }
         return *this;
     }
 
@@ -151,17 +140,6 @@ struct user_message {
         this->um_snippets.insert(this->um_snippets.end(),
                                  std::make_move_iterator(std::begin(snippets)),
                                  std::make_move_iterator(std::end(snippets)));
-        if (this->um_snippets.size() > 1) {
-            for (auto iter = this->um_snippets.begin();
-                 iter != this->um_snippets.end();)
-            {
-                if (iter->s_content.empty()) {
-                    iter = this->um_snippets.erase(iter);
-                } else {
-                    ++iter;
-                }
-            }
-        }
         return *this;
     }
 

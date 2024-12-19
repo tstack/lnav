@@ -161,7 +161,7 @@ read_file(const std::filesystem::path& path)
 
 Result<write_file_result, std::string>
 write_file(const std::filesystem::path& path,
-           const string_fragment& content,
+           string_fragment_producer& content,
            std::set<write_file_options> options)
 {
     write_file_result retval;
@@ -169,19 +169,30 @@ write_file(const std::filesystem::path& path,
     tmp_pattern += ".XXXXXX";
 
     auto tmp_pair = TRY(open_temp_file(tmp_pattern));
-    auto bytes_written
-        = write(tmp_pair.second.get(), content.data(), content.length());
-    if (bytes_written < 0) {
-        return Err(
-            fmt::format(FMT_STRING("unable to write to temporary file {}: {}"),
-                        tmp_pair.first.string(),
-                        strerror(errno)));
-    }
-    if (bytes_written != content.length()) {
-        return Err(fmt::format(FMT_STRING("short write to file {}: {} < {}"),
-                               tmp_pair.first.string(),
-                               bytes_written,
-                               content.length()));
+    auto for_res = content.for_each(
+        [&tmp_pair](string_fragment sf) -> Result<void, std::string> {
+            auto bytes_written
+                = write(tmp_pair.second.get(), sf.data(), sf.length());
+            if (bytes_written < 0) {
+                return Err(fmt::format(
+                    FMT_STRING("unable to write to temporary file {}: {}"),
+                    tmp_pair.first.string(),
+                    strerror(errno)));
+            }
+
+            if (bytes_written != sf.length()) {
+                return Err(
+                    fmt::format(FMT_STRING("short write to file {}: {} < {}"),
+                                tmp_pair.first.string(),
+                                bytes_written,
+                                sf.length()));
+            }
+
+            return Ok();
+        });
+
+    if (for_res.isErr()) {
+        return Err(for_res.unwrapErr());
     }
 
     std::error_code ec;
@@ -200,6 +211,10 @@ write_file(const std::filesystem::path& path,
 
             retval.wfr_backup_path = backup_path;
         }
+    }
+
+    if (options.count(write_file_options::executable)) {
+        fchmod(tmp_pair.second.get(), S_IRWXU);
     }
 
     std::filesystem::rename(tmp_pair.first, path, ec);
@@ -244,8 +259,7 @@ stat_file(const std::filesystem::path& path)
                            strerror(errno)));
 }
 
-file_lock::
-file_lock(const std::filesystem::path& archive_path)
+file_lock::file_lock(const std::filesystem::path& archive_path)
 {
     auto lock_path = archive_path;
 

@@ -52,7 +52,7 @@ struct term_color {
 };
 
 struct term_color_palette {
-    term_color_palette(const char* name, const string_fragment& json);
+    term_color_palette(const char* name, string_fragment_producer& json);
 
     uint8_t match_color(const lab_color& to_match) const;
 

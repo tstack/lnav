@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
+
 #include "text_anonymizer.hh"
 
 #include <arpa/inet.h>
@@ -37,7 +39,6 @@
 #include "config.h"
 #include "data_scanner.hh"
 #include "diseases-json.h"
-#include <filesystem>
 #include "hasher.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "words-json.h"
@@ -70,9 +71,10 @@ load_word_list()
 {
     static const intern_string_t name
         = intern_string::lookup(words_json.get_name());
+    auto sfp = words_json.to_string_fragment_producer();
     auto parse_res
         = random_list_handlers.parser_for(name).with_ignore_unused(false).of(
-            words_json.to_string_fragment());
+            *sfp);
 
     return parse_res.unwrap();
 }
@@ -90,9 +92,10 @@ load_animal_list()
 {
     static const intern_string_t name
         = intern_string::lookup(animals_json.get_name());
+    auto sfp = animals_json.to_string_fragment_producer();
     auto parse_res
         = random_list_handlers.parser_for(name).with_ignore_unused(false).of(
-            animals_json.to_string_fragment());
+            *sfp);
 
     return parse_res.unwrap();
 }
@@ -110,9 +113,10 @@ load_disease_list()
 {
     static const intern_string_t name
         = intern_string::lookup(diseases_json.get_name());
+    auto sfp = diseases_json.to_string_fragment_producer();
     auto parse_res
         = random_list_handlers.parser_for(name).with_ignore_unused(false).of(
-            diseases_json.to_string_fragment());
+            *sfp);
 
     return parse_res.unwrap();
 }
@@ -342,8 +346,7 @@ text_anonymizer::next(string_fragment line)
                             (unsigned char) ((base_mac >> 0) & 0xff),
                         });
 
-                        return anon_mac.to_string(
-                            std::make_optional(inp[2]));
+                        return anon_mac.to_string(std::make_optional(inp[2]));
                     });
                 break;
             }

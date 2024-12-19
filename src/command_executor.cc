@@ -283,7 +283,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             log_debug("prqlc adding mod %s", mod.get_name());
             tree.emplace_back(prqlc::SourceTreeElement{
                 mod.get_name(),
-                mod.to_string_fragment().to_string(),
+                mod.to_string_fragment_producer()->to_string(),
             });
         }
         tree.emplace_back(prqlc::SourceTreeElement{"", stmt_str});
@@ -349,6 +349,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
     ec.ec_accumulator->clear();
 
+    require(!ec.ec_source.empty());
     const auto& source = ec.ec_source.back();
     sql_progress_guard progress_guard(sql_progress,
                                       sql_progress_finished,
@@ -1251,12 +1252,8 @@ exec_context::exec_context(logline_value_vector* line_values,
       ec_accumulator(std::make_unique<attr_line_t>()),
       ec_sql_callback(sql_callback), ec_pipe_callback(pipe_callback)
 {
-    static const auto COMMAND_SRC = intern_string::lookup("command");
-
     this->ec_local_vars.push(std::map<std::string, scoped_value_t>());
     this->ec_path_stack.emplace_back(".");
-    this->ec_source.emplace_back(
-        lnav::console::snippet::from(COMMAND_SRC, "").with_line(1));
     this->ec_output_stack.emplace_back("screen", std::nullopt);
     this->ec_error_callback_stack.emplace_back(
         [](const auto& um) { lnav::console::print(stderr, um); });

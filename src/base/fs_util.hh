@@ -94,6 +94,7 @@ Result<std::string, std::string> read_file(const std::filesystem::path& path);
 
 enum class write_file_options {
     backup_existing,
+    executable,
 };
 
 struct write_file_result {
@@ -102,8 +103,17 @@ struct write_file_result {
 
 Result<write_file_result, std::string> write_file(
     const std::filesystem::path& path,
-    const string_fragment& content,
+    string_fragment_producer& content,
     std::set<write_file_options> options = {});
+
+inline Result<write_file_result, std::string>
+write_file(const std::filesystem::path& path,
+           const string_fragment& content,
+           std::set<write_file_options> options = {})
+{
+    auto sfp = string_fragment_producer::from(content);
+    return write_file(path, *sfp, options);
+}
 
 std::string build_path(const std::vector<std::filesystem::path>& paths);
 

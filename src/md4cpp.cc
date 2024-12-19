@@ -76,9 +76,10 @@ load_xml_entity_map()
 {
     static const intern_string_t name
         = intern_string::lookup(xml_entities_json.get_name());
+    auto sfp = xml_entities_json.to_string_fragment_producer();
     auto parse_res
         = xml_entity_map_handlers.parser_for(name).with_ignore_unused(true).of(
-            xml_entities_json.to_string_fragment());
+            *sfp);
 
     assert(parse_res.isOk());
 
@@ -98,9 +99,9 @@ load_emoji_map()
 {
     static const intern_string_t name
         = intern_string::lookup(emojis_json.get_name());
+    auto sfp = emojis_json.to_string_fragment_producer();
     auto parse_res
-        = emoji_map_handlers.parser_for(name).with_ignore_unused(true).of(
-            emojis_json.to_string_fragment());
+        = emoji_map_handlers.parser_for(name).with_ignore_unused(true).of(*sfp);
 
     assert(parse_res.isOk());
 

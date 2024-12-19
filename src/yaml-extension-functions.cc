@@ -33,6 +33,7 @@
 
 #define RYML_SINGLE_HDR_DEFINE_NOW
 
+#include "base/itertools.hh"
 #include "ryml_all.hpp"
 #include "sqlite-extension-func.hh"
 #include "vtab_module.hh"
@@ -51,10 +52,14 @@ ryml_error_to_um(const char* msg, size_t len, ryml::Location loc, void* ud)
     if (loc.offset == sf.length()) {
         loc.line -= 1;
     }
+    auto snippet_line
+        = sf.find_left_boundary(loc.offset, string_fragment::tag1{'\n'})
+              .find_right_boundary(0, string_fragment::tag1{'\n'});
     throw lnav::console::user_message::error("failed to parse YAML content")
         .with_reason(msg_str)
         .with_snippet(lnav::console::snippet::from(
-            source_location{src, (int32_t) loc.line}, ""));
+            source_location{src, (int32_t) loc.line},
+            snippet_line.to_string()));
 }
 
 static json_string

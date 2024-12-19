@@ -33,11 +33,11 @@
 
 #include <zlib.h>
 
+#include "base/lnav_log.hh"
 #include "config.h"
 #include "fmt/format.h"
 
-namespace lnav {
-namespace gzip {
+namespace lnav::gzip {
 
 bool
 is_gzipped(const char* buffer, size_t len)
@@ -122,5 +122,67 @@ uncompress(const std::string& src, const void* buffer, size_t size)
     return Ok(std::move(uncomp.resize(strm.total_out)));
 }
 
-}  // namespace gzip
-}  // namespace lnav
+struct gunzip_producer : string_fragment_producer {
+    explicit gunzip_producer(const std::string& src) : gp_src(src) {}
+
+    next_result next() override
+    {
+        if (this->strm.next_in == nullptr) {
+            return eof{};
+        }
+
+        this->strm.next_out = (Bytef*) this->gp_buff;
+        this->strm.avail_out = sizeof(this->gp_buff);
+
+        const auto err = inflate(&this->strm, Z_SYNC_FLUSH);
+        if (err == Z_STREAM_END) {
+            auto used = sizeof(this->gp_buff) - this->strm.avail_out;
+            this->strm.next_in = nullptr;
+            if (inflateEnd(&strm) != Z_OK) {
+                return error{
+                    fmt::format(FMT_STRING("unable to uncompress: {} -- {}"),
+                                this->gp_src,
+                                this->strm.msg ? this->strm.msg : zError(err))};
+            }
+            return string_fragment::from_bytes(this->gp_buff, used);
+        }
+
+        if (err == Z_OK) {
+            auto used = sizeof(this->gp_buff) - this->strm.avail_out;
+            return string_fragment::from_bytes(this->gp_buff, used);
+        }
+
+        inflateEnd(&this->strm);
+        return error{
+            fmt::format(FMT_STRING("unable to uncompress: {} -- {}"),
+                        this->gp_src,
+                        this->strm.msg ? this->strm.msg : zError(err))};
+    }
+
+    std::string gp_src;
+    z_stream strm = {};
+    unsigned char gp_buff[2048];
+};
+
+Result<std::unique_ptr<string_fragment_producer>, std::string>
+uncompress_stream(const std::string& src,
+                  const unsigned char* buffer,
+                  size_t size)
+{
+    int err;
+
+    auto gp = std::make_unique<gunzip_producer>(src);
+    gp->strm.next_in = (Bytef*) buffer;
+    gp->strm.avail_in = size;
+
+    if ((err = inflateInit(&gp->strm)) != Z_OK) {
+        return Err(fmt::format(FMT_STRING("invalid gzip data: {} -- {}"),
+                               src,
+                               gp->strm.msg ? gp->strm.msg : zError(err)));
+    }
+
+    std::unique_ptr<string_fragment_producer> retval = std::move(gp);
+    return Ok(std::move(retval));
+}
+
+}  // namespace lnav::gzip

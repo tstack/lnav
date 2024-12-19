@@ -404,11 +404,28 @@ public:
         return this->parse((const unsigned char*) sf.data(), sf.length());
     }
 
+    yajl_status parse(string_fragment_producer& sfp);
+
     int get_line_number() const;
 
     yajl_status complete_parse();
 
-    bool parse_doc(const string_fragment& sf);
+    bool parse_doc(string_fragment_producer& sfp);
+
+    bool parse_doc(const string_fragment& sf)
+    {
+        if (this->parse_frag(sf) != yajl_status_ok) {
+            return false;
+        }
+
+        this->ypc_json_text = sf.udata();
+        this->ypc_json_text_len = sf.length();
+        auto status = this->complete_parse();
+        this->ypc_json_text = nullptr;
+        this->ypc_json_text_len = 0;
+
+        return status == yajl_status_ok;
+    }
 
     void report_error(const lnav::console::user_message& msg) const
     {
@@ -461,7 +478,7 @@ public:
         return lvalue;
     }
 
-    template<typename T, typename MEM_T, MEM_T T::*MEM>
+    template<typename T, typename MEM_T, MEM_T T::* MEM>
     auto& get_obj_member()
     {
         auto obj = (T*) this->ypc_obj_stack.top();
@@ -506,6 +523,8 @@ public:
                           int child_start = 0);
 
 private:
+    yajl_status parse_frag(string_fragment sf);
+
     static const yajl_callbacks DEFAULT_CALLBACKS;
 
     static int map_start(void* ctx);

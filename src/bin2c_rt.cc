@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, Timothy Stack
+ * Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,35 +25,28 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file bin2c.hh
  */
 
-#ifndef lnav_bin2c_hh
-#define lnav_bin2c_hh
+#include "bin2c.hh"
 
-#include <memory>
+#include <zlib.h>
 
-#include <assert.h>
-#include <sys/types.h>
+#include "base/lnav.gzip.hh"
 
-#include "base/intern_string.hh"
+bin_src_file::bin_src_file(const char* name,
+                           const unsigned char* data,
+                           size_t compressed_size,
+                           size_t size)
+    : bsf_name(name), bsf_compressed_data(data),
+      bsf_compressed_size(compressed_size)
+{
+}
 
-struct bin_src_file {
-    bin_src_file(const char* name,
-                 const unsigned char* data,
-                 size_t compressed_size,
-                 size_t size);
+std::unique_ptr<string_fragment_producer>
+bin_src_file::to_string_fragment_producer() const
+{
+    auto gz_res = lnav::gzip::uncompress_stream(
+        this->bsf_name, this->bsf_compressed_data, this->bsf_compressed_size);
 
-    std::unique_ptr<string_fragment_producer> to_string_fragment_producer()
-        const;
-
-    const char* get_name() const { return this->bsf_name; }
-
-private:
-    const char* bsf_name;
-    const unsigned char* bsf_compressed_data;
-    size_t bsf_compressed_size;
-};
-
-#endif
+    return gz_res.unwrap();
+}

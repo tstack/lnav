@@ -1151,43 +1151,37 @@ write_sample_file()
         auto sample_path = lnav::paths::dotlnav()
             / fmt::format(FMT_STRING("formats/default/{}.sample"),
                           bsf.get_name());
-        auto sf = bsf.to_string_fragment();
-        auto_fd sample_fd;
+        auto sfp = bsf.to_string_fragment_producer();
+        auto write_res = lnav::filesystem::write_file(sample_path, *sfp);
 
-        if ((sample_fd = lnav::filesystem::openp(
-                 sample_path, O_WRONLY | O_TRUNC | O_CREAT, 0644))
-                == -1
-            || (write(sample_fd.get(), sf.data(), sf.length()) == -1))
-        {
+        if (write_res.isErr()) {
+            auto msg = write_res.unwrapErr();
             fprintf(stderr,
                     "error:unable to write default format file: %s -- %s\n",
                     sample_path.c_str(),
-                    strerror(errno));
+                    msg.c_str());
         }
     }
 
     for (const auto& bsf : lnav_sh_scripts) {
         auto sh_path = lnav::paths::dotlnav()
             / fmt::format(FMT_STRING("formats/default/{}"), bsf.get_name());
-        auto sf = bsf.to_string_fragment();
-        auto_fd sh_fd;
+        auto sfp = bsf.to_string_fragment_producer();
+        auto write_res = lnav::filesystem::write_file(
+            sh_path, *sfp, {lnav::filesystem::write_file_options::executable});
 
-        if ((sh_fd = lnav::filesystem::openp(
-                 sh_path, O_WRONLY | O_TRUNC | O_CREAT, 0755))
-                == -1
-            || write(sh_fd.get(), sf.data(), sf.length()) == -1)
-        {
+        if (write_res.isErr()) {
+            auto msg = write_res.unwrapErr();
             fprintf(stderr,
                     "error:unable to write default text file: %s -- %s\n",
                     sh_path.c_str(),
-                    strerror(errno));
+                    msg.c_str());
         }
     }
 
     for (const auto& bsf : lnav_scripts) {
         struct script_metadata meta;
-        auto sf = bsf.to_string_fragment();
-        auto_fd script_fd;
+        auto sf = bsf.to_string_fragment_producer()->to_string();
 
         extract_metadata(sf, meta);
         auto path
@@ -1198,13 +1192,14 @@ write_sample_file()
             // Assume it's the right contents and move on...
             continue;
         }
-        if ((script_fd = lnav::filesystem::openp(
-                 script_path, O_WRONLY | O_TRUNC | O_CREAT, 0755))
-                == -1
-            || write(script_fd.get(), sf.data(), sf.length()) == -1)
-        {
+
+        auto write_res = lnav::filesystem::write_file(
+            script_path,
+            sf,
+            {lnav::filesystem::write_file_options::executable});
+        if (write_res.isErr()) {
             fprintf(stderr,
-                    "error:unable to write default text file: %s -- %s\n",
+                    "error:unable to write default script file: %s -- %s\n",
                     script_path.c_str(),
                     strerror(errno));
         }
@@ -1367,18 +1362,8 @@ load_formats(const std::vector<std::filesystem::path>& extra_paths,
             .ypc_userdata
             = &ud;
         yajl_config(handle, yajl_allow_comments, 1);
-        auto sf = bsf.to_string_fragment();
-        if (ypc_builtin.parse(sf) != yajl_status_ok) {
-            auto* msg = yajl_get_error(handle, 1, sf.udata(), sf.length());
-
-            errors.emplace_back(
-                lnav::console::user_message::error("invalid json")
-                    .with_snippet(lnav::console::snippet::from(
-                        ypc_builtin.ypc_source, attr_line_t((const char*) msg)))
-                    .with_errno_reason());
-            yajl_free_error(handle, msg);
-        }
-        ypc_builtin.complete_parse();
+        auto sf = bsf.to_string_fragment_producer();
+        ypc_builtin.parse(*sf);
         yajl_free(handle);
     }
 

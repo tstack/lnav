@@ -1315,7 +1315,8 @@ fstat(*pattern*)
       ;SELECT ifnull(data, raise_error('cannot read: ' || st_name, error)) FROM fstat('/non-existent')
       ✘ error: cannot read: non-existent
        reason: No such file or directory
-       --> command:1
+       --> fstat:1
+       | SELECT ifnull(data, raise_error('cannot read: ' || st_name, error)) FROM fstat('/non-existent')
       
 
 
@@ -3287,7 +3288,8 @@ raise_error(*msg*, *\[reason\]*)
       ;SELECT ifnull($val, raise_error('please set $val', 'because'))
       ✘ error: please set $val
        reason: because
-       --> command:1
+       --> raise_error:1
+       | SELECT ifnull($val, raise_error('please set $val', 'because'))
       
 
 

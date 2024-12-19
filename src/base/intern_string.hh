@@ -41,6 +41,7 @@
 #include <sys/types.h>
 
 #include "fmt/format.h"
+#include "mapbox/variant.hpp"
 #include "result.h"
 #include "scn/util/string_view.h"
 #include "strnatcmp.h"
@@ -687,6 +688,48 @@ operator<<(std::ostream& os, const string_fragment& sf)
     os.write(sf.data(), sf.length());
     return os;
 }
+
+class string_fragment_producer {
+public:
+    struct eof {};
+    struct error {
+        std::string what;
+    };
+    using next_result = mapbox::util::variant<eof, string_fragment, error>;
+    static std::unique_ptr<string_fragment_producer> from(string_fragment sf);
+
+    Result<void, std::string> for_each(
+        std::function<Result<void, std::string>(string_fragment)> cb)
+    {
+        while (true) {
+            auto next_res = this->next();
+            if (next_res.is<error>()) {
+                auto err = next_res.get<error>();
+
+                return Err(err.what);
+            }
+
+            if (next_res.is<eof>()) {
+                break;
+            }
+
+            const auto sf = next_res.get<string_fragment>();
+            auto cb_res = cb(sf);
+
+            if (cb_res.isErr()) {
+                return Err(cb_res.unwrapErr());
+            }
+        }
+
+        return Ok();
+    }
+
+    virtual ~string_fragment_producer() {}
+
+    virtual next_result next() = 0;
+
+    std::string to_string();
+};
 
 class intern_string {
 public:

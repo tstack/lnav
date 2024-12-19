@@ -466,6 +466,7 @@ add_library(
         archive_manager.cc
         document.sections.cc
         bin2c.hh
+        bin2c_rt.cc
         bookmarks.cc
         bottom_status_source.cc
         breadcrumb_curses.cc

@@ -30,6 +30,7 @@
 #include "view_helpers.hh"
 
 #include "base/itertools.hh"
+#include "base/itertools.enumerate.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "document.sections.hh"
@@ -539,7 +540,7 @@ build_all_help_text()
         return;
     }
 
-    shlex lexer(help_md.to_string_fragment());
+    shlex lexer(help_md.to_string_fragment_producer()->to_string());
     std::string sub_help_text;
 
     lexer.with_ignore_quotes(true).eval(
@@ -1011,7 +1012,7 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
     auto& dos = lnav_data.ld_db_overlay;
     auto& db_tc = lnav_data.ld_views[LNV_DB];
 
-    for (const auto& ex : ht.ht_example) {
+    for (const auto& [index, ex] : lnav::itertools::enumerate(ht.ht_example, 1)) {
         std::string alt_msg;
         attr_line_t result;
 
@@ -1030,8 +1031,10 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
             case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
             case help_context_t::HC_PRQL_TRANSFORM:
             case help_context_t::HC_PRQL_FUNCTION: {
+                intern_string_t ex_src = intern_string::lookup(ht.ht_name);
                 exec_context ec;
 
+                auto src_guard = ec.enter_source(ex_src, index, ex.he_cmd);
                 ec.ec_label_source_stack.push_back(&dls);
 
                 auto exec_res = execute_sql(ec, ex.he_cmd, alt_msg);

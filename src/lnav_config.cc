@@ -1875,7 +1875,8 @@ load_default_config(struct _lnav_config& config_obj,
 
     yajl_config(handle, yajl_allow_comments, 1);
     yajl_config(handle, yajl_allow_multiple_values, 1);
-    ypc_builtin.parse_doc(bsf.to_string_fragment());
+    auto sfp = bsf.to_string_fragment_producer();
+    ypc_builtin.parse_doc(*sfp);
 
     return path == "*" || ypc_builtin.ypc_active_paths.empty();
 }
@@ -1903,9 +1904,8 @@ load_config(const std::vector<std::filesystem::path>& extra_paths,
     for (auto& bsf : lnav_config_json) {
         auto sample_path = lnav::paths::dotlnav() / "configs" / "default"
             / fmt::format(FMT_STRING("{}.sample"), bsf.get_name());
-
-        auto write_res = lnav::filesystem::write_file(sample_path,
-                                                      bsf.to_string_fragment());
+        auto sfp =  bsf.to_string_fragment_producer();
+        auto write_res = lnav::filesystem::write_file(sample_path, *sfp);
         if (write_res.isErr()) {
             fprintf(stderr,
                     "error:unable to write default config file: %s -- %s\n",

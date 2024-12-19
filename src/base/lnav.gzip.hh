@@ -37,6 +37,7 @@
 #include <sys/time.h>
 
 #include "auto_mem.hh"
+#include "intern_string.hh"
 #include "result.h"
 
 namespace lnav {
@@ -62,6 +63,11 @@ Result<auto_buffer, std::string> compress(const void* input, size_t len);
 Result<auto_buffer, std::string> uncompress(const std::string& src,
                                             const void* buffer,
                                             size_t size);
+
+Result<std::unique_ptr<string_fragment_producer>, std::string>
+uncompress_stream(const std::string& src,
+                  const unsigned char* buffer,
+                  size_t size);
 
 }  // namespace gzip
 }  // namespace lnav

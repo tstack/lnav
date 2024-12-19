@@ -273,7 +273,7 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename T, typename U>
-    static inline U& get_field(T& input, std::shared_ptr<U>(T::*field))
+    static inline U& get_field(T& input, std::shared_ptr<U>(T::* field))
     {
         auto& ptr = input.*field;
 
@@ -285,20 +285,20 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename T, typename U>
-    static inline U& get_field(T& input, U(T::*field))
+    static inline U& get_field(T& input, U(T::* field))
     {
         return input.*field;
     }
 
     template<typename T, typename U, typename... V>
-    static inline auto get_field(T& input, U(T::*field), V... args)
+    static inline auto get_field(T& input, U(T::* field), V... args)
         -> decltype(get_field(input.*field, args...))
     {
         return get_field(input.*field, args...);
     }
 
     template<typename T, typename U, typename... V>
-    static inline auto get_field(void* input, U(T::*field), V... args)
+    static inline auto get_field(void* input, U(T::* field), V... args)
         -> decltype(get_field(*((T*) input), field, args...))
     {
         return get_field(*((T*) input), field, args...);
@@ -574,7 +574,7 @@ struct json_path_handler : public json_path_handler_base {
     }
 
     template<typename T, typename U>
-    json_path_handler& for_child(positioned_property<U>(T::*field))
+    json_path_handler& for_child(positioned_property<U>(T::* field))
     {
         this->jph_obj_provider
             = [field](const yajlpp_provider_context& ypc, void* root) -> void* {
@@ -1265,7 +1265,7 @@ struct json_path_handler : public json_path_handler_base {
             intern_string_t{}, source_location{}, string_fragment{}))>::type
         = 0,
         typename... Args>
-    json_path_handler& for_field(Args... args, T C::*ptr_arg)
+    json_path_handler& for_field(Args... args, T C::* ptr_arg)
     {
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args..., ptr_arg](
@@ -1629,7 +1629,19 @@ public:
     }
 
     Result<T, std::vector<lnav::console::user_message>> of(
-        const string_fragment& json)
+        string_fragment_producer& json)
+    {
+        if (this->yp_parse_context.parse_doc(json)) {
+            if (this->yp_errors.empty()) {
+                return Ok(std::move(this->yp_obj));
+            }
+        }
+
+        return Err(std::move(this->yp_errors));
+    }
+
+    Result<T, std::vector<lnav::console::user_message>> of(
+        string_fragment json)
     {
         if (this->yp_parse_context.parse_doc(json)) {
             if (this->yp_errors.empty()) {

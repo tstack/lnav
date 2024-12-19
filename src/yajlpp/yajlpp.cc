@@ -29,6 +29,7 @@
  * @file yajlpp.cc
  */
 
+#include <filesystem>
 #include <regex>
 #include <utility>
 
@@ -36,7 +37,6 @@
 
 #include "config.h"
 #include "fmt/format.h"
-#include <filesystem>
 #include "yajl/api/yajl_parse.h"
 #include "yajlpp_def.hh"
 
@@ -1010,9 +1010,8 @@ yajlpp_parse_context::parse(const unsigned char* jsonText, size_t jsonTextLen)
     this->ypc_json_text = jsonText;
     this->ypc_json_text_len = jsonTextLen;
 
-    yajl_status retval = yajl_parse(this->ypc_handle, jsonText, jsonTextLen);
-
-    size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
+    const auto retval = yajl_parse(this->ypc_handle, jsonText, jsonTextLen);
+    const auto consumed = yajl_get_bytes_consumed(this->ypc_handle);
 
     this->ypc_line_number
         += std::count(&jsonText[0], &jsonText[consumed], '\n');
@@ -1036,10 +1035,11 @@ yajlpp_parse_context::parse(const unsigned char* jsonText, size_t jsonTextLen)
 yajl_status
 yajlpp_parse_context::complete_parse()
 {
-    yajl_status retval = yajl_complete_parse(this->ypc_handle);
+    const auto retval = yajl_complete_parse(this->ypc_handle);
 
     if (retval != yajl_status_ok && this->ypc_error_reporter) {
-        auto* msg = yajl_get_error(this->ypc_handle, 0, nullptr, 0);
+        auto* msg = yajl_get_error(
+            this->ypc_handle, 0, this->ypc_json_text, this->ypc_json_text_len);
 
         this->report_error(lnav::console::user_message::error("invalid JSON")
                                .with_reason((const char*) msg)
@@ -1050,15 +1050,14 @@ yajlpp_parse_context::complete_parse()
     return retval;
 }
 
-bool
-yajlpp_parse_context::parse_doc(const string_fragment& sf)
+yajl_status
+yajlpp_parse_context::parse_frag(string_fragment sf)
 {
-    bool retval = true;
-
-    this->ypc_json_text = (const unsigned char*) sf.data();
+    this->ypc_json_text = sf.udata();
     this->ypc_json_text_len = sf.length();
 
-    auto rc = yajl_parse(this->ypc_handle, this->ypc_json_text, sf.length());
+    const auto rc
+        = yajl_parse(this->ypc_handle, this->ypc_json_text, sf.length());
     size_t consumed = yajl_get_bytes_consumed(this->ypc_handle);
     this->ypc_total_consumed += consumed;
     this->ypc_line_number += std::count(
@@ -1077,12 +1076,43 @@ yajlpp_parse_context::parse_doc(const string_fragment& sf)
                     .with_snippet(this->get_snippet()));
             yajl_free_error(this->ypc_handle, msg);
         }
-        retval = false;
-    } else if (this->complete_parse() != yajl_status_ok) {
-        retval = false;
     }
 
     this->ypc_json_text = nullptr;
+    this->ypc_json_text_len = 0;
+
+    return rc;
+}
+
+bool
+yajlpp_parse_context::parse_doc(string_fragment_producer& sfp)
+{
+    auto retval = true;
+
+    while (true) {
+        auto next_res = sfp.next();
+        if (next_res.is<string_fragment_producer::eof>()) {
+            break;
+        }
+        if (next_res.is<string_fragment_producer::error>()) {
+            const auto err = next_res.get<string_fragment_producer::error>();
+            this->report_error(
+                lnav::console::user_message::error("unable to read file")
+                    .with_reason(err.what)
+                    .with_snippet(this->get_snippet()));
+            break;
+        }
+
+        auto sf = next_res.get<string_fragment>();
+
+        if (this->parse_frag(sf) != yajl_status_ok) {
+            retval = false;
+            break;
+        }
+    }
+    if (retval && this->complete_parse() != yajl_status_ok) {
+        retval = false;
+    }
 
     return retval;
 }
@@ -1199,6 +1229,44 @@ yajlpp_parse_context::get_path_fragment(int offset,
         retval = &this->ypc_path[start];
         len_out = end - start;
     }
+
+    return retval;
+}
+
+yajl_status
+yajlpp_parse_context::parse(string_fragment_producer& sfp)
+{
+    yajl_status retval = yajl_status_ok;
+    while (retval == yajl_status_ok) {
+        auto next_res = sfp.next();
+        if (next_res.is<string_fragment_producer::eof>()) {
+            break;
+        }
+
+        if (next_res.is<string_fragment_producer::error>()) {
+            const auto err = next_res.get<string_fragment_producer::error>();
+            this->report_error(
+                lnav::console::user_message::error("unable to read file")
+                    .with_reason(err.what)
+                    .with_snippet(this->get_snippet()));
+            break;
+        }
+
+        auto sf = next_res.get<string_fragment>();
+        retval = this->parse(sf);
+        if (retval != yajl_status_ok) {
+            auto* msg
+                = yajl_get_error(this->ypc_handle, 1, sf.udata(), sf.length());
+            auto um = lnav::console::user_message::error("invalid JSON")
+                          .with_snippet(lnav::console::snippet::from(
+                              this->ypc_source, attr_line_t((const char*) msg)))
+                          .with_errno_reason();
+            this->report_error(um);
+            yajl_free_error(this->ypc_handle, msg);
+        }
+    }
+
+    retval = this->complete_parse();
 
     return retval;
 }

@@ -40,6 +40,7 @@
 #include "pcrepp/pcre2pp.hh"
 #include "ww898/cp_utf8.hpp"
 #include "xxHash/xxhash.h"
+#include "lnav_log.hh"
 
 const static int TABLE_SIZE = 4095;
 
@@ -497,6 +498,42 @@ string_fragment::column_width() const
             }
         }
     }
+
+    return retval;
+}
+
+struct single_producer : string_fragment_producer {
+    explicit single_producer(const string_fragment& sf) : sp_frag(sf) {}
+
+    next_result next() override
+    {
+        auto retval = std::exchange(this->sp_frag, std::nullopt);
+        if (retval) {
+            return retval.value();
+        }
+
+        return eof{};
+    }
+
+    std::optional<string_fragment> sp_frag;
+};
+
+std::unique_ptr<string_fragment_producer>
+string_fragment_producer::from(string_fragment sf)
+{
+    return std::make_unique<single_producer>(sf);
+}
+
+std::string
+string_fragment_producer::to_string()
+{
+    auto retval = std::string{};
+
+    auto for_res = this->for_each(
+        [&retval](string_fragment sf) -> Result<void, std::string> {
+            retval.append(sf.data(), sf.length());
+            return Ok();
+        });
 
     return retval;
 }

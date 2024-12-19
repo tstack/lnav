@@ -360,24 +360,38 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
         });
 
         log_debug("tailer(%s): writing to child", netloc.c_str());
-        auto sf = tailer_bin[0].to_string_fragment();
-        ssize_t total_bytes = 0;
         bool write_failed = false;
 
-        while (total_bytes < sf.length()) {
-            log_debug("attempting to write %d", sf.length() - total_bytes);
-            auto rc = write(
-                in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
-
-            if (rc < 0) {
-                log_error("  tailer(%s): write failed -- %s",
-                          netloc.c_str(),
-                          strerror(errno));
-                write_failed = true;
+        auto sfp = tailer_bin[0].to_string_fragment_producer();
+        while (true) {
+            auto next_res = sfp->next();
+            if (next_res.is<string_fragment_producer::eof>()) {
                 break;
             }
-            log_debug("  wrote %d", rc);
-            total_bytes += rc;
+
+            if (next_res.is<string_fragment_producer::error>()) {
+                return Err(next_res.get<string_fragment_producer::error>().what);
+            }
+
+            auto sf = next_res.get<string_fragment>();
+
+            ssize_t total_bytes = 0;
+
+            while (total_bytes < sf.length()) {
+                log_debug("attempting to write %d", sf.length() - total_bytes);
+                auto rc = write(
+                    in_pipe.write_end(), sf.data(), sf.length() - total_bytes);
+
+                if (rc < 0) {
+                    log_error("  tailer(%s): write failed -- %s",
+                              netloc.c_str(),
+                              strerror(errno));
+                    write_failed = true;
+                    break;
+                }
+                log_debug("  wrote %d", rc);
+                total_bytes += rc;
+            }
         }
 
         in_pipe.write_end().reset();
@@ -478,12 +492,11 @@ scrub_netloc(const std::string& netloc)
     return std::regex_replace(netloc, TO_SCRUB, "_");
 }
 
-tailer::looper::host_tailer::
-host_tailer(const std::string& netloc,
-            auto_pid<process_state::running> child,
-            auto_fd to_child,
-            auto_fd from_child,
-            auto_fd err_from_child)
+tailer::looper::host_tailer::host_tailer(const std::string& netloc,
+                                         auto_pid<process_state::running> child,
+                                         auto_fd to_child,
+                                         auto_fd from_child,
+                                         auto_fd err_from_child)
     : isc::service<host_tailer>(netloc), ht_netloc(netloc),
       ht_local_path(tmp_path() / scrub_netloc(netloc)),
       ht_error_reader([netloc,
