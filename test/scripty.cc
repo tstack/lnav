@@ -698,18 +698,20 @@ struct term_machine {
                                 break;
                             }
                             case 'c': {
-                                fprintf(stderr, "%s:got DA1\n", tstamp());
-                                fprintf(scripty_data.sd_from_child,
-                                        "CSI send device attributes\n");
-                                if (!this->tm_child_term.get_passout()) {
-                                    static const auto* DA = "\x1b[?1;2c";
+                                if (this->tm_escape_buffer.size() == 3) {
+                                    fprintf(stderr, "%s:got DA1\n", tstamp());
+                                    fprintf(scripty_data.sd_from_child,
+                                            "CSI send device attributes\n");
+                                    if (!this->tm_child_term.get_passout()) {
+                                        static const auto* DA = "\x1b[?1;2c";
 
-                                    fprintf(stderr,
-                                            "%s:sending DA1 response\n",
-                                            tstamp());
-                                    write(this->tm_child_term.get_fd(),
-                                          DA,
-                                          strlen(DA));
+                                        fprintf(stderr,
+                                                "%s:sending DA1 response\n",
+                                                tstamp());
+                                        write(this->tm_child_term.get_fd(),
+                                              DA,
+                                              strlen(DA));
+                                    }
                                 }
                                 break;
                             }
