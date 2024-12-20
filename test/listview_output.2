@@ -1,3 +1,4 @@
+CTRL bell
 CSI Use alternate screen buffer
 CSI DSR cursor position
 CSI send device attributes
@@ -26,18 +27,18 @@ S  -1 ┋                                                                       
 A      ·····························└ normal
 CSI Hide cursor
 CSI Erase all
-S   1 ┋Hello                                                                           ┋
-A      └ bold, fg(#c0c0c0), bg(#000000)
-A      ··└ [22m
+S   1 ┋ Hello                                                                          ┋
+A      └ fg(#c0c0c0), bg(#000000)
+A      ·└ bold
+A      ···└ [22m
 CTRL (0
 S   1 ┋                                                                               x┋
 A      ···············································································└ [39;49m
-S   2 ┋                                                                                ┋
-A      └ [3m
 CTRL (B
-S   2 ┋orld!                                                                           ┋
-A      └ fg(#800000), bg(#008000)
-A      ··└ [23m, fg(#c0c0c0), bg(#000000)
+S   2 ┋World!                                                                          ┋
+A      └ fg(#c0c0c0), bg(#000000)
+A      ·└ [3m, fg(#800000), bg(#008000)
+A      ···└ [23m, fg(#c0c0c0), bg(#000000)
 CTRL (0
 S   2 ┋                                                                               x┋
 A      ···············································································└ [39;49m

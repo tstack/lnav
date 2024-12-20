@@ -1978,8 +1978,8 @@ For support questions, email:
   [1mpi()[0m, [1mpower()[0m, [1mradians()[0m, [1mround()[0m, [1msign()[0m, [1msquare()[0m, [1msum()[0m, [1mtotal()[0m
 [4mExample[0m
 #1 To get the arccosine of 0.2:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40macos[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m)                                  [0m
-   1.3694384060045657
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mprintf[0m[37m[40m([0m[35m[40m'%.3f'[0m[37m[40m, [0m[1m[37m[40macos[0m[37m[40m([0m[1m[37m[40m0.2[0m[37m[40m))                  [0m
+   1.369
 
 
 [1m[4macosh[0m[4m([0m[4mnum[0m[4m)[0m

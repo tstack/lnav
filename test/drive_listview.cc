@@ -43,7 +43,6 @@ static listview_curses lv;
 
 static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
 
-
 class my_source : public list_data_source {
 public:
     my_source() : ms_rows(2) {}
@@ -60,8 +59,8 @@ public:
 
             if (row == 0) {
                 value_out.al_string += " Hello";
-                value_out.with_attr(string_attr(line_range{1, 3},
-                    VC_STYLE.value(text_attrs::with_bold())));
+                value_out.with_attr(string_attr(
+                    line_range{1, 3}, VC_STYLE.value(text_attrs::with_bold())));
             } else if (row == 1) {
                 auto mixed_style = text_attrs::with_italic();
                 mixed_style.ta_fg_color = rgb_color{255, 0, 0};
@@ -71,8 +70,8 @@ public:
                     log_debug("wtf!");
                 }
                 value_out.al_string += "World!";
-                value_out.with_attr(string_attr(line_range{1, 3},
-                    VC_STYLE.value(mixed_style)));
+                value_out.with_attr(
+                    string_attr(line_range{1, 3}, VC_STYLE.value(mixed_style)));
             } else if (row < this->ms_rows) {
                 value_out.al_string += std::to_string(static_cast<int>(row));
             } else {
@@ -104,7 +103,7 @@ main(int argc, char* argv[])
     int c, retval = EXIT_SUCCESS;
     bool wait_for_input = false, set_height = false;
     const char* keys = nullptr;
-    my_source ms;
+    std::optional<int> rows;
 
     setenv("DUMP_CRASH", "1", 1);
     setlocale(LC_ALL, "");
@@ -119,13 +118,6 @@ main(int argc, char* argv[])
     errpipe[1].close_on_exec();
     auto pipe_err_handle
         = log_pipe_err(errpipe[0].release(), errpipe[1].release());
-
-    auto nco = notcurses_options{};
-    nco.flags |= NCOPTION_SUPPRESS_BANNERS;
-    nco.loglevel = NCLOGLEVEL_DEBUG;
-    auto sc = screen_curses::create(nco).unwrap();
-    lv.set_data_source(&ms);
-    lv.set_window(sc.get_std_plane());
 
     while ((c = getopt(argc, argv, "cy:t:k:l:r:h:w")) != -1) {
         switch (c) {
@@ -153,38 +145,51 @@ main(int argc, char* argv[])
                 wait_for_input = true;
                 break;
             case 'r':
-                ms.ms_rows = atoi(optarg);
+                rows = atoi(optarg);
                 break;
         }
     }
 
-    if (!set_height) {
-        auto height = ncplane_dim_y(sc.get_std_plane());
-        lv.set_height(vis_line_t(height - lv.get_y()));
-    }
-
-    ncinput nci;
-    if (keys != nullptr) {
-        // Treats the string argument as a sequence of key presses (only
-        // individual characters supported as key input)
-        for (const char* ptr = keys; ptr != nullptr && *ptr != '\0'; ++ptr) {
-            lv.do_update();
-            if (wait_for_input) {
-                notcurses_render(sc.get_notcurses());
-                notcurses_get_blocking(sc.get_notcurses(), &nci);
-            }
-            ncinput nci;
-            nci.id = static_cast<uint32_t>(*ptr);
-            nci.eff_text[0] = *ptr;
-            nci.eff_text[1] = '\0';
-            lv.handle_key(nci);
+    {
+        my_source ms;
+        if (rows) {
+            ms.ms_rows = rows.value();
         }
-    }
+        auto nco = notcurses_options{};
+        nco.flags |= NCOPTION_SUPPRESS_BANNERS;
+        nco.loglevel = NCLOGLEVEL_DEBUG;
+        auto sc = screen_curses::create(nco).unwrap();
+        lv.set_data_source(&ms);
+        lv.set_window(sc.get_std_plane());
+        if (!set_height) {
+            auto height = ncplane_dim_y(sc.get_std_plane());
+            lv.set_height(vis_line_t(height - lv.get_y()));
+        }
 
-    lv.do_update();
-    notcurses_render(sc.get_notcurses());
-    if (wait_for_input) {
-        notcurses_get_blocking(sc.get_notcurses(), &nci);
+        if (keys != nullptr) {
+            // Treats the string argument as a sequence of key presses (only
+            // individual characters supported as key input)
+            for (const char* ptr = keys; ptr != nullptr && *ptr != '\0'; ++ptr)
+            {
+                ncinput nci;
+                lv.do_update();
+                if (wait_for_input) {
+                    notcurses_render(sc.get_notcurses());
+                    notcurses_get_blocking(sc.get_notcurses(), &nci);
+                }
+                nci.id = static_cast<uint32_t>(*ptr);
+                nci.eff_text[0] = *ptr;
+                nci.eff_text[1] = '\0';
+                lv.handle_key(nci);
+            }
+        }
+
+        lv.do_update();
+        notcurses_render(sc.get_notcurses());
+        if (wait_for_input) {
+            ncinput nci;
+            notcurses_get_blocking(sc.get_notcurses(), &nci);
+        }
     }
 
     return retval;

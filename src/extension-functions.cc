@@ -2133,8 +2133,10 @@ common_extension_functions(struct FuncDef** basic_funcs,
                 .with_parameter(
                     {"num", "A cosine value that is between -1 and 1"})
                 .with_tags({"math"})
-                .with_example(
-                    {"To get the arccosine of 0.2", "SELECT acos(0.2)"}),
+                .with_example({
+                    "To get the arccosine of 0.2",
+                    "SELECT printf('%.3f', acos(0.2))",
+                }),
         },
         {
             "asin",

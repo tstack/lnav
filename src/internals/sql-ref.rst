@@ -456,8 +456,8 @@ acos(*num*)
 
     .. code-block::  custsqlite
 
-      ;SELECT acos(0.2)
-      1.3694384060045657
+      ;SELECT printf('%.3f', acos(0.2))
+      1.369
 
   **See Also**
     :ref:`abs`, :ref:`acosh`, :ref:`asin`, :ref:`asinh`, :ref:`atan2`, :ref:`atan`, :ref:`atanh`, :ref:`atn2`, :ref:`avg`, :ref:`ceil`, :ref:`degrees`, :ref:`exp`, :ref:`floor`, :ref:`log10`, :ref:`log`, :ref:`max`, :ref:`min`, :ref:`pi`, :ref:`power`, :ref:`radians`, :ref:`round`, :ref:`sign`, :ref:`square`, :ref:`sum`, :ref:`total`
