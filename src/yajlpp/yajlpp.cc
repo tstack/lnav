@@ -1106,6 +1106,7 @@ yajlpp_parse_context::parse_doc(string_fragment_producer& sfp)
         auto sf = next_res.get<string_fragment>();
 
         if (this->parse_frag(sf) != yajl_status_ok) {
+            log_error("parse frag failed %s", this->ypc_source.c_str());
             retval = false;
             break;
         }

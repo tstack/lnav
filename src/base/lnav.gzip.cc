@@ -125,6 +125,15 @@ uncompress(const std::string& src, const void* buffer, size_t size)
 struct gunzip_producer : string_fragment_producer {
     explicit gunzip_producer(const std::string& src) : gp_src(src) {}
 
+    gunzip_producer(const gunzip_producer&) = delete;
+    gunzip_producer& operator=(const gunzip_producer&) = delete;
+
+    ~gunzip_producer() override {
+        if (this->strm.next_in) {
+            inflateEnd(&this->strm);
+        }
+    }
+
     next_result next() override
     {
         if (this->strm.next_in == nullptr) {
@@ -152,6 +161,7 @@ struct gunzip_producer : string_fragment_producer {
             return string_fragment::from_bytes(this->gp_buff, used);
         }
 
+        this->strm.next_in = nullptr;
         inflateEnd(&this->strm);
         return error{
             fmt::format(FMT_STRING("unable to uncompress: {} -- {}"),
@@ -170,7 +180,6 @@ uncompress_stream(const std::string& src,
                   size_t size)
 {
     int err;
-
     auto gp = std::make_unique<gunzip_producer>(src);
     gp->strm.next_in = (Bytef*) buffer;
     gp->strm.avail_in = size;

@@ -84,11 +84,12 @@ get_css_color_names()
 {
     static const intern_string_t iname
         = intern_string::lookup(css_color_names_json.get_name());
-    auto sfp = css_color_names_json.to_string_fragment_producer();
+    static auto sfp = css_color_names_json.to_string_fragment_producer();
     static const auto INSTANCE
         = css_color_names_handlers.parser_for(iname)
               .of(*sfp)
               .unwrap();
+    log_debug("CSS color name count %d", INSTANCE.ccn_name_to_color.size());
 
     return INSTANCE;
 }

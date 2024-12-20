@@ -540,7 +540,8 @@ build_all_help_text()
         return;
     }
 
-    shlex lexer(help_md.to_string_fragment_producer()->to_string());
+    auto help_md_str = help_md.to_string_fragment_producer()->to_string();
+    shlex lexer(help_md_str);
     std::string sub_help_text;
 
     lexer.with_ignore_quotes(true).eval(
