@@ -1308,7 +1308,6 @@ notcurses_early_init(const struct notcurses_options* opts, FILE* fp, unsigned* u
 }
 
 notcurses* notcurses_core_init(const notcurses_options* opts, FILE* outfp){
-      fprintf(stderr, "notcurses hello!\n");
   if(outfp == NULL){
     outfp = stdout;
   }

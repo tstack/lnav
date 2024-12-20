@@ -1196,6 +1196,7 @@ handoff_initial_responses_late(inputctx* ictx){
   bool sig = false;
   pthread_mutex_lock(&ictx->ilock);
   if(ictx->initdata_complete && ictx->initdata){
+      loginfo("handoff late");
      ictx->initdata = NULL;
      sig = true;
   }
@@ -1209,7 +1210,9 @@ handoff_initial_responses_late(inputctx* ictx){
 
 // mark the initdata as complete, but don't yet broadcast it off.
 static void
-handoff_initial_responses_early(inputctx* ictx){
+handoff_initial_responses_early(inputctx* ictx)
+{
+    loginfo("handoff early %p", ictx->initdata);
   pthread_mutex_lock(&ictx->ilock);
   // set initdata_complete, but don't clear initdata
   ictx->initdata_complete = ictx->initdata;
@@ -2562,7 +2565,7 @@ block_on_input(inputctx* ictx, unsigned* rtfd, unsigned* rifd){
   int timeoutms = nonblock ? 0 : -1;
   while((events = poll(pfds, pfdcount, timeoutms)) < 0){ // FIXME smask?
 #else
-  struct timespec ts = { .tv_sec = 0, .tv_nsec = 0, };
+  struct timespec ts = { .tv_sec = 1, .tv_nsec = 0, };
   struct timespec* pts = nonblock ? &ts : NULL;
   while((events = ppoll(pfds, pfdcount, pts, &smask)) < 0){
 #endif
@@ -2944,12 +2947,14 @@ int notcurses_linesigs_enable(notcurses* n){
 
 struct initial_responses* inputlayer_get_responses(inputctx* ictx){
   struct initial_responses* iresp;
+      loginfo("inputlayer_get_resp wait");
   pthread_mutex_lock(&ictx->ilock);
   while(ictx->initdata || !ictx->initdata_complete){
     pthread_cond_wait(&ictx->icond, &ictx->ilock);
   }
   iresp = ictx->initdata_complete;
   ictx->initdata_complete = NULL;
+      loginfo("inputlayer_get_resp got %p", iresp);
   pthread_mutex_unlock(&ictx->ilock);
   if(ictx->failed){
     logpanic("aborting after automaton construction failure");

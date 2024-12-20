@@ -1471,6 +1471,7 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
     }
   }
   unsigned kitty_graphics = 0;
+    loginfo("ttyfd %d", ti->ttyfd);
   if(ti->ttyfd >= 0){
     if(handle_responses(ti, &tablelen, &tableused, cursor_y, cursor_x,
                         draininput, &kitty_graphics)){
