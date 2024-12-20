@@ -151,14 +151,16 @@ main(int argc, char* argv[])
     }
 
     {
-        my_source ms;
-        if (rows) {
-            ms.ms_rows = rows.value();
-        }
         auto nco = notcurses_options{};
         nco.flags |= NCOPTION_SUPPRESS_BANNERS;
         nco.loglevel = NCLOGLEVEL_DEBUG;
         auto sc = screen_curses::create(nco).unwrap();
+        view_colors::singleton().init(sc.get_notcurses());
+
+        my_source ms;
+        if (rows) {
+            ms.ms_rows = rows.value();
+        }
         lv.set_data_source(&ms);
         lv.set_window(sc.get_std_plane());
         if (!set_height) {

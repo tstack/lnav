@@ -141,7 +141,7 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_json_long.0
 
-run_cap_test ${lnav_test} -n \
+run_cap_test ${lnav_test} -nN \
     -c ':switch-to-view help' \
     -c ':next-section' \
     -c ':next-section' \
