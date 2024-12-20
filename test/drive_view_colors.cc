@@ -86,11 +86,6 @@ main(int argc, char* argv[])
 {
     int c, retval = EXIT_SUCCESS;
     bool wait_for_input = false;
-    test_colors tc;
-
-    auto nco = notcurses_options{};
-    nco.flags |= NCOPTION_SUPPRESS_BANNERS;
-    auto sc = screen_curses::create(nco).unwrap();
 
     while ((c = getopt(argc, argv, "w")) != -1) {
         switch (c) {
@@ -100,13 +95,20 @@ main(int argc, char* argv[])
         }
     }
 
-    view_colors::init(sc.get_notcurses());
-    tc.tc_window = sc.get_std_plane();
-    tc.do_update();
-    notcurses_render(sc.get_notcurses());
-    if (wait_for_input) {
-        ncinput nci;
-        notcurses_get_blocking(sc.get_notcurses(), &nci);
+    {
+        auto nco = notcurses_options{};
+        nco.flags |= NCOPTION_SUPPRESS_BANNERS;
+        auto sc = screen_curses::create(nco).unwrap();
+        test_colors tc;
+
+        view_colors::init(sc.get_notcurses());
+        tc.tc_window = sc.get_std_plane();
+        tc.do_update();
+        notcurses_render(sc.get_notcurses());
+        if (wait_for_input) {
+            ncinput nci;
+            notcurses_get_blocking(sc.get_notcurses(), &nci);
+        }
     }
 
     return retval;

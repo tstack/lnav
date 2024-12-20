@@ -317,6 +317,8 @@ static const std::map<std::string, std::string> CSI_TO_DESC = {
     {"[?1l", "Normal cursor keys"},
     {"[?47h", "Use alternate screen buffer"},
     {"[?1049h", "Use alternate screen buffer"},
+    {"[?25l", "Hide cursor"},
+    {"[?25h", "Show cursor"},
     {"[?47l", "Use normal screen buffer"},
     {"[2h", "Set Keyboard Action mode"},
     {"[4h", "Set Replace mode"},

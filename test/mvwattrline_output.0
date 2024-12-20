@@ -24,6 +24,7 @@ A      ·····························└ normal, nor
 CTRL (B
 S  -1 ┋                                                                                ┋
 A      ·····························└ normal
+CSI Hide cursor
 CSI Erase all
 S   1 ┋Plain text                                                                      ┋
 A      └ [39;49m
@@ -42,5 +43,6 @@ S   7 ┋                                                                       
 A      ········································└ normal
 CSI Normal cursor keys
 CTRL Normal keypad
+CSI Show cursor
 S   7 ┋                                                                                ┋
-A      ········································└ [?25h, normal, normal
+A      ········································└ normal, normal
