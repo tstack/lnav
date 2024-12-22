@@ -66,10 +66,10 @@ public:
 
     size_t text_line_width(textview_curses& curses) override;
 
-    void text_value_for_line(textview_curses& tc,
-                             int line,
-                             std::string& value_out,
-                             line_flags_t flags) override;
+    line_info text_value_for_line(textview_curses& tc,
+                                  int line,
+                                  std::string& value_out,
+                                  line_flags_t flags) override;
 
     void text_attrs_for_line(textview_curses& tc,
                              int line,
@@ -176,8 +176,8 @@ public:
     timeline_opid_row_map gs_active_opids;
     timeline_desc_map gs_descriptions;
     std::vector<std::reference_wrapper<opid_row>> gs_time_order;
-    struct timeval gs_lower_bound {};
-    struct timeval gs_upper_bound {};
+    struct timeval gs_lower_bound{};
+    struct timeval gs_upper_bound{};
     size_t gs_filtered_count{0};
     std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
     exec_context* gs_exec_context{nullptr};

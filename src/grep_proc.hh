@@ -72,7 +72,7 @@ public:
      * @param line The line to retrieve.
      * @param value_out The destination for the line value.
      */
-    virtual bool grep_value_for_line(LineType line, std::string& value_out) = 0;
+    virtual std::optional<line_info> grep_value_for_line(LineType line, std::string& value_out) = 0;
 
     virtual LineType grep_initial_line(LineType start, LineType highest)
     {
@@ -129,30 +129,7 @@ public:
      * @param end The offset of the character after the last character in the
      * match.
      */
-    virtual void grep_match(grep_proc<LineType>& gp,
-                            LineType line,
-                            int start,
-                            int end)
-        = 0;
-
-    /**
-     * Called for each captured substring in the line.
-     *
-     * @param line The line number that matched.
-     * @param start The offset within the line where the capture begins.
-     * @param end The offset of the character after the last character in the
-     * capture.
-     * @param capture The captured substring itself.
-     */
-    virtual void grep_capture(grep_proc<LineType>& gp,
-                              LineType line,
-                              int start,
-                              int end,
-                              const string_fragment& capture)
-    {
-    }
-
-    virtual void grep_match_end(grep_proc<LineType>& gp, LineType line) {}
+    virtual void grep_match(grep_proc<LineType>& gp, LineType line) = 0;
 };
 
 /**
@@ -170,7 +147,7 @@ class grep_proc : public pollable {
 public:
     class error : public std::exception {
     public:
-        error(int err) : e_err(err){};
+        error(int err) : e_err(err) {};
 
         int e_err;
     };
@@ -267,7 +244,7 @@ protected:
 
     void child_loop();
 
-    virtual void child_init(){};
+    virtual void child_init() {};
 
     virtual void child_batch() { fflush(stdout); }
 

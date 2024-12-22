@@ -370,7 +370,7 @@ spectrogram_source::row_for_time(timeval time_bucket)
     return vis_line_t(retval);
 }
 
-void
+line_info
 spectrogram_source::text_value_for_line(textview_curses& tc,
                                         int row,
                                         std::string& value_out,
@@ -383,7 +383,7 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
     auto row_time_opt = this->time_for_row_int(vis_line_t(row));
     if (!row_time_opt) {
         value_out.clear();
-        return;
+        return {};
     }
     auto ri = row_time_opt.value();
 
@@ -398,6 +398,8 @@ spectrogram_source::text_value_for_line(textview_curses& tc,
             value_out[lpc] = 'x';
         }
     }
+
+    return {};
 }
 
 void

@@ -54,41 +54,41 @@ static struct {
 
 class my_source : public grep_proc_source<vis_line_t> {
 public:
-    my_source() : ms_current_line(0){};
+    my_source() : ms_current_line(0) {}
 
-    bool grep_value_for_line(vis_line_t line_number, string& value_out)
+    std::optional<line_info> grep_value_for_line(vis_line_t line_number,
+                                                 string& value_out) override
     {
-        bool retval = true;
-
         assert(line_number == MS_LINES[this->ms_current_line].l_number);
         value_out = MS_LINES[this->ms_current_line].l_value;
 
         this->ms_current_line += 1;
 
-        return retval;
-    };
+        return line_info{};
+    }
 
     int ms_current_line;
 };
 
 class my_sleeper_source : public grep_proc_source<vis_line_t> {
-    bool grep_value_for_line(vis_line_t line_number, string& value_out)
+    std::optional<line_info> grep_value_for_line(vis_line_t line_number,
+                                                 string& value_out) override
     {
         sleep(1000);
-        return true;
-    };
+        return {};
+    }
 };
 
 class my_sink : public grep_proc_sink<vis_line_t> {
 public:
-    my_sink() : ms_finished(false){};
+    my_sink() : ms_finished(false) {};
 
-    void grep_match(grep_proc<vis_line_t>& gp,
-                    vis_line_t line,
-                    int start,
-                    int end){};
+    void grep_match(grep_proc<vis_line_t>& gp, vis_line_t line) override {}
 
-    void grep_end(grep_proc<vis_line_t>& gp) { this->ms_finished = true; };
+    void grep_end(grep_proc<vis_line_t>& gp) override
+    {
+        this->ms_finished = true;
+    }
 
     bool ms_finished;
 };

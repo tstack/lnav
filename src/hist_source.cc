@@ -61,7 +61,7 @@ hist_source2::row_for_time(timeval tv_bucket)
     return vis_line_t(retval);
 }
 
-void
+line_info
 hist_source2::text_value_for_line(textview_curses& tc,
                                   int row,
                                   std::string& value_out,
@@ -90,6 +90,8 @@ hist_source2::text_value_for_line(textview_curses& tc,
         rint(bucket.b_values[HT_ERROR].hv_value),
         rint(bucket.b_values[HT_WARNING].hv_value),
         rint(bucket.b_values[HT_MARK].hv_value));
+
+    return {};
 }
 
 void

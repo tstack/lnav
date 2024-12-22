@@ -340,10 +340,10 @@ public:
 
     bool empty() const { return this->lss_filtered_index.empty(); }
 
-    void text_value_for_line(textview_curses& tc,
-                             int row,
-                             std::string& value_out,
-                             line_flags_t flags);
+    line_info text_value_for_line(textview_curses& tc,
+                                  int row,
+                                  std::string& value_out,
+                                  line_flags_t flags);
 
     void text_attrs_for_line(textview_curses& tc,
                              int row,
@@ -699,8 +699,8 @@ public:
     public:
         meta_grepper(logfile_sub_source& source) : lmg_source(source) {}
 
-        bool grep_value_for_line(vis_line_t line,
-                                 std::string& value_out) override;
+        std::optional<line_info> grep_value_for_line(
+            vis_line_t line, std::string& value_out) override;
 
         vis_line_t grep_initial_line(vis_line_t start,
                                      vis_line_t highest) override;
@@ -713,10 +713,7 @@ public:
 
         void grep_end(grep_proc<vis_line_t>& gp) override;
 
-        void grep_match(grep_proc<vis_line_t>& gp,
-                        vis_line_t line,
-                        int start,
-                        int end) override;
+        void grep_match(grep_proc<vis_line_t>& gp, vis_line_t line) override;
 
         logfile_sub_source& lmg_source;
         bool lmg_done{false};
@@ -846,12 +843,8 @@ private:
     std::array<std::pair<int, size_t>, LINE_SIZE_CACHE_SIZE>
         lss_line_size_cache;
     log_level_t lss_min_log_level{LEVEL_UNKNOWN};
-    struct timeval lss_min_log_time {
-        0, 0
-    };
-    struct timeval lss_max_log_time {
-        std::numeric_limits<time_t>::max(), 0
-    };
+    struct timeval lss_min_log_time{0, 0};
+    struct timeval lss_max_log_time{std::numeric_limits<time_t>::max(), 0};
     bool lss_marked_only{false};
     index_delegate* lss_index_delegate{nullptr};
     size_t lss_longest_line{0};

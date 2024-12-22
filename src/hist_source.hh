@@ -377,9 +377,15 @@ public:
 
     void init();
 
-    void set_time_slice(std::chrono::microseconds slice) { this->hs_time_slice = slice; }
+    void set_time_slice(std::chrono::microseconds slice)
+    {
+        this->hs_time_slice = slice;
+    }
 
-    std::chrono::microseconds get_time_slice() const { return this->hs_time_slice; }
+    std::chrono::microseconds get_time_slice() const
+    {
+        return this->hs_time_slice;
+    }
 
     size_t text_line_count() override { return this->hs_line_count; }
 
@@ -390,14 +396,16 @@ public:
 
     void clear();
 
-    void add_value(std::chrono::microseconds row, hist_type_t htype, double value = 1.0);
+    void add_value(std::chrono::microseconds row,
+                   hist_type_t htype,
+                   double value = 1.0);
 
     void end_of_row();
 
-    void text_value_for_line(textview_curses& tc,
-                             int row,
-                             std::string& value_out,
-                             line_flags_t flags) override;
+    line_info text_value_for_line(textview_curses& tc,
+                                  int row,
+                                  std::string& value_out,
+                                  line_flags_t flags) override;
 
     void text_attrs_for_line(textview_curses& tc,
                              int row,

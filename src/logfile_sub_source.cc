@@ -227,7 +227,7 @@ logfile_sub_source::find_from_time(const struct timeval& start) const
     return std::nullopt;
 }
 
-void
+line_info
 logfile_sub_source::text_value_for_line(textview_curses& tc,
                                         int row,
                                         std::string& value_out,
@@ -235,9 +235,10 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 {
     if (this->lss_indexing_in_progress) {
         value_out = "";
-        return;
+        return {};
     }
 
+    line_info retval;
     content_line_t line(0);
 
     require_ge(row, 0);
@@ -247,10 +248,22 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
     if (flags & RF_RAW) {
         auto lf = this->find(line);
+        auto ll = lf->begin() + line;
+        retval.li_file_range = lf->get_file_range(ll, false);
+        retval.li_level = ll->get_msg_level();
+        // retval.li_timestamp = ll->get_timeval();
+        retval.li_partial = false;
+        retval.li_utf8_scan_result.usr_has_ansi = ll->has_ansi();
+        retval.li_utf8_scan_result.usr_message = ll->is_valid_utf() ? nullptr : "bad";
+        //timeval start_time, end_time;
+        //gettimeofday(&start_time, NULL);
         value_out = lf->read_line(lf->begin() + line)
                         .map([](auto sbr) { return to_string(sbr); })
                         .unwrapOr({});
-        return;
+        //gettimeofday(&end_time, NULL);
+        //timeval diff = end_time - start_time;
+        //log_debug("read time %d.%06d %s:%d", diff.tv_sec, diff.tv_usec, lf->get_filename().c_str(), line);
+        return retval;
     }
 
     require_false(this->lss_in_value_for_line);
@@ -437,6 +450,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     this->lss_in_value_for_line = false;
+
+    return retval;
 }
 
 void
@@ -2195,7 +2210,7 @@ sql_filter::to_command() const
     return fmt::format(FMT_STRING("filter-expr {}"), this->lf_id);
 }
 
-bool
+std::optional<line_info>
 logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
                                                       std::string& value_out)
 {
@@ -2240,7 +2255,11 @@ logfile_sub_source::meta_grepper::grep_value_for_line(vis_line_t line,
         value_out.append(bm.bm_opid);
     }
 
-    return !this->lmg_done;
+    if (!this->lmg_done) {
+        return line_info{};
+    }
+
+    return std::nullopt;
 }
 
 vis_line_t
@@ -2287,11 +2306,9 @@ logfile_sub_source::meta_grepper::grep_end(grep_proc<vis_line_t>& gp)
 
 void
 logfile_sub_source::meta_grepper::grep_match(grep_proc<vis_line_t>& gp,
-                                             vis_line_t line,
-                                             int start,
-                                             int end)
+                                             vis_line_t line)
 {
-    this->lmg_source.tss_view->grep_match(gp, line, start, end);
+    this->lmg_source.tss_view->grep_match(gp, line);
 }
 
 logline_window::iterator

@@ -245,7 +245,7 @@ files_sub_source::text_line_width(textview_curses& curses)
     return 512;
 }
 
-void
+line_info
 files_sub_source::text_value_for_line(textview_curses& tc,
                                       int line,
                                       std::string& value_out,
@@ -291,7 +291,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
             }
 
             value_out = al.get_string();
-            return;
+            return {};
         }
 
         line -= errs->size();
@@ -321,7 +321,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         }
 
         value_out = al.get_string();
-        return;
+        return {};
     }
 
     line -= fc.fc_other_files.size();
@@ -357,6 +357,8 @@ files_sub_source::text_value_for_line(textview_curses& tc,
 
     value_out = al.get_string();
     this->fss_last_line_len = value_out.length();
+
+    return {};
 }
 
 void

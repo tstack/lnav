@@ -517,7 +517,7 @@ timeline_source::text_line_count()
     return this->gs_time_order.size();
 }
 
-void
+line_info
 timeline_source::text_value_for_line(textview_curses& tc,
                                      int line,
                                      std::string& value_out,
@@ -555,6 +555,8 @@ timeline_source::text_value_for_line(textview_curses& tc,
 
         value_out = this->gs_rendered_line.get_string();
     }
+
+    return {};
 }
 
 void

@@ -500,7 +500,6 @@ TESTS = \
 	test_meta.sh \
 	test_mvwattrline.sh \
 	test_timeline.sh \
-	test_grep_proc.sh \
 	test_grep_proc2 \
 	test_json_format.sh \
 	test_log_accel \
@@ -533,6 +532,7 @@ TESTS += test_prql.sh
 endif
 
 DISABLED_TESTS = \
+	test_grep_proc.sh \
 	test_remote.sh \
 	test_top_status \
 	test_tui.sh \

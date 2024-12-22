@@ -102,7 +102,7 @@ textfile_sub_source::text_line_count()
     return retval;
 }
 
-void
+line_info
 textfile_sub_source::text_value_for_line(textview_curses& tc,
                                          int line,
                                          std::string& value_out,
@@ -110,7 +110,7 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
 {
     if (this->tss_files.empty() || line < 0) {
         value_out.clear();
-        return;
+        return {};
     }
 
     const auto lf = this->current_file();
@@ -120,7 +120,7 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
     {
         rend_iter->second.rf_text_source->text_value_for_line(
             tc, line, value_out, flags);
-        return;
+        return {};
     }
 
     if (lf->get_text_format() == text_format_t::TF_BINARY) {
@@ -136,7 +136,7 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
                       fr.fr_offset,
                       fr.fr_size,
                       read_res.unwrapErr().c_str());
-            return;
+            return {};
         }
 
         auto sbr = read_res.unwrap();
@@ -154,13 +154,13 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
         }
 
         value_out = this->tss_hex_line.get_string();
-        return;
+        return {};
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     if (lfo == nullptr || line >= lfo->lfo_filter_state.tfs_index.size()) {
         value_out.clear();
-        return;
+        return {};
     }
 
     auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
@@ -185,6 +185,8 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
                 = fmt::format(FMT_STRING("{: >12}|{}"), relstr, value_out);
         }
     }
+
+    return {};
 }
 
 void
@@ -1505,8 +1507,7 @@ textfile_sub_source::get_effective_view_mode() const
     return retval;
 }
 
-textfile_header_overlay::
-textfile_header_overlay(textfile_sub_source* src)
+textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src)
     : tho_src(src)
 {
 }

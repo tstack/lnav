@@ -53,7 +53,7 @@ ansi_regex()
 size_t
 erase_ansi_escapes(string_fragment input)
 {
-    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+    thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     const auto& regex = ansi_regex();
     std::optional<int> move_start;

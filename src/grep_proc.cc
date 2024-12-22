@@ -188,31 +188,22 @@ grep_proc<LineType>::child_loop()
              this->gp_source.grep_next_line(line))
         {
             line_value.clear();
-            done = !this->gp_source.grep_value_for_line(line, line_value);
-            if (!done) {
+            auto val_res
+                = this->gp_source.grep_value_for_line(line, line_value);
+            if (!val_res) {
+                done = true;
+            } else {
+                auto li = val_res.value();
+                uint32_t re_opts = 0;
+                if (li.li_utf8_scan_result.is_valid()) {
+                    re_opts = PCRE2_NO_UTF_CHECK;
+                }
                 this->gp_pcre->capture_from(line_value)
+                    .with_options(re_opts)
                     .for_each([&](lnav::pcre2pp::match_data& md) {
                         if (md.leading().sf_begin == 0) {
                             fprintf(stdout, "%d\n", (int) line);
                         }
-                        fprintf(stdout,
-                                "[%d:%d]\n",
-                                md[0]->sf_begin,
-                                md[0]->sf_end);
-                        for (int lpc = 1; lpc < md.get_count(); lpc++) {
-                            if (!md[lpc]) {
-                                continue;
-                            }
-                            fprintf(stdout,
-                                    "(%d:%d)",
-                                    md[lpc]->sf_begin,
-                                    md[lpc]->sf_end);
-
-                            fwrite(
-                                md[lpc]->data(), 1, md[lpc]->length(), stdout);
-                            fputc('\n', stdout);
-                        }
-                        fprintf(stdout, "/\n");
                     });
             }
 
@@ -245,6 +236,8 @@ grep_proc<LineType>::cleanup()
             ;
         }
         require(!WIFSIGNALED(status) || WTERMSIG(status) != SIGABRT);
+
+        log_info("cleaned up grep child %d", this->gp_child);
         this->gp_child = -1;
         this->gp_child_started = false;
 
@@ -273,8 +266,6 @@ template<typename LineType>
 void
 grep_proc<LineType>::dispatch_line(const string_fragment& line)
 {
-    int start, end;
-
     require(line.is_valid());
 
     auto sv = line.to_string_view();
@@ -282,38 +273,12 @@ grep_proc<LineType>::dispatch_line(const string_fragment& line)
     } else if (scn::scan(sv, "{}", this->gp_last_line.lvalue())) {
         /* Starting a new line with matches. */
         ensure(this->gp_last_line >= 0);
-    } else if (scn::scan(sv, "[{}:{}]", start, end)) {
-        require(start >= 0);
-        require(end >= 0);
-
         /* Pass the match offsets to the sink delegate. */
         if (this->gp_sink != nullptr) {
-            this->gp_sink->grep_match(*this, this->gp_last_line, start, end);
-        }
-    } else if (line[0] == '/') {
-        if (this->gp_sink != nullptr) {
-            this->gp_sink->grep_match_end(*this, this->gp_last_line);
+            this->gp_sink->grep_match(*this, this->gp_last_line);
         }
     } else {
-        auto scan_res = scn::scan(sv, "({}:{})", start, end);
-        if (scan_res) {
-            require(start == -1 || start >= 0);
-            require(end >= 0);
-
-            /* Pass the captured strings to the sink delegate. */
-            if (this->gp_sink != nullptr) {
-                this->gp_sink->grep_capture(
-                    *this,
-                    this->gp_last_line,
-                    start,
-                    end,
-                    start < 0
-                        ? string_fragment{}
-                        : to_string_fragment(scan_res.range_as_string_view()));
-            }
-        } else {
-            log_error("bad line from child -- %s", line);
-        }
+        log_error("bad line from child -- %s", line);
     }
 }
 
@@ -418,10 +383,10 @@ grep_proc<LineType>::update_poll_set(std::vector<struct pollfd>& pollfds)
 {
     if (this->gp_line_buffer.get_fd() != -1) {
         pollfds.push_back(
-            (struct pollfd){this->gp_line_buffer.get_fd(), POLLIN, 0});
+            (struct pollfd) {this->gp_line_buffer.get_fd(), POLLIN, 0});
     }
     if (this->gp_err_pipe.get() != -1) {
-        pollfds.push_back((struct pollfd){this->gp_err_pipe, POLLIN, 0});
+        pollfds.push_back((struct pollfd) {this->gp_err_pipe, POLLIN, 0});
     }
 }
 

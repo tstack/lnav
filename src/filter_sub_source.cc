@@ -318,7 +318,7 @@ filter_sub_source::text_line_width(textview_curses& curses)
     return retval;
 }
 
-void
+line_info
 filter_sub_source::text_value_for_line(textview_curses& tc,
                                        int line,
                                        std::string& value_out,
@@ -393,6 +393,8 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     value_out = al.get_string();
+
+    return {};
 }
 
 void

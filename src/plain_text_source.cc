@@ -185,7 +185,7 @@ plain_text_source::text_line_width(textview_curses& curses)
     return this->tds_longest_line;
 }
 
-void
+line_info
 plain_text_source::text_value_for_line(textview_curses& tc,
                                        int row,
                                        std::string& value_out,
@@ -204,6 +204,8 @@ plain_text_source::text_value_for_line(textview_curses& tc,
             break;
         }
     }
+
+    return {};
 }
 
 void

@@ -381,10 +381,7 @@ textview_curses::grep_end(grep_proc<vis_line_t>& gp)
 }
 
 void
-textview_curses::grep_match(grep_proc<vis_line_t>& gp,
-                            vis_line_t line,
-                            int start,
-                            int end)
+textview_curses::grep_match(grep_proc<vis_line_t>& gp, vis_line_t line)
 {
     this->tc_bookmarks[&BM_SEARCH].insert_once(vis_line_t(line));
     if (this->tc_sub_source != nullptr) {
@@ -1075,21 +1072,25 @@ textview_curses::set_sub_source(text_sub_source* src)
     return *this;
 }
 
-bool
+std::optional<line_info>
 textview_curses::grep_value_for_line(vis_line_t line, std::string& value_out)
 {
-    bool retval = false;
-
     if (this->tc_sub_source
         && line < (int) this->tc_sub_source->text_line_count())
     {
-        this->tc_sub_source->text_value_for_line(
+        auto retval = this->tc_sub_source->text_value_for_line(
             *this, line, value_out, text_sub_source::RF_RAW);
-        scrub_ansi_string(value_out, nullptr);
-        retval = true;
+        if (retval.li_utf8_scan_result.is_valid()
+            && retval.li_utf8_scan_result.usr_has_ansi)
+        {
+            // log_debug("has ansi %d", retval.li_utf8_scan_result.usr_has_ansi);
+            auto new_size = erase_ansi_escapes(value_out);
+            value_out.resize(new_size);
+        }
+        return retval;
     }
 
-    return retval;
+    return std::nullopt;
 }
 
 void

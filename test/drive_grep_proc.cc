@@ -46,10 +46,8 @@ class my_source : public grep_proc_source<vis_line_t> {
 public:
     my_source(auto_fd& fd) { this->ms_buffer.set_fd(fd); };
 
-    bool grep_value_for_line(vis_line_t line_number, string& value_out)
+    std::optional<line_info> grep_value_for_line(vis_line_t line_number, string& value_out) override
     {
-        bool retval = false;
-
         try {
             auto load_result = this->ms_buffer.load_next_line(this->ms_range);
 
@@ -64,7 +62,9 @@ public:
                                   value_out = to_string(sbr);
                               });
 
-                    retval = read_result.isOk();
+                    if (read_result.isOk()) {
+                        return line_info{};
+                    }
                 }
             }
         } catch (const line_buffer::error& e) {
@@ -74,7 +74,7 @@ public:
                     strerror(e.e_err));
         }
 
-        return retval;
+        return std::nullopt;
     };
 
 private:
@@ -87,26 +87,9 @@ public:
     my_sink() : ms_finished(false) {}
 
     void grep_match(grep_proc<vis_line_t>& gp,
-                    vis_line_t line,
-                    int start,
-                    int end) override
+                    vis_line_t line) override
     {
-        printf("%d:%d:%d\n", (int) line, start, end);
-    }
-
-    void grep_capture(grep_proc<vis_line_t>& gp,
-                      vis_line_t line,
-                      int start,
-                      int end,
-                      const string_fragment& capture) override
-    {
-        fprintf(stderr,
-                "%d(%d:%d)%.*s\n",
-                (int) line,
-                start,
-                end,
-                capture.length(),
-                capture.data());
+        printf("%d\n", (int) line);
     }
 
     void grep_end(grep_proc<vis_line_t>& gp) override

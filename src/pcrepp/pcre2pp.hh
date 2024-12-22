@@ -183,11 +183,18 @@ private:
 struct capture_builder {
     const code& mb_code;
     input mb_input;
+    uint32_t mb_options{0};
 
     capture_builder at(const string_fragment& remaining) &&
     {
         this->mb_input.i_offset = this->mb_input.i_next_offset
             = remaining.sf_begin;
+        return *this;
+    }
+
+    capture_builder with_options(uint32_t opts) &&
+    {
+        this->mb_options = opts;
         return *this;
     }
 
@@ -346,7 +353,7 @@ capture_builder::for_each(F func) &&
     matcher::error eret;
 
     while (!done) {
-        auto match_res = mat.matches(Options);
+        auto match_res = mat.matches(Options | this->mb_options);
         done = match_res.match(
             [mat, &func](matcher::found) {
                 func(mat.mb_match_data);

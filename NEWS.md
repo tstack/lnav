@@ -7,6 +7,7 @@ Features:
 Bug Fixes:
 * Improved startup time.
 * Reduced memory footprint.
+* Improved search performance.
 
 Maintenance:
 * Replaced ncurses with notcurses.

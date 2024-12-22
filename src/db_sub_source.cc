@@ -41,7 +41,7 @@ const char db_label_source::NULL_STR[] = "<NULL>";
 
 constexpr size_t MAX_JSON_WIDTH = 16 * 1024;
 
-void
+line_info
 db_label_source::text_value_for_line(textview_curses& tc,
                                      int row,
                                      std::string& label_out,
@@ -55,7 +55,7 @@ db_label_source::text_value_for_line(textview_curses& tc,
     label_out.clear();
     this->dls_ansi_attrs.clear();
     if (row < 0_vl || row >= (int) this->dls_rows.size()) {
-        return;
+        return {};
     }
     for (int lpc = 0; lpc < (int) this->dls_rows[row].size(); lpc++) {
         auto actual_col_size = std::min(this->dls_max_column_width,
@@ -82,6 +82,8 @@ db_label_source::text_value_for_line(textview_curses& tc,
         this->dls_ansi_attrs.insert(
             this->dls_ansi_attrs.end(), cell_attrs.begin(), cell_attrs.end());
     }
+
+    return {};
 }
 
 void

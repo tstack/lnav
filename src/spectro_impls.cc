@@ -43,16 +43,18 @@ class filtered_sub_source
 public:
     size_t text_line_count() override { return this->fss_lines.size(); }
 
-    void text_value_for_line(textview_curses& tc,
-                             int line,
-                             std::string& value_out,
-                             line_flags_t flags) override
+    line_info text_value_for_line(textview_curses& tc,
+                                  int line,
+                                  std::string& value_out,
+                                  line_flags_t flags) override
     {
         this->fss_lines | lnav::itertools::nth(line)
             | lnav::itertools::for_each([&](const auto row) {
                   this->fss_delegate->text_value_for_line(
                       tc, *row, value_out, flags);
               });
+
+        return {};
     }
 
     size_t text_size_for_line(textview_curses& tc,

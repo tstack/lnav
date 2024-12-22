@@ -255,9 +255,7 @@ public:
 
         row_info(struct timeval tv, int64_t id) : ri_time(tv), ri_id(id) {}
 
-        struct timeval ri_time {
-            0, 0
-        };
+        struct timeval ri_time{0, 0};
         int64_t ri_id{-1};
     };
 
@@ -412,10 +410,10 @@ public:
      * @param raw Indicates that the raw contents of the line should be returned
      *   without any post processing.
      */
-    virtual void text_value_for_line(textview_curses& tc,
-                                     int line,
-                                     std::string& value_out,
-                                     line_flags_t flags = 0)
+    virtual line_info text_value_for_line(textview_curses& tc,
+                                          int line,
+                                          std::string& value_out,
+                                          line_flags_t flags = 0)
         = 0;
 
     virtual size_t text_size_for_line(textview_curses& tc,
@@ -677,7 +675,8 @@ public:
             : this->tc_sub_source->text_source_name(*this);
     }
 
-    bool grep_value_for_line(vis_line_t line, std::string& value_out);
+    std::optional<line_info> grep_value_for_line(vis_line_t line,
+                                                 std::string& value_out);
 
     void grep_quiesce()
     {
@@ -689,10 +688,7 @@ public:
     void grep_begin(grep_proc<vis_line_t>& gp,
                     vis_line_t start,
                     vis_line_t stop);
-    void grep_match(grep_proc<vis_line_t>& gp,
-                    vis_line_t line,
-                    int start,
-                    int end);
+    void grep_match(grep_proc<vis_line_t>& gp, vis_line_t line);
 
     bool is_searching() const { return this->tc_searching > 0; }
 
@@ -854,9 +850,7 @@ protected:
     vis_bookmarks tc_bookmarks;
 
     int tc_searching{0};
-    struct timeval tc_follow_deadline {
-        0, 0
-    };
+    struct timeval tc_follow_deadline{0, 0};
     vis_line_t tc_follow_selection{-1_vl};
     std::function<bool()> tc_follow_func;
     action tc_search_action;
