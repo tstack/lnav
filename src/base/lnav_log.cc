@@ -68,6 +68,7 @@
 #include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "enum_util.hh"
+#include "fs_util.hh"
 #include "lnav_log.hh"
 #include "opt_util.hh"
 
@@ -227,6 +228,7 @@ log_host_info()
     }
     log_info("Executable:");
     log_info("  version=%s", VCS_PACKAGE_STRING);
+    log_info("  mtime=%lld", lnav::filesystem::self_mtime());
 
     getrusage(RUSAGE_SELF, &ru);
     log_rusage(lnav_log_level_t::INFO, ru);

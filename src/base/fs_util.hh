@@ -75,6 +75,12 @@ openp(const std::filesystem::path& path, int flags, mode_t mode)
     return open(path.c_str(), flags, mode);
 }
 
+std::optional<std::filesystem::path>
+self_path();
+
+time_t
+self_mtime();
+
 Result<std::filesystem::path, std::string> realpath(
     const std::filesystem::path& path);
 
@@ -94,6 +100,7 @@ Result<std::string, std::string> read_file(const std::filesystem::path& path);
 
 enum class write_file_options {
     backup_existing,
+    read_only,
     executable,
 };
 

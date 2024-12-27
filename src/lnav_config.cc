@@ -1882,7 +1882,7 @@ load_default_config(struct _lnav_config& config_obj,
 }
 
 static bool
-load_default_configs(struct _lnav_config& config_obj,
+load_default_configs(_lnav_config& config_obj,
                      const std::string& path,
                      std::vector<lnav::console::user_message>& errors)
 {
@@ -1901,9 +1901,25 @@ load_config(const std::vector<std::filesystem::path>& extra_paths,
 {
     auto user_config = lnav::paths::dotlnav() / "config.json";
 
-    for (auto& bsf : lnav_config_json) {
+    for (const auto& bsf : lnav_config_json) {
         auto sample_path = lnav::paths::dotlnav() / "configs" / "default"
             / fmt::format(FMT_STRING("{}.sample"), bsf.get_name());
+
+        auto stat_res = lnav::filesystem::stat_file(sample_path);
+        if (stat_res.isOk()) {
+            auto st = stat_res.unwrap();
+            if (st.st_mtime >= lnav::filesystem::self_mtime()) {
+                log_debug("skipping writing sample: %s (mtimes %d >= %d)",
+                          bsf.get_name(),
+                          st.st_mtime,
+                          lnav::filesystem::self_mtime());
+                continue;
+            }
+            log_debug("sample file needs to be updated: %s", bsf.get_name());
+        } else {
+            log_debug("sample file does not exist: %s", bsf.get_name());
+        }
+
         auto sfp =  bsf.to_string_fragment_producer();
         auto write_res = lnav::filesystem::write_file(sample_path, *sfp);
         if (write_res.isErr()) {

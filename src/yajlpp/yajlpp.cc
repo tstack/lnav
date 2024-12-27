@@ -219,12 +219,12 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
             ygc.ygc_depth += 1;
 
             if (this->jph_obj_provider) {
-                static thread_local auto md
+                thread_local auto md
                     = lnav::pcre2pp::match_data::unitialized();
 
                 auto find_res = this->jph_regex->capture_from(full_path)
                                     .into(md)
-                                    .matches();
+                                    .matches(PCRE2_NO_UTF_CHECK);
 
                 ygc.ygc_obj_stack.push(this->jph_obj_provider(
                     {&md, yajlpp_provider_context::nindex},
@@ -523,7 +523,7 @@ json_path_handler_base::walk(
 
                     if (!this->jph_regex->capture_from(short_path)
                              .into(md)
-                             .matches()
+                             .matches(PCRE2_NO_UTF_CHECK)
                              .ignore_error())
                     {
                         log_error(
@@ -730,7 +730,7 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
 
         if (jph.jph_regex->capture_from(path_frag)
                 .into(md)
-                .matches()
+                .matches(PCRE2_NO_UTF_CHECK)
                 .ignore_error()
             && (md.remaining().empty() || md.remaining().startswith("/")))
         {
@@ -970,7 +970,7 @@ yajlpp_parse_context::handle_unused_or_delete(void* ctx)
     if (!ypc->ypc_handler_stack.empty()
         && ypc->ypc_handler_stack.back()->jph_obj_deleter)
     {
-        static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
         auto key_start = ypc->ypc_path_index_stack.back();
         auto path_frag = string_fragment::from_byte_range(
@@ -979,7 +979,7 @@ yajlpp_parse_context::handle_unused_or_delete(void* ctx)
         ypc->ypc_handler_stack.back()
             ->jph_regex->capture_from(path_frag)
             .into(md)
-            .matches();
+            .matches(PCRE2_NO_UTF_CHECK);
 
         ypc->ypc_handler_stack.back()->jph_obj_deleter(
             provider_ctx, ypc->ypc_obj_stack.top());

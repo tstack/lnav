@@ -40,8 +40,63 @@
 #include "lnav_log.hh"
 #include "opt_util.hh"
 
-namespace lnav {
-namespace filesystem {
+#ifdef HAVE_LIBPROC_H
+#    include <libproc.h>
+#endif
+
+namespace lnav::filesystem {
+
+std::optional<std::filesystem::path>
+self_path()
+{
+#ifdef HAVE_LIBPROC_H
+    auto pid = getpid();
+    char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+
+    auto rc = proc_pidpath(pid, pathbuf, sizeof(pathbuf));
+    if (rc <= 0) {
+        log_error("unable to determine self path: %s", strerror(errno));
+    } else {
+        log_info("self path: %s", pathbuf);
+        return std::filesystem::path(pathbuf);
+    }
+    return std::nullopt;
+#else
+    char pathbuf[PATH_MAX];
+    auto rc = readlink("/proc/self/exe", pathbuf, sizeof(pathbuf));
+    if (rc > 0) {
+        return std::filesystem::path(pathbuf);
+    }
+    return std::nullopt;
+#endif
+}
+
+static time_t
+init_self_mtime()
+{
+    auto retval = time_t{};
+    auto path_opt = self_path();
+
+    time(&retval);
+    if (path_opt) {
+        auto stat_res = stat_file(path_opt.value());
+        if (stat_res.isErr()) {
+            log_error("unable to stat self: %s", stat_res.unwrapErr().c_str());
+        } else {
+            retval = stat_res.unwrap().st_mtime;
+        }
+    }
+
+    return retval;
+}
+
+time_t
+self_mtime()
+{
+    static auto RETVAL = init_self_mtime();
+
+    return RETVAL;
+}
 
 std::string
 escape_path(const std::filesystem::path& p)
@@ -213,9 +268,15 @@ write_file(const std::filesystem::path& path,
         }
     }
 
+    auto mode = S_IRUSR | S_IWUSR;
     if (options.count(write_file_options::executable)) {
-        fchmod(tmp_pair.second.get(), S_IRWXU);
+        mode |= S_IXUSR;
     }
+    if (options.count(write_file_options::read_only)) {
+        mode &= ~S_IWUSR;
+    }
+
+    fchmod(tmp_pair.second.get(), mode);
 
     std::filesystem::rename(tmp_pair.first, path, ec);
     if (ec) {
@@ -225,6 +286,7 @@ write_file(const std::filesystem::path& path,
                         ec.message()));
     }
 
+    log_debug("wrote file: %s", path.c_str());
     return Ok(retval);
 }
 
@@ -272,8 +334,7 @@ file_lock::file_lock(const std::filesystem::path& archive_path)
     this->lh_fd = open_res.unwrap();
 }
 
-}  // namespace filesystem
-}  // namespace lnav
+}  // namespace lnav::filesystem
 
 namespace fmt {
 

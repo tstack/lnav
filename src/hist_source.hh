@@ -334,7 +334,7 @@ protected:
         ssize_t ci_last_seen_row{-1};
     };
 
-    struct chart_ident& find_ident(const T& ident)
+    chart_ident& find_ident(const T& ident)
     {
         auto iter = this->sbc_ident_lookup.find(ident);
         if (iter == this->sbc_ident_lookup.end()) {
@@ -347,7 +347,7 @@ protected:
 
     bool sbc_do_stacking{true};
     unsigned long sbc_left{0}, sbc_right{0};
-    std::vector<struct chart_ident> sbc_idents;
+    std::vector<chart_ident> sbc_idents;
     std::unordered_map<T, unsigned int> sbc_ident_lookup;
     show_state sbc_show_state{show_none()};
 
@@ -396,7 +396,7 @@ public:
 
     void clear();
 
-    void add_value(std::chrono::microseconds row,
+    void add_value(std::chrono::microseconds ts,
                    hist_type_t htype,
                    double value = 1.0);
 
@@ -420,7 +420,7 @@ public:
 
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
-    std::optional<vis_line_t> row_for_time(struct timeval tv_bucket) override;
+    std::optional<vis_line_t> row_for_time(timeval tv_bucket) override;
 
 private:
     struct hist_value {
@@ -432,7 +432,7 @@ private:
         hist_value b_values[HT__MAX];
     };
 
-    static const int64_t BLOCK_SIZE = 100;
+    static constexpr int64_t BLOCK_SIZE = 100;
 
     struct bucket_block {
         bucket_block()
@@ -448,9 +448,9 @@ private:
 
     std::chrono::microseconds hs_time_slice{10 * 60};
     int64_t hs_line_count;
-    int64_t hs_last_bucket;
-    std::chrono::microseconds hs_last_row;
-    std::map<int64_t, struct bucket_block> hs_blocks;
+    int64_t hs_current_row;
+    std::chrono::microseconds hs_last_ts;
+    std::vector<bucket_block> hs_blocks;
     stacked_bar_chart<hist_type_t> hs_chart;
     bool hs_needs_flush{false};
 };

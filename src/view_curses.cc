@@ -774,7 +774,6 @@ view_colors::match_color(styling::color_unit cu) const
     }
 
     if (cu.cu_value.is<rgb_color>()) {
-        log_info("matching RGB to palette");
         auto lab = lab_color{cu.cu_value.get<rgb_color>()};
 
         return styling::color_unit::from_palette(
@@ -838,22 +837,6 @@ view_colors::to_attrs(const lnav_theme& lt,
     fg = this->match_color(fg);
     bg = this->match_color(bg);
 
-    log_debug("pp %s fg color %s", pp_sc.pp_path.c_str(), fg_color.c_str());
-    fg.cu_value.match(
-        [](styling::transparent) { log_debug("  trans"); },
-        [](styling::semantic) { log_debug("  semantic"); },
-        [](const palette_color& pc) { log_debug("  palette %d", pc); },
-        [](const rgb_color& rc) {
-            log_debug("  rgb %d %d %d", rc.rc_r, rc.rc_g, rc.rc_b);
-        });
-    log_debug("pp %s bg color %s", pp_sc.pp_path.c_str(), bg_color.c_str());
-    bg.cu_value.match(
-        [](styling::transparent) { log_debug("  trans"); },
-        [](styling::semantic) { log_debug("  semantic"); },
-        [](const palette_color& pc) { log_debug("  palette %d", pc); },
-        [](const rgb_color& rc) {
-            log_debug("  rgb %d %d %d", rc.rc_r, rc.rc_g, rc.rc_b);
-        });
     auto retval1 = text_attrs{0, fg, bg};
     text_attrs retval2;
 

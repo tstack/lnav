@@ -39,11 +39,7 @@ hist_source2::row_for_time(timeval tv_bucket)
     int retval = 0;
     auto time_bucket = rounddown(to_us(tv_bucket), this->hs_time_slice);
 
-    for (auto iter = this->hs_blocks.begin(); iter != this->hs_blocks.end();
-         ++iter)
-    {
-        auto& bb = iter->second;
-
+    for (auto& bb : this->hs_blocks) {
         if (time_bucket < bb.bb_buckets[0].b_time) {
             break;
         }
@@ -65,7 +61,7 @@ line_info
 hist_source2::text_value_for_line(textview_curses& tc,
                                   int row,
                                   std::string& value_out,
-                                  text_sub_source::line_flags_t flags)
+                                  line_flags_t flags)
 {
     auto& bucket = this->find_bucket(row);
     struct tm bucket_tm;
@@ -120,22 +116,22 @@ hist_source2::text_attrs_for_line(textview_curses& tc,
 }
 
 void
-hist_source2::add_value(std::chrono::microseconds row,
+hist_source2::add_value(std::chrono::microseconds ts,
                         hist_type_t htype,
                         double value)
 {
-    // XXX require_ge(row, this->hs_last_row);
+    require_ge(ts.count(), this->hs_last_ts.count());
 
-    row = rounddown(row, this->hs_time_slice);
-    if (row != this->hs_last_row) {
+    ts = rounddown(ts, this->hs_time_slice);
+    if (ts != this->hs_last_ts) {
         this->end_of_row();
 
-        this->hs_last_bucket += 1;
-        this->hs_last_row = row;
+        this->hs_current_row += 1;
+        this->hs_last_ts = ts;
     }
 
-    auto& bucket = this->find_bucket(this->hs_last_bucket);
-    bucket.b_time = row;
+    auto& bucket = this->find_bucket(this->hs_current_row);
+    bucket.b_time = ts;
     bucket.b_values[htype].hv_value += value;
 
     this->hs_needs_flush = true;
@@ -158,8 +154,8 @@ void
 hist_source2::clear()
 {
     this->hs_line_count = 0;
-    this->hs_last_bucket = -1;
-    this->hs_last_row = std::chrono::microseconds::zero();
+    this->hs_current_row = -1;
+    this->hs_last_ts = std::chrono::microseconds::zero();
     this->hs_blocks.clear();
     this->hs_chart.clear();
     this->init();
@@ -168,10 +164,10 @@ hist_source2::clear()
 void
 hist_source2::end_of_row()
 {
-    if (this->hs_last_bucket >= 0) {
-        auto& last_bucket = this->find_bucket(this->hs_last_bucket);
+    if (this->hs_current_row >= 0) {
+        auto& last_bucket = this->find_bucket(this->hs_current_row);
 
-        for (int lpc = 0; lpc < HT__MAX; lpc++) {
+        for (size_t lpc = 0; lpc < HT__MAX; lpc++) {
             this->hs_chart.add_value((const hist_type_t) lpc,
                                      last_bucket.b_values[lpc].hv_value);
         }
@@ -186,7 +182,7 @@ hist_source2::time_for_row(vis_line_t row)
         return std::nullopt;
     }
 
-    bucket_t& bucket = this->find_bucket(row);
+    const auto& bucket = this->find_bucket(row);
 
     return row_info{timeval{to_time_t(bucket.b_time), 0}, row};
 }
@@ -194,8 +190,12 @@ hist_source2::time_for_row(vis_line_t row)
 hist_source2::bucket_t&
 hist_source2::find_bucket(int64_t index)
 {
-    struct bucket_block& bb = this->hs_blocks[index / BLOCK_SIZE];
-    unsigned int intra_block_index = index % BLOCK_SIZE;
+    const auto block_index = index / BLOCK_SIZE;
+    if (block_index >= this->hs_blocks.size()) {
+        this->hs_blocks.resize(block_index + 1);
+    }
+    auto& bb = this->hs_blocks[block_index];
+    const unsigned int intra_block_index = index % BLOCK_SIZE;
     bb.bb_used = std::max(intra_block_index, bb.bb_used);
     this->hs_line_count = std::max(this->hs_line_count, index + 1);
     return bb.bb_buckets[intra_block_index];

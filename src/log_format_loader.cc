@@ -1151,8 +1151,27 @@ write_sample_file()
         auto sample_path = lnav::paths::dotlnav()
             / fmt::format(FMT_STRING("formats/default/{}.sample"),
                           bsf.get_name());
+
+        auto stat_res = lnav::filesystem::stat_file(sample_path);
+        if (stat_res.isOk()) {
+            auto st = stat_res.unwrap();
+            if (st.st_mtime >= lnav::filesystem::self_mtime()) {
+                log_debug("skipping writing sample: %s (mtimes %d >= %d)",
+                          bsf.get_name(),
+                          st.st_mtime,
+                          lnav::filesystem::self_mtime());
+                continue;
+            }
+            log_debug("sample file needs to be updated: %s", bsf.get_name());
+        } else {
+            log_debug("sample file does not exist: %s", bsf.get_name());
+        }
+
         auto sfp = bsf.to_string_fragment_producer();
-        auto write_res = lnav::filesystem::write_file(sample_path, *sfp);
+        auto write_res = lnav::filesystem::write_file(
+            sample_path,
+            *sfp,
+            {lnav::filesystem::write_file_options::read_only});
 
         if (write_res.isErr()) {
             auto msg = write_res.unwrapErr();
@@ -1166,9 +1185,22 @@ write_sample_file()
     for (const auto& bsf : lnav_sh_scripts) {
         auto sh_path = lnav::paths::dotlnav()
             / fmt::format(FMT_STRING("formats/default/{}"), bsf.get_name());
+        auto stat_res = lnav::filesystem::stat_file(sh_path);
+        if (stat_res.isOk()) {
+            auto st = stat_res.unwrap();
+            if (st.st_mtime >= lnav::filesystem::self_mtime()) {
+                continue;
+            }
+        }
+
         auto sfp = bsf.to_string_fragment_producer();
         auto write_res = lnav::filesystem::write_file(
-            sh_path, *sfp, {lnav::filesystem::write_file_options::executable});
+            sh_path,
+            *sfp,
+            {
+                lnav::filesystem::write_file_options::executable,
+                lnav::filesystem::write_file_options::read_only,
+            });
 
         if (write_res.isErr()) {
             auto msg = write_res.unwrapErr();
@@ -1180,7 +1212,7 @@ write_sample_file()
     }
 
     for (const auto& bsf : lnav_scripts) {
-        struct script_metadata meta;
+        script_metadata meta;
         auto sf = bsf.to_string_fragment_producer()->to_string();
 
         extract_metadata(sf, meta);
@@ -1188,15 +1220,20 @@ write_sample_file()
             = fmt::format(FMT_STRING("formats/default/{}.lnav"), meta.sm_name);
         auto script_path = lnav::paths::dotlnav() / path;
         auto stat_res = lnav::filesystem::stat_file(script_path);
-        if (stat_res.isOk() && stat_res.unwrap().st_size == sf.length()) {
-            // Assume it's the right contents and move on...
-            continue;
+        if (stat_res.isOk()) {
+            auto st = stat_res.unwrap();
+            if (st.st_mtime >= lnav::filesystem::self_mtime()) {
+                continue;
+            }
         }
 
         auto write_res = lnav::filesystem::write_file(
             script_path,
             sf,
-            {lnav::filesystem::write_file_options::executable});
+            {
+                lnav::filesystem::write_file_options::executable,
+                lnav::filesystem::write_file_options::read_only,
+            });
         if (write_res.isErr()) {
             fprintf(stderr,
                     "error:unable to write default script file: %s -- %s\n",
@@ -1210,7 +1247,7 @@ static void
 format_error_reporter(const yajlpp_parse_context& ypc,
                       const lnav::console::user_message& msg)
 {
-    struct loader_userdata* ud = (loader_userdata*) ypc.ypc_userdata;
+    auto* ud = (loader_userdata*) ypc.ypc_userdata;
 
     ud->ud_errors->emplace_back(msg);
 }
@@ -1220,7 +1257,7 @@ load_format_file(const std::filesystem::path& filename,
                  std::vector<lnav::console::user_message>& errors)
 {
     std::vector<intern_string_t> retval;
-    struct loader_userdata ud;
+    loader_userdata ud;
     auto_fd fd;
 
     log_info("loading formats from file: %s", filename.c_str());

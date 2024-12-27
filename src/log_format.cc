@@ -1389,7 +1389,7 @@ external_log_format::scan(logfile& lf,
     auto line_sf = sbr.to_string_fragment();
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
-        static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
         auto* fpat = this->elf_pattern_order[curr_fmt].get();
         auto* pat = fpat->p_pcre.pp_value.get();

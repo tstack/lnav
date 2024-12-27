@@ -89,7 +89,6 @@ get_css_color_names()
         = css_color_names_handlers.parser_for(iname)
               .of(*sfp)
               .unwrap();
-    log_debug("CSS color name count %d", INSTANCE.ccn_name_to_color.size());
 
     return INSTANCE;
 }

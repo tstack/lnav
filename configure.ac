@@ -116,7 +116,7 @@ AS_CASE(["$host_os"],
     )
 )
 
-AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h)
+AC_CHECK_HEADERS(execinfo.h pty.h util.h zlib.h bzlib.h libutil.h sys/ttydefaults.h libproc.h)
 
 dnl Experimental SIMD features.
 AC_ARG_ENABLE([simd],
