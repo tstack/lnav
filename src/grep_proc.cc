@@ -68,27 +68,6 @@ grep_proc<LineType>::~grep_proc()
 
 template<typename LineType>
 void
-grep_proc<LineType>::handle_match(
-    int line, std::string& line_value, int off, int* matches, int count)
-{
-    int lpc;
-
-    if (off == 0) {
-        fprintf(stdout, "%d\n", line);
-    }
-    fprintf(stdout, "[%d:%d]\n", matches[0], matches[1]);
-    for (lpc = 1; lpc < count; lpc++) {
-        fprintf(stdout, "(%d:%d)", matches[lpc * 2], matches[lpc * 2 + 1]);
-        fwrite(&(line_value.c_str()[matches[lpc * 2]]),
-               1,
-               matches[lpc * 2 + 1] - matches[lpc * 2],
-               stdout);
-        fputc('\n', stdout);
-    }
-}
-
-template<typename LineType>
-void
 grep_proc<LineType>::start()
 {
     require(this->invariant());
@@ -165,6 +144,7 @@ template<typename LineType>
 void
 grep_proc<LineType>::child_loop()
 {
+    auto md = lnav::pcre2pp::match_data::unitialized();
     char outbuf[BUFSIZ * 2];
     std::string line_value;
 
@@ -198,13 +178,13 @@ grep_proc<LineType>::child_loop()
                 if (li.li_utf8_scan_result.is_valid()) {
                     re_opts = PCRE2_NO_UTF_CHECK;
                 }
-                this->gp_pcre->capture_from(line_value)
-                    .with_options(re_opts)
-                    .for_each([&](lnav::pcre2pp::match_data& md) {
-                        if (md.leading().sf_begin == 0) {
-                            fprintf(stdout, "%d\n", (int) line);
-                        }
-                    });
+                auto match_res = this->gp_pcre->capture_from(line_value)
+                                     .into(md)
+                                     .matches(re_opts)
+                                     .ignore_error();
+                if (match_res) {
+                    fmt::println(stdout, FMT_STRING("{}"), (int) line);
+                }
             }
 
             if (((line + 1) % 10000) == 0) {
@@ -217,7 +197,7 @@ grep_proc<LineType>::child_loop()
             // When scanning to the end of the source, we need to return the
             // highest line that was seen so that the next request that
             // continues from the end works properly.
-            fprintf(stdout, "h%d\n", line - 1);
+            fmt::println(stdout, FMT_STRING("h%d"), line - 1);
         }
         this->gp_highest_line = line - 1_vl;
         this->child_term();

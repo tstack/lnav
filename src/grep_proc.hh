@@ -250,9 +250,6 @@ protected:
 
     virtual void child_term() { fflush(stdout); }
 
-    virtual void handle_match(
-        int line, std::string& line_value, int off, int* matches, int count);
-
     std::shared_ptr<lnav::pcre2pp::code> gp_pcre;
     grep_proc_source<LineType>& gp_source; /*< The data source delegate. */
 

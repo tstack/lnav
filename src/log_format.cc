@@ -1696,7 +1696,7 @@ external_log_format::module_scan(string_fragment body_cap,
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
-            static thread_local auto md
+            thread_local auto md
                 = lnav::pcre2pp::match_data::unitialized();
 
             auto& fpat = elf->elf_pattern_order[curr_fmt];

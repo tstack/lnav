@@ -112,7 +112,7 @@ run_cap_test() {
     "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err
 
     sed -ibak \
-        -e "s;${prefix};{prefix};g" \
+        -e "s;${prefix}/etc;{prefix}/etc;g" \
         -e "s;${LNAV_VERSION};{LNAV_VERSION};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${builddir};{test_dir};g" \
@@ -145,7 +145,7 @@ run_cap_test() {
     fi
 
     sed -ibak -E \
-        -e "s;${prefix};{prefix};g" \
+        -e "s;${prefix}/etc;{prefix}/etc;g" \
         -e "s;${LNAV_VERSION};{LNAV_VERSION};g" \
         -e "s;${test_dir};{test_dir};g" \
         -e "s;${builddir};{builddir};g" \
