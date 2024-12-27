@@ -21,7 +21,7 @@ jobs:
             "CPPFLAGS=-I$(brew --prefix ncurses)/include -I$(brew --prefix libunistring)/include" \
             "CXXFLAGS=-g2 -O2" \
             'CFLAGS=-O2 -g2' \
-            "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix lz4)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix libunistring)" \
+            "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix lz4)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix libunistring)/lib/" \
             --with-readline=$(brew --prefix readline) \
             --with-libarchive=$(brew --prefix libarchive) \
             || cat config.log
