@@ -79,6 +79,14 @@ public:
             this->md_input.i_string.sf_end);
     }
 
+    size_t capture_size(size_t index) const
+    {
+        const auto start = this->md_ovector[(index * 2)];
+        const auto stop = this->md_ovector[(index * 2) + 1];
+
+        return stop - start;
+    }
+
     std::optional<string_fragment> operator[](size_t index) const
     {
         if (index >= this->md_capture_end) {

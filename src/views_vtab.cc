@@ -564,6 +564,7 @@ CREATE TABLE lnav_views (
 
                 if (last_ri_opt) {
                     auto last_time = last_ri_opt->ri_time;
+                    last_time.tv_usec = rounddown(last_time.tv_usec, 1000);
                     if (tv != last_time) {
                         time_source->row_for_time(tv) |
                             [&tc, &selection](auto row) {

@@ -435,6 +435,8 @@ public:
         return this->lf_format_match_messages;
     }
 
+    size_t estimated_remaining_lines() const;
+
 protected:
     /**
      * Process a line from the file.

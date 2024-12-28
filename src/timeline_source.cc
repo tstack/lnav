@@ -1078,6 +1078,7 @@ void
 timeline_source::text_crumbs_for_line(int line,
                                       std::vector<breadcrumb::crumb>& crumbs)
 {
+    static intern_string_t SRC = intern_string::lookup("crumb");
     text_sub_source::text_crumbs_for_line(line, crumbs);
 
     if (line >= this->gs_time_order.size()) {
@@ -1089,13 +1090,15 @@ timeline_source::text_crumbs_for_line(int line,
 
     sql_strftime(ts, sizeof(ts), row.or_value.otr_range.tr_begin, 'T');
 
-    crumbs.emplace_back(
-        std::string(ts),
-        timestamp_poss,
-        [ec = this->gs_exec_context](const auto& ts) {
-            ec->execute(fmt::format(FMT_STRING(":goto {}"),
-                                    ts.template get<std::string>()));
-        });
+    crumbs.emplace_back(std::string(ts),
+                        timestamp_poss,
+                        [ec = this->gs_exec_context](const auto& ts) {
+                            auto cmd
+                                = fmt::format(FMT_STRING(":goto {}"),
+                                              ts.template get<std::string>());
+                            auto src_guard = ec->enter_source(SRC, 1, cmd);
+                            ec->execute(cmd);
+                        });
     crumbs.back().c_expected_input
         = breadcrumb::crumb::expected_input_t::anything;
     crumbs.back().c_search_placeholder = "(Enter an absolute or relative time)";

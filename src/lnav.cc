@@ -1715,7 +1715,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             if (initial_rescan_completed) {
                 if (ui_now >= next_rebuild_time) {
                     auto text_file_count = lnav_data.ld_text_source.size();
+                    // log_debug("BEGIN rebuild");
                     auto rebuild_res = rebuild_indexes(loop_deadline);
+                    // log_debug("END rebuild");
                     changes += rebuild_res.rir_changes;
                     if (!changes && ui_clock::now() < loop_deadline) {
                         next_rebuild_time = ui_clock::now() + 333ms;
@@ -2591,6 +2593,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         auto* file_opt = app.add_option("file", file_args, "files");
 
         auto wait_cb = [](size_t count) {
+            fprintf(stderr, "PID %d waiting for attachment\n", getpid());
             char b;
             if (isatty(STDIN_FILENO) && read(STDIN_FILENO, &b, 1) == -1) {
                 perror("Read key from STDIN");

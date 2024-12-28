@@ -87,6 +87,7 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
 
     retval.emplace_back(attr_line_t().pad_to(left).append(title));
     {
+        static intern_string_t SRC = intern_string::lookup("menu");
         attr_line_t al;
 
         int start = left;
@@ -113,6 +114,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                         ? (is_script ? "|$href" : ":open $href")
                         : fmt::format(FMT_STRING(":filter-in {}"),
                                       lnav::pcre2pp::quote(value));
+                    auto src_guard
+                        = lnav_data.ld_exec_context.enter_source(SRC, 1, cmd);
                     auto exec_res
                         = lnav_data.ld_exec_context
                               .with_provenance(exec_context::mouse_input{})
@@ -138,6 +141,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                 [](const std::string& value) {
                     auto cmd = fmt::format(FMT_STRING("/{}"),
                                            lnav::pcre2pp::quote(value));
+                    auto src_guard
+                        = lnav_data.ld_exec_context.enter_source(SRC, 1, cmd);
                     lnav_data.ld_exec_context
                         .with_provenance(exec_context::mouse_input{})
                         ->execute(cmd);

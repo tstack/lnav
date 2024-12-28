@@ -774,10 +774,16 @@ view_colors::match_color(styling::color_unit cu) const
     }
 
     if (cu.cu_value.is<rgb_color>()) {
-        auto lab = lab_color{cu.cu_value.get<rgb_color>()};
+        auto rgb = cu.cu_value.get<rgb_color>();
+        auto lab = lab_color{rgb};
+        auto pal = vc_active_palette->match_color(lab);
 
-        return styling::color_unit::from_palette(
-            palette_color{vc_active_palette->match_color(lab)});
+        log_trace("mapped RGB (%d, %d, %d) to palette %d",
+                  rgb.rc_r,
+                  rgb.rc_g,
+                  rgb.rc_b,
+                  pal);
+        return styling::color_unit::from_palette(palette_color{pal});
     }
 
     return cu;

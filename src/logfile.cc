@@ -835,7 +835,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 auto check_line_off = last_line->get_offset();
                 auto last_length_res
                     = this->message_byte_length(last_line, false);
-                log_debug("flushing at %d", check_line_off);
+                log_debug("flushing at %" PRIu64, check_line_off);
                 this->lf_line_buffer.flush_at(check_line_off);
 
                 auto read_result = this->lf_line_buffer.read_range({
@@ -1662,3 +1662,20 @@ logfile::clear_logline_opid(uint32_t line_number)
         this->lf_invalidated_opids.insert(opid_sf);
     }
 }
+
+size_t
+logfile::estimated_remaining_lines() const
+{
+    if (this->lf_index.empty() || this->is_compressed()) {
+        return 10;
+    }
+
+    const auto bytes_per_line = this->lf_index_size / this->lf_index.size();
+    if (this->lf_index_size > this->lf_stat.st_size) {
+        return 0;
+    }
+    const auto remaining_bytes = this->lf_stat.st_size - this->lf_index_size;
+
+    return remaining_bytes / bytes_per_line;
+}
+

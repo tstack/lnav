@@ -1411,27 +1411,28 @@ external_log_format::scan(logfile& lf,
         }
 
         auto ts = md[fpat->p_timestamp_field_index];
-        auto time_cap = md[fpat->p_time_field_index];
         auto level_cap = md[fpat->p_level_field_index];
-        auto mod_cap = md[fpat->p_module_field_index];
         auto opid_cap = md[fpat->p_opid_field_index];
-        auto subid_cap = md[fpat->p_subid_field_index];
         auto body_cap = md[fpat->p_body_field_index];
         const char* last;
-        struct exttm log_time_tm;
-        struct timeval log_tv;
+        exttm log_time_tm;
+        timeval log_tv;
         uint8_t mod_index = 0, opid = 0;
         char combined_datetime_buf[512];
 
-        if (ts && time_cap) {
-            auto ts_str_len = snprintf(combined_datetime_buf,
-                                       sizeof(combined_datetime_buf),
-                                       "%.*sT%.*s",
-                                       ts->length(),
-                                       ts->data(),
-                                       time_cap->length(),
-                                       time_cap->data());
-            ts = string_fragment::from_bytes(combined_datetime_buf, ts_str_len);
+        if (fpat->p_time_field_index != -1) {
+            auto time_cap = md[fpat->p_time_field_index];
+            if (ts && time_cap) {
+                auto ts_str_len = snprintf(combined_datetime_buf,
+                                           sizeof(combined_datetime_buf),
+                                           "%.*sT%.*s",
+                                           ts->length(),
+                                           ts->data(),
+                                           time_cap->length(),
+                                           time_cap->data());
+                ts = string_fragment::from_bytes(combined_datetime_buf,
+                                                 ts_str_len);
+            }
         }
 
         auto level = this->convert_level(
@@ -1482,7 +1483,10 @@ external_log_format::scan(logfile& lf,
             && !dst.empty()
             && dst.back().get_time<std::chrono::seconds>().count()
                 == log_tv.tv_sec
-            && dst.back().get_subsecond_time<std::chrono::milliseconds>().count() != 0)
+            && dst.back()
+                    .get_subsecond_time<std::chrono::milliseconds>()
+                    .count()
+                != 0)
         {
             auto log_ms
                 = dst.back().get_subsecond_time<std::chrono::microseconds>();
@@ -1508,22 +1512,28 @@ external_log_format::scan(logfile& lf,
             auto& otr = opid_iter->second;
 
             otr.otr_level_stats.update_msg_count(level);
-
-            if (subid_cap && !subid_cap->empty()) {
-                auto* ostr = sbc.sbc_opids.sub_op_in_use(sbc.sbc_allocator,
-                                                         opid_iter,
-                                                         subid_cap.value(),
-                                                         log_tv,
-                                                         level);
-                if (ostr != nullptr && ostr->ostr_description.empty()) {
-                    log_op_description sub_desc;
-                    this->update_op_description(
-                        *this->lf_subid_description_def, sub_desc, fpat, md);
-                    if (!sub_desc.lod_elements.empty()) {
-                        auto& sub_desc_def = this->lf_subid_description_def->at(
-                            sub_desc.lod_id.value());
-                        ostr->ostr_description
-                            = sub_desc_def.to_string(sub_desc.lod_elements);
+            if (fpat->p_subid_field_index != -1) {
+                auto subid_cap = md[fpat->p_subid_field_index];
+                if (subid_cap && !subid_cap->empty()) {
+                    auto* ostr = sbc.sbc_opids.sub_op_in_use(sbc.sbc_allocator,
+                                                             opid_iter,
+                                                             subid_cap.value(),
+                                                             log_tv,
+                                                             level);
+                    if (ostr != nullptr && ostr->ostr_description.empty()) {
+                        log_op_description sub_desc;
+                        this->update_op_description(
+                            *this->lf_subid_description_def,
+                            sub_desc,
+                            fpat,
+                            md);
+                        if (!sub_desc.lod_elements.empty()) {
+                            auto& sub_desc_def
+                                = this->lf_subid_description_def->at(
+                                    sub_desc.lod_id.value());
+                            ostr->ostr_description
+                                = sub_desc_def.to_string(sub_desc.lod_elements);
+                        }
                     }
                 }
             }
@@ -1531,44 +1541,50 @@ external_log_format::scan(logfile& lf,
                 *this->lf_opid_description_def, otr.otr_description, fpat, md);
             opid = opid_cap->hash();
         }
+        if (fpat->p_module_field_index != -1) {
+            auto mod_cap = md[fpat->p_module_field_index];
+            if (mod_cap && body_cap) {
+                intern_string_t mod_name
+                    = intern_string::lookup(mod_cap.value());
+                auto mod_iter = MODULE_FORMATS.find(mod_name);
 
-        if (mod_cap && body_cap) {
-            intern_string_t mod_name = intern_string::lookup(mod_cap.value());
-            auto mod_iter = MODULE_FORMATS.find(mod_name);
+                if (mod_iter == MODULE_FORMATS.end()) {
+                    mod_index = this->module_scan(body_cap.value(), mod_name);
+                    mod_iter = MODULE_FORMATS.find(mod_name);
+                } else if (mod_iter->second.mf_mod_format) {
+                    mod_index = mod_iter->second.mf_mod_format->lf_mod_index;
+                }
 
-            if (mod_iter == MODULE_FORMATS.end()) {
-                mod_index = this->module_scan(body_cap.value(), mod_name);
-                mod_iter = MODULE_FORMATS.find(mod_name);
-            } else if (mod_iter->second.mf_mod_format) {
-                mod_index = mod_iter->second.mf_mod_format->lf_mod_index;
-            }
+                if (mod_index && level_cap && body_cap) {
+                    auto mod_elf
+                        = std::dynamic_pointer_cast<external_log_format>(
+                            mod_iter->second.mf_mod_format);
 
-            if (mod_index && level_cap && body_cap) {
-                auto mod_elf = std::dynamic_pointer_cast<external_log_format>(
-                    mod_iter->second.mf_mod_format);
+                    if (mod_elf) {
+                        thread_local auto mod_md
+                            = lnav::pcre2pp::match_data::unitialized();
 
-                if (mod_elf) {
-                    thread_local auto mod_md
-                        = lnav::pcre2pp::match_data::unitialized();
+                        shared_buffer_ref body_ref;
 
-                    shared_buffer_ref body_ref;
+                        body_cap->trim();
 
-                    body_cap->trim();
+                        int mod_pat_index = mod_elf->last_pattern_index();
+                        auto& mod_pat
+                            = *mod_elf->elf_pattern_order[mod_pat_index];
+                        auto match_res = mod_pat.p_pcre.pp_value
+                                             ->capture_from(body_cap.value())
+                                             .into(mod_md)
+                                             .matches(PCRE2_NO_UTF_CHECK)
+                                             .ignore_error();
+                        if (match_res) {
+                            auto mod_level_cap
+                                = mod_md[mod_pat.p_level_field_index];
 
-                    int mod_pat_index = mod_elf->last_pattern_index();
-                    auto& mod_pat = *mod_elf->elf_pattern_order[mod_pat_index];
-                    auto match_res = mod_pat.p_pcre.pp_value
-                                         ->capture_from(body_cap.value())
-                                         .into(mod_md)
-                                         .matches(PCRE2_NO_UTF_CHECK)
-                                         .ignore_error();
-                    if (match_res) {
-                        auto mod_level_cap
-                            = mod_md[mod_pat.p_level_field_index];
-
-                        level = mod_elf->convert_level(
-                            mod_level_cap.value_or(string_fragment::invalid()),
-                            &sbc);
+                            level = mod_elf->convert_level(
+                                mod_level_cap.value_or(
+                                    string_fragment::invalid()),
+                                &sbc);
+                        }
                     }
                 }
             }
@@ -1579,15 +1595,12 @@ external_log_format::scan(logfile& lf,
                 continue;
             }
 
-            auto cap = md[ivd.ivd_index];
+            auto cap_size = md.capture_size(ivd.ivd_index);
+            auto& lvs = this->lf_value_stats[ivd.ivd_value_def->vd_meta
+                                                 .lvm_values_index.value()];
 
-            if (cap && cap->is_valid()) {
-                auto& lvs = this->lf_value_stats[ivd.ivd_value_def->vd_meta
-                                                     .lvm_values_index.value()];
-
-                if (cap->length() > lvs.lvs_width) {
-                    lvs.lvs_width = cap->length();
-                }
+            if (cap_size > lvs.lvs_width) {
+                lvs.lvs_width = cap_size;
             }
         }
 
@@ -1672,7 +1685,9 @@ external_log_format::scan(logfile& lf,
     if (this->lf_specialized && !this->lf_multiline) {
         const auto& last_line = dst.back();
 
-        log_debug("invalid line %d %d", dst.size(), li.li_file_range.fr_offset);
+        log_debug("invalid line %d file_offset=%" PRIu64,
+                  dst.size(),
+                  li.li_file_range.fr_offset);
         dst.emplace_back(li.li_file_range.fr_offset,
                          last_line.get_timeval(),
                          log_level_t::LEVEL_INVALID);
@@ -1696,8 +1711,7 @@ external_log_format::module_scan(string_fragment body_cap,
         int curr_fmt = -1, fmt_lock = -1;
 
         while (::next_format(elf->elf_pattern_order, curr_fmt, fmt_lock)) {
-            thread_local auto md
-                = lnav::pcre2pp::match_data::unitialized();
+            thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
             auto& fpat = elf->elf_pattern_order[curr_fmt];
             auto& pat = fpat->p_pcre;
@@ -4132,20 +4146,16 @@ log_level_t
 external_log_format::convert_level(string_fragment sf,
                                    scan_batch_context* sbc) const
 {
-    log_level_t retval = LEVEL_INFO;
+    auto retval = LEVEL_INFO;
 
     if (sf.is_valid()) {
         if (sbc != nullptr && sbc->sbc_cached_level_count > 0) {
-            auto cached_level_iter
-                = std::find(std::begin(sbc->sbc_cached_level_strings),
-                            std::begin(sbc->sbc_cached_level_strings)
-                                + sbc->sbc_cached_level_count,
-                            sf);
-            if (cached_level_iter
-                != std::begin(sbc->sbc_cached_level_strings)
-                    + sbc->sbc_cached_level_count)
-            {
-                auto cache_index
+            const auto level_end = std::begin(sbc->sbc_cached_level_strings)
+                + sbc->sbc_cached_level_count;
+            const auto cached_level_iter = std::find(
+                std::begin(sbc->sbc_cached_level_strings), level_end, sf);
+            if (cached_level_iter != level_end) {
+                const auto cache_index
                     = std::distance(std::begin(sbc->sbc_cached_level_strings),
                                     cached_level_iter);
                 if (cache_index != 0) {
@@ -4194,8 +4204,7 @@ logline_value_meta
 external_log_format::get_value_meta(intern_string_t field_name,
                                     value_kind_t kind)
 {
-    auto iter = this->elf_value_defs.find(field_name);
-
+    const auto iter = this->elf_value_defs.find(field_name);
     if (iter == this->elf_value_defs.end()) {
         auto retval = logline_value_meta(
             field_name, kind, logline_value_meta::external_column{}, this);

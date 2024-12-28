@@ -254,15 +254,17 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         // retval.li_timestamp = ll->get_timeval();
         retval.li_partial = false;
         retval.li_utf8_scan_result.usr_has_ansi = ll->has_ansi();
-        retval.li_utf8_scan_result.usr_message = ll->is_valid_utf() ? nullptr : "bad";
-        //timeval start_time, end_time;
-        //gettimeofday(&start_time, NULL);
+        retval.li_utf8_scan_result.usr_message = ll->is_valid_utf() ? nullptr
+                                                                    : "bad";
+        // timeval start_time, end_time;
+        // gettimeofday(&start_time, NULL);
         value_out = lf->read_line(lf->begin() + line)
                         .map([](auto sbr) { return to_string(sbr); })
                         .unwrapOr({});
-        //gettimeofday(&end_time, NULL);
-        //timeval diff = end_time - start_time;
-        //log_debug("read time %d.%06d %s:%d", diff.tv_sec, diff.tv_usec, lf->get_filename().c_str(), line);
+        // gettimeofday(&end_time, NULL);
+        // timeval diff = end_time - start_time;
+        // log_debug("read time %d.%06d %s:%d", diff.tv_sec, diff.tv_usec,
+        // lf->get_filename().c_str(), line);
         return retval;
     }
 
@@ -783,6 +785,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
     iterator iter;
     size_t total_lines = 0;
+    size_t est_remaining_lines = 0;
     bool full_sort = false;
     int file_count = 0;
     bool force = this->lss_force_rebuild;
@@ -856,9 +859,9 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         if (!this->lss_index.empty()
                             && lf->size() > ld.ld_lines_indexed)
                         {
-                            logline& new_file_line = (*lf)[ld.ld_lines_indexed];
+                            auto& new_file_line = (*lf)[ld.ld_lines_indexed];
                             content_line_t cl = this->lss_index.back();
-                            logline* last_indexed_line = this->find_line(cl);
+                            auto* last_indexed_line = this->find_line(cl);
 
                             // If there are new lines that are older than what
                             // we have in the index, we need to resort.
@@ -913,6 +916,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
             file_count += 1;
             total_lines += lf->size();
+
+            est_remaining_lines += lf->estimated_remaining_lines();
         }
     }
 
@@ -920,7 +925,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         return rebuild_result::rr_appended_lines;
     }
 
-    if (this->lss_index.reserve(total_lines)) {
+    if (this->lss_index.reserve(total_lines + est_remaining_lines)) {
         // The index array was reallocated, just do a full sort/rebuild since
         // it's been cleared out.
         log_debug("expanding index capacity %zu", this->lss_index.ba_capacity);
@@ -1032,6 +1037,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         if (full_sort) {
+            log_trace("rebuild_index full sort");
             for (auto& ld : this->lss_files) {
                 auto* lf = ld->get_file_ptr();
 
@@ -1114,7 +1120,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             if (this->lss_sorting_observer) {
                 this->lss_sorting_observer(*this, index_off, index_size);
             }
-            for (;;) {
+            log_trace("k-way merge") for (;;)
+            {
                 logfile::iterator lf_iter;
                 logfile_data* ld;
 
@@ -1189,6 +1196,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lss_index_delegate->index_start(*this);
         }
 
+        log_trace("filtered index");
         for (size_t index_index = start_size;
              index_index < this->lss_index.size();
              index_index++)
@@ -1230,8 +1238,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 }
                 this->lss_filtered_index.push_back(index_index);
                 if (this->lss_index_delegate != nullptr) {
-                    this->lss_index_delegate->index_line(
-                        *this, lf, lf->begin() + line_number);
+                    this->lss_index_delegate->index_line(*this, lf, line_iter);
                 }
             }
         }
@@ -1467,6 +1474,10 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
                             break;
                     }
                     if (!cmd.empty()) {
+                        static intern_string_t SRC
+                            = intern_string::lookup("hotkey");
+                        auto src_guard
+                            = this->lss_exec_context->enter_source(SRC, 1, cmd);
                         this->lss_exec_context
                             ->with_provenance(exec_context::mouse_input{})
                             ->execute(cmd);
@@ -2561,6 +2572,7 @@ void
 logfile_sub_source::text_crumbs_for_line(int line,
                                          std::vector<breadcrumb::crumb>& crumbs)
 {
+    static intern_string_t SRC = intern_string::lookup("crumb");
     text_sub_source::text_crumbs_for_line(line, crumbs);
 
     if (this->lss_filtered_index.empty()) {
@@ -2599,8 +2611,10 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 return retval;
             },
             [ec = this->lss_exec_context](const auto& part) {
-                ec->execute(fmt::format(FMT_STRING(":goto {}"),
-                                        part.template get<std::string>()));
+                auto cmd = fmt::format(FMT_STRING(":goto {}"),
+                                       part.template get<std::string>());
+                auto src_guard = ec->enter_source(SRC, 1, cmd);
+                ec->execute(cmd);
             });
     }
 
@@ -2615,13 +2629,15 @@ logfile_sub_source::text_crumbs_for_line(int line,
 
     sql_strftime(ts, sizeof(ts), line_pair.second->get_timeval(), 'T');
 
-    crumbs.emplace_back(
-        std::string(ts),
-        timestamp_poss,
-        [ec = this->lss_exec_context](const auto& ts) {
-            ec->execute(fmt::format(FMT_STRING(":goto {}"),
-                                    ts.template get<std::string>()));
-        });
+    crumbs.emplace_back(std::string(ts),
+                        timestamp_poss,
+                        [ec = this->lss_exec_context](const auto& ts) {
+                            auto cmd
+                                = fmt::format(FMT_STRING(":goto {}"),
+                                              ts.template get<std::string>());
+                            auto src_guard = ec->enter_source(SRC, 1, cmd);
+                            ec->execute(cmd);
+                        });
     crumbs.back().c_expected_input
         = breadcrumb::crumb::expected_input_t::anything;
     crumbs.back().c_search_placeholder = "(Enter an absolute or relative time)";
@@ -2651,6 +2667,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
      WHERE name = 'log'
 )";
 
+            auto src_guard = ec->enter_source(SRC, 1, MOVE_STMT);
             ec->execute_with(
                 MOVE_STMT,
                 std::make_pair("format_name",
@@ -2680,6 +2697,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
      WHERE name = 'log'
 )";
 
+            auto src_guard = ec->enter_source(SRC, 1, MOVE_STMT);
             ec->execute_with(
                 MOVE_STMT,
                 std::make_pair("uniq_path",
@@ -2725,6 +2743,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                          WHERE name = 'log'
                     )";
 
+                auto src_guard = ec->enter_source(SRC, 1, MOVE_STMT);
                 ec->execute_with(
                     MOVE_STMT,
                     std::make_pair("opid", opid.template get<std::string>()));
