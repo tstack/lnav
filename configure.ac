@@ -48,10 +48,32 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AM_PROG_AR
 AC_PROG_LN_S
+AC_PROG_GREP
 AC_PROG_MAKE_SET
 
 AC_PATH_PROG(BASH, [bash])
 AC_PATH_PROG(CARGO_CMD, [cargo])
+AC_PATH_PROG(RUSTC_CMD, [rustc])
+if test x"$RUSTC_CMD" == x""; then
+    RUSTC_PLATFORM=no
+else
+    # for example, rustc expects x86_64-unknown-linux-gnu instead of x86_64-pc-linux-gnu
+    # and armv7-unknown-linux-gnueabihf instead of armv7l-unknown-linux-gnueabihf
+    AC_MSG_CHECKING([rustc --target argument])
+    if "$RUSTC_CMD" --print target-list | $GREP "$host" > /dev/null; then
+        RUSTC_PLATFORM="$host"
+    else
+        candidate=`echo "$host_cpu"-unknown-"$host_os" | sed -e 's/armv\(.\)l-/armv\1-/'`
+        if "$RUSTC_CMD" --print target-list | $GREP "$candidate" > /dev/null; then
+            RUSTC_PLATFORM="$candidate"
+        else
+            AC_MSG_ERROR("$RUSTC_CMD knows neither $host nor $candidate")
+        fi
+    AC_MSG_RESULT(["$RUSTC_PLATFORM"])
+    fi
+fi
+AC_SUBST(RUSTC_PLATFORM)
+
 AC_PATH_PROG(BZIP2_CMD, [bzip2])
 AC_PATH_PROG(RE2C_CMD, [re2c])
 AM_CONDITIONAL(HAVE_RE2C, test x"$RE2C_CMD" != x"")
