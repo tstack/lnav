@@ -32,8 +32,6 @@
 
 #include <sqlite3.h>
 
-#include "vtab_module.hh"
-
 int register_views_vtab(sqlite3* db);
 
 #endif

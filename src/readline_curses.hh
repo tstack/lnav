@@ -174,8 +174,7 @@ public:
     {
         require(this->rc_active_context != -1);
 
-        std::map<int, readline_context*>::const_iterator iter;
-        iter = this->rc_contexts.find(this->rc_active_context);
+        const auto iter = this->rc_contexts.find(this->rc_active_context);
         return iter->second;
     }
 

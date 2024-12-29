@@ -31,6 +31,7 @@
 #define regex101_import_hh
 
 #include <filesystem>
+#include <string>
 
 #include "base/lnav.console.hh"
 #include "log_format_ext.hh"

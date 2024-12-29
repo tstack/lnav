@@ -37,7 +37,6 @@
 
 #include "log_vtab_impl.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "shared_buffer.hh"
 
 class log_search_table : public log_vtab_impl {
 public:

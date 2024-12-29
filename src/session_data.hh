@@ -64,8 +64,8 @@ struct recent_refs_t {
     std::set<std::string> rr_netlocs;
 };
 
-extern struct session_data_t session_data;
-extern struct recent_refs_t recent_refs;
+extern session_data_t session_data;
+extern recent_refs_t recent_refs;
 
 void init_session();
 void load_session();
@@ -73,8 +73,7 @@ void load_time_bookmarks();
 void save_session();
 void reset_session();
 
-namespace lnav {
-namespace session {
+namespace lnav::session {
 
 void restore_view_states();
 
@@ -104,7 +103,6 @@ void delete_entry(const std::string& format_name,
 Result<std::vector<entry>, std::string> get_entries();
 
 }  // namespace regex101
-}  // namespace session
-}  // namespace lnav
+}  // namespace lnav::session
 
 #endif

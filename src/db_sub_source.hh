@@ -30,7 +30,6 @@
 #ifndef db_sub_source_hh
 #define db_sub_source_hh
 
-#include <iterator>
 #include <optional>
 #include <string>
 #include <vector>
@@ -63,7 +62,7 @@ public:
     {
         size_t retval = 0;
 
-        for (auto& dls_header : this->dls_headers) {
+        for (const auto& dls_header : this->dls_headers) {
             retval += dls_header.hm_column_size + 1;
         }
         return retval;
@@ -86,7 +85,7 @@ public:
 
     std::optional<size_t> column_name_to_index(const std::string& name) const;
 
-    std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
+    std::optional<vis_line_t> row_for_time(timeval time_bucket) override;
 
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
@@ -110,7 +109,7 @@ public:
     size_t dls_max_column_width{120};
     std::vector<header_meta> dls_headers;
     std::vector<std::vector<const char*>> dls_rows;
-    std::vector<struct timeval> dls_time_column;
+    std::vector<timeval> dls_time_column;
     std::vector<size_t> dls_cell_width;
     int dls_time_column_index{-1};
     std::optional<size_t> dls_time_column_invalidated_at;

@@ -32,14 +32,10 @@
 
 #include "logfile.hh"
 
-namespace lnav {
-namespace log {
-namespace watch {
+namespace lnav::log::watch {
 
 void eval_with(logfile& lf, logfile::iterator ll);
 
 }
-}  // namespace log
-}  // namespace lnav
 
 #endif

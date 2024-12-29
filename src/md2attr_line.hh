@@ -30,8 +30,13 @@
 #ifndef lnav_md2attr_line_hh
 #define lnav_md2attr_line_hh
 
-#include "base/attr_line.hh"
 #include <filesystem>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "base/attr_line.hh"
+#include "base/result.h"
 #include "md4cpp.hh"
 
 namespace pugi {

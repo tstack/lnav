@@ -32,12 +32,10 @@
 
 #include "base/lnav.console.hh"
 
-namespace lnav {
-namespace session {
+namespace lnav::session {
 
 Result<void, lnav::console::user_message> export_to(FILE* file);
 
 }
-}  // namespace lnav
 
 #endif

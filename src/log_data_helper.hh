@@ -36,14 +36,9 @@
 #include <memory>
 #include <string>
 
-#include <sqlite3.h>
-
-#include "base/lnav_log.hh"
 #include "column_namer.hh"
 #include "data_parser.hh"
 #include "logfile_sub_source.hh"
-#include "sql_util.hh"
-#include "xml_util.hh"
 #include "yajlpp/json_ptr.hh"
 
 class log_data_helper {

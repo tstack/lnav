@@ -43,12 +43,10 @@
 #include <unistd.h>
 
 #include "base/auto_fd.hh"
-#include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "line_buffer.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "pollable.hh"
-#include "strong_int.hh"
 
 template<typename LineType>
 class grep_proc;

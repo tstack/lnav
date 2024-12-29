@@ -32,14 +32,12 @@
 #ifndef lnav_logfile_cfg_hh
 #define lnav_logfile_cfg_hh
 
-namespace lnav {
-namespace logfile {
+namespace lnav::logfile {
 
 struct config {
     uint64_t lc_max_unrecognized_lines{1000};
 };
 
-}  // namespace logfile
-}  // namespace lnav
+}  // namespace lnav::logfile
 
 #endif

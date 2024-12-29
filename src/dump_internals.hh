@@ -30,8 +30,6 @@
 #ifndef dump_internals_hh
 #define dump_internals_hh
 
-#include <string>
-
 namespace lnav {
 
 void dump_internals(const char* dir);

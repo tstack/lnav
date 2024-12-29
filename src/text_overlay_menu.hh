@@ -30,6 +30,8 @@
 #ifndef lnav_text_overlay_menu_hh
 #define lnav_text_overlay_menu_hh
 
+#include <vector>
+
 #include "listview_curses.hh"
 
 class text_overlay_menu : public list_overlay_source {

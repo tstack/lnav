@@ -33,7 +33,6 @@
 #define sql_help_hh
 
 #include <map>
-#include <set>
 
 #include "base/attr_line.hh"
 #include "help_text.hh"

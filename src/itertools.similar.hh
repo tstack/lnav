@@ -36,8 +36,7 @@
 #include "base/itertools.hh"
 #include "fts_fuzzy_match.hh"
 
-namespace lnav {
-namespace itertools {
+namespace lnav::itertools {
 
 namespace details {
 
@@ -73,8 +72,7 @@ similar_to(std::string pattern, size_t count = 5)
     return similar_to(details::identity{}, std::move(pattern), count);
 }
 
-}  // namespace itertools
-}  // namespace lnav
+}  // namespace lnav::itertools
 
 template<typename T, typename F>
 std::vector<typename T::value_type>

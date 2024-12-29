@@ -32,6 +32,7 @@
 #ifndef log_format_loader_hh
 #define log_format_loader_hh
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -39,7 +40,6 @@
 
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
-#include <filesystem>
 #include "shlex.resolver.hh"
 
 class log_vtab_manager;

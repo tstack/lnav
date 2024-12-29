@@ -32,8 +32,7 @@
 #include "config.h"
 #include "fmtlib/fmt/format.h"
 
-namespace lnav {
-namespace pugixml {
+namespace lnav::pugixml {
 
 std::string
 get_actual_path(const pugi::xml_node& node)
@@ -52,7 +51,8 @@ get_actual_path(const pugi::xml_node& node)
                 auto name = std::string(curr.name());
 
                 if (curr.previous_sibling(curr.name())
-                    || curr.next_sibling(curr.name())) {
+                    || curr.next_sibling(curr.name()))
+                {
                     auto sibling = curr;
                     int index = 0;
 
@@ -77,5 +77,4 @@ get_actual_path(const pugi::xml_node& node)
     return retval;
 }
 
-}  // namespace pugixml
-}  // namespace lnav
+}  // namespace lnav::pugixml

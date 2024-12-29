@@ -32,14 +32,11 @@
 
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "base/color_spaces.hh"
 #include "base/intern_string.hh"
-#include "base/result.h"
-#include "log_level.hh"
-#include "mapbox/variant.hpp"
+#include "base/log_level_enum.hh"
 #include "yajlpp/yajlpp.hh"
 #include "yajlpp/yajlpp_def.hh"
 

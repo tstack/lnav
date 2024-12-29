@@ -32,9 +32,6 @@
 #ifndef lnav_sqlite_extension_func_h
 #define lnav_sqlite_extension_func_h
 
-#include <map>
-#include <string>
-
 #include <sqlite3.h>
 #include <stdint.h>
 

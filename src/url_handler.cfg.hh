@@ -35,8 +35,7 @@
 
 #include "yajlpp/yajlpp.hh"
 
-namespace lnav {
-namespace url_handler {
+namespace lnav::url_handler {
 
 struct scheme {
     positioned_property<std::string> p_handler;
@@ -46,7 +45,6 @@ struct config {
     std::map<std::string, scheme> c_schemes;
 };
 
-}  // namespace url_handler
-}  // namespace lnav
+}  // namespace lnav::url_handler
 
 #endif

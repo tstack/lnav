@@ -32,8 +32,6 @@
 #ifndef LNAV_SHLEX_HH_H
 #define LNAV_SHLEX_HH_H
 
-#include <functional>
-#include <map>
 #include <string>
 #include <vector>
 

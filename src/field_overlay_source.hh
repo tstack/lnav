@@ -30,7 +30,6 @@
 #ifndef LNAV_FIELD_OVERLAY_SOURCE_H
 #define LNAV_FIELD_OVERLAY_SOURCE_H
 
-#include <utility>
 #include <vector>
 
 #include "listview_curses.hh"

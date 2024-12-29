@@ -42,8 +42,7 @@
 #include "mapbox/variant.hpp"
 #include "text_format.hh"
 
-namespace lnav {
-namespace document {
+namespace lnav::document {
 
 using section_key_t = mapbox::util::variant<std::string, size_t>;
 using section_interval_t = interval_tree::Interval<file_off_t, section_key_t>;
@@ -82,7 +81,7 @@ struct hier_node {
 
     std::optional<size_t> find_line_number(const std::string& str) const
     {
-        auto iter = this->hn_named_children.find(str);
+        const auto iter = this->hn_named_children.find(str);
         if (iter != this->hn_named_children.end()) {
             return std::make_optional(iter->second->hn_line_number);
         }
@@ -93,8 +92,7 @@ struct hier_node {
     std::optional<size_t> find_line_number(size_t index) const
     {
         if (index < this->hn_children.size()) {
-            return std::make_optional(
-                this->hn_children[index]->hn_line_number);
+            return std::make_optional(this->hn_children[index]->hn_line_number);
         }
         return std::nullopt;
     }
@@ -140,8 +138,7 @@ metadata discover_structure(attr_line_t& al,
                             struct line_range lr,
                             text_format_t tf = text_format_t::TF_UNKNOWN);
 
-}  // namespace document
-}  // namespace lnav
+}  // namespace lnav::document
 
 namespace fmt {
 template<>

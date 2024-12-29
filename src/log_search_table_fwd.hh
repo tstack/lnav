@@ -30,7 +30,7 @@
 #ifndef lnav_log_search_table_fwd_hh
 #define lnav_log_search_table_fwd_hh
 
-#include "pcrepp/pcre2pp.hh"
+#include <pcre2.h>
 
 namespace log_search_table_ns {
 static constexpr int PATTERN_OPTIONS

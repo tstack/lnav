@@ -32,12 +32,11 @@
 #ifndef LNAV_UNIQUE_PATH_HH
 #define LNAV_UNIQUE_PATH_HH
 
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <filesystem>
 
 /**
  * A source of a path for the unique_path_generator.

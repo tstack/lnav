@@ -30,6 +30,10 @@
 #ifndef lnav_text_link_handler_hh
 #define lnav_text_link_handler_hh
 
+#include <optional>
+#include <set>
+#include <string>
+
 #include "textview_curses.hh"
 
 class text_link_handler : public text_sub_source {

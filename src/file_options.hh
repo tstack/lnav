@@ -30,13 +30,12 @@
 #ifndef lnav_file_options_hh
 #define lnav_file_options_hh
 
+#include <filesystem>
 #include <map>
 
 #include "base/lnav.console.hh"
 #include "base/result.h"
 #include "date/tz.h"
-#include <filesystem>
-#include "mapbox/variant.hpp"
 #include "safe/safe.h"
 #include "yajlpp/yajlpp.hh"
 

@@ -32,6 +32,9 @@
 #include "log_data_helper.hh"
 
 #include "config.h"
+#include "pugixml/pugixml.hpp"
+#include "sql_util.hh"
+#include "xml_util.hh"
 
 void
 log_data_helper::clear()

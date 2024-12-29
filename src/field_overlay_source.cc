@@ -39,6 +39,7 @@
 #include "md2attr_line.hh"
 #include "ptimec.hh"
 #include "readline_highlighters.hh"
+#include "sql_util.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 

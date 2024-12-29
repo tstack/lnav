@@ -88,9 +88,9 @@ struct help_text {
     const char* ht_group_start{nullptr};
     const char* ht_group_end{nullptr};
     const char* ht_description{nullptr};
-    std::vector<struct help_text> ht_parameters;
-    std::vector<struct help_text> ht_results;
-    std::vector<struct help_example> ht_example;
+    std::vector<help_text> ht_parameters;
+    std::vector<help_text> ht_results;
+    std::vector<help_example> ht_example;
     help_nargs_t ht_nargs{help_nargs_t::HN_REQUIRED};
     help_parameter_format_t ht_format{help_parameter_format_t::HPF_STRING};
     std::vector<const char*> ht_enum_values;

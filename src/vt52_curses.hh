@@ -32,9 +32,6 @@
 #ifndef vt52_curses_hh
 #define vt52_curses_hh
 
-#include <list>
-#include <string>
-
 #include "view_curses.hh"
 
 /**

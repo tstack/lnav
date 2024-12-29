@@ -32,11 +32,11 @@
 #ifndef spectro_source_hh
 #define spectro_source_hh
 
+#include <chrono>
 #include <unordered_map>
 #include <vector>
 
 #include <math.h>
-#include <time.h>
 
 #include "statusview_curses.hh"
 #include "textview_curses.hh"

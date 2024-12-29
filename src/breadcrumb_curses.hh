@@ -31,7 +31,6 @@
 #define lnav_breadcrumb_curses_hh
 
 #include <functional>
-#include <utility>
 #include <vector>
 
 #include "plain_text_source.hh"

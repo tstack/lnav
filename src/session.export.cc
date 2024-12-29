@@ -110,8 +110,7 @@ struct from_sqlite<log_file_session_state> {
     }
 };
 
-namespace lnav {
-namespace session {
+namespace lnav::session {
 
 static std::optional<std::filesystem::path>
 find_container_dir(std::filesystem::path file_path)
@@ -492,5 +491,4 @@ SELECT content_id, format, time_offset FROM lnav_file
     return Ok();
 }
 
-}  // namespace session
-}  // namespace lnav
+}  // namespace lnav::session

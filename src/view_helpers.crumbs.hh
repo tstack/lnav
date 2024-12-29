@@ -30,6 +30,8 @@
 #ifndef lnav_view_helpers_crumbs_hh
 #define lnav_view_helpers_crumbs_hh
 
+#include <vector>
+
 #include "breadcrumb_curses.hh"
 
 std::vector<breadcrumb::crumb> lnav_crumb_source();

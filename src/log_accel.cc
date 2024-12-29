@@ -33,6 +33,7 @@
 
 #include "log_accel.hh"
 
+#include "base/lnav_log.hh"
 #include "config.h"
 
 const double log_accel::MIN_RANGE = 5.0;

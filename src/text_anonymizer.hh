@@ -31,7 +31,6 @@
 #define lnav_text_anonymizer_hh
 
 #include <string>
-#include <vector>
 
 #include "base/intern_string.hh"
 #include "robin_hood/robin_hood.h"

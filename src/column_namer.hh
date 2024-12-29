@@ -32,7 +32,6 @@
 #ifndef lnav_column_namer_hh
 #define lnav_column_namer_hh
 
-#include <string>
 #include <unordered_map>
 #include <vector>
 

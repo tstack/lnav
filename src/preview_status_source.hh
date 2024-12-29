@@ -30,8 +30,6 @@
 #ifndef lnav_preview_status_source_hh
 #define lnav_preview_status_source_hh
 
-#include <string>
-
 #include "statusview_curses.hh"
 
 class preview_status_source : public status_data_source {
@@ -47,7 +45,7 @@ public:
 
     preview_status_source()
     {
-        static const char TOGGLE_MSG[] = "Press CTRL+P to show/hide";
+        static constexpr char TOGGLE_MSG[] = "Press CTRL+P to show/hide";
 
         this->tss_fields[TSF_TITLE].set_width(14);
         this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);

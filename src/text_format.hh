@@ -32,13 +32,13 @@
 #ifndef text_format_hh
 #define text_format_hh
 
+#include <filesystem>
 #include <string>
 
 #include <sys/types.h>
 
 #include "base/intern_string.hh"
 #include "fmt/format.h"
-#include <filesystem>
 
 enum class text_format_t {
     TF_UNKNOWN,
@@ -139,6 +139,6 @@ struct text_format_meta_t {
 };
 
 std::optional<text_format_meta_t> extract_text_meta(string_fragment sf,
-                                                       text_format_t tf);
+                                                    text_format_t tf);
 
 #endif

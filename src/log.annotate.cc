@@ -37,14 +37,13 @@
 #include "base/paths.hh"
 #include "line_buffer.hh"
 #include "lnav.hh"
+#include "log.annotate.cfg.hh"
 #include "log_data_helper.hh"
 #include "md4cpp.hh"
 #include "readline_highlighters.hh"
 #include "yajlpp/yajlpp.hh"
 
-namespace lnav {
-namespace log {
-namespace annotate {
+namespace lnav::log::annotate {
 
 struct compiled_cond_expr {
     auto_mem<sqlite3_stmt> cce_stmt{sqlite3_finalize};
@@ -407,6 +406,4 @@ apply(vis_line_t vl, std::vector<intern_string_t> annos)
     return Ok();
 }
 
-}  // namespace annotate
-}  // namespace log
-}  // namespace lnav
+}  // namespace lnav::log::annotate

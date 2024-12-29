@@ -33,7 +33,6 @@
 #include <string>
 #include <vector>
 
-#include "base/auto_fd.hh"
 #include "base/auto_pid.hh"
 #include "base/result.h"
 #include "file_format.hh"

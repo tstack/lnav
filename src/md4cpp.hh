@@ -148,7 +148,7 @@ inline std::string operator"" _emoji(const char* str, std::size_t len)
     const auto& em = get_emoji_map();
     const auto key = std::string(str, len);
 
-    auto iter = em.em_shortname2emoji.find(key);
+    const auto iter = em.em_shortname2emoji.find(key);
     assert(iter != em.em_shortname2emoji.end());
 
     return iter->second.get().e_value;

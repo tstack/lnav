@@ -66,8 +66,7 @@ write_line_meta(int fd, struct timeval& tv, log_level_t level, off_t woff)
 
 extern char** environ;
 
-namespace lnav {
-namespace piper {
+namespace lnav::piper {
 
 class piper_config_listener : public lnav_config_listener {
 public:
@@ -195,8 +194,10 @@ looper::get_wakeup_pipe()
     return retval;
 }
 
-looper::
-looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd, options opts)
+looper::looper(std::string name,
+               auto_fd stdout_fd,
+               auto_fd stderr_fd,
+               options opts)
     : l_name(std::move(name)), l_cwd(std::filesystem::current_path().string()),
       l_env(environ_to_map()), l_stdout(std::move(stdout_fd)),
       l_stderr(std::move(stderr_fd)), l_options(opts)
@@ -215,8 +216,7 @@ looper(std::string name, auto_fd stdout_fd, auto_fd stderr_fd, options opts)
     this->l_future = std::async(std::launch::async, [this]() { this->loop(); });
 }
 
-looper::~
-looper()
+looper::~looper()
 {
     char ch = '\0';
 
@@ -787,5 +787,4 @@ cleanup()
     });
 }
 
-}  // namespace piper
-}  // namespace lnav
+}  // namespace lnav::piper

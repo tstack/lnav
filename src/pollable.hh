@@ -54,9 +54,9 @@ public:
 
     category get_category() const { return this->p_category; }
 
-    virtual void update_poll_set(std::vector<struct pollfd>& pollfds) = 0;
+    virtual void update_poll_set(std::vector<pollfd>& pollfds) = 0;
 
-    virtual void check_poll_set(const std::vector<struct pollfd>& pollfds) = 0;
+    virtual void check_poll_set(const std::vector<pollfd>& pollfds) = 0;
 
 private:
     std::shared_ptr<pollable_supervisor> p_supervisor;
@@ -70,16 +70,16 @@ public:
         size_t ur_interactive{0};
     };
 
-    update_result update_poll_set(std::vector<struct pollfd>& pollfds);
+    update_result update_poll_set(std::vector<pollfd>& pollfds);
 
-    void check_poll_set(const std::vector<struct pollfd>& pollfds);
+    void check_poll_set(const std::vector<pollfd>& pollfds);
 
     size_t count(pollable::category cat);
 };
 
-short pollfd_revents(const std::vector<struct pollfd>& pollfds, int fd);
+short pollfd_revents(const std::vector<pollfd>& pollfds, int fd);
 
-bool pollfd_ready(const std::vector<struct pollfd>& pollfds,
+bool pollfd_ready(const std::vector<pollfd>& pollfds,
                   int fd,
                   short events = POLLIN | POLLHUP);
 

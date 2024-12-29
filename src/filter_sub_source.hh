@@ -30,7 +30,6 @@
 #ifndef filter_sub_source_hh
 #define filter_sub_source_hh
 
-#include "base/injector.hh"
 #include "plain_text_source.hh"
 #include "readline_curses.hh"
 #include "textview_curses.hh"

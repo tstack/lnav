@@ -34,7 +34,6 @@
 
 #include <notcurses/notcurses.h>
 
-#include "base/lnav_log.hh"
 #include "config.h"
 
 /**

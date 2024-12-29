@@ -41,8 +41,7 @@
 #include "safe/safe.h"
 #include "yajlpp/yajlpp_def.hh"
 
-namespace lnav {
-namespace piper {
+namespace lnav::piper {
 
 enum class state {
     running,
@@ -199,7 +198,6 @@ Result<handle<state::running>, std::string> create_looper(std::string name,
 
 void cleanup();
 
-}  // namespace piper
-}  // namespace lnav
+}  // namespace lnav::piper
 
 #endif

@@ -34,12 +34,10 @@
 
 #include "pugixml/pugixml.hpp"
 
-namespace lnav {
-namespace pugixml {
+namespace lnav::pugixml {
 
 std::string get_actual_path(const pugi::xml_node& node);
 
 }
-}  // namespace lnav
 
 #endif

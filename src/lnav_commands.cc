@@ -85,6 +85,7 @@
 #include "session_data.hh"
 #include "shlex.hh"
 #include "spectro_impls.hh"
+#include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 #include "sysclip.hh"
 #include "tailer/tailer.looper.hh"

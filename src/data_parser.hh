@@ -32,7 +32,6 @@
 
 #include <iterator>
 #include <list>
-#include <stack>
 #include <vector>
 
 #include <stdio.h>

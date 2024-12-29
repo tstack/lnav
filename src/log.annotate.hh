@@ -30,11 +30,9 @@
 #ifndef lnav_log_annotate_hh
 #define lnav_log_annotate_hh
 
-#include <string>
-
+#include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"
-#include "log.annotate.cfg.hh"
 #include "vis_line.hh"
 
 namespace lnav {
