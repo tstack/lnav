@@ -32,6 +32,7 @@
 #include "spectro_source.hh"
 
 #include "base/ansi_scrubber.hh"
+#include "base/keycodes.hh"
 #include "base/math_util.hh"
 #include "config.h"
 

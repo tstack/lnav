@@ -36,14 +36,12 @@
 #include <exception>
 #include <functional>
 #include <map>
-#include <stack>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <errno.h>
 #include <poll.h>
-#include <readline/history.h>
 #include <readline/readline.h>
 #include <stdlib.h>
 #include <string.h>
@@ -146,11 +144,11 @@ public:
 
     std::string get_alt_value() const { return this->rc_alt_value; }
 
-    void update_poll_set(std::vector<struct pollfd>& pollfds) override;
+    void update_poll_set(std::vector<pollfd>& pollfds) override;
 
     void handle_key(const ncinput& ch);
 
-    void check_poll_set(const std::vector<struct pollfd>& pollfds) override;
+    void check_poll_set(const std::vector<pollfd>& pollfds) override;
 
     void focus(int context,
                const std::string& prompt,
@@ -219,7 +217,7 @@ public:
 
     void add_possibility(const int context,
                          const std::string& type,
-                         const char* values[])
+                         const char* const values[])
     {
         for (int lpc = 0; values[lpc]; lpc++) {
             this->add_possibility(context, type, values[lpc]);
@@ -228,8 +226,8 @@ public:
 
     void add_possibility(const int context,
                          const std::string& type,
-                         const char** first,
-                         const char** last)
+                         const char* const* first,
+                         const char* const* last)
     {
         for (; first < last; first++) {
             this->add_possibility(context, type, *first);

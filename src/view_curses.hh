@@ -33,28 +33,24 @@
 #define view_curses_hh
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include <limits.h>
 #include <notcurses/notcurses.h>
 #include <signal.h>
-#include <spookyhash/SpookyV2.h>
 #include <stdint.h>
 #include <sys/time.h>
-#include <zlib.h>
 
 #include "base/attr_line.hh"
 #include "base/enum_util.hh"
-#include "base/keycodes.hh"
 #include "base/lnav_log.hh"
-#include "base/lrucache.hpp"
-#include "base/opt_util.hh"
+#include "base/log_level_enum.hh"
+#include "base/result.h"
+#include "base/string_attr_type.hh"
 #include "config.h"
 #include "lnav_config_fwd.hh"
-#include "log_level.hh"
-#include "logfile_fwd.hh"
 #include "styling.hh"
 
 class view_curses;
@@ -83,14 +79,11 @@ public:
         }
     }
 
-    screen_curses(screen_curses&& other) noexcept
-        : sc_notcurses(std::exchange(other.sc_notcurses, nullptr))
-    {
-    }
+    screen_curses(screen_curses&& other) noexcept;
 
     screen_curses(const screen_curses&) = delete;
 
-    screen_curses& operator=(screen_curses&& other)
+    screen_curses& operator=(screen_curses&& other) noexcept
     {
         this->sc_notcurses = std::exchange(other.sc_notcurses, nullptr);
         return *this;
@@ -104,7 +97,7 @@ public:
     }
 
 private:
-    screen_curses(notcurses* nc) : sc_notcurses(nc) {}
+    explicit screen_curses(notcurses* nc) : sc_notcurses(nc) {}
 
     notcurses* sc_notcurses;
 };
@@ -122,7 +115,7 @@ public:
 
 class ui_periodic_timer {
 public:
-    static const struct itimerval INTERVAL;
+    static const itimerval INTERVAL;
 
     static ui_periodic_timer& singleton();
 
@@ -140,7 +133,7 @@ public:
         counter = this->upt_counter + decay;
     }
 
-    int fade_diff(sig_atomic_t& counter) const
+    int fade_diff(const sig_atomic_t& counter) const
     {
         if (this->upt_counter >= counter) {
             return 0;
@@ -341,7 +334,7 @@ struct mouse_event {
     mouse_button_t me_button;
     mouse_button_state_t me_state;
     uint8_t me_modifiers;
-    struct timeval me_time{};
+    timeval me_time{};
     int me_x;
     int me_y;
     int me_press_x{-1};
@@ -480,7 +473,7 @@ public:
             return false;
         }
 
-        bool retval;
+        bool retval = false;
         this->top() | [this, &retval](T* vc) {
             if (this->vc_needs_update) {
                 vc->set_needs_update();

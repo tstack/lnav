@@ -32,6 +32,7 @@
 #include "base/ansi_scrubber.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
+#include "base/keycodes.hh"
 #include "base/math_util.hh"
 #include "base/opt_util.hh"
 #include "bookmarks.hh"

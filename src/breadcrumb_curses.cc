@@ -31,6 +31,7 @@
 
 #include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
+#include "base/keycodes.hh"
 #include "itertools.similar.hh"
 
 using namespace lnav::roles::literals;
@@ -233,8 +234,8 @@ breadcrumb_curses::handle_key(const ncinput& ch)
             case 'a':
             case 'A':
                 mapped_id = KEY_CTRL('a');
-            break;
-            break;
+                break;
+                break;
             case 'e':
             case 'E':
                 mapped_id = KEY_CTRL('e');

@@ -30,7 +30,7 @@
 #ifndef lnav_keycodes_hh
 #define lnav_keycodes_hh
 
-inline constexpr int
+constexpr int
 KEY_CTRL(char k)
 {
     return k & 0x1f;

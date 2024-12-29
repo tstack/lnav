@@ -108,11 +108,12 @@ statusview_curses::do_update()
     int top = this->vc_y < 0 ? height + this->vc_y : this->vc_y;
     int right = width;
     const auto attrs = vc.attrs_for_role(
-        this->sc_enabled ? this->sc_default_role : role_t::VCR_INACTIVE_STATUS);
+        this->sc_enabled ? this->vc_default_role : role_t::VCR_INACTIVE_STATUS);
 
     nccell clear_cell;
     nccell_init(&clear_cell);
-    nccell_prime(this->sc_window, &clear_cell, " ", 0, view_colors::to_channels(attrs));
+    nccell_prime(
+        this->sc_window, &clear_cell, " ", 0, view_colors::to_channels(attrs));
     ncplane_cursor_move_yx(this->sc_window, top, 0);
     ncplane_hline(this->sc_window, &clear_cell, width);
     nccell_release(this->sc_window, &clear_cell);
@@ -133,8 +134,10 @@ statusview_curses::do_update()
                     if (sa.sa_type == &VC_STYLE) {
                         auto sa_attrs = sa.sa_value.get<text_attrs>();
                         sa_attrs.clear_style(text_attrs::style::reverse);
-                        sa_attrs.ta_fg_color = styling::color_unit::make_empty();
-                        sa_attrs.ta_bg_color = styling::color_unit::make_empty();
+                        sa_attrs.ta_fg_color
+                            = styling::color_unit::make_empty();
+                        sa_attrs.ta_bg_color
+                            = styling::color_unit::make_empty();
                         sa.sa_value = sa_attrs;
                     } else if (sa.sa_type == &VC_ROLE) {
                         if (sa.sa_value.get<role_t>()

@@ -165,6 +165,8 @@ public:
  */
 class statusview_curses : public view_curses {
 public:
+    statusview_curses() { this->vc_default_role = role_t::VCR_STATUS; }
+
     void set_data_source(status_data_source* src) { this->sc_source = src; }
     status_data_source* get_data_source() { return this->sc_source; }
 
@@ -173,9 +175,6 @@ public:
 
     void set_enabled(bool value) { this->sc_enabled = value; }
     bool get_enabled() const { return this->sc_enabled; }
-
-    void set_default_role(role_t role) { this->sc_default_role = role; }
-    role_t get_default_role() const { return this->sc_default_role; }
 
     void window_change();
 

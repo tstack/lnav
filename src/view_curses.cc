@@ -37,6 +37,8 @@
 #include <cmath>
 #include <string>
 
+#include <zlib.h>
+
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.hh"
 #include "base/from_trait.hh"
@@ -1300,4 +1302,9 @@ screen_curses::create(const notcurses_options& options)
              notcurses_detected_terminal(nc));
 
     return Ok(screen_curses(nc));
+}
+
+screen_curses::screen_curses(screen_curses&& other) noexcept
+    : sc_notcurses(std::exchange(other.sc_notcurses, nullptr))
+{
 }

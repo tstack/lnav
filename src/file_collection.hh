@@ -33,11 +33,12 @@
 #define lnav_file_collection_hh
 
 #include <forward_list>
+#include <future>
 #include <list>
 #include <map>
 #include <set>
 #include <string>
-#include <utility>
+#include <vector>
 
 #include <sys/resource.h>
 

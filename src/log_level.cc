@@ -33,7 +33,7 @@
 
 #include "config.h"
 
-const char* level_names[LEVEL__MAX + 1] = {
+const char* const level_names[LEVEL__MAX + 1] = {
     "unknown",
     "trace",
     "debug5",

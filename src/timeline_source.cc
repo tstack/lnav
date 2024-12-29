@@ -36,6 +36,7 @@
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/itertools.hh"
+#include "base/keycodes.hh"
 #include "base/math_util.hh"
 #include "command_executor.hh"
 #include "intervaltree/IntervalTree.h"

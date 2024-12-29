@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "base/auto_fd.hh"
 #include "base/injector.bind.hh"
 #include "config.h"
 #include "listview_curses.hh"

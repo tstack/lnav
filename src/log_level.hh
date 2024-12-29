@@ -36,7 +36,7 @@
 
 #include "base/log_level_enum.hh"
 
-extern const char* level_names[LEVEL__MAX + 1];
+extern const char* const level_names[LEVEL__MAX + 1];
 
 constexpr size_t MAX_LEVEL_NAME_LEN = 8;
 
