@@ -50,15 +50,7 @@
 struct date_time_scanner {
     date_time_scanner() { this->clear(); }
 
-    void clear()
-    {
-        this->dts_base_time = 0;
-        this->dts_base_tm = exttm{};
-        this->dts_fmt_lock = -1;
-        this->dts_fmt_len = -1;
-        this->dts_last_tv = timeval{};
-        this->dts_last_tm = exttm{};
-    }
+    void clear();
 
     struct lock_state {
         int ls_fmt_index{-1};
@@ -106,6 +98,8 @@ struct date_time_scanner {
     time_t dts_local_offset_cache{0};
     time_t dts_local_offset_valid{0};
     time_t dts_local_offset_expiry{0};
+    time_t dts_localtime_cached_gmt{0};
+    tm dts_localtime_cached_tm{};
     const date::time_zone* dts_default_zone{nullptr};
 
     static const int EXPIRE_TIME = 15 * 60;

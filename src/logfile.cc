@@ -1207,6 +1207,13 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         } else {
             retval = rebuild_result_t::NEW_LINES;
         }
+
+        {
+            auto est_rem = this->estimated_remaining_lines();
+            if (est_rem > 0) {
+                this->lf_index.reserve(this->lf_index.size() + est_rem);
+            }
+        }
     } else if (this->lf_sort_needed) {
         retval = rebuild_result_t::NEW_ORDER;
         this->lf_sort_needed = false;
