@@ -33,7 +33,7 @@
 
 [1m[36m#include[0m [35m"config.h"[0m
 
-[1m[36mconst[0m [1m[36mchar[0m* level_names[[1mLEVEL__MAX[0m + [1m1[0m] = {
+[1m[36mconst[0m [1m[36mchar[0m* [1m[36mconst[0m level_names[[1mLEVEL__MAX[0m + [1m1[0m] = {
     [35m"unknown"[0m,
     [35m"trace"[0m,
     [35m"debug5"[0m,
