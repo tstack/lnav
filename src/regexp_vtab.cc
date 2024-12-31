@@ -37,7 +37,7 @@
 #include "config.h"
 #include "lnav_util.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlitepp.hh"
@@ -381,17 +381,17 @@ CREATE TABLE regexp_capture_into_json (
                         if (!vc.c_flags || vc.c_flags->convert_numbers) {
                             auto cap_view = cap->to_string_view();
                             auto scan_int_res
-                                = scn::scan_value<int64_t>(cap_view);
+                                = scn::scan_int<int64_t>(cap_view, 0);
 
-                            if (scan_int_res && scan_int_res.range().empty()) {
-                                yajl_gen_integer(gen, scan_int_res.value());
+                            if (scan_int_res && scan_int_res->range().empty()) {
+                                yajl_gen_integer(gen, scan_int_res->value());
                                 continue;
                             }
 
                             auto scan_float_res
                                 = scn::scan_value<double>(cap_view);
                             if (scan_float_res
-                                && scan_float_res.range().empty())
+                                && scan_float_res->range().empty())
                             {
                                 yajl_gen_number(
                                     gen, cap_view.data(), cap_view.length());

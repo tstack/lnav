@@ -46,7 +46,7 @@
 #include "lnav.events.hh"
 #include "md2attr_line.hh"
 #include "pretty_printer.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "sql_util.hh"
 #include "sqlitepp.hh"
 #include "textfile_sub_source.cfg.hh"
@@ -1138,8 +1138,8 @@ textfile_sub_source::row_for_anchor(const std::string& id)
             auto comp_pair = hier_sf.split_when(string_fragment::tag1{'/'});
             auto scan_res
                 = scn::scan_value<int64_t>(comp_pair.first.to_string_view());
-            if (scan_res && scan_res.empty()) {
-                path.emplace_back(scan_res.value());
+            if (scan_res && scan_res->range().empty()) {
+                path.emplace_back(scan_res->value());
             } else {
                 path.emplace_back(json_ptr::decode(comp_pair.first));
             }

@@ -38,7 +38,7 @@
 #include "injector.hh"
 #include "math_util.hh"
 #include "ptimec.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 
 size_t
 date_time_scanner::ftime(char* dst,
@@ -124,10 +124,10 @@ date_time_scanner::scan(const char* time_dest,
         tm_out->et_flags = 0;
         if (time_len > 1 && time_dest[0] == '+' && isdigit(time_dest[1])) {
             retval = nullptr;
-            auto sv = scn::string_view{time_dest, time_len};
+            auto sv = std::string_view{time_dest, time_len};
             auto epoch_scan_res = scn::scan_value<int64_t>(sv);
             if (epoch_scan_res) {
-                time_t gmt = epoch_scan_res.value();
+                time_t gmt = epoch_scan_res->value();
 
                 if (convert_local
                     && (this->dts_local_time || this->dts_zoned_to_local))
@@ -145,7 +145,7 @@ date_time_scanner::scan(const char* time_dest,
                     | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET;
 
                 this->dts_fmt_lock = curr_time_fmt;
-                this->dts_fmt_len = sv.length() - epoch_scan_res.range().size();
+                this->dts_fmt_len = sv.length() - epoch_scan_res->range().size();
                 retval = time_dest + this->dts_fmt_len;
                 found = true;
                 break;

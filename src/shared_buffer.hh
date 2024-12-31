@@ -33,6 +33,7 @@
 #define shared_buffer_hh
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <string.h>
@@ -43,7 +44,6 @@
 #include "base/intern_string.hh"
 #include "base/line_range.hh"
 #include "base/lnav_log.hh"
-#include "scn/util/string_view.h"
 
 class shared_buffer;
 
@@ -133,11 +133,11 @@ public:
         return string_fragment::from_bytes(this->sb_data, this->length());
     }
 
-    scn::string_view to_string_view(const line_range& lr) const
+    std::string_view to_string_view(const line_range& lr) const
     {
-        return scn::string_view{
+        return std::string_view{
             this->get_data_at(lr.lr_start),
-            this->get_data_at(lr.lr_end),
+            static_cast<std::string_view::size_type>(lr.length()),
         };
     }
 

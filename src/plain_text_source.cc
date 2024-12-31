@@ -31,7 +31,7 @@
 
 #include "base/itertools.hh"
 #include "config.h"
-#include "scn/scn.h"
+#include "scn/scan.h"
 
 static std::vector<plain_text_source::text_line>
 to_text_line(const std::vector<attr_line_t>& lines)
@@ -418,8 +418,8 @@ plain_text_source::row_for_anchor(const std::string& id)
             auto comp_pair = hier_sf.split_when(string_fragment::tag1{'/'});
             auto scan_res
                 = scn::scan_value<int64_t>(comp_pair.first.to_string_view());
-            if (scan_res && scan_res.empty()) {
-                path.emplace_back(scan_res.value());
+            if (scan_res && scan_res->range().empty()) {
+                path.emplace_back(scan_res->value());
             } else {
                 path.emplace_back(json_ptr::decode(comp_pair.first));
             }

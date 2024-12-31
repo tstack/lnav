@@ -59,7 +59,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "default-config.h"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "styling.hh"
 #include "view_curses.hh"
 #include "yajlpp/yajlpp.hh"
@@ -1713,12 +1713,12 @@ public:
             std::string keystr;
             if (keyseq_sf.startswith("f")) {
                 auto sv = keyseq_sf.to_string_view();
-                int32_t value;
-                auto scan_res = scn::scan(sv, "f{}", value);
+                auto scan_res = scn::scan<int32_t>(sv, "f{}");
                 if (!scan_res) {
                     log_error("invalid function key sequence: %s", keyseq_sf);
                     continue;
                 }
+                auto value = scan_res->value();
                 if (value < 0 || value > 64) {
                     log_error("invalid function key number: %s", keyseq_sf);
                     continue;
@@ -1729,13 +1729,13 @@ public:
                 auto sv
                     = string_fragment::from_str(pair.first).to_string_view();
                 while (!sv.empty()) {
-                    int32_t value;
-                    auto scan_res = scn::scan(sv, "x{:2x}", value);
+                    auto scan_res = scn::scan<int32_t>(sv, "x{:2x}");
                     if (!scan_res) {
                         log_error("invalid key sequence: %s",
                                   pair.first.c_str());
                         break;
                     }
+                    auto value = scan_res->value();
                     auto ch = (char) (value & 0xff);
                     switch (ch) {
                         case '\t':
@@ -1748,7 +1748,8 @@ public:
                             keystr.push_back(ch);
                             break;
                     }
-                    sv = scan_res.range_as_string_view();
+                    sv = std::string_view{scan_res->range().data(),
+                                          scan_res->range().size()};
                 }
             }
 
@@ -1920,7 +1921,7 @@ load_config(const std::vector<std::filesystem::path>& extra_paths,
             log_debug("sample file does not exist: %s", bsf.get_name());
         }
 
-        auto sfp =  bsf.to_string_fragment_producer();
+        auto sfp = bsf.to_string_fragment_producer();
         auto write_res = lnav::filesystem::write_file(sample_path, *sfp);
         if (write_res.isErr()) {
             fprintf(stderr,

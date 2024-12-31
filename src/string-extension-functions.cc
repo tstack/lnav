@@ -31,7 +31,7 @@
 #include "pcrepp/pcre2pp.hh"
 #include "pretty_printer.hh"
 #include "safe/safe.h"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "spookyhash/SpookyV2.h"
 #include "sqlite-extension-func.hh"
 #include "text_anonymizer.hh"
@@ -157,13 +157,13 @@ mapbox::util::
         }
 
         auto scan_int_res = scn::scan_value<int64_t>(cap->to_string_view());
-        if (scan_int_res && scan_int_res.empty()) {
-            return scan_int_res.value();
+        if (scan_int_res && scan_int_res->range().empty()) {
+            return scan_int_res->value();
         }
 
         auto scan_float_res = scn::scan_value<double>(cap->to_string_view());
-        if (scan_float_res && scan_float_res.empty()) {
-            return scan_float_res.value();
+        if (scan_float_res && scan_float_res->range().empty()) {
+            return scan_float_res->value();
         }
 
         return cap.value();
@@ -181,12 +181,12 @@ mapbox::util::
             } else {
                 auto scan_int_res
                     = scn::scan_value<int64_t>(cap->to_string_view());
-                if (scan_int_res && scan_int_res.empty()) {
-                    yajl_gen_integer(gen, scan_int_res.value());
+                if (scan_int_res && scan_int_res->range().empty()) {
+                    yajl_gen_integer(gen, scan_int_res->value());
                 } else {
                     auto scan_float_res
                         = scn::scan_value<double>(cap->to_string_view());
-                    if (scan_float_res && scan_float_res.empty()) {
+                    if (scan_float_res && scan_float_res->range().empty()) {
                         yajl_gen_number(gen, cap->data(), cap->length());
                     } else {
                         yajl_gen_pstring(gen, cap->data(), cap->length());
@@ -571,15 +571,16 @@ sql_decode(string_fragment str, encode_algo algo)
             auto sv = str.to_string_view();
 
             while (!sv.empty()) {
-                int32_t value;
-                auto scan_res = scn::scan(sv, "{:2x}", value);
+                auto scan_res = scn::scan<int32_t>(sv, "{:2x}");
                 if (!scan_res) {
                     throw sqlite_func_error(
                         "invalid hex input at: {}",
                         std::distance(str.begin(), sv.begin()));
                 }
+                auto value = scan_res->value();
                 buf.push_back((char) (value & 0xff));
-                sv = scan_res.range_as_string_view();
+                sv = std::string_view{scan_res->range().begin(),
+                                      scan_res->range().size()};
             }
 
             return blob_auto_buffer{std::move(buf)};

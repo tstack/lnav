@@ -79,7 +79,7 @@
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "relative_time.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "service_tags.hh"
 #include "session.export.hh"
 #include "session_data.hh"
@@ -3091,13 +3091,13 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             auto colon_index = fn.rfind(':');
             auto hash_index = fn.rfind('#');
             if (colon_index != std::string::npos) {
-                auto top_range
-                    = scn::string_view{&fn[colon_index + 1], &(*fn.cend())};
+                auto top_range = std::string_view{&fn[colon_index + 1],
+                                                  fn.size() - colon_index - 1};
                 auto scan_res = scn::scan_value<int>(top_range);
 
                 if (scan_res) {
                     fn = fn.substr(0, colon_index);
-                    file_loc = vis_line_t(scan_res.value());
+                    file_loc = vis_line_t(scan_res->value());
                 }
             } else if (hash_index != std::string::npos) {
                 file_loc = fn.substr(hash_index);
@@ -5558,11 +5558,11 @@ com_config(exec_context& ec,
                 } else if (ypc.ypc_current_handler->jph_callbacks.yajl_integer)
                 {
                     auto scan_res = scn::scan_value<int64_t>(value);
-                    if (!scan_res || !scan_res.empty()) {
+                    if (!scan_res || !scan_res->range().empty()) {
                         return ec.make_error("expecting an integer, found: {}",
                                              value);
                     }
-                    ypc.ypc_callbacks.yajl_integer(&ypc, scan_res.value());
+                    ypc.ypc_callbacks.yajl_integer(&ypc, scan_res->value());
                     changed = true;
                 } else if (ypc.ypc_current_handler->jph_callbacks.yajl_boolean)
                 {

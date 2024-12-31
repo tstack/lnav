@@ -45,7 +45,7 @@
 #include "base/string_util.hh"
 #include "config.h"
 #include "lnav_util.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "vis_line.hh"
 
 template<typename LineType>
@@ -249,16 +249,22 @@ grep_proc<LineType>::dispatch_line(const string_fragment& line)
     require(line.is_valid());
 
     auto sv = line.to_string_view();
-    if (scn::scan(sv, "h{}", this->gp_highest_line.lvalue())) {
-    } else if (scn::scan(sv, "{}", this->gp_last_line.lvalue())) {
-        /* Starting a new line with matches. */
-        ensure(this->gp_last_line >= 0);
-        /* Pass the match offsets to the sink delegate. */
-        if (this->gp_sink != nullptr) {
-            this->gp_sink->grep_match(*this, this->gp_last_line);
-        }
+    auto h_scan_res = scn::scan<int>(sv, "h{}");
+    if (h_scan_res) {
+        this->gp_highest_line = LineType{h_scan_res->value()};
     } else {
-        log_error("bad line from child -- %s", line);
+        auto ll_scan_res = scn::scan<int>(sv, "{}");
+        if (ll_scan_res) {
+            this->gp_last_line = LineType{ll_scan_res->value()};
+            /* Starting a new line with matches. */
+            ensure(this->gp_last_line >= 0);
+            /* Pass the match offsets to the sink delegate. */
+            if (this->gp_sink != nullptr) {
+                this->gp_sink->grep_match(*this, this->gp_last_line);
+            }
+        } else {
+            log_error("bad line from child -- %s", line);
+        }
     }
 }
 

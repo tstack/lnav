@@ -38,7 +38,7 @@
 #include "base/opt_util.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "view_curses.hh"
 
 static const lnav::pcre2pp::code&
@@ -273,7 +273,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
             auto osc_id = scn::scan_value<int32_t>(md[3]->to_string_view());
 
             if (osc_id) {
-                switch (osc_id.value()) {
+                switch (osc_id->value()) {
                     case 8:
                         auto split_res = md[4]->split_pair(semi_pred);
                         if (split_res) {
@@ -312,7 +312,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                         if (!ansi_code_res) {
                             break;
                         }
-                        auto ansi_code = ansi_code_res.value();
+                        auto ansi_code = ansi_code_res->value();
                         if (90 <= ansi_code && ansi_code <= 97) {
                             ansi_code -= 60;
                             // XXX attrs.ta_attrs |= A_STANDOUT;
@@ -337,25 +337,25 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                             if (!color_type.has_value()) {
                                 break;
                             }
-                            if (color_type.value() == 2) {
-                            } else if (color_type.value() == 5) {
+                            if (color_type->value() == 2) {
+                            } else if (color_type->value() == 5) {
                                 auto color_index_pair
                                     = color_code_pair->second.split_when(
                                         semi_pred);
                                 auto color_index = scn::scan_value<short>(
                                     color_index_pair.first.to_string_view());
                                 if (!color_index.has_value()
-                                    || color_index.value() < 0
-                                    || color_index.value() > 255)
+                                    || color_index->value() < 0
+                                    || color_index->value() > 255)
                                 {
                                     break;
                                 }
                                 if (ansi_code == 38) {
                                     attrs.ta_fg_color = palette_color{
-                                        (uint8_t) color_index.value()};
+                                        (uint8_t) color_index->value()};
                                 } else {
                                     attrs.ta_bg_color = palette_color{
-                                        (uint8_t) color_index.value()};
+                                        (uint8_t) color_index->value()};
                                 }
                                 seq = color_index_pair.second;
                             }
@@ -421,7 +421,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                     auto role_res = scn::scan_value<int>(seq.to_string_view());
 
                     if (role_res) {
-                        role_t role_tmp = (role_t) role_res.value();
+                        role_t role_tmp = (role_t) role_res->value();
                         if (role_tmp > role_t::VCR_NONE
                             && role_tmp < role_t::VCR__MAX)
                         {

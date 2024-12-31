@@ -112,7 +112,7 @@
 #include "readline_curses.hh"
 #include "readline_highlighters.hh"
 #include "regexp_vtab.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "spectro_source.hh"
@@ -3189,14 +3189,15 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         auto colon_index = file_path_str.rfind(':');
         if (colon_index != std::string::npos) {
-            auto top_range = scn::string_view{&file_path_str[colon_index + 1],
-                                              &(*file_path_str.cend())};
+            auto top_range
+                = std::string_view{&file_path_str[colon_index + 1],
+                                   file_path_str.size() - colon_index - 1};
             auto scan_res = scn::scan_value<int>(top_range);
 
             if (scan_res) {
                 file_path_without_trailer
                     = file_path_str.substr(0, colon_index);
-                file_loc = vis_line_t(scan_res.value());
+                file_loc = vis_line_t(scan_res->value());
             } else {
                 log_info(
                     "did not parse line number from file path with colon: %s",

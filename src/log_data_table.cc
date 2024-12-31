@@ -31,7 +31,7 @@
 
 #include "column_namer.hh"
 #include "config.h"
-#include "scn/scn.h"
+#include "scn/scan.h"
 
 log_data_table::log_data_table(logfile_sub_source& lss,
                                log_vtab_manager& lvm,
@@ -186,7 +186,7 @@ log_data_table::extract(logfile* lf,
             case DT_NUMBER: {
                 auto num_view = line.to_string_view(lr);
                 auto num_scan_res = scn::scan_value<double>(num_view);
-                auto num = num_scan_res ? num_scan_res.value() : 0.0;
+                auto num = num_scan_res ? num_scan_res->value() : 0.0;
 
                 values.lvv_values.emplace_back(*meta_iter, num);
                 break;

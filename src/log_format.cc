@@ -49,7 +49,7 @@
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
 #include "readline_highlighters.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 #include "sqlitepp.hh"
@@ -362,7 +362,7 @@ logline_value::logline_value(logline_value_meta lvm,
             auto scan_res
                 = scn::scan_value<int64_t>(sbr.to_string_view(origin));
             if (scan_res) {
-                this->lv_value.i = scan_res.value();
+                this->lv_value.i = scan_res->value();
             } else {
                 this->lv_value.i = 0;
             }
@@ -372,7 +372,7 @@ logline_value::logline_value(logline_value_meta lvm,
         case value_kind_t::VALUE_FLOAT: {
             auto scan_res = scn::scan_value<double>(sbr.to_string_view(origin));
             if (scan_res) {
-                this->lv_value.d = scan_res.value();
+                this->lv_value.d = scan_res->value();
             } else {
                 this->lv_value.d = 0;
             }
@@ -915,7 +915,7 @@ read_json_number(yajlpp_parse_context* ypc,
         return 0;
     }
 
-    auto val = scan_res.value();
+    auto val = scan_res->value();
     if (jlu->jlu_format->lf_timestamp_field == field_name) {
         long long divisor = jlu->jlu_format->elf_timestamp_divisor;
         struct timeval tv;
@@ -1631,10 +1631,10 @@ external_log_format::scan(logfile& lf,
                 std::optional<double> dvalue_opt;
                 switch (vd.vd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER: {
-                        auto scan_res = scn::scan_value<int64_t>(
+                        auto scan_res = scn::scan_int<int64_t>(
                             num_cap->to_string_view());
                         if (scan_res) {
-                            dvalue_opt = scan_res.value();
+                            dvalue_opt = scan_res->value();
                         }
                         break;
                     }
@@ -1642,7 +1642,7 @@ external_log_format::scan(logfile& lf,
                         auto scan_res = scn::scan_value<double>(
                             num_cap->to_string_view());
                         if (scan_res) {
-                            dvalue_opt = scan_res.value();
+                            dvalue_opt = scan_res->value();
                         }
                         break;
                     }

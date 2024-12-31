@@ -60,7 +60,7 @@
 #include "hasher.hh"
 #include "line_buffer.hh"
 #include "piper.looper.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 
 using namespace std::chrono_literals;
 
@@ -1236,18 +1236,17 @@ line_buffer::load_next_line(file_range prev_line)
         = retval.li_utf8_scan_result.is_valid();
 
     if (this->lb_line_metadata) {
-        auto sv = scn::string_view{
+        auto sv = std::string_view{
             line_start,
             (size_t) retval.li_file_range.fr_size,
         };
 
-        char level = '\0';
-        auto scan_res = scn::scan(sv,
-                                  "{}.{}:{};",
-                                  retval.li_timestamp.tv_sec,
-                                  retval.li_timestamp.tv_usec,
-                                  level);
+        auto scan_res = scn::scan<int64_t, int64_t, char>(sv,
+                                  "{}.{}:{};");
         if (scan_res) {
+            auto& [tv_sec, tv_usec, level] = scan_res->values();
+            retval.li_timestamp.tv_sec = tv_sec;
+            retval.li_timestamp.tv_usec = tv_usec;
             retval.li_timestamp.tv_sec
                 = lnav::to_local_time(date::sys_seconds{std::chrono::seconds{
                                           retval.li_timestamp.tv_sec}})

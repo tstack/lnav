@@ -32,7 +32,7 @@
 #include "base/itertools.hh"
 #include "lnav.hh"
 #include "logfile_sub_source.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 
 using namespace lnav::roles::literals;
 
@@ -498,11 +498,11 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
                        .value_or(vis_line_t(dls.dls_rows.size()));
 
     for (auto lpc = begin_row; lpc < end_row; ++lpc) {
-        auto scan_res = scn::scan_value<double>(scn::string_view{
+        auto scan_res = scn::scan_value<double>(std::string_view{
             dls.dls_rows[lpc][this->dsvs_column_index.value()]});
 
         if (scan_res) {
-            row_out.add_value(sr, scan_res.value(), false);
+            row_out.add_value(sr, scan_res->value(), false);
         }
     }
 
@@ -521,12 +521,12 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
                            .value_or(vis_line_t(dls.dls_rows.size()));
 
         for (auto lpc = begin_row; lpc < end_row; ++lpc) {
-            auto scan_res = scn::scan_value<double>(scn::string_view{
+            auto scan_res = scn::scan_value<double>(std::string_view{
                 dls.dls_rows[lpc][this->dsvs_column_index.value()]});
             if (!scan_res) {
                 continue;
             }
-            auto value = scan_res.value();
+            auto value = scan_res->value();
             if ((range_min == value)
                 || (range_min < value && value < range_max))
             {

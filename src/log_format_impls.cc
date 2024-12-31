@@ -42,7 +42,7 @@
 #include "formats/logfmt/logfmt.parser.hh"
 #include "log_vtab_impl.hh"
 #include "ptimec.hh"
-#include "scn/scn.h"
+#include "scn/scan.h"
 #include "sql_util.hh"
 #include "yajlpp/yajlpp.hh"
 
@@ -633,7 +633,7 @@ public:
                         auto scan_float_res = scn::scan_value<double>(sv);
                         if (scan_float_res) {
                             this->lf_value_stats[fd.fd_numeric_index.value()]
-                                .add_value(scan_float_res.value());
+                                .add_value(scan_float_res->value());
                         }
                         break;
                     }
@@ -1318,7 +1318,7 @@ public:
 
                         if (scan_float_res) {
                             this->lf_value_stats[fd.fd_numeric_index.value()]
-                                .add_value(scan_float_res.value());
+                                .add_value(scan_float_res->value());
                         }
                         break;
                     }
