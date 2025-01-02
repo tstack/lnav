@@ -49,10 +49,32 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AM_PROG_AR
 AC_PROG_LN_S
+AC_PROG_GREP
 AC_PROG_MAKE_SET
 
 AC_PATH_PROG(BASH, [bash])
 AC_PATH_PROG(CARGO_CMD, [cargo])
+AC_PATH_PROG(RUSTC_CMD, [rustc])
+RUSTC_PLATFORM=no
+if test x"$RUSTC_CMD" != x""; then
+    # for example, rustc expects x86_64-unknown-linux-gnu instead of x86_64-pc-linux-gnu
+    # and armv7-unknown-linux-gnueabihf instead of armv7l-unknown-linux-gnueabihf
+    # and x86_64-apple-darwin instead of x86_64-apple-darwin22.6.0
+    AC_MSG_CHECKING([rustc --target argument])
+    candidate1=`echo "$host" | sed -e 's/armv\(@<:@0-9@:>@\)l-/armv\1-/' | sed -e 's/-darwin@<:@0-9.@:>@*/-darwin/'`
+    candidate2=`echo "$host_cpu"-unknown-"$host_os" | sed -e 's/armv\(@<:@0-9@:>@\)l-/armv\1-/' | sed -e 's/-darwin@<:@0-9.@:>@*/-darwin/'`
+    for candidate in $host $candidate1 $candidate2; do
+        if "$RUSTC_CMD" --print target-list | $GREP "^$candidate"'$' > /dev/null; then
+            RUSTC_PLATFORM="$candidate"
+        fi
+    done
+    if test x"$RUSTC_PLATFORM" = x"no"; then
+        AC_MSG_ERROR("$RUSTC_CMD knows none of $host $candidate1 $candidate2")
+    fi
+    AC_MSG_RESULT(["$RUSTC_PLATFORM"])
+fi
+AC_SUBST(RUSTC_PLATFORM)
+
 AC_PATH_PROG(BZIP2_CMD, [bzip2])
 AC_PATH_PROG(RE2C_CMD, [re2c])
 AM_CONDITIONAL(HAVE_RE2C, test x"$RE2C_CMD" != x"")
