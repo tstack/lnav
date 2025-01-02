@@ -135,8 +135,7 @@ private:
 
 #define Z_BUFSIZE      65536U
 #define SYNCPOINT_SIZE (1024 * 1024)
-line_buffer::gz_indexed::
-gz_indexed()
+line_buffer::gz_indexed::gz_indexed()
 {
     if ((this->inbuf = auto_mem<Bytef>::malloc(Z_BUFSIZE)) == nullptr) {
         throw std::bad_alloc();
@@ -368,14 +367,12 @@ line_buffer::gz_indexed::read(void* buf, size_t offset, size_t size)
     return bytes;
 }
 
-line_buffer::
-line_buffer()
+line_buffer::line_buffer()
 {
     ensure(this->invariant());
 }
 
-line_buffer::~
-line_buffer()
+line_buffer::~line_buffer()
 {
     if (this->lb_loader_future.valid()) {
         this->lb_loader_future.wait();
@@ -804,6 +801,8 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         this->lb_line_has_ansi = std::move(this->lb_alt_line_has_ansi);
         this->lb_alt_line_has_ansi.clear();
         this->lb_stats.s_used_preloads += 1;
+        this->lb_next_line_start_index = 0;
+        this->lb_next_buffer_offset = 0;
     }
     if (this->in_range(start)
         && (max_length == 0 || this->in_range(start + max_length - 1)))
@@ -1114,22 +1113,43 @@ line_buffer::load_next_line(file_range prev_line)
         if (!this->lb_line_starts.empty()) {
             auto buffer_offset = offset - this->lb_file_offset;
 
-            auto start_iter = std::lower_bound(this->lb_line_starts.begin(),
-                                               this->lb_line_starts.end(),
-                                               buffer_offset);
-            if (start_iter != this->lb_line_starts.end()) {
+            if (this->lb_next_buffer_offset == buffer_offset) {
+                auto start_iter = this->lb_line_starts.begin()
+                    + this->lb_next_line_start_index;
                 auto next_line_iter = start_iter + 1;
-
-                // log_debug("found offset %d %d", buffer_offset, *start_iter);
                 if (next_line_iter != this->lb_line_starts.end()) {
                     utf8_end = *next_line_iter - 1 - *start_iter;
                     found_in_cache = true;
                     lf = line_start + utf8_end;
+
+                    this->lb_next_buffer_offset = *next_line_iter;
+                    this->lb_next_line_start_index += 1;
                 } else {
                     // log_debug("no next iter");
                 }
             } else {
-                // log_debug("no buffer_offset found");
+                auto start_iter = std::lower_bound(this->lb_line_starts.begin(),
+                                                   this->lb_line_starts.end(),
+                                                   buffer_offset);
+                if (start_iter != this->lb_line_starts.end()) {
+                    auto next_line_iter = start_iter + 1;
+
+                    // log_debug("found offset %d %d", buffer_offset,
+                    // *start_iter);
+                    if (next_line_iter != this->lb_line_starts.end()) {
+                        utf8_end = *next_line_iter - 1 - *start_iter;
+                        found_in_cache = true;
+                        lf = line_start + utf8_end;
+
+                        this->lb_next_line_start_index = std::distance(
+                            this->lb_alt_line_starts.begin(), next_line_iter);
+                        this->lb_next_buffer_offset = *next_line_iter;
+                    } else {
+                        // log_debug("no next iter");
+                    }
+                } else {
+                    // log_debug("no buffer_offset found");
+                }
             }
         }
 
@@ -1241,8 +1261,7 @@ line_buffer::load_next_line(file_range prev_line)
             (size_t) retval.li_file_range.fr_size,
         };
 
-        auto scan_res = scn::scan<int64_t, int64_t, char>(sv,
-                                  "{}.{}:{};");
+        auto scan_res = scn::scan<int64_t, int64_t, char>(sv, "{}.{}:{};");
         if (scan_res) {
             auto& [tv_sec, tv_usec, level] = scan_res->values();
             retval.li_timestamp.tv_sec = tv_sec;
@@ -1317,8 +1336,8 @@ line_buffer::get_available()
             static_cast<file_ssize_t>(this->lb_buffer.size())};
 }
 
-line_buffer::gz_indexed::indexDict::
-indexDict(const z_stream& s, const file_size_t size)
+line_buffer::gz_indexed::indexDict::indexDict(const z_stream& s,
+                                              const file_size_t size)
 {
     assert((s.data_type & GZ_END_OF_BLOCK_MASK));
     assert(!(s.data_type & GZ_END_OF_FILE_MASK));

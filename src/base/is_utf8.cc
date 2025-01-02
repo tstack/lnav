@@ -67,10 +67,6 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
     ssize_t i = 0, valid_end = 0;
 
     while (i < str.length()) {
-        if (ustr[i] == '\x1b') {
-            retval.usr_has_ansi = true;
-        }
-
         if (terminator && ustr[i] == terminator.value()) {
             retval.usr_remaining = str.substr(i + 1);
             break;
@@ -86,6 +82,8 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
         if (ustr[i] <= 0x7F) /* 00..7F */ {
             if (ustr[i] == '\t') {
                 retval.usr_column_width_guess += 7;
+            } else if (ustr[i] == '\x1b') {
+                retval.usr_has_ansi = true;
             }
             i += 1;
         } else if (ustr[i] >= 0xC2 && ustr[i] <= 0xDF) /* C2..DF 80..BF */ {

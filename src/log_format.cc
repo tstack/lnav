@@ -228,8 +228,7 @@ std::optional<std::string>
 log_format::opid_descriptor::matches(const string_fragment& sf) const
 {
     if (this->od_extractor.pp_value) {
-        static thread_local auto desc_md
-            = lnav::pcre2pp::match_data::unitialized();
+        thread_local auto desc_md = lnav::pcre2pp::match_data::unitialized();
 
         auto desc_match_res = this->od_extractor.pp_value->capture_from(sf)
                                   .into(desc_md)
@@ -684,7 +683,7 @@ log_format::log_scanf(uint32_t line_number,
     int pat_index = this->last_pattern_index();
 
     while (!done && next_format(fmt, curr_fmt, pat_index)) {
-        static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
         auto match_res = fmt[curr_fmt]
                              .pcre->capture_from(line)
@@ -1387,10 +1386,9 @@ external_log_format::scan(logfile& lf,
     int curr_fmt = -1, orig_lock = this->last_pattern_index();
     int pat_index = orig_lock;
     auto line_sf = sbr.to_string_fragment();
+    thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     while (::next_format(this->elf_pattern_order, curr_fmt, pat_index)) {
-        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
-
         auto* fpat = this->elf_pattern_order[curr_fmt].get();
         auto* pat = fpat->p_pcre.pp_value.get();
 
@@ -1631,8 +1629,8 @@ external_log_format::scan(logfile& lf,
                 std::optional<double> dvalue_opt;
                 switch (vd.vd_meta.lvm_kind) {
                     case value_kind_t::VALUE_INTEGER: {
-                        auto scan_res = scn::scan_int<int64_t>(
-                            num_cap->to_string_view());
+                        auto scan_res
+                            = scn::scan_int<int64_t>(num_cap->to_string_view());
                         if (scan_res) {
                             dvalue_opt = scan_res->value();
                         }

@@ -29,6 +29,9 @@
  * @file ptimec.c
  */
 
+#include <optional>
+
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,6 +59,24 @@ escape_char(char ch)
     return charstr;
 }
 
+static std::optional<size_t>
+spec_fixed_width(char spec)
+{
+    switch (spec) {
+        case 'd':
+        case 'H':
+        case 'M':
+        case 'S':
+            return 2;
+        case 'b':
+            return 3;
+        case 'Y':
+            return 4;
+        default:
+            return std::nullopt;
+    }
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -67,51 +88,119 @@ main(int argc, char* argv[])
 
         printf(
             "// %s\n"
-            "bool ptime_f%d(struct exttm *dst, const char *str, off_t &off, "
+            "bool ptime_f%d(struct exttm *dst, const char *str, off_t "
+            "&off_inout, "
             "ssize_t len) {\n"
             "    dst->et_flags = 0;\n"
             "    // log_debug(\"ptime_f%d\");\n",
             arg,
             lpc,
             lpc);
+
+        size_t min_width = 0;
+        for (int index = 0; arg[index]; index++) {
+            if (arg[index] == '%') {
+                auto fixed_width_opt = spec_fixed_width(arg[index + 1]);
+                if (fixed_width_opt.has_value()) {
+                    min_width += fixed_width_opt.value();
+                } else {
+                    break;
+                }
+                index += 1;
+            } else {
+                min_width += 1;
+            }
+        }
+
+        if (min_width > 0) {
+            printf(
+                "    if (len - off_inout < %lu) {\n"
+                "        return false;\n"
+                "    }\n",
+                min_width);
+        }
+
+        auto checked_pos = std::optional<size_t>(0);
         for (int index = 0; arg[index]; arg++) {
             if (arg[index] == '%') {
+                std::optional<size_t> fixed_width_opt;
+
+                if (checked_pos.has_value()) {
+                    fixed_width_opt = spec_fixed_width(arg[index + 1]);
+                    if (!fixed_width_opt.has_value()) {
+                        printf("    off_inout += %lu;\n", checked_pos.value());
+                    }
+                }
+
                 switch (arg[index + 1]) {
                     case 'a':
                     case 'Z':
                         if (arg[index + 2]) {
                             printf(
-                                "    if (!ptime_Z_upto(dst, str, off, len, "
+                                "    if (!ptime_Z_upto(dst, str, off_inout, "
+                                "len, "
                                 "'%s')) "
                                 "return false;\n",
                                 escape_char(arg[index + 2]));
                         } else {
                             printf(
-                                "    if (!ptime_Z_upto_end(dst, str, off, "
+                                "    if (!ptime_Z_upto_end(dst, str, "
+                                "off_inout, "
                                 "len)) "
                                 "return false;\n");
                         }
-                        arg += 1;
+                        index += 1;
                         break;
                     case '@':
                         printf(
-                            "    if (!ptime_at(dst, str, off, len)) return "
+                            "    if (!ptime_at(dst, str, off_inout, len)) "
+                            "return "
                             "false;\n");
-                        arg += 1;
+                        index += 1;
                         break;
                     default:
-                        printf(
-                            "    if (!ptime_%c(dst, str, off, len)) return "
-                            "false;\n",
-                            arg[index + 1]);
-                        arg += 1;
+                        if (fixed_width_opt) {
+                            printf(
+                                "    PTIME_CHECK_%c(dst, str, off_inout + "
+                                "%lu);\n",
+                                arg[index + 1],
+                                checked_pos.value());
+                        } else {
+                            printf(
+                                "    if (!ptime_%c(dst, str, off_inout, len)) "
+                                "return "
+                                "false;\n",
+                                arg[index + 1]);
+                        }
+                        index += 1;
                         break;
                 }
+                if (checked_pos) {
+                    if (fixed_width_opt.has_value()) {
+                        checked_pos
+                            = checked_pos.value() + fixed_width_opt.value();
+                    } else {
+                        checked_pos = std::nullopt;
+                    }
+                }
             } else {
-                printf(
-                    "    if (!ptime_char('%s', str, off, len)) return false;\n",
-                    escape_char(arg[index]));
+                if (checked_pos) {
+                    printf(
+                        "    PTIME_CHECK_CHAR('%s', str[off_inout + %lu]);\n",
+                        escape_char(arg[index]),
+                        checked_pos.value());
+                    checked_pos = checked_pos.value() + 1;
+                } else {
+                    printf(
+                        "    if (!ptime_char('%s', str, off_inout, len)) "
+                        "return "
+                        "false;\n",
+                        escape_char(arg[index]));
+                }
             }
+        }
+        if (checked_pos.has_value()) {
+            printf("    off_inout += %lu;\n", min_width);
         }
         printf("    return true;\n");
         printf("}\n\n");

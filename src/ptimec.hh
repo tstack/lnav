@@ -93,60 +93,81 @@ bool ptime_b_slow(struct exttm* dst,
                   ssize_t len);
 
 inline bool
-ptime_b(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+ptime_b_int(struct exttm* dst, const char* str, off_t off)
+{
+    auto month_start = (unsigned char*) &str[off];
+    uint32_t month_int = ABR_TO_INT(month_start[0] & ~0x20UL,
+                                    month_start[1] & ~0x20UL,
+                                    month_start[2] & ~0x20UL);
+    int val;
+
+    switch (month_int) {
+        case ABR_TO_INT('J', 'A', 'N'):
+            val = 0;
+            break;
+        case ABR_TO_INT('F', 'E', 'B'):
+            val = 1;
+            break;
+        case ABR_TO_INT('M', 'A', 'R'):
+            val = 2;
+            break;
+        case ABR_TO_INT('A', 'P', 'R'):
+            val = 3;
+            break;
+        case ABR_TO_INT('M', 'A', 'Y'):
+            val = 4;
+            break;
+        case ABR_TO_INT('J', 'U', 'N'):
+            val = 5;
+            break;
+        case ABR_TO_INT('J', 'U', 'L'):
+            val = 6;
+            break;
+        case ABR_TO_INT('A', 'U', 'G'):
+            val = 7;
+            break;
+        case ABR_TO_INT('S', 'E', 'P'):
+            val = 8;
+            break;
+        case ABR_TO_INT('O', 'C', 'T'):
+            val = 9;
+            break;
+        case ABR_TO_INT('N', 'O', 'V'):
+            val = 10;
+            break;
+        case ABR_TO_INT('D', 'E', 'C'):
+            val = 11;
+            break;
+        default:
+            val = -1;
+            break;
+    }
+    if (val >= 0) {
+        dst->et_tm.tm_mon = val;
+        dst->et_flags |= ETF_MONTH_SET;
+        return true;
+    }
+
+    return false;
+}
+
+#define PTIME_CHECK_b(dst, str, off) \
+    if (!ptime_b_int(dst, str, off)) { \
+        off_t tmp_off = off; \
+        if (!ptime_b_slow(dst, str, tmp_off, len)) { \
+            off_inout = off; \
+            return false; \
+        } \
+        auto diff = tmp_off - (off + 3); \
+        off_inout += diff; \
+    }
+
+inline bool
+ptime_b(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     if (off_inout + 3 < len) {
-        auto month_start = (unsigned char*) &str[off_inout];
-        uint32_t month_int = ABR_TO_INT(month_start[0] & ~0x20UL,
-                                        month_start[1] & ~0x20UL,
-                                        month_start[2] & ~0x20UL);
-        int val;
-
-        switch (month_int) {
-            case ABR_TO_INT('J', 'A', 'N'):
-                val = 0;
-                break;
-            case ABR_TO_INT('F', 'E', 'B'):
-                val = 1;
-                break;
-            case ABR_TO_INT('M', 'A', 'R'):
-                val = 2;
-                break;
-            case ABR_TO_INT('A', 'P', 'R'):
-                val = 3;
-                break;
-            case ABR_TO_INT('M', 'A', 'Y'):
-                val = 4;
-                break;
-            case ABR_TO_INT('J', 'U', 'N'):
-                val = 5;
-                break;
-            case ABR_TO_INT('J', 'U', 'L'):
-                val = 6;
-                break;
-            case ABR_TO_INT('A', 'U', 'G'):
-                val = 7;
-                break;
-            case ABR_TO_INT('S', 'E', 'P'):
-                val = 8;
-                break;
-            case ABR_TO_INT('O', 'C', 'T'):
-                val = 9;
-                break;
-            case ABR_TO_INT('N', 'O', 'V'):
-                val = 10;
-                break;
-            case ABR_TO_INT('D', 'E', 'C'):
-                val = 11;
-                break;
-            default:
-                val = -1;
-                break;
-        }
-        if (val >= 0) {
+        if (ptime_b_int(dst, str, off_inout)) {
             off_inout += 3;
-            dst->et_tm.tm_mon = val;
-            dst->et_flags |= ETF_MONTH_SET;
             return true;
         }
     }
@@ -273,20 +294,18 @@ ftime_b(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     }
 }
 
+#define PTIME_CHECK_S(dst, str, off) \
+    dst->et_tm.tm_sec = (str[off] - '0') * 10 + (str[off + 1] - '0'); \
+    if (dst->et_tm.tm_sec < 0 || dst->et_tm.tm_sec >= 60) { \
+        off_inout = off; \
+        return false; \
+    } \
+    dst->et_flags |= ETF_SECOND_SET;
+
 inline bool
-ptime_S(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+ptime_S(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(2, {
-        if (str[off_inout + 1] > '9') {
-            return false;
-        }
-        dst->et_tm.tm_sec
-            = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
-        if (dst->et_tm.tm_sec < 0 || dst->et_tm.tm_sec >= 60) {
-            return false;
-        }
-        dst->et_flags |= ETF_SECOND_SET;
-    });
+    PTIME_CONSUME(2, { PTIME_CHECK_S(dst, str, off_inout); });
 
     return true;
 }
@@ -448,19 +467,20 @@ ftime_L(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((millis / 1) % 10));
 }
 
-inline bool
-ptime_M(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
-{
-    PTIME_CONSUME(2, {
-        if (str[off_inout + 1] > '9') {
-            return false;
-        }
-        dst->et_tm.tm_min
-            = (str[off_inout] - '0') * 10 + (str[off_inout + 1] - '0');
-        dst->et_flags |= ETF_MINUTE_SET;
-    });
+#define PTIME_CHECK_M(dst, str, off) \
+    dst->et_tm.tm_min = (str[off] - '0') * 10 + (str[off + 1] - '0'); \
+    if (dst->et_tm.tm_min < 0 || dst->et_tm.tm_min >= 60) { \
+        off_inout = off; \
+        return false; \
+    } \
+    dst->et_flags |= ETF_MINUTE_SET;
 
-    return (dst->et_tm.tm_min >= 0 && dst->et_tm.tm_min <= 59);
+inline bool
+ptime_M(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+{
+    PTIME_CONSUME(2, { PTIME_CHECK_M(dst, str, off_inout); });
+
+    return true;
 }
 
 inline void
@@ -470,25 +490,25 @@ ftime_M(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((tm.et_tm.tm_min / 1) % 10));
 }
 
+#define PTIME_CHECK_H(dst, str, off) \
+    if (str[off] == ' ') { \
+        dst->et_tm.tm_hour = 0; \
+    } else { \
+        dst->et_tm.tm_hour = (str[off] - '0') * 10; \
+    } \
+    dst->et_tm.tm_hour += (str[off + 1] - '0'); \
+    if (dst->et_tm.tm_hour < 0 || dst->et_tm.tm_hour > 23) { \
+        off_inout = off; \
+        return false; \
+    } \
+    dst->et_flags |= ETF_HOUR_SET;
+
 inline bool
 ptime_H(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(2, {
-        if (str[off_inout + 1] > '9') {
-            return false;
-        }
-        if (isdigit(str[off_inout])) {
-            dst->et_tm.tm_hour = (str[off_inout] - '0') * 10;
-        } else if (str[off_inout] == ' ') {
-            dst->et_tm.tm_hour = 0;
-        } else {
-            return false;
-        }
-        dst->et_tm.tm_hour += (str[off_inout + 1] - '0');
-        dst->et_flags |= ETF_HOUR_SET;
-    });
+    PTIME_CONSUME(2, { PTIME_CHECK_H(dst, str, off_inout); });
 
-    return (dst->et_tm.tm_hour >= 0 && dst->et_tm.tm_hour <= 23);
+    return true;
 }
 
 inline void
@@ -615,27 +635,27 @@ ftime_I(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((hour / 1) % 10));
 }
 
+#define PTIME_CHECK_d(dst, str, off) \
+    dst->et_tm.tm_yday = -1; \
+    if (str[off] == ' ') { \
+        dst->et_tm.tm_mday = 0; \
+    } else { \
+        dst->et_tm.tm_mday = (str[off] - '0') * 10; \
+    } \
+    dst->et_tm.tm_mday += (str[off + 1] - '0'); \
+    if (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31) { \
+        dst->et_flags |= ETF_DAY_SET; \
+    } else { \
+        off_inout = off; \
+        return false; \
+    }
+
 inline bool
 ptime_d(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(2, {
-        dst->et_tm.tm_yday = -1;
-        if (str[off_inout] == ' ') {
-            dst->et_tm.tm_mday = 0;
-        } else {
-            dst->et_tm.tm_mday = (str[off_inout] - '0') * 10;
-        }
-        if (str[off_inout + 1] > '9') {
-            return false;
-        }
-        dst->et_tm.tm_mday += (str[off_inout + 1] - '0');
-    });
+    PTIME_CONSUME(2, { PTIME_CHECK_d(dst, str, off_inout); });
 
-    if (dst->et_tm.tm_mday >= 1 && dst->et_tm.tm_mday <= 31) {
-        dst->et_flags |= ETF_DAY_SET;
-        return true;
-    }
-    return false;
+    return true;
 }
 
 inline void
@@ -732,7 +752,6 @@ ptime_m(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     off_t orig_off = off_inout;
 
-    dst->et_tm.tm_mon = 0;
     PTIME_CONSUME(1, {
         if (str[off_inout] < '0' || str[off_inout] > '9') {
             return false;
@@ -906,22 +925,21 @@ ftime_p(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('M');
 }
 
+#define PTIME_CHECK_Y(dst, str, off) \
+    dst->et_tm.tm_year \
+        = ((str[off + 0] - '0') * 1000 + (str[off + 1] - '0') * 100 \
+           + (str[off + 2] - '0') * 10 + (str[off + 3] - '0') * 1) \
+        - 1900; \
+    if (dst->et_tm.tm_year < 0 || dst->et_tm.tm_year > 1100) { \
+        off_inout = off; \
+        return false; \
+    } \
+    dst->et_flags |= ETF_YEAR_SET;
+
 inline bool
 ptime_Y(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(4, {
-        dst->et_tm.tm_year = ((str[off_inout + 0] - '0') * 1000
-                              + (str[off_inout + 1] - '0') * 100
-                              + (str[off_inout + 2] - '0') * 10
-                              + (str[off_inout + 3] - '0') * 1)
-            - 1900;
-
-        if (dst->et_tm.tm_year < 0 || dst->et_tm.tm_year > 1100) {
-            return false;
-        }
-
-        dst->et_flags |= ETF_YEAR_SET;
-    });
+    PTIME_CONSUME(4, { PTIME_CHECK_Y(dst, str, off_inout); });
 
     return true;
 }
@@ -1227,14 +1245,15 @@ ftime_N(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
     PTIME_APPEND('0' + ((nano / 1) % 10));
 }
 
+#define PTIME_CHECK_CHAR(expected, actual) \
+    if (expected != actual) { \
+        return false; \
+    }
+
 inline bool
 ptime_char(char val, const char* str, off_t& off_inout, ssize_t len)
 {
-    PTIME_CONSUME(1, {
-        if (str[off_inout] != val) {
-            return false;
-        }
-    });
+    PTIME_CONSUME(1, { PTIME_CHECK_CHAR(val, str[off_inout]); });
 
     return true;
 }
@@ -1246,7 +1265,7 @@ ftime_char(char* dst, off_t& off_inout, ssize_t len, char ch)
 }
 
 template<typename T>
-inline bool
+bool
 ptime_hex_to_quad(T& value_inout, const char quad)
 {
     value_inout <<= 4;

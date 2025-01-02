@@ -75,8 +75,8 @@ TEST_CASE("date_time_scanner")
     lnav_config.lc_log_date_time.c_zoned_to_local = false;
     for (const auto* good_time : GOOD_TIMES) {
         date_time_scanner dts;
-        struct timeval tv;
-        struct exttm tm;
+        timeval tv;
+        exttm tm;
         const char* rc;
 
         rc = dts.scan(good_time, strlen(good_time), nullptr, &tm, tv);
@@ -96,8 +96,8 @@ TEST_CASE("date_time_scanner")
     {
         const auto sf
             = string_fragment::from_const("2014-02-11 16:12:34.123.456");
-        struct timeval tv;
-        struct exttm tm;
+        timeval tv;
+        exttm tm;
         date_time_scanner dts;
         const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
         CHECK((tm.et_flags & ETF_MILLIS_SET));
@@ -112,8 +112,8 @@ TEST_CASE("date_time_scanner")
     {
         const auto sf
             = string_fragment::from_const("2014-02-11 16:12:34.12345Z");
-        struct timeval tv;
-        struct exttm tm;
+        timeval tv;
+        exttm tm;
         date_time_scanner dts;
         const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
         printf("fmt %s\n", PTIMEC_FORMAT_STR[dts.dts_fmt_lock]);
@@ -130,8 +130,8 @@ TEST_CASE("date_time_scanner")
     {
         const auto sf
             = string_fragment::from_const("Tue Jul 25 12:01:01 AM UTC 2023");
-        struct timeval tv;
-        struct exttm tm;
+        timeval tv;
+        exttm tm;
         date_time_scanner dts;
         const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
         printf("fmt %s\n", PTIMEC_FORMAT_STR[dts.dts_fmt_lock]);
@@ -150,8 +150,8 @@ TEST_CASE("date_time_scanner")
     {
         static const char* OLD_TIME = "05/18/1960 12:00:53 AM";
         date_time_scanner dts;
-        struct timeval tv;
-        struct exttm tm;
+        timeval tv;
+        exttm tm;
 
         auto rc = dts.scan(OLD_TIME, strlen(OLD_TIME), nullptr, &tm, tv);
         assert(rc != nullptr);
@@ -162,7 +162,7 @@ TEST_CASE("date_time_scanner")
 
     {
         date_time_scanner dts;
-        struct timeval tv;
+        timeval tv;
 
         dts.convert_to_timeval("@40000000433225833b6e1a8c", -1, nullptr, tv);
         assert(tv.tv_sec == 1127359865);
@@ -176,8 +176,8 @@ TEST_CASE("date_time_scanner")
 
     for (const auto* bad_time : BAD_TIMES) {
         date_time_scanner dts;
-        struct timeval tv;
-        struct exttm tm;
+        timeval tv;
+        exttm tm;
 
         printf("Checking bad time: %s\n", bad_time);
         assert(dts.scan(bad_time, strlen(bad_time), nullptr, &tm, tv)
@@ -187,31 +187,31 @@ TEST_CASE("date_time_scanner")
     {
         const char* en_date = "Jan  1 12:00:00";
         const char* es_date = " 1/Ene/2014:12:00:00 +0000";
-        struct timeval en_tv, es_tv;
-        struct exttm en_tm, es_tm;
+        timeval en_tv, es_tv;
+        exttm en_tm, es_tm;
         date_time_scanner dts;
 
         if (setlocale(LC_TIME, "es_ES.UTF-8") != nullptr) {
-            assert(dts.scan(en_date, strlen(en_date), nullptr, &en_tm, en_tv)
-                   != nullptr);
+            CHECK(dts.scan(en_date, strlen(en_date), nullptr, &en_tm, en_tv)
+                  != nullptr);
             dts.clear();
-            assert(dts.scan(es_date, strlen(es_date), nullptr, &es_tm, es_tv)
-                   != nullptr);
+            CHECK(dts.scan(es_date, strlen(es_date), nullptr, &es_tm, es_tv)
+                  != nullptr);
         }
     }
 
     {
         const char* en_date = "Jan  1 12:00:00";
         const char* fr_date = "août 19 11:08:37";
-        struct timeval en_tv, fr_tv;
-        struct exttm en_tm, fr_tm;
+        timeval en_tv, fr_tv;
+        exttm en_tm, fr_tm;
         date_time_scanner dts;
 
         if (setlocale(LC_TIME, "fr_FR.UTF-8") != nullptr) {
-            assert(dts.scan(en_date, strlen(en_date), nullptr, &en_tm, en_tv)
+            CHECK(dts.scan(en_date, strlen(en_date), nullptr, &en_tm, en_tv)
                    != nullptr);
             dts.clear();
-            assert(dts.scan(fr_date, strlen(fr_date), nullptr, &fr_tm, fr_tv)
+            CHECK(dts.scan(fr_date, strlen(fr_date), nullptr, &fr_tm, fr_tv)
                    != nullptr);
         }
     }
@@ -224,30 +224,30 @@ TEST_CASE("date_time_scanner")
         };
         char buf[64];
         date_time_scanner dts;
-        struct exttm tm;
-        struct timeval tv;
+        exttm tm;
+        timeval tv;
 
         const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
-        assert(ts_end - ts == 12);
+        CHECK(ts_end - ts == 12);
         auto rc = dts.ftime(buf, sizeof(buf), fmt, tm);
-        assert(rc == 12);
-        assert(strcmp(ts, buf) == 0);
+        CHECK(rc == 12);
+        CHECK(strcmp(ts, buf) == 0);
     }
 
     {
         const char* epoch_str = "ts 1428721664 ]";
-        struct exttm tm;
+        exttm tm;
         off_t off = 0;
 
         memset(&tm, 0, sizeof(tm));
         bool rc = ptime_fmt("ts %s ]", &tm, epoch_str, off, strlen(epoch_str));
-        assert(rc);
-        assert(tm2sec(&tm.et_tm) == 1428721664);
+        CHECK(rc);
+        CHECK(tm2sec(&tm.et_tm) == 1428721664);
     }
 
     {
         const char* epoch_str = "ts 60150c93 ]";
-        struct exttm tm;
+        exttm tm;
         off_t off = 0;
 
         memset(&tm, 0, sizeof(tm));
@@ -268,8 +268,8 @@ TEST_CASE("date_time_scanner")
         };
         char buf[64];
         date_time_scanner dts;
-        struct exttm tm;
-        struct timeval tv;
+        exttm tm;
+        timeval tv;
 
         const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
         assert(ts_end - ts == 15);

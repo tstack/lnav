@@ -26,7 +26,7 @@ add_subdirectory(yajlpp)
 add_executable(bin2c bin2c.hh ../tools/bin2c.c)
 target_link_libraries(bin2c ZLIB::ZLIB)
 
-add_executable(ptimec ptimec.hh ptimec.c)
+add_executable(ptimec ptimec.hh ptimec.cc)
 
 set(TIME_FORMATS
         "@%@"
@@ -133,8 +133,10 @@ set(TIME_FORMATS
 
 set(GEN_SRCS "")
 
-add_custom_command(OUTPUT time_fmts.cc COMMAND ptimec ${TIME_FORMATS} >
-        time_fmts.cc)
+add_custom_command(
+        OUTPUT time_fmts.cc
+        DEPENDS ptimec
+        COMMAND ptimec ${TIME_FORMATS} > time_fmts.cc)
 
 add_library(lnavdt STATIC config.h.in ptimec.hh ptimec_rt.cc time_fmts.cc)
 target_include_directories(lnavdt PUBLIC . ${CMAKE_CURRENT_BINARY_DIR} third-party/date/include)
@@ -334,7 +336,10 @@ add_library(
         third-party/scnlib/include/scn/istream.h
         third-party/scnlib/include/scn/scan.h
 )
-target_include_directories(cppscnlib PRIVATE third-party/scnlib/src/deps/fast_float/single_include)
+target_include_directories(
+        cppscnlib PRIVATE
+        third-party/scnlib/src
+        third-party/scnlib/src/deps/fast_float/single_include)
 target_include_directories(cppscnlib PUBLIC third-party/scnlib/include)
 
 add_library(

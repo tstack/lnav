@@ -90,7 +90,7 @@ builtin-sh-scripts.cc: $(BIN2C_PATH) $(BUILTIN_SHSCRIPTS)
 
 include time_formats.am
 
-time_fmts.cc: ptimec$(BUILD_EXEEXT)
+time_fmts.cc: ptimec$(BUILD_EXEEXT) time_formats.am
 	$(PTIME_V)./ptimec$(BUILD_EXEEXT) $(TIME_FORMATS) > $@
 
 if HAVE_RE2C
@@ -556,11 +556,11 @@ lnav_test_SOURCES = \
     $(PLUGIN_SRCS)
 
 if CROSS_COMPILING
-ptimec$(BUILD_EXEEXT): ptimec.c
-	$(AM_V_CC) $(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -g3 -o $@ $? -fPIE
+ptimec$(BUILD_EXEEXT): ptimec.cc
+	$(AM_V_CXX) $(CXX_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -g3 -o $@ $? -fPIE
 else
-ptimec$(BUILD_EXEEXT): ptimec.c
-	$(AM_V_CC) $(CC) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $? -fPIE
+ptimec$(BUILD_EXEEXT): ptimec.cc
+	$(AM_V_CXX) $(CXX) $(CPPFLAGS) $(LDFLAGS) -g3 -o $@ $? -fPIE
 endif
 
 if HAVE_RE2C
@@ -572,7 +572,7 @@ EXTRA_DIST = \
     third-party/prqlc-c/Cargo.toml \
     third-party/prqlc-c/cbindgen.toml \
     third-party/prqlc-c/src/lib.rs \
-	ptimec.c
+	ptimec.cc
 
 CLEANFILES = \
 	ptimec$(BUILD_EXEEXT)

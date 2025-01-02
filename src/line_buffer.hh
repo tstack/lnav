@@ -371,6 +371,8 @@ private:
     file_off_t lb_last_line_offset{-1}; /*< */
 
     std::vector<uint32_t> lb_line_starts;
+    file_off_t lb_next_buffer_offset{0};
+    size_t lb_next_line_start_index{0};
     std::vector<bool> lb_line_is_utf;
     std::vector<bool> lb_line_has_ansi;
     stats lb_stats;
