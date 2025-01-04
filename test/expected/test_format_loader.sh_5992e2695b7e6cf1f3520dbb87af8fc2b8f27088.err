@@ -158,7 +158,6 @@
          [1msemi      [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m; [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
          [1mstd       [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mpid>[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m”
          [1mwith-level[0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel>[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
-         
 [33m⚠ warning[0m: invalid pattern: “[1m/bad_sample_log/regex/semi[0m”
    [33mreason[0m: pattern does not match any samples
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:10

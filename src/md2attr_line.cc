@@ -289,6 +289,9 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                     new_block_text.append(line).append("\n");
                 }
             }
+            if (!cmd_block.empty()) {
+                new_block_text.append(cmd_block);
+            }
             block_text = new_block_text.move();
         }
 

@@ -7,4 +7,3 @@
             │                        ─┬─  
             │                         ╰─── `take` expected int or range, but found this.access_log.abc
          ───╯
-         

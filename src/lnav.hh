@@ -234,6 +234,8 @@ struct lnav_data_t {
 
     db_label_source ld_db_row_source;
     db_overlay_source ld_db_overlay;
+    db_label_source ld_db_example_row_source;
+    db_overlay_source ld_db_example_overlay;
     db_label_source ld_db_preview_source[2];
     db_overlay_source ld_db_preview_overlay_source[2];
     std::vector<std::string> ld_db_key_names;

@@ -1216,6 +1216,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         auto _ign_signal = finally([] {
             signal(SIGWINCH, SIG_IGN);
             lnav_data.ld_winched = false;
+            lnav_data.ld_window = nullptr;
         });
 
         auto_fd errpipe[2];
@@ -1226,8 +1227,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         auto pipe_err_handle
             = log_pipe_err(errpipe[0].release(), errpipe[1].release());
 
-        notcurses_options nco;
-        memset(&nco, 0, sizeof(nco));
+        notcurses_options nco = {};
         nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
         nco.loglevel = NCLOGLEVEL_PANIC;
         auto create_screen_res = screen_curses::create(nco);
@@ -3005,6 +3005,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_sub_source(&lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
+    lnav_data.ld_db_example_row_source.dls_max_column_width = 15;
+    lnav_data.ld_db_example_overlay.dos_labels
+        = &lnav_data.ld_db_example_row_source;
     lnav_data.ld_db_preview_overlay_source[0].dos_labels
         = &lnav_data.ld_db_preview_source[0];
     lnav_data.ld_db_preview_overlay_source[1].dos_labels

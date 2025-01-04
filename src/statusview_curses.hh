@@ -186,7 +186,6 @@ private:
     status_data_source* sc_source{nullptr};
     ncplane* sc_window{nullptr};
     bool sc_enabled{true};
-    role_t sc_default_role{role_t::VCR_STATUS};
 
     struct displayed_field {
         displayed_field(line_range lr, size_t field_index)

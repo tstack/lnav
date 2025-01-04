@@ -3,7 +3,6 @@
 [36m | [0mparse error: object key and value must be separated by a colon (':')
 [36m | [0m          ar_log": {         "abc"     } }                          
 [36m | [0m                     (right here) ------^                           
-[36m | [0m                                                                    
 [33m⚠ warning[0m: format file is missing “[1m$schema[0m” property
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m
 [36m =[0m   [36mnote[0m: the schema specifies the supported format version and can be used with editors to automatically validate the file

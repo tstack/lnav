@@ -1009,8 +1009,8 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
         return;
     }
 
-    auto& dls = lnav_data.ld_db_row_source;
-    auto& dos = lnav_data.ld_db_overlay;
+    auto& dls = lnav_data.ld_db_example_row_source;
+    auto& dos = lnav_data.ld_db_example_overlay;
     auto& db_tc = lnav_data.ld_views[LNV_DB];
 
     for (const auto& [index, ex] : lnav::itertools::enumerate(ht.ht_example, 1)) {
@@ -1128,11 +1128,7 @@ eval_example(const help_text& ht, const help_example& ex)
 
         switch (ht.ht_context) {
             default: {
-                auto& dls = lnav_data.ld_db_row_source;
-                auto old_width = dls.dls_max_column_width;
-                dls.dls_max_column_width = 15;
                 execute_example(*res_map, ht);
-                dls.dls_max_column_width = old_width;
                 break;
             }
         }

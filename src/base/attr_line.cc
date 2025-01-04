@@ -36,6 +36,7 @@
 #include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "config.h"
+#include "intervaltree/IntervalTree.h"
 #include "lnav_log.hh"
 #include "pcrepp/pcre2pp.hh"
 
@@ -399,13 +400,43 @@ attr_line_t::subline(size_t start, size_t len) const
 void
 attr_line_t::split_lines(std::vector<attr_line_t>& lines) const
 {
+    using line_type_t = interval_tree::Interval<size_t, attr_line_t>;
+    using lines_tree_t = interval_tree::IntervalTree<size_t, attr_line_t>;
+
+    auto eols = std::vector<line_type_t>{};
     size_t pos = 0, next_line;
 
     while ((next_line = this->al_string.find('\n', pos)) != std::string::npos) {
-        lines.emplace_back(this->subline(pos, next_line - pos));
+        eols.emplace_back(
+            pos,
+            next_line > pos ? next_line - 1 : next_line,
+            attr_line_t{this->al_string.substr(pos, next_line - pos)});
         pos = next_line + 1;
     }
-    lines.emplace_back(this->subline(pos));
+    if (pos < this->al_string.length()) {
+        eols.emplace_back(pos,
+                          this->al_string.length() - 1,
+                          attr_line_t{this->al_string.substr(pos)});
+    }
+    auto lines_tree = lines_tree_t{std::move(eols)};
+    for (const auto& sa : this->al_attrs) {
+        if (sa.sa_range.empty()) {
+            continue;
+        }
+        auto range_end = sa.sa_range.end_for_string(this->al_string) - 1;
+        lines_tree.visit_overlapping(
+            sa.sa_range.lr_start, range_end, [&sa](const auto& cinterval) {
+                auto& interval = const_cast<line_type_t&>(cinterval);
+                auto lr = line_range(interval.start, interval.stop + 1);
+                auto ilr = lr.intersection(sa.sa_range).shift(0, -lr.lr_start);
+                interval.value.al_attrs.emplace_back(
+                    ilr, std::make_pair(sa.sa_type, sa.sa_value));
+            });
+    }
+    lines_tree.visit_all([&lines](auto& cinterval) {
+        auto& interval = const_cast<line_type_t&>(cinterval);
+        lines.emplace_back(std::move(interval.value));
+    });
 }
 
 attr_line_t&

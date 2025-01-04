@@ -6,4 +6,3 @@
            [4m$inum[0m:INTEGER = “1”
            [4m$nul[0m:NULL = “<NULL>”
            [4m$str[0m:TEXT = “abc”
-         

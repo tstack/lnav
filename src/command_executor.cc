@@ -65,8 +65,10 @@ using namespace lnav::roles::literals;
 
 exec_context INIT_EXEC_CONTEXT;
 
+static sig_atomic_t sql_counter = 0;
+
 int
-sql_progress(const struct log_cursor& lc)
+sql_progress(const log_cursor& lc)
 {
     ssize_t total = lnav_data.ld_log_source.text_line_count();
     off_t off = lc.lc_curr_line;
@@ -83,8 +85,6 @@ sql_progress(const struct log_cursor& lc)
         return 1;
     }
 
-    static sig_atomic_t sql_counter = 0;
-
     if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
         lnav_data.ld_bottom_source.update_loading(off, total);
         lnav_data.ld_status_refresher();
@@ -96,6 +96,12 @@ sql_progress(const struct log_cursor& lc)
 void
 sql_progress_finished()
 {
+    if (sql_counter == 0) {
+        return;
+    }
+
+    sql_counter = 0;
+
     if (lnav_data.ld_window == nullptr) {
         return;
     }
@@ -265,9 +271,9 @@ execute_search(const std::string& search_cmd)
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
-    db_label_source& dls = *(ec.ec_label_source_stack.back());
+    auto& dls = *(ec.ec_label_source_stack.back());
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-    struct timeval start_tv, end_tv;
+    timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
     std::string retval;
     int retcode = SQLITE_OK;
@@ -516,7 +522,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             } else {
                 int row_count = dls.dls_rows.size();
                 char row_count_buf[128];
-                struct timeval diff_tv;
+                timeval diff_tv;
 
                 timersub(&end_tv, &start_tv, &diff_tv);
                 snprintf(row_count_buf,
