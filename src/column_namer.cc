@@ -38,9 +38,16 @@
 #include "config.h"
 #include "sql_util.hh"
 
-const char column_namer::BUILTIN_COL[] = "col";
+const auto column_namer::BUILTIN_COL = string_fragment::from_const("col");
 
-column_namer::column_namer(language lang) : cn_language(lang) {}
+column_namer::column_namer(language lang) : cn_language(lang)
+{
+    this->cn_builtin_names.emplace_back(BUILTIN_COL);
+    this->cn_builtin_names.emplace_back(
+        string_fragment::from_const("log_time"));
+    this->cn_builtin_names.emplace_back(
+        string_fragment::from_const("log_level"));
+}
 
 bool
 column_namer::existing_name(const string_fragment& in_name) const
@@ -80,7 +87,7 @@ column_namer::add_column(const string_fragment& in_name)
     int num = 0;
 
     if (in_name.empty()) {
-        base_name = string_fragment::from_const(BUILTIN_COL);
+        base_name = BUILTIN_COL;
     } else {
         base_name = in_name;
     }

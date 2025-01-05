@@ -72,6 +72,11 @@ external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<std::shared_ptr<external_log_format>>
     external_log_format::GRAPH_ORDERED_FORMATS;
 
+const intern_string_t log_format::LOG_TIME_STR
+    = intern_string::lookup("log_time");
+const intern_string_t log_format::LOG_LEVEL_STR
+    = intern_string::lookup("log_level");
+
 static const uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
     | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_SECOND_SET;
 
@@ -2793,27 +2798,35 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
         vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
         vd->vd_internal = true;
+
+        this->elf_value_defs[LOG_TIME_STR] = vd;
     }
     if (startswith(this->elf_level_field.get(), "/")) {
         this->elf_level_field
             = intern_string::lookup(this->elf_level_field.get() + 1);
     }
-    if (!this->elf_level_field.empty()
-        && this->elf_value_defs.find(this->elf_level_field)
-            == this->elf_value_defs.end())
-    {
-        auto& vd = this->elf_value_defs[this->elf_level_field];
-        if (vd.get() == nullptr) {
-            vd = std::make_shared<value_def>(
-                this->elf_level_field,
-                value_kind_t::VALUE_TEXT,
-                logline_value_meta::internal_column{},
-                this);
+    if (!this->elf_level_field.empty()) {
+        auto level_iter = this->elf_value_defs.find(this->elf_level_field);
+        if (level_iter == this->elf_value_defs.end()) {
+            auto& vd = this->elf_value_defs[this->elf_level_field];
+            if (vd.get() == nullptr) {
+                vd = std::make_shared<value_def>(
+                    this->elf_level_field,
+                    value_kind_t::VALUE_TEXT,
+                    logline_value_meta::internal_column{},
+                    this);
+            }
+            vd->vd_meta.lvm_name = this->elf_level_field;
+            vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
+            vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
+            vd->vd_internal = true;
+
+            if (this->elf_level_field != this->elf_body_field) {
+                this->elf_value_defs[LOG_LEVEL_STR] = vd;
+            }
+        } else {
+            this->elf_value_defs[LOG_LEVEL_STR] = level_iter->second;
         }
-        vd->vd_meta.lvm_name = this->elf_level_field;
-        vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
-        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
-        vd->vd_internal = true;
     }
     if (!this->elf_body_field.empty()) {
         auto& vd = this->elf_value_defs[this->elf_body_field];

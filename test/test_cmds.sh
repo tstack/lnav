@@ -168,6 +168,14 @@ run_cap_test ${lnav_test} -n -d /tmp/lnav.err \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -c ":hide-fields log_time" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":hide-fields log_level" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
     -c ":hide-fields foobar" \
     ${test_dir}/logfile_access_log.0
 

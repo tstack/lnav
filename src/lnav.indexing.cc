@@ -56,6 +56,10 @@ public:
             return indexing_result::CONTINUE;
         }
 
+        if (lnav_data.ld_sigint_count.load() > 0) {
+            return indexing_result::BREAK;
+        }
+
         /* XXX require(off <= total); */
         if (off > (off_t) total) {
             off = total;

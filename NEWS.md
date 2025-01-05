@@ -3,11 +3,13 @@
 Features:
 * Log message timestamps are now represented with microsecond
   precision internally instead of just millisecond.
+* The `log_time` and `log_level` fields can now be hidden.
 
 Bug Fixes:
 * Improved startup time.
 * Reduced memory footprint.
 * Improved search performance.
+* Reduce time to open help text.
 
 Maintenance:
 * Replaced ncurses with notcurses.

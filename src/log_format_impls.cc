@@ -237,7 +237,10 @@ public:
                 && !dst.empty()
                 && dst.back().get_time<std::chrono::seconds>().count()
                     == log_tv.tv_sec
-                && dst.back().get_subsecond_time<std::chrono::microseconds>().count() != 0)
+                && dst.back()
+                        .get_subsecond_time<std::chrono::microseconds>()
+                        .count()
+                    != 0)
             {
                 auto log_ms
                     = dst.back()
@@ -496,6 +499,7 @@ struct separated_string {
 
 class bro_log_format : public log_format {
 public:
+    static const intern_string_t TS;
     struct field_def {
         logline_value_meta fd_meta;
         logline_value_meta* fd_root_meta;
@@ -575,7 +579,6 @@ public:
     {
         static const intern_string_t STATUS_CODE
             = intern_string::lookup("bro_status_code");
-        static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
         static const intern_string_t ID_ORIG_H
             = intern_string::lookup("bro_id_orig_h");
@@ -858,7 +861,6 @@ public:
                   logline_value_vector& values,
                   bool annotate_module) const override
     {
-        static const intern_string_t TS = intern_string::lookup("bro_ts");
         static const intern_string_t UID = intern_string::lookup("bro_uid");
 
         auto& sbr = values.lvv_sbr;
@@ -919,8 +921,12 @@ public:
         return retval;
     }
 
-    bool hide_field(const intern_string_t field_name, bool val) override
+    bool hide_field(intern_string_t field_name, bool val) override
     {
+        if (field_name == LOG_TIME_STR) {
+            field_name = TS;
+        }
+
         auto fd_iter = FIELD_META.find(field_name);
         if (fd_iter == FIELD_META.end()) {
             return false;
@@ -1004,7 +1010,7 @@ public:
         std::shared_ptr<bro_log_table> retval = nullptr;
 
         auto& tables = get_tables();
-        auto iter = tables.find(this->blf_format_name);
+        const auto iter = tables.find(this->blf_format_name);
         if (iter == tables.end()) {
             retval = std::make_shared<bro_log_table>(*this);
             tables[this->blf_format_name] = retval;
@@ -1029,6 +1035,8 @@ public:
 
 std::unordered_map<const intern_string_t, logline_value_meta>
     bro_log_format::FIELD_META;
+
+const intern_string_t bro_log_format::TS = intern_string::lookup("bro_ts");
 
 struct ws_separated_string {
     const char* ss_str;
@@ -1129,6 +1137,9 @@ struct ws_separated_string {
 
 class w3c_log_format : public log_format {
 public:
+    static const intern_string_t F_DATE;
+    static const intern_string_t F_TIME;
+
     struct field_def {
         const intern_string_t fd_name;
         logline_value_meta fd_meta;
@@ -1225,12 +1236,10 @@ public:
                            const line_info& li,
                            shared_buffer_ref& sbr)
     {
-        static const intern_string_t F_DATE = intern_string::lookup("date");
         static const intern_string_t F_DATE_LOCAL
             = intern_string::lookup("date-local");
         static const intern_string_t F_DATE_UTC
             = intern_string::lookup("date-UTC");
-        static const intern_string_t F_TIME = intern_string::lookup("time");
         static const intern_string_t F_TIME_LOCAL
             = intern_string::lookup("time-local");
         static const intern_string_t F_TIME_UTC
@@ -1239,8 +1248,8 @@ public:
             = intern_string::lookup("sc-status");
 
         ws_separated_string ss(sbr.get_data(), sbr.length());
-        struct timeval date_tv{0, 0}, time_tv{0, 0};
-        struct exttm date_tm, time_tm;
+        timeval date_tv{0, 0}, time_tv{0, 0};
+        exttm date_tm, time_tm;
         bool found_date = false, found_time = false;
         log_level_t level = LEVEL_INFO;
 
@@ -1329,8 +1338,8 @@ public:
         }
 
         if (found_time) {
-            struct exttm tm = time_tm;
-            struct timeval tv;
+            exttm tm = time_tm;
+            timeval tv;
 
             if (found_date) {
                 tm.et_tm.tm_year = date_tm.et_tm.tm_year;
@@ -1593,6 +1602,17 @@ public:
 
     bool hide_field(const intern_string_t field_name, bool val) override
     {
+        if (field_name == LOG_TIME_STR) {
+            auto date_iter = FIELD_META.find(F_DATE);
+            auto time_iter = FIELD_META.find(F_TIME);
+            if (date_iter == FIELD_META.end() || time_iter == FIELD_META.end()) {
+                return false;
+            }
+            date_iter->second.lvm_user_hidden = val;
+            time_iter->second.lvm_user_hidden = val;
+            return true;
+        }
+
         auto fd_iter = FIELD_META.find(field_name);
         if (fd_iter == FIELD_META.end()) {
             return false;
@@ -1683,7 +1703,7 @@ public:
         std::shared_ptr<w3c_log_table> retval = nullptr;
 
         auto& tables = get_tables();
-        auto iter = tables.find(this->wlf_format_name);
+        const auto iter = tables.find(this->wlf_format_name);
         if (iter == tables.end()) {
             retval = std::make_shared<w3c_log_table>(*this);
             tables[this->wlf_format_name] = retval;
@@ -1705,6 +1725,9 @@ public:
 
 std::unordered_map<const intern_string_t, logline_value_meta>
     w3c_log_format::FIELD_META;
+
+const intern_string_t w3c_log_format::F_DATE = intern_string::lookup("date");
+const intern_string_t w3c_log_format::F_TIME = intern_string::lookup("time");
 
 static size_t KNOWN_FIELD_INDEX = 0;
 const std::vector<w3c_log_format::field_def> w3c_log_format::KNOWN_FIELDS = {

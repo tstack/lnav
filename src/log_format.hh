@@ -655,6 +655,10 @@ public:
                                     std::equal_to<intern_string_t>>;
     desc_cap_map lf_desc_captures;
 
+
+    static const intern_string_t LOG_TIME_STR;
+    static const intern_string_t LOG_LEVEL_STR;
+
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;
 

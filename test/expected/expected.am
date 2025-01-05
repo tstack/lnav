@@ -104,6 +104,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cmds.sh_4f06183ed231669965965f5042fbbb507fa7deab.out \
     $(srcdir)/%reldir%/test_cmds.sh_512872aebaae73ca4f33fa93acb2f4e3b018f8b4.err \
     $(srcdir)/%reldir%/test_cmds.sh_512872aebaae73ca4f33fa93acb2f4e3b018f8b4.out \
+    $(srcdir)/%reldir%/test_cmds.sh_517d6b34e8de5a4cf17ee4d943fc3a01caa4a4e5.err \
+    $(srcdir)/%reldir%/test_cmds.sh_517d6b34e8de5a4cf17ee4d943fc3a01caa4a4e5.out \
     $(srcdir)/%reldir%/test_cmds.sh_53a9686102f69b07b034df291f554a00b265ed20.err \
     $(srcdir)/%reldir%/test_cmds.sh_53a9686102f69b07b034df291f554a00b265ed20.out \
     $(srcdir)/%reldir%/test_cmds.sh_55c2fd15ec2c7d96dbef7b36a42a1b7b42f90dbc.err \
@@ -254,6 +256,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_cmds.sh_ed5b73be0b991e0e8d6735e31df5b37c4286321b.out \
     $(srcdir)/%reldir%/test_cmds.sh_f788d5f5932905d09ecbd581040ec5ce76459da5.err \
     $(srcdir)/%reldir%/test_cmds.sh_f788d5f5932905d09ecbd581040ec5ce76459da5.out \
+    $(srcdir)/%reldir%/test_cmds.sh_f9566350497edeab6c8e9995bdad965c835fc386.err \
+    $(srcdir)/%reldir%/test_cmds.sh_f9566350497edeab6c8e9995bdad965c835fc386.out \
     $(srcdir)/%reldir%/test_cmds.sh_ff6faebbde8586e04bfadba14a3d2bb4451784ad.err \
     $(srcdir)/%reldir%/test_cmds.sh_ff6faebbde8586e04bfadba14a3d2bb4451784ad.out \
     $(srcdir)/%reldir%/test_config.sh_13fa2428c26fa12e732209620e21466b36bab252.err \

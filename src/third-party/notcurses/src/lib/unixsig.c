@@ -103,7 +103,7 @@ int drop_signals(void* nc){
       sigaction(SIGBUS, &old_bus, NULL);
       sigaction(SIGFPE, &old_fpe, NULL);
       sigaction(SIGILL, &old_ill, NULL);
-      sigaction(SIGINT, &old_int, NULL);
+      // sigaction(SIGINT, &old_int, NULL);
       sigaction(SIGQUIT, &old_quit, NULL);
       sigaction(SIGSEGV, &old_segv, NULL);
       sigaction(SIGTERM, &old_term, NULL);
@@ -240,7 +240,7 @@ int setup_signals(void* vnc, bool no_quit_sigs, bool no_winch_sigs,
     ret |= sigaction(SIGBUS, &sa, &old_bus);
     ret |= sigaction(SIGFPE, &sa, &old_fpe);
     ret |= sigaction(SIGILL, &sa, &old_ill);
-    ret |= sigaction(SIGINT, &sa, &old_int);
+    // ret |= sigaction(SIGINT, &sa, &old_int);
     ret |= sigaction(SIGQUIT, &sa, &old_quit);
     ret |= sigaction(SIGSEGV, &sa, &old_segv);
     ret |= sigaction(SIGTERM, &sa, &old_term);

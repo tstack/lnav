@@ -482,7 +482,7 @@ attr_line_t::apply_hide()
     auto& sa = this->al_attrs;
 
     for (auto& sattr : sa) {
-        if (sattr.sa_type == &SA_HIDDEN && sattr.sa_range.length() > 3) {
+        if (sattr.sa_type == &SA_HIDDEN && sattr.sa_range.length() > 1) {
             auto& lr = sattr.sa_range;
 
             std::for_each(sa.begin(), sa.end(), [&](string_attr& attr) {
