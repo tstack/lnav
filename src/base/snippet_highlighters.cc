@@ -203,7 +203,7 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
                     }
                     break;
                 case '?': {
-                    struct line_range lr(lpc, lpc + 1);
+                    line_range lr(lpc, lpc + 1);
 
                     if (lpc == sub.lr_start || (lpc - sub.lr_start) == 0) {
                         alb.overlay_attr_for_char(

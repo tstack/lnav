@@ -33,19 +33,14 @@
 #include <filesystem>
 #include <map>
 #include <optional>
-#include <set>
 #include <string>
 
 #include <sys/time.h>
 
 #include "auto_mem.hh"
-#include "base/intern_string.hh"
-#include "lnav.console.hh"
-#include "mapbox/variant_io.hpp"
 #include "time_util.hh"
 
-namespace lnav {
-namespace piper {
+namespace lnav::piper {
 
 enum class demux_output_t {
     not_applicable,
@@ -84,27 +79,6 @@ extern const char HEADER_MAGIC[4];
 
 std::optional<auto_buffer> read_header(int fd, const char* first8);
 
-class multiplex_matcher {
-public:
-    struct found {
-        std::string f_id;
-    };
-
-    struct partial {};
-    struct not_found {};
-
-    using match_result = mapbox::util::variant<found, partial, not_found>;
-
-    match_result match(const string_fragment& line);
-
-    std::vector<lnav::console::user_message> mm_details;
-
-private:
-    std::set<std::string> mm_partial_match_ids;
-    size_t mm_line_count{0};
-};
-
-}  // namespace piper
-}  // namespace lnav
+}  // namespace lnav::piper
 
 #endif

@@ -218,7 +218,7 @@ readline_command_highlighter_int(attr_line_t& al,
             for (last = start; last < sub.length() && !isspace(line[last]);
                  last++)
                 ;
-            struct line_range lr{(int) start, (int) last};
+            line_range lr{(int) start, (int) last};
 
             if (x && lr.length() > 0 && !lr.contains(x.value())
                 && !lr.contains(x.value() - 1))

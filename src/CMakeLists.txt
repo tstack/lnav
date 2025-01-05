@@ -353,6 +353,7 @@ target_include_directories(base64 PUBLIC third-party/base64/include)
 
 add_library(
         lnavnotcurses STATIC
+        third-party/notcurses/src/compat/compat.c
         third-party/notcurses/src/lib/automaton.c
         third-party/notcurses/src/lib/blit.c
         third-party/notcurses/src/lib/debug.c
@@ -402,15 +403,14 @@ add_library(lnavfileio STATIC
         grep_proc.hh
         line_buffer.hh
         log_level.hh
-        piper.looper.cfg.hh
-        piper.looper.hh
+        piper.header.hh
         pollable.hh
         shared_buffer.hh
 
         grep_proc.cc
         line_buffer.cc
         log_level.cc
-        piper.looper.cc
+        piper.header.cc
         pollable.cc
         shared_buffer.cc
 )
@@ -485,6 +485,8 @@ add_library(
         data_scanner_re.cc
         data_parser.cc
         file_converter_manager.cc
+        piper.looper.cc
+        piper.match.cc
         plain_text_source.cc
         pretty_printer.cc
         pugixml/pugixml.cpp
@@ -606,6 +608,9 @@ add_library(
         md2attr_line.hh
         md4cpp.hh
         file_converter_manager.hh
+        piper.looper.cfg.hh
+        piper.looper.hh
+        piper.match.hh
         plain_text_source.hh
         pretty_printer.hh
         preview_status_source.hh

@@ -38,6 +38,7 @@
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "line_buffer.hh"
+#include "piper.match.hh"
 #include "text_format.hh"
 
 detect_file_format_result

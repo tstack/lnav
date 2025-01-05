@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2023, Timothy Stack
+* Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,54 +27,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "piper.file.hh"
+#ifndef lnav_piper_header_hh
+#define lnav_piper_header_hh
 
-#include <arpa/inet.h>
-#include <unistd.h>
-
-#include "base/injector.hh"
-#include "base/lnav_log.hh"
-#include "base/paths.hh"
+#include "base/piper.file.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 namespace lnav::piper {
 
-const char HEADER_MAGIC[4] = {'L', 0, 'N', 1};
+extern const typed_json_path_container<lnav::piper::header> header_handlers;
 
-const std::filesystem::path&
-storage_path()
-{
-    static auto INSTANCE = lnav::paths::workdir() / "piper";
-
-    return INSTANCE;
 }
 
-std::optional<auto_buffer>
-read_header(int fd, const char* first8)
-{
-    if (memcmp(first8, HEADER_MAGIC, sizeof(HEADER_MAGIC)) != 0) {
-        log_trace("first 4 bytes are not a piper header: %02x%02x%02x%02x",
-                  first8[0],
-                  first8[1],
-                  first8[2],
-                  first8[3]);
-        return std::nullopt;
-    }
-
-    uint32_t meta_size = ntohl(*((uint32_t*) &first8[4]));
-
-    auto meta_buf = auto_buffer::alloc(meta_size);
-    if (meta_buf.in() == nullptr) {
-        log_error("failed to alloc %d bytes for header", meta_size);
-        return std::nullopt;
-    }
-    auto meta_prc = pread(fd, meta_buf.in(), meta_size, 8);
-    if (meta_prc != meta_size) {
-        log_error("failed to read piper header: %s", strerror(errno));
-        return std::nullopt;
-    }
-    meta_buf.resize(meta_size);
-
-    return meta_buf;
-}
-
-}  // namespace lnav::piper
+#endif

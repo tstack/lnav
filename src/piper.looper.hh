@@ -36,10 +36,10 @@
 #include <string>
 
 #include "base/auto_fd.hh"
+#include "base/lnav.console.hh"
 #include "base/piper.file.hh"
 #include "base/result.h"
 #include "safe/safe.h"
-#include "yajlpp/yajlpp_def.hh"
 
 namespace lnav::piper {
 
@@ -186,8 +186,6 @@ public:
 private:
     std::shared_ptr<looper> h_looper;
 };
-
-extern const typed_json_path_container<lnav::piper::header> header_handlers;
 
 using running_handle = handle<state::running>;
 

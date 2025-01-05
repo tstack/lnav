@@ -54,7 +54,7 @@
 #include "log.watch.hh"
 #include "log_format.hh"
 #include "logfile.cfg.hh"
-#include "piper.looper.hh"
+#include "piper.header.hh"
 #include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;

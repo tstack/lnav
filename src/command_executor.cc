@@ -1054,25 +1054,24 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     auto row_number = dls.dls_rows.size();
     dls.dls_rows.resize(row_number + 1);
     for (int lpc = 0; lpc < ncols; lpc++) {
-        auto* raw_value = sqlite3_column_value(stmt, lpc);
-        const auto value_type = sqlite3_value_type(raw_value);
+        const auto value_type = sqlite3_column_type(stmt, lpc);
         scoped_value_t value;
         auto& hm = dls.dls_headers[lpc];
 
         switch (value_type) {
             case SQLITE_INTEGER:
-                value = (int64_t) sqlite3_value_int64(raw_value);
+                value = (int64_t) sqlite3_column_int64(stmt, lpc);
                 break;
             case SQLITE_FLOAT:
-                value = sqlite3_value_double(raw_value);
+                value = sqlite3_column_double(stmt, lpc);
                 break;
             case SQLITE_NULL:
                 value = null_value_t{};
                 break;
             default:
                 value = string_fragment::from_bytes(
-                    sqlite3_value_text(raw_value),
-                    sqlite3_value_bytes(raw_value));
+                    sqlite3_column_text(stmt, lpc),
+                    sqlite3_column_bytes(stmt, lpc));
                 break;
         }
         dls.push_column(value);
@@ -1082,6 +1081,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         {
             switch (value_type) {
                 case SQLITE_TEXT:
+                    auto *raw_value = sqlite3_column_value(stmt, lpc);
                     hm.hm_column_type = SQLITE_TEXT;
                     hm.hm_sub_type = sqlite3_value_subtype(raw_value);
                     break;
@@ -1121,22 +1121,22 @@ internal_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
             continue;
         }
 
-        auto* raw_value = sqlite3_column_value(stmt, lpc);
         auto value_type = sqlite3_column_type(stmt, lpc);
         scoped_value_t value;
         switch (value_type) {
             case SQLITE_INTEGER:
-                value = (int64_t) sqlite3_value_int64(raw_value);
+                value = (int64_t) sqlite3_column_int64(stmt, lpc);
                 break;
             case SQLITE_FLOAT:
-                value = sqlite3_value_double(raw_value);
+                value = sqlite3_column_double(stmt, lpc);
                 break;
             case SQLITE_NULL:
                 value = null_value_t{};
                 break;
             default:
-                value = std::string((const char*) sqlite3_value_text(raw_value),
-                                    sqlite3_value_bytes(raw_value));
+                value
+                    = std::string((const char*) sqlite3_column_text(stmt, lpc),
+                                  sqlite3_column_bytes(stmt, lpc));
                 break;
         }
         vars[column_name] = value;

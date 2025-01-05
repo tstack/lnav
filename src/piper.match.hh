@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2023, Timothy Stack
+* Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,54 +27,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "piper.file.hh"
+#ifndef lnav_piper_match_hh
+#define lnav_piper_match_hh
 
-#include <arpa/inet.h>
-#include <unistd.h>
+#include <set>
+#include <string>
 
-#include "base/injector.hh"
-#include "base/lnav_log.hh"
-#include "base/paths.hh"
+#include "base/intern_string.hh"
+#include "base/lnav.console.hh"
+#include "mapbox/variant.hpp"
 
 namespace lnav::piper {
 
-const char HEADER_MAGIC[4] = {'L', 0, 'N', 1};
+class multiplex_matcher {
+public:
+    struct found {
+        std::string f_id;
+    };
 
-const std::filesystem::path&
-storage_path()
-{
-    static auto INSTANCE = lnav::paths::workdir() / "piper";
+    struct partial {};
+    struct not_found {};
 
-    return INSTANCE;
+    using match_result = mapbox::util::variant<found, partial, not_found>;
+
+    match_result match(const string_fragment& line);
+
+    std::vector<lnav::console::user_message> mm_details;
+
+private:
+    std::set<std::string> mm_partial_match_ids;
+    size_t mm_line_count{0};
+};
+
 }
 
-std::optional<auto_buffer>
-read_header(int fd, const char* first8)
-{
-    if (memcmp(first8, HEADER_MAGIC, sizeof(HEADER_MAGIC)) != 0) {
-        log_trace("first 4 bytes are not a piper header: %02x%02x%02x%02x",
-                  first8[0],
-                  first8[1],
-                  first8[2],
-                  first8[3]);
-        return std::nullopt;
-    }
-
-    uint32_t meta_size = ntohl(*((uint32_t*) &first8[4]));
-
-    auto meta_buf = auto_buffer::alloc(meta_size);
-    if (meta_buf.in() == nullptr) {
-        log_error("failed to alloc %d bytes for header", meta_size);
-        return std::nullopt;
-    }
-    auto meta_prc = pread(fd, meta_buf.in(), meta_size, 8);
-    if (meta_prc != meta_size) {
-        log_error("failed to read piper header: %s", strerror(errno));
-        return std::nullopt;
-    }
-    meta_buf.resize(meta_size);
-
-    return meta_buf;
-}
-
-}  // namespace lnav::piper
+#endif

@@ -48,7 +48,7 @@
 #include "log_format.hh"
 #include "log_format_ext.hh"
 #include "mapbox/variant.hpp"
-#include "piper.looper.hh"
+#include "piper.header.hh"
 #include "regex101.import.hh"
 #include "session_data.hh"
 

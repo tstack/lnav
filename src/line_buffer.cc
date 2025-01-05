@@ -59,7 +59,7 @@
 #include "fmtlib/fmt/format.h"
 #include "hasher.hh"
 #include "line_buffer.hh"
-#include "piper.looper.hh"
+#include "piper.header.hh"
 #include "scn/scan.h"
 
 using namespace std::chrono_literals;

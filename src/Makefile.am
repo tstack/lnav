@@ -307,8 +307,10 @@ noinst_HEADERS = \
 	mapbox/variant_visitor.hpp \
 	md2attr_line.hh \
 	md4cpp.hh \
+	piper.header.hh \
 	piper.looper.hh \
 	piper.looper.cfg.hh \
+	piper.match.hh \
 	plain_text_source.hh \
 	pollable.hh \
 	pretty_printer.hh \
@@ -484,7 +486,9 @@ libdiag_a_SOURCES = \
 	md4cpp.cc \
 	network-extension-functions.cc \
 	data_parser.cc \
+	piper.header.cc \
 	piper.looper.cc \
+	piper.match.cc \
 	plain_text_source.cc \
 	pollable.cc \
 	pretty_printer.cc \

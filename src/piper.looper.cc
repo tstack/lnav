@@ -45,7 +45,9 @@
 #include "line_buffer.hh"
 #include "lnav_config_fwd.hh"
 #include "pcrepp/pcre2pp.hh"
+#include "piper.header.hh"
 #include "piper.looper.cfg.hh"
+#include "piper.match.hh"
 #include "robin_hood/robin_hood.h"
 
 using namespace std::chrono_literals;
@@ -125,41 +127,6 @@ public:
 };
 
 piper_config_listener _PIPER_LISTENER;
-
-const json_path_container header_env_handlers = {
-    yajlpp::pattern_property_handler("(?<name>.*)")
-        .with_synopsis("<name>")
-        .for_field(&lnav::piper::header::h_env),
-};
-
-const json_path_container header_demux_handlers = {
-    yajlpp::pattern_property_handler("(?<name>.*)")
-        .with_synopsis("<name>")
-        .for_field(&lnav::piper::header::h_demux_meta),
-};
-
-static const json_path_handler_base::enum_value_t demux_output_values[] = {
-    {"not_applicable", demux_output_t::not_applicable},
-    {"signal", demux_output_t::signal},
-    {"invalid", demux_output_t::invalid},
-
-    json_path_handler_base::ENUM_TERMINATOR,
-};
-
-const typed_json_path_container<lnav::piper::header> header_handlers = {
-    yajlpp::property_handler("name").for_field(&lnav::piper::header::h_name),
-    yajlpp::property_handler("timezone")
-        .for_field(&lnav::piper::header::h_timezone),
-    yajlpp::property_handler("ctime").for_field(&lnav::piper::header::h_ctime),
-    yajlpp::property_handler("cwd").for_field(&lnav::piper::header::h_cwd),
-    yajlpp::property_handler("env").with_children(header_env_handlers),
-    yajlpp::property_handler("mux_id").for_field(
-        &lnav::piper::header::h_mux_id),
-    yajlpp::property_handler("demux_output")
-        .with_enum_values(demux_output_values)
-        .for_field(&lnav::piper::header::h_demux_output),
-    yajlpp::property_handler("demux_meta").with_children(header_demux_handlers),
-};
 
 static std::map<std::string, std::string>
 environ_to_map()

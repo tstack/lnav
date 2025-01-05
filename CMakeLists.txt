@@ -34,6 +34,7 @@ set(lnav_LIBS
         PkgConfig::readline
         LibArchive::LibArchive
         ZLIB::ZLIB
+        ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libunistring.a
 )
 
 add_subdirectory(src)
