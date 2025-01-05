@@ -623,7 +623,9 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                    || li.li_utf8_scan_result.usr_has_ansi);
         }
         if (prescan_size > 0 && this->lf_index.size() >= prescan_size
-            && prescan_time != this->lf_index[prescan_size - 1].get_time<std::chrono::microseconds>())
+            && prescan_time
+                != this->lf_index[prescan_size - 1]
+                       .get_time<std::chrono::microseconds>())
         {
             retval = true;
         }
@@ -931,8 +933,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 this->lf_notes.writeAccess()->emplace(note_type::not_utf,
                                                       note_um);
                 if (this->lf_logfile_observer != nullptr) {
-                    this->lf_logfile_observer->logfile_indexing(
-                        this->shared_from_this(), 0, 0);
+                    this->lf_logfile_observer->logfile_indexing(this, 0, 0);
                 }
                 break;
             }
@@ -1030,7 +1031,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
             if (this->lf_logfile_observer != nullptr) {
                 auto indexing_res = this->lf_logfile_observer->logfile_indexing(
-                    this->shared_from_this(),
+                    this,
                     this->lf_line_buffer.get_read_offset(
                         li.li_file_range.next_offset()),
                     st.st_size);
@@ -1086,7 +1087,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 }
 
                 for (const auto& pd : this->lf_applicable_partitioners) {
-                    static thread_local auto part_md
+                    thread_local auto part_md
                         = lnav::pcre2pp::match_data::unitialized();
 
                     auto curr_ll = this->end() - 1;
@@ -1146,8 +1147,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lf_notes.writeAccess()->emplace(note_type::indexing_disabled,
                                                   note_um);
             if (this->lf_logfile_observer != nullptr) {
-                this->lf_logfile_observer->logfile_indexing(
-                    this->shared_from_this(), 0, 0);
+                this->lf_logfile_observer->logfile_indexing(this, 0, 0);
             }
         }
 
@@ -1219,7 +1219,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lf_sort_needed = false;
     }
 
-    this->lf_index_time = std::chrono::seconds{this->lf_line_buffer.get_file_time()};
+    this->lf_index_time
+        = std::chrono::seconds{this->lf_line_buffer.get_file_time()};
     if (this->lf_index_time.count() == 0) {
         this->lf_index_time = std::chrono::seconds{st.st_mtime};
     }
@@ -1355,7 +1356,7 @@ logfile::reobserve_from(iterator iter)
 
         if (this->lf_logfile_observer != nullptr) {
             auto indexing_res = this->lf_logfile_observer->logfile_indexing(
-                this->shared_from_this(), offset, this->size());
+                this, offset, this->size());
             if (indexing_res == logfile_observer::indexing_result::BREAK) {
                 break;
             }
@@ -1373,7 +1374,7 @@ logfile::reobserve_from(iterator iter)
     }
     if (this->lf_logfile_observer != nullptr) {
         this->lf_logfile_observer->logfile_indexing(
-            this->shared_from_this(), this->size(), this->size());
+            this, this->size(), this->size());
         this->lf_logline_observer->logline_eof(*this);
     }
 }
@@ -1685,4 +1686,3 @@ logfile::estimated_remaining_lines() const
 
     return remaining_bytes / bytes_per_line;
 }
-

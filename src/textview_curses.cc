@@ -1083,7 +1083,8 @@ textview_curses::grep_value_for_line(vis_line_t line, std::string& value_out)
         if (retval.li_utf8_scan_result.is_valid()
             && retval.li_utf8_scan_result.usr_has_ansi)
         {
-            // log_debug("has ansi %d", retval.li_utf8_scan_result.usr_has_ansi);
+            // log_debug("has ansi %d",
+            // retval.li_utf8_scan_result.usr_has_ansi);
             auto new_size = erase_ansi_escapes(value_out);
             value_out.resize(new_size);
         }
@@ -1382,6 +1383,12 @@ logfile_filter_state::resize(size_t newsize)
                0,
                sizeof(uint32_t) * (newsize - old_mask_size));
     }
+}
+
+void
+logfile_filter_state::reserve(size_t expected)
+{
+    this->tfs_mask.reserve(expected);
 }
 
 std::optional<size_t>

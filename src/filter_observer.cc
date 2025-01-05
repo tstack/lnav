@@ -27,10 +27,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <algorithm>
+#include <iterator>
+
 #include "filter_observer.hh"
 
+#include "base/lnav_log.hh"
 #include "config.h"
 #include "log_format.hh"
+#include "shared_buffer.hh"
 
 void
 line_filter_observer::logline_new_lines(const logfile& lf,
@@ -38,7 +43,7 @@ line_filter_observer::logline_new_lines(const logfile& lf,
                                         logfile::const_iterator ll_end,
                                         const shared_buffer_ref& sbr)
 {
-    size_t offset = std::distance(lf.begin(), ll_begin);
+    const auto offset = std::distance(lf.begin(), ll_begin);
 
     require(&lf == this->lfo_filter_state.tfs_logfile.get());
 
@@ -53,7 +58,7 @@ line_filter_observer::logline_new_lines(const logfile& lf,
             lf.get_format()->get_subline(*ll_begin, sbr_copy);
         }
         sbr_copy.erase_ansi();
-        for (auto& filter : this->lfo_filter_stack) {
+        for (const auto& filter : this->lfo_filter_stack) {
             if (filter->lf_deleted) {
                 continue;
             }
@@ -69,7 +74,8 @@ line_filter_observer::logline_new_lines(const logfile& lf,
 void
 line_filter_observer::logline_eof(const logfile& lf)
 {
-    for (auto& iter : this->lfo_filter_stack) {
+    this->lfo_filter_state.reserve(lf.size() + lf.estimated_remaining_lines());
+    for (const auto& iter : this->lfo_filter_stack) {
         if (iter->lf_deleted) {
             continue;
         }
@@ -82,7 +88,7 @@ line_filter_observer::get_min_count(size_t max) const
 {
     size_t retval = max;
 
-    for (auto& filter : this->lfo_filter_stack) {
+    for (const auto& filter : this->lfo_filter_stack) {
         if (filter->lf_deleted) {
             continue;
         }

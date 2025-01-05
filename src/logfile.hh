@@ -78,7 +78,7 @@ public:
      * @param total The total size of the file.
      * @return false
      */
-    virtual indexing_result logfile_indexing(const std::shared_ptr<logfile>& lf,
+    virtual indexing_result logfile_indexing(const logfile* lf,
                                              file_off_t off,
                                              file_size_t total)
         = 0;
@@ -87,7 +87,7 @@ public:
 struct logfile_activity {
     int64_t la_polls{0};
     int64_t la_reads{0};
-    struct rusage la_initial_index_rusage {};
+    struct rusage la_initial_index_rusage{};
 };
 
 /**
@@ -180,7 +180,10 @@ public:
      * @return The last modified time of the file when the file was last
      * indexed.
      */
-    std::chrono::microseconds get_modified_time() const { return this->lf_index_time; }
+    std::chrono::microseconds get_modified_time() const
+    {
+        return this->lf_index_time;
+    }
 
     int get_time_offset_line() const { return this->lf_time_offset_line; }
 
@@ -464,7 +467,7 @@ private:
     std::optional<std::filesystem::path> lf_actual_path;
     std::string lf_basename;
     std::string lf_content_id;
-    struct stat lf_stat {};
+    struct stat lf_stat{};
     std::shared_ptr<log_format> lf_format;
     uint32_t lf_format_quality{0};
     std::vector<logline> lf_index;
@@ -473,9 +476,7 @@ private:
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;
     int lf_time_offset_line{0};
-    struct timeval lf_time_offset {
-        0, 0
-    };
+    struct timeval lf_time_offset{0, 0};
     bool lf_is_closed{false};
     bool lf_indexing{true};
     bool lf_partial_line{false};

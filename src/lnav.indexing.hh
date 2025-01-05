@@ -45,6 +45,6 @@ rebuild_indexes_result_t rebuild_indexes(
 void rebuild_indexes_repeatedly();
 bool rescan_files(bool required = false);
 bool update_active_files(file_collection& new_files);
-void do_observer_update(const std::shared_ptr<logfile>& lf);
+void do_observer_update(const logfile* lf);
 
 #endif

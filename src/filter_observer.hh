@@ -30,21 +30,24 @@
 #ifndef filter_observer_hh
 #define filter_observer_hh
 
-#include <sys/types.h>
+#include <cstdint>
+#include <memory>
 
+#include "base/file_range.hh"
 #include "logfile.hh"
+#include "shared_buffer.hh"
 #include "textview_curses.hh"
 
 class line_filter_observer : public logline_observer {
 public:
-    line_filter_observer(filter_stack& fs, std::shared_ptr<logfile> lf)
+    line_filter_observer(filter_stack& fs, const std::shared_ptr<logfile>& lf)
         : lfo_filter_stack(fs), lfo_filter_state(lf)
     {
     }
 
     void logline_restart(const logfile& lf, file_size_t rollback_size) override
     {
-        for (auto& filter : this->lfo_filter_stack) {
+        for (const auto& filter : this->lfo_filter_stack) {
             filter->revert_to_last(this->lfo_filter_state, rollback_size);
         }
     }

@@ -48,6 +48,7 @@
 #include "ring_span.hh"
 #include "text_format.hh"
 #include "textview_curses_fwd.hh"
+#include "vis_line.hh"
 
 class textview_curses;
 
@@ -64,6 +65,8 @@ public:
     void clear_deleted_filter_state(uint32_t used_mask);
 
     void resize(size_t newsize);
+
+    void reserve(size_t expected);
 
     std::optional<size_t> content_line_to_vis_line(uint32_t line);
 
