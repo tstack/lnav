@@ -132,20 +132,26 @@ string_fragment
 vt52_curses::map_input(const ncinput& ch)
 {
     /* Check for an escape sequence, otherwise just return the char. */
-    const auto esc = vt52_escape_map::singleton()[ch.id];
-    if (esc) {
-        return esc.value();
+    if (ch.modifiers == 0) {
+        const auto esc = vt52_escape_map::singleton()[ch.id];
+        if (esc) {
+            return esc.value();
+        }
     }
     if (ch.id == 0x7f) {
         this->vc_map_buffer = static_cast<char>(ch.id);
         return string_fragment::from_c_str(&this->vc_map_buffer);
     }
 
-    if (ncinput_shift_p(&ch) && ch.id == NCKEY_LEFT) {
+    if ((ncinput_shift_p(&ch) || ncinput_ctrl_p(&ch) || ncinput_alt_p(&ch))
+        && ch.id == NCKEY_LEFT)
+    {
         return string_fragment::from_const("\033b");
     }
 
-    if (ncinput_shift_p(&ch) && ch.id == NCKEY_RIGHT) {
+    if ((ncinput_shift_p(&ch) || ncinput_ctrl_p(&ch) || ncinput_alt_p(&ch))
+        && ch.id == NCKEY_RIGHT)
+    {
         return string_fragment::from_const("\033f");
     }
 

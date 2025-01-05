@@ -197,7 +197,7 @@ grep_proc<LineType>::child_loop()
             // When scanning to the end of the source, we need to return the
             // highest line that was seen so that the next request that
             // continues from the end works properly.
-            fmt::println(stdout, FMT_STRING("h%d"), line - 1);
+            fmt::println(stdout, FMT_STRING("h{}"), line - 1);
         }
         this->gp_highest_line = line - 1_vl;
         this->child_term();

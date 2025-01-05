@@ -38,7 +38,7 @@
 #include "config.h"
 #include "sql_util.hh"
 
-const auto column_namer::BUILTIN_COL = string_fragment::from_const("col");
+const string_fragment column_namer::BUILTIN_COL = string_fragment::from_const("col");
 
 column_namer::column_namer(language lang) : cn_language(lang)
 {
