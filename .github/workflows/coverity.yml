@@ -38,6 +38,7 @@ jobs:
           libbz2-dev
           libcurl4-openssl-dev
           libreadline-dev
+          libunistring-dev
           pipx
           tshark
           zlib1g-dev
