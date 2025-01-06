@@ -157,6 +157,7 @@ public:
             dup2(slave, STDOUT_FILENO);
 
             unsetenv("TERM_PROGRAM");
+            unsetenv("COLORTERM");
             setenv("IN_SCRIPTY", "1", 1);
             setenv("TERM", term_type, 1);
         } else {
