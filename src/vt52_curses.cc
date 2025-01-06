@@ -143,13 +143,15 @@ vt52_curses::map_input(const ncinput& ch)
         return string_fragment::from_c_str(&this->vc_map_buffer);
     }
 
-    if ((ncinput_shift_p(&ch) || ncinput_ctrl_p(&ch) || ncinput_alt_p(&ch))
+    if ((ncinput_shift_p(&ch) || ncinput_ctrl_p(&ch) || ncinput_alt_p(&ch)
+         || ncinput_meta_p(&ch))
         && ch.id == NCKEY_LEFT)
     {
         return string_fragment::from_const("\033b");
     }
 
-    if ((ncinput_shift_p(&ch) || ncinput_ctrl_p(&ch) || ncinput_alt_p(&ch))
+    if ((ncinput_shift_p(&ch) || ncinput_ctrl_p(&ch) || ncinput_alt_p(&ch)
+         || ncinput_meta_p(&ch))
         && ch.id == NCKEY_RIGHT)
     {
         return string_fragment::from_const("\033f");

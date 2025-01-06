@@ -163,6 +163,13 @@ prep_xtmodkeys(inputctx* ictx){
       .modifiers = NCKEY_MOD_CTRL, },
     { .esc = "\x1b[6S", .key = NCKEY_F04,
       .modifiers = NCKEY_MOD_CTRL | NCKEY_MOD_SHIFT, },
+
+    { .esc = "\033b", .key = NCKEY_LEFT,
+      .modifiers = NCKEY_MOD_ALT },
+    { .esc = "\033f", .key = NCKEY_RIGHT,
+        .modifiers = NCKEY_MOD_ALT },
+
+
     { .esc = NULL, .key = 0, },
   }, *k;
   for(k = keys ; k->esc ; ++k){
