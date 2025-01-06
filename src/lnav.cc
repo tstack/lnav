@@ -1244,31 +1244,44 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         auto sc = create_screen_res.unwrap();
         auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());
+        auto& mouse_i = injector::get<xterm_mouse&>();
 
-        ec.ec_ui_callbacks.uc_pre_stdout_write = [&sc]() {
-            notcurses_leave_alternate_screen(sc.get_notcurses());
+        auto ui_cb_mouse = false;
+        ec.ec_ui_callbacks.uc_pre_stdout_write
+            = [&sc, &mouse_i, &ui_cb_mouse]() {
+                ui_cb_mouse = mouse_i.is_enabled();
+                if (ui_cb_mouse) {
+                    mouse_i.set_enabled(sc.get_notcurses(), false);
+                }
+                notcurses_leave_alternate_screen(sc.get_notcurses());
 
-            // notcurses sets stdio to non-blocking, which can cause an issue
-            // when writing since there is a chance of an EAGAIN happening
-            const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
-            fcntl(STDOUT_FILENO, F_SETFL, fl & ~O_NONBLOCK);
-        };
-        ec.ec_ui_callbacks.uc_post_stdout_write = [&sc]() {
-            const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
-            fcntl(STDOUT_FILENO, F_SETFL, fl | O_NONBLOCK);
+                  // notcurses sets stdio to non-blocking, which can cause an
+                  // issue when writing since there is a chance of an EAGAIN
+                  // happening
+                  const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
+                  fcntl(STDOUT_FILENO, F_SETFL, fl & ~O_NONBLOCK);
+              };
+        ec.ec_ui_callbacks.uc_post_stdout_write
+            = [&sc, &mouse_i, &ui_cb_mouse]() {
+                  const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
+                  fcntl(STDOUT_FILENO, F_SETFL, fl | O_NONBLOCK);
 
-            auto nci = ncinput{};
-            do {
-                notcurses_get_blocking(sc.get_notcurses(), &nci);
-            } while (nci.evtype == NCTYPE_RELEASE || ncinput_lock_p(&nci)
-                     || ncinput_modifier_p(&nci));
-            notcurses_enter_alternate_screen(sc.get_notcurses());
-            notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
-            // XXX doing this refresh twice since it doesn't seem to be enough
-            // to do it once...
-            notcurses_render(sc.get_notcurses());
-            notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
-        };
+                  auto nci = ncinput{};
+                  do {
+                      notcurses_get_blocking(sc.get_notcurses(), &nci);
+                  } while (nci.evtype == NCTYPE_RELEASE || ncinput_lock_p(&nci)
+                           || ncinput_modifier_p(&nci));
+                  notcurses_enter_alternate_screen(sc.get_notcurses());
+
+                  if (ui_cb_mouse) {
+                      mouse_i.set_enabled(sc.get_notcurses(), true);
+                  }
+                  notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
+                  // XXX doing this refresh twice since it doesn't seem to be
+                  // enough to do it once...
+                  notcurses_render(sc.get_notcurses());
+                  notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
+              };
         ec.ec_ui_callbacks.uc_redraw = [&sc]() {
             notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
         };
@@ -1276,8 +1289,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_behavior lb;
 
         ui_periodic_timer::singleton();
-
-        auto& mouse_i = injector::get<xterm_mouse&>();
 
         mouse_i.set_behavior(&lb);
         mouse_i.set_enabled(
