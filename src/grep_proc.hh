@@ -70,7 +70,9 @@ public:
      * @param line The line to retrieve.
      * @param value_out The destination for the line value.
      */
-    virtual std::optional<line_info> grep_value_for_line(LineType line, std::string& value_out) = 0;
+    virtual std::optional<line_info> grep_value_for_line(LineType line,
+                                                         std::string& value_out)
+        = 0;
 
     virtual LineType grep_initial_line(LineType start, LineType highest)
     {
@@ -165,7 +167,7 @@ public:
 
     using injectable = grep_proc(std::shared_ptr<pollable_supervisor>);
 
-    virtual ~grep_proc();
+    ~grep_proc() override;
 
     /** @param gpd The sink to send results to. */
     void set_sink(grep_proc_sink<LineType>* gpd) { this->gp_sink = gpd; }

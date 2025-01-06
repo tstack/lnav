@@ -30,9 +30,12 @@
 #ifndef lnav_all_logs_vtab_hh
 #define lnav_all_logs_vtab_hh
 
-#include <array>
+#include <cstdint>
+#include <vector>
 
+#include "log_format.hh"
 #include "log_vtab_impl.hh"
+#include "logfile.hh"
 
 /**
  * A virtual table that provides access to all log messages from all formats.

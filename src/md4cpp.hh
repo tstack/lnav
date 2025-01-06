@@ -33,6 +33,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "base/intern_string.hh"
 #include "base/result.h"
@@ -143,7 +144,8 @@ std::string escape_html(const std::string& content);
 
 namespace literals {
 
-inline std::string operator"" _emoji(const char* str, std::size_t len)
+inline std::string
+operator"" _emoji(const char* str, std::size_t len)
 {
     const auto& em = get_emoji_map();
     const auto key = std::string(str, len);

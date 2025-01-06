@@ -79,6 +79,9 @@ input_dispatcher::new_input(const struct timeval& current_time,
               ch.utf8,
               eff_str.c_str(),
               ch.evtype);
+    if (ncinput_mouse_p(&ch)) {
+        log_debug("  mouse [x=%d;y=%d]", ch.x, ch.y);
+    }
     if (!ncinput_mouse_p(&ch) && ch.evtype == NCTYPE_RELEASE) {
         return;
     }
@@ -106,7 +109,8 @@ input_dispatcher::new_input(const struct timeval& current_time,
                         }).unwrapOr(size_t{1});
         log_debug("seq_size %d", seq_size);
         if (seq_size == 1) {
-            snprintf(keyseq.data(), keyseq.size(), "x%02x", ch.eff_text[0] & 0xff);
+            snprintf(
+                keyseq.data(), keyseq.size(), "x%02x", ch.eff_text[0] & 0xff);
             log_debug("key %s", keyseq.data());
             handled = this->id_key_handler(nc, ch, keyseq.data());
         }

@@ -30,6 +30,7 @@
 #include "all_logs_vtab.hh"
 
 #include "base/attr_line.hh"
+#include "base/intern_string.hh"
 #include "config.h"
 #include "data_parser.hh"
 #include "elem_to_json.hh"

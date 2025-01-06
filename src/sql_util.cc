@@ -1056,7 +1056,7 @@ annotate_sql_statement(attr_line_t& al)
         = lnav::pcre2pp::code::from_const(R"(^;?(\.\w+))");
     static const auto ws_pattern = lnav::pcre2pp::code::from_const(R"(\A\s+)");
 
-    auto& line = al.get_string();
+    const auto& line = al.get_string();
     auto& sa = al.get_attrs();
 
     if (lnav::sql::is_prql(line)) {
@@ -1282,7 +1282,7 @@ is_prql(const string_fragment& sf)
     return (trimmed.startswith("let ") || trimmed.startswith("from"));
 }
 
-const char* prql_transforms[] = {
+static const char* const prql_transforms[] = {
     "aggregate",
     "append",
     "derive",
@@ -1299,7 +1299,7 @@ const char* prql_transforms[] = {
     nullptr,
 };
 
-const char* prql_keywords[] = {
+const char* const prql_keywords[] = {
     "average", "avg", "case", "count", "count_distinct", "false", "func",
     "into",    "let", "max",  "min",   "module",         "null",  "prql",
     "stddev",  "sum", "true", "type",

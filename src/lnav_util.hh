@@ -42,12 +42,12 @@
 
 #include <fcntl.h>
 #include <poll.h>
+#include <stdio.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
 
-#include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/result.h"

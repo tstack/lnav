@@ -33,8 +33,11 @@
 #define sql_help_hh
 
 #include <map>
+#include <string>
+#include <vector>
 
 #include "base/attr_line.hh"
+#include "base/intern_string.hh"
 #include "help_text.hh"
 
 extern string_attr_type<void> SQL_COMMAND_ATTR;
@@ -78,7 +81,7 @@ bool is_prql(const string_fragment& sf);
 
 void annotate_prql_statement(attr_line_t& al);
 
-extern const char* prql_keywords[];
+extern const char* const prql_keywords[];
 extern std::multimap<std::string, const help_text*> prql_functions;
 
 }  // namespace sql
@@ -87,7 +90,7 @@ namespace prql {
 
 std::string quote_ident(std::string id);
 
-}
+}  // namespace prql
 
 }  // namespace lnav
 
