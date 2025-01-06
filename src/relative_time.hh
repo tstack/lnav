@@ -30,7 +30,7 @@
 #ifndef LNAV_RELATIVE_TIME_HH
 #define LNAV_RELATIVE_TIME_HH
 
-#include <sys/time.h>
+#include <time.h>
 
 #define __STDC_FORMAT_MACROS
 #include <array>
@@ -187,43 +187,39 @@ public:
         return true;
     }
 
-    struct exttm adjust_now() const
+    exttm adjust_now() const
     {
-        struct exttm tm;
+        exttm tm;
         time_t now;
 
         time(&now);
-        tm.et_tm = *gmtime(&now);
+        gmtime_r(&now, &tm.et_tm);
         return this->adjust(tm);
     }
 
-    struct exttm adjust(const struct timeval& tv) const
+    exttm adjust(const struct timeval& tv) const
     {
-        struct exttm tm;
-
-        tm.et_tm = *gmtime(&tv.tv_sec);
-        tm.et_nsec = tv.tv_usec * 1000;
-        return this->adjust(tm);
+        return this->adjust(exttm::from_tv(tv));
     }
 
-    struct exttm adjust(const struct exttm& tm) const;
+    exttm adjust(const struct exttm& tm) const;
 
-    std::optional<exttm> window_start(const struct exttm& tm) const;
+    std::optional<exttm> window_start(const exttm& tm) const;
 
     int64_t to_microseconds() const;
 
-    void to_timeval(struct timeval& tv_out) const
+    void to_timeval(timeval& tv_out) const
     {
-        int64_t us = this->to_microseconds();
+        const auto us = this->to_microseconds();
 
         tv_out.tv_sec = us / (1000 * 1000);
         tv_out.tv_usec = us % (1000 * 1000);
     }
 
-    struct timeval to_timeval() const
+    timeval to_timeval() const
     {
-        int64_t us = this->to_microseconds();
-        struct timeval retval;
+        const auto us = this->to_microseconds();
+        timeval retval;
 
         retval.tv_sec = us / (1000 * 1000);
         retval.tv_usec = us % (1000 * 1000);

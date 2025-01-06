@@ -44,8 +44,7 @@
 #include "base/result.h"
 #include "mapbox/variant.hpp"
 
-namespace lnav {
-namespace pcre2pp {
+namespace lnav::pcre2pp {
 
 class code;
 struct capture_builder;
@@ -170,6 +169,8 @@ public:
 
         return *this;
     }
+
+    bool found_p(uint32_t options = 0);
 
     matches_result matches(uint32_t options = 0);
 
@@ -380,7 +381,6 @@ capture_builder::for_each(F func) &&
     return Err(eret);
 }
 
-}  // namespace pcre2pp
-}  // namespace lnav
+}  // namespace lnav::pcre2pp
 
 #endif

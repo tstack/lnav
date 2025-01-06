@@ -1002,10 +1002,7 @@ relative_time::window_start(const struct exttm& tm) const
         tv.tv_sec = us / 1000000ULL;
         tv.tv_usec = us % 1000000ULL;
 
-        retval.et_tm = *gmtime(&tv.tv_sec);
-        retval.et_nsec = tv.tv_usec * 1000ULL;
-
-        return retval;
+        return exttm::from_tv(tv);
     }
 
     bool clear = false;

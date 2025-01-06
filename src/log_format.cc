@@ -1401,11 +1401,9 @@ external_log_format::scan(logfile& lf,
             continue;
         }
 
-        auto match_res = pat->capture_from(line_sf)
-                             .into(md)
-                             .matches(PCRE2_NO_UTF_CHECK)
-                             .ignore_error();
-        if (!match_res) {
+        auto found_match
+            = pat->capture_from(line_sf).into(md).found_p(PCRE2_NO_UTF_CHECK);
+        if (!found_match) {
             if (!this->lf_pattern_locks.empty() && pat_index != -1) {
                 curr_fmt = -1;
                 pat_index = -1;

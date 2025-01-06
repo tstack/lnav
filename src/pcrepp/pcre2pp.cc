@@ -34,8 +34,7 @@
 #include "config.h"
 #include "ww898/cp_utf8.hpp"
 
-namespace lnav {
-namespace pcre2pp {
+namespace lnav::pcre2pp {
 
 std::string
 match_data::to_string() const
@@ -395,6 +394,53 @@ code::named_captures::end() const
     };
 }
 
+bool
+matcher::found_p(uint32_t options)
+{
+    this->mb_input.i_offset = this->mb_input.i_next_offset;
+
+    if (this->mb_input.i_offset == -1) {
+        return false;
+    }
+
+    auto rc = pcre2_match(this->mb_code.p_code.in(),
+                          this->mb_input.i_string.udata(),
+                          this->mb_input.i_string.length(),
+                          this->mb_input.i_offset,
+                          options,
+                          this->mb_match_data.md_data.in(),
+                          nullptr);
+
+    if (rc > 0) {
+        this->mb_match_data.md_input = this->mb_input;
+        this->mb_match_data.md_code = &this->mb_code;
+        this->mb_match_data.md_capture_end = rc;
+        if (this->mb_match_data[0]->empty()
+            && this->mb_match_data[0]->sf_end >= this->mb_input.i_string.sf_end)
+        {
+            this->mb_input.i_next_offset = -1;
+        } else if (this->mb_match_data[0]->empty()) {
+            this->mb_input.i_next_offset
+                = this->mb_match_data.md_ovector[1] + 1;
+        } else {
+            this->mb_input.i_next_offset = this->mb_match_data.md_ovector[1];
+        }
+        this->mb_match_data.md_input.i_next_offset
+            = this->mb_input.i_next_offset;
+        return true;
+    }
+
+    this->mb_match_data.md_input = this->mb_input;
+    this->mb_match_data.md_ovector[0] = this->mb_input.i_offset;
+    this->mb_match_data.md_ovector[1] = this->mb_input.i_offset;
+    this->mb_match_data.md_capture_end = 1;
+    if (rc == PCRE2_ERROR_NOMATCH) {
+        return false;
+    }
+
+    return false;
+}
+
 matcher::matches_result
 matcher::matches(uint32_t options)
 {
@@ -474,5 +520,4 @@ matcher::error::get_message()
     return {(const char*) buffer};
 }
 
-}  // namespace pcre2pp
-}  // namespace lnav
+}  // namespace lnav::pcre2pp

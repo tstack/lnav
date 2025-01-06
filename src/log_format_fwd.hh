@@ -32,12 +32,18 @@
 #ifndef lnav_log_format_fwd_hh
 #define lnav_log_format_fwd_hh
 
+#include <chrono>
+#include <cstdint>
+#include <optional>
 #include <utility>
 
 #include <sys/types.h>
+#include <time.h>
 
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/file_range.hh"
+#include "base/intern_string.hh"
+#include "base/log_level_enum.hh"
 #include "base/map_util.hh"
 #include "base/string_attr_type.hh"
 #include "byte_array.hh"
@@ -153,11 +159,12 @@ public:
           ll_sub_offset(0), ll_valid_utf(1), ll_level(lev), ll_module_id(mod),
           ll_meta_mark(0), ll_expr_mark(0)
     {
-        memset(this->ll_schema, 0, sizeof(this->ll_schema));
+        this->ll_schema[0] = 0;
+        this->ll_schema[1] = 0;
     }
 
     logline(file_off_t off,
-            const struct timeval& tv,
+            const timeval& tv,
             log_level_t lev,
             uint8_t mod = 0,
             uint8_t opid = 0)
@@ -166,7 +173,8 @@ public:
           ll_expr_mark(0)
     {
         this->set_time(tv);
-        memset(this->ll_schema, 0, sizeof(this->ll_schema));
+        this->ll_schema[0] = 0;
+        this->ll_schema[1] = 0;
     }
 
     /** @return The offset of the line in the file. */
@@ -192,10 +200,10 @@ public:
 
     void to_exttm(struct exttm& tm_out) const
     {
-        auto secs = static_cast<time_t>(
+        const auto secs = static_cast<time_t>(
             this->get_time<std::chrono::seconds>().count());
 
-        tm_out.et_tm = *gmtime(&secs);
+        gmtime_r(&secs, &tm_out.et_tm);
         tm_out.et_nsec
             = this->get_subsecond_time<std::chrono::nanoseconds>().count();
     }
@@ -216,10 +224,7 @@ public:
         };
     }
 
-    void set_time(const timeval& tv)
-    {
-        this->ll_time = to_us(tv);
-    }
+    void set_time(const timeval& tv) { this->ll_time = to_us(tv); }
 
     template<typename T>
     void set_subsecond_time(T sub)
@@ -339,8 +344,6 @@ public:
     {
         memcpy(this->ll_schema, ba.in(), sizeof(this->ll_schema));
     }
-
-    char get_schema() const { return this->ll_schema[0]; }
 
     /**
      * Perform a partial match of the given schema against this log line.

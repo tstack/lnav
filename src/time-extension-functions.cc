@@ -111,7 +111,7 @@ timeslice(sqlite3_value* time_in, std::optional<const char*> slice_in_opt)
 
             tv.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(msecs)
                             .count();
-            tm.et_tm = *gmtime(&tv.tv_sec);
+            gmtime_r(&tv.tv_sec, &tm.et_tm);
             tm.et_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(
                              msecs % 1000)
                              .count();
@@ -123,7 +123,7 @@ timeslice(sqlite3_value* time_in, std::optional<const char*> slice_in_opt)
             auto fract = modf(secs, &integ);
 
             tv.tv_sec = integ;
-            tm.et_tm = *gmtime(&tv.tv_sec);
+            gmtime_r(&tv.tv_sec, &tm.et_tm);
             tm.et_nsec = floor(fract * 1000000000.0);
             break;
         }

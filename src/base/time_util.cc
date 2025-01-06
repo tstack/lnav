@@ -380,7 +380,7 @@ exttm::from_tv(const timeval& tv)
 {
     auto retval = exttm{};
 
-    retval.et_tm = *gmtime(&tv.tv_sec);
+    gmtime_r(&tv.tv_sec, &retval.et_tm);
     retval.et_nsec = tv.tv_usec * 1000;
 
     return retval;
