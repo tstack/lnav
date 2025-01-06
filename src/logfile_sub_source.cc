@@ -3224,10 +3224,15 @@ logfile_sub_source::text_handle_mouse(
     mouse_event& me)
 {
     if (tc.get_overlay_selection()) {
+        auto nci = ncinput{};
         if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 2, 4)) {
-            this->list_input_handle_key(tc, {' '});
+            nci.id = ' ';
+            nci.eff_text[0] = ' ';
+            this->list_input_handle_key(tc, nci);
         } else if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 5, 6)) {
-            this->list_input_handle_key(tc, {'#'});
+            nci.id = '#';
+            nci.eff_text[0] = '#';
+            this->list_input_handle_key(tc, nci);
         }
     }
     return true;
