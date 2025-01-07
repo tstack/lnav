@@ -758,11 +758,11 @@ sql_parse_url(std::string url)
                                 query_map.gen(val);
                             } else {
                                 auto eq = strchr(kv_pair_encoded.data(), '=');
-                                query_map.gen(eq + 1);
+                                query_map.gen(
+                                    string_fragment::from_c_str(eq + 1));
                             }
                         }
                     } else {
-
                     }
                 } else {
                     auto val_str = split_res.first.to_string();
