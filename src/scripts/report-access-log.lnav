@@ -44,7 +44,7 @@
    GROUP BY timeslice(log_time_msecs, '1d')
    ORDER BY Hits DESC
    LIMIT 10
-:write-cols-to -
+:write-table-to -
 
 ;SELECT
      count(*) AS Hits,
@@ -58,7 +58,7 @@
    GROUP BY cs_uri_stem, cs_method
    ORDER BY Hits DESC
    LIMIT 10
-:write-cols-to -
+:write-table-to -
 
 ;SELECT
      count(*) AS Hits,
@@ -73,7 +73,7 @@
    GROUP BY cs_uri_stem, cs_method
    ORDER BY Hits DESC
    LIMIT 10
-:write-cols-to -
+:write-table-to -
 
 ;SELECT
      count(*) AS Hits,
@@ -85,7 +85,7 @@
    GROUP BY c_ip
    ORDER BY Hits DESC
    LIMIT 10
-:write-cols-to -
+:write-table-to -
 
 ;SELECT
      count(*) AS Hits,
@@ -98,7 +98,7 @@
    GROUP BY cs_referer
    ORDER BY Hits DESC
    LIMIT 10
-:write-cols-to -
+:write-table-to -
 
 ;SELECT
      count(*) AS Hits,
@@ -110,6 +110,6 @@
    GROUP BY sc_status / 100
    ORDER BY Hits DESC
    LIMIT 10
-:write-cols-to -
+:write-table-to -
 
 ;DROP TABLE IF EXISTS report_access_log
