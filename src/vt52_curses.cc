@@ -41,6 +41,7 @@
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "vt52_curses.hh"
+#include "ww898/cp_utf8.hpp"
 
 /**
  * Singleton used to hold the mapping of ncurses keycodes to VT52 escape
@@ -139,8 +140,8 @@ vt52_curses::map_input(const ncinput& ch)
         }
     }
     if (ch.id == 0x7f) {
-        this->vc_map_buffer = static_cast<char>(ch.id);
-        return string_fragment::from_c_str(&this->vc_map_buffer);
+        this->vc_map_buffer[0] = static_cast<char>(ch.id);
+        return string_fragment::from_bytes(this->vc_map_buffer, 1);
     }
 
     if ((ncinput_shift_p(&ch) || ncinput_ctrl_p(&ch) || ncinput_alt_p(&ch)
@@ -161,7 +162,15 @@ vt52_curses::map_input(const ncinput& ch)
         return string_fragment::from_const("\033[Z");
     }
 
-    return string_fragment::from_c_str(ch.utf8);
+    size_t index = 0;
+    for (const auto eff_ch : ch.eff_text) {
+        ww898::utf::utf8::write(eff_ch, [this, &index](const char bits) {
+            this->vc_map_buffer[index] = bits;
+            index += 1;
+        });
+    }
+
+    return string_fragment::from_bytes(this->vc_map_buffer, index);
 }
 
 void

@@ -138,10 +138,10 @@ protected:
     char vc_escape[16]; /*< Storage for escape sequences. */
     int vc_escape_len{0}; /*< The number of chars in vc_escape. */
     int vc_expected_escape_len{-1};
-    char vc_map_buffer{0}; /*<
-                            * Buffer returned by map_input for trivial
-                            * translations (one-to-one).
-                            */
+    char vc_map_buffer[32]; /*<
+                             * Buffer returned by map_input for trivial
+                             * translations (one-to-one).
+                             */
     attr_line_t vc_line;
 };
 
