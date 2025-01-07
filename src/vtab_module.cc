@@ -65,6 +65,7 @@ sqlite3_error_to_user_message(sqlite3* db)
             return from_res.unwrap();
         }
 
+        log_error("unable to parse error message: %s", errmsg);
         return lnav::console::user_message::error("internal error")
             .with_reason(from_res.unwrapErr()[0].um_message.get_string());
     }

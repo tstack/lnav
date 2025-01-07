@@ -68,13 +68,14 @@ db_label_source::text_value_for_line(textview_curses& tc,
         auto cell_length
             = utf8_string_length(cell_str).unwrapOr(actual_col_size);
         auto padding = actual_col_size - cell_length;
+        auto rjust = cell_length > 0 && isdigit(cell_str[0]);
         this->dls_cell_width[lpc] = cell_str.length() + padding;
-        if (this->dls_headers[lpc].hm_column_type != SQLITE3_TEXT) {
+        if (rjust) {
             label_out.append(padding, ' ');
         }
         shift_string_attrs(cell_attrs, 0, label_out.size());
         label_out.append(cell_str);
-        if (this->dls_headers[lpc].hm_column_type == SQLITE3_TEXT) {
+        if (!rjust) {
             label_out.append(padding, ' ');
         }
         label_out.append(1, ' ');

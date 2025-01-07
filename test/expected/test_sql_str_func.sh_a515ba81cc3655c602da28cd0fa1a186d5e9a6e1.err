@@ -1,1 +1,0 @@
-error: sqlite3_exec failed -- lnav-error:{"level":"error","message":{"str":"invalid URL: https://example.com:100000","attrs":[{"start":13,"end":39,"type":"role","value":56}]},"reason":{"str":"Port number was not a decimal number between 0 and 65535","attrs":[]},"snippets":[],"notes":[],"help":{"str":"","attrs":[]}}

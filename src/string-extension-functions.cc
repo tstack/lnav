@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "base/humanize.hh"
+#include "base/is_utf8.hh"
 #include "base/lnav.gzip.hh"
 #include "base/string_util.hh"
 #include "column_namer.hh"
@@ -631,9 +632,21 @@ sql_parse_url(std::string url)
     auto rc = curl_url_set(
         cu, CURLUPART_URL, url.c_str(), CURLU_NON_SUPPORT_SCHEME);
     if (rc != CURLUE_OK) {
-        throw lnav::console::user_message::error(
-            attr_line_t("invalid URL: ").append(lnav::roles::file(url)))
-            .with_reason(curl_url_strerror(rc));
+        auto_mem<char> url_part(curl_free);
+        yajlpp_gen gen;
+        yajl_gen_config(gen, yajl_gen_beautify, false);
+
+        {
+            yajlpp_map root(gen);
+            root.gen("error");
+            root.gen("invalid-url");
+            root.gen("url");
+            root.gen(url);
+            root.gen("reason");
+            root.gen(curl_url_strerror(rc));
+        }
+
+        return json_string(gen);
     }
 
     auto_mem<char> url_part(curl_free);
@@ -682,7 +695,18 @@ sql_parse_url(std::string url)
         root.gen("path");
         rc = curl_url_get(cu, CURLUPART_PATH, url_part.out(), CURLU_URLDECODE);
         if (rc == CURLUE_OK) {
-            root.gen(string_fragment::from_c_str(url_part.in()));
+            auto path_frag = string_fragment::from_c_str(url_part.in());
+            auto path_utf_res = is_utf8(path_frag);
+            if (path_utf_res.is_valid()) {
+                root.gen(path_frag);
+            } else {
+                rc = curl_url_get(cu, CURLUPART_PATH, url_part.out(), 0);
+                if (rc == CURLUE_OK) {
+                    root.gen(string_fragment::from_c_str(url_part.in()));
+                } else {
+                    root.gen();
+                }
+            }
         } else {
             root.gen();
         }
@@ -721,12 +745,24 @@ sql_parse_url(std::string url)
                 if (eq_index_opt) {
                     auto key = kv_pair_frag.sub_range(0, eq_index_opt.value());
                     auto val = kv_pair_frag.substr(eq_index_opt.value() + 1);
-                    auto key_str = key.to_string();
 
-                    if (seen_keys.count(key_str) == 0) {
-                        seen_keys.emplace(key_str);
-                        query_map.gen(key);
-                        query_map.gen(val);
+                    auto key_utf_res = is_utf8(key);
+                    auto val_utf_res = is_utf8(val);
+                    if (key_utf_res.is_valid()) {
+                        auto key_str = key.to_string();
+
+                        if (seen_keys.count(key_str) == 0) {
+                            seen_keys.emplace(key_str);
+                            query_map.gen(key);
+                            if (val_utf_res.is_valid()) {
+                                query_map.gen(val);
+                            } else {
+                                auto eq = strchr(kv_pair_encoded.data(), '=');
+                                query_map.gen(eq + 1);
+                            }
+                        }
+                    } else {
+
                     }
                 } else {
                     auto val_str = split_res.first.to_string();

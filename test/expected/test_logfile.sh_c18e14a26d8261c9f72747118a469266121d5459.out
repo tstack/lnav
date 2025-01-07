@@ -1,3 +1,3 @@
 log_line        log_time         log_level   col_0     col_1   log_part log_idle_msecs log_mark log_comment log_tags log_annotations log_filters 
-       0 2021-05-19 08:00:01.000 info               1 /abc/def   <NULL>              0        0      <NULL>   <NULL>          <NULL>      <NULL> 
-       2 2021-05-19 08:00:03.000 info               3 /ghi/jkl   <NULL>           2000        0      <NULL>   <NULL>          <NULL>      <NULL> 
+       0 2021-05-19 08:00:01.000 info               1 /abc/def <NULL>                0        0 <NULL>      <NULL>   <NULL>          <NULL>      
+       2 2021-05-19 08:00:03.000 info               3 /ghi/jkl <NULL>             2000        0 <NULL>      <NULL>   <NULL>          <NULL>      

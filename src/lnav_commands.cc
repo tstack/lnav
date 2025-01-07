@@ -60,6 +60,7 @@
 #include "db_sub_source.hh"
 #include "external_opener.hh"
 #include "field_overlay_source.hh"
+#include "fmt/color.h"
 #include "fmt/printf.h"
 #include "hasher.hh"
 #include "itertools.similar.hh"
@@ -1667,9 +1668,11 @@ com_save_to(exec_context& ec,
 
         for (const auto& hdr : dls.dls_headers) {
             auto centered_hdr = center_str(hdr.hm_name, hdr.hm_column_size);
+            auto style = fmt::text_style{};
 
             fprintf(outfile, "\u2503");
-            fprintf(outfile, "%s", centered_hdr.c_str());
+            style |= fmt::emphasis::bold;
+            fmt::print(outfile, style, FMT_STRING("{}"), centered_hdr);
         }
         fprintf(outfile, "\u2503\n");
 
@@ -1703,12 +1706,13 @@ com_save_to(exec_context& ec,
                 auto cell_length
                     = utf8_string_length(cell).unwrapOr(cell.size());
                 auto padding = anonymize ? 1 : hdr.hm_column_size - cell_length;
+                auto rjust = cell_length > 0 && isdigit(cell[0]);
 
-                if (hdr.hm_column_type != SQLITE3_TEXT) {
+                if (rjust) {
                     fprintf(outfile, "%s", std::string(padding, ' ').c_str());
                 }
                 fprintf(outfile, "%s", cell.c_str());
-                if (hdr.hm_column_type == SQLITE3_TEXT) {
+                if (!rjust) {
                     fprintf(outfile, "%s", std::string(padding, ' ').c_str());
                 }
             }

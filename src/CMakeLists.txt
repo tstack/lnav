@@ -270,6 +270,7 @@ set(BUILTIN_LNAV_SCRIPTS
         scripts/partition-by-boot.lnav
         scripts/piper-url-handler.lnav
         scripts/rename-stdin.lnav
+        scripts/report-access-log.lnav
         scripts/search-for.lnav
 )
 

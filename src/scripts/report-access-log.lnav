@@ -1,0 +1,115 @@
+#
+# @synopsis: report-access-log
+# @description: Generate a report of the access_log table
+#
+
+;DROP TABLE IF EXISTS report_access_log
+;CREATE TABLE report_access_log AS
+    SELECT
+        log_time_msecs,
+        c_ip,
+        cs_method,
+        cs_uri_stem,
+        cs_version,
+        sc_status,
+        sc_bytes,
+        CASE cs_referer
+          WHEN '-' THEN NULL
+          ELSE jget(parse_url(cs_referer), '/host')
+        END AS cs_referer,
+        cs_user_agent
+      FROM access_log
+
+;SELECT count(*) AS total_requests,
+        count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS unique_visitors,
+        count(DISTINCT cs_uri_stem) AS requested_files,
+        humanize_file_size(sum(sc_bytes)) AS tx_amount
+   FROM report_access_log
+
+;SELECT count(*) AS not_found
+   FROM (SELECT 1 FROM report_access_log
+           WHERE sc_status = 404
+           GROUP BY cs_uri_stem)
+
+:echo Total Requests  ${total_requests}  Unique Visitors ${unique_visitors}  Requested Files ${requested_files}
+:echo Not Found ${not_found} Tx. Amount ${tx_amount}
+
+;SELECT
+     count(*) AS Hits,
+     printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
+     count(DISTINCT c_ip) AS Vis,
+     humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
+     strftime('%F', min(log_time_msecs) / 1000, 'unixepoch') AS Date
+   FROM report_access_log
+   GROUP BY timeslice(log_time_msecs, '1d')
+   ORDER BY Hits DESC
+   LIMIT 10
+:write-cols-to -
+
+;SELECT
+     count(*) AS Hits,
+     printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
+     count(DISTINCT c_ip) AS Vis,
+     humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
+     cs_method AS Mtd,
+     cs_version AS Proto,
+     cs_uri_stem AS URIs
+   FROM report_access_log
+   GROUP BY cs_uri_stem, cs_method
+   ORDER BY Hits DESC
+   LIMIT 10
+:write-cols-to -
+
+;SELECT
+     count(*) AS Hits,
+     printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
+     count(DISTINCT c_ip) AS Vis,
+     humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
+     cs_method AS Mtd,
+     cs_version AS Proto,
+     cs_uri_stem AS URIs
+   FROM report_access_log
+   WHERE sc_status = 404
+   GROUP BY cs_uri_stem, cs_method
+   ORDER BY Hits DESC
+   LIMIT 10
+:write-cols-to -
+
+;SELECT
+     count(*) AS Hits,
+     printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
+     count(DISTINCT c_ip) AS Vis,
+     humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
+     c_ip AS Host
+   FROM report_access_log
+   GROUP BY c_ip
+   ORDER BY Hits DESC
+   LIMIT 10
+:write-cols-to -
+
+;SELECT
+     count(*) AS Hits,
+     printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
+     count(DISTINCT c_ip) AS Vis,
+     humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
+     cs_referer AS Referer
+   FROM report_access_log
+   WHERE cs_referer IS NOT NULL
+   GROUP BY cs_referer
+   ORDER BY Hits DESC
+   LIMIT 10
+:write-cols-to -
+
+;SELECT
+     count(*) AS Hits,
+     printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
+     count(DISTINCT c_ip) AS Vis,
+     humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
+     printf('%sXX', sc_status / 100) AS Status
+   FROM report_access_log
+   GROUP BY sc_status / 100
+   ORDER BY Hits DESC
+   LIMIT 10
+:write-cols-to -
+
+;DROP TABLE IF EXISTS report_access_log

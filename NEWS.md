@@ -4,6 +4,22 @@ Features:
 * Log message timestamps are now represented with microsecond
   precision internally instead of just millisecond.
 * The `log_time` and `log_level` fields can now be hidden.
+* Added a `report-access-log` script that generates a report that
+  is similar to the output of the [goaccess](https://goaccess.io)
+  utility.
+
+Interface changes:
+* DB query results that start with a number are right justified
+  instead of only full numbers.
+
+Breaking changes:
+* The `parse_url()` SQL function no longer raises an error for an
+  invalid URL.
+  Instead, it will return a JSON object with an object with the
+  following properties:
+  - `error` - An identifier for the error.
+  - `url` - The invalid URL itself.
+  - `reason` - A description of the error.
 
 Bug Fixes:
 * Improved startup time.

@@ -32,10 +32,15 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "base/is_utf8.hh"
 #include "yajlpp.hh"
 #include "yajlpp_def.hh"
 
 const char* TEST_DATA = R"([{ "foo": 0 }, 2, { "foo": 1 }])";
+
+const char* TEST_UTF_DATA
+    = "{\"path\":\""
+      "\xd8\xb3\xd8\xa7\xd9\x85\xb3\xd9\x88\xd9\x86\xda\xaf-43\"}";
 
 const char* TEST_OBJ_DATA = "{ \"foo\": 0 }";
 
@@ -71,6 +76,28 @@ dummy_string_handler(void* ctx, const unsigned char* s, size_t len)
 int
 main(int argc, char* argv[])
 {
+    {
+        struct test_struct {
+            std::string ts_path;
+        };
+
+        typed_json_path_container<test_struct> test_obj_handlers = {
+            yajlpp::property_handler("path").for_field(&test_struct::ts_path),
+        };
+
+        auto test_utf_res = is_utf8(string_fragment::from_c_str(TEST_UTF_DATA));
+        assert(!test_utf_res.is_valid());
+        static const auto STRING_SRC = intern_string::lookup("string");
+        auto parse_res = test_obj_handlers.parser_for(STRING_SRC)
+                             .of(string_fragment::from_c_str(TEST_UTF_DATA));
+        if (parse_res.isErr()) {
+            fprintf(stderr,
+                    "parse error: %s\n",
+                    parse_res.unwrapErr()[0].to_attr_line().al_string.c_str());
+        }
+        assert(parse_res.isErr());
+    }
+
     static const auto TEST_SRC = intern_string::lookup("test_data");
 
     {

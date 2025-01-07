@@ -1,2 +1,2 @@
 [1m[4mview_name[0m[1m[4m [0m[1m[4mfilter_id[0m[1m[4m [0m[1m[4menabled[0m[1m[4m [0m[1m[4mtype[0m[1m[4m [0m[1m[4mlanguage[0m[1m[4m [0m[1m[4mpattern[0m[1m[4m [0m
-log               0       1 out  sql      1       
+log               0       1 out  sql            1 
