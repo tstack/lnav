@@ -207,7 +207,7 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
         const auto& values = msg_info.get_values();
         auto lv_iter = find_if(values.lvv_values.begin(),
                                values.lvv_values.end(),
-                               logline_value_cmp(&this->lsvs_colname));
+                               logline_value_name_cmp(&this->lsvs_colname));
 
         if (lv_iter != values.lvv_values.end()) {
             switch (lv_iter->lv_meta.lvm_kind) {
@@ -248,7 +248,7 @@ log_spectro_value_source::spectro_row(spectrogram_request& sr,
             const auto& values = msg_info.get_values();
             auto lv_iter = find_if(values.lvv_values.begin(),
                                    values.lvv_values.end(),
-                                   logline_value_cmp(&this->lsvs_colname));
+                                   logline_value_name_cmp(&this->lsvs_colname));
 
             if (lv_iter != values.lvv_values.end()) {
                 switch (lv_iter->lv_meta.lvm_kind) {
@@ -313,7 +313,7 @@ log_spectro_value_source::spectro_mark(textview_curses& tc,
 
         auto lv_iter = find_if(values.lvv_values.begin(),
                                values.lvv_values.end(),
-                               logline_value_cmp(&this->lsvs_colname));
+                               logline_value_name_cmp(&this->lsvs_colname));
 
         if (lv_iter != values.lvv_values.end()) {
             switch (lv_iter->lv_meta.lvm_kind) {

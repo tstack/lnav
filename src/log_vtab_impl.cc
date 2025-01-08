@@ -486,7 +486,7 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
             (size_t) (ic.cc_column - VT_COL_MAX)};
         auto lv_iter = find_if(vc->line_values.lvv_values.begin(),
                                vc->line_values.lvv_values.end(),
-                               logline_value_cmp(nullptr, sub_col));
+                               logline_value_col_eq(sub_col));
         if (lv_iter == vc->line_values.lvv_values.end()
             || lv_iter->lv_meta.lvm_kind == value_kind_t::VALUE_NULL)
         {
@@ -1032,7 +1032,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     (size_t) (col - VT_COL_MAX)};
                 auto lv_iter = find_if(vc->line_values.lvv_values.begin(),
                                        vc->line_values.lvv_values.end(),
-                                       logline_value_cmp(nullptr, sub_col));
+                                       logline_value_col_eq(sub_col));
 
                 if (lv_iter != vc->line_values.lvv_values.end()) {
                     if (!lv_iter->lv_meta.lvm_struct_name.empty()) {

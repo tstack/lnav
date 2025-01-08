@@ -16,7 +16,7 @@
         sc_bytes,
         CASE cs_referer
           WHEN '-' THEN NULL
-          ELSE jget(parse_url(cs_referer), '/host')
+          ELSE regexp_match('://([^/]+)', cs_referer)
         END AS cs_referer,
         cs_user_agent
       FROM access_log
@@ -32,13 +32,20 @@
            WHERE sc_status = 404
            GROUP BY cs_uri_stem)
 
+:echo # access_log report
+:echo
+:echo ## Dashboard
+:echo
 :echo Total Requests  ${total_requests}  Unique Visitors ${unique_visitors}  Requested Files ${requested_files}
 :echo Not Found ${not_found} Tx. Amount ${tx_amount}
+
+:echo
+:echo ## Unique visitors per day
 
 ;SELECT
      count(*) AS Hits,
      printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
-     count(DISTINCT c_ip) AS Vis,
+     count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS Vis,
      humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
      strftime('%F', min(log_time_msecs) / 1000, 'unixepoch') AS Date
    FROM report_access_log
@@ -46,6 +53,9 @@
    ORDER BY Hits DESC
    LIMIT 10
 :write-table-to -
+
+:echo
+:echo ## Requested files
 
 ;SELECT
      count(*) AS Hits,
@@ -60,6 +70,9 @@
    ORDER BY Hits DESC
    LIMIT 10
 :write-table-to -
+
+:echo
+:echo ## Not found URLs
 
 ;SELECT
      count(*) AS Hits,
@@ -76,6 +89,9 @@
    LIMIT 10
 :write-table-to -
 
+:echo
+:echo ## Visitor IPs
+
 ;SELECT
      count(*) AS Hits,
      printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
@@ -87,6 +103,9 @@
    ORDER BY Hits DESC
    LIMIT 10
 :write-table-to -
+
+:echo
+:echo ## Referring Sites
 
 ;SELECT
      count(*) AS Hits,
@@ -100,6 +119,9 @@
    ORDER BY Hits DESC
    LIMIT 10
 :write-table-to -
+
+:echo
+:echo ## HTTP Status Codes
 
 ;SELECT
      count(*) AS Hits,

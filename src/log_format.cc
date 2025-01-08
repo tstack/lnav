@@ -2317,7 +2317,7 @@ external_log_format::get_subline(const logline& ll,
                         lv_iter = find_if(
                             this->jlf_line_values.lvv_values.begin(),
                             this->jlf_line_values.lvv_values.end(),
-                            logline_value_cmp(&jfe.jfe_value.pp_value));
+                            logline_value_name_cmp(&jfe.jfe_value.pp_value));
                         if (lv_iter != this->jlf_line_values.lvv_values.end()) {
                             auto str = lv_iter->to_string();
                             value_def* vd = nullptr;
@@ -2457,7 +2457,8 @@ external_log_format::get_subline(const logline& ll,
                             lv_iter = find_if(
                                 this->jlf_line_values.lvv_values.begin(),
                                 this->jlf_line_values.lvv_values.end(),
-                                logline_value_cmp(&this->lf_timestamp_field));
+                                logline_value_name_cmp(
+                                    &this->lf_timestamp_field));
                             if (lv_iter
                                 != this->jlf_line_values.lvv_values.end())
                             {
