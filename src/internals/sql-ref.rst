@@ -1959,9 +1959,9 @@ json_each(*X*, *\[P\]*)
 
       ;SELECT * FROM json_each('[null,1,"two",{"three":4.5}]')
       key     value      type    atom  id parent fullkey path 
-        0 <NULL>        null    <NULL>  2 <NULL> $[0]    $    
+        0        <NULL> null    <NULL>  2 <NULL> $[0]    $    
         1             1 integer      1  3 <NULL> $[1]    $    
-        2 two           text    two     5 <NULL> $[2]    $    
+        2           two text       two  5 <NULL> $[2]    $    
         3 {"three":4.5} object  <NULL>  9 <NULL> $[3]    $    
 
   **See Also**
@@ -2303,11 +2303,11 @@ json_tree(*X*, *\[P\]*)
       ;SELECT key,value,type,atom,fullkey,path FROM json_tree('[null,1,"two",{"three":4.5}]')
        key        value       type    atom   fullkey   path 
       <NULL> [null,1⋯":4.5}] array   <NULL> $          $    
-           0 <NULL>          null    <NULL> $[0]       $    
+           0          <NULL> null    <NULL> $[0]       $    
            1               1 integer      1 $[1]       $    
-           2 two             text    two    $[2]       $    
-           3 {"three":4.5}   object  <NULL> $[3]       $    
-      three              4.5 real       4.5 $[3].three $[3] 
+           2             two text       two $[2]       $    
+           3   {"three":4.5} object  <NULL> $[3]       $    
+       three             4.5 real       4.5 $[3].three $[3] 
 
   **See Also**
     :ref:`jget`, :ref:`json_array_length`, :ref:`json_array`, :ref:`json_concat`, :ref:`json_contains`, :ref:`json_each`, :ref:`json_extract`, :ref:`json_group_array`, :ref:`json_group_object`, :ref:`json_insert`, :ref:`json_object`, :ref:`json_quote`, :ref:`json_remove`, :ref:`json_replace`, :ref:`json_set`, :ref:`json_type`, :ref:`json_valid`, :ref:`json`, :ref:`yaml_to_json`
@@ -3401,11 +3401,11 @@ regexp_capture(*string*, *pattern*)
 
       ;SELECT * FROM regexp_capture('a=1; b=2', '(\w+)=(\d+)')
       match_index capture_index capture_name capture_count range_start range_stop content 
-                0             0 <NULL>                   3           1          4 a=1     
-                0             1 <NULL>                   3           1          2 a       
+                0             0 <NULL>                   3           1          4     a=1 
+                0             1 <NULL>                   3           1          2       a 
                 0             2 <NULL>                   3           3          4       1 
-                1             0 <NULL>                   3           6          9 b=2     
-                1             1 <NULL>                   3           6          7 b       
+                1             0 <NULL>                   3           6          9     b=2 
+                1             1 <NULL>                   3           6          7       b 
                 1             2 <NULL>                   3           8          9       2 
 
   **See Also**
@@ -4230,7 +4230,7 @@ timeslice(*time*, *slice*)
 
       ;SELECT timeslice(log_time_msecs, 'before 4:30am') AS slice, count(1) FROM lnav_example_log GROUP BY slice
            slice       count(1)  
-      <NULL>                   1 
+               <NULL>          1 
       2017-02⋯:00.000          3 
 
   **See Also**

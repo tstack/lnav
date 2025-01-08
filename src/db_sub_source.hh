@@ -89,6 +89,12 @@ public:
 
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
+    enum class align_t {
+        left,
+        center,
+        right,
+    };
+
     struct header_meta {
         explicit header_meta(std::string name) : hm_name(std::move(name)) {}
 
@@ -102,6 +108,7 @@ public:
         unsigned int hm_sub_type{0};
         bool hm_graphable{false};
         size_t hm_column_size{0};
+        align_t hm_align{align_t::left};
         text_attrs hm_title_attrs;
         stacked_bar_chart<std::string> hm_chart;
     };

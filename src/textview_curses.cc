@@ -678,9 +678,7 @@ textview_curses::handle_mouse(mouse_event& me)
                 }
                 this->tc_selection_start = std::nullopt;
             }
-            if (me.me_button == mouse_button_t::BUTTON_LEFT
-                && mouse_line.is<main_content>())
-            {
+            if (mouse_line.is<main_content>()) {
                 const auto& [mc_line] = mouse_line.get<main_content>();
                 attr_line_t al;
 
@@ -688,18 +686,29 @@ textview_curses::handle_mouse(mouse_event& me)
                 auto line_sf = string_fragment::from_str(al.get_string());
                 auto cursor_sf = line_sf.sub_cell_range(
                     this->lv_left + me.me_x, this->lv_left + me.me_x);
-                auto attr_iter = find_string_attr_containing(
+                auto link_iter = find_string_attr_containing(
                     al.get_attrs(), &VC_HYPERLINK, cursor_sf.sf_begin);
-                if (attr_iter != al.get_attrs().end()) {
-                    auto href = attr_iter->sa_value.get<std::string>();
+                if (link_iter != al.get_attrs().end()) {
+                    auto href = link_iter->sa_value.get<std::string>();
+                    auto* ta = dynamic_cast<text_anchors*>(this->tc_sub_source);
 
-                    this->tc_selected_text = selected_text_info{
-                        me.me_x,
-                        mc_line,
-                        attr_iter->sa_range,
-                        al.to_string_fragment(attr_iter).to_string(),
-                        href,
-                    };
+                    if (me.me_button == mouse_button_t::BUTTON_LEFT
+                        && ta != nullptr && startswith(href, "#"))
+                    {
+                        auto row_opt = ta->row_for_anchor(href);
+
+                        if (row_opt.has_value()) {
+                            this->set_selection(row_opt.value());
+                        }
+                    } else {
+                        this->tc_selected_text = selected_text_info{
+                            me.me_x,
+                            mc_line,
+                            link_iter->sa_range,
+                            al.to_string_fragment(link_iter).to_string(),
+                            href,
+                        };
+                    }
                 }
             }
             if (this->tc_delegate != nullptr) {

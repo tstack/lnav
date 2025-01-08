@@ -1,5 +1,5 @@
 {
-   "comment": "This is JSON front-matter"
+"comment": "This is JSON front-matter"
 }
 
 # Table of Contents
@@ -19,14 +19,16 @@
 
 <span style="color: #f00; font-weight: bold">Bold red</span>
 
-<span style="text-decoration: underline; background-color: darkblue">Underline</span>
+<span style="text-decoration: underline; background-color: darkblue">
+Underline</span>
 
 <pre>
   Hello,
   <span class="name">World</span>!
 </pre>
 
-Goodbye, <span style="border-left: solid cyan; border-right: dashed green">World</span>!
+Goodbye, <span style="border-left: solid cyan; border-right: dashed green">
+World</span>!
 
 ```foolang
 foo bar bar
@@ -51,16 +53,16 @@ def hw(name):
     This function prints "Hello, <name>!"
     """
 
-    print(f"Hello, {name}!") # test comment
+    print(f"Hello, {name}!")  # test comment
 ```
 
 ```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <books>
-   <!-- Line comment -->
-   <book id="100">
-      <author>Finnegan</author>
-   </book>
+    <!-- Line comment -->
+    <book id="100">
+        <author>Finnegan</author>
+    </book>
 </books>
 ```
 
@@ -80,3 +82,14 @@ def hw(name):
 
 > [!CAUTION]
 > Advises about risks or negative outcomes of certain actions.
+
+## Table
+
+|  ID |    Name     | Description   |
+|----:|:-----------:|---------------|
+|   1 |     One     | The first     |
+|   2 |     Two     | The second    |
+|   3 |    Three    | The third     |
+|   4 |    Four     | The fourth    |
+|  .. |     ..      | ..            |
+| 100 | One Hundred | The hundredth |

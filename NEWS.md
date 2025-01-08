@@ -7,10 +7,22 @@ Features:
 * Added a `report-access-log` script that generates a report that
   is similar to the output of the [goaccess](https://goaccess.io)
   utility.
+* Scripts can now specify their output format using the
+  `@output-format:` documentation description.
+  This setting can affect the output of some commands, like
+  `:write-table-to` which will output Markdown tables when the
+  output is set to `text/markdown`.
+* Column alignment in Markdown tables is now supported.
 
 Interface changes:
 * DB query results that start with a number are right justified
   instead of only full numbers.
+* Left-clicking a local link in a markdown document will jump to
+  that section of the document instead of opening the overlay
+  menu.
+  You can still open the overlay menu by right-clicking on the link.
+* Rows in a Markdown table are now highlighted with alternating
+  styles.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an

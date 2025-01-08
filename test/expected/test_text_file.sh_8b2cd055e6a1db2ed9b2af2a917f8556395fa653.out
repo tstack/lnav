@@ -1,2 +1,2 @@
-[1m[4m                  filepath                  [0m[1m[4m [0m[1m[4m              descriptor               [0m[1m[4m [0m[1m[4m    mimetype    [0m[1m[4m [0m[1m[4m                   content                   [0m[1m[4m [0m
-{test_dir}/textfile_0.md net.daringfireball.markdown.frontmatter application/json {␊   "comment": "This is JSON front-matter"␊} 
+[1m[4m                  filepath                  [0m[1m[4m [0m[1m[4m              descriptor               [0m[1m[4m [0m[1m[4m    mimetype    [0m[1m[4m [0m[1m[4m                 content                  [0m[1m[4m [0m
+{test_dir}/textfile_0.md net.daringfireball.markdown.frontmatter application/json {␊"comment": "This is JSON front-matter"␊} 

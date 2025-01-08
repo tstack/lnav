@@ -410,7 +410,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 if (lpc >= row.r_columns.size()) {
                     continue;
                 }
-                auto col_len = row.r_columns[lpc].column_width();
+                auto col_len = row.r_columns[lpc].c_contents.column_width();
                 if (col_len > max_col_sizes[lpc]) {
                     max_col_sizes[lpc] = col_len;
                 }
@@ -429,7 +429,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
             attr_line_t td_block;
             td_block.append(tab.t_headers[lpc], &tws);
-            cells.emplace_back(td_block.rtrim().split_lines());
+            cells.emplace_back(MD_ALIGN_CENTER, td_block.rtrim().split_lines());
             if (cells.back().cl_lines.size() > max_cell_lines) {
                 max_cell_lines = cells.back().cl_lines.size();
             }
@@ -452,19 +452,25 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                     repeat("\u2550", full_width + col_sizes.size())))
                 .append("\n");
         }
+        size_t row_index = 0;
         for (const auto& row : tab.t_rows) {
             cells.clear();
             max_cell_lines = 0;
-            for (size_t lpc = 0; lpc < row.r_columns.size(); lpc++) {
-                tws.with_width(col_sizes[lpc]);
+            for (const auto& [col_index, cell] :
+                 lnav::itertools::enumerate(row.r_columns))
+            {
+                tws.with_width(col_sizes[col_index]);
 
                 attr_line_t td_block;
-                td_block.append(row.r_columns[lpc], &tws);
-                cells.emplace_back(td_block.rtrim().split_lines());
+                td_block.append(cell.c_contents, &tws);
+                cells.emplace_back(cell.c_align,
+                                   td_block.rtrim().split_lines());
                 if (cells.back().cl_lines.size() > max_cell_lines) {
                     max_cell_lines = cells.back().cl_lines.size();
                 }
             }
+            auto alt_row_index = row_index % 4;
+            auto line_lr = line_range{(int) block_text.al_string.size(), 0};
             for (size_t line_index = 0; line_index < max_cell_lines;
                  line_index++)
             {
@@ -472,19 +478,49 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                 for (const auto& cell : cells) {
                     block_text.append(" ");
                     if (line_index < cell.cl_lines.size()) {
-                        block_text.append(cell.cl_lines[line_index]);
-                        if (col < col_sizes.size() - 1) {
-                            block_text.append(
-                                col_sizes[col]
-                                    - cell.cl_lines[line_index].column_width(),
-                                ' ');
+                        auto padding = size_t{0};
+
+                        if (col < col_sizes.size()) {
+                            if (col_sizes[col]
+                                > cell.cl_lines[line_index].column_width())
+                            {
+                                padding = col_sizes[col]
+                                    - cell.cl_lines[line_index].column_width();
+                            }
                         }
+
+                        auto lpadding = size_t{0};
+                        auto rpadding = size_t{0};
+                        switch (cell.cl_align) {
+                            case MD_ALIGN_DEFAULT:
+                            case MD_ALIGN_LEFT:
+                                rpadding = padding;
+                                break;
+                            case MD_ALIGN_CENTER:
+                                lpadding = padding / 2;
+                                rpadding = padding - lpadding;
+                                break;
+                            case MD_ALIGN_RIGHT:
+                                lpadding = padding;
+                                break;
+                        }
+                        block_text.append(lpadding, ' ');
+                        block_text.append(cell.cl_lines[line_index]);
+                        block_text.append(rpadding, ' ');
                     } else if (col < col_sizes.size() - 1) {
                         block_text.append(col_sizes[col], ' ');
                     }
                     col += 1;
                 }
                 block_text.append("\n");
+            }
+            if (alt_row_index == 2 || alt_row_index == 3) {
+                line_lr.lr_end = block_text.al_string.size();
+                block_text.al_attrs.emplace_back(
+                    line_lr, VC_ROLE.value(role_t::VCR_ALT_ROW));
+            }
+            if (max_cell_lines > 0) {
+                row_index += 1;
             }
         }
         if (!block_text.empty()) {
@@ -494,7 +530,9 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
     } else if (bl.is<block_th>()) {
         this->ml_tables.back().t_headers.push_back(block_text);
     } else if (bl.is<MD_BLOCK_TD_DETAIL*>()) {
-        this->ml_tables.back().t_rows.back().r_columns.push_back(block_text);
+        auto td_detail = bl.get<MD_BLOCK_TD_DETAIL*>();
+        this->ml_tables.back().t_rows.back().r_columns.emplace_back(
+            td_detail->align, block_text);
     } else {
         if (bl.is<block_html>()) {
             if (startswith(block_text.get_string(), "<!--")) {
@@ -920,12 +958,18 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             };
             struct empty_tag {};
 
-            mapbox::util::variant<open_tag, close_tag, empty_tag> tag{
-                mapbox::util::no_init{}};
+            using html_tag_t
+                = mapbox::util::variant<open_tag, close_tag, empty_tag>;
 
-            if (sf.startswith("</")) {
+            html_tag_t tag{mapbox::util::no_init{}};
+
+            auto lbracket = sf.find('<');
+            if (!lbracket) {
+            } else if (lbracket && lbracket.value() + 1 < sf.length()
+                       && sf[lbracket.value() + 1] == '/')
+            {
                 tag = close_tag{
-                    sf.substr(2)
+                    sf.substr(lbracket.value() + 2)
                         .split_when(string_fragment::tag1{'>'})
                         .first.to_string(),
                 };
@@ -953,9 +997,14 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
                     },
                     [this, &last_block](const close_tag& ct) {
                         if (this->ml_html_starts.empty()) {
+                            log_warning("closing tag %s with no open tag",
+                                        ct.ct_name.c_str());
                             return;
                         }
                         if (this->ml_html_starts.back().first != ct.ct_name) {
+                            log_warning(
+                                "closing tag %s with no matching open tag",
+                                ct.ct_name.c_str());
                             return;
                         }
 

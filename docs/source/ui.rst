@@ -459,6 +459,10 @@ elements will respond to mouse inputs:
   values which, when clicked, will open either the spectrogram
   view for the given field or open the DB query prompt with a
   PRQL query to generate a histogram of the field values;
+* left-clicking a local link in a Markdown document will move
+  the cursor to that part of the document;
+* right-clicking a link in a Markdown document will open an
+  overlay menu with relevant options;
 * clicking in the scroll area will move the view by a page,
   double-clicking will move the view to that area, and
   dragging the scrollbar will move the view to the given spot;

@@ -1055,6 +1055,55 @@ check_for_file_zones()
 }
 
 static void
+ui_execute_init_commands(
+    exec_context& ec,
+    std::vector<std::pair<Result<std::string, lnav::console::user_message>,
+                          std::string>>& cmd_results)
+{
+    std::error_code errc;
+    std::filesystem::create_directories(lnav::paths::workdir(), errc);
+    auto open_temp_res = lnav::filesystem::open_temp_file(lnav::paths::workdir()
+                                                          / "exec.XXXXXX");
+
+    if (open_temp_res.isErr()) {
+        lnav_data.ld_rl_view->set_value(
+            fmt::format(FMT_STRING("Unable to open temporary output file: {}"),
+                        open_temp_res.unwrapErr()));
+    } else {
+        auto tmp_pair = open_temp_res.unwrap();
+        auto fd_copy = tmp_pair.second.dup();
+        auto tf = text_format_t::TF_UNKNOWN;
+
+        {
+            exec_context::output_guard og(
+                ec,
+                "tmp",
+                std::make_pair(fdopen(tmp_pair.second.release(), "w"), fclose));
+            execute_init_commands(ec, cmd_results);
+            tf = ec.ec_output_stack.back().od_format;
+        }
+
+        struct stat st;
+        if (fstat(fd_copy, &st) != -1 && st.st_size > 0) {
+            static const auto OUTPUT_NAME
+                = std::string("Initial command output");
+            lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
+                .with_filename(OUTPUT_NAME)
+                .with_include_in_session(false)
+                .with_detect_format(false)
+                .with_text_format(tf)
+                .with_init_location(0_vl);
+            lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
+
+            if (lnav_data.ld_rl_view != nullptr) {
+                lnav_data.ld_rl_view->set_alt_value(
+                    HELP_MSG_1(X, "to close the file"));
+            }
+        }
+    }
+}
+
+static void
 looper()
 {
     static auto* ps = injector::get<pollable_supervisor*>();
@@ -1249,11 +1298,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         auto ui_cb_mouse = false;
         ec.ec_ui_callbacks.uc_pre_stdout_write
             = [&sc, &mouse_i, &ui_cb_mouse]() {
-                ui_cb_mouse = mouse_i.is_enabled();
-                if (ui_cb_mouse) {
-                    mouse_i.set_enabled(sc.get_notcurses(), false);
-                }
-                notcurses_leave_alternate_screen(sc.get_notcurses());
+                  ui_cb_mouse = mouse_i.is_enabled();
+                  if (ui_cb_mouse) {
+                      mouse_i.set_enabled(sc.get_notcurses(), false);
+                  }
+                  notcurses_leave_alternate_screen(sc.get_notcurses());
 
                   // notcurses sets stdio to non-blocking, which can cause an
                   // issue when writing since there is a chance of an EAGAIN
@@ -2029,7 +2078,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         std::string>>
                         cmd_results;
 
-                    execute_init_commands(ec, cmd_results);
+                    ui_execute_init_commands(ec, cmd_results);
 
                     if (!cmd_results.empty()) {
                         auto last_cmd_result = cmd_results.back();

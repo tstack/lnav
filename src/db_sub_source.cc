@@ -68,7 +68,7 @@ db_label_source::text_value_for_line(textview_curses& tc,
         auto cell_length
             = utf8_string_length(cell_str).unwrapOr(actual_col_size);
         auto padding = actual_col_size - cell_length;
-        auto rjust = cell_length > 0 && isdigit(cell_str[0]);
+        auto rjust = this->dls_headers[lpc].hm_align == align_t::right;
         this->dls_cell_width[lpc] = cell_str.length() + padding;
         if (rjust) {
             label_out.append(padding, ' ');
@@ -92,8 +92,8 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                                      int row,
                                      string_attrs_t& sa)
 {
-    struct line_range lr(0, 0);
-    const struct line_range lr2(0, -1);
+    line_range lr(0, 0);
+    const line_range lr2(0, -1);
 
     if (row < 0_vl || row >= (int) this->dls_rows.size()) {
         return;

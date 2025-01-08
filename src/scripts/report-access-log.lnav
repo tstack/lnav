@@ -41,6 +41,7 @@
 
 :echo
 :echo ## Unique visitors per day
+:echo
 
 ;SELECT
      count(*) AS Hits,
@@ -56,6 +57,7 @@
 
 :echo
 :echo ## Requested files
+:echo
 
 ;SELECT
      count(*) AS Hits,
@@ -73,6 +75,7 @@
 
 :echo
 :echo ## Not found URLs
+:echo
 
 ;SELECT
      count(*) AS Hits,
@@ -91,6 +94,7 @@
 
 :echo
 :echo ## Visitor IPs
+:echo
 
 ;SELECT
      count(*) AS Hits,
@@ -106,6 +110,7 @@
 
 :echo
 :echo ## Referring Sites
+:echo
 
 ;SELECT
      count(*) AS Hits,
@@ -122,6 +127,7 @@
 
 :echo
 :echo ## HTTP Status Codes
+:echo
 
 ;SELECT
      count(*) AS Hits,

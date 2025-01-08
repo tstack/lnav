@@ -777,7 +777,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
         }
 
         if (std::filesystem::is_regular_file(script_path)) {
-            struct script_metadata meta;
+            script_metadata meta;
 
             meta.sm_path = script_path;
             extract_metadata_from_file(meta);
@@ -792,9 +792,10 @@ execute_file(exec_context& ec, const std::string& path_and_args)
             if (!ec.ec_output_stack.empty()) {
                 ec.ec_output_stack.back().od_format
                     = path_iter.sm_output_format;
-                log_info("setting out format for '%s' to %d",
-                    ec.ec_output_stack.back().od_name.c_str(),
-                    ec.ec_output_stack.back().od_format);
+                log_info("%s: setting out format for '%s' to %d",
+                         script_name.c_str(),
+                         ec.ec_output_stack.back().od_name.c_str(),
+                         ec.ec_output_stack.back().od_format);
             }
             retval = TRY(execute_file_contents(ec, path_iter.sm_path));
         }
@@ -908,25 +909,6 @@ execute_init_commands(
     std::string out_name;
     std::optional<exec_context::output_t> ec_out;
     auto_fd fd_copy;
-
-    if (!(lnav_data.ld_flags & LNF_HEADLESS)) {
-        auto_mem<FILE> tmpout(fclose);
-
-        tmpout = std::tmpfile();
-        if (!tmpout) {
-            msgs.emplace_back(Err(lnav::console::user_message::error(
-                                      "Unable to open temporary output file")
-                                      .with_errno_reason()),
-                              "");
-            return;
-        }
-        fcntl(fileno(tmpout), F_SETFD, FD_CLOEXEC);
-        fd_copy = auto_fd::dup_of(fileno(tmpout));
-        fd_copy.close_on_exec();
-        ec_out = exec_context::output_t{tmpout.release(), fclose};
-        out_name = "Output of initial commands";
-    }
-
     auto& dls = *(ec.ec_label_source_stack.back());
     int option_index = 1;
 
@@ -985,29 +967,6 @@ execute_init_commands(
         }
     }
     lnav_data.ld_commands.clear();
-
-    struct stat st;
-
-    if (ec_out && fstat(fd_copy, &st) != -1 && st.st_size > 0) {
-        static const auto OUTPUT_NAME = std::string("Initial command output");
-
-        auto create_piper_res = lnav::piper::create_looper(
-            OUTPUT_NAME, std::move(fd_copy), auto_fd{});
-        if (create_piper_res.isOk()) {
-            lnav_data.ld_active_files.fc_file_names[OUTPUT_NAME]
-                .with_piper(create_piper_res.unwrap())
-                .with_include_in_session(false)
-                .with_detect_format(false)
-                .with_init_location(0_vl);
-            lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
-
-            if (lnav_data.ld_rl_view != nullptr) {
-                lnav_data.ld_rl_view->set_alt_value(
-                    HELP_MSG_1(X, "to close the file"));
-            }
-        }
-    }
-
     lnav_data.ld_cmd_init_done = true;
 }
 
@@ -1072,18 +1031,25 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         switch (value_type) {
             case SQLITE_INTEGER:
                 value = (int64_t) sqlite3_column_int64(stmt, lpc);
+                hm.hm_align = db_label_source::align_t::right;
                 break;
             case SQLITE_FLOAT:
                 value = sqlite3_column_double(stmt, lpc);
+                hm.hm_align = db_label_source::align_t::right;
                 break;
             case SQLITE_NULL:
                 value = null_value_t{};
                 break;
-            default:
-                value = string_fragment::from_bytes(
+            default: {
+                auto frag = string_fragment::from_bytes(
                     sqlite3_column_text(stmt, lpc),
                     sqlite3_column_bytes(stmt, lpc));
+                if (!frag.empty() && isdigit(frag[0])) {
+                    hm.hm_align = db_label_source::align_t::right;
+                }
+                value = frag;
                 break;
+            }
         }
         dls.push_column(value);
         if ((hm.hm_column_type == SQLITE_TEXT
@@ -1366,6 +1332,8 @@ exec_context::output_guard::output_guard(exec_context& context,
     }
     if (file) {
         log_info("redirecting command output to: %s", name.c_str());
+    } else if (!context.ec_output_stack.empty()) {
+        tf = context.ec_output_stack.back().od_format;
     }
     context.ec_output_stack.emplace_back(std::move(name), file, tf);
 }
