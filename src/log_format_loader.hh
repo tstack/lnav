@@ -41,6 +41,7 @@
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "shlex.resolver.hh"
+#include "text_format.hh"
 #include "yajlpp/yajlpp_def.hh"
 
 class log_vtab_manager;
@@ -65,6 +66,7 @@ struct script_metadata {
     std::string sm_name;
     std::string sm_synopsis;
     std::string sm_description;
+    text_format_t sm_output_format{text_format_t::TF_UNKNOWN};
 };
 
 void extract_metadata_from_file(script_metadata& meta_inout);

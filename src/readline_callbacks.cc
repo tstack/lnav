@@ -1041,6 +1041,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                 const auto path_and_args = rc->get_value();
                 auto tmp_pair = open_temp_res.unwrap();
                 auto fd_copy = tmp_pair.second.dup();
+                auto tf = text_format_t::TF_UNKNOWN;
 
                 {
                     exec_context::output_guard og(
@@ -1057,6 +1058,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         = execute_file(ec, path_and_args.get_string());
                     if (exec_res.isOk()) {
                         rc->set_value(exec_res.unwrap());
+                        tf = ec.ec_output_stack.back().od_format;
                     } else {
                         auto um = exec_res.unwrapErr();
 
@@ -1086,6 +1088,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         .with_filename(desc)
                         .with_include_in_session(false)
                         .with_detect_format(false)
+                        .with_text_format(tf)
                         .with_init_location(0_vl);
                     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
 

@@ -1,6 +1,7 @@
 #
 # @synopsis: report-access-log
 # @description: Generate a report of the access_log table
+# @output-format: text/markdown
 #
 
 ;DROP TABLE IF EXISTS report_access_log

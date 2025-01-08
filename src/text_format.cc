@@ -33,10 +33,36 @@
 
 #include "text_format.hh"
 
+#include "base/from_trait.hh"
+#include "base/itertools.enumerate.hh"
+#include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
 #include "yajl/api/yajl_parse.h"
+
+const string_fragment
+    TEXT_FORMAT_STRINGS[lnav::enums::to_underlying(text_format_t::TF_UNKNOWN)
+                        + 1]
+    = {
+        string_fragment::from_const("application/octet-stream"),
+        string_fragment::from_const("text/c"),
+        string_fragment::from_const("text/java"),
+        string_fragment::from_const("application/json"),
+        string_fragment::from_const("text/log"),
+        string_fragment::from_const("text/x-makefile"),
+        string_fragment::from_const("text/man"),
+        string_fragment::from_const("text/markdown"),
+        string_fragment::from_const("text/python"),
+        string_fragment::from_const("text/rust"),
+        string_fragment::from_const("application/sql"),
+        string_fragment::from_const("text/xml"),
+        string_fragment::from_const("application/yaml"),
+        string_fragment::from_const("application/toml"),
+        string_fragment::from_const("text/x-diff"),
+        string_fragment::from_const("text/x-shellscript"),
+        string_fragment::from_const("text/plain"),
+};
 
 text_format_t
 detect_text_format(string_fragment sf,
@@ -244,8 +270,7 @@ extract_text_meta(string_fragment sf, text_format_t tf)
 
     switch (tf) {
         case text_format_t::TF_MAN: {
-            static thread_local auto md
-                = lnav::pcre2pp::match_data::unitialized();
+            thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
             auto find_res
                 = MAN_NAME.capture_from(sf).into(md).matches().ignore_error();
@@ -262,4 +287,18 @@ extract_text_meta(string_fragment sf, text_format_t tf)
     }
 
     return std::nullopt;
+}
+
+template<>
+Result<text_format_t, std::string>
+from(const string_fragment sf)
+{
+    for (const auto& [index, format_sf] :
+         lnav::itertools::enumerate(TEXT_FORMAT_STRINGS))
+    {
+        if (format_sf == sf) {
+            return Ok(static_cast<text_format_t>(index));
+        }
+    }
+    return Err(fmt::format(FMT_STRING("unrecognized text format: {}"), sf));
 }

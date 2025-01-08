@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 
 #include "base/auto_fd.hh"
+#include "base/from_trait.hh"
 #include "base/fs_util.hh"
 #include "base/paths.hh"
 #include "base/string_util.hh"
@@ -1215,6 +1216,7 @@ write_sample_file()
         script_metadata meta;
         auto sf = bsf.to_string_fragment_producer()->to_string();
 
+        meta.sm_name = bsf.get_name();
         extract_metadata(sf, meta);
         auto path
             = fmt::format(FMT_STRING("formats/default/{}.lnav"), meta.sm_name);
@@ -1542,12 +1544,14 @@ load_format_extra(sqlite3* db,
 }
 
 static void
-extract_metadata(string_fragment contents, struct script_metadata& meta_out)
+extract_metadata(string_fragment contents, script_metadata& meta_out)
 {
     static const auto SYNO_RE = lnav::pcre2pp::code::from_const(
         "^#\\s+@synopsis:(.*)$", PCRE2_MULTILINE);
     static const auto DESC_RE = lnav::pcre2pp::code::from_const(
         "^#\\s+@description:(.*)$", PCRE2_MULTILINE);
+    static const auto OUTPUT_FORMAT_RE = lnav::pcre2pp::code::from_const(
+        "^#\\s+@output-format:\\s+(.*)$", PCRE2_MULTILINE);
 
     auto syno_md = SYNO_RE.create_match_data();
     auto syno_match_res
@@ -1560,6 +1564,29 @@ extract_metadata(string_fragment contents, struct script_metadata& meta_out)
         = DESC_RE.capture_from(contents).into(desc_md).matches().ignore_error();
     if (desc_match_res) {
         meta_out.sm_description = desc_md[1]->trim().to_string();
+    }
+
+    auto out_format_md = OUTPUT_FORMAT_RE.create_match_data();
+    auto out_format_res = OUTPUT_FORMAT_RE.capture_from(contents)
+                              .into(out_format_md)
+                              .matches()
+                              .ignore_error();
+    if (out_format_res) {
+        auto out_format_frag = out_format_md[1]->trim();
+        auto from_res = from<text_format_t>(out_format_frag);
+        if (from_res.isErr()) {
+            log_error("%s (%s): invalid @output-format '%.*s'",
+                      meta_out.sm_name.c_str(),
+                      meta_out.sm_path.c_str(),
+                      out_format_frag.length(),
+                      out_format_frag.data());
+        } else {
+            meta_out.sm_output_format = from_res.unwrap();
+            log_info("%s (%s): setting output format to %d",
+                     meta_out.sm_name.c_str(),
+                     meta_out.sm_path.c_str(),
+                     meta_out.sm_output_format);
+        }
     }
 
     if (!meta_out.sm_synopsis.empty()) {

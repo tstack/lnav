@@ -104,18 +104,28 @@ struct exec_context {
         return Err(this->make_error_msg(format_str, args...));
     }
 
-    std::optional<FILE*> get_output()
+    std::optional<FILE*> get_output() const
     {
         for (auto iter = this->ec_output_stack.rbegin();
              iter != this->ec_output_stack.rend();
              ++iter)
         {
-            if (iter->second && (*iter->second).first) {
-                return (*iter->second).first;
+            if (iter->od_output && iter->od_output->first) {
+                return iter->od_output->first;
             }
         }
 
         return std::nullopt;
+    }
+
+    text_format_t get_output_format() const
+    {
+        auto retval = text_format_t::TF_UNKNOWN;
+
+        if (!this->ec_output_stack.empty()) {
+            retval = this->ec_output_stack.back().od_format;
+        }
+        return retval;
     }
 
     void set_output(const std::string& name, FILE* file, int (*closer)(FILE*));
@@ -185,11 +195,13 @@ struct exec_context {
         explicit output_guard(exec_context& context,
                               std::string name = "default",
                               const std::optional<output_t>& file
-                              = std::nullopt);
+                              = std::nullopt,
+                              text_format_t tf = text_format_t::TF_UNKNOWN);
 
         ~output_guard();
 
         exec_context& sg_context;
+        bool sg_active;
     };
 
     struct sql_callback_guard {
@@ -212,7 +224,9 @@ struct exec_context {
                               const std::string& content);
 
     struct db_source_guard {
-        explicit db_source_guard(exec_context* context) : dsg_context(context) {}
+        explicit db_source_guard(exec_context* context) : dsg_context(context)
+        {
+        }
 
         db_source_guard(const db_source_guard&) = delete;
 
@@ -326,9 +340,20 @@ struct exec_context {
     std::vector<lnav::console::snippet> ec_source;
     help_text* ec_current_help{nullptr};
 
-    std::vector<std::pair<std::string, std::optional<output_t>>>
-        ec_output_stack;
+    struct output_desc {
+        output_desc(std::string name,
+                    std::optional<output_t> out,
+                    text_format_t tf = text_format_t::TF_UNKNOWN)
+            : od_name(std::move(name)), od_output(std::move(out)), od_format(tf)
+        {
+        }
 
+        std::string od_name;
+        std::optional<output_t> od_output;
+        text_format_t od_format{text_format_t::TF_UNKNOWN};
+    };
+
+    std::vector<output_desc> ec_output_stack;
     std::unique_ptr<attr_line_t> ec_accumulator;
 
     sql_callback_t ec_sql_callback;
