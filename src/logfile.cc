@@ -621,6 +621,12 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                     && li.li_utf8_scan_result.is_valid());
             last_line.set_has_ansi(last_line.has_ansi()
                                    || li.li_utf8_scan_result.usr_has_ansi);
+            if (last_line.get_msg_level() == LEVEL_INVALID) {
+                if (this->lf_invalid_lines.ili_lines.size() < invalid_line_info::MAX_INVALID_LINES) {
+                    this->lf_invalid_lines.ili_lines.push_back(this->lf_index.size() - 1);
+                }
+                this->lf_invalid_lines.ili_total += 1;
+            }
         }
         if (prescan_size > 0 && this->lf_index.size() >= prescan_size
             && prescan_time

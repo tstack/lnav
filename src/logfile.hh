@@ -438,6 +438,18 @@ public:
         return this->lf_format_match_messages;
     }
 
+    struct invalid_line_info {
+        static constexpr size_t MAX_INVALID_LINES = 5;
+
+        std::vector<size_t> ili_lines;
+        size_t ili_total{0};
+    };
+
+    const invalid_line_info& get_invalid_line_info() const
+    {
+        return this->lf_invalid_lines;
+    }
+
     size_t estimated_remaining_lines() const;
 
 protected:
@@ -508,6 +520,7 @@ private:
     size_t lf_file_options_generation{0};
     std::optional<std::pair<std::string, lnav::file_options>> lf_file_options;
     std::vector<lnav::console::user_message> lf_format_match_messages;
+    invalid_line_info lf_invalid_lines;
 };
 
 class logline_observer {

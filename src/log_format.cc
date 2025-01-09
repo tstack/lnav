@@ -1686,7 +1686,8 @@ external_log_format::scan(logfile& lf,
     if (this->lf_specialized && !this->lf_multiline) {
         const auto& last_line = dst.back();
 
-        log_debug("invalid line %d file_offset=%" PRIu64,
+        log_debug("%s: invalid line %d file_offset=%" PRIu64,
+                  lf.get_filename().c_str(),
                   dst.size(),
                   li.li_file_range.fr_offset);
         dst.emplace_back(li.li_file_range.fr_offset,

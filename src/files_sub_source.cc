@@ -616,6 +616,30 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 }
             }
 
+            const auto& ili = lf->get_invalid_line_info();
+            if (ili.ili_total > 0) {
+                auto dotdot = ili.ili_total
+                    > logfile::invalid_line_info::MAX_INVALID_LINES;
+                auto um = lnav::console::user_message::error(
+                              attr_line_t()
+                                  .append(lnav::roles::number(
+                                      fmt::to_string(ili.ili_total)))
+                                  .append(" line(s) are not handled by the "
+                                          "format and considered invalid"))
+                              .with_note(attr_line_t("Lines: ")
+                                             .join(ili.ili_lines, ", ")
+                                             .append(dotdot ? ", ..." : ""))
+                              .with_help(
+                                  "The format may be need to be adjusted to "
+                                  "capture these lines");
+
+                details.emplace_back(attr_line_t());
+                um.to_attr_line().rtrim().split_lines()
+                    | lnav::itertools::for_each([&details](const auto& al) {
+                          details.emplace_back(attr_line_t("    ").append(al));
+                      });
+            }
+
             {
                 const auto& meta = lf->get_embedded_metadata();
 
