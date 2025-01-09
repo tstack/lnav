@@ -140,7 +140,7 @@ const xml_entity_map& get_xml_entity_map();
 
 const emoji_map& get_emoji_map();
 
-std::string escape_html(const std::string& content);
+std::string escape_html(string_fragment content);
 
 namespace literals {
 

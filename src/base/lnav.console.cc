@@ -529,6 +529,12 @@ println(FILE* file, const attr_line_t& al)
                     if (style.has_style(text_attrs::style::underline)) {
                         line_style |= fmt::emphasis::underline;
                     }
+                    if (style.has_style(text_attrs::style::italic)) {
+                        line_style |= fmt::emphasis::italic;
+                    }
+                    if (style.has_style(text_attrs::style::struck)) {
+                        line_style |= fmt::emphasis::strikethrough;
+                    }
                     if (!style.ta_fg_color.empty()) {
                         auto color_opt
                             = color_to_terminal_color(style.ta_fg_color);

@@ -4,8 +4,10 @@
 
 # Table of Contents
 
-- [Test](#test)
-- [Github Alerts](#github-alerts)
+- [Table of Contents](#table-of-contents)
+    - [Test](#test)
+    - [Github Alerts](#github-alerts)
+    - [Table](#table)
 
 ## Test
 
@@ -18,6 +20,14 @@
 <img src="../docs/lnav-architecture.png" alt="The internal architecture of lnav" />
 
 <span style="color: #f00; font-weight: bold">Bold red</span>
+
+~~Strikethrough~~
+
+*italic*
+
+**bold**
+
+_underline_
 
 <span style="text-decoration: underline; background-color: darkblue">
 Underline</span>
@@ -93,3 +103,26 @@ def hw(name):
 |   4 |    Four     | The fourth    |
 |  .. |     ..      | ..            |
 | 100 | One Hundred | The hundredth |
+
+| abc        | def |
+|------------|-----|
+| foo \| bar | ddd |
+
+<table>
+<tr>
+<th>
+Foo
+</th>
+<td>
+Bar
+</td>
+</tr>
+<tr>
+<th>
+Foo
+</th>
+<td>
+Bar
+</td>
+</tr>
+</table>

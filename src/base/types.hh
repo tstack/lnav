@@ -32,4 +32,12 @@
 
 struct null_value_t {};
 
+struct type_visitor {
+    template<typename T>
+    const char* operator()(const T& operand) const
+    {
+        return typeid(operand).name();
+    }
+};
+
 #endif

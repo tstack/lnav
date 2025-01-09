@@ -1,8 +1,10 @@
 
 [1m[35mTable of Contents[0m
 
- [33m•[0m ]8;;#test\[4mTest[0m]8;;\
- [33m•[0m ]8;;#github-alerts\[4mGithub Alerts[0m]8;;\
+ [33m•[0m ]8;;#table-of-contents\[4mTable of Contents[0m]8;;\
+    [33m—[0m ]8;;#test\[4mTest[0m]8;;\
+    [33m—[0m ]8;;#github-alerts\[4mGithub Alerts[0m]8;;\
+    [33m—[0m ]8;;#table\[4mTable[0m]8;;\
 
 [1mTest[0m
 
@@ -18,6 +20,14 @@
  [34m▌[0m[2] - file://{top_srcdir}/docs/lnav-architecture.png 
 
 [1m[31mBold red[0m
+
+[9mStrikethrough[0m
+
+[3mitalic[0m
+
+[1mbold[0m
+
+[4munderline[0m
 
 
 [4m[44mUnderline[0m
@@ -85,3 +95,7 @@ Goodbye, [36m▌[0m World[32m╏[0m!
 [1m    4     Four     The fourth    [0m
    ..      ..      ..            
   100 One Hundred  The hundredth 
+
+ abc        def 
+════════════════
+ foo | bar  ddd 

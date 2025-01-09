@@ -34,6 +34,7 @@
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "base/map_util.hh"
+#include "base/types.hh"
 #include "document.sections.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "pugixml/pugixml.hpp"
@@ -101,6 +102,11 @@ md2attr_line::flush_footnotes()
 Result<void, std::string>
 md2attr_line::enter_block(const md4cpp::event_handler::block& bl)
 {
+    if (this->ml_source_path) {
+        log_trace("enter_block %s",
+                  mapbox::util::apply_visitor(type_visitor(), bl));
+    }
+
     if (this->ml_list_stack.empty()
         && (bl.is<MD_BLOCK_H_DETAIL*>() || bl.is<block_hr>()
             || bl.is<block_p>()))
@@ -130,6 +136,11 @@ md2attr_line::enter_block(const md4cpp::event_handler::block& bl)
 Result<void, std::string>
 md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 {
+    if (this->ml_source_path) {
+        log_trace("leave_block %s",
+                  mapbox::util::apply_visitor(type_visitor(), bl));
+    }
+
     auto block_text = std::move(this->ml_blocks.back());
     this->ml_blocks.pop_back();
 
@@ -556,6 +567,11 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 Result<void, std::string>
 md2attr_line::enter_span(const md4cpp::event_handler::span& sp)
 {
+    if (this->ml_source_path) {
+        log_trace("enter_span %s",
+                  mapbox::util::apply_visitor(type_visitor(), sp));
+    }
+
     auto& last_block = this->ml_blocks.back();
     this->ml_span_starts.push_back(last_block.length());
     if (sp.is<span_code>()) {
@@ -570,6 +586,11 @@ md2attr_line::enter_span(const md4cpp::event_handler::span& sp)
 Result<void, std::string>
 md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
 {
+    if (this->ml_source_path) {
+        log_trace("leave_span %s",
+                  mapbox::util::apply_visitor(type_visitor(), sp));
+    }
+
     auto& last_block = this->ml_blocks.back();
     if (sp.is<span_code>()) {
         this->ml_code_depth -= 1;
@@ -591,12 +612,10 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
             static_cast<int>(this->ml_span_starts.back()),
             static_cast<int>(last_block.length()),
         };
-#if defined(A_ITALIC)
         last_block.with_attr({
             lr,
-            VC_STYLE.value(text_attrs{(int32_t) A_ITALIC}),
+            VC_STYLE.value(text_attrs{text_attrs::with_italic()}),
         });
-#endif
     } else if (sp.is<span_strong>()) {
         line_range lr{
             static_cast<int>(this->ml_span_starts.back()),
@@ -614,6 +633,15 @@ md2attr_line::leave_span(const md4cpp::event_handler::span& sp)
         last_block.with_attr({
             lr,
             VC_STYLE.value(text_attrs::with_underline()),
+        });
+    } else if (sp.is<span_del>()) {
+        auto lr = line_range{
+            static_cast<int>(this->ml_span_starts.back()),
+            static_cast<int>(last_block.length()),
+        };
+        last_block.with_attr({
+            lr,
+            VC_STYLE.value(text_attrs::with_struck()),
         });
     } else if (sp.is<MD_SPAN_A_DETAIL*>()) {
         const auto* a_detail = sp.get<MD_SPAN_A_DETAIL*>();
@@ -743,6 +771,10 @@ md2attr_line::to_attr_line(const pugi::xml_node& doc)
     static const auto NAME_BORDER_RIGHT
         = string_fragment::from_const("border-right");
     static const auto& vc = view_colors::singleton();
+
+    if (this->ml_source_path) {
+        log_trace("converting HTML to attr_line");
+    }
 
     attr_line_t retval;
     if (doc.children().empty()) {

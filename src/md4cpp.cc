@@ -32,6 +32,7 @@
 #include "base/is_utf8.hh"
 #include "base/lnav_log.hh"
 #include "emojis-json.h"
+#include "pcrepp/pcre2pp.hh"
 #include "xml-entities-json.h"
 #include "yajlpp/yajlpp_def.hh"
 
@@ -122,12 +123,12 @@ get_emoji_map()
 }
 
 std::string
-escape_html(const std::string& content)
+escape_html(string_fragment content)
 {
     std::string retval;
 
-    retval.reserve(content.size());
-    for (auto ch : content) {
+    retval.reserve(content.length());
+    for (const auto ch : content) {
         switch (ch) {
             case '"':
                 retval.append("&quot;");
@@ -284,6 +285,7 @@ static int
 md4cpp_text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata)
 {
     auto* pu = static_cast<parse_userdata*>(userdata);
+
     auto text_res = pu->pu_handler.text(type, string_fragment(text, 0, size));
     if (text_res.isErr()) {
         pu->pu_error_msg = text_res.unwrapErr();
@@ -309,7 +311,8 @@ parse(const string_fragment& sf, event_handler& eh)
     auto pu = parse_userdata{eh};
 
     parser.abi_version = 0;
-    parser.flags = (MD_DIALECT_GITHUB | MD_FLAG_UNDERLINE)
+    parser.flags
+        = (MD_DIALECT_GITHUB | MD_FLAG_UNDERLINE | MD_FLAG_STRIKETHROUGH)
         & ~(MD_FLAG_PERMISSIVEAUTOLINKS);
     parser.enter_block = md4cpp_enter_block;
     parser.leave_block = md4cpp_leave_block;
