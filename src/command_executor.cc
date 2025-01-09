@@ -1246,9 +1246,9 @@ exec_context::exec_context(logline_value_vector* line_values,
 Result<std::string, lnav::console::user_message>
 exec_context::execute(const std::string& cmdline)
 {
-    if (this->get_provenance<mouse_input>()) {
-        require(!lnav_data.ld_rl_view->is_active());
-
+    if (this->get_provenance<mouse_input>()
+        && !lnav_data.ld_rl_view->is_active())
+    {
         int context = 0;
         switch (cmdline[0]) {
             case '/':

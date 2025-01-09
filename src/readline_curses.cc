@@ -1476,6 +1476,11 @@ readline_curses::focus(int context,
                        const std::string& prompt,
                        const std::string& initial)
 {
+    if (this->rc_active_context == context) {
+        this->rewrite_line(initial.size(), initial);
+        return;
+    }
+
     char cwd[MAXPATHLEN + 1024];
     char buffer[8 + sizeof(cwd)];
 
