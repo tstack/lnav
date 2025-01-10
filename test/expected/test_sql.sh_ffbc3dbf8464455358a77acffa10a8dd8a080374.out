@@ -1,4 +1,4 @@
 log_line,log_time,log_level,c_ip,cs_method,cs_referer,cs_uri_query,cs_uri_stem,cs_user_agent,cs_username,cs_version,sc_bytes,sc_status,cs_host,log_part,log_idle_msecs,log_mark,log_comment,log_tags,log_annotations,log_filters
-0,2009-07-20 22:59:26.000,info,192.168.202.254,GET,-,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,-,HTTP/1.0,134,200,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
-1,2009-07-20 22:59:29.000,error,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,-,HTTP/1.0,46210,404,<NULL>,<NULL>,3000,0,<NULL>,<NULL>,<NULL>,<NULL>
-2,2009-07-20 22:59:29.000,info,192.168.202.254,GET,-,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,-,HTTP/1.0,78929,200,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+0,2009-07-20 22:59:26.000,info,192.168.202.254,GET,<NULL>,<NULL>,/vmw/cgi/tramp,gPXE/0.9.7,<NULL>,HTTP/1.0,134,200,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>
+1,2009-07-20 22:59:29.000,error,192.168.202.254,GET,<NULL>,<NULL>,/vmw/vSphere/default/vmkboot.gz,gPXE/0.9.7,<NULL>,HTTP/1.0,46210,404,<NULL>,<NULL>,3000,0,<NULL>,<NULL>,<NULL>,<NULL>
+2,2009-07-20 22:59:29.000,info,192.168.202.254,GET,<NULL>,<NULL>,/vmw/vSphere/default/vmkernel.gz,gPXE/0.9.7,<NULL>,HTTP/1.0,78929,200,<NULL>,<NULL>,0,0,<NULL>,<NULL>,<NULL>,<NULL>

@@ -13,10 +13,10 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?) (?<c_ip>[^ ]+) (?<cs_username>[^ ]+) (?<cs_method>[A-Z]+) \"(?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))?\" (?:-1|\\d+) (?<sc_status>\\d+) \\d+\\s*(?<body>.*)"
             },
             "std": {
-                "pattern": "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]*)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
+                "pattern": "^(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?:-|(?<cs_username>\\S+))\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?:-|(?<cs_referer>[^\"]*))\" \"(?:-|(?<cs_user_agent>[^\"]+))\")?\\s*(?<body>.*)"
             },
             "std-vhost": {
-                "pattern": "^(?<cs_host>[\\w\\-\\.]*)(?::\\d+)?\\s+(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?<cs_username>\\S+)\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?<cs_referer>[^\"]+)\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
+                "pattern": "^(?<cs_host>[\\w\\-\\.]*)(?::\\d+)?\\s+(?<c_ip>[\\w\\.:\\-]+)\\s+[\\w\\.\\-]+\\s+(?:-|(?<cs_username>\\S+))\\s+\\[(?<timestamp>[^\\]]+)\\] \"(?:\\-|(?<cs_method>\\w+) (?<cs_uri_stem>[^ \\?]+)(?:\\?(?<cs_uri_query>[^ ]*))? (?<cs_version>[\\w/\\.]+))\" (?<sc_status>\\d+) (?<sc_bytes>\\d+|-)(?: \"(?:-|(?<cs_referer>[^\"]+))\" \"(?<cs_user_agent>[^\"]+)\")?\\s*(?<body>.*)"
             },
             "mod-std": {
                 "module-format": true,
