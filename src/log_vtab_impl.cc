@@ -334,7 +334,7 @@ struct vtab_cursor {
     }
 
     sqlite3_vtab_cursor base;
-    log_cursor log_cursor;
+    struct log_cursor log_cursor;
     vis_line_t log_msg_line{-1_vl};
     logline_value_vector line_values;
 };
