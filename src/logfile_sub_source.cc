@@ -199,10 +199,10 @@ struct filtered_logline_cmp {
         return (*ll_lhs) < (*ll_rhs);
     }
 
-    bool operator()(const uint32_t& lhs, const struct timeval& rhs) const
+    bool operator()(const uint32_t& lhs, const timeval& rhs) const
     {
-        content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
-        logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
+        const auto cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
+        const auto* ll_lhs = this->llss_controller.find_line(cl_lhs);
 
         if (ll_lhs == nullptr) {
             return true;
@@ -214,12 +214,12 @@ struct filtered_logline_cmp {
 };
 
 std::optional<vis_line_t>
-logfile_sub_source::find_from_time(const struct timeval& start) const
+logfile_sub_source::find_from_time(const timeval& start) const
 {
-    auto lb = std::lower_bound(this->lss_filtered_index.begin(),
-                               this->lss_filtered_index.end(),
-                               start,
-                               filtered_logline_cmp(*this));
+    const auto lb = std::lower_bound(this->lss_filtered_index.begin(),
+                                     this->lss_filtered_index.end(),
+                                     start,
+                                     filtered_logline_cmp(*this));
     if (lb != this->lss_filtered_index.end()) {
         return vis_line_t(lb - this->lss_filtered_index.begin());
     }
@@ -365,8 +365,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 adjusted_time = this->lss_token_line->get_timeval();
                 if (format->lf_timestamp_flags & ETF_NANOS_SET) {
                     fmt = "%Y-%m-%d %H:%M:%S.%N";
-                    struct timeval actual_tv;
-                    struct exttm tm;
+                    timeval actual_tv;
+                    exttm tm;
                     if (format->lf_date_time.scan(
                             this->lss_token_value.data() + time_range.lr_start,
                             time_range.length(),

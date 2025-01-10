@@ -129,6 +129,7 @@ struct log_cursor {
     vis_line_t lc_curr_line;
     int lc_sub_index;
     vis_line_t lc_end_line;
+    vis_line_t lc_direction{1_vl};
 
     using level_constraint = integral_constraint<log_level_t>;
 
@@ -146,6 +147,8 @@ struct log_cursor {
     std::vector<column_constraint> lc_indexed_columns;
     std::vector<vis_line_t> lc_indexed_lines;
 
+    size_t lc_scanned_rows{0};
+
     enum class constraint_t {
         none,
         unique,
@@ -158,7 +161,10 @@ struct log_cursor {
     bool is_eof() const
     {
         return this->lc_indexed_lines.empty()
-            && this->lc_curr_line >= this->lc_end_line;
+            && ((this->lc_direction > 0 &&
+                this->lc_curr_line >= this->lc_end_line)
+                || (this->lc_direction < 0 &&
+                    this->lc_curr_line <= this->lc_end_line));
     }
 };
 

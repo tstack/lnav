@@ -50,7 +50,7 @@ using namespace lnav::roles::literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-static struct log_cursor log_cursor_latest;
+static log_cursor log_cursor_latest;
 
 thread_local _log_vtab_data log_vtab_data;
 
@@ -234,6 +234,10 @@ log_vtab_impl::extract(logfile* lf,
 bool
 log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
 {
+    if (lc.lc_curr_line < 0_vl) {
+        return false;
+    }
+
     content_line_t cl(lss.at(lc.lc_curr_line));
     auto* lf = lss.find_file_ptr(cl);
     auto lf_iter = lf->begin() + cl;
@@ -330,7 +334,7 @@ struct vtab_cursor {
     }
 
     sqlite3_vtab_cursor base;
-    struct log_cursor log_cursor;
+    log_cursor log_cursor;
     vis_line_t log_msg_line{-1_vl};
     logline_value_vector line_values;
 };
@@ -419,6 +423,7 @@ vt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     p_cur->base.pVtab = p_svt;
     p_cur->log_cursor.lc_opid = std::nullopt;
     p_cur->log_cursor.lc_curr_line = 0_vl;
+    p_cur->log_cursor.lc_direction = 1_vl;
     p_cur->log_cursor.lc_end_line = vis_line_t(p_vt->lss->text_line_count());
     p_cur->log_cursor.lc_sub_index = 0;
 
@@ -523,7 +528,7 @@ vt_next(sqlite3_vtab_cursor* cur)
         vc->log_cursor.lc_curr_line = vc->log_cursor.lc_indexed_lines.back();
         vc->log_cursor.lc_indexed_lines.pop_back();
     } else {
-        vc->log_cursor.lc_curr_line += 1_vl;
+        vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
     }
     vc->log_cursor.lc_sub_index = 0;
     do {
@@ -538,14 +543,20 @@ vt_next(sqlite3_vtab_cursor* cur)
         while (vc->log_cursor.lc_curr_line != -1_vl && !vc->log_cursor.is_eof()
                && !vt->vi->is_valid(vc->log_cursor, *vt->lss))
         {
-            vc->log_cursor.lc_curr_line += 1_vl;
+            vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
             vc->log_cursor.lc_sub_index = 0;
         }
         if (vc->log_cursor.is_eof()) {
+            log_info("vt_next at EOF (%d:%d:%d), scanned rows %lu",
+                     vc->log_cursor.lc_curr_line,
+                     vc->log_cursor.lc_end_line,
+                     vc->log_cursor.lc_direction,
+                     vc->log_cursor.lc_scanned_rows);
             done = true;
         } else {
             done = vt->vi->next(vc->log_cursor, *vt->lss);
             if (done) {
+                vc->log_cursor.lc_scanned_rows += 1;
                 populate_indexed_columns(vc, vt);
             } else {
                 if (!vc->log_cursor.lc_indexed_lines.empty()) {
@@ -553,7 +564,7 @@ vt_next(sqlite3_vtab_cursor* cur)
                         = vc->log_cursor.lc_indexed_lines.back();
                     vc->log_cursor.lc_indexed_lines.pop_back();
                 } else {
-                    vc->log_cursor.lc_curr_line += 1_vl;
+                    vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
                 }
                 vc->log_cursor.lc_sub_index = 0;
             }
@@ -597,7 +608,7 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
                           (int) vc->log_cursor.lc_curr_line);
 #endif
             } else {
-                vc->log_cursor.lc_curr_line += 1_vl;
+                vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
             }
             vc->log_cursor.lc_sub_index = 0;
             for (auto& col_constraint : vc->log_cursor.lc_indexed_columns) {
@@ -1258,11 +1269,25 @@ log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
         case SQLITE_INDEX_CONSTRAINT_LT:
             if (vl <= 0_vl) {
                 this->lc_curr_line = this->lc_end_line;
-            } else if (vl < this->lc_end_line) {
-                this->lc_end_line = vl;
+            } else if (this->lc_direction > 0) {
+                if (vl < this->lc_end_line) {
+                    this->lc_end_line = vl;
+                }
+            } else if (this->lc_direction < 0) {
+                if (vl < this->lc_curr_line) {
+                    this->lc_curr_line = vl - 1_vl;
+                }
             }
             break;
     }
+#ifdef DEBUG_INDEXING
+    log_debug("log_cursor::update(%s, %d) -> (%d:%d:%d)",
+              sql_constraint_op_name(op),
+              vl,
+              this->lc_curr_line,
+              this->lc_end_line,
+              this->lc_direction);
+#endif
 }
 
 log_cursor::string_constraint::string_constraint(unsigned char op,
@@ -1349,23 +1374,32 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     auto* vt = (log_vtab*) p_vtc->pVtab;
     sqlite3_index_info::sqlite3_index_constraint* index = nullptr;
 
-    if (idxStr) {
+    if (idxStr != nullptr) {
         auto desc_len = strlen(idxStr);
         auto index_len = idxNum * sizeof(*index);
         auto storage_len = desc_len + 128 + index_len;
+        auto direction_storage
+            = static_cast<const char*>(idxStr) + desc_len + 1;
+        p_cur->log_cursor.lc_direction = vis_line_t(direction_storage[0]);
         auto* remaining_storage = const_cast<void*>(
-            static_cast<const void*>(idxStr + desc_len + 1));
+            static_cast<const void*>(idxStr + desc_len + 1 + 1));
         auto* index_storage
             = std::align(alignof(sqlite3_index_info::sqlite3_index_constraint),
                          index_len,
                          remaining_storage,
                          storage_len);
-        index = reinterpret_cast<sqlite3_index_info::sqlite3_index_constraint*>(
+        index = static_cast<sqlite3_index_info::sqlite3_index_constraint*>(
             index_storage);
+    } else {
+        p_cur->log_cursor.lc_direction = 1_vl;
     }
 
 #ifdef DEBUG_INDEXING
-    log_debug("vt_filter(%s, %d)", vt->vi->get_name().get(), idxNum);
+    log_info("vt_filter(%s, %d, direction=%d)",
+             vt->vi->get_name().get(),
+             idxNum,
+             p_cur->log_cursor.lc_direction);
+    log_info("  index storage: %p", index);
 #endif
     p_cur->log_cursor.lc_format_name.clear();
     p_cur->log_cursor.lc_pattern_name.clear();
@@ -1378,8 +1412,14 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_unique_path.clear();
     p_cur->log_cursor.lc_last_unique_path_match = nullptr;
     p_cur->log_cursor.lc_last_unique_path_mismatch = nullptr;
-    p_cur->log_cursor.lc_curr_line = 0_vl;
-    p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
+    if (p_cur->log_cursor.lc_direction < 0) {
+        p_cur->log_cursor.lc_curr_line
+            = vis_line_t(vt->lss->text_line_count() - 1);
+        p_cur->log_cursor.lc_end_line = -1_vl;
+    } else {
+        p_cur->log_cursor.lc_curr_line = 0_vl;
+        p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
+    }
 
     std::optional<vtab_time_range> log_time_range;
     std::optional<log_cursor::opid_hash> opid_val;
@@ -1735,14 +1775,26 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
 
     if (!log_time_range) {
     } else if (log_time_range->empty()) {
+#ifdef DEBUG_INDEXING
+        log_warning("time range is empty");
+#endif
         p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
     } else {
         if (log_time_range->vtr_begin) {
             auto vl_opt
                 = vt->lss->row_for_time(log_time_range->vtr_begin.value());
             if (!vl_opt) {
+#ifdef DEBUG_INDEXING
+                log_warning("cannot find row with begin time: %d",
+                            log_time_range->vtr_begin.value().tv_sec);
+#endif
                 p_cur->log_cursor.lc_curr_line = p_cur->log_cursor.lc_end_line;
             } else {
+#ifdef DEBUG_INDEXING
+                log_debug("found row with begin time: %d -> %d",
+                          log_time_range->vtr_begin.value(),
+                          vl_opt.value());
+#endif
                 p_cur->log_cursor.lc_curr_line = vl_opt.value();
             }
         }
@@ -1780,9 +1832,10 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     auto rc = vt->base.pModule->xNext(p_vtc);
 
 #ifdef DEBUG_INDEXING
-    log_debug("vt_filter() -> cursor_range(%d:%d)",
+    log_debug("vt_filter() -> cursor_range(%d:%d:%d)",
               (int) p_cur->log_cursor.lc_curr_line,
-              (int) p_cur->log_cursor.lc_end_line);
+              (int) p_cur->log_cursor.lc_end_line,
+              p_cur->log_cursor.lc_direction);
 #endif
 
     return rc;
@@ -1795,11 +1848,34 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
     std::vector<std::string> index_desc;
     int argvInUse = 0;
     auto* vt = (log_vtab*) tab;
+    char direction = 1;
 
-    log_info("vt_best_index(%s, nConstraint=%d)",
+    log_info("vt_best_index(%s, nConstraint=%d, nOrderBy=%d)",
              vt->vi->get_name().get(),
-             p_info->nConstraint);
+             p_info->nConstraint,
+             p_info->nOrderBy);
+    if (p_info->nOrderBy > 0) {
+        log_info("  ORDER BY");
+        for (int i = 0; i < p_info->nOrderBy; i++) {
+            const auto& orderby_info = p_info->aOrderBy[i];
+            log_info("    %d %s",
+                     orderby_info.iColumn,
+                     orderby_info.desc ? "DESC" : "ASC");
+        }
+
+        if (p_info->aOrderBy[0].iColumn == 0) {
+            if (p_info->aOrderBy[0].desc) {
+                log_info("  consuming ORDER BY log_line DESC");
+                direction = -1;
+            } else {
+                log_info("  consuming ORDER BY log_line ASC");
+                direction = 1;
+            }
+            p_info->orderByConsumed = 1;
+        }
+    }
     if (!vt->vi->vi_supports_indexes) {
+        p_info->orderByConsumed = 0;
         return SQLITE_OK;
     }
     for (int lpc = 0; lpc < p_info->nConstraint; lpc++) {
@@ -1935,6 +2011,8 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         fmt::format(FMT_STRING("col({}) {} ?"),
                                     col,
                                     sql_constraint_op_name(op)));
+                    direction = 1;
+                    p_info->orderByConsumed = 0;
                 }
                 break;
             }
@@ -1956,9 +2034,10 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
         }
         auto* desc_storage = static_cast<char*>(storage);
         memcpy(desc_storage, full_desc.c_str(), full_desc.size() + 1);
+        desc_storage[full_desc.size() + 1] = direction;
         auto* remaining_storage
-            = static_cast<void*>(desc_storage + full_desc.size() + 1);
-        len -= full_desc.size() - 1;
+            = static_cast<void*>(desc_storage + full_desc.size() + 1 + 1);
+        len -= 1 + full_desc.size() - 1;
         auto* index_storage
             = std::align(alignof(sqlite3_index_info::sqlite3_index_constraint),
                          index_len,
@@ -1967,15 +2046,17 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
         index_copy
             = reinterpret_cast<sqlite3_index_info::sqlite3_index_constraint*>(
                 index_storage);
+        log_info("  index storage: %p", index_copy);
         memcpy(index_copy, &indexes[0], index_len);
         p_info->idxNum = argvInUse;
         p_info->idxStr = static_cast<char*>(storage);
         p_info->needToFreeIdxStr = 1;
         p_info->estimatedCost = 10.0;
     } else {
-        static char fullscan_str[] = "fullscan";
+        static char fullscan_asc[] = "fullscan\0\001";
+        static char fullscan_desc[] = "fullscan\0\377";
 
-        p_info->idxStr = fullscan_str;
+        p_info->idxStr = direction < 0 ? fullscan_desc : fullscan_asc;
         p_info->estimatedCost = 1000000000.0;
     }
 

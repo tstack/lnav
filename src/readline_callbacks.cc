@@ -524,12 +524,19 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
             break;
 
         case ln_mode_t::COMMAND: {
-            lnav_data.ld_exec_context.ec_dry_run = true;
+            auto& ec = lnav_data.ld_exec_context;
+            ec.ec_dry_run = true;
 
             lnav_data.ld_preview_generation += 1;
             clear_preview();
-            auto result = execute_command(lnav_data.ld_exec_context,
-                                          rc->get_value().get_string());
+            auto src_guard = ec.enter_source(
+                SRC,
+                1,
+                fmt::format(FMT_STRING(":{}"), rc->get_value().get_string()));
+            readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
+            ec.ec_source.back().s_content.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+            auto result = execute_command(ec, rc->get_value().get_string());
 
             if (result.isOk()) {
                 auto msg = result.unwrap();
@@ -549,7 +556,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
 
             lnav_data.ld_preview_view[0].reload_data();
 
-            lnav_data.ld_exec_context.ec_dry_run = false;
+            ec.ec_dry_run = false;
             return;
         }
 

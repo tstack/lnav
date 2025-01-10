@@ -527,7 +527,7 @@ public:
 
     std::optional<row_info> time_for_row(vis_line_t row)
     {
-        if (row >= 0_vl && row < (ssize_t) this->text_line_count()) {
+        if (row >= 0_vl && row < (ssize_t) this->lss_filtered_index.size()) {
             auto cl = this->at(row);
             return row_info{
                 this->find_line(cl)->get_timeval(),
