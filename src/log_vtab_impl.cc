@@ -38,6 +38,7 @@
 #include "hasher.hh"
 #include "lnav_util.hh"
 #include "logfile_sub_source.hh"
+#include "scn/ranges.h"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
@@ -322,7 +323,11 @@ struct vtab_cursor {
             return;
         }
         auto& sbr = this->line_values.lvv_sbr;
-        lf->read_full_message(ll, sbr);
+        lf->read_full_message(ll,
+                              sbr,
+                              this->log_cursor.lc_direction < 0
+                                  ? line_buffer::scan_direction::backward
+                                  : line_buffer::scan_direction::forward);
         sbr.erase_ansi();
         this->log_msg_line = this->log_cursor.lc_curr_line;
     }
@@ -470,13 +475,15 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
 
     for (const auto& ic : vc->log_cursor.lc_indexed_columns) {
         auto& ci = vt->vi->vi_column_indexes[ic.cc_column];
+        const auto vl = vc->log_cursor.lc_curr_line;
 
-        if (vc->log_cursor.lc_curr_line < ci.ci_max_line) {
+        if (ci.ci_indexed_range.contains(vl)) {
+            // the index already contains this column, nothing to do
             continue;
         }
 
         if (lf == nullptr) {
-            content_line_t cl(vt->lss->at(vc->log_cursor.lc_curr_line));
+            const auto cl = vt->lss->at(vl);
             uint64_t line_number;
             auto ld = vt->lss->find_data(cl, line_number);
             lf = (*ld)->get_file_ptr();
@@ -498,20 +505,25 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
             continue;
         }
 
-        auto value = lv_iter->to_string();
+        auto value = lv_iter->to_string_fragment(ci.ci_string_arena);
 
 #ifdef DEBUG_INDEXING
-        log_debug("updated index for column %d %s -> %d",
+        log_debug("updated index for column %d %.*s -> %d",
                   ic.cc_column,
-                  value.c_str(),
+                  value.length(),
+                  value.data(),
                   (int) vc->log_cursor.lc_curr_line);
 #endif
 
-        if (ci.ci_value_to_lines[value].empty()
-            || ci.ci_value_to_lines[value].back()
-                != vc->log_cursor.lc_curr_line)
+        auto& line_deq = ci.ci_value_to_lines[value];
+        if (line_deq.empty()
+            || (line_deq.front() != vl && line_deq.back() != vl))
         {
-            ci.ci_value_to_lines[value].push_back(vc->log_cursor.lc_curr_line);
+            if (vc->log_cursor.lc_direction < 0) {
+                line_deq.push_front(vl);
+            } else {
+                line_deq.push_back(vl);
+            }
         }
     }
 }
@@ -523,8 +535,18 @@ vt_next(sqlite3_vtab_cursor* cur)
     auto* vt = (log_vtab*) cur->pVtab;
     auto done = false;
 
+#ifdef DEBUG_INDEXING
+    log_debug("vt_next([%d:%d:%d])",
+              vc->log_cursor.lc_curr_line,
+              vc->log_cursor.lc_end_line,
+              vc->log_cursor.lc_direction);
+#endif
+
     vc->invalidate();
-    if (!vc->log_cursor.lc_indexed_lines.empty()) {
+    if (!vc->log_cursor.lc_indexed_lines.empty()
+        && vc->log_cursor.lc_indexed_lines_range.contains(
+            vc->log_cursor.lc_curr_line))
+    {
         vc->log_cursor.lc_curr_line = vc->log_cursor.lc_indexed_lines.back();
         vc->log_cursor.lc_indexed_lines.pop_back();
     } else {
@@ -556,10 +578,20 @@ vt_next(sqlite3_vtab_cursor* cur)
         } else {
             done = vt->vi->next(vc->log_cursor, *vt->lss);
             if (done) {
+                if (vc->log_cursor.lc_curr_line % 10000 == 0) {
+                    log_debug("scanned %d", vc->log_cursor.lc_curr_line);
+                }
+#ifdef DEBUG_INDEXING
+                log_debug("scanned %d", vc->log_cursor.lc_curr_line);
+#endif
                 vc->log_cursor.lc_scanned_rows += 1;
                 populate_indexed_columns(vc, vt);
+                vt->vi->expand_indexes_to(vc->log_cursor.lc_curr_line);
             } else {
-                if (!vc->log_cursor.lc_indexed_lines.empty()) {
+                if (!vc->log_cursor.lc_indexed_lines.empty()
+                    && vc->log_cursor.lc_indexed_lines_range.contains(
+                        vc->log_cursor.lc_curr_line))
+                {
                     vc->log_cursor.lc_curr_line
                         = vc->log_cursor.lc_indexed_lines.back();
                     vc->log_cursor.lc_indexed_lines.pop_back();
@@ -570,6 +602,13 @@ vt_next(sqlite3_vtab_cursor* cur)
             }
         }
     } while (!done);
+
+#ifdef DEBUG_INDEXING
+    log_debug("vt_next() -> [%d:%d:%d]",
+              vc->log_cursor.lc_curr_line,
+              vc->log_cursor.lc_end_line,
+              vc->log_cursor.lc_direction);
+#endif
 
     return SQLITE_OK;
 }
@@ -591,7 +630,11 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
             break;
         }
 
+        auto vl_before = vc->log_cursor.lc_curr_line;
         done = vt->vi->next(vc->log_cursor, *vt->lss);
+        if (vl_before != vc->log_cursor.lc_curr_line) {
+            vt->vi->expand_indexes_to(vl_before);
+        }
         if (done) {
             populate_indexed_columns(vc, vt);
         } else if (vc->log_cursor.is_eof()) {
@@ -599,7 +642,11 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
         } else {
             require(vc->log_cursor.lc_curr_line < vt->lss->text_line_count());
 
-            if (!vc->log_cursor.lc_indexed_lines.empty()) {
+            if (!vc->log_cursor.lc_indexed_lines.empty()
+                && vc->log_cursor.lc_indexed_lines_range.contains(
+                    vc->log_cursor.lc_curr_line))
+            {
+                vt->vi->expand_indexes_to(vc->log_cursor.lc_curr_line);
                 vc->log_cursor.lc_curr_line
                     = vc->log_cursor.lc_indexed_lines.back();
                 vc->log_cursor.lc_indexed_lines.pop_back();
@@ -608,16 +655,10 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
                           (int) vc->log_cursor.lc_curr_line);
 #endif
             } else {
+                vt->vi->expand_indexes_to(vc->log_cursor.lc_curr_line);
                 vc->log_cursor.lc_curr_line += vc->log_cursor.lc_direction;
             }
             vc->log_cursor.lc_sub_index = 0;
-            for (auto& col_constraint : vc->log_cursor.lc_indexed_columns) {
-                vt->vi->vi_column_indexes[col_constraint.cc_column].ci_max_line
-                    = std::max(
-                        vt->vi->vi_column_indexes[col_constraint.cc_column]
-                            .ci_max_line,
-                        vc->log_cursor.lc_curr_line);
-            }
         }
     } while (!done);
 
@@ -1274,7 +1315,7 @@ log_cursor::update(unsigned char op, vis_line_t vl, constraint_t cons)
                     this->lc_end_line = vl;
                 }
             } else if (this->lc_direction < 0) {
-                if (vl < this->lc_curr_line) {
+                if (vl <= this->lc_curr_line) {
                     this->lc_curr_line = vl - 1_vl;
                 }
             }
@@ -1406,7 +1447,6 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_opid = std::nullopt;
     p_cur->log_cursor.lc_level_constraint = std::nullopt;
     p_cur->log_cursor.lc_log_path.clear();
-    p_cur->log_cursor.lc_indexed_columns.clear();
     p_cur->log_cursor.lc_last_log_path_match = nullptr;
     p_cur->log_cursor.lc_last_log_path_mismatch = nullptr;
     p_cur->log_cursor.lc_unique_path.clear();
@@ -1420,6 +1460,9 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         p_cur->log_cursor.lc_curr_line = 0_vl;
         p_cur->log_cursor.lc_end_line = vis_line_t(vt->lss->text_line_count());
     }
+    p_cur->log_cursor.lc_scanned_rows = 0;
+    p_cur->log_cursor.lc_indexed_lines.clear();
+    p_cur->log_cursor.lc_indexed_lines_range = msg_range::empty();
 
     std::optional<vtab_time_range> log_time_range;
     std::optional<log_cursor::opid_hash> opid_val;
@@ -1701,68 +1744,137 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
         }
     }
 
-    if (!p_cur->log_cursor.lc_indexed_columns.empty()) {
-        std::optional<vis_line_t> max_indexed_line;
-
+    if (p_cur->log_cursor.lc_curr_line == p_cur->log_cursor.lc_end_line) {
+    } else if (!p_cur->log_cursor.lc_indexed_columns.empty()) {
+        auto min_index_range = msg_range::invalid();
+        auto scan_range
+            = msg_range::empty()
+                  .expand_to(p_cur->log_cursor.lc_curr_line)
+                  .expand_to(
+                      p_cur->log_cursor.lc_end_line
+                      - (p_cur->log_cursor.lc_direction > 0 ? 1_vl : -1_vl))
+                  .get_valid()
+                  .value();
         for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
             auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
-
             if (coli.ci_index_generation != vt->lss->lss_index_generation) {
                 coli.ci_value_to_lines.clear();
                 coli.ci_index_generation = vt->lss->lss_index_generation;
-                coli.ci_max_line = 0_vl;
+                coli.ci_indexed_range = msg_range::empty();
+                coli.ci_string_arena.reset();
             }
 
-            if (!max_indexed_line) {
-                max_indexed_line = coli.ci_max_line;
-            } else if (coli.ci_max_line < max_indexed_line.value()) {
-                max_indexed_line = coli.ci_max_line;
+            {
+                auto col_valid_opt = coli.ci_indexed_range.get_valid();
+                if (col_valid_opt) {
+                    log_debug("column %d valid range [%d:%d)",
+                              icol.cc_column,
+                              col_valid_opt->v_min_line,
+                              col_valid_opt->v_max_line);
+                }
             }
+
+            min_index_range.intersect(coli.ci_indexed_range);
         }
 
         for (const auto& icol : p_cur->log_cursor.lc_indexed_columns) {
-            auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
+            const auto& coli = vt->vi->vi_column_indexes[icol.cc_column];
 
             auto iter
                 = coli.ci_value_to_lines.find(icol.cc_constraint.sc_value);
             if (iter != coli.ci_value_to_lines.end()) {
                 for (auto vl : iter->second) {
-                    if (vl >= max_indexed_line.value()) {
+                    if (!scan_range.contains(vl)) {
+#ifdef DEBUG_INDEXING
+                        log_debug(
+                            "indexed line %d is outside of scan range [%d:%d)",
+                            vl,
+                            scan_range.v_min_line,
+                            scan_range.v_max_line);
+#endif
                         continue;
                     }
 
-                    if (vl < p_cur->log_cursor.lc_curr_line) {
+                    if (!min_index_range.contains(vl)) {
+#ifdef DEBUG_INDEXING
+                        log_debug(
+                            "indexed line %d is outside of the min index range",
+                            vl);
+#endif
                         continue;
                     }
 
 #ifdef DEBUG_INDEXING
-                    log_debug("adding indexed line %d", (int) vl);
+                    log_debug("adding indexed line %d", vl);
 #endif
                     p_cur->log_cursor.lc_indexed_lines.push_back(vl);
                 }
             }
         }
+        p_cur->log_cursor.lc_indexed_lines_range = min_index_range;
 
+#if 0
         if (max_indexed_line && max_indexed_line.value() > 0_vl) {
             p_cur->log_cursor.lc_indexed_lines.push_back(
                 max_indexed_line.value());
         }
+#endif
 
-        std::sort(p_cur->log_cursor.lc_indexed_lines.begin(),
-                  p_cur->log_cursor.lc_indexed_lines.end(),
-                  std::greater<>());
-
-        if (max_indexed_line
-            && max_indexed_line.value() < vt->lss->text_line_count())
+        auto index_valid_opt = min_index_range.get_valid();
+        if (!min_index_range.contains(scan_range.v_min_line)
+            || !min_index_range.contains(scan_range.v_max_line - 1_vl))
         {
-            log_debug("max indexed out of sync, clearing other indexes");
+            log_debug(
+                "scan needed to populate index, clearing other indexes "
+                "scan_range[%d:%d)",
+                scan_range.v_min_line,
+                scan_range.v_max_line);
             p_cur->log_cursor.lc_level_constraint = std::nullopt;
-            p_cur->log_cursor.lc_curr_line = 0_vl;
             opid_val = std::nullopt;
             log_time_range = std::nullopt;
-            p_cur->log_cursor.lc_indexed_lines.clear();
             log_path_constraints.clear();
             log_unique_path_constraints.clear();
+
+            if (index_valid_opt) {
+                log_debug("  min_index_range[%d:%d)",
+                          index_valid_opt->v_min_line,
+                          index_valid_opt->v_max_line);
+                if ((scan_range.v_min_line < index_valid_opt->v_min_line
+                     && index_valid_opt->v_max_line < scan_range.v_max_line)
+                    || scan_range.v_max_line <= index_valid_opt->v_min_line
+                    || scan_range.v_min_line >= index_valid_opt->v_max_line)
+                {
+                    p_cur->log_cursor.lc_indexed_lines.clear();
+                } else {
+                    if (p_cur->log_cursor.lc_direction < 0) {
+                    } else {
+                        p_cur->log_cursor.lc_indexed_lines.push_back(
+                            index_valid_opt->v_max_line);
+                    }
+                }
+            } else {
+                log_debug("  min_index_range::empty");
+                p_cur->log_cursor.lc_indexed_lines.clear();
+            }
+        } else if (index_valid_opt) {
+            if (p_cur->log_cursor.lc_direction < 0) {
+                p_cur->log_cursor.lc_indexed_lines.push_back(
+                    index_valid_opt->v_min_line - 1_vl);
+            } else {
+                p_cur->log_cursor.lc_indexed_lines.push_back(
+                    index_valid_opt->v_max_line);
+            }
+        }
+
+        if (p_cur->log_cursor.lc_direction < 0) {
+            log_debug("ORDER BY is DESC, reversing indexed lines");
+            std::sort(p_cur->log_cursor.lc_indexed_lines.begin(),
+                      p_cur->log_cursor.lc_indexed_lines.end(),
+                      std::less<>());
+        } else {
+            std::sort(p_cur->log_cursor.lc_indexed_lines.begin(),
+                      p_cur->log_cursor.lc_indexed_lines.end(),
+                      std::greater<>());
         }
 
 #ifdef DEBUG_INDEXING
@@ -1823,13 +1935,24 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_log_path = std::move(log_path_constraints);
     p_cur->log_cursor.lc_unique_path = std::move(log_unique_path_constraints);
 
+#if 0
     if (p_cur->log_cursor.lc_indexed_lines.empty()) {
         p_cur->log_cursor.lc_indexed_lines.push_back(
             p_cur->log_cursor.lc_curr_line);
     }
+#endif
+    log_debug("before table filter [%d:%d)",
+              p_cur->log_cursor.lc_curr_line,
+              p_cur->log_cursor.lc_end_line);
     vt->vi->filter(p_cur->log_cursor, *vt->lss);
 
-    auto rc = vt->base.pModule->xNext(p_vtc);
+    log_debug("before initial next [%d:%d)",
+              p_cur->log_cursor.lc_curr_line,
+              p_cur->log_cursor.lc_end_line);
+    if (vt->base.pModule->xNext != vt_next_no_rowid) {
+        p_cur->log_cursor.lc_curr_line -= p_cur->log_cursor.lc_direction;
+    }
+    vt->base.pModule->xNext(p_vtc);
 
 #ifdef DEBUG_INDEXING
     log_debug("vt_filter() -> cursor_range(%d:%d:%d)",
@@ -1838,7 +1961,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
               p_cur->log_cursor.lc_direction);
 #endif
 
-    return rc;
+    return SQLITE_OK;
 }
 
 static int
@@ -2011,8 +2134,6 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         fmt::format(FMT_STRING("col({}) {} ?"),
                                     col,
                                     sql_constraint_op_name(op)));
-                    direction = 1;
-                    p_info->orderByConsumed = 0;
                 }
                 break;
             }

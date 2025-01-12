@@ -1,0 +1,33 @@
+#
+# @synopsis: find-msg {next|prev} format-name field-name
+# @description: Find the next/previous message that matches the field of the currently focused message
+#
+
+;SELECT CASE $1
+           WHEN 'next' THEN '>'
+           WHEN 'prev' THEN '<'
+           ELSE raise_error('invalid direction "' || $1 || '", expecting "next" or "prev"')
+        END AS line_cmp,
+        CASE $1
+           WHEN 'next' THEN 'ASC'
+           WHEN 'prev' THEN 'DESC'
+        END AS line_order
+;SELECT $2 AS format_name
+;SELECT $3 AS field_name
+
+# Get the value of the field in the currently focused message
+:eval ;SELECT $field_name AS curr_value
+   FROM $format_name
+   WHERE log_line = log_msg_line() AND $field_name != '-' AND $field_name IS NOT NULL
+;SELECT ifnull($curr_value, raise_error('focused line does not have a %s value', $field_name))
+
+# Find the next/previous message with a matching field
+:eval ;SELECT log_line AS next_selection
+   FROM $format_name
+   WHERE log_line $line_cmp log_msg_line() AND $field_name = \$curr_value
+   ORDER BY log_line $line_order
+   LIMIT 1
+;SELECT ifnull($next_selection,
+               raise_error(printf('no further requests found with %s: %s', $field_name, $curr_value)))
+
+;UPDATE lnav_top_view SET selection = $next_selection

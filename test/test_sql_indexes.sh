@@ -48,3 +48,31 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM all_logs WHERE log_line <= 20" \
     ${test_dir}/logfile_access_log.*
+
+rm -f sql_index.err
+run_cap_test ${lnav_test} -d sql_index.err -n \
+    -c ":goto -1" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c ";SELECT selection FROM lnav_top_view" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c ";SELECT selection FROM lnav_top_view" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c ";SELECT selection FROM lnav_top_view" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c ":goto 998" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c ";SELECT selection FROM lnav_top_view" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c ";SELECT log_line, log_time, cs_method FROM access_log WHERE cs_referer = 'https://www.zanbil.ir/m/browse/fryer/%D8%B3%D8%B1%D8%AE-%DA%A9%D9%86'" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_shop_access_log.0
+
+run_cap_test grep "vt_next at EOF" sql_index.err

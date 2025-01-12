@@ -231,6 +231,8 @@ public:
 
     std::string to_string() const;
 
+    string_fragment to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const;
+
     const char* text_value() const
     {
         if (this->lv_str) {

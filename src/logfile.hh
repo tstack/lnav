@@ -317,7 +317,8 @@ public:
 
     void read_full_message(const_iterator ll,
                            shared_buffer_ref& msg_out,
-                           int max_lines = 50);
+                           line_buffer::scan_direction dir
+                           = line_buffer::scan_direction::forward);
 
     Result<shared_buffer_ref, std::string> read_raw_message(const_iterator ll);
 

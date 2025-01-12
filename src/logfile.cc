@@ -1302,9 +1302,9 @@ logfile::read_range(const file_range& fr)
 }
 
 void
-logfile::read_full_message(logfile::const_iterator ll,
+logfile::read_full_message(const_iterator ll,
                            shared_buffer_ref& msg_out,
-                           int max_lines)
+                           line_buffer::scan_direction dir)
 {
     require(ll->get_sub_offset() == 0);
 
@@ -1319,7 +1319,7 @@ logfile::read_full_message(logfile::const_iterator ll,
         if (range_for_line.fr_size > line_buffer::MAX_LINE_BUFFER_SIZE) {
             range_for_line.fr_size = line_buffer::MAX_LINE_BUFFER_SIZE;
         }
-        auto read_result = this->lf_line_buffer.read_range(range_for_line);
+        auto read_result = this->lf_line_buffer.read_range(range_for_line, dir);
 
         if (read_result.isErr()) {
             auto errmsg = read_result.unwrapErr();

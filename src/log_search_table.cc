@@ -37,9 +37,8 @@
 const static std::string MATCH_INDEX = "match_index";
 static auto match_index_name = intern_string::lookup("match_index");
 
-log_search_table::
-log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
-                 intern_string_t table_name)
+log_search_table::log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
+                                   intern_string_t table_name)
     : log_vtab_impl(table_name), lst_regex(code),
       lst_match_data(this->lst_regex->create_match_data())
 {
@@ -274,7 +273,9 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
                   this->lst_mismatch_bitmap.capacity());
 #endif
     }
-    if (!lc.lc_indexed_lines.empty()) {
+    if (!lc.lc_indexed_lines.empty()
+        && lc.lc_indexed_lines_range.contains(lc.lc_curr_line))
+    {
         lc.lc_curr_line = lc.lc_indexed_lines.back();
         lc.lc_indexed_lines.pop_back();
     }

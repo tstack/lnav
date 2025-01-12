@@ -476,6 +476,81 @@ logline_value::to_string() const
     return {buffer};
 }
 
+string_fragment
+logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
+{
+    char buffer[128];
+
+    switch (this->lv_meta.lvm_kind) {
+        case value_kind_t::VALUE_NULL:
+            return string_fragment::from_const("null");
+
+        case value_kind_t::VALUE_JSON:
+        case value_kind_t::VALUE_XML:
+        case value_kind_t::VALUE_STRUCT:
+        case value_kind_t::VALUE_TEXT:
+        case value_kind_t::VALUE_TIMESTAMP:
+            if (this->lv_str) {
+                return string_fragment::from_str(this->lv_str.value())
+                    .to_owned(alloc);
+            }
+            if (this->lv_frag.empty()) {
+                return this->lv_intern_string.to_string_fragment().to_owned(
+                    alloc);
+            }
+            return this->lv_frag.to_owned(alloc);
+
+        case value_kind_t::VALUE_QUOTED:
+        case value_kind_t::VALUE_W3C_QUOTED:
+            if (this->lv_frag.empty()) {
+                return string_fragment{};
+            } else {
+                switch (this->lv_frag.data()[0]) {
+                    case '\'':
+                    case '"': {
+                        auto unquote_func = this->lv_meta.lvm_kind
+                                == value_kind_t::VALUE_W3C_QUOTED
+                            ? unquote_w3c
+                            : unquote;
+                        char unquoted_str[this->lv_frag.length()];
+                        size_t unquoted_len;
+
+                        unquoted_len = unquote_func(unquoted_str,
+                                                    this->lv_frag.data(),
+                                                    this->lv_frag.length());
+                        return string_fragment::from_bytes(unquoted_str,
+                                                           unquoted_len)
+                            .to_owned(alloc);
+                    }
+                    default:
+                        return this->lv_frag.to_owned(alloc);
+                }
+            }
+            break;
+
+        case value_kind_t::VALUE_INTEGER:
+            snprintf(buffer, sizeof(buffer), "%" PRId64, this->lv_value.i);
+            break;
+
+        case value_kind_t::VALUE_FLOAT:
+            snprintf(buffer, sizeof(buffer), "%lf", this->lv_value.d);
+            break;
+
+        case value_kind_t::VALUE_BOOLEAN:
+            if (this->lv_value.i) {
+                return string_fragment::from_const("true");
+            }
+            return string_fragment::from_const("false");
+            break;
+        case value_kind_t::VALUE_UNKNOWN:
+        case value_kind_t::VALUE__MAX:
+            ensure(0);
+            break;
+    }
+
+    return string_fragment::from_c_str(buffer).to_owned(alloc);
+}
+
 std::vector<std::shared_ptr<log_format>> log_format::lf_root_formats;
 
 std::vector<std::shared_ptr<log_format>>&

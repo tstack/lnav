@@ -56,9 +56,7 @@
 
 struct line_info {
     file_range li_file_range;
-    struct timeval li_timestamp {
-        0, 0
-    };
+    struct timeval li_timestamp{0, 0};
     log_level_t li_level{LEVEL_UNKNOWN};
     bool li_partial{false};
     utf8_scan_result li_utf8_scan_result{};
@@ -198,7 +196,13 @@ public:
      */
     Result<line_info, std::string> load_next_line(file_range prev_line = {});
 
-    Result<shared_buffer_ref, std::string> read_range(file_range fr);
+    enum class scan_direction {
+        forward,
+        backward,
+    };
+
+    Result<shared_buffer_ref, std::string> read_range(
+        file_range fr, scan_direction dir = scan_direction::forward);
 
     file_range get_available();
 
@@ -297,7 +301,9 @@ private:
      * @param start The file offset of the start of the line.
      * @param max_length The amount of data to be cached in the buffer.
      */
-    void ensure_available(file_off_t start, ssize_t max_length);
+    void ensure_available(file_off_t start,
+                          ssize_t max_length,
+                          scan_direction dir = scan_direction::forward);
 
     /**
      * Fill the buffer with the given range of data from the file.
@@ -307,7 +313,9 @@ private:
      * @param max_length The maximum amount of data to read from the file.
      * @return True if any data was read from the file.
      */
-    bool fill_range(file_off_t start, ssize_t max_length);
+    bool fill_range(file_off_t start,
+                    ssize_t max_length,
+                    scan_direction dir = scan_direction::forward);
 
     /**
      * After a successful fill, the cached data can be retrieved with this

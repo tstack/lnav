@@ -30,12 +30,14 @@
 #ifndef vtab_impl_hh
 #define vtab_impl_hh
 
+#include <deque>
 #include <map>
 #include <string>
 #include <vector>
 
 #include <sqlite3.h>
 
+#include "ArenaAlloc/arenaalloc.h"
 #include "logfile_sub_source.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
@@ -50,6 +52,88 @@ enum {
 };
 
 class logfile_sub_source;
+
+struct msg_range {
+    struct valid {
+        bool contains(const vis_line_t vl) const
+        {
+            return this->v_min_line <= vl && vl < this->v_max_line;
+        }
+
+        void expand_to(const vis_line_t vl)
+        {
+            if (vl < this->v_min_line) {
+                this->v_min_line = vl;
+            }
+            if (vl >= this->v_max_line) {
+                this->v_max_line = vl + 1_vl;
+            }
+        }
+
+        vis_line_t v_min_line;
+        vis_line_t v_max_line;
+    };
+
+    struct empty_t {};
+
+    using range_t = mapbox::util::variant<valid, empty_t>;
+
+    static msg_range invalid() { return msg_range{{mapbox::util::no_init{}}}; }
+
+    static msg_range empty() { return msg_range{empty_t()}; }
+
+    std::optional<valid> get_valid() const
+    {
+        if (this->mr_value.is<valid>()) {
+            return this->mr_value.get<valid>();
+        }
+        return std::nullopt;
+    }
+
+    bool contains(vis_line_t vl) const
+    {
+        return this->mr_value.match(
+            [vl](const valid& v) { return v.contains(vl); },
+            [](const empty_t&) { return false; });
+    }
+
+    msg_range& expand_to(vis_line_t vl)
+    {
+        this->mr_value = this->mr_value.match(
+            [vl](valid v) {
+                v.expand_to(vl);
+                return v;
+            },
+            [vl](empty_t) { return valid{vl, vl + 1_vl}; });
+        return *this;
+    }
+
+    msg_range& intersect(const msg_range& rhs)
+    {
+        if (this->mr_value.valid()) {
+            if (rhs.mr_value.valid()) {
+                this->mr_value = this->mr_value.match(
+                    [&rhs](const valid& v) {
+                        return rhs.mr_value.match(
+                            [&v](const valid& rv) {
+                                return range_t{valid{
+                                    std::max(v.v_min_line, rv.v_min_line),
+                                    std::min(v.v_max_line, rv.v_max_line),
+                                }};
+                            },
+                            [](const empty_t&) { return range_t{empty_t()}; });
+                    },
+                    [](const empty_t&) { return range_t{empty_t{}}; });
+            }
+        } else {
+            this->mr_value = rhs.mr_value;
+        }
+
+        return *this;
+    }
+
+    range_t mr_value;
+};
 
 struct log_cursor {
     struct opid_hash {
@@ -146,6 +230,7 @@ struct log_cursor {
 
     std::vector<column_constraint> lc_indexed_columns;
     std::vector<vis_line_t> lc_indexed_lines;
+    msg_range lc_indexed_lines_range = msg_range::empty();
 
     size_t lc_scanned_rows{0};
 
@@ -161,10 +246,10 @@ struct log_cursor {
     bool is_eof() const
     {
         return this->lc_indexed_lines.empty()
-            && ((this->lc_direction > 0 &&
-                this->lc_curr_line >= this->lc_end_line)
-                || (this->lc_direction < 0 &&
-                    this->lc_curr_line <= this->lc_end_line));
+            && ((this->lc_direction > 0
+                 && this->lc_curr_line >= this->lc_end_line)
+                || (this->lc_direction < 0
+                    && this->lc_curr_line <= this->lc_end_line));
     }
 };
 
@@ -234,13 +319,23 @@ public:
                          logline_value_vector& values);
 
     struct column_index {
-        robin_hood::unordered_map<std::string, std::vector<vis_line_t>>
-            ci_value_to_lines;
+        robin_hood::
+            unordered_map<string_fragment, std::deque<vis_line_t>, frag_hasher>
+                ci_value_to_lines;
         uint32_t ci_index_generation{0};
-        vis_line_t ci_max_line{0};
+        msg_range ci_indexed_range = msg_range::empty();
+
+        ArenaAlloc::Alloc<char> ci_string_arena;
     };
 
     std::map<int32_t, column_index> vi_column_indexes;
+
+    void expand_indexes_to(vis_line_t vl)
+    {
+        for (auto& [col_num, ci] : this->vi_column_indexes) {
+            ci.ci_indexed_range.expand_to(vl);
+        }
+    }
 
     bool vi_supports_indexes{true};
     int vi_column_count{0};

@@ -508,7 +508,9 @@ line_buffer::resize_buffer(size_t new_max)
 }
 
 void
-line_buffer::ensure_available(file_off_t start, ssize_t max_length)
+line_buffer::ensure_available(file_off_t start,
+                              ssize_t max_length,
+                              scan_direction dir)
 {
     ssize_t prefill, available;
 
@@ -536,19 +538,38 @@ line_buffer::ensure_available(file_off_t start, ssize_t max_length)
         this->lb_share_manager.invalidate_refs();
         prefill = 0;
         this->lb_buffer.clear();
-        if ((this->lb_file_size != (ssize_t) -1)
-            && (start + this->lb_buffer.capacity() > this->lb_file_size))
-        {
+
+        switch (dir) {
+            case scan_direction::forward:
+                break;
+            case scan_direction::backward: {
+                auto padded_max_length = max_length * 4;
+                if (padded_max_length < this->lb_buffer.capacity()) {
+                    start = std::max(
+                        file_off_t{0},
+                        static_cast<file_off_t>(start
+                                                - (this->lb_buffer.capacity()
+                                                   - padded_max_length)));
+                }
+                break;
+            }
+        }
+
+        if (this->lb_file_size == (ssize_t) -1) {
+            this->lb_file_offset = start;
+        } else {
             require(start <= this->lb_file_size);
             /*
              * If the start is near the end of the file, move the offset back a
              * bit so we can get more of the file in the cache.
              */
-            this->lb_file_offset = this->lb_file_size
-                - std::min(this->lb_file_size,
-                           (file_ssize_t) this->lb_buffer.capacity());
-        } else {
-            this->lb_file_offset = start;
+            if (start + this->lb_buffer.capacity() > this->lb_file_size) {
+                this->lb_file_offset = this->lb_file_size
+                    - std::min(this->lb_file_size,
+                               (file_ssize_t) this->lb_buffer.capacity());
+            } else {
+                this->lb_file_offset = start;
+            }
         }
     } else {
         /* The request is in the cached range.  Record how much extra data is in
@@ -752,13 +773,14 @@ line_buffer::load_next_buffer()
 }
 
 bool
-line_buffer::fill_range(file_off_t start, ssize_t max_length)
+line_buffer::fill_range(file_off_t start,
+                        ssize_t max_length,
+                        scan_direction dir)
 {
     bool retval = false;
 
     require(start >= 0);
 
-    // log_debug("fill range %d %d", start, max_length);
 #if 0
     log_debug("(%p) fill range %d %d (%d) %d",
               this,
@@ -849,7 +871,7 @@ line_buffer::fill_range(file_off_t start, ssize_t max_length)
         ssize_t rc;
 
         /* Make sure there is enough space, then */
-        this->ensure_available(start, max_length);
+        this->ensure_available(start, max_length, dir);
 
         safe::WriteAccess<safe_gz_indexed> gi(this->lb_gz_file);
 
@@ -1279,7 +1301,7 @@ line_buffer::load_next_line(file_range prev_line)
 }
 
 Result<shared_buffer_ref, std::string>
-line_buffer::read_range(file_range fr)
+line_buffer::read_range(file_range fr, scan_direction dir)
 {
     shared_buffer_ref retval;
     const char* line_start;
@@ -1304,7 +1326,7 @@ line_buffer::read_range(file_range fr)
     if (!(this->in_range(fr.fr_offset)
           && this->in_range(fr.fr_offset + fr.fr_size - 1)))
     {
-        if (!this->fill_range(fr.fr_offset, fr.fr_size)) {
+        if (!this->fill_range(fr.fr_offset, fr.fr_size, dir)) {
             return Err(std::string("unable to read file"));
         }
     }
