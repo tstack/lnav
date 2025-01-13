@@ -553,6 +553,7 @@ textview_curses::handle_mouse(mouse_event& me)
                                             tok_sf.sf_begin,
                                             tok_sf.sf_end,
                                         },
+                                        al.al_attrs,
                                         tok_sf.to_string(),
                                     };
                                     this->set_needs_update();
@@ -609,6 +610,7 @@ textview_curses::handle_mouse(mouse_event& me)
                                     cursor_sf.sf_begin,
                                     cursor_sf.sf_end,
                                 },
+                                al.al_attrs,
                                 cursor_sf.to_string(),
                             };
                         }
@@ -693,7 +695,8 @@ textview_curses::handle_mouse(mouse_event& me)
                     auto* ta = dynamic_cast<text_anchors*>(this->tc_sub_source);
 
                     if (me.me_button == mouse_button_t::BUTTON_LEFT
-                        && ta != nullptr && startswith(href, "#"))
+                        && ta != nullptr && startswith(href, "#")
+                        && !startswith(href, "#/frontmatter"))
                     {
                         auto row_opt = ta->row_for_anchor(href);
 
@@ -705,6 +708,7 @@ textview_curses::handle_mouse(mouse_event& me)
                             me.me_x,
                             mc_line,
                             link_iter->sa_range,
+                            al.get_attrs(),
                             al.to_string_fragment(link_iter).to_string(),
                             href,
                         };

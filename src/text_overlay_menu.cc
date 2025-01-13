@@ -33,6 +33,7 @@
 #include "config.h"
 #include "lnav.hh"
 #include "md4cpp.hh"
+#include "readline_highlighters.hh"
 #include "sysclip.hh"
 #include "textview_curses.hh"
 
@@ -71,17 +72,51 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
 
     auto is_link = !sti.sti_href.empty();
     auto menu_line = vis_line_t{1};
+    attr_line_t link_cmd;
     if (is_link) {
-        auto ta = text_attrs{};
-
-        ta.ta_attrs |= NCSTYLE_UNDERLINE;
         auto href_al
             = attr_line_t(" Link: ")
                   .append(lnav::roles::table_header(sti.sti_href))
                   .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO))
-                  .with_attr_for_all(VC_STYLE.value(ta))
                   .move();
         retval.emplace_back(href_al);
+        menu_line += 1_vl;
+
+        std::string filepath;
+        auto file_attr_opt = get_string_attr(sti.sti_attrs, &logline::L_FILE);
+        if (file_attr_opt) {
+            filepath = file_attr_opt.value()
+                           ->sa_value.get<std::shared_ptr<logfile>>()
+                           ->get_filename();
+        }
+
+        {
+            logline_value_vector values;
+            exec_context ec(&values, internal_sql_callback, pipe_callback);
+
+            auto exec_res
+                = ec.execute_with("|lnav-link-callback $href $filepath",
+                                  std::make_pair("href", sti.sti_href),
+                                  std::make_pair("filepath", filepath));
+            if (exec_res.isOk()) {
+                link_cmd = exec_res.unwrap();
+            }
+        }
+        if (link_cmd.empty()) {
+            link_cmd = ":open $href";
+        }
+        readline_lnav_highlighter(link_cmd, std::nullopt);
+
+        auto cmd_al
+            = attr_line_t(" ")
+                  .append("Command"_table_header)
+                  .append(": ")
+                  .append(link_cmd)
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO))
+                  .with_attr_for_all(
+                      VC_STYLE.value(text_attrs::with_underline()))
+                  .move();
+        retval.emplace_back(cmd_al);
         menu_line += 1_vl;
     }
 
@@ -93,14 +128,14 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
         int start = left;
         if (is_link || supports_filtering) {
             if (is_link) {
-                if (endswith(sti.sti_href, ".lnav")) {
-                    al.append(":play_button:"_emoji)
-                        .append(" Execute")
-                        .append("        ");
-                } else {
+                if (startswith(link_cmd.al_string, ":open")) {
                     al.append(":floppy_disk:"_emoji)
                         .append(" Open in lnav")
                         .append("  ");
+                } else {
+                    al.append(":play_button:"_emoji)
+                        .append(" Execute")
+                        .append("        ");
                 }
             } else {
                 al.append(" ").append("\u2714 Filter-in"_ok).append("   ");
@@ -108,10 +143,9 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
             this->los_menu_items.emplace_back(
                 menu_line,
                 line_range{start, start + (int) al.length()},
-                [is_link, sti](const std::string& value) {
-                    const auto is_script = endswith(sti.sti_href, ".lnav");
+                [is_link, link_cmd, sti](const std::string& value) {
                     const auto cmd = is_link
-                        ? (is_script ? "|$href" : ":open $href")
+                        ? link_cmd.get_string()
                         : fmt::format(FMT_STRING(":filter-in {}"),
                                       lnav::pcre2pp::quote(value));
                     auto src_guard

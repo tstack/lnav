@@ -510,8 +510,6 @@ public:
 
     virtual void scroll_invoked(textview_curses* tc);
 
-    virtual void text_open_href(const std::string& href) {}
-
     bool tss_supports_filtering{false};
     bool tss_apply_filters{true};
 
@@ -808,6 +806,7 @@ public:
         int sti_x;
         int64_t sti_line;
         line_range sti_range;
+        string_attrs_t sti_attrs;
         std::string sti_value;
         std::string sti_href;
     };

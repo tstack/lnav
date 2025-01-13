@@ -36,12 +36,11 @@
 #include "filter_observer.hh"
 #include "logfile.hh"
 #include "plain_text_source.hh"
-#include "text_link_handler.hh"
 #include "text_overlay_menu.hh"
 #include "textview_curses.hh"
 
 class textfile_sub_source
-    : public text_link_handler
+    : public text_sub_source
     , public vis_location_history
     , public text_accel_source
     , public text_anchors {

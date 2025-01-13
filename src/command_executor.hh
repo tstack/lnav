@@ -302,7 +302,7 @@ struct exec_context {
         const std::string& cmdline, kv_pair_t pair, Args... args)
     {
         this->ec_local_vars.top().emplace(pair);
-        return this->execute(cmdline, args...);
+        return this->execute_with_int(cmdline, args...);
     }
 
     template<typename... Args>

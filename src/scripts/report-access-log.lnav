@@ -8,6 +8,7 @@
 ;CREATE TABLE report_access_log AS
     SELECT
         log_time_msecs,
+        log_level,
         c_ip,
         cs_method,
         cs_uri_stem,
@@ -24,7 +25,8 @@
 ;SELECT count(*) AS total_requests,
         count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS unique_visitors,
         count(DISTINCT cs_uri_stem) AS requested_files,
-        humanize_file_size(sum(sc_bytes)) AS tx_amount
+        humanize_file_size(sum(sc_bytes)) AS tx_amount,
+        sum(CASE log_level WHEN 'invalid' THEN 1 ELSE 0 END) AS invalid_requests
    FROM report_access_log
 
 ;SELECT count(*) AS not_found
@@ -32,15 +34,27 @@
            WHERE sc_status = 404
            GROUP BY cs_uri_stem)
 
-:echo # access_log report
-:echo
-:echo ## Dashboard
-:echo
-:echo Total Requests  ${total_requests}  Unique Visitors ${unique_visitors}  Requested Files ${requested_files}
-:echo Not Found ${not_found} Tx. Amount ${tx_amount}
+:echo ---
+title: Access Log Report
+targets:
+  invalid-requests:
+    command: ;SELECT log_line, log_raw_text FROM access_log WHERE log_level = 'invalid'
+  unique-visitors:
+    command: ;SELECT c_ip, cs_user_agent, count(*) AS hits FROM access_log GROUP BY c_ip, cs_user_agent ORDER BY hits DESC
+---
 
-:echo
-:echo ## Unique visitors per day
+# access_log report
+
+## Dashboard
+
+* ${total_requests} Total requests
+* ${invalid_requests} [Total invalid requests](#/frontmatter/targets/invalid-requests/command)
+* ${unique_visitors} [Unique visitors](#/frontmatter/targets/unique-visitors/command)
+* ${requested_files} Requested files
+* ${not_found} Not found
+* ${tx_amount} Tx. amount
+
+## Unique visitors per day
 :echo
 
 ;SELECT
@@ -62,7 +76,7 @@
 ;SELECT
      count(*) AS Hits,
      printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
-     count(DISTINCT c_ip) AS Vis,
+     count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS Vis,
      humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
      cs_method AS Mtd,
      cs_version AS Proto,
@@ -80,7 +94,7 @@
 ;SELECT
      count(*) AS Hits,
      printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
-     count(DISTINCT c_ip) AS Vis,
+     count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS Vis,
      humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
      cs_method AS Mtd,
      cs_version AS Proto,
@@ -99,7 +113,7 @@
 ;SELECT
      count(*) AS Hits,
      printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
-     count(DISTINCT c_ip) AS Vis,
+     count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS Vis,
      humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
      c_ip AS Host
    FROM report_access_log
@@ -115,7 +129,7 @@
 ;SELECT
      count(*) AS Hits,
      printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
-     count(DISTINCT c_ip) AS Vis,
+     count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS Vis,
      humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
      cs_referer AS Referer
    FROM report_access_log
@@ -132,7 +146,7 @@
 ;SELECT
      count(*) AS Hits,
      printf('%.2f%%', 100.0 * count(*) / $total_requests) AS "h%",
-     count(DISTINCT c_ip) AS Vis,
+     count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS Vis,
      humanize_file_size(sum(sc_bytes)) AS "Tx. Amount",
      printf('%sXX', sc_status / 100) AS Status
    FROM report_access_log
@@ -140,5 +154,3 @@
    ORDER BY Hits DESC
    LIMIT 10
 :write-table-to -
-
-;DROP TABLE IF EXISTS report_access_log

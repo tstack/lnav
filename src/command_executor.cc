@@ -271,7 +271,6 @@ execute_search(const std::string& search_cmd)
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
-    auto& dls = *(ec.ec_label_source_stack.back());
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
@@ -492,71 +491,74 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             | lnav::itertools::for_each(&logfile::dump_stats);
         if (ec.ec_sql_callback != sql_callback) {
             retval = ec.ec_accumulator->get_string();
-        } else if (!dls.dls_rows.empty()) {
-            lnav_data.ld_views[LNV_DB].reload_data();
-            lnav_data.ld_views[LNV_DB].set_left(0);
-            if (lnav_data.ld_flags & LNF_HEADLESS) {
-                if (ec.ec_local_vars.size() == 1) {
-                    ensure_view(&lnav_data.ld_views[LNV_DB]);
-                }
-
-                retval = "";
-                alt_msg = "";
-            } else if (dls.dls_rows.size() == 1) {
-                auto& row = dls.dls_rows[0];
-
-                if (dls.dls_headers.size() == 1) {
-                    retval = row[0];
-                } else {
-                    for (unsigned int lpc = 0; lpc < dls.dls_headers.size();
-                         lpc++)
-                    {
-                        if (lpc > 0) {
-                            retval.append("; ");
-                        }
-                        retval.append(dls.dls_headers[lpc].hm_name);
-                        retval.push_back('=');
-                        retval.append(row[lpc]);
+        } else {
+            auto& dls = *(ec.ec_label_source_stack.back());
+            if (!dls.dls_rows.empty()) {
+                lnav_data.ld_views[LNV_DB].reload_data();
+                lnav_data.ld_views[LNV_DB].set_left(0);
+                if (lnav_data.ld_flags & LNF_HEADLESS) {
+                    if (ec.ec_local_vars.size() == 1) {
+                        ensure_view(&lnav_data.ld_views[LNV_DB]);
                     }
-                }
-            } else {
-                int row_count = dls.dls_rows.size();
-                char row_count_buf[128];
-                timeval diff_tv;
 
-                timersub(&end_tv, &start_tv, &diff_tv);
-                snprintf(row_count_buf,
-                         sizeof(row_count_buf),
-                         ANSI_BOLD("%'d") " row%s matched in " ANSI_BOLD(
-                             "%ld.%03ld") " seconds",
-                         row_count,
-                         row_count == 1 ? "" : "s",
-                         diff_tv.tv_sec,
-                         std::max((long) diff_tv.tv_usec / 1000, 1L));
-                retval = row_count_buf;
-                if (dls.has_log_time_column()) {
-                    alt_msg = HELP_MSG_1(Q,
+                    retval = "";
+                    alt_msg = "";
+                } else if (dls.dls_rows.size() == 1) {
+                    auto& row = dls.dls_rows[0];
+
+                    if (dls.dls_headers.size() == 1) {
+                        retval = row[0];
+                    } else {
+                        for (unsigned int lpc = 0; lpc < dls.dls_headers.size();
+                             lpc++)
+                        {
+                            if (lpc > 0) {
+                                retval.append("; ");
+                            }
+                            retval.append(dls.dls_headers[lpc].hm_name);
+                            retval.push_back('=');
+                            retval.append(row[lpc]);
+                        }
+                    }
+                } else {
+                    int row_count = dls.dls_rows.size();
+                    char row_count_buf[128];
+                    timeval diff_tv;
+
+                    timersub(&end_tv, &start_tv, &diff_tv);
+                    snprintf(row_count_buf,
+                             sizeof(row_count_buf),
+                             ANSI_BOLD("%'d") " row%s matched in " ANSI_BOLD(
+                                 "%ld.%03ld") " seconds",
+                             row_count,
+                             row_count == 1 ? "" : "s",
+                             diff_tv.tv_sec,
+                             std::max((long) diff_tv.tv_usec / 1000, 1L));
+                    retval = row_count_buf;
+                    if (dls.has_log_time_column()) {
+                        alt_msg
+                            = HELP_MSG_1(Q,
                                          "to switch back to the previous view "
                                          "at the matching 'log_time' value");
-                } else {
-                    alt_msg = "";
+                    } else {
+                        alt_msg = "";
+                    }
                 }
             }
-        }
 #ifdef HAVE_SQLITE3_STMT_READONLY
-        else if (last_is_readonly)
-        {
-            retval = "info: No rows matched";
-            alt_msg = "";
+            else if (last_is_readonly) {
+                retval = "info: No rows matched";
+                alt_msg = "";
 
-            if (lnav_data.ld_flags & LNF_HEADLESS) {
-                if (ec.ec_local_vars.size() == 1) {
-                    lnav_data.ld_views[LNV_DB].reload_data();
-                    ensure_view(&lnav_data.ld_views[LNV_DB]);
+                if (lnav_data.ld_flags & LNF_HEADLESS) {
+                    if (ec.ec_local_vars.size() == 1) {
+                        lnav_data.ld_views[LNV_DB].reload_data();
+                        ensure_view(&lnav_data.ld_views[LNV_DB]);
+                    }
                 }
             }
-        }
 #endif
+        }
     }
 
     return Ok(retval);

@@ -3128,7 +3128,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     {
-        hist_source2& hs = lnav_data.ld_hist_source2;
+        auto& hs = lnav_data.ld_hist_source2;
 
         lnav_data.ld_log_source.set_index_delegate(new hist_index_delegate(
             lnav_data.ld_hist_source2, lnav_data.ld_views[LNV_HISTOGRAM]));

@@ -265,13 +265,17 @@ list(APPEND GEN_SRCS default-config.h default-config.cc)
 set(BUILTIN_LNAV_SCRIPTS
         scripts/dhclient-summary.lnav
         scripts/docker-url-handler.lnav
+        scripts/find-msg.lnav
         scripts/journald-url-handler.lnav
+        scripts/lnav-copy-text.lnav
+        scripts/lnav-link-callback.lnav
         scripts/lnav-pop-view.lnav
         scripts/partition-by-boot.lnav
         scripts/piper-url-handler.lnav
         scripts/rename-stdin.lnav
         scripts/report-access-log.lnav
         scripts/search-for.lnav
+        scripts/zk-set-ops.lnav
 )
 
 set(BUILTIN_LNAV_SCRIPT_PATHS ${BUILTIN_LNAV_SCRIPTS})
@@ -284,7 +288,12 @@ add_custom_command(
         DEPENDS bin2c ${BUILTIN_LNAV_SCRIPTS})
 list(APPEND GEN_SRCS builtin-scripts.h builtin-scripts.cc)
 
-set(BUILTIN_SH_SCRIPTS scripts/com.vmware.btresolver.py scripts/dump-pid.sh scripts/pcap_log-converter.sh)
+set(BUILTIN_SH_SCRIPTS
+        scripts/com.vmware.btresolver.py
+        scripts/dump-pid.sh
+        scripts/pcap_log-converter.sh
+        scripts/zookeeper.sql
+)
 
 set(BUILTIN_SH_SCRIPT_PATHS ${BUILTIN_SH_SCRIPTS})
 
@@ -517,7 +526,6 @@ add_library(
         styling.cc
         text_anonymizer.cc
         text_format.cc
-        text_link_handler.cc
         text_overlay_menu.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
@@ -649,7 +657,6 @@ add_library(
         termios_guard.hh
         text_anonymizer.hh
         text_format.hh
-        text_link_handler.hh
         text_overlay_menu.hh
         textfile_highlighters.hh
         textfile_sub_source.hh

@@ -1,0 +1,26 @@
+#
+# @synopsis: lnav-link-callback
+# @description: Callback used to generate a command to open a hyperlink
+#
+
+;SELECT $1 AS href
+;SELECT $2 AS filepath
+
+;SELECT CASE
+   WHEN startswith($href, '#/frontmatter/') THEN
+     (SELECT jget(
+        CASE mimetype
+          WHEN 'application/json' THEN content
+          WHEN 'application/yaml' THEN yaml_to_json(content)
+        END,
+        substr($href, 14))
+        FROM lnav_file_metadata
+        WHERE
+          filepath = $filepath AND
+          descriptor = 'net.daringfireball.markdown.frontmatter')
+   WHEN startswith($href, '#') THEN format(':goto $href')
+   WHEN endswith($href, '.lnav') THEN format('|$href')
+   ELSE ''
+   END AS cmd
+
+:echo $cmd

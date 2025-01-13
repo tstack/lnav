@@ -7,6 +7,9 @@ Features:
 * Added a `report-access-log` script that generates a report that
   is similar to the output of the [goaccess](https://goaccess.io)
   utility.
+* Added a `find-msg` script that can be used to find the
+  next/previous message with a field that matches the value of the
+  field in the focused message.
 * Scripts can now specify their output format using the
   `@output-format:` documentation description.
   This setting can affect the output of some commands, like
@@ -38,6 +41,8 @@ Bug Fixes:
 * Reduced memory footprint.
 * Improved search performance.
 * Reduce time to open help text.
+* Improved performance of log virtual tables when ordering result
+  by `log_line DESC`.
 
 Maintenance:
 * Replaced ncurses with notcurses.
