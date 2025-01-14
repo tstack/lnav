@@ -31,10 +31,8 @@
 
 #include "attr_line.builder.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "view_curses.hh"
 
-namespace lnav {
-namespace snippets {
+namespace lnav::snippets {
 
 static bool
 is_bracket(const std::string& str, int index, bool is_lit)
@@ -93,10 +91,9 @@ find_matching_bracket(
                 if (depth == 0) {
                     alb.overlay_attr_for_char(
                         lpc,
-                        VC_STYLE.value(
-                        text_attrs::with_styles(
-                        text_attrs::style::bold,
-                        text_attrs::style::reverse)));
+                        VC_STYLE.value(text_attrs::with_styles(
+                            text_attrs::style::bold,
+                            text_attrs::style::reverse)));
                     alb.overlay_attr_for_char(lpc,
                                               VC_ROLE.value(role_t::VCR_OK));
                     break;
@@ -121,10 +118,10 @@ find_matching_bracket(
                 depth -= 1;
             } else {
                 auto lr = line_range(is_lit ? lpc - 1 : lpc, lpc + 1);
-                alb.overlay_attr(lr,
-                VC_STYLE.value(text_attrs::with_styles(
-           text_attrs::style::bold,
-           text_attrs::style::reverse)));
+                alb.overlay_attr(
+                    lr,
+                    VC_STYLE.value(text_attrs::with_styles(
+                        text_attrs::style::bold, text_attrs::style::reverse)));
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
             }
         }
@@ -135,9 +132,9 @@ find_matching_bracket(
             = line_range(is_lit ? first_left.value() - 1 : first_left.value(),
                          first_left.value() + 1);
         alb.overlay_attr(
-        lr, VC_STYLE.value(text_attrs::with_styles(
-                        text_attrs::style::bold,
-                        text_attrs::style::reverse)));
+            lr,
+            VC_STYLE.value(text_attrs::with_styles(
+                text_attrs::style::bold, text_attrs::style::reverse)));
         alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_ERROR));
     }
 }
@@ -209,8 +206,8 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
                         alb.overlay_attr_for_char(
                             lpc,
                             VC_STYLE.value(text_attrs::with_styles(
-                            text_attrs::style::bold,
-                            text_attrs::style::reverse)));
+                                text_attrs::style::bold,
+                                text_attrs::style::reverse)));
                         alb.overlay_attr_for_char(
                             lpc, VC_ROLE.value(role_t::VCR_ERROR));
                     } else if (line[lpc - 1] == '(') {
@@ -311,9 +308,9 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
                     break;
                 case ' ':
                     alb.overlay_attr(line_range(lpc - 1, lpc + 1),
-                    VC_STYLE.value(text_attrs::with_styles(
-           text_attrs::style::bold,
-           text_attrs::style::reverse)));
+                                     VC_STYLE.value(text_attrs::with_styles(
+                                         text_attrs::style::bold,
+                                         text_attrs::style::reverse)));
                     alb.overlay_attr(line_range(lpc - 1, lpc + 1),
                                      VC_ROLE.value(role_t::VCR_ERROR));
                     break;
@@ -328,11 +325,10 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
                         alb.overlay_attr(line_range(lpc - 1, lpc + 3),
                                          VC_ROLE.value(role_t::VCR_RE_SPECIAL));
                     } else {
-                        alb.overlay_attr(
-                            line_range(lpc - 1, lpc + 1),
-                            VC_STYLE.value(text_attrs::with_styles(
-                            text_attrs::style::bold,
-                            text_attrs::style::reverse)));
+                        alb.overlay_attr(line_range(lpc - 1, lpc + 1),
+                                         VC_STYLE.value(text_attrs::with_styles(
+                                             text_attrs::style::bold,
+                                             text_attrs::style::reverse)));
                         alb.overlay_attr(line_range(lpc - 1, lpc + 1),
                                          VC_ROLE.value(role_t::VCR_ERROR));
                     }
@@ -358,5 +354,4 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
     }
 }
 
-}  // namespace snippets
-}  // namespace lnav
+}  // namespace lnav::snippets

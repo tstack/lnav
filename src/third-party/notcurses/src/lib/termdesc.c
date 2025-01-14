@@ -1039,11 +1039,11 @@ apply_term_heuristics(tinfo* ti, const char* tname, queried_terminals_e qterm,
   }
   tname = newname;
   // run a wcwidth(⣿) to guarantee libc Unicode 3 support, independent of term
-  if(wcwidth(L'⣿') < 0){
+  if(uc_width(L'⣿', "UTF-8") < 0){
     ti->caps.braille = false;
   }
   // run a wcwidth(🬸) to guarantee libc Unicode 13 support, independent of term
-  if(wcwidth(L'🬸') < 0){
+  if(uc_width(L'🬸', "UTF-8") < 0){
     ti->caps.sextants = false;
   }
   ti->termname = tname;

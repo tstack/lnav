@@ -70,7 +70,6 @@ add_library(
         strnatcmp.h
         time_util.hh
         types.hh
-        wcwidth9.h
 
         ../third-party/xxHash/xxhash.h
         ../third-party/xxHash/xxhash.c

@@ -70,8 +70,7 @@ noinst_HEADERS = \
     string_util.hh \
     strnatcmp.h \
     time_util.hh \
-    types.hh \
-    wcwidth9.h
+    types.hh
 
 libbase_a_SOURCES = \
     ansi_scrubber.cc \
@@ -121,7 +120,8 @@ test_base_LDADD = \
     ../fmtlib/libcppfmt.a \
     ../third-party/date/src/libdatepp.a \
     ../third-party/scnlib/src/libscnlib.a \
-    ../pcrepp/libpcrepp.a
+    ../pcrepp/libpcrepp.a \
+    -lunistring
 
 TESTS = \
     test_base

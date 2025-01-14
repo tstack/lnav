@@ -1,5 +1,6 @@
 #include "linux.h"
 #include "version.h"
+#include <uniwidth.h>
 #include "egcpool.h"
 #include "internal.h"
 #include <time.h>
@@ -25,6 +26,11 @@ void notcurses_version_components(int* major, int* minor, int* patch, int* tweak
   *minor = NOTCURSES_VERNUM_MINOR;
   *patch = NOTCURSES_VERNUM_PATCH;
   *tweak = atoi(NOTCURSES_VERSION_TWEAK);
+}
+
+int ncwidth(uint32_t ch, const char*encoding)
+{
+    return uc_width(ch, encoding);
 }
 
 int notcurses_enter_alternate_screen(notcurses* nc){

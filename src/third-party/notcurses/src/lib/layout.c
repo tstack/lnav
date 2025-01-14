@@ -96,7 +96,7 @@ puttext_line(ncplane* n, ncalign_e align, const char* text, size_t* bytes){
       return cols;
     }
     b += consumed;
-    int width = wcwidth(w);
+    int width = uc_width(w, "UTF-8");
     if(width < 0){
       width = 0; // FIXME
     }

@@ -37,10 +37,11 @@
 
 #include "config.h"
 #include "fmt/ostream.h"
+#include "lnav_log.hh"
 #include "pcrepp/pcre2pp.hh"
+#include "uniwidth.h"
 #include "ww898/cp_utf8.hpp"
 #include "xxHash/xxhash.h"
-#include "lnav_log.hh"
 
 const static int TABLE_SIZE = 4095;
 
@@ -443,7 +444,7 @@ string_fragment::sub_cell_range(int cell_start, int cell_end) const
                     } while (cell_index % 8);
                     break;
                 default: {
-                    auto wcw_res = wcwidth(read_res.unwrap());
+                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
                     if (wcw_res < 0) {
                         wcw_res = 1;
                     }
@@ -488,7 +489,7 @@ string_fragment::column_width() const
                     } while (retval % 8);
                     break;
                 default: {
-                    auto wcw_res = wcwidth(read_res.unwrap());
+                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
                     if (wcw_res < 0) {
                         wcw_res = 1;
                     }

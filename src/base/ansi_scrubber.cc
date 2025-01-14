@@ -39,7 +39,6 @@
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
 #include "scn/scan.h"
-#include "view_curses.hh"
 
 static const lnav::pcre2pp::code&
 ansi_regex()
@@ -188,7 +187,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                             *sa, bold_range.lr_start, -bold_range.length() * 2);
                         tmp_sa.emplace_back(
                             bold_range,
-                            VC_STYLE.value(text_attrs{NCSTYLE_BOLD}));
+                            VC_STYLE.value(text_attrs::with_bold()));
                         bold_range.clear();
                     }
                     if (ul_range.is_valid()) {
@@ -210,7 +209,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                             *sa, ul_range.lr_start, -ul_range.length() * 2);
                         tmp_sa.emplace_back(
                             ul_range,
-                            VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
+                            VC_STYLE.value(text_attrs::with_underline()));
                         ul_range.clear();
                     }
                     if (bold_range.is_valid()) {
@@ -239,14 +238,14 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 shift_string_attrs(
                     *sa, ul_range.lr_start, -ul_range.length() * 2);
                 tmp_sa.emplace_back(
-                    ul_range, VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
+                    ul_range, VC_STYLE.value(text_attrs::with_underline()));
                 ul_range.clear();
             }
             if (sa != nullptr && bold_range.is_valid()) {
                 shift_string_attrs(
                     *sa, bold_range.lr_start, -bold_range.length() * 2);
                 tmp_sa.emplace_back(bold_range,
-                                    VC_STYLE.value(text_attrs{NCSTYLE_BOLD}));
+                                    VC_STYLE.value(text_attrs::with_bold()));
                 bold_range.clear();
             }
             if (sa != nullptr && output_size > 0 && cp_dst > 0) {

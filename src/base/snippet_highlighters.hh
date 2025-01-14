@@ -32,12 +32,10 @@
 
 #include "attr_line.hh"
 
-namespace lnav {
-namespace snippets {
+namespace lnav::snippets {
 
 void regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub);
 
-}  // namespace snippets
-}  // namespace lnav
+}
 
 #endif

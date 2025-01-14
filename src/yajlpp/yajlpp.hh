@@ -249,7 +249,7 @@ struct json_path_handler_base {
               void* root = nullptr,
               const std::string& base = "/") const;
 
-    enum class schema_type_t : std::uint32_t {
+    enum class schema_type_t : uint32_t {
         ANY,
         BOOLEAN,
         INTEGER,

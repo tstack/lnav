@@ -118,7 +118,7 @@ utf8_egc_len(const char* gcluster, int* colcount){
       injoin = true;
       cols = 0;
     }else{
-      cols = wcwidth(wc);
+      cols = uc_width(wc, "UTF-8");
       if(cols < 0){
         injoin = false;
         if(iswspace(wc)){ // newline or tab

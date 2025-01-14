@@ -7,6 +7,7 @@ extern "C" {
 
 // #include "version.h"
 // #include "builddef.h"
+#include <uniwidth.h>
 #include "compat/compat.h"
 #include "notcurses/ncport.h"
 #include "notcurses/notcurses.h"

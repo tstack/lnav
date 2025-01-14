@@ -48,6 +48,7 @@
 #include "config.h"
 #include "lnav_config.hh"
 #include "shlex.hh"
+#include "uniwidth.h"
 #include "view_curses.hh"
 #include "xterm_mouse.hh"
 
@@ -325,8 +326,11 @@ view_curses::mvwattrline(ncplane* window,
                     lpc = lpc_start + 1;
                 } else {
                     auto wch = read_res.unwrap();
-                    auto wcw_res = wcwidth(wch);
+                    auto wcw_res = uc_width(wch, "UTF-8");
                     if (wcw_res < 0) {
+                        log_trace(
+                            "uc_width(%x) does not recognize width character",
+                            wch);
                         wcw_res = 1;
                     }
                     if (lpc > (lpc_start + 1)) {

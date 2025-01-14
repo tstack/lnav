@@ -41,6 +41,8 @@ API const char* notcurses_version(void);
 // library we loaded, not what we compile against.
 API void notcurses_version_components(int* major, int* minor, int* patch, int* tweak);
 
+API int ncwidth(uint32_t ch, const char* encoding);
+
 struct notcurses; // Notcurses state for a given terminal, composed of ncplanes
 struct ncplane;   // a drawable Notcurses surface, composed of cells
 struct ncvisual;  // a visual bit of multimedia opened with LibAV|OIIO
@@ -745,10 +747,10 @@ typedef struct nccell {
 // a width of 1 to match utf8_egc_len()'s behavior for whitespace/NUL.
 // FIXME can we enforce this with static_assert?
 #define NCCELL_INITIALIZER(c, s, chan) { .gcluster = (htole(c)), .gcluster_backstop = 0,\
-  .width = (uint8_t)((wcwidth(c) < 0 || !c) ? 1 : wcwidth(c)), .stylemask = (s), .channels = (chan), }
+  .width = (uint8_t)((ncwidth(c, "UTF-8") < 0 || !c) ? 1 : ncwidth(c, "UTF-8")), .stylemask = (s), .channels = (chan), }
 // python fails on #define CELL_CHAR_INITIALIZER(c) CELL_INITIALIZER(c, 0, 0)
 #define NCCELL_CHAR_INITIALIZER(c) { .gcluster = (htole(c)), .gcluster_backstop = 0,\
-  .width = (uint8_t)((wcwidth(c) < 0 || !c) ? 1 : wcwidth(c)), .stylemask = 0, .channels = 0, }
+  .width = (uint8_t)((ncwidth(c, "UTF-8") < 0 || !c) ? 1 : ncwidth(c, "UTF-8")), .stylemask = 0, .channels = 0, }
 // python fails on #define CELL_TRIVIAL_INITIALIZER CELL_CHAR_INITIALIZER(0)
 #define NCCELL_TRIVIAL_INITIALIZER { .gcluster = 0, .gcluster_backstop = 0,\
                                      .width = 1, .stylemask = 0, .channels = 0, }
