@@ -43,9 +43,11 @@ targets:
     command: ;SELECT c_ip, cs_user_agent, count(*) AS hits FROM access_log GROUP BY c_ip, cs_user_agent ORDER BY hits DESC
 ---
 
-# access_log report
-
-## Dashboard
+:echo
+:echo # access_log report
+:echo
+:echo ## Dashboard
+:echo
 
 * ${total_requests} Total requests
 * ${invalid_requests} [Total invalid requests](#/frontmatter/targets/invalid-requests/command)
@@ -54,7 +56,8 @@ targets:
 * ${not_found} Not found
 * ${tx_amount} Tx. amount
 
-## Unique visitors per day
+:echo
+:echo ## Unique visitors per day
 :echo
 
 ;SELECT

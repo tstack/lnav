@@ -1029,7 +1029,9 @@ check_for_file_zones()
             without_tz_files.emplace_back(lf->get_unique_path());
         }
     }
-    if (with_tz_count > 0 && !without_tz_files.empty()) {
+    if (with_tz_count > 0 && !without_tz_files.empty()
+        && !lnav_data.ld_exec_context.ec_msg_callback_stack.empty())
+    {
         const auto note
             = attr_line_t("The file(s) without a zone: ")
                   .join(without_tz_files, VC_ROLE.value(role_t::VCR_FILE), ", ")
@@ -1050,7 +1052,7 @@ check_for_file_zones()
                               "that do not include a zone in the timestamp"))
                   .move();
 
-        lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
+        lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
     }
 }
 
@@ -1361,7 +1363,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         view_colors::init(sc.get_notcurses());
 
         auto ecb_guard
-            = lnav_data.ld_exec_context.add_error_callback([](const auto& um) {
+            = lnav_data.ld_exec_context.add_msg_callback([](const auto& um) {
                   auto al = um.to_attr_line().rtrim();
 
                   if (al.get_string().find('\n') == std::string::npos) {
@@ -2087,7 +2089,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                             lnav_data.ld_rl_view->set_value(
                                 last_cmd_result.first.unwrap());
                         } else {
-                            ec.ec_error_callback_stack.back()(
+                            ec.ec_msg_callback_stack.back()(
                                 last_cmd_result.first.unwrapErr());
                         }
                         lnav_data.ld_rl_view->set_alt_value(
@@ -3606,6 +3608,18 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     cmd_results;
                 textview_curses *log_tc, *text_tc, *tc;
                 bool output_view = true;
+                auto msg_cb_guard = lnav_data.ld_exec_context.add_msg_callback(
+                    [](const auto& um) {
+                        switch (um.um_level) {
+                            case lnav::console::user_message::level::error:
+                            case lnav::console::user_message::level::warning:
+                                lnav::console::println(stderr,
+                                                       um.to_attr_line());
+                                break;
+                            default:
+                                break;
+                        }
+                    });
 
                 log_fos->fos_contexts.top().c_show_applicable_annotations
                     = false;

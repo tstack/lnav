@@ -535,7 +535,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
                 if (compile_res.isErr()) {
                     auto ce = compile_res.unwrapErr();
                     auto um = lnav::console::to_user_message(INPUT_SRC, ce);
-                    lnav_data.ld_exec_context.ec_error_callback_stack.back()(
+                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(
                         um);
                     this->rl_abort(rc);
                 } else {
@@ -580,7 +580,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
                               .with_reason(sqlite3_errmsg(lnav_data.ld_db.in()))
                               .with_snippet(lnav::console::snippet::from(
                                   INPUT_SRC, sqlerr));
-                    lnav_data.ld_exec_context.ec_error_callback_stack.back()(
+                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(
                         um);
                     this->rl_abort(rc);
                 } else {

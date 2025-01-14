@@ -454,7 +454,8 @@ update_active_files(file_collection& new_files)
         });
 
     if (was_below_open_file_limit
-        && !lnav_data.ld_active_files.is_below_open_file_limit())
+        && !lnav_data.ld_active_files.is_below_open_file_limit()
+        && !lnav_data.ld_exec_context.ec_msg_callback_stack.empty())
     {
         auto um
             = lnav::console::user_message::error("Unable to open more files")
@@ -469,7 +470,7 @@ update_active_files(file_collection& new_files)
                           .append(" to increase the limit before running lnav"))
                   .move();
 
-        lnav_data.ld_exec_context.ec_error_callback_stack.back()(um);
+        lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
     }
 
     return true;

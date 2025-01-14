@@ -70,13 +70,6 @@ static sig_atomic_t sql_counter = 0;
 int
 sql_progress(const log_cursor& lc)
 {
-    ssize_t total = lnav_data.ld_log_source.text_line_count();
-    off_t off = lc.lc_curr_line;
-
-    if (off < 0 || off >= total) {
-        return 0;
-    }
-
     if (lnav_data.ld_window == nullptr) {
         return 0;
     }
@@ -86,7 +79,12 @@ sql_progress(const log_cursor& lc)
     }
 
     if (ui_periodic_timer::singleton().time_to_update(sql_counter)) {
-        lnav_data.ld_bottom_source.update_loading(off, total);
+        ssize_t total = lnav_data.ld_log_source.text_line_count();
+        off_t off = lc.lc_curr_line;
+
+        if (off >= 0 && off <= total) {
+            lnav_data.ld_bottom_source.update_loading(off, total);
+        }
         lnav_data.ld_status_refresher();
     }
 
@@ -546,7 +544,8 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                 }
             }
 #ifdef HAVE_SQLITE3_STMT_READONLY
-            else if (last_is_readonly) {
+            else if (last_is_readonly)
+            {
                 retval = "info: No rows matched";
                 alt_msg = "";
 
@@ -829,10 +828,31 @@ execute_from_file(exec_context& ec,
         case '/':
             execute_search(cmdline.substr(1));
             break;
-        case ';':
+        case ';': {
+            if (!ec.ec_msg_callback_stack.empty()) {
+                auto src_slash = src.rfind('/');
+                auto cmd_al
+                    = attr_line_t(cmdline.substr(0, cmdline.find('\n')));
+                readline_lnav_highlighter(cmd_al, std::nullopt);
+                const auto um = lnav::console::user_message::info(
+                                    attr_line_t("Executing command at ")
+                                        .append(lnav::roles::file(
+                                            src_slash != std::string::npos
+                                                ? src.substr(src_slash)
+                                                : src))
+                                        .append(":")
+                                        .append(lnav::roles::number(
+                                            fmt::to_string(line_number)))
+                                        .append("> ")
+                                        .append(cmd_al))
+                                    .move();
+                ec.ec_msg_callback_stack.back()(um);
+            }
+
             setup_logline_table(ec);
             retval = TRY(execute_sql(ec, cmdline.substr(1), alt_msg));
             break;
+        }
         case '|':
             retval = TRY(execute_file(ec, cmdline.substr(1)));
             break;
@@ -1241,8 +1261,6 @@ exec_context::exec_context(logline_value_vector* line_values,
     this->ec_local_vars.push(std::map<std::string, scoped_value_t>());
     this->ec_path_stack.emplace_back(".");
     this->ec_output_stack.emplace_back("screen", std::nullopt);
-    this->ec_error_callback_stack.emplace_back(
-        [](const auto& um) { lnav::console::print(stderr, um); });
 }
 
 Result<std::string, lnav::console::user_message>
@@ -1271,8 +1289,8 @@ exec_context::execute(const std::string& cmdline)
     }
 
     auto exec_res = execute_any(*this, cmdline);
-    if (exec_res.isErr()) {
-        this->ec_error_callback_stack.back()(exec_res.unwrapErr());
+    if (exec_res.isErr() && !this->ec_msg_callback_stack.empty()) {
+        this->ec_msg_callback_stack.back()(exec_res.unwrapErr());
     }
 
     return exec_res;

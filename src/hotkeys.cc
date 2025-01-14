@@ -64,8 +64,7 @@ handle_keyseq(const char* keyseq)
 
     ec.ec_label_source_stack.push_back(&lnav_data.ld_db_row_source);
     ec.ec_global_vars = lnav_data.ld_exec_context.ec_global_vars;
-    ec.ec_error_callback_stack
-        = lnav_data.ld_exec_context.ec_error_callback_stack;
+    ec.ec_msg_callback_stack = lnav_data.ld_exec_context.ec_msg_callback_stack;
     ec.ec_ui_callbacks = lnav_data.ld_exec_context.ec_ui_callbacks;
     var_stack.push(std::map<std::string, scoped_value_t>());
     // XXX push another so it doesn't look like interactive use
@@ -85,7 +84,7 @@ handle_keyseq(const char* keyseq)
     } else {
         auto um = result.unwrapErr();
 
-        ec.ec_error_callback_stack.back()(um);
+        ec.ec_msg_callback_stack.back()(um);
     }
 
     if (!kc.kc_alt_msg.empty()) {

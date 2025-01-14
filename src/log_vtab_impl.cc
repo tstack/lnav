@@ -45,7 +45,7 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-#define DEBUG_INDEXING 1
+// #define DEBUG_INDEXING 1
 
 using namespace lnav::roles::literals;
 

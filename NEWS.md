@@ -26,6 +26,8 @@ Interface changes:
   You can still open the overlay menu by right-clicking on the link.
 * Rows in a Markdown table are now highlighted with alternating
   styles.
+* Long-running SQL queries in scripts are now mentioned in the UI
+  to make it easier to see what is going on.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an

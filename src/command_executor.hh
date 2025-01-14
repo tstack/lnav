@@ -58,8 +58,7 @@ int internal_sql_callback(exec_context& ec, sqlite3_stmt* stmt);
 using pipe_callback_t
     = std::future<std::string> (*)(exec_context&, const std::string&, auto_fd&);
 
-using error_callback_t
-    = std::function<void(const lnav::console::user_message&)>;
+using msg_callback_t = std::function<void(const lnav::console::user_message&)>;
 
 struct exec_context {
     enum class perm_t {
@@ -252,30 +251,33 @@ struct exec_context {
         return db_source_guard{this};
     }
 
-    struct error_cb_guard {
-        explicit error_cb_guard(exec_context* context) : sg_context(context) {}
-
-        error_cb_guard(const error_cb_guard&) = delete;
-        error_cb_guard(error_cb_guard&& other) noexcept
-            : sg_context(other.sg_context)
+    struct msg_cb_guard {
+        explicit msg_cb_guard(std::vector<msg_callback_t>* cb_stack)
+            : sg_cb_stack(cb_stack)
         {
-            other.sg_context = nullptr;
         }
 
-        ~error_cb_guard()
+        msg_cb_guard(const msg_cb_guard&) = delete;
+        msg_cb_guard(msg_cb_guard&& other) noexcept
+            : sg_cb_stack(other.sg_cb_stack)
         {
-            if (this->sg_context != nullptr) {
-                this->sg_context->ec_error_callback_stack.pop_back();
+            other.sg_cb_stack = nullptr;
+        }
+
+        ~msg_cb_guard()
+        {
+            if (this->sg_cb_stack != nullptr) {
+                this->sg_cb_stack->pop_back();
             }
         }
 
-        exec_context* sg_context;
+        std::vector<msg_callback_t>* sg_cb_stack;
     };
 
-    error_cb_guard add_error_callback(error_callback_t cb)
+    msg_cb_guard add_msg_callback(msg_callback_t cb)
     {
-        this->ec_error_callback_stack.emplace_back(std::move(cb));
-        return error_cb_guard{this};
+        this->ec_msg_callback_stack.emplace_back(std::move(cb));
+        return msg_cb_guard{&this->ec_msg_callback_stack};
     }
 
     scoped_resolver create_resolver()
@@ -358,7 +360,7 @@ struct exec_context {
 
     sql_callback_t ec_sql_callback;
     pipe_callback_t ec_pipe_callback;
-    std::vector<error_callback_t> ec_error_callback_stack;
+    std::vector<msg_callback_t> ec_msg_callback_stack;
     std::vector<db_label_source*> ec_label_source_stack;
 
     struct ui_callbacks {
