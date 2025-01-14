@@ -924,6 +924,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_indexes.sh_96472cfd28ed0f7c293e735c2b92742ee454a68d.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_a7297d8c61805cff38987cdede31066e6d245fd3.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_a7297d8c61805cff38987cdede31066e6d245fd3.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_ef6993847513a8a6479234f4459a562708201ce3.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_ef6993847513a8a6479234f4459a562708201ce3.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_f7681c234d4f60df16c997a05163aeb058c52870.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_f7681c234d4f60df16c997a05163aeb058c52870.out \
     $(srcdir)/%reldir%/test_sql_json_func.sh_017d24148f3e28f719429b709f4aa5478f458443.err \

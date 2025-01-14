@@ -1,0 +1,9 @@
+[1m[31m✘ error[0m: no further requests found with cs_referer: https://znbl.ir/static/bundle-bundle_site_head.css
+[36m --> [0m[1mcommand-option[0m:2
+[36m | [0m[37m[40m|find-msg prev access_log cs_referer    [0m
+[36m --> [0m[1m../test/cfg/test_sql_indexes.sh/.lnav/formats/default/find-msg.lnav[0m:30
+[36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[37m[40m$next_selection[0m[37m[40m,                                                                       [0m
+[36m | [0m[37m[40m               [0m[1m[37m[40mraise_error[0m[37m[40m([0m[1m[37m[40mprintf[0m[37m[40m([0m[35m[40m'no further requests found with %s: %s'[0m[37m[40m, [0m[37m[40m$field_name[0m[37m[40m, [0m[37m[40m$curr_value[0m[37m[40m)))[0m
+[36m =[0m [36mnote[0m: the bound parameters are set as follows:
+           [4m$curr_value[0m:TEXT = “https://znbl.ir/stat⋯undle_site_head.css”
+           [4m$field_name[0m:TEXT = “cs_referer”

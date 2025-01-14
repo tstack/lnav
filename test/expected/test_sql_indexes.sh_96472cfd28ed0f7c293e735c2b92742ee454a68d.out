@@ -5,4 +5,4 @@
 2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (999:999:1), scanned rows 1
 2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (998:998:1), scanned rows 1
 2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (997:997:1), scanned rows 1
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (1000:1000:1), scanned rows 30
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (1000:1000:1), scanned rows 59

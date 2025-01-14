@@ -76,3 +76,20 @@ run_cap_test ${lnav_test} -d sql_index.err -n \
     ${test_dir}/logfile_shop_access_log.0
 
 run_cap_test grep "vt_next at EOF" sql_index.err
+
+rm -f sql_index.err
+run_cap_test ${lnav_test} -d sql_index.err -n \
+    -c ":goto 661" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'log'" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c "|find-msg next access_log cs_referer" \
+    -c ";SELECT selection FROM lnav_views WHERE name = 'log'" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    -c "|find-msg prev access_log cs_referer" \
+    -c ";SELECT selection FROM lnav_top_view" \
+    -c ":write-csv-to -" \
+    -c ":switch-to-view log" \
+    ${test_dir}/logfile_shop_access_log.0

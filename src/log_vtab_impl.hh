@@ -330,10 +330,13 @@ public:
 
     std::map<int32_t, column_index> vi_column_indexes;
 
-    void expand_indexes_to(vis_line_t vl)
+    void expand_indexes_to(
+        const std::vector<log_cursor::column_constraint>& cons,
+        const vis_line_t vl)
     {
-        for (auto& [col_num, ci] : this->vi_column_indexes) {
-            ci.ci_indexed_range.expand_to(vl);
+        for (const auto& cc : cons) {
+            this->vi_column_indexes[cc.cc_column].ci_indexed_range.expand_to(
+                vl);
         }
     }
 
