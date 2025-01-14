@@ -188,7 +188,7 @@ public:
         bucket_stats_t overall_stats;
         struct line_range lr;
 
-        lr.lr_unit = line_range::unit::codepoint;
+        // lr.lr_unit = line_range::unit::codepoint;
 
         size_t ident_to_show = this->sbc_show_state.match(
             [](const show_none) { return -1; },
