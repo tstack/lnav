@@ -27,13 +27,13 @@
 #include "data_scanner.hh"
 #include "elem_to_json.hh"
 #include "formats/logfmt/logfmt.parser.hh"
+#include "hasher.hh"
 #include "libbase64.h"
 #include "mapbox/variant.hpp"
 #include "pcrepp/pcre2pp.hh"
 #include "pretty_printer.hh"
 #include "safe/safe.h"
 #include "scn/scan.h"
-#include "spookyhash/SpookyV2.h"
 #include "sqlite-extension-func.hh"
 #include "text_anonymizer.hh"
 #include "view_curses.hh"
@@ -280,25 +280,24 @@ regexp_replace(string_fragment str, string_fragment re, const char* repl)
     return reobj->re2->replace(str, repl);
 }
 
-std::string
+string_fragment
 spooky_hash(const std::vector<const char*>& args)
 {
-    byte_array<2, uint64> hash;
-    SpookyHash context;
+    thread_local char hash_str_buf[hasher::STRING_SIZE];
 
-    context.Init(0, 0);
+    hasher context;
     for (const auto* const arg : args) {
         int64_t len = arg != nullptr ? strlen(arg) : 0;
 
-        context.Update(&len, sizeof(len));
+        context.update((const char*) &len, sizeof(len));
         if (arg == nullptr) {
             continue;
         }
-        context.Update(arg, len);
+        context.update(arg, len);
     }
-    context.Final(hash.out(0), hash.out(1));
+    context.to_string(hash_str_buf);
 
-    return hash.to_string();
+    return string_fragment::from_bytes(hash_str_buf, sizeof(hash_str_buf));
 }
 
 void

@@ -94,6 +94,32 @@ public:
         bits.to_string(std::back_inserter(buf));
     }
 
+    void to_string(char buf[STRING_SIZE])
+    {
+        auto bits = this->to_array();
+
+        fmt::format_to(
+            buf,
+            FMT_STRING("{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}"
+                       "{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}"),
+            bits.ba_data[0],
+            bits.ba_data[1],
+            bits.ba_data[2],
+            bits.ba_data[3],
+            bits.ba_data[4],
+            bits.ba_data[5],
+            bits.ba_data[6],
+            bits.ba_data[7],
+            bits.ba_data[8],
+            bits.ba_data[9],
+            bits.ba_data[10],
+            bits.ba_data[11],
+            bits.ba_data[12],
+            bits.ba_data[13],
+            bits.ba_data[14],
+            bits.ba_data[15]);
+    }
+
     std::string to_string() const
     {
         auto bits = this->to_array();

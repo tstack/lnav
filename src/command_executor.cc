@@ -838,12 +838,12 @@ execute_from_file(exec_context& ec,
                                     attr_line_t("Executing command at ")
                                         .append(lnav::roles::file(
                                             src_slash != std::string::npos
-                                                ? src.substr(src_slash)
+                                                ? src.substr(src_slash + 1)
                                                 : src))
                                         .append(":")
                                         .append(lnav::roles::number(
                                             fmt::to_string(line_number)))
-                                        .append("> ")
+                                        .append(" \u2014 ")
                                         .append(cmd_al))
                                     .move();
                 ec.ec_msg_callback_stack.back()(um);
