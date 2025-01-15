@@ -46,6 +46,9 @@
             },
             "repeated": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) \\^\\^\\^ \\d+ similar messages? omitted \\^\\^\\^$"
+            },
+            "spring1": {
+                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+)\\]\\s+\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
             }
         },
         "level-field": "level",
@@ -108,6 +111,10 @@
                 "identifier": true
             },
             "srcline": {
+                "kind": "string",
+                "identifier": true
+            },
+            "pid": {
                 "kind": "string",
                 "identifier": true
             },
@@ -188,6 +195,9 @@
             },
             {
                 "line": "2024-07-18 14:06:40.554 ^^^ 1 similar message omitted ^^^"
+            },
+            {
+                "line": "2025-01-14T16:10:44.175-07:00  INFO 93649 --- [Course Creation] [         task-1] [6618a4de8f36bf71c60b2982181e6d36-c66827472589372a] e.c.o.s.c.c.ConsumerService              : Received new unassociated section CanvasSection(course=ABCD1234, term=2251, sectionSourcedId=123456-01-2251-B-100-12345, title=A test title, section=null, sessionCode=null, activityType=LEC, classNumber=null, academicOrgCode=null, startDate=2025-01-11, endDate=2025-05-09, enrollments=[CanvasEnrollment(emplid=123456, role=PI, sectionSourcedId=123456-01-2251-B-100-12345)])"
             }
         ]
     }
