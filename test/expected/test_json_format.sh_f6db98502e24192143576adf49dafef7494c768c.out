@@ -1,0 +1,5 @@
+25-01-13 09:58:13.631 app [debu] this is a debug message num=39
+25-01-13 09:58:13.632 app [info] this is a info message num=74
+[33m25-01-13 09:58:13.633[0m[33m [0m[33mapp[0m[33m [warn] this is a warning message num=83[0m
+[31m25-01-13 09:58:13.634[0m[31m [0m[31mapp[0m[31m [erro] this is a error message num=15[0m
+[31m25-01-13 09:58:13.634[0m[31m [0m[31mapp[0m[31m [crit] this is a critical message num=52[0m

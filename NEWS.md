@@ -16,11 +16,12 @@ Features:
   `:write-table-to` which will output Markdown tables when the
   output is set to `text/markdown`.
 * Column alignment in Markdown tables is now supported.
+* Added ecs_log for the Elastic Common Schema from @ba-didi.
 
 Interface changes:
 * DB query results that start with a number are right justified
   instead of only full numbers.
-* Left-clicking a local link in a markdown document will jump to
+* Left-clicking a local link in a Markdown document will jump to
   that section of the document instead of opening the overlay
   menu.
   You can still open the overlay menu by right-clicking on the link.

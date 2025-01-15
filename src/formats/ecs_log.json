@@ -1,0 +1,106 @@
+
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "ecs_log": {
+        "title": "ecs",
+        "description": "Elastic Common Schema (ECS) defines a common set of fields for ingesting data into Elasticsearch including log records",
+        "url": "https://www.elastic.co/guide/en/ecs-logging/overview/current/intro.html",
+        "file-type": "json",
+        "line-format": [
+            {
+                "field": "__timestamp__",
+                "auto-width": true,
+                "align": "left",
+                "timestamp-format": "%y-%m-%d %H:%M:%S.%L"
+            },
+            " ",
+            {
+                "field": "log/logger",
+                "auto-width": true,
+                "align": "left"
+            },
+            " ",
+            {
+                "field": "log.level",
+                "align": "left",
+                "min-width": 4,
+                "max-width": 4,
+                "overflow": "truncate",
+                "prefix": "[",
+                "suffix": "]"
+            },
+            " ",
+            {
+                "field": "message"
+            }
+        ],
+        "value": {
+            "@timestamp": {
+                "kind": "string"
+            },
+            "log.level": {
+                "kind": "string"
+            },
+            "message": {
+                "kind": "string"
+            },
+            "log/logger": {
+                "kind": "string",
+                "identifier":true
+            },
+            "ecs.version": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "log/origin/file/name": {
+                "kind": "string",
+                "hidden": true
+            },
+            "log/origin/file/line": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "log/origin/function": {
+                "kind": "string",
+                "hidden": true
+            },
+            "error/type": {
+                "kind": "string",
+                "hidden": true
+            },
+            "error/message": {
+                "kind": "string",
+                "hidden": true
+            },
+            "error/stack_trace": {
+                "kind": "string",
+                "hidden": true
+            },
+            "log/original": {
+                "kind": "string",
+                "hidden": true
+            },
+            "process/name": {
+                "kind": "string",
+                "hidden": true,
+                "identifier":true
+            },
+            "process/pid": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "process/thread/id": {
+                "kind": "integer",
+                "hidden": true
+            },
+            "process/thread/name": {
+                "kind": "string",
+                "hidden": true
+            }
+        },
+        "level-field": "log.level",
+        "timestamp-field": "@timestamp",
+        "convert-to-local-time": true,
+        "hide-extra": true
+    }
+}

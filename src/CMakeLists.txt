@@ -172,6 +172,7 @@ set(FORMAT_FILES
         formats/cloudvm_ram_log.json
         formats/cups_log.json
         formats/dpkg_log.json
+        formats/ecs_log.json
         formats/elb_log.json
         formats/engine_log.json
         formats/error_log.json

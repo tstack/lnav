@@ -11,6 +11,7 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/cloudvm_ram_log.json \
     $(srcdir)/%reldir%/cups_log.json \
     $(srcdir)/%reldir%/dpkg_log.json \
+    $(srcdir)/%reldir%/ecs_log.json \
     $(srcdir)/%reldir%/elb_log.json \
     $(srcdir)/%reldir%/engine_log.json \
     $(srcdir)/%reldir%/env_logger_log.json \

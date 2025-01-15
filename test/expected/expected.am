@@ -374,6 +374,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_json_format.sh_dfff27a651650a04d93de9a06ab5480e94ce3a79.out \
     $(srcdir)/%reldir%/test_json_format.sh_e36401aa54bc61de71f8dcbe66ea16effa59ea52.err \
     $(srcdir)/%reldir%/test_json_format.sh_e36401aa54bc61de71f8dcbe66ea16effa59ea52.out \
+    $(srcdir)/%reldir%/test_json_format.sh_f6db98502e24192143576adf49dafef7494c768c.err \
+    $(srcdir)/%reldir%/test_json_format.sh_f6db98502e24192143576adf49dafef7494c768c.out \
     $(srcdir)/%reldir%/test_json_format.sh_f740026626ab554dacb249762d8be7d6539b8c6e.err \
     $(srcdir)/%reldir%/test_json_format.sh_f740026626ab554dacb249762d8be7d6539b8c6e.out \
     $(srcdir)/%reldir%/test_json_format.sh_fe19b7ebd349cd689b3f5c22618eab5ce995e68e.err \
