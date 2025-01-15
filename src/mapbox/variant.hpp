@@ -247,7 +247,7 @@ struct variant_helper<T, Types...>
     {
         if (type_index == sizeof...(Types))
         {
-            if constexpr (sizeof(T) > 0) {
+            if constexpr (!std::is_trivially_destructible_v<T>) {
                 reinterpret_cast<T*>(data)->~T();
             }
         }
@@ -526,6 +526,7 @@ class variant
 private:
     static const std::size_t data_size = detail::static_max<sizeof(Types)...>::value;
     static const std::size_t data_align = detail::static_max<alignof(Types)...>::value;
+    static const bool needs_destruct = (!std::is_trivially_destructible_v<Types> || ...);
 public:
     struct adapted_variant_tag;
     using types = std::tuple<Types...>;
@@ -581,7 +582,9 @@ public:
 private:
     VARIANT_INLINE void copy_assign(variant<Types...> const& rhs)
     {
-        helper_type::destroy(type_index, &data);
+        if constexpr (needs_destruct) {
+            helper_type::destroy(type_index, &data);
+        }
         type_index = detail::invalid_value;
         helper_type::copy(rhs.type_index, &rhs.data, &data);
         type_index = rhs.type_index;
@@ -589,7 +592,9 @@ private:
 
     VARIANT_INLINE void move_assign(variant<Types...>&& rhs)
     {
-        helper_type::destroy(type_index, &data);
+        if constexpr (needs_destruct) {
+            helper_type::destroy(type_index, &data);
+        }
         type_index = detail::invalid_value;
         helper_type::move(rhs.type_index, &rhs.data, &data);
         type_index = rhs.type_index;
@@ -662,7 +667,9 @@ public:
     template <typename T, typename... Args>
     VARIANT_INLINE void set(Args&&... args)
     {
-        helper_type::destroy(type_index, &data);
+        if constexpr (needs_destruct) {
+            helper_type::destroy(type_index, &data);
+        }
         type_index = detail::invalid_value;
         new (&data) T(std::forward<Args>(args)...);
         type_index = detail::direct_type<T, Types...>::index;
@@ -872,9 +879,12 @@ public:
         return variant::visit(std::move(*this), ::mapbox::util::make_visitor(std::forward<Fs>(fs)...));
     }
 
+
     ~variant() noexcept // no-throw destructor
     {
-        helper_type::destroy(type_index, &data);
+        if constexpr (needs_destruct) {
+            helper_type::destroy(type_index, &data);
+        }
     }
 
     // comparison operators
