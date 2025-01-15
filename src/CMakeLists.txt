@@ -267,6 +267,7 @@ set(BUILTIN_LNAV_SCRIPTS
         scripts/dhclient-summary.lnav
         scripts/docker-url-handler.lnav
         scripts/find-msg.lnav
+        scripts/find-chained-msg.lnav
         scripts/journald-url-handler.lnav
         scripts/lnav-copy-text.lnav
         scripts/lnav-link-callback.lnav

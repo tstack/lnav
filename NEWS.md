@@ -10,6 +10,9 @@ Features:
 * Added a `find-msg` script that can be used to find the
   next/previous message with a field that matches the value of the
   field in the focused message.
+* Added a `find-chained-msg` script that can be used to find the
+  next/previous message where a target field matches the value of
+  the source field in the focused message.
 * Scripts can now specify their output format using the
   `@output-format:` documentation description.
   This setting can affect the output of some commands, like
@@ -29,6 +32,9 @@ Interface changes:
   styles.
 * Long-running SQL queries in scripts are now mentioned in the UI
   to make it easier to see what is going on.
+* Defining a value in a log format with the same name as one of
+  predefined columns in the log virtual tables will now generate
+  an error.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an
@@ -44,8 +50,9 @@ Bug Fixes:
 * Reduced memory footprint.
 * Improved search performance.
 * Reduce time to open help text.
-* Improved performance of log virtual tables when ordering result
-  by `log_line DESC`.
+* Improved performance of log virtual tables when ordering the
+  result by `log_line DESC`.
+* Improved performance of the `spooky_hash()` SQL function.
 
 Maintenance:
 * Replaced ncurses with notcurses.
