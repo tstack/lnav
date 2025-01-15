@@ -437,11 +437,16 @@ files_sub_source::text_handle_mouse(
     const listview_curses::display_line_content_t&,
     mouse_event& me)
 {
+    auto nci = ncinput{};
     if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
-        this->list_input_handle_key(tc, {' '});
+        nci.id = ' ';
+        nci.eff_text[0] = ' ';
+        this->list_input_handle_key(tc, nci);
     }
     if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{4, -1})) {
-        this->list_input_handle_key(tc, {'\r'});
+        nci.id = '\r';
+        nci.eff_text[0] = '\r';
+        this->list_input_handle_key(tc, nci);
     }
 
     return false;

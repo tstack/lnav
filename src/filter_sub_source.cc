@@ -42,8 +42,7 @@
 
 using namespace lnav::roles::literals;
 
-filter_sub_source::
-filter_sub_source(std::shared_ptr<readline_curses> editor)
+filter_sub_source::filter_sub_source(std::shared_ptr<readline_curses> editor)
     : fss_editor(editor)
 {
     this->fss_editor->set_x(25);
@@ -459,7 +458,8 @@ filter_sub_source::rl_change(readline_curses* rc)
                         ? role_t::VCR_DIFF_DELETE
                         : role_t::VCR_DIFF_ADD;
                     hl.with_role(role);
-                    hl.with_attrs(text_attrs::with_styles(text_attrs::style::blink, text_attrs::style::reverse));
+                    hl.with_attrs(text_attrs::with_styles(
+                        text_attrs::style::blink, text_attrs::style::reverse));
                     hm[{highlight_source_t::PREVIEW, "preview"}] = hl;
                     top_view->set_needs_update();
                     lnav_data.ld_filter_help_status_source.fss_error.clear();
@@ -535,8 +535,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
                 if (compile_res.isErr()) {
                     auto ce = compile_res.unwrapErr();
                     auto um = lnav::console::to_user_message(INPUT_SRC, ce);
-                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(
-                        um);
+                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
                     this->rl_abort(rc);
                 } else {
                     tf->lf_deleted = true;
@@ -580,8 +579,7 @@ filter_sub_source::rl_perform(readline_curses* rc)
                               .with_reason(sqlite3_errmsg(lnav_data.ld_db.in()))
                               .with_snippet(lnav::console::snippet::from(
                                   INPUT_SRC, sqlerr));
-                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(
-                        um);
+                    lnav_data.ld_exec_context.ec_msg_callback_stack.back()(um);
                     this->rl_abort(rc);
                 } else {
                     lnav_data.ld_log_source.set_sql_filter(new_value,
@@ -693,17 +691,26 @@ filter_sub_source::text_handle_mouse(
     const listview_curses::display_line_content_t&,
     mouse_event& me)
 {
+    log_debug("filter mouse %d", me.me_x);
     if (this->fss_editing) {
         return true;
     }
+    auto nci = ncinput{};
     if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 1, 3)) {
-        this->list_input_handle_key(tc, {' '});
+        nci.id = ' ';
+        nci.eff_text[0] = ' ';
+        this->list_input_handle_key(tc, nci);
     }
     if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 4, 7)) {
-        this->list_input_handle_key(tc, {'t'});
+        nci.id = 't';
+        nci.eff_text[0] = 't';
+        this->list_input_handle_key(tc, nci);
     }
-    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{25, -1})) {
-        this->list_input_handle_key(tc, {'\r'});
+    if (me.is_double_click_in(mouse_button_t::BUTTON_LEFT, line_range{25, -1}))
+    {
+        nci.id = '\r';
+        nci.eff_text[0] = '\r';
+        this->list_input_handle_key(tc, nci);
     }
     return true;
 }
