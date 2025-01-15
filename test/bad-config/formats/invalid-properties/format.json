@@ -17,6 +17,9 @@
         "value": {
             "non-existent": {
                 "kind": "string"
+            },
+            "log_level": {
+                "kind": "string"
             }
         },
         "highlights": {

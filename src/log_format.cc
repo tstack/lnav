@@ -77,7 +77,7 @@ const intern_string_t log_format::LOG_TIME_STR
 const intern_string_t log_format::LOG_LEVEL_STR
     = intern_string::lookup("log_level");
 
-static const uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
+static constexpr uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
     | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_SECOND_SET;
 
 log_level_stats&
@@ -1830,10 +1830,10 @@ external_log_format::annotate(logfile* lf,
                               logline_value_vector& values,
                               bool annotate_module) const
 {
-    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+    thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     auto& line = values.lvv_sbr;
-    struct line_range lr;
+    line_range lr;
 
     line.erase_ansi();
     if (this->elf_type != elf_type_t::ELF_TYPE_TEXT) {
@@ -1873,7 +1873,7 @@ external_log_format::annotate(logfile* lf,
     values.lvv_values.reserve(this->elf_value_defs.size());
 
     int pat_index = this->pattern_index_for_line(line_number);
-    auto& pat = *this->elf_pattern_order[pat_index];
+    const auto& pat = *this->elf_pattern_order[pat_index];
 
     sa.reserve(pat.p_pcre.pp_value->get_capture_count());
     auto match_res
@@ -1926,7 +1926,7 @@ external_log_format::annotate(logfile* lf,
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
         const indexed_value_def& ivd = pat.p_value_by_index[lpc];
-        const struct scaling_factor* scaling = nullptr;
+        const scaling_factor* scaling = nullptr;
         auto cap = md[ivd.ivd_index];
         const auto& vd = *ivd.ivd_value_def;
 
@@ -1938,7 +1938,7 @@ external_log_format::annotate(logfile* lf,
                     = intern_string::lookup(unit_cap.value());
                 auto unit_iter = vd.vd_unit_scaling.find(unit_val);
                 if (unit_iter != vd.vd_unit_scaling.end()) {
-                    const struct scaling_factor& sf = unit_iter->second;
+                    const auto& sf = unit_iter->second;
 
                     scaling = &sf;
                 }
@@ -3143,6 +3143,25 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
     for (auto& vd : this->elf_value_def_order) {
         std::vector<std::string>::iterator act_iter;
+
+        if (log_vtab_impl::RESERVED_COLUMNS.count(
+                vd->vd_meta.lvm_name.to_string_fragment()))
+        {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("value name ")
+                              .append_quoted(lnav::roles::symbol(
+                                  fmt::format(FMT_STRING("/{}/value/{}"),
+                                              this->elf_name,
+                                              vd->vd_meta.lvm_name)))
+                              .append(" is reserved and cannot be used"))
+                          .with_reason(
+                              "lnav automatically defines several columns in "
+                              "the log virtual table")
+                          .with_snippets(this->get_snippets())
+                          .with_help("Choose another name")
+                          .move();
+            errors.emplace_back(um);
+        }
 
         vd->vd_meta.lvm_format = this;
         if (!vd->vd_internal

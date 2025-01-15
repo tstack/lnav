@@ -33,6 +33,7 @@
 #include <deque>
 #include <map>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <sqlite3.h>
@@ -258,6 +259,9 @@ const std::string LOG_TIME = "log_time";
 
 class log_vtab_impl {
 public:
+    static const std::unordered_set<string_fragment, frag_hasher>
+        RESERVED_COLUMNS;
+
     struct vtab_column {
         vtab_column(const std::string name = "",
                     int type = SQLITE3_TEXT,

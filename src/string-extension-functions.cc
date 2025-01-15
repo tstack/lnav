@@ -147,9 +147,6 @@ mapbox::util::
         throw std::runtime_error(err.get_message());
     }
 
-    yajlpp_gen gen;
-    yajl_gen_config(gen, yajl_gen_beautify, false);
-
     if (extractor.get_capture_count() == 1) {
         auto cap = md[1];
 
@@ -157,18 +154,24 @@ mapbox::util::
             return static_cast<const char*>(nullptr);
         }
 
-        auto scan_int_res = scn::scan_value<int64_t>(cap->to_string_view());
-        if (scan_int_res && scan_int_res->range().empty()) {
-            return scan_int_res->value();
-        }
-
-        auto scan_float_res = scn::scan_value<double>(cap->to_string_view());
-        if (scan_float_res && scan_float_res->range().empty()) {
-            return scan_float_res->value();
+        auto scan_int_res = scn::scan_int<int64_t>(cap->to_string_view());
+        if (scan_int_res) {
+            if (scan_int_res->range().empty()) {
+                return scan_int_res->value();
+            }
+            auto scan_float_res
+                = scn::scan_value<double>(cap->to_string_view());
+            if (scan_float_res && scan_float_res->range().empty()) {
+                return scan_float_res->value();
+            }
         }
 
         return cap.value();
-    } else {
+    }
+
+    yajlpp_gen gen;
+    yajl_gen_config(gen, yajl_gen_beautify, false);
+    {
         yajlpp_map root_map(gen);
 
         for (size_t lpc = 0; lpc < extractor.get_capture_count(); lpc++) {

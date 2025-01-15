@@ -1,8 +1,8 @@
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (1000:1000:1), scanned rows 1
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (996:996:1), scanned rows 1
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (662:662:1), scanned rows 1
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (-1:-1:-1), scanned rows 661
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (999:999:1), scanned rows 1
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (998:998:1), scanned rows 1
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (997:997:1), scanned rows 1
-2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:576 vt_next at EOF (1000:1000:1), scanned rows 59
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (1000:1000:1), scanned rows 1
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (996:996:1), scanned rows 1
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (662:662:1), scanned rows 1
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (-1:-1:-1), scanned rows 661
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (999:999:1), scanned rows 1
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (998:998:1), scanned rows 1
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (997:997:1), scanned rows 1
+2013-06-06T19:13:20.123+00:00 I t0 log_vtab_impl.cc:602 vt_next at EOF (1000:1000:1), scanned rows 59

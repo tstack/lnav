@@ -55,6 +55,32 @@ static log_cursor log_cursor_latest;
 
 thread_local _log_vtab_data log_vtab_data;
 
+const std::unordered_set<string_fragment, frag_hasher>
+    log_vtab_impl::RESERVED_COLUMNS = {
+        string_fragment::from_const("log_line"),
+        string_fragment::from_const("log_time"),
+        string_fragment::from_const("log_level"),
+        string_fragment::from_const("log_part"),
+        string_fragment::from_const("log_actual_time"),
+        string_fragment::from_const("log_idle_msecs"),
+        string_fragment::from_const("log_mark"),
+        string_fragment::from_const("log_comment"),
+        string_fragment::from_const("log_tags"),
+        string_fragment::from_const("log_annotations"),
+        string_fragment::from_const("log_filters"),
+        string_fragment::from_const("log_opid"),
+        string_fragment::from_const("log_user_opid"),
+        string_fragment::from_const("log_format"),
+        string_fragment::from_const("log_format_regex"),
+        string_fragment::from_const("log_time_msecs"),
+        string_fragment::from_const("log_path"),
+        string_fragment::from_const("log_unique_path"),
+        string_fragment::from_const("log_text"),
+        string_fragment::from_const("log_body"),
+        string_fragment::from_const("log_raw_text"),
+        string_fragment::from_const("log_line_hash"),
+};
+
 static const char* LOG_COLUMNS = R"(  (
   log_line        INTEGER,                         -- The line number for the log message
   log_time        DATETIME,                        -- The adjusted timestamp for the log message

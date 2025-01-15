@@ -247,7 +247,9 @@ struct variant_helper<T, Types...>
     {
         if (type_index == sizeof...(Types))
         {
-            reinterpret_cast<T*>(data)->~T();
+            if constexpr (sizeof(T) > 0) {
+                reinterpret_cast<T*>(data)->~T();
+            }
         }
         else
         {
