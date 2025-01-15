@@ -148,6 +148,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                         ? link_cmd.get_string()
                         : fmt::format(FMT_STRING(":filter-in {}"),
                                       lnav::pcre2pp::quote(value));
+                    auto& dls = lnav_data.ld_db_row_source;
+                    auto previous_db_gen = dls.dls_generation;
                     auto src_guard
                         = lnav_data.ld_exec_context.enter_source(SRC, 1, cmd);
                     auto exec_res
@@ -157,6 +159,10 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                                   cmd, std::make_pair("href", sti.sti_href));
                     if (exec_res.isOk()) {
                         lnav_data.ld_rl_view->set_value(exec_res.unwrap());
+                        if (dls.dls_generation != previous_db_gen &&
+                            dls.dls_rows.size() > 1) {
+                            ensure_view(&lnav_data.ld_views[LNV_DB]);
+                        }
                     }
                 });
             start += al.length();

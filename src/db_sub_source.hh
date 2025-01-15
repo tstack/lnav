@@ -113,6 +113,7 @@ public:
         stacked_bar_chart<std::string> hm_chart;
     };
 
+    uint32_t dls_generation{0};
     size_t dls_max_column_width{120};
     std::vector<header_meta> dls_headers;
     std::vector<std::vector<const char*>> dls_rows;

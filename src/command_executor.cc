@@ -491,6 +491,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             retval = ec.ec_accumulator->get_string();
         } else {
             auto& dls = *(ec.ec_label_source_stack.back());
+            dls.dls_generation += 1;
             if (!dls.dls_rows.empty()) {
                 lnav_data.ld_views[LNV_DB].reload_data();
                 lnav_data.ld_views[LNV_DB].set_left(0);
@@ -943,6 +944,7 @@ execute_init_commands(
                 = intern_string::lookup("command-option");
 
             std::string alt_msg;
+            auto has_db_query = false;
 
             wait_for_children();
 
@@ -964,6 +966,7 @@ execute_init_commands(
                         setup_logline_table(ec);
                         msgs.emplace_back(
                             execute_sql(ec, cmd.substr(1), alt_msg), alt_msg);
+                        has_db_query = true;
                         break;
                     case '|':
                         msgs.emplace_back(execute_file(ec, cmd.substr(1)),
@@ -981,7 +984,8 @@ execute_init_commands(
                 wait_for_pipers(deadline);
                 rebuild_indexes_repeatedly();
             }
-            if (!dls.dls_headers.empty() && lnav_data.ld_view_stack.size() == 1)
+            if (has_db_query && !dls.dls_headers.empty()
+                && lnav_data.ld_view_stack.size() == 1)
             {
                 lnav_data.ld_views[LNV_DB].reload_data();
                 ensure_view(LNV_DB);

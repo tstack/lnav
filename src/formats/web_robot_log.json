@@ -1,0 +1,88 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "web_robot_log": {
+        "title": "web robot log",
+        "description": "",
+        "url": "https://github.com/pamburus/hl/issues/132",
+        "file-type": "json",
+        "line-format": [
+            {
+                "field": "ip"
+            },
+            " ",
+            {
+                "prefix": "[",
+                "field": "__timestamp__",
+                "suffix": "]"
+            },
+            " \"",
+            {
+                "field": "method"
+            },
+            " ",
+            {
+                "field": "resource"
+            },
+            "\" ",
+            {
+                "field": "response"
+            },
+            " ",
+            {
+                "field": "bytes"
+            },
+            " ",
+            {
+                "field": "referrer",
+                "default-value": "-"
+            },
+            " ",
+            {
+                "field": "useragent",
+                "default-value": "-"
+            }
+        ],
+        "value": {
+            "ip": {
+                "kind": "string",
+                "collate": "ipaddress",
+                "identifier": true
+            },
+            "level": {
+                "kind": "string",
+                "hidden": true
+            },
+            "method": {
+                "kind": "string",
+                "identifier": true
+            },
+            "resource": {
+                "kind": "string",
+                "identifier": true
+            },
+            "response": {
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "bytes": {
+                "kind": "integer"
+            },
+            "referrer": {
+                "kind": "string",
+                "identifier": true
+            },
+            "request": {
+                "kind": "string",
+                "hidden": true
+            },
+            "request-id": {
+                "kind": "string",
+                "hidden": true,
+                "identifier": true
+            },
+            "useragent": {
+                "kind": "string"
+            }
+        }
+    }
+}
