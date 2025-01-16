@@ -84,7 +84,7 @@ extern "C" {
         /** strings are returned as pointers into the JSON text when,
          * possible, as a result, they are _not_ null padded */
         int (* yajl_string)(void * ctx, const unsigned char * stringVal,
-                            size_t stringLen);
+                            size_t stringLen, yajl_string_props_t* props);
 
         int (* yajl_start_map)(void * ctx);
         int (* yajl_map_key)(void * ctx, const unsigned char * key,
@@ -101,7 +101,7 @@ extern "C" {
      *                    are encountered in the input text.  May be NULL,
      *                    which is only useful for validation.
      *  \param afs        memory allocation functions, may be NULL for to use
-     *                    C runtime library routines (malloc and friends) 
+     *                    C runtime library routines (malloc and friends)
      *  \param ctx        a context pointer that will be passed to callbacks.
      */
     YAJL_API yajl_handle yajl_alloc(const yajl_callbacks * callbacks,

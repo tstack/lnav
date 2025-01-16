@@ -289,6 +289,14 @@ static int handle_string (void *ctx,
     return ((context_add_value (ctx, v) == 0) ? STATUS_CONTINUE : STATUS_ABORT);
 }
 
+
+static int handle_string2 (void *ctx,
+                           const unsigned char *string, size_t string_length,
+                           yajl_string_props_t* props)
+{
+    return handle_string(ctx, string, string_length);
+}
+
 static int handle_number (void *ctx, const char *string, size_t string_length)
 {
     yajl_val v;
@@ -410,7 +418,7 @@ yajl_val yajl_tree_parse (const char *input,
             /* integer     = */ NULL,
             /* double      = */ NULL,
             /* number      = */ handle_number,
-            /* string      = */ handle_string,
+            /* string      = */ handle_string2,
             /* start map   = */ handle_start_map,
             /* map key     = */ handle_string,
             /* end map     = */ handle_end_map,

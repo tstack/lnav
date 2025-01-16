@@ -291,7 +291,8 @@ read_format_int(yajlpp_parse_context* ypc, long long val)
 static int
 read_format_field(yajlpp_parse_context* ypc,
                   const unsigned char* str,
-                  size_t len)
+                  size_t len,
+                  yajl_string_props_t*)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto leading_slash = len > 0 && str[0] == '/';
@@ -310,7 +311,7 @@ read_format_field(yajlpp_parse_context* ypc,
 }
 
 static int
-read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
+read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto regex = std::string((const char*) str, len);
@@ -349,7 +350,7 @@ read_level_int(yajlpp_parse_context* ypc, long long val)
 }
 
 static int
-read_action_def(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
+read_action_def(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto action_name = ypc->get_path_fragment(2);
@@ -377,7 +378,7 @@ read_action_bool(yajlpp_parse_context* ypc, int val)
 }
 
 static int
-read_action_cmd(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
+read_action_cmd(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto action_name = ypc->get_path_fragment(2);
@@ -409,7 +410,8 @@ sample_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
 static int
 read_json_constant(yajlpp_parse_context* ypc,
                    const unsigned char* str,
-                   size_t len)
+                   size_t len,
+                   yajl_string_props_t*)
 {
     auto val = std::string((const char*) str, len);
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
@@ -1104,7 +1106,7 @@ const struct json_path_container format_handlers = {
 };
 
 static int
-read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
+read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     auto* ud = static_cast<loader_userdata*>(ypc->ypc_userdata);
     auto file_id = std::string((const char*) str, len);

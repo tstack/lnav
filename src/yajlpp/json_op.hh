@@ -47,7 +47,8 @@ class json_op {
                              size_t numberLen);
     static int handle_string(void* ctx,
                              const unsigned char* stringVal,
-                             size_t len);
+                             size_t len,
+                             yajl_string_props_t* props);
     static int handle_start_map(void* ctx);
     static int handle_map_key(void* ctx, const unsigned char* key, size_t len);
     static int handle_end_map(void* ctx);

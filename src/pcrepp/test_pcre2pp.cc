@@ -33,6 +33,40 @@
 #include "doctest/doctest.h"
 #include "pcre2pp.hh"
 
+TEST_CASE("marks")
+{
+    auto code
+        = lnav::pcre2pp::code::from_const("^(?:/abc(*MARK:0)|/def(*MARK:1))$");
+    auto md = lnav::pcre2pp::match_data::unitialized();
+
+    {
+        const auto abc = string_fragment::from_const("/abc");
+        auto match_res = code.capture_from(abc)
+                             .into(md)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+        CHECK(match_res.has_value());
+        CHECK(md.get_mark() == "0");
+    }
+    {
+        const auto def = string_fragment::from_const("/def");
+        auto match_res = code.capture_from(def)
+                             .into(md)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+        CHECK(match_res.has_value());
+        CHECK(md.get_mark() == "1");
+    }
+    {
+        const auto ghi = string_fragment::from_const("/ghi");
+        auto match_res = code.capture_from(ghi)
+                             .into(md)
+                             .matches(PCRE2_NO_UTF_CHECK)
+                             .ignore_error();
+        CHECK(!match_res.has_value());
+    }
+}
+
 TEST_CASE("bad pattern")
 {
     auto compile_res

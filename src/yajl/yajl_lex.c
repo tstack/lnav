@@ -142,7 +142,7 @@ static const char charLookupTable[256] =
 /*10*/ IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    ,
 /*18*/ IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    , IJC    ,
 
-/*20*/ 0      , 0      , NFP|VEC|IJC, 0      , 0      , 0      , 0      , 0      ,
+/*20*/ 0      , 0      , NFP|VEC|IJC, 0      , 0      , 0      , 0      , NFP    ,
 /*28*/ 0      , 0      , 0      , 0      , 0      , 0      , 0      , VEC    ,
 /*30*/ VHC    , VHC    , VHC    , VHC    , VHC    , VHC    , VHC    , VHC    ,
 /*38*/ VHC    , VHC    , 0      , 0      , 0      , 0      , 0      , 0      ,
@@ -266,11 +266,14 @@ yajl_string_scan(const unsigned char * buf, size_t len, int utf8check)
 
 static yajl_tok
 yajl_lex_string(yajl_lexer lexer, const unsigned char * jsonText,
-                size_t jsonTextLen, size_t * offset)
+                size_t jsonTextLen, size_t * offset,
+                yajl_string_props_t* props)
 {
     yajl_tok tok = yajl_tok_error;
     int hasEscapes = 0;
 
+    props->has_ansi = 0;
+    props->line_feeds = 0;
     for (;;) {
         unsigned char curChar;
 
@@ -498,7 +501,8 @@ yajl_lex_comment(yajl_lexer lexer, const unsigned char * jsonText,
 yajl_tok
 yajl_lex_lex(yajl_lexer lexer, const unsigned char * jsonText,
              size_t jsonTextLen, size_t * offset,
-             const unsigned char ** outBuf, size_t * outLen)
+             const unsigned char ** outBuf, size_t * outLen,
+             yajl_string_props_t* props)
 {
     yajl_tok tok = yajl_tok_error;
     unsigned char c;
@@ -595,7 +599,7 @@ yajl_lex_lex(yajl_lexer lexer, const unsigned char * jsonText,
             }
             case '"': {
                 tok = yajl_lex_string(lexer, (const unsigned char *) jsonText,
-                                      jsonTextLen, offset);
+                                      jsonTextLen, offset, props);
                 goto lexed;
             }
             case '-':
@@ -751,9 +755,10 @@ yajl_tok yajl_lex_peek(yajl_lexer lexer, const unsigned char * jsonText,
     size_t bufOff = lexer->bufOff;
     unsigned int bufInUse = lexer->bufInUse;
     yajl_tok tok;
+    yajl_string_props_t props;
 
     tok = yajl_lex_lex(lexer, jsonText, jsonTextLen, &offset,
-                       &outBuf, &outLen);
+                       &outBuf, &outLen, &props);
 
     lexer->bufOff = bufOff;
     lexer->bufInUse = bufInUse;

@@ -236,7 +236,8 @@ to_json(const lnav::console::user_message& um)
 static int
 read_string_attr_type(yajlpp_parse_context* ypc,
                       const unsigned char* str,
-                      size_t len)
+                      size_t len,
+                      yajl_string_props_t*)
 {
     auto* sa = (string_attr*) ypc->ypc_obj_stack.top();
     auto type = std::string((const char*) str, len);

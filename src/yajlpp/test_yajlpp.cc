@@ -68,7 +68,7 @@ read_const(yajlpp_parse_context* ypc, long long value)
 }
 
 static int
-dummy_string_handler(void* ctx, const unsigned char* s, size_t len)
+dummy_string_handler(void* ctx, const unsigned char* s, size_t len, yajl_string_props_t*)
 {
     return 1;
 }

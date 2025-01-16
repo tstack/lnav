@@ -83,7 +83,7 @@ appender(void* ctx, const char* strVal, size_t strLen)
 }
 
 static int
-handle_string(void* ctx, const unsigned char* stringVal, size_t len)
+handle_string(void* ctx, const unsigned char* stringVal, size_t len, yajl_string_props_t*)
 {
     json_ptr_walk* jpw = (json_ptr_walk*) ctx;
     auto_mem<yajl_gen_t> gen(yajl_gen_free);

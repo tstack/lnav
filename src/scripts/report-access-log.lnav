@@ -22,6 +22,14 @@
         cs_user_agent
       FROM access_log
 
+# XXX These indexes don't seem to help...
+#;CREATE INDEX report_access_log_unique_visitors ON
+#    report_access_log(spooky_hash(c_ip, cs_user_agent))
+#;CREATE INDEX report_access_log_uri ON
+#    report_access_log(cs_uri_stem)
+#;CREATE INDEX report_access_log_status ON
+#    report_access_log(sc_status)
+
 ;SELECT count(*) AS total_requests,
         count(DISTINCT spooky_hash(c_ip, cs_user_agent)) AS unique_visitors,
         count(DISTINCT cs_uri_stem) AS requested_files,

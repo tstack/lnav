@@ -108,6 +108,11 @@ public:
 
     uint32_t get_capacity() const { return this->md_ovector_count; }
 
+    string_fragment get_mark() const
+    {
+        return string_fragment::from_c_str(pcre2_get_mark(this->md_data.in()));
+    }
+
     std::string to_string() const;
 
 private:

@@ -1955,7 +1955,8 @@ public:
                             handle = yajl_alloc(&cb, nullptr, &lph);
                             cb.yajl_string = +[](void* ctx,
                                                  const unsigned char* str,
-                                                 size_t len) -> int {
+                                                 size_t len,
+                                                 yajl_string_props_t*) -> int {
                                 auto& lph = *((logfmt_pair_handler*) ctx);
                                 string_fragment value_frag{str, 0, (int) len};
 

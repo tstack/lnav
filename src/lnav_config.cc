@@ -417,7 +417,7 @@ update_installs_from_git()
 }
 
 static int
-read_repo_path(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
+read_repo_path(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     auto path = std::string((const char*) str, len);
 
@@ -1635,7 +1635,7 @@ const std::set<std::string> SUPPORTED_FORMAT_SCHEMAS = {
 };
 
 static int
-read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
+read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     auto file_id = std::string((const char*) str, len);
 

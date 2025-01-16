@@ -156,8 +156,6 @@ AS_IF([test "x$with_system_doctest" != "xyes"], [
 
 LNAV_WITH_JEMALLOC
 
-LNAV_WITH_LOCAL_YAJL
-
 AX_WITH_CURSES
 
 AS_VAR_IF([ax_cv_curses],[yes],[],

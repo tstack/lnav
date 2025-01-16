@@ -46,7 +46,8 @@ Breaking changes:
   - `reason` - A description of the error.
 
 Bug Fixes:
-* Improved startup time.
+* Reduced startup time.
+* Reduced indexing time for plain text and JSON-lines logs.
 * Reduced memory footprint.
 * Improved search performance.
 * Reduce time to open help text.

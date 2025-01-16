@@ -896,7 +896,7 @@ yajlpp_parse_context::handle_unused(void* ctx)
             expected_types.emplace_back("float");
         }
         if (ypc->ypc_callbacks.yajl_string
-            != (int (*)(void*, const unsigned char*, size_t))
+            != (int (*)(void*, const unsigned char*, size_t, yajl_string_props_t*))
                 yajlpp_parse_context::handle_unused)
         {
             expected_types.emplace_back("string");
@@ -995,7 +995,7 @@ const yajl_callbacks yajlpp_parse_context::DEFAULT_CALLBACKS = {
     (int (*)(void*, long long)) yajlpp_parse_context::handle_unused,
     (int (*)(void*, double)) yajlpp_parse_context::handle_unused,
     nullptr,
-    (int (*)(void*, const unsigned char*, size_t))
+    (int (*)(void*, const unsigned char*, size_t, yajl_string_props_t*))
         yajlpp_parse_context::handle_unused,
     yajlpp_parse_context::map_start,
     yajlpp_parse_context::map_key,
@@ -1116,6 +1116,15 @@ yajlpp_parse_context::parse_doc(string_fragment_producer& sfp)
     }
 
     return retval;
+}
+
+string_fragment
+yajlpp_parse_context::get_path_as_string_fragment() const
+{
+    if (this->ypc_path.size() <= 1) {
+        return string_fragment();
+    }
+    return string_fragment::from_bytes(&this->ypc_path[1], this->ypc_path.size() - 2);
 }
 
 const intern_string_t

@@ -102,7 +102,7 @@ gen_handle_number(void* ctx, const char* numberVal, size_t numberLen)
 }
 
 static int
-gen_handle_string(void* ctx, const unsigned char* stringVal, size_t len)
+gen_handle_string(void* ctx, const unsigned char* stringVal, size_t len, yajl_string_props_t*)
 {
     json_op* jo = (json_op*) ctx;
     yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
@@ -211,7 +211,8 @@ json_op::handle_number(void* ctx, const char* numberVal, size_t numberLen)
 int
 json_op::handle_string(void* ctx,
                        const unsigned char* stringVal,
-                       size_t stringLen)
+                       size_t stringLen,
+                       yajl_string_props_t* props)
 {
     json_op* jo = (json_op*) ctx;
     int retval = 1;
@@ -219,7 +220,7 @@ json_op::handle_string(void* ctx,
     if (jo->check_index()) {
         if (jo->jo_ptr_callbacks.yajl_string != nullptr) {
             retval
-                = jo->jo_ptr_callbacks.yajl_string(ctx, stringVal, stringLen);
+                = jo->jo_ptr_callbacks.yajl_string(ctx, stringVal, stringLen, props);
         }
     }
 

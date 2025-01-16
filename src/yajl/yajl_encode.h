@@ -27,7 +27,8 @@ void yajl_string_encode(const yajl_print_t printer,
                         int escape_solidus);
 
 void yajl_string_decode(yajl_buf buf, const unsigned char * str,
-                        size_t length);
+                        size_t length,
+                        yajl_string_props_t* props);
 
 int yajl_string_validate_utf8(const unsigned char * s, size_t len);
 

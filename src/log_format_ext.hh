@@ -75,6 +75,8 @@ public:
         std::string vd_rewriter;
         std::string vd_description;
         intern_string_t vd_rewrite_src_name;
+        bool vd_used_in_line_format{false};
+        bool vd_is_desc_field{false};
     };
 
     struct indexed_value_def {
@@ -286,12 +288,12 @@ public:
         bool vlcr_valid_utf{true};
     };
 
-    value_line_count_result value_line_count(const intern_string_t ist,
+    value_line_count_result value_line_count(const value_def* vd,
                                              bool top_level,
-                                             std::optional<double> val
-                                             = std::nullopt,
-                                             const unsigned char* str = nullptr,
-                                             ssize_t len = -1);
+                                             std::optional<double> val,
+                                             const unsigned char* str,
+                                             ssize_t len,
+                                             yajl_string_props_t* props);
 
     bool has_value_def(const intern_string_t ist) const
     {
@@ -341,6 +343,8 @@ public:
     value_defs_state elf_specialized_value_defs_state;
 
     std::vector<std::shared_ptr<value_def>> elf_value_def_order;
+    robin_hood::unordered_map<string_fragment, value_def*, frag_hasher>
+        elf_value_def_frag_map;
     std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
     size_t elf_column_count{0};
     double elf_timestamp_divisor{1.0};

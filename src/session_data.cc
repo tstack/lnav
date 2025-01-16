@@ -855,7 +855,7 @@ load_time_bookmarks()
 }
 
 static int
-read_files(yajlpp_parse_context* ypc, const unsigned char* str, size_t len)
+read_files(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     return 1;
 }

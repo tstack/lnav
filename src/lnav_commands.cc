@@ -5579,10 +5579,12 @@ com_config(exec_context& ec,
                 }
 
                 if (ypc.ypc_current_handler->jph_callbacks.yajl_string) {
+                    yajl_string_props_t props{};
                     ypc.ypc_callbacks.yajl_string(
                         &ypc,
                         (const unsigned char*) value.c_str(),
-                        value.size());
+                        value.size(),
+                        &props);
                     changed = true;
                 } else if (ypc.ypc_current_handler->jph_callbacks.yajl_integer)
                 {

@@ -75,7 +75,7 @@ struct contains_userdata {
 };
 
 int
-contains_string(void* ctx, const unsigned char* str, size_t len)
+contains_string(void* ctx, const unsigned char* str, size_t len, yajl_string_props_t*)
 {
     auto sf = string_fragment::from_bytes(str, len);
     auto& cu = *((contains_userdata*) ctx);
@@ -211,7 +211,7 @@ gen_handle_boolean(void* ctx, int boolVal)
 }
 
 static int
-gen_handle_string(void* ctx, const unsigned char* stringVal, size_t len)
+gen_handle_string(void* ctx, const unsigned char* stringVal, size_t len, yajl_string_props_t* props)
 {
     sql_json_op* sjo = (sql_json_op*) ctx;
     yajl_gen gen = (yajl_gen) sjo->jo_ptr_data;
@@ -405,7 +405,7 @@ concat_gen_number(void* ctx, const char* val, size_t len)
 }
 
 static int
-concat_gen_string(void* ctx, const unsigned char* val, size_t len)
+concat_gen_string(void* ctx, const unsigned char* val, size_t len, yajl_string_props_t*)
 {
     auto* cc = static_cast<concat_context*>(ctx);
 

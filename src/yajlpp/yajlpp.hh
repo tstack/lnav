@@ -298,7 +298,7 @@ struct json_path_handler_base {
     std::function<int(yajlpp_parse_context*, int)> jph_bool_cb;
     std::function<int(yajlpp_parse_context*, long long)> jph_integer_cb;
     std::function<int(yajlpp_parse_context*, double)> jph_double_cb;
-    std::function<int(yajlpp_parse_context*, const string_fragment& sf)>
+    std::function<int(yajlpp_parse_context*, const string_fragment& sf, yajl_string_props_t*)>
         jph_str_cb;
 
     void validate_string(yajlpp_parse_context& ypc, string_fragment sf) const;
@@ -356,6 +356,8 @@ public:
         frag = this->get_path_fragment(offset, fragbuf, len);
         return std::string(frag, len);
     }
+
+    string_fragment get_path_as_string_fragment() const;
 
     const intern_string_t get_path() const;
 
