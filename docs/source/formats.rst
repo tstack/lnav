@@ -145,6 +145,10 @@ object with the following fields:
   "lock-on" behavior is needed to avoid the performance hit of having to
   try too many different regexes.
 
+  .. note:: If the format allows for multiline log entries, the regex must 
+     match also only the first line for automatic format detection to work 
+     correctly, i.e. everything after the first line must be optional.
+
   .. note:: Log files that contain JSON messages should not specify this field.
 
   :pattern: The regular expression that should be used to match log messages.
