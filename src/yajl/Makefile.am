@@ -17,7 +17,6 @@ noinst_HEADERS = \
 	yajl_parser.h \
 	yajl_version.h
 
-if USE_INCLUDED_YAJL
 libyajl_a_SOURCES = \
     yajl.c \
 	yajl_alloc.c \
@@ -34,4 +33,3 @@ libyajl_a_SOURCES = \
 	yajl_parser.h \
 	yajl_tree.c \
 	yajl_version.c
-endif
