@@ -1068,6 +1068,7 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
                 log_trace("example: %s", ex.he_cmd);
                 log_trace("example result: %s", result.get_string().c_str());
 
+                scrub_ansi_string(result.al_string, &result.al_attrs);
                 res_map.emplace(ex.he_cmd, std::move(result));
                 break;
             }

@@ -233,6 +233,7 @@ private:
     size_t tss_line_indent_size{0};
     bool tss_completed_last_scan{true};
     attr_line_t tss_hex_line;
+    string_attrs_t tss_plain_line_attrs;
     int64_t tss_content_line{0};
     view_mode tss_view_mode{view_mode::rendered};
 };

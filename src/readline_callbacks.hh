@@ -47,9 +47,9 @@ void rl_blur(readline_curses* rc);
 readline_context::split_result_t prql_splitter(readline_context& rc,
                                                const std::string& cmdline);
 
-extern const char* RE_HELP;
-extern const char* RE_EXAMPLE;
-extern const char* SQL_HELP;
-extern const char* SQL_EXAMPLE;
+extern const char* const RE_HELP;
+extern const char* const RE_EXAMPLE;
+extern const char* const SQL_HELP;
+extern const char* const SQL_EXAMPLE;
 
 #endif  // LNAV_READLINE_CALLBACKS_HH

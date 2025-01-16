@@ -136,7 +136,7 @@ void yajl_string_decode(yajl_buf buf, const unsigned char * str,
                 case '/': unescaped = "/"; break;
                 case '"': unescaped = "\""; break;
                 case 'f': unescaped = "\f"; break;
-                case 'b': unescaped = "\b"; break;
+                case 'b': unescaped = "\b"; props->has_ansi = 1; break;
                 case 't': unescaped = "\t"; break;
                 case 'u': {
                     unsigned int codepoint = 0;

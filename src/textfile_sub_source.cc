@@ -163,11 +163,16 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
         return {};
     }
 
-    auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
+    const auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
     auto read_result = lf->read_line(ll);
     this->tss_line_indent_size = 0;
     if (read_result.isOk()) {
-        value_out = to_string(read_result.unwrap());
+        auto sbr = read_result.unwrap();
+        value_out = to_string(sbr);
+        this->tss_plain_line_attrs.clear();
+        if (sbr.get_metadata().m_has_ansi) {
+            scrub_ansi_string(value_out, &this->tss_plain_line_attrs);
+        }
         for (const auto& ch : value_out) {
             if (ch == ' ') {
                 this->tss_line_indent_size += 1;
@@ -212,6 +217,7 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
     } else if (lf->get_text_format() == text_format_t::TF_BINARY) {
         value_out = this->tss_hex_line.get_attrs();
     } else {
+        value_out = this->tss_plain_line_attrs;
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
         if (lfo != nullptr && row >= 0

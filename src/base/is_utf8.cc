@@ -82,7 +82,7 @@ is_utf8(string_fragment str, std::optional<unsigned char> terminator)
         if (ustr[i] <= 0x7F) /* 00..7F */ {
             if (ustr[i] == '\t') {
                 retval.usr_column_width_guess += 7;
-            } else if (ustr[i] == '\x1b') {
+            } else if (ustr[i] == '\x1b' || ustr[i] == '\b') {
                 retval.usr_has_ansi = true;
             }
             i += 1;

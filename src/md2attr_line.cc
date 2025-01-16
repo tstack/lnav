@@ -1100,7 +1100,6 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             }
 
             std::string span_text;
-
             auto loop_res = REPL_RE.capture_from(sf).for_each(
                 [&span_text](const lnav::pcre2pp::match_data& md) {
                     span_text += md.leading();
@@ -1132,7 +1131,8 @@ md2attr_line::text(MD_TEXTTYPE tt, const string_fragment& sf)
             text_wrap_settings tws
                 = {0, this->ml_blocks.size() == 1 ? 70 : 10000};
 
-            last_block.append(span_text, &tws);
+            auto span_al = attr_line_t::from_ansi_str(span_text);
+            last_block.append(span_al, &tws);
             break;
         }
     }

@@ -64,7 +64,7 @@ using namespace lnav::roles::literals;
 #define ANSI_REV(msg) ANSI_CSI "7m" msg ANSI_NORM
 #define ANSI_STR(msg) ANSI_CSI "32m" msg ANSI_NORM
 
-const char *RE_HELP =
+const char * const RE_HELP =
     " "  ANSI_RE(".") "   Any character    "
     " "     "a" ANSI_RE("|") "b   a or b        "
     " " ANSI_RE("(?-i)") "   Case-sensitive search\n"
@@ -86,7 +86,7 @@ const char *RE_HELP =
     " " ANSI_RE("[") "ab" ANSI_RE("-") "d" ANSI_RE("]") "  Any of a, b, c, or d"
 ;
 
-const char *RE_EXAMPLE =
+const char * const RE_EXAMPLE =
     ANSI_UNDERLINE("Examples") "\n"
     "  abc" ANSI_RE("*") "       matches  "
     ANSI_STR("'ab'") ", " ANSI_STR("'abc'") ", " ANSI_STR("'abccc'") "\n"
@@ -99,19 +99,19 @@ const char *RE_EXAMPLE =
     "  " ANSI_RE("(?-i)") "ABC   matches  " ANSI_STR("'ABC'") " and " ANSI_UNDERLINE("not") " " ANSI_STR("'abc'")
 ;
 
-const char* CMD_HELP =
+const char* const CMD_HELP =
     " " ANSI_KW(":goto") "              Go to a line #, timestamp, etc...\n"
     " " ANSI_KW(":filter-out") "        Filter out lines that match a pattern\n"
     " " ANSI_KW(":hide-lines-before") " Hide lines before a timestamp\n"
     " " ANSI_KW(":open") "              Open another file/directory\n";
 
-const char* CMD_EXAMPLE =
+const char* const CMD_EXAMPLE =
     ANSI_UNDERLINE("Examples") "\n"
     "  " ANSI_KW(":goto") " 123\n"
     "  " ANSI_KW(":filter-out") " spam\n"
     "  " ANSI_KW(":hide-lines-before") " here\n";
 
-const char *SQL_HELP =
+const char * const SQL_HELP =
     " " ANSI_KW("SELECT") "  Select rows from a table      "
     " " ANSI_KW("DELETE") "  Delete rows from a table\n"
     " " ANSI_KW("INSERT") "  Insert rows into a table      "
@@ -122,14 +122,14 @@ const char *SQL_HELP =
     " " ANSI_KW("DETACH") "  Detach a SQLite database"
 ;
 
-const char *SQL_EXAMPLE =
+const char * const SQL_EXAMPLE =
     ANSI_UNDERLINE("Examples") "\n"
     "  SELECT * FROM %s WHERE log_level >= 'warning' LIMIT 10\n"
     "  UPDATE %s SET log_mark = 1 WHERE log_line = log_top_line()\n"
     "  SELECT * FROM logline LIMIT 10"
 ;
 
-const char *PRQL_HELP =
+const char * const PRQL_HELP =
     " " ANSI_KW("from") "    Specify a data source       "
     " " ANSI_KW("derive") "     Derive one or more columns\n"
     " " ANSI_KW("select") "  Select one or more columns  "
@@ -138,13 +138,13 @@ const char *PRQL_HELP =
     " " ANSI_KW("filter") "     Pick rows based on their values\n"
     ;
 
-const char *PRQL_EXAMPLE =
+const char * const PRQL_EXAMPLE =
     ANSI_UNDERLINE("Examples") "\n"
         "  from %s | stats.count_by { log_level }\n"
         "  from %s | filter log_line == lnav.view.top_line\n"
     ;
 
-static const char* LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
+static const char* const LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
 
 static attr_line_t
 format_sql_example(const char* sql_example_fmt)

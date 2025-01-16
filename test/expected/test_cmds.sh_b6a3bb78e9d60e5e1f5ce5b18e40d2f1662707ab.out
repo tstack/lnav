@@ -105,8 +105,7 @@ On color displays, the lines will be highlighted as follows:
 
  [33m•[0m Errors will be colored in [31mred[0m;
  [33m•[0m warnings will be [33myellow[0m;
- [33m•[0m boundaries between days will be [4munderlined[0m;
-   and
+ [33m•[0m boundaries between days will be [4munderlined[0m; and
  [33m•[0m various color highlights will be applied to: IP
    addresses, SQL keywords, XML tags, file and line numbers
    in Java backtraces, and quoted strings.

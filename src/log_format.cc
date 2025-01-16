@@ -1005,11 +1005,7 @@ read_json_number(yajlpp_parse_context* ypc,
 {
     auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
     auto number_frag = string_fragment::from_bytes(numberVal, numberLen);
-    auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
-    if (!scan_res) {
-        log_error("invalid number %.*s", numberLen, numberVal);
-        return 0;
-    }
+    std::optional<double> val;
 
     intern_string_t field_name;
     const auto* vd = jlu->get_field_def(ypc);
@@ -1017,14 +1013,18 @@ read_json_number(yajlpp_parse_context* ypc,
         field_name = vd->vd_meta.lvm_name;
     }
 
-    auto val = scan_res->value();
     if (field_name.empty()) {
     } else if (jlu->jlu_format->lf_timestamp_field == field_name) {
         long long divisor = jlu->jlu_format->elf_timestamp_divisor;
+        auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
+        if (!scan_res) {
+            log_error("invalid number %.*s", numberLen, numberVal);
+            return 0;
+        }
+        auto ts_val = scan_res.value().value();
         timeval tv;
-
-        tv.tv_sec = val / divisor;
-        tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
+        tv.tv_sec = ts_val / divisor;
+        tv.tv_usec = fmod(ts_val, divisor) * (1000000.0 / divisor);
         jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec, jlu->jlu_exttm);
         tv.tv_sec = tm2sec(&jlu->jlu_exttm.et_tm);
         jlu->jlu_exttm.et_gmtoff
@@ -1039,26 +1039,33 @@ read_json_number(yajlpp_parse_context* ypc,
         jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
         jlu->jlu_base_line->set_time(tv);
     } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
+        auto scan_res = scn::scan_value<double>(number_frag.to_string_view());
+        if (!scan_res) {
+            log_error("invalid number %.*s", numberLen, numberVal);
+            return 0;
+        }
+        auto ts_val = scan_res.value().value();
+
         uint64_t millis = 0;
         jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
         switch (jlu->jlu_format->lf_subsecond_unit.value()) {
             case log_format::subsecond_unit::milli:
-                millis = val;
-                jlu->jlu_exttm.et_nsec = val * 1000000;
+                millis = ts_val;
+                jlu->jlu_exttm.et_nsec = ts_val * 1000000;
                 jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
                 break;
             case log_format::subsecond_unit::micro:
                 millis = std::chrono::duration_cast<std::chrono::milliseconds>(
-                             std::chrono::microseconds((int64_t) val))
+                             std::chrono::microseconds((int64_t) ts_val))
                              .count();
-                jlu->jlu_exttm.et_nsec = val * 1000;
+                jlu->jlu_exttm.et_nsec = ts_val * 1000;
                 jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
                 break;
             case log_format::subsecond_unit::nano:
                 millis = std::chrono::duration_cast<std::chrono::milliseconds>(
-                             std::chrono::nanoseconds((int64_t) val))
+                             std::chrono::nanoseconds((int64_t) ts_val))
                              .count();
-                jlu->jlu_exttm.et_nsec = val;
+                jlu->jlu_exttm.et_nsec = ts_val;
                 jlu->jlu_exttm.et_flags |= ETF_NANOS_SET;
                 break;
         }
@@ -1070,7 +1077,13 @@ read_json_number(yajlpp_parse_context* ypc,
             jlu->jlu_base_line->set_level(jlu->jlu_format->convert_level(
                 number_frag, jlu->jlu_batch_context));
         } else {
-            int64_t level_int = val;
+            auto scan_res
+                = scn::scan_int<int64_t>(number_frag.to_string_view());
+            if (!scan_res) {
+                log_error("invalid number %.*s", numberLen, numberVal);
+                return 0;
+            }
+            auto level_int = scan_res.value().value();
 
             for (const auto& pair : jlu->jlu_format->elf_level_pairs) {
                 if (pair.first == level_int) {
@@ -1078,6 +1091,19 @@ read_json_number(yajlpp_parse_context* ypc,
                     break;
                 }
             }
+        }
+    } else if (vd != nullptr) {
+        if ((vd->vd_meta.lvm_kind == value_kind_t::VALUE_INTEGER
+             || vd->vd_meta.lvm_kind == value_kind_t::VALUE_FLOAT)
+            && !vd->vd_meta.lvm_foreign_key && !vd->vd_meta.lvm_identifier)
+        {
+            auto scan_res
+                = scn::scan_value<double>(number_frag.to_string_view());
+            if (!scan_res) {
+                log_error("invalid number %.*s", numberLen, numberVal);
+                return 0;
+            }
+            val = scan_res.value().value();
         }
     }
 
@@ -4284,7 +4310,7 @@ external_log_format::value_line_count(const value_def* vd,
         return retval;
     }
 
-    if (str != nullptr && !val) {
+    if (str != nullptr && props != nullptr && !val) {
         auto frag = string_fragment::from_bytes(str, len);
         while (frag.endswith("\n")) {
             frag.pop_back();

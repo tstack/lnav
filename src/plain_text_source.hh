@@ -82,6 +82,11 @@ public:
 
     plain_text_source& replace_with(const std::vector<attr_line_t>& text_lines);
 
+    plain_text_source& replace_with(const char *str)
+    {
+        return this->replace_with(attr_line_t::from_ansi_str(str));
+    }
+
     void clear();
 
     plain_text_source& truncate_to(size_t max_lines);

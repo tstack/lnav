@@ -747,7 +747,6 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         require_ge(attr.sa_range.lr_start, 0);
     }
 
-    scrub_ansi_string(str, &sa);
     struct line_range body, orig_line;
 
     body = find_string_attr_range(sa, &SA_BODY);

@@ -49,30 +49,29 @@ to_text_line(const std::vector<attr_line_t>& lines)
            });
 }
 
-plain_text_source::
-plain_text_source(const std::string& text)
+plain_text_source::plain_text_source(const std::string& text)
 {
     size_t start = 0, end;
 
     while ((end = text.find('\n', start)) != std::string::npos) {
         size_t len = (end - start);
-        this->tds_lines.emplace_back(start, text.substr(start, len));
+        this->tds_lines.emplace_back(
+            start, attr_line_t::from_ansi_str(text.substr(start, len)));
         start = end + 1;
     }
     if (start < text.length()) {
-        this->tds_lines.emplace_back(start, text.substr(start));
+        this->tds_lines.emplace_back(
+            start, attr_line_t::from_ansi_str(text.substr(start)));
     }
     this->tds_longest_line = this->compute_longest_line();
 }
 
-plain_text_source::
-plain_text_source(const std::vector<std::string>& text_lines)
+plain_text_source::plain_text_source(const std::vector<std::string>& text_lines)
 {
     this->replace_with(text_lines);
 }
 
-plain_text_source::
-plain_text_source(const std::vector<attr_line_t>& text_lines)
+plain_text_source::plain_text_source(const std::vector<attr_line_t>& text_lines)
     : tds_lines(to_text_line(text_lines))
 {
     this->tds_longest_line = this->compute_longest_line();
@@ -130,7 +129,7 @@ plain_text_source::replace_with(const std::vector<std::string>& text_lines)
 {
     file_off_t off = 0;
     for (const auto& str : text_lines) {
-        this->tds_lines.emplace_back(off, str);
+        this->tds_lines.emplace_back(off, attr_line_t::from_ansi_str(str));
         off += str.length() + 1;
     }
     this->tds_longest_line = this->compute_longest_line();
