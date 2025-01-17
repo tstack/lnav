@@ -62,12 +62,13 @@ self_path()
     }
     return std::nullopt;
 #else
-    char pathbuf[PATH_MAX];
-    auto rc = readlink("/proc/self/exe", pathbuf, sizeof(pathbuf));
-    if (rc > 0) {
-        return std::filesystem::path(pathbuf);
+    std::error_code ec;
+    auto target = std::filesystem::read_symlink("/proc/self/exe", ec);
+    if (ec) {
+        log_error("failed to read /proc/self/exe: %s", ec.message().c_str());
+        return std::nullopt;
     }
-    return std::nullopt;
+    return target;
 #endif
 }
 
