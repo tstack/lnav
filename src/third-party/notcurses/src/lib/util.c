@@ -79,6 +79,7 @@ char* notcurses_hostname(void){
   return NULL;
 }
 
+#if 0
 char* notcurses_osversion(void){
 #ifdef __MINGW32__
   // FIXME get version
@@ -111,3 +112,4 @@ char* notcurses_osversion(void){
 #undef PREFIX
 #endif
 }
+#endif

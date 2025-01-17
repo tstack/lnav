@@ -4707,8 +4707,10 @@ API ALLOC char* notcurses_accountname(void);
 // Returns a heap-allocated copy of the local host name.
 API ALLOC char* notcurses_hostname(void);
 
+#if 0
 // Returns a heap-allocated copy of human-readable OS name and version.
 API ALLOC char* notcurses_osversion(void);
+#endif
 
 // Dump selected Notcurses state to the supplied 'debugfp'. Output is freeform,
 // newline-delimited, and subject to change. It includes geometry of all
