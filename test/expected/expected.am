@@ -912,6 +912,8 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_indexes.sh_1614ebb5e2e83bab11023354dea8a0885ddf64b4.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_2b4945247332d01b08e6f17340f7d17f3b3649b8.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_2b4945247332d01b08e6f17340f7d17f3b3649b8.out \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_3ecd6942600b4b2904e1bc882c49a1ac5084aa94.err \
+    $(srcdir)/%reldir%/test_sql_indexes.sh_3ecd6942600b4b2904e1bc882c49a1ac5084aa94.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_541a8e35f34a206e340a3880128b6ce137847872.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_541a8e35f34a206e340a3880128b6ce137847872.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_66a060f4c737778c10620cd94ce3935bdae5a90b.err \
@@ -922,8 +924,6 @@ EXPECTED_FILES = \
     $(srcdir)/%reldir%/test_sql_indexes.sh_6f707b6e856dbaab6f95e7e89b98dc3652021f85.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_7cf6e25cb5eb0aab9f75a59d36beab44aba89f79.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_7cf6e25cb5eb0aab9f75a59d36beab44aba89f79.out \
-    $(srcdir)/%reldir%/test_sql_indexes.sh_96472cfd28ed0f7c293e735c2b92742ee454a68d.err \
-    $(srcdir)/%reldir%/test_sql_indexes.sh_96472cfd28ed0f7c293e735c2b92742ee454a68d.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_a7297d8c61805cff38987cdede31066e6d245fd3.err \
     $(srcdir)/%reldir%/test_sql_indexes.sh_a7297d8c61805cff38987cdede31066e6d245fd3.out \
     $(srcdir)/%reldir%/test_sql_indexes.sh_ef6993847513a8a6479234f4459a562708201ce3.err \
