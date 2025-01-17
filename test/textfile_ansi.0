@@ -1,1 +1,1 @@
-{ [0;31mExample[0m: foo, bar: baz }
+{ [0;31mExample[0m: foo, bar: [38;2;0;255;0mbaz[0m }

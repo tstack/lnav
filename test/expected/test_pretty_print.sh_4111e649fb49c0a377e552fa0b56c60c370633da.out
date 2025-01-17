@@ -1,4 +1,4 @@
 {
     [31mExample[0m: foo,
-    bar: baz 
+    bar: [32mbaz[0m 
 }
