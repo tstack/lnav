@@ -116,6 +116,7 @@ set(TIME_FORMATS
         "%m/%d/%Y %H:%M:%S"
         "%d/%b/%Y %H:%M:%S"
         "%d/%b/%y %H:%M:%S"
+        "%m.%d %H:%M:%S"
         "%m%d %H:%M:%S"
         "%Y%m%d %H:%M:%S"
         "%Y%m%d.%H%M%S"
@@ -193,6 +194,7 @@ set(FORMAT_FILES
         formats/page_log.json
         formats/pcap_log.json
         formats/procstate_log.json
+        formats/proxifier_log.json
         formats/redis_log.json
         formats/snaplogic_log.json
         formats/sssd_log.json

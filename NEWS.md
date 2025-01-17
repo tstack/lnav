@@ -20,6 +20,7 @@ Features:
   output is set to `text/markdown`.
 * Column alignment in Markdown tables is now supported.
 * Added ecs_log for the Elastic Common Schema from @ba-didi.
+* Added a Proxifier log format.
 * Escape sequences for 24-bit color are now handled.
 
 Interface changes:

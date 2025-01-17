@@ -1,0 +1,49 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "proxifier_log": {
+        "title": "Proxifier",
+        "description": "Proxifier proxy client",
+        "url": "https://www.proxifier.com/docs/win-v4/ui.html#output",
+        "multiline": false,
+        "regex": {
+            "std": {
+                "pattern": "\\[(?<timestamp>\\d{2}\\.\\d{2} \\d{2}:\\d{2}:\\d{2})\\]\\s+(?<app_name>[^ ]+(?: \\*64)?)(?:\\s+(?:-|(?<app_pid>\\d+)))\\s+(?<target_host>[^:]+):(?<target_port>\\d+)\\s+(?<body>(?:open|close).*)"
+            },
+            "error": {
+                "pattern": "\\[(?<timestamp>\\d{2}\\.\\d{2} \\d{2}:\\d{2}:\\d{2})\\]\\s+(?<app_name>[^ ]+(?: \\*64)?)(?:\\s+(?:-|(?<app_pid>\\d+)))\\s+(?<target_host>[^:]+):(?<target_port>\\d+)\\s+(?<level>error) : (?<body>.*)"
+            }
+        },
+        "value": {
+            "app_name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "app_pid": {
+                "kind": "string",
+                "identifier": true
+            },
+            "target_host": {
+                "kind": "string",
+                "identifier": true
+            },
+            "target_port": {
+                "kind": "string",
+                "identifier": true
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "[10.30 16:49:06] chrome.exe - proxy.cse.cuhk.edu.hk:5070 open through proxy proxy.cse.cuhk.edu.hk:5070 HTTPS"
+            },
+            {
+                "line": "[07.27 10:23:42] chrome.exe *64 - t12.baidu.com:80 close, 0 bytes sent, 0 bytes received, lifetime 00:17"
+            },
+            {
+                "line": "[07.27 06:19:08] chrome.exe *64 - mtalk.google.com:5228 error : Could not connect through proxy proxy.cse.cuhk.edu.hk:5070 - Proxy server cannot establish a connection with the target, status code 403"
+            }
+        ]
+    }
+}
