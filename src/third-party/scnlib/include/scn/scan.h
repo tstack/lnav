@@ -5001,10 +5001,12 @@ struct stdio_file_interface_impl<File, bsd_file_tag>
     }
     void fill_buffer()
     {
+#if 0
         if (__srget(this->file) != EOF) {
             --this->file->_p;
             ++this->file->_r;
         }
+#endif
     }
 };
 
