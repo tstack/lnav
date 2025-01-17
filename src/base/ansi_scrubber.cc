@@ -337,6 +337,15 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                                 break;
                             }
                             if (color_type->value() == 2) {
+                                auto scan_res
+                                    = scn::scan<uint8_t, uint8_t, uint8_t>(
+                                        color_code_pair->second
+                                            .to_string_view(),
+                                        "{};{};{}");
+                                if (scan_res) {
+                                    auto [r, g, b] = scan_res->values();
+                                    attrs.ta_fg_color = rgb_color{r, g, b};
+                                }
                             } else if (color_type->value() == 5) {
                                 auto color_index_pair
                                     = color_code_pair->second.split_when(
