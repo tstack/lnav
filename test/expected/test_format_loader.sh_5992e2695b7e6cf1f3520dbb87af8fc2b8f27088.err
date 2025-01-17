@@ -167,7 +167,7 @@
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:7
 [36m =[0m   [36mhelp[0m: every pattern should have at least one sample that it matches
 [1m[31m✘ error[0m: “[1minvalid_props_log[0m” is not a valid log format
- [1m[31mreason[0m: “[1msubsecond-unit[0m” must be set when “[1msubsecond-field[0m” is used
+ [1m[31mreason[0m: “[1msubsecond-units[0m” must be set when “[1msubsecond-field[0m” is used
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-properties/format.json[0m:3
 [1m[31m✘ error[0m: invalid pattern: “[1m/invalid_props_log/regex/std[0m”
  [1m[31mreason[0m: no timestamp capture found in the pattern
