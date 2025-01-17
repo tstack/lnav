@@ -1616,13 +1616,18 @@ lnav_behavior::mouse_event(
 
     auto width = ncplane_dim_x(lnav_data.ld_window);
 
-    me.me_press_x = this->lb_last_event.me_press_x;
-    me.me_press_y = this->lb_last_event.me_press_y;
-    me.me_x = x - 1;
+    me.me_x = x;
     if (me.me_x >= width) {
         me.me_x = width - 1;
     }
     me.me_y = y - 1;
+    if (me.me_state == mouse_button_state_t::BUTTON_STATE_PRESSED) {
+        me.me_press_x = me.me_x;
+        me.me_press_y = me.me_y;
+    } else {
+        me.me_press_x = this->lb_last_event.me_press_x;
+        me.me_press_y = this->lb_last_event.me_press_y;
+    }
 
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED:

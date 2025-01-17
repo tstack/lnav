@@ -495,6 +495,7 @@ breadcrumb_curses::handle_mouse(mouse_event& me)
         this->focus();
         this->on_focus(*this);
         this->do_update();
+        this->bc_initial_mouse_event = true;
     }
 
     auto find_res = this->bc_displayed_crumbs
@@ -518,7 +519,6 @@ breadcrumb_curses::handle_mouse(mouse_event& me)
                     this->blur();
                     this->reload_data();
                     this->on_blur(*this);
-                    this->bc_initial_mouse_event = true;
                 }
                 return true;
             }
@@ -531,7 +531,6 @@ breadcrumb_curses::handle_mouse(mouse_event& me)
             this->blur();
             this->reload_data();
             this->on_blur(*this);
-            this->bc_initial_mouse_event = true;
             return true;
         }
     }
