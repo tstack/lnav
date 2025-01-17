@@ -62,6 +62,7 @@ TIME_FORMATS = \
     "%a %b %d %H:%M:%S.%L " \
     "%a %b %d %H:%M " \
     "%a %b %e %H:%M:%S %Z %Y" \
+    "%d/%m/%y %H:%M:%S" \
     "%d/%b/%Y:%H:%M:%S %z" \
     "%d-%b-%Y %H:%M:%S %z" \
     "%d-%b-%Y %H:%M:%S %Z" \
@@ -94,6 +95,8 @@ TIME_FORMATS = \
     "%m.%d %H:%M:%S" \
     "%m%d %H:%M:%S" \
     "%Y%m%d %H:%M:%S" \
+    "%y%m%d %H%M%S" \
+    "%Y%m%d %H%M%S" \
     "%Y%m%d.%H%M%S" \
     "%H:%M:%S" \
     "%H:%M:%S.%f" \

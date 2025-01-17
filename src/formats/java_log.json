@@ -49,6 +49,12 @@
             },
             "spring1": {
                 "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+)\\]\\s+\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
+            },
+            "hdfs": {
+                "pattern": "(?<timestamp>\\d{6} \\d{6}) (?<thread>\\d+) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
+            },
+            "spark": {
+                "pattern": "(?<timestamp>\\d{2}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
             }
         },
         "level-field": "level",
@@ -198,6 +204,12 @@
             },
             {
                 "line": "2025-01-14T16:10:44.175-07:00  INFO 93649 --- [Course Creation] [         task-1] [6618a4de8f36bf71c60b2982181e6d36-c66827472589372a] e.c.o.s.c.c.ConsumerService              : Received new unassociated section CanvasSection(course=ABCD1234, term=2251, sectionSourcedId=123456-01-2251-B-100-12345, title=A test title, section=null, sessionCode=null, activityType=LEC, classNumber=null, academicOrgCode=null, startDate=2025-01-11, endDate=2025-05-09, enrollments=[CanvasEnrollment(emplid=123456, role=PI, sectionSourcedId=123456-01-2251-B-100-12345)])"
+            },
+            {
+                "line": "081111 101735 26595 INFO dfs.DataNode$PacketResponder: Received block blk_-5815145248455404269 of size 67108864 from /10.251.121.224"
+            },
+            {
+                "line": "17/06/09 20:10:52 INFO executor.CoarseGrainedExecutorBackend: Got assigned task 87"
             }
         ]
     }
