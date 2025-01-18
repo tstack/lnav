@@ -3,4 +3,4 @@
 [36m | [0m[37m[40m:close                                  [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mclose[0m[4m [0m[4mpath[0m
          ══════════════════════════════════════════════════════════════════════
-           Close the given file(s) or the top file in the view
+           Close the given file(s) or the focused file in the view

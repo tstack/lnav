@@ -4276,7 +4276,7 @@ com_clear_partition(exec_context& ec,
             part_start = bv.prev(tc.get_selection());
         }
         if (!part_start) {
-            return ec.make_error("top line is not in a partition");
+            return ec.make_error("focused line is not in a partition");
         }
 
         if (!ec.ec_dry_run) {
@@ -6179,15 +6179,16 @@ readline_context::command_t STD_COMMANDS[] = {
      com_adjust_log_time,
 
      help_text(":adjust-log-time")
-         .with_summary("Change the timestamps of the top file to be relative "
-                       "to the given date")
+         .with_summary(
+             "Change the timestamps of the focused file to be relative "
+             "to the given date")
          .with_parameter(
              help_text("timestamp",
-                       "The new timestamp for the top line in the view")
+                       "The new timestamp for the focused line in the view")
                  .with_format(help_parameter_format_t::HPF_DATETIME))
-         .with_example({"To set the top timestamp to a given date",
+         .with_example({"To set the focused timestamp to a given date",
                         "2017-01-02T05:33:00"})
-         .with_example({"To set the top timestamp back an hour", "-1h"})},
+         .with_example({"To set the focused timestamp back an hour", "-1h"})},
 
     {"unix-time",
      com_unix_time,
@@ -6294,7 +6295,7 @@ readline_context::command_t STD_COMMANDS[] = {
      com_mark,
 
      help_text(":mark")
-         .with_summary("Toggle the bookmark state for the top line in the "
+         .with_summary("Toggle the bookmark state for the focused line in the "
                        "current view")
          .with_tags({"bookmarks"})},
     {
@@ -6395,7 +6396,7 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("field-name",
                        "The name of the field to hide in the format for "
                        "the "
-                       "top log line.  "
+                       "focused log line.  "
                        "A qualified name can be used where the field "
                        "name is "
                        "prefixed "
@@ -6426,7 +6427,7 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_summary("Hide lines that come before the given date")
          .with_parameter(help_text("date", "An absolute or relative date"))
          .with_examples({
-             {"To hide the lines before the top line in the view", "here"},
+             {"To hide the lines before the focused line in the view", "here"},
              {"To hide the log messages before 6 AM today", "6am"},
          })
          .with_tags({"filtering"})},
@@ -6437,7 +6438,7 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_summary("Hide lines that come after the given date")
          .with_parameter(help_text("date", "An absolute or relative date"))
          .with_examples({
-             {"To hide the lines after the top line in the view", "here"},
+             {"To hide the lines after the focused line in the view", "here"},
              {"To hide the lines after 6 AM today", "6am"},
          })
          .with_tags({"filtering"})},
@@ -6702,7 +6703,7 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_parameter(
              help_text("shell-cmd", "The shell command-line to execute"))
          .with_tags({"io"})
-         .with_example({"To write the top line to 'sed' for processing",
+         .with_example({"To write the focused line to 'sed' for processing",
                         "sed -e 's/foo/bar/g'"})},
     {"redirect-to",
      com_redirect_to,
@@ -6761,7 +6762,7 @@ readline_context::command_t STD_COMMANDS[] = {
      com_create_logline_table,
 
      help_text(":create-logline-table")
-         .with_summary("Create an SQL table using the top line of "
+         .with_summary("Create an SQL table using the focused line of "
                        "the log view "
                        "as a template")
          .with_parameter(help_text("table-name", "The name for the new table"))
@@ -6859,13 +6860,14 @@ readline_context::command_t STD_COMMANDS[] = {
      com_show_only_this_file,
 
      help_text(":show-only-this-file")
-         .with_summary("Show only the file for the top line in the view")
+         .with_summary("Show only the file for the focused line in the view")
          .with_opposites({"hide-file"})},
     {"close",
      com_close,
 
      help_text(":close")
-         .with_summary("Close the given file(s) or the top file in the view")
+         .with_summary(
+             "Close the given file(s) or the focused file in the view")
          .with_parameter(help_text{"path",
                                    "A path or glob pattern that "
                                    "specifies the files to close"}
@@ -6876,7 +6878,7 @@ readline_context::command_t STD_COMMANDS[] = {
         com_comment,
 
         help_text(":comment")
-            .with_summary("Attach a comment to the top log line.  The "
+            .with_summary("Attach a comment to the focused log line.  The "
                           "comment will be "
                           "displayed right below the log message it is "
                           "associated with. "
@@ -6885,7 +6887,7 @@ readline_context::command_t STD_COMMANDS[] = {
                           "new-lines with '\\n'.")
             .with_parameter(help_text("text", "The comment text"))
             .with_example({"To add the comment 'This is where it all went "
-                           "wrong' to the top line",
+                           "wrong' to the focused line",
                            "This is where it all went wrong"})
             .with_tags({"metadata"}),
 
@@ -6895,7 +6897,7 @@ readline_context::command_t STD_COMMANDS[] = {
      com_clear_comment,
 
      help_text(":clear-comment")
-         .with_summary("Clear the comment attached to the top log line")
+         .with_summary("Clear the comment attached to the focused log line")
          .with_opposites({"comment"})
          .with_tags({"metadata"})},
     {
@@ -6903,11 +6905,11 @@ readline_context::command_t STD_COMMANDS[] = {
         com_tag,
 
         help_text(":tag")
-            .with_summary("Attach tags to the top log line")
+            .with_summary("Attach tags to the focused log line")
             .with_parameter(
                 help_text("tag", "The tags to attach").one_or_more())
             .with_example({"To add the tags '#BUG123' and '#needs-review' to "
-                           "the top line",
+                           "the focused line",
                            "#BUG123 #needs-review"})
             .with_tags({"metadata"}),
     },
@@ -6915,11 +6917,10 @@ readline_context::command_t STD_COMMANDS[] = {
      com_untag,
 
      help_text(":untag")
-         .with_summary("Detach tags from the top log line")
+         .with_summary("Detach tags from the focused log line")
          .with_parameter(help_text("tag", "The tags to detach").one_or_more())
          .with_example({"To remove the tags '#BUG123' and "
-                        "'#needs-review' from "
-                        "the top line",
+                        "'#needs-review' from the focused line",
                         "#BUG123 #needs-review"})
          .with_opposites({"tag"})
          .with_tags({"metadata"})},
@@ -6939,17 +6940,17 @@ readline_context::command_t STD_COMMANDS[] = {
      com_partition_name,
 
      help_text(":partition-name")
-         .with_summary("Mark the top line in the log view as the start of a "
+         .with_summary("Mark the focused line in the log view as the start of a "
                        "new partition with the given name")
          .with_parameter(help_text("name", "The name for the new partition"))
-         .with_example({"To mark the top line as the start of the partition "
+         .with_example({"To mark the focused line as the start of the partition "
                         "named 'boot #1'",
                         "boot #1"})},
     {"clear-partition",
      com_clear_partition,
 
      help_text(":clear-partition")
-         .with_summary("Clear the partition the top line is a part of")
+         .with_summary("Clear the partition the focused line is a part of")
          .with_opposites({"partition-name"})},
     {"session",
      com_session,

@@ -4,19 +4,19 @@
 :adjust-log-time *timestamp*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Change the timestamps of the top file to be relative to the given date
+  Change the timestamps of the focused file to be relative to the given date
 
   **Parameters**
-    * **timestamp\*** --- The new timestamp for the top line in the view
+    * **timestamp\*** --- The new timestamp for the focused line in the view
 
   **Examples**
-    To set the top timestamp to a given date:
+    To set the focused timestamp to a given date:
 
     .. code-block::  lnav
 
       :adjust-log-time 2017-01-02T05:33:00
 
-    To set the top timestamp back an hour:
+    To set the focused timestamp back an hour:
 
     .. code-block::  lnav
 
@@ -106,7 +106,7 @@
 :clear-comment
 ^^^^^^^^^^^^^^
 
-  Clear the comment attached to the top log line
+  Clear the comment attached to the focused log line
 
   **See Also**
     :ref:`annotate`, :ref:`comment`, :ref:`tag`
@@ -184,7 +184,7 @@
 :clear-partition
 ^^^^^^^^^^^^^^^^
 
-  Clear the partition the top line is a part of
+  Clear the partition the focused line is a part of
 
 
 ----
@@ -195,7 +195,7 @@
 :close *path*
 ^^^^^^^^^^^^^
 
-  Close the given file(s) or the top file in the view
+  Close the given file(s) or the focused file in the view
 
   **Parameters**
     * **path** --- A path or glob pattern that specifies the files to close
@@ -209,13 +209,13 @@
 :comment *text*
 ^^^^^^^^^^^^^^^
 
-  Attach a comment to the top log line.  The comment will be displayed right below the log message it is associated with. The comment can be formatted using markdown and you can add new-lines with '\n'.
+  Attach a comment to the focused log line.  The comment will be displayed right below the log message it is associated with. The comment can be formatted using markdown and you can add new-lines with '\n'.
 
   **Parameters**
     * **text\*** --- The comment text
 
   **Examples**
-    To add the comment 'This is where it all went wrong' to the top line:
+    To add the comment 'This is where it all went wrong' to the focused line:
 
     .. code-block::  lnav
 
@@ -276,7 +276,7 @@
 :create-logline-table *table-name*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Create an SQL table using the top line of the log view as a template
+  Create an SQL table using the focused line of the log view as a template
 
   **Parameters**
     * **table-name\*** --- The name for the new table
@@ -691,7 +691,7 @@
   Hide log message fields by replacing them with an ellipsis
 
   **Parameters**
-    * **field-name** --- The name of the field to hide in the format for the top log line.  A qualified name can be used where the field name is prefixed by the format name and a dot to hide any field.
+    * **field-name** --- The name of the field to hide in the format for the focused log line.  A qualified name can be used where the field name is prefixed by the format name and a dot to hide any field.
 
   **Examples**
     To hide the log_procname fields in all formats:
@@ -737,7 +737,7 @@
     * **date\*** --- An absolute or relative date
 
   **Examples**
-    To hide the lines after the top line in the view:
+    To hide the lines after the focused line in the view:
 
     .. code-block::  lnav
 
@@ -766,7 +766,7 @@
     * **date\*** --- An absolute or relative date
 
   **Examples**
-    To hide the lines before the top line in the view:
+    To hide the lines before the focused line in the view:
 
     .. code-block::  lnav
 
@@ -836,7 +836,7 @@
 :mark
 ^^^^^
 
-  Toggle the bookmark state for the top line in the current view
+  Toggle the bookmark state for the focused line in the current view
 
   **See Also**
     :ref:`hide_unmarked_lines`, :ref:`next_mark`, :ref:`prev_mark`
@@ -948,13 +948,13 @@
 :partition-name *name*
 ^^^^^^^^^^^^^^^^^^^^^^
 
-  Mark the top line in the log view as the start of a new partition with the given name
+  Mark the focused line in the log view as the start of a new partition with the given name
 
   **Parameters**
     * **name\*** --- The name for the new partition
 
   **Examples**
-    To mark the top line as the start of the partition named 'boot #1':
+    To mark the focused line as the start of the partition named 'boot #1':
 
     .. code-block::  lnav
 
@@ -975,7 +975,7 @@
     * **shell-cmd\*** --- The shell command-line to execute
 
   **Examples**
-    To write the top line to 'sed' for processing:
+    To write the focused line to 'sed' for processing:
 
     .. code-block::  lnav
 
@@ -1366,7 +1366,7 @@
 :show-only-this-file
 ^^^^^^^^^^^^^^^^^^^^
 
-  Show only the file for the top line in the view
+  Show only the file for the focused line in the view
 
 
 ----
@@ -1453,13 +1453,13 @@
 :tag *tag*
 ^^^^^^^^^^
 
-  Attach tags to the top log line
+  Attach tags to the focused log line
 
   **Parameters**
     * **tag** --- The tags to attach
 
   **Examples**
-    To add the tags '#BUG123' and '#needs-review' to the top line:
+    To add the tags '#BUG123' and '#needs-review' to the focused line:
 
     .. code-block::  lnav
 
@@ -1531,13 +1531,13 @@
 :untag *tag*
 ^^^^^^^^^^^^
 
-  Detach tags from the top log line
+  Detach tags from the focused log line
 
   **Parameters**
     * **tag** --- The tags to detach
 
   **Examples**
-    To remove the tags '#BUG123' and '#needs-review' from the top line:
+    To remove the tags '#BUG123' and '#needs-review' from the focused line:
 
     .. code-block::  lnav
 
