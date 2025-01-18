@@ -38,8 +38,7 @@
 #include "pcrepp/pcre2pp.hh"
 #include "yajlpp/yajlpp_def.hh"
 
-namespace lnav {
-namespace piper {
+namespace lnav::piper {
 
 struct demux_def {
     bool dd_enabled{true};
@@ -60,7 +59,6 @@ struct config {
     std::map<std::string, demux_def> c_demux_definitions;
 };
 
-}  // namespace piper
-}  // namespace lnav
+}  // namespace lnav::piper
 
 #endif

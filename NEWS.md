@@ -104,6 +104,7 @@ Features:
 * Added log formats for the `env_logger` and `simple_logger` Rust
   crates.
 * Timestamp formats can now use `%j` to capture day-of-year values.
+* Added `italic` and `strike` to the text styling configuration.
 
 Interface Changes:
 * The "Gantt Chart" view has been renamed to "timeline."
@@ -114,8 +115,9 @@ Interface Changes:
   to `SHIFT` when clicking/dragging in the main view to
   highlight lines.  A few terminals capture shift+clicks as a
   way to select text and do not pass them to the application.
-* Clicking on an internal link in a Markdown document will move 
+* Clicking on an internal link in a Markdown document will move
   to that section.
+* Search duration is now reported in the bottom prompt line.
 
 Bug Fixes:
 * Log messages in formats with custom timestamp formats were

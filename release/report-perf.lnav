@@ -1,0 +1,19 @@
+#! /usr/bin/env -N -f-
+
+;ATTACH DATABASE 'perf.db' AS perf_db
+;SELECT
+     CASE
+       WHEN (row_number() OVER win1) = 1 THEN Description
+       ELSE '  ┃  '
+     END AS Description,
+     Program,
+     Duration,
+     CASE
+       WHEN (row_number() OVER win1) = 1 THEN __lnav_style__
+       ELSE json_insert(__lnav_style__, '$.columns.Description.color', '#555')
+     END AS __lnav_style__
+   FROM perf_data
+   NATURAL JOIN perf_program
+   NATURAL JOIN perf_test_id
+   WINDOW win1 AS (PARTITION BY test_id)
+:switch-to-view db

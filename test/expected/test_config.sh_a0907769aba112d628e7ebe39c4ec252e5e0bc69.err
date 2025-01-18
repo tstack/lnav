@@ -5,7 +5,9 @@
            [1mcolor[0m [4m#hex|color_name[0m
            [1mbackground-color[0m [4m#hex|color_name[0m
            [1munderline[0m 
-           [1mbold[0m
+           [1mbold[0m 
+           [1mitalic[0m 
+           [1mstrike[0m
 [1m[31m✘ error[0m: “abc(” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/ui/theme-defs/invalid-theme/highlights/foobar/pattern[0m

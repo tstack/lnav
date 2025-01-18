@@ -860,6 +860,14 @@ view_colors::to_attrs(const lnav_theme& lt,
         retval1 |= text_attrs::style::bold;
         retval2 |= text_attrs::style::bold;
     }
+    if (sc.sc_italic) {
+        retval1 |= text_attrs::style::italic;
+        retval2 |= text_attrs::style::italic;
+    }
+    if (sc.sc_strike) {
+        retval1 |= text_attrs::style::struck;
+        retval2 |= text_attrs::style::struck;
+    }
 
     return {retval1, retval2, role_class};
 }

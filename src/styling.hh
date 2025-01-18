@@ -61,11 +61,14 @@ struct style_config {
     std::string sc_background_color;
     bool sc_underline{false};
     bool sc_bold{false};
+    bool sc_italic{false};
+    bool sc_strike{false};
 
     bool empty() const
     {
         return this->sc_color.empty() && this->sc_background_color.empty()
-            && !this->sc_underline && !this->sc_bold;
+            && !this->sc_underline && !this->sc_bold && !this->sc_italic
+            && !this->sc_strike;
     }
 };
 
@@ -158,5 +161,7 @@ struct lnav_theme {
 
 extern term_color_palette* xterm_colors();
 extern term_color_palette* ansi_colors();
+
+extern const json_path_container style_config_handlers;
 
 #endif

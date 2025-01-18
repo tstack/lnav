@@ -797,6 +797,10 @@ public:
         return *this;
     }
 
+    std::optional<std::chrono::milliseconds> consume_search_duration() {
+        return std::exchange(this->tc_search_duration, std::nullopt);
+    }
+
     std::function<void(textview_curses&)> tc_state_event_handler;
 
     std::optional<role_t> tc_cursor_role;
@@ -870,6 +874,8 @@ protected:
     std::string tc_previous_search;
     std::shared_ptr<grep_highlighter> tc_search_child;
     std::shared_ptr<grep_proc<vis_line_t>> tc_source_search_child;
+    std::optional<std::chrono::steady_clock::time_point> tc_search_start_time;
+    std::optional<std::chrono::milliseconds> tc_search_duration;
     std::function<void(textview_curses&)> tc_reload_config_delegate;
 };
 

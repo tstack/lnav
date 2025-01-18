@@ -153,7 +153,7 @@ bottom_status_source::update_marks(listview_curses* lc)
 void
 bottom_status_source::update_hits(textview_curses* tc)
 {
-    status_field& sf = this->bss_fields[BSF_HITS];
+    auto& sf = this->bss_fields[BSF_HITS];
     role_t new_role;
 
     if (tc->is_searching()) {

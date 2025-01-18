@@ -38,7 +38,6 @@
 #include "base/time_util.hh"
 #include "config.h"
 #include "data_scanner.hh"
-#include "date/solar_hijri.h"
 #include "fmt/format.h"
 #include "lnav_config.hh"
 #include "log_format_fwd.hh"
@@ -46,7 +45,7 @@
 #include "shlex.hh"
 #include "view_curses.hh"
 
-const auto REVERSE_SEARCH_OFFSET = 2000_vl;
+constexpr auto REVERSE_SEARCH_OFFSET = 2000_vl;
 
 void
 text_filter::revert_to_last(logfile_filter_state& lfs, size_t rollback_size)
@@ -376,6 +375,16 @@ textview_curses::grep_end(grep_proc<vis_line_t>& gp)
 {
     this->tc_searching -= 1;
     this->grep_end_batch(gp);
+    if (this->tc_searching == 0 && this->tc_search_start_time) {
+        const auto now = std::chrono::steady_clock::now();
+        this->tc_search_duration
+            = std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - this->tc_search_start_time.value());
+        this->tc_search_start_time = std::nullopt;
+        if (this->tc_state_event_handler) {
+            this->tc_state_event_handler(*this);
+        }
+    }
 
     ensure(this->tc_searching >= 0);
 }
@@ -906,6 +915,8 @@ textview_curses::execute_search(const std::string& regex_orig)
             if (top > 0) {
                 gp->queue_request(0_vl, top);
             }
+            this->tc_search_start_time = std::chrono::steady_clock::now();
+            this->tc_search_duration = std::nullopt;
             gp->start();
 
             this->tc_search_child = std::make_shared<grep_highlighter>(
@@ -1012,13 +1023,11 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
     if (end_line >= this->get_inner_height()) {
         end_line = vis_line_t(this->get_inner_height() - 1);
     }
-    for (vis_line_t curr_line = start_line; curr_line <= end_line; ++curr_line)
-    {
-        bookmark_vector<vis_line_t>& bv = this->tc_bookmarks[bm];
-        bookmark_vector<vis_line_t>::iterator iter;
+    for (auto curr_line = start_line; curr_line <= end_line; ++curr_line) {
+        auto& bv = this->tc_bookmarks[bm];
         bool added;
 
-        iter = bv.insert_once(curr_line);
+        auto iter = bv.insert_once(curr_line);
         if (iter == bv.end()) {
             added = true;
         } else {

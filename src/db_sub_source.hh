@@ -39,6 +39,7 @@
 #include "ArenaAlloc/arenaalloc.h"
 #include "hist_source.hh"
 #include "shlex.resolver.hh"
+#include "styling.hh"
 #include "textview_curses.hh"
 
 class db_label_source
@@ -113,6 +114,10 @@ public:
         stacked_bar_chart<std::string> hm_chart;
     };
 
+    struct row_style {
+        std::map<int, text_attrs> rs_column_config;
+    };
+
     uint32_t dls_generation{0};
     size_t dls_max_column_width{120};
     std::vector<header_meta> dls_headers;
@@ -121,6 +126,8 @@ public:
     std::vector<size_t> dls_cell_width;
     int dls_time_column_index{-1};
     std::optional<size_t> dls_time_column_invalidated_at;
+    std::vector<row_style> dls_row_styles;
+    int dls_row_style_index{-1};
     std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator{
         std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024)};
     string_attrs_t dls_ansi_attrs;

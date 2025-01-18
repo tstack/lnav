@@ -619,36 +619,6 @@ static const struct json_path_container global_var_handlers = {
         .for_field(&_lnav_config::lc_global_vars),
 };
 
-static const struct json_path_container style_config_handlers =
-    json_path_container{
-        yajlpp::property_handler("color")
-            .with_synopsis("#hex|color_name")
-            .with_description(
-                "The foreground color value for this style. The value can be "
-                "the name of an xterm color, the hexadecimal value, or a theme "
-                "variable reference.")
-            .with_example("#fff")
-            .with_example("Green")
-            .with_example("$black")
-            .for_field(&style_config::sc_color),
-        yajlpp::property_handler("background-color")
-            .with_synopsis("#hex|color_name")
-            .with_description(
-                "The background color value for this style. The value can be "
-                "the name of an xterm color, the hexadecimal value, or a theme "
-                "variable reference.")
-            .with_example("#2d2a2e")
-            .with_example("Green")
-            .for_field(&style_config::sc_background_color),
-        yajlpp::property_handler("underline")
-            .with_description("Indicates that the text should be underlined.")
-            .for_field(&style_config::sc_underline),
-        yajlpp::property_handler("bold")
-            .with_description("Indicates that the text should be bolded.")
-            .for_field(&style_config::sc_bold),
-    }
-        .with_definition_id("style");
-
 static const auto icon_config_handlers
     = json_path_container{
         yajlpp::property_handler("value")

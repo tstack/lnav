@@ -1088,6 +1088,16 @@
                     "title": "/bold",
                     "description": "Indicates that the text should be bolded.",
                     "type": "boolean"
+                },
+                "italic": {
+                    "title": "/italic",
+                    "description": "Indicates that the text should be italicized.",
+                    "type": "boolean"
+                },
+                "strike": {
+                    "title": "/strike",
+                    "description": "Indicates that the text should be struck.",
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false

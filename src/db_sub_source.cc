@@ -33,13 +33,31 @@
 #include "base/date_time_scanner.hh"
 #include "base/itertools.hh"
 #include "base/time_util.hh"
+#include "base/types.hh"
 #include "config.h"
 #include "scn/scan.h"
 #include "yajlpp/json_ptr.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 const char db_label_source::NULL_STR[] = "<NULL>";
 
 constexpr size_t MAX_JSON_WIDTH = 16 * 1024;
+
+struct user_row_style {
+    std::map<std::string, style_config> urs_column_config;
+};
+
+static json_path_container col_style_handlers = {
+    yajlpp::pattern_property_handler("(?<column_name>[^/]+)")
+        .for_field(&user_row_style::urs_column_config)
+        .with_children(style_config_handlers),
+};
+
+static typed_json_path_container<user_row_style> row_style_handlers
+    = typed_json_path_container<user_row_style>{
+        yajlpp::property_handler("columns")
+            .with_children(col_style_handlers),
+}.with_schema_id2("row-style");
 
 line_info
 db_label_source::text_value_for_line(textview_curses& tc,
@@ -58,6 +76,9 @@ db_label_source::text_value_for_line(textview_curses& tc,
         return {};
     }
     for (int lpc = 0; lpc < (int) this->dls_rows[row].size(); lpc++) {
+        if (lpc == this->dls_row_style_index) {
+            continue;
+        }
         auto actual_col_size = std::min(this->dls_max_column_width,
                                         this->dls_headers[lpc].hm_column_size);
         auto cell_str = scrub_ws(this->dls_rows[row][lpc]);
@@ -104,6 +125,10 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
         sa.emplace_back(lr2, VC_ROLE.value(role_t::VCR_ALT_ROW));
     }
     for (size_t lpc = 0; lpc < this->dls_headers.size() - 1; lpc++) {
+        if (lpc == this->dls_row_style_index) {
+            continue;
+        }
+
         const auto& hm = this->dls_headers[lpc];
 
         if (hm.hm_graphable) {
@@ -121,8 +146,22 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     }
     int cell_start = 0;
     for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
+        if (lpc == this->dls_row_style_index) {
+            continue;
+        }
+
         auto row_view = std::string_view{this->dls_rows[row][lpc]};
         const auto& hm = this->dls_headers[lpc];
+        std::optional<text_attrs> user_attrs;
+
+        if (row < this->dls_row_styles.size()) {
+            auto style_iter
+                = this->dls_row_styles[row].rs_column_config.find(lpc);
+            if (style_iter != this->dls_row_styles[row].rs_column_config.end())
+            {
+                user_attrs = style_iter->second;
+            }
+        }
 
         int left = cell_start;
         if (hm.hm_graphable) {
@@ -134,13 +173,21 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                                                   this->dls_cell_width[lpc],
                                                   hm.hm_name,
                                                   num_scan_res->value(),
-                                                  sa);
+                                                  sa,
+                                                  user_attrs);
 
                 for (const auto& attr : sa) {
                     require_ge(attr.sa_range.lr_start, 0);
                 }
             }
+        } else if (user_attrs.has_value()) {
+            auto stlr = line_range{
+                cell_start,
+                (int) (cell_start + this->dls_cell_width[lpc]),
+            };
+            sa.emplace_back(stlr, VC_STYLE.value(user_attrs.value()));
         }
+
         if (row_view.length() > 2 && row_view.length() < MAX_JSON_WIDTH
             && ((row_view.front() == '{' && row_view.back() == '}')
                 || (row_view.front() == '[' && row_view.back() == ']')))
@@ -189,7 +236,7 @@ db_label_source::push_header(const std::string& colstr,
     this->dls_headers.emplace_back(colstr);
     this->dls_cell_width.push_back(0);
 
-    header_meta& hm = this->dls_headers.back();
+    auto& hm = this->dls_headers.back();
 
     hm.hm_column_size = utf8_string_length(colstr).unwrapOr(colstr.length());
     hm.hm_column_type = type;
@@ -199,6 +246,9 @@ db_label_source::push_header(const std::string& colstr,
     }
     if (colstr == "log_time" || colstr == "min(log_time)") {
         this->dls_time_column_index = this->dls_headers.size() - 1;
+    }
+    if (colstr == "__lnav_style__") {
+        this->dls_row_style_index = this->dls_headers.size() - 1;
     }
     hm.hm_chart.with_show_state(stacked_bar_chart_base::show_all{});
 }
@@ -249,6 +299,84 @@ db_label_source::push_column(const scoped_value_t& sv)
         } else {
             this->dls_time_column.push_back(tv);
         }
+    } else if (index == this->dls_row_style_index) {
+        if (sv.is<null_value_t>()) {
+            this->dls_row_styles.emplace_back(row_style{});
+        } else if (sv.is<string_fragment>()) {
+            static const intern_string_t SRC
+                = intern_string::lookup("__lnav_style__");
+            auto frag = sv.get<string_fragment>();
+            if (frag.empty()) {
+                this->dls_row_styles.emplace_back(row_style{});
+            } else {
+                auto parse_res = row_style_handlers.parser_for(SRC).of(frag);
+                if (parse_res.isErr()) {
+                    dump_schema_to(row_style_handlers, "/tmp");
+                    log_error("DB row %d JSON is invalid:", index);
+                    auto errors = parse_res.unwrapErr();
+                    for (const auto& err : errors) {
+                        log_error("  %s", err.to_attr_line().al_string.c_str());
+                    }
+                } else {
+                    const auto& vc = view_colors::singleton();
+
+                    auto urs = parse_res.unwrap();
+                    auto rs = row_style{};
+                    for (const auto& [col_name, col_style] :
+                         urs.urs_column_config)
+                    {
+                        auto col_index_opt
+                            = this->column_name_to_index(col_name);
+                        if (!col_index_opt) {
+                            log_error("DB row %d column name '%s' not found",
+                                      index,
+                                      col_name.c_str());
+                        } else {
+                            text_attrs ta;
+
+                            auto fg_res = styling::color_unit::from_str(
+                                col_style.sc_color);
+                            if (fg_res.isErr()) {
+                                log_error("DB row %d color is invalid: %s",
+                                          index,
+                                          fg_res.unwrapErr().c_str());
+                            } else {
+                                ta.ta_fg_color
+                                    = vc.match_color(fg_res.unwrap());
+                            }
+                            auto bg_res = styling::color_unit::from_str(
+                                col_style.sc_background_color);
+                            if (bg_res.isErr()) {
+                                log_error(
+                                    "DB row %d background-color is invalid: %s",
+                                    index,
+                                    bg_res.unwrapErr().c_str());
+                            } else {
+                                ta.ta_bg_color
+                                    = vc.match_color(bg_res.unwrap());
+                            }
+                            if (col_style.sc_underline) {
+                                ta |= text_attrs::style::underline;
+                            }
+                            if (col_style.sc_bold) {
+                                ta |= text_attrs::style::bold;
+                            }
+                            if (col_style.sc_italic) {
+                                ta |= text_attrs::style::italic;
+                            }
+                            if (col_style.sc_strike) {
+                                ta |= text_attrs::style::struck;
+                            }
+                            rs.rs_column_config[col_index_opt.value()] = ta;
+                        }
+                    }
+                    this->dls_row_styles.emplace_back(std::move(rs));
+                }
+            }
+        } else {
+            log_error("DB row %d is not a string -- %s",
+                      mapbox::util::apply_visitor(type_visitor(), sv));
+        }
     }
 
     this->dls_rows.back().push_back(col_sf.data());
@@ -298,7 +426,10 @@ db_label_source::clear()
     this->dls_headers.clear();
     this->dls_rows.clear();
     this->dls_time_column.clear();
+    this->dls_time_column_index = -1;
     this->dls_cell_width.clear();
+    this->dls_row_styles.clear();
+    this->dls_row_style_index = -1;
     this->dls_allocator = std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024);
 }
 
@@ -311,11 +442,9 @@ db_label_source::column_name_to_index(const std::string& name) const
 std::optional<vis_line_t>
 db_label_source::row_for_time(struct timeval time_bucket)
 {
-    std::vector<struct timeval>::iterator iter;
-
-    iter = std::lower_bound(this->dls_time_column.begin(),
-                            this->dls_time_column.end(),
-                            time_bucket);
+    const auto iter = std::lower_bound(this->dls_time_column.begin(),
+                                       this->dls_time_column.end(),
+                                       time_bucket);
     if (iter != this->dls_time_column.end()) {
         return vis_line_t(std::distance(this->dls_time_column.begin(), iter));
     }
@@ -400,7 +529,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                                        + jpw_value.wt_value);
 
                 auto& sa = value_out.back().get_attrs();
-                struct line_range lr(1, 2);
+                line_range lr(1, 2);
 
                 sa.emplace_back(lr, VC_GRAPHIC.value(NCACS_LTEE));
                 lr.lr_start = 3 + jpw_value.wt_ptr.size() + 3;
@@ -414,7 +543,8 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                     if (num_scan_res) {
                         auto attrs = vc.attrs_for_ident(jpw_value.wt_ptr);
 
-                        chart.add_value(jpw_value.wt_ptr, num_scan_res->value());
+                        chart.add_value(jpw_value.wt_ptr,
+                                        num_scan_res->value());
                         chart.with_attrs_for_ident(jpw_value.wt_ptr, attrs);
                     }
                 }
@@ -478,6 +608,10 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
     auto& sa = value_out.get_attrs();
 
     for (size_t lpc = 0; lpc < this->dos_labels->dls_headers.size(); lpc++) {
+        if (lpc == this->dos_labels->dls_row_style_index) {
+            continue;
+        }
+
         auto actual_col_size = std::min(dls->dls_max_column_width,
                                         dls->dls_headers[lpc].hm_column_size);
         std::string cell_title = dls->dls_headers[lpc].hm_name;
@@ -496,7 +630,7 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         shift_string_attrs(cell_attrs, 0, line.size());
         line.append(cell_title);
         line.append(total_fill, ' ');
-        struct line_range header_range(line_len_before, line.length());
+        auto header_range = line_range(line_len_before, line.length());
 
         line.append(1, ' ');
 
@@ -504,8 +638,8 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
 
         text_attrs attrs;
         if (this->dos_labels->dls_headers[lpc].hm_graphable) {
-            attrs
-                = dls->dls_headers[lpc].hm_title_attrs | text_attrs::with_reverse();
+            attrs = dls->dls_headers[lpc].hm_title_attrs
+                | text_attrs::with_reverse();
         } else {
             attrs |= text_attrs::style::underline;
         }
@@ -515,6 +649,7 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
 
     struct line_range lr(0);
 
-    sa.emplace_back(lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD | NCSTYLE_UNDERLINE}));
+    sa.emplace_back(
+        lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD | NCSTYLE_UNDERLINE}));
     return true;
 }

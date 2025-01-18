@@ -177,7 +177,9 @@ public:
                                unsigned long width,
                                const T& ident,
                                double value,
-                               string_attrs_t& value_out) const
+                               string_attrs_t& value_out,
+                               std::optional<text_attrs> user_attrs
+                               = std::nullopt) const
     {
         auto ident_iter = this->sbc_ident_lookup.find(ident);
 
@@ -249,8 +251,17 @@ public:
         lr.lr_end = left = lr.lr_start + amount;
 
         if (!ci.ci_attrs.empty() && !lr.empty()) {
-            const auto rev_attrs = ci.ci_attrs | text_attrs::style::reverse;
-            value_out.emplace_back(lr, VC_STYLE.value(rev_attrs));
+            auto rev_attrs = ci.ci_attrs | text_attrs::style::reverse;
+            if (user_attrs) {
+                if (!user_attrs->ta_fg_color.empty()) {
+                    rev_attrs.ta_fg_color = user_attrs->ta_fg_color;
+                }
+                if (!user_attrs->ta_bg_color.empty()) {
+                    rev_attrs.ta_bg_color = user_attrs->ta_bg_color;
+                }
+            }
+            value_out.emplace_back(
+                    lr, VC_STYLE.value(rev_attrs));
         }
     }
 

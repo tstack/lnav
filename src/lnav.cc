@@ -1450,6 +1450,15 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             if (top_view && *top_view == &tc) {
                 lnav_data.ld_bottom_source.update_search_term(tc);
             }
+            if (!lnav_data.ld_rl_view->is_active()) {
+                auto search_duration = tc.consume_search_duration();
+                if (search_duration) {
+                    double secs = search_duration->count() / 1000.0;
+                    lnav_data.ld_rl_view->set_attr_value(attr_line_t("search completed in ")
+                        .append(lnav::roles::number(fmt::format(FMT_STRING("{:.3}"), secs)))
+                        .append(" seconds"));
+                }
+            }
         };
         for (lpc = 0; lpc < LNV__MAX; lpc++) {
             lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
