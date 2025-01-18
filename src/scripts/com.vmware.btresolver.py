@@ -14,7 +14,7 @@ if False:
     print("Hello, World!")
     sys.exit()
 
-RESOLVING_SERVICE_URL = "http://btresolver.eng.vmware.com:80/"
+RESOLVING_SERVICE_URL = "https://btresolver.lvn.broadcom.net:443/"
 DEFAULT_TIMEOUT = 10
 
 req_url = "%s%s" % (RESOLVING_SERVICE_URL, "async_resolve_text_bts")
