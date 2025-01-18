@@ -38,10 +38,12 @@ files to be added or removed from the view.  If the path is an archive or
 compressed file (and lnav was built with libarchive), the archive will be
 extracted to a temporary location and the files within will be loaded.  The
 files that are found will be scanned to identify their file format.  Files
-that match a log format will be collated by time and displayed in the LOG
+that match a log format will be collated by time [#]_ and displayed in the LOG
 view.  Plain text files can be viewed in the TEXT view, which can be accessed
 by pressing :kbd:`t`.
 
+.. [#] Log message timestamps are stored in the index with a resolution of
+   microseconds.
 
 Archive Support
 ^^^^^^^^^^^^^^^
@@ -327,6 +329,9 @@ with a single SQL statement [#]_, we will break things down into a few steps for
 this example.  First, we will use the :ref:`:create-search-table<create_search_table>`
 command to match the dhclient message and extract the IP address:
 
+.. [#] The expression :code:`regexp_match('bound to ([^ ]+)', log_body) as ip`
+   can be used to extract the IP address from the log message body.
+
 .. code-block:: lnav
 
    :create-search-table dhclient_ip bound to (?<ip>[^ ]+)
@@ -353,9 +358,6 @@ Since the above can be a lot to type out interactively, you can put these
 commands into a :ref:`script<scripts>` and execute that script with the
 :kbd:`\|` hotkey.
 
-.. [#] The expression :code:`regexp_match('bound to ([^ ]+)', log_body) as ip`
-   can be used to extract the IP address from the log message body.
-
 Sharing Sessions With Others
 ----------------------------
 
@@ -376,9 +378,9 @@ directory.
 Also, in order to support archives of log files, lnav will try to find the
 directory where the archive was unpacked and use that as the base for the
 :code:`:open` command.  Currently, this is done by searching for the top
-"README" file in the directory hierarchy containing the files [1]_.  The
+"README" file in the directory hierarchy containing the files [#]_.  The
 consumer of the session script can then set the :code:`LOG_DIR_0` (or 1, 2,
 ...) environment variable to change where the log files will be loaded from.
 
-.. [1] It is assumed a log archive would have a descriptive README file.
+.. [#] It is assumed a log archive would have a descriptive README file.
    Other heuristics may be added in the future.

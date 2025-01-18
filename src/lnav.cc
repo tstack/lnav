@@ -2855,6 +2855,40 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                 continue;
             }
 
+            if (endswith(file_path, ".lnav")) {
+                auto script_path = std::filesystem::path(file_path);
+                auto read_res = lnav::filesystem::read_file(script_path);
+                if (read_res.isErr()) {
+                    lnav::console::print(
+                        stderr,
+                        lnav::console::user_message::error(
+                            attr_line_t("unable to read script file: ")
+                                .append(lnav::roles::file(file_path)))
+                            .with_reason(read_res.unwrapErr()));
+                    return EXIT_FAILURE;
+                }
+
+                auto dst_path = formats_installed_path / script_path.filename();
+                auto write_res
+                    = lnav::filesystem::write_file(dst_path, read_res.unwrap());
+                if (write_res.isErr()) {
+                    lnav::console::print(
+                        stderr,
+                        lnav::console::user_message::error(
+                            attr_line_t("unable to write script file: ")
+                                .append(lnav::roles::file(file_path)))
+                            .with_reason(write_res.unwrapErr()));
+                    return EXIT_FAILURE;
+                }
+
+                lnav::console::print(
+                    stderr,
+                    lnav::console::user_message::ok(
+                        attr_line_t("installed -- ")
+                            .append(lnav::roles::file(dst_path))));
+                continue;
+            }
+
             if (endswith(file_path, ".sql")) {
                 auto sql_path = std::filesystem::path(file_path);
                 auto read_res = lnav::filesystem::read_file(sql_path);

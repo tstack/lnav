@@ -22,6 +22,8 @@ Features:
 * Added ecs_log for the Elastic Common Schema from @ba-didi.
 * Added a Proxifier log format.
 * Escape sequences for 24-bit color are now handled.
+* The `-i` option for installing files will now copy `.lnav`
+  script files to the `formats/installed` directory.
 
 Interface changes:
 * DB query results that start with a number are right justified

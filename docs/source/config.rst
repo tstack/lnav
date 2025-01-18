@@ -399,7 +399,7 @@ File: `pod-2`
 
 
 Behavior Details
-++++++++++++++++
+^^^^^^^^^^^^^^^^
 
 Control Lines:
 
@@ -421,7 +421,7 @@ Demuxing Process:
   further processing. They will not undergo additional demuxing.
 
 JSON Schema Reference
-+++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/demux/patternProperties/^([\w\-\.]+)$
 
