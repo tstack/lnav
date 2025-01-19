@@ -74,9 +74,26 @@ The DB view has the following display features:
 * A stacked bar chart of the numeric column values is displayed underneath the
   rows.  Pressing :kbd:`TAB` will cycle through displaying no columns, each
   individual column, or all columns.
-* JSON columns in the top row can be pretty-printed by pressing :kbd:`p`.
+* JSON columns in the focused row can be pretty-printed by pressing :kbd:`p`.
   The display will show the value and JSON-Pointer path that can be passed to
   the `jget`_ function.
+* Table cells can be styled by adding a `__lnav_style__` column to the query.
+  This column must be a JSON object with the key `columns` that contains the
+  the column names to be styled and the :ref:`style configuration<theme_style>`.
+  For example, to apply semantic coloring to the :code:`cs_uri_stem` column
+  you would use the following JSON:
+
+  .. code-block:: json
+
+      {
+          "columns": {
+              "cs_uri_stem": {
+                 "color": "semantic()"
+              }
+          }
+      }
+
+  .. jsonschema:: ../schemas/config-v1.schema.json#/definitions/style
 
 
 PRQL Support (v0.12.1+)

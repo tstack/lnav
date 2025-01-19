@@ -76,7 +76,9 @@ db_label_source::text_value_for_line(textview_curses& tc,
         return {};
     }
     for (int lpc = 0; lpc < (int) this->dls_rows[row].size(); lpc++) {
-        if (lpc == this->dls_row_style_index) {
+        if (lpc == this->dls_row_style_index
+            && !this->dls_row_styles_have_errors)
+        {
             continue;
         }
         auto actual_col_size = std::min(this->dls_max_column_width,
@@ -125,7 +127,9 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
         sa.emplace_back(lr2, VC_ROLE.value(role_t::VCR_ALT_ROW));
     }
     for (size_t lpc = 0; lpc < this->dls_headers.size() - 1; lpc++) {
-        if (lpc == this->dls_row_style_index) {
+        if (lpc == this->dls_row_style_index
+            && !this->dls_row_styles_have_errors)
+        {
             continue;
         }
 
@@ -146,13 +150,16 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
     }
     int cell_start = 0;
     for (size_t lpc = 0; lpc < this->dls_headers.size(); lpc++) {
+        std::optional<text_attrs> user_attrs;
+
         if (lpc == this->dls_row_style_index) {
-            continue;
+            if (!this->dls_row_styles_have_errors) {
+                continue;
+            }
         }
 
         auto row_view = std::string_view{this->dls_rows[row][lpc]};
         const auto& hm = this->dls_headers[lpc];
-        std::optional<text_attrs> user_attrs;
 
         if (row < this->dls_row_styles.size()) {
             auto style_iter
@@ -188,9 +195,15 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
             sa.emplace_back(stlr, VC_STYLE.value(user_attrs.value()));
         }
 
-        if (row_view.length() > 2 && row_view.length() < MAX_JSON_WIDTH
-            && ((row_view.front() == '{' && row_view.back() == '}')
-                || (row_view.front() == '[' && row_view.back() == ']')))
+        if (lpc == this->dls_row_style_index) {
+            auto stlr = line_range{
+                cell_start,
+                (int) (cell_start + this->dls_cell_width[lpc]),
+            };
+            sa.emplace_back(stlr, VC_ROLE.value(role_t::VCR_ERROR));
+        } else if (row_view.length() > 2 && row_view.length() < MAX_JSON_WIDTH
+                   && ((row_view.front() == '{' && row_view.back() == '}')
+                       || (row_view.front() == '[' && row_view.back() == ']')))
         {
             json_ptr_walk jpw;
 
@@ -256,13 +269,17 @@ db_label_source::push_header(const std::string& colstr,
 void
 db_label_source::push_column(const scoped_value_t& sv)
 {
+    auto row_index = this->dls_rows.size() - 1;
     auto& vc = view_colors::singleton();
     int index = this->dls_rows.back().size();
     auto& hm = this->dls_headers[index];
 
     auto col_sf = sv.match(
         [](const std::string& str) { return string_fragment::from_str(str); },
-        [this](const string_fragment& sf) {
+        [this, &index](const string_fragment& sf) {
+            if (this->dls_row_style_index == index) {
+                return string_fragment{};
+            }
             return sf.to_owned(*this->dls_allocator);
         },
         [this](int64_t i) {
@@ -311,15 +328,16 @@ db_label_source::push_column(const scoped_value_t& sv)
             } else {
                 auto parse_res = row_style_handlers.parser_for(SRC).of(frag);
                 if (parse_res.isErr()) {
-                    dump_schema_to(row_style_handlers, "/tmp");
-                    log_error("DB row %d JSON is invalid:", index);
+                    log_error("DB row %d JSON is invalid:", row_index);
                     auto errors = parse_res.unwrapErr();
                     for (const auto& err : errors) {
                         log_error("  %s", err.to_attr_line().al_string.c_str());
                     }
+                    col_sf = string_fragment::from_str(
+                                 errors[0].to_attr_line().al_string)
+                                 .to_owned(*this->dls_allocator);
+                    this->dls_row_styles_have_errors = true;
                 } else {
-                    const auto& vc = view_colors::singleton();
-
                     auto urs = parse_res.unwrap();
                     auto rs = row_style{};
                     for (const auto& [col_name, col_style] :
@@ -329,8 +347,15 @@ db_label_source::push_column(const scoped_value_t& sv)
                             = this->column_name_to_index(col_name);
                         if (!col_index_opt) {
                             log_error("DB row %d column name '%s' not found",
-                                      index,
+                                      row_index,
                                       col_name.c_str());
+                            col_sf = string_fragment::from_str(
+                                         fmt::format(
+                                             FMT_STRING(
+                                                 "column name '{}' not found"),
+                                             col_name))
+                                         .to_owned(*this->dls_allocator);
+                            this->dls_row_styles_have_errors = true;
                         } else {
                             text_attrs ta;
 
@@ -338,8 +363,15 @@ db_label_source::push_column(const scoped_value_t& sv)
                                 col_style.sc_color);
                             if (fg_res.isErr()) {
                                 log_error("DB row %d color is invalid: %s",
-                                          index,
+                                          row_index,
                                           fg_res.unwrapErr().c_str());
+                                col_sf
+                                    = string_fragment::from_str(
+                                          fmt::format(
+                                              FMT_STRING("invalid color: {}"),
+                                              fg_res.unwrapErr()))
+                                          .to_owned(*this->dls_allocator);
+                                this->dls_row_styles_have_errors = true;
                             } else {
                                 ta.ta_fg_color
                                     = vc.match_color(fg_res.unwrap());
@@ -349,8 +381,16 @@ db_label_source::push_column(const scoped_value_t& sv)
                             if (bg_res.isErr()) {
                                 log_error(
                                     "DB row %d background-color is invalid: %s",
-                                    index,
+                                    row_index,
                                     bg_res.unwrapErr().c_str());
+                                col_sf = string_fragment::from_str(
+                                             fmt::format(
+                                                 FMT_STRING(
+                                                     "invalid "
+                                                     "background-color: {}"),
+                                                 fg_res.unwrapErr()))
+                                             .to_owned(*this->dls_allocator);
+                                this->dls_row_styles_have_errors = true;
                             } else {
                                 ta.ta_bg_color
                                     = vc.match_color(bg_res.unwrap());
@@ -375,7 +415,13 @@ db_label_source::push_column(const scoped_value_t& sv)
             }
         } else {
             log_error("DB row %d is not a string -- %s",
+                      row_index,
                       mapbox::util::apply_visitor(type_visitor(), sv));
+
+            col_sf
+                = string_fragment::from_str("expecting a JSON object for style")
+                      .to_owned(*this->dls_allocator);
+            this->dls_row_styles_have_errors = true;
         }
     }
 
@@ -429,6 +475,7 @@ db_label_source::clear()
     this->dls_time_column_index = -1;
     this->dls_cell_width.clear();
     this->dls_row_styles.clear();
+    this->dls_row_styles_have_errors = false;
     this->dls_row_style_index = -1;
     this->dls_allocator = std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024);
 }
@@ -608,7 +655,9 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
     auto& sa = value_out.get_attrs();
 
     for (size_t lpc = 0; lpc < this->dos_labels->dls_headers.size(); lpc++) {
-        if (lpc == this->dos_labels->dls_row_style_index) {
+        if (lpc == this->dos_labels->dls_row_style_index
+            && !this->dos_labels->dls_row_styles_have_errors)
+        {
             continue;
         }
 

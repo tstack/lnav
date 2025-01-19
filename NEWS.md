@@ -24,6 +24,9 @@ Features:
 * Escape sequences for 24-bit color are now handled.
 * The `-i` option for installing files will now copy `.lnav`
   script files to the `formats/installed` directory.
+* Added `italic` and `strike` to the text styling configuration.
+* DB query results can now be styled on a row-by-row basis by
+  adding a column with the name `__lnav_style__`.
 
 Interface changes:
 * DB query results that start with a number are right justified
@@ -104,7 +107,6 @@ Features:
 * Added log formats for the `env_logger` and `simple_logger` Rust
   crates.
 * Timestamp formats can now use `%j` to capture day-of-year values.
-* Added `italic` and `strike` to the text styling configuration.
 
 Interface Changes:
 * The "Gantt Chart" view has been renamed to "timeline."

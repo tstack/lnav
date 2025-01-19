@@ -918,3 +918,11 @@ run_cap_test ${lnav_test} -Nn \
 run_cap_test ${lnav_test} -n \
      -c ";.msgformats" \
      ${test_dir}/logfile_for_join.0
+
+run_cap_test ${lnav_test} -Nn \
+    -c ";SELECT log_line, sc_bytes, json_object('columns', json_object('sc_bytes', json_object('color', '#f00'))) AS __lnav_style__ FROM access_log"  \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -Nn \
+    -c ";SELECT log_line, sc_bytes, json_object('columns', json_object('sc_ytes', json_object('color', '#f00'))) AS __lnav_style__ FROM access_log"  \
+    ${test_dir}/logfile_access_log.0

@@ -127,6 +127,7 @@ public:
     int dls_time_column_index{-1};
     std::optional<size_t> dls_time_column_invalidated_at;
     std::vector<row_style> dls_row_styles;
+    bool dls_row_styles_have_errors{false};
     int dls_row_style_index{-1};
     std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator{
         std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024)};
