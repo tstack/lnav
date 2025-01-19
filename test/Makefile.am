@@ -1,6 +1,8 @@
 
 include $(top_srcdir)/aminclude_static.am
 
+SUBDIRS = expected
+
 TESTS_ENVIRONMENT = $(BASH) $(top_builddir)/TESTS_ENVIRONMENT
 LOG_COMPILER = $(BASH) $(top_builddir)/TESTS_ENVIRONMENT
 
@@ -240,10 +242,7 @@ dist_noinst_SCRIPTS = \
 	test_vt52_curses.sh \
 	test_pretty_print.sh
 
-include expected/expected.am
-
 dist_noinst_DATA = \
-    $(EXPECTED_FILES) \
     expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.err \
     expected/test_tailer.sh_12f539e535df04364316699f9edeac461aa9f9de.out \
 	ansi-colors.0.in \

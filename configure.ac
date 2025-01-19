@@ -339,5 +339,6 @@ AC_CONFIG_FILES([src/third-party/date/src/Makefile])
 AC_CONFIG_FILES([src/third-party/notcurses/src/lib/Makefile])
 AC_CONFIG_FILES([src/third-party/scnlib/src/Makefile])
 AC_CONFIG_FILES([test/Makefile])
+AC_CONFIG_FILES([test/expected/Makefile])
 
 AC_OUTPUT
