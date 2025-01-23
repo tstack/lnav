@@ -549,6 +549,15 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                     .append(": ")
                     .append(humanize::file_size(lf->get_index_size(),
                                                 humanize::alignment::none)));
+            if (lf->is_compressed()) {
+                details.emplace_back(attr_line_t()
+                                         .append("Compressed Size"_h3)
+                                         .right_justify(NAME_WIDTH)
+                                         .append(": ")
+                                         .append(humanize::file_size(
+                                             lf->get_stat().st_size,
+                                             humanize::alignment::none)));
+            }
 
             details.emplace_back(attr_line_t()
                                      .append("Lines"_h3)
@@ -576,6 +585,27 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                     - lf->front().get_timeval())
                                     .to_string()));
             }
+
+            auto file_options_opt = lf->get_file_options();
+            if (file_options_opt) {
+                auto& [path, file_options] = file_options_opt.value();
+
+                details.emplace_back(attr_line_t()
+                                         .append("Options Path"_h3)
+                                         .right_justify(NAME_WIDTH)
+                                         .append(": ")
+                                         .append(lnav::roles::file(path)));
+                if (file_options.fo_default_zone.pp_value != nullptr) {
+                    details.emplace_back(attr_line_t()
+                                             .append("Timezone"_h3)
+                                             .right_justify(NAME_WIDTH)
+                                             .append(": ")
+                                             .append(lnav::roles::symbol(
+                                                 file_options.fo_default_zone
+                                                     .pp_value->name())));
+                }
+            }
+
             {
                 auto line = attr_line_t("  ")
                                 .append("Log Format"_h2)
