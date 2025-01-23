@@ -53,7 +53,8 @@ public:
         cols = this->ldt_cols;
     }
 
-    void get_foreign_keys(std::vector<std::string>& keys_inout) const override
+    void get_foreign_keys(
+        std::unordered_set<std::string>& keys_inout) const override
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
     }

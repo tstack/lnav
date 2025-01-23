@@ -222,8 +222,8 @@ logfmt::parser::step()
     auto value_pair = value_start.split_while(bvp);
 
     if (value_pair) {
-        static const auto TRUE_FRAG = string_fragment::from_const("true");
-        static const auto FALSE_FRAG = string_fragment::from_const("false");
+        static constexpr auto TRUE_FRAG = string_fragment::from_const("true");
+        static constexpr auto FALSE_FRAG = string_fragment::from_const("false");
 
         this->p_next_input = value_pair->second;
         if (bvp.is_integer()) {

@@ -979,13 +979,13 @@ public:
         }
 
         void get_foreign_keys(
-            std::vector<std::string>& keys_inout) const override
+            std::unordered_set<std::string>& keys_inout) const override
         {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
             for (const auto& fd : this->blt_format.blf_field_defs) {
                 if (fd.fd_meta.lvm_identifier || fd.fd_meta.lvm_foreign_key) {
-                    keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
+                    keys_inout.emplace(fd.fd_meta.lvm_name.to_string());
                 }
             }
         }
@@ -1672,13 +1672,13 @@ public:
         };
 
         void get_foreign_keys(
-            std::vector<std::string>& keys_inout) const override
+            std::unordered_set<std::string>& keys_inout) const override
         {
             this->log_vtab_impl::get_foreign_keys(keys_inout);
 
             for (const auto& fd : KNOWN_FIELDS) {
                 if (fd.fd_meta.lvm_identifier || fd.fd_meta.lvm_foreign_key) {
-                    keys_inout.push_back(fd.fd_meta.lvm_name.to_string());
+                    keys_inout.emplace(fd.fd_meta.lvm_name.to_string());
                 }
             }
         }

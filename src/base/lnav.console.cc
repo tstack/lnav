@@ -148,17 +148,28 @@ user_message::to_attr_line(std::set<render_flags> flags) const
             case level::raw:
                 break;
             case level::ok:
-                retval.append(lnav::roles::ok("\u2714 "));
+                retval.append("  ");
+                retval.al_attrs.emplace_back(line_range{0, 1},
+                                             VC_ICON.value(ui_icon_t::ok));
                 break;
             case level::info:
-                retval.append("\u24d8 info"_info).append(": ");
+                retval.append("  ").append("info"_info).append(": ");
+                retval.al_attrs.emplace_back(line_range{0, 1},
+                                             VC_ICON.value(ui_icon_t::info));
                 break;
             case level::warning:
-                retval.append(lnav::roles::warning("\u26a0 warning"))
+                retval.append("  ")
+                    .append(lnav::roles::warning("warning"))
                     .append(": ");
+                retval.al_attrs.emplace_back(line_range{0, 1},
+                                             VC_ICON.value(ui_icon_t::warning));
                 break;
             case level::error:
-                retval.append(lnav::roles::error("\u2718 error")).append(": ");
+                retval.append("  ")
+                    .append(lnav::roles::error("error"))
+                    .append(": ");
+                retval.al_attrs.emplace_back(line_range{0, 1},
+                                             VC_ICON.value(ui_icon_t::error));
                 break;
         }
     }
@@ -426,6 +437,14 @@ wchar_for_icon(ui_icon_t ic)
     switch (ic) {
         case ui_icon_t::hidden:
             return {L'\u22ee', role_t::VCR_HIDDEN};
+        case ui_icon_t::ok:
+            return {L'\u2714', role_t::VCR_OK};
+        case ui_icon_t::info:
+            return {L'\u24d8', role_t::VCR_INFO};
+        case ui_icon_t::warning:
+            return {L'\u26a0', role_t::VCR_WARNING};
+        case ui_icon_t::error:
+            return {L'\u2718', role_t::VCR_ERROR};
     }
 
     ensure(false);

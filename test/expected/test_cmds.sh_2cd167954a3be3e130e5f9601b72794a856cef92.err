@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: expecting file name or '-' to write to the terminal
+[1m[31m✘[0m [1m[31merror[0m: expecting file name or '-' to write to the terminal
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:write-to                               [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mwrite-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m

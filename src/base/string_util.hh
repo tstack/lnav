@@ -249,7 +249,7 @@ on_blank(const std::string& str, const std::string& def)
 std::string to_superscript(const std::string& in);
 
 template<typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
-inline std::string
+std::string
 to_superscript(T in)
 {
     return to_superscript(fmt::to_string(in));
@@ -296,12 +296,23 @@ struct formatter<lnav::tainted_string> : formatter<string_view> {
 };
 }  // namespace fmt
 
-namespace lnav {
-namespace pcre2pp {
+namespace lnav::pcre2pp {
 
 std::string quote(string_fragment sf);
 
 }
-}  // namespace lnav
+
+enum class text_align_t {
+    start,
+    center,
+    end,
+};
+
+struct split_num_result {
+    double snr_value;
+    std::string_view snr_units;
+};
+
+std::optional<split_num_result> try_split_num_and_units(std::string_view in);
 
 #endif

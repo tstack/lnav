@@ -1,14 +1,15 @@
-[33m⚠ warning[0m: unexpected value for property “[1m/ui/theme-defs/invalid-theme/styles/text/bad-property[0m”
+[33m⚠[0m [33mwarning[0m: unexpected value for property “[1m/ui/theme-defs/invalid-theme/styles/text/bad-property[0m”
 [36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-theme/config.json[0m:9
 [36m | [0m[37m[40m                        "bad-property": "abc"[0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
+           [1mtext-align[0m [4mstart|center|end[0m
            [1mcolor[0m [4m#hex|color_name[0m
            [1mbackground-color[0m [4m#hex|color_name[0m
            [1munderline[0m 
            [1mbold[0m 
            [1mitalic[0m 
            [1mstrike[0m
-[1m[31m✘ error[0m: “abc(” is not a valid regular expression
+[1m[31m✘[0m [1m[31merror[0m: “abc(” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/ui/theme-defs/invalid-theme/highlights/foobar/pattern[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m
@@ -19,7 +20,7 @@
            [1m/ui/theme-defs/invalid-theme/highlights/foobar/pattern[0m [4mregular expression[0m
          [1mDescription[0m
            The regular expression to highlight
-[1m[31m✘ error[0m: “[1mbad[0m” is not a supported configuration $schema version
+[1m[31m✘[0m [1m[31merror[0m: “[1mbad[0m” is not a supported configuration $schema version
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.bad-schema.json[0m:2
 [36m | [0m[37m[40m    "$schema": "bad"                    [0m
 [36m =[0m [36mnote[0m: expecting one of the following $schema values:
@@ -30,7 +31,7 @@
            The URI that specifies the schema that describes this type of file
          [1mExample[0m
            https://lnav.org/schemas/config-v1.schema.json
-[33m⚠ warning[0m: unexpected value for property “[1m/ui[0m”
+[33m⚠[0m [33mwarning[0m: unexpected value for property “[1m/ui[0m”
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.malformed.json[0m:2
 [36m | [0m[37m[40m    "ui": "theme",                      [0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
@@ -39,12 +40,12 @@
            [1mui[0m[1m/[0m 
            [1mlog[0m[1m/[0m 
            [1mglobal[0m[1m/[0m
-[1m[31m✘ error[0m: invalid JSON
+[1m[31m✘[0m [1m[31merror[0m: invalid JSON
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.malformed.json[0m:3
 [36m | [0mparse error: object key and value must be separated by a colon (':')
 [36m | [0m               "ui": "theme",     "abc",     "def": "" }            
 [36m | [0m                     (right here) ------^                           
-[33m⚠ warning[0m: unexpected value for property “[1m/ui[0m”
+[33m⚠[0m [33mwarning[0m: unexpected value for property “[1m/ui[0m”
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.truncated.json[0m:2
 [36m | [0m[37m[40m    "ui": "theme"                       [0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
@@ -53,23 +54,23 @@
            [1mui[0m[1m/[0m 
            [1mlog[0m[1m/[0m 
            [1mglobal[0m[1m/[0m
-[1m[31m✘ error[0m: invalid JSON
+[1m[31m✘[0m [1m[31merror[0m: invalid JSON
  [1m[31mreason[0m: parse error: premature EOF
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.truncated.json[0m:3
-[1m[31m✘ error[0m: missing value for property “[1m/log/annotations/org.lnav.test.no-condition/condition[0m”
+[1m[31m✘[0m [1m[31merror[0m: missing value for property “[1m/log/annotations/org.lnav.test.no-condition/condition[0m”
  [1m[31mreason[0m: incomplete input
 [36m --> [0m[1m/log/annotations/org.lnav.test.no-condition/condition[0m
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/log/annotations/org.lnav.test.no-condition/condition[0m [4m<SQL-expression>[0m
          [1mDescription[0m
            The SQLite expression to execute for a log message that determines whether or not this annotation is applicable.  The expression is evaluated the same way as a filter expression
-[1m[31m✘ error[0m: missing value for property “[1m/log/annotations/org.lnav.test.no-handler/handler[0m”
+[1m[31m✘[0m [1m[31merror[0m: missing value for property “[1m/log/annotations/org.lnav.test.no-handler/handler[0m”
  [1m[31mreason[0m: Every annotation requires a handler
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/log/annotations/org.lnav.test.no-handler/handler[0m [4m<script>[0m
          [1mDescription[0m
            The script to execute to generate the annotation content. A JSON object with the log message content will be sent to the script on the standard input
-[1m[31m✘ error[0m: invalid value for property “[1m/ui/theme-defs/invalid-theme/styles/text/color[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid value for property “[1m/ui/theme-defs/invalid-theme/styles/text/color[0m”
  [1m[31mreason[0m: invalid color -- “InvalidColor”
 [1m[31m |      [0m  [1m[31mreason[0m: Unknown color: 'InvalidColor'.  See https://jonasjacek.github.io/colors/ for a list of supported color names
 [36m --> [0m[1m{test_dir}/bad-config2/configs/invalid-theme/config.json[0m:8
@@ -81,7 +82,7 @@
            #fff
            Green
            $black
-[1m[31m✘ error[0m: invalid value for property “[1m/ui/theme[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid value for property “[1m/ui/theme[0m”
  [1m[31mreason[0m: unknown theme -- “foo”
 [1m[31m |      [0m [36m =[0m [36mhelp[0m: The available themes are: default, dracula, eldar, grayscale, invalid-theme, monocai, night-owl, solarized-dark, solarized-light
 [36m --> [0m[1m{test_dir}/bad-config2/formats/invalid-config/config.json[0m:3

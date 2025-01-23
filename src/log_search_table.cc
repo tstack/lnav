@@ -117,10 +117,10 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
 }
 
 void
-log_search_table::get_foreign_keys(std::vector<std::string>& keys_inout) const
+log_search_table::get_foreign_keys(std::unordered_set<std::string>& keys_inout) const
 {
     log_vtab_impl::get_foreign_keys(keys_inout);
-    keys_inout.emplace_back(MATCH_INDEX);
+    keys_inout.emplace(MATCH_INDEX);
 }
 
 bool

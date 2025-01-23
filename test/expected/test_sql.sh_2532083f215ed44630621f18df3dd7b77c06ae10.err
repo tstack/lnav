@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: “bad(” is not a valid regular expression
+[1m[31m✘[0m [1m[31merror[0m: “bad(” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1mpattern[0m
 [36m | [0m[37m[40mbad[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m

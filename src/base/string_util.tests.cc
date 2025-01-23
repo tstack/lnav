@@ -131,3 +131,28 @@ TEST_CASE("last_word_str")
         CHECK(s == "foo");
     }
 }
+
+TEST_CASE("try_split_num_and_units")
+{
+    using namespace std::string_view_literals;
+
+    {
+        auto plain = "123"sv;
+        auto res = try_split_num_and_units(plain);
+        CHECK(res.has_value());
+        CHECK(res.value().snr_value == 123);
+        CHECK(res.value().snr_units.empty());
+    }
+    {
+        auto with_units = "456GB"sv;
+        auto res = try_split_num_and_units(with_units);
+        CHECK(res.has_value());
+        CHECK(res.value().snr_value == 456);
+        CHECK(res.value().snr_units == "GB"sv);
+    }
+    {
+        auto bad = "2007-11-03 09:23:00.000"sv;
+        auto res = try_split_num_and_units(bad);
+        CHECK(!res.has_value());
+    }
+}

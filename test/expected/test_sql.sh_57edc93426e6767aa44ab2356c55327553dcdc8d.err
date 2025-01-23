@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: no data was redirected to lnav's standard-input
+[1m[31m✘[0m [1m[31merror[0m: no data was redirected to lnav's standard-input
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m|rename-stdin foo                       [0m
 [36m --> [0m[1m../test/cfg/test_sql.sh/.lnav/formats/default/rename-stdin.lnav[0m:7

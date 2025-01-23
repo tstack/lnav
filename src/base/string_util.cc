@@ -37,6 +37,7 @@
 #include "config.h"
 #include "is_utf8.hh"
 #include "lnav_log.hh"
+#include "scn/scan.h"
 
 void
 scrub_to_utf8(char* buffer, size_t length)
@@ -379,8 +380,7 @@ formatter<lnav::tainted_string>::format(const lnav::tainted_string& ts,
 }
 }  // namespace fmt
 
-namespace lnav {
-namespace pcre2pp {
+namespace lnav::pcre2pp {
 
 static bool
 is_meta(char ch)
@@ -450,5 +450,23 @@ quote(string_fragment str)
     return retval;
 }
 
-}  // namespace pcre2pp
-}  // namespace lnav
+}  // namespace lnav::pcre2pp
+
+std::optional<split_num_result>
+try_split_num_and_units(std::string_view in)
+{
+    auto scan_res = scn::scan_value<double>(in);
+    if (!scan_res) {
+        return std::nullopt;
+    }
+
+    auto unit_range = scan_res->range();
+    auto units = std::string_view{unit_range.data(), unit_range.size()};
+    if (units.size() > 3) {
+        return std::nullopt;
+    }
+    return split_num_result{
+        scan_res->value(),
+        units,
+    };
+}

@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: SQL statement failed
+[1m[31m✘[0m [1m[31merror[0m: SQL statement failed
  [1m[31mreason[0m: Rows cannot be deleted from the lnav_view_files table
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m;[0m[1m[36m[40mDELETE[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_view_files[0m[37m[40m            [0m

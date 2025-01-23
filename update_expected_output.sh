@@ -4,7 +4,7 @@ srcdir="$1"
 builddir="$2"
 
 expected_dir="$1/expected"
-expected_am="${expected_dir}/expected.am"
+expected_am="${expected_dir}/Makefile.am"
 
 mkdir -p "${expected_dir}"
 
@@ -86,7 +86,7 @@ done
 
 cat > "${expected_am}.new" <<EOF
 
-EXPECTED_FILES = \\
+dist_noinst_DATA = \\
 $(sort "${expected_am}.tmp")
     \$()
 EOF

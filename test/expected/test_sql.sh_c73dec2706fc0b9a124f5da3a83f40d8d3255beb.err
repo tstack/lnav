@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: failed to compile SQL statement
+[1m[31m✘[0m [1m[31merror[0m: failed to compile SQL statement
  [1m[31mreason[0m: not authorized
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[1m[36m[40mattach[0m[37m[40m [0m[1m[36m[40mdatabase[0m[37m[40m [0m[35m[40m'file:memdb?cache=shared'[0m[37m[40m [0m[1m[36m[40mas[0m[37m[40m [0m[35m[40m'db'[0m

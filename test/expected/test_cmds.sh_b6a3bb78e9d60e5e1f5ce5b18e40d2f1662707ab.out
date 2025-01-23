@@ -2577,7 +2577,7 @@ For support questions, email:
 #1 To read a file and raise an error if there is a problem:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m(data, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'cannot read: '[0m[37m[40m [0m[1m[37m[40m||[0m[37m[40m st_name, error)) [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[1m[37m[40mfstat[0m[37m[40m([0m[35m[40m'/non-existent'[0m[37m[40m)[0m
-   [1m[31m✘ error[0m: cannot read: non-existent
+   [1m[31m✘[0m [1m[31merror[0m: cannot read: non-existent
     [1m[31mreason[0m: No such file or directory
    [36m --> [0m[1mfstat[0m:1
    [36m | [0m[37m[40mSELECT ifnull(data, raise_error('cannot read: ' || st_name, error)) FROM fstat('/non-existent')[0m
@@ -4017,7 +4017,7 @@ For support questions, email:
 [4mExample[0m
 #1 To raise an error if a variable is not set:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m($val, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'please set $val'[0m[37m[40m, [0m[35m[40m'because'[0m[37m[40m))[0m
-   [1m[31m✘ error[0m: please set $val
+   [1m[31m✘[0m [1m[31merror[0m: please set $val
     [1m[31mreason[0m: because
    [36m --> [0m[1mraise_error[0m:1
    [36m | [0m[37m[40mSELECT ifnull($val, raise_error('please set $val', 'because'))[0m

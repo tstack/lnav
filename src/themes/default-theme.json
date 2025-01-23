@@ -6,6 +6,18 @@
                 "icons": {
                     "hidden": {
                         "value": "\u22EE"
+                    },
+                    "ok": {
+                        "value": "\u2714"
+                    },
+                    "info": {
+                        "value": "\u24d8"
+                    },
+                    "warning": {
+                        "value": "\u26a0"
+                    },
+                    "error": {
+                        "value": "\u2718"
                     }
                 },
                 "vars": {

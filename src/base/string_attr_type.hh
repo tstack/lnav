@@ -36,6 +36,7 @@
 #include <stdint.h>
 
 #include "base/intern_string.hh"
+#include "base/string_util.hh"
 #include "color_spaces.hh"
 #include "enum_util.hh"
 #include "mapbox/variant.hpp"
@@ -45,6 +46,10 @@ struct bookmark_metadata;
 
 enum class ui_icon_t : int32_t {
     hidden,
+    ok,
+    info,
+    warning,
+    error,
 };
 
 /** Roles that can be mapped to curses attributes using attrs_for_role() */
@@ -277,6 +282,7 @@ struct text_attrs {
     uint32_t ta_attrs{0};
     styling::color_unit ta_fg_color{styling::color_unit::make_empty()};
     styling::color_unit ta_bg_color{styling::color_unit::make_empty()};
+    std::optional<text_align_t> ta_align;
 };
 
 struct block_elem_t {

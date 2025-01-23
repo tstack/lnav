@@ -1,70 +1,62 @@
 #! /usr/bin/env lnav -nN -f-
 
 ;ATTACH DATABASE 'perf.db' AS perf_db
-;PRAGMA foreign_keys = ON
 
 ;CREATE TABLE IF NOT EXISTS perf_db.perf_test_id (
    test_id TEXT PRIMARY KEY,
+   priority INTEGER,
    Description TEXT
 )
 
-;REPLACE INTO perf_db.perf_test_id VALUES ('indexing', 'Time to index and go to line 10mil')
-;REPLACE INTO perf_db.perf_test_id VALUES ('searching', 'Time to find')
+;REPLACE INTO perf_db.perf_test_id VALUES ('indexing', 0, 'Time to load and go to line 10mil')
+;REPLACE INTO perf_db.perf_test_id VALUES ('searching', 1, 'Time to find a text at end')
+;REPLACE INTO perf_db.perf_test_id VALUES ('filtering', 2, 'Time to filter out messages')
+;REPLACE INTO perf_db.perf_test_id VALUES ('stats', 3, 'Time to count unique IPs')
 
 ;CREATE TABLE IF NOT EXISTS perf_db.perf_program (
    Program TEXT PRIMARY KEY,
-   __lnav_style__ TEXT
+   priority INTEGER
 )
 
 ;REPLACE INTO perf_db.perf_program VALUES (
    'lnav',
-   json_object(
-     'columns', json_object(
-        'Duration', json_object(
-           'color', '#0f0'
-        )
-     )
-   )
-)
-
-;REPLACE INTO perf_db.perf_program VALUES (
-   'less',
-   json_object(
-     'columns', json_object(
-        'Duration', json_object(
-           'color', '#f0f'
-        )
-     )
-   )
+   0
 )
 
 ;REPLACE INTO perf_db.perf_program VALUES (
    'vim',
-   json_object(
-     'columns', json_object(
-        'Duration', json_object(
-           'color', '#0d0'
-        )
-     )
-   )
+   1
+)
+
+;REPLACE INTO perf_db.perf_program VALUES (
+   'less',
+   2
+)
+
+;REPLACE INTO perf_db.perf_program VALUES (
+   'cut | sort | uniq | sort -n',
+   3
 )
 
 ;CREATE TABLE IF NOT EXISTS perf_db.perf_data (
    test_id TEXT,
    Program TEXT,
-   Duration REAL,
+   Duration REAL NOT NULL,
+   Memory INTEGER NOT NULL,
 
    FOREIGN KEY(test_id) REFERENCES perf_test_id(test_id),
    FOREIGN KEY(Program) REFERENCES perf_program(Program),
    PRIMARY KEY(test_id, Program)
 )
 
-;SELECT raise_error("usage: " || $0 || " {test_id} {program} {duration}")
-   WHERE $1 IS NULL OR $2 IS NULL OR $3 IS NULL
+;SELECT raise_error("usage: " || $0 || " {test_id} {program} {duration} {memory}")
+   WHERE $1 IS NULL OR $2 IS NULL OR $3 IS NULL OR $4 IS NULL
 
 ;SELECT $1 AS test_id
 ;SELECT $2 AS program
 ;SELECT $3 AS duration
+;SELECT $4 AS memory
 
-;REPLACE INTO perf_data VALUES ($test_id, $program, $duration)
+;PRAGMA foreign_keys = ON
+;REPLACE INTO perf_data VALUES ($test_id, $program, $duration, $memory)
 #   ON CONFLICT(test_id, program) DO UPDATE SET duration=duration;

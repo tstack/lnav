@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: invalid value for “[1mlog_tags[0m” column of table “[1maccess_log[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid value for “[1mlog_tags[0m” column of table “[1maccess_log[0m”
  [1m[31mreason[0m: unexpected JSON value
 [1m[31m |      [0m [36m --> [0m[1maccess_log.log_tags[0m:1
 [1m[31m |      [0m [36m | [0m[37m[40m1                                       [0m

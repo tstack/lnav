@@ -4133,13 +4133,16 @@ public:
         }
     }
 
-    void get_foreign_keys(std::vector<std::string>& keys_inout) const override
+    void get_foreign_keys(
+        std::unordered_set<std::string>& keys_inout) const override
     {
         log_vtab_impl::get_foreign_keys(keys_inout);
 
         for (const auto& elf_value_def : this->elt_format.elf_value_defs) {
-            if (elf_value_def.second->vd_meta.lvm_foreign_key) {
-                keys_inout.emplace_back(elf_value_def.first.to_string());
+            if (elf_value_def.second->vd_meta.lvm_foreign_key
+                || elf_value_def.second->vd_meta.lvm_identifier)
+            {
+                keys_inout.emplace(elf_value_def.first.to_string());
             }
         }
     }

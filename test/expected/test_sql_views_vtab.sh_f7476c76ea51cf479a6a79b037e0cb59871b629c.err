@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: SQL statement failed
+[1m[31m✘[0m [1m[31merror[0m: SQL statement failed
  [1m[31mreason[0m: Expecting an lnav view name for column number 0
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[37m[40mlnav_view_filters[0m[37m[40m [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[1m[36m[40mNULL[0m[37m[40m, [0m[1m[37m[40m0[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m, [0m[35m[40m'out'[0m[37m[40m, [0m[35m[40m'regex'[0m[37m[40m, [0m[35m[40m'abc'[0m[37m[40m)[0m

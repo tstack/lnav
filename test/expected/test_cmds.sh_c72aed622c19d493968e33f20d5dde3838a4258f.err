@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: invalid unix time -- abc
+[1m[31m✘[0m [1m[31merror[0m: invalid unix time -- abc
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40munix-time[0m[37m[40m abc                          [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4munix-time[0m[4m [0m[4mseconds[0m

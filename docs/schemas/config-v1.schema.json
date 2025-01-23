@@ -353,6 +353,26 @@
                                             "description": "Icon for hidden fields",
                                             "title": "/ui/theme-defs/<theme_name>/icons/hidden",
                                             "$ref": "#/definitions/icon"
+                                        },
+                                        "ok": {
+                                            "description": "Icon for OK",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/ok",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "info": {
+                                            "description": "Icon for informational messages",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/info",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "warning": {
+                                            "description": "Icon for warning messages",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/warning",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "error": {
+                                            "description": "Icon for error messages",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/error",
+                                            "$ref": "#/definitions/icon"
                                         }
                                     },
                                     "additionalProperties": false
@@ -1060,6 +1080,16 @@
             "type": "object",
             "$$target": "#/definitions/style",
             "properties": {
+                "text-align": {
+                    "title": "/text-align",
+                    "description": "How to align text within a cell",
+                    "type": "string",
+                    "enum": [
+                        "start",
+                        "center",
+                        "end"
+                    ]
+                },
                 "color": {
                     "title": "/color",
                     "description": "The foreground color value for this style. The value can be the name of an xterm color, the hexadecimal value, or a theme variable reference.",

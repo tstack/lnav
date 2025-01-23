@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: invalid value for “[1mlog_tags[0m” column of table “[1maccess_log[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid value for “[1mlog_tags[0m” column of table “[1maccess_log[0m”
  [1m[31mreason[0m: “foo” is not a valid value for option “[1m/#[0m”
 [1m[31m |      [0m  [1m[31mreason[0m: value does not match pattern: [1m^#[^\s]+$[0m
 [1m[31m |      [0m [36m --> [0m[1maccess_log.log_tags[0m:1

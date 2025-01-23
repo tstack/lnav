@@ -1,3 +1,3 @@
-[1m[4mregexp_replace(cs_uri_query, '.*rapidView=(\d+).*', '\1')[0m[1m[4m [0m
-                                                     1295 
-                                                     1839 
+[1m[4m[7mregexp_replace(cs_uri_query, '.*rapidView=(\d+).*', '\1')[0m[1m[4m [0m
+[7m [0m                                                    1295 
+[7m                                                     1839[0m 

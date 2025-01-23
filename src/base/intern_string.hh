@@ -51,12 +51,17 @@ unsigned long hash_str(const char* str, size_t len);
 struct string_fragment {
     using iterator = const char*;
 
-    static string_fragment invalid()
+    static constexpr string_fragment invalid()
     {
         string_fragment retval;
 
         retval.invalidate();
         return retval;
+    }
+
+    static string_fragment from_string_view(std::string_view str)
+    {
+        return string_fragment{str.data(), 0, (int) str.size()};
     }
 
     static string_fragment from_c_str(const char* str)
@@ -71,7 +76,7 @@ struct string_fragment {
     }
 
     template<typename T, std::size_t N>
-    static string_fragment from_const(const T (&str)[N])
+    static constexpr string_fragment from_const(const T (&str)[N])
     {
         return string_fragment{str, 0, (int) N - 1};
     }
@@ -118,20 +123,22 @@ struct string_fragment {
         return string_fragment{bytes, (int) begin, (int) end};
     }
 
-    explicit string_fragment(const char* str = "", int begin = 0, int end = -1)
+    explicit constexpr string_fragment(const char* str = "",
+                                       int begin = 0,
+                                       int end = -1)
         : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end)
     {
     }
 
-    explicit string_fragment(const unsigned char* str,
-                             int begin = 0,
-                             int end = -1)
+    explicit constexpr string_fragment(const unsigned char* str,
+                                       int begin = 0,
+                                       int end = -1)
         : sf_string((const char*) str), sf_begin(begin),
           sf_end(end == -1 ? strlen((const char*) str) : end)
     {
     }
 
-    string_fragment(const std::string& str)
+    constexpr string_fragment(const std::string& str)
         : sf_string(str.c_str()), sf_begin(0), sf_end(str.length())
     {
     }

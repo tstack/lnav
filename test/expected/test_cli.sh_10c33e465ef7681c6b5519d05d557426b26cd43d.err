@@ -1,4 +1,4 @@
-[1m[35mⓘ info[0m: the following piper captures were found in:
+[1m[35mⓘ[0m [1m[35minfo[0m: the following piper captures were found in:
 	[1m{TMPDIR}/lnav-user-{uid}-work/piper[0m
 [36m =[0m [36mnote[0m: The captures currently consume [1m33B[0m of disk space.  File sizes include associated metadata.
 [36m =[0m [36mhelp[0m: You can reopen a capture by passing the piper URL to lnav

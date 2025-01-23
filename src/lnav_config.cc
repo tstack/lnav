@@ -417,7 +417,10 @@ update_installs_from_git()
 }
 
 static int
-read_repo_path(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
+read_repo_path(yajlpp_parse_context* ypc,
+               const unsigned char* str,
+               size_t len,
+               yajl_string_props_t*)
 {
     auto path = std::string((const char*) str, len);
 
@@ -630,6 +633,22 @@ static const json_path_container theme_icons_handlers = {
     yajlpp::property_handler("hidden")
         .with_description("Icon for hidden fields")
         .for_child(&lnav_theme::lt_icon_hidden)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("ok")
+        .with_description("Icon for OK")
+        .for_child(&lnav_theme::lt_icon_ok)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("info")
+        .with_description("Icon for informational messages")
+        .for_child(&lnav_theme::lt_icon_info)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("warning")
+        .with_description("Icon for warning messages")
+        .for_child(&lnav_theme::lt_icon_warning)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("error")
+        .with_description("Icon for error messages")
+        .for_child(&lnav_theme::lt_icon_error)
         .with_children(icon_config_handlers),
 };
 
@@ -1605,7 +1624,10 @@ const std::set<std::string> SUPPORTED_FORMAT_SCHEMAS = {
 };
 
 static int
-read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
+read_id(yajlpp_parse_context* ypc,
+        const unsigned char* str,
+        size_t len,
+        yajl_string_props_t*)
 {
     auto file_id = std::string((const char*) str, len);
 

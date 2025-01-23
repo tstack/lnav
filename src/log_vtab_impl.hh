@@ -314,7 +314,8 @@ public:
 
     virtual void get_columns(std::vector<vtab_column>& cols) const {}
 
-    virtual void get_foreign_keys(std::vector<std::string>& keys_inout) const;
+    virtual void get_foreign_keys(
+        std::unordered_set<std::string>& keys_inout) const;
 
     virtual void get_primary_keys(std::vector<std::string>& keys_out) const {}
 

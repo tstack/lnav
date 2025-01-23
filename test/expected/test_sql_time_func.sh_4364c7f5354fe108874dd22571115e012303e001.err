@@ -1,4 +1,4 @@
-✘ error: call to timezone(tz, ts) failed
- reason: bad-zone not found in timezone database
- --> command-option:1
- | ;SELECT timezone('bad-zone', '2022-03-02T10:20:30.400-0700')
+[1m[31m✘[0m [1m[31merror[0m: call to [1m[4mtimezone[0m[4m([0m[4mtz[0m[4m, [0m[4mts[0m[4m)[0m failed
+ [1m[31mreason[0m: bad-zone not found in timezone database
+[36m --> [0m[1mcommand-option[0m:1
+[36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimezone[0m[37m[40m([0m[35m[40m'bad-zone'[0m[37m[40m, [0m[35m[40m'2022-03-02T10:20:30.400-0700'[0m[37m[40m)[0m

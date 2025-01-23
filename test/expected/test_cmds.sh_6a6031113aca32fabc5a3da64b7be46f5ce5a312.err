@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: expecting file name to open
+[1m[31m✘[0m [1m[31merror[0m: expecting file name to open
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:open                                   [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mopen[0m[4m [0m[4mpath[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpath[0m[4mN[0m[4m][0m

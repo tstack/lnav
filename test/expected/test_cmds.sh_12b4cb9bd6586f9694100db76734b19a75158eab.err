@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: call to [1m[4mtimeslice[0m[4m([0m[4mtime[0m[4m, [0m[4mslice[0m[4m)[0m failed
+[1m[31m✘[0m [1m[31merror[0m: call to [1m[4mtimeslice[0m[4m([0m[4mtime[0m[4m, [0m[4mslice[0m[4m)[0m failed
  [1m[31mreason[0m: unable to parse time slice value: bad -- Unrecognized input
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40mfilter-expr[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40m:log_time_msecs[0m[37m[40m, [0m[35m[40m'bad'[0m[37m[40m) [0m[1m[36m[40mis[0m[37m[40m [0m[1m[36m[40mnot[0m[37m[40m [0m[1m[36m[40mnull[0m

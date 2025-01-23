@@ -31,12 +31,16 @@
 #define lnav_humanize_hh
 
 #include <string>
+#include <optional>
 
 #include <sys/types.h>
 
 #include "file_range.hh"
 
 namespace humanize {
+
+template<typename R>
+std::optional<R> try_from(const string_fragment& v);
 
 enum class alignment {
     none,

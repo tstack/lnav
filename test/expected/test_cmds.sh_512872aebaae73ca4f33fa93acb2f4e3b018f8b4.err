@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: cannot open file: [1m/non-existent[0m
+[1m[31m✘[0m [1m[31merror[0m: cannot open file: [1m/non-existent[0m
  [1m[31mreason[0m: No such file or directory
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:[0m[1m[36m[40mopen[0m[37m[40m /non-existent                     [0m

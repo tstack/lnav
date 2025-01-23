@@ -61,12 +61,7 @@ EOF
 2004-12-05T19:16:24.387 192.168.0.1 → 192.168.0.10 DHCP 342 DHCP ACK      - Transaction ID 0x3d1e
 EOF
 
-  run_test ${lnav_test} -n ${test_dir}/dhcp-trunc.pcapng
-
-  check_error_output "truncated pcap file is not recognized" <<EOF
-✘ error: unable to open file: {test_dir}/dhcp-trunc.pcapng
- reason: tshark: The file "{test_dir}/dhcp-trunc.pcapng" appears to have been cut short in the middle of a packet.
-EOF
+  run_cap_test ${lnav_test} -n ${test_dir}/dhcp-trunc.pcapng
 fi
 
 
@@ -98,6 +93,7 @@ log_time
 EOF
 fi
 
+unset YES_COLOR
 if test x"${LIBARCHIVE_LIBS}" != x""; then
     rm -rf logfile-tmp
     mkdir logfile-tmp
@@ -106,7 +102,7 @@ if test x"${LIBARCHIVE_LIBS}" != x""; then
       ${srcdir}/logfile_syslog.0
 
     check_error_output "invalid min-free-space allowed?" <<EOF
-✘ error: “-1” is not a valid value for option “/tuning/archive-manager/min-free-space”
+  error: “-1” is not a valid value for option “/tuning/archive-manager/min-free-space”
  reason: value must be greater than or equal to 0
  --> input:1
  = help: Property Synopsis
@@ -134,7 +130,7 @@ EOF
             `test_err_filename` > test_logfile.big.out
         mv test_logfile.big.out `test_err_filename`
         check_error_output "decompression worked?" <<EOF
-✘ error: unable to open file: /logfile_syslog.1.xz
+  error: unable to open file: /logfile_syslog.1.xz
  reason: available space on disk (NNN) is below the minimum-free threshold (1.0PB).  Unable to unpack 'logfile_syslog.1.xz' to 'logfile-tmp/lnav-user-NNN-work/archives/arc-NNN-logfile_syslog.1.xz'
 EOF
 
@@ -208,7 +204,7 @@ EOF
         > test_logfile.trunc.out
     mv test_logfile.trunc.out `test_err_filename`
     check_error_output "truncated tgz not reported correctly" <<EOF
-✘ error: unable to open file: /test-logs-trunc.tgz
+  error: unable to open file: /test-logs-trunc.tgz
  reason: failed to extract 'src/lnav' from archive '/test-logs-trunc.tgz' -- truncated
 EOF
 
@@ -224,7 +220,7 @@ EOF
         > test_logfile.rotmp.out
     cp test_logfile.rotmp.out `test_err_filename`
     check_error_output "archive not unpacked" <<EOF
-✘ error: unable to open file: /test-logs.tgz
+  error: unable to open file: /test-logs.tgz
  reason: unable to create directory: rotmp/lnav-user-NNN-work/archives -- Permission denied
 EOF
 fi
@@ -239,7 +235,7 @@ sed -e "s|/.*/unreadable.log|unreadable.log|g" `test_err_filename` | head -3 \
 
 mv test_logfile.unreadable.out `test_err_filename`
 check_error_output "able to read an unreadable log file?" <<EOF
-✘ error: file exists, but is not readable: unreadable.log
+  error: file exists, but is not readable: unreadable.log
  reason: Permission denied
 EOF
 

@@ -54,9 +54,7 @@
 
 using namespace lnav::roles::literals;
 
-namespace lnav {
-
-namespace management {
+namespace lnav::management {
 
 struct no_subcmd_t {
     CLI::App* ns_root_app{nullptr};
@@ -1508,5 +1506,4 @@ perform(std::shared_ptr<operations> opts)
         [](const subcmd_crash_t& sc) { return sc.sc_action(sc); });
 }
 
-}  // namespace management
-}  // namespace lnav
+}  // namespace lnav::management

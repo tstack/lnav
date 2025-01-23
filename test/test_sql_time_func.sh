@@ -1,5 +1,8 @@
 #! /bin/bash
 
+export TZ=UTC
+export YES_COLOR=1
+
 # timeslice('blah')
 run_cap_test ./drive_sql "select timeslice('2015-08-07 12:01:00', 'blah')"
 

@@ -926,3 +926,10 @@ run_cap_test ${lnav_test} -Nn \
 run_cap_test ${lnav_test} -Nn \
     -c ";SELECT log_line, sc_bytes, json_object('columns', json_object('sc_ytes', json_object('color', '#f00'))) AS __lnav_style__ FROM access_log"  \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT bro_response_body_len AS bro_response_body_len1, humanize_file_size(bro_response_body_len) AS bro_response_body_len2 FROM bro_http_log ORDER BY bro_response_body_len DESC" \
+    ${test_dir}/logfile_bro_http.log.0
+
+run_cap_test ${lnav_test} -nN \
+    -c ";SELECT '1us' AS Duration UNION ALL SELECT '500ms' UNION ALL SELECT '1s'"

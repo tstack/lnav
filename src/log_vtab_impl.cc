@@ -233,18 +233,19 @@ log_vtab_impl::logline_value_to_sqlite_type(value_kind_t kind)
 }
 
 void
-log_vtab_impl::get_foreign_keys(std::vector<std::string>& keys_inout) const
+log_vtab_impl::get_foreign_keys(
+    std::unordered_set<std::string>& keys_inout) const
 {
-    keys_inout.emplace_back("id");
-    keys_inout.emplace_back("parent");
-    keys_inout.emplace_back("notused");
+    keys_inout.emplace("id");
+    keys_inout.emplace("parent");
+    keys_inout.emplace("notused");
 
-    keys_inout.emplace_back("log_line");
-    keys_inout.emplace_back("min(log_line)");
-    keys_inout.emplace_back("log_mark");
-    keys_inout.emplace_back("log_time_msecs");
-    keys_inout.emplace_back("log_top_line()");
-    keys_inout.emplace_back("log_msg_line()");
+    keys_inout.emplace("log_line");
+    keys_inout.emplace("min(log_line)");
+    keys_inout.emplace("log_mark");
+    keys_inout.emplace("log_time_msecs");
+    keys_inout.emplace("log_top_line()");
+    keys_inout.emplace("log_msg_line()");
 }
 
 void

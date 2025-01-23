@@ -265,6 +265,7 @@ noinst_HEADERS = \
 	help_text_formatter.hh \
 	highlighter.hh \
 	hist_source.hh \
+	hist_source_T.hh \
 	hotkeys.hh \
 	init.sql \
 	input_dispatcher.hh \

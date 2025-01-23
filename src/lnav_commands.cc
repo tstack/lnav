@@ -1690,14 +1690,14 @@ com_save_to(exec_context& ec,
 
             if (tf == text_format_t::TF_MARKDOWN) {
                 switch (hdr.hm_align) {
-                    case db_label_source::align_t::left:
+                    case text_align_t::start:
                         cell_line.front() = ':';
                         break;
-                    case db_label_source::align_t::center:
+                    case text_align_t::center:
                         cell_line.front() = ':';
                         cell_line.back() = ':';
                         break;
-                    case db_label_source::align_t::right:
+                    case text_align_t::end:
                         cell_line.back() = ':';
                         break;
                 }
@@ -1729,7 +1729,7 @@ com_save_to(exec_context& ec,
                 auto cell_length
                     = utf8_string_length(cell).unwrapOr(cell.size());
                 auto padding = anonymize ? 1 : hdr.hm_column_size - cell_length;
-                auto rjust = hdr.hm_align == db_label_source::align_t::right;
+                auto rjust = hdr.hm_align == text_align_t::end;
 
                 if (rjust) {
                     fprintf(outfile, "%s", std::string(padding, ' ').c_str());
@@ -2500,9 +2500,18 @@ com_filter(exec_context& ec,
                       pf->get_index(),
                       args[1].c_str());
             fs.add_filter(pf);
+            const auto start_time = std::chrono::steady_clock::now();
             tss->text_filters_changed();
+            const auto end_time = std::chrono::steady_clock::now();
+            const double duration
+                = std::chrono::duration_cast<std::chrono::milliseconds>(
+                      end_time - start_time)
+                      .count()
+                / 1000.0;
 
-            retval = "info: filter now active";
+            retval = fmt::format(
+                FMT_STRING("info: filter activated in {:.3}s"),
+                duration);
         }
     } else {
         return ec.make_error("expecting a regular expression to filter");
@@ -5824,10 +5833,10 @@ command_prompt(std::vector<std::string>& args)
         ldh.parse_line(log_view.get_selection(), true);
 
         if (tc == &lnav_data.ld_views[LNV_DB]) {
-            db_label_source& dls = lnav_data.ld_db_row_source;
+            auto& dls = lnav_data.ld_db_row_source;
 
             for (auto& dls_header : dls.dls_headers) {
-                if (!dls_header.hm_graphable) {
+                if (!dls_header.is_graphable()) {
                     continue;
                 }
 
@@ -6940,12 +6949,14 @@ readline_context::command_t STD_COMMANDS[] = {
      com_partition_name,
 
      help_text(":partition-name")
-         .with_summary("Mark the focused line in the log view as the start of a "
-                       "new partition with the given name")
+         .with_summary(
+             "Mark the focused line in the log view as the start of a "
+             "new partition with the given name")
          .with_parameter(help_text("name", "The name for the new partition"))
-         .with_example({"To mark the focused line as the start of the partition "
-                        "named 'boot #1'",
-                        "boot #1"})},
+         .with_example(
+             {"To mark the focused line as the start of the partition "
+              "named 'boot #1'",
+              "boot #1"})},
     {"clear-partition",
      com_clear_partition,
 

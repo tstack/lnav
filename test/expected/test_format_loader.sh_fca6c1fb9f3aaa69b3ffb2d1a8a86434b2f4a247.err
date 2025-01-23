@@ -1,14 +1,14 @@
-[1m[31m✘ error[0m: invalid JSON
+[1m[31m✘[0m [1m[31merror[0m: invalid JSON
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m:4
 [36m | [0mparse error: object key and value must be separated by a colon (':')
 [36m | [0m          ar_log": {         "abc"     } }                          
 [36m | [0m                     (right here) ------^                           
-[33m⚠ warning[0m: format file is missing “[1m$schema[0m” property
+[33m⚠[0m [33mwarning[0m: format file is missing “[1m$schema[0m” property
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m
 [36m =[0m   [36mnote[0m: the schema specifies the supported format version and can be used with editors to automatically validate the file
 [36m =[0m   [36mhelp[0m: add the following property to the top-level JSON object:
          [37m[40m    "$schema": "https://lnav.org/schemas/format-v1.schema.json",[0m
-[1m[31m✘ error[0m: “abc(” is not a valid regular expression
+[1m[31m✘[0m [1m[31merror[0m: “abc(” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/invalid_key_log/level-pointer[0m
 [36m | [0m[37m[40mabc[0m[1m[7m[32m[40m([0m[37m[40m                                    [0m
@@ -19,7 +19,7 @@
            [1m/invalid_key_log/level-pointer[0m 
          [1mDescription[0m
            A regular-expression that matches the JSON-pointer of the level property
-[1m[31m✘ error[0m: “def[ghi” is not a valid regular expression
+[1m[31m✘[0m [1m[31merror[0m: “def[ghi” is not a valid regular expression
  [1m[31mreason[0m: missing terminating ] for character class
 [36m --> [0m[1m/invalid_key_log/file-pattern[0m
 [36m | [0m[37m[40mdef[0m[1m[7m[32m[40m[[0m[37m[40mghi                                           [0m
@@ -30,7 +30,7 @@
            [1m/invalid_key_log/file-pattern[0m 
          [1mDescription[0m
            A regular expression that restricts this format to log files with a matching name
-[33m⚠ warning[0m: unexpected value for property “[1m/invalid_key_log/value/test/identifiers[0m”
+[33m⚠[0m [33mwarning[0m: unexpected value for property “[1m/invalid_key_log/value/test/identifiers[0m”
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:14
 [36m | [0m[37m[40m                "identifiers": true     [0m
 [36m =[0m   [36mhelp[0m: [1mAvailable Properties[0m
@@ -43,7 +43,7 @@
            [1maction-list[0m [4m<string>[0m
            [1mrewriter[0m [4m<command>[0m
            [1mdescription[0m [4m<string>[0m
-[1m[31m✘ error[0m: “-1.2” is not a valid value for “[1m/invalid_key_log/timestamp-divisor[0m”
+[1m[31m✘[0m [1m[31merror[0m: “-1.2” is not a valid value for “[1m/invalid_key_log/timestamp-divisor[0m”
  [1m[31mreason[0m: value cannot be less than or equal to zero
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:25
 [36m | [0m[37m[40m        "timestamp-divisor": -1.2       [0m
@@ -51,19 +51,19 @@
            [1m/invalid_key_log/timestamp-divisor[0m [4m<number>[0m
          [1mDescription[0m
            The value to divide a numeric timestamp by in a JSON log.
-[1m[31m✘ error[0m: “[1mfoobar_log[0m” is not a valid log format
+[1m[31m✘[0m [1m[31merror[0m: “[1mfoobar_log[0m” is not a valid log format
  [1m[31mreason[0m: no regexes specified
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m:2
-[1m[31m✘ error[0m: “[1mfoobar_log[0m” is not a valid log format
+[1m[31m✘[0m [1m[31merror[0m: “[1mfoobar_log[0m” is not a valid log format
  [1m[31mreason[0m: log message samples must be included in a format definition
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-json/format.json[0m:2
-[1m[31m✘ error[0m: invalid pattern: “[1m/invalid_key_log/regex/foo[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1m/invalid_key_log/regex/foo[0m”
  [1m[31mreason[0m: no timestamp capture found in the pattern
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:3
 [36m =[0m [36mhelp[0m: all log messages need a timestamp
-[1m[31m✘ error[0m: “[1minvalid_key_log[0m” is not a valid log format
+[1m[31m✘[0m [1m[31merror[0m: “[1minvalid_key_log[0m” is not a valid log format
  [1m[31mreason[0m: structured logs cannot have regexes
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:3
-[1m[31m✘ error[0m: invalid line format element “[1m/invalid_key_log/line-format/0/field[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid line format element “[1m/invalid_key_log/line-format/0/field[0m”
  [1m[31mreason[0m: “non-existent” is not a defined value
 [36m --> [0m[1m{test_dir}/bad-config-json/formats/invalid-key/format.json[0m:22

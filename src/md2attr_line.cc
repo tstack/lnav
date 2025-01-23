@@ -706,12 +706,12 @@ right_border_string(border_line_width width)
 static attr_line_t
 span_style_border(border_side side, const string_fragment& value)
 {
-    static const auto NAME_THIN = string_fragment::from_const("thin");
-    static const auto NAME_MEDIUM = string_fragment::from_const("medium");
-    static const auto NAME_THICK = string_fragment::from_const("thick");
-    static const auto NAME_SOLID = string_fragment::from_const("solid");
-    static const auto NAME_DASHED = string_fragment::from_const("dashed");
-    static const auto NAME_DOTTED = string_fragment::from_const("dotted");
+    static constexpr auto NAME_THIN = string_fragment::from_const("thin");
+    static constexpr auto NAME_MEDIUM = string_fragment::from_const("medium");
+    static constexpr auto NAME_THICK = string_fragment::from_const("thick");
+    static constexpr auto NAME_SOLID = string_fragment::from_const("solid");
+    static constexpr auto NAME_DASHED = string_fragment::from_const("dashed");
+    static constexpr auto NAME_DOTTED = string_fragment::from_const("dotted");
     static const auto& vc = view_colors::singleton();
 
     text_attrs border_attrs;

@@ -1,19 +1,152 @@
 #! /usr/bin/env -N -f-
 
 ;ATTACH DATABASE 'perf.db' AS perf_db
-;SELECT
-     CASE
-       WHEN (row_number() OVER win1) = 1 THEN Description
-       ELSE '  ┃  '
-     END AS Description,
-     Program,
-     Duration,
-     CASE
-       WHEN (row_number() OVER win1) = 1 THEN __lnav_style__
-       ELSE json_insert(__lnav_style__, '$.columns.Description.color', '#555')
-     END AS __lnav_style__
-   FROM perf_data
-   NATURAL JOIN perf_program
-   NATURAL JOIN perf_test_id
-   WINDOW win1 AS (PARTITION BY test_id)
+
+;DROP TABLE IF EXISTS perf_db.perf_program_styles
+;CREATE TABLE IF NOT EXISTS perf_db.perf_program_styles (
+   Program TEXT PRIMARY KEY,
+   __lnav_style__ TEXT,
+
+   FOREIGN KEY(Program) REFERENCES perf_program(Program)
+)
+
+;REPLACE INTO perf_db.perf_program_styles VALUES (
+   'lnav',
+   json_object(
+     'columns', json_object(
+        'Test Description', json_object(
+           'color', '#ddd'
+        ),
+        'Program', json_object(
+           'color', '#ffa500',
+           'bold', json('true')
+        ),
+        'Duration', json_object(
+           'color', '#ff007f'
+        ),
+        'Memory', json_object(
+           'color', '#ff007f'
+        )
+     )
+   )
+)
+
+;REPLACE INTO perf_db.perf_program_styles VALUES (
+   'vim',
+   json_object(
+     'columns', json_object(
+        'Program', json_object(
+           'color', '#ffa500',
+           'bold', json('true')
+        ),
+        'Duration', json_object(
+           'color', '#0d0'
+        ),
+        'Memory', json_object(
+           'color', '#0d0'
+        )
+     )
+   )
+)
+
+;REPLACE INTO perf_db.perf_program_styles VALUES (
+   'less',
+   json_object(
+     'columns', json_object(
+        'Program', json_object(
+           'color', '#ffa500',
+           'bold', json('true')
+        ),
+        'Duration', json_object(
+           'color', '#aaf'
+        ),
+        'Memory', json_object(
+           'color', '#aaf'
+        )
+     )
+   )
+)
+
+;REPLACE INTO perf_db.perf_program_styles VALUES (
+   'cut | sort | uniq | sort -n',
+   json_object(
+     'columns', json_object(
+        'Program', json_object(
+           'color', '#ffa500',
+           'bold', json('true')
+        ),
+        'Duration', json_object(
+           'color', '#ff0'
+        ),
+        'Memory', json_object(
+           'color', '#ff0'
+        )
+     )
+   )
+)
+
+
+;SELECT "Test Description",
+    Program,
+    Duration,
+    Memory,
+    __lnav_style__
+FROM (
+        SELECT row_number() OVER (
+                ORDER BY 1
+            ) AS rnum,
+            "Test Description",
+            Program,
+            Duration,
+            Memory,
+            __lnav_style__
+        FROM (
+                SELECT perf_test_id.priority,
+                    CASE
+                        WHEN (row_number() OVER win1) = 1 THEN Description
+                        ELSE '  ┃  '
+                    END AS "Test Description",
+                    perf_program.Program,
+                    format("%0.2fs", Duration) AS Duration,
+                    humanize_file_size(Memory) AS Memory,
+                    CASE
+                        WHEN (row_number() OVER win1) = 1 THEN __lnav_style__
+                        ELSE json_insert(
+                            __lnav_style__,
+                            '$.columns.Test Description.color',
+                            '#555'
+                        )
+                    END AS __lnav_style__
+                FROM perf_data
+                    LEFT JOIN perf_program ON perf_data.program = perf_program.program
+                    LEFT JOIN perf_test_id ON perf_data.test_id = perf_test_id.test_id
+                    LEFT JOIN perf_program_styles ON perf_data.program = perf_program_styles.program WINDOW win1 AS (
+                        PARTITION BY perf_data.test_id
+                        ORDER BY perf_program.priority ASC
+                    )
+                ORDER BY perf_test_id.priority
+            )
+        UNION ALL
+        SELECT 3.5,
+            replicate('━', 33),
+            replicate('━', 27),
+            replicate('━', 20),
+            replicate('━', 20),
+            NULL
+        UNION ALL
+        SELECT 6.5,
+            replicate('━', 33),
+            replicate('━', 27),
+            replicate('━', 20),
+            replicate('━', 20),
+            NULL
+        UNION ALL
+        SELECT 9.5,
+            replicate('━', 33),
+            replicate('━', 27),
+            replicate('━', 20),
+            replicate('━', 20),
+            NULL
+    )
+ORDER BY rnum ASC
 :switch-to-view db

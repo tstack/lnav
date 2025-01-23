@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: expecting an SQL expression
+[1m[31m✘[0m [1m[31merror[0m: expecting an SQL expression
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:mark-expr                              [0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mmark-expr[0m[4m [0m[4mexpr[0m

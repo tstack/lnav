@@ -27,6 +27,7 @@ Features:
 * Added `italic` and `strike` to the text styling configuration.
 * DB query results can now be styled on a row-by-row basis by
   adding a column with the name `__lnav_style__`.
+* Added a "performance" section to the documentation.
 
 Interface changes:
 * DB query results that start with a number are right justified
@@ -42,6 +43,8 @@ Interface changes:
 * Defining a value in a log format with the same name as one of
   predefined columns in the log virtual tables will now generate
   an error.
+* The DB view will now chart result columns that contain a number
+  with a unit, like "KB", "MB", "GB", etc...
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an

@@ -430,7 +430,8 @@ db_spectro_value_source::update_stats()
         return;
     }
 
-    if (!dls.dls_headers[this->dsvs_column_index.value()].hm_graphable) {
+    if (!dls.dls_headers[this->dsvs_column_index.value()].is_graphable())
+    {
         this->dsvs_error_msg
             = lnav::console::user_message::error(
                   "Cannot generate spectrogram for database results")

@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: {test_dir}/logfile_access_log.0 is not a directory
+[1m[31m✘[0m [1m[31merror[0m: {test_dir}/logfile_access_log.0 is not a directory
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40mcd[0m[37m[40m {test_dir}/logfile_access_log.0[0m
 [36m =[0m [36mhelp[0m: [4m:[0m[1m[4mcd[0m[4m [0m[4mdir[0m

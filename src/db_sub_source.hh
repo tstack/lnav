@@ -78,7 +78,9 @@ public:
                              int row,
                              string_attrs_t& sa) override;
 
-    void push_header(const std::string& colstr, int type, bool graphable);
+    void push_header(const std::string& colstr, int type);
+
+    void set_col_as_graphable(int lpc);
 
     void push_column(const scoped_value_t& sv);
 
@@ -90,12 +92,6 @@ public:
 
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
-    enum class align_t {
-        left,
-        center,
-        right,
-    };
-
     struct header_meta {
         explicit header_meta(std::string name) : hm_name(std::move(name)) {}
 
@@ -104,13 +100,18 @@ public:
             return this->hm_name == name;
         }
 
+        bool is_graphable() const
+        {
+            return this->hm_graphable && this->hm_graphable.value();
+        }
+
         std::string hm_name;
         int hm_column_type{SQLITE3_TEXT};
         unsigned int hm_sub_type{0};
-        bool hm_graphable{false};
+        std::optional<bool> hm_graphable;
         size_t hm_column_size{0};
-        align_t hm_align{align_t::left};
-        text_attrs hm_title_attrs;
+        text_align_t hm_align{text_align_t::start};
+        text_attrs hm_title_attrs{text_attrs::with_underline()};
         stacked_bar_chart<std::string> hm_chart;
     };
 

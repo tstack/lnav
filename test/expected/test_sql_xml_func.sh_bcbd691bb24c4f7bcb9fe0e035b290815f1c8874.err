@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: Invalid XPath expression
+[1m[31m✘[0m [1m[31merror[0m: Invalid XPath expression
  [1m[31mreason[0m: Expected ']' to match an opening '['
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/cat[alog'[0m[37m[40m, ([0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mcontent[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_file[0m[37m[40m [0m[1m[36m[40mLIMIT[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m))[0m

@@ -151,6 +151,18 @@
                 "icons": {
                     "hidden": {
                         "value": "⋮"
+                    },
+                    "ok": {
+                        "value": "✔"
+                    },
+                    "info": {
+                        "value": "ⓘ"
+                    },
+                    "warning": {
+                        "value": "⚠"
+                    },
+                    "error": {
+                        "value": "✘"
                     }
                 },
                 "styles": {
@@ -946,6 +958,18 @@
                 "icons": {
                     "hidden": {
 
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
+
                     }
                 },
                 "styles": {
@@ -1696,6 +1720,18 @@
                 "icons": {
                     "hidden": {
 
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
+
                     }
                 },
                 "styles": {
@@ -2444,6 +2480,18 @@
                 },
                 "icons": {
                     "hidden": {
+
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
 
                     }
                 },
@@ -3195,6 +3243,18 @@
                 "icons": {
                     "hidden": {
 
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
+
                     }
                 },
                 "styles": {
@@ -3943,6 +4003,18 @@
                 },
                 "icons": {
                     "hidden": {
+
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
 
                     }
                 },
@@ -4702,6 +4774,18 @@
                 "icons": {
                     "hidden": {
 
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
+
                     }
                 },
                 "styles": {
@@ -5459,6 +5543,18 @@
                 },
                 "icons": {
                     "hidden": {
+
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
 
                     }
                 },

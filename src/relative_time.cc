@@ -202,7 +202,7 @@ static const struct {
     },
 };
 
-static int64_t TIME_SCALES[] = {
+static constexpr int64_t TIME_SCALES[] = {
     1000 * 1000,
     60,
     60,

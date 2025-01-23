@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: no further requests found with cs_referer: https://znbl.ir/static/bundle-bundle_site_head.css
+[1m[31m✘[0m [1m[31merror[0m: no further requests found with cs_referer: https://znbl.ir/static/bundle-bundle_site_head.css
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m|find-msg prev access_log cs_referer    [0m
 [36m --> [0m[1m../test/cfg/test_sql_indexes.sh/.lnav/formats/default/find-msg.lnav[0m:30

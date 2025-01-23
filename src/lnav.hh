@@ -238,7 +238,7 @@ struct lnav_data_t {
     db_overlay_source ld_db_example_overlay;
     db_label_source ld_db_preview_source[2];
     db_overlay_source ld_db_preview_overlay_source[2];
-    std::vector<std::string> ld_db_key_names;
+    std::unordered_set<std::string> ld_db_key_names;
 
     vis_line_t ld_last_pretty_print_top;
 
@@ -256,7 +256,7 @@ struct lnav_data_t {
 
     int ld_fifo_counter;
 
-    struct key_repeat_history ld_key_repeat_history;
+    key_repeat_history ld_key_repeat_history;
 
     bool ld_initial_build{false};
     bool ld_show_help_view{false};

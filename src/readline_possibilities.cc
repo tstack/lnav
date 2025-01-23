@@ -145,7 +145,7 @@ handle_table_info(void* ptr, int ncols, char** colvalues, char** colnames)
             ln_mode_t::SQL, "*", std::string(quoted_name));
     }
     if (strcmp(colvalues[5], "1") == 0) {
-        lnav_data.ld_db_key_names.emplace_back(colvalues[1]);
+        lnav_data.ld_db_key_names.emplace(colvalues[1]);
     }
     return 0;
 }
@@ -153,8 +153,8 @@ handle_table_info(void* ptr, int ncols, char** colvalues, char** colnames)
 static int
 handle_foreign_key_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    lnav_data.ld_db_key_names.emplace_back(colvalues[3]);
-    lnav_data.ld_db_key_names.emplace_back(colvalues[4]);
+    lnav_data.ld_db_key_names.emplace(colvalues[3]);
+    lnav_data.ld_db_key_names.emplace(colvalues[4]);
     return 0;
 }
 

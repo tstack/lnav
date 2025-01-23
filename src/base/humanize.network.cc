@@ -44,8 +44,7 @@ from_str(string_fragment sf)
         "^(?:(?<username>[\\w\\._\\-]+)@)?"
         "(?:\\[(?<ipv6>[^\\]]+)\\]|(?<hostname>[^\\[/:]+)):"
         "(?<path>.*)$");
-    static thread_local auto REMOTE_MATCH_DATA
-        = REMOTE_PATTERN.create_match_data();
+    thread_local auto REMOTE_MATCH_DATA = REMOTE_PATTERN.create_match_data();
 
     auto match_res = REMOTE_PATTERN.capture_from(sf)
                          .into(REMOTE_MATCH_DATA)

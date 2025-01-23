@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: invalid options parameter
+[1m[31m✘[0m [1m[31merror[0m: invalid options parameter
  [1m[31mreason[0m: invalid JSON
 [1m[31m |      [0m  [1m[31mreason[0m: parse error: invalid object key (must be a string)
 [1m[31m |      [0m [36m --> [0m[1moptions[0m:1

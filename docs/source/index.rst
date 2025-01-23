@@ -24,6 +24,7 @@ Contents:
    sqltab
    events
    data
+   performance
    howitworks
    faq
 

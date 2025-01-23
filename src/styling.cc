@@ -55,8 +55,21 @@ static const json_path_container term_color_handler = {
         .with_children(term_color_rgb_handler),
 };
 
+static const json_path_handler_base::enum_value_t _align_values[] = {
+    {"start", text_align_t::start},
+    {"center", text_align_t::center},
+    {"end", text_align_t::end},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
 const json_path_container style_config_handlers =
     json_path_container{
+        yajlpp::property_handler("text-align")
+        .with_synopsis("start|center|end")
+        .with_enum_values(_align_values)
+        .with_description("How to align text within a cell")
+        .for_field(&style_config::sc_text_align),
         yajlpp::property_handler("color")
             .with_synopsis("#hex|color_name")
             .with_description(

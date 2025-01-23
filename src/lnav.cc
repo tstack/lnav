@@ -226,14 +226,14 @@ const std::vector<std::string> lnav_zoom_strings = {
     "1-week",
 };
 
-static const std::vector<std::string> DEFAULT_DB_KEY_NAMES = {
+static const std::unordered_set<std::string> DEFAULT_DB_KEY_NAMES = {
     "$id",         "capture_count", "capture_index",
     "device",      "enabled",       "filter_id",
     "id",          "inode",         "key",
     "match_index", "parent",        "range_start",
     "range_stop",  "rowid",         "st_dev",
     "st_gid",      "st_ino",        "st_mode",
-    "st_rdev",     "st_uid",
+    "st_rdev",     "st_uid",        "pattern",
 };
 
 static auto bound_pollable_supervisor
@@ -342,8 +342,6 @@ setup_logline_table(exec_context& ec)
     for (const auto& iter : *lnav_data.ld_vtab_manager) {
         iter.second->get_foreign_keys(db_key_names);
     }
-
-    stable_sort(db_key_names.begin(), db_key_names.end());
 
     return retval;
 }
@@ -1454,9 +1452,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 auto search_duration = tc.consume_search_duration();
                 if (search_duration) {
                     double secs = search_duration->count() / 1000.0;
-                    lnav_data.ld_rl_view->set_attr_value(attr_line_t("search completed in ")
-                        .append(lnav::roles::number(fmt::format(FMT_STRING("{:.3}"), secs)))
-                        .append(" seconds"));
+                    lnav_data.ld_rl_view->set_attr_value(
+                        attr_line_t("search completed in ")
+                            .append(lnav::roles::number(
+                                fmt::format(FMT_STRING("{:.3}"), secs)))
+                            .append(" seconds"));
                 }
             }
         };
@@ -2477,9 +2477,6 @@ main(int argc, char* argv[])
 
     rl_readline_name = "lnav";
     lnav_data.ld_db_key_names = DEFAULT_DB_KEY_NAMES;
-
-    stable_sort(lnav_data.ld_db_key_names.begin(),
-                lnav_data.ld_db_key_names.end());
 
     auto dot_lnav_path = lnav::paths::dotlnav();
     std::error_code last_write_ec;

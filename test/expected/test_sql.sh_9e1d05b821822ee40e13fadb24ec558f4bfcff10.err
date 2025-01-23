@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: SQL statement failed
+[1m[31m✘[0m [1m[31merror[0m: SQL statement failed
  [1m[31mreason[0m: real file paths cannot be updated, only symbolic ones
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m [0m[37m[40mlnav_file[0m[37m[40m [0m[1m[36m[40mSET[0m[37m[40m [0m[37m[40mfilepath[0m[1m[37m[40m=[0m[35m[40m'foo'[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[1m[37m[40mendswith[0m[37m[40m([0m[37m[40mfilepath[0m[37m[40m, [0m[35m[40m'_log.0'[0m[37m[40m)[0m

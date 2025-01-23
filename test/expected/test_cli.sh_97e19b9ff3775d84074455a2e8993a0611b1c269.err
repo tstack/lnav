@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: invalid value for “[1m-c[0m” option
+[1m[31m✘[0m [1m[31merror[0m: invalid value for “[1m-c[0m” option
 [36m --> [0m[1mcommand-line argument[0m
 [36m | [0m[37m[40m -c [0m[37m[40mfoo [0m                                
 [36m | [0m    [1m[31m^ command type prefix is missing[0m    

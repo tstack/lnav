@@ -1,0 +1,2 @@
+  error: unable to open file: {test_dir}/dhcp-trunc.pcapng
+ reason: tshark: The file "{test_dir}/dhcp-trunc.pcapng" appears to have been cut short in the middle of a packet.

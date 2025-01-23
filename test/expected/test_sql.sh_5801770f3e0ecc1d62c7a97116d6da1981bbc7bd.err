@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: SQL statement failed
+[1m[31m✘[0m [1m[31merror[0m: SQL statement failed
  [1m[31mreason[0m: A non-empty name and value must be provided when inserting an environment variable
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[1m[37m[40menviron[0m[1m[37m[40m [0m[37m[40m([0m[37m[40mname[0m[37m[40m, [0m[37m[40mvalue[0m[37m[40m) [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[1m[36m[40mnull[0m[37m[40m, [0m[1m[36m[40mnull[0m[37m[40m)[0m

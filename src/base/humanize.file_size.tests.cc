@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <chrono>
 #include <iostream>
 
 #include "base/humanize.hh"
@@ -48,4 +49,71 @@ TEST_CASE("humanize::file_size")
     CHECK(humanize::file_size(std::numeric_limits<int64_t>::max(),
                               humanize::alignment::columnar)
           == "8.0EB");
+}
+
+TEST_CASE("humanize::try_from")
+{
+    {
+        auto integer = string_fragment::from_const("123 ");
+        auto try_res = humanize::try_from<double>(integer);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 123);
+    }
+    {
+        auto real = string_fragment::from_const(" 123.456");
+        auto try_res = humanize::try_from<double>(real);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 123.456);
+    }
+    {
+        auto file_size = string_fragment::from_const(" 123.4GB");
+        auto try_res = humanize::try_from<double>(file_size);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 123.4 * 1024 * 1024 * 1024);
+    }
+    {
+        auto secs = string_fragment::from_const("1.2s");
+        auto try_res = humanize::try_from<double>(secs);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 1.2);
+    }
+    {
+        auto secs = string_fragment::from_const("1ms");
+        auto try_res = humanize::try_from<double>(secs);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 0.001);
+    }
+    {
+        auto secs = string_fragment::from_const("1.2ms");
+        auto try_res = humanize::try_from<double>(secs);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 0.0012);
+    }
+    {
+        auto secs = string_fragment::from_const("1:25");
+        auto try_res = humanize::try_from<double>(secs);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 60 + 25);
+    }
+    {
+        auto secs_sub = string_fragment::from_const("1:25.6");
+        auto try_res = humanize::try_from<double>(secs_sub);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 60 + 25.6);
+    }
+    {
+        auto secs = string_fragment::from_const("1:30:25.33 ");
+        auto try_res = humanize::try_from<double>(secs);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 3600 + 30 * 60 + 25.33);
+    }
 }

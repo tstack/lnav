@@ -999,9 +999,8 @@ execute_init_commands(
 int
 sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 {
-    const auto& vc = view_colors::singleton();
     auto& dls = *(ec.ec_label_source_stack.back());
-    int ncols = sqlite3_column_count(stmt);
+    const int ncols = sqlite3_column_count(stmt);
 
     if (!sqlite3_stmt_busy(stmt)) {
         dls.clear();
@@ -1010,7 +1009,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
             const int type = sqlite3_column_type(stmt, lpc);
             std::string colname = sqlite3_column_name(stmt, lpc);
 
-            dls.push_header(colname, type, false);
+            dls.push_header(colname, type);
         }
         return 0;
     }
@@ -1023,26 +1022,13 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
             int type = sqlite3_column_type(stmt, lpc);
             std::string colname = sqlite3_column_name(stmt, lpc);
 
-            bool graphable = (type == SQLITE_INTEGER || type == SQLITE_FLOAT)
-                && !binary_search(lnav_data.ld_db_key_names.begin(),
-                                  lnav_data.ld_db_key_names.end(),
-                                  colname);
+            bool graphable = (type == SQLITE_INTEGER || type == SQLITE_FLOAT);
             auto& hm = dls.dls_headers[lpc];
             hm.hm_column_type = type;
-            hm.hm_graphable = graphable;
-            if (graphable) {
-                auto name_for_ident_attrs = colname;
-                auto attrs = vc.attrs_for_ident(name_for_ident_attrs);
-                for (size_t attempt = 0;
-                     hm.hm_chart.attrs_in_use(attrs) && attempt < 3;
-                     attempt++)
-                {
-                    name_for_ident_attrs += " ";
-                    attrs = vc.attrs_for_ident(name_for_ident_attrs);
-                }
-                hm.hm_chart.with_attrs_for_ident(colname, attrs);
-                hm.hm_title_attrs = attrs;
-                hm.hm_column_size = std::max(hm.hm_column_size, size_t{10});
+            if (lnav_data.ld_db_key_names.count(colname) > 0) {
+                hm.hm_graphable = false;
+            } else if (graphable) {
+                dls.set_col_as_graphable(lpc);
             }
         }
     }
@@ -1057,11 +1043,11 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         switch (value_type) {
             case SQLITE_INTEGER:
                 value = (int64_t) sqlite3_column_int64(stmt, lpc);
-                hm.hm_align = db_label_source::align_t::right;
+                hm.hm_align = text_align_t::end;
                 break;
             case SQLITE_FLOAT:
                 value = sqlite3_column_double(stmt, lpc);
-                hm.hm_align = db_label_source::align_t::right;
+                hm.hm_align = text_align_t::end;
                 break;
             case SQLITE_NULL:
                 value = null_value_t{};
@@ -1070,8 +1056,21 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                 auto frag = string_fragment::from_bytes(
                     sqlite3_column_text(stmt, lpc),
                     sqlite3_column_bytes(stmt, lpc));
-                if (!frag.empty() && isdigit(frag[0])) {
-                    hm.hm_align = db_label_source::align_t::right;
+                if (!frag.empty()) {
+                    if (isdigit(frag[0])) {
+                        hm.hm_align = text_align_t::end;
+                        if (!hm.hm_graphable.has_value()) {
+                            auto split_res
+                                = try_split_num_and_units(frag.to_string_view());
+                            if (split_res.has_value()) {
+                                dls.set_col_as_graphable(lpc);
+                            } else {
+                                hm.hm_graphable = false;
+                            }
+                        }
+                    } else if (!hm.hm_graphable.has_value()) {
+                        hm.hm_graphable = false;
+                    }
                 }
                 value = frag;
                 break;

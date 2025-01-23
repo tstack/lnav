@@ -32,6 +32,7 @@
 #include "base/math_util.hh"
 #include "config.h"
 #include "fmt/chrono.h"
+#include "hist_source_T.hh"
 
 std::optional<vis_line_t>
 hist_source2::row_for_time(timeval tv_bucket)

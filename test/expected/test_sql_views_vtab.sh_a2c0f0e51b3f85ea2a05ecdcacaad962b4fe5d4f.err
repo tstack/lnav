@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: SQL statement failed
+[1m[31m✘[0m [1m[31merror[0m: SQL statement failed
  [1m[31mreason[0m: filter already exists -- :filter-in vmk
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[1m[37m[40mlnav_view_filters[0m[1m[37m[40m [0m[37m[40m([0m[37m[40mview_name[0m[37m[40m, [0m[37m[40mpattern[0m[37m[40m, [0m[37m[40mtype[0m[37m[40m) [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'log'[0m[37m[40m, [0m[35m[40m'vmk'[0m[37m[40m, [0m[35m[40m'in'[0m[37m[40m)[0m

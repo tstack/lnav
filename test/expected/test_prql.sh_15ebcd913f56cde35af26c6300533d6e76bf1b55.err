@@ -1,4 +1,4 @@
-[1m[31m✘ error[0m: unable to compile PRQL: [1m[36mfrom[0m access_log | [1m[36mtake[0m abc
+[1m[31m✘[0m [1m[31merror[0m: unable to compile PRQL: [1m[36mfrom[0m access_log | [1m[36mtake[0m abc
  [1m[31mreason[0m: `take` expected int or range, but found this.access_log.abc
 [36m =[0m [36mnote[0m: Error: 
             ╭─[:1:24]

@@ -112,7 +112,7 @@ public:
 
     static Result<relative_time, parse_error> from_str(string_fragment str);
 
-    static relative_time from_timeval(const struct timeval& tv);
+    static relative_time from_timeval(const timeval& tv);
 
     static relative_time from_usecs(std::chrono::microseconds usecs);
 
@@ -197,12 +197,12 @@ public:
         return this->adjust(tm);
     }
 
-    exttm adjust(const struct timeval& tv) const
+    exttm adjust(const timeval& tv) const
     {
         return this->adjust(exttm::from_tv(tv));
     }
 
-    exttm adjust(const struct exttm& tm) const;
+    exttm adjust(const exttm& tm) const;
 
     std::optional<exttm> window_start(const exttm& tm) const;
 
