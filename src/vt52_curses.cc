@@ -164,6 +164,9 @@ vt52_curses::map_input(const ncinput& ch)
 
     size_t index = 0;
     for (const auto eff_ch : ch.eff_text) {
+        if (eff_ch == 0) {
+            break;
+        }
         ww898::utf::utf8::write(eff_ch, [this, &index](const char bits) {
             this->vc_map_buffer[index] = bits;
             index += 1;
