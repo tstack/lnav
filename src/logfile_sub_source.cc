@@ -729,8 +729,8 @@ struct logline_cmp {
 
     bool operator()(const content_line_t& lhs, const content_line_t& rhs) const
     {
-        logline* ll_lhs = this->llss_controller.find_line(lhs);
-        logline* ll_rhs = this->llss_controller.find_line(rhs);
+        const auto* ll_lhs = this->llss_controller.find_line(lhs);
+        const auto* ll_rhs = this->llss_controller.find_line(rhs);
 
         return (*ll_lhs) < (*ll_rhs);
     }
@@ -739,8 +739,8 @@ struct logline_cmp {
     {
         content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
         content_line_t cl_rhs = (content_line_t) llss_controller.lss_index[rhs];
-        logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
-        logline* ll_rhs = this->llss_controller.find_line(cl_rhs);
+        const auto* ll_lhs = this->llss_controller.find_line(cl_lhs);
+        const auto* ll_rhs = this->llss_controller.find_line(cl_rhs);
 
         return (*ll_lhs) < (*ll_rhs);
     }
@@ -765,7 +765,7 @@ struct logline_cmp {
 
     bool operator()(const content_line_t& lhs, const struct timeval& rhs) const
     {
-        logline* ll_lhs = this->llss_controller.find_line(lhs);
+        const auto* ll_lhs = this->llss_controller.find_line(lhs);
 
         return *ll_lhs < rhs;
     }
@@ -790,8 +790,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     int file_count = 0;
     bool force = this->lss_force_rebuild;
     auto retval = rebuild_result::rr_no_change;
-    std::optional<struct timeval> lowest_tv = std::nullopt;
-    vis_line_t search_start = 0_vl;
+    std::optional<timeval> lowest_tv = std::nullopt;
+    auto search_start = 0_vl;
 
     this->lss_force_rebuild = false;
     if (force) {

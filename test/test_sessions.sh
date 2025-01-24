@@ -98,6 +98,18 @@ run_cap_test ${lnav_test} -n \
     -c ":test-comment adjust time in session" \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ":reset-session" \
+    -c ":save-session" \
+    -c ":test-comment reset adjusted time" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
+    -c ":test-comment reset of adjust stuck" \
+    ${test_dir}/logfile_access_log.0
+
 # hiding fields failed
 rm -rf ./sessions
 mkdir -p $HOME

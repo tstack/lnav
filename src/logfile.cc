@@ -47,6 +47,7 @@
 #include "base/injector.hh"
 #include "base/snippet_highlighters.hh"
 #include "base/string_util.hh"
+#include "base/time_util.hh"
 #include "config.h"
 #include "file_options.hh"
 #include "hasher.hh"
@@ -295,8 +296,8 @@ logfile::exists() const
         && this->lf_stat.st_size <= st.st_size;
 }
 
-void
-logfile::reset_state()
+auto
+logfile::reset_state() -> void
 {
     this->clear_time_offset();
     this->lf_indexing = this->lf_options.loo_is_visible;
@@ -1489,6 +1490,10 @@ logfile::mark_as_duplicate(const std::string& name)
 void
 logfile::adjust_content_time(int line, const timeval& tv, bool abs_offset)
 {
+    if (this->lf_time_offset == tv) {
+        return;
+    }
+
     auto old_time = this->lf_time_offset;
 
     this->lf_time_offset_line = line;
