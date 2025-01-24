@@ -33,9 +33,7 @@
 #include "itertools.hh"
 #include "pcrepp/pcre2pp.hh"
 
-namespace humanize {
-namespace network {
-namespace path {
+namespace humanize::network::path {
 
 std::optional<::network::path>
 from_str(string_fragment sf)
@@ -71,6 +69,4 @@ from_str(string_fragment sf)
     };
 }
 
-}  // namespace path
-}  // namespace network
-}  // namespace humanize
+}  // namespace humanize::network::path

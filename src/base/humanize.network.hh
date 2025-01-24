@@ -95,14 +95,10 @@ struct formatter<network::path> {
 
 }  // namespace fmt
 
-namespace humanize {
-namespace network {
-namespace path {
+namespace humanize::network::path {
 
 std::optional<::network::path> from_str(string_fragment sf);
 
-}  // namespace path
-}  // namespace network
-}  // namespace humanize
+}
 
 #endif

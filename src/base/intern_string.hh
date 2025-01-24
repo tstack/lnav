@@ -34,6 +34,7 @@
 
 #include <optional>
 #include <ostream>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -123,22 +124,27 @@ struct string_fragment {
         return string_fragment{bytes, (int) begin, (int) end};
     }
 
-    explicit constexpr string_fragment(const char* str = "",
+    constexpr string_fragment() : sf_string(nullptr), sf_begin(0), sf_end(0) {}
+
+    explicit constexpr string_fragment(const char* str,
                                        int begin = 0,
                                        int end = -1)
-        : sf_string(str), sf_begin(begin), sf_end(end == -1 ? strlen(str) : end)
+        : sf_string(str), sf_begin(begin),
+          sf_end(end == -1
+                     ? static_cast<int>(std::string::traits_type::length(str))
+                     : end)
     {
     }
 
-    explicit constexpr string_fragment(const unsigned char* str,
-                                       int begin = 0,
-                                       int end = -1)
+    explicit string_fragment(const unsigned char* str,
+                             int begin = 0,
+                             int end = -1)
         : sf_string((const char*) str), sf_begin(begin),
           sf_end(end == -1 ? strlen((const char*) str) : end)
     {
     }
 
-    constexpr string_fragment(const std::string& str)
+    string_fragment(const std::string& str)
         : sf_string(str.c_str()), sf_begin(0), sf_end(str.length())
     {
     }
@@ -336,7 +342,7 @@ struct string_fragment {
     {
         assert((int) start <= this->length());
 
-        if (start > 0 && start == this->length()) {
+        if (start > 0 && start == static_cast<size_t>(this->length())) {
             start -= 1;
         }
         while (start > 0) {
