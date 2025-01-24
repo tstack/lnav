@@ -1489,7 +1489,7 @@ logfile::mark_as_duplicate(const std::string& name)
 void
 logfile::adjust_content_time(int line, const timeval& tv, bool abs_offset)
 {
-    struct timeval old_time = this->lf_time_offset;
+    auto old_time = this->lf_time_offset;
 
     this->lf_time_offset_line = line;
     if (abs_offset) {
@@ -1498,7 +1498,7 @@ logfile::adjust_content_time(int line, const timeval& tv, bool abs_offset)
         timeradd(&old_time, &tv, &this->lf_time_offset);
     }
     for (auto& iter : *this) {
-        struct timeval curr, diff, new_time;
+        timeval curr, diff, new_time;
 
         curr = iter.get_timeval();
         timersub(&curr, &old_time, &diff);
@@ -1506,6 +1506,7 @@ logfile::adjust_content_time(int line, const timeval& tv, bool abs_offset)
         iter.set_time(new_time);
     }
     this->lf_sort_needed = true;
+    this->lf_index_generation += 1;
 }
 
 void

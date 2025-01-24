@@ -160,6 +160,8 @@ public:
 
     file_off_t get_index_size() const { return this->lf_index_size; }
 
+    int get_index_generation() const { return this->lf_index_generation; }
+
     std::optional<const_iterator> line_for_offset(file_off_t off) const;
 
     /**
@@ -486,6 +488,7 @@ private:
     std::vector<logline> lf_index;
     std::chrono::microseconds lf_index_time{0};
     file_off_t lf_index_size{0};
+    int lf_index_generation{0};
     bool lf_sort_needed{false};
     line_buffer lf_line_buffer;
     int lf_time_offset_line{0};

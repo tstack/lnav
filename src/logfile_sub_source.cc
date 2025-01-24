@@ -1354,6 +1354,10 @@ logfile_sub_source::text_filters_changed()
         }
     }
 
+    if (this->lss_force_rebuild) {
+        return;
+    }
+
     auto& vis_bm = this->tss_view->get_bookmarks();
     uint32_t filtered_in_mask, filtered_out_mask;
 
@@ -1619,7 +1623,7 @@ logfile_sub_source::set_sql_marker(std::string stmt_str, sqlite3_stmt* stmt)
     this->lss_marker_stmt_text = std::move(stmt_str);
     this->lss_marker_stmt = stmt;
 
-    if (this->tss_view == nullptr) {
+    if (this->tss_view == nullptr || this->lss_force_rebuild) {
         return Ok();
     }
 

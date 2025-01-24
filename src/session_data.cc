@@ -1781,13 +1781,15 @@ reset_session()
         lf->reset_state();
     }
 
+    // XXX clean this up
+    lnav_data.ld_log_source.set_force_rebuild();
     lnav_data.ld_log_source.set_marked_only(false);
     lnav_data.ld_log_source.clear_min_max_log_times();
     lnav_data.ld_log_source.set_min_log_level(LEVEL_UNKNOWN);
     lnav_data.ld_log_source.set_sql_filter("", nullptr);
     lnav_data.ld_log_source.set_sql_marker("", nullptr);
-
     lnav_data.ld_log_source.clear_bookmark_metadata();
+    lnav_data.ld_log_source.rebuild_index();
 
     for (auto& tc : lnav_data.ld_views) {
         text_sub_source* tss = tc.get_sub_source();
