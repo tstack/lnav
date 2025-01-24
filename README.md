@@ -173,17 +173,18 @@ The following alternatives are also available:
 
 The following software packages are required to build lnav:
 
-- gcc/clang  - A C++14-compatible compiler.
-- libpcre2   - The Perl Compatible Regular Expression v2 (PCRE2) library.
-- sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.
-- ncurses    - The ncurses text UI library.
-- readline   - The readline line editing library.
-- zlib       - The zlib compression library.
-- bz2        - The bzip2 compression library.
-- libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
-- libarchive - The libarchive library for opening archive files, like zip/tgz.
-- wireshark  - The 'tshark' program is used to interpret pcap files.
-- cargo/rust - The Rust language is used to build the PRQL compiler.
+- gcc/clang    - A C++14-compatible compiler.
+- libpcre2     - The Perl Compatible Regular Expression v2 (PCRE2) library.
+- sqlite       - The SQLite database engine.  Version 3.9.0 or higher is required.
+- ncurses      - The ncurses text UI library.
+- readline     - The readline line editing library.
+- zlib         - The zlib compression library.
+- bz2          - The bzip2 compression library.
+- libcurl      - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.
+- libarchive   - The libarchive library for opening archive files, like zip/tgz.
+- libunistring - The libunistring library for dealing with unicode.
+- wireshark    - The 'tshark' program is used to interpret pcap files.
+- cargo/rust   - The Rust language is used to build the PRQL compiler.
 
 #### Build
 

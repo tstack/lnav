@@ -146,22 +146,24 @@ The following alternatives are also available:
 
 The following software packages are required to build lnav:
 
- [33m•[0m gcc/clang  - A C++14-compatible compiler.
- [33m•[0m libpcre2   - The Perl Compatible Regular Expression v2
-   (PCRE2) library.
- [33m•[0m sqlite     - The SQLite database engine.  Version
+ [33m•[0m gcc/clang    - A C++14-compatible compiler.
+ [33m•[0m libpcre2     - The Perl Compatible Regular Expression
+   v2 (PCRE2) library.
+ [33m•[0m sqlite       - The SQLite database engine.  Version
    3.9.0 or higher is required.
- [33m•[0m ncurses    - The ncurses text UI library.
- [33m•[0m readline   - The readline line editing library.
- [33m•[0m zlib       - The zlib compression library.
- [33m•[0m bz2        - The bzip2 compression library.
- [33m•[0m libcurl    - The cURL library for downloading files
+ [33m•[0m ncurses      - The ncurses text UI library.
+ [33m•[0m readline     - The readline line editing library.
+ [33m•[0m zlib         - The zlib compression library.
+ [33m•[0m bz2          - The bzip2 compression library.
+ [33m•[0m libcurl      - The cURL library for downloading files
    from URLs.  Version 7.23.0 or higher is required.
- [33m•[0m libarchive - The libarchive library for opening
+ [33m•[0m libarchive   - The libarchive library for opening
    archive files, like zip/tgz.
- [33m•[0m wireshark  - The [35m'tshark'[0m program is used to interpret
-   pcap files.
- [33m•[0m cargo/rust - The Rust language is used to build the
+ [33m•[0m libunistring - The libunistring library for dealing
+   with unicode.
+ [33m•[0m wireshark    - The [35m'tshark'[0m program is used to
+   interpret pcap files.
+ [33m•[0m cargo/rust   - The Rust language is used to build the
    PRQL compiler.
 
 [4mBuild[0m

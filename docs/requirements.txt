@@ -1,5 +1,6 @@
 furo
 sphinx>=4.3.0
+sphinxcontrib-images
 sphinx-copybutton
 sphinx-jsonschema
 sphinx-prompt

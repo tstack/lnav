@@ -229,6 +229,7 @@ lexers['custsqlite'] = CustSqliteLexer(startinline=True)
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.coverage',
+    'sphinxcontrib.images',
     'sphinx_copybutton',
     'sphinx-jsonschema',
     'sphinx-prompt',

@@ -176,6 +176,7 @@ When compiling from source, the following dependencies are required:
 * `Readline <http://www.gnu.org/s/readline>`_
 * `libcurl <https://curl.haxx.se>`_
 * `libarchive <https://libarchive.org>`_
+* `libunistring <https://www.gnu.org/software/libunistring/>`_
 
 Installation
 ^^^^^^^^^^^^

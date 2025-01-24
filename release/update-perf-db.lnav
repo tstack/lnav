@@ -9,7 +9,7 @@
 )
 
 ;REPLACE INTO perf_db.perf_test_id VALUES ('indexing', 0, 'Time to load and go to line 10mil')
-;REPLACE INTO perf_db.perf_test_id VALUES ('searching', 1, 'Time to find a text at end')
+;REPLACE INTO perf_db.perf_test_id VALUES ('searching', 1, 'Time to find a string near end')
 ;REPLACE INTO perf_db.perf_test_id VALUES ('filtering', 2, 'Time to filter out messages')
 ;REPLACE INTO perf_db.perf_test_id VALUES ('stats', 3, 'Time to count unique IPs')
 
@@ -34,7 +34,7 @@
 )
 
 ;REPLACE INTO perf_db.perf_program VALUES (
-   'cut | sort | uniq | sort -n',
+   'shell pipeline',
    3
 )
 

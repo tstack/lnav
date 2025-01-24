@@ -68,7 +68,7 @@
 )
 
 ;REPLACE INTO perf_db.perf_program_styles VALUES (
-   'cut | sort | uniq | sort -n',
+   'shell pipeline',
    json_object(
      'columns', json_object(
         'Program', json_object(
@@ -129,21 +129,21 @@ FROM (
         UNION ALL
         SELECT 3.5,
             replicate('━', 33),
-            replicate('━', 27),
+            replicate('━', 14),
             replicate('━', 20),
             replicate('━', 20),
             NULL
         UNION ALL
         SELECT 6.5,
             replicate('━', 33),
-            replicate('━', 27),
+            replicate('━', 14),
             replicate('━', 20),
             replicate('━', 20),
             NULL
         UNION ALL
         SELECT 9.5,
             replicate('━', 33),
-            replicate('━', 27),
+            replicate('━', 14),
             replicate('━', 20),
             replicate('━', 20),
             NULL

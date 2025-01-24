@@ -4,7 +4,13 @@ Performance
 ===========
 
 This section provides some performance measurements of **lnav** and
-standard utilities.  The measurements are done using this
+standard utilities.  The numbers in here are for a fairly large
+file to demonstrate that lnav is at least competitive with existing
+tools if not better.  Since lnav is purpose-built for working with
+logs, it is able to perform better and provide a friendlier experience
+than traditional tooling.
+
+The measurements are done using this
 `E-commerce access log <https://www.kaggle.com/datasets/eliasdabbas/web-server-access-logs>`_
 file available on `Kaggle <https://www.kaggle.com>`_.  The file is
 3.3GB in size with over 10 million lines.  Tests are run on an
@@ -23,7 +29,7 @@ The report is generated using the
 `report-perf.lnav <https://github.com/tstack/lnav/blob/master/release/report-perf.lnav>`_
 script.
 
-.. figure:: lnav-perf.png
+.. thumbnail:: lnav-perf.png
     :align: center
 
     Performance results as displayed in lnav's DB view.
@@ -37,11 +43,18 @@ The indexing benchmark tests how long it takes to open the test
 file and go to line 10 million.
 
 * :code:`lnav` displays the UI immediately and shows progress
-  while loading the file.
+  while loading the file.  The medium-sized memory footprint
+  is due to :code:`lnav` creating an index entry for each
+  line in the file.  The index allows for immediate jumps to
+  different parts of the log by time, log level, and
+  line number.
 * :code:`vim` loads the entire file without providing any
-  feedback during the process.
+  feedback during the process.  The large memory footprint is
+  due to :code:`vim` loading the entire file into memory.
 * :code:`less` displays the start of the file immediately, but
   gives no feedback when scanning to the end of the file.
+  The small memory footprint means there is no index and
+  :code:`less` needs to scan the file for many operations.
 
 Searching
 ---------
@@ -89,7 +102,9 @@ with standard tooling.
   in the "total" column to help visualize the values.
   The PRQL query :code:`from access_log | stats.count_by { c_ip }`
   was used to count the unique IPs.
-* :code:`cut shop-access.log | sort | uniq | sort -n` computes
-  for the whole time without giving feedback and dumps to the
-  terminal.  The memory usage listed in the chart is from
-  :code:`sort`.  I'm not sure why it is so big...
+* :code:`shell pipeline` refers to the following pipeline:
+  :code:`cut -d ' ' -f 1 shop-access.log | sort | uniq | sort -n`.
+  Executing that pipeline executes the whole time without giving
+  feedback and dumps to the terminal.  The memory usage listed
+  in the chart is from :code:`sort`.  I'm not sure why it is so
+  big...

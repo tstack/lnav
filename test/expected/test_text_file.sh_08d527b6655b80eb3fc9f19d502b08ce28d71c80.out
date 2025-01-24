@@ -173,17 +173,18 @@ The following alternatives are also available:
 
 The following software packages are required to build lnav:
 
-[1m[31m- gcc/clang  - A C++14-compatible compiler.[0m
-[1m[31m- libpcre2   - The Perl Compatible Regular Expression v2 (PCRE2) library.[0m
-[1m[31m- sqlite     - The SQLite database engine.  Version 3.9.0 or higher is required.[0m
-[1m[31m- ncurses    - The ncurses text UI library.[0m
-[1m[31m- readline   - The readline line editing library.[0m
-[1m[31m- zlib       - The zlib compression library.[0m
-[1m[31m- bz2        - The bzip2 compression library.[0m
-[1m[31m- libcurl    - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.[0m
-[1m[31m- libarchive - The libarchive library for opening archive files, like zip/tgz.[0m
-[1m[31m- wireshark  - The [0m[35m'tshark'[0m[1m[31m program is used to interpret pcap files.[0m
-[1m[31m- cargo/rust - The Rust language is used to build the PRQL compiler.[0m
+[1m[31m- gcc/clang    - A C++14-compatible compiler.[0m
+[1m[31m- libpcre2     - The Perl Compatible Regular Expression v2 (PCRE2) library.[0m
+[1m[31m- sqlite       - The SQLite database engine.  Version 3.9.0 or higher is required.[0m
+[1m[31m- ncurses      - The ncurses text UI library.[0m
+[1m[31m- readline     - The readline line editing library.[0m
+[1m[31m- zlib         - The zlib compression library.[0m
+[1m[31m- bz2          - The bzip2 compression library.[0m
+[1m[31m- libcurl      - The cURL library for downloading files from URLs.  Version 7.23.0 or higher is required.[0m
+[1m[31m- libarchive   - The libarchive library for opening archive files, like zip/tgz.[0m
+[1m[31m- libunistring - The libunistring library for dealing with unicode.[0m
+[1m[31m- wireshark    - The [0m[35m'tshark'[0m[1m[31m program is used to interpret pcap files.[0m
+[1m[31m- cargo/rust   - The Rust language is used to build the PRQL compiler.[0m
 
 #### Build
 
