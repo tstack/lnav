@@ -582,7 +582,7 @@ struct string_fragment {
         this->sf_end = 0;
     }
 
-    void invalidate()
+    constexpr void invalidate()
     {
         this->sf_begin = -1;
         this->sf_end = -1;
