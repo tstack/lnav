@@ -36,8 +36,7 @@
 #include "base/lnav.console.hh"
 #include "CLI/CLI.hpp"
 
-namespace lnav {
-namespace management {
+namespace lnav::management {
 
 class operations;
 
@@ -47,7 +46,6 @@ using perform_result_t = std::vector<lnav::console::user_message>;
 
 perform_result_t perform(std::shared_ptr<operations> opts);
 
-}  // namespace management
-}  // namespace lnav
+}  // namespace lnav::management
 
 #endif

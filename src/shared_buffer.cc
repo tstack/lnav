@@ -115,7 +115,7 @@ shared_buffer_ref(shared_buffer_ref&& other) noexcept
 }
 
 shared_buffer_ref&
-shared_buffer_ref::operator=(shared_buffer_ref&& other)
+shared_buffer_ref::operator=(shared_buffer_ref&& other) noexcept
 {
     this->disown();
 

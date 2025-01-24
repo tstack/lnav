@@ -311,7 +311,10 @@ read_format_field(yajlpp_parse_context* ypc,
 }
 
 static int
-read_levels(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
+read_levels(yajlpp_parse_context* ypc,
+            const unsigned char* str,
+            size_t len,
+            yajl_string_props_t*)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto regex = std::string((const char*) str, len);
@@ -350,7 +353,10 @@ read_level_int(yajlpp_parse_context* ypc, long long val)
 }
 
 static int
-read_action_def(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
+read_action_def(yajlpp_parse_context* ypc,
+                const unsigned char* str,
+                size_t len,
+                yajl_string_props_t*)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto action_name = ypc->get_path_fragment(2);
@@ -378,7 +384,10 @@ read_action_bool(yajlpp_parse_context* ypc, int val)
 }
 
 static int
-read_action_cmd(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
+read_action_cmd(yajlpp_parse_context* ypc,
+                const unsigned char* str,
+                size_t len,
+                yajl_string_props_t*)
 {
     auto elf = (external_log_format*) ypc->ypc_obj_stack.top();
     auto action_name = ypc->get_path_fragment(2);
@@ -391,7 +400,7 @@ read_action_cmd(yajlpp_parse_context* ypc, const unsigned char* str, size_t len,
     return 1;
 }
 
-static external_log_format::sample&
+static external_log_format::sample_t&
 ensure_sample(external_log_format* elf, int index)
 {
     elf->elf_samples.resize(index + 1);
@@ -399,7 +408,7 @@ ensure_sample(external_log_format* elf, int index)
     return elf->elf_samples[index];
 }
 
-static external_log_format::sample*
+static external_log_format::sample_t*
 sample_provider(const yajlpp_provider_context& ypc, external_log_format* elf)
 {
     auto& sample = ensure_sample(elf, ypc.ypc_index);
@@ -700,17 +709,17 @@ static const struct json_path_container sample_handlers = {
     yajlpp::property_handler("description")
         .with_synopsis("<text>")
         .with_description("A description of this sample.")
-        .for_field(&external_log_format::sample::s_description),
+        .for_field(&external_log_format::sample_t::s_description),
     yajlpp::property_handler("line")
         .with_synopsis("<log-line>")
         .with_description(
             "A sample log line that should match a pattern in this format.")
-        .for_field(&external_log_format::sample::s_line),
+        .for_field(&external_log_format::sample_t::s_line),
 
     yajlpp::property_handler("level")
         .with_enum_values(LEVEL_ENUM)
         .with_description("The expected level for this sample log line.")
-        .for_field(&external_log_format::sample::s_level),
+        .for_field(&external_log_format::sample_t::s_level),
 };
 
 static const json_path_handler_base::enum_value_t TYPE_ENUM[] = {
@@ -1106,7 +1115,10 @@ const struct json_path_container format_handlers = {
 };
 
 static int
-read_id(yajlpp_parse_context* ypc, const unsigned char* str, size_t len, yajl_string_props_t*)
+read_id(yajlpp_parse_context* ypc,
+        const unsigned char* str,
+        size_t len,
+        yajl_string_props_t*)
 {
     auto* ud = static_cast<loader_userdata*>(ypc->ypc_userdata);
     auto file_id = std::string((const char*) str, len);

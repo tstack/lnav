@@ -933,3 +933,12 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -nN \
     -c ";SELECT '1us' AS Duration UNION ALL SELECT '500ms' UNION ALL SELECT '1s'"
+
+run_cap_test env TEST_COMMENT="alignment demo" ${lnav_test} -nN -f- <<'EOF'
+;SELECT 'left' AS "Alignment Demo", '{"columns": {"Alignment Demo": {"text-align": "start"}}}' AS __lnav_style__
+ UNION ALL
+ SELECT 'center', '{"columns": {"Alignment Demo": {"text-align": "center"}}}' AS __lnav_style__
+ UNION ALL
+ SELECT 'right', '{"columns": {"Alignment Demo": {"text-align": "end"}}}' AS __lnav_style__
+:switch-to-view db
+EOF

@@ -1,0 +1,4 @@
+[1m[31m✘[0m [1m[31merror[0m: test file did not match any of this format's patterns
+ [1m[31mreason[0m: line is not a JSON object
+[36m --> [0m[1m{test_dir}/logfile_syslog.0[0m:1
+[36m | [0mNov  3 09:23:38 veridian automount[7998]: lookup(file): lookup for foobar failed

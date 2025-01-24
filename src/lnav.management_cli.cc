@@ -198,6 +198,7 @@ struct subcmd_format_t {
 
     CLI::App* sf_format_app{nullptr};
     std::string sf_name;
+    std::string sf_path;
     CLI::App* sf_regex_app{nullptr};
     std::string sf_regex_name;
     CLI::App* sf_regex101_app{nullptr};
@@ -402,6 +403,118 @@ struct subcmd_format_t {
                 .append(on_blank(format->lf_description, "<no description>")));
 
         return {std::move(um)};
+    }
+
+    static perform_result_t test_action(const subcmd_format_t& sf)
+    {
+        auto validate_res = sf.validate_external_format();
+        if (validate_res.isErr()) {
+            return {validate_res.unwrapErr()};
+        }
+        auto* format = validate_res.unwrap();
+
+        if (sf.sf_path.empty()) {
+            auto um = lnav::console::user_message::error(
+                "Expecting a file path to test");
+
+            return {std::move(um)};
+        }
+        auto stat_res = lnav::filesystem::stat_file(sf.sf_path);
+        if (stat_res.isErr()) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("Unable to stat file: ")
+                              .append(lnav::roles::file(sf.sf_path)))
+                          .with_reason(stat_res.unwrapErr());
+
+            return {std::move(um)};
+        }
+        auto st = stat_res.unwrap();
+        if (!S_ISREG(st.st_mode)) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("Unable to test with path: ")
+                              .append(lnav::roles::file(sf.sf_path)))
+                          .with_reason("not a regular file");
+
+            return {std::move(um)};
+        }
+
+        auto open_res = lnav::filesystem::open_file(sf.sf_path, O_RDONLY);
+        if (open_res.isErr()) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("Unable to open file")
+                              .append(lnav::roles::file(sf.sf_path)))
+                          .with_reason(open_res.unwrapErr());
+
+            return {std::move(um)};
+        }
+        auto test_file_fd = open_res.unwrap();
+
+        line_buffer lb;
+        lb.set_fd(test_file_fd);
+
+        auto load_res = lb.load_next_line();
+        if (load_res.isErr()) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("Unable load line from file")
+                              .append(lnav::roles::file(sf.sf_path)))
+                          .with_reason(load_res.unwrapErr());
+
+            return {std::move(um)};
+        }
+        auto li = load_res.unwrap();
+        auto read_res = lb.read_range(li.li_file_range);
+        if (read_res.isErr()) {
+            auto um = lnav::console::user_message::error(
+                          attr_line_t("Unable read line from file")
+                              .append(lnav::roles::file(sf.sf_path)))
+                          .with_reason(read_res.unwrapErr());
+
+            return {std::move(um)};
+        }
+        auto sbr = read_res.unwrap();
+
+        auto sample = log_format::sample_t{{
+            intern_string::lookup("/"),
+            source_location{
+                intern_string::lookup(sf.sf_path),
+                1,
+            },
+            sbr.to_string_fragment().rtrim("\n").to_string(),
+        }};
+        perform_result_t retval;
+        auto test_res = format->test_line(sample, retval);
+        test_res.match(
+            [&retval, &sample](const log_format::scan_no_match& nope) {
+                if (retval.empty()) {
+                    auto um = lnav::console::user_message::error(
+                        attr_line_t("test file did not match any of this "
+                                    "format's patterns"));
+                    if (nope.snm_reason != nullptr) {
+                        um.with_reason(nope.snm_reason)
+                            .with_snippet(lnav::console::snippet::from(
+                                sample.s_line.pp_location,
+                                sample.s_line.pp_value));
+                    }
+                    retval.emplace_back(um);
+                }
+            },
+            [&retval, &sample](const log_format::scan_match& yep) {
+                auto al = attr_line_t("test file matched format");
+                if (!sample.s_matched_regexes.empty()) {
+                    al.append(" pattern ")
+                        .append(lnav::roles::symbol(
+                            *sample.s_matched_regexes.begin()));
+                }
+                auto um = lnav::console::user_message::ok(al);
+                retval.emplace_back(um);
+            },
+            [&retval](const log_format::scan_incomplete& inc) {
+                auto um = lnav::console::user_message::error(attr_line_t(
+                    "test file did not have enough data to match against"));
+                retval.emplace_back(um);
+            });
+
+        return retval;
     }
 
     static perform_result_t source_action(const subcmd_format_t& sf)
@@ -1313,6 +1426,18 @@ describe_cli(CLI::App& app, int argc, char* argv[])
                 ->callback([&]() {
                     format_args.set_action(subcmd_format_t::get_action);
                 });
+        }
+
+        {
+            auto* subcmd_format_test
+                = subcmd_format
+                      ->add_subcommand("test",
+                                       "test this format against a file")
+                      ->callback([&]() {
+                          format_args.set_action(subcmd_format_t::test_action);
+                      });
+            subcmd_format_test->add_option(
+                "path", format_args.sf_path, "the path to the file to test");
         }
 
         {

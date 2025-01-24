@@ -62,3 +62,23 @@ run_cap_test ${lnav_test} -n $PIPER_URL
 run_cap_test ${lnav_test} -n $PIPER_URL \
     -c ";SELECT filepath, descriptor, mimetype, jget(content, '/ctime') as ctime, jget(content, '/cwd') as cwd FROM lnav_file_metadata" \
     -c ':write-json-to -'
+
+run_cap_test ${lnav_test} -m \
+    format access_log test non-existent
+
+run_cap_test ${lnav_test} -m \
+    format access_log test /tmp
+
+run_cap_test ${lnav_test} -m \
+    format access_log test ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -m \
+    format access_log test ${test_dir}/logfile_syslog.0
+
+run_cap_test ${lnav_test} -m \
+    -I ${test_dir} \
+    format test_log test ${test_dir}/logfile_json.json
+
+run_cap_test ${lnav_test} -m \
+    -I ${test_dir} \
+    format test_log test ${test_dir}/logfile_syslog.0

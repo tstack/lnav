@@ -27,6 +27,10 @@ Features:
 * Added `italic` and `strike` to the text styling configuration.
 * DB query results can now be styled on a row-by-row basis by
   adding a column with the name `__lnav_style__`.
+* Added "format <format-name> test" management command to make it
+  easier to test a format against a file.
+  Can be helpful for determining why a file is not being recognized
+  by particular format.
 * Added a "performance" section to the documentation.
 
 Interface changes:

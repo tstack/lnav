@@ -3233,6 +3233,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     if (mmode_ops) {
+        isc::supervisor root_superv(injector::get<isc::service_list>());
         auto perform_res = lnav::management::perform(mmode_ops);
 
         return print_user_msgs(perform_res, mode_flags);
@@ -3282,7 +3283,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    if (file_args.empty()) {
+    if (file_args.empty() && !mode_flags.mf_no_default) {
         load_stdin = true;
     }
 
@@ -3551,7 +3552,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         }
     }
 
-    if (!isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
+    if (!isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)
+        && !(lnav_data.ld_flags & LNF_HEADLESS))
+    {
         if (dup2(STDOUT_FILENO, STDIN_FILENO) == -1) {
             perror("cannot dup stdout to stdin");
         }

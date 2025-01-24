@@ -1,0 +1,2 @@
+[1m[31m✘[0m [1m[31merror[0m: Unable to stat file: [1mnon-existent[0m
+ [1m[31mreason[0m: failed to find file: non-existent -- No such file or directory

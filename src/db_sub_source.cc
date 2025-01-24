@@ -107,16 +107,26 @@ db_label_source::text_value_for_line(textview_curses& tc,
         auto cell_length
             = utf8_string_length(cell_str).unwrapOr(actual_col_size);
         auto padding = actual_col_size - cell_length;
-        auto rjust = align == text_align_t::end;
-        this->dls_cell_width[lpc] = cell_str.length() + padding;
-        if (rjust) {
-            label_out.append(padding, ' ');
+        auto lpadding = 0;
+        auto rpadding = padding;
+        switch (align) {
+            case text_align_t::start:
+                break;
+            case text_align_t::center: {
+                lpadding = padding / 2;
+                rpadding = padding - lpadding;
+                break;
+            }
+            case text_align_t::end:
+                lpadding = padding;
+                rpadding = 0;
+                break;
         }
+        this->dls_cell_width[lpc] = cell_str.length() + padding;
+        label_out.append(lpadding, ' ');
         shift_string_attrs(cell_attrs, 0, label_out.size());
         label_out.append(cell_str);
-        if (!rjust) {
-            label_out.append(padding, ' ');
-        }
+        label_out.append(rpadding, ' ');
         label_out.append(1, ' ');
 
         this->dls_ansi_attrs.insert(
@@ -427,6 +437,7 @@ db_label_source::push_column(const scoped_value_t& sv)
                                 ta.ta_bg_color
                                     = vc.match_color(bg_res.unwrap());
                             }
+                            ta.ta_align = col_style.sc_text_align;
                             if (col_style.sc_underline) {
                                 ta |= text_attrs::style::underline;
                             }

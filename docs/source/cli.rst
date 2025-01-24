@@ -156,6 +156,10 @@ Subcommands
 
    Pull changes to a regex that was previously pushed to regex101.com .
 
+.. option:: format <format-name> test <path>
+
+   Test this format against the given file.
+
 .. option:: piper clean
 
    Remove all of the files that stored data that was piped into **lnav**.

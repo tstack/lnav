@@ -70,7 +70,7 @@ public:
             return scan_match{1};
         }
 
-        return scan_no_match{""};
+        return scan_no_match{"not a piper capture"};
     }
 
     void annotate(logfile* lf,
@@ -670,7 +670,7 @@ public:
             dst.emplace_back(li.li_file_range.fr_offset, tv, level, 0, opid);
             return scan_match{2000};
         }
-        return scan_no_match{};
+        return scan_no_match{"no header found"};
     }
 
     scan_result_t scan(logfile& lf,
@@ -700,7 +700,7 @@ public:
         if (dst.empty() || dst.size() > 20 || sbr.empty()
             || sbr.get_data()[0] == '#')
         {
-            return scan_no_match{};
+            return scan_no_match{"no header found"};
         }
 
         auto line_iter = dst.begin();
@@ -852,7 +852,7 @@ public:
         this->blf_format_name.clear();
         this->lf_value_stats.clear();
 
-        return scan_no_match{};
+        return scan_no_match{"no header found"};
     }
 
     void annotate(logfile* lf,
@@ -1359,7 +1359,7 @@ public:
             return scan_match{2000};
         }
 
-        return scan_no_match{};
+        return scan_no_match{"no header found"};
     }
 
     scan_result_t scan(logfile& lf,
@@ -1394,7 +1394,7 @@ public:
         if (dst.empty() || dst.size() > 20 || sbr.empty()
             || sbr.get_data()[0] == '#')
         {
-            return scan_no_match{};
+            return scan_no_match{"no header found"};
         }
 
         this->clear();
@@ -1530,7 +1530,7 @@ public:
         this->wlf_format_name.clear();
         this->lf_value_stats.clear();
 
-        return scan_no_match{};
+        return scan_no_match{"no header found"};
     }
 
     void annotate(logfile* lf,

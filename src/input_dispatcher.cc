@@ -69,7 +69,7 @@ input_dispatcher::new_input(const struct timeval& current_time,
 
     for (size_t lpc = 0; ch.eff_text[lpc]; lpc++) {
         fmt::format_to(
-            std::back_inserter(eff_str), FMT_STRING("{:x}"), ch.eff_text[lpc]);
+            std::back_inserter(eff_str), FMT_STRING("{:02x}"), ch.eff_text[lpc]);
     }
     log_debug("new input %x %d/%x(%c)/%s/%s evtype=%d",
               ch.modifiers,

@@ -37,10 +37,8 @@
 #include <time.h>
 #define __STDC_FORMAT_MACROS
 #include <limits>
-#include <list>
 #include <memory>
 #include <set>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -51,11 +49,9 @@
 #include "base/date_time_scanner.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
-#include "file_format.hh"
 #include "highlighter.hh"
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
-#include "log_level.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "shared_buffer.hh"
 
@@ -386,6 +382,13 @@ public:
 
     static std::shared_ptr<log_format> find_root_format(const char* name);
 
+    struct sample_t {
+        positioned_property<std::string> s_line;
+        std::string s_description;
+        log_level_t s_level{LEVEL_UNKNOWN};
+        std::set<std::string> s_matched_regexes;
+    };
+
     struct action_def {
         std::string ad_name;
         std::string ad_label;
@@ -440,6 +443,9 @@ public:
 
     using scan_result_t
         = mapbox::util::variant<scan_match, scan_no_match, scan_incomplete>;
+
+    virtual scan_result_t test_line(
+        sample_t& sample, std::vector<lnav::console::user_message>& msgs);
 
     /**
      * Scan a log line to see if it matches this log format.

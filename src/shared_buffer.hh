@@ -50,8 +50,7 @@ class shared_buffer;
 #define SHARED_BUFFER_TRACE 0
 
 struct shared_buffer_ref {
-public:
-    shared_buffer_ref(char* data = nullptr, size_t len = 0)
+    shared_buffer_ref(const char* data = nullptr, size_t len = 0)
         : sb_owner(nullptr), sb_data(data), sb_length(len)
     {
     }
@@ -73,7 +72,7 @@ public:
         return retval;
     }
 
-    shared_buffer_ref& operator=(shared_buffer_ref&& other);
+    shared_buffer_ref& operator=(shared_buffer_ref&& other) noexcept;
 
     bool empty() const
     {
