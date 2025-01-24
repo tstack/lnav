@@ -6,49 +6,52 @@
         "url": "",
         "regex": {
             "jvm": {
-                "pattern": "^(?<level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| (?<timestamp_f>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<debug_level>\\w+)\\s+(?<class>[\\w.]+)\\s+-\\s+(?<body>.*)"
+                "pattern": "^(?<level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| (?<timestamp_f>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3}) \\[(?<function>\\w+-\\d+)\\]\\s+(?<debug_level>\\w+)\\s+(?<class>[\\w.]+)\\s+(?:-\\s+)*(?<body>.*)"
             },
             "dump": {
                 "pattern": "^(?<level>\\w+)\\s+\\|\\s+jvm (?<jvm_no>\\d+)\\s+\\|\\s(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2})\\s+\\| JVMDUMP\\w+\\s(?<body>.*)$"
             },
             "tasko": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[\\w\\-\\.]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[\\s*(?<thread>[\\w\\-\\.]+)\\s*\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)\\s+(-\\s+)*(?<body>.*)$"
             },
             "prefix-brackets": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<thread>[\\w\\-\\.]+)\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)*(?<body>.*)$"
             },
             "in-brackets": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[\\w\\-\\.]+)(?:\\s+(?:\\[\\]|null))?\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)?(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[\\s*(?<thread>[\\w\\-\\.]+)(?:\\s+(?:\\[\\]|null))?\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)(?:\\s+opId=(?<opid>[^\\]]*))?\\]\\s*(-\\s+)*(?<body>.*)$"
             },
             "nobrackets": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<thread>[\\w\\-\\.]+) (?:operationID=(?<opid>\\S+))?\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)\\s+(-\\s+)?(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<thread>[\\w\\-\\.]+) (?:operationID=(?<opid>\\S+))?\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<class>[\\w.]+)\\s+(-\\s+)*(?<body>.*)$"
             },
             "vmw1": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<srcfile>[^\\|]+)\\s*\\|\\s*(?<srcline>\\d+)\\s*\\|\\s*(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\|\\s*(?<thread>[^\\|]+?)\\s*\\|\\s*(?<srcfile>[^\\|]+)\\s*\\|\\s*(?<srcline>\\d+)\\s*\\|\\s*(?<body>.*)$"
             },
             "vmw2": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\]\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\d+\\[(?<thread>[^\\]]+)\\]\\s+-\\s+(?<class>[^\\(]+)\\.(?<method>\\w+)\\((?<srcfile>[^:]+):(?<srcline>\\d+)\\)\\s+-\\s+(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\]\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\d+\\[\\s*(?<thread>[^\\]]+?)\\s*\\]\\s+-\\s+(?<class>[^\\(]+)\\.(?<method>\\w+)\\((?<srcfile>[^:]+):(?<srcline>\\d+)\\)\\s+(?:-\\s+)*(?<body>.*)$"
             },
             "vmw3": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\|\\s*(?<thread>[^\\|]+)\\s*\\|\\s*(?<class>[a-zA-Z_\\.][^\\|]+)\\s*\\|\\s+(?!\\d+\\s*\\|)(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s*\\|\\s*(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s*\\|\\s*(?<thread>[^\\|]+?)\\s*\\|\\s*(?<class>[a-zA-Z_\\.][^\\|]+)\\s*\\|\\s+(?!\\d+\\s*\\|)(?<body>.*)$"
             },
             "vmw-sso": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+[\\w\\-]+\\[\\d+:(?<thread>[^\\]]+)\\]\\s+\\[CorId=(?<corid>[^\\s\\]]*)(?:\\s+OpId=(?<opid>[^\\]]*))?\\]\\s+\\[(?<class>[^\\]]+)\\]\\s+(?<body>.*)$"
             },
             "vmw-sps": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+-\\s+(?<body>.*)$"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}( |T)\\d{2}:\\d{2}:\\d{2}(,|\\.)\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\\s+\\[(?<thread>[^\\]]+)\\]\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+opId=(?<opid>\\S*)\\s+(?<class>\\S+)\\s+(?:-\\s+)*(?<body>.*)$"
             },
-            "level-thread-class": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) (?<level>\\w+)\\s+\\[(?<thread>[^\\]]+)\\] (?<class>[^:]+): (?<body>.*)"
+            "level-thread-class-bracket": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) (?<level>\\w+)\\s+\\[\\s*(?<thread>[^\\]]+?)\\s*\\] \\[\\s*(?<class>[^\\]]+?)\\s*\\]\\s+(?:-\\s+)*(?<body>.*)"
+            },
+            "level-thread-class-colon": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) (?<level>\\w+)\\s+\\[\\s*(?<thread>[^\\]]+?)\\s*\\] (?<class>[^\\[:]+):\\s+(?:-\\s+)*(?<body>.*)"
             },
             "level-class-src": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) (?<level>\\w+)\\s+(?<class>[\\.\\w]+) \\((?<srcfile>[^:]+):(?<function>[^(]+)\\((?<srcline>\\d+)\\)\\) - (?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) (?<level>\\w+)\\s+(?<class>[\\.\\w]+) \\((?<srcfile>[^:]+):(?<function>[^(]+)\\((?<srcline>\\d+)\\)\\)\\s+(?:-\\s+)*(?<body>.*)"
             },
             "repeated": {
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) \\^\\^\\^ \\d+ similar messages? omitted \\^\\^\\^$"
             },
             "spring1": {
-                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+)\\]\\s+\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
+                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+?)\\s*\\]\\s+\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
             },
             "hdfs": {
                 "pattern": "(?<timestamp>\\d{6} \\d{6}) (?<thread>\\d+) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
@@ -210,6 +213,9 @@
             },
             {
                 "line": "17/06/09 20:10:52 INFO executor.CoarseGrainedExecutorBackend: Got assigned task 87"
+            },
+            {
+                "line": "2025-01-24T07:00:30,139 INFO  [background-preinit       ] [Version                  ] - HV000001: Hibernate Validator 8.0.1.Final"
             }
         ]
     }

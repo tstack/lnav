@@ -498,14 +498,18 @@ struct subcmd_format_t {
                     retval.emplace_back(um);
                 }
             },
-            [&retval, &sample](const log_format::scan_match& yep) {
+            [&retval, &sample](
+                const log_format::scan_match& yep) mutable {
                 auto al = attr_line_t("test file matched format");
                 if (!sample.s_matched_regexes.empty()) {
                     al.append(" pattern ")
                         .append(lnav::roles::symbol(
                             *sample.s_matched_regexes.begin()));
                 }
-                auto um = lnav::console::user_message::ok(al);
+
+                auto um = lnav::console::user_message::ok(al).with_snippet(
+                    lnav::console::snippet::from(sample.s_line.pp_location,
+                                                 sample.s_line.pp_value));
                 retval.emplace_back(um);
             },
             [&retval](const log_format::scan_incomplete& inc) {

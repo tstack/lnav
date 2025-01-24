@@ -1,1 +1,3 @@
 [1m[32m✔[0m test file matched format pattern [1mstd[0m
+[36m --> [0m[1m{test_dir}/logfile_access_log.0[0m:1
+[36m | [0m192.168.202.254 - - [20/Jul/2009:22:59:26 +0000] "GET /vmw/cgi/tramp HTTP/1.0" 200 134 "-" "gPXE/0.9.7"
