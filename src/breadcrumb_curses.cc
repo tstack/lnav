@@ -416,7 +416,7 @@ breadcrumb_curses::search_overlay_source::list_static_overlay(
         | lnav::itertools::unwrap_or(
                          breadcrumb::crumb::expected_input_t::exact);
 
-    value_out.with_attr_for_all(VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
+    value_out.with_attr_for_all(VC_STYLE.value(text_attrs::with_underline()));
 
     if (!parent->bc_current_search.empty()) {
         value_out = parent->bc_current_search;

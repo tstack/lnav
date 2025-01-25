@@ -637,7 +637,7 @@ spectrogram_source::list_static_overlay(const listview_curses& lv,
     line.append(buf);
 
     value_out.with_attr(string_attr(
-        line_range(0, -1), VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE})));
+        line_range(0, -1), VC_STYLE.value(text_attrs::with_underline())));
 
     return true;
 }

@@ -317,7 +317,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
             al.with_attr_for_all(VC_ROLE.value(cursor_role));
         }
         if (line == fc.fc_other_files.size() - 1) {
-            al.with_attr_for_all(VC_STYLE.value(text_attrs{NCSTYLE_UNDERLINE}));
+            al.with_attr_for_all(VC_STYLE.value(text_attrs::with_underline()));
         }
 
         value_out = al.get_string();

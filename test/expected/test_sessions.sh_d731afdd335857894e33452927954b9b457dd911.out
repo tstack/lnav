@@ -1,0 +1,37 @@
+2025-01-24T07:00:31,139 INFO [background-preinit       ] Version                  : HV000001: Hibernate Validator 8.0.1.Final
+2025-01-24T07:00:31,227 INFO [main                     ] FarmApplication          : Starting FarmApplication v3.0.7 using Java 21.0.5 with PID 1 (/app/farm.jar started by ? in /)
+2025-01-24T07:00:31,237 INFO [main                     ] FarmApplication          : The following 3 profiles are active: "zookeeper", "production", "admin-groups-filter"
+2025-01-24T07:00:35,307 INFO [main                     ] ZookeeperConfig          : Creating farm zookeeper connection to <zoo-ts_one:2181> with namespace farm-ts_one.
+2025-01-24T07:00:36,200 INFO [arm-thread-pool1-thread-1] ZookeeperConfig          : Connection state changed on client zoo-ts_one:2181 to state CONNECTED.
+2025-01-24T07:00:36,307 INFO [main                     ] ZookeeperConfig          : Creating farm zookeeper connection to <zoo-ts_one:2181> with namespace farm-ts_one.
+2025-01-24T07:00:36,200 INFO [arm-thread-pool1-thread-1] ZookeeperConfig          : Connection state changed on client zoo-ts_one:2181 to state CONNECTED.
+2025-01-24T07:00:38,877 INFO [main                     ] ActivatorIorPool         : Loaded activators from /objroot/iorroot/activators.
+2025-01-24T07:00:38,878 INFO [main                     ] ActivatorIorPool         : 	/objroot/iorroot/activators/activator-ts_one.ior
+2025-01-24T07:00:39,877 INFO [main                     ] ActivatorIorPool         : Loaded activators from /objroot/iorroot/activators.
+2025-01-24T07:00:39,878 INFO [main                     ] ActivatorIorPool         : 	/objroot/iorroot/activators/activator-ts_one.ior
+2025-01-24T07:00:40,040 INFO [main                     ] RedundantLoginClient     : Initializing redundant login client.
+2025-01-24T07:00:40,140 INFO [main                     ] RedundantLoginClient     : Initializing redundant login client.
+2025-01-24T07:00:40,686 INFO [main                     ] RSAKeyLoaderService      : - JwksStrategy - Number of JWKS end-points to process: 1
+2025-01-24T07:00:40,686 INFO [main                     ] RSAKeyLoaderService      : - JwksStrategy - [+] A key '1733431541093' is loaded
+2025-01-24T07:00:40,686 INFO [main                     ] RSAKeyLoaderService      : - DiskStrategy - Number of PEM files to process: 0
+2025-01-24T07:00:40,986 INFO [main                     ] RSAKeyLoaderService      : - JwksStrategy - Number of JWKS end-points to process: 1
+2025-01-24T07:00:40,986 INFO [main                     ] RSAKeyLoaderService      : - JwksStrategy - [+] A key '1733431541093' is loaded
+2025-01-24T07:00:40,986 INFO [main                     ] RSAKeyLoaderService      : - DiskStrategy - Number of PEM files to process: 0
+2025-01-24T07:00:42,838 INFO [main                     ] FarmApplication          : Started FarmApplication in 13.531 seconds (process running for 16.066)
+2025-01-24T07:00:42,865 INFO [arm-thread-pool1-thread-4] RSAKeyLoaderService      : Nothing to do. Keeping previously loaded 1 RSA keys.
+2025-01-24T07:00:42,869 INFO [main                     ] FarmApplication          : Farm Instance ID: 7e4ebea6544c
+2025-01-24T07:00:42,884 INFO [Thread-6                 ] BootstrapCoordinator     : Waiting for connection to all nodes
+2025-01-24T07:00:42,884 INFO [Thread-6                 ] BootstrapCoordinator     : Nothing to do
+2025-01-24T07:00:42,938 INFO [main                     ] FarmApplication          : Started FarmApplication in 13.531 seconds (process running for 16.066)
+2025-01-24T07:00:42,954 INFO [rator-SafeNotifyService-0] SharedLocksManager       : Farm '7e4ebea6544c' CONNECTED. Cluster size: 1
+2025-01-24T07:00:42,961 INFO [rator-SafeNotifyService-0] SharedLocksManager       : Farm 'c733499183a4' CONNECTED. Cluster size: 2
+2025-01-24T07:00:42,965 INFO [arm-thread-pool1-thread-4] RSAKeyLoaderService      : Nothing to do. Keeping previously loaded 1 RSA keys.
+2025-01-24T07:00:42,969 INFO [main                     ] FarmApplication          : Farm Instance ID: 7e4ebea6544c
+2025-01-24T07:00:42,984 INFO [Thread-6                 ] BootstrapCoordinator     : Waiting for connection to all nodes
+2025-01-24T07:00:42,984 INFO [Thread-6                 ] BootstrapCoordinator     : Nothing to do
+2025-01-24T07:00:43,950 INFO [Thread-6                 ] BootstrapCoordinator     : Bootstrap is complete. Farm is ready to process requests.
+2025-01-24T07:00:43,954 INFO [rator-SafeNotifyService-0] SharedLocksManager       : Farm '7e4ebea6544c' CONNECTED. Cluster size: 1
+2025-01-24T07:00:43,961 INFO [rator-SafeNotifyService-0] SharedLocksManager       : Farm 'c733499183a4' CONNECTED. Cluster size: 2
+2025-01-24T07:00:44,950 INFO [Thread-6                 ] BootstrapCoordinator     : Bootstrap is complete. Farm is ready to process requests.
+2025-01-24T07:05:38,884 INFO [rm-thread-pool1-thread-18] ActivatorIorPool         : Loaded activators from /objroot/iorroot/activators.
+2025-01-24T07:05:39,884 INFO [rm-thread-pool1-thread-18] ActivatorIorPool         : Loaded activators from /objroot/iorroot/activators.

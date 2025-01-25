@@ -288,8 +288,7 @@ timeline_header_overlay::list_static_overlay(const listview_curses& lv,
             .append(" ")
             .append("|", VC_GRAPHIC.value(NCACS_VLINE))
             .append(" Operation"_h1);
-        auto hdr_attrs = text_attrs{};
-        hdr_attrs.ta_attrs = NCSTYLE_UNDERLINE;
+        auto hdr_attrs = text_attrs::with_underline();
         value_out.get_attrs().emplace_back(line_range{0, -1},
                                            VC_STYLE.value(hdr_attrs));
         value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS_INFO));

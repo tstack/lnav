@@ -49,8 +49,7 @@ static auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
 static auto CLOSE_HELP = ANSI_BOLD("X") ": Close";
 static auto FOCUS_DETAILS_HELP = ANSI_BOLD("CTRL-]") ": Focus on details view";
 
-filter_status_source::
-filter_status_source()
+filter_status_source::filter_status_source()
 {
     this->tss_fields[TSF_TITLE].set_width(14);
     this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
@@ -223,8 +222,9 @@ filter_status_source::update_filtered(text_sub_source* tss)
         if (tss->get_filtered_count() == this->bss_last_filtered_count) {
             if (timer.fade_diff(this->bss_filter_counter) == 0) {
                 this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_STATUS);
-                al.with_attr(string_attr(line_range{0, -1},
-                                         VC_STYLE.value(text_attrs{NCSTYLE_BOLD})));
+                al.with_attr(
+                    string_attr(line_range{0, -1},
+                                VC_STYLE.value(text_attrs::with_bold())));
             }
         } else {
             this->tss_fields[TSF_FILTERED].set_role(role_t::VCR_ALERT_STATUS);
@@ -235,8 +235,7 @@ filter_status_source::update_filtered(text_sub_source* tss)
     }
 }
 
-filter_help_status_source::
-filter_help_status_source()
+filter_help_status_source::filter_help_status_source()
 {
     this->fss_help.set_min_width(10);
     this->fss_help.set_share(1);

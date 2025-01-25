@@ -569,20 +569,14 @@ dist_noinst_DATA = \
     test_sessions.sh_0300a1391c33b1c45ddfa90198a6bd0a5404a77f.err \
     test_sessions.sh_0300a1391c33b1c45ddfa90198a6bd0a5404a77f.out \
     test_sessions.sh_17b85654b929b2a8fc1705a170ced544783292fa.err \
-    test_sessions.sh_17b85654b929b2a8fc1705a170ced544783292fa.err \
-    test_sessions.sh_17b85654b929b2a8fc1705a170ced544783292fa.out \
     test_sessions.sh_17b85654b929b2a8fc1705a170ced544783292fa.out \
     test_sessions.sh_2ee066bea01006950407a34421e763020d36acd5.err \
     test_sessions.sh_2ee066bea01006950407a34421e763020d36acd5.out \
     test_sessions.sh_33ab03afda2c9331a289fcbd1abdbc1c37b2e87b.err \
-    test_sessions.sh_33ab03afda2c9331a289fcbd1abdbc1c37b2e87b.err \
-    test_sessions.sh_33ab03afda2c9331a289fcbd1abdbc1c37b2e87b.out \
     test_sessions.sh_33ab03afda2c9331a289fcbd1abdbc1c37b2e87b.out \
     test_sessions.sh_345b0e66dab7b881397c4b38380da81092ab70dd.err \
     test_sessions.sh_345b0e66dab7b881397c4b38380da81092ab70dd.out \
     test_sessions.sh_430b9522ba1a37983138f3c4935cba91b781e415.err \
-    test_sessions.sh_430b9522ba1a37983138f3c4935cba91b781e415.err \
-    test_sessions.sh_430b9522ba1a37983138f3c4935cba91b781e415.out \
     test_sessions.sh_430b9522ba1a37983138f3c4935cba91b781e415.out \
     test_sessions.sh_4f13dd3858546b6e04a27e244159d355e368f2ae.err \
     test_sessions.sh_4f13dd3858546b6e04a27e244159d355e368f2ae.out \
@@ -595,18 +589,12 @@ dist_noinst_DATA = \
     test_sessions.sh_858fd0081ed9c46dd81e2f81f1090756f2463558.err \
     test_sessions.sh_858fd0081ed9c46dd81e2f81f1090756f2463558.out \
     test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.err \
-    test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.err \
-    test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.out \
     test_sessions.sh_903b41c950f5f90d7786d7a09bb6e2f217654b15.out \
     test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.err \
-    test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.err \
-    test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.out \
     test_sessions.sh_92a98a3e4e3a10bf1f2371d21a8282c5d3d4baa5.out \
     test_sessions.sh_9978aaa475513f9981840e612f853a7707ffcf90.err \
     test_sessions.sh_9978aaa475513f9981840e612f853a7707ffcf90.out \
     test_sessions.sh_a2b217a4102aa5cbe4952f935c5d416f02fa4cb7.err \
-    test_sessions.sh_a2b217a4102aa5cbe4952f935c5d416f02fa4cb7.err \
-    test_sessions.sh_a2b217a4102aa5cbe4952f935c5d416f02fa4cb7.out \
     test_sessions.sh_a2b217a4102aa5cbe4952f935c5d416f02fa4cb7.out \
     test_sessions.sh_a92822d121a836140a401fd71535dc4a7a8d5b48.err \
     test_sessions.sh_a92822d121a836140a401fd71535dc4a7a8d5b48.out \
@@ -615,18 +603,14 @@ dist_noinst_DATA = \
     test_sessions.sh_b932b33dd087b94d4306dd179c5d4f9ddd394960.err \
     test_sessions.sh_b932b33dd087b94d4306dd179c5d4f9ddd394960.out \
     test_sessions.sh_ba1ded92531350668301431db64df2d2f4a2e9ee.err \
-    test_sessions.sh_ba1ded92531350668301431db64df2d2f4a2e9ee.err \
     test_sessions.sh_ba1ded92531350668301431db64df2d2f4a2e9ee.out \
-    test_sessions.sh_ba1ded92531350668301431db64df2d2f4a2e9ee.out \
+    test_sessions.sh_d731afdd335857894e33452927954b9b457dd911.err \
+    test_sessions.sh_d731afdd335857894e33452927954b9b457dd911.out \
     test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.err \
     test_sessions.sh_ddf45811e9906de9f3930fe802ac7b2cc6e48106.out \
     test_sessions.sh_e57697be4d81ac8e5b2b2fa84f919b2d494978f3.err \
-    test_sessions.sh_e57697be4d81ac8e5b2b2fa84f919b2d494978f3.err \
-    test_sessions.sh_e57697be4d81ac8e5b2b2fa84f919b2d494978f3.out \
     test_sessions.sh_e57697be4d81ac8e5b2b2fa84f919b2d494978f3.out \
     test_sessions.sh_e988439404f2e97604641c8d087855f3efe052e4.err \
-    test_sessions.sh_e988439404f2e97604641c8d087855f3efe052e4.err \
-    test_sessions.sh_e988439404f2e97604641c8d087855f3efe052e4.out \
     test_sessions.sh_e988439404f2e97604641c8d087855f3efe052e4.out \
     test_shlexer.sh_14dd967cb2af90899c9e5e45d00b676b5a3163aa.err \
     test_shlexer.sh_14dd967cb2af90899c9e5e45d00b676b5a3163aa.out \

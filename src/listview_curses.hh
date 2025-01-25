@@ -540,6 +540,8 @@ public:
     struct overlay_content {
         vis_line_t oc_main_line;
         vis_line_t oc_line;
+        size_t oc_height{0};
+        size_t oc_inner_height{0};
     };
     struct empty_space {};
 
@@ -593,7 +595,7 @@ protected:
     vis_line_t lv_selection{0};
     bool lv_sync_selection_and_top{false};
 
-    struct timeval lv_mouse_time {
+    timeval lv_mouse_time {
         0, 0
     };
     int lv_scroll_accel{1};

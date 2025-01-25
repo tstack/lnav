@@ -533,11 +533,10 @@ listview_curses::do_update()
                             = this->lv_overlay_source->list_header_for_overlay(
                                 *this, row);
                         if (hdr) {
-                            auto ov_hdr_attrs = text_attrs{};
-                            ov_hdr_attrs.ta_attrs |= NCSTYLE_UNDERLINE;
+                            auto ov_hdr_attrs = text_attrs::with_underline();
                             auto ov_hdr = hdr.value().with_attr_for_all(
                                 VC_STYLE.value(ov_hdr_attrs));
-                            this->lv_display_lines.push_back(
+                            this->lv_display_lines.emplace_back(
                                 static_overlay_content{});
                             mvwattrline(this->lv_window,
                                         y,
@@ -559,8 +558,11 @@ listview_curses::do_update()
                                 VC_ROLE.value(role_t::VCR_CURSOR_LINE));
                         }
 
-                        this->lv_display_lines.push_back(
-                            overlay_content{row, overlay_row});
+                        this->lv_display_lines.emplace_back(
+                            overlay_content{row,
+                                            overlay_row,
+                                            overlay_height,
+                                            row_overlay_content.size()});
                         mvwattrline(this->lv_window,
                                     y,
                                     this->vc_x,
@@ -722,7 +724,7 @@ listview_curses::shift_selection(shift_amount_t sa)
 
     this->get_dimensions(height, width);
     if (this->lv_overlay_focused) {
-        vis_line_t focused = this->get_selection();
+        const auto focused = this->get_selection();
         std::vector<attr_line_t> overlay_content;
 
         this->lv_overlay_source->list_value_for_overlay(
@@ -846,7 +848,7 @@ scroll_polarity(mouse_button_t button)
 bool
 listview_curses::handle_mouse(mouse_event& me)
 {
-    auto GUTTER_REPEAT_DELAY
+    static constexpr auto GUTTER_REPEAT_DELAY
         = std::chrono::duration_cast<std::chrono::microseconds>(100ms).count();
 
     if (view_curses::handle_mouse(me)) {
@@ -858,16 +860,50 @@ listview_curses::handle_mouse(mouse_event& me)
     }
 
     vis_line_t inner_height, height;
-    struct timeval diff;
     unsigned long width;
 
-    timersub(&me.me_time, &this->lv_mouse_time, &diff);
+    auto diff = me.me_time - this->lv_mouse_time;
     this->get_dimensions(height, width);
     inner_height = this->get_inner_height();
 
     switch (me.me_button) {
         case mouse_button_t::BUTTON_SCROLL_UP:
         case mouse_button_t::BUTTON_SCROLL_DOWN: {
+            if (me.me_y < this->lv_display_lines.size()) {
+                auto display_content = this->lv_display_lines[me.me_y];
+
+                if (display_content.is<overlay_content>()
+                    && this->lv_overlay_focused)
+                {
+                    auto oc = display_content.get<overlay_content>();
+
+                    if (oc.oc_height < oc.oc_inner_height) {
+                        if (me.me_button == mouse_button_t::BUTTON_SCROLL_UP
+                            && this->lv_focused_overlay_top > 0_vl)
+                        {
+                            this->lv_mouse_time = me.me_time;
+                            this->lv_focused_overlay_top -= 1_vl;
+                            this->set_needs_update();
+                        }
+
+                        if (me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN
+                            && this->lv_focused_overlay_top
+                                < (oc.oc_inner_height - oc.oc_height))
+                        {
+                            this->lv_mouse_time = me.me_time;
+                            this->lv_focused_overlay_top += 1_vl;
+                            if (this->lv_focused_overlay_selection
+                                <= this->lv_focused_overlay_top)
+                            {
+                                this->lv_focused_overlay_selection
+                                    = this->lv_focused_overlay_top + 1_vl;
+                            }
+                            this->set_needs_update();
+                        }
+                        return true;
+                    }
+                }
+            }
             this->shift_top(vis_line_t(scroll_polarity(me.me_button) * 2_vl),
                             true);
             return true;
@@ -983,8 +1019,6 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
     } else if (this->lv_top != top) {
         auto old_top = this->lv_top;
         this->lv_top = top;
-        this->lv_focused_overlay_top = 0_vl;
-        this->lv_focused_overlay_selection = 0_vl;
         if (this->lv_selectable) {
             if (this->lv_selection < 0_vl) {
                 this->set_selection_without_context(top);

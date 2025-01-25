@@ -1014,10 +1014,10 @@ view_colors::init_roles(const lnav_theme& lt,
         this->get_role_attrs(role_t::VCR_ACTIVE_STATUS).ra_normal,
         this->get_role_attrs(role_t::VCR_ACTIVE_STATUS).ra_reverse,
     };
-    this->get_role_attrs(role_t::VCR_ACTIVE_STATUS2).ra_normal.ta_attrs
-        |= NCSTYLE_BOLD;
-    this->get_role_attrs(role_t::VCR_ACTIVE_STATUS2).ra_reverse.ta_attrs
-        |= NCSTYLE_BOLD;
+    this->get_role_attrs(role_t::VCR_ACTIVE_STATUS2).ra_normal
+        |= text_attrs::style::bold;
+    this->get_role_attrs(role_t::VCR_ACTIVE_STATUS2).ra_reverse
+        |= text_attrs::style::bold;
     this->get_role_attrs(role_t::VCR_STATUS_TITLE)
         = this->to_attrs(lt, lt.lt_style_status_title, reporter);
     this->get_role_attrs(role_t::VCR_STATUS_SUBTITLE)

@@ -145,7 +145,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     time_str.append(curr_timestamp);
     time_lr.lr_end = time_str.length();
     time_line.with_attr(
-        string_attr(time_lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD})));
+        string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
     time_str.append(" \u2014 ");
     time_lr.lr_start = time_str.length();
     time_str.append(humanize::time::point::from_tv(ll->get_timeval())
@@ -153,7 +153,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                         .as_precise_time_ago());
     time_lr.lr_end = time_str.length();
     time_line.with_attr(
-        string_attr(time_lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD})));
+        string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
 
     struct line_range time_range = find_string_attr_range(
         this->fos_log_helper.ldh_line_attrs, &logline::L_TIMESTAMP);
@@ -193,7 +193,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                 humanize::time::duration::from_tv(diff_tv).to_string());
             time_lr.lr_end = time_str.length();
             time_line.with_attr(
-                string_attr(time_lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD})));
+                string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
         }
     }
 
@@ -333,7 +333,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             this->fos_lines.back().with_attr(
                 string_attr(line_range(32, 32 + format_name.length()),
                             VC_STYLE.value(vc.attrs_for_ident(format_name)
-                                           | text_attrs{NCSTYLE_BOLD})));
+                                           | text_attrs::style::bold)));
             last_format = curr_format;
         }
 
@@ -476,7 +476,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         auto& disc_str = al.get_string();
 
         al.with_attr(string_attr(line_range(disc_str.length(), -1),
-                                 VC_STYLE.value(text_attrs{NCSTYLE_BOLD})));
+                                 VC_STYLE.value(text_attrs::with_bold())));
         disc_str.append(this->fos_log_helper.ldh_msg_format);
     }
 
@@ -687,7 +687,7 @@ field_overlay_source::add_key_line_attrs(int key_size, bool last_line)
 
     lr.lr_start = 3 + key_size + 3;
     lr.lr_end = -1;
-    sa.emplace_back(lr, VC_STYLE.value(text_attrs{NCSTYLE_BOLD}));
+    sa.emplace_back(lr, VC_STYLE.value(text_attrs::with_bold()));
 }
 
 void

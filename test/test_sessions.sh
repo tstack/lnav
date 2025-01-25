@@ -110,6 +110,11 @@ run_cap_test ${lnav_test} -n \
     -c ":test-comment reset of adjust stuck" \
     ${test_dir}/logfile_access_log.0
 
+run_cap_test ${lnav_test} -n \
+    -c ":adjust-log-time +1h" \
+    -c ":reset-session" \
+    ${test_dir}/logfile_java.*
+
 # hiding fields failed
 rm -rf ./sessions
 mkdir -p $HOME

@@ -49,6 +49,8 @@ Interface changes:
   an error.
 * The DB view will now chart result columns that contain a number
   with a unit, like "KB", "MB", "GB", etc...
+* When switching to the pretty view, the focused line should be
+  in the same position in the text as in the source view.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an

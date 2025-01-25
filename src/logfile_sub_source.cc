@@ -482,7 +482,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             > day_num(this->lss_token_line->get_time<std::chrono::seconds>()
                           .count())))
     {
-        attrs.ta_attrs |= NCSTYLE_UNDERLINE;
+        attrs |= text_attrs::style::underline;
     }
 
     const auto& line_values = this->lss_token_values;
