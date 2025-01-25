@@ -229,7 +229,7 @@ lexers['custsqlite'] = CustSqliteLexer(startinline=True)
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.coverage',
-    'sphinxcontrib.images',
+    "sphinxcontrib.lightbox2",
     'sphinx_copybutton',
     'sphinx-jsonschema',
     'sphinx-prompt',
@@ -459,3 +459,7 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 # texinfo_show_urls = 'footnote'
+
+lightbox2_fade_duration = 300
+lightbox2_image_fade_duration = 300
+lightbox2_resize_duration = 300

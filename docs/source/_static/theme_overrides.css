@@ -26,3 +26,11 @@ table.query-results p {
 DL DT {
     border-bottom: 1px solid #333 !important;
 }
+
+.lightbox .lb-image {
+    border-color: rgba(32, 32, 32, .4) !important;
+}
+
+.lb-outerContainer {
+    background-color: rgba(128, 128, 128, .4) !important;
+}

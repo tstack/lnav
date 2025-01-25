@@ -29,7 +29,7 @@ The report is generated using the
 `report-perf.lnav <https://github.com/tstack/lnav/blob/master/release/report-perf.lnav>`_
 script.
 
-.. thumbnail:: lnav-perf.png
+.. figure:: lnav-perf.png
     :align: center
 
     Performance results as displayed in lnav's DB view.
