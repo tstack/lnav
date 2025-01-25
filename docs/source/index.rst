@@ -15,6 +15,7 @@ Contents:
    hotkeys
    cli
    usage
+   scripts
    cookbook
    config
    formats

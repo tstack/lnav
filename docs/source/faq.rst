@@ -30,9 +30,26 @@ Q: How can I force a format for a file?
 :Answer: The log format for a file is automatically detected and cannot be
   forced.
 
-:Solution: Add some of the log file lines to the :ref:`sample<format_sample>`
-  array and then startup lnav to get a detailed explanation of where the format
-  patterns are not matching the sample lines.
+:Solution: First, you need to get an idea of why the file is not being
+  detected by the expected format using one of the following methods:
+
+  * Use the :ref:`format test<format_test_cli>` management command to check
+    the file against the format.  This command will give some details about
+    why the file is not matching the format.  For example, the following
+    command will check the file :code:`my_access.log` against the
+    :code:`access_log` format:
+
+    .. prompt:: bash
+
+        lnav -m format access_log test my_access.log
+
+  * Add some of the log file lines to the :ref:`sample<format_sample>`
+    array and then startup lnav to get a detailed explanation of where the
+    format patterns are not matching the sample lines.
+
+  After you get an idea of why the regular expressions are not matching,
+  you can update the existing regexes or add a new one.  For formats
+  where you are not the author, you can create a :ref:`patch<patch_format>`.
 
 :Details: The first lines of the file are matched against the
   :ref:`regular expressions defined in the format definitions<format_regex>`.

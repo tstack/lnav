@@ -8,17 +8,6 @@ These recipes can be used as a starting point for your own needs after some
 adaptation.
 
 
-Log Formats
------------
-
-TBD
-
-Defining a New Format
-^^^^^^^^^^^^^^^^^^^^^
-
-TBD
-
-
 Annotating Logs
 ---------------
 

@@ -156,6 +156,7 @@ Subcommands
 
    Pull changes to a regex that was previously pushed to regex101.com .
 
+.. _format_test_cli:
 .. option:: format <format-name> test <path>
 
    Test this format against the given file.
