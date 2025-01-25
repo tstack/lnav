@@ -177,6 +177,7 @@ When compiling from source, the following dependencies are required:
 * `libcurl <https://curl.haxx.se>`_
 * `libarchive <https://libarchive.org>`_
 * `libunistring <https://www.gnu.org/software/libunistring/>`_
+* `cargo/rust <https://www.rust-lang.org>`_
 
 Installation
 ^^^^^^^^^^^^
