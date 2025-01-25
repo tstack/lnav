@@ -31,6 +31,8 @@
 #define pretty_printer_hh
 
 #include <deque>
+#include <optional>
+#include <set>
 #include <sstream>
 #include <stack>
 #include <string>

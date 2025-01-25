@@ -61,7 +61,7 @@ public:
 
     plain_text_source() = default;
 
-    plain_text_source(const std::string& text);
+    plain_text_source(const string_fragment& text);
 
     plain_text_source(const std::vector<std::string>& text_lines);
 

@@ -32,7 +32,6 @@
 #ifndef attr_line_hh
 #define attr_line_hh
 
-#include <new>
 #include <optional>
 #include <string>
 #include <vector>
@@ -215,18 +214,25 @@ public:
 
     attr_line_t(const char* str) : al_string(str) {}
 
-    static inline attr_line_t from_ansi_str(const char* str)
+    static attr_line_t from_ansi_str(const char* str)
     {
         attr_line_t retval;
 
         return retval.with_ansi_string("%s", str);
     }
 
-    static inline attr_line_t from_ansi_str(const std::string& str)
+    static attr_line_t from_ansi_str(const std::string& str)
     {
         attr_line_t retval;
 
         return retval.with_ansi_string(str);
+    }
+
+    static attr_line_t from_ansi_frag(const string_fragment& sf)
+    {
+        attr_line_t retval;
+
+        return retval.with_ansi_string(sf);
     }
 
     /** @return The string itself. */
@@ -248,6 +254,8 @@ public:
     attr_line_t& with_ansi_string(const char* str, ...);
 
     attr_line_t& with_ansi_string(const std::string& str);
+
+    attr_line_t& with_ansi_string(const string_fragment& str);
 
     attr_line_t& with_attr(const string_attr& sa)
     {

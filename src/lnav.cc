@@ -1398,8 +1398,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
         }
 
-        execute_examples();
-
         rlc->set_window(lnav_data.ld_window);
         rlc->set_focus_action(rl_focus);
         rlc->set_change_action(rl_change);

@@ -67,6 +67,15 @@ attr_line_t::with_ansi_string(const std::string& str)
     return *this;
 }
 
+attr_line_t&
+attr_line_t::with_ansi_string(const string_fragment& str)
+{
+    this->al_string = str.to_string();
+    scrub_ansi_string(this->al_string, &this->al_attrs);
+
+    return *this;
+}
+
 namespace text_stream {
 struct word {
     string_fragment w_word;

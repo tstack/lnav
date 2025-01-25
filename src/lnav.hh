@@ -240,7 +240,7 @@ struct lnav_data_t {
     db_overlay_source ld_db_preview_overlay_source[2];
     std::unordered_set<std::string> ld_db_key_names;
 
-    vis_line_t ld_last_pretty_print_top;
+    vis_line_t ld_last_pretty_print_top{-1_vl};
 
     std::unique_ptr<log_vtab_manager> ld_vtab_manager;
     auto_sqlite3 ld_db;

@@ -41,6 +41,8 @@ struct line_range {
         codepoint,
     };
 
+    static line_range empty_at(int start) { return line_range{start, start}; }
+
     int lr_start;
     int lr_end;
     unit lr_unit;
@@ -76,13 +78,13 @@ struct line_range {
             && (this->lr_end == -1 || pos < this->lr_end);
     }
 
-    bool contains(const struct line_range& other) const
+    bool contains(const line_range& other) const
     {
         return this->contains(other.lr_start)
             && (this->lr_end == -1 || other.lr_end <= this->lr_end);
     }
 
-    bool intersects(const struct line_range& other) const
+    bool intersects(const line_range& other) const
     {
         if (this->contains(other.lr_start)) {
             return true;
@@ -97,7 +99,7 @@ struct line_range {
         return false;
     }
 
-    line_range intersection(const struct line_range& other) const;
+    line_range intersection(const line_range& other) const;
 
     line_range& shift(int32_t start, int32_t amount);
 
@@ -110,7 +112,7 @@ struct line_range {
         }
     }
 
-    bool operator<(const struct line_range& rhs) const
+    bool operator<(const line_range& rhs) const
     {
         if (this->lr_start < rhs.lr_start) {
             return true;
@@ -136,7 +138,7 @@ struct line_range {
         return false;
     }
 
-    bool operator==(const struct line_range& rhs) const
+    bool operator==(const line_range& rhs) const
     {
         return (this->lr_start == rhs.lr_start && this->lr_end == rhs.lr_end);
     }

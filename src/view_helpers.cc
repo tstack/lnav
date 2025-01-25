@@ -27,10 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
+#include <utility>
+
 #include "view_helpers.hh"
 
-#include "base/itertools.hh"
 #include "base/itertools.enumerate.hh"
+#include "base/itertools.hh"
 #include "bound_tags.hh"
 #include "config.h"
 #include "document.sections.hh"
@@ -56,7 +59,7 @@
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
-const char* lnav_view_strings[LNV__MAX + 1] = {
+const char* const lnav_view_strings[LNV__MAX + 1] = {
     "log",
     "text",
     "help",
@@ -70,7 +73,7 @@ const char* lnav_view_strings[LNV__MAX + 1] = {
     nullptr,
 };
 
-const char* lnav_view_titles[LNV__MAX] = {
+const char* const lnav_view_titles[LNV__MAX] = {
     "LOG",
     "TEXT",
     "HELP",
@@ -82,7 +85,8 @@ const char* lnav_view_titles[LNV__MAX] = {
     "TIMELINE",
 };
 
-const char* lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1]
+const char* const
+    lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1]
     = {
         "PAGING",
         "BREADCRUMBS",
@@ -335,7 +339,8 @@ public:
 static void
 open_pretty_view()
 {
-    static const char* NOTHING_MSG = "Nothing to pretty-print";
+    static auto NOTHING_MSG
+        = string_fragment::from_const("Nothing to pretty-print");
 
     auto* top_tc = *lnav_data.ld_view_stack.top();
     auto* pretty_tc = &lnav_data.ld_views[LNV_PRETTY];
@@ -366,22 +371,27 @@ open_pretty_view()
     std::vector<std::unique_ptr<lnav::document::hier_node>> hier_nodes;
     std::vector<pretty_sub_source::hier_interval_t> hier_tree_vec;
     std::set<size_t> pretty_indents;
+    std::optional<vis_line_t> pretty_selected_line;
     if (top_tc == log_tc) {
         auto& lss = lnav_data.ld_log_source;
-        bool first_line = true;
         auto start_off = size_t{0};
+        auto line_count = 0_vl;
 
         for (auto vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
-            content_line_t cl = lss.at(vl);
+            auto cl = lss.at(vl);
             auto lf = lss.find(cl);
             auto ll = lf->begin() + cl;
             shared_buffer_ref sbr;
 
-            if (!first_line && !ll->is_message()) {
+            if (line_count > 0_vl && !ll->is_message()) {
                 continue;
             }
             auto ll_start = lf->message_start(ll);
             attr_line_t al;
+
+            if (vl == log_tc->get_selection()) {
+                pretty_selected_line = line_count;
+            }
 
             vl -= vis_line_t(std::distance(ll_start, ll));
             lss.text_value_for_line(
@@ -458,7 +468,7 @@ open_pretty_view()
                 full_text.append("\n");
             }
 
-            first_line = false;
+            line_count += vis_line_t(pretty_lines.size());
             for (auto& interval : curr_intervals) {
                 interval.start += start_off;
                 interval.stop += start_off;
@@ -478,14 +488,19 @@ open_pretty_view()
             start_off += line_off;
         }
     } else if (top_tc == text_tc) {
-        if (text_tc->listview_rows(*text_tc)) {
+        if (text_tc->listview_rows(*text_tc) > 0) {
             std::vector<attr_line_t> rows;
             rows.resize(text_tc->get_bottom() - text_tc->get_top() + 1);
             text_tc->listview_value_for_rows(
                 *text_tc, text_tc->get_top(), rows);
+
             attr_line_t orig_al;
 
+            auto curr_vl = text_tc->get_top();
             for (auto& row : rows) {
+                if (curr_vl == text_tc->get_selection()) {
+                    row.with_attr_for_all(SA_ORIGIN_OFFSET.value(int64_t{0}));
+                }
                 remove_string_attr(row.get_attrs(), &VC_BLOCK_ELEM);
                 for (auto& attr : row.get_attrs()) {
                     if (attr.sa_type == &VC_ROLE) {
@@ -499,6 +514,7 @@ open_pretty_view()
                     }
                 }
                 orig_al.append(row);
+                curr_vl += 1_vl;
             }
 
             data_scanner ds(orig_al.get_string());
@@ -506,6 +522,16 @@ open_pretty_view()
 
             pp.append_to(full_text);
 
+            auto origin_opt
+                = get_string_attr(full_text.get_attrs(), &SA_ORIGIN_OFFSET);
+            if (origin_opt.has_value()) {
+                auto leading = string_fragment::from_byte_range(
+                    full_text.al_string.data(),
+                    0,
+                    origin_opt.value()->sa_range.lr_start);
+                auto leading_lines = leading.count('\n');
+                pretty_selected_line = vis_line_t(leading_lines);
+            }
             all_intervals = pp.take_intervals();
             hier_nodes.emplace_back(pp.take_hier_root());
             hier_tree_vec.emplace_back(
@@ -529,6 +555,7 @@ open_pretty_view()
     if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
         pretty_tc->set_top(0_vl);
     }
+    pretty_tc->set_selection(pretty_selected_line.value_or(0_vl));
     lnav_data.ld_last_pretty_print_top = log_tc->get_top();
     pretty_tc->redo_search();
 }
@@ -1013,7 +1040,8 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
     auto& dos = lnav_data.ld_db_example_overlay;
     auto& db_tc = lnav_data.ld_views[LNV_DB];
 
-    for (const auto& [index, ex] : lnav::itertools::enumerate(ht.ht_example, 1)) {
+    for (const auto& [index, ex] : lnav::itertools::enumerate(ht.ht_example, 1))
+    {
         std::string alt_msg;
         attr_line_t result;
 
@@ -1079,55 +1107,23 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
     }
 }
 
-void
-execute_examples()
-{
-#if 0
-    static const auto* sql_cmd_map
-        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
-
-    auto& dls = lnav_data.ld_db_row_source;
-
-    auto old_width = dls.dls_max_column_width;
-    dls.dls_max_column_width = 15;
-    for (const auto& help_pair : sqlite_function_help) {
-        execute_example(*help_pair.second);
-    }
-    for (const auto& help_pair : lnav::sql::prql_functions) {
-        if (help_pair.second->ht_context != help_context_t::HC_PRQL_FUNCTION) {
-            continue;
-        }
-        execute_example(*help_pair.second);
-    }
-    for (const auto& cmd_pair : *sql_cmd_map) {
-        if (cmd_pair.second->c_help.ht_context
-                != help_context_t::HC_PRQL_TRANSFORM
-            && cmd_pair.second->c_help.ht_context
-                != help_context_t::HC_PRQL_FUNCTION)
-        {
-            continue;
-        }
-        execute_example(cmd_pair.second->c_help);
-    }
-    dls.dls_max_column_width = old_width;
-
-    dls.clear();
-#endif
-}
-
 const attr_line_t&
 eval_example(const help_text& ht, const help_example& ex)
 {
     static const auto EMPTY = attr_line_t();
     auto res_map = EXAMPLE_RESULTS.writeAccess();
 
-    for (auto _attempt : {0, 1}) {
+    for ([[maybe_unused]] auto _attempt : {0, 1}) {
         const auto iter = res_map->find(ex.he_cmd);
         if (iter != res_map->end()) {
             return iter->second;
         }
 
         switch (ht.ht_context) {
+            case help_context_t::HC_NONE:
+            case help_context_t::HC_PARAMETER:
+            case help_context_t::HC_RESULT:
+                break;
             default: {
                 execute_example(*res_map, ht);
                 break;

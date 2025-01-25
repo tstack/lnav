@@ -32,8 +32,9 @@
 #ifndef lnav_view_helpers_hh
 #define lnav_view_helpers_hh
 
+#include <optional>
+
 #include "bookmarks.hh"
-#include "help_text.hh"
 #include "listview_curses.hh"
 #include "logfile_fwd.hh"
 #include "vis_line.hh"
@@ -78,9 +79,9 @@ enum class ln_mode_t : int {
     BUSY,
 };
 
-extern const char* lnav_view_strings[LNV__MAX + 1];
-extern const char* lnav_view_titles[LNV__MAX];
-extern const char*
+extern const char* const lnav_view_strings[LNV__MAX + 1];
+extern const char* const lnav_view_titles[LNV__MAX];
+extern const char* const
     lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1];
 
 std::optional<lnav_view_t> view_from_string(const char* name);
