@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdatomic.h>
 #include "automaton.h"
 #include "internal.h"
 #include "unixsig.h"
@@ -110,7 +111,7 @@ typedef struct inputctx {
   struct initial_responses* initdata_complete;
   int kittykbd;        // kitty keyboard protocol support level
   bool failed;         // error initializing input automaton, abort
-    volatile bool looping;
+    atomic_int looping;
 } inputctx;
 
 static inline void
