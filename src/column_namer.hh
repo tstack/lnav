@@ -53,7 +53,7 @@ public:
 
     string_fragment add_column(const string_fragment& in_name);
 
-    ArenaAlloc::Alloc<char> cn_alloc;
+    ArenaAlloc::Alloc<char> cn_alloc{1024};
     language cn_language;
     std::vector<string_fragment> cn_builtin_names;
     std::vector<string_fragment> cn_names;
