@@ -2522,6 +2522,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         log_info("performing cleanup");
 
+        if (lnav_data.ld_spectro_source != nullptr) {
+            delete std::exchange(lnav_data.ld_spectro_source->ss_value_source,
+                                 nullptr);
+        }
+
         for (auto& tv : lnav_data.ld_views) {
             tv.set_window(nullptr);
         }
@@ -3218,10 +3223,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
     log_info("END registering format tables")
 
-    load_format_extra(lnav_data.ld_db.in(),
-                      ec.ec_global_vars,
-                      lnav_data.ld_config_paths,
-                      loader_errors);
+        load_format_extra(lnav_data.ld_db.in(),
+                          ec.ec_global_vars,
+                          lnav_data.ld_config_paths,
+                          loader_errors);
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
 
     if (!loader_errors.empty()) {

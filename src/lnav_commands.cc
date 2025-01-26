@@ -2509,9 +2509,8 @@ com_filter(exec_context& ec,
                       .count()
                 / 1000.0;
 
-            retval = fmt::format(
-                FMT_STRING("info: filter activated in {:.3}s"),
-                duration);
+            retval = fmt::format(FMT_STRING("info: filter activated in {:.3}s"),
+                                 duration);
         }
     } else {
         return ec.make_error("expecting a regular expression to filter");
@@ -5743,8 +5742,7 @@ com_spectrogram(exec_context& ec,
 
         ss.ss_granularity = ZOOM_LEVELS[lnav_data.ld_zoom_level];
         if (ss.ss_value_source != nullptr) {
-            delete ss.ss_value_source;
-            ss.ss_value_source = nullptr;
+            delete std::exchange(ss.ss_value_source, nullptr);
         }
         ss.invalidate();
 
