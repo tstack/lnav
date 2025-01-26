@@ -206,6 +206,22 @@ string_fragment::rtrim(const char* tokens) const
     return retval;
 }
 
+std::optional<int>
+string_fragment::rfind(char ch) const
+{
+    if (this->empty()) {
+        return std::nullopt;
+    }
+
+    for (auto index = this->sf_end - 1; index >= this->sf_begin; index--) {
+        if (this->sf_string[index] == ch) {
+            return index;
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::optional<string_fragment>
 string_fragment::consume_n(int amount) const
 {

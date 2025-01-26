@@ -335,6 +335,8 @@ struct string_fragment {
         return std::nullopt;
     }
 
+    std::optional<int> rfind(char ch) const;
+
     template<typename P>
     string_fragment find_left_boundary(size_t start,
                                        P&& predicate,
@@ -536,6 +538,35 @@ struct string_fragment {
                 this->sf_begin + consumed + 1,
                 this->sf_end,
             });
+    }
+
+    template<typename P>
+    split_result rsplit_pair(P&& predicate) const
+    {
+        if (this->empty()) {
+            return std::nullopt;
+        }
+
+        auto curr = this->sf_end - 1;
+        while (curr >= this->sf_begin) {
+            if (predicate(this->sf_string[curr])) {
+                return std::make_pair(
+                    string_fragment{
+                        this->sf_string,
+                        this->sf_begin,
+                        this->sf_begin + curr,
+                    },
+                    string_fragment{
+                        this->sf_string,
+                        this->sf_begin + curr + 1,
+                        this->sf_end,
+                    });
+            }
+
+            curr -= 1;
+        }
+
+        return std::nullopt;
     }
 
     split_result split_n(int amount) const;

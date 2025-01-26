@@ -799,13 +799,15 @@ view_colors::to_attrs(const lnav_theme& lt,
         // too slow to do this now
         reporter(&sc.sc_color, lnav::console::user_message::warning(""));
 #endif
-    } else {
-        auto role_class_path = std::filesystem::path(pp_sc.pp_path.to_string());
-        auto inner = role_class_path.filename().string();
-        auto outer = role_class_path.parent_path().filename().string();
+    } else if (!pp_sc.pp_path.empty()) {
+        auto role_class_path = pp_sc.pp_path.to_string_fragment();
+        auto inner
+            = role_class_path.rsplit_pair(string_fragment::tag1{'/'}).value();
+        auto outer
+            = inner.first.rsplit_pair(string_fragment::tag1{'/'}).value();
 
         role_class = intern_string::lookup(
-            fmt::format(FMT_STRING("-lnav_{}_{}"), outer, inner));
+            fmt::format(FMT_STRING("-lnav_{}_{}"), outer.second, inner.second));
     }
 
     auto fg1 = sc.sc_color;
