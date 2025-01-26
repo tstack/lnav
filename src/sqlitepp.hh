@@ -101,6 +101,11 @@ struct bind_visitor {
         sqlite3_bind_double(this->bv_stmt, this->bv_index, value);
     }
 
+    void operator()(bool value) const
+    {
+        sqlite3_bind_int(this->bv_stmt, this->bv_index, value);
+    }
+
     sqlite3_stmt* bv_stmt;
     int bv_index;
 };

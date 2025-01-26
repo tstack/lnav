@@ -5231,6 +5231,9 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     [&pair](double val) {
                         setenv(
                             pair.first.c_str(), fmt::to_string(val).c_str(), 1);
+                    },
+                    [&pair](bool val) {
+                        setenv(pair.first.c_str(), val ? "1" : "0", 1);
                     });
             }
 

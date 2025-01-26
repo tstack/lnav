@@ -339,7 +339,11 @@
                                         "^(\\w+)$": {
                                             "title": "/ui/theme-defs/<theme_name>/vars/<var_name>",
                                             "description": "A theme variable definition",
-                                            "type": "string"
+                                            "type": [
+                                                "boolean",
+                                                "integer",
+                                                "string"
+                                            ]
                                         }
                                     },
                                     "additionalProperties": false

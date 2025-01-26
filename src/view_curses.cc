@@ -229,7 +229,6 @@ view_curses::mvwattrline(ncplane* window,
     auto& sa = al.get_attrs();
     const auto& line = al.get_string();
     std::vector<utf_to_display_adjustment> utf_adjustments;
-    std::string full_line;
 
     require(lr_chars.lr_end >= 0);
 
@@ -358,24 +357,15 @@ view_curses::mvwattrline(ncplane* window,
         retval.mr_chars_out = char_index;
     }
     retval.mr_bytes_remaining = expanded_line.size() - lr_bytes.lr_end;
-
-    full_line = expanded_line;
-    if (line_width_chars > retval.mr_chars_out) {
-        for (size_t fill_index = 0;
-             fill_index < (line_width_chars - retval.mr_chars_out);
-             fill_index++)
-        {
-            full_line.push_back(' ');
-        }
-    }
+    expanded_line.resize(lr_bytes.lr_end);
 
     auto& vc = view_colors::singleton();
     auto base_attrs = vc.attrs_for_role(base_role);
     if (lr_chars.length() > 0) {
         ncplane_erase_region(window, y, x, 1, lr_chars.length());
-        if (lr_bytes.lr_start < (int) full_line.size()) {
+        if (lr_bytes.lr_start < (int) expanded_line.size()) {
             ncplane_putstr_yx(
-                window, y, x, &full_line.c_str()[lr_bytes.lr_start]);
+                window, y, x, &expanded_line.c_str()[lr_bytes.lr_start]);
         }
     }
 
@@ -801,7 +791,7 @@ view_colors::to_attrs(const lnav_theme& lt,
                       lnav_config_listener::error_reporter& reporter)
 {
     const auto& sc = pp_sc.pp_value;
-    std::string fg1, bg1, fg_color, bg_color;
+    std::string fg_color, bg_color;
     intern_string_t role_class;
 
     if (pp_sc.pp_path.empty()) {
@@ -818,14 +808,10 @@ view_colors::to_attrs(const lnav_theme& lt,
             fmt::format(FMT_STRING("-lnav_{}_{}"), outer, inner));
     }
 
-    fg1 = sc.sc_color;
-    bg1 = sc.sc_background_color;
-    std::map<std::string, scoped_value_t> vars;
-    for (const auto& vpair : lt.lt_vars) {
-        vars[vpair.first] = vpair.second;
-    }
-    shlex(fg1).eval(fg_color, scoped_resolver{&vars});
-    shlex(bg1).eval(bg_color, scoped_resolver{&vars});
+    auto fg1 = sc.sc_color;
+    auto bg1 = sc.sc_background_color;
+    shlex(fg1).eval(fg_color, scoped_resolver{&lt.lt_vars});
+    shlex(bg1).eval(bg_color, scoped_resolver{&lt.lt_vars});
 
     auto fg = styling::color_unit::from_str(fg_color).unwrapOrElse(
         [&](const auto& msg) {
@@ -930,8 +916,11 @@ view_colors::init_roles(const lnav_theme& lt,
 
     for (int ansi_fg = 1; ansi_fg < 8; ansi_fg++) {
         auto fg_iter = lt.lt_vars.find(COLOR_NAMES[ansi_fg]);
-        auto fg_str = fg_iter == lt.lt_vars.end() ? "" : fg_iter->second;
+        auto fg_str = fg_iter == lt.lt_vars.end()
+            ? ""
+            : fmt::to_string(fg_iter->second);
 
+        log_debug("ansi fg str %s", fg_str.c_str());
         auto rgb_fg = from<rgb_color>(string_fragment::from_str(fg_str))
                           .unwrapOrElse([&](const auto& msg) {
                               reporter(&fg_str,

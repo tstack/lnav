@@ -30,6 +30,8 @@
 #ifndef lnav_events_hh
 #define lnav_events_hh
 
+#include <string>
+
 #include <sqlite3.h>
 
 #include "yajlpp/yajlpp_def.hh"
@@ -65,7 +67,7 @@ struct msg_detected {
     std::string md_format;
     uint32_t md_line_number;
     std::string md_timestamp;
-    std::map<std::string, json_any_t> md_values;
+    std::map<std::string, scoped_value_t> md_values;
     std::string md_schema{SCHEMA_ID};
 
     static const std::string SCHEMA_ID;

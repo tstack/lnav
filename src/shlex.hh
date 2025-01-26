@@ -35,12 +35,9 @@
 #include <string>
 #include <vector>
 
-#include <pwd.h>
-
 #include "base/attr_line.hh"
 #include "base/intern_string.hh"
-#include "base/opt_util.hh"
-#include "shlex.resolver.hh"
+#include "base/lnav.resolver.hh"
 
 enum class shlex_token_t {
     eof,

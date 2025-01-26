@@ -647,7 +647,6 @@ add_library(
         session.export.hh
         sequence_sink.hh
         shlex.hh
-        shlex.resolver.hh
         simdutf8check.h
         spectro_impls.hh
         spectro_source.hh

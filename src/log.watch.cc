@@ -361,7 +361,7 @@ eval_with(logfile& lf, logfile::iterator ll)
             switch (lv.lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_NULL:
                     lmd.md_values[lv.lv_meta.lvm_name.to_string()]
-                        = json_null_t{};
+                        = null_value_t{};
                     break;
                 case value_kind_t::VALUE_BOOLEAN:
                     lmd.md_values[lv.lv_meta.lvm_name.to_string()]

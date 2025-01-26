@@ -72,7 +72,7 @@ TEST_CASE("shlex::eval")
     shlex lexer(cmdline1);
 
     std::map<std::string, scoped_value_t> vars = {
-        {"semantic_highlight_color", "foo"},
+        {"semantic_highlight_color", string_fragment::from_const("foo")},
     };
 
     std::string out;

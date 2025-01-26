@@ -30,7 +30,7 @@
 #ifndef lnav_ansi_vars_hh
 #define lnav_ansi_vars_hh
 
-#include "shlex.resolver.hh"
+#include "lnav.resolver.hh"
 
 /**
  * Populate a variable map with strings that contain escape sequences that

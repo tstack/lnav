@@ -37,8 +37,8 @@
 #include <sqlite3.h>
 
 #include "ArenaAlloc/arenaalloc.h"
+#include "base/lnav.resolver.hh"
 #include "hist_source.hh"
-#include "shlex.resolver.hh"
 #include "styling.hh"
 #include "textview_curses.hh"
 

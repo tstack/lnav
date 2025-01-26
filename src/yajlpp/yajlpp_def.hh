@@ -35,18 +35,12 @@
 #include <chrono>
 
 #include "base/date_time_scanner.hh"
+#include "base/lnav.resolver.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "mapbox/variant.hpp"
 #include "relative_time.hh"
 #include "yajlpp.hh"
-
-struct json_null_t {
-    bool operator==(const json_null_t& other) const { return true; }
-};
-
-using json_any_t
-    = mapbox::util::variant<json_null_t, bool, int64_t, double, std::string>;
 
 struct json_path_container;
 
@@ -740,7 +734,8 @@ struct json_path_handler : public json_path_handler_base {
             bool>
         = true,
         std::enable_if_t<
-            !std::is_same_v<json_any_t, typename LastIsMap<Args...>::value_type>
+            !std::is_same_v<scoped_value_t,
+                            typename LastIsMap<Args...>::value_type>
                 && !std::is_same_v<std::string,
                                    typename LastIsMap<Args...>::value_type>
                 && !std::is_same_v<std::optional<std::string>,
@@ -827,7 +822,7 @@ struct json_path_handler : public json_path_handler_base {
 
     template<typename... Args,
              std::enable_if_t<
-                 LastIs<std::map<std::string, json_any_t>, Args...>::value,
+                 LastIs<std::map<std::string, scoped_value_t>, Args...>::value,
                  bool>
              = true>
     json_path_handler& for_field(Args... args)
@@ -885,11 +880,13 @@ struct json_path_handler : public json_path_handler_base {
 
                 for (const auto& pair : field) {
                     gen(pair.first);
-                    pair.second.match([&gen](json_null_t v) { gen(); },
-                                      [&gen](bool v) { gen(v); },
-                                      [&gen](int64_t v) { gen(v); },
-                                      [&gen](double v) { gen(v); },
-                                      [&gen](const std::string& v) { gen(v); });
+                    pair.second.match(
+                        [&gen](null_value_t v) { gen(); },
+                        [&gen](bool v) { gen(v); },
+                        [&gen](int64_t v) { gen(v); },
+                        [&gen](double v) { gen(v); },
+                        [&gen](const std::string& v) { gen(v); },
+                        [&](const string_fragment& v) { gen(v); });
                 }
             }
 
@@ -1284,10 +1281,9 @@ struct json_path_handler : public json_path_handler_base {
     json_path_handler& for_field(Args... args, T C::* ptr_arg)
     {
         this->add_cb(str_field_cb2);
-        this->jph_str_cb = [args..., ptr_arg](
-                               yajlpp_parse_context* ypc,
-                               const string_fragment& value_frag,
-                               yajl_string_props_t*) {
+        this->jph_str_cb = [args..., ptr_arg](yajlpp_parse_context* ypc,
+                                              const string_fragment& value_frag,
+                                              yajl_string_props_t*) {
             auto* obj = ypc->ypc_obj_stack.top();
             const auto* jph = ypc->ypc_current_handler;
             auto loc = source_location{ypc->ypc_source, ypc->get_line_number()};

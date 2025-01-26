@@ -212,7 +212,7 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
                 retval[name] = global_var->second;
             } else if ((env_value = getenv(&name[1])) != nullptr) {
                 sqlite3_bind_text(stmt, lpc + 1, env_value, -1, SQLITE_STATIC);
-                retval[name] = env_value;
+                retval[name] = string_fragment::from_c_str(env_value);
             }
         } else if (name[0] == ':' && ec.ec_line_values != nullptr) {
             for (auto& lv : ec.ec_line_values->lvv_values) {
@@ -234,7 +234,8 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
                         break;
                     case value_kind_t::VALUE_NULL:
                         sqlite3_bind_null(stmt, lpc + 1);
-                        retval[name] = db_label_source::NULL_STR;
+                        retval[name] = string_fragment::from_c_str(
+                            db_label_source::NULL_STR);
                         break;
                     default:
                         sqlite3_bind_text(stmt,
@@ -249,7 +250,8 @@ bind_sql_parameters(exec_context& ec, sqlite3_stmt* stmt)
         } else {
             sqlite3_bind_null(stmt, lpc + 1);
             log_warning("Could not bind variable: %s", name);
-            retval[name] = db_label_source::NULL_STR;
+            retval[name]
+                = string_fragment::from_c_str(db_label_source::NULL_STR);
         }
     }
 
@@ -443,6 +445,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                                 [](const string_fragment&) {
                                     return SQLITE_TEXT;
                                 },
+                                [](bool) { return SQLITE_INTEGER; },
                                 [](int64_t) { return SQLITE_INTEGER; },
                                 [](null_value_t) { return SQLITE_NULL; },
                                 [](double) { return SQLITE_FLOAT; });
@@ -1060,8 +1063,8 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                     if (isdigit(frag[0])) {
                         hm.hm_align = text_align_t::end;
                         if (!hm.hm_graphable.has_value()) {
-                            auto split_res
-                                = try_split_num_and_units(frag.to_string_view());
+                            auto split_res = try_split_num_and_units(
+                                frag.to_string_view());
                             if (split_res.has_value()) {
                                 dls.set_col_as_graphable(lpc);
                             } else {

@@ -31,19 +31,21 @@
 #define LNAV_COMMAND_EXECUTOR_H
 
 #include <filesystem>
+#include <functional>
 #include <future>
 #include <optional>
 #include <stack>
 #include <string>
+#include <vector>
 
 #include <sqlite3.h>
 
 #include "base/auto_fd.hh"
 #include "base/lnav.console.hh"
+#include "base/lnav.resolver.hh"
 #include "db_sub_source.hh"
 #include "fmt/format.h"
 #include "help_text.hh"
-#include "shlex.resolver.hh"
 #include "vis_line.hh"
 
 struct exec_context;

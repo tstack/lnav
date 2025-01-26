@@ -31,8 +31,7 @@
 
 #include "sqlitepp.client.hh"
 
-namespace lnav {
-namespace events {
+namespace lnav::events {
 
 namespace file {
 
@@ -173,5 +172,4 @@ INSERT INTO lnav_events (content) VALUES (?)
     }
 }
 
-}  // namespace events
-}  // namespace lnav
+}  // namespace lnav::events

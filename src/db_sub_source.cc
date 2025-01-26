@@ -338,7 +338,11 @@ db_label_source::push_column(const scoped_value_t& sv)
             return string_fragment::from_memory_buffer(buf).to_owned(
                 *this->dls_allocator);
         },
-        [](null_value_t) { return string_fragment::from_const(NULL_STR); });
+        [](null_value_t) { return string_fragment::from_const(NULL_STR); },
+        [](bool b) {
+            return b ? string_fragment::from_const("true")
+                     : string_fragment::from_const("false");
+        });
 
     if (index == this->dls_time_column_index) {
         date_time_scanner dts;

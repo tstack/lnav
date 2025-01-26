@@ -30,7 +30,9 @@
 #ifndef lnav_base_types_hh
 #define lnav_base_types_hh
 
-struct null_value_t {};
+struct null_value_t {
+    bool operator==(const null_value_t&) const { return true; }
+};
 
 struct type_visitor {
     template<typename T>

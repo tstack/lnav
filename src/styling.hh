@@ -36,6 +36,7 @@
 
 #include "base/color_spaces.hh"
 #include "base/intern_string.hh"
+#include "base/lnav.resolver.hh"
 #include "base/log_level_enum.hh"
 #include "base/string_util.hh"
 #include "yajlpp/yajlpp.hh"
@@ -84,7 +85,7 @@ struct icon_config {
 };
 
 struct lnav_theme {
-    std::map<std::string, std::string> lt_vars;
+    std::map<std::string, scoped_value_t> lt_vars;
     positioned_property<icon_config> lt_icon_hidden;
     positioned_property<icon_config> lt_icon_ok;
     positioned_property<icon_config> lt_icon_info;

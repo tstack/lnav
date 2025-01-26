@@ -496,16 +496,17 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
 void
 add_ansi_vars(std::map<std::string, scoped_value_t>& vars)
 {
-    vars["ansi_csi"] = ANSI_CSI;
-    vars["ansi_norm"] = ANSI_NORM;
-    vars["ansi_bold"] = ANSI_BOLD_START;
-    vars["ansi_underline"] = ANSI_UNDERLINE_START;
-    vars["ansi_black"] = ANSI_COLOR(COLOR_BLACK);
-    vars["ansi_red"] = ANSI_COLOR(COLOR_RED);
-    vars["ansi_green"] = ANSI_COLOR(COLOR_GREEN);
-    vars["ansi_yellow"] = ANSI_COLOR(COLOR_YELLOW);
-    vars["ansi_blue"] = ANSI_COLOR(COLOR_BLUE);
-    vars["ansi_magenta"] = ANSI_COLOR(COLOR_MAGENTA);
-    vars["ansi_cyan"] = ANSI_COLOR(COLOR_CYAN);
-    vars["ansi_white"] = ANSI_COLOR(COLOR_WHITE);
+    vars["ansi_csi"] = string_fragment::from_const(ANSI_CSI);
+    vars["ansi_norm"] = string_fragment::from_const(ANSI_NORM);
+    vars["ansi_bold"] = string_fragment::from_const(ANSI_BOLD_START);
+    vars["ansi_underline"] = string_fragment::from_const(ANSI_UNDERLINE_START);
+    vars["ansi_black"] = string_fragment::from_const(ANSI_COLOR(COLOR_BLACK));
+    vars["ansi_red"] = string_fragment::from_const(ANSI_COLOR(COLOR_RED));
+    vars["ansi_green"] = string_fragment::from_const(ANSI_COLOR(COLOR_GREEN));
+    vars["ansi_yellow"] = string_fragment::from_const(ANSI_COLOR(COLOR_YELLOW));
+    vars["ansi_blue"] = string_fragment::from_const(ANSI_COLOR(COLOR_BLUE));
+    vars["ansi_magenta"]
+        = string_fragment::from_const(ANSI_COLOR(COLOR_MAGENTA));
+    vars["ansi_cyan"] = string_fragment::from_const(ANSI_COLOR(COLOR_CYAN));
+    vars["ansi_white"] = string_fragment::from_const(ANSI_COLOR(COLOR_WHITE));
 }

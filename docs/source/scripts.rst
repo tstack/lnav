@@ -101,3 +101,9 @@ find-chained-msg
 This script is similar to :code:`find-msg`, except instead of matching a
 single field in the focused and next/previous message, the matched value
 can be in separate fields.
+
+report-access-log
+^^^^^^^^^^^^^^^^^
+
+This script generates a report from the :code:`access_log` table that is
+similar to the output of the `goaccess <https://goaccess.io>`_ tool.

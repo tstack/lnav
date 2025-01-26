@@ -336,7 +336,6 @@ noinst_HEADERS = \
 	session_data.hh \
 	shared_buffer.hh \
 	shlex.hh \
-	shlex.resolver.hh \
 	simdutf8check.h \
 	spectro_impls.hh \
 	spectro_source.hh \

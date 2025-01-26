@@ -70,7 +70,7 @@ handle_keyseq(const char* keyseq)
     // XXX push another so it doesn't look like interactive use
     var_stack.push(std::map<std::string, scoped_value_t>());
     auto& vars = var_stack.top();
-    vars["keyseq"] = keyseq;
+    vars["keyseq"] = string_fragment::from_c_str(keyseq);
     const auto& kc = iter->second;
 
     log_debug(

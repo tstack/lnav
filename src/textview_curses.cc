@@ -213,15 +213,6 @@ textview_curses::reload_config(error_reporter& reporter)
         iter = this->tc_highlights.erase(iter);
     }
 
-    std::map<std::string, scoped_value_t> vars;
-    auto curr_theme_iter
-        = lnav_config.lc_ui_theme_defs.find(lnav_config.lc_ui_theme);
-    if (curr_theme_iter != lnav_config.lc_ui_theme_defs.end()) {
-        for (const auto& vpair : curr_theme_iter->second.lt_vars) {
-            vars[vpair.first] = vpair.second;
-        }
-    }
-
     for (const auto& theme_name : {DEFAULT_THEME_NAME, lnav_config.lc_ui_theme})
     {
         auto theme_iter = lnav_config.lc_ui_theme_defs.find(theme_name);
@@ -230,20 +221,21 @@ textview_curses::reload_config(error_reporter& reporter)
             continue;
         }
 
+        auto vars = &theme_iter->second.lt_vars;
         for (const auto& hl_pair : theme_iter->second.lt_highlights) {
             if (hl_pair.second.hc_regex.pp_value == nullptr) {
                 continue;
             }
 
             const auto& sc = hl_pair.second.hc_style;
-            std::string fg1, bg1, fg_color, bg_color, errmsg;
+            std::string fg_color, bg_color, errmsg;
             bool invalid = false;
             text_attrs attrs;
 
-            fg1 = sc.sc_color;
-            bg1 = sc.sc_background_color;
-            shlex(fg1).eval(fg_color, scoped_resolver{&vars});
-            shlex(bg1).eval(bg_color, scoped_resolver{&vars});
+            auto fg1 = sc.sc_color;
+            auto bg1 = sc.sc_background_color;
+            shlex(fg1).eval(fg_color, scoped_resolver{vars});
+            shlex(bg1).eval(bg_color, scoped_resolver{vars});
 
             attrs.ta_fg_color = vc.match_color(
                 styling::color_unit::from_str(fg_color).unwrapOrElse(

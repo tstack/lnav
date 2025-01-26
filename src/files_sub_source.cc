@@ -42,8 +42,10 @@
 #include "config.h"
 #include "lnav.hh"
 #include "mapbox/variant.hpp"
+#include "md4cpp.hh"
 #include "sql_util.hh"
 
+using namespace md4cpp::literals;
 using namespace lnav::roles::literals;
 
 namespace files_model {
@@ -492,10 +494,14 @@ files_sub_source::text_selection_changed(textview_curses& tc)
             auto actual_path = lf->get_actual_path();
             auto format = lf->get_format();
 
+            details.emplace_back(attr_line_t()
+                                     .appendf(FMT_STRING("{}"), path.filename())
+                                     .with_attr_for_all(VC_STYLE.value(
+                                         text_attrs::with_bold())));
             details.emplace_back(
-                attr_line_t()
-                    .appendf(FMT_STRING("{}"), path)
-                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_IDENTIFIER)));
+                attr_line_t("  ")
+                    .append(":open_file_folder:"_emoji)
+                    .appendf(FMT_STRING(" {}"), path.parent_path()));
             const auto notes = lf->get_notes();
             if (!notes.empty()) {
                 details.emplace_back(

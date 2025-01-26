@@ -124,6 +124,41 @@ listview_curses::update_top_from_selection()
 }
 
 void
+listview_curses::get_dimensions(vis_line_t& height_out,
+                                unsigned long& width_out) const
+{
+    unsigned int height;
+
+    if (this->lv_window == nullptr) {
+        height_out = std::max(this->lv_height, 1_vl);
+        if (this->lv_source) {
+            width_out = this->lv_source->listview_width(*this);
+        } else {
+            width_out = 80;
+        }
+    } else {
+        unsigned int width_tmp;
+
+        ncplane_dim_yx(this->lv_window, &height, &width_tmp);
+        width_out = width_tmp;
+        if (this->lv_height < 0) {
+            height_out
+                = vis_line_t(height) + this->lv_height - vis_line_t(this->vc_y);
+            if (height_out < 0_vl) {
+                height_out = 0_vl;
+            }
+        } else {
+            height_out = this->lv_height;
+        }
+    }
+    if (this->vc_x < width_out) {
+        width_out -= this->vc_x;
+    } else {
+        width_out = 0;
+    }
+}
+
+void
 listview_curses::reload_data()
 {
     if (this->lv_source == nullptr) {
@@ -474,9 +509,9 @@ listview_curses::do_update()
                     require_ge(attr.sa_range.lr_start, 0);
                 }
 
-                this->lv_display_lines.push_back(main_content{row});
                 mvwattrline_result write_res;
                 do {
+                    this->lv_display_lines.push_back(main_content{row});
                     if (this->lv_word_wrap) {
                         // XXX mvwhline(this->lv_window, y, this->vc_x, ' ',
                         // width);

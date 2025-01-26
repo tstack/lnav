@@ -444,38 +444,7 @@ public:
      * @param height_out The actual height of the view in lines.
      * @param width_out The actual width of the view in columns.
      */
-    void get_dimensions(vis_line_t& height_out, unsigned long& width_out) const
-    {
-        unsigned int height;
-
-        if (this->lv_window == nullptr) {
-            height_out = std::max(this->lv_height, 1_vl);
-            if (this->lv_source) {
-                width_out = this->lv_source->listview_width(*this);
-            } else {
-                width_out = 80;
-            }
-        } else {
-            unsigned int width_tmp;
-
-            ncplane_dim_yx(this->lv_window, &height, &width_tmp);
-            width_out = width_tmp;
-            if (this->lv_height < 0) {
-                height_out = vis_line_t(height) + this->lv_height
-                    - vis_line_t(this->vc_y);
-                if (height_out < 0_vl) {
-                    height_out = 0_vl;
-                }
-            } else {
-                height_out = this->lv_height;
-            }
-        }
-        if (this->vc_x < width_out) {
-            width_out -= this->vc_x;
-        } else {
-            width_out = 0;
-        }
-    }
+    void get_dimensions(vis_line_t& height_out, unsigned long& width_out) const;
 
     std::pair<vis_line_t, unsigned long> get_dimensions() const
     {

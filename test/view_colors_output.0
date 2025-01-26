@@ -42,14 +42,14 @@ S  14 ┋This is line: 13                                                       
 S  15 ┋This is line: 14                                                                ┋
 S  16 ┋This is line: 15                                                                ┋
 S  17 ┋before <123> after                                                              ┋
-A      ········└ fg(#000000), bg(#008080)      │
-A      ···········└ [39;49m                    │
-A      ········································└ [39;49m
+A      ········└ fg(#000000), bg(#008080)
+A      ···········└ [39;49m
+A      ··················└ [39;49m
 CTRL (B
 S  17 ┋                                                                                ┋
-A      ········································└ normal
+A      ··················└ normal
 CSI Normal cursor keys
 CTRL Normal keypad
 CSI Show cursor
 S  17 ┋                                                                                ┋
-A      ········································└ normal, normal
+A      ··················└ normal, normal

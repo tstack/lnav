@@ -33,6 +33,9 @@
 #    include <alloca.h>
 #endif
 
+#include <pwd.h>
+
+#include "base/opt_util.hh"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
 #include "shlex.hh"

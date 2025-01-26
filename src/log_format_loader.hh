@@ -40,7 +40,7 @@
 
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
-#include "shlex.resolver.hh"
+#include "base/lnav.resolver.hh"
 #include "text_format.hh"
 #include "yajlpp/yajlpp_def.hh"
 

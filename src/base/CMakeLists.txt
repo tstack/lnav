@@ -57,6 +57,7 @@ add_library(
         line_range.hh
         lnav.console.hh
         lnav.console.into.hh
+        lnav.resolver.hh
         log_level_enum.hh
         lrucache.hpp
         map_util.hh

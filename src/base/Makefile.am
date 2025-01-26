@@ -56,6 +56,7 @@ noinst_HEADERS = \
     lnav.console.hh \
     lnav.console.into.hh \
     lnav.gzip.hh \
+    lnav.resolver.hh \
     log_level_enum.hh \
     lrucache.hpp \
     map_util.hh \

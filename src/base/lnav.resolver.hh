@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -26,11 +26,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file shlex.resolver.hh
+ * @file lnav.resolver.hh
  */
 
-#ifndef lnav_shlex_resolver_hh
-#define lnav_shlex_resolver_hh
+#ifndef lnav_resolver_hh
+#define lnav_resolver_hh
 
 #include <map>
 #include <string>
@@ -42,7 +42,7 @@
 #include "mapbox/variant.hpp"
 
 using scoped_value_t = mapbox::util::
-    variant<std::string, string_fragment, int64_t, double, null_value_t>;
+    variant<std::string, string_fragment, int64_t, double, null_value_t, bool>;
 
 namespace fmt {
 template<>
@@ -55,7 +55,8 @@ struct formatter<scoped_value_t> : formatter<std::string> {
                        [](string_fragment sf) { return sf.to_string(); },
                        [](null_value_t) { return std::string("<NULL>"); },
                        [](int64_t value) { return fmt::to_string(value); },
-                       [](double value) { return fmt::to_string(value); });
+                       [](double value) { return fmt::to_string(value); },
+                       [](bool value) { return value ? "true" : "false"; });
 
         return fmt::formatter<std::string>::format(retval, ctx);
     }

@@ -35,7 +35,7 @@
 #include <sqlite3.h>
 
 #include "base/lnav.console.hh"
-#include "shlex.resolver.hh"
+#include "base/lnav.resolver.hh"
 
 void sql_execute_script(
     sqlite3* db,
