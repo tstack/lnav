@@ -576,7 +576,9 @@ struct string_fragment {
     struct tag1 {
         const char t_value;
 
-        bool operator()(char ch) const { return this->t_value == ch; }
+        constexpr explicit tag1(const char value) : t_value(value) {}
+
+        constexpr bool operator()(char ch) const { return this->t_value == ch; }
     };
 
     struct quoted_string_body {
