@@ -397,11 +397,16 @@ vt_create(sqlite3* db,
     p_vt->lss = vm->get_source();
     rc = sqlite3_declare_vtab(db, p_vt->vi->get_table_statement().c_str());
 
-    /* Success. Set *pp_vt and return */
-    auto loose_p_vt = p_vt.release();
-    *pp_vt = &loose_p_vt->base;
-
-    log_debug("creating log format table: %s = %p", argv[3], p_vt.get());
+    if (rc == SQLITE_OK) {
+        /* Success. Set *pp_vt and return */
+        auto loose_p_vt = p_vt.release();
+        *pp_vt = &loose_p_vt->base;
+        log_debug("creating log format table: %s = %p", argv[3], loose_p_vt);
+    } else {
+        log_error("sqlite3_declare_vtab(%s) failed: %s",
+                  p_vt->vi->get_name().c_str(),
+                  sqlite3_errmsg(db));
+    }
 
     return rc;
 }
@@ -410,6 +415,8 @@ static int
 vt_destructor(sqlite3_vtab* p_svt)
 {
     log_vtab* p_vt = (log_vtab*) p_svt;
+
+    log_debug("deleting log format table: %p", p_vt);
 
     delete p_vt;
 
@@ -2557,8 +2564,9 @@ log_vtab_manager::unregister_vtab(intern_string_t name)
         auto_mem<char, sqlite3_free> sql;
         __attribute((unused)) int rc;
 
-        sql = sqlite3_mprintf("DROP TABLE %s ", name.get());
-        rc = sqlite3_exec(this->vm_db, sql, NULL, NULL, NULL);
+        sql = sqlite3_mprintf("DROP TABLE IF EXISTS %s", name.get());
+        log_debug("unregister_vtab: %s", sql.in());
+        rc = sqlite3_exec(this->vm_db, sql, nullptr, nullptr, nullptr);
 
         this->vm_impls.erase(name);
     }

@@ -3208,6 +3208,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         std::make_shared<log_format_vtab_impl>(
             *log_format::find_root_format("lnav_piper_log")));
 
+    log_info("BEGIN registering format tables");
     for (auto& iter : log_format::get_root_formats()) {
         auto lvi = iter->get_vtab_impl();
 
@@ -3215,6 +3216,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             lnav_data.ld_vtab_manager->register_vtab(lvi);
         }
     }
+    log_info("END registering format tables")
 
     load_format_extra(lnav_data.ld_db.in(),
                       ec.ec_global_vars,
