@@ -1,3 +1,3 @@
-[1m[32m✔ [0mformat patch file written to: [1mregex101-home/.lnav/formats/installed/unit_test_log.regex101-zpEnjV.json[0m
+[1m[32m✔[0m format patch file written to: [1mregex101-home/.lnav/formats/installed/unit_test_log.regex101-zpEnjV.json[0m
 [36m =[0m [36mhelp[0m: once the regex has been found to be working correctly, move the contents of the patch file to the original file at:
             [1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m

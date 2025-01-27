@@ -171,15 +171,20 @@ struct shell_exec_options {
     std::map<std::string, std::optional<std::string>> po_env;
 };
 
-static const json_path_container shell_exec_env_handlers = {
-    yajlpp::pattern_property_handler(R"((?<name>[^=]+))")
-        .for_field(&shell_exec_options::po_env),
-};
+static const typed_json_path_container<shell_exec_options>&
+get_shell_exec_options_handlers()
+{
+    static const json_path_container shell_exec_env_handlers = {
+        yajlpp::pattern_property_handler(R"((?<name>[^=]+))")
+            .for_field(&shell_exec_options::po_env),
+    };
 
-static const typed_json_path_container<shell_exec_options>
-    shell_exec_option_handlers = {
+    static const typed_json_path_container<shell_exec_options> retval = {
         yajlpp::property_handler("env").with_children(shell_exec_env_handlers),
-};
+    };
+
+    return retval;
+}
 
 static blob_auto_buffer
 sql_shell_exec(const char* cmd,
@@ -187,7 +192,6 @@ sql_shell_exec(const char* cmd,
                std::optional<string_fragment> opts_json)
 {
     static const intern_string_t SRC = intern_string::lookup("options");
-
     static auto& lnav_flags = injector::get<unsigned long&, lnav_flags_tag>();
 
     if (lnav_flags & LNF_SECURE_MODE) {
@@ -197,8 +201,8 @@ sql_shell_exec(const char* cmd,
     shell_exec_options options;
 
     if (opts_json) {
-        auto parse_res
-            = shell_exec_option_handlers.parser_for(SRC).of(opts_json.value());
+        auto parse_res = get_shell_exec_options_handlers().parser_for(SRC).of(
+            opts_json.value());
 
         if (parse_res.isErr()) {
             throw lnav::console::user_message::error(

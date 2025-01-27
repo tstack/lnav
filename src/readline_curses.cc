@@ -77,11 +77,11 @@ static sig_atomic_t got_timeout = 0;
 static sig_atomic_t got_winch = 0;
 static readline_curses* child_this;
 static sig_atomic_t looping = 1;
-static const int HISTORY_SIZE = 256;
+static constexpr int HISTORY_SIZE = 256;
 static int completion_start;
-static const int FUZZY_PEER_THRESHOLD = 30;
+static constexpr int FUZZY_PEER_THRESHOLD = 30;
 
-static const char* RL_INIT[] = {
+static const char* const RL_INIT[] = {
     /*
      * XXX Need to keep the input on a single line since the display screws
      * up if it wraps around.

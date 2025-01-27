@@ -1,2 +1,2 @@
-[1m[31m✘ error[0m: regex “[1mstd[0m” of format “[1msyslog_log[0m” has not been pushed to regex101.com
+[1m[31m✘[0m [1m[31merror[0m: regex “[1mstd[0m” of format “[1msyslog_log[0m” has not been pushed to regex101.com
 [36m =[0m [36mhelp[0m: use the “[1m[36mpush[0m” subcommand to create the regex on regex101.com for easy editing

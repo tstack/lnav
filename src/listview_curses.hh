@@ -394,7 +394,7 @@ public:
         if (this->lv_word_wrap) {
             alerter::singleton().chime(
                 "cannot scroll horizontally when word wrap is enabled");
-        } else if (offset < 0 && this->lv_left < (unsigned int) -offset) {
+        } else if (offset < 0 && this->lv_left < -offset) {
             this->set_left(0);
         } else {
             this->set_left(this->lv_left + offset);

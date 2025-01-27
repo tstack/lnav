@@ -63,9 +63,9 @@
 session_data_t session_data;
 recent_refs_t recent_refs;
 
-static const char* LOG_METADATA_NAME = "log_metadata.db";
+static const char* const LOG_METADATA_NAME = "log_metadata.db";
 
-static const char* META_TABLE_DEF = R"(
+static const char* const META_TABLE_DEF = R"(
 CREATE TABLE IF NOT EXISTS bookmarks (
     log_time datetime,
     log_format varchar(64),
@@ -116,25 +116,25 @@ CREATE TABLE IF NOT EXISTS regex101_entries (
 );
 )";
 
-static const char* BOOKMARK_LRU_STMT
+static const char* const BOOKMARK_LRU_STMT
     = "DELETE FROM bookmarks WHERE access_time <= "
       "  (SELECT access_time FROM bookmarks "
       "   ORDER BY access_time DESC LIMIT 1 OFFSET 50000)";
 
-static const char* NETLOC_LRU_STMT
+static const char* const NETLOC_LRU_STMT
     = "DELETE FROM recent_netlocs WHERE access_time <= "
       "  (SELECT access_time FROM bookmarks "
       "   ORDER BY access_time DESC LIMIT 1 OFFSET 10)";
 
-static const char* UPGRADE_STMTS[] = {
+static const char* const UPGRADE_STMTS[] = {
     R"(ALTER TABLE bookmarks ADD COLUMN comment text DEFAULT '';)",
     R"(ALTER TABLE bookmarks ADD COLUMN tags text DEFAULT '';)",
     R"(ALTER TABLE bookmarks ADD COLUMN annotations text DEFAULT NULL;)",
     R"(ALTER TABLE bookmarks ADD COLUMN log_opid text DEFAULT NULL;)",
 };
 
-static const size_t MAX_SESSIONS = 8;
-static const size_t MAX_SESSION_FILE_COUNT = 256;
+static constexpr size_t MAX_SESSIONS = 8;
+static constexpr size_t MAX_SESSION_FILE_COUNT = 256;
 
 struct session_line {
     session_line(struct timeval tv,

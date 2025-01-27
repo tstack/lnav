@@ -81,14 +81,14 @@ const std::unordered_set<string_fragment, frag_hasher>
         string_fragment::from_const("log_line_hash"),
 };
 
-static const char* LOG_COLUMNS = R"(  (
+static const char* const LOG_COLUMNS = R"(  (
   log_line        INTEGER,                         -- The line number for the log message
   log_time        DATETIME,                        -- The adjusted timestamp for the log message
   log_level       TEXT     COLLATE loglevel,       -- The log message level
   -- BEGIN Format-specific fields:
 )";
 
-static const char* LOG_FOOTER_COLUMNS = R"(
+static const char* const LOG_FOOTER_COLUMNS = R"(
   -- END Format-specific fields
   log_part         TEXT     COLLATE naturalnocase,    -- The partition the message is in
   log_actual_time  DATETIME HIDDEN,                   -- The timestamp from the original log file for this message
@@ -133,68 +133,71 @@ enum class log_footer_columns : uint32_t {
     line_hash,
 };
 
-std::string
+const std::string&
 log_vtab_impl::get_table_statement()
 {
-    std::vector<log_vtab_impl::vtab_column> cols;
-    std::vector<log_vtab_impl::vtab_column>::const_iterator iter;
-    std::ostringstream oss;
-    size_t max_name_len = 15;
+    if (this->vi_table_statement.empty()) {
+        std::vector<vtab_column> cols;
+        std::ostringstream oss;
+        size_t max_name_len = 15;
 
-    oss << "CREATE TABLE " << this->get_name().to_string() << LOG_COLUMNS;
-    this->get_columns(cols);
-    this->vi_column_count = cols.size();
-    for (iter = cols.begin(); iter != cols.end(); iter++) {
-        max_name_len = std::max(max_name_len, iter->vc_name.length());
-    }
-    for (iter = cols.begin(); iter != cols.end(); iter++) {
-        std::string comment;
-
-        require(!iter->vc_name.empty());
-
-        if (!iter->vc_comment.empty()) {
-            comment.append(" -- ").append(iter->vc_comment);
+        oss << "CREATE TABLE " << this->get_name().to_string() << LOG_COLUMNS;
+        this->get_columns(cols);
+        this->vi_column_count = cols.size();
+        for (const auto& col : cols) {
+            max_name_len = std::max(max_name_len, col.vc_name.length());
         }
+        for (const auto& col : cols) {
+            std::string comment;
 
-        auto colname = sql_quote_ident(iter->vc_name.c_str());
-        auto coldecl = lnav::sql::mprintf(
-            "  %-*s %-7s %s COLLATE %-15Q,%s\n",
-            max_name_len,
-            colname.in(),
-            sqlite3_type_to_string(iter->vc_type),
-            iter->vc_hidden ? "hidden" : "",
-            iter->vc_collator.empty() ? "BINARY" : iter->vc_collator.c_str(),
-            comment.c_str());
-        oss << coldecl;
-    }
-    oss << LOG_FOOTER_COLUMNS;
+            require(!col.vc_name.empty());
 
-    {
-        std::vector<std::string> primary_keys;
-
-        this->get_primary_keys(primary_keys);
-        if (!primary_keys.empty()) {
-            auto first = true;
-
-            oss << ", PRIMARY KEY (";
-            for (const auto& pkey : primary_keys) {
-                if (!first) {
-                    oss << ", ";
-                }
-                oss << pkey;
-                first = false;
+            if (!col.vc_comment.empty()) {
+                comment.append(" -- ").append(col.vc_comment);
             }
-            oss << ")\n";
-        } else {
-            oss << ", PRIMARY KEY (log_line)\n";
+
+            auto colname = sql_quote_ident(col.vc_name.c_str());
+            auto coldecl = lnav::sql::mprintf(
+                "  %-*s %-7s %s COLLATE %-15Q,%s\n",
+                max_name_len,
+                colname.in(),
+                sqlite3_type_to_string(col.vc_type),
+                col.vc_hidden ? "hidden" : "",
+                col.vc_collator.empty() ? "BINARY" : col.vc_collator.c_str(),
+                comment.c_str());
+            oss << coldecl;
         }
+        oss << LOG_FOOTER_COLUMNS;
+
+        {
+            std::vector<std::string> primary_keys;
+
+            this->get_primary_keys(primary_keys);
+            if (!primary_keys.empty()) {
+                auto first = true;
+
+                oss << ", PRIMARY KEY (";
+                for (const auto& pkey : primary_keys) {
+                    if (!first) {
+                        oss << ", ";
+                    }
+                    oss << pkey;
+                    first = false;
+                }
+                oss << ")\n";
+            } else {
+                oss << ", PRIMARY KEY (log_line)\n";
+            }
+        }
+
+        oss << ");\n";
+
+        log_trace("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
+
+        this->vi_table_statement = oss.str();
     }
 
-    oss << ");\n";
-
-    log_trace("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
-
-    return oss.str();
+    return this->vi_table_statement;
 }
 
 std::pair<int, unsigned int>
@@ -2441,7 +2444,7 @@ vt_update(sqlite3_vtab* tab,
     return retval;
 }
 
-static sqlite3_module generic_vtab_module = {
+static const sqlite3_module generic_vtab_module = {
     0, /* iVersion */
     vt_create, /* xCreate       - create a vtable */
     vt_connect, /* xConnect      - associate a vtable with a connection */
@@ -2463,7 +2466,7 @@ static sqlite3_module generic_vtab_module = {
     nullptr, /* xFindFunction - function overloading */
 };
 
-static sqlite3_module no_rowid_vtab_module = {
+static const sqlite3_module no_rowid_vtab_module = {
     0, /* iVersion */
     vt_create, /* xCreate       - create a vtable */
     vt_connect, /* xConnect      - associate a vtable with a connection */

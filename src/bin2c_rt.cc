@@ -29,18 +29,7 @@
 
 #include "bin2c.hh"
 
-#include <zlib.h>
-
 #include "base/lnav.gzip.hh"
-
-bin_src_file::bin_src_file(const char* name,
-                           const unsigned char* data,
-                           size_t compressed_size,
-                           size_t size)
-    : bsf_name(name), bsf_compressed_data(data),
-      bsf_compressed_size(compressed_size)
-{
-}
 
 std::unique_ptr<string_fragment_producer>
 bin_src_file::to_string_fragment_producer() const

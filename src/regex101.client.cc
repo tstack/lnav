@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
+
 #include "regex101.client.hh"
 
 #include <curl/curl.h>
@@ -34,51 +36,63 @@
 #include "base/itertools.hh"
 #include "config.h"
 #include "curl_looper.hh"
-#include <filesystem>
 #include "yajlpp/yajlpp_def.hh"
 
-namespace regex101 {
-namespace client {
+namespace regex101::client {
 
-static const json_path_handler_base::enum_value_t CRITERIA_ENUM[] = {
-    {"DOES_MATCH", unit_test::criteria::DOES_MATCH},
-    {"DOES_NOT_MATCH", unit_test::criteria::DOES_NOT_MATCH},
+static const typed_json_path_container<entry>&
+get_entry_handlers()
+{
+    static const json_path_handler_base::enum_value_t CRITERIA_ENUM[] = {
+        {"DOES_MATCH", unit_test::criteria::DOES_MATCH},
+        {"DOES_NOT_MATCH", unit_test::criteria::DOES_NOT_MATCH},
 
-    json_path_handler_base::ENUM_TERMINATOR,
-};
+        json_path_handler_base::ENUM_TERMINATOR,
+    };
 
-static const json_path_container UNIT_TEST_HANDLERS = {
-    yajlpp::property_handler("description")
-        .for_field(&unit_test::ut_description),
-    yajlpp::property_handler("testString")
-        .for_field(&unit_test::ut_test_string),
-    yajlpp::property_handler("target").for_field(&unit_test::ut_target),
-    yajlpp::property_handler("criteria")
-        .with_enum_values(CRITERIA_ENUM)
-        .for_field(&unit_test::ut_criteria),
-};
+    static const json_path_container UNIT_TEST_HANDLERS = {
+        yajlpp::property_handler("description")
+            .for_field(&unit_test::ut_description),
+        yajlpp::property_handler("testString")
+            .for_field(&unit_test::ut_test_string),
+        yajlpp::property_handler("target").for_field(&unit_test::ut_target),
+        yajlpp::property_handler("criteria")
+            .with_enum_values(CRITERIA_ENUM)
+            .for_field(&unit_test::ut_criteria),
+    };
 
-static const typed_json_path_container<entry> ENTRY_HANDLERS = {
-    yajlpp::property_handler("dateCreated").for_field(&entry::e_date_created),
-    yajlpp::property_handler("regex").for_field(&entry::e_regex),
-    yajlpp::property_handler("testString").for_field(&entry::e_test_string),
-    yajlpp::property_handler("flags").for_field(&entry::e_flags),
-    yajlpp::property_handler("delimiter").for_field(&entry::e_delimiter),
-    yajlpp::property_handler("flavor").for_field(&entry::e_flavor),
-    yajlpp::property_handler("unitTests#")
-        .for_field(&entry::e_unit_tests)
-        .with_children(UNIT_TEST_HANDLERS),
-    yajlpp::property_handler("permalinkFragment")
-        .for_field(&entry::e_permalink_fragment),
-};
+    static const typed_json_path_container<entry> retval = {
+        yajlpp::property_handler("dateCreated")
+            .for_field(&entry::e_date_created),
+        yajlpp::property_handler("regex").for_field(&entry::e_regex),
+        yajlpp::property_handler("testString").for_field(&entry::e_test_string),
+        yajlpp::property_handler("flags").for_field(&entry::e_flags),
+        yajlpp::property_handler("delimiter").for_field(&entry::e_delimiter),
+        yajlpp::property_handler("flavor").for_field(&entry::e_flavor),
+        yajlpp::property_handler("unitTests#")
+            .for_field(&entry::e_unit_tests)
+            .with_children(UNIT_TEST_HANDLERS),
+        yajlpp::property_handler("permalinkFragment")
+            .for_field(&entry::e_permalink_fragment),
+    };
 
-static const typed_json_path_container<upsert_response> RESPONSE_HANDLERS = {
-    yajlpp::property_handler("deleteCode")
-        .for_field(&upsert_response::cr_delete_code),
-    yajlpp::property_handler("permalinkFragment")
-        .for_field(&upsert_response::cr_permalink_fragment),
-    yajlpp::property_handler("version").for_field(&upsert_response::cr_version),
-};
+    return retval;
+}
+
+static const typed_json_path_container<upsert_response>&
+get_response_handlers()
+{
+    static const typed_json_path_container<upsert_response> retval = {
+        yajlpp::property_handler("deleteCode")
+            .for_field(&upsert_response::cr_delete_code),
+        yajlpp::property_handler("permalinkFragment")
+            .for_field(&upsert_response::cr_permalink_fragment),
+        yajlpp::property_handler("version").for_field(
+            &upsert_response::cr_version),
+    };
+
+    return retval;
+}
 
 static const std::filesystem::path REGEX101_BASE_URL
     = "https://regex101.com/api/regex";
@@ -87,7 +101,7 @@ static const char* USER_AGENT = "lnav/" PACKAGE_VERSION;
 Result<upsert_response, lnav::console::user_message>
 upsert(entry& en)
 {
-    auto entry_json = ENTRY_HANDLERS.to_string(en);
+    auto entry_json = get_entry_handlers().to_string(en);
 
     curl_request cr(REGEX101_BASE_URL.string());
 
@@ -124,10 +138,10 @@ upsert(entry& en)
                                         .append_quoted(response)));
     }
 
-    auto parse_res
-        = RESPONSE_HANDLERS.parser_for(intern_string::lookup(cr.get_name()))
-              .with_ignore_unused(true)
-              .of(response);
+    auto parse_res = get_response_handlers()
+                         .parser_for(intern_string::lookup(cr.get_name()))
+                         .with_ignore_unused(true)
+                         .of(response);
     if (parse_res.isOk()) {
         return Ok(parse_res.unwrap());
     }
@@ -227,7 +241,7 @@ retrieve(const std::string& permalink)
 
     auto version_response = version_perform_res.unwrap();
     auto version_parse_res
-        = ENTRY_HANDLERS
+        = get_entry_handlers()
               .parser_for(intern_string::lookup(version_req.get_name()))
               .with_ignore_unused(true)
               .of(version_response);
@@ -333,5 +347,4 @@ entry::operator!=(const entry& rhs) const
     return !(rhs == *this);
 }
 
-}  // namespace client
-}  // namespace regex101
+}  // namespace regex101::client

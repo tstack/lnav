@@ -1,4 +1,4 @@
-[1m[32m✔ [0mconverted regex101 entry to format file: [1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m
+[1m[32m✔[0m converted regex101 entry to format file: [1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m
 [36m =[0m [36mnote[0m: the converted format may still have errors
 [36m =[0m [36mhelp[0m: use the following command to patch the regex as more changes are made on regex101.com:
             lnav -m format unit_test_log regex std regex101 pull

@@ -1,13 +1,64 @@
-[1m[31m✘ error[0m: invalid pattern: “[1m/unit_test_log/regex/std[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1m/unit_test_log/regex/std[0m”
  [1m[31mreason[0m: no timestamp capture found in the pattern
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:3
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.regex101-zpEnjV.json[0m:2
 [36m =[0m [36mhelp[0m: all log messages need a timestamp
-[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
+[1m[31m✘[0m [1m[31merror[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
  [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
-[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
- [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
-[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
- [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
-[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
- [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
-[1m[31m✘ error[0m: invalid value for property “[1m/unit_test_log/timestamp-field[0m”
- [1m[31mreason[0m: “timestamp” was not found in the pattern at [1m/unit_test_log/regex/std[0m
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:3
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.regex101-zpEnjV.json[0m:2
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "Fri Jul 15 23:12:58 2016 : Info: Loaded virtual server <default>"
+ [1m[31mreason[0m: timestamp was not captured
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:23
+[36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1mstd[0m”
+ [1m[31mreason[0m: pattern does not match entire message
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:23
+[36m | [0m[37m[40mFri Jul 15 23:12:58 2016 : Info: Loaded virtual server <default>[0m
+[36m | [0m[1m[31m[40m^ matched up to here                                            [0m
+[36m =[0m [36mnote[0m: [1mstd[0m = 
+[36m =[0m [36mhelp[0m: update the regular expression to fully capture the sample message
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "Fri Jul 15 23:12:58 2016 : Warning: Ignoring \"sql\" (see raddb/mods-available/README.rst)"
+ [1m[31mreason[0m: timestamp was not captured
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:26
+[36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1mstd[0m”
+ [1m[31mreason[0m: pattern does not match entire message
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:26
+[36m | [0m[37m[40mFri Jul 15 23:12:58 2016 : Warning: Ignoring "sql" (see raddb/mods-available/README.rst)[0m
+[36m | [0m[1m[31m[40m^ matched up to here                                                                    [0m
+[36m =[0m [36mnote[0m: [1mstd[0m = 
+[36m =[0m [36mhelp[0m: update the regular expression to fully capture the sample message
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "Wed Oct 18 22:17:43 2023 : Info: (102211) radutmp: NAS wifi-router rebooted (Accounting-Off packet seen)"
+ [1m[31mreason[0m: timestamp was not captured
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:29
+[36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1mstd[0m”
+ [1m[31mreason[0m: pattern does not match entire message
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:29
+[36m | [0m[37m[40mWed Oct 18 22:17:43 2023 : Info: (102211) radutmp: NAS wifi-router rebooted (Accounting-Off packet seen)[0m
+[36m | [0m[1m[31m[40m^ matched up to here                                                                                    [0m
+[36m =[0m [36mnote[0m: [1mstd[0m = 
+[36m =[0m [36mhelp[0m: update the regular expression to fully capture the sample message
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "Fri Oct 20 18:50:05 2023 : Auth: (105290)   Login OK: [iphonese3] (from client wifi-router port 0 via TLS tunnel)"
+ [1m[31mreason[0m: timestamp was not captured
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:32
+[36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1mstd[0m”
+ [1m[31mreason[0m: pattern does not match entire message
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:32
+[36m | [0m[37m[40mFri Oct 20 18:50:05 2023 : Auth: (105290)   Login OK: [iphonese3] (from client wifi-router port 0 via TLS tunnel)[0m
+[36m | [0m[1m[31m[40m^ matched up to here                                                                                             [0m
+[36m =[0m [36mnote[0m: [1mstd[0m = 
+[36m =[0m [36mhelp[0m: update the regular expression to fully capture the sample message
+[1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "Fri Oct 20 18:50:05 2023 : Auth: (105291) Login OK: [iphonese3] (from client wifi-router port 197 cli 22-2E-28-D6-F5-CC)"
+ [1m[31mreason[0m: timestamp was not captured
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:35
+[36m =[0m [36mhelp[0m: A timestamp needs to be captured in order for a line to be recognized as a log message
+[1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1mstd[0m”
+ [1m[31mreason[0m: pattern does not match entire message
+[36m --> [0m[1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m:35
+[36m | [0m[37m[40mFri Oct 20 18:50:05 2023 : Auth: (105291) Login OK: [iphonese3] (from client wifi-router port 197 cli 22-2E-28-D6-F5-CC)[0m
+[36m | [0m[1m[31m[40m^ matched up to here                                                                                                    [0m
+[36m =[0m [36mnote[0m: [1mstd[0m = 
+[36m =[0m [36mhelp[0m: update the regular expression to fully capture the sample message

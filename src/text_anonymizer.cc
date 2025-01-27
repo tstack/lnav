@@ -62,9 +62,15 @@ struct random_list {
     }
 };
 
-static const typed_json_path_container<random_list> random_list_handlers = {
-    yajlpp::property_handler("data#").for_field(&random_list::rl_data),
-};
+static const typed_json_path_container<random_list>&
+get_random_list_handlers()
+{
+    static const typed_json_path_container<random_list> retval = {
+        yajlpp::property_handler("data#").for_field(&random_list::rl_data),
+    };
+
+    return retval;
+}
 
 static random_list
 load_word_list()
@@ -72,9 +78,10 @@ load_word_list()
     static const intern_string_t name
         = intern_string::lookup(words_json.get_name());
     auto sfp = words_json.to_string_fragment_producer();
-    auto parse_res
-        = random_list_handlers.parser_for(name).with_ignore_unused(false).of(
-            *sfp);
+    auto parse_res = get_random_list_handlers()
+                         .parser_for(name)
+                         .with_ignore_unused(false)
+                         .of(*sfp);
 
     return parse_res.unwrap();
 }
@@ -93,9 +100,10 @@ load_animal_list()
     static const intern_string_t name
         = intern_string::lookup(animals_json.get_name());
     auto sfp = animals_json.to_string_fragment_producer();
-    auto parse_res
-        = random_list_handlers.parser_for(name).with_ignore_unused(false).of(
-            *sfp);
+    auto parse_res = get_random_list_handlers()
+                         .parser_for(name)
+                         .with_ignore_unused(false)
+                         .of(*sfp);
 
     return parse_res.unwrap();
 }
@@ -114,9 +122,10 @@ load_disease_list()
     static const intern_string_t name
         = intern_string::lookup(diseases_json.get_name());
     auto sfp = diseases_json.to_string_fragment_producer();
-    auto parse_res
-        = random_list_handlers.parser_for(name).with_ignore_unused(false).of(
-            *sfp);
+    auto parse_res = get_random_list_handlers()
+                         .parser_for(name)
+                         .with_ignore_unused(false)
+                         .of(*sfp);
 
     return parse_res.unwrap();
 }

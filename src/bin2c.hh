@@ -34,16 +34,15 @@
 
 #include <memory>
 
-#include <assert.h>
 #include <sys/types.h>
 
 #include "base/intern_string.hh"
 
 struct bin_src_file {
-    bin_src_file(const char* name,
-                 const unsigned char* data,
-                 size_t compressed_size,
-                 size_t size);
+    constexpr bin_src_file(const char* name,
+                           const unsigned char* data,
+                           size_t compressed_size,
+                           size_t size);
 
     std::unique_ptr<string_fragment_producer> to_string_fragment_producer()
         const;
@@ -55,5 +54,14 @@ private:
     const unsigned char* bsf_compressed_data;
     size_t bsf_compressed_size;
 };
+
+constexpr bin_src_file::bin_src_file(const char* name,
+                                     const unsigned char* data,
+                                     size_t compressed_size,
+                                     size_t size)
+    : bsf_name(name), bsf_compressed_data(data),
+      bsf_compressed_size(compressed_size)
+{
+}
 
 #endif

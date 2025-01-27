@@ -282,12 +282,17 @@ struct regexp_capture_flags {
     bool convert_numbers{true};
 };
 
-const typed_json_path_container<regexp_capture_flags>
-    regexp_capture_flags_handlers
-    = typed_json_path_container<regexp_capture_flags>{
-        yajlpp::property_handler("convert-numbers")
-            .for_field(&regexp_capture_flags::convert_numbers),
-    };
+const typed_json_path_container<regexp_capture_flags>&
+get_regexp_capture_flags_handlers()
+{
+    static const typed_json_path_container<regexp_capture_flags> retval
+        = typed_json_path_container<regexp_capture_flags>{
+            yajlpp::property_handler("convert-numbers")
+                .for_field(&regexp_capture_flags::convert_numbers),
+        };
+
+    return retval;
+}
 
 struct regexp_capture_into_json {
     static constexpr const char* NAME = "regexp_capture_into_json";
@@ -510,7 +515,7 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
 
         if (!flags_json.empty()) {
             const auto parse_res
-                = regexp_capture_flags_handlers.parser_for(FLAGS_SRC).of(
+                = get_regexp_capture_flags_handlers().parser_for(FLAGS_SRC).of(
                     flags_json);
 
             if (parse_res.isErr()) {

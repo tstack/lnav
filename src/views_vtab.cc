@@ -124,12 +124,17 @@ struct from_sqlite<std::shared_ptr<lnav::pcre2pp::code>> {
 
 namespace {
 
-static const typed_json_path_container<breadcrumb::possibility>
-    breadcrumb_possibility_handlers = {
+const typed_json_path_container<breadcrumb::possibility>&
+get_breadcrumb_possibility_handlers()
+{
+    static const typed_json_path_container<breadcrumb::possibility> retval = {
         yajlpp::property_handler("display_value")
             .for_field(&breadcrumb::possibility::p_display_value,
                        &attr_line_t::al_string),
-};
+    };
+
+    return retval;
+}
 
 struct resolved_crumb {
     resolved_crumb() = default;
@@ -148,16 +153,21 @@ struct resolved_crumb {
     std::vector<breadcrumb::possibility> rc_possibilities;
 };
 
-static const typed_json_path_container<resolved_crumb> breadcrumb_crumb_handlers
-    = {
+const typed_json_path_container<resolved_crumb>&
+get_breadcrumb_crumb_handlers()
+{
+    static const typed_json_path_container<resolved_crumb> retval = {
         yajlpp::property_handler("display_value")
             .for_field(&resolved_crumb::rc_display_value),
         yajlpp::property_handler("search_placeholder")
             .for_field(&resolved_crumb::rc_search_placeholder),
         yajlpp::property_handler("possibilities#")
             .for_field(&resolved_crumb::rc_possibilities)
-            .with_children(breadcrumb_possibility_handlers),
-};
+            .with_children(get_breadcrumb_possibility_handlers()),
+    };
+
+    return retval;
+}
 
 struct top_line_meta {
     std::optional<std::string> tlm_time;
@@ -166,32 +176,45 @@ struct top_line_meta {
     std::vector<resolved_crumb> tlm_crumbs;
 };
 
-static const typed_json_path_container<top_line_meta> top_line_meta_handlers = {
-    yajlpp::property_handler("time").for_field(&top_line_meta::tlm_time),
-    yajlpp::property_handler("file").for_field(&top_line_meta::tlm_file),
-    yajlpp::property_handler("anchor").for_field(&top_line_meta::tlm_anchor),
-    yajlpp::property_handler("breadcrumbs#")
-        .for_field(&top_line_meta::tlm_crumbs)
-        .with_children(breadcrumb_crumb_handlers),
-};
+const typed_json_path_container<top_line_meta>&
+get_top_line_meta_handlers()
+{
+    static const typed_json_path_container<top_line_meta> retval = {
+        yajlpp::property_handler("time").for_field(&top_line_meta::tlm_time),
+        yajlpp::property_handler("file").for_field(&top_line_meta::tlm_file),
+        yajlpp::property_handler("anchor").for_field(
+            &top_line_meta::tlm_anchor),
+        yajlpp::property_handler("breadcrumbs#")
+            .for_field(&top_line_meta::tlm_crumbs)
+            .with_children(get_breadcrumb_crumb_handlers()),
+    };
 
-static const typed_json_path_container<line_range> line_range_handlers = {
-    yajlpp::property_handler("start").for_field(&line_range::lr_start),
-    yajlpp::property_handler("end").for_field(&line_range::lr_end),
-};
+    return retval;
+}
 
-static const typed_json_path_container<textview_curses::selected_text_info>
-    selected_text_handlers = {
-        yajlpp::property_handler("line").for_field(
-            &textview_curses::selected_text_info::sti_line),
-        yajlpp::property_handler("range")
-            .for_child(&textview_curses::selected_text_info::sti_range)
-            .with_children(line_range_handlers),
-        yajlpp::property_handler("value").for_field(
-            &textview_curses::selected_text_info::sti_value),
-        yajlpp::property_handler("href").for_field(
-            &textview_curses::selected_text_info::sti_href),
-};
+const typed_json_path_container<textview_curses::selected_text_info>&
+get_selected_text_handlers()
+{
+    static const typed_json_path_container<line_range> line_range_handlers = {
+        yajlpp::property_handler("start").for_field(&line_range::lr_start),
+        yajlpp::property_handler("end").for_field(&line_range::lr_end),
+    };
+
+    static const typed_json_path_container<textview_curses::selected_text_info>
+        retval = {
+            yajlpp::property_handler("line").for_field(
+                &textview_curses::selected_text_info::sti_line),
+            yajlpp::property_handler("range")
+                .for_child(&textview_curses::selected_text_info::sti_range)
+                .with_children(line_range_handlers),
+            yajlpp::property_handler("value").for_field(
+                &textview_curses::selected_text_info::sti_value),
+            yajlpp::property_handler("href").for_field(
+                &textview_curses::selected_text_info::sti_href),
+        };
+
+    return retval;
+}
 
 enum class row_details_t {
     hide,
@@ -220,44 +243,50 @@ struct view_options {
     }
 };
 
-static const json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
-    {"hide", row_details_t::hide},
-    {"show", row_details_t::show},
+const typed_json_path_container<view_options>&
+get_view_options_handlers()
+{
+    static const json_path_handler_base::enum_value_t ROW_DETAILS_ENUM[] = {
+        {"hide", row_details_t::hide},
+        {"show", row_details_t::show},
 
-    json_path_handler_base::ENUM_TERMINATOR,
-};
+        json_path_handler_base::ENUM_TERMINATOR,
+    };
 
-static const json_path_handler_base::enum_value_t WORD_WRAP_ENUM[] = {
-    {"none", word_wrap_t::none},
-    {"normal", word_wrap_t::normal},
+    static const json_path_handler_base::enum_value_t WORD_WRAP_ENUM[] = {
+        {"none", word_wrap_t::none},
+        {"normal", word_wrap_t::normal},
 
-    json_path_handler_base::ENUM_TERMINATOR,
-};
+        json_path_handler_base::ENUM_TERMINATOR,
+    };
 
-static const typed_json_path_container<view_options> view_options_handlers = {
-    yajlpp::property_handler("row-details")
-        .with_enum_values(ROW_DETAILS_ENUM)
-        .with_description(
-            "Show or hide the details overlay for the focused row")
-        .for_field(&view_options::vo_row_details),
-    yajlpp::property_handler("row-time-offset")
-        .with_enum_values(ROW_DETAILS_ENUM)
-        .with_description(
-            "Show or hide the time-offset from a row to the previous mark")
-        .for_field(&view_options::vo_row_time_offset),
-    yajlpp::property_handler("hidden-fields")
-        .with_enum_values(ROW_DETAILS_ENUM)
-        .with_description(
-            "Show or hide fields that have been hidden by the user")
-        .for_field(&view_options::vo_hidden_fields),
-    yajlpp::property_handler("overlay-focused-line")
-        .with_description("The focused line in an overlay")
-        .for_field(&view_options::vo_overlay_focus),
-    yajlpp::property_handler("word-wrap")
-        .with_enum_values(WORD_WRAP_ENUM)
-        .with_description("How to break long lines")
-        .for_field(&view_options::vo_word_wrap),
-};
+    static const typed_json_path_container<view_options> retval = {
+        yajlpp::property_handler("row-details")
+            .with_enum_values(ROW_DETAILS_ENUM)
+            .with_description(
+                "Show or hide the details overlay for the focused row")
+            .for_field(&view_options::vo_row_details),
+        yajlpp::property_handler("row-time-offset")
+            .with_enum_values(ROW_DETAILS_ENUM)
+            .with_description(
+                "Show or hide the time-offset from a row to the previous mark")
+            .for_field(&view_options::vo_row_time_offset),
+        yajlpp::property_handler("hidden-fields")
+            .with_enum_values(ROW_DETAILS_ENUM)
+            .with_description(
+                "Show or hide fields that have been hidden by the user")
+            .for_field(&view_options::vo_hidden_fields),
+        yajlpp::property_handler("overlay-focused-line")
+            .with_description("The focused line in an overlay")
+            .for_field(&view_options::vo_overlay_focus),
+        yajlpp::property_handler("word-wrap")
+            .with_enum_values(WORD_WRAP_ENUM)
+            .with_description("How to break long lines")
+            .for_field(&view_options::vo_word_wrap),
+    };
+
+    return retval;
+}
 
 struct lnav_views : public tvt_iterator_cursor<lnav_views> {
     static constexpr const char* NAME = "lnav_views";
@@ -426,7 +455,8 @@ CREATE TABLE lnav_views (
                             crumb.c_search_placeholder,
                             std::move(poss));
                     }
-                    to_sqlite(ctx, top_line_meta_handlers.to_json_string(tlm));
+                    to_sqlite(ctx,
+                              get_top_line_meta_handlers().to_json_string(tlm));
                 } else {
                     sqlite3_result_null(ctx);
                 }
@@ -470,14 +500,15 @@ CREATE TABLE lnav_views (
                 if (vo.empty()) {
                     sqlite3_result_null(ctx);
                 } else {
-                    to_sqlite(ctx, view_options_handlers.to_json_string(vo));
+                    to_sqlite(ctx,
+                              get_view_options_handlers().to_json_string(vo));
                 }
                 break;
             }
             case 14: {
                 if (tc.tc_selected_text) {
                     to_sqlite(ctx,
-                              selected_text_handlers.to_json_string(
+                              get_selected_text_handlers().to_json_string(
                                   tc.tc_selected_text.value()));
                 } else {
                     sqlite3_result_null(ctx);
@@ -532,7 +563,8 @@ CREATE TABLE lnav_views (
             static const intern_string_t OPTIONS_SRC
                 = intern_string::lookup("options");
 
-            auto parse_res = view_options_handlers.parser_for(OPTIONS_SRC)
+            auto parse_res = get_view_options_handlers()
+                                 .parser_for(OPTIONS_SRC)
                                  .of(options.value());
             if (parse_res.isErr()) {
                 auto errmsg = parse_res.unwrapErr();
@@ -602,8 +634,9 @@ CREATE TABLE lnav_views (
             static const intern_string_t SQL_SRC
                 = intern_string::lookup("top_meta");
 
-            auto parse_res = top_line_meta_handlers.parser_for(SQL_SRC).of(
-                string_fragment::from_c_str(top_meta));
+            auto parse_res
+                = get_top_line_meta_handlers().parser_for(SQL_SRC).of(
+                    string_fragment::from_c_str(top_meta));
             if (parse_res.isErr()) {
                 auto errmsg = parse_res.unwrapErr();
 

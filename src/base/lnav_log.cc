@@ -125,7 +125,7 @@ static struct {
     char lr_data[BUFFER_SIZE];
 } log_ring = {0, BUFFER_SIZE, 0, {}};
 
-static const char* LEVEL_NAMES[] = {
+static constexpr const char* const LEVEL_NAMES[] = {
     "T",
     "D",
     "I",

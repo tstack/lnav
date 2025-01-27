@@ -37,7 +37,7 @@
 #include "sqlitepp.client.hh"
 #include "top_status_source.cfg.hh"
 
-static const char* MSG_QUERY = R"(
+static const char* const MSG_QUERY = R"(
 SELECT message FROM lnav_user_notifications
   WHERE message IS NOT NULL AND
         (expiration IS NULL OR expiration > datetime('now')) AND
@@ -77,7 +77,7 @@ top_status_source::update_time(const timeval& current_time)
 void
 top_status_source::update_time()
 {
-    struct timeval tv;
+    timeval tv;
 
     gettimeofday(&tv, nullptr);
     this->update_time(tv);

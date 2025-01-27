@@ -1,3 +1,3 @@
-[1m[31m✘ error[0m: unable to import: [1mhttps://regex101.com/r/zpEnjV/1[0m
+[1m[31m✘[0m [1m[31merror[0m: unable to import: [1mhttps://regex101.com/r/zpEnjV/1[0m
  [1m[31mreason[0m: format file already exists: [1mregex101-home/.lnav/formats/installed/unit_test_log.json[0m
 [36m =[0m [36mhelp[0m: delete the existing file to continue
