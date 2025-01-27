@@ -46,8 +46,6 @@ class db_label_source
     : public text_sub_source
     , public text_time_translator {
 public:
-    ~db_label_source() override { this->clear(); }
-
     bool has_log_time_column() const { return !this->dls_time_column.empty(); }
 
     size_t text_line_count() override { return this->dls_rows.size(); }
@@ -130,8 +128,7 @@ public:
     std::vector<row_style> dls_row_styles;
     bool dls_row_styles_have_errors{false};
     int dls_row_style_index{-1};
-    std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator{
-        std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024)};
+    std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator;
     string_attrs_t dls_ansi_attrs;
 
     static const char NULL_STR[];

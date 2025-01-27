@@ -542,7 +542,12 @@ db_label_source::clear()
     this->dls_row_styles.clear();
     this->dls_row_styles_have_errors = false;
     this->dls_row_style_index = -1;
-    this->dls_allocator = std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024);
+    if (this->dls_allocator == nullptr) {
+        this->dls_allocator
+            = std::make_unique<ArenaAlloc::Alloc<char>>(64 * 1024);
+    } else {
+        this->dls_allocator->reset();
+    }
 }
 
 std::optional<size_t>
