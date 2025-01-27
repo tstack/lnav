@@ -62,16 +62,21 @@ using namespace lnav::roles::literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-static const size_t INDEX_RESERVE_INCREMENT = 1024;
+static constexpr size_t INDEX_RESERVE_INCREMENT = 1024;
 
-static const typed_json_path_container<lnav::gzip::header> file_header_handlers
-    = {
+static const typed_json_path_container<lnav::gzip::header>&
+get_file_header_handlers()
+{
+    static const typed_json_path_container<lnav::gzip::header> retval = {
         yajlpp::property_handler("name").for_field(&lnav::gzip::header::h_name),
         yajlpp::property_handler("mtime").for_field(
             &lnav::gzip::header::h_mtime),
         yajlpp::property_handler("comment").for_field(
             &lnav::gzip::header::h_comment),
-};
+    };
+
+    return retval;
+}
 
 Result<std::shared_ptr<logfile>, std::string>
 logfile::open(std::filesystem::path filename,
@@ -154,7 +159,8 @@ logfile::open(std::filesystem::path filename,
                 if (!gzhdr.empty()) {
                     lf->lf_embedded_metadata["net.zlib.gzip.header"] = {
                         text_format_t::TF_JSON,
-                        file_header_handlers.formatter_for(gzhdr)
+                        get_file_header_handlers()
+                            .formatter_for(gzhdr)
                             .with_config(yajl_gen_beautify, 1)
                             .to_string(),
                     };
@@ -623,8 +629,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             last_line.set_has_ansi(last_line.has_ansi()
                                    || li.li_utf8_scan_result.usr_has_ansi);
             if (last_line.get_msg_level() == LEVEL_INVALID) {
-                if (this->lf_invalid_lines.ili_lines.size() < invalid_line_info::MAX_INVALID_LINES) {
-                    this->lf_invalid_lines.ili_lines.push_back(this->lf_index.size() - 1);
+                if (this->lf_invalid_lines.ili_lines.size()
+                    < invalid_line_info::MAX_INVALID_LINES)
+                {
+                    this->lf_invalid_lines.ili_lines.push_back(
+                        this->lf_index.size() - 1);
                 }
                 this->lf_invalid_lines.ili_total += 1;
             }

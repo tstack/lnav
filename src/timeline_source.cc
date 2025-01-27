@@ -1056,7 +1056,7 @@ timeline_source::get_filtered_count_for(size_t filter_index) const
     return this->gs_filter_hits[filter_index];
 }
 
-static std::vector<breadcrumb::possibility>
+static const std::vector<breadcrumb::possibility>&
 timestamp_poss()
 {
     const static std::vector<breadcrumb::possibility> retval = {

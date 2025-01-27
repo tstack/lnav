@@ -38,12 +38,14 @@
 
 namespace md4cpp {
 
-static const typed_json_path_container<xml_entity> xml_entity_handlers = {
-    yajlpp::property_handler("characters").for_field(&xml_entity::xe_chars),
-};
+static const typed_json_path_container<xml_entity_map>&
+get_xml_entity_map_handlers()
+{
+    static const typed_json_path_container<xml_entity> xml_entity_handlers = {
+        yajlpp::property_handler("characters").for_field(&xml_entity::xe_chars),
+    };
 
-static const typed_json_path_container<xml_entity_map> xml_entity_map_handlers
-    = {
+    static const typed_json_path_container<xml_entity_map> retval = {
         yajlpp::pattern_property_handler("(?<var_name>\\&\\w+;?)")
             .with_synopsis("<name>")
             .with_path_provider<xml_entity_map>(
@@ -59,18 +61,27 @@ static const typed_json_path_container<xml_entity_map> xml_entity_map_handlers
                     return &xem->xem_entities[entity_name];
                 })
             .with_children(xml_entity_handlers),
-};
+    };
 
-static const typed_json_path_container<emoji> emoji_handlers = {
-    yajlpp::property_handler("emoji").for_field(&emoji::e_value),
-    yajlpp::property_handler("shortname").for_field(&emoji::e_shortname),
-};
+    return retval;
+}
 
-static const typed_json_path_container<emoji_map> emoji_map_handlers = {
-    yajlpp::property_handler("emojis#")
-        .for_field(&emoji_map::em_emojis)
-        .with_children(emoji_handlers),
-};
+static const typed_json_path_container<emoji_map>&
+get_emoji_map_handlers()
+{
+    static const typed_json_path_container<emoji> emoji_handlers = {
+        yajlpp::property_handler("emoji").for_field(&emoji::e_value),
+        yajlpp::property_handler("shortname").for_field(&emoji::e_shortname),
+    };
+
+    static const typed_json_path_container<emoji_map> retval = {
+        yajlpp::property_handler("emojis#")
+            .for_field(&emoji_map::em_emojis)
+            .with_children(emoji_handlers),
+    };
+
+    return retval;
+}
 
 static xml_entity_map
 load_xml_entity_map()
@@ -78,9 +89,10 @@ load_xml_entity_map()
     static const intern_string_t name
         = intern_string::lookup(xml_entities_json.get_name());
     auto sfp = xml_entities_json.to_string_fragment_producer();
-    auto parse_res
-        = xml_entity_map_handlers.parser_for(name).with_ignore_unused(true).of(
-            *sfp);
+    auto parse_res = get_xml_entity_map_handlers()
+                         .parser_for(name)
+                         .with_ignore_unused(true)
+                         .of(*sfp);
 
     assert(parse_res.isOk());
 
@@ -102,7 +114,8 @@ load_emoji_map()
         = intern_string::lookup(emojis_json.get_name());
     auto sfp = emojis_json.to_string_fragment_producer();
     auto parse_res
-        = emoji_map_handlers.parser_for(name).with_ignore_unused(true).of(*sfp);
+        = get_emoji_map_handlers().parser_for(name).with_ignore_unused(true).of(
+            *sfp);
 
     assert(parse_res.isOk());
 

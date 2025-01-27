@@ -67,7 +67,7 @@ rgb_color::operator>=(const rgb_color& rhs) const
     return !(*this < rhs);
 }
 
-rgb_color
+constexpr rgb_color
 rgb_color::from(const ansi_color color)
 {
     switch (color) {

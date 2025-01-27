@@ -57,9 +57,9 @@ enum class ansi_color : uint8_t {
 #define COLOR_WHITE 7
 
 struct rgb_color {
-    static rgb_color from(ansi_color color);
+    static constexpr rgb_color from(ansi_color color);
 
-    explicit rgb_color(short r = -1, short g = -1, short b = -1)
+    explicit constexpr rgb_color(short r = -1, short g = -1, short b = -1)
         : rc_r(r), rc_g(g), rc_b(b)
     {
     }
@@ -87,7 +87,7 @@ struct rgb_color {
 };
 
 struct lab_color {
-    lab_color() : lc_l(0), lc_a(0), lc_b(0) {}
+    constexpr lab_color() : lc_l(0), lc_a(0), lc_b(0) {}
 
     explicit lab_color(const rgb_color& rgb);
 

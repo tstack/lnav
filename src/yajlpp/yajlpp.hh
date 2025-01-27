@@ -298,7 +298,8 @@ struct json_path_handler_base {
     std::function<int(yajlpp_parse_context*, int)> jph_bool_cb;
     std::function<int(yajlpp_parse_context*, long long)> jph_integer_cb;
     std::function<int(yajlpp_parse_context*, double)> jph_double_cb;
-    std::function<int(yajlpp_parse_context*, const string_fragment& sf, yajl_string_props_t*)>
+    std::function<int(
+        yajlpp_parse_context*, const string_fragment& sf, yajl_string_props_t*)>
         jph_str_cb;
 
     void validate_string(yajlpp_parse_context& ypc, string_fragment sf) const;
@@ -339,21 +340,39 @@ public:
 
     intern_string_t get_path_fragment_i(int offset) const
     {
-        char fragbuf[this->ypc_path.size()];
-        const char* frag;
+        constexpr auto BUF_SIZE = 128;
+        std::unique_ptr<char[]> fragalloc;
+        char fragbuf[BUF_SIZE];
+        char* fragptr = nullptr;
+
+        if (this->ypc_path.size() >= BUF_SIZE) {
+            fragalloc = std::make_unique<char[]>(this->ypc_path.size());
+            fragptr = fragalloc.get();
+        } else {
+            fragptr = fragbuf;
+        }
         size_t len;
 
-        frag = this->get_path_fragment(offset, fragbuf, len);
+        const auto* frag = this->get_path_fragment(offset, fragptr, len);
         return intern_string::lookup(frag, len);
     }
 
     std::string get_path_fragment(int offset) const
     {
-        char fragbuf[this->ypc_path.size()];
-        const char* frag;
+        constexpr auto BUF_SIZE = 128;
+        std::unique_ptr<char[]> fragalloc;
+        char fragbuf[BUF_SIZE];
+        char* fragptr = nullptr;
+
+        if (this->ypc_path.size() >= BUF_SIZE) {
+            fragalloc = std::make_unique<char[]>(this->ypc_path.size());
+            fragptr = fragalloc.get();
+        } else {
+            fragptr = fragbuf;
+        }
         size_t len;
 
-        frag = this->get_path_fragment(offset, fragbuf, len);
+        const auto* frag = this->get_path_fragment(offset, fragptr, len);
         return std::string(frag, len);
     }
 

@@ -865,7 +865,6 @@ view_colors::init_roles(const lnav_theme& lt,
                         lnav_config_listener::error_reporter& reporter)
 {
     const auto& default_theme = lnav_config.lc_ui_theme_defs["default"];
-    rgb_color fg, bg;
     std::string err;
 
     size_t icon_index = 0;
@@ -922,7 +921,6 @@ view_colors::init_roles(const lnav_theme& lt,
             ? ""
             : fmt::to_string(fg_iter->second);
 
-        log_debug("ansi fg str %s", fg_str.c_str());
         auto rgb_fg = from<rgb_color>(string_fragment::from_str(fg_str))
                           .unwrapOrElse([&](const auto& msg) {
                               reporter(&fg_str,

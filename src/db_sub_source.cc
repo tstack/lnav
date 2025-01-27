@@ -49,17 +49,23 @@ struct user_row_style {
     std::map<std::string, style_config> urs_column_config;
 };
 
-static json_path_container col_style_handlers = {
-    yajlpp::pattern_property_handler("(?<column_name>[^/]+)")
-        .for_field(&user_row_style::urs_column_config)
-        .with_children(style_config_handlers),
-};
+static const typed_json_path_container<user_row_style>&
+get_row_style_handlers()
+{
+    static const json_path_container col_style_handlers = {
+        yajlpp::pattern_property_handler("(?<column_name>[^/]+)")
+            .for_field(&user_row_style::urs_column_config)
+            .with_children(style_config_handlers),
+    };
 
-static typed_json_path_container<user_row_style> row_style_handlers
-    = typed_json_path_container<user_row_style>{
-        yajlpp::property_handler("columns")
-            .with_children(col_style_handlers),
-}.with_schema_id2("row-style");
+    static const typed_json_path_container<user_row_style> retval
+        = typed_json_path_container<user_row_style>{
+            yajlpp::property_handler("columns")
+                .with_children(col_style_handlers),
+    }.with_schema_id2("row-style");
+
+    return retval;
+}
 
 line_info
 db_label_source::text_value_for_line(textview_curses& tc,
@@ -372,7 +378,8 @@ db_label_source::push_column(const scoped_value_t& sv)
             if (frag.empty()) {
                 this->dls_row_styles.emplace_back(row_style{});
             } else {
-                auto parse_res = row_style_handlers.parser_for(SRC).of(frag);
+                auto parse_res
+                    = get_row_style_handlers().parser_for(SRC).of(frag);
                 if (parse_res.isErr()) {
                     log_error("DB row %d JSON is invalid:", row_index);
                     auto errors = parse_res.unwrapErr();

@@ -813,22 +813,29 @@ struct url_parts {
     std::optional<std::string> up_fragment;
 };
 
-static const json_path_container url_params_handlers = {
-    yajlpp::pattern_property_handler("(?<param>.*)")
-        .for_field(&url_parts::up_parameters),
-};
+const typed_json_path_container<url_parts>&
+get_url_parts_handlers()
+{
+    static const json_path_container url_params_handlers = {
+        yajlpp::pattern_property_handler("(?<param>.*)")
+            .for_field(&url_parts::up_parameters),
+    };
 
-static const typed_json_path_container<url_parts> url_parts_handlers = {
-    yajlpp::property_handler("scheme").for_field(&url_parts::up_scheme),
-    yajlpp::property_handler("username").for_field(&url_parts::up_username),
-    yajlpp::property_handler("password").for_field(&url_parts::up_password),
-    yajlpp::property_handler("host").for_field(&url_parts::up_host),
-    yajlpp::property_handler("port").for_field(&url_parts::up_port),
-    yajlpp::property_handler("path").for_field(&url_parts::up_path),
-    yajlpp::property_handler("query").for_field(&url_parts::up_query),
-    yajlpp::property_handler("parameters").with_children(url_params_handlers),
-    yajlpp::property_handler("fragment").for_field(&url_parts::up_fragment),
-};
+    static const typed_json_path_container<url_parts> retval = {
+        yajlpp::property_handler("scheme").for_field(&url_parts::up_scheme),
+        yajlpp::property_handler("username").for_field(&url_parts::up_username),
+        yajlpp::property_handler("password").for_field(&url_parts::up_password),
+        yajlpp::property_handler("host").for_field(&url_parts::up_host),
+        yajlpp::property_handler("port").for_field(&url_parts::up_port),
+        yajlpp::property_handler("path").for_field(&url_parts::up_path),
+        yajlpp::property_handler("query").for_field(&url_parts::up_query),
+        yajlpp::property_handler("parameters")
+            .with_children(url_params_handlers),
+        yajlpp::property_handler("fragment").for_field(&url_parts::up_fragment),
+    };
+
+    return retval;
+}
 
 static auto_mem<char>
 sql_unparse_url(string_fragment in)
@@ -836,7 +843,7 @@ sql_unparse_url(string_fragment in)
     static auto* CURL_HANDLE = get_curl_easy();
     static intern_string_t SRC = intern_string::lookup("arg");
 
-    auto parse_res = url_parts_handlers.parser_for(SRC).of(in);
+    auto parse_res = get_url_parts_handlers().parser_for(SRC).of(in);
     if (parse_res.isErr()) {
         throw parse_res.unwrapErr()[0];
     }
