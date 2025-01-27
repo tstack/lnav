@@ -892,6 +892,8 @@ dist_noinst_DATA = \
     test_sql_fs_func.sh_3ed11101a413e47c3dfe219557b7a6df04a64253.out \
     test_sql_fs_func.sh_3f211691430b1e78ce0d7802f52a73f9bf6ddf6d.err \
     test_sql_fs_func.sh_3f211691430b1e78ce0d7802f52a73f9bf6ddf6d.out \
+    test_sql_fs_func.sh_4496fb1d68027be9daa763f1c666829e732ba2b5.err \
+    test_sql_fs_func.sh_4496fb1d68027be9daa763f1c666829e732ba2b5.out \
     test_sql_fs_func.sh_469380561dccd79c7249562067107c330838eaad.err \
     test_sql_fs_func.sh_469380561dccd79c7249562067107c330838eaad.out \
     test_sql_fs_func.sh_54b004f301907860d360434b37fd6c81fcc12f99.err \
@@ -934,6 +936,8 @@ dist_noinst_DATA = \
     test_sql_fs_func.sh_ea02b3a385f12798b768098fb7ad80178e652d03.out \
     test_sql_fs_func.sh_f31f240313ddec806aa6f353ceed707dfd9aaf16.err \
     test_sql_fs_func.sh_f31f240313ddec806aa6f353ceed707dfd9aaf16.out \
+    test_sql_fs_func.sh_f39d7de82adacfb9c309f4c990ca64f1ad1817a3.err \
+    test_sql_fs_func.sh_f39d7de82adacfb9c309f4c990ca64f1ad1817a3.out \
     test_sql_indexes.sh_026dd9752b6101e0791689d3a2026f7e517e36f5.err \
     test_sql_indexes.sh_026dd9752b6101e0791689d3a2026f7e517e36f5.out \
     test_sql_indexes.sh_0df1012c96a67c974505a412fc7fc962bf9c8730.err \
@@ -1346,6 +1350,8 @@ dist_noinst_DATA = \
     test_sql_views_vtab.sh_f8340cb4c62aabd839ea09235b6ebe41b2bb48f4.out \
     test_sql_views_vtab.sh_ff600c345b96c00810b6d84cfea4c4cecd74f342.err \
     test_sql_views_vtab.sh_ff600c345b96c00810b6d84cfea4c4cecd74f342.out \
+    test_sql_xml_func.sh_0a5cb1e6eff33b3ef6301c3433dcaa74ce3785d7.err \
+    test_sql_xml_func.sh_0a5cb1e6eff33b3ef6301c3433dcaa74ce3785d7.out \
     test_sql_xml_func.sh_46dfa23e2effabf3fa150c4b871fd8d22b1c834d.err \
     test_sql_xml_func.sh_46dfa23e2effabf3fa150c4b871fd8d22b1c834d.out \
     test_sql_xml_func.sh_4effabf11b59580e5f0727199eb74fba049c0cda.err \

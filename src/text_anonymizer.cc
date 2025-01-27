@@ -480,7 +480,7 @@ text_anonymizer::next(string_fragment line)
                 } else {
                     static const auto ATTR_RE
                         = lnav::pcre2pp::code::from_const(R"([\w\-]+=)");
-                    static thread_local auto md
+                    thread_local auto md
                         = lnav::pcre2pp::match_data::unitialized();
 
                     auto remaining = string_fragment::from_str_range(

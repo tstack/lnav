@@ -1,0 +1,3 @@
+[1m[4m  name  [0m[1m[4m [0m[1m[4m     value     [0m[1m[4m [0m[1m[4m       result        [0m[1m[4m [0m[1m[4m      node_path       [0m[1m[4m [0m[1m[4mnode_attr[0m[1m[4m [0m[1m[4m[7mnode_text [0m[1m[4m [0m
+TEST_XP1 //book[1]/price <price>44.95</price>␊ /catalog/book[1]/price {}        [7m     44.95[0m 
+TEST_XP2 //book[2]/price <price>5.95</price>␊  /catalog/book[2]/price {}        [7m [0m     5.95 

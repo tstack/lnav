@@ -96,7 +96,7 @@ struct user_message {
 
     user_message() = default;
     user_message(user_message&&) = default;
-    user_message(const user_message&) = default;
+    user_message(const user_message&) noexcept = default;
 
     user_message& operator=(user_message&&) = default;
     user_message& operator=(const user_message&) = default;

@@ -6,6 +6,8 @@ unset XDG_CONFIG_HOME
 
 run_cap_test ./drive_sql "select readlink('non-existent-link')"
 
+run_cap_test ./drive_sql "select readlink('drive_sql')"
+
 ln -sf sql_fs_readlink_test sql_fs_readlink_test.lnk
 run_cap_test ./drive_sql "select readlink('sql_fs_readlink_test.lnk')"
 rm sql_fs_readlink_test.lnk
@@ -73,3 +75,7 @@ echo "Hello, World!" > fstat-hw.dat
 touch -t 200711030923 fstat-hw.dat
 chmod 0644 fstat-hw.dat
 run_cap_test ${lnav_test} -Nn -c ";SELECT st_name,st_type,st_mode,st_nlink,st_size,st_mtime,error,data FROM fstat('fstat-hw.dat')"
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT filepath, st_size FROM lnav_file, fstat(filepath)" \
+    ${test_dir}/logfile_access_log.*

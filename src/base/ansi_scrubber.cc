@@ -120,8 +120,8 @@ erase_ansi_escapes(string_fragment input)
 void
 scrub_ansi_string(std::string& str, string_attrs_t* sa)
 {
-    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
-    static const auto semi_pred = string_fragment::tag1{';'};
+    thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+    static constexpr auto semi_pred = string_fragment::tag1{';'};
 
     const auto& regex = ansi_regex();
     std::optional<std::string> href;

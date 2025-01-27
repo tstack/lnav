@@ -54,7 +54,7 @@ regex101::import(const std::string& url,
 {
     static const auto USER_URL = lnav::pcre2pp::code::from_const(
         R"(^https://regex101.com/r/(\w+)(?:/(\d+))?)");
-    static thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+    thread_local auto md = lnav::pcre2pp::match_data::unitialized();
     static const auto NAME_RE = lnav::pcre2pp::code::from_const(R"(^\w+$)");
 
     if (url.empty()) {

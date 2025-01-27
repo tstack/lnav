@@ -311,7 +311,7 @@ public:
     matcher::matches_result find_in(string_fragment in,
                                     uint32_t options = 0) const
     {
-        static thread_local match_data md = this->create_match_data();
+        thread_local match_data md = this->create_match_data();
 
         if (md.md_ovector_count < this->p_match_proto.md_ovector_count) {
             md = this->create_match_data();

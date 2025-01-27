@@ -30,7 +30,10 @@
  */
 
 #include <future>
+#include <map>
+#include <optional>
 #include <string>
+#include <vector>
 
 #include <errno.h>
 #include <stdlib.h>
@@ -43,10 +46,12 @@
 #include "base/auto_mem.hh"
 #include "base/auto_pid.hh"
 #include "base/injector.hh"
+#include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/opt_util.hh"
 #include "bound_tags.hh"
 #include "config.h"
+#include "mapbox/variant.hpp"
 #include "sqlite-extension-func.hh"
 #include "sqlite3.h"
 #include "vtab_module.hh"
@@ -81,9 +86,7 @@ sql_basename(const char* path_in)
 static mapbox::util::variant<const char*, string_fragment>
 sql_dirname(const char* path_in)
 {
-    ssize_t text_end;
-
-    text_end = strlen(path_in) - 1;
+    ssize_t text_end = strlen(path_in) - 1;
     while (text_end >= 0
            && (path_in[text_end] == '/' || path_in[text_end] == '\\'))
     {
@@ -129,42 +132,53 @@ sql_joinpath(const std::vector<const char*>& paths)
     return full_path;
 }
 
-static std::string
+static text_auto_buffer
 sql_readlink(const char* path)
 {
     struct stat st;
 
     if (lstat(path, &st) == -1) {
-        throw sqlite_func_error(
-            "unable to stat path: {} -- {}", path, strerror(errno));
+        throw lnav::console::user_message::error(
+            attr_line_t("readlink() cannot lstat path: ")
+                .append(lnav::roles::file(path)))
+            .with_errno_reason();
     }
 
-    char buf[st.st_size];
-    ssize_t rc;
+    auto path_len = strlen(path);
+    if (!S_ISLNK(st.st_mode)) {
+        auto buf = auto_buffer::from(path, path_len);
+        return text_auto_buffer{std::move(buf)};
+    }
 
-    rc = readlink(path, buf, sizeof(buf));
+    auto buf = auto_buffer::alloc(st.st_size);
+    auto rc = readlink(path, buf.in(), buf.capacity());
     if (rc < 0) {
         if (errno == EINVAL) {
-            return path;
+            memcpy(buf.in(), path, path_len);
+        } else {
+            throw lnav::console::user_message::error(
+                attr_line_t("readlink() failed for path: ")
+                    .append(lnav::roles::file(path)))
+                .with_errno_reason();
         }
-        throw sqlite_func_error(
-            "unable to read link: {} -- {}", path, strerror(errno));
     }
+    buf.resize(rc);
 
-    return std::string(buf, rc);
+    return text_auto_buffer{std::move(buf)};
 }
 
-static std::string
+static text_auto_buffer
 sql_realpath(const char* path)
 {
-    char resolved_path[PATH_MAX];
-
-    if (realpath(path, resolved_path) == nullptr) {
-        throw sqlite_func_error(
-            "Could not get real path for {} -- {}", path, strerror(errno));
+    auto resolved_path = auto_buffer::alloc(PATH_MAX);
+    if (realpath(path, resolved_path.in()) == nullptr) {
+        throw lnav::console::user_message::error(
+            attr_line_t("Could not get real path for ")
+                .append_quoted(lnav::roles::file(path)))
+            .with_errno_reason();
     }
 
-    return resolved_path;
+    return text_auto_buffer{std::move(resolved_path)};
 }
 
 struct shell_exec_options {
@@ -233,7 +247,7 @@ sql_shell_exec(const char* cmd,
     }
 
     if (child_pid.in_child()) {
-        const char* args[] = {
+        const char* const args[] = {
             getenv_opt("SHELL").value_or("bash"),
             "-c",
             cmd,

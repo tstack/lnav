@@ -27,8 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
+
 #include "fstat_vtab.hh"
 
+#include <fcntl.h>
 #include <glob.h>
 #include <grp.h>
 #include <pwd.h>
@@ -41,7 +44,6 @@
 #include "base/lnav_log.hh"
 #include "bound_tags.hh"
 #include "config.h"
-#include <filesystem>
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
@@ -119,6 +121,9 @@ CREATE TABLE fstat (
 
         void load_stat()
         {
+            if (this->c_path_index >= this->c_glob->gl_pathc) {
+                return;
+            }
             auto rc = lstat(this->c_glob->gl_pathv[this->c_path_index],
                             &this->c_stat);
 
@@ -129,6 +134,9 @@ CREATE TABLE fstat (
 
         int next()
         {
+            log_debug("fstat_vtab::next %d %d",
+                      this->c_path_index,
+                      this->c_glob->gl_pathc);
             if (this->c_path_index < this->c_glob->gl_pathc) {
                 this->c_path_index += 1;
                 this->load_stat();
@@ -139,7 +147,11 @@ CREATE TABLE fstat (
 
         int reset() { return SQLITE_OK; }
 
-        int eof() { return this->c_path_index >= this->c_glob->gl_pathc; }
+        int eof()
+        {
+            log_debug("eof %d %d", this->c_path_index, this->c_glob->gl_pathc);
+            return this->c_path_index >= this->c_glob->gl_pathc;
+        }
 
         int get_rowid(sqlite3_int64& rowid_out)
         {
@@ -410,7 +422,7 @@ CREATE TABLE fstat (
 #endif
 };
 
-static int
+int
 rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
 {
     vtab_index_constraints vic(pIdxInfo);
@@ -432,14 +444,14 @@ rcBestIndex(sqlite3_vtab* tab, sqlite3_index_info* pIdxInfo)
     return SQLITE_OK;
 }
 
-static int
+int
 rcFilter(sqlite3_vtab_cursor* pVtabCursor,
          int idxNum,
          const char* idxStr,
          int argc,
          sqlite3_value** argv)
 {
-    fstat_table::cursor* pCur = (fstat_table::cursor*) pVtabCursor;
+    auto* pCur = (fstat_table::cursor*) pVtabCursor;
 
     if (argc != 1) {
         pCur->c_pattern.clear();
@@ -448,6 +460,8 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
 
     const char* pattern = (const char*) sqlite3_value_text(argv[0]);
     pCur->c_pattern = pattern;
+    pCur->c_path_index = 0;
+    pCur->c_error.clear();
 
     auto glob_flags = GLOB_ERR;
     if (!lnav::filesystem::is_glob(pCur->c_pattern)) {
@@ -458,6 +472,7 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     glob_flags |= GLOB_TILDE;
 #endif
 
+    log_debug("doing glob %s", pattern);
     switch (glob(pattern, glob_flags, nullptr, pCur->c_glob.inout())) {
         case GLOB_NOSPACE:
             pVtabCursor->pVtab->zErrMsg

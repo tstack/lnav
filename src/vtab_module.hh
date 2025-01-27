@@ -30,7 +30,11 @@
 #ifndef vtab_module_hh
 #define vtab_module_hh
 
+#include <exception>
+#include <map>
+#include <optional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <sqlite3.h>
@@ -89,12 +93,12 @@ template<typename T>
 struct from_sqlite {
     using U = std::remove_reference_t<T>;
 
-    U operator()(int argc, sqlite3_value** val, int argi) { return U(); }
+    U operator()(int argc, sqlite3_value** val, int argi) const { return U(); }
 };
 
 template<>
 struct from_sqlite<bool> {
-    bool operator()(int argc, sqlite3_value** val, int argi)
+    bool operator()(int argc, sqlite3_value** val, int argi) const
     {
         if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
             throw from_sqlite_conversion_error("integer", argi);
@@ -106,7 +110,7 @@ struct from_sqlite<bool> {
 
 template<>
 struct from_sqlite<int64_t> {
-    int64_t operator()(int argc, sqlite3_value** val, int argi)
+    int64_t operator()(int argc, sqlite3_value** val, int argi) const
     {
         if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
             throw from_sqlite_conversion_error("integer", argi);
@@ -118,7 +122,7 @@ struct from_sqlite<int64_t> {
 
 template<>
 struct from_sqlite<sqlite3_value*> {
-    sqlite3_value* operator()(int argc, sqlite3_value** val, int argi)
+    sqlite3_value* operator()(int argc, sqlite3_value** val, int argi) const
     {
         return val[argi];
     }
@@ -126,7 +130,7 @@ struct from_sqlite<sqlite3_value*> {
 
 template<>
 struct from_sqlite<int> {
-    int operator()(int argc, sqlite3_value** val, int argi)
+    int operator()(int argc, sqlite3_value** val, int argi) const
     {
         if (sqlite3_value_numeric_type(val[argi]) != SQLITE_INTEGER) {
             throw from_sqlite_conversion_error("integer", argi);
@@ -138,7 +142,7 @@ struct from_sqlite<int> {
 
 template<>
 struct from_sqlite<const char*> {
-    const char* operator()(int argc, sqlite3_value** val, int argi)
+    const char* operator()(int argc, sqlite3_value** val, int argi) const
     {
         return (const char*) sqlite3_value_text(val[argi]);
     }
@@ -146,7 +150,7 @@ struct from_sqlite<const char*> {
 
 template<>
 struct from_sqlite<string_fragment> {
-    string_fragment operator()(int argc, sqlite3_value** val, int argi)
+    string_fragment operator()(int argc, sqlite3_value** val, int argi) const
     {
         const auto ptr = (const char*) sqlite3_value_blob(val[argi]);
 
@@ -159,7 +163,7 @@ struct from_sqlite<string_fragment> {
 
 template<>
 struct from_sqlite<std::string> {
-    std::string operator()(int argc, sqlite3_value** val, int argi)
+    std::string operator()(int argc, sqlite3_value** val, int argi) const
     {
         return {
             (const char*) sqlite3_value_blob(val[argi]),
@@ -170,7 +174,7 @@ struct from_sqlite<std::string> {
 
 template<>
 struct from_sqlite<double> {
-    double operator()(int argc, sqlite3_value** val, int argi)
+    double operator()(int argc, sqlite3_value** val, int argi) const
     {
         return sqlite3_value_double(val[argi]);
     }
@@ -178,7 +182,7 @@ struct from_sqlite<double> {
 
 template<typename T>
 struct from_sqlite<std::optional<T>> {
-    std::optional<T> operator()(int argc, sqlite3_value** val, int argi)
+    std::optional<T> operator()(int argc, sqlite3_value** val, int argi) const
     {
         if (argi >= argc || sqlite3_value_type(val[argi]) == SQLITE_NULL) {
             return std::nullopt;
@@ -190,7 +194,7 @@ struct from_sqlite<std::optional<T>> {
 
 template<typename T>
 struct from_sqlite<const std::vector<T>&> {
-    std::vector<T> operator()(int argc, sqlite3_value** val, int argi)
+    std::vector<T> operator()(int argc, sqlite3_value** val, int argi) const
     {
         std::vector<T> retval;
 
@@ -204,7 +208,9 @@ struct from_sqlite<const std::vector<T>&> {
 
 template<typename T>
 struct from_sqlite<vtab_types::nullable<T>> {
-    vtab_types::nullable<T> operator()(int argc, sqlite3_value** val, int argi)
+    vtab_types::nullable<T> operator()(int argc,
+                                       sqlite3_value** val,
+                                       int argi) const
     {
         return {from_sqlite<T*>()(argc, val, argi)};
     }
@@ -433,14 +439,8 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
 
     static void func1(sqlite3_context* context, int argc, sqlite3_value** argv)
     {
-        const static bool IS_NULLABLE[]
-            = {vtab_types::is_nullable<Args>::value...};
-        const static bool IS_SQLITE3_VALUE[]
-            = {std::is_same<Args, sqlite3_value*>::value...};
-
         if ((size_t) argc < REQ_COUNT && VAR_COUNT == 0) {
-            const struct FuncDef* fd
-                = (const FuncDef*) sqlite3_user_data(context);
+            const auto* fd = (const FuncDef*) sqlite3_user_data(context);
             char buffer[128];
 
             if (OPT_COUNT == 0) {
@@ -463,6 +463,11 @@ struct sqlite_func_adapter<Return (*)(Args...), f> {
         }
 
         if constexpr (REQ_COUNT > 0) {
+            const static bool IS_NULLABLE[]
+                = {vtab_types::is_nullable<Args>::value...};
+            const static bool IS_SQLITE3_VALUE[]
+                = {std::is_same_v<Args, sqlite3_value*>...};
+
             for (size_t lpc = 0; lpc < REQ_COUNT; lpc++) {
                 if (!IS_NULLABLE[lpc] && !IS_SQLITE3_VALUE[lpc]
                     && sqlite3_value_type(argv[lpc]) == SQLITE_NULL)
@@ -663,12 +668,10 @@ struct vtab_module : public vtab_module_base {
         p_svt->zErrMsg = nullptr;
 
         auto* p_cur = new (typename T::cursor)(p_svt);
-
         if (p_cur == nullptr) {
             return SQLITE_NOMEM;
-        } else {
-            *pp_cursor = (sqlite3_vtab_cursor*) p_cur;
         }
+        *pp_cursor = (sqlite3_vtab_cursor*) p_cur;
 
         return SQLITE_OK;
     }

@@ -26,6 +26,7 @@
 #include "data_parser.hh"
 #include "data_scanner.hh"
 #include "elem_to_json.hh"
+#include "fmt/format.h"
 #include "formats/logfmt/logfmt.parser.hh"
 #include "hasher.hh"
 #include "libbase64.h"
@@ -56,7 +57,7 @@ enum class encode_algo {
 
 template<>
 struct from_sqlite<encode_algo> {
-    inline encode_algo operator()(int argc, sqlite3_value** val, int argi)
+    encode_algo operator()(int argc, sqlite3_value** val, int argi)
     {
         const char* algo_name = (const char*) sqlite3_value_text(val[argi]);
 
@@ -83,12 +84,12 @@ struct cache_entry {
         std::make_shared<column_namer>(column_namer::language::JSON)};
 };
 
-static cache_entry*
+cache_entry*
 find_re(string_fragment re)
 {
     using re_cache_t
         = std::unordered_map<string_fragment, cache_entry, frag_hasher>;
-    static thread_local re_cache_t cache;
+    thread_local re_cache_t cache;
 
     auto iter = cache.find(re);
     if (iter == cache.end()) {
@@ -321,7 +322,7 @@ sql_spooky_hash_step(sqlite3_context* context, int argc, sqlite3_value** argv)
     }
 }
 
-static void
+void
 sql_spooky_hash_final(sqlite3_context* context)
 {
     auto* hasher
@@ -346,7 +347,7 @@ struct sparkline_context {
     std::vector<double> sc_values;
 };
 
-static void
+void
 sparkline_step(sqlite3_context* context, int argc, sqlite3_value** argv)
 {
     auto* sc = (sparkline_context*) sqlite3_aggregate_context(
@@ -369,7 +370,7 @@ sparkline_step(sqlite3_context* context, int argc, sqlite3_value** argv)
     }
 }
 
-static void
+void
 sparkline_final(sqlite3_context* context)
 {
     auto* sc = (sparkline_context*) sqlite3_aggregate_context(
@@ -477,7 +478,7 @@ get_curl_easy()
 }
 #endif
 
-static mapbox::util::variant<text_auto_buffer, auto_mem<char>, null_value_t>
+mapbox::util::variant<text_auto_buffer, auto_mem<char>, null_value_t>
 sql_encode(sqlite3_value* value, encode_algo algo)
 {
     switch (sqlite3_value_type(value)) {
@@ -557,7 +558,7 @@ sql_encode(sqlite3_value* value, encode_algo algo)
     ensure(false);
 }
 
-static mapbox::util::variant<blob_auto_buffer, auto_mem<char>>
+mapbox::util::variant<blob_auto_buffer, auto_mem<char>>
 sql_decode(string_fragment str, encode_algo algo)
 {
     switch (algo) {
@@ -608,7 +609,7 @@ sql_humanize_file_size(file_ssize_t value)
     return humanize::file_size(value, humanize::alignment::columnar);
 }
 
-static std::string
+std::string
 sql_anonymize(string_fragment frag)
 {
     static safe::Safe<lnav::text_anonymizer> ta;
@@ -837,7 +838,7 @@ get_url_parts_handlers()
     return retval;
 }
 
-static auto_mem<char>
+auto_mem<char>
 sql_unparse_url(string_fragment in)
 {
     static auto* CURL_HANDLE = get_curl_easy();

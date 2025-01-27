@@ -295,10 +295,9 @@ relative_time::from_str(string_fragment str)
 
         bool found = false;
         for (int lpc = 0; lpc < RTT__MAX && !found; lpc++) {
-            static thread_local auto md
-                = lnav::pcre2pp::match_data::unitialized();
+            thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
-            token_t token = (token_t) lpc;
+            auto token = (token_t) lpc;
             auto match_res = MATCHERS[lpc]
                                  .pcre.capture_from(remaining)
                                  .into(md)

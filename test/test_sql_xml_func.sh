@@ -19,3 +19,8 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM xpath('/cat[alog', (SELECT content FROM lnav_file LIMIT 1))" \
     ${test_dir}/books.xml
+
+run_cap_test env TEST_XP1="//book[1]/price" TEST_XP2="//book[2]/price" \
+    ${lnav_test} -n \
+    -c ";SELECT * FROM environ, xpath(environ.value, (SELECT content FROM lnav_file)) WHERE name LIKE 'TEST_XP%'" \
+    ${test_dir}/books.xml

@@ -32,6 +32,7 @@
 
 #include "static_file_vtab.hh"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "base/auto_mem.hh"
@@ -58,9 +59,9 @@ struct sf_vtab_cursor {
     std::map<std::string, static_file_info> vc_files;
 };
 
-static int sfvt_destructor(sqlite3_vtab* p_svt);
+int sfvt_destructor(sqlite3_vtab* p_svt);
 
-static int
+int
 sfvt_create(sqlite3* db,
             void* pAux,
             int argc,
@@ -87,7 +88,7 @@ sfvt_create(sqlite3* db,
     return rc;
 }
 
-static int
+int
 sfvt_destructor(sqlite3_vtab* p_svt)
 {
     static_file_vtab* p_vt = (static_file_vtab*) p_svt;
@@ -98,7 +99,7 @@ sfvt_destructor(sqlite3_vtab* p_svt)
     return SQLITE_OK;
 }
 
-static int
+int
 sfvt_connect(sqlite3* db,
              void* p_aux,
              int argc,
@@ -109,21 +110,21 @@ sfvt_connect(sqlite3* db,
     return sfvt_create(db, p_aux, argc, argv, pp_vt, pzErr);
 }
 
-static int
+int
 sfvt_disconnect(sqlite3_vtab* pVtab)
 {
     return sfvt_destructor(pVtab);
 }
 
-static int
+int
 sfvt_destroy(sqlite3_vtab* p_vt)
 {
     return sfvt_destructor(p_vt);
 }
 
-static int sfvt_next(sqlite3_vtab_cursor* cur);
+int sfvt_next(sqlite3_vtab_cursor* cur);
 
-static void
+void
 find_static_files(sf_vtab_cursor* p_cur, const std::filesystem::path& dir)
 {
     auto& file_map = p_cur->vc_files;
@@ -149,15 +150,14 @@ find_static_files(sf_vtab_cursor* p_cur, const std::filesystem::path& dir)
     }
 }
 
-static int
+int
 sfvt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
 {
-    static_file_vtab* p_vt = (static_file_vtab*) p_svt;
+    auto p_vt = (static_file_vtab*) p_svt;
 
     p_vt->base.zErrMsg = nullptr;
 
-    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) new sf_vtab_cursor();
-
+    auto p_cur = new (std::nothrow) sf_vtab_cursor();
     if (p_cur == nullptr) {
         return SQLITE_NOMEM;
     }
@@ -178,10 +178,10 @@ sfvt_open(sqlite3_vtab* p_svt, sqlite3_vtab_cursor** pp_cursor)
     return SQLITE_OK;
 }
 
-static int
+int
 sfvt_close(sqlite3_vtab_cursor* cur)
 {
-    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) cur;
+    auto* p_cur = (sf_vtab_cursor*) cur;
 
     p_cur->vc_files_iter = p_cur->vc_files.end();
     /* Free cursor struct. */
@@ -190,18 +190,18 @@ sfvt_close(sqlite3_vtab_cursor* cur)
     return SQLITE_OK;
 }
 
-static int
+int
 sfvt_eof(sqlite3_vtab_cursor* cur)
 {
-    sf_vtab_cursor* vc = (sf_vtab_cursor*) cur;
+    auto* vc = (sf_vtab_cursor*) cur;
 
     return vc->vc_files_iter == vc->vc_files.end();
 }
 
-static int
+int
 sfvt_next(sqlite3_vtab_cursor* cur)
 {
-    sf_vtab_cursor* vc = (sf_vtab_cursor*) cur;
+    auto* vc = (sf_vtab_cursor*) cur;
 
     if (vc->vc_files_iter != vc->vc_files.end()) {
         ++vc->vc_files_iter;
@@ -210,10 +210,10 @@ sfvt_next(sqlite3_vtab_cursor* cur)
     return SQLITE_OK;
 }
 
-static int
+int
 sfvt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 {
-    sf_vtab_cursor* vc = (sf_vtab_cursor*) cur;
+    auto* vc = (sf_vtab_cursor*) cur;
 
     switch (col) {
         case 0:
@@ -249,36 +249,36 @@ sfvt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
     return SQLITE_OK;
 }
 
-static int
+int
 sfvt_rowid(sqlite3_vtab_cursor* cur, sqlite_int64* p_rowid)
 {
-    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) cur;
+    auto* p_cur = (sf_vtab_cursor*) cur;
 
     *p_rowid = std::distance(p_cur->vc_files.begin(), p_cur->vc_files_iter);
 
     return SQLITE_OK;
 }
 
-static int
+int
 sfvt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
 {
     return SQLITE_OK;
 }
 
-static int
+int
 sfvt_filter(sqlite3_vtab_cursor* cur,
             int idxNum,
             const char* idxStr,
             int argc,
             sqlite3_value** argv)
 {
-    sf_vtab_cursor* p_cur = (sf_vtab_cursor*) cur;
+    auto* p_cur = (sf_vtab_cursor*) cur;
 
     p_cur->vc_files_iter = p_cur->vc_files.begin();
     return SQLITE_OK;
 }
 
-static sqlite3_module static_file_vtab_module = {
+const sqlite3_module static_file_vtab_module = {
     0, /* iVersion */
     sfvt_create, /* xCreate       - create a vtable */
     sfvt_connect, /* xConnect      - associate a vtable with a connection */
@@ -316,8 +316,7 @@ int
 register_static_file_vtab(sqlite3* db)
 {
     auto_mem<char, sqlite3_free> errmsg;
-    int rc;
-    rc = sqlite3_create_module(
+    int rc = sqlite3_create_module(
         db, "lnav_static_file_vtab_impl", &static_file_vtab_module, nullptr);
     ensure(rc == SQLITE_OK);
     if ((rc = sqlite3_exec(db,
