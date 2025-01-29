@@ -1,4 +1,4 @@
 [1m[4mlog_line[0m[1m[4m [0m[1m[4m log_comment [0m[1m[4m [0m[1m[4mlog_tags[0m[1m[4m [0m
        0 Hello, World! ["#foo"] 
        1 <NULL>        <NULL>   
-[1m       2[0m[1m [0m[1m<[0m[1mNULL[0m[1m>       [0m[1m [0m[1m<[0m[1mNULL[0m[1m>   [0m
+[1m       2[0m[1m [0m[1m<NULL>       [0m[1m [0m[1m<NULL>  [0m[1m [0m

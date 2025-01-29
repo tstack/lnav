@@ -28,6 +28,7 @@
  */
 
 #include <algorithm>
+#include <string_view>
 
 #include "attr_line.hh"
 
@@ -39,6 +40,142 @@
 #include "intervaltree/IntervalTree.h"
 #include "lnav_log.hh"
 #include "pcrepp/pcre2pp.hh"
+
+using namespace std::string_view_literals;
+
+attr_line_t
+attr_line_t::from_table_cell_content(const string_fragment& content,
+                                     size_t max_char_width)
+{
+    static constexpr auto TAB_SYMBOL = "\u21e5"sv;
+    static constexpr auto LF_SYMBOL = "\u240a"sv;
+    static constexpr auto CR_SYMBOL = "\u240d"sv;
+    static constexpr auto REP_SYMBOL = "\ufffd"sv;
+    static const std::string ELLIPSIS = "\u22ef";
+
+    auto has_ansi = false;
+    size_t char_width = 0;
+    attr_line_t retval;
+
+    retval.al_string.reserve(max_char_width);
+    for (size_t index = 0; index < content.length(); ++index) {
+        const auto ch = content.udata()[index];
+
+        switch (ch) {
+            case '\t':
+                retval.al_string.append(TAB_SYMBOL);
+                char_width += 1;
+                break;
+            case '\n':
+                retval.al_string.append(LF_SYMBOL);
+                char_width += 1;
+                break;
+            case '\r':
+                retval.al_string.append(CR_SYMBOL);
+                char_width += 1;
+                break;
+            case '\b':
+            case '\x1b':
+                has_ansi = true;
+                retval.al_string.push_back(ch);
+                break;
+            default:
+                if (ch < 0x80) {
+                    retval.al_string.push_back(ch);
+                    char_width += 1;
+                } else if (ch < 0xc0) {
+                    retval.al_string.append(REP_SYMBOL);
+                    char_width += 1;
+                } else if (ch < 0xe0) {
+                    auto next_ch = content[index + 1];
+                    if (next_ch != 0) {
+                        retval.al_string.push_back(ch);
+                        retval.al_string.push_back(next_ch);
+                        index += 1;
+                    } else {
+                        retval.al_string.append(REP_SYMBOL);
+                    }
+                    char_width += 1;
+                } else if (ch < 0xf0) {
+                    if (content[index + 1] != 0 && content[index + 2] != 0) {
+                        retval.al_string.push_back(ch);
+                        retval.al_string.push_back(content[index + 1]);
+                        retval.al_string.push_back(content[index + 2]);
+                        index += 2;
+                    } else {
+                        retval.al_string.append(REP_SYMBOL);
+                    }
+                    char_width += 1;
+                } else if (ch < 0xf8) {
+                    if (content[index + 1] != 0 && content[index + 2] != 0
+                        && content[index + 3] != 0)
+                    {
+                        retval.al_string.push_back(ch);
+                        retval.al_string.push_back(content[index + 1]);
+                        retval.al_string.push_back(content[index + 2]);
+                        retval.al_string.push_back(content[index + 3]);
+                        index += 3;
+                    } else {
+                        retval.al_string.append(REP_SYMBOL);
+                    }
+                    char_width += 1;
+                } else if (ch < 0xfc) {
+                    if (content[index + 1] != 0 && content[index + 2] != 0
+                        && content[index + 3] != 0 && content[index + 4] != 0)
+                    {
+                        retval.al_string.push_back(ch);
+                        retval.al_string.push_back(content[index + 1]);
+                        retval.al_string.push_back(content[index + 2]);
+                        retval.al_string.push_back(content[index + 3]);
+                        retval.al_string.push_back(content[index + 4]);
+                        index += 4;
+                    } else {
+                        retval.al_string.append(REP_SYMBOL);
+                    }
+                    char_width += 1;
+                } else if (ch < 0xfe) {
+                    if (content[index + 1] != 0 && content[index + 2] != 0
+                        && content[index + 3] != 0 && content[index + 4] != 0
+                        && content[index + 5] != 0)
+                    {
+                        retval.al_string.push_back(ch);
+                        retval.al_string.push_back(content[index + 1]);
+                        retval.al_string.push_back(content[index + 2]);
+                        retval.al_string.push_back(content[index + 3]);
+                        retval.al_string.push_back(content[index + 4]);
+                        retval.al_string.push_back(content[index + 5]);
+                        index += 5;
+                    } else {
+                        retval.al_string.append(REP_SYMBOL);
+                    }
+                    char_width += 1;
+                } else {
+                    retval.al_string.append(REP_SYMBOL);
+                    char_width += 1;
+                }
+                break;
+        }
+    }
+
+    if (has_ansi) {
+        scrub_ansi_string(retval.al_string, &retval.al_attrs);
+    }
+
+    if (char_width > max_char_width) {
+        auto chars_to_remove = (char_width - max_char_width) + 1;
+        auto midpoint = char_width / 2;
+        auto chars_to_keep_at_front = midpoint - (chars_to_remove / 2);
+        auto bytes_to_keep_at_front
+            = utf8_char_to_byte_index(retval.al_string, chars_to_keep_at_front);
+        auto remove_up_to_bytes = utf8_char_to_byte_index(
+            retval.al_string, chars_to_keep_at_front + chars_to_remove);
+        auto bytes_to_remove = remove_up_to_bytes - bytes_to_keep_at_front;
+        retval.erase(bytes_to_keep_at_front, bytes_to_remove);
+        retval.insert(bytes_to_keep_at_front, ELLIPSIS);
+    }
+
+    return retval;
+}
 
 attr_line_t&
 attr_line_t::with_ansi_string(const char* str, ...)

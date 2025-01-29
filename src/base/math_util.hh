@@ -153,4 +153,11 @@ private:
     T c_max;
 };
 
+template<typename T>
+size_t
+count_digits(T n)
+{
+    return n == 0 ? 1 : 1 + std::floor(std::log10(std::abs(n)));
+}
+
 #endif

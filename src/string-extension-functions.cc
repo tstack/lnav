@@ -301,7 +301,7 @@ spooky_hash(const std::vector<const char*>& args)
     }
     context.to_string(hash_str_buf);
 
-    return string_fragment::from_bytes(hash_str_buf, sizeof(hash_str_buf));
+    return string_fragment::from_bytes(hash_str_buf, sizeof(hash_str_buf) - 1);
 }
 
 void

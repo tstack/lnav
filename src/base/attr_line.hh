@@ -35,6 +35,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include <limits.h>
 
@@ -51,14 +52,21 @@ to_line_range(const string_fragment& frag)
 }
 
 struct string_attr {
-    string_attr(const struct line_range& lr, const string_attr_pair& value)
+    string_attr(const line_range& lr, const string_attr_pair& value)
         : sa_range(lr), sa_type(value.first), sa_value(value.second)
     {
     }
 
     string_attr() = default;
 
-    bool operator<(const struct string_attr& rhs) const
+    bool operator==(const string_attr& other) const
+    {
+        return this->sa_type == other.sa_type
+            && this->sa_range == other.sa_range
+            && this->sa_value == other.sa_value;
+    }
+
+    bool operator<(const string_attr& rhs) const
     {
         if (this->sa_range < rhs.sa_range) {
             return true;
@@ -73,7 +81,7 @@ struct string_attr {
         return false;
     }
 
-    struct line_range sa_range;
+    line_range sa_range;
     const string_attr_type_base* sa_type{nullptr};
     string_attr_value sa_value;
 };
@@ -83,7 +91,7 @@ struct string_attr_wrapper {
     explicit string_attr_wrapper(const string_attr* sa) : saw_string_attr(sa) {}
 
     template<typename U = T>
-    std::enable_if_t<!std::is_void<U>::value, const U&> get() const
+    std::enable_if_t<!std::is_void_v<U>, const U&> get() const
     {
         return this->saw_string_attr->sa_value.template get<T>();
     }
@@ -101,7 +109,7 @@ std::optional<const string_attr*> get_string_attr(
     const string_attrs_t& sa, const string_attr_type_base* type, int start = 0);
 
 template<typename T>
-inline std::optional<string_attr_wrapper<T>>
+std::optional<string_attr_wrapper<T>>
 get_string_attr(const string_attrs_t& sa,
                 const string_attr_type<T>& type,
                 int start = 0)
@@ -116,7 +124,7 @@ get_string_attr(const string_attrs_t& sa,
 }
 
 template<typename T>
-inline string_attrs_t::const_iterator
+string_attrs_t::const_iterator
 find_string_attr_containing(const string_attrs_t& sa,
                             const string_attr_type_base* type,
                             T x)
@@ -213,6 +221,16 @@ public:
     attr_line_t(std::string str) : al_string(std::move(str)) {}
 
     attr_line_t(const char* str) : al_string(str) {}
+
+    static attr_line_t from_table_cell_content(const string_fragment& content,
+                                               size_t max_char_width);
+
+    static attr_line_t from_table_cell_content(const unsigned char* content,
+                                               size_t max_char_width)
+    {
+        return from_table_cell_content(string_fragment::from_c_str(content),
+                                       max_char_width);
+    }
 
     static attr_line_t from_ansi_str(const char* str)
     {

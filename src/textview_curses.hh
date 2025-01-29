@@ -797,9 +797,14 @@ public:
         return *this;
     }
 
-    std::optional<std::chrono::milliseconds> consume_search_duration() {
+    std::optional<std::chrono::milliseconds> consume_search_duration()
+    {
         return std::exchange(this->tc_search_duration, std::nullopt);
     }
+
+    void apply_highlights(attr_line_t& al,
+                          const line_range& body,
+                          const line_range& orig_line);
 
     std::function<void(textview_curses&)> tc_state_event_handler;
 

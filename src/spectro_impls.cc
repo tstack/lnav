@@ -430,8 +430,7 @@ db_spectro_value_source::update_stats()
         return;
     }
 
-    if (!dls.dls_headers[this->dsvs_column_index.value()].is_graphable())
-    {
+    if (!dls.dls_headers[this->dsvs_column_index.value()].is_graphable()) {
         this->dsvs_error_msg
             = lnav::console::user_message::error(
                   "Cannot generate spectrogram for database results")
@@ -444,7 +443,7 @@ db_spectro_value_source::update_stats()
         return;
     }
 
-    if (dls.dls_rows.empty()) {
+    if (dls.dls_row_cursors.empty()) {
         this->dsvs_error_msg
             = lnav::console::user_message::error(
                   "Cannot generate spectrogram for database results")
@@ -467,7 +466,7 @@ db_spectro_value_source::update_stats()
         this->dsvs_stats.lvs_max_value = bs.bs_max_value;
     }
 
-    this->dsvs_stats.lvs_count = dls.dls_rows.size();
+    this->dsvs_stats.lvs_count = dls.dls_row_cursors.size();
 }
 
 void
@@ -496,14 +495,14 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
     auto begin_row
         = dls.row_for_time({to_time_t(sr.sr_begin_time), 0}).value_or(0_vl);
     auto end_row = dls.row_for_time({to_time_t(sr.sr_end_time), 0})
-                       .value_or(vis_line_t(dls.dls_rows.size()));
+                       .value_or(vis_line_t(dls.dls_row_cursors.size()));
 
     for (auto lpc = begin_row; lpc < end_row; ++lpc) {
-        auto scan_res = scn::scan_value<double>(std::string_view{
-            dls.dls_rows[lpc][this->dsvs_column_index.value()]});
+        auto get_res
+            = dls.get_cell_as_double(lpc, this->dsvs_column_index.value());
 
-        if (scan_res) {
-            row_out.add_value(sr, scan_res->value(), false);
+        if (get_res) {
+            row_out.add_value(sr, get_res.value(), false);
         }
     }
 
@@ -519,15 +518,15 @@ db_spectro_value_source::spectro_row(spectrogram_request& sr,
         auto begin_row
             = dls.row_for_time({to_time_t(sr.sr_begin_time), 0}).value_or(0_vl);
         auto end_row = dls.row_for_time({to_time_t(sr.sr_end_time), 0})
-                           .value_or(vis_line_t(dls.dls_rows.size()));
+                           .value_or(vis_line_t(dls.dls_row_cursors.size()));
 
         for (auto lpc = begin_row; lpc < end_row; ++lpc) {
-            auto scan_res = scn::scan_value<double>(std::string_view{
-                dls.dls_rows[lpc][this->dsvs_column_index.value()]});
-            if (!scan_res) {
+            auto get_res
+                = dls.get_cell_as_double(lpc, this->dsvs_column_index.value());
+            if (!get_res) {
                 continue;
             }
-            auto value = scan_res->value();
+            auto value = get_res.value();
             if ((range_min == value)
                 || (range_min < value && value < range_max))
             {

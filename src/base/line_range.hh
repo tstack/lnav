@@ -41,13 +41,18 @@ struct line_range {
         codepoint,
     };
 
-    static line_range empty_at(int start) { return line_range{start, start}; }
+    static constexpr line_range empty_at(int start)
+    {
+        return line_range{start, start};
+    }
 
     int lr_start;
     int lr_end;
     unit lr_unit;
 
-    explicit line_range(int start = -1, int end = -1, unit u = unit::bytes)
+    explicit constexpr line_range(int start = -1,
+                                  int end = -1,
+                                  unit u = unit::bytes)
         : lr_start(start), lr_end(end), lr_unit(u)
     {
     }

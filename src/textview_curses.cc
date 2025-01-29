@@ -734,12 +734,54 @@ textview_curses::handle_mouse(mouse_event& me)
 }
 
 void
+textview_curses::apply_highlights(attr_line_t& al,
+                                  const line_range& body,
+                                  const line_range& orig_line)
+{
+    intern_string_t format_name;
+
+    auto format_attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
+    if (format_attr_opt.has_value()) {
+        format_name = format_attr_opt.value().get();
+    }
+
+    auto source_format = this->tc_sub_source->get_text_format();
+    for (const auto& tc_highlight : this->tc_highlights) {
+        bool internal_hl
+            = tc_highlight.first.first == highlight_source_t::INTERNAL
+            || tc_highlight.first.first == highlight_source_t::THEME;
+
+        if (!tc_highlight.second.h_text_formats.empty()
+            && tc_highlight.second.h_text_formats.count(source_format) == 0)
+        {
+            continue;
+        }
+
+        if (!tc_highlight.second.h_format_name.empty()
+            && tc_highlight.second.h_format_name != format_name)
+        {
+            continue;
+        }
+
+        if (this->tc_disabled_highlights.count(tc_highlight.first.first)) {
+            continue;
+        }
+
+        // Internal highlights should only apply to the log message body so
+        // that we don't start highlighting other fields.  User-provided
+        // highlights should apply only to the line itself and not any of
+        // the surrounding decorations that are added (for example, the file
+        // lines that are inserted at the beginning of the log view).
+        int start_pos = internal_hl ? body.lr_start : orig_line.lr_start;
+        tc_highlight.second.annotate(al, start_pos);
+    }
+}
+
+void
 textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 {
     auto& sa = value_out.get_attrs();
     auto& str = value_out.get_string();
-    auto source_format = this->tc_sub_source->get_text_format();
-    intern_string_t format_name;
 
     this->tc_sub_source->text_value_for_line(*this, row, str);
     this->tc_sub_source->text_attrs_for_line(*this, row, sa);
@@ -748,10 +790,10 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         require_ge(attr.sa_range.lr_start, 0);
     }
 
-    struct line_range body, orig_line;
+    line_range body, orig_line;
 
     body = find_string_attr_range(sa, &SA_BODY);
-    if (body.lr_start == -1) {
+    if (!body.is_valid()) {
         body.lr_start = 0;
         body.lr_end = str.size();
     }
@@ -760,11 +802,6 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
     if (!orig_line.is_valid()) {
         orig_line.lr_start = 0;
         orig_line.lr_end = str.size();
-    }
-
-    auto format_attr_opt = get_string_attr(sa, SA_FORMAT);
-    if (format_attr_opt) {
-        format_name = format_attr_opt.value().get();
     }
 
     if (this->is_selectable() && this->tc_cursor_role
@@ -791,34 +828,8 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         }
     }
 
-    for (auto& tc_highlight : this->tc_highlights) {
-        bool internal_hl
-            = tc_highlight.first.first == highlight_source_t::INTERNAL
-            || tc_highlight.first.first == highlight_source_t::THEME;
-
-        if (!tc_highlight.second.h_text_formats.empty()
-            && tc_highlight.second.h_text_formats.count(source_format) == 0)
-        {
-            continue;
-        }
-
-        if (!tc_highlight.second.h_format_name.empty()
-            && tc_highlight.second.h_format_name != format_name)
-        {
-            continue;
-        }
-
-        if (this->tc_disabled_highlights.count(tc_highlight.first.first)) {
-            continue;
-        }
-
-        // Internal highlights should only apply to the log message body so
-        // that we don't start highlighting other fields.  User-provided
-        // highlights should apply only to the line itself and not any of the
-        // surrounding decorations that are added (for example, the file lines
-        // that are inserted at the beginning of the log view).
-        int start_pos = internal_hl ? body.lr_start : orig_line.lr_start;
-        tc_highlight.second.annotate(value_out, start_pos);
+    if (!body.empty() || !orig_line.empty()) {
+        this->apply_highlights(value_out, body, orig_line);
     }
 
     if (this->tc_hide_fields) {

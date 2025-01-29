@@ -1,5 +1,5 @@
 [2020-12-10 06:56:41,061] INFO [m:108] Calling 'x' with params:
-
+ 
 [2020-12-10 06:56:41,092] DEBUG [connect.client:69] Full request text:
  └ #xml-req
 <?xml version='1.0' encoding='iso-8859-2'?>
@@ -16,7 +16,7 @@
     </name>
   </request>
 </a-request>
-
+ 
 [2020-12-10 06:56:41,099] DEBUG [m:85] Full reply text:
 <?xml version='1.0' encoding='iso-8859-2'?>
 <a-reply>

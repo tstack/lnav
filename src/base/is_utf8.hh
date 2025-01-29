@@ -28,8 +28,7 @@
 #ifndef _IS_UTF8_H
 #define _IS_UTF8_H
 
-#include <stdlib.h>
-#include <sys/types.h>
+#include <optional>
 
 #include "intern_string.hh"
 
@@ -41,14 +40,14 @@ struct utf8_scan_result {
     bool usr_has_ansi{false};
     size_t usr_column_width_guess{0};
 
-    const char* remaining_ptr(const string_fragment& frag) const
+    const char* remaining_ptr() const
     {
         if (this->usr_remaining) {
             return this->usr_remaining->begin();
-        } else {
-            return nullptr;
         }
+        return nullptr;
     }
+
     bool is_valid() const { return this->usr_message == nullptr; }
 };
 

@@ -30,6 +30,8 @@
 #ifndef lnav_string_attr_type_hh
 #define lnav_string_attr_type_hh
 
+#include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -288,16 +290,20 @@ struct text_attrs {
 struct block_elem_t {
     wchar_t value;
     role_t role;
+
+    bool operator==(const block_elem_t& rhs) const
+    {
+        return this->value == rhs.value && this->role == rhs.role;
+    }
 };
 
 using string_attr_value = mapbox::util::variant<int64_t,
                                                 role_t,
                                                 text_attrs,
-                                                const intern_string_t,
+                                                intern_string_t,
                                                 std::string,
                                                 std::shared_ptr<logfile>,
                                                 bookmark_metadata*,
-                                                timespec,
                                                 string_fragment,
                                                 block_elem_t,
                                                 styling::color_unit,
@@ -355,7 +361,7 @@ public:
 extern string_attr_type<void> SA_ORIGINAL_LINE;
 extern string_attr_type<void> SA_BODY;
 extern string_attr_type<void> SA_HIDDEN;
-extern string_attr_type<const intern_string_t> SA_FORMAT;
+extern string_attr_type<intern_string_t> SA_FORMAT;
 extern string_attr_type<void> SA_REMOVED;
 extern string_attr_type<void> SA_PREFORMATTED;
 extern string_attr_type<std::string> SA_INVALID;

@@ -66,6 +66,7 @@ Bug Fixes:
 * Reduced indexing time for plain text and JSON-lines logs.
 * Reduced memory footprint.
 * Improved search performance.
+* Improved DB view performance.
 * Reduce time to open help text.
 * Improved performance of log virtual tables when ordering the
   result by `log_line DESC`.

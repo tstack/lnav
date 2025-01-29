@@ -88,7 +88,7 @@ endswith(const char* str, const char* suffix)
 }
 
 template<int N>
-inline bool
+bool
 endswith(const std::string& str, const char (&suffix)[N])
 {
     if (N - 1 > str.length()) {
@@ -307,12 +307,5 @@ enum class text_align_t {
     center,
     end,
 };
-
-struct split_num_result {
-    double snr_value;
-    std::string_view snr_units;
-};
-
-std::optional<split_num_result> try_split_num_and_units(std::string_view in);
 
 #endif

@@ -1013,7 +1013,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                                      .append(attr_line_t::from_ansi_str(
                                          msg.c_str())))
                                  .to_attr_line();
-                    if (dls.dls_rows.size() > 1) {
+                    if (dls.dls_row_cursors.size() > 1) {
                         ensure_view(&lnav_data.ld_views[LNV_DB]);
                     }
                 }

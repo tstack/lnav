@@ -41,7 +41,7 @@
 static int
 handle_null(void* ctx)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_values.emplace_back(jpw->current_ptr(), yajl_t_null, "null");
     jpw->inc_array_index();
@@ -52,7 +52,7 @@ handle_null(void* ctx)
 static int
 handle_boolean(void* ctx, int boolVal)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto* jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_values.emplace_back(jpw->current_ptr(),
                                  boolVal ? yajl_t_true : yajl_t_false,
@@ -65,7 +65,7 @@ handle_boolean(void* ctx, int boolVal)
 static int
 handle_number(void* ctx, const char* numberVal, size_t numberLen)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_values.emplace_back(
         jpw->current_ptr(), yajl_t_number, std::string(numberVal, numberLen));
@@ -77,15 +77,18 @@ handle_number(void* ctx, const char* numberVal, size_t numberLen)
 static void
 appender(void* ctx, const char* strVal, size_t strLen)
 {
-    std::string& str = *(std::string*) ctx;
+    auto& str = *(std::string*) ctx;
 
     str.append(strVal, strLen);
 }
 
 static int
-handle_string(void* ctx, const unsigned char* stringVal, size_t len, yajl_string_props_t*)
+handle_string(void* ctx,
+              const unsigned char* stringVal,
+              size_t len,
+              yajl_string_props_t*)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto jpw = (json_ptr_walk*) ctx;
     auto_mem<yajl_gen_t> gen(yajl_gen_free);
     std::string str;
 
@@ -101,7 +104,7 @@ handle_string(void* ctx, const unsigned char* stringVal, size_t len, yajl_string
 static int
 handle_start_map(void* ctx)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.emplace_back("");
     jpw->jpw_array_indexes.push_back(-1);
@@ -112,7 +115,7 @@ handle_start_map(void* ctx)
 static int
 handle_map_key(void* ctx, const unsigned char* key, size_t len)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto jpw = (json_ptr_walk*) ctx;
     char partially_encoded_key[len + 32];
     size_t required_len;
 
@@ -138,7 +141,7 @@ handle_map_key(void* ctx, const unsigned char* key, size_t len)
 static int
 handle_end_map(void* ctx)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.pop_back();
     jpw->jpw_array_indexes.pop_back();
@@ -151,7 +154,7 @@ handle_end_map(void* ctx)
 static int
 handle_start_array(void* ctx)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.emplace_back("");
     jpw->jpw_array_indexes.push_back(0);
@@ -162,7 +165,7 @@ handle_start_array(void* ctx)
 static int
 handle_end_array(void* ctx)
 {
-    json_ptr_walk* jpw = (json_ptr_walk*) ctx;
+    auto jpw = (json_ptr_walk*) ctx;
 
     jpw->jpw_keys.pop_back();
     jpw->jpw_array_indexes.pop_back();
@@ -171,17 +174,19 @@ handle_end_array(void* ctx)
     return 1;
 }
 
-const yajl_callbacks json_ptr_walk::callbacks = {handle_null,
-                                                 handle_boolean,
-                                                 nullptr,
-                                                 nullptr,
-                                                 handle_number,
-                                                 handle_string,
-                                                 handle_start_map,
-                                                 handle_map_key,
-                                                 handle_end_map,
-                                                 handle_start_array,
-                                                 handle_end_array};
+const yajl_callbacks json_ptr_walk::callbacks = {
+    handle_null,
+    handle_boolean,
+    nullptr,
+    nullptr,
+    handle_number,
+    handle_string,
+    handle_start_map,
+    handle_map_key,
+    handle_end_map,
+    handle_start_array,
+    handle_end_array,
+};
 
 size_t
 json_ptr::encode(char* dst, size_t dst_len, const char* src, size_t src_len)
@@ -526,7 +531,7 @@ json_ptr_walk::current_ptr()
 
 void
 json_ptr_walk::update_error_msg(yajl_status status,
-                                const char* buffer,
+                                const unsigned char* buffer,
                                 ssize_t len)
 {
     switch (status) {
@@ -536,8 +541,7 @@ json_ptr_walk::update_error_msg(yajl_status status,
             this->jpw_error_msg = "internal error";
             break;
         case yajl_status_error: {
-            auto* msg = yajl_get_error(
-                this->jpw_handle, 1, (const unsigned char*) buffer, len);
+            auto* msg = yajl_get_error(this->jpw_handle, 1, buffer, len);
             this->jpw_error_msg = std::string((const char*) msg);
 
             yajl_free_error(this->jpw_handle, msg);
@@ -549,19 +553,15 @@ json_ptr_walk::update_error_msg(yajl_status status,
 yajl_status
 json_ptr_walk::complete_parse()
 {
-    yajl_status retval;
-
-    retval = yajl_complete_parse(this->jpw_handle);
-    this->update_error_msg(retval, nullptr, -1);
+    auto retval = yajl_complete_parse(this->jpw_handle);
+    this->update_error_msg(retval, nullptr, 0);
     return retval;
 }
 
 yajl_status
-json_ptr_walk::parse(const char* buffer, ssize_t len)
+json_ptr_walk::parse(const unsigned char* buffer, ssize_t len)
 {
-    yajl_status retval;
-
-    retval = yajl_parse(this->jpw_handle, (const unsigned char*) buffer, len);
+    auto retval = yajl_parse(this->jpw_handle, buffer, len);
     this->update_error_msg(retval, buffer, len);
     return retval;
 }

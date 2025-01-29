@@ -101,11 +101,7 @@ highlighter::annotate(attr_line_t& al, int start) const
         return;
     }
 
-    timeval tstart, tend, tdiff;
-
-    gettimeofday(&tstart, nullptr);
-
-    this->h_regex->capture_from(sf).for_each(
+    this->h_regex->capture_from(sf).for_each<PCRE2_NO_UTF_CHECK>(
         [&](lnav::pcre2pp::match_data& md) {
             if (md.get_count() == 1) {
                 this->annotate_capture(al, to_line_range(md[0].value()));
@@ -134,10 +130,4 @@ highlighter::annotate(attr_line_t& al, int start) const
                 }
             }
         });
-    gettimeofday(&tend, nullptr);
-    timersub(&tend, &tstart, &tdiff);
-    if (tdiff.tv_usec > 10000) {
-        log_debug("slow highlight %s %s", this->h_name.c_str(),
-            this->h_regex->get_pattern().c_str());
-    }
 }

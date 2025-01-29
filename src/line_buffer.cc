@@ -759,7 +759,7 @@ line_buffer::load_next_buffer()
             auto remaining = this->lb_alt_buffer.value().size() - before;
             auto frag = string_fragment::from_bytes(line_start, remaining);
             auto utf_scan_res = is_utf8(frag, '\n');
-            auto lf = utf_scan_res.remaining_ptr(frag);
+            auto lf = utf_scan_res.remaining_ptr();
             this->lb_alt_line_starts.emplace_back(before);
             this->lb_alt_line_is_utf.emplace_back(utf_scan_res.is_valid());
             this->lb_alt_line_has_ansi.emplace_back(utf_scan_res.usr_has_ansi);
@@ -1179,7 +1179,7 @@ line_buffer::load_next_line(file_range prev_line)
             auto frag = string_fragment::from_bytes(
                 line_start, retval.li_file_range.fr_size);
             auto scan_res = is_utf8(frag, '\n');
-            lf = scan_res.remaining_ptr(frag);
+            lf = scan_res.remaining_ptr();
             if (lf != nullptr) {
                 lf -= 1;
             }

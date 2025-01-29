@@ -160,7 +160,7 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                     if (exec_res.isOk()) {
                         lnav_data.ld_rl_view->set_value(exec_res.unwrap());
                         if (dls.dls_generation != previous_db_gen &&
-                            dls.dls_rows.size() > 1) {
+                            dls.dls_row_cursors.size() > 1) {
                             ensure_view(&lnav_data.ld_views[LNV_DB]);
                         }
                     }

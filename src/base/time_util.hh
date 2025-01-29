@@ -31,6 +31,7 @@
 #define lnav_time_util_hh
 
 #include <chrono>
+#include <string>
 
 #include <inttypes.h>
 #include <string.h>
@@ -53,7 +54,7 @@ ssize_t strftime_rfc3339(
 std::string to_rfc3339_string(time64_t tim, int millis, char sep = ' ');
 
 inline std::string
-to_rfc3339_string(struct timeval tv, char sep = ' ')
+to_rfc3339_string(timeval tv, char sep = ' ')
 {
     return to_rfc3339_string(tv.tv_sec, tv.tv_usec / 1000, sep);
 }
@@ -76,20 +77,20 @@ struct duration_hasher {
 
 }  // namespace lnav
 
-struct tm* secs2tm(lnav::time64_t tim, struct tm* res);
+tm* secs2tm(lnav::time64_t tim, tm* res);
 /**
  * Convert the time stored in a 'tm' struct into epoch time.
  *
  * @param t The 'tm' structure to convert to epoch time.
  * @return The given time in seconds since the epoch.
  */
-time_t tm2sec(const struct tm* t);
-void secs2wday(const struct timeval& tv, struct tm* res);
+time_t tm2sec(const tm* t);
+void secs2wday(const timeval& tv, tm* res);
 
 inline time_t
 convert_log_time_to_local(time_t value)
 {
-    struct tm tm;
+    tm tm;
 
     localtime_r(&value, &tm);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
@@ -146,7 +147,7 @@ enum exttm_flags_t {
 struct exttm {
     static exttm from_tv(const timeval& tv);
 
-    struct tm et_tm{};
+    tm et_tm{};
     int32_t et_nsec{0};
     unsigned int et_flags{0};
     long et_gmtoff{0};
@@ -158,63 +159,69 @@ struct exttm {
         return memcmp(this, &other, sizeof(exttm)) == 0;
     }
 
-    struct timeval to_timeval() const;
+    timeval to_timeval() const;
 };
 
 inline bool
-operator<(const struct timeval& left, time_t right)
+operator<(const timeval& left, time_t right)
 {
     return left.tv_sec < right;
 }
 
 inline bool
-operator<(time_t left, const struct timeval& right)
+operator<(time_t left, const timeval& right)
 {
     return left < right.tv_sec;
 }
 
 inline bool
-operator<(const struct timeval& left, const struct timeval& right)
+operator<(const timeval& left, const timeval& right)
 {
     return left.tv_sec < right.tv_sec
         || ((left.tv_sec == right.tv_sec) && (left.tv_usec < right.tv_usec));
 }
 
 inline bool
-operator<=(const struct timeval& left, const struct timeval& right)
+operator<=(const timeval& left, const timeval& right)
 {
     return left.tv_sec < right.tv_sec
         || ((left.tv_sec == right.tv_sec) && (left.tv_usec <= right.tv_usec));
 }
 
 inline bool
-operator!=(const struct timeval& left, const struct timeval& right)
+operator!=(const timeval& left, const timeval& right)
 {
     return left.tv_sec != right.tv_sec || left.tv_usec != right.tv_usec;
 }
 
 inline bool
-operator==(const struct timeval& left, const struct timeval& right)
+operator==(const timeval& left, const timeval& right)
 {
     return left.tv_sec == right.tv_sec && left.tv_usec == right.tv_usec;
 }
 
-inline struct timeval
-operator-(const struct timeval& lhs, const struct timeval& rhs)
+inline timeval
+operator-(const timeval& lhs, const timeval& rhs)
 {
-    struct timeval diff;
+    timeval diff;
 
     timersub(&lhs, &rhs, &diff);
     return diff;
 }
 
-inline struct timeval
-operator+(const struct timeval& lhs, const struct timeval& rhs)
+inline timeval
+operator+(const timeval& lhs, const timeval& rhs)
 {
-    struct timeval retval;
+    timeval retval;
 
     timeradd(&lhs, &rhs, &retval);
     return retval;
+}
+
+inline bool
+operator==(const timespec& left, const timespec& right)
+{
+    return left.tv_sec == right.tv_sec && left.tv_nsec == right.tv_nsec;
 }
 
 typedef int64_t mstime_t;
@@ -228,27 +235,27 @@ to_mstime(const timeval& tv)
 inline mstime_t
 getmstime()
 {
-    struct timeval tv;
+    timeval tv;
 
     gettimeofday(&tv, nullptr);
 
     return to_mstime(tv);
 }
 
-inline struct timeval
+inline timeval
 current_timeval()
 {
-    struct timeval retval;
+    timeval retval;
 
     gettimeofday(&retval, nullptr);
 
     return retval;
 }
 
-inline struct timespec
+inline timespec
 current_timespec()
 {
-    struct timespec retval;
+    timespec retval;
 
     clock_gettime(CLOCK_REALTIME, &retval);
 
@@ -268,8 +275,8 @@ hour_num(time_t ti)
 }
 
 struct time_range {
-    struct timeval tr_begin;
-    struct timeval tr_end;
+    timeval tr_begin;
+    timeval tr_end;
 
     bool valid() const { return this->tr_end.tv_sec == 0; }
 

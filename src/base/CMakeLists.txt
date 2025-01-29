@@ -6,6 +6,7 @@ add_library(
         attr_line.builder.cc
         auto_fd.cc
         auto_pid.cc
+        cell_container.cc
         color_spaces.cc
         date_time_scanner.cc
         fs_util.cc
@@ -35,6 +36,7 @@ add_library(
         auto_mem.hh
         auto_pid.hh
         bus.hh
+        cell_container.hh
         color_spaces.hh
         date_time_scanner.cfg.hh
         date_time_scanner.hh
@@ -93,6 +95,7 @@ target_link_libraries(base
 add_executable(
         test_base
         attr_line.tests.cc
+        cell_container.tests.cc
         fs_util.tests.cc
         humanize.file_size.tests.cc
         humanize.network.tests.cc

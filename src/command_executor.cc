@@ -34,6 +34,7 @@
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
+#include "base/humanize.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
 #include "base/paths.hh"
@@ -495,7 +496,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         } else {
             auto& dls = *(ec.ec_label_source_stack.back());
             dls.dls_generation += 1;
-            if (!dls.dls_rows.empty()) {
+            if (!dls.dls_row_cursors.empty()) {
                 lnav_data.ld_views[LNV_DB].reload_data();
                 lnav_data.ld_views[LNV_DB].set_left(0);
                 if (lnav_data.ld_flags & LNF_HEADLESS) {
@@ -505,25 +506,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
                     retval = "";
                     alt_msg = "";
-                } else if (dls.dls_rows.size() == 1) {
-                    auto& row = dls.dls_rows[0];
-
-                    if (dls.dls_headers.size() == 1) {
-                        retval = row[0];
-                    } else {
-                        for (unsigned int lpc = 0; lpc < dls.dls_headers.size();
-                             lpc++)
-                        {
-                            if (lpc > 0) {
-                                retval.append("; ");
-                            }
-                            retval.append(dls.dls_headers[lpc].hm_name);
-                            retval.push_back('=');
-                            retval.append(row[lpc]);
-                        }
-                    }
+                } else if (dls.dls_row_cursors.size() == 1) {
+                    retval = dls.get_row_as_string(0_vl);
                 } else {
-                    int row_count = dls.dls_rows.size();
+                    int row_count = dls.dls_row_cursors.size();
                     char row_count_buf[128];
                     timeval diff_tv;
 
@@ -1018,9 +1004,9 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     }
 
     int retval = 0;
-    auto set_vars = dls.dls_rows.empty();
+    auto set_vars = dls.dls_row_cursors.empty();
 
-    if (dls.dls_rows.empty()) {
+    if (dls.dls_row_cursors.empty()) {
         for (int lpc = 0; lpc < ncols; lpc++) {
             int type = sqlite3_column_type(stmt, lpc);
             std::string colname = sqlite3_column_name(stmt, lpc);
@@ -1036,11 +1022,13 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         }
     }
 
-    auto row_number = dls.dls_rows.size();
+    auto row_number = dls.dls_row_cursors.size();
     dls.dls_rows.resize(row_number + 1);
+    dls.dls_row_cursors.emplace_back(dls.dls_cell_container.end_cursor());
+    dls.dls_push_column = 0;
     for (int lpc = 0; lpc < ncols; lpc++) {
         const auto value_type = sqlite3_column_type(stmt, lpc);
-        scoped_value_t value;
+        db_label_source::column_value_t value;
         auto& hm = dls.dls_headers[lpc];
 
         switch (value_type) {
@@ -1063,8 +1051,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
                     if (isdigit(frag[0])) {
                         hm.hm_align = text_align_t::end;
                         if (!hm.hm_graphable.has_value()) {
-                            auto split_res = try_split_num_and_units(
-                                frag.to_string_view());
+                            auto split_res = humanize::try_from<double>(frag);
                             if (split_res.has_value()) {
                                 dls.set_col_as_graphable(lpc);
                             } else {
@@ -1098,10 +1085,13 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
             }
             auto& vars = ec.ec_local_vars.top();
 
-            if (value.is<string_fragment>()) {
-                value = value.get<string_fragment>().to_string();
-            }
-            vars[hm.hm_name] = value;
+            vars[hm.hm_name] = value.match(
+                [](const string_fragment& sf) {
+                    return scoped_value_t{sf.to_string()};
+                },
+                [](int64_t i) { return scoped_value_t{i}; },
+                [](double d) { return scoped_value_t{d}; },
+                [](null_value_t) { return scoped_value_t{null_value_t{}}; });
         }
     }
 

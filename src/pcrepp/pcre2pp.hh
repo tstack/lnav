@@ -360,7 +360,11 @@ template<uint32_t Options, typename F>
 Result<string_fragment, matcher::error>
 capture_builder::for_each(F func) &&
 {
-    auto md = this->mb_code.create_match_data();
+    thread_local auto md = match_data::unitialized();
+
+    if (md.get_capacity() < this->mb_code.get_match_data_capacity()) {
+        md = this->mb_code.create_match_data();
+    }
     auto mat = matcher{this->mb_code, this->mb_input, md};
 
     bool done = false;

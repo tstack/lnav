@@ -92,7 +92,7 @@ write_line_to(FILE* outfile, const attr_line_t& al)
     const auto& al_attrs = al.get_attrs();
     auto lr = find_string_attr_range(al_attrs, &SA_ORIGINAL_LINE);
 
-    if (!lr.is_valid() || lr.lr_start > 1) {
+    if (lr.empty() || !lr.is_valid() || lr.lr_start > 1) {
         // If the line is prefixed with some extra information, include that
         // in the output.  For example, the log file name or time offset.
         lnav::console::println(outfile, al);

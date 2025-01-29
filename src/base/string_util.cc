@@ -310,6 +310,10 @@ scrub_ws(const char* in, ssize_t len)
 
     std::string retval;
 
+    if (len > 0) {
+        retval.reserve(len);
+    }
+
     for (size_t lpc = 0; (len == -1 && in[lpc]) || (len >= 0 && lpc < len);
          lpc++)
     {
@@ -326,7 +330,7 @@ scrub_ws(const char* in, ssize_t len)
                 retval.append(CR_SYMBOL);
                 break;
             default:
-                retval.append(1, ch);
+                retval.push_back(ch);
                 break;
         }
     }
@@ -451,22 +455,3 @@ quote(string_fragment str)
 }
 
 }  // namespace lnav::pcre2pp
-
-std::optional<split_num_result>
-try_split_num_and_units(std::string_view in)
-{
-    auto scan_res = scn::scan_value<double>(in);
-    if (!scan_res) {
-        return std::nullopt;
-    }
-
-    auto unit_range = scan_res->range();
-    auto units = std::string_view{unit_range.data(), unit_range.size()};
-    if (units.size() > 3) {
-        return std::nullopt;
-    }
-    return split_num_result{
-        scan_res->value(),
-        units,
-    };
-}

@@ -1071,10 +1071,10 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
                 if (exec_res.isErr()) {
                     auto um = exec_res.unwrapErr();
                     result.append(um.to_attr_line());
-                } else if (dls.dls_rows.size() == 1
-                           && dls.dls_rows[0].size() == 1)
+                } else if (dls.dls_row_cursors.size() == 1
+                           && dls.dls_headers.size() == 1)
                 {
-                    result.append(dls.dls_rows[0][0]);
+                    result.append(dls.get_row_as_string(0_vl));
                 } else {
                     attr_line_t al;
                     dos.list_static_overlay(db_tc, 0, 1, al);
@@ -1415,7 +1415,7 @@ view_title_poss()
                 units = "file";
                 break;
             case LNV_DB:
-                quantity = lnav_data.ld_db_row_source.dls_rows.size();
+                quantity = lnav_data.ld_db_row_source.dls_row_cursors.size();
                 units = "row";
                 break;
         }

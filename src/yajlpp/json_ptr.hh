@@ -54,11 +54,18 @@ public:
         this->jpw_handle = yajl_alloc(&callbacks, nullptr, this);
     }
 
-    yajl_status parse(const char* buffer, ssize_t len);
+    yajl_status parse(const unsigned char* buffer, ssize_t len);
+
+    yajl_status parse(const char* buffer, ssize_t len)
+    {
+        return this->parse((const unsigned char*) buffer, len);
+    }
 
     yajl_status complete_parse();
 
-    void update_error_msg(yajl_status status, const char* buffer, ssize_t len);
+    void update_error_msg(yajl_status status,
+                          const unsigned char* buffer,
+                          ssize_t len);
 
     void clear() { this->jpw_values.clear(); }
 

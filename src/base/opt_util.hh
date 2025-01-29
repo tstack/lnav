@@ -37,14 +37,14 @@
 namespace detail {
 
 template<class T>
-typename std::enable_if<std::is_void<T>::value, T>::type
+typename std::enable_if<std::is_void_v<T>, T>::type
 void_or_nullopt()
 {
     return;
 }
 
 template<class T>
-typename std::enable_if<not std::is_void<T>::value, T>::type
+typename std::enable_if<not std::is_void_v<T>, T>::type
 void_or_nullopt()
 {
     return std::nullopt;
@@ -65,18 +65,19 @@ operator|(T&& t, F f) -> decltype(detail::void_or_nullopt<decltype(f(
                                       std::forward<T>(t).operator*()))>())
 {
     using return_type = decltype(f(std::forward<T>(t).operator*()));
-    if (t)
+    if (t) {
         return f(std::forward<T>(t).operator*());
-    else
-        return detail::void_or_nullopt<return_type>();
+    }
+
+    return detail::void_or_nullopt<return_type>();
 }
 
 template<class T>
-constexpr std::optional<typename std::decay<T>::type>
+constexpr std::optional<std::decay_t<T>>
 make_optional_from_nullable(T&& v)
 {
     if (v != nullptr) {
-        return std::optional<typename std::decay<T>::type>(std::forward<T>(v));
+        return std::optional<std::decay_t<T>>(std::forward<T>(v));
     }
     return std::nullopt;
 }
