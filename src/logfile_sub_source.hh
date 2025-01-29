@@ -239,8 +239,6 @@ class logfile_sub_source
     , public text_anchors
     , public text_delegate {
 public:
-    const static bookmark_type_t BM_ERRORS;
-    const static bookmark_type_t BM_WARNINGS;
     const static bookmark_type_t BM_FILES;
 
     virtual void text_filters_changed();

@@ -747,8 +747,8 @@
 /ui/theme-defs/monocai/styles/h2/underline -> monocai.json:98
 /ui/theme-defs/monocai/styles/h3/color -> monocai.json:101
 /ui/theme-defs/monocai/styles/h4/underline -> monocai.json:104
-/ui/theme-defs/monocai/styles/h5/underline -> monocai.json:107
-/ui/theme-defs/monocai/styles/h6/underline -> monocai.json:110
+/ui/theme-defs/monocai/styles/h5/italic -> monocai.json:107
+/ui/theme-defs/monocai/styles/h6/italic -> monocai.json:110
 /ui/theme-defs/monocai/styles/hidden/bold -> monocai.json:50
 /ui/theme-defs/monocai/styles/hidden/color -> monocai.json:49
 /ui/theme-defs/monocai/styles/hr/color -> monocai.json:113

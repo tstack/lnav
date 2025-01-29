@@ -914,7 +914,7 @@ namespace fmt {
 template<>
 struct formatter<string_fragment> : formatter<string_view> {
     template<typename FormatContext>
-    auto format(const string_fragment& sf, FormatContext& ctx)
+    auto format(const string_fragment& sf, FormatContext& ctx) const
     {
         return formatter<string_view>::format(
             string_view{sf.data(), (size_t) sf.length()}, ctx);

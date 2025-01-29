@@ -234,6 +234,7 @@ static const std::unordered_set<std::string> DEFAULT_DB_KEY_NAMES = {
     "range_stop",  "rowid",         "st_dev",
     "st_gid",      "st_ino",        "st_mode",
     "st_rdev",     "st_uid",        "pattern",
+    "paused",      "filtering",
 };
 
 static auto bound_pollable_supervisor

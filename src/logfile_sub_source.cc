@@ -55,8 +55,6 @@
 
 using namespace lnav::roles::literals;
 
-const bookmark_type_t logfile_sub_source::BM_ERRORS("error");
-const bookmark_type_t logfile_sub_source::BM_WARNINGS("warning");
 const bookmark_type_t logfile_sub_source::BM_FILES("file");
 
 static int
@@ -1280,8 +1278,8 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
     logfile* last_file = nullptr;
     vis_line_t vl;
 
-    bm[&BM_WARNINGS].clear();
-    bm[&BM_ERRORS].clear();
+    bm[&textview_curses::BM_WARNINGS].clear();
+    bm[&textview_curses::BM_ERRORS].clear();
     bm[&BM_FILES].clear();
 
     for (auto& lss_user_mark : this->lss_user_marks) {
@@ -1316,13 +1314,13 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
         if (line_iter->is_message()) {
             switch (line_iter->get_msg_level()) {
                 case LEVEL_WARNING:
-                    bm[&BM_WARNINGS].insert_once(vl);
+                    bm[&textview_curses::BM_WARNINGS].insert_once(vl);
                     break;
 
                 case LEVEL_FATAL:
                 case LEVEL_ERROR:
                 case LEVEL_CRITICAL:
-                    bm[&BM_ERRORS].insert_once(vl);
+                    bm[&textview_curses::BM_ERRORS].insert_once(vl);
                     break;
 
                 default:

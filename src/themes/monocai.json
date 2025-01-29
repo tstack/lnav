@@ -104,10 +104,10 @@
                         "underline": true
                     },
                     "h5": {
-                        "underline": true
+                        "italic": true
                     },
                     "h6": {
-                        "underline": true
+                        "italic": true
                     },
                     "hr": {
                         "color": "#444"

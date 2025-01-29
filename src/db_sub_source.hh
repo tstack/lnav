@@ -46,11 +46,13 @@
 
 class db_label_source
     : public text_sub_source
-    , public text_time_translator {
+    , public text_time_translator
+    , public list_input_delegate
+    , public text_delegate {
 public:
     bool has_log_time_column() const { return !this->dls_time_column.empty(); }
 
-    size_t text_line_count() override { return this->dls_rows.size(); }
+    size_t text_line_count() override { return this->dls_row_cursors.size(); }
 
     size_t text_size_for_line(textview_curses& tc,
                               int line,
@@ -96,6 +98,12 @@ public:
 
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
+    bool text_handle_mouse(textview_curses& tc,
+                           const listview_curses::display_line_content_t&,
+                           mouse_event& me) override;
+
+    bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
+
     std::string get_row_as_string(vis_line_t row);
 
     std::string get_cell_as_string(vis_line_t row, size_t col);
@@ -134,7 +142,6 @@ public:
     uint32_t dls_generation{0};
     size_t dls_max_column_width{120};
     std::vector<header_meta> dls_headers;
-    std::vector<std::vector<const unsigned char*>> dls_rows;
     lnav::cell_container dls_cell_container;
     std::vector<lnav::cell_container::cursor> dls_row_cursors;
     size_t dls_push_column{0};
@@ -142,10 +149,10 @@ public:
     std::vector<size_t> dls_cell_width;
     int dls_time_column_index{-1};
     std::optional<size_t> dls_time_column_invalidated_at;
+    std::optional<size_t> dls_level_column;
     std::vector<row_style> dls_row_styles;
     bool dls_row_styles_have_errors{false};
     int dls_row_style_column{-1};
-    std::unique_ptr<ArenaAlloc::Alloc<char>> dls_allocator;
     ArenaAlloc::Alloc<char> dls_cell_allocator{1024};
     string_attrs_t dls_ansi_attrs;
 
@@ -179,4 +186,5 @@ public:
     bool dos_active{false};
     db_label_source* dos_labels{nullptr};
 };
+
 #endif

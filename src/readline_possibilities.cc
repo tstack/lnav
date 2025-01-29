@@ -456,7 +456,8 @@ add_mark_possibilities()
         if (bt->get_name().empty()) {
             continue;
         }
-        rc->add_possibility(ln_mode_t::COMMAND, "mark-type", bt->get_name());
+        rc->add_possibility(
+            ln_mode_t::COMMAND, "mark-type", bt->get_name().to_string());
     }
 }
 

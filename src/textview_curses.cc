@@ -179,6 +179,8 @@ text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
     return humanize::time::duration::from_tv(diff_tv).to_string();
 }
 
+const bookmark_type_t textview_curses::BM_ERRORS("error");
+const bookmark_type_t textview_curses::BM_WARNINGS("warning");
 const bookmark_type_t textview_curses::BM_USER("user");
 const bookmark_type_t textview_curses::BM_USER_EXPR("user-expr");
 const bookmark_type_t textview_curses::BM_SEARCH("search");

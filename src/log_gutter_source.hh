@@ -59,12 +59,12 @@ public:
         } else {
              ch = search_hit ? NCACS_RTEE : NCACS_VLINE;
         }
-        next = bm[&logfile_sub_source::BM_ERRORS].next(vis_line_t(start));
+        next = bm[&textview_curses::BM_ERRORS].next(vis_line_t(start));
         if (next && next.value() <= end) {
             role_out = role_t::VCR_ERROR;
             bar_role_out = role_t::VCR_SCROLLBAR_ERROR;
         } else {
-            next = bm[&logfile_sub_source::BM_WARNINGS].next(vis_line_t(start));
+            next = bm[&textview_curses::BM_WARNINGS].next(vis_line_t(start));
             if (next && next.value() <= end) {
                 role_out = role_t::VCR_WARNING;
                 bar_role_out = role_t::VCR_SCROLLBAR_WARNING;

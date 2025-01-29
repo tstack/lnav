@@ -51,6 +51,9 @@ Interface changes:
   with a unit, like "KB", "MB", "GB", etc...
 * When switching to the pretty view, the focused line should be
   in the same position in the text as in the source view.
+* In the DB View, if there is a column named `log_level`, it
+  will be used as the level for the row and the hotkeys for
+  jumping to the next/previous error/warning will work.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an

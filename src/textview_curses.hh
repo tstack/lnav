@@ -574,6 +574,8 @@ class textview_curses
 public:
     using action = std::function<void(textview_curses*)>;
 
+    const static bookmark_type_t BM_ERRORS;
+    const static bookmark_type_t BM_WARNINGS;
     const static bookmark_type_t BM_USER;
     const static bookmark_type_t BM_USER_EXPR;
     const static bookmark_type_t BM_SEARCH;

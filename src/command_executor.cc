@@ -1022,8 +1022,6 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
         }
     }
 
-    auto row_number = dls.dls_row_cursors.size();
-    dls.dls_rows.resize(row_number + 1);
     dls.dls_row_cursors.emplace_back(dls.dls_cell_container.end_cursor());
     dls.dls_push_column = 0;
     for (int lpc = 0; lpc < ncols; lpc++) {

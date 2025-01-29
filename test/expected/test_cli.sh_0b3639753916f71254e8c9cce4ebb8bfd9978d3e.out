@@ -3453,17 +3453,17 @@
                     "h5": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "h6": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "hr": {

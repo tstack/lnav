@@ -38,6 +38,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "base/intern_string.hh"
 #include "base/lnav_log.hh"
 
 struct logmsg_annotations {
@@ -187,15 +188,17 @@ public:
 
     static std::vector<bookmark_type_t*>& get_all_types();
 
-    explicit bookmark_type_t(std::string name) : bt_name(std::move(name))
+    template<typename T, std::size_t N>
+    explicit bookmark_type_t(const T (&name)[N])
+        : bt_name(string_fragment::from_const(name))
     {
         get_all_types().push_back(this);
     }
 
-    const std::string& get_name() const { return this->bt_name; }
+    const string_fragment& get_name() const { return this->bt_name; }
 
 private:
-    const std::string bt_name;
+    const string_fragment bt_name;
 };
 
 template<typename LineType>

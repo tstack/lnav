@@ -569,7 +569,8 @@ listview_curses::do_update()
                                 *this, row);
                         if (hdr) {
                             auto ov_hdr_attrs = text_attrs::with_underline();
-                            auto ov_hdr = hdr.value().with_attr_for_all(
+                            auto ov_hdr = hdr.value();
+                            ov_hdr.pad_to(width).with_attr_for_all(
                                 VC_STYLE.value(ov_hdr_attrs));
                             this->lv_display_lines.emplace_back(
                                 static_overlay_content{});

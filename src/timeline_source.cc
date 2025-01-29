@@ -633,8 +633,8 @@ void
 timeline_source::rebuild_indexes()
 {
     auto& bm = this->tss_view->get_bookmarks();
-    auto& bm_errs = bm[&logfile_sub_source::BM_ERRORS];
-    auto& bm_warns = bm[&logfile_sub_source::BM_WARNINGS];
+    auto& bm_errs = bm[&textview_curses::BM_ERRORS];
+    auto& bm_warns = bm[&textview_curses::BM_WARNINGS];
 
     bm_errs.clear();
     bm_warns.clear();
