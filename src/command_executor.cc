@@ -415,7 +415,9 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         bool done = false;
 
         auto bound_values = TRY(bind_sql_parameters(ec, stmt.in()));
-        ec.ec_sql_callback(ec, stmt.in());
+        if (last_is_readonly) {
+            ec.ec_sql_callback(ec, stmt.in());
+        }
         while (!done) {
             retcode = sqlite3_step(stmt.in());
 
@@ -480,6 +482,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         lnav_data.ld_rl_view->clear_value();
     }
 
+    if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
+        ec.ec_label_source_stack.back()->dls_query_end
+            = std::chrono::steady_clock::now();
+    }
     gettimeofday(&end_tv, nullptr);
     if (retcode == SQLITE_DONE) {
         if (lnav_data.ld_log_source.is_line_meta_changed()) {
@@ -1007,6 +1013,7 @@ sql_callback(exec_context& ec, sqlite3_stmt* stmt)
     auto set_vars = dls.dls_row_cursors.empty();
 
     if (dls.dls_row_cursors.empty()) {
+        dls.dls_query_start = std::chrono::steady_clock::now();
         for (int lpc = 0; lpc < ncols; lpc++) {
             int type = sqlite3_column_type(stmt, lpc);
             std::string colname = sqlite3_column_name(stmt, lpc);

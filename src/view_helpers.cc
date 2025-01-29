@@ -1064,6 +1064,7 @@ execute_example(std::unordered_map<std::string, attr_line_t>& res_map,
                 exec_context ec;
 
                 auto src_guard = ec.enter_source(ex_src, index, ex.he_cmd);
+                dls.clear();
                 ec.ec_label_source_stack.push_back(&dls);
 
                 auto exec_res = execute_sql(ec, ex.he_cmd, alt_msg);

@@ -54,6 +54,8 @@ Interface changes:
 * In the DB View, if there is a column named `log_level`, it
   will be used as the level for the row and the hotkeys for
   jumping to the next/previous error/warning will work.
+* In the DB View, pressing `c` while focused in the overlay
+  will copy the value of the column.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an

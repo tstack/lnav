@@ -108,6 +108,7 @@ public:
         return *this;
     }
 
+    auto_mem& operator=(const auto_mem&) = delete;
     auto_mem& operator=(auto_mem&) = delete;
 
     auto_mem& operator=(auto_mem&& am) noexcept

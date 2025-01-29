@@ -45,6 +45,8 @@
 #include "yajlpp/json_ptr.hh"
 #include "yajlpp/yajlpp_def.hh"
 
+using namespace lnav::roles::literals;
+
 const unsigned char db_label_source::NULL_STR[] = "<NULL>";
 
 constexpr size_t MAX_JSON_WIDTH = 16 * 1024;
@@ -610,6 +612,8 @@ db_label_source::push_column(const column_value_t& sv)
 void
 db_label_source::clear()
 {
+    this->dls_query_start = std::nullopt;
+    this->dls_query_end = std::nullopt;
     this->dls_headers.clear();
     this->dls_row_cursors.clear();
     this->dls_cell_container.reset();
@@ -674,6 +678,77 @@ db_label_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
     return false;
 }
 
+static const string_attr_type<std::string> DBA_DETAILS("details");
+
+std::optional<json_string>
+db_label_source::text_row_details(const textview_curses& tc)
+{
+    if (this->dls_row_cursors.empty()) {
+        log_trace("db_label_source::text_row_details: empty");
+        return std::nullopt;
+    }
+    if (!this->dls_query_end.has_value()) {
+        log_trace("db_label_source::text_row_details: query in progress");
+        return std::nullopt;
+    }
+
+    auto ov_sel = tc.get_overlay_selection();
+
+    if (ov_sel.has_value()) {
+        std::vector<attr_line_t> rows;
+        auto* ov_source = tc.get_overlay_source();
+        ov_source->list_value_for_overlay(tc, tc.get_selection(), rows);
+        if (ov_sel.value() < rows.size()) {
+            auto& row_al = rows[ov_sel.value()];
+            auto deets_attr = get_string_attr(row_al.al_attrs, DBA_DETAILS);
+            if (deets_attr) {
+                auto deets = deets_attr->get();
+                if (!deets.empty()) {
+                    return json_string(
+                        auto_buffer::from(deets.c_str(), deets.length()));
+                }
+            }
+        }
+    } else {
+        yajlpp_gen gen;
+
+        {
+            yajlpp_map root(gen);
+
+            auto cursor = this->dls_row_cursors[tc.get_selection()].sync();
+            for (const auto& [col, hm] :
+                 lnav::itertools::enumerate(this->dls_headers))
+            {
+                root.gen(hm.hm_name);
+
+                switch (cursor->get_type()) {
+                    case lnav::cell_type::CT_NULL:
+                        root.gen();
+                        break;
+                    case lnav::cell_type::CT_INTEGER:
+                        root.gen(cursor->get_int());
+                        break;
+                    case lnav::cell_type::CT_FLOAT:
+                        if (cursor->get_sub_value() == 0) {
+                            root.gen(cursor->get_float());
+                        } else {
+                            root.gen(cursor->get_float_as_text());
+                        }
+                        break;
+                    case lnav::cell_type::CT_TEXT:
+                        root.gen(cursor->get_text());
+                        break;
+                }
+                cursor = cursor->next();
+            }
+        }
+
+        return json_string{gen};
+    }
+
+    return std::nullopt;
+}
+
 std::string
 db_label_source::get_row_as_string(vis_line_t row)
 {
@@ -704,6 +779,7 @@ db_label_source::get_row_as_string(vis_line_t row)
         cursor = cursor->next();
         lpc += 1;
     }
+    this->dls_cell_allocator.reset();
 
     return retval;
 }
@@ -717,6 +793,7 @@ db_label_source::get_cell_as_string(vis_line_t row, size_t col)
         return "";
     }
 
+    this->dls_cell_allocator.reset();
     size_t lpc = 0;
     auto cursor = this->dls_row_cursors[row].sync();
     while (cursor.has_value()) {
@@ -794,7 +871,21 @@ db_overlay_source::list_header_for_overlay(const listview_curses& lv,
 {
     attr_line_t retval;
 
-    retval.append("  Row details");
+    retval.append("  Details for row ")
+        .append(
+            lnav::roles::number(fmt::format(FMT_STRING("{:L}"), (int) line)))
+        .append(". Press ")
+        .append("p"_hotkey)
+        .append(" to hide this panel.");
+    if (lv.get_overlay_selection()) {
+        retval.append("  Press ")
+            .append("c"_hotkey)
+            .append(" to copy a column value.");
+    } else {
+        retval.append("  Press ")
+            .append("CTRL-]"_hotkey)
+            .append(" to focus on this panel");
+    }
     return retval;
 }
 
@@ -837,6 +928,22 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
             if (jpw.parse(sf.udata(), sf.length()) == yajl_status_ok
                 && jpw.complete_parse() == yajl_status_ok)
             {
+                {
+                    yajlpp_gen gen;
+
+                    {
+                        yajlpp_map root(gen);
+
+                        root.gen("key");
+                        root.gen(hm.hm_name);
+                        root.gen("value");
+                        root.gen(sf);
+                    }
+                    al.al_attrs.emplace_back(
+                        line_range{0, -1},
+                        DBA_DETAILS.value(
+                            gen.to_string_fragment().to_string()));
+                }
                 value_out.emplace_back(al);
                 al.clear();
 
@@ -851,14 +958,29 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                 for (const auto& [walk_index, jpw_value] :
                      lnav::itertools::enumerate(jpw.jpw_values))
                 {
+                    {
+                        yajlpp_gen gen;
+
+                        {
+                            yajlpp_map root(gen);
+
+                            root.gen("key");
+                            root.gen(jpw_value.wt_ptr);
+                            root.gen("value");
+                            root.gen(jpw_value.wt_value);
+                        }
+                        al.al_attrs.emplace_back(
+                            line_range{0, -1},
+                            DBA_DETAILS.value(
+                                gen.to_string_fragment().to_string()));
+                    }
+
                     al.append(indent + 2, ' ')
                         .append(lnav::roles::h5(jpw_value.wt_ptr))
                         .append(" = ")
                         .append(jpw_value.wt_value);
-                    value_out.emplace_back(al);
-                    al.clear();
 
-                    auto& sa = value_out.back().get_attrs();
+                    auto& sa = al.al_attrs;
                     line_range lr(indent, indent + 1);
 
                     sa.emplace_back(
@@ -882,6 +1004,8 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                         }
                         sa.emplace_back(lr, VC_ROLE.value(role_t::VCR_NUMBER));
                     }
+                    value_out.emplace_back(al);
+                    al.clear();
                 }
 
                 int curr_line = start_line;
@@ -908,10 +1032,51 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                     }
                 }
             } else {
+                yajlpp_gen gen;
+
+                {
+                    yajlpp_map root(gen);
+
+                    root.gen("key");
+                    root.gen(hm.hm_name);
+                    root.gen("value");
+                    root.gen(sf);
+                }
                 al.append(": ").append(sf);
+                al.al_attrs.emplace_back(
+                    line_range{0, -1},
+                    DBA_DETAILS.value(gen.to_string_fragment().to_string()));
             }
         } else {
+            yajlpp_gen gen;
+
+            {
+                yajlpp_map root(gen);
+
+                root.gen("key");
+                root.gen(hm.hm_name);
+                root.gen("value");
+                switch (cursor->get_type()) {
+                    case lnav::cell_type::CT_NULL:
+                        root.gen();
+                        break;
+                    case lnav::cell_type::CT_INTEGER:
+                        root.gen(cursor->get_int());
+                        break;
+                    case lnav::cell_type::CT_FLOAT:
+                        if (cursor->get_sub_value() == 0) {
+                            root.gen(cursor->get_float());
+                        } else {
+                            root.gen(cursor->get_float_as_text());
+                        }
+                        break;
+                }
+            }
+
             al.append(": ").append(sf);
+            al.al_attrs.emplace_back(
+                line_range{0, -1},
+                DBA_DETAILS.value(gen.to_string_fragment().to_string()));
         }
 
         if (!al.empty()) {
@@ -919,6 +1084,8 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
         }
         cursor = cursor->next();
     }
+
+    this->dos_labels->dls_cell_allocator.reset();
 }
 
 bool

@@ -225,3 +225,10 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";INSERT INTO lnav_view_filters (view_name, language, pattern) VALUES ('log', 'sql', ':sc_bytes # 134')" \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM access_log" \
+    -c ";CREATE TABLE row_deets AS SELECT row_details FROM lnav_views WHERE name = 'db'" \
+    -c ";SELECT json(row_details) as row_details FROM row_deets" \
+    -c ":write-json-to -" \
+    ${test_dir}/logfile_access_log.0

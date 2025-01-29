@@ -5,13 +5,16 @@
 
 ;SELECT
     jget(selected_text, '/value') AS sel_value,
-    jget(selected_text, '/href') AS sel_href
+    jget(selected_text, '/href') AS sel_href,
+    jget(row_details, '/value') AS details_value
    FROM lnav_top_view
 ;SELECT CASE
     WHEN $sel_href IS NOT NULL AND $sel_href != '' THEN
         ':echo -n ${sel_href}'
     WHEN $sel_value IS NOT NULL AND $sel_value != '' THEN
         ':echo -n ${sel_value}'
+    WHEN $details_value IS NOT NULL AND $details_value != '' THEN
+        ':echo -n ${details_value}'
     ELSE
         ':write-to -'
     END AS cmd

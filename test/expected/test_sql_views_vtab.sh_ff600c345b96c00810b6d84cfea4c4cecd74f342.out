@@ -93,7 +93,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "text",
@@ -115,7 +116,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "help",
@@ -135,7 +137,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "histogram",
@@ -160,7 +163,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "db",
@@ -185,7 +189,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "schema",
@@ -205,7 +210,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "pretty",
@@ -225,7 +231,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "spectro",
@@ -246,7 +253,8 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     },
     {
         "name": "timeline",
@@ -267,6 +275,7 @@
             "hidden-fields": "hide",
             "word-wrap": "none"
         },
-        "selected_text": null
+        "selected_text": null,
+        "row_details": null
     }
 ]

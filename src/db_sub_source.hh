@@ -30,6 +30,7 @@
 #ifndef db_sub_source_hh
 #define db_sub_source_hh
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <optional>
@@ -48,7 +49,8 @@ class db_label_source
     : public text_sub_source
     , public text_time_translator
     , public list_input_delegate
-    , public text_delegate {
+    , public text_delegate
+    , public text_detail_provider {
 public:
     bool has_log_time_column() const { return !this->dls_time_column.empty(); }
 
@@ -106,6 +108,9 @@ public:
 
     std::string get_row_as_string(vis_line_t row);
 
+    std::optional<json_string> text_row_details(
+        const textview_curses& tc) override;
+
     std::string get_cell_as_string(vis_line_t row, size_t col);
     std::optional<int64_t> get_cell_as_int64(vis_line_t row, size_t col);
     std::optional<double> get_cell_as_double(vis_line_t row, size_t col);
@@ -140,6 +145,8 @@ public:
     };
 
     uint32_t dls_generation{0};
+    std::optional<std::chrono::steady_clock::time_point> dls_query_start;
+    std::optional<std::chrono::steady_clock::time_point> dls_query_end;
     size_t dls_max_column_width{120};
     std::vector<header_meta> dls_headers;
     lnav::cell_container dls_cell_container;

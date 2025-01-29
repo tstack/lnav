@@ -561,6 +561,14 @@ public:
     }
 };
 
+class text_detail_provider {
+public:
+    virtual ~text_detail_provider() = default;
+
+    virtual std::optional<json_string>
+    text_row_details(const textview_curses& tc) = 0;
+};
+
 /**
  * The textview_curses class adds user bookmarks and searching to the standard
  * list view interface.
