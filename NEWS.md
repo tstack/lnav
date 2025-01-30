@@ -29,9 +29,12 @@ Features:
   adding a column with the name `__lnav_style__`.
 * Added "format <format-name> test" management command to make it
   easier to test a format against a file.
-  Can be helpful for determining why a file is not being recognized
-  by particular format.
+  This can be helpful for determining why a file is not being
+  recognized by particular format.
 * Added a "performance" section to the documentation.
+* Session exports now include `:hide-fields` and `:show-fields`
+  commands from the session.
+  They are currently commented out by default.
 
 Interface changes:
 * DB query results that start with a number are right justified

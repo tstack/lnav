@@ -30,6 +30,7 @@
 #include "session.export.hh"
 
 #include "base/injector.hh"
+#include "base/itertools.hh"
 #include "bound_tags.hh"
 #include "lnav.hh"
 #include "sqlitepp.client.hh"
@@ -49,9 +50,9 @@ struct log_message_session_state {
 
 template<>
 struct from_sqlite<log_message_session_state> {
-    inline log_message_session_state operator()(int argc,
-                                                sqlite3_value** argv,
-                                                int argi)
+    log_message_session_state operator()(int argc,
+                                         sqlite3_value** argv,
+                                         int argi)
     {
         return {
             from_sqlite<int64_t>()(argc, argv, argi + 0),
@@ -76,9 +77,9 @@ struct log_filter_session_state {
 
 template<>
 struct from_sqlite<log_filter_session_state> {
-    inline log_filter_session_state operator()(int argc,
-                                               sqlite3_value** argv,
-                                               int argi)
+    log_filter_session_state operator()(int argc,
+                                        sqlite3_value** argv,
+                                        int argi)
     {
         return {
             from_sqlite<std::string>()(argc, argv, argi + 0),
@@ -98,9 +99,7 @@ struct log_file_session_state {
 
 template<>
 struct from_sqlite<log_file_session_state> {
-    inline log_file_session_state operator()(int argc,
-                                             sqlite3_value** argv,
-                                             int argi)
+    log_file_session_state operator()(int argc, sqlite3_value** argv, int argi)
     {
         return {
             from_sqlite<std::string>()(argc, argv, argi + 0),
@@ -199,7 +198,7 @@ SELECT content_id, format, time_offset FROM lnav_file
   WHERE format IS NOT NULL AND time_offset != 0
 )";
 
-    static constexpr const char HEADER[] = R"(#!lnav -Nf
+    static constexpr char HEADER[] = R"(#!lnav -Nf
 # This file is an export of an lnav session.  You can type
 # '|/path/to/this/file' in lnav to execute this file and
 # restore the state of the session.
@@ -211,12 +210,12 @@ SELECT content_id, format, time_offset FROM lnav_file
 
 )";
 
-    static constexpr const char LOG_DIR_INSERT[] = R"(
+    static constexpr char LOG_DIR_INSERT[] = R"(
 # Set this environment variable to override this value or edit this script.
 ;INSERT OR IGNORE INTO environ (name, value) VALUES ('LOG_DIR_{}', {})
 )";
 
-    static constexpr const char MARK_HEADER[] = R"(
+    static constexpr char MARK_HEADER[] = R"(
 
 # The following SQL statements will restore the bookmarks,
 # comments, and tags that were added in the session.
@@ -224,7 +223,7 @@ SELECT content_id, format, time_offset FROM lnav_file
 ;SELECT total_changes() AS before_mark_changes
 )";
 
-    static constexpr const char MARK_FOOTER[] = R"(
+    static constexpr char MARK_FOOTER[] = R"(
 ;SELECT {} - (total_changes() - $before_mark_changes) AS failed_mark_changes
 ;SELECT echoln(printf('%sERROR%s: failed to restore %d bookmarks',
                       $ansi_red, $ansi_norm, $failed_mark_changes))
@@ -246,14 +245,20 @@ SELECT content_id, format, time_offset FROM lnav_file
 ;SELECT total_changes() AS before_file_changes
 )";
 
-    static constexpr const char FILE_FOOTER[] = R"(
+    static const char* FIELD_HEADER = R"(
+# The following field visibility commands were run by the
+# original user during this session.  Uncomment them if
+# desired.
+)";
+
+    static constexpr char FILE_FOOTER[] = R"(
 ;SELECT {} - (total_changes() - $before_file_changes) AS failed_file_changes
 ;SELECT echoln(printf('%sERROR%s: failed to restore the state of %d files',
                       $ansi_red, $ansi_norm, $failed_file_changes))
    WHERE $failed_file_changes != 0
 )";
 
-    static constexpr const char VIEW_HEADER[] = R"(
+    static constexpr char VIEW_HEADER[] = R"(
 
 # The following commands will restore the state of the {} view.
 
@@ -429,6 +434,40 @@ SELECT content_id, format, time_offset FROM lnav_file
         fmt::print(file,
                    FMT_STRING(":switch-to-view {}\n"),
                    lnav_view_strings[view_index]);
+
+        if (view_index == LNV_LOG) {
+            std::vector<std::string> field_cmds;
+            for (const auto& format : log_format::get_root_formats()) {
+                auto field_states = format->get_field_states();
+
+                for (const auto& fs_pair : field_states) {
+                    if (!fs_pair.second.lvm_user_hidden) {
+                        continue;
+                    }
+
+                    if (fs_pair.second.lvm_user_hidden.value()) {
+                        field_cmds.emplace_back(
+                            fmt::format(FMT_STRING("# :hide-fields {}.{}\n"),
+
+                                        format->get_name(),
+                                        fs_pair.first));
+                    } else if (fs_pair.second.lvm_hidden) {
+                        field_cmds.emplace_back(
+                            fmt::format(FMT_STRING("# :show-fields {}.{}\n"),
+                                        format->get_name().to_string(),
+                                        fs_pair.first));
+                    }
+                }
+            }
+
+            if (!field_cmds.empty()) {
+                fmt::print(file, FMT_STRING("{}"), FIELD_HEADER);
+                field_cmds
+                    | lnav::itertools::for_each([&file](const auto& cmd) {
+                          fmt::print(file, FMT_STRING("{}"), cmd);
+                      });
+            }
+        }
 
         auto* tss = tc.get_sub_source();
         auto* lss = dynamic_cast<logfile_sub_source*>(tss);
