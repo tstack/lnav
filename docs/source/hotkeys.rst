@@ -259,8 +259,7 @@ Display
      - Toggle the display of the log parser results
    * - :kbd:`Tab`
      - In the log/text views, focus on the configuration panel for editing
-       filters and examining the list of loaded files.  In the SQL result view,
-       cycle through columns to display as bar graphs
+       filters and examining the list of loaded files.
    * - :kbd:`Ctrl` + :kbd:`l`
      - Switch to lo-fi mode.  The displayed log lines will be dumped to the
        terminal without any decorations so they can be copied easily.

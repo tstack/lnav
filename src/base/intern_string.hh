@@ -196,7 +196,7 @@ struct string_fragment {
 
     string_fragment sub_cell_range(int cell_start, int cell_end) const;
 
-    const char& operator[](int index) const
+    const char& operator[](size_t index) const
     {
         return this->sf_string[sf_begin + index];
     }

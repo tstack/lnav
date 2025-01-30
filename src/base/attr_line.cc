@@ -56,6 +56,8 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
     auto has_ansi = false;
     size_t char_width = 0;
     attr_line_t retval;
+    std::string_view replacement;
+    size_t copy_start = 0;
 
     retval.al_string.reserve(max_char_width);
     for (size_t index = 0; index < content.length(); ++index) {
@@ -63,74 +65,58 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
 
         switch (ch) {
             case '\t':
-                retval.al_string.append(TAB_SYMBOL);
+                replacement = TAB_SYMBOL;
                 char_width += 1;
                 break;
             case '\n':
-                retval.al_string.append(LF_SYMBOL);
+                replacement = LF_SYMBOL;
                 char_width += 1;
                 break;
             case '\r':
-                retval.al_string.append(CR_SYMBOL);
+                replacement = CR_SYMBOL;
                 char_width += 1;
                 break;
             case '\b':
             case '\x1b':
                 has_ansi = true;
-                retval.al_string.push_back(ch);
                 break;
             default:
                 if (ch < 0x80) {
-                    retval.al_string.push_back(ch);
                     char_width += 1;
                 } else if (ch < 0xc0) {
-                    retval.al_string.append(REP_SYMBOL);
+                    replacement = REP_SYMBOL;
                     char_width += 1;
                 } else if (ch < 0xe0) {
                     auto next_ch = content[index + 1];
                     if (next_ch != 0) {
-                        retval.al_string.push_back(ch);
-                        retval.al_string.push_back(next_ch);
                         index += 1;
                     } else {
-                        retval.al_string.append(REP_SYMBOL);
+                        replacement = REP_SYMBOL;
                     }
                     char_width += 1;
                 } else if (ch < 0xf0) {
                     if (content[index + 1] != 0 && content[index + 2] != 0) {
-                        retval.al_string.push_back(ch);
-                        retval.al_string.push_back(content[index + 1]);
-                        retval.al_string.push_back(content[index + 2]);
                         index += 2;
                     } else {
-                        retval.al_string.append(REP_SYMBOL);
+                        replacement = REP_SYMBOL;
                     }
                     char_width += 1;
                 } else if (ch < 0xf8) {
                     if (content[index + 1] != 0 && content[index + 2] != 0
                         && content[index + 3] != 0)
                     {
-                        retval.al_string.push_back(ch);
-                        retval.al_string.push_back(content[index + 1]);
-                        retval.al_string.push_back(content[index + 2]);
-                        retval.al_string.push_back(content[index + 3]);
                         index += 3;
                     } else {
-                        retval.al_string.append(REP_SYMBOL);
+                        replacement = REP_SYMBOL;
                     }
                     char_width += 1;
                 } else if (ch < 0xfc) {
                     if (content[index + 1] != 0 && content[index + 2] != 0
                         && content[index + 3] != 0 && content[index + 4] != 0)
                     {
-                        retval.al_string.push_back(ch);
-                        retval.al_string.push_back(content[index + 1]);
-                        retval.al_string.push_back(content[index + 2]);
-                        retval.al_string.push_back(content[index + 3]);
-                        retval.al_string.push_back(content[index + 4]);
                         index += 4;
                     } else {
-                        retval.al_string.append(REP_SYMBOL);
+                        replacement = REP_SYMBOL;
                     }
                     char_width += 1;
                 } else if (ch < 0xfe) {
@@ -138,23 +124,29 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
                         && content[index + 3] != 0 && content[index + 4] != 0
                         && content[index + 5] != 0)
                     {
-                        retval.al_string.push_back(ch);
-                        retval.al_string.push_back(content[index + 1]);
-                        retval.al_string.push_back(content[index + 2]);
-                        retval.al_string.push_back(content[index + 3]);
-                        retval.al_string.push_back(content[index + 4]);
-                        retval.al_string.push_back(content[index + 5]);
                         index += 5;
                     } else {
-                        retval.al_string.append(REP_SYMBOL);
+                        replacement = REP_SYMBOL;
                     }
                     char_width += 1;
                 } else {
-                    retval.al_string.append(REP_SYMBOL);
+                    replacement = REP_SYMBOL;
                     char_width += 1;
                 }
                 break;
         }
+
+        if (!replacement.empty()) {
+            auto copy_len = index - copy_start;
+            retval.al_string.append(&content[copy_start], copy_len);
+            copy_start = index + 1;
+            retval.al_string.append(replacement);
+            replacement = ""sv;
+        }
+    }
+    if (copy_start < content.length()) {
+        auto copy_len = content.length() - copy_start;
+        retval.al_string.append(&content[copy_start], copy_len);
     }
 
     if (has_ansi) {
