@@ -450,12 +450,12 @@ elements will respond to mouse inputs:
 * when text is selected, a menu will pop up that can be used
   to filter based on the current text, search for it, or copy
   it to the clipboard;
-* right-clicking the start of a log message in the main view
-  will open the parser details overlay;
-* the parser details now displays a diamond next to fields to
+* right-clicking the start of a message in the LOG view or a
+  row in the DB view will open the details overlay;
+* the details overlay displays a diamond next to fields to
   indicate whether they are shown/hidden and this can be
   clicked to toggle the state;
-* the parser details will show a bar chart icon for fields with
+* the log details will show a bar chart icon for fields with
   values which, when clicked, will open either the spectrogram
   view for the given field or open the DB query prompt with a
   PRQL query to generate a histogram of the field values;

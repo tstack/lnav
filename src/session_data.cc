@@ -1785,6 +1785,8 @@ reset_session()
     lnav_data.ld_log_source.clear_bookmark_metadata();
     lnav_data.ld_log_source.rebuild_index();
 
+    lnav_data.ld_db_row_source.reset_user_state();
+
     for (auto& tc : lnav_data.ld_views) {
         text_sub_source* tss = tc.get_sub_source();
 

@@ -101,6 +101,9 @@ db_label_source::text_value_for_line(textview_curses& tc,
             continue;
         }
         const auto& hm = this->dls_headers[lpc];
+        if (hm.hm_hidden) {
+            continue;
+        }
         auto actual_col_size
             = std::min(this->dls_max_column_width, hm.hm_column_size);
         auto align = hm.hm_align;
@@ -196,6 +199,9 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
         }
 
         const auto& hm = this->dls_headers[lpc];
+        if (hm.hm_hidden) {
+            continue;
+        }
 
         if (hm.is_graphable()) {
             lr.lr_end += this->dls_cell_width[lpc];
@@ -224,6 +230,9 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
         }
 
         const auto& hm = this->dls_headers[lpc];
+        if (hm.hm_hidden) {
+            continue;
+        }
         if (row < this->dls_row_styles.size()) {
             auto style_iter
                 = this->dls_row_styles[row].rs_column_config.find(lpc);
@@ -664,21 +673,53 @@ db_label_source::text_handle_mouse(
     const listview_curses::display_line_content_t&,
     mouse_event& me)
 {
-    return false;
+    if (tc.get_overlay_selection()) {
+        auto nci = ncinput{};
+        if (me.is_click_in(mouse_button_t::BUTTON_LEFT, 0, 3)) {
+            nci.id = ' ';
+            nci.eff_text[0] = ' ';
+            this->list_input_handle_key(tc, nci);
+        }
+    }
+    return true;
 }
+
+static const string_attr_type<std::string> DBA_DETAILS("details");
+static const string_attr_type<std::string> DBA_COLUMN_NAME("column-name");
 
 bool
 db_label_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
     switch (ch.eff_text[0]) {
-        case 'c':
+        case ' ': {
+            auto ov_sel = lv.get_overlay_selection();
+            if (ov_sel) {
+                std::vector<attr_line_t> rows;
+                auto* ov_source = lv.get_overlay_source();
+                ov_source->list_value_for_overlay(lv, lv.get_selection(), rows);
+                if (ov_sel.value() < rows.size()) {
+                    auto& row_al = rows[ov_sel.value()];
+                    auto col_attr
+                        = get_string_attr(row_al.al_attrs, DBA_COLUMN_NAME);
+                    if (col_attr) {
+                        auto col_name = col_attr.value().get();
+                        auto col_opt = this->column_name_to_index(col_name);
+                        if (col_opt) {
+                            this->dls_headers[col_opt.value()].hm_hidden
+                                = !this->dls_headers[col_opt.value()].hm_hidden;
+                        }
+                    }
+                }
+                lv.set_needs_update();
+
+                return true;
+            }
             break;
+        }
     }
 
     return false;
 }
-
-static const string_attr_type<std::string> DBA_DETAILS("details");
 
 std::optional<json_string>
 db_label_source::text_row_details(const textview_curses& tc)
@@ -715,31 +756,37 @@ db_label_source::text_row_details(const textview_curses& tc)
         {
             yajlpp_map root(gen);
 
-            auto cursor = this->dls_row_cursors[tc.get_selection()].sync();
-            for (const auto& [col, hm] :
-                 lnav::itertools::enumerate(this->dls_headers))
-            {
-                root.gen(hm.hm_name);
+            root.gen("value");
 
-                switch (cursor->get_type()) {
-                    case lnav::cell_type::CT_NULL:
-                        root.gen();
-                        break;
-                    case lnav::cell_type::CT_INTEGER:
-                        root.gen(cursor->get_int());
-                        break;
-                    case lnav::cell_type::CT_FLOAT:
-                        if (cursor->get_sub_value() == 0) {
-                            root.gen(cursor->get_float());
-                        } else {
-                            root.gen(cursor->get_float_as_text());
-                        }
-                        break;
-                    case lnav::cell_type::CT_TEXT:
-                        root.gen(cursor->get_text());
-                        break;
+            {
+                yajlpp_map value_map(gen);
+
+                auto cursor = this->dls_row_cursors[tc.get_selection()].sync();
+                for (const auto& [col, hm] :
+                     lnav::itertools::enumerate(this->dls_headers))
+                {
+                    value_map.gen(hm.hm_name);
+
+                    switch (cursor->get_type()) {
+                        case lnav::cell_type::CT_NULL:
+                            value_map.gen();
+                            break;
+                        case lnav::cell_type::CT_INTEGER:
+                            value_map.gen(cursor->get_int());
+                            break;
+                        case lnav::cell_type::CT_FLOAT:
+                            if (cursor->get_sub_value() == 0) {
+                                value_map.gen(cursor->get_float());
+                            } else {
+                                value_map.gen(cursor->get_float_as_text());
+                            }
+                            break;
+                        case lnav::cell_type::CT_TEXT:
+                            value_map.gen(cursor->get_text());
+                            break;
+                    }
+                    cursor = cursor->next();
                 }
-                cursor = cursor->next();
             }
         }
 
@@ -865,6 +912,14 @@ db_label_source::get_cell_as_double(vis_line_t row, size_t col)
     return std::nullopt;
 }
 
+void
+db_label_source::reset_user_state()
+{
+    for (auto& hm : this->dls_headers) {
+        hm.hm_hidden = false;
+    }
+}
+
 std::optional<attr_line_t>
 db_overlay_source::list_header_for_overlay(const listview_curses& lv,
                                            vis_line_t line)
@@ -878,9 +933,11 @@ db_overlay_source::list_header_for_overlay(const listview_curses& lv,
         .append("p"_hotkey)
         .append(" to hide this panel.");
     if (lv.get_overlay_selection()) {
-        retval.append("  Press ")
+        retval.append(" Controls: ")
             .append("c"_hotkey)
-            .append(" to copy a column value.");
+            .append(" to copy a column value; ")
+            .append("SPC"_hotkey)
+            .append(" to hide/show a column");
     } else {
         retval.append("  Press ")
             .append("CTRL-]"_hotkey)
@@ -919,9 +976,18 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
         auto al = attr_line_t()
                       .append(lnav::roles::h3(hm.hm_name))
                       .right_justify(max_name_width.value_or(0) + 2);
+
+        if (hm.hm_hidden) {
+            al.insert(1, "\u25c7"_comment);
+        } else {
+            al.insert(1, "\u25c6"_ok);
+        }
+
         auto sf
             = cursor->to_string_fragment(this->dos_labels->dls_cell_allocator);
 
+        al.al_attrs.emplace_back(line_range{0, -1},
+                                 DBA_COLUMN_NAME.value(hm.hm_name));
         if (cursor->get_type() == lnav::cell_type::CT_TEXT) {
             json_ptr_walk jpw;
 
@@ -950,7 +1016,7 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                 stacked_bar_chart<std::string> chart;
                 int start_line = value_out.size();
 
-                auto indent = 2 + max_name_width.value() - hm.hm_name.size();
+                auto indent = 3 + max_name_width.value() - hm.hm_name.size();
                 chart.with_stacking_enabled(false)
                     .with_margins(indent + 2, 0)
                     .with_show_state(stacked_bar_chart_base::show_all{});
@@ -1110,6 +1176,9 @@ db_overlay_source::list_static_overlay(const listview_curses& lv,
         }
 
         const auto& hm = dls->dls_headers[lpc];
+        if (hm.hm_hidden) {
+            continue;
+        }
         auto actual_col_size
             = std::min(dls->dls_max_column_width, hm.hm_column_size);
         auto cell_title = hm.hm_name;

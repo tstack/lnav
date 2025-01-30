@@ -942,3 +942,13 @@ run_cap_test env TEST_COMMENT="alignment demo" ${lnav_test} -nN -f- <<'EOF'
  SELECT 'right', '{"columns": {"Alignment Demo": {"text-align": "end"}}}' AS __lnav_style__
 :switch-to-view db
 EOF
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM access_log" \
+    -c ":hide-fields log_time" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM access_log" \
+    -c ":hide-fields bad" \
+    ${test_dir}/logfile_access_log.0

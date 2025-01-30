@@ -114,6 +114,7 @@ private:
         this->vem_map[NCKEY_HOME] = string_fragment::from_const("\x01");
         this->vem_map[NCKEY_END] = string_fragment::from_const("\x05");
         this->vem_map[NCKEY_ENTER] = string_fragment::from_const("\r");
+        this->vem_map[NCKEY_DEL] = string_fragment::from_const("\004");
 
         this->vem_input_map[tgetstr((char*) "ce", &area)] = "ce";
         this->vem_input_map[tgetstr((char*) "kl", &area)] = "kl";

@@ -4820,58 +4820,80 @@ com_toggle_field(exec_context& ec,
         return ec.make_error("Expecting a log message field name");
     } else {
         auto* tc = *lnav_data.ld_view_stack.top();
+        const auto hide = args[0] == "hide-fields";
+        std::vector<std::string> found_fields, missing_fields;
 
-        if (tc != &lnav_data.ld_views[LNV_LOG]) {
+        if (tc != &lnav_data.ld_views[LNV_LOG]
+            && tc != &lnav_data.ld_views[LNV_DB])
+        {
             retval = "error: hiding fields only works in the log view";
         } else if (ec.ec_dry_run) {
             // TODO: highlight the fields to be hidden.
             retval = "";
         } else {
-            auto& lss = lnav_data.ld_log_source;
-            bool hide = args[0] == "hide-fields";
-            std::vector<std::string> found_fields, missing_fields;
+            if (tc == &lnav_data.ld_views[LNV_DB]) {
+                auto& dls = lnav_data.ld_db_row_source;
 
-            for (int lpc = 1; lpc < (int) args.size(); lpc++) {
-                intern_string_t name;
-                std::shared_ptr<log_format> format;
-                size_t dot;
+                for (size_t lpc = 1; lpc < args.size(); lpc++) {
+                    const auto& name = args[lpc];
 
-                if ((dot = args[lpc].find('.')) != std::string::npos) {
-                    const intern_string_t format_name
-                        = intern_string::lookup(args[lpc].c_str(), dot);
+                    auto col_opt = dls.column_name_to_index(name);
+                    if (col_opt.has_value()) {
+                        found_fields.emplace_back(name);
 
-                    format = log_format::find_root_format(format_name.get());
-                    if (!format) {
-                        return ec.make_error("unknown format -- {}",
-                                             format_name.to_string());
+                        dls.dls_headers[col_opt.value()].hm_hidden = hide;
+                    } else {
+                        missing_fields.emplace_back(name);
                     }
-                    name = intern_string::lookup(&(args[lpc].c_str()[dot + 1]),
-                                                 args[lpc].length() - dot - 1);
-                } else if (tc->get_inner_height() == 0) {
-                    return ec.make_error("no log messages to hide");
-                } else {
-                    auto cl = lss.at(tc->get_selection());
-                    auto lf = lss.find(cl);
-                    format = lf->get_format();
-                    name = intern_string::lookup(args[lpc]);
                 }
+                tc->set_needs_update();
+                tc->reload_data();
+            } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
+                const auto& lss = lnav_data.ld_log_source;
 
-                if (format->hide_field(name, hide)) {
-                    found_fields.push_back(args[lpc]);
-                    if (hide) {
-                        if (lnav_data.ld_rl_view != nullptr) {
-                            lnav_data.ld_rl_view->set_alt_value(
-                                HELP_MSG_1(x,
-                                           "to quickly show hidden "
-                                           "fields"));
+                for (int lpc = 1; lpc < (int) args.size(); lpc++) {
+                    intern_string_t name;
+                    std::shared_ptr<log_format> format;
+                    size_t dot;
+
+                    if ((dot = args[lpc].find('.')) != std::string::npos) {
+                        const intern_string_t format_name
+                            = intern_string::lookup(args[lpc].c_str(), dot);
+
+                        format
+                            = log_format::find_root_format(format_name.get());
+                        if (!format) {
+                            return ec.make_error("unknown format -- {}",
+                                                 format_name.to_string());
                         }
+                        name = intern_string::lookup(
+                            &(args[lpc].c_str()[dot + 1]),
+                            args[lpc].length() - dot - 1);
+                    } else if (tc->get_inner_height() == 0) {
+                        return ec.make_error("no log messages to hide");
+                    } else {
+                        auto cl = lss.at(tc->get_selection());
+                        auto lf = lss.find(cl);
+                        format = lf->get_format();
+                        name = intern_string::lookup(args[lpc]);
                     }
-                    tc->set_needs_update();
-                } else {
-                    missing_fields.push_back(args[lpc]);
+
+                    if (format->hide_field(name, hide)) {
+                        found_fields.push_back(args[lpc]);
+                        if (hide) {
+                            if (lnav_data.ld_rl_view != nullptr) {
+                                lnav_data.ld_rl_view->set_alt_value(
+                                    HELP_MSG_1(x,
+                                               "to quickly show hidden "
+                                               "fields"));
+                            }
+                        }
+                        tc->set_needs_update();
+                    } else {
+                        missing_fields.push_back(args[lpc]);
+                    }
                 }
             }
-
             if (missing_fields.empty()) {
                 auto visibility = hide ? "hiding" : "showing";
                 retval = fmt::format(FMT_STRING("info: {} field(s) -- {}"),

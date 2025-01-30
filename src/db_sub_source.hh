@@ -117,6 +117,8 @@ public:
 
     void update_time_column(const string_fragment& sf);
 
+    void reset_user_state();
+
     struct header_meta {
         explicit header_meta(std::string name) : hm_name(std::move(name)) {}
 
@@ -133,6 +135,7 @@ public:
         std::string hm_name;
         int hm_column_type{SQLITE3_TEXT};
         unsigned int hm_sub_type{0};
+        bool hm_hidden{false};
         std::optional<bool> hm_graphable;
         size_t hm_column_size{0};
         text_align_t hm_align{text_align_t::start};

@@ -3110,6 +3110,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         .set_reload_config_delegate(sel_reload_delegate)
         .set_sub_source(&lnav_data.ld_hist_source2);
     lnav_data.ld_views[LNV_DB].set_sub_source(&lnav_data.ld_db_row_source);
+    lnav_data.ld_views[LNV_DB].add_input_delegate(lnav_data.ld_db_row_source);
     lnav_data.ld_db_overlay.dos_labels = &lnav_data.ld_db_row_source;
     lnav_data.ld_db_example_row_source.dls_max_column_width = 15;
     lnav_data.ld_db_example_overlay.dos_labels
