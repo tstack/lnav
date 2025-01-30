@@ -51,7 +51,7 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) \\^\\^\\^ \\d+ similar messages? omitted \\^\\^\\^$"
             },
             "spring1": {
-                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+?)\\s*\\]\\s+\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
+                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+?)\\s*\\]\\s+(?:\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+)?(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
             },
             "hdfs": {
                 "pattern": "(?<timestamp>\\d{6} \\d{6}) (?<thread>\\d+) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
@@ -216,6 +216,9 @@
             },
             {
                 "line": "2025-01-24T07:00:30,139 INFO  [background-preinit       ] [Version                  ] - HV000001: Hibernate Validator 8.0.1.Final"
+            },
+            {
+                "line": "2025-01-23T03:42:36.681-0800  INFO 125873 --- [myapp] [           main] o.s.b.d.f.logexample.MyApplication       : Starting MyApplication using Java 17.0.14 with PID 125873 (/opt/apps/myapp.jar started by myuser in /opt/apps/)"
             }
         ]
     }
