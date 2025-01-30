@@ -34,6 +34,8 @@
 
 #include "cell_container.hh"
 
+#include <zlib.h>
+
 namespace lnav {
 
 static constexpr auto DEFAULT_CHUNK_SIZE = size_t{32 * 1024};
@@ -45,15 +47,48 @@ combine_type_value(uint8_t type, uint8_t subvalue)
     return type | subvalue << 2U;
 }
 
-cell_chunk::cell_chunk(size_t capacity)
-    : cc_data(std::make_unique<unsigned char[]>(capacity)),
-      cc_capacity(capacity)
+cell_chunk::cell_chunk(cell_container* parent,
+                       std::unique_ptr<unsigned char[]> data,
+                       size_t capacity)
+    : cc_parent(parent), cc_data(std::move(data)), cc_capacity(capacity)
 {
 }
 
+void
+cell_chunk::reset()
+{
+    this->cc_next.reset();
+    this->cc_size = 0;
+    if (this->cc_data == nullptr) {
+        this->cc_data = std::make_unique<unsigned char[]>(this->cc_capacity);
+    }
+    this->cc_compressed.reset();
+}
+
+void
+cell_chunk::load() const
+{
+    if (this->cc_data != nullptr) {
+        return;
+    }
+
+    this->cc_data = std::make_unique<unsigned char[]>(this->cc_capacity);
+    auto cap = this->cc_capacity;
+    auto rc = uncompress(this->cc_data.get(),
+                         &cap,
+                         this->cc_compressed.get(),
+                         this->cc_compressed_size);
+    ensure(rc == Z_OK);
+}
+
 cell_container::cell_container()
-    : cc_first(std::make_unique<cell_chunk>(DEFAULT_CHUNK_SIZE)),
-      cc_last(cc_first.get())
+    : cc_first(std::make_unique<cell_chunk>(
+          this,
+          std::make_unique<unsigned char[]>(DEFAULT_CHUNK_SIZE),
+          DEFAULT_CHUNK_SIZE)),
+      cc_last(cc_first.get()),
+      cc_compress_buffer(auto_buffer::alloc(compressBound(DEFAULT_CHUNK_SIZE))),
+      cc_chunk_cache({})
 {
     // log_debug("cell container %p  chunk %p", this, this->cc_last);
 }
@@ -62,15 +97,60 @@ unsigned char*
 cell_container::alloc(size_t amount)
 {
     if (this->cc_last->available() < amount) {
+        auto last = this->cc_last;
+
+        auto buflen = compressBound(last->cc_size);
+        if (this->cc_compress_buffer.capacity() < buflen) {
+            this->cc_compress_buffer.expand_to(buflen);
+        }
+
+        auto rc = compress2(this->cc_compress_buffer.u_in(),
+                            &buflen,
+                            last->cc_data.get(),
+                            last->cc_size,
+                            2);
+        require(rc == Z_OK);
+        this->cc_compress_buffer.resize(buflen);
+        last->cc_compressed = this->cc_compress_buffer.to_unique();
+        last->cc_compressed_size = buflen;
+
         auto chunk_size = std::max(amount, DEFAULT_CHUNK_SIZE);
-        this->cc_last->cc_next = std::make_unique<cell_chunk>(chunk_size);
-        this->cc_last = this->cc_last->cc_next.get();
+        if (chunk_size > last->cc_capacity) {
+            last->cc_data = std::make_unique<unsigned char[]>(chunk_size);
+        }
+        last->cc_next = std::make_unique<cell_chunk>(
+            this, std::move(last->cc_data), chunk_size);
+        this->cc_last = last->cc_next.get();
         // log_debug("allocating chunk with %lu %p", chunk_size, this->cc_last);
 
         ensure(this->cc_last->cc_capacity >= chunk_size);
     }
 
     return this->cc_last->alloc(amount);
+}
+
+void
+cell_container::load_chunk_into_cache(const cell_chunk* cc)
+{
+    if (cc->cc_data != nullptr) {
+        return;
+    }
+
+    if (this->cc_chunk_cache[2] != nullptr) {
+        this->cc_chunk_cache[2]->evict();
+    }
+    this->cc_chunk_cache[2] = this->cc_chunk_cache[1];
+    this->cc_chunk_cache[1] = this->cc_chunk_cache[0];
+    this->cc_chunk_cache[0] = cc;
+    cc->load();
+}
+
+void
+cell_container::reset()
+{
+    this->cc_last = this->cc_first.get();
+    this->cc_first->reset();
+    this->cc_chunk_cache = {};
 }
 
 void
@@ -171,6 +251,7 @@ cell_container::cursor::sync() const
     auto next_offset = this->c_offset;
 
     if (next_offset < cc->cc_size) {
+        this->c_chunk->cc_parent->load_chunk_into_cache(cc);
         return *this;
     }
 
@@ -179,6 +260,7 @@ cell_container::cursor::sync() const
         return std::nullopt;
     }
 
+    this->c_chunk->cc_parent->load_chunk_into_cache(cc);
     return cursor{cc, size_t{0}};
 }
 
@@ -209,6 +291,9 @@ cell_container::cursor::next() const
     auto next_offset = this->c_offset + advance;
     if (this->c_offset + advance >= this->c_chunk->cc_size) {
         cc = this->c_chunk->cc_next.get();
+        if (cc != nullptr) {
+            this->c_chunk->cc_parent->load_chunk_into_cache(cc);
+        }
         next_offset = 0;
 #if 0
         log_debug("advanced past current chunk %p, going to %p %lu",
@@ -233,6 +318,7 @@ cell_container::cursor::next() const
         next_offset = 0;
     }
 
+    this->c_chunk->cc_parent->load_chunk_into_cache(cc);
     return cursor{cc, next_offset};
 }
 

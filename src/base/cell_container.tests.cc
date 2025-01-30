@@ -76,15 +76,17 @@ TEST_CASE("cell_container-basic")
         auto str3 = string_fragment::from_const("bye");
 
         auto cont = lnav::cell_container();
-        auto cell1 = cont.end_cursor();
+        auto start_cursor = cont.end_cursor();
         cont.push_text_cell(str1);
+        cont.push_text_cell(str2);
+        cont.push_text_cell(str3);
 
+        auto cell1 = start_cursor.sync().value();
         CHECK(cell1.get_type() == lnav::cell_type::CT_TEXT);
         auto t = cell1.get_text();
         printf("1 wow %.*s\n", t.length(), t.data());
         CHECK(t == str1);
 
-        cont.push_text_cell(str2);
         auto cell2 = cell1.next();
         CHECK(cell2.has_value());
         CHECK(cell2->get_type() == lnav::cell_type::CT_TEXT);
@@ -92,7 +94,6 @@ TEST_CASE("cell_container-basic")
         printf("2 wow %.*s\n", t2.length(), t2.data());
         CHECK(cell2->get_text() == str2);
 
-        cont.push_text_cell(str3);
         auto cell3 = cell2->next();
         CHECK(cell3.has_value());
         CHECK(cell3->get_type() == lnav::cell_type::CT_TEXT);
@@ -153,9 +154,10 @@ TEST_CASE("cell_container-basic")
         auto str1 = string_fragment::from_str(short_str1);
 
         auto cont = lnav::cell_container();
-        auto cell1 = cont.end_cursor();
+        auto start_cursor = cont.end_cursor();
         cont.push_text_cell(str1);
 
+        auto cell1 = start_cursor.sync().value();
         CHECK(cell1.get_type() == lnav::cell_type::CT_TEXT);
         auto t = cell1.get_text();
         printf("1 wow %.*s\n", t.length(), t.data());

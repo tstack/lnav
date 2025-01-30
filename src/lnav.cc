@@ -2523,6 +2523,28 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
         log_info("performing cleanup");
 
+        {
+            auto& dls = lnav_data.ld_db_row_source;
+            size_t memory_usage = 0, total_size = 0, cached_chunks = 0;
+            for (auto cc = dls.dls_cell_container.cc_first.get(); cc != nullptr;
+                 cc = cc->cc_next.get())
+            {
+                total_size += cc->cc_capacity;
+                if (cc->cc_data) {
+                    cached_chunks += 1;
+                    memory_usage += cc->cc_capacity;
+                } else {
+                    memory_usage += cc->cc_compressed_size;
+                }
+            }
+            log_debug(
+                "cell memory footprint: total=%zu; actual=%zu; "
+                "cached-chunks=%zu",
+                total_size,
+                memory_usage,
+                cached_chunks);
+        }
+
         if (lnav_data.ld_spectro_source != nullptr) {
             delete std::exchange(lnav_data.ld_spectro_source->ss_value_source,
                                  nullptr);

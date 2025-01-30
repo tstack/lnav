@@ -178,6 +178,9 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
                                      int row,
                                      string_attrs_t& sa)
 {
+    static const auto NUM_ATTR = VC_ROLE.value(role_t::VCR_NUMBER);
+    static const auto VLINE_ATTR = VC_GRAPHIC.value(NCACS_VLINE);
+
     line_range lr(0, 0);
     const line_range lr2(0, -1);
 
@@ -205,11 +208,11 @@ db_label_source::text_attrs_for_line(textview_curses& tc,
 
         if (hm.is_graphable()) {
             lr.lr_end += this->dls_cell_width[lpc];
-            sa.emplace_back(lr, VC_ROLE.value(role_t::VCR_NUMBER));
+            sa.emplace_back(lr, NUM_ATTR);
         }
         lr.lr_start += this->dls_cell_width[lpc];
         lr.lr_end = lr.lr_start + 1;
-        sa.emplace_back(lr, VC_GRAPHIC.value(NCACS_VLINE));
+        sa.emplace_back(lr, VLINE_ATTR);
         lr.lr_start += 1;
     }
 
@@ -805,6 +808,8 @@ db_label_source::get_row_as_string(vis_line_t row)
 
     if (this->dls_headers.size() == 1) {
         return this->dls_row_cursors[row]
+            .sync()
+            .value()
             .to_string_fragment(this->dls_cell_allocator)
             .to_string();
     }

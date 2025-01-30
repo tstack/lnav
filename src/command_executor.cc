@@ -483,8 +483,26 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     }
 
     if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
-        ec.ec_label_source_stack.back()->dls_query_end
-            = std::chrono::steady_clock::now();
+        auto& dls = *ec.ec_label_source_stack.back();
+        dls.dls_query_end = std::chrono::steady_clock::now();
+
+        size_t memory_usage = 0, total_size = 0, cached_chunks = 0;
+        for (auto cc = dls.dls_cell_container.cc_first.get(); cc != nullptr;
+             cc = cc->cc_next.get())
+        {
+            total_size += cc->cc_capacity;
+            if (cc->cc_data) {
+                cached_chunks += 1;
+                memory_usage += cc->cc_capacity;
+            } else {
+                memory_usage += cc->cc_compressed_size;
+            }
+        }
+        log_debug(
+            "cell memory footprint: total=%zu; actual=%zu; cached-chunks=%zu",
+            total_size,
+            memory_usage,
+            cached_chunks);
     }
     gettimeofday(&end_tv, nullptr);
     if (retcode == SQLITE_DONE) {

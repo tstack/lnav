@@ -30,10 +30,12 @@
 #ifndef lnav_cell_container_hh
 #define lnav_cell_container_hh
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <optional>
 
+#include "auto_mem.hh"
 #include "intern_string.hh"
 #include "lnav_log.hh"
 
@@ -48,8 +50,12 @@ constexpr uint8_t CT_TEXT = 3;
 
 }  // namespace cell_type
 
+struct cell_container;
+
 struct cell_chunk {
-    explicit cell_chunk(size_t capacity);
+    cell_chunk(cell_container* parent,
+               std::unique_ptr<unsigned char[]> data,
+               size_t capacity);
 
     size_t available() const { return this->cc_capacity - this->cc_size; }
 
@@ -61,16 +67,19 @@ struct cell_chunk {
         return retval;
     }
 
-    void reset()
-    {
-        this->cc_next.reset();
-        this->cc_size = 0;
-    }
+    void reset();
 
+    void load() const;
+
+    void evict() const { this->cc_data.reset(); }
+
+    cell_container* cc_parent;
     std::unique_ptr<cell_chunk> cc_next;
-    std::unique_ptr<unsigned char[]> cc_data;
+    mutable std::unique_ptr<unsigned char[]> cc_data;
     const size_t cc_capacity;
     size_t cc_size{0};
+    std::unique_ptr<const unsigned char[]> cc_compressed;
+    size_t cc_compressed_size{0};
 };
 
 struct cell_container {
@@ -148,14 +157,16 @@ struct cell_container {
 
     unsigned char* alloc(size_t amount);
 
-    void reset()
-    {
-        this->cc_last = this->cc_first.get();
-        this->cc_first->reset();
-    }
+    void load_chunk_into_cache(const cell_chunk* cc);
+
+    void reset();
 
     std::unique_ptr<cell_chunk> cc_first;
     cell_chunk* cc_last;
+    auto_buffer cc_compress_buffer;
+
+    static constexpr size_t CHUNK_CACHE_SIZE = 3;
+    std::array<const cell_chunk*, CHUNK_CACHE_SIZE> cc_chunk_cache;
 };
 
 }  // namespace lnav

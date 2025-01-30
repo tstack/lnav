@@ -72,7 +72,7 @@ TEST_CASE("humanize::network::path")
         CHECK(!rp.p_locality.l_service.has_value());
         CHECK(rp.p_path == "/var/log");
 
-        CHECK(fmt::format("{}", rp.p_locality)
+        CHECK(fmt::format(FMT_STRING("{}"), rp.p_locality)
               == "dean@[fe80::184f:c67:baf1:fe02%en0]");
     }
 
