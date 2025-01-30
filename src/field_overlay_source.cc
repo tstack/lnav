@@ -325,7 +325,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         auto* curr_elf = dynamic_cast<external_log_format*>(curr_format);
         const auto format_name = curr_format->get_name().to_string();
         attr_line_t al;
-        std::string value_str = lv.to_string();
+        auto value_str = lv.to_string();
 
         if (curr_format != last_format) {
             this->fos_lines.emplace_back(" Known message fields for table "
@@ -376,7 +376,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             hl_range.lr_end = al.get_string().length();
             al.pad_to(prefix_len + this->fos_known_key_size);
 
-            this->fos_row_to_field_meta.emplace(this->fos_lines.size(), meta);
+            this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                                row_info{meta, value_str});
         } else {
             auto jget_str = lnav::sql::mprintf("jget(%s, '/%q')",
                                                meta.lvm_struct_name.get(),
@@ -384,6 +385,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             hl_range.lr_start = al.get_string().length();
             al.append(jget_str.in());
             hl_range.lr_end = al.get_string().length();
+
+            this->fos_row_to_field_meta.emplace(
+                this->fos_lines.size(), row_info{std::nullopt, value_str});
         }
         readline_sqlite_highlighter_int(al, std::nullopt, hl_range);
 
@@ -424,6 +428,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(extra_pair.second));
+        this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                            row_info{
+                                                std::nullopt,
+                                                extra_pair.second,
+                                            });
         this->fos_lines.emplace_back(key_line);
         this->add_key_line_attrs(key_size - 3);
     }
@@ -439,6 +448,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             readline_sqlite_highlighter(key_line, std::nullopt);
             auto key_size = key_line.length();
             key_line.append(" = ").append(scrub_ws(jpairs[lpc].wt_value));
+            this->fos_row_to_field_meta.emplace(
+                this->fos_lines.size(),
+                row_info{std::nullopt, jpairs[lpc].wt_value});
             this->fos_lines.emplace_back(key_line);
             this->add_key_line_attrs(key_size - 3);
         }
@@ -459,6 +471,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         readline_sqlite_highlighter(key_line, std::nullopt);
         auto key_size = key_line.length();
         key_line.append(" = ").append(scrub_ws(xml_pair.second));
+        this->fos_row_to_field_meta.emplace(
+            this->fos_lines.size(), row_info{std::nullopt, xml_pair.second});
         this->fos_lines.emplace_back(key_line);
         this->add_key_line_attrs(key_size - 3);
     }
@@ -493,6 +507,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             string_attr(line_range(3, 3 + name.length()),
                         VC_STYLE.value(vc.attrs_for_ident(name.to_string()))));
 
+        this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                            row_info{std::nullopt, val});
         this->fos_lines.emplace_back(al);
         this->add_key_line_attrs(
             this->fos_unknown_key_size,
@@ -728,6 +744,8 @@ field_overlay_source::list_header_for_overlay(const listview_curses& lv,
         retval.append("  ")
             .append("SPC"_hotkey)
             .append(": hide/show field  ")
+            .append("c"_hotkey)
+            .append(": copy field value  ")
             .append("Esc"_hotkey)
             .append(": exit this panel");
     } else {

@@ -217,6 +217,17 @@ to use for these types of files using the
   time" is the original textual timestamp.  The "received time" is the time
   of an earlier message that is larger than this log message's time.
 
+To get more details about a log message, move to the starting line of the
+message and press :kbd:`p` to open an overlay with information about the
+timestamp and individual fields.  You then can focus into the overlay panel
+by pressing :kbd:`Ctrl` + :kbd:`]` to operate on individual fields in the
+message.  Inside the overlay, the following hotkeys are supported:
+
+* :kbd:`SPC` to toggle field visibility
+* :kbd:`c` to copy the value of a field
+* :kbd:`#` to open the SQL prompt with a query to create a chart of this
+  field's values over time.
+
 The source file name for each message can be displayed by scrolling left.
 Scrolling left once will show the shortened version of the file name relative
 to the other files that are loaded.  In the shortened version, the unique

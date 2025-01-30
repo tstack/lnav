@@ -237,7 +237,8 @@ class logfile_sub_source
     , public text_accel_source
     , public list_input_delegate
     , public text_anchors
-    , public text_delegate {
+    , public text_delegate
+    , public text_detail_provider {
 public:
     const static bookmark_type_t BM_FILES;
 
@@ -778,6 +779,8 @@ public:
     std::optional<std::string> anchor_for_row(vis_line_t vl);
 
     std::unordered_set<std::string> get_anchors();
+
+    std::optional<json_string> text_row_details(const textview_curses& tc);
 
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }

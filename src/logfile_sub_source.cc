@@ -1418,6 +1418,39 @@ logfile_sub_source::text_filters_changed()
     }
 }
 
+std::optional<json_string>
+logfile_sub_source::text_row_details(const textview_curses& tc)
+{
+    if (this->lss_index.empty()) {
+        log_trace("logfile_sub_source::text_row_details empty");
+        return std::nullopt;
+    }
+
+    auto ov_sel = tc.get_overlay_selection();
+    if (ov_sel.has_value()) {
+        auto* fos
+            = dynamic_cast<field_overlay_source*>(tc.get_overlay_source());
+        auto iter = fos->fos_row_to_field_meta.find(ov_sel.value());
+        if (iter != fos->fos_row_to_field_meta.end()) {
+            auto find_res = this->find_line_with_file(tc.get_top());
+            if (find_res) {
+                yajlpp_gen gen;
+
+                {
+                    yajlpp_map root(gen);
+
+                    root.gen("value");
+                    root.gen(iter->second.ri_value);
+                }
+
+                return json_string(gen);
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 bool
 logfile_sub_source::list_input_handle_key(listview_curses& lv,
                                           const ncinput& ch)
@@ -1429,15 +1462,17 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
                 auto* fos = dynamic_cast<field_overlay_source*>(
                     lv.get_overlay_source());
                 auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
-                if (iter != fos->fos_row_to_field_meta.end()) {
+                if (iter != fos->fos_row_to_field_meta.end() &&
+                    iter->second.ri_meta) {
                     auto find_res = this->find_line_with_file(lv.get_top());
                     if (find_res) {
                         auto file_and_line = find_res.value();
                         auto* format = file_and_line.first->get_format_ptr();
                         auto fstates = format->get_field_states();
-                        auto state_iter = fstates.find(iter->second.lvm_name);
+                        auto state_iter
+                            = fstates.find(iter->second.ri_meta->lvm_name);
                         if (state_iter != fstates.end()) {
-                            format->hide_field(iter->second.lvm_name,
+                            format->hide_field(iter->second.ri_meta->lvm_name,
                                                !state_iter->second.is_hidden());
                             lv.set_needs_update();
                         }
@@ -1453,8 +1488,9 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
                 auto* fos = dynamic_cast<field_overlay_source*>(
                     lv.get_overlay_source());
                 auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
-                if (iter != fos->fos_row_to_field_meta.end()) {
-                    const auto& meta = iter->second;
+                if (iter != fos->fos_row_to_field_meta.end() &&
+                    iter->second.ri_meta) {
+                    const auto& meta = iter->second.ri_meta.value();
                     std::string cmd;
 
                     switch (meta.to_chart_type()) {

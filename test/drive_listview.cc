@@ -68,7 +68,7 @@ public:
                 mixed_style.ta_bg_color = rgb_color{0, 255, 0};
                 mixed_style.ta_bg_color = palette_color{COLOR_GREEN};
                 if (mixed_style.ta_bg_color.cu_value.is<palette_color>()) {
-                    log_debug("wtf!");
+                    log_debug("is palette_color ?");
                 }
                 value_out.al_string += "World!";
                 value_out.with_attr(

@@ -51,6 +51,9 @@ Interface changes:
   with a unit, like "KB", "MB", "GB", etc...
 * When switching to the pretty view, the focused line should be
   in the same position in the text as in the source view.
+* In the LOG view, you can now copy the value of a field by
+  pressing `c` when focused on a line in the parser details
+  overlay (activated by pressing `p`).
 * In the DB View, if there is a column named `log_level`, it
   will be used as the level for the row and the hotkeys for
   jumping to the next/previous error/warning will work.

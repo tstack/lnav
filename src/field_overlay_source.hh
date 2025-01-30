@@ -100,7 +100,13 @@ public:
     int fos_unknown_key_size{0};
     std::vector<attr_line_t> fos_lines;
     std::vector<attr_line_t> fos_meta_lines;
-    std::map<size_t, logline_value_meta> fos_row_to_field_meta;
+
+    struct row_info {
+        std::optional<logline_value_meta> ri_meta;
+        std::string ri_value;
+    };
+
+    std::map<size_t, row_info> fos_row_to_field_meta;
 };
 
 #endif  // LNAV_FIELD_OVERLAY_SOURCE_H
