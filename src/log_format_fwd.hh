@@ -134,13 +134,13 @@ struct scan_batch_context {
  */
 class logline {
 public:
-    static string_attr_type<void> L_PREFIX;
-    static string_attr_type<void> L_TIMESTAMP;
-    static string_attr_type<std::shared_ptr<logfile>> L_FILE;
-    static string_attr_type<bookmark_metadata*> L_PARTITION;
-    static string_attr_type<void> L_MODULE;
-    static string_attr_type<void> L_OPID;
-    static string_attr_type<bookmark_metadata*> L_META;
+    static const string_attr_type<void> L_PREFIX;
+    static const string_attr_type<void> L_TIMESTAMP;
+    static const string_attr_type<std::shared_ptr<logfile>> L_FILE;
+    static const string_attr_type<bookmark_metadata*> L_PARTITION;
+    static const string_attr_type<void> L_MODULE;
+    static const string_attr_type<void> L_OPID;
+    static const string_attr_type<bookmark_metadata*> L_META;
 
     /**
      * Construct a logline object with the given values.

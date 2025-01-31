@@ -984,18 +984,17 @@ sql_keyword_re()
     return retval;
 }
 
-string_attr_type<void> SQL_COMMAND_ATTR("sql_command");
-string_attr_type<void> SQL_KEYWORD_ATTR("sql_keyword");
-string_attr_type<void> SQL_IDENTIFIER_ATTR("sql_ident");
-string_attr_type<void> SQL_FUNCTION_ATTR("sql_func");
-string_attr_type<void> SQL_STRING_ATTR("sql_string");
-string_attr_type<void> SQL_NUMBER_ATTR("sql_number");
-string_attr_type<void> SQL_UNTERMINATED_STRING_ATTR("sql_unstring");
-string_attr_type<void> SQL_OPERATOR_ATTR("sql_oper");
-string_attr_type<void> SQL_PAREN_ATTR("sql_paren");
-string_attr_type<void> SQL_COMMA_ATTR("sql_comma");
-string_attr_type<void> SQL_GARBAGE_ATTR("sql_garbage");
-string_attr_type<void> SQL_COMMENT_ATTR("sql_comment");
+constexpr string_attr_type<void> SQL_COMMAND_ATTR("sql_command");
+constexpr string_attr_type<void> SQL_KEYWORD_ATTR("sql_keyword");
+constexpr string_attr_type<void> SQL_IDENTIFIER_ATTR("sql_ident");
+constexpr string_attr_type<void> SQL_FUNCTION_ATTR("sql_func");
+constexpr string_attr_type<void> SQL_STRING_ATTR("sql_string");
+constexpr string_attr_type<void> SQL_NUMBER_ATTR("sql_number");
+constexpr string_attr_type<void> SQL_OPERATOR_ATTR("sql_oper");
+constexpr string_attr_type<void> SQL_PAREN_ATTR("sql_paren");
+constexpr string_attr_type<void> SQL_COMMA_ATTR("sql_comma");
+constexpr string_attr_type<void> SQL_GARBAGE_ATTR("sql_garbage");
+constexpr string_attr_type<void> SQL_COMMENT_ATTR("sql_comment");
 
 void
 annotate_sql_statement(attr_line_t& al)
@@ -1004,7 +1003,7 @@ annotate_sql_statement(attr_line_t& al)
 
     static const struct {
         lnav::pcre2pp::code re;
-        string_attr_type<void>* type;
+        const string_attr_type<void>* type;
     } PATTERNS[] = {
         {
             lnav::pcre2pp::code::from_const(R"(\A,)"),
@@ -1355,20 +1354,20 @@ prql_transform_re()
     return retval;
 }
 
-string_attr_type<void> PRQL_STAGE_ATTR("prql_stage");
-string_attr_type<void> PRQL_TRANSFORM_ATTR("prql_transform");
-string_attr_type<void> PRQL_KEYWORD_ATTR("prql_keyword");
-string_attr_type<void> PRQL_IDENTIFIER_ATTR("prql_ident");
-string_attr_type<void> PRQL_FQID_ATTR("prql_fqid");
-string_attr_type<void> PRQL_DOT_ATTR("prql_dot");
-string_attr_type<void> PRQL_PIPE_ATTR("prql_pipe");
-string_attr_type<void> PRQL_STRING_ATTR("prql_string");
-string_attr_type<void> PRQL_NUMBER_ATTR("prql_number");
-string_attr_type<void> PRQL_OPERATOR_ATTR("prql_oper");
-string_attr_type<void> PRQL_PAREN_ATTR("prql_paren");
-string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR("prql_unterminated_paren");
-string_attr_type<void> PRQL_GARBAGE_ATTR("prql_garbage");
-string_attr_type<void> PRQL_COMMENT_ATTR("prql_comment");
+constexpr string_attr_type<void> PRQL_STAGE_ATTR("prql_stage");
+constexpr string_attr_type<void> PRQL_TRANSFORM_ATTR("prql_transform");
+constexpr string_attr_type<void> PRQL_KEYWORD_ATTR("prql_keyword");
+constexpr string_attr_type<void> PRQL_IDENTIFIER_ATTR("prql_ident");
+constexpr string_attr_type<void> PRQL_FQID_ATTR("prql_fqid");
+constexpr string_attr_type<void> PRQL_DOT_ATTR("prql_dot");
+constexpr string_attr_type<void> PRQL_PIPE_ATTR("prql_pipe");
+constexpr string_attr_type<void> PRQL_STRING_ATTR("prql_string");
+constexpr string_attr_type<void> PRQL_NUMBER_ATTR("prql_number");
+constexpr string_attr_type<void> PRQL_OPERATOR_ATTR("prql_oper");
+constexpr string_attr_type<void> PRQL_PAREN_ATTR("prql_paren");
+constexpr string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR("prql_unterminated_paren");
+constexpr string_attr_type<void> PRQL_GARBAGE_ATTR("prql_garbage");
+constexpr string_attr_type<void> PRQL_COMMENT_ATTR("prql_comment");
 
 void
 annotate_prql_statement(attr_line_t& al)
@@ -1378,7 +1377,7 @@ annotate_prql_statement(attr_line_t& al)
 
     static const struct {
         lnav::pcre2pp::code re;
-        string_attr_type<void>* type;
+        const string_attr_type<void>* type;
     } PATTERNS[] = {
         {
             lnav::pcre2pp::code::from_const(R"(\A(?:\[|\]|\{|\}|\(|\)))"),

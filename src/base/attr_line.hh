@@ -32,10 +32,10 @@
 #ifndef attr_line_hh
 #define attr_line_hh
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
-#include <cstdint>
 
 #include <limits.h>
 
@@ -174,12 +174,12 @@ rfind_string_attr_if(const string_attrs_t& sa, ssize_t near, T predicate)
     return nearest;
 }
 
-struct line_range find_string_attr_range(const string_attrs_t& sa,
-                                         string_attr_type_base* type);
+line_range find_string_attr_range(const string_attrs_t& sa,
+                                  const string_attr_type_base* type);
 
-void remove_string_attr(string_attrs_t& sa, const struct line_range& lr);
+void remove_string_attr(string_attrs_t& sa, const line_range& lr);
 
-void remove_string_attr(string_attrs_t& sa, string_attr_type_base* type);
+void remove_string_attr(string_attrs_t& sa, const string_attr_type_base* type);
 
 void shift_string_attrs(string_attrs_t& sa, int32_t start, int32_t amount);
 

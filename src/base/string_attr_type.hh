@@ -312,7 +312,8 @@ using string_attr_value = mapbox::util::variant<int64_t,
 
 class string_attr_type_base {
 public:
-    explicit string_attr_type_base(const char* name) noexcept : sat_name(name)
+    explicit constexpr string_attr_type_base(const char* name) noexcept
+        : sat_name(name)
     {
     }
 
@@ -327,7 +328,7 @@ class string_attr_type : public string_attr_type_base {
 public:
     using value_type = T;
 
-    explicit string_attr_type(const char* name) noexcept
+    explicit constexpr string_attr_type(const char* name) noexcept
         : string_attr_type_base(name)
     {
     }
@@ -335,7 +336,7 @@ public:
     template<typename U = T>
     std::enable_if_t<std::is_void_v<U>, string_attr_pair> value() const
     {
-        return std::make_pair(this, string_attr_value{});
+        return std::make_pair(this, string_attr_value{mapbox::util::no_init{}});
     }
 
     template<std::size_t N>
@@ -358,26 +359,26 @@ public:
     }
 };
 
-extern string_attr_type<void> SA_ORIGINAL_LINE;
-extern string_attr_type<void> SA_BODY;
-extern string_attr_type<void> SA_HIDDEN;
-extern string_attr_type<intern_string_t> SA_FORMAT;
-extern string_attr_type<void> SA_REMOVED;
-extern string_attr_type<void> SA_PREFORMATTED;
-extern string_attr_type<std::string> SA_INVALID;
-extern string_attr_type<std::string> SA_ERROR;
-extern string_attr_type<int64_t> SA_LEVEL;
-extern string_attr_type<int64_t> SA_ORIGIN_OFFSET;
+extern const string_attr_type<void> SA_ORIGINAL_LINE;
+extern const string_attr_type<void> SA_BODY;
+extern const string_attr_type<void> SA_HIDDEN;
+extern const string_attr_type<intern_string_t> SA_FORMAT;
+extern const string_attr_type<void> SA_REMOVED;
+extern const string_attr_type<void> SA_PREFORMATTED;
+extern const string_attr_type<std::string> SA_INVALID;
+extern const string_attr_type<std::string> SA_ERROR;
+extern const string_attr_type<int64_t> SA_LEVEL;
+extern const string_attr_type<int64_t> SA_ORIGIN_OFFSET;
 
-extern string_attr_type<role_t> VC_ROLE;
-extern string_attr_type<role_t> VC_ROLE_FG;
-extern string_attr_type<text_attrs> VC_STYLE;
-extern string_attr_type<const char*> VC_GRAPHIC;
-extern string_attr_type<block_elem_t> VC_BLOCK_ELEM;
-extern string_attr_type<styling::color_unit> VC_FOREGROUND;
-extern string_attr_type<styling::color_unit> VC_BACKGROUND;
-extern string_attr_type<std::string> VC_HYPERLINK;
-extern string_attr_type<ui_icon_t> VC_ICON;
+extern const string_attr_type<role_t> VC_ROLE;
+extern const string_attr_type<role_t> VC_ROLE_FG;
+extern const string_attr_type<text_attrs> VC_STYLE;
+extern const string_attr_type<const char*> VC_GRAPHIC;
+extern const string_attr_type<block_elem_t> VC_BLOCK_ELEM;
+extern const string_attr_type<styling::color_unit> VC_FOREGROUND;
+extern const string_attr_type<styling::color_unit> VC_BACKGROUND;
+extern const string_attr_type<std::string> VC_HYPERLINK;
+extern const string_attr_type<ui_icon_t> VC_ICON;
 
 namespace lnav {
 

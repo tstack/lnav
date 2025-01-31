@@ -820,7 +820,7 @@ shift_string_attrs(string_attrs_t& sa, const line_range& cover, int32_t amount)
 }
 
 struct line_range
-find_string_attr_range(const string_attrs_t& sa, string_attr_type_base* type)
+find_string_attr_range(const string_attrs_t& sa, const string_attr_type_base* type)
 {
     auto iter = find_string_attr(sa, type);
 
@@ -842,7 +842,7 @@ remove_string_attr(string_attrs_t& sa, const line_range& lr)
 }
 
 void
-remove_string_attr(string_attrs_t& sa, string_attr_type_base* type)
+remove_string_attr(string_attrs_t& sa, const string_attr_type_base* type)
 {
     for (auto iter = sa.begin(); iter != sa.end();) {
         if (iter->sa_type == type) {

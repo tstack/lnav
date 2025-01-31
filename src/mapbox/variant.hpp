@@ -554,7 +554,7 @@ public:
         new (&data) first_type();
     }
 
-    VARIANT_INLINE variant(no_init) noexcept
+    VARIANT_INLINE constexpr variant(no_init) noexcept
         : type_index(detail::invalid_value) {}
 
     // http://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers

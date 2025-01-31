@@ -687,8 +687,8 @@ db_label_source::text_handle_mouse(
     return true;
 }
 
-static const string_attr_type<std::string> DBA_DETAILS("details");
-static const string_attr_type<std::string> DBA_COLUMN_NAME("column-name");
+static constexpr string_attr_type<std::string> DBA_DETAILS("details");
+static constexpr string_attr_type<std::string> DBA_COLUMN_NAME("column-name");
 
 bool
 db_label_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)

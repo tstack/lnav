@@ -31,23 +31,23 @@
 
 #include "config.h"
 
-string_attr_type<void> SA_ORIGINAL_LINE("original_line");
-string_attr_type<void> SA_BODY("body");
-string_attr_type<void> SA_HIDDEN("hidden");
-string_attr_type<intern_string_t> SA_FORMAT("format");
-string_attr_type<void> SA_REMOVED("removed");
-string_attr_type<void> SA_PREFORMATTED("preformatted");
-string_attr_type<std::string> SA_INVALID("invalid");
-string_attr_type<std::string> SA_ERROR("error");
-string_attr_type<int64_t> SA_LEVEL("level");
-string_attr_type<int64_t> SA_ORIGIN_OFFSET("origin-offset");
+constexpr string_attr_type<void> SA_ORIGINAL_LINE("original_line");
+constexpr string_attr_type<void> SA_BODY("body");
+constexpr string_attr_type<void> SA_HIDDEN("hidden");
+constexpr string_attr_type<intern_string_t> SA_FORMAT("format");
+constexpr string_attr_type<void> SA_REMOVED("removed");
+constexpr string_attr_type<void> SA_PREFORMATTED("preformatted");
+constexpr string_attr_type<std::string> SA_INVALID("invalid");
+constexpr string_attr_type<std::string> SA_ERROR("error");
+constexpr string_attr_type<int64_t> SA_LEVEL("level");
+constexpr string_attr_type<int64_t> SA_ORIGIN_OFFSET("origin-offset");
 
-string_attr_type<role_t> VC_ROLE("role");
-string_attr_type<role_t> VC_ROLE_FG("role-fg");
-string_attr_type<text_attrs> VC_STYLE("style");
-string_attr_type<const char *> VC_GRAPHIC("graphic");
-string_attr_type<block_elem_t> VC_BLOCK_ELEM("block-elem");
-string_attr_type<styling::color_unit> VC_FOREGROUND("foreground");
-string_attr_type<styling::color_unit> VC_BACKGROUND("background");
-string_attr_type<std::string> VC_HYPERLINK("hyperlink");
-string_attr_type<ui_icon_t> VC_ICON("icon");
+constexpr string_attr_type<role_t> VC_ROLE("role");
+constexpr string_attr_type<role_t> VC_ROLE_FG("role-fg");
+constexpr string_attr_type<text_attrs> VC_STYLE("style");
+constexpr string_attr_type<const char *> VC_GRAPHIC("graphic");
+constexpr string_attr_type<block_elem_t> VC_BLOCK_ELEM("block-elem");
+constexpr string_attr_type<styling::color_unit> VC_FOREGROUND("foreground");
+constexpr string_attr_type<styling::color_unit> VC_BACKGROUND("background");
+constexpr string_attr_type<std::string> VC_HYPERLINK("hyperlink");
+constexpr string_attr_type<ui_icon_t> VC_ICON("icon");

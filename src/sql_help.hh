@@ -40,16 +40,16 @@
 #include "base/intern_string.hh"
 #include "help_text.hh"
 
-extern string_attr_type<void> SQL_COMMAND_ATTR;
-extern string_attr_type<void> SQL_KEYWORD_ATTR;
-extern string_attr_type<void> SQL_IDENTIFIER_ATTR;
-extern string_attr_type<void> SQL_FUNCTION_ATTR;
-extern string_attr_type<void> SQL_STRING_ATTR;
-extern string_attr_type<void> SQL_NUMBER_ATTR;
-extern string_attr_type<void> SQL_OPERATOR_ATTR;
-extern string_attr_type<void> SQL_PAREN_ATTR;
-extern string_attr_type<void> SQL_GARBAGE_ATTR;
-extern string_attr_type<void> SQL_COMMENT_ATTR;
+extern const string_attr_type<void> SQL_COMMAND_ATTR;
+extern const string_attr_type<void> SQL_KEYWORD_ATTR;
+extern const string_attr_type<void> SQL_IDENTIFIER_ATTR;
+extern const string_attr_type<void> SQL_FUNCTION_ATTR;
+extern const string_attr_type<void> SQL_STRING_ATTR;
+extern const string_attr_type<void> SQL_NUMBER_ATTR;
+extern const string_attr_type<void> SQL_OPERATOR_ATTR;
+extern const string_attr_type<void> SQL_PAREN_ATTR;
+extern const string_attr_type<void> SQL_GARBAGE_ATTR;
+extern const string_attr_type<void> SQL_COMMENT_ATTR;
 
 void annotate_sql_statement(attr_line_t& al_inout);
 
@@ -62,20 +62,20 @@ std::vector<const help_text*> find_sql_help_for_line(const attr_line_t& al,
 namespace lnav {
 namespace sql {
 
-extern string_attr_type<void> PRQL_STAGE_ATTR;
-extern string_attr_type<void> PRQL_TRANSFORM_ATTR;
-extern string_attr_type<void> PRQL_KEYWORD_ATTR;
-extern string_attr_type<void> PRQL_IDENTIFIER_ATTR;
-extern string_attr_type<void> PRQL_FQID_ATTR;
-extern string_attr_type<void> PRQL_PIPE_ATTR;
-extern string_attr_type<void> PRQL_DOT_ATTR;
-extern string_attr_type<void> PRQL_STRING_ATTR;
-extern string_attr_type<void> PRQL_NUMBER_ATTR;
-extern string_attr_type<void> PRQL_OPERATOR_ATTR;
-extern string_attr_type<void> PRQL_PAREN_ATTR;
-extern string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR;
-extern string_attr_type<void> PRQL_GARBAGE_ATTR;
-extern string_attr_type<void> PRQL_COMMENT_ATTR;
+extern const string_attr_type<void> PRQL_STAGE_ATTR;
+extern const string_attr_type<void> PRQL_TRANSFORM_ATTR;
+extern const string_attr_type<void> PRQL_KEYWORD_ATTR;
+extern const string_attr_type<void> PRQL_IDENTIFIER_ATTR;
+extern const string_attr_type<void> PRQL_FQID_ATTR;
+extern const string_attr_type<void> PRQL_PIPE_ATTR;
+extern const string_attr_type<void> PRQL_DOT_ATTR;
+extern const string_attr_type<void> PRQL_STRING_ATTR;
+extern const string_attr_type<void> PRQL_NUMBER_ATTR;
+extern const string_attr_type<void> PRQL_OPERATOR_ATTR;
+extern const string_attr_type<void> PRQL_PAREN_ATTR;
+extern const string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR;
+extern const string_attr_type<void> PRQL_GARBAGE_ATTR;
+extern const string_attr_type<void> PRQL_COMMENT_ATTR;
 
 bool is_prql(const string_fragment& sf);
 

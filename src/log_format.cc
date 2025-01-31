@@ -62,13 +62,13 @@ using namespace lnav::roles::literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-string_attr_type<void> logline::L_PREFIX("prefix");
-string_attr_type<void> logline::L_TIMESTAMP("timestamp");
-string_attr_type<std::shared_ptr<logfile>> logline::L_FILE("file");
-string_attr_type<bookmark_metadata*> logline::L_PARTITION("partition");
-string_attr_type<void> logline::L_MODULE("module");
-string_attr_type<void> logline::L_OPID("opid");
-string_attr_type<bookmark_metadata*> logline::L_META("meta");
+constexpr string_attr_type<void> logline::L_PREFIX("prefix");
+constexpr string_attr_type<void> logline::L_TIMESTAMP("timestamp");
+constexpr string_attr_type<std::shared_ptr<logfile>> logline::L_FILE("file");
+constexpr string_attr_type<bookmark_metadata*> logline::L_PARTITION("partition");
+constexpr string_attr_type<void> logline::L_MODULE("module");
+constexpr string_attr_type<void> logline::L_OPID("opid");
+constexpr string_attr_type<bookmark_metadata*> logline::L_META("meta");
 
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<std::shared_ptr<external_log_format>>
