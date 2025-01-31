@@ -1,0 +1,21 @@
+[32m#[0m
+[32m# @synopsis: lnav-pop-view[0m
+[32m# @description: Pop the top view on the view stack[0m
+[32m#[0m
+
+;[1m[36mSELECT[0m rowid [1m[36mas[0m row_to_delete, name [1m[36mas[0m last_view_name, [1m[36mCASE[0m name
+   [1m[36mWHEN[0m [35m'db'[0m [1m[36mTHEN[0m $[4mkeymap_def_db_view[0m
+   [1m[36mWHEN[0m [35m'histogram'[0m [1m[36mTHEN[0m $[4mkeymap_def_hist_view[0m
+   [1m[36mWHEN[0m [35m'text'[0m [1m[36mTHEN[0m $[4mkeymap_def_text_view[0m
+   [1m[36mELSE[0m [35m''[0m
+ [1m[36mEND[0m [1m[36mas[0m view_alt_msg [1m[36mFROM[0m lnav_view_stack [1m[36mORDER[0m [1m[36mBY[0m rowid [1m[36mDESC[0m [1m[36mLIMIT[0m 1;
+;[1m[36mSELECT[0m top_time [1m[36mas[0m last_top_time [1m[36mFROM[0m lnav_views [1m[36mWHERE[0m [4mname[0m = $[4mlast_view_name[0m;
+;[1m[36mDELETE[0m [1m[36mFROM[0m lnav_view_stack [1m[36mWHERE[0m [4mrowid[0m = $[4mrow_to_delete[0m;
+;[1m[36mSELECT[0m name [1m[36mAS[0m new_top_view_name [1m[36mFROM[0m lnav_view_stack [1m[36mORDER[0m [1m[36mBY[0m rowid [1m[36mDESC[0m [1m[36mLIMIT[0m 1;
+;[1m[36mSELECT[0m top_time [1m[36mAS[0m old_top_time [1m[36mFROM[0m lnav_views [1m[36mWHERE[0m [4mname[0m = $[4mnew_top_view_name[0m;
+;[1m[36mUPDATE[0m lnav_views [1m[36mSET[0m [4mtop_time[0m = $[4mlast_top_time[0m [1m[36mWHERE[0m
+  $[4m1[0m = [35m'x51'[0m [1m[36mAND[0m
+  [4mname[0m = $[4mnew_top_view_name[0m [1m[36mAND[0m
+  $[4mlast_top_time[0m [1m[36mIS[0m [1m[36mNOT[0m [1m[36mNULL[0m;
+:eval :alt-msg ${[4mview_alt_msg[0m}
+:echo

@@ -257,6 +257,7 @@ setup_highlights(highlight_map_t& hm)
     hm[{highlight_source_t::INTERNAL, "sql.0.comment"}]
         = highlighter(xpcre_compile("(?:(?<=[\\s;])|^)--.*"))
               .with_text_format(text_format_t::TF_SQL)
+              .with_text_format(text_format_t::TF_LNAV_SCRIPT)
               .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "sql.9.keyword"}]
         = highlighter(xpcre_compile("(?:"
@@ -394,6 +395,7 @@ setup_highlights(highlight_map_t& hm)
                                     PCRE2_CASELESS))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_SQL)
+              .with_text_format(text_format_t::TF_LNAV_SCRIPT)
               .with_role(role_t::VCR_KEYWORD);
 
     hm[{highlight_source_t::INTERNAL, "srcfile"}]
@@ -414,6 +416,7 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_text_format(text_format_t::TF_PYTHON)
               .with_text_format(text_format_t::TF_SQL)
+              .with_text_format(text_format_t::TF_LNAV_SCRIPT)
               .with_text_format(text_format_t::TF_XML)
               .with_text_format(text_format_t::TF_YAML)
               .with_text_format(text_format_t::TF_TOML)
@@ -447,6 +450,7 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_MAKEFILE)
               .with_text_format(text_format_t::TF_YAML)
               .with_text_format(text_format_t::TF_TOML)
+              .with_text_format(text_format_t::TF_LNAV_SCRIPT)
               .with_role(role_t::VCR_COMMENT);
     hm[{highlight_source_t::INTERNAL, "javadoc"}]
         = highlighter(
@@ -552,6 +556,7 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_PYTHON)
               .with_text_format(text_format_t::TF_RUST)
               .with_text_format(text_format_t::TF_SQL)
+              .with_text_format(text_format_t::TF_LNAV_SCRIPT)
               .with_role(role_t::VCR_FUNCTION);
     hm[{highlight_source_t::INTERNAL, "sep"}]
         = highlighter(xpcre_compile(R"(\.|\s+&(?=\w)|(?<=\w)&\s+|::|\%\b)"))
@@ -561,6 +566,7 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_PYTHON)
               .with_text_format(text_format_t::TF_RUST)
               .with_text_format(text_format_t::TF_SQL)
+              .with_text_format(text_format_t::TF_LNAV_SCRIPT)
               .with_role(role_t::VCR_SEP_REF_ACC);
     hm[{highlight_source_t::INTERNAL, "type"}]
         = highlighter(
@@ -572,5 +578,6 @@ setup_highlights(highlight_map_t& hm)
               .with_text_format(text_format_t::TF_PYTHON)
               .with_text_format(text_format_t::TF_RUST)
               .with_text_format(text_format_t::TF_SQL)
+              .with_text_format(text_format_t::TF_LNAV_SCRIPT)
               .with_role(role_t::VCR_TYPE);
 }

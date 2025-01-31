@@ -61,6 +61,7 @@ const string_fragment
         string_fragment::from_const("application/toml"),
         string_fragment::from_const("text/x-diff"),
         string_fragment::from_const("text/x-shellscript"),
+        string_fragment::from_const("text/x-lnav-script"),
         string_fragment::from_const("text/plain"),
 };
 
@@ -96,6 +97,7 @@ detect_text_format(string_fragment sf,
     static const auto MD_EXT = std::filesystem::path(".md");
     static const auto MARKDOWN_EXT = std::filesystem::path(".markdown");
     static const auto SH_EXT = std::filesystem::path(".sh");
+    static const auto LNAV_EXT = std::filesystem::path(".lnav");
 
     static const auto DIFF_MATCHERS = lnav::pcre2pp::code::from_const(
         R"(^--- .*\n\+\+\+ .*\n)", PCRE2_MULTILINE);
@@ -162,6 +164,13 @@ detect_text_format(string_fragment sf,
     static const auto SH_MATCHERS
         = lnav::pcre2pp::code::from_const("^#!.+sh\\b", PCRE2_MULTILINE);
 
+    static const auto LNAV_MATCHERS = lnav::pcre2pp::code::from_const(
+        "(?:"
+        "^;SELECT\\s+|"
+        "^:[a-z0-9\\-]+\\s+"
+        ")",
+        PCRE2_MULTILINE | PCRE2_CASELESS);
+
     if (path) {
         while (FILTER_EXTS.count(path->extension()) > 0) {
             path = path->stem();
@@ -212,6 +221,10 @@ detect_text_format(string_fragment sf,
         if (stem == SH_EXT) {
             return text_format_t::TF_SHELL_SCRIPT;
         }
+
+        if (stem == LNAV_EXT) {
+            return text_format_t::TF_LNAV_SCRIPT;
+        }
     }
 
     {
@@ -249,6 +262,10 @@ detect_text_format(string_fragment sf,
 
     if (C_LIKE_MATCHERS.find_in(sf).ignore_error()) {
         return text_format_t::TF_C_LIKE;
+    }
+
+    if (LNAV_MATCHERS.find_in(sf).ignore_error()) {
+        return text_format_t::TF_LNAV_SCRIPT;
     }
 
     if (SQL_MATCHERS.find_in(sf).ignore_error()) {

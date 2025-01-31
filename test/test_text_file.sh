@@ -146,3 +146,6 @@ run_cap_test ${lnav_test} -nN \
     -c ':next-section' \
     -c ':next-section' \
     -c ";SELECT top FROM lnav_views WHERE name = 'help'"
+
+run_cap_test ${lnav_test} -n \
+    ${top_srcdir}/src/scripts/lnav-pop-view.lnav

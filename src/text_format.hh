@@ -58,6 +58,7 @@ enum class text_format_t : uint8_t {
     TF_TOML,
     TF_DIFF,
     TF_SHELL_SCRIPT,
+    TF_LNAV_SCRIPT,
     TF_UNKNOWN,
 };
 
