@@ -319,6 +319,8 @@ struct mouse_event {
         return this->me_modifiers & lnav::enums::to_underlying(mod);
     }
 
+    bool is_click(mouse_button_t button) const;
+
     bool is_click_in(mouse_button_t button, int x_start, int x_end) const;
 
     bool is_click_in(mouse_button_t button, line_range lr) const

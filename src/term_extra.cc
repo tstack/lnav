@@ -35,7 +35,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/param.h>
+#include <unistd.h>
 
+#include "base/attr_line.hh"
 #include "fmt/format.h"
 #include "fmt/std.h"
 #include "log_format_fwd.hh"
@@ -75,7 +77,7 @@ term_extra::update_title(listview_curses* lc)
         lc->get_data_source()->listview_value_for_rows(
             *lc, lc->get_top(), rows);
         auto& sa = rows[0].get_attrs();
-        auto line_attr_opt = get_string_attr(sa, logline::L_FILE);
+        auto line_attr_opt = get_string_attr(sa, L_FILE);
         if (line_attr_opt) {
             auto lf = line_attr_opt.value().get();
             const auto& filename = lf->get_unique_path();

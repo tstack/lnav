@@ -346,8 +346,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             || !(format->lf_timestamp_flags & ETF_MONTH_SET))
         && format->lf_date_time.dts_fmt_lock != -1)
     {
-        auto time_attr
-            = find_string_attr(this->lss_token_attrs, &logline::L_TIMESTAMP);
+        auto time_attr = find_string_attr(this->lss_token_attrs, &L_TIMESTAMP);
         if (time_attr != this->lss_token_attrs.end()) {
             const struct line_range time_range = time_attr->sa_range;
             struct timeval adjusted_time;
@@ -623,7 +622,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
     lr.lr_start = 0;
     lr.lr_end = -1;
-    value_out.emplace_back(lr, logline::L_FILE.value(this->lss_token_file));
+    value_out.emplace_back(lr, L_FILE.value(this->lss_token_file));
     value_out.emplace_back(
         lr, SA_FORMAT.value(this->lss_token_file->get_format()->get_name()));
 
@@ -635,7 +634,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
             lr.lr_end = -1;
             value_out.emplace_back(
                 lr,
-                logline::L_PARTITION.value(
+                L_PARTITION.value(
                     line_meta_context.bmc_current_metadata.value()));
         }
 
@@ -644,14 +643,13 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         if (line_meta_opt) {
             lr.lr_start = 0;
             lr.lr_end = -1;
-            value_out.emplace_back(
-                lr, logline::L_META.value(line_meta_opt.value()));
+            value_out.emplace_back(lr, L_META.value(line_meta_opt.value()));
         }
     }
 
     if (this->lss_token_file->is_time_adjusted()) {
         struct line_range time_range
-            = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
+            = find_string_attr_range(value_out, &L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
             value_out.emplace_back(time_range,
@@ -661,7 +659,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
     if (this->lss_token_line->is_time_skewed()) {
         struct line_range time_range
-            = find_string_attr_range(value_out, &logline::L_TIMESTAMP);
+            = find_string_attr_range(value_out, &L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
             value_out.emplace_back(time_range,
@@ -1462,8 +1460,9 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
                 auto* fos = dynamic_cast<field_overlay_source*>(
                     lv.get_overlay_source());
                 auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
-                if (iter != fos->fos_row_to_field_meta.end() &&
-                    iter->second.ri_meta) {
+                if (iter != fos->fos_row_to_field_meta.end()
+                    && iter->second.ri_meta)
+                {
                     auto find_res = this->find_line_with_file(lv.get_top());
                     if (find_res) {
                         auto file_and_line = find_res.value();
@@ -1488,8 +1487,9 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
                 auto* fos = dynamic_cast<field_overlay_source*>(
                     lv.get_overlay_source());
                 auto iter = fos->fos_row_to_field_meta.find(ov_vl.value());
-                if (iter != fos->fos_row_to_field_meta.end() &&
-                    iter->second.ri_meta) {
+                if (iter != fos->fos_row_to_field_meta.end()
+                    && iter->second.ri_meta)
+                {
                     const auto& meta = iter->second.ri_meta.value();
                     std::string cmd;
 

@@ -371,7 +371,7 @@ CREATE TABLE lnav_views (
             }
             case 6: {
                 to_sqlite(ctx, tc.map_top_row([](const auto& al) {
-                    return get_string_attr(al.get_attrs(), logline::L_FILE) |
+                    return get_string_attr(al.get_attrs(), L_FILE) |
                         [](const auto wrapper) {
                             auto lf = wrapper.get();
 
@@ -439,7 +439,7 @@ CREATE TABLE lnav_views (
                         tlm.tlm_anchor = ta->anchor_for_row(tc.get_top());
                     }
                     tlm.tlm_file = tc.map_top_row([](const auto& al) {
-                        return get_string_attr(al.get_attrs(), logline::L_FILE)
+                        return get_string_attr(al.get_attrs(), L_FILE)
                             | [](const auto wrapper) {
                                   auto lf = wrapper.get();
 
@@ -517,7 +517,8 @@ CREATE TABLE lnav_views (
                 break;
             }
             case 15: {
-                auto* tdp = dynamic_cast<text_detail_provider*>(tc.get_sub_source());
+                auto* tdp
+                    = dynamic_cast<text_detail_provider*>(tc.get_sub_source());
                 if (tdp == nullptr) {
                     sqlite3_result_null(ctx);
                 } else {

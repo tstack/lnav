@@ -123,6 +123,14 @@ struct utf_to_display_adjustment {
 };
 
 bool
+mouse_event::is_click(mouse_button_t button) const
+{
+    return this->me_button == button
+        && this->me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+        && this->me_press_x == this->me_x && this->me_press_y == this->me_y;
+}
+
+bool
 mouse_event::is_click_in(mouse_button_t button, int x_start, int x_end) const
 {
     return this->me_button == button

@@ -62,13 +62,13 @@ using namespace lnav::roles::literals;
 
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-constexpr string_attr_type<void> logline::L_PREFIX("prefix");
-constexpr string_attr_type<void> logline::L_TIMESTAMP("timestamp");
-constexpr string_attr_type<std::shared_ptr<logfile>> logline::L_FILE("file");
-constexpr string_attr_type<bookmark_metadata*> logline::L_PARTITION("partition");
-constexpr string_attr_type<void> logline::L_MODULE("module");
-constexpr string_attr_type<void> logline::L_OPID("opid");
-constexpr string_attr_type<bookmark_metadata*> logline::L_META("meta");
+constexpr string_attr_type<void> L_PREFIX("prefix");
+constexpr string_attr_type<void> L_TIMESTAMP("timestamp");
+constexpr string_attr_type<std::shared_ptr<logfile>> L_FILE("file");
+constexpr string_attr_type<bookmark_metadata*> L_PARTITION("partition");
+constexpr string_attr_type<void> L_MODULE("module");
+constexpr string_attr_type<void> L_OPID("opid");
+constexpr string_attr_type<bookmark_metadata*> L_META("meta");
 
 external_log_format::mod_map_t external_log_format::MODULE_FORMATS;
 std::vector<std::shared_ptr<external_log_format>>
@@ -1962,21 +1962,21 @@ external_log_format::annotate(logfile* lf,
         auto ts_cap = md[pat.p_timestamp_field_index];
         if (ts_cap) {
             sa.emplace_back(to_line_range(ts_cap.value()),
-                            logline::L_TIMESTAMP.value());
+                            L_TIMESTAMP.value());
         }
 
         if (pat.p_module_field_index != -1) {
             module_cap = md[pat.p_module_field_index];
             if (module_cap) {
                 sa.emplace_back(to_line_range(module_cap.value()),
-                                logline::L_MODULE.value());
+                                L_MODULE.value());
             }
         }
 
         auto opid_cap = md[pat.p_opid_field_index];
         if (opid_cap && !opid_cap->empty()) {
             sa.emplace_back(to_line_range(opid_cap.value()),
-                            logline::L_OPID.value());
+                            L_OPID.value());
             values.lvv_opid_value = opid_cap->to_string();
             values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
@@ -2552,7 +2552,7 @@ external_log_format::get_subline(const logline& ll,
                                 == this->lf_timestamp_field)
                             {
                                 this->jlf_line_attrs.emplace_back(
-                                    lr, logline::L_TIMESTAMP.value());
+                                    lr, L_TIMESTAMP.value());
                             } else if (lv_iter->lv_meta.lvm_name
                                        == this->elf_body_field)
                             {
@@ -2563,7 +2563,7 @@ external_log_format::get_subline(const logline& ll,
                                        && !lr.empty())
                             {
                                 this->jlf_line_attrs.emplace_back(
-                                    lr, logline::L_OPID.value());
+                                    lr, L_OPID.value());
                             }
                             lv_iter->lv_origin = lr;
                             lv_iter->lv_sub_offset = sub_offset;
@@ -2604,7 +2604,7 @@ external_log_format::get_subline(const logline& ll,
                             this->json_append_to_cache(ts, ts_len);
                             lr.lr_end = this->jlf_cached_line.size();
                             this->jlf_line_attrs.emplace_back(
-                                lr, logline::L_TIMESTAMP.value());
+                                lr, L_TIMESTAMP.value());
 
                             lv_iter = find_if(
                                 this->jlf_line_values.lvv_values.begin(),
@@ -2738,7 +2738,7 @@ external_log_format::get_subline(const logline& ll,
                     && !lv.lv_origin.empty())
                 {
                     this->jlf_line_attrs.emplace_back(lv.lv_origin,
-                                                      logline::L_OPID.value());
+                                                      L_OPID.value());
                 }
             }
         }
@@ -4216,7 +4216,7 @@ public:
                     }
                     this->elt_container_body.ltrim(line.get_data());
                     mod_name_range = find_string_attr_range(this->vi_attrs,
-                                                            &logline::L_MODULE);
+                                                            &L_MODULE);
                     if (!mod_name_range.is_valid()) {
                         return false;
                     }

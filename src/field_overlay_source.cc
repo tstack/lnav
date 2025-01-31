@@ -155,8 +155,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     time_line.with_attr(
         string_attr(time_lr, VC_STYLE.value(text_attrs::with_bold())));
 
-    struct line_range time_range = find_string_attr_range(
-        this->fos_log_helper.ldh_line_attrs, &logline::L_TIMESTAMP);
+    auto time_range = find_string_attr_range(
+        this->fos_log_helper.ldh_line_attrs, &L_TIMESTAMP);
 
     curr_tv = this->fos_log_helper.ldh_line->get_timeval();
     if (ll->is_time_skewed() && time_range.lr_end != -1) {

@@ -761,7 +761,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     tc->get_data_source()->listview_value_for_rows(
                         *tc, tc->get_top(), rows);
                     auto& sa = rows[0].get_attrs();
-                    auto line_attr_opt = get_string_attr(sa, logline::L_FILE);
+                    auto line_attr_opt = get_string_attr(sa, L_FILE);
                     if (line_attr_opt) {
                         const auto& fc = lnav_data.ld_active_files;
                         auto lf = line_attr_opt.value().get();

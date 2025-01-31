@@ -83,7 +83,7 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
         menu_line += 1_vl;
 
         std::string filepath;
-        auto file_attr_opt = get_string_attr(sti.sti_attrs, &logline::L_FILE);
+        auto file_attr_opt = get_string_attr(sti.sti_attrs, &L_FILE);
         if (file_attr_opt) {
             filepath = file_attr_opt.value()
                            ->sa_value.get<std::shared_ptr<logfile>>()

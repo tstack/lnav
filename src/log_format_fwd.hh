@@ -129,19 +129,19 @@ struct scan_batch_context {
     size_t sbc_cached_level_count{0};
 };
 
+extern const string_attr_type<void> L_PREFIX;
+extern const string_attr_type<void> L_TIMESTAMP;
+extern const string_attr_type<std::shared_ptr<logfile>> L_FILE;
+extern const string_attr_type<bookmark_metadata*> L_PARTITION;
+extern const string_attr_type<void> L_MODULE;
+extern const string_attr_type<void> L_OPID;
+extern const string_attr_type<bookmark_metadata*> L_META;
+
 /**
  * Metadata for a single line in a log file.
  */
 class logline {
 public:
-    static const string_attr_type<void> L_PREFIX;
-    static const string_attr_type<void> L_TIMESTAMP;
-    static const string_attr_type<std::shared_ptr<logfile>> L_FILE;
-    static const string_attr_type<bookmark_metadata*> L_PARTITION;
-    static const string_attr_type<void> L_MODULE;
-    static const string_attr_type<void> L_OPID;
-    static const string_attr_type<bookmark_metadata*> L_META;
-
     /**
      * Construct a logline object with the given values.
      *

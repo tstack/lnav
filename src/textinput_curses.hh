@@ -42,6 +42,10 @@ public:
 
     void set_content(const attr_line_t& al);
 
+    bool contains(int x, int y) const override;
+
+    bool handle_mouse(mouse_event& me) override;
+
     bool handle_key(const ncinput& ch);
 
     void update_lines();

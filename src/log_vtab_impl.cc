@@ -809,7 +809,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             struct line_range time_range;
 
                             time_range = find_string_attr_range(
-                                vt->vi->vi_attrs, &logline::L_TIMESTAMP);
+                                vt->vi->vi_attrs, &L_TIMESTAMP);
 
                             const auto* time_src
                                 = vc->line_values.lvv_sbr.get_data()

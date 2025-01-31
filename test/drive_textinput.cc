@@ -90,19 +90,19 @@ public:
         switch (button & xterm_mouse::XT_BUTTON__MASK) {
             case xterm_mouse::XT_BUTTON1:
                 me.me_button = mouse_button_t::BUTTON_LEFT;
-            break;
+                break;
             case xterm_mouse::XT_BUTTON2:
                 me.me_button = mouse_button_t::BUTTON_MIDDLE;
-            break;
+                break;
             case xterm_mouse::XT_BUTTON3:
                 me.me_button = mouse_button_t::BUTTON_RIGHT;
-            break;
+                break;
             case xterm_mouse::XT_SCROLL_UP:
                 me.me_button = mouse_button_t::BUTTON_SCROLL_UP;
-            break;
+                break;
             case xterm_mouse::XT_SCROLL_DOWN:
                 me.me_button = mouse_button_t::BUTTON_SCROLL_DOWN;
-            break;
+                break;
         }
 
         gettimeofday(&me.me_time, nullptr);
@@ -136,6 +136,28 @@ public:
             me.me_press_x = this->db_last_event.me_press_x;
             me.me_press_y = this->db_last_event.me_press_y;
         }
+
+        switch (me.me_state) {
+            case mouse_button_state_t::BUTTON_STATE_PRESSED:
+            case mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK: {
+                if (this->db_input->contains(me.me_x, me.me_y)) {
+                    me.me_press_y = me.me_y - this->db_input->get_y();
+                    me.me_press_x = me.me_x - this->db_input->get_x();
+                    this->db_input->handle_mouse(me);
+                }
+                break;
+            }
+            case mouse_button_state_t::BUTTON_STATE_DRAGGED:
+                break;
+            case mouse_button_state_t::BUTTON_STATE_RELEASED: {
+                this->db_last_release_event = me;
+                break;
+            }
+        }
+
+        me.me_y -= this->db_input->get_y();
+        me.me_x -= this->db_input->get_x();
+        this->db_input->handle_mouse(me);
 
         this->db_last_event = me;
     }

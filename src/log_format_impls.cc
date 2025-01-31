@@ -80,7 +80,7 @@ public:
                   bool annotate_module) const override
     {
         auto lr = line_range{0, 0};
-        sa.emplace_back(lr, logline::L_TIMESTAMP.value());
+        sa.emplace_back(lr, L_TIMESTAMP.value());
         log_format::annotate(lf, line_number, sa, values, annotate_module);
     }
 
@@ -284,7 +284,7 @@ public:
 
         auto ts_cap = md[fmt.pf_timestamp_index].value();
         auto lr = to_line_range(ts_cap.trim());
-        sa.emplace_back(lr, logline::L_TIMESTAMP.value());
+        sa.emplace_back(lr, L_TIMESTAMP.value());
 
         values.lvv_values.emplace_back(TS_META, line, lr);
         values.lvv_values.back().lv_meta.lvm_format = (log_format*) this;
@@ -306,7 +306,7 @@ public:
 
         lr.lr_start = 0;
         lr.lr_end = prefix_len;
-        sa.emplace_back(lr, logline::L_PREFIX.value());
+        sa.emplace_back(lr, L_PREFIX.value());
 
         lr.lr_start = prefix_len;
         lr.lr_end = line.length();
@@ -885,9 +885,9 @@ public:
             auto lr = line_range(sf.sf_begin, sf.sf_end);
 
             if (fd.fd_meta.lvm_name == TS) {
-                sa.emplace_back(lr, logline::L_TIMESTAMP.value());
+                sa.emplace_back(lr, L_TIMESTAMP.value());
             } else if (fd.fd_meta.lvm_name == UID) {
-                sa.emplace_back(lr, logline::L_OPID.value());
+                sa.emplace_back(lr, L_OPID.value());
             }
 
             if (lr.is_valid()) {
@@ -2073,7 +2073,7 @@ public:
                         = line_range{value_frag.sf_begin, value_frag.sf_end};
 
                     if (kvp.first == "time" || kvp.first == "ts") {
-                        sa.emplace_back(value_lr, logline::L_TIMESTAMP.value());
+                        sa.emplace_back(value_lr, L_TIMESTAMP.value());
                     } else if (kvp.first == "level") {
                     } else if (kvp.first == "msg") {
                         sa.emplace_back(value_lr, SA_BODY.value());

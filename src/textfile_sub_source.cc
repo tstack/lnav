@@ -310,7 +310,7 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
         }
     }
 
-    value_out.emplace_back(lr, logline::L_FILE.value(this->current_file()));
+    value_out.emplace_back(lr, L_FILE.value(this->current_file()));
 }
 
 size_t

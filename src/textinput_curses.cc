@@ -52,6 +52,38 @@ textinput_curses::set_content(const attr_line_t& al)
 }
 
 bool
+textinput_curses::contains(int x, int y) const
+{
+    return this->vc_x <= x && x < this->vc_x + this->vc_width && this->vc_y <= y
+        && y < this->vc_y + this->tc_height;
+}
+
+bool
+textinput_curses::handle_mouse(mouse_event& me)
+{
+    log_debug("mouse here! %d %d %d", me.me_state, me.me_x, me.me_y);
+    if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED) {
+        this->tc_cursor_x = this->tc_left + me.me_x;
+        this->tc_cursor_y = this->tc_top + me.me_y;
+        log_debug("new cursor %d %d", this->tc_cursor_x, this->tc_cursor_y);
+        this->ensure_cursor_visible();
+    }
+    if (me.me_button == mouse_button_t::BUTTON_SCROLL_UP) {
+        if (this->tc_cursor_y > 0) {
+            this->tc_cursor_y -= 1;
+            this->ensure_cursor_visible();
+        }
+    } else if (me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN) {
+        if (this->tc_cursor_y + 1 < this->tc_lines.size()) {
+            this->tc_cursor_y += 1;
+            this->ensure_cursor_visible();
+        }
+    }
+
+    return true;
+}
+
+bool
 textinput_curses::handle_key(const ncinput& ch)
 {
     auto dim = this->get_visible_dimensions();
@@ -275,6 +307,19 @@ void
 textinput_curses::ensure_cursor_visible()
 {
     auto dim = this->get_visible_dimensions();
+
+    if (this->tc_cursor_y < 0) {
+        this->tc_cursor_y = 0;
+    }
+    if (this->tc_cursor_y >= this->tc_lines.size()) {
+        this->tc_cursor_y = this->tc_lines.size() - 1;
+    }
+    if (this->tc_cursor_x < 0) {
+        this->tc_cursor_x = 0;
+    }
+    if (this->tc_cursor_x >= this->tc_lines[this->tc_cursor_y].column_width()) {
+        this->tc_cursor_x = this->tc_lines[this->tc_cursor_y].column_width();
+    }
 
     if (this->tc_cursor_x < this->tc_left) {
         this->tc_left = this->tc_cursor_x;

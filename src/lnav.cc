@@ -2214,8 +2214,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         tc->get_data_source()->listview_value_for_rows(
                             *tc, tc->get_selection(), rows);
                         auto& sa = rows[0].get_attrs();
-                        auto line_attr_opt
-                            = get_string_attr(sa, logline::L_FILE);
+                        auto line_attr_opt = get_string_attr(sa, L_FILE);
                         if (line_attr_opt) {
                             auto lf = line_attr_opt.value().get();
 
