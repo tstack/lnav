@@ -73,7 +73,7 @@ cell_chunk::load() const
     }
 
     this->cc_data = std::make_unique<unsigned char[]>(this->cc_capacity);
-    auto cap = this->cc_capacity;
+    uLongf cap = this->cc_capacity;
     auto rc = uncompress(this->cc_data.get(),
                          &cap,
                          this->cc_compressed.get(),
