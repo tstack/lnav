@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,32 +25,51 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file readline_highlighters.hh
  */
 
-#ifndef readline_highlighters_hh
-#define readline_highlighters_hh
+#ifndef textinput_curses_hh
+#define textinput_curses_hh
+
+#include <cstdint>
+#include <vector>
 
 #include "base/attr_line.hh"
 #include "text_format.hh"
+#include "view_curses.hh"
 
-void readline_regex_highlighter(attr_line_t& line, std::optional<int> x);
+class textinput_curses : public view_curses {
+public:
 
-void readline_command_highlighter(attr_line_t& line, std::optional<int> x);
+    void set_content(const attr_line_t& al);
 
-void readline_sqlite_highlighter_int(attr_line_t& line,
-                                     std::optional<int> x,
-                                     line_range sub);
-void readline_sqlite_highlighter(attr_line_t& line, std::optional<int> x);
+    bool handle_key(const ncinput& ch);
 
-void readline_shlex_highlighter_int(attr_line_t& al,
-                                    std::optional<int> x,
-                                    line_range sub);
-void readline_shlex_highlighter(attr_line_t& line, std::optional<int> x);
+    void update_lines();
 
-void readline_lnav_highlighter(attr_line_t& line, std::optional<int> x);
+    void ensure_cursor_visible();
 
-void highlight_syntax(text_format_t tf, attr_line_t& al);
+    void focus();
+
+    void blur();
+
+    struct dimension_result {
+        int dr_height{0};
+        int dr_width{0};
+    };
+
+    dimension_result get_visible_dimensions() const;
+
+    bool do_update() override;
+
+    ncplane* tc_window{nullptr};
+    int tc_left{0};
+    size_t tc_top{0};
+    int tc_height{0};
+    int tc_cursor_x{0};
+    int tc_cursor_y{0};
+    text_format_t tc_text_format{text_format_t::TF_UNKNOWN};
+    std::vector<attr_line_t> tc_lines;
+    std::string tc_clipboard;
+};
 
 #endif

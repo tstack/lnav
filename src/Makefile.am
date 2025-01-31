@@ -356,6 +356,7 @@ noinst_HEADERS = \
 	text_anonymizer.hh \
 	text_format.hh \
 	text_overlay_menu.hh \
+	textinput_curses.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
 	textfile_sub_source.cfg.hh \
@@ -521,6 +522,7 @@ libdiag_a_SOURCES = \
 	sql_util.cc \
 	state-extension-functions.cc \
 	sysclip.cc \
+	textinput_curses.cc \
 	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \

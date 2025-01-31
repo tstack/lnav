@@ -158,6 +158,8 @@ struct string_fragment {
 
     Result<ssize_t, const char*> utf8_length() const;
 
+    size_t column_to_byte_index(size_t col) const;
+
     size_t column_width() const;
 
     const char* data() const { return &this->sf_string[this->sf_begin]; }

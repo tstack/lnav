@@ -547,6 +547,8 @@ public:
         return utf8_string_length(this->al_string).unwrapOr(this->length());
     }
 
+    size_t column_to_byte_index(size_t column) const;
+
     size_t column_width() const
     {
         return string_fragment::from_str(this->al_string).column_width();

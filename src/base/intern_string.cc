@@ -485,6 +485,42 @@ string_fragment::sub_cell_range(int cell_start, int cell_end) const
 }
 
 size_t
+string_fragment::column_to_byte_index(const size_t col) const
+{
+    auto index = this->sf_begin;
+    size_t curr_col = 0;
+
+    while (curr_col < col && index < this->sf_end) {
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            curr_col += 1;
+        } else {
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        curr_col += 1;
+                    } while (curr_col % 8);
+                    break;
+                default: {
+                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+
+                    curr_col += wcw_res;
+                    break;
+                }
+            }
+        }
+    }
+
+    return index;
+}
+
+size_t
 string_fragment::column_width() const
 {
     auto index = this->sf_begin;

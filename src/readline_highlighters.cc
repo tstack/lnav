@@ -520,3 +520,16 @@ readline_lnav_highlighter(attr_line_t& al, std::optional<int> x)
                                       });
     }
 }
+
+void
+highlight_syntax(text_format_t tf, attr_line_t& al)
+{
+     switch (tf) {
+        case text_format_t::TF_SQL: {
+            readline_sqlite_highlighter(al, std::nullopt);
+            break;
+        }
+        default:
+            break;
+    }
+}

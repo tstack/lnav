@@ -707,6 +707,13 @@ attr_line_t::pad_to(ssize_t size)
     return *this;
 }
 
+size_t
+attr_line_t::column_to_byte_index(size_t column) const
+{
+    return string_fragment::from_str(this->al_string)
+        .column_to_byte_index(column);
+}
+
 line_range
 line_range::intersection(const line_range& other) const
 {
@@ -820,7 +827,8 @@ shift_string_attrs(string_attrs_t& sa, const line_range& cover, int32_t amount)
 }
 
 struct line_range
-find_string_attr_range(const string_attrs_t& sa, const string_attr_type_base* type)
+find_string_attr_range(const string_attrs_t& sa,
+                       const string_attr_type_base* type)
 {
     auto iter = find_string_attr(sa, type);
 

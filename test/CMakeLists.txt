@@ -89,6 +89,9 @@ target_link_libraries(drive_logfile diag)
 add_executable(drive_sql_anno drive_sql_anno.cc test_stubs.cc)
 target_link_libraries(drive_sql_anno diag)
 
+add_executable(drive_textinput drive_textinput.cc test_stubs.cc)
+target_link_libraries(drive_textinput diag)
+
 add_executable(drive_data_scanner drive_data_scanner.cc test_stubs.cc)
 target_link_libraries(drive_data_scanner diag logfmt)
 

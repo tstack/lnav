@@ -191,6 +191,23 @@ truncate_to(std::string& str, size_t max_char_len)
     str.insert(bytes_to_keep_at_front, ELLIPSIS);
 }
 
+ssize_t
+utf8_char_to_byte_index(const std::string& str, ssize_t ch_index)
+{
+    ssize_t retval = 0;
+
+    while (ch_index > 0) {
+        auto ch_len
+            = ww898::utf::utf8::char_size([&str, retval]() {
+                  return std::make_pair(str[retval], str.length() - retval - 1);
+              }).unwrapOr(1);
+
+        retval += ch_len;
+        ch_index -= 1;
+    }
+
+    return retval;
+}
 bool
 is_url(const std::string& fn)
 {

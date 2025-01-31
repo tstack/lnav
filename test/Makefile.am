@@ -75,6 +75,7 @@ check_PROGRAMS = \
 	drive_shlexer \
 	drive_sql \
 	drive_sql_anno \
+	drive_textinput \
 	drive_view_colors \
 	drive_vt52_curses \
 	drive_readline_curses \
@@ -193,6 +194,8 @@ drive_readline_curses_SOURCES = drive_readline_curses.cc
 drive_sql_SOURCES = drive_sql.cc
 
 drive_sql_anno_SOURCES = drive_sql_anno.cc
+
+drive_textinput_SOURCES = drive_textinput.cc
 
 slicer_SOURCES = slicer.cc
 

@@ -177,23 +177,7 @@ toupper(const std::string& str)
     return toupper(str.c_str());
 }
 
-inline ssize_t
-utf8_char_to_byte_index(const std::string& str, ssize_t ch_index)
-{
-    ssize_t retval = 0;
-
-    while (ch_index > 0) {
-        auto ch_len
-            = ww898::utf::utf8::char_size([&str, retval]() {
-                  return std::make_pair(str[retval], str.length() - retval - 1);
-              }).unwrapOr(1);
-
-        retval += ch_len;
-        ch_index -= 1;
-    }
-
-    return retval;
-}
+ssize_t utf8_char_to_byte_index(const std::string& str, ssize_t ch_index);
 
 inline Result<size_t, const char*>
 utf8_string_length(const char* str, ssize_t len = -1)
