@@ -52,6 +52,8 @@ public:
 
     void blur();
 
+    std::string get_content() const;
+
     struct dimension_result {
         int dr_height{0};
         int dr_width{0};

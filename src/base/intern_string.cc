@@ -39,6 +39,7 @@
 #include "fmt/ostream.h"
 #include "lnav_log.hh"
 #include "pcrepp/pcre2pp.hh"
+#include "unictype.h"
 #include "uniwidth.h"
 #include "ww898/cp_utf8.hpp"
 #include "xxHash/xxhash.h"
@@ -518,6 +519,61 @@ string_fragment::column_to_byte_index(const size_t col) const
     }
 
     return index;
+}
+
+static bool
+iswordbreak(wchar_t wchar)
+{
+    const uint32_t mask = UC_CATEGORY_MASK_Z | UC_CATEGORY_MASK_Zs;
+    return uc_is_general_category_withtable(wchar, mask);
+}
+
+std::optional<int>
+string_fragment::next_word(const int start_col) const
+{
+    auto index = this->sf_begin;
+    size_t curr_col = 0;
+    auto in_word = false;
+
+    while (index < this->sf_end) {
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            curr_col += 1;
+        } else {
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        curr_col += 1;
+                    } while (curr_col % 8);
+                    break;
+                default: {
+                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+
+                    if (curr_col == start_col) {
+                        in_word = !iswordbreak(ch);
+                    } else if (curr_col > start_col) {
+                        if (in_word) {
+                            if (iswordbreak(ch)) {
+                                return index;
+                            }
+                        } else if (!iswordbreak(ch)) {
+                            return index;
+                        }
+                    }
+                    curr_col += wcw_res;
+                    break;
+                }
+            }
+        }
+    }
+
+    return std::nullopt;
 }
 
 size_t

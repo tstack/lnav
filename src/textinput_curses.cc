@@ -57,6 +57,17 @@ textinput_curses::handle_key(const ncinput& ch)
     auto dim = this->get_visible_dimensions();
     auto inner_height = this->tc_lines.size();
     auto bottom = inner_height - 1;
+    auto chid = ch.id;
+
+    if (ncinput_alt_p(&ch)) {
+        switch (chid) {
+            case 'f':
+            case 'F': {
+                log_debug("next word");
+                return true;
+            }
+        }
+    }
 
     if (ncinput_ctrl_p(&ch)) {
         switch (ch.id) {
@@ -66,12 +77,22 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->ensure_cursor_visible();
                 return true;
             }
+            case 'b':
+            case 'B': {
+                chid = NCKEY_LEFT;
+                break;
+            }
             case 'e':
             case 'E': {
                 this->tc_cursor_x
                     = this->tc_lines[this->tc_cursor_y].column_width();
                 this->ensure_cursor_visible();
                 return true;
+            }
+            case 'f':
+            case 'F': {
+                chid = NCKEY_RIGHT;
+                break;
             }
             case 'k':
             case 'K': {
@@ -106,12 +127,12 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
+            default:
+                return false;
         }
-
-        return false;
     }
 
-    switch (ch.id) {
+    switch (chid) {
         case NCKEY_ENTER: {
             auto& curr_al = this->tc_lines[this->tc_cursor_y];
             auto byte_index = curr_al.column_to_byte_index(this->tc_cursor_x);
@@ -167,7 +188,9 @@ textinput_curses::handle_key(const ncinput& ch)
         case NCKEY_BACKSPACE: {
             if (this->tc_cursor_x > 0) {
                 auto& al = this->tc_lines[this->tc_cursor_y];
-                al.erase(al.column_to_byte_index(this->tc_cursor_x - 1), 1);
+                auto start = al.column_to_byte_index(this->tc_cursor_x - 1);
+                auto end = al.column_to_byte_index(this->tc_cursor_x);
+                al.erase(start, end - start);
                 this->tc_cursor_x -= 1;
                 this->update_lines();
             } else if (this->tc_cursor_y > 0) {
@@ -276,11 +299,8 @@ textinput_curses::ensure_cursor_visible()
 void
 textinput_curses::update_lines()
 {
-    auto content = attr_line_t();
+    auto content = attr_line_t(this->get_content());
 
-    for (const auto& al : this->tc_lines) {
-        content.append(al.al_string).append("\n");
-    }
     highlight_syntax(this->tc_text_format, content);
     this->tc_lines = content.split_lines();
     this->ensure_cursor_visible();
@@ -302,6 +322,17 @@ textinput_curses::get_visible_dimensions() const
     if (this->vc_x < width) {
         retval.dr_width = std::min(width - this->vc_x,
                                    this->vc_x + (unsigned) this->vc_width);
+    }
+    return retval;
+}
+
+std::string
+textinput_curses::get_content() const
+{
+    std::string retval;
+
+    for (const auto& al : this->tc_lines) {
+        retval.append(al.al_string).append("\n");
     }
     return retval;
 }

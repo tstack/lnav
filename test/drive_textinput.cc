@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <chrono>
 #include <vector>
 
 #include <termios.h>
@@ -40,6 +41,8 @@
 #include "termios_guard.hh"
 #include "textinput_curses.hh"
 #include "xterm_mouse.hh"
+
+using namespace std::chrono_literals;
 
 constexpr char EMPTY[] = "";
 
@@ -73,6 +76,74 @@ static const std::map<std::string, std::pair<text_format_t, const char*>>
         {"empty", {text_format_t::TF_UNKNOWN, EMPTY}},
         {"lorem", {text_format_t::TF_UNKNOWN, LOREM}},
         {"sql1", {text_format_t::TF_SQL, SQL1_CONTENT}},
+};
+
+class drive_behavior : public mouse_behavior {
+public:
+    void mouse_event(
+        notcurses* nc, int button, bool release, int x, int y) override
+    {
+        static const auto CLICK_INTERVAL = 333ms;
+
+        struct mouse_event me;
+
+        switch (button & xterm_mouse::XT_BUTTON__MASK) {
+            case xterm_mouse::XT_BUTTON1:
+                me.me_button = mouse_button_t::BUTTON_LEFT;
+            break;
+            case xterm_mouse::XT_BUTTON2:
+                me.me_button = mouse_button_t::BUTTON_MIDDLE;
+            break;
+            case xterm_mouse::XT_BUTTON3:
+                me.me_button = mouse_button_t::BUTTON_RIGHT;
+            break;
+            case xterm_mouse::XT_SCROLL_UP:
+                me.me_button = mouse_button_t::BUTTON_SCROLL_UP;
+            break;
+            case xterm_mouse::XT_SCROLL_DOWN:
+                me.me_button = mouse_button_t::BUTTON_SCROLL_DOWN;
+            break;
+        }
+
+        gettimeofday(&me.me_time, nullptr);
+        me.me_modifiers = button & xterm_mouse::XT_MODIFIER_MASK;
+
+        if (release
+            && (to_mstime(me.me_time)
+                - to_mstime(this->db_last_release_event.me_time))
+                < CLICK_INTERVAL.count())
+        {
+            me.me_state = mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK;
+        } else if (button & xterm_mouse::XT_DRAG_FLAG) {
+            me.me_state = mouse_button_state_t::BUTTON_STATE_DRAGGED;
+        } else if (release) {
+            me.me_state = mouse_button_state_t::BUTTON_STATE_RELEASED;
+        } else {
+            me.me_state = mouse_button_state_t::BUTTON_STATE_PRESSED;
+        }
+
+        auto width = ncplane_dim_x(this->db_window);
+
+        me.me_x = x;
+        if (me.me_x >= width) {
+            me.me_x = width - 1;
+        }
+        me.me_y = y - 1;
+        if (me.me_state == mouse_button_state_t::BUTTON_STATE_PRESSED) {
+            me.me_press_x = me.me_x;
+            me.me_press_y = me.me_y;
+        } else {
+            me.me_press_x = this->db_last_event.me_press_x;
+            me.me_press_y = this->db_last_event.me_press_y;
+        }
+
+        this->db_last_event = me;
+    }
+
+    ncplane* db_window;
+    textinput_curses* db_input;
+    struct mouse_event db_last_event;
+    struct mouse_event db_last_release_event;
 };
 
 int
@@ -133,6 +204,8 @@ main(int argc, char** argv)
     std::vector<lnav::console::user_message> errors;
     load_config({}, errors);
 
+    std::string new_content;
+
     guard_termios gt(STDIN_FILENO);
     {
 #ifdef VDSUSP
@@ -164,6 +237,13 @@ main(int argc, char** argv)
             tc.set_content(iter->second.second);
         }
 
+        auto& mouse_i = injector::get<xterm_mouse&>();
+        drive_behavior db;
+        db.db_window = sc.get_std_plane();
+        db.db_input = &tc;
+        mouse_i.set_behavior(&db);
+        mouse_i.set_enabled(sc.get_notcurses(), true);
+
         while (true) {
             tc.do_update();
             log_debug("doing render");
@@ -178,7 +258,15 @@ main(int argc, char** argv)
                 break;
             }
             log_debug("got input");
-            tc.handle_key(nci);
+            if (ncinput_mouse_p(&nci)) {
+                mouse_i.handle_mouse(sc.get_notcurses(), nci);
+            } else {
+                tc.handle_key(nci);
+            }
         }
+
+        new_content = tc.get_content();
     }
+
+    printf("%s", new_content.c_str());
 }

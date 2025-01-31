@@ -339,6 +339,9 @@ struct string_fragment {
 
     std::optional<int> rfind(char ch) const;
 
+    std::optional<int> next_word(int start_col) const;
+    std::optional<int> prev_word(int start_col) const;
+
     template<typename P>
     string_fragment find_left_boundary(size_t start,
                                        P&& predicate,

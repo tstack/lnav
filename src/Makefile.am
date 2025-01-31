@@ -513,6 +513,7 @@ libdiag_a_SOURCES = \
 	statusview_curses.cc \
 	string-extension-functions.cc \
 	styling.cc \
+	term_extra.cc \
 	text_anonymizer.cc \
 	text_format.cc \
 	text_overlay_menu.cc \
