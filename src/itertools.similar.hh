@@ -102,11 +102,16 @@ operator|(const T& in, const lnav::itertools::details::similar_to<F>& st)
     for (const auto& elem : in) {
         int score = 0;
 
-        if (!fts::fuzzy_match(
-                st.st_pattern.c_str(),
-                lnav::func::invoke(st.st_mapper.value(), elem).c_str(),
-                score))
-        {
+        auto elem_str = lnav::func::invoke(st.st_mapper.value(), elem);
+        const char* estr;
+
+        if constexpr (std::is_same_v<decltype(elem_str), const char*>) {
+            estr = elem_str;
+        } else {
+            estr = elem_str.c_str();
+        }
+
+        if (!fts::fuzzy_match(st.st_pattern.c_str(), estr, score)) {
             continue;
         }
         if (score <= 0) {

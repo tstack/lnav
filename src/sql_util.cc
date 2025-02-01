@@ -57,7 +57,7 @@ using namespace lnav::roles::literals;
 /**
  * Copied from -- http://www.sqlite.org/lang_keywords.html
  */
-const char* sql_keywords[] = {
+const std::array<const char*, 145> sql_keywords = {
     "ABORT",
     "ACTION",
     "ADD",

@@ -34,9 +34,13 @@
 
 #include "base/auto_fd.hh"
 #include "base/injector.bind.hh"
+#include "base/injector.hh"
+#include "base/itertools.hh"
 #include "base/lnav.console.hh"
 #include "command_executor.hh"
+#include "itertools.similar.hh"
 #include "lnav_config.hh"
+#include "sql_util.hh"
 #include "sqlitepp.hh"
 #include "termios_guard.hh"
 #include "textinput_curses.hh"
@@ -245,6 +249,7 @@ main(int argc, char** argv)
         nco.loglevel = NCLOGLEVEL_INFO;
         auto sc = screen_curses::create(nco).unwrap();
         view_colors::singleton().init(sc.get_notcurses());
+        auto looping = true;
 
         textinput_curses tc;
         tc.set_x(x);
@@ -258,6 +263,46 @@ main(int argc, char** argv)
             tc.tc_text_format = iter->second.first;
             tc.set_content(iter->second.second);
         }
+        tc.tc_on_abort = [&looping](auto& tc) { looping = false; };
+        tc.tc_on_change = [](textinput_curses& tc) {
+            auto& al = tc.tc_lines[tc.tc_cursor_y];
+            auto word_start_col = string_fragment::from_str(al.al_string)
+                                      .prev_word(tc.tc_cursor_x);
+            auto word_start_index
+                = al.column_to_byte_index(word_start_col.value_or(0));
+            auto word_end_index = al.column_to_byte_index(tc.tc_cursor_x);
+            auto prefix = al.subline(word_start_index,
+                                     word_end_index - word_start_index);
+            log_debug("prefix %s", prefix.al_string.c_str());
+            if (prefix.empty()) {
+                return;
+            }
+
+            auto poss
+                = sql_keywords | lnav::itertools::similar_to(prefix.al_string);
+            tc.open_popup_for_completion(
+                word_start_col.value_or(0),
+                poss | lnav::itertools::map([](const auto& s) {
+                    return attr_line_t(s);
+                }));
+            log_debug("poss %d", poss.size());
+        };
+        tc.tc_on_completion = [](textinput_curses& tc) {
+            auto& al = tc.tc_lines[tc.tc_cursor_y];
+            auto word_start_col = string_fragment::from_str(al.al_string)
+                                      .prev_word(tc.tc_cursor_x);
+            auto word_start_index
+                = al.column_to_byte_index(word_start_col.value_or(0));
+            auto word_end_index = al.column_to_byte_index(tc.tc_cursor_x);
+            const auto& repl
+                = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()]
+                      .tl_value.al_string;
+            al.erase(word_start_index, word_end_index - word_start_index);
+            al.insert(word_start_index, repl);
+            tc.tc_cursor_x = word_start_col.value_or(0)
+                + string_fragment::from_str(repl).column_width();
+            tc.update_lines();
+        };
 
         auto& mouse_i = injector::get<xterm_mouse&>();
         drive_behavior db;
@@ -266,7 +311,7 @@ main(int argc, char** argv)
         mouse_i.set_behavior(&db);
         mouse_i.set_enabled(sc.get_notcurses(), true);
 
-        while (true) {
+        while (looping) {
             tc.do_update();
             log_debug("doing render");
             notcurses_render(sc.get_notcurses());
@@ -275,11 +320,14 @@ main(int argc, char** argv)
             log_debug("waiting for input");
             ncinput nci;
             notcurses_get_blocking(sc.get_notcurses(), &nci);
-            log_debug("got input %d %c", ncinput_ctrl_p(&nci), nci.id);
             if (ncinput_ctrl_p(&nci) && nci.id == 'X') {
-                break;
+                looping = false;
+                continue;
             }
-            log_debug("got input");
+            log_debug("got input shift=%d alt=%d ctrl=%d",
+                      ncinput_shift_p(&nci),
+                      ncinput_alt_p(&nci),
+                      ncinput_ctrl_p(&nci));
             if (ncinput_mouse_p(&nci)) {
                 mouse_i.handle_mouse(sc.get_notcurses(), nci);
             } else {

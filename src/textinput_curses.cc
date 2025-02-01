@@ -31,9 +31,25 @@
 
 #include "textinput_curses.hh"
 
+#include "base/attr_line.hh"
+#include "base/itertools.hh"
+#include "base/keycodes.hh"
+#include "base/string_attr_type.hh"
 #include "config.h"
 #include "readline_highlighters.hh"
 #include "ww898/cp_utf8.hpp"
+
+textinput_curses::textinput_curses()
+{
+    this->vc_children.emplace_back(&this->tc_popup);
+    this->tc_popup_source.set_reverse_selection(true);
+    this->tc_popup.set_visible(false);
+    this->tc_popup.set_title("textinput popup");
+    this->tc_popup.set_selectable(true);
+    this->tc_popup.set_show_scrollbar(true);
+    this->tc_popup.set_default_role(role_t::VCR_POPUP);
+    this->tc_popup.set_sub_source(&this->tc_popup_source);
+}
 
 void
 textinput_curses::set_content(const attr_line_t& al)
@@ -67,6 +83,11 @@ textinput_curses::handle_mouse(mouse_event& me)
         this->tc_cursor_y = this->tc_top + me.me_y;
         log_debug("new cursor %d %d", this->tc_cursor_x, this->tc_cursor_y);
         this->ensure_cursor_visible();
+    } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED) {
+        this->tc_cursor_x = this->tc_left + me.me_x;
+        this->tc_cursor_y = this->tc_top + me.me_y;
+        log_debug("new cursor %d %d", this->tc_cursor_x, this->tc_cursor_y);
+        this->ensure_cursor_visible();
     }
     if (me.me_button == mouse_button_t::BUTTON_SCROLL_UP) {
         if (this->tc_cursor_y > 0) {
@@ -92,10 +113,35 @@ textinput_curses::handle_key(const ncinput& ch)
     auto chid = ch.id;
 
     if (ncinput_alt_p(&ch)) {
+        log_debug("alt pressed");
         switch (chid) {
             case 'f':
             case 'F': {
                 log_debug("next word");
+                return true;
+            }
+            case NCKEY_LEFT: {
+                auto& al = this->tc_lines[this->tc_cursor_y];
+                auto next_col_opt = string_fragment::from_str(al.al_string)
+                                        .prev_word(this->tc_cursor_x);
+                if (next_col_opt) {
+                    this->tc_cursor_x = next_col_opt.value();
+                } else {
+                    this->tc_cursor_x = 0;
+                }
+                this->ensure_cursor_visible();
+                return true;
+            }
+            case NCKEY_RIGHT: {
+                auto& al = this->tc_lines[this->tc_cursor_y];
+                auto next_col_opt = string_fragment::from_str(al.al_string)
+                                        .next_word(this->tc_cursor_x);
+                if (next_col_opt) {
+                    this->tc_cursor_x = next_col_opt.value();
+                } else {
+                    this->tc_cursor_x = al.column_width();
+                }
+                this->ensure_cursor_visible();
                 return true;
             }
         }
@@ -165,17 +211,46 @@ textinput_curses::handle_key(const ncinput& ch)
     }
 
     switch (chid) {
-        case NCKEY_ENTER: {
-            auto& curr_al = this->tc_lines[this->tc_cursor_y];
-            auto byte_index = curr_al.column_to_byte_index(this->tc_cursor_x);
-            auto remaining = curr_al.subline(byte_index);
-            curr_al.erase(byte_index);
-            this->tc_cursor_x = 0;
-            this->tc_cursor_y += 1;
-            this->tc_lines.insert(this->tc_lines.begin() + this->tc_cursor_y,
-                                  remaining);
-            this->update_lines();
+        case NCKEY_ESC:
+        case KEY_CTRL(']'): {
+            if (this->tc_popup.is_visible()) {
+                this->tc_popup.set_visible(false);
+                this->set_needs_update();
+            } else if (this->tc_on_abort) {
+                this->tc_on_abort(*this);
+            }
             return true;
+        }
+        case NCKEY_ENTER: {
+            if (this->tc_popup.is_visible()) {
+                if (this->tc_on_completion) {
+                    this->tc_on_completion(*this);
+                }
+                this->tc_popup.set_visible(false);
+                this->set_needs_update();
+            } else {
+                auto& curr_al = this->tc_lines[this->tc_cursor_y];
+                auto byte_index
+                    = curr_al.column_to_byte_index(this->tc_cursor_x);
+                auto remaining = curr_al.subline(byte_index);
+                curr_al.erase(byte_index);
+                this->tc_cursor_x = 0;
+                this->tc_cursor_y += 1;
+                this->tc_lines.insert(
+                    this->tc_lines.begin() + this->tc_cursor_y, remaining);
+                this->update_lines();
+            }
+            return true;
+        }
+        case NCKEY_TAB: {
+            if (this->tc_popup.is_visible()) {
+                if (this->tc_on_completion) {
+                    this->tc_on_completion(*this);
+                }
+                this->tc_popup.set_visible(false);
+                this->set_needs_update();
+            }
+            break;
         }
         case NCKEY_HOME: {
             this->tc_cursor_x = 0;
@@ -217,6 +292,25 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             return true;
         }
+        case NCKEY_DEL: {
+            auto& al = this->tc_lines[this->tc_cursor_y];
+            if (this->tc_cursor_x == al.column_width()) {
+                if (this->tc_cursor_y + 1 < this->tc_lines.size()) {
+                    al.append(this->tc_lines[this->tc_cursor_y + 1]);
+                    this->tc_lines.erase(this->tc_lines.begin()
+                                         + this->tc_cursor_y + 1);
+                    this->update_lines();
+                }
+            } else {
+                auto start_byte_index
+                    = al.column_to_byte_index(this->tc_cursor_x);
+                auto end_byte_index
+                    = al.column_to_byte_index(this->tc_cursor_x + 1);
+                al.erase(start_byte_index, end_byte_index - start_byte_index);
+                this->update_lines();
+            }
+            break;
+        }
         case NCKEY_BACKSPACE: {
             if (this->tc_cursor_x > 0) {
                 auto& al = this->tc_lines[this->tc_cursor_y];
@@ -240,14 +334,18 @@ textinput_curses::handle_key(const ncinput& ch)
             return true;
         }
         case NCKEY_UP: {
-            if (this->tc_cursor_y > 0) {
+            if (this->tc_popup.is_visible()) {
+                this->tc_popup.handle_key(ch);
+            } else if (this->tc_cursor_y > 0) {
                 this->tc_cursor_y -= 1;
                 this->ensure_cursor_visible();
             }
             return true;
         }
         case NCKEY_DOWN: {
-            if (this->tc_cursor_y + 1 < inner_height) {
+            if (this->tc_popup.is_visible()) {
+                this->tc_popup.handle_key(ch);
+            } else if (this->tc_cursor_y + 1 < inner_height) {
                 this->tc_cursor_y += 1;
                 this->ensure_cursor_visible();
             }
@@ -333,6 +431,13 @@ textinput_curses::ensure_cursor_visible()
     if (this->tc_cursor_y >= this->tc_top + dim.dr_height) {
         this->tc_top = (this->tc_cursor_y - dim.dr_height) + 1;
     }
+    if (this->tc_top + dim.dr_height > this->tc_lines.size()) {
+        if (this->tc_lines.size() > dim.dr_height) {
+            this->tc_top = this->tc_lines.size() - dim.dr_height;
+        } else {
+            this->tc_top = 0;
+        }
+    }
     if (this->tc_cursor_x
         >= this->tc_lines[this->tc_cursor_y].column_width() + 1)
     {
@@ -349,6 +454,11 @@ textinput_curses::update_lines()
     highlight_syntax(this->tc_text_format, content);
     this->tc_lines = content.split_lines();
     this->ensure_cursor_visible();
+
+    this->tc_popup.set_visible(false);
+    if (this->tc_on_change) {
+        this->tc_on_change(*this);
+    }
 }
 
 textinput_curses::dimension_result
@@ -399,10 +509,15 @@ textinput_curses::blur()
 bool
 textinput_curses::do_update()
 {
+    auto retval = false;
+
     if (!this->vc_needs_update) {
-        return false;
+        log_debug("skip update");
+        return view_curses::do_update();
     }
 
+    log_debug("render input");
+    retval = true;
     auto dim = this->get_visible_dimensions();
     auto y = this->vc_y;
     auto y_max = this->vc_y + dim.dr_height;
@@ -419,5 +534,48 @@ textinput_curses::do_update()
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
     }
 
-    return true;
+    return view_curses::do_update() || retval;
+}
+
+void
+textinput_curses::open_popup_for_completion(
+    size_t left, std::vector<attr_line_t> possibilities)
+{
+    if (possibilities.empty()) {
+        return;
+    }
+
+    auto max_width = possibilities | lnav::itertools::map([](const auto& elem) {
+                         return elem.column_width();
+                     })
+        | lnav::itertools::max();
+
+    this->tc_popup_source.replace_with(possibilities);
+    this->tc_popup.set_window(this->tc_window);
+    this->tc_popup.set_x(this->vc_x + left);
+    this->tc_popup.set_y(this->vc_y + this->tc_cursor_y - this->tc_top + 1);
+    this->tc_popup.set_width(max_width.value_or(1) + 2);
+    this->tc_popup.set_height(
+        vis_line_t(std::min(this->tc_max_popup_height, possibilities.size())));
+    this->tc_popup.set_visible(true);
+    this->tc_popup.set_selection(0_vl);
+    this->set_needs_update();
+}
+
+void
+textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
+{
+    if (possibilities.empty()) {
+        return;
+    }
+    this->tc_popup_source.replace_with(possibilities);
+    this->tc_popup.set_window(this->tc_window);
+    this->tc_popup.set_x(this->vc_x);
+    this->tc_popup.set_y(this->vc_y + 1);
+    this->tc_popup.set_width(this->vc_width);
+    this->tc_popup.set_height(
+        vis_line_t(std::min(this->tc_max_popup_height, possibilities.size())));
+    this->tc_popup.set_visible(true);
+    this->tc_popup.set_selection(0_vl);
+    this->set_needs_update();
 }

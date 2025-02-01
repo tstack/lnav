@@ -31,14 +31,19 @@
 #define textinput_curses_hh
 
 #include <cstdint>
+#include <functional>
+#include <string>
 #include <vector>
 
 #include "base/attr_line.hh"
+#include "plain_text_source.hh"
 #include "text_format.hh"
+#include "textview_curses.hh"
 #include "view_curses.hh"
 
 class textinput_curses : public view_curses {
 public:
+    textinput_curses();
 
     void set_content(const attr_line_t& al);
 
@@ -67,7 +72,13 @@ public:
 
     bool do_update() override;
 
+    void open_popup_for_completion(size_t left,
+                                   std::vector<attr_line_t> possibilities);
+
+    void open_popup_for_history(std::vector<attr_line_t> possibilities);
+
     ncplane* tc_window{nullptr};
+    size_t tc_max_popup_height{5};
     int tc_left{0};
     size_t tc_top{0};
     int tc_height{0};
@@ -76,6 +87,13 @@ public:
     text_format_t tc_text_format{text_format_t::TF_UNKNOWN};
     std::vector<attr_line_t> tc_lines;
     std::string tc_clipboard;
+    textview_curses tc_popup;
+    plain_text_source tc_popup_source;
+    std::function<void(textinput_curses&)> tc_on_abort;
+    std::function<void(textinput_curses&)> tc_on_change;
+    std::function<void(textinput_curses&)> tc_on_completion;
+    std::function<void(textinput_curses&)> tc_on_history;
+    std::function<void(textinput_curses&)> tc_on_perform;
 };
 
 #endif

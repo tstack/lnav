@@ -32,6 +32,7 @@
 #ifndef lnav_sql_util_hh
 #define lnav_sql_util_hh
 
+#include <array>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -45,7 +46,7 @@
 #include "base/intern_string.hh"
 #include "base/time_util.hh"
 
-extern const char* sql_keywords[145];
+extern const std::array<const char*, 145> sql_keywords;
 extern const char* sql_function_names[];
 extern const std::unordered_map<unsigned char, const char*>
     sql_constraint_names;

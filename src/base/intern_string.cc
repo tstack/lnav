@@ -524,8 +524,9 @@ string_fragment::column_to_byte_index(const size_t col) const
 static bool
 iswordbreak(wchar_t wchar)
 {
-    const uint32_t mask = UC_CATEGORY_MASK_Z | UC_CATEGORY_MASK_Zs;
-    return uc_is_general_category_withtable(wchar, mask);
+    const uint32_t mask
+        = UC_CATEGORY_MASK_L | UC_CATEGORY_MASK_N | UC_CATEGORY_MASK_Pc;
+    return !uc_is_general_category_withtable(wchar, mask);
 }
 
 std::optional<int>
@@ -560,10 +561,10 @@ string_fragment::next_word(const int start_col) const
                     } else if (curr_col > start_col) {
                         if (in_word) {
                             if (iswordbreak(ch)) {
-                                return index;
+                                in_word = false;
                             }
                         } else if (!iswordbreak(ch)) {
-                            return index;
+                            return curr_col;
                         }
                     }
                     curr_col += wcw_res;
@@ -574,6 +575,55 @@ string_fragment::next_word(const int start_col) const
     }
 
     return std::nullopt;
+}
+
+std::optional<int>
+string_fragment::prev_word(const int start_col) const
+{
+    auto index = this->sf_begin;
+    size_t curr_col = 0;
+    auto in_word = false;
+    std::optional<int> last_word_col;
+
+    while (index < this->sf_end) {
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            curr_col += 1;
+        } else {
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        curr_col += 1;
+                    } while (curr_col % 8);
+                    break;
+                default: {
+                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+
+                    if (curr_col == start_col) {
+                        return last_word_col;
+                    }
+                    if (iswordbreak(ch)) {
+                        in_word = false;
+                    } else {
+                        if (!in_word) {
+                            last_word_col = curr_col;
+                        }
+                        in_word = true;
+                    }
+                    curr_col += wcw_res;
+                    break;
+                }
+            }
+        }
+    }
+
+    return last_word_col;
 }
 
 size_t
