@@ -8,6 +8,7 @@ on:
       - README.md
       - NEWS.md
   pull_request:
+    types: [opened, synchronize, edited, ready_for_review]
     branches: [ master ]
 
 jobs:
