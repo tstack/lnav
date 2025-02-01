@@ -4,7 +4,7 @@
 #include "internal.h"
 
 // primarily drive ownership off an atomic, safely used within a signal handler
-static void* _Atomic signal_nc = ATOMIC_VAR_INIT(NULL);
+static void* _Atomic signal_nc = NULL;
 
 #ifdef __MINGW32__
 int block_signals(sigset_t* old_blocked_signals){
