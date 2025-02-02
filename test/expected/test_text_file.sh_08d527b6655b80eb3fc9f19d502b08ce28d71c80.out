@@ -8,7 +8,7 @@
 
 [<img [4msrc[0m=[35m"https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg"[0m [4mheight[0m=[35m"20"[0m [4malt[0m=[35m"Discord Logo"[0m/>](https://discord.gg/erBPnKwz7R)
 
-[4m_This is the source repository for **lnav**, visit [https://lnav.org](https://lnav.org) for a high level overview._[0m
+[4m_This is the source repository for [0m[1m[4m**lnav**[0m[4m, visit [https://lnav.org](https://lnav.org) for a high level overview._[0m
 
 [1m[35m# LNAV -- The Logfile Navigator[0m
 
@@ -160,7 +160,7 @@ The following alternatives are also available:
 [1m## Links[0m
 
 [33m-[0m [Main Site](https://lnav.org)
-[33m-[0m [**Documentation**](https://docs.lnav.org) on Read the Docs
+[33m-[0m [[1m**Documentation**[0m](https://docs.lnav.org) on Read the Docs
 [33m-[0m [Internal Architecture](ARCHITECTURE.md)
 
 [1m## Contributing[0m
