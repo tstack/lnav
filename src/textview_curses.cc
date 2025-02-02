@@ -753,9 +753,7 @@ textview_curses::apply_highlights(attr_line_t& al,
             = tc_highlight.first.first == highlight_source_t::INTERNAL
             || tc_highlight.first.first == highlight_source_t::THEME;
 
-        if (!tc_highlight.second.h_text_formats.empty()
-            && tc_highlight.second.h_text_formats.count(source_format) == 0)
-        {
+        if (!tc_highlight.second.applies_to_format(source_format)) {
             continue;
         }
 

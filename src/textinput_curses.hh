@@ -79,6 +79,8 @@ public:
 
     void open_popup_for_history(std::vector<attr_line_t> possibilities);
 
+    void apply_highlights();
+
     ncplane* tc_window{nullptr};
     size_t tc_max_popup_height{5};
     int tc_left{0};
@@ -88,6 +90,7 @@ public:
     int tc_cursor_y{0};
     text_format_t tc_text_format{text_format_t::TF_UNKNOWN};
     std::vector<attr_line_t> tc_lines;
+    highlight_map_t tc_highlights;
     std::string tc_clipboard;
     textview_curses tc_popup;
     plain_text_source tc_popup_source;

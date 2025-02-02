@@ -60,6 +60,8 @@ textinput_curses::set_content(const attr_line_t& al)
     this->tc_lines = al_copy.split_lines();
     if (this->tc_lines.empty()) {
         this->tc_lines.emplace_back(attr_line_t());
+    } else {
+        this->apply_highlights();
     }
     this->tc_left = 0;
     this->tc_top = 0;
@@ -443,12 +445,35 @@ textinput_curses::ensure_cursor_visible()
 }
 
 void
+textinput_curses::apply_highlights()
+{
+    log_debug("apply highlights");
+    for (auto& line : this->tc_lines) {
+        for (const auto& hl_pair : this->tc_highlights) {
+            const auto& hl = hl_pair.second;
+
+            if (!hl.applies_to_format(this->tc_text_format)) {
+                continue;
+            }
+            hl.annotate(line, 0);
+            log_debug("  %s %d %s",
+                      hl_pair.first.second.c_str(),
+                      line.al_attrs.size(),
+                      line.al_string.c_str());
+        }
+    }
+}
+
+void
 textinput_curses::update_lines()
 {
     auto content = attr_line_t(this->get_content());
 
     highlight_syntax(this->tc_text_format, content);
     this->tc_lines = content.split_lines();
+    if (content.al_attrs.empty()) {
+        this->apply_highlights();
+    }
     this->ensure_cursor_visible();
 
     this->tc_popup.set_visible(false);

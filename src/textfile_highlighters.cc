@@ -627,11 +627,11 @@ setup_highlights_int()
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_LIST_GLYPH);
-    hm[{highlight_source_t::INTERNAL, "md.li"}]
+    hm[{highlight_source_t::INTERNAL, "md.blockquote"}]
         = highlighter(xpcre_compile(R"(^\s*(>\s+.*))"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
-              .with_role(role_t::VCR_LIST_GLYPH);
+              .with_role(role_t::VCR_QUOTED_TEXT);
     hm[{highlight_source_t::INTERNAL, "md.strikethrough"}]
         = highlighter(xpcre_compile(R"((?:^|\s+)(~[^~]+~)(?:$|\s+))"))
               .with_nestable(true)

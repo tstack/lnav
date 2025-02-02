@@ -43,6 +43,7 @@
 #include "sql_util.hh"
 #include "sqlitepp.hh"
 #include "termios_guard.hh"
+#include "textfile_highlighters.hh"
 #include "textinput_curses.hh"
 #include "xterm_mouse.hh"
 
@@ -60,6 +61,27 @@ commodo consequat.
 
 constexpr char SQL1_CONTENT[] = R"(SELECT * FROM access_log
   WHERE cs_uri_stem LIKE '%foo%'
+)";
+
+constexpr char MD1_CONTENT[] = R"(
+# Markdown test
+
+A list:
+- abc
+- def
+
+Steps to reproduce:
+1. one
+2. two
+3. three
+
+This is **bold** and this is *italic*.
+
+So-and-so said:
+
+> Hello, World!
+> Goodbye, World!
+
 )";
 
 static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
@@ -80,6 +102,7 @@ static const std::map<std::string, std::pair<text_format_t, const char*>>
         {"empty", {text_format_t::TF_UNKNOWN, EMPTY}},
         {"lorem", {text_format_t::TF_UNKNOWN, LOREM}},
         {"sql1", {text_format_t::TF_SQL, SQL1_CONTENT}},
+        {"md1", {text_format_t::TF_MARKDOWN, MD1_CONTENT}},
 };
 
 class drive_behavior : public mouse_behavior {
@@ -257,6 +280,7 @@ main(int argc, char** argv)
         tc.set_width(width);
         tc.tc_height = height;
         tc.tc_window = sc.get_std_plane();
+        setup_highlights(tc.tc_highlights);
         {
             auto iter = CONTENT_MAP.find(content);
 

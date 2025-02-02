@@ -99,6 +99,12 @@ struct highlighter {
 
     void annotate_capture(attr_line_t& al, const line_range& lr) const;
 
+    bool applies_to_format(text_format_t tf) const
+    {
+        return this->h_text_formats.empty()
+            || this->h_text_formats.count(tf) > 0;
+    }
+
     std::string h_name;
     role_t h_role{role_t::VCR_NONE};
     std::shared_ptr<lnav::pcre2pp::code> h_regex;
