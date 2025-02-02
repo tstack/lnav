@@ -2800,6 +2800,10 @@ logfile_sub_source::text_crumbs_for_line(int line,
             if (body_opt->saw_string_attr->sa_range.length() < 128 * 1024) {
                 this->lss_token_meta = lnav::document::discover_structure(
                     al, body_opt.value().saw_string_attr->sa_range);
+                // XXX discover_structure() changes `al`, have to recompute
+                // stuff
+                sf = string_fragment::from_str(al.get_string());
+                body_opt = get_string_attr(al.get_attrs(), SA_BODY);
             } else {
                 this->lss_token_meta = lnav::document::metadata{};
             }

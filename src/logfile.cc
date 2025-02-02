@@ -1000,6 +1000,17 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                           .unwrapOr(text_format_t::TF_UNKNOWN);
                 log_debug("setting text format to %s",
                           fmt::to_string(this->lf_text_format).c_str());
+                switch (this->lf_text_format) {
+                    case text_format_t::TF_DIFF:
+                    case text_format_t::TF_MAN:
+                    case text_format_t::TF_MARKDOWN:
+                        log_debug(
+                            "  file is text, disabling log format detection");
+                        this->lf_options.loo_detect_format = false;
+                        break;
+                    default:
+                        break;
+                }
             }
             if (!li.li_utf8_scan_result.is_valid()
                 && this->lf_text_format != text_format_t::TF_MARKDOWN

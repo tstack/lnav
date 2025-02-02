@@ -231,7 +231,13 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
            goto yyc_sdocstring;
        }
 
-       <sdocstring> ([\x00]|"'''") {
+       <sdocstring> [\x00] {
+           CAPTURE(DT_QUOTED_STRING);
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <sdocstring> "'''" {
            CAPTURE(DT_QUOTED_STRING);
            cap_inner.c_end -= 3;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
@@ -239,6 +245,28 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
 
        <sdocstring> * {
            goto yyc_sdocstring;
+       }
+
+       <init, bol> "```" {
+           CAPTURE(DT_CODE_BLOCK);
+           cap_inner.c_begin += 3;
+           goto yyc_codeblock;
+       }
+
+       <codeblock> [\x00] {
+           CAPTURE(DT_CODE_BLOCK);
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <codeblock> "```" {
+           CAPTURE(DT_CODE_BLOCK);
+           cap_inner.c_end -= 3;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <codeblock> * {
+           goto yyc_codeblock;
        }
 
        <init, bol> "/*" ([^\x00*]|"*"+[^\x00/])* "*"+ "/" {

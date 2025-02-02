@@ -17,7 +17,7 @@ set of files/directories, **lnav** will:
 
 - decompress as needed;
 - detect their format;
-- merge the files together by time into a single view;
+- merge the files by time into a single view;
 - tail the files, follow renames, find new files in directories;
 - build an index of errors and warnings;
 - [pretty-print JSON-lines](https://docs.lnav.org/en/latest/formats.html#json-lines).

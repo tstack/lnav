@@ -108,9 +108,11 @@ enum data_token_t {
     DT_DIFF_FILE_HEADER,
     DT_DIFF_HUNK_HEADING,
 
-    DT_TERMINAL_MAX = DT_DIFF_HUNK_HEADING + 1,
+    DT_CODE_BLOCK,
 
-    DNT_KEY = 54,
+    DT_TERMINAL_MAX = DT_CODE_BLOCK + 1,
+
+    DNT_KEY = 55,
     DNT_PAIR,
     DNT_VALUE,
     DNT_ROW,

@@ -422,8 +422,8 @@ textinput_curses::ensure_cursor_visible()
     if (this->tc_cursor_x < this->tc_left) {
         this->tc_left = this->tc_cursor_x;
     }
-    if (this->tc_cursor_x > this->tc_left + dim.dr_width) {
-        this->tc_left = this->tc_cursor_x - dim.dr_width;
+    if (this->tc_cursor_x >= this->tc_left + (dim.dr_width - 1)) {
+        this->tc_left = (this->tc_cursor_x - dim.dr_width) + 1;
     }
     if (this->tc_cursor_y < this->tc_top) {
         this->tc_top = this->tc_cursor_y;
@@ -438,11 +438,7 @@ textinput_curses::ensure_cursor_visible()
             this->tc_top = 0;
         }
     }
-    if (this->tc_cursor_x
-        >= this->tc_lines[this->tc_cursor_y].column_width() + 1)
-    {
-        this->tc_cursor_x = this->tc_lines[this->tc_cursor_y].column_width();
-    }
+
     this->set_needs_update();
 }
 
@@ -465,17 +461,16 @@ textinput_curses::dimension_result
 textinput_curses::get_visible_dimensions() const
 {
     dimension_result retval;
-    unsigned height = 0;
-    unsigned width = 0;
 
-    ncplane_dim_yx(this->tc_window, &height, &width);
+    ncplane_dim_yx(
+        this->tc_window, &retval.dr_full_height, &retval.dr_full_width);
 
-    if (this->vc_y < height) {
-        retval.dr_height
-            = std::min((int) height - this->vc_y, this->vc_y + this->tc_height);
+    if (this->vc_y < retval.dr_full_height) {
+        retval.dr_height = std::min((int) retval.dr_full_height - this->vc_y,
+                                    this->vc_y + this->tc_height);
     }
-    if (this->vc_x < width) {
-        retval.dr_width = std::min(width - this->vc_x,
+    if (this->vc_x < retval.dr_full_width) {
+        retval.dr_width = std::min(retval.dr_full_width - this->vc_x,
                                    this->vc_x + (unsigned) this->vc_width);
     }
     return retval;
@@ -545,18 +540,30 @@ textinput_curses::open_popup_for_completion(
         return;
     }
 
+    auto dim = this->get_visible_dimensions();
     auto max_width = possibilities | lnav::itertools::map([](const auto& elem) {
                          return elem.column_width();
                      })
         | lnav::itertools::max();
 
+    auto full_width = std::min((int) max_width.value_or(1) + 2, dim.dr_width);
+    auto popup_height
+        = vis_line_t(std::min(this->tc_max_popup_height, possibilities.size()));
+    auto rel_x = left;
+    if (rel_x + full_width > dim.dr_width) {
+        rel_x = dim.dr_width - full_width;
+    }
+    auto rel_y = this->tc_cursor_y - this->tc_top + 1;
+    if (this->vc_y + rel_y + popup_height > dim.dr_full_height) {
+        rel_y = this->tc_cursor_y - this->tc_top - popup_height;
+    }
+
     this->tc_popup_source.replace_with(possibilities);
     this->tc_popup.set_window(this->tc_window);
-    this->tc_popup.set_x(this->vc_x + left);
-    this->tc_popup.set_y(this->vc_y + this->tc_cursor_y - this->tc_top + 1);
-    this->tc_popup.set_width(max_width.value_or(1) + 2);
-    this->tc_popup.set_height(
-        vis_line_t(std::min(this->tc_max_popup_height, possibilities.size())));
+    this->tc_popup.set_x(this->vc_x + rel_x);
+    this->tc_popup.set_y(this->vc_y + rel_y);
+    this->tc_popup.set_width(full_width);
+    this->tc_popup.set_height(popup_height);
     this->tc_popup.set_visible(true);
     this->tc_popup.set_selection(0_vl);
     this->set_needs_update();

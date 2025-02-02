@@ -29,7 +29,7 @@ set of files/directories, [1mlnav[0m will:
 
  [33m•[0m decompress as needed;
  [33m•[0m detect their format;
- [33m•[0m merge the files together by time into a single view;
+ [33m•[0m merge the files by time into a single view;
  [33m•[0m tail the files, follow renames, find new files in
    directories;
  [33m•[0m build an index of errors and warnings;

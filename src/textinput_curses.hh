@@ -66,6 +66,8 @@ public:
     struct dimension_result {
         int dr_height{0};
         int dr_width{0};
+        unsigned dr_full_height{0};
+        unsigned dr_full_width{0};
     };
 
     dimension_result get_visible_dimensions() const;

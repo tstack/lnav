@@ -39,8 +39,7 @@
 #include "base/opt_util.hh"
 #include "data_scanner.hh"
 
-namespace lnav {
-namespace document {
+namespace lnav::document {
 
 std::optional<hier_node*>
 hier_node::lookup_child(section_key_t key) const
@@ -688,7 +687,7 @@ public:
                 case DT_ZERO_WIDTH_SPACE:
                     break;
                 default:
-                    if (dt == DT_QUOTED_STRING) {
+                    if (dt == DT_QUOTED_STRING || dt == DT_CODE_BLOCK) {
                         auto quoted_sf = tokenize_res->to_string_fragment();
 
                         if (quoted_sf.find('\n')) {
@@ -915,8 +914,7 @@ metadata::possibility_provider(const std::vector<section_key_t>& path)
     return retval;
 }
 
-}  // namespace document
-}  // namespace lnav
+}  // namespace lnav::document
 
 namespace fmt {
 auto
