@@ -38,7 +38,8 @@
 #include "config.h"
 #include "sql_util.hh"
 
-const string_fragment column_namer::BUILTIN_COL = string_fragment::from_const("col");
+const string_fragment column_namer::BUILTIN_COL
+    = string_fragment::from_const("col");
 
 column_namer::column_namer(language lang) : cn_language(lang)
 {
@@ -47,6 +48,8 @@ column_namer::column_namer(language lang) : cn_language(lang)
         string_fragment::from_const("log_time"));
     this->cn_builtin_names.emplace_back(
         string_fragment::from_const("log_level"));
+    this->cn_builtin_names.emplace_back(
+        string_fragment::from_const("log_opid"));
 }
 
 bool

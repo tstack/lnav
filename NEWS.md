@@ -4,6 +4,9 @@ Features:
 * Log message timestamps are now represented with microsecond
   precision internally instead of just millisecond.
 * The `log_time` and `log_level` fields can now be hidden.
+* The "Op ID:" overlay that is added when the `log_opid` field is
+  manually set on a message can now be hidden by hiding the
+  `log_opid` field.
 * Added a `report-access-log` script that generates a report that
   is similar to the output of the [goaccess](https://goaccess.io)
   utility.

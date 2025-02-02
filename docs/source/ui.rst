@@ -321,6 +321,8 @@ can also press :kbd:`Shift` + :kbd:`i` to toggle the histogram view
 while synchronizing the top time.  While in the histogram view,
 pressing :kbd:`z` / :kbd:`Shift` + :kbd:`z` will zoom in/out.
 
+.. _timeline:
+
 TIMELINE
 ^^^^^^^^
 
@@ -334,8 +336,11 @@ TIMELINE
    are received and processed.
 
 The timeline view [#]_ visualizes operations over time.  The operations
-are identified by the "opid" field defined in the log format.  In the
-view, there is a header that shows the overall time span, the
+are identified by the "opid" field defined in the log format.  If the
+format does not define an OP ID, you can set one manually by doing an
+:code:`UPDATE` of the :code:`log_opid` column on the log vtable.
+
+In the view, there is a header that shows the overall time span, the
 narrowed time span around the focused line, and the column headers.
 Each row in the view shows the following:
 

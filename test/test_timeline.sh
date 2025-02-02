@@ -11,6 +11,11 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
+    -c ":hide-fields log_opid" \
+    ${test_dir}/logfile_glog.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE all_logs set log_opid = 'test1' where log_line in (1, 3, 6)" \
     -c ':switch-to-view timeline' \
     ${test_dir}/logfile_glog.0
 

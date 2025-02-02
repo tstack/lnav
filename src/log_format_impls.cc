@@ -328,8 +328,13 @@ public:
         if (field_name == TS_META.lvm_name) {
             TS_META.lvm_user_hidden = val;
             return true;
-        } else if (field_name == LEVEL_META.lvm_name) {
+        }
+        if (field_name == LEVEL_META.lvm_name) {
             LEVEL_META.lvm_user_hidden = val;
+            return true;
+        }
+        if (field_name == OPID_META.lvm_name) {
+            OPID_META.lvm_user_hidden = val;
             return true;
         }
         return false;
@@ -340,12 +345,14 @@ public:
         return {
             {TS_META.lvm_name, TS_META},
             {LEVEL_META.lvm_name, LEVEL_META},
+            {OPID_META.lvm_name, OPID_META},
         };
     }
 
 private:
     static logline_value_meta TS_META;
     static logline_value_meta LEVEL_META;
+    static logline_value_meta OPID_META;
 };
 
 logline_value_meta generic_log_format::TS_META{
@@ -353,10 +360,17 @@ logline_value_meta generic_log_format::TS_META{
     value_kind_t::VALUE_TEXT,
     logline_value_meta::table_column{2},
 };
+
 logline_value_meta generic_log_format::LEVEL_META{
     intern_string::lookup("log_level"),
     value_kind_t::VALUE_TEXT,
-    logline_value_meta::table_column{4},
+    logline_value_meta::table_column{3},
+};
+
+logline_value_meta generic_log_format::OPID_META{
+    intern_string::lookup("log_opid"),
+    value_kind_t::VALUE_TEXT,
+    logline_value_meta::internal_column{},
 };
 
 std::string
@@ -1605,7 +1619,8 @@ public:
         if (field_name == LOG_TIME_STR) {
             auto date_iter = FIELD_META.find(F_DATE);
             auto time_iter = FIELD_META.find(F_TIME);
-            if (date_iter == FIELD_META.end() || time_iter == FIELD_META.end()) {
+            if (date_iter == FIELD_META.end() || time_iter == FIELD_META.end())
+            {
                 return false;
             }
             date_iter->second.lvm_user_hidden = val;

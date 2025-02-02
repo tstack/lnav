@@ -78,6 +78,8 @@ const intern_string_t log_format::LOG_TIME_STR
     = intern_string::lookup("log_time");
 const intern_string_t log_format::LOG_LEVEL_STR
     = intern_string::lookup("log_level");
+const intern_string_t log_format::LOG_OPID_STR
+    = intern_string::lookup("log_opid");
 
 static constexpr uint32_t DATE_TIME_SET_FLAGS = ETF_YEAR_SET | ETF_MONTH_SET
     | ETF_DAY_SET | ETF_HOUR_SET | ETF_MINUTE_SET | ETF_SECOND_SET;
@@ -1961,8 +1963,7 @@ external_log_format::annotate(logfile* lf,
     if (!pat.p_module_format) {
         auto ts_cap = md[pat.p_timestamp_field_index];
         if (ts_cap) {
-            sa.emplace_back(to_line_range(ts_cap.value()),
-                            L_TIMESTAMP.value());
+            sa.emplace_back(to_line_range(ts_cap.value()), L_TIMESTAMP.value());
         }
 
         if (pat.p_module_field_index != -1) {
@@ -1975,8 +1976,7 @@ external_log_format::annotate(logfile* lf,
 
         auto opid_cap = md[pat.p_opid_field_index];
         if (opid_cap && !opid_cap->empty()) {
-            sa.emplace_back(to_line_range(opid_cap.value()),
-                            L_OPID.value());
+            sa.emplace_back(to_line_range(opid_cap.value()), L_OPID.value());
             values.lvv_opid_value = opid_cap->to_string();
             values.lvv_opid_provenance
                 = logline_value_vector::opid_provenance::file;
@@ -3395,6 +3395,25 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             this->elf_value_defs[LOG_LEVEL_STR] = level_iter->second;
         }
     }
+
+    auto opid_field_iter = this->elf_value_defs.find(LOG_OPID_STR);
+    if (opid_field_iter == this->elf_value_defs.end()) {
+        auto vd
+            = std::make_shared<value_def>(this->elf_opid_field,
+                                          value_kind_t::VALUE_TEXT,
+                                          logline_value_meta::internal_column{},
+                                          this);
+        if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+            this->elf_value_def_order.emplace_back(vd);
+        }
+        vd->vd_meta.lvm_name = LOG_OPID_STR;
+        vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
+        vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
+        vd->vd_internal = true;
+
+        this->elf_value_defs[LOG_OPID_STR] = vd;
+    }
+
     if (!this->elf_body_field.empty()) {
         auto& vd = this->elf_value_defs[this->elf_body_field];
         if (vd.get() == nullptr) {
@@ -3639,7 +3658,8 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
     for (auto& vd : this->elf_value_def_order) {
         std::vector<std::string>::iterator act_iter;
 
-        if (log_vtab_impl::RESERVED_COLUMNS.count(
+        if (!vd->vd_internal
+            && log_vtab_impl::RESERVED_COLUMNS.count(
                 vd->vd_meta.lvm_name.to_string_fragment()))
         {
             auto um = lnav::console::user_message::error(
@@ -4215,8 +4235,8 @@ public:
                         return false;
                     }
                     this->elt_container_body.ltrim(line.get_data());
-                    mod_name_range = find_string_attr_range(this->vi_attrs,
-                                                            &L_MODULE);
+                    mod_name_range
+                        = find_string_attr_range(this->vi_attrs, &L_MODULE);
                     if (!mod_name_range.is_valid()) {
                         return false;
                     }

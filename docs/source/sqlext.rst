@@ -156,16 +156,17 @@ command in the SQL prompt to examine a dump of the current database schema.
 The following columns are builtin and included in a :code:`SELECT *`:
 
   :log_line: The line number for the message in the log view.
-  :log_part: The partition the message is in.  This column can be changed by
-    an :code:`UPDATE` or the :ref:`:parition-name<partition_name>` command.
   :log_time: The adjusted timestamp for the log message.  This time can differ
     from the log message's time stamp if it arrived out-of-order and the log
     format expects log files to be time-ordered.
+  :log_level: The log message level.
+  :log_part: The partition the message is in.  This column can be changed by
+    an :code:`UPDATE` or the :ref:`:parition-name<partition_name>` command.
   :log_actual_time: The log messages original timestamp in the file.
   :log_idle_msecs: The difference in time between this messages and the
     previous.  The unit of time is milliseconds.
-  :log_level: The log message level.
-  :log_mark: True if the log message was marked by the user.
+  :log_mark: True if the log message was marked by the user.  This column can
+    be changed by an :code:`UPDATE`.
   :log_comment: The comment for the message.  This column can be changed by
     an :code:`UPDATE` or the :ref:`:comment<comment>` command.
   :log_tags: A JSON list of tags for the message.  This column can be changed
@@ -177,6 +178,9 @@ The following columns are builtin and included in a :code:`SELECT *`:
 The following columns are builtin and are hidden, so they will *not* be
 included in a :code:`SELECT *`:
 
+  :log_opid: The OP ID as captured from the log message or as set by an
+    :code:`UPDATE`.  Setting the OP ID allows operations to be visualized
+    in the :ref:`timeline<timeline>` view.
   :log_time_msecs: The adjusted timestamp for the log message as the number of
     milliseconds from the epoch.  This column can be more efficient to use for
     time-related operations, like :ref:`timeslice()<timeslice>`.

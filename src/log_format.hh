@@ -671,6 +671,7 @@ public:
 
     static const intern_string_t LOG_TIME_STR;
     static const intern_string_t LOG_LEVEL_STR;
+    static const intern_string_t LOG_OPID_STR;
 
 protected:
     static std::vector<std::shared_ptr<log_format>> lf_root_formats;

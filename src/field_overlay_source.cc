@@ -561,7 +561,20 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     const auto& line_meta = *(line_meta_opt.value());
     size_t filename_width = this->fos_lss.get_filename_offset();
 
-    if (!line_meta.bm_opid.empty()) {
+    auto file_and_line = this->fos_lss.find_line_with_file(row);
+    auto* format = file_and_line->first->get_format_ptr();
+    auto field_states = format->get_field_states();
+    auto show_opid = false;
+    auto field_iter = field_states.find(log_format::LOG_OPID_STR);
+    if (field_iter != field_states.end() && !field_iter->second.is_hidden()) {
+        show_opid = true;
+    }
+    if (row == tc->get_selection() && !this->fos_contexts.empty()
+        && this->fos_contexts.top().c_show)
+    {
+        show_opid = true;
+    }
+    if (show_opid && !line_meta.bm_opid.empty()) {
         auto al = attr_line_t()
                       .append(" Op ID: "_table_header)
                       .append(lnav::roles::identifier(line_meta.bm_opid))

@@ -597,6 +597,7 @@ add_sqlite_possibilities()
         "log_path",
         "log_text",
         "log_body",
+        "log_opid",
 
         nullptr,
     };
