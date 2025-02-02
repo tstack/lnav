@@ -33,24 +33,6 @@
 #include "pcrepp/pcre2pp.hh"
 #include "view_curses.hh"
 
-highlighter&
-highlighter::operator=(const highlighter& other)
-{
-    if (this == &other) {
-        return *this;
-    }
-
-    this->h_name = other.h_name;
-    this->h_role = other.h_role;
-    this->h_regex = other.h_regex;
-    this->h_format_name = other.h_format_name;
-    this->h_attrs = other.h_attrs;
-    this->h_text_formats = other.h_text_formats;
-    this->h_nestable = other.h_nestable;
-
-    return *this;
-}
-
 void
 highlighter::annotate_capture(attr_line_t& al, const line_range& lr) const
 {

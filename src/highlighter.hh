@@ -32,10 +32,13 @@
 #ifndef highlighter_hh
 #define highlighter_hh
 
+#include <memory>
 #include <set>
-#include <utility>
+#include <string>
 
 #include "base/attr_line.hh"
+#include "base/intern_string.hh"
+#include "base/string_attr_type.hh"
 #include "pcrepp/pcre2pp_fwd.hh"
 #include "styling.hh"
 #include "text_format.hh"
@@ -47,10 +50,6 @@ struct highlighter {
         : h_regex(regex)
     {
     }
-
-    highlighter(const highlighter& other) = default;
-
-    highlighter& operator=(const highlighter& other);
 
     virtual ~highlighter() = default;
 

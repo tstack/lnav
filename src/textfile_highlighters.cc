@@ -42,9 +42,11 @@ xpcre_compile(const T (&pattern)[N], int options = 0)
         .to_shared();
 }
 
-void
-setup_highlights(highlight_map_t& hm)
+highlight_map_t
+setup_highlights_int()
 {
+    highlight_map_t hm;
+
     hm[{highlight_source_t::INTERNAL, "python"}]
         = highlighter(xpcre_compile("(?:"
                                     "\\bFalse\\b|"
@@ -635,4 +637,14 @@ setup_highlights(highlight_map_t& hm)
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_attrs(text_attrs::with_struck());
+
+    return hm;
+}
+
+void
+setup_highlights(highlight_map_t& hm)
+{
+    static const auto default_highlighters = setup_highlights_int();
+
+    hm.insert(default_highlighters.begin(), default_highlighters.end());
 }
