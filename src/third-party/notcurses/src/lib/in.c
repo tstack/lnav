@@ -1556,6 +1556,7 @@ xtversion_cb(inputctx* ictx){
     { .prefix = "contour ", .suffix = 0, .term = TERMINAL_CONTOUR, },
     { .prefix = "kitty(", .suffix = ')', .term = TERMINAL_KITTY, },
     { .prefix = "foot(", .suffix = ')', .term = TERMINAL_FOOT, },
+    { .prefix = "ghostty ", .suffix = 0, .term = TERMINAL_GHOSTTY, },
     { .prefix = "mlterm(", .suffix = ')', .term = TERMINAL_MLTERM, },
     { .prefix = "tmux ", .suffix = 0, .term = TERMINAL_TMUX, },
     { .prefix = "iTerm2 ", .suffix = 0, .term = TERMINAL_ITERM, },
@@ -1720,14 +1721,16 @@ tcap_cb(inputctx* ictx){
           ictx->initdata->qterm = TERMINAL_MLTERM;
         }else if(strcmp(key, "xterm-kitty") == 0){
           ictx->initdata->qterm = TERMINAL_KITTY;
+        }else if(strcmp(key, "xterm-ghostty") == 0){
+          ictx->initdata->qterm = TERMINAL_GHOSTTY;
         }else if(strcmp(key, "xterm-256color") == 0){
           ictx->initdata->qterm = TERMINAL_XTERM;
         }else{
-          logdebug("unknown terminal name %s", key);
+          logwarn("unknown terminal name %s", key);
         }
       }
     }else if(strcmp(val, "RGB") == 0){
-      loginfo("got rgb (%s)", s);
+      loginfo("got rgb (%s)", key);
       ictx->initdata->rgb = true;
     }else if(strcmp(val, "hpa") == 0){
       loginfo("got hpa (%s)", key);
@@ -2257,6 +2260,7 @@ process_escape(inputctx* ictx, const unsigned char* buf, int buflen){
       }
     }
   }
+  logdebug("midescape %d", -ictx->amata.used);
   // we exhausted input without knowing whether or not this is a valid control
   // sequence; we're still on-trie, and need more (immediate) input.
   ictx->midescape = 1;
@@ -2403,7 +2407,8 @@ process_melange(inputctx* ictx, const unsigned char* buf, int* bufused){
       consumed = process_escape(ictx, buf + offset, *bufused);
       if(consumed < 0){
         if(ictx->midescape){
-          if(*bufused != -consumed || *bufused == origlen){
+          if(*bufused != -consumed || consumed == -1){
+            logdebug("not midescape bufused=%d origlen=%d", *bufused, origlen);
             // not at the end; treat it as input. no need to move between
             // buffers; simply ensure we process it as input, and don't mark
             // anything as consumed.
@@ -2415,9 +2420,11 @@ process_melange(inputctx* ictx, const unsigned char* buf, int* bufused){
     // don't process as input only if we just read a valid control character,
     // or if we need to read more to determine what it is.
     if(consumed <= 0 && !ictx->midescape){
+      logdebug("treating as input");
       consumed = process_ncinput(ictx, buf + offset, *bufused);
     }
     if(consumed < 0){
+      logdebug("consumed < 0; break");
       break;
     }
     *bufused -= consumed;

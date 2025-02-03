@@ -52,6 +52,7 @@ typedef enum {
     TERMINAL_MSTERMINAL,    // Microsoft Windows Terminal
     TERMINAL_MINTTY,        // XTVERSION == 'mintty ver' MinTTY (Cygwin, MSYS2)
     TERMINAL_KONSOLE,       // TDA: "~KDE" (7e4b4445)
+    TERMINAL_GHOSTTY,       // XTVERSION == 'ghostty '
 } queried_terminals_e;
 
 // after spawning the input layer, send initial queries to the terminal. its

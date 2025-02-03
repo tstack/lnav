@@ -917,6 +917,13 @@ apply_konsole_heuristics(tinfo* ti){
 }
 
 static const char*
+apply_ghostty_heuristics(tinfo* ti){
+  ti->caps.quadrants = true;
+  ti->caps.sextants = true;
+  return "ghostty";
+}
+
+static const char*
 apply_linux_heuristics(tinfo* ti, unsigned nonewfonts){
   const char* tname = NULL;
 #ifdef __linux__
@@ -966,6 +973,7 @@ apply_term_heuristics(tinfo* ti, const char* tname, queried_terminals_e qterm,
     // setupterm interprets a missing/empty TERM variable as the special value “unknown”.
     tname = ti->termname ? ti->termname : "unknown";
   }
+  loginfo("tname is %s (qterm %d)", tname, qterm);
   // st had neither caps.sextants nor caps.quadrants last i checked (0.8.4)
   ti->caps.braille = true; // most everyone has working caps.braille, even from fonts
   ti->caps.halfblocks = true; // most everyone has working halfblocks
@@ -1029,7 +1037,11 @@ apply_term_heuristics(tinfo* ti, const char* tname, queried_terminals_e qterm,
     case TERMINAL_KONSOLE:
       newname = apply_konsole_heuristics(ti);
       break;
+    case TERMINAL_GHOSTTY:
+      newname = apply_ghostty_heuristics(ti);
+      break;
     default:
+      logwarn("no match for qterm %d tname %s", qterm, tname);
       newname = tname;
       break;
   }
