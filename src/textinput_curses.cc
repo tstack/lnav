@@ -391,11 +391,13 @@ textinput_curses::handle_key(const ncinput& ch)
                                             index += 1;
                                         });
             }
-            utf8[index] = 0;
-            auto& al = this->tc_lines[this->tc_cursor_y];
-            al.insert(al.column_to_byte_index(this->tc_cursor_x), utf8);
-            this->tc_cursor_x += 1;
-            this->update_lines();
+            if (index > 0) {
+                utf8[index] = 0;
+                auto& al = this->tc_lines[this->tc_cursor_y];
+                al.insert(al.column_to_byte_index(this->tc_cursor_x), utf8);
+                this->tc_cursor_x += 1;
+                this->update_lines();
+            }
             return true;
         }
     }

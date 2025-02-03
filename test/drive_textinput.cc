@@ -182,11 +182,12 @@ public:
             }
         }
 
-        me.me_y -= this->db_input->get_y();
-        me.me_x -= this->db_input->get_x();
-        this->db_input->handle_mouse(me);
-
-        this->db_last_event = me;
+        if (this->db_input->contains(me.me_x, me.me_y)) {
+            me.me_y -= this->db_input->get_y();
+            me.me_x -= this->db_input->get_x();
+            this->db_input->handle_mouse(me);
+            this->db_last_event = me;
+        }
     }
 
     ncplane* db_window;
@@ -354,7 +355,7 @@ main(int argc, char** argv)
                       ncinput_ctrl_p(&nci));
             if (ncinput_mouse_p(&nci)) {
                 mouse_i.handle_mouse(sc.get_notcurses(), nci);
-            } else {
+            } else if (nci.evtype != NCTYPE_PRESS) {
                 tc.handle_key(nci);
             }
         }
