@@ -170,7 +170,6 @@ public:
                 if (this->db_input->contains(me.me_x, me.me_y)) {
                     me.me_press_y = me.me_y - this->db_input->get_y();
                     me.me_press_x = me.me_x - this->db_input->get_x();
-                    this->db_input->handle_mouse(me);
                 }
                 break;
             }
@@ -182,7 +181,9 @@ public:
             }
         }
 
-        if (this->db_input->contains(me.me_x, me.me_y)) {
+        if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED
+            || this->db_input->contains(me.me_x, me.me_y))
+        {
             me.me_y -= this->db_input->get_y();
             me.me_x -= this->db_input->get_x();
             this->db_input->handle_mouse(me);
@@ -290,12 +291,12 @@ main(int argc, char** argv)
         }
         tc.tc_on_abort = [&looping](auto& tc) { looping = false; };
         tc.tc_on_change = [](textinput_curses& tc) {
-            auto& al = tc.tc_lines[tc.tc_cursor_y];
+            auto& al = tc.tc_lines[tc.tc_cursor.y];
             auto word_start_col = string_fragment::from_str(al.al_string)
-                                      .prev_word(tc.tc_cursor_x);
+                                      .prev_word(tc.tc_cursor.x);
             auto word_start_index
                 = al.column_to_byte_index(word_start_col.value_or(0));
-            auto word_end_index = al.column_to_byte_index(tc.tc_cursor_x);
+            auto word_end_index = al.column_to_byte_index(tc.tc_cursor.x);
             auto prefix = al.subline(word_start_index,
                                      word_end_index - word_start_index);
             log_debug("prefix %s", prefix.al_string.c_str());
@@ -313,18 +314,18 @@ main(int argc, char** argv)
             log_debug("poss %d", poss.size());
         };
         tc.tc_on_completion = [](textinput_curses& tc) {
-            auto& al = tc.tc_lines[tc.tc_cursor_y];
+            auto& al = tc.tc_lines[tc.tc_cursor.y];
             auto word_start_col = string_fragment::from_str(al.al_string)
-                                      .prev_word(tc.tc_cursor_x);
+                                      .prev_word(tc.tc_cursor.x);
             auto word_start_index
                 = al.column_to_byte_index(word_start_col.value_or(0));
-            auto word_end_index = al.column_to_byte_index(tc.tc_cursor_x);
+            auto word_end_index = al.column_to_byte_index(tc.tc_cursor.x);
             const auto& repl
                 = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()]
                       .tl_value.al_string;
             al.erase(word_start_index, word_end_index - word_start_index);
             al.insert(word_start_index, repl);
-            tc.tc_cursor_x = word_start_col.value_or(0)
+            tc.tc_cursor.x = word_start_col.value_or(0)
                 + string_fragment::from_str(repl).column_width();
             tc.update_lines();
         };
@@ -355,7 +356,9 @@ main(int argc, char** argv)
                       ncinput_ctrl_p(&nci));
             if (ncinput_mouse_p(&nci)) {
                 mouse_i.handle_mouse(sc.get_notcurses(), nci);
-            } else if (nci.evtype != NCTYPE_PRESS) {
+            } else if (nci.evtype != NCTYPE_PRESS && !ncinput_lock_p(&nci)
+                       && !ncinput_modifier_p(&nci))
+            {
                 tc.handle_key(nci);
             }
         }

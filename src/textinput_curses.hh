@@ -32,10 +32,12 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "base/attr_line.hh"
+#include "base/line_range.hh"
 #include "plain_text_source.hh"
 #include "text_format.hh"
 #include "textview_curses.hh"
@@ -43,6 +45,162 @@
 
 class textinput_curses : public view_curses {
 public:
+    enum class direction_t {
+        left,
+        right,
+        up,
+        down,
+    };
+
+    struct movement {
+        const direction_t hm_dir;
+        const size_t hm_amount;
+
+        movement(direction_t hm_dir, size_t amount)
+            : hm_dir(hm_dir), hm_amount(amount)
+        {
+        }
+    };
+
+    struct input_point {
+        int x{0};
+        int y{0};
+
+        input_point copy_with_x(int x) { return {x, this->y}; }
+
+        input_point copy_with_y(int y) { return {this->x, y}; }
+
+        bool operator<(const input_point& rhs) const
+        {
+            return this->y < rhs.y || (this->y == rhs.y && this->x < rhs.x);
+        }
+
+        bool operator==(const input_point& rhs) const
+        {
+            return this->x == rhs.x && this->y == rhs.y;
+        }
+
+        input_point operator+(const movement& rhs) const
+        {
+            auto retval = *this;
+            switch (rhs.hm_dir) {
+                case direction_t::left:
+                    retval.x -= rhs.hm_amount;
+                    break;
+                case direction_t::right:
+                    retval.x += rhs.hm_amount;
+                    break;
+                case direction_t::up:
+                    retval.y -= rhs.hm_amount;
+                    break;
+                case direction_t::down:
+                    retval.y += rhs.hm_amount;
+                    break;
+            }
+
+            return retval;
+        }
+
+        input_point& operator+=(const movement& rhs)
+        {
+            switch (rhs.hm_dir) {
+                case direction_t::left:
+                    this->x -= rhs.hm_amount;
+                    break;
+                case direction_t::right:
+                    this->x += rhs.hm_amount;
+                    break;
+                case direction_t::up:
+                    this->y -= rhs.hm_amount;
+                    break;
+                case direction_t::down:
+                    this->y += rhs.hm_amount;
+                    break;
+            }
+
+            return *this;
+        }
+    };
+
+    struct selected_range {
+        input_point sr_start;
+        input_point sr_end;
+
+        static selected_range from_mouse(input_point start, input_point end)
+        {
+            return {start, end, bounds_t::inclusive};
+        }
+
+        static selected_range from_key(input_point start, input_point end)
+        {
+            return {start, end, bounds_t::exclusive};
+        }
+
+        static selected_range from_point(input_point ip)
+        {
+            return selected_range{ip};
+        }
+
+        static selected_range from_point_and_movement(input_point ip,
+                                                      movement m)
+        {
+            return {ip + m, ip + m, bounds_t::inclusive};
+        }
+
+        bool empty() const { return this->sr_start == this->sr_end; }
+
+        bool contains_line(int y) const
+        {
+            return this->sr_start.y <= y && y <= this->sr_end.y;
+        }
+
+        bool contains(const input_point& ip) const
+        {
+            return this->sr_start.y <= ip.y && ip.y <= this->sr_end.y
+                && this->sr_start.x <= ip.x && ip.x <= this->sr_end.x;
+        }
+
+        std::optional<line_range> range_for_line(int y) const
+        {
+            if (!this->contains_line(y)) {
+                return std::nullopt;
+            }
+
+            line_range retval;
+
+            if (y > this->sr_start.y) {
+                retval.lr_start = 0;
+            } else {
+                retval.lr_start = this->sr_start.x;
+            }
+            if (y < this->sr_end.y) {
+                retval.lr_end = -1;
+            } else {
+                retval.lr_end = this->sr_end.x;
+            }
+
+            return retval;
+        }
+
+    private:
+        explicit selected_range(input_point ip) : sr_start{ip}, sr_end{ip} {}
+
+        enum class bounds_t {
+            inclusive,
+            exclusive,
+        };
+
+        selected_range(input_point start, input_point end, bounds_t bounds)
+            : sr_start(start < end ? start : end),
+              sr_end(start < end
+                         ? end
+                         : (bounds == bounds_t::inclusive
+                                ? (start + movement{direction_t::right, 1})
+                                : start))
+        {
+        }
+    };
+
     textinput_curses();
 
     void set_content(const attr_line_t& al);
@@ -81,17 +239,72 @@ public:
 
     void apply_highlights();
 
+    void replace_selection(string_fragment sf);
+
+    void move_cursor_by(movement hm_dir)
+    {
+        this->tc_cursor += hm_dir;
+        if (this->tc_cursor.x < 0) {
+            if (this->tc_cursor.y > 0) {
+                this->tc_cursor.y -= 1;
+                this->tc_cursor.x
+                    = this->tc_lines[this->tc_cursor.y].column_width();
+            } else {
+                this->tc_cursor.x = 0;
+            }
+        }
+        if (hm_dir.hm_dir == direction_t::right
+            && this->tc_cursor.x
+                > this->tc_lines[this->tc_cursor.y].column_width())
+        {
+            if (this->tc_cursor.y + 1 < this->tc_lines.size()) {
+                this->tc_cursor.x = 0;
+                this->tc_cursor.y += 1;
+            }
+        }
+        this->tc_drag_selection = std::nullopt;
+        this->tc_selection = std::nullopt;
+        this->ensure_cursor_visible();
+    }
+
+    void move_cursor_to(input_point ip)
+    {
+        this->tc_cursor = ip;
+        this->tc_drag_selection = std::nullopt;
+        this->tc_selection = std::nullopt;
+        this->ensure_cursor_visible();
+    }
+
+    void clamp_point(input_point& ip) const
+    {
+        if (ip.y < 0) {
+            ip.y = 0;
+        }
+        if (ip.y >= this->tc_lines.size()) {
+            ip.y = this->tc_lines.size() - 1;
+        }
+        if (ip.x < 0) {
+            ip.x = 0;
+        }
+        if (ip.x >= this->tc_lines[ip.y].column_width()) {
+            ip.x = this->tc_lines[ip.y].column_width();
+        }
+    }
+
     ncplane* tc_window{nullptr};
     size_t tc_max_popup_height{5};
     int tc_left{0};
     size_t tc_top{0};
     int tc_height{0};
-    int tc_cursor_x{0};
-    int tc_cursor_y{0};
+    input_point tc_cursor;
     text_format_t tc_text_format{text_format_t::TF_UNKNOWN};
     std::vector<attr_line_t> tc_lines;
     highlight_map_t tc_highlights;
+    input_point tc_cursor_anchor;
+    std::optional<selected_range> tc_drag_selection;
+    std::optional<selected_range> tc_selection;
     std::string tc_clipboard;
+    std::optional<selected_range> tc_complete_range;
     textview_curses tc_popup;
     plain_text_source tc_popup_source;
     std::function<void(textinput_curses&)> tc_on_abort;
