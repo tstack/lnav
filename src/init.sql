@@ -1,9 +1,7 @@
 CREATE TABLE IF NOT EXISTS http_status_codes
 (
     status  INTEGER PRIMARY KEY,
-    message TEXT,
-
-    FOREIGN KEY (status) REFERENCES access_log (sc_status)
+    message TEXT
 );
 
 INSERT INTO http_status_codes VALUES (100, 'Continue');
