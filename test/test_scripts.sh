@@ -1,6 +1,8 @@
 #! /bin/bash
 
-lnav_test="${top_builddir}/src/lnav-test"
+export TZ=UTC
+export YES_COLOR=1
+export DUMP_CRASH=1
 
 touch scripts-empty
 
