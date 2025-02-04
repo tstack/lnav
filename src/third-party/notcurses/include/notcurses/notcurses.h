@@ -1242,6 +1242,7 @@ typedef struct ncinput {
                      // utf32 representation, taking modifier 
                      // keys into account. This can be multiple
                      // codepoints. Array is zero-terminated.
+  const char* paste_content;
 } ncinput;
 
 static inline bool
@@ -1330,6 +1331,9 @@ ncinput_equal_p(const ncinput* n1, const ncinput* n2){
   }
   return true;
 }
+
+void
+ncinput_free_paste_content(ncinput* n);
 
 // Read a UTF-32-encoded Unicode codepoint from input. This might only be part
 // of a larger EGC. Provide a NULL 'ts' to block at length, and otherwise a
@@ -3917,6 +3921,10 @@ API int notcurses_cursor_disable(struct notcurses* nc)
 // Get the current location of the terminal's cursor, whether visible or not.
 API int notcurses_cursor_yx(const struct notcurses* nc, int* y, int* x)
   __attribute__ ((nonnull (1)));
+
+API int notcurses_bracketed_paste_enable(struct notcurses *nc);
+
+API int notcurses_bracketed_paste_disable(struct notcurses *nc);
 
 // Convert the plane's content to greyscale.
 API void ncplane_greyscale(struct ncplane* n)

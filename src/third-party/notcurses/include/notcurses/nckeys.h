@@ -175,6 +175,8 @@ extern "C" {
 #define NCKEY_BUTTON10  preterunicode(210)
 #define NCKEY_BUTTON11  preterunicode(211)
 
+#define NCKEY_PASTE     preterunicode(300)
+
 // we received SIGCONT
 #define NCKEY_SIGNAL    preterunicode(400)
 

@@ -1475,6 +1475,16 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
             goto err;
         }
     }
+    if(get_escape(ti, ESCAPE_BE) == NULL){
+        if(grow_esc_table(ti, "\e[?2004h", ESCAPE_BE, &tablelen, &tableused)){
+            goto err;
+        }
+    }
+    if(get_escape(ti, ESCAPE_BD) == NULL){
+        if(grow_esc_table(ti, "\e[?2004l", ESCAPE_BD, &tablelen, &tableused)){
+            goto err;
+        }
+    }
     // if op is defined as ansi 39 + ansi 49, make the split definitions
   // available. this ought be asserted by extension capability "ax", but
   // no terminal i've found seems to do so. =[
@@ -1486,7 +1496,6 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
     }
   }
   unsigned kitty_graphics = 0;
-    loginfo("ttyfd %d", ti->ttyfd);
   if(ti->ttyfd >= 0){
     if(handle_responses(ti, &tablelen, &tableused, cursor_y, cursor_x,
                         draininput, &kitty_graphics)){

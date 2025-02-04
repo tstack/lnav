@@ -174,6 +174,7 @@ notcurses_stop_minimal(void* vnc){
         nc->tcache.in_alt_screen = 0;
       }
     }
+      notcurses_bracketed_paste_disable(nc);
   }
   logdebug("restored terminal, returning %d", ret);
   return ret;

@@ -112,6 +112,9 @@ typedef struct inputctx {
   int kittykbd;        // kitty keyboard protocol support level
   bool failed;         // error initializing input automaton, abort
     atomic_int looping;
+    bool bracked_paste_enabled;
+    bool in_bracketed_paste;
+    fbuf paste_buffer;
 } inputctx;
 
 static inline void
@@ -1516,6 +1519,35 @@ palette_cb(inputctx* ictx){
 }
 
 static int
+bracket_start_cb(inputctx* ictx)
+{
+    loginfo("bracket start");
+    ictx->in_bracketed_paste = true;
+    return 2;
+}
+
+static int
+bracket_end_cb(inputctx* ictx)
+{
+    loginfo("bracket end");
+    ictx->in_bracketed_paste = false;
+
+    fbuf_putc(&ictx->paste_buffer, '\0');
+    ncinput pni = {
+        .id = NCKEY_PASTE,
+        .evtype = NCTYPE_UNKNOWN,
+        .paste_content = ictx->paste_buffer.buf,
+    };
+    ictx->paste_buffer.buf = 0;
+    ictx->paste_buffer.size = 0;
+    ictx->paste_buffer.used = 0;
+    fbuf_init_small(&ictx->paste_buffer);
+    load_ncinput(ictx, &pni);
+
+    return 2;
+}
+
+static int
 extract_xtversion(inputctx* ictx, const char* str, char suffix){
   size_t slen = strlen(str);
   if(slen == 0){
@@ -1826,6 +1858,8 @@ build_cflow_automaton(inputctx* ictx){
     { "[1;\\N:\\NE", kitty_cb_begin, },
     { "[1;\\N:\\NF", kitty_cb_end, },
     { "[1;\\N:\\NH", kitty_cb_home, },
+    {"[200~", bracket_start_cb, },
+    {"[201~", bracket_end_cb, },
     { "[?\\Nu", kitty_keyboard_cb, },
     { "[?1016;\\N$y", decrpm_pixelmice, },
     { "[?2026;\\N$y", decrpm_asu_cb, },
@@ -2007,6 +2041,9 @@ create_inputctx(tinfo* ti, FILE* infp, int lmargin, int tmargin, int rmargin,
                             i->bmargin = bmargin;
                             i->drain = drain;
                             i->failed = false;
+                              i->bracked_paste_enabled = false;
+                              i->in_bracketed_paste = false;
+                              fbuf_init_small(&i->paste_buffer);
                             logdebug("input descriptors: %d/%d", i->stdinfd, i->termfd);
                             return i;
                           }
@@ -2060,6 +2097,7 @@ free_inputctx(inputctx* i){
     endpipes(i->ipipes);
     free(i->inputs);
     free(i->csrs);
+      fbuf_free(&i->paste_buffer);
     free(i);
   }
 }
@@ -2420,8 +2458,17 @@ process_melange(inputctx* ictx, const unsigned char* buf, int* bufused){
     // don't process as input only if we just read a valid control character,
     // or if we need to read more to determine what it is.
     if(consumed <= 0 && !ictx->midescape){
-      logdebug("treating as input");
-      consumed = process_ncinput(ictx, buf + offset, *bufused);
+        if (ictx->bracked_paste_enabled && ictx->in_bracketed_paste) {
+            const unsigned char* esc = memchr(buf + offset, '\x1b', *bufused);
+            consumed = *bufused;
+            if (esc) {
+                consumed = esc - (buf + offset);
+            }
+            fbuf_putn(&ictx->paste_buffer, (const char*) buf + offset, consumed);
+            loginfo("consumed for paste %d; total=%llu/%llu", consumed, ictx->paste_buffer.used, ictx->paste_buffer.size);
+        } else {
+            consumed = process_ncinput(ictx, buf + offset, *bufused);
+        }
     }
     if(consumed < 0){
       logdebug("consumed < 0; break");
@@ -2813,6 +2860,53 @@ internal_get(inputctx* ictx, const struct timespec* ts, ncinput* ni){
   }
   return id;
 }
+
+int
+notcurses_bracketed_paste_enable(struct notcurses* nc)
+{
+    const char* be = get_escape(&nc->tcache, ESCAPE_BE);
+    if (be) {
+        if (!tty_emit(be, nc->tcache.ttyfd)) {
+            loginfo("enabled bracketed paste mode");
+            nc->tcache.ictx->bracked_paste_enabled = true;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+int
+notcurses_bracketed_paste_disable(struct notcurses* nc)
+{
+    if (!nc->tcache.ictx->bracked_paste_enabled) {
+        return 0;
+    }
+
+    const char* bd = get_escape(&nc->tcache, ESCAPE_BD);
+    if (bd) {
+        if (!tty_emit(bd, nc->tcache.ttyfd)) {
+            loginfo("disabled bracketed paste mode");
+            nc->tcache.ictx->bracked_paste_enabled = false;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+void
+ncinput_free_paste_content(ncinput* n)
+{
+    if (n->id == NCKEY_PASTE) {
+        fbuf small_f = {0};
+
+        small_f.buf = (char *) n->paste_content;
+        fbuf_free(&small_f);
+        n->paste_content = NULL;
+    }
+}
+
 
 // infp has already been set non-blocking
 uint32_t notcurses_get(notcurses* nc, const struct timespec* absdl, ncinput* ni){

@@ -133,6 +133,9 @@ private:
 string_fragment
 vt52_curses::map_input(const ncinput& ch)
 {
+    if (ch.id == NCKEY_PASTE) {
+        return string_fragment::from_c_str(ch.paste_content);
+    }
     /* Check for an escape sequence, otherwise just return the char. */
     if (ch.modifiers == 0) {
         const auto esc = vt52_escape_map::singleton()[ch.id];

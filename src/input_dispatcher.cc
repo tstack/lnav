@@ -95,6 +95,12 @@ input_dispatcher::new_input(const struct timeval& current_time,
         return;
     }
 
+    if (ch.id == NCKEY_PASTE) {
+        keyseq[0] = '\0';
+        this->id_key_handler(nc, ch, keyseq.data());
+        return;
+    }
+
     if (ch.id > 0xff) {
         if (NCKEY_F00 <= ch.id && ch.id <= NCKEY_F60) {
             snprintf(keyseq.data(), keyseq.size(), "f%d", ch.id - NCKEY_F00);

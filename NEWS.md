@@ -7,6 +7,13 @@ Features:
 * The "Op ID:" overlay that is added when the `log_opid` field is
   manually set on a message can now be hidden by hiding the
   `log_opid` field.
+* Pasting a command snippet when the input focus is on the main
+  view will now execute it.
+  For this to work: the terminal must support "bracketed-paste"
+  mode, which most do;
+  and, the pasted content must also start with one of the sigils
+  for the desired operation (i.e. `:` for lnav commands, `;` for SQL
+  queries, `/` for searches, and `|` for scripts).
 * Added a `report-access-log` script that generates a report that
   is similar to the output of the [goaccess](https://goaccess.io)
   utility.

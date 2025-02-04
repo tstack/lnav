@@ -91,6 +91,8 @@ typedef enum {
   ESCAPE_RMACS,
   ESCAPE_BLINK,
   ESCAPE_NOBLINK,
+  ESCAPE_BE,
+  ESCAPE_BD,
   ESCAPE_MAX
 } escape_e;
 

@@ -718,7 +718,12 @@ handle_config_ui_key(notcurses* nc, const ncinput& ch, const char* keyseq)
     if (ch.id == NCKEY_F02) {
         auto& mouse_i = injector::get<xterm_mouse&>();
         mouse_i.set_enabled(nc, !mouse_i.is_enabled());
-        return retval;
+        return true;
+    }
+
+    if (ch.id == NCKEY_PASTE) {
+        handle_paste_content(nc, ch);
+        return true;
     }
 
     switch (lnav_data.ld_mode) {
@@ -820,6 +825,10 @@ handle_key(notcurses* nc, const ncinput& ch, const char* keyseq)
                 case ln_mode_t::SPECTRO_DETAILS: {
                     if (ch.id == '\t' || ch.id == 'q') {
                         set_view_mode(ln_mode_t::PAGING);
+                        return true;
+                    }
+                    if (ch.id == NCKEY_PASTE) {
+                        handle_paste_content(nc, ch);
                         return true;
                     }
                     if (lnav_data.ld_spectro_details_view.handle_key(ch)) {
@@ -966,7 +975,7 @@ struct refresh_status_bars {
 
     void doit() const
     {
-        struct timeval current_time{};
+        timeval current_time{};
         ncinput ch;
 
         gettimeofday(&current_time, nullptr);
@@ -982,6 +991,8 @@ struct refresh_status_bars {
             lnav_data.ld_view_stack.top() | [ch](auto tc) {
                 lnav_data.ld_key_repeat_history.update(ch.id, tc->get_top());
             };
+
+            ncinput_free_paste_content(&ch);
 
             if (!lnav_data.ld_looping) {
                 // No reason to keep processing input after the
@@ -1269,12 +1280,21 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_window = nullptr;
         });
 
+        auto_fd errpipe[2];
+        auto_fd::pipe(errpipe);
+
+        errpipe[0].close_on_exec();
+        errpipe[1].close_on_exec();
+        auto pipe_err_handle = std::make_optional(
+            log_pipe_err(errpipe[0].release(), errpipe[1].release()));
+
         notcurses_options nco = {};
         nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
-        nco.loglevel = NCLOGLEVEL_PANIC;
+        nco.loglevel = NCLOGLEVEL_DEBUG;
         auto create_screen_res = screen_curses::create(nco);
 
         if (create_screen_res.isErr()) {
+            pipe_err_handle = std::nullopt;
             log_error("create screen failed with: %s",
                       create_screen_res.unwrapErr().c_str());
             auto help_txt = attr_line_t();
@@ -1306,17 +1326,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             return;
         }
 
-        auto_fd errpipe[2];
-        auto_fd::pipe(errpipe);
-
-        errpipe[0].close_on_exec();
-        errpipe[1].close_on_exec();
-        auto pipe_err_handle
-            = log_pipe_err(errpipe[0].release(), errpipe[1].release());
-
         auto sc = create_screen_res.unwrap();
         auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());
         auto& mouse_i = injector::get<xterm_mouse&>();
+
+        auto _paste = finally(
+            [&sc] { notcurses_bracketed_paste_disable(sc.get_notcurses()); });
+        notcurses_bracketed_paste_enable(sc.get_notcurses());
 
         auto ui_cb_mouse = false;
         ec.ec_ui_callbacks.uc_pre_stdout_write
@@ -1341,6 +1357,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                   auto nci = ncinput{};
                   do {
                       notcurses_get_blocking(sc.get_notcurses(), &nci);
+                      ncinput_free_paste_content(&nci);
                   } while (nci.evtype == NCTYPE_RELEASE || ncinput_lock_p(&nci)
                            || ncinput_modifier_p(&nci));
                   notcurses_enter_alternate_screen(sc.get_notcurses());
@@ -1964,10 +1981,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                         lnav_data.ld_input_dispatcher.new_input(
                             current_time, sc.get_notcurses(), nci);
 
-                        lnav_data.ld_view_stack.top() | [nci](auto tc) {
+                        lnav_data.ld_view_stack.top() | [&nci](auto tc) {
                             lnav_data.ld_key_repeat_history.update(
                                 nci.id, tc->get_top());
                         };
+                        ncinput_free_paste_content(&nci);
 
                         if (!lnav_data.ld_looping) {
                             // No reason to keep processing input after the

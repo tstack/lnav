@@ -276,6 +276,8 @@ main(int argc, char** argv)
         view_colors::singleton().init(sc.get_notcurses());
         auto looping = true;
 
+        notcurses_bracketed_paste_enable(sc.get_notcurses());
+
         textinput_curses tc;
         tc.set_x(x);
         tc.set_y(y);
@@ -359,7 +361,13 @@ main(int argc, char** argv)
             } else if (nci.evtype != NCTYPE_PRESS && !ncinput_lock_p(&nci)
                        && !ncinput_modifier_p(&nci))
             {
+                log_debug("handling key %x", nci.id);
                 tc.handle_key(nci);
+            } else {
+                log_debug("miss evtype=%d; lock=%d; mod=%d",
+                          nci.evtype,
+                          ncinput_lock_p(&nci),
+                          ncinput_modifier_p(&nci));
             }
         }
 

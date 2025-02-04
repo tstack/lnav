@@ -209,6 +209,17 @@ textinput_curses::handle_key(const ncinput& ch)
     auto bottom = inner_height - 1;
     auto chid = ch.id;
 
+    if (ch.id == NCKEY_PASTE) {
+        static const auto lf_re = lnav::pcre2pp::code::from_const("\r\n?");
+        auto paste_sf = string_fragment::from_c_str(ch.paste_content);
+        if (!this->tc_selection) {
+            this->tc_selection = selected_range::from_point(this->tc_cursor);
+        }
+        auto text = lf_re.replace(paste_sf, "\n");
+        this->replace_selection(text);
+        return true;
+    }
+
     if (ncinput_alt_p(&ch)) {
         log_debug("alt pressed");
         switch (chid) {
@@ -670,8 +681,6 @@ textinput_curses::replace_selection(string_fragment sf)
         if (sel_range->lr_start < 0) {
             if (curr_line > 0) {
                 log_debug("append %d to %d", curr_line, curr_line - 1);
-                this->tc_cursor.x
-                    = this->tc_lines[curr_line - 1].column_width();
                 this->tc_cursor.y = curr_line - 1;
                 this->tc_lines[curr_line - 1].append(this->tc_lines[curr_line]);
                 del_max = curr_line;
@@ -690,7 +699,6 @@ textinput_curses::replace_selection(string_fragment sf)
             if (curr_line == range.sr_start.y) {
                 log_debug("full first");
                 full_first_line = true;
-                this->tc_cursor.x = sf.column_width();
             }
         } else {
             auto& al = this->tc_lines[curr_line];
@@ -702,7 +710,7 @@ textinput_curses::replace_selection(string_fragment sf)
             this->tc_lines[curr_line].erase(start, end - start);
             if (curr_line == range.sr_start.y) {
                 this->tc_lines[curr_line].insert(start, sf.to_string());
-                this->tc_cursor.x = sel_range->lr_start + sf.column_width();
+                this->tc_cursor.x = sel_range->lr_start;
             } else if (sel_range->lr_start > 0 && curr_line == range.sr_end.y) {
                 del_max = curr_line;
                 this->tc_lines[curr_line - 1].append(this->tc_lines[curr_line]);
@@ -719,6 +727,12 @@ textinput_curses::replace_selection(string_fragment sf)
                                  + (full_first_line ? 0 : 1),
                              this->tc_lines.begin() + del_max.value() + 1);
     }
+
+    const auto repl_cols
+        = sf.find_left_boundary(sf.length(), string_fragment::tag1{'\n'})
+              .column_width();
+    this->tc_cursor.x += repl_cols;
+    this->tc_cursor.y += sf.count('\n');
 
     this->tc_drag_selection = std::nullopt;
     this->update_lines();

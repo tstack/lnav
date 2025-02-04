@@ -104,6 +104,56 @@ handle_keyseq(const char* keyseq)
     return true;
 }
 
+void
+handle_paste_content(notcurses* nc, const ncinput& ch)
+{
+    auto& ec = lnav_data.ld_exec_context;
+
+    switch (ch.paste_content[0]) {
+        case '/':
+        case ':':
+        case ';':
+        case '|': {
+            static const auto lf_re = lnav::pcre2pp::code::from_const("\r\n?");
+            static const intern_string_t SRC
+                = intern_string::lookup("pasted-content");
+
+            auto paste_sf = string_fragment::from_c_str(ch.paste_content);
+            auto cmdline = lf_re.replace(paste_sf, "\n");
+            auto sg = ec.enter_source(SRC, 0, cmdline);
+
+            auto exec_res = ec.execute(cmdline);
+            if (exec_res.isOk()) {
+                lnav_data.ld_rl_view->set_value(exec_res.unwrap());
+            } else {
+                auto um = exec_res.unwrapErr();
+
+                ec.ec_msg_callback_stack.back()(um);
+            }
+            break;
+        }
+        default: {
+            auto um
+                = lnav::console::user_message::error(
+                      attr_line_t("ignoring pasted content"))
+                      .with_reason(
+                          attr_line_t("content does not start with one of the "
+                                      "expected prefixes: ")
+                              .append(":"_quoted_code)
+                              .append(" for lnav commands; ")
+                              .append(";"_quoted_code)
+                              .append(" for SQL queries; ")
+                              .append("/"_quoted_code)
+                              .append(" for searches; ")
+                              .append("|"_quoted_code)
+                              .append(" scripts"));
+
+            ec.ec_msg_callback_stack.back()(um);
+            break;
+        }
+    }
+}
+
 bool
 handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
 {
@@ -111,10 +161,15 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         return false;
     }
 
-    textview_curses* tc = *lnav_data.ld_view_stack.top();
+    auto* tc = *lnav_data.ld_view_stack.top();
     auto& ec = lnav_data.ld_exec_context;
     auto* tc_tss = tc->get_sub_source();
     auto& bm = tc->get_bookmarks();
+
+    if (ch.id == NCKEY_PASTE) {
+        handle_paste_content(nc, ch);
+        return true;
+    }
 
     if (tc->get_overlay_selection()) {
         if (tc->handle_key(ch)) {
