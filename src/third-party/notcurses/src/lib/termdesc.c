@@ -1368,6 +1368,17 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
       free(ti->tpreserved);
       return -1;
     }
+
+#ifndef __MINGW32__
+      // windows doesn't really have a concept of terminfo. you might ssh into other
+      // machines, but they'll use the terminfo installed thereon (putty, etc.).
+      int termerr;
+      if(setupterm(termtype, ti->ttyfd, &termerr)){
+          logpanic("terminfo error %d for [%s] (see terminfo(3ncurses))",
+                   termerr, termtype ? termtype : "");
+          goto err;
+      }
+#endif
     // if we already know our terminal (e.g. on the linux console), there's no
     // need to send the identification queries. the controls are sufficient.
     bool minimal = (ti->qterm != TERMINAL_UNKNOWN);
@@ -1376,15 +1387,7 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
     }
   }
 #ifndef __MINGW32__
-  // windows doesn't really have a concept of terminfo. you might ssh into other
-  // machines, but they'll use the terminfo installed thereon (putty, etc.).
-  int termerr;
-  if(setupterm(termtype, ti->ttyfd, &termerr)){
-    logpanic("terminfo error %d for [%s] (see terminfo(3ncurses))",
-             termerr, termtype ? termtype : "");
-    goto err;
-  }
-  tname = termname(); // longname() is also available
+      tname = termname(); // longname() is also available
 #endif
   int linesigs_enabled = 1;
   if(ti->tpreserved){

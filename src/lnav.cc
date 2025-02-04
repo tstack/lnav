@@ -1269,14 +1269,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_window = nullptr;
         });
 
-        auto_fd errpipe[2];
-        auto_fd::pipe(errpipe);
-
-        errpipe[0].close_on_exec();
-        errpipe[1].close_on_exec();
-        auto pipe_err_handle
-            = log_pipe_err(errpipe[0].release(), errpipe[1].release());
-
         notcurses_options nco = {};
         nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
         nco.loglevel = NCLOGLEVEL_PANIC;
@@ -1285,12 +1277,42 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (create_screen_res.isErr()) {
             log_error("create screen failed with: %s",
                       create_screen_res.unwrapErr().c_str());
+            auto help_txt = attr_line_t();
+            auto term_var = getenv("TERM");
+            if (term_var == nullptr) {
+                help_txt.append("The ")
+                    .append("TERM"_symbol)
+                    .append(" environment variable is not set.  ");
+            } else {
+                help_txt.append("The ")
+                    .append("TERM"_symbol)
+                    .append(" value of ")
+                    .append_quoted(term_var)
+                    .append(" is not known.  ");
+            }
+            help_txt
+                .append(
+                    "Check for your "
+                    "terminal in ")
+                .append(
+                    "https://github.com/dankamongmen/notcurses/blob/master/TERMINALS.md"_hyperlink)
+                .append(" or use ")
+                .append_quoted("xterm-256color");
             lnav::console::print(
                 stderr,
                 lnav::console::user_message::error("unable to open TUI")
-                    .with_reason(create_screen_res.unwrapErr()));
+                    .with_reason(create_screen_res.unwrapErr())
+                    .with_help(help_txt));
             return;
         }
+
+        auto_fd errpipe[2];
+        auto_fd::pipe(errpipe);
+
+        errpipe[0].close_on_exec();
+        errpipe[1].close_on_exec();
+        auto pipe_err_handle
+            = log_pipe_err(errpipe[0].release(), errpipe[1].release());
 
         auto sc = create_screen_res.unwrap();
         auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());

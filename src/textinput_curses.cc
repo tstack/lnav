@@ -795,7 +795,7 @@ textinput_curses::do_update()
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
     }
 
-    {
+    if (this->tc_height > 1) {
         double progress = 1.0;
         double coverage = 1.0;
 

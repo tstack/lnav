@@ -62,6 +62,11 @@
  *   * At the beginning of a line, the current line is appended to the
  *     previous.
  *   * At the beginning of the buffer, nothing happens.
+ * - Pressing CTRL-K:
+ *   * without an active selection, copies the text from the cursor to
+ *     the end of the line into the clipboard and then deletes it;
+ *   * with a selection, copies the selected text into the clipboard
+ *     and then deletes it.
  */
 class textinput_curses : public view_curses {
 public:
