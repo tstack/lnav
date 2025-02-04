@@ -32,6 +32,7 @@
 #include "textinput_curses.hh"
 
 #include "base/attr_line.hh"
+#include "base/auto_mem.hh"
 #include "base/itertools.hh"
 #include "base/keycodes.hh"
 #include "base/string_attr_type.hh"
@@ -293,6 +294,13 @@ textinput_curses::handle_key(const ncinput& ch)
                         = al.column_to_byte_index(this->tc_cursor.x);
                     this->tc_clipboard = al.subline(byte_index).al_string;
                     al.erase(byte_index);
+                    if (this->tc_clipboard.empty()
+                        && this->tc_cursor.y + 1 < this->tc_lines.size())
+                    {
+                        al.append(this->tc_lines[this->tc_cursor.y + 1]);
+                        this->tc_lines.erase(this->tc_lines.begin()
+                                             + this->tc_cursor.y + 1);
+                    }
                 }
                 {
                     auto clip_open_res
@@ -326,14 +334,46 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             case 'y':
             case 'Y': {
+                auto open_clip_res = sysclip::open(sysclip::type_t::GENERAL,
+                                                   sysclip::op_t::READ);
+                if (open_clip_res.isOk()) {
+                    auto clip_file = open_clip_res.unwrap();
+                    auto buf = auto_buffer::alloc(1024);
+
+                    while (true) {
+                        if (buf.available() == 0) {
+                            buf.expand_by(1024);
+                        }
+
+                        auto rc = fread(buf.in(),
+                                        sizeof(char),
+                                        buf.available(),
+                                        clip_file.in());
+                        log_debug("fread returned: %d", rc);
+                        if (rc == 0) {
+                            break;
+                        }
+                        buf.resize_by(rc);
+                    }
+
+                    this->tc_clipboard = buf.to_string();
+                    log_debug("sysclip returned: %s",
+                              this->tc_clipboard.c_str());
+                }
+
                 if (!this->tc_clipboard.empty()) {
                     auto& al = this->tc_lines[this->tc_cursor.y];
                     al.insert(al.column_to_byte_index(this->tc_cursor.x),
                               this->tc_clipboard);
+                    const auto clip_sf
+                        = string_fragment::from_str(this->tc_clipboard);
                     const auto clip_cols
-                        = string_fragment::from_str(this->tc_clipboard)
+                        = clip_sf
+                              .find_left_boundary(clip_sf.length(),
+                                                  string_fragment::tag1{'\n'})
                               .column_width();
                     this->tc_cursor.x += clip_cols;
+                    this->tc_cursor.y += clip_sf.count('\n');
                     this->tc_selection = std::nullopt;
                     this->tc_drag_selection = std::nullopt;
                     this->update_lines();

@@ -65,6 +65,8 @@
  * - Pressing CTRL-K:
  *   * without an active selection, copies the text from the cursor to
  *     the end of the line into the clipboard and then deletes it;
+ *     - If the cursor is at the end of the line, the line-feed is deleted
+ *       and the following line is appended to the current line.
  *   * with a selection, copies the selected text into the clipboard
  *     and then deletes it.
  */
