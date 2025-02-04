@@ -36,7 +36,10 @@
 #include "base/keycodes.hh"
 #include "base/string_attr_type.hh"
 #include "config.h"
+#include "data_parser.hh"
+#include "data_scanner.hh"
 #include "readline_highlighters.hh"
+#include "sysclip.hh"
 #include "ww898/cp_utf8.hpp"
 
 textinput_curses::textinput_curses()
@@ -100,8 +103,8 @@ textinput_curses::handle_mouse(mouse_event& me)
         auto dim = this->get_visible_dimensions();
         if (this->tc_top + dim.dr_height < inner_height) {
             this->tc_top += 1;
-            if (this->tc_cursor.y < this->tc_top) {
-                this->tc_cursor.y = this->tc_top;
+            if (this->tc_cursor.y <= this->tc_top) {
+                this->tc_cursor.y = this->tc_top + 1;
             }
         }
         this->ensure_cursor_visible();
@@ -123,7 +126,62 @@ textinput_curses::handle_mouse(mouse_event& me)
         this->tc_complete_range = std::nullopt;
         this->tc_cursor = inner_point;
         log_debug("new cursor x=%d y=%d", this->tc_cursor.x, this->tc_cursor.y);
-        if (me.me_state == mouse_button_state_t::BUTTON_STATE_PRESSED) {
+        if (me.me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK) {
+            const auto& al = this->tc_lines[this->tc_cursor.y];
+            auto sf = string_fragment::from_str(al.al_string);
+            auto cursor_sf = sf.sub_cell_range(this->tc_left + me.me_x,
+                                               this->tc_left + me.me_x);
+            auto ds = data_scanner(sf);
+
+            while (true) {
+                auto tok_res = ds.tokenize2(this->tc_text_format);
+                if (!tok_res.has_value()) {
+                    break;
+                }
+
+                auto tok = tok_res.value();
+                log_debug("tok %d", tok.tr_token);
+
+                auto tok_sf = (tok.tr_token == data_token_t::DT_QUOTED_STRING
+                               && (cursor_sf.sf_begin
+                                       == tok.to_string_fragment().sf_begin
+                                   || cursor_sf.sf_begin
+                                       == tok.to_string_fragment().sf_end - 1))
+                    ? tok.to_string_fragment()
+                    : tok.inner_string_fragment();
+                log_debug("tok %d:%d  curs %d:%d",
+                          tok_sf.sf_begin,
+                          tok_sf.sf_end,
+                          cursor_sf.sf_begin,
+                          cursor_sf.sf_end);
+                if (tok_sf.contains(cursor_sf)
+                    && tok.tr_token != data_token_t::DT_WHITE)
+                {
+                    log_debug("hit!");
+                    auto group_tok
+                        = ds.find_matching_bracket(this->tc_text_format, tok);
+                    if (group_tok) {
+                        tok_sf = group_tok.value().to_string_fragment();
+                    }
+                    auto tok_start = input_point{
+                        (int) sf.byte_to_column_index(tok_sf.sf_begin)
+                            - this->tc_left,
+                        this->tc_cursor.y,
+                    };
+                    auto tok_end = input_point{
+                        (int) sf.byte_to_column_index(tok_sf.sf_end)
+                            - this->tc_left,
+                        this->tc_cursor.y,
+                    };
+
+                    log_debug("st %d:%d", tok_start.x, tok_end.x);
+                    this->tc_drag_selection = std::nullopt;
+                    this->tc_selection
+                        = selected_range::from_mouse(tok_start, tok_end);
+                    this->set_needs_update();
+                }
+            }
+        } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_PRESSED) {
             this->tc_selection = std::nullopt;
             this->tc_drag_selection = sel_range;
         } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED) {
@@ -204,11 +262,52 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             case 'k':
             case 'K': {
-                auto& al = this->tc_lines[this->tc_cursor.y];
-                auto byte_index = al.column_to_byte_index(this->tc_cursor.x);
-                this->tc_clipboard = al.subline(byte_index).al_string;
-                al.erase(byte_index);
-                this->tc_selection = std::nullopt;
+                if (this->tc_selection) {
+                    this->tc_clipboard.clear();
+                    auto range = this->tc_selection;
+                    for (auto curr_line = range->sr_start.y;
+                         curr_line <= range->sr_end.y;
+                         ++curr_line)
+                    {
+                        auto sel_range = range->range_for_line(curr_line);
+                        if (!sel_range) {
+                            continue;
+                        }
+
+                        auto& al = this->tc_lines[curr_line];
+                        auto start_byte
+                            = al.column_to_byte_index(sel_range->lr_start);
+                        auto end_byte
+                            = al.column_to_byte_index(sel_range->lr_end);
+                        auto sub
+                            = al.subline(start_byte, end_byte - start_byte);
+                        if (curr_line > range->sr_start.y) {
+                            this->tc_clipboard.push_back('\n');
+                        }
+                        this->tc_clipboard.append(sub.al_string);
+                    }
+                    this->replace_selection(string_fragment{});
+                } else {
+                    auto& al = this->tc_lines[this->tc_cursor.y];
+                    auto byte_index
+                        = al.column_to_byte_index(this->tc_cursor.x);
+                    this->tc_clipboard = al.subline(byte_index).al_string;
+                    al.erase(byte_index);
+                }
+                {
+                    auto clip_open_res
+                        = sysclip::open(sysclip::type_t::GENERAL);
+
+                    if (clip_open_res.isOk()) {
+                        auto clip_file = clip_open_res.unwrap();
+                        fprintf(
+                            clip_file.in(), "%s", this->tc_clipboard.c_str());
+                    } else {
+                        auto err_msg = clip_open_res.unwrapErr();
+                        log_error("unable to open clipboard: %s",
+                                  err_msg.c_str());
+                    }
+                }
                 this->tc_drag_selection = std::nullopt;
                 this->update_lines();
                 return true;
@@ -651,6 +750,7 @@ textinput_curses::blur()
 bool
 textinput_curses::do_update()
 {
+    static auto& vc = view_colors::singleton();
     auto retval = false;
 
     if (!this->vc_needs_update) {
@@ -661,10 +761,10 @@ textinput_curses::do_update()
     log_debug("render input");
     retval = true;
     auto dim = this->get_visible_dimensions();
+    auto row_count = this->tc_lines.size();
     auto y = this->vc_y;
     auto y_max = this->vc_y + dim.dr_height;
-    for (auto curr_line = this->tc_top;
-         curr_line < this->tc_lines.size() && y < y_max;
+    for (auto curr_line = this->tc_top; curr_line < row_count && y < y_max;
          curr_line++, y++)
     {
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
@@ -693,6 +793,39 @@ textinput_curses::do_update()
     }
     for (; y < y_max; y++) {
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
+    }
+
+    {
+        double progress = 1.0;
+        double coverage = 1.0;
+
+        if (row_count > 0) {
+            progress = (double) this->tc_top / (double) row_count;
+            coverage = (double) dim.dr_height / (double) row_count;
+        }
+
+        auto scroll_top = (int) (progress * (double) dim.dr_height);
+        auto scroll_bottom = scroll_top
+            + std::min(dim.dr_height,
+                       (int) (coverage * (double) dim.dr_height));
+
+        for (auto y = this->vc_y; y < y_max; y++) {
+            auto role = this->vc_default_role;
+            auto bar_role = role_t::VCR_SCROLLBAR;
+            auto ch = NCACS_VLINE;
+            if (y >= this->vc_y + scroll_top && y <= this->vc_y + scroll_bottom)
+            {
+                role = bar_role;
+            }
+            auto attrs = vc.attrs_for_role(role);
+            ncplane_putstr_yx(
+                this->tc_window, y, this->vc_x + dim.dr_width - 1, ch);
+            ncplane_set_cell_yx(this->tc_window,
+                                y,
+                                this->vc_x + dim.dr_width - 1,
+                                attrs.ta_attrs | NCSTYLE_ALTCHARSET,
+                                view_colors::to_channels(attrs));
+        }
     }
 
     return view_curses::do_update() || retval;

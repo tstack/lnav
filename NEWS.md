@@ -38,6 +38,7 @@ Features:
 * Session exports now include `:hide-fields` and `:show-fields`
   commands from the session.
   They are currently commented out by default.
+* Added highlighting for Markdown syntax.
 
 Interface changes:
 * DB query results that start with a number are right justified

@@ -43,6 +43,26 @@
 #include "textview_curses.hh"
 #include "view_curses.hh"
 
+/**
+ * A multi-line text input box that supports the following UX:
+ *
+ * - Pressing up:
+ *   * on the home line moves the cursor to the beginning of the line;
+ *   * on a line in the middle moves to the previous line and moves to the
+ *     end of the line, if the previous line is shorter;
+ *   * scrolls the view so that one line above the cursor is visible.
+ * - Pressing down:
+ *   * on the bottom line moves the cursor to the end of the line;
+ *   * scrolls the view so that the cursor is visible;
+ *   * does not move the cursor past the last line in the buffer.
+ * - Typing a character:
+ *   * inserts it at the cursor position
+ *   * scrolls the view to the right
+ * - Pressing backspace deletes the previous character.
+ *   * At the beginning of a line, the current line is appended to the
+ *     previous.
+ *   * At the beginning of the buffer, nothing happens.
+ */
 class textinput_curses : public view_curses {
 public:
     enum class direction_t {

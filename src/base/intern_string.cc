@@ -521,6 +521,42 @@ string_fragment::column_to_byte_index(const size_t col) const
     return index;
 }
 
+size_t
+string_fragment::byte_to_column_index(const size_t byte_index) const
+{
+    auto index = this->sf_begin;
+    size_t curr_col = 0;
+
+    while (index < this->sf_end && index < byte_index) {
+        auto read_res = ww898::utf::utf8::read(
+            [this, &index]() { return this->sf_string[index++]; });
+        if (read_res.isErr()) {
+            curr_col += 1;
+        } else {
+            auto ch = read_res.unwrap();
+
+            switch (ch) {
+                case '\t':
+                    do {
+                        curr_col += 1;
+                    } while (curr_col % 8);
+                break;
+                default: {
+                    auto wcw_res = uc_width(read_res.unwrap(), "UTF-8");
+                    if (wcw_res < 0) {
+                        wcw_res = 1;
+                    }
+
+                    curr_col += wcw_res;
+                    break;
+                }
+            }
+        }
+    }
+
+    return curr_col;
+}
+
 static bool
 iswordbreak(wchar_t wchar)
 {

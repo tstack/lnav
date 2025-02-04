@@ -448,6 +448,7 @@ listview_curses::get_overlay_top(vis_line_t row, size_t count, size_t total)
 bool
 listview_curses::do_update()
 {
+    static auto& vc = view_colors::singleton();
     bool retval = false;
 
     if (this->lv_window == nullptr || this->lv_height == 0 || !this->vc_visible)
@@ -466,7 +467,6 @@ listview_curses::do_update()
 
     this->update_top_from_selection();
     while (this->vc_needs_update) {
-        auto& vc = view_colors::singleton();
         vis_line_t row;
         attr_line_t overlay_line;
         struct line_range lr;
