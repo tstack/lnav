@@ -49,3 +49,7 @@ if test $? -ne 0; then
     echo "Script output was not redirected?"
     exit 1
 fi
+
+run_cap_test ${lnav_test} -n \
+    -c '|report-access-log' \
+    ${test_dir}/logfile_shop_access_log.0

@@ -1,0 +1,89 @@
+---
+title: Access Log Report
+targets:
+  invalid-requests:
+    command: ;SELECT log_line, log_raw_text FROM access_log WHERE log_level = 'invalid'
+  unique-visitors:
+    command: ;SELECT c_ip, cs_user_agent, count(*) AS hits FROM access_log GROUP BY c_ip, cs_user_agent ORDER BY hits DESC
+---
+
+# access_log report
+
+## Dashboard
+
+* 1000 Total requests
+* 0 [Total invalid requests](#/frontmatter/targets/invalid-requests/command)
+* 110 [Unique visitors](#/frontmatter/targets/unique-visitors/command)
+* 751 Requested files
+* 15 Not found
+* 18.1MB Tx. amount
+
+## Unique visitors per day
+
+|   Hits   |  h%   |   Vis    |Tx. Amount|   Date   |
+|---------:|------:|---------:|---------:|---------:|
+|      1000|100.00%|       110|    18.1MB|2019-01-21|
+
+## Requested files
+
+|   Hits   | h%  |   Vis    |Tx. Amount|Mtd | Proto  |                                   URIs                                    |
+|---------:|----:|---------:|---------:|:---|:-------|:--------------------------------------------------------------------------|
+|        34|3.40%|        12|   136.8KB|GET |HTTP/1.1|/settings/logo                                                             |
+|        12|1.20%|         5|    73.5KB|GET |HTTP/1.1|/filter                                                                    |
+|        11|1.10%|         1|     2.2KB|POST|HTTP/1.1|/m/updateVariation                                                         |
+|        10|1.00%|         1|     0.0 B|HEAD|HTTP/1.1|/amp_preconnect_polyfill_404_or_other_error_expected._Do_not_worry_about_it|
+|        10|1.00%|         1|   304.2KB|GET |HTTP/1.1|/filter/stexists,p8391,b80                                                 |
+|         8|0.80%|         4|   209.0KB|GET |HTTP/1.1|/                                                                          |
+|         7|0.70%|         1|   217.1KB|GET |HTTP/1.1|/filter/stexists,p12590                                                    |
+|         7|0.70%|         1|   216.9KB|GET |HTTP/1.1|/filter/stexists,p12601                                                    |
+|         7|0.70%|         7|    22.6KB|GET |HTTP/1.1|/static/images/amp/blog.png                                                |
+|         7|0.70%|         7|    48.8KB|GET |HTTP/1.1|/static/images/amp/instagram.png                                           |
+
+## Not found URLs
+
+|   Hits   | h%  |   Vis    |Tx. Amount|Mtd | Proto  |                                                                                                                                                                            URIs                                                                                                                                                                             |
+|---------:|----:|---------:|---------:|:---|:-------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|        10|1.00%|         1|     0.0 B|HEAD|HTTP/1.1|/amp_preconnect_polyfill_404_or_other_error_expected._Do_not_worry_about_it                                                                                                                                                                                                                                                                                  |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/browse/flute-keys/www.zanbil.ir                                                                                                                                                                                                                                                                                                                             |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/m/product/25828                                                                                                                                                                                                                                                                                                                                             |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/product/12705                                                                                                                                                                                                                                                                                                                                               |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/product/14047                                                                                                                                                                                                                                                                                                                                               |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/product/14926                                                                                                                                                                                                                                                                                                                                               |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/product/17699                                                                                                                                                                                                                                                                                                                                               |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/product/24030                                                                                                                                                                                                                                                                                                                                               |
+|         1|0.10%|         1|    33.0KB|GET |HTTP/1.1|/product/25816/53071/%D8%B3%D8%A7%DA%A9%D8%B3%DB%8C%D9%81%D9%88%D9%86%20%20YAMAHA%20%20%D8%B7%D9%84⋯9%D8%A7%D9%84%D8%A7%20%D9%88%20%D8%B3%D9%84%D8%A7%D9%85%D8%AA%20%D9%81%DB%8C%D8%B2%DB%8C%DA%A9%DB%8C                                                                                                                                                     |
+|         1|0.10%|         1|    32.8KB|GET |HTTP/1.1|/product/3628                                                                                                                                                                                                                                                                                                                                                |
+
+## Visitor IPs
+
+|   Hits   | h%  |   Vis    |Tx. Amount|     Host     |
+|---------:|----:|---------:|---------:|-------------:|
+|        88|8.80%|         3|     2.0MB| 66.249.66.194|
+|        83|8.30%|         2|     2.8MB|  66.249.66.91|
+|        78|7.80%|         1|     2.4MB|130.185.74.243|
+|        72|7.20%|         1|   514.9KB|   5.211.97.39|
+|        72|7.20%|         1|   788.0KB|   31.56.96.51|
+|        66|6.60%|         1|   532.8KB| 66.111.54.249|
+|        49|4.90%|         1|     1.1MB|   89.47.79.75|
+|        44|4.40%|         1|   470.8KB|204.18.198.248|
+|        41|4.10%|         4|     1.6MB|   91.99.72.15|
+|        39|3.90%|         2|     1.5MB| 207.46.13.136|
+
+## Referring Sites
+
+|   Hits   |  h%  |   Vis    |Tx. Amount|            Referer             |
+|---------:|-----:|---------:|---------:|:-------------------------------|
+|       468|46.80%|        18|     4.5MB|www.zanbil.ir                   |
+|         6| 0.60%|         6|    57.2KB|www-zanbil-ir.cdn.ampproject.org|
+|         3| 0.30%|         1|   103.4KB|znbl.ir                         |
+|         2| 0.20%|         2|    52.2KB|www.google.com                  |
+|         2| 0.20%|         2|     8.3KB|torob.com                       |
+|         2| 0.20%|         1|    59.9KB|ptcnovin.com                    |
+
+## HTTP Status Codes
+
+|   Hits   |  h%  |   Vis    |Tx. Amount|Status|
+|---------:|-----:|---------:|---------:|-----:|
+|       938|93.80%|       100|    17.6MB|   2XX|
+|        38| 3.80%|        18|     1.9KB|   3XX|
+|        24| 2.40%|         6|   458.3KB|   4XX|

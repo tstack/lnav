@@ -566,6 +566,8 @@ dist_noinst_DATA = \
     test_regex101.sh_f23e393dbf23d0d8e276e9b7610c7b74d79980f8.out \
     test_regex101.sh_fc41b6ee90cbf038620151f16d164b361acf82dd.err \
     test_regex101.sh_fc41b6ee90cbf038620151f16d164b361acf82dd.out \
+    test_scripts.sh_361492d777ead4b66c51da1fcb4d54256a18cb66.err \
+    test_scripts.sh_361492d777ead4b66c51da1fcb4d54256a18cb66.out \
     test_sessions.sh_0300a1391c33b1c45ddfa90198a6bd0a5404a77f.err \
     test_sessions.sh_0300a1391c33b1c45ddfa90198a6bd0a5404a77f.out \
     test_sessions.sh_14aae534ade7470dee4e812297dd719f0725fee4.err \

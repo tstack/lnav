@@ -1290,7 +1290,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         notcurses_options nco = {};
         nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
-        nco.loglevel = NCLOGLEVEL_DEBUG;
+        nco.loglevel = NCLOGLEVEL_PANIC;
         auto create_screen_res = screen_curses::create(nco);
 
         if (create_screen_res.isErr()) {
