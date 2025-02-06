@@ -549,6 +549,11 @@ public:
 
     size_t column_to_byte_index(size_t column) const;
 
+    size_t byte_to_column_index(size_t byte_index) const
+    {
+        return this->to_string_fragment().byte_to_column_index(byte_index);
+    }
+
     size_t column_width() const
     {
         return string_fragment::from_str(this->al_string).column_width();

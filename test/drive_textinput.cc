@@ -33,6 +33,7 @@
 #include <termios.h>
 
 #include "base/auto_fd.hh"
+#include "base/fs_util.hh"
 #include "base/injector.bind.hh"
 #include "base/injector.hh"
 #include "base/itertools.hh"
@@ -201,11 +202,14 @@ int
 main(int argc, char** argv)
 {
     std::string content = "lorem";
+    std::string file_content;
     int c;
     int x = 0;
     int y = 0;
-    int width = 40;
-    int height = 10;
+    std::optional<int> width;
+    std::optional<int> height;
+
+    signal(SIGPIPE, SIG_IGN);
 
     setenv("DUMP_CRASH", "1", 1);
     setlocale(LC_ALL, "");
@@ -221,8 +225,16 @@ main(int argc, char** argv)
     auto pipe_err_handle
         = log_pipe_err(errpipe[0].release(), errpipe[1].release());
 
-    while ((c = getopt(argc, argv, "x:y:h:w:c:")) != -1) {
+    while ((c = getopt(argc, argv, "Sx:y:h:w:c:")) != -1) {
         switch (c) {
+            case 'S': {
+                fprintf(stderr, "PID %d waiting for attachment\n", getpid());
+                char b;
+                if (isatty(STDIN_FILENO) && read(STDIN_FILENO, &b, 1) == -1) {
+                    perror("Read key from STDIN");
+                }
+                break;
+            }
             case 'x':
                 x = atoi(optarg);
                 break;
@@ -245,6 +257,22 @@ main(int argc, char** argv)
         }
     }
 
+    argc -= optind;
+    argv += optind;
+
+    if (argc > 0) {
+        auto read_res = lnav::filesystem::read_file(argv[0]);
+        if (read_res.isErr()) {
+            fprintf(stderr,
+                    "error: unable to read file: %s -- %s\n",
+                    argv[0],
+                    read_res.unwrapErr().c_str());
+            return EXIT_FAILURE;
+        }
+
+        file_content = read_res.unwrap();
+    }
+
     if (sqlite3_open(":memory:", drive_textinput_data.dtd_db.out())
         != SQLITE_OK)
     {
@@ -257,17 +285,20 @@ main(int argc, char** argv)
 
     std::string new_content;
 
+    auto perform_exit = false;
     guard_termios gt(STDIN_FILENO);
     {
-#ifdef VDSUSP
         {
             struct termios tio;
 
             tcgetattr(STDIN_FILENO, &tio);
+            tio.c_cc[VSTART] = 0;
+            tio.c_cc[VSTOP] = 0;
+#ifdef VDSUSP
             tio.c_cc[VDSUSP] = 0;
+#endif
             tcsetattr(STDIN_FILENO, TCSANOW, &tio);
         }
-#endif
 
         auto nco = notcurses_options{};
         nco.flags |= NCOPTION_SUPPRESS_BANNERS;
@@ -278,18 +309,26 @@ main(int argc, char** argv)
 
         notcurses_bracketed_paste_enable(sc.get_notcurses());
 
+        unsigned plane_width, plane_height;
+
+        ncplane_dim_yx(sc.get_std_plane(), &plane_height, &plane_width);
+
         textinput_curses tc;
         tc.set_x(x);
         tc.set_y(y);
-        tc.set_width(width);
-        tc.tc_height = height;
+        tc.set_width(width.value_or(plane_width));
+        tc.tc_height = height.value_or(plane_height);
         tc.tc_window = sc.get_std_plane();
         setup_highlights(tc.tc_highlights);
-        {
+        if (file_content.empty()) {
             auto iter = CONTENT_MAP.find(content);
 
             tc.tc_text_format = iter->second.first;
             tc.set_content(iter->second.second);
+        } else {
+            tc.tc_text_format = detect_text_format(
+                file_content, std::filesystem::path(argv[0]));
+            tc.set_content(file_content);
         }
         tc.tc_on_abort = [&looping](auto& tc) { looping = false; };
         tc.tc_on_change = [](textinput_curses& tc) {
@@ -306,8 +345,13 @@ main(int argc, char** argv)
                 return;
             }
 
-            auto poss
-                = sql_keywords | lnav::itertools::similar_to(prefix.al_string);
+            auto poss = tc.tc_doc_meta.m_words
+                | lnav::itertools::similar_to(prefix.al_string);
+            auto poss_iter
+                = std::find(poss.begin(), poss.end(), prefix.al_string);
+            if (poss_iter != poss.end()) {
+                poss.erase(poss_iter);
+            }
             tc.open_popup_for_completion(
                 word_start_col.value_or(0),
                 poss | lnav::itertools::map([](const auto& s) {
@@ -350,16 +394,24 @@ main(int argc, char** argv)
             notcurses_get_blocking(sc.get_notcurses(), &nci);
             if (ncinput_ctrl_p(&nci) && nci.id == 'X') {
                 looping = false;
+                perform_exit = true;
                 continue;
             }
             log_debug("got input shift=%d alt=%d ctrl=%d",
                       ncinput_shift_p(&nci),
                       ncinput_alt_p(&nci),
                       ncinput_ctrl_p(&nci));
-            if (ncinput_mouse_p(&nci)) {
+            if (nci.id == NCKEY_RESIZE) {
+                log_debug("doing resize!");
+                notcurses_render(sc.get_notcurses());
+                ncplane_dim_yx(sc.get_std_plane(), &plane_height, &plane_width);
+                tc.set_width(width.value_or(plane_width));
+                tc.tc_height = height.value_or(plane_height);
+                tc.set_needs_update();
+            } else if (ncinput_mouse_p(&nci)) {
                 mouse_i.handle_mouse(sc.get_notcurses(), nci);
-            } else if (nci.evtype != NCTYPE_PRESS && !ncinput_lock_p(&nci)
-                       && !ncinput_modifier_p(&nci))
+            } else if (nci.evtype == NCTYPE_PRESS) {
+            } else if (!ncinput_lock_p(&nci) && !ncinput_modifier_p(&nci))
             {
                 log_debug("handling key %x", nci.id);
                 tc.handle_key(nci);
@@ -374,5 +426,11 @@ main(int argc, char** argv)
         new_content = tc.get_content();
     }
 
-    printf("%s", new_content.c_str());
+    if (argc > 0) {
+        if (perform_exit) {
+            lnav::filesystem::write_file(argv[0], new_content);
+        }
+    } else {
+        printf("%s", new_content.c_str());
+    }
 }

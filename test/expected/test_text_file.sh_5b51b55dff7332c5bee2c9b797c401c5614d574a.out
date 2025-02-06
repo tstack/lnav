@@ -47,7 +47,7 @@ Then, in the [1mlnav[0m TUI, you can:
    ]8;;https://docs.lnav.org/en/latest/usage.html#sqlite-expression\[4mexpressions[0m]8;;\⁵;
  [33m•[0m pretty-print structured text (]8;;https://docs.lnav.org/en/latest/ui.html#pretty\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/ui.html#pretty\[4m[37m[40m P [0m]8;;\⁶);
  [33m•[0m view a histogram of messages over time (]8;;https://docs.lnav.org/en/latest/ui.html#hist\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/ui.html#hist\[4m[37m[40m i [0m]8;;\⁷);
- [33m•[0m query messages using SQLite (]8;;https://docs.lnav.org/en/latest/sqlext.html\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/sqlext.html\[4m[37m[40m ; [0m]8;;\⁸)
+ [33m•[0m analyze messages using SQLite (]8;;https://docs.lnav.org/en/latest/sqlext.html\[4mpress [0m]8;;\]8;;https://docs.lnav.org/en/latest/sqlext.html\[4m[37m[40m ; [0m]8;;\⁸)
 
  [34m▌[0m[1] - https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation     
  [34m▌[0m[2] - https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation     

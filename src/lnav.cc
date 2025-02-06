@@ -1386,16 +1386,18 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
 
         lnav_data.ld_window = sc.get_std_plane();
-
-#ifdef VDSUSP
+        
         {
             struct termios tio;
 
             tcgetattr(STDIN_FILENO, &tio);
+            tio.c_cc[VSTART] = 0;
+            tio.c_cc[VSTOP] = 0;
+#ifdef VDSUSP
             tio.c_cc[VDSUSP] = 0;
+#endif
             tcsetattr(STDIN_FILENO, TCSANOW, &tio);
         }
-#endif
 
         auto& vc = view_colors::singleton();
         view_colors::init(sc.get_notcurses());

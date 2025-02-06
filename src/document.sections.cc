@@ -211,6 +211,7 @@ struct metadata_builder {
     std::unique_ptr<hier_node> mb_root_node;
     std::set<size_t> mb_indents;
     text_format_t mb_text_format{text_format_t::TF_UNKNOWN};
+    std::set<std::string> mb_words;
 
     metadata to_metadata() &&
     {
@@ -220,6 +221,7 @@ struct metadata_builder {
             std::move(this->mb_type_intervals),
             std::move(this->mb_indents),
             this->mb_text_format,
+            this->mb_words,
         };
     }
 };
@@ -400,10 +402,11 @@ discover_metadata(const attr_line_t& al)
 
 class structure_walker {
 public:
-    explicit structure_walker(attr_line_t& al, line_range lr, text_format_t tf)
-        : sw_line(al), sw_range(lr), sw_text_format(tf),
-          sw_scanner(string_fragment::from_str_range(
-              al.get_string(), lr.lr_start, lr.lr_end))
+    explicit structure_walker(discover_builder& db)
+        : sw_discover_builder(db), sw_line(db.db_line), sw_range(db.db_range),
+          sw_scanner(string_fragment::from_str_range(db.db_line.get_string(),
+                                                     db.db_range.lr_start,
+                                                     db.db_range.lr_end))
     {
         this->sw_interval_state.resize(1);
         this->sw_hier_nodes.push_back(std::make_unique<hier_node>());
@@ -411,7 +414,7 @@ public:
 
     bool is_structured_text() const
     {
-        switch (this->sw_text_format) {
+        switch (this->sw_discover_builder.db_text_format) {
             case text_format_t::TF_JSON:
             case text_format_t::TF_YAML:
             case text_format_t::TF_TOML:
@@ -427,10 +430,10 @@ public:
     {
         metadata_builder mb;
 
-        mb.mb_text_format = this->sw_text_format;
+        mb.mb_text_format = this->sw_discover_builder.db_text_format;
         while (true) {
-            auto tokenize_res
-                = this->sw_scanner.tokenize2(this->sw_text_format);
+            auto tokenize_res = this->sw_scanner.tokenize2(
+                this->sw_discover_builder.db_text_format);
             if (!tokenize_res) {
                 break;
             }
@@ -686,7 +689,7 @@ public:
                     break;
                 case DT_ZERO_WIDTH_SPACE:
                     break;
-                default:
+                default: {
                     if (dt == DT_QUOTED_STRING || dt == DT_CODE_BLOCK) {
                         auto quoted_sf = tokenize_res->to_string_fragment();
 
@@ -705,8 +708,16 @@ public:
                                 VC_ROLE.value(role_t::VCR_STRING));
                         }
                     }
+                    if (this->sw_discover_builder.db_save_words
+                        && (dt == DT_CONSTANT || dt == DT_ID || dt == DT_WORD
+                            || dt == DT_SYMBOL))
+                    {
+                        mb.mb_words.insert(
+                            tokenize_res->to_string_fragment().to_string());
+                    }
                     this->sw_values.emplace_back(el);
                     break;
+                }
             }
         }
         this->flush_values();
@@ -873,9 +884,9 @@ private:
         ivstate.is_name.clear();
     }
 
+    discover_builder& sw_discover_builder;
     attr_line_t& sw_line;
     line_range sw_range;
-    text_format_t sw_text_format;
     data_scanner sw_scanner;
     int sw_depth{0};
     size_t sw_line_number{0};
@@ -884,24 +895,23 @@ private:
     std::vector<element> sw_values{};
     std::vector<data_token_t> sw_container_tokens;
     std::vector<interval_state> sw_interval_state;
-    std::vector<lnav::document::section_interval_t> sw_intervals;
-    std::vector<lnav::document::section_type_interval_t> sw_type_intervals;
-    std::vector<std::unique_ptr<lnav::document::hier_node>> sw_hier_nodes;
-    std::unique_ptr<lnav::document::hier_node> sw_hier_stage;
+    std::vector<section_interval_t> sw_intervals;
+    std::vector<section_type_interval_t> sw_type_intervals;
+    std::vector<std::unique_ptr<hier_node>> sw_hier_nodes;
+    std::unique_ptr<hier_node> sw_hier_stage;
 };
 
 metadata
-discover_structure(attr_line_t& al, struct line_range lr, text_format_t tf)
+discover_builder::perform()
 {
-    return structure_walker(al, lr, tf).walk();
+    return structure_walker(*this).walk();
 }
 
 std::vector<breadcrumb::possibility>
 metadata::possibility_provider(const std::vector<section_key_t>& path)
 {
     std::vector<breadcrumb::possibility> retval;
-    auto curr_node = lnav::document::hier_node::lookup_path(
-        this->m_sections_root.get(), path);
+    auto curr_node = hier_node::lookup_path(this->m_sections_root.get(), path);
     if (curr_node) {
         auto* parent_node = curr_node.value()->hn_parent;
 

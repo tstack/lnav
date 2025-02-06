@@ -38,6 +38,8 @@
 
 #include "base/attr_line.hh"
 #include "base/line_range.hh"
+#include "pcrepp/pcre2pp.hh"
+#include "document.sections.hh"
 #include "plain_text_source.hh"
 #include "text_format.hh"
 #include "textview_curses.hh"
@@ -105,6 +107,11 @@ public:
         bool operator==(const input_point& rhs) const
         {
             return this->x == rhs.x && this->y == rhs.y;
+        }
+        
+        bool operator!=(const input_point& rhs) const
+        {
+            return this->x != rhs.x || this->y != rhs.y;
         }
 
         input_point operator+(const movement& rhs) const
@@ -236,6 +243,8 @@ public:
 
     bool handle_mouse(mouse_event& me) override;
 
+    bool handle_search_key(const ncinput& ch);
+
     bool handle_key(const ncinput& ch);
 
     void update_lines();
@@ -268,9 +277,16 @@ public:
 
     void replace_selection(string_fragment sf);
 
-    void move_cursor_by(movement hm_dir)
+    void move_cursor_by(movement move)
     {
-        this->tc_cursor += hm_dir;
+        auto cursor_y_offset = this->tc_cursor.y - this->tc_top;
+        this->tc_cursor += move;
+        if (move.hm_amount > 1
+            && (move.hm_dir == direction_t::up
+                || move.hm_dir == direction_t::down))
+        {
+            this->tc_top = this->tc_cursor.y - cursor_y_offset;
+        }
         if (this->tc_cursor.x < 0) {
             if (this->tc_cursor.y > 0) {
                 this->tc_cursor.y -= 1;
@@ -280,7 +296,7 @@ public:
                 this->tc_cursor.x = 0;
             }
         }
-        if (hm_dir.hm_dir == direction_t::right
+        if (move.hm_dir == direction_t::right
             && this->tc_cursor.x
                 > this->tc_lines[this->tc_cursor.y].column_width())
         {
@@ -318,19 +334,35 @@ public:
         }
     }
 
+    void move_cursor_to_next_search_hit();
+
+    void move_cursor_to_prev_search_hit();
+
+    enum class mode_t {
+        editing,
+        searching,
+    };
+
     ncplane* tc_window{nullptr};
     size_t tc_max_popup_height{5};
     int tc_left{0};
     size_t tc_top{0};
     int tc_height{0};
     input_point tc_cursor;
+    mode_t tc_mode{mode_t::editing};
+    std::string tc_search;
+    std::shared_ptr<lnav::pcre2pp::code> tc_search_code;
+    std::optional<bool> tc_search_found;
+    input_point tc_search_start_point;
     text_format_t tc_text_format{text_format_t::TF_UNKNOWN};
     std::vector<attr_line_t> tc_lines;
+    lnav::document::metadata tc_doc_meta;
     highlight_map_t tc_highlights;
     input_point tc_cursor_anchor;
     std::optional<selected_range> tc_drag_selection;
     std::optional<selected_range> tc_selection;
-    std::string tc_clipboard;
+    input_point tc_cut_location;
+    std::vector<std::string> tc_clipboard;
     std::optional<selected_range> tc_complete_range;
     textview_curses tc_popup;
     plain_text_source tc_popup_source;

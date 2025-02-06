@@ -125,6 +125,7 @@ struct metadata {
     section_types_tree_t m_section_types_tree;
     std::set<size_t> m_indents;
     text_format_t m_text_format{text_format_t::TF_UNKNOWN};
+    std::set<std::string> m_words;
 
     std::vector<section_key_t> path_for_range(size_t start, size_t stop);
 
@@ -134,9 +135,40 @@ struct metadata {
 
 metadata discover_metadata(const attr_line_t& al);
 
-metadata discover_structure(attr_line_t& al,
-                            struct line_range lr,
-                            text_format_t tf = text_format_t::TF_UNKNOWN);
+struct discover_builder {
+    explicit discover_builder(attr_line_t& al) : db_line(al) {}
+
+    discover_builder& over_range(line_range lr)
+    {
+        this->db_range = lr;
+        return *this;
+    }
+
+    discover_builder& with_text_format(text_format_t tf)
+    {
+        this->db_text_format = tf;
+        return *this;
+    }
+
+    discover_builder& save_words()
+    {
+        this->db_save_words = true;
+        return *this;
+    }
+
+    metadata perform();
+
+    attr_line_t& db_line;
+    line_range db_range{0, -1};
+    text_format_t db_text_format{text_format_t::TF_UNKNOWN};
+    bool db_save_words{false};
+};
+
+inline discover_builder
+discover(attr_line_t& al)
+{
+    return discover_builder(al);
+}
 
 }  // namespace lnav::document
 

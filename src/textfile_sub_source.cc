@@ -856,10 +856,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                 = metadata_state{
                                     st.st_mtime,
                                     lf->get_index_size(),
-                                    lnav::document::discover_structure(
-                                        content,
-                                        line_range{0, -1},
-                                        lf->get_text_format()),
+                                    lnav::document::discover(content)
+                                        .with_text_format(lf->get_text_format())
+                                        .perform(),
                                 };
                         }
                     } else {

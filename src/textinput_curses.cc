@@ -61,6 +61,24 @@ textinput_curses::set_content(const attr_line_t& al)
     auto al_copy = al;
 
     highlight_syntax(this->tc_text_format, al_copy);
+    this->tc_doc_meta = lnav::document::discover(al_copy)
+                            .with_text_format(this->tc_text_format)
+                            .save_words()
+                            .perform();
+    log_debug("doc indents:");
+    for (auto ind : this->tc_doc_meta.m_indents) {
+        log_debug("  indent=%d", ind);
+    }
+    lnav::document::hier_node::depth_first(
+        this->tc_doc_meta.m_sections_root.get(),
+        [this](lnav::document::hier_node* hn) {
+            log_debug("hier_node: %p %s",
+                      hn,
+                      fmt::format(FMT_STRING("{}"),
+                                  this->tc_doc_meta.path_for_range(
+                                      hn->hn_start, hn->hn_start))
+                          .c_str());
+        });
     this->tc_lines = al_copy.split_lines();
     if (this->tc_lines.empty()) {
         this->tc_lines.emplace_back();
@@ -94,7 +112,7 @@ textinput_curses::handle_mouse(mouse_event& me)
         auto dim = this->get_visible_dimensions();
         if (this->tc_top > 0) {
             this->tc_top -= 1;
-            if (this->tc_top + dim.dr_height - 1 < this->tc_cursor.y) {
+            if (this->tc_top + dim.dr_height - 2 < this->tc_cursor.y) {
                 this->move_cursor_by({direction_t::up, 1});
             } else {
                 this->ensure_cursor_visible();
@@ -110,6 +128,7 @@ textinput_curses::handle_mouse(mouse_event& me)
         }
         this->ensure_cursor_visible();
     } else if (me.me_button == mouse_button_t::BUTTON_LEFT) {
+        this->tc_mode = mode_t::editing;
         auto inner_press_point = input_point{
             this->tc_left + me.me_press_x,
             (int) this->tc_top + me.me_press_y,
@@ -202,8 +221,164 @@ textinput_curses::handle_mouse(mouse_event& me)
 }
 
 bool
+textinput_curses::handle_search_key(const ncinput& ch)
+{
+    if (ncinput_ctrl_p(&ch)) {
+        switch (ch.id) {
+            case 's':
+            case 'S': {
+                this->tc_search_start_point = this->tc_cursor;
+                this->move_cursor_to_next_search_hit();
+                return true;
+            }
+            case 'r':
+            case 'R': {
+                this->tc_search_start_point = this->tc_cursor;
+                this->move_cursor_to_prev_search_hit();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    switch (ch.id) {
+        case NCKEY_ESC:
+            this->tc_mode = mode_t::editing;
+            this->set_needs_update();
+            return true;
+        case NCKEY_BACKSPACE: {
+            if (!this->tc_search.empty()) {
+                this->tc_search.pop_back();
+                auto compile_res = lnav::pcre2pp::code::from(
+                    lnav::pcre2pp::quote(this->tc_search), PCRE2_CASELESS);
+                this->tc_search_code = compile_res.unwrap().to_shared();
+                this->move_cursor_to_next_search_hit();
+            }
+            return true;
+        }
+        case NCKEY_ENTER: {
+            this->tc_search_start_point = this->tc_cursor;
+            this->move_cursor_to_next_search_hit();
+            break;
+        }
+        case NCKEY_LEFT:
+        case NCKEY_RIGHT:
+        case NCKEY_UP:
+        case NCKEY_DOWN: {
+            this->tc_mode = mode_t::editing;
+            this->handle_key(ch);
+            break;
+        }
+        default: {
+            char utf8[32];
+            size_t index = 0;
+            for (const auto eff_ch : ch.eff_text) {
+                log_debug(" eff %x", eff_ch);
+                if (eff_ch == 0) {
+                    break;
+                }
+                ww898::utf::utf8::write(eff_ch,
+                                        [&utf8, &index](const char bits) {
+                                            utf8[index] = bits;
+                                            index += 1;
+                                        });
+            }
+            if (index > 0) {
+                utf8[index] = 0;
+
+                this->tc_search.append(utf8);
+                if (!this->tc_search.empty()) {
+                    auto compile_res = lnav::pcre2pp::code::from(
+                        lnav::pcre2pp::quote(this->tc_search), PCRE2_CASELESS);
+                    this->tc_search_code = compile_res.unwrap().to_shared();
+                    this->move_cursor_to_next_search_hit();
+                }
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void
+textinput_curses::move_cursor_to_next_search_hit()
+{
+    auto x = this->tc_search_start_point.x;
+    if (this->tc_search_found && !this->tc_search_found.value()) {
+        this->tc_search_start_point.y = 0;
+    }
+    this->tc_search_found = false;
+    for (auto y = this->tc_search_start_point.y; y < this->tc_lines.size(); y++)
+    {
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
+        const auto& al = this->tc_lines[y];
+        auto byte_x = al.column_to_byte_index(x);
+        auto after_x_sf = al.to_string_fragment().substr(byte_x);
+        auto find_res = this->tc_search_code->capture_from(after_x_sf)
+                            .into(md)
+                            .matches()
+                            .ignore_error();
+        if (find_res) {
+            this->tc_cursor.x
+                = al.byte_to_column_index(find_res.value().f_all.sf_end);
+            this->tc_cursor.y = y;
+            log_debug(
+                "search found %d:%d", this->tc_cursor.x, this->tc_cursor.y);
+            this->tc_search_found = true;
+            this->ensure_cursor_visible();
+            break;
+        }
+        x = 0;
+    }
+    this->set_needs_update();
+}
+
+void
+textinput_curses::move_cursor_to_prev_search_hit()
+{
+    auto max_x = std::make_optional(this->tc_search_start_point.x);
+    if (this->tc_search_found && !this->tc_search_found.value()) {
+        this->tc_search_start_point.y = this->tc_lines.size() - 1;
+    }
+    this->tc_search_found = false;
+    for (auto y = this->tc_search_start_point.y; y >= 0; y--) {
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
+        const auto& al = this->tc_lines[y];
+        auto before_x_sf = al.to_string_fragment();
+        if (max_x) {
+            before_x_sf = before_x_sf.sub_cell_range(0, max_x.value());
+        }
+        auto find_res = this->tc_search_code->capture_from(before_x_sf)
+                            .into(md)
+                            .matches()
+                            .ignore_error();
+        if (find_res) {
+            auto new_input_point = input_point{
+                (int) al.byte_to_column_index(find_res.value().f_all.sf_end),
+                y,
+            };
+            if (new_input_point != this->tc_cursor) {
+                this->tc_cursor = new_input_point;
+                this->tc_search_found = true;
+                this->ensure_cursor_visible();
+                break;
+            }
+        }
+        max_x = std::nullopt;
+    }
+    this->set_needs_update();
+}
+
+bool
 textinput_curses::handle_key(const ncinput& ch)
 {
+    if (this->tc_mode == mode_t::searching) {
+        return this->handle_search_key(ch);
+    }
+
     auto dim = this->get_visible_dimensions();
     auto inner_height = this->tc_lines.size();
     auto bottom = inner_height - 1;
@@ -275,8 +450,8 @@ textinput_curses::handle_key(const ncinput& ch)
             case 'k':
             case 'K': {
                 if (this->tc_selection) {
-                    this->tc_clipboard.clear();
                     auto range = this->tc_selection;
+                    auto new_clip = std::string();
                     for (auto curr_line = range->sr_start.y;
                          curr_line <= range->sr_end.y;
                          ++curr_line)
@@ -294,20 +469,28 @@ textinput_curses::handle_key(const ncinput& ch)
                         auto sub
                             = al.subline(start_byte, end_byte - start_byte);
                         if (curr_line > range->sr_start.y) {
-                            this->tc_clipboard.push_back('\n');
+                            new_clip.push_back('\n');
                         }
-                        this->tc_clipboard.append(sub.al_string);
+                        new_clip.append(sub.al_string);
                     }
+                    this->tc_clipboard.clear();
+                    this->tc_clipboard.emplace_back(new_clip);
                     this->replace_selection(string_fragment{});
                 } else {
+                    if (this->tc_cursor != this->tc_cut_location) {
+                        this->tc_clipboard.clear();
+                    }
+                    this->tc_cut_location = this->tc_cursor;
                     auto& al = this->tc_lines[this->tc_cursor.y];
                     auto byte_index
                         = al.column_to_byte_index(this->tc_cursor.x);
-                    this->tc_clipboard = al.subline(byte_index).al_string;
+                    this->tc_clipboard.emplace_back(
+                        al.subline(byte_index).al_string);
                     al.erase(byte_index);
-                    if (this->tc_clipboard.empty()
+                    if (this->tc_clipboard.back().empty()
                         && this->tc_cursor.y + 1 < this->tc_lines.size())
                     {
+                        this->tc_clipboard.back().push_back('\n');
                         al.append(this->tc_lines[this->tc_cursor.y + 1]);
                         this->tc_lines.erase(this->tc_lines.begin()
                                              + this->tc_cursor.y + 1);
@@ -319,23 +502,38 @@ textinput_curses::handle_key(const ncinput& ch)
 
                     if (clip_open_res.isOk()) {
                         auto clip_file = clip_open_res.unwrap();
-                        fprintf(
-                            clip_file.in(), "%s", this->tc_clipboard.c_str());
+                        fprintf(clip_file.in(),
+                                "%s",
+                                this->tc_clipboard.back().c_str());
                     } else {
                         auto err_msg = clip_open_res.unwrapErr();
                         log_error("unable to open clipboard: %s",
                                   err_msg.c_str());
                     }
                 }
+                log_debug("clip contents") for (const auto& line :
+                                                this->tc_clipboard)
+                {
+                    log_debug("line '%s'", line.c_str());
+                }
                 this->tc_drag_selection = std::nullopt;
                 this->update_lines();
+                return true;
+            }
+            case 's':
+            case 'S': {
+                this->tc_mode = mode_t::searching;
+                this->tc_search_start_point = this->tc_cursor;
+                this->tc_search_found = std::nullopt;
+                this->set_needs_update();
                 return true;
             }
             case 'u':
             case 'U': {
                 auto& al = this->tc_lines[this->tc_cursor.y];
                 auto byte_index = al.column_to_byte_index(this->tc_cursor.x);
-                this->tc_clipboard = al.subline(0, byte_index).al_string;
+                this->tc_clipboard.emplace_back(
+                    al.subline(0, byte_index).al_string);
                 al.erase(0, byte_index);
                 this->tc_cursor.x = 0;
                 this->tc_selection = std::nullopt;
@@ -367,24 +565,33 @@ textinput_curses::handle_key(const ncinput& ch)
                         buf.resize_by(rc);
                     }
 
-                    this->tc_clipboard = buf.to_string();
-                    log_debug("sysclip returned: %s",
-                              this->tc_clipboard.c_str());
+                    auto from_sysclip = buf.to_string();
+                    if (this->tc_clipboard.empty()
+                        || from_sysclip != this->tc_clipboard.back())
+                    {
+                        this->tc_clipboard.emplace_back(from_sysclip);
+                    }
                 }
 
-                if (!this->tc_clipboard.empty()) {
+                for (const auto& clipping : this->tc_clipboard) {
                     auto& al = this->tc_lines[this->tc_cursor.y];
+                    log_debug("before insert: '%s'", al.al_string.c_str());
                     al.insert(al.column_to_byte_index(this->tc_cursor.x),
-                              this->tc_clipboard);
-                    const auto clip_sf
-                        = string_fragment::from_str(this->tc_clipboard);
+                              clipping);
+                    log_debug("after insert: '%s'", al.al_string.c_str());
+                    const auto clip_sf = string_fragment::from_str(clipping);
                     const auto clip_cols
                         = clip_sf
                               .find_left_boundary(clip_sf.length(),
                                                   string_fragment::tag1{'\n'})
                               .column_width();
-                    this->tc_cursor.x += clip_cols;
-                    this->tc_cursor.y += clip_sf.count('\n');
+                    auto line_count = clip_sf.count('\n');
+                    if (line_count > 0) {
+                        this->tc_cursor.x = 0;
+                    } else {
+                        this->tc_cursor.x += clip_cols;
+                    }
+                    this->tc_cursor.y += line_count;
                     this->tc_selection = std::nullopt;
                     this->tc_drag_selection = std::nullopt;
                     this->update_lines();
@@ -421,16 +628,17 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->tc_complete_range = std::nullopt;
                 this->set_needs_update();
             } else {
-                auto& curr_al = this->tc_lines[this->tc_cursor.y];
-                auto byte_index
-                    = curr_al.column_to_byte_index(this->tc_cursor.x);
-                auto remaining = curr_al.subline(byte_index);
-                curr_al.erase(byte_index);
-                this->tc_cursor.x = 0;
-                this->tc_cursor.y += 1;
-                this->tc_lines.insert(
-                    this->tc_lines.begin() + this->tc_cursor.y, remaining);
-                this->update_lines();
+                if (!this->tc_selection) {
+                    this->tc_selection
+                        = selected_range::from_point(this->tc_cursor);
+                }
+                auto indent = std::string("\n");
+                auto& al = this->tc_lines[this->tc_cursor.y];
+                auto indent_and_body = al.to_string_fragment().split_when(
+                    [](auto ch) { return !isspace(ch); });
+                indent.append(indent_and_body.first.data(),
+                              indent_and_body.first.length());
+                this->replace_selection(indent);
             }
             return true;
         }
@@ -442,6 +650,45 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->tc_popup.set_visible(false);
                 this->tc_complete_range = std::nullopt;
                 this->set_needs_update();
+            } else if (!this->tc_selection) {
+                auto indent_amount = 4;
+                auto line_sf
+                    = this->tc_lines[this->tc_cursor.y].to_string_fragment();
+                const auto [before, after]
+                    = line_sf.split_when([](auto ch) { return !isspace(ch); });
+                auto indent_iter
+                    = std::lower_bound(this->tc_doc_meta.m_indents.begin(),
+                                       this->tc_doc_meta.m_indents.end(),
+                                       before.length());
+                if (indent_iter != this->tc_doc_meta.m_indents.end()) {
+                    if (ncinput_shift_p(&ch)) {
+                        if (indent_iter == this->tc_doc_meta.m_indents.begin())
+                        {
+                            indent_amount = 0;
+                        } else {
+                            indent_amount = *std::prev(indent_iter);
+                        }
+                    } else if (before.empty()) {
+                        indent_amount = *indent_iter;
+                    } else {
+                        auto next_indent_iter = std::next(indent_iter);
+                        if (next_indent_iter
+                            == this->tc_doc_meta.m_indents.end())
+                        {
+                            indent_amount += *indent_iter;
+                        } else {
+                            indent_amount = *next_indent_iter;
+                        }
+                    }
+                }
+                this->tc_selection = selected_range::from_key(
+                    this->tc_cursor.copy_with_x(0),
+                    this->tc_cursor.copy_with_x(before.length()));
+                auto indent = std::string(indent_amount, ' ');
+                auto old_cursor = this->tc_cursor;
+                this->replace_selection(indent);
+                this->tc_cursor.x
+                    = indent.length() - before.length() + old_cursor.x;
             }
             break;
         }
@@ -463,7 +710,6 @@ textinput_curses::handle_key(const ncinput& ch)
             if (this->tc_cursor.y < bottom) {
                 this->move_cursor_by(
                     {direction_t::down, (size_t) dim.dr_height});
-                this->ensure_cursor_visible();
             }
             return true;
         }
@@ -476,8 +722,42 @@ textinput_curses::handle_key(const ncinput& ch)
         }
         case NCKEY_BACKSPACE: {
             if (!this->tc_selection) {
-                this->tc_selection = selected_range::from_point_and_movement(
-                    this->tc_cursor, movement{direction_t::left, 1});
+                auto line_sf
+                    = this->tc_lines[this->tc_cursor.y].to_string_fragment();
+                const auto [before, after]
+                    = line_sf
+                          .split_n(
+                              line_sf.column_to_byte_index(this->tc_cursor.x))
+                          .value();
+
+                log_debug("before: '%.*s'", before.length(), before.data());
+                log_debug("after: '%.*s'", after.length(), after.data());
+                if (this->tc_cursor.x > 0 && before.trim().empty()) {
+                    log_debug("x %d", this->tc_cursor.x);
+                    auto indent_iter
+                        = std::lower_bound(this->tc_doc_meta.m_indents.begin(),
+                                           this->tc_doc_meta.m_indents.end(),
+                                           this->tc_cursor.x);
+                    if (indent_iter != this->tc_doc_meta.m_indents.end()) {
+                        log_debug("eh? %d", *indent_iter);
+                        if (indent_iter == this->tc_doc_meta.m_indents.begin())
+                        {
+                            this->tc_selection = selected_range::from_key(
+                                this->tc_cursor.copy_with_x(0),
+                                this->tc_cursor);
+                        } else {
+                            auto prev_indent_iter = std::prev(indent_iter);
+                            this->tc_selection = selected_range::from_key(
+                                this->tc_cursor.copy_with_x(*prev_indent_iter),
+                                this->tc_cursor);
+                        }
+                    }
+                }
+                if (!this->tc_selection) {
+                    this->tc_selection
+                        = selected_range::from_point_and_movement(
+                            this->tc_cursor, movement{direction_t::left, 1});
+                }
             }
             this->replace_selection(string_fragment{});
             return true;
@@ -618,12 +898,12 @@ textinput_curses::ensure_cursor_visible()
             this->tc_top -= 1;
         }
     }
-    if (this->tc_cursor.y >= this->tc_top + dim.dr_height) {
-        this->tc_top = (this->tc_cursor.y - dim.dr_height) + 1;
+    if (this->tc_cursor.y + 1 >= this->tc_top + dim.dr_height) {
+        this->tc_top = (this->tc_cursor.y + 1 - dim.dr_height) + 1;
     }
     if (this->tc_top + dim.dr_height > this->tc_lines.size()) {
         if (this->tc_lines.size() > dim.dr_height) {
-            this->tc_top = this->tc_lines.size() - dim.dr_height;
+            this->tc_top = this->tc_lines.size() - dim.dr_height + 1;
         } else {
             this->tc_top = 0;
         }
@@ -681,6 +961,8 @@ textinput_curses::replace_selection(string_fragment sf)
         if (sel_range->lr_start < 0) {
             if (curr_line > 0) {
                 log_debug("append %d to %d", curr_line, curr_line - 1);
+                this->tc_cursor.x
+                    = this->tc_lines[curr_line - 1].column_width();
                 this->tc_cursor.y = curr_line - 1;
                 this->tc_lines[curr_line - 1].append(this->tc_lines[curr_line]);
                 del_max = curr_line;
@@ -728,11 +1010,21 @@ textinput_curses::replace_selection(string_fragment sf)
                              this->tc_lines.begin() + del_max.value() + 1);
     }
 
+    const auto repl_last_line
+        = sf.find_left_boundary(sf.length(), string_fragment::tag1{'\n'});
+    log_debug(
+        "last line '%.*s'", repl_last_line.length(), repl_last_line.data());
     const auto repl_cols
         = sf.find_left_boundary(sf.length(), string_fragment::tag1{'\n'})
               .column_width();
-    this->tc_cursor.x += repl_cols;
-    this->tc_cursor.y += sf.count('\n');
+    const auto repl_lines = sf.count('\n');
+    log_debug("repl_cols => %d", repl_cols);
+    if (repl_lines > 0) {
+        this->tc_cursor.x = repl_cols;
+    } else {
+        this->tc_cursor.x += repl_cols;
+    }
+    this->tc_cursor.y += repl_lines;
 
     this->tc_drag_selection = std::nullopt;
     this->update_lines();
@@ -744,10 +1036,16 @@ textinput_curses::update_lines()
     auto content = attr_line_t(this->get_content());
 
     highlight_syntax(this->tc_text_format, content);
-    this->tc_lines = content.split_lines();
-    if (content.al_attrs.empty()) {
-        this->apply_highlights();
+    this->tc_doc_meta = lnav::document::discover(content)
+                            .with_text_format(this->tc_text_format)
+                            .save_words()
+                            .perform();
+    log_debug("doc indents:");
+    for (auto ind : this->tc_doc_meta.m_indents) {
+        log_debug("  indent=%d", ind);
     }
+    this->tc_lines = content.split_lines();
+    this->apply_highlights();
     this->ensure_cursor_visible();
 
     this->tc_popup.set_visible(false);
@@ -824,17 +1122,13 @@ textinput_curses::do_update()
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
         auto lr = line_range{this->tc_left, this->tc_left + dim.dr_width};
         auto al = this->tc_lines[curr_line];
-        log_debug(
-            " curr line sel %d %d", curr_line, this->tc_selection.has_value());
         if (this->tc_drag_selection) {
-            log_debug("drag attr");
             auto sel_lr = this->tc_drag_selection->range_for_line(curr_line);
             if (sel_lr) {
                 al.al_attrs.emplace_back(
                     sel_lr.value(), VC_ROLE.value(role_t::VCR_SELECTED_TEXT));
             }
         } else if (this->tc_selection) {
-            log_debug("selected attr");
             auto sel_lr = this->tc_selection->range_for_line(curr_line);
             if (sel_lr) {
                 al.al_attrs.emplace_back(
@@ -843,10 +1137,38 @@ textinput_curses::do_update()
                 log_error("  no range");
             }
         }
+        if (this->tc_mode == mode_t::searching
+            && this->tc_search_found.value_or(false))
+        {
+            this->tc_search_code->capture_from(al.al_string)
+                .for_each([&al](lnav::pcre2pp::match_data& md) {
+                    al.al_attrs.emplace_back(
+                        line_range{
+                            md[0]->sf_begin,
+                            md[0]->sf_end,
+                        },
+                        VC_ROLE.value(role_t::VCR_SEARCH));
+                });
+        }
         auto mvw_res = mvwattrline(this->tc_window, y, this->vc_x, al, lr);
     }
     for (; y < y_max; y++) {
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
+    }
+    if (this->tc_mode == mode_t::searching) {
+        auto search_prompt = attr_line_t("Search: ")
+                                 .append(this->tc_search)
+                                 .with_attr_for_all(VC_ROLE.value(
+                                     (this->tc_search.empty()
+                                      || this->tc_search_found.value_or(false))
+                                         ? role_t::VCR_OK
+                                         : role_t::VCR_ERROR));
+        auto lr = line_range{0, dim.dr_width};
+        mvwattrline(this->tc_window,
+                    this->vc_y + dim.dr_height - 1,
+                    this->vc_x,
+                    search_prompt,
+                    lr);
     }
 
     if (this->tc_height > 1) {

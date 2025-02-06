@@ -100,7 +100,7 @@ plain_text_source::replace_with_mutable(attr_line_t& text_lines,
     this->tds_text_format = tf;
     this->tds_lines.clear();
     this->tds_doc_sections
-        = lnav::document::discover_structure(text_lines, line_range{0, -1}, tf);
+        = lnav::document::discover(text_lines).with_text_format(tf).perform();
     file_off_t off = 0;
     auto lines = text_lines.split_lines();
     while (!lines.empty() && lines.back().empty()) {

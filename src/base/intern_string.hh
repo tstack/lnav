@@ -351,16 +351,22 @@ struct string_fragment {
     {
         assert((int) start <= this->length());
 
+        if (this->empty()) {
+            return *this;
+        }
+
         if (start > 0 && start == static_cast<size_t>(this->length())) {
             start -= 1;
         }
-        while (start > 0) {
+        while (true) {
             if (predicate(this->data()[start])) {
                 count -= 1;
                 if (count == 0) {
                     start += 1;
                     break;
                 }
+            } else if (start == 0) {
+                break;
             }
             start -= 1;
         }

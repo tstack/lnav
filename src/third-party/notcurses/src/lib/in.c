@@ -2622,7 +2622,7 @@ block_on_input(inputctx* ictx, unsigned* rtfd, unsigned* rifd){
 #if defined(__APPLE__)
       loginfo("select maxfd %d", maxfd);
       struct timeval ts = {1, 0};
-      while ((events = select(maxfd + 1, &rfds, NULL, NULL, nonblock ? &ts : NULL)) <0) {
+      while ((events = select(maxfd + 1, &rfds, NULL, NULL, &ts)) <0) {
 #    elif defined(__MINGW32__)
   int timeoutms = nonblock ? 0 : -1;
   while((events = poll(pfds, pfdcount, timeoutms)) < 0){ // FIXME smask?

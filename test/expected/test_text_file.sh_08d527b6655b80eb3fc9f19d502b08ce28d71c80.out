@@ -30,7 +30,7 @@ Then, in the [1m**lnav**[0m TUI, you can:
 [33m-[0m filter messages using [regular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions](https://docs.lnav.org/en/latest/usage.html#sqlite-expression);
 [33m-[0m pretty-print structured text ([press [35m`P`[0m](https://docs.lnav.org/en/latest/ui.html#pretty));
 [33m-[0m view a histogram of messages over time ([press [35m`i`[0m](https://docs.lnav.org/en/latest/ui.html#hist));
-[33m-[0m query messages using SQLite ([press [35m`;`[0m](https://docs.lnav.org/en/latest/sqlext.html))
+[33m-[0m analyze messages using SQLite ([press [35m`;`[0m](https://docs.lnav.org/en/latest/sqlext.html))
 
 [1m## Screenshot[0m
 

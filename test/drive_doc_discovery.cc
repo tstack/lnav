@@ -56,7 +56,10 @@ main(int argc, char* argv[])
                 = string_fragment::from_str(content.get_string());
             auto tf = detect_text_format(content_sf, fn);
             auto lr = line_range{0, static_cast<int>(content.length())};
-            auto meta = lnav::document::discover_structure(content, lr, tf);
+            auto meta = lnav::document::discover(content)
+                            .over_range(lr)
+                            .with_text_format(tf)
+                            .perform();
 
             auto remaining = content_sf;
             while (!remaining.empty()) {
