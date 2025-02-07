@@ -247,6 +247,28 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
            goto yyc_sdocstring;
        }
 
+       <init, bol> "R\"(" {
+           CAPTURE(DT_QUOTED_STRING);
+           cap_inner.c_begin += 3;
+           goto yyc_rdocstring;
+       }
+
+       <rdocstring> [\x00] {
+           CAPTURE(DT_QUOTED_STRING);
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <rdocstring> ")\"" {
+           CAPTURE(DT_QUOTED_STRING);
+           cap_inner.c_end -= 2;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <rdocstring> * {
+           goto yyc_rdocstring;
+       }
+
        <init, bol> "```" {
            CAPTURE(DT_CODE_BLOCK);
            cap_inner.c_begin += 3;
@@ -414,7 +436,25 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
        <init, bol> "=" { RET(DT_EQUALS); }
        <init, bol> "," { RET(DT_COMMA); }
        <init, bol> ";" { RET(DT_SEMI); }
-       <init, bol> "--"/[^\-] { RET(DT_EMDASH); }
+
+       <emdashcomment> [\x00\n] {
+           CAPTURE(DT_COMMENT);
+
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.data()};
+       }
+
+       <emdashcomment> * {
+           goto yyc_emdashcomment;
+       }
+
+       <init, bol> "--"/[^\-] {
+           if (tf == text_format_t::TF_SQL) {
+               CAPTURE(DT_COMMENT);
+
+               goto yyc_emdashcomment;
+           }
+           RET(DT_EMDASH);
+       }
        <init, bol> "()" | "{}" | "[]" { RET(DT_EMPTY_CONTAINER); }
        <init, bol> "{" { RET(DT_LCURLY); }
        <init, bol> "}" { RET(DT_RCURLY); }

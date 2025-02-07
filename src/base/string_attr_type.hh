@@ -441,6 +441,14 @@ status_title(S str)
 
 template<typename S>
 std::pair<S, string_attr_pair>
+status_subtitle(S str)
+{
+    return std::make_pair(std::move(str),
+                          VC_ROLE.value(role_t::VCR_STATUS_SUBTITLE));
+}
+
+template<typename S>
+std::pair<S, string_attr_pair>
 ok(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_OK));
@@ -696,6 +704,13 @@ inline std::pair<std::string, string_attr_pair> operator"" _status_title(
 {
     return std::make_pair(std::string(str, len),
                           VC_ROLE.value(role_t::VCR_STATUS_TITLE));
+}
+
+inline std::pair<std::string, string_attr_pair> operator"" _status_subtitle(
+    const char* str, std::size_t len)
+{
+    return std::make_pair(std::string(str, len),
+                          VC_ROLE.value(role_t::VCR_STATUS_SUBTITLE));
 }
 
 inline std::pair<std::string, string_attr_pair> operator"" _symbol(

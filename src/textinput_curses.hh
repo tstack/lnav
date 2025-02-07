@@ -32,14 +32,15 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "base/attr_line.hh"
 #include "base/line_range.hh"
-#include "pcrepp/pcre2pp.hh"
 #include "document.sections.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "plain_text_source.hh"
 #include "text_format.hh"
 #include "textview_curses.hh"
@@ -49,7 +50,7 @@
  * A multi-line text input box that supports the following UX:
  *
  * - Pressing up:
- *   * on the home line moves the cursor to the beginning of the line;
+ *   * on the first line moves the cursor to the beginning of the line;
  *   * on a line in the middle moves to the previous line and moves to the
  *     end of the line, if the previous line is shorter;
  *   * scrolls the view so that one line above the cursor is visible.
@@ -69,8 +70,28 @@
  *     the end of the line into the clipboard and then deletes it;
  *     - If the cursor is at the end of the line, the line-feed is deleted
  *       and the following line is appended to the current line.
+ *     - Subsequent presses of CTRL-K append text to the clipboard if the
+ *       cursor hasn't been moved by the user.
  *   * with a selection, copies the selected text into the clipboard
  *     and then deletes it.
+ * - Pressing CTRL-Y:
+ *   * Copies the contents of the clipboard into the buffer at the cursor
+ *     location.
+ * - Pressing CTRL-A moves the cursor to the beginning of the line.
+ * - Pressing CTRL-E moves the cursor to the end of the line.
+ * - Pressing HOME moves the cursor to the first line of the buffer.
+ * - Pressing END moves the cursor to the last line of the buffer.
+ * - Pressing CTRL-S switches to search mode:
+ *   * Entering text will search for the first occurrence starting from
+ *     the cursor position.
+ *   * Pressing CTRL-S will move to the next occurrence.
+ *     If nothing was found on the last press, pressing again will wrap
+ *     around to the first line of the buffer.
+ *   * Pressing CTRL-R will move to the previous occurrence.
+ *     If nothing was found on the last press, pressing again will wrap
+ *     around to the last line of the buffer.
+ *   * Pressing ESC or any of the movement keys will cancel the search
+ *     and move the cursor in the buffer.
  */
 class textinput_curses : public view_curses {
 public:
@@ -108,7 +129,7 @@ public:
         {
             return this->x == rhs.x && this->y == rhs.y;
         }
-        
+
         bool operator!=(const input_point& rhs) const
         {
             return this->x != rhs.x || this->y != rhs.y;
@@ -243,6 +264,8 @@ public:
 
     bool handle_mouse(mouse_event& me) override;
 
+    bool handle_help_key(const ncinput& ch);
+
     bool handle_search_key(const ncinput& ch);
 
     bool handle_key(const ncinput& ch);
@@ -255,7 +278,7 @@ public:
 
     void blur();
 
-    std::string get_content() const;
+    std::string get_content(bool trim = false) const;
 
     struct dimension_result {
         int dr_height{0};
@@ -281,11 +304,12 @@ public:
     {
         auto cursor_y_offset = this->tc_cursor.y - this->tc_top;
         this->tc_cursor += move;
-        if (move.hm_amount > 1
-            && (move.hm_dir == direction_t::up
-                || move.hm_dir == direction_t::down))
+        if (move.hm_dir == direction_t::up || move.hm_dir == direction_t::down)
         {
-            this->tc_top = this->tc_cursor.y - cursor_y_offset;
+            if (move.hm_amount > 1) {
+                this->tc_top = this->tc_cursor.y - cursor_y_offset;
+            }
+            this->tc_cursor.x = this->tc_max_cursor_x;
         }
         if (this->tc_cursor.x < 0) {
             if (this->tc_cursor.y > 0) {
@@ -341,6 +365,7 @@ public:
     enum class mode_t {
         editing,
         searching,
+        show_help,
     };
 
     ncplane* tc_window{nullptr};
@@ -349,7 +374,9 @@ public:
     size_t tc_top{0};
     int tc_height{0};
     input_point tc_cursor;
+    int tc_max_cursor_x{0};
     mode_t tc_mode{mode_t::editing};
+    bool tc_unhandled_input{false};
     std::string tc_search;
     std::shared_ptr<lnav::pcre2pp::code> tc_search_code;
     std::optional<bool> tc_search_found;
@@ -366,6 +393,8 @@ public:
     std::optional<selected_range> tc_complete_range;
     textview_curses tc_popup;
     plain_text_source tc_popup_source;
+    textview_curses tc_help_view;
+    plain_text_source tc_help_source;
     std::function<void(textinput_curses&)> tc_on_abort;
     std::function<void(textinput_curses&)> tc_on_change;
     std::function<void(textinput_curses&)> tc_on_completion;

@@ -41,8 +41,7 @@
 
 #include "func_util.hh"
 
-namespace lnav {
-namespace itertools {
+namespace lnav::itertools {
 
 struct empty {};
 
@@ -141,6 +140,37 @@ struct max_with_init {
 struct sum {};
 
 struct to_vector {};
+
+template<typename T, typename = void>
+struct HasEmplaceBack : std::false_type {};
+
+template<typename Type>
+struct HasEmplaceBack<Type,
+                      std::enable_if_t<std::is_member_function_pointer<
+                          decltype(&Type::foo)>::emplace_back>>
+    : std::true_type {};
+
+template<typename T>
+void
+extend(T& accum)
+{
+}
+
+template<typename T, typename E, typename... Args>
+void
+extend(T& accum, E& arg, Args&... args)
+{
+    if constexpr (HasEmplaceBack<T>::value) {
+        for (const auto& elem : arg) {
+            accum.emplace_back(elem);
+        }
+    } else {
+        for (const auto& elem : arg) {
+            accum.emplace(elem);
+        }
+    }
+    details::extend(accum, args...);
+}
 
 }  // namespace details
 
@@ -250,7 +280,7 @@ sort_with(C cmp)
 
 template<typename C, typename T>
 inline auto
-sort_by(T C::*m)
+sort_by(T C::* m)
 {
     return sort_with(
         [m](const C& lhs, const C& rhs) { return lhs.*m < rhs.*m; });
@@ -306,13 +336,9 @@ template<typename T, typename... Args>
 T
 chain(const T& value1, const Args&... args)
 {
-    T retval;
+    auto retval = value1;
 
-    for (const auto& arg : {value1, args...}) {
-        for (const auto& elem : arg) {
-            retval.emplace_back(elem);
-        }
-    }
+    details::extend(retval, args...);
 
     return retval;
 }
@@ -336,8 +362,7 @@ sum()
     return details::sum{};
 }
 
-}  // namespace itertools
-}  // namespace lnav
+}  // namespace lnav::itertools
 
 template<typename C, typename P>
 std::optional<std::conditional_t<

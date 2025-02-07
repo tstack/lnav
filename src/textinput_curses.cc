@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007-2012, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -43,9 +43,70 @@
 #include "sysclip.hh"
 #include "ww898/cp_utf8.hpp"
 
+using namespace lnav::roles::literals;
+
+static const attr_line_t&
+get_help_text()
+{
+    static const auto retval
+        = attr_line_t()
+              .append("Prompt Help"_h1)
+              .append("\n\n")
+              .append("Editing"_h2)
+              .append("\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-A"_hotkey)
+              .append("    - Move to the beginning of the line\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-E"_hotkey)
+              .append("    - Move to the end of the line\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("ALT  \u2190"_hotkey)
+              .append("    - Move to the previous word\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("ALT  \u2192"_hotkey)
+              .append("    - Move to the end of the line\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-K"_hotkey)
+              .append("    - Cut to the end of the line into the clipboard\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-U"_hotkey)
+              .append(
+                  "    - Cut back to the beginning of the line into the "
+                  "clipboard\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-Y"_hotkey)
+              .append("    - Paste the clipboard content\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("TAB/ENTER"_hotkey)
+              .append(" - Accept a completion suggestion\n")
+              .append("\n")
+              .append("Searching"_h2)
+              .append("\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-S"_hotkey)
+              .append(" - Switch to search mode\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-R"_hotkey)
+              .append(" - Search backwards for the string\n");
+
+    return retval;
+}
+
 textinput_curses::textinput_curses()
 {
     this->vc_children.emplace_back(&this->tc_popup);
+
     this->tc_popup_source.set_reverse_selection(true);
     this->tc_popup.set_visible(false);
     this->tc_popup.set_title("textinput popup");
@@ -53,6 +114,15 @@ textinput_curses::textinput_curses()
     this->tc_popup.set_show_scrollbar(true);
     this->tc_popup.set_default_role(role_t::VCR_POPUP);
     this->tc_popup.set_sub_source(&this->tc_popup_source);
+
+    this->vc_children.emplace_back(&this->tc_help_view);
+    this->tc_help_view.set_visible(false);
+    this->tc_help_view.set_title("textinput help");
+    this->tc_help_view.set_show_scrollbar(true);
+    this->tc_help_view.set_default_role(role_t::VCR_STATUS);
+    this->tc_help_view.set_sub_source(&this->tc_help_source);
+
+    this->tc_help_source.replace_with(get_help_text());
 }
 
 void
@@ -107,7 +177,10 @@ textinput_curses::handle_mouse(mouse_event& me)
               me.me_state,
               me.me_x,
               me.me_y);
-
+    this->tc_unhandled_input = false;
+    if (this->tc_mode == mode_t::show_help) {
+        return this->tc_help_view.handle_mouse(me);
+    }
     if (me.me_button == mouse_button_t::BUTTON_SCROLL_UP) {
         auto dim = this->get_visible_dimensions();
         if (this->tc_top > 0) {
@@ -221,10 +294,34 @@ textinput_curses::handle_mouse(mouse_event& me)
 }
 
 bool
+textinput_curses::handle_help_key(const ncinput& ch)
+{
+    switch (ch.id) {
+        case NCKEY_UP:
+        case NCKEY_DOWN: {
+            return this->tc_help_view.handle_key(ch);
+        }
+        default: {
+            this->tc_mode = mode_t::editing;
+            this->tc_help_view.set_visible(false);
+            this->set_needs_update();
+            return true;
+        }
+    }
+}
+
+bool
 textinput_curses::handle_search_key(const ncinput& ch)
 {
     if (ncinput_ctrl_p(&ch)) {
         switch (ch.id) {
+            case 'a':
+            case 'A':
+            case 'e':
+            case 'E': {
+                this->tc_mode = mode_t::editing;
+                return this->handle_key(ch);
+            }
             case 's':
             case 'S': {
                 this->tc_search_start_point = this->tc_cursor;
@@ -248,10 +345,15 @@ textinput_curses::handle_search_key(const ncinput& ch)
             return true;
         case NCKEY_BACKSPACE: {
             if (!this->tc_search.empty()) {
-                this->tc_search.pop_back();
-                auto compile_res = lnav::pcre2pp::code::from(
-                    lnav::pcre2pp::quote(this->tc_search), PCRE2_CASELESS);
-                this->tc_search_code = compile_res.unwrap().to_shared();
+                if (this->tc_search_found.has_value()) {
+                    this->tc_search.pop_back();
+                    auto compile_res = lnav::pcre2pp::code::from(
+                        lnav::pcre2pp::quote(this->tc_search), PCRE2_CASELESS);
+                    this->tc_search_code = compile_res.unwrap().to_shared();
+                } else {
+                    this->tc_search.clear();
+                    this->tc_search_code.reset();
+                }
                 this->move_cursor_to_next_search_hit();
             }
             return true;
@@ -286,6 +388,9 @@ textinput_curses::handle_search_key(const ncinput& ch)
             if (index > 0) {
                 utf8[index] = 0;
 
+                if (!this->tc_search_found.has_value()) {
+                    this->tc_search.clear();
+                }
                 this->tc_search.append(utf8);
                 if (!this->tc_search.empty()) {
                     auto compile_res = lnav::pcre2pp::code::from(
@@ -375,6 +480,16 @@ textinput_curses::move_cursor_to_prev_search_hit()
 bool
 textinput_curses::handle_key(const ncinput& ch)
 {
+    this->tc_unhandled_input = false;
+    switch (this->tc_mode) {
+        case mode_t::searching:
+            return this->handle_search_key(ch);
+        case mode_t::show_help:
+            return this->handle_help_key(ch);
+        case mode_t::editing:
+            break;
+    }
+
     if (this->tc_mode == mode_t::searching) {
         return this->handle_search_key(ch);
     }
@@ -598,8 +713,11 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
-            default:
+            default: {
+                this->tc_unhandled_input = true;
+                this->set_needs_update();
                 return false;
+            }
         }
     }
 
@@ -834,6 +952,11 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             return true;
         }
+        case NCKEY_F01: {
+            this->tc_mode = mode_t::show_help;
+            this->set_needs_update();
+            return true;
+        }
         default: {
             char utf8[32];
             size_t index = 0;
@@ -856,6 +979,9 @@ textinput_curses::handle_key(const ncinput& ch)
                         = selected_range::from_point(this->tc_cursor);
                 }
                 this->replace_selection(string_fragment::from_c_str(utf8));
+            } else {
+                this->tc_unhandled_input = true;
+                this->set_needs_update();
             }
             return true;
         }
@@ -913,6 +1039,14 @@ textinput_curses::ensure_cursor_visible()
     {
         this->tc_popup.set_visible(false);
         this->tc_complete_range = std::nullopt;
+    }
+
+    if (this->tc_cursor.x == this->tc_lines[this->tc_cursor.y].column_width()) {
+        if (this->tc_cursor.x >= this->tc_max_cursor_x) {
+            this->tc_max_cursor_x = this->tc_cursor.x;
+        }
+    } else {
+        this->tc_max_cursor_x = this->tc_cursor.x;
     }
 
     this->set_needs_update();
@@ -1040,10 +1174,6 @@ textinput_curses::update_lines()
                             .with_text_format(this->tc_text_format)
                             .save_words()
                             .perform();
-    log_debug("doc indents:");
-    for (auto ind : this->tc_doc_meta.m_indents) {
-        log_debug("  indent=%d", ind);
-    }
     this->tc_lines = content.split_lines();
     this->apply_highlights();
     this->ensure_cursor_visible();
@@ -1075,12 +1205,17 @@ textinput_curses::get_visible_dimensions() const
 }
 
 std::string
-textinput_curses::get_content() const
+textinput_curses::get_content(bool trim) const
 {
     std::string retval;
 
     for (const auto& al : this->tc_lines) {
-        retval.append(al.al_string).append("\n");
+        const auto& line = al.al_string;
+        auto line_sf = string_fragment::from_str(line);
+        if (trim) {
+            line_sf = line_sf.rtrim(" ");
+        }
+        retval.append(line_sf.data(), line_sf.length()).append("\n");
     }
     return retval;
 }
@@ -1088,6 +1223,10 @@ textinput_curses::get_content() const
 void
 textinput_curses::focus()
 {
+    if (this->tc_mode == mode_t::show_help) {
+        notcurses_cursor_disable(ncplane_notcurses(this->tc_window));
+        return;
+    }
     notcurses_cursor_enable(ncplane_notcurses(this->tc_window),
                             this->vc_y + this->tc_cursor.y - this->tc_top,
                             this->vc_x + this->tc_cursor.x - this->tc_left);
@@ -1107,6 +1246,17 @@ textinput_curses::do_update()
 
     if (!this->vc_needs_update) {
         log_debug("skip update");
+        return view_curses::do_update();
+    }
+
+    if (this->tc_mode == mode_t::show_help) {
+        log_debug("render help");
+        this->tc_help_view.set_window(this->tc_window);
+        this->tc_help_view.set_x(this->vc_x);
+        this->tc_help_view.set_y(this->vc_y);
+        this->tc_help_view.set_width(this->vc_width);
+        this->tc_help_view.set_height(vis_line_t(this->tc_height));
+        this->tc_help_view.set_visible(true);
         return view_curses::do_update();
     }
 
@@ -1155,14 +1305,35 @@ textinput_curses::do_update()
     for (; y < y_max; y++) {
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
     }
-    if (this->tc_mode == mode_t::searching) {
-        auto search_prompt = attr_line_t("Search: ")
-                                 .append(this->tc_search)
-                                 .with_attr_for_all(VC_ROLE.value(
-                                     (this->tc_search.empty()
-                                      || this->tc_search_found.value_or(false))
-                                         ? role_t::VCR_OK
-                                         : role_t::VCR_ERROR));
+    if (this->tc_unhandled_input) {
+        auto hint
+            = attr_line_t()
+                  .append(" Notice: "_status_subtitle)
+                  .append(" Unhandled key press.  Press F1 for help")
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_ALERT_STATUS));
+        auto lr = line_range{0, dim.dr_width};
+        mvwattrline(this->tc_window,
+                    this->vc_y + dim.dr_height - 1,
+                    this->vc_x,
+                    hint,
+                    lr);
+    } else if (this->tc_mode == mode_t::searching) {
+        auto search_prompt = attr_line_t(" ");
+        if (this->tc_search.empty() || this->tc_search_found.has_value()) {
+            search_prompt.append(this->tc_search)
+                .append(" ", VC_ROLE.value(role_t::VCR_CURSOR_LINE));
+        } else {
+            search_prompt.append(this->tc_search,
+                                 VC_ROLE.value(role_t::VCR_SEARCH));
+        }
+        if (this->tc_search_found && this->tc_search_found.value()) {
+            search_prompt.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+        }
+        search_prompt.insert(0, " Search: "_status_subtitle);
+        if (this->tc_search_found && !this->tc_search_found.value()) {
+            search_prompt.with_attr_for_all(
+                VC_ROLE.value(role_t::VCR_ALERT_STATUS));
+        }
         auto lr = line_range{0, dim.dr_width};
         mvwattrline(this->tc_window,
                     this->vc_y + dim.dr_height - 1,

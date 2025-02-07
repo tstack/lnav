@@ -39,6 +39,7 @@
 #include "base/itertools.hh"
 #include "base/lnav.console.hh"
 #include "command_executor.hh"
+#include "data_scanner.hh"
 #include "itertools.similar.hh"
 #include "lnav_config.hh"
 #include "sql_util.hh"
@@ -332,46 +333,85 @@ main(int argc, char** argv)
         }
         tc.tc_on_abort = [&looping](auto& tc) { looping = false; };
         tc.tc_on_change = [](textinput_curses& tc) {
+            switch (tc.tc_text_format) {
+                case text_format_t::TF_DIFF:
+                case text_format_t::TF_MAN:
+                case text_format_t::TF_BINARY:
+                case text_format_t::TF_MARKDOWN:
+                case text_format_t::TF_UNKNOWN:
+                    return;
+                default:
+                    break;
+            }
+
             auto& al = tc.tc_lines[tc.tc_cursor.y];
-            auto word_start_col = string_fragment::from_str(al.al_string)
-                                      .prev_word(tc.tc_cursor.x);
-            auto word_start_index
-                = al.column_to_byte_index(word_start_col.value_or(0));
-            auto word_end_index = al.column_to_byte_index(tc.tc_cursor.x);
-            auto prefix = al.subline(word_start_index,
-                                     word_end_index - word_start_index);
-            log_debug("prefix %s", prefix.al_string.c_str());
+            auto al_sf
+                = al.to_string_fragment().sub_cell_range(0, tc.tc_cursor.x);
+            if (al_sf.endswith(" ")) {
+                return;
+            }
+            data_scanner ds(al_sf);
+
+            std::optional<data_scanner::tokenize_result> last_tok;
+            while (true) {
+                auto tok_res = ds.tokenize2(tc.tc_text_format);
+                if (!tok_res.has_value()) {
+                    break;
+                }
+
+                last_tok = tok_res;
+            }
+
+            if (!last_tok.has_value()) {
+                return;
+            }
+            switch (last_tok->tr_token) {
+                case DT_CONSTANT:
+                case DT_SYMBOL:
+                case DT_WORD:
+                case DT_ID:
+                    break;
+                default:
+                    return;
+            }
+            auto prefix = last_tok->to_string_fragment().to_string();
+            log_debug("prefix %s", prefix.c_str());
             if (prefix.empty()) {
                 return;
             }
 
-            auto poss = tc.tc_doc_meta.m_words
-                | lnav::itertools::similar_to(prefix.al_string);
-            auto poss_iter
-                = std::find(poss.begin(), poss.end(), prefix.al_string);
+            auto poss_set = tc.tc_doc_meta.m_words;
+            switch (tc.tc_text_format) {
+                case text_format_t::TF_SQL: {
+                    poss_set = lnav::itertools::chain(poss_set, sql_keywords);
+                    break;
+                }
+                default:
+                    break;
+            }
+            auto poss = poss_set | lnav::itertools::similar_to(prefix, 10);
+            auto poss_iter = std::find(poss.begin(), poss.end(), prefix);
             if (poss_iter != poss.end()) {
                 poss.erase(poss_iter);
             }
             tc.open_popup_for_completion(
-                word_start_col.value_or(0),
+                al.byte_to_column_index(last_tok->tr_capture.c_begin),
                 poss | lnav::itertools::map([](const auto& s) {
                     return attr_line_t(s);
                 }));
-            log_debug("poss %d", poss.size());
         };
         tc.tc_on_completion = [](textinput_curses& tc) {
             auto& al = tc.tc_lines[tc.tc_cursor.y];
-            auto word_start_col = string_fragment::from_str(al.al_string)
-                                      .prev_word(tc.tc_cursor.x);
-            auto word_start_index
-                = al.column_to_byte_index(word_start_col.value_or(0));
-            auto word_end_index = al.column_to_byte_index(tc.tc_cursor.x);
+            auto complete_sf
+                = string_fragment::from_str(al.al_string)
+                      .sub_cell_range(tc.tc_complete_range->sr_start.x,
+                                      tc.tc_complete_range->sr_end.x);
             const auto& repl
                 = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()]
                       .tl_value.al_string;
-            al.erase(word_start_index, word_end_index - word_start_index);
-            al.insert(word_start_index, repl);
-            tc.tc_cursor.x = word_start_col.value_or(0)
+            al.erase(complete_sf.sf_begin, complete_sf.length());
+            al.insert(complete_sf.sf_begin, repl);
+            tc.tc_cursor.x = tc.tc_complete_range->sr_start.x
                 + string_fragment::from_str(repl).column_width();
             tc.update_lines();
         };
@@ -411,8 +451,7 @@ main(int argc, char** argv)
             } else if (ncinput_mouse_p(&nci)) {
                 mouse_i.handle_mouse(sc.get_notcurses(), nci);
             } else if (nci.evtype == NCTYPE_PRESS) {
-            } else if (!ncinput_lock_p(&nci) && !ncinput_modifier_p(&nci))
-            {
+            } else if (!ncinput_lock_p(&nci) && !ncinput_modifier_p(&nci)) {
                 log_debug("handling key %x", nci.id);
                 tc.handle_key(nci);
             } else {
@@ -423,7 +462,7 @@ main(int argc, char** argv)
             }
         }
 
-        new_content = tc.get_content();
+        new_content = tc.get_content(true);
     }
 
     if (argc > 0) {
