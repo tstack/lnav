@@ -3056,10 +3056,19 @@ int notcurses_linesigs_enable(notcurses* n){
 
 struct initial_responses* inputlayer_get_responses(inputctx* ictx){
   struct initial_responses* iresp;
+      struct timeval wait_start_tv, curr_tv, diff_tv;
       loginfo("inputlayer_get_resp wait");
+      gettimeofday(&wait_start_tv, NULL);
+      struct timespec ts = {wait_start_tv.tv_sec + 1, 0};
   pthread_mutex_lock(&ictx->ilock);
   while(ictx->initdata || !ictx->initdata_complete){
-    pthread_cond_wait(&ictx->icond, &ictx->ilock);
+    pthread_cond_timedwait(&ictx->icond, &ictx->ilock, &ts);
+      gettimeofday(&curr_tv, NULL);
+      timersub(&curr_tv, &wait_start_tv, &diff_tv);
+      if (diff_tv.tv_sec > 1) {
+          logpanic("timedout waiting for initial response");
+          return NULL;
+      }
   }
   iresp = ictx->initdata_complete;
   ictx->initdata_complete = NULL;
