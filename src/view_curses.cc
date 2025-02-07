@@ -744,12 +744,14 @@ view_colors::init(notcurses* nc)
 {
     vc_active_palette = ansi_colors();
     if (nc != nullptr) {
-        vc_active_palette = xterm_colors();
         const auto* caps = notcurses_capabilities(nc);
         if (caps->rgb) {
             log_info("terminal supports RGB colors");
         } else {
             log_info("terminal supports %d colors", caps->colors);
+        }
+        if (caps->colors > 8) {
+            vc_active_palette = xterm_colors();
         }
     }
 
