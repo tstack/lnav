@@ -45,8 +45,8 @@
 
 using namespace lnav::roles::literals;
 
-static const attr_line_t&
-get_help_text()
+const attr_line_t&
+textinput_curses::get_help_text()
 {
     static const auto retval
         = attr_line_t()
@@ -54,6 +54,14 @@ get_help_text()
               .append("\n\n")
               .append("Editing"_h2)
               .append("\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("ESC"_hotkey)
+              .append("       - Cancel editing\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-X"_hotkey)
+              .append("    - Save and exit the editor\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-A"_hotkey)
@@ -78,8 +86,14 @@ get_help_text()
               .append(" ")
               .append("CTRL-U"_hotkey)
               .append(
-                  "    - Cut back to the beginning of the line into the "
-                  "clipboard\n ")
+                  "    - Cut from the beginning of the line to the cursor "
+                  "into the clipboard\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-W"_hotkey)
+              .append(
+                  "    - Cut from the beginning of the previous word into "
+                  "the clipboard\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-Y"_hotkey)
@@ -135,10 +149,6 @@ textinput_curses::set_content(const attr_line_t& al)
                             .with_text_format(this->tc_text_format)
                             .save_words()
                             .perform();
-    log_debug("doc indents:");
-    for (auto ind : this->tc_doc_meta.m_indents) {
-        log_debug("  indent=%d", ind);
-    }
     lnav::document::hier_node::depth_first(
         this->tc_doc_meta.m_sections_root.get(),
         [this](lnav::document::hier_node* hn) {
@@ -297,11 +307,23 @@ bool
 textinput_curses::handle_help_key(const ncinput& ch)
 {
     switch (ch.id) {
+        case ' ':
+        case 'b':
+        case 'j':
+        case 'k':
+        case 'g':
+        case 'G':
+        case NCKEY_HOME:
+        case NCKEY_END:
         case NCKEY_UP:
-        case NCKEY_DOWN: {
+        case NCKEY_DOWN:
+        case NCKEY_PGUP:
+        case NCKEY_PGDOWN: {
+            log_debug("passing key press to help view");
             return this->tc_help_view.handle_key(ch);
         }
         default: {
+            log_debug("switching back to editing from help");
             this->tc_mode = mode_t::editing;
             this->tc_help_view.set_visible(false);
             this->set_needs_update();
@@ -361,7 +383,7 @@ textinput_curses::handle_search_key(const ncinput& ch)
         case NCKEY_ENTER: {
             this->tc_search_start_point = this->tc_cursor;
             this->move_cursor_to_next_search_hit();
-            break;
+            return true;
         }
         case NCKEY_LEFT:
         case NCKEY_RIGHT:
@@ -369,13 +391,12 @@ textinput_curses::handle_search_key(const ncinput& ch)
         case NCKEY_DOWN: {
             this->tc_mode = mode_t::editing;
             this->handle_key(ch);
-            break;
+            return true;
         }
         default: {
             char utf8[32];
             size_t index = 0;
             for (const auto eff_ch : ch.eff_text) {
-                log_debug(" eff %x", eff_ch);
                 if (eff_ch == 0) {
                     break;
                 }
@@ -506,18 +527,13 @@ textinput_curses::handle_key(const ncinput& ch)
             this->tc_selection = selected_range::from_point(this->tc_cursor);
         }
         auto text = lf_re.replace(paste_sf, "\n");
+        log_debug("applying bracketed paste of size %zu", text.length());
         this->replace_selection(text);
         return true;
     }
 
     if (ncinput_alt_p(&ch)) {
-        log_debug("alt pressed");
         switch (chid) {
-            case 'f':
-            case 'F': {
-                log_debug("next word");
-                return true;
-            }
             case NCKEY_LEFT: {
                 auto& al = this->tc_lines[this->tc_cursor.y];
                 auto next_col_opt = string_fragment::from_str(al.al_string)
@@ -566,6 +582,11 @@ textinput_curses::handle_key(const ncinput& ch)
             case 'K': {
                 if (this->tc_selection) {
                     auto range = this->tc_selection;
+                    log_debug("cutting selection [%d:%d) - [%d:%d)",
+                              range->sr_start.x,
+                              range->sr_start.y,
+                              range->sr_end.x,
+                              range->sr_end.y);
                     auto new_clip = std::string();
                     for (auto curr_line = range->sr_start.y;
                          curr_line <= range->sr_end.y;
@@ -592,7 +613,9 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_clipboard.emplace_back(new_clip);
                     this->replace_selection(string_fragment{});
                 } else {
+                    log_debug("cutting to end of line %d", this->tc_cursor.y);
                     if (this->tc_cursor != this->tc_cut_location) {
+                        log_debug("  cursor moved, clearing clipboard");
                         this->tc_clipboard.clear();
                     }
                     this->tc_cut_location = this->tc_cursor;
@@ -601,15 +624,18 @@ textinput_curses::handle_key(const ncinput& ch)
                         = al.column_to_byte_index(this->tc_cursor.x);
                     this->tc_clipboard.emplace_back(
                         al.subline(byte_index).al_string);
-                    al.erase(byte_index);
-                    if (this->tc_clipboard.back().empty()
+                    this->tc_selection = selected_range::from_key(
+                        this->tc_cursor,
+                        this->tc_cursor.copy_with_x(al.column_width()));
+                    if (this->tc_selection->empty()
                         && this->tc_cursor.y + 1 < this->tc_lines.size())
                     {
                         this->tc_clipboard.back().push_back('\n');
-                        al.append(this->tc_lines[this->tc_cursor.y + 1]);
-                        this->tc_lines.erase(this->tc_lines.begin()
-                                             + this->tc_cursor.y + 1);
+                        this->tc_selection = selected_range::from_key(
+                            this->tc_cursor,
+                            input_point{0, this->tc_cursor.y + 1});
                     }
+                    this->replace_selection(string_fragment{});
                 }
                 {
                     auto clip_open_res
@@ -626,17 +652,13 @@ textinput_curses::handle_key(const ncinput& ch)
                                   err_msg.c_str());
                     }
                 }
-                log_debug("clip contents") for (const auto& line :
-                                                this->tc_clipboard)
-                {
-                    log_debug("line '%s'", line.c_str());
-                }
                 this->tc_drag_selection = std::nullopt;
                 this->update_lines();
                 return true;
             }
             case 's':
             case 'S': {
+                log_debug("switching to search mode from edit");
                 this->tc_mode = mode_t::searching;
                 this->tc_search_start_point = this->tc_cursor;
                 this->tc_search_found = std::nullopt;
@@ -645,55 +667,59 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             case 'u':
             case 'U': {
+                log_debug("cutting to beginning of line");
                 auto& al = this->tc_lines[this->tc_cursor.y];
                 auto byte_index = al.column_to_byte_index(this->tc_cursor.x);
                 this->tc_clipboard.emplace_back(
                     al.subline(0, byte_index).al_string);
-                al.erase(0, byte_index);
-                this->tc_cursor.x = 0;
+                this->tc_selection = selected_range::from_key(
+                    this->tc_cursor.copy_with_x(0), this->tc_cursor);
+                this->replace_selection(string_fragment{});
                 this->tc_selection = std::nullopt;
                 this->tc_drag_selection = std::nullopt;
                 this->update_lines();
                 return true;
             }
+            case 'w':
+            case 'W': {
+                log_debug("cutting to beginning of previous word");
+                auto al_sf
+                    = this->tc_lines[this->tc_cursor.y].to_string_fragment();
+                auto prev_word_start_opt = al_sf.prev_word(this->tc_cursor.x);
+                if (prev_word_start_opt) {
+                    if (this->tc_cut_location != this->tc_cursor) {
+                        log_debug(
+                            "  cursor moved since last cut, clearing "
+                            "clipboard");
+                        this->tc_clipboard.clear();
+                    }
+                    auto prev_word = al_sf.sub_cell_range(
+                        prev_word_start_opt.value(), this->tc_cursor.x);
+                    this->tc_clipboard.emplace_front(prev_word.to_string());
+                    this->tc_selection = selected_range::from_key(
+                        this->tc_cursor.copy_with_x(
+                            prev_word_start_opt.value()),
+                        this->tc_cursor);
+                    this->replace_selection(string_fragment{});
+                    this->tc_cut_location = this->tc_cursor;
+                }
+                return true;
+            }
+            case 'x':
+            case 'X': {
+                log_debug("performing action");
+                if (this->tc_on_perform) {
+                    this->tc_on_perform(*this);
+                }
+                return true;
+            }
             case 'y':
             case 'Y': {
-                auto open_clip_res = sysclip::open(sysclip::type_t::GENERAL,
-                                                   sysclip::op_t::READ);
-                if (open_clip_res.isOk()) {
-                    auto clip_file = open_clip_res.unwrap();
-                    auto buf = auto_buffer::alloc(1024);
-
-                    while (true) {
-                        if (buf.available() == 0) {
-                            buf.expand_by(1024);
-                        }
-
-                        auto rc = fread(buf.in(),
-                                        sizeof(char),
-                                        buf.available(),
-                                        clip_file.in());
-                        log_debug("fread returned: %d", rc);
-                        if (rc == 0) {
-                            break;
-                        }
-                        buf.resize_by(rc);
-                    }
-
-                    auto from_sysclip = buf.to_string();
-                    if (this->tc_clipboard.empty()
-                        || from_sysclip != this->tc_clipboard.back())
-                    {
-                        this->tc_clipboard.emplace_back(from_sysclip);
-                    }
-                }
-
+                log_debug("pasting clipboard contents");
                 for (const auto& clipping : this->tc_clipboard) {
                     auto& al = this->tc_lines[this->tc_cursor.y];
-                    log_debug("before insert: '%s'", al.al_string.c_str());
                     al.insert(al.column_to_byte_index(this->tc_cursor.x),
                               clipping);
-                    log_debug("after insert: '%s'", al.al_string.c_str());
                     const auto clip_sf = string_fragment::from_str(clipping);
                     const auto clip_cols
                         = clip_sf
@@ -721,7 +747,6 @@ textinput_curses::handle_key(const ncinput& ch)
         }
     }
 
-    log_debug("chid %x", chid);
     switch (chid) {
         case NCKEY_ESC:
         case KEY_CTRL(']'): {
@@ -758,6 +783,7 @@ textinput_curses::handle_key(const ncinput& ch)
                               indent_and_body.first.length());
                 this->replace_selection(indent);
             }
+            // TODO implement "double enter" to call tc_on_perform
             return true;
         }
         case NCKEY_TAB: {
@@ -848,16 +874,12 @@ textinput_curses::handle_key(const ncinput& ch)
                               line_sf.column_to_byte_index(this->tc_cursor.x))
                           .value();
 
-                log_debug("before: '%.*s'", before.length(), before.data());
-                log_debug("after: '%.*s'", after.length(), after.data());
                 if (this->tc_cursor.x > 0 && before.trim().empty()) {
-                    log_debug("x %d", this->tc_cursor.x);
                     auto indent_iter
                         = std::lower_bound(this->tc_doc_meta.m_indents.begin(),
                                            this->tc_doc_meta.m_indents.end(),
                                            this->tc_cursor.x);
                     if (indent_iter != this->tc_doc_meta.m_indents.end()) {
-                        log_debug("eh? %d", *indent_iter);
                         if (indent_iter == this->tc_doc_meta.m_indents.begin())
                         {
                             this->tc_selection = selected_range::from_key(
@@ -1162,6 +1184,48 @@ textinput_curses::replace_selection(string_fragment sf)
 
     this->tc_drag_selection = std::nullopt;
     this->update_lines();
+}
+
+void
+textinput_curses::move_cursor_by(movement move)
+{
+    auto cursor_y_offset = this->tc_cursor.y - this->tc_top;
+    this->tc_cursor += move;
+    if (move.hm_dir == direction_t::up || move.hm_dir == direction_t::down) {
+        if (move.hm_amount > 1) {
+            this->tc_top = this->tc_cursor.y - cursor_y_offset;
+        }
+        this->tc_cursor.x = this->tc_max_cursor_x;
+    }
+    if (this->tc_cursor.x < 0) {
+        if (this->tc_cursor.y > 0) {
+            this->tc_cursor.y -= 1;
+            this->tc_cursor.x
+                = this->tc_lines[this->tc_cursor.y].column_width();
+        } else {
+            this->tc_cursor.x = 0;
+        }
+    }
+    if (move.hm_dir == direction_t::right
+        && this->tc_cursor.x > this->tc_lines[this->tc_cursor.y].column_width())
+    {
+        if (this->tc_cursor.y + 1 < this->tc_lines.size()) {
+            this->tc_cursor.x = 0;
+            this->tc_cursor.y += 1;
+        }
+    }
+    this->tc_drag_selection = std::nullopt;
+    this->tc_selection = std::nullopt;
+    this->ensure_cursor_visible();
+}
+
+void
+textinput_curses::move_cursor_to(input_point ip)
+{
+    this->tc_cursor = ip;
+    this->tc_drag_selection = std::nullopt;
+    this->tc_selection = std::nullopt;
+    this->ensure_cursor_visible();
 }
 
 void

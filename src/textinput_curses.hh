@@ -31,6 +31,7 @@
 #define textinput_curses_hh
 
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -95,6 +96,8 @@
  */
 class textinput_curses : public view_curses {
 public:
+    static const attr_line_t& get_help_text();
+
     enum class direction_t {
         left,
         right,
@@ -300,47 +303,9 @@ public:
 
     void replace_selection(string_fragment sf);
 
-    void move_cursor_by(movement move)
-    {
-        auto cursor_y_offset = this->tc_cursor.y - this->tc_top;
-        this->tc_cursor += move;
-        if (move.hm_dir == direction_t::up || move.hm_dir == direction_t::down)
-        {
-            if (move.hm_amount > 1) {
-                this->tc_top = this->tc_cursor.y - cursor_y_offset;
-            }
-            this->tc_cursor.x = this->tc_max_cursor_x;
-        }
-        if (this->tc_cursor.x < 0) {
-            if (this->tc_cursor.y > 0) {
-                this->tc_cursor.y -= 1;
-                this->tc_cursor.x
-                    = this->tc_lines[this->tc_cursor.y].column_width();
-            } else {
-                this->tc_cursor.x = 0;
-            }
-        }
-        if (move.hm_dir == direction_t::right
-            && this->tc_cursor.x
-                > this->tc_lines[this->tc_cursor.y].column_width())
-        {
-            if (this->tc_cursor.y + 1 < this->tc_lines.size()) {
-                this->tc_cursor.x = 0;
-                this->tc_cursor.y += 1;
-            }
-        }
-        this->tc_drag_selection = std::nullopt;
-        this->tc_selection = std::nullopt;
-        this->ensure_cursor_visible();
-    }
+    void move_cursor_by(movement move);
 
-    void move_cursor_to(input_point ip)
-    {
-        this->tc_cursor = ip;
-        this->tc_drag_selection = std::nullopt;
-        this->tc_selection = std::nullopt;
-        this->ensure_cursor_visible();
-    }
+    void move_cursor_to(input_point ip);
 
     void clamp_point(input_point& ip) const
     {
@@ -389,7 +354,7 @@ public:
     std::optional<selected_range> tc_drag_selection;
     std::optional<selected_range> tc_selection;
     input_point tc_cut_location;
-    std::vector<std::string> tc_clipboard;
+    std::deque<std::string> tc_clipboard;
     std::optional<selected_range> tc_complete_range;
     textview_curses tc_popup;
     plain_text_source tc_popup_source;

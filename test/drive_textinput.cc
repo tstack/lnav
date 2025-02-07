@@ -401,19 +401,15 @@ main(int argc, char** argv)
                 }));
         };
         tc.tc_on_completion = [](textinput_curses& tc) {
-            auto& al = tc.tc_lines[tc.tc_cursor.y];
-            auto complete_sf
-                = string_fragment::from_str(al.al_string)
-                      .sub_cell_range(tc.tc_complete_range->sr_start.x,
-                                      tc.tc_complete_range->sr_end.x);
+            tc.tc_selection = tc.tc_complete_range;
             const auto& repl
                 = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()]
-                      .tl_value.al_string;
-            al.erase(complete_sf.sf_begin, complete_sf.length());
-            al.insert(complete_sf.sf_begin, repl);
-            tc.tc_cursor.x = tc.tc_complete_range->sr_start.x
-                + string_fragment::from_str(repl).column_width();
-            tc.update_lines();
+                      .tl_value.to_string_fragment();
+            tc.replace_selection(repl);
+        };
+        tc.tc_on_perform = [&looping, &perform_exit](textinput_curses& tc) {
+            perform_exit = true;
+            looping = false;
         };
 
         auto& mouse_i = injector::get<xterm_mouse&>();
@@ -432,11 +428,6 @@ main(int argc, char** argv)
             log_debug("waiting for input");
             ncinput nci;
             notcurses_get_blocking(sc.get_notcurses(), &nci);
-            if (ncinput_ctrl_p(&nci) && nci.id == 'X') {
-                looping = false;
-                perform_exit = true;
-                continue;
-            }
             log_debug("got input shift=%d alt=%d ctrl=%d",
                       ncinput_shift_p(&nci),
                       ncinput_alt_p(&nci),
