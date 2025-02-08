@@ -151,9 +151,10 @@ TEST_CASE("find_left_boundary")
 
     {
         auto sf = string_fragment::from_const("\n    ");
-        auto wtf = sf.find_left_boundary(sf.length(), string_fragment::tag1{'\n'});
+        auto last_line
+            = sf.find_left_boundary(sf.length(), string_fragment::tag1{'\n'});
 
-        CHECK(wtf.to_string() == "    ");
+        CHECK(last_line.to_string() == "    ");
     }
 }
 

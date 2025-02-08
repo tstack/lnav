@@ -1132,7 +1132,6 @@ textinput_curses::replace_selection(string_fragment sf)
             this->tc_lines[curr_line].append(this->tc_lines[curr_line + 1]);
             del_max = curr_line + 1;
         } else if (sel_range->lr_start == 0 && sel_range->lr_end == -1) {
-            log_debug("wtf");
             del_max = curr_line;
             if (curr_line == range.sr_start.y) {
                 log_debug("full first");

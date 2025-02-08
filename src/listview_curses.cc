@@ -491,6 +491,7 @@ listview_curses::do_update()
             std::min((size_t) height, row_count - (int) this->lv_top));
         this->lv_source->listview_value_for_rows(*this, row, rows);
         this->lv_display_lines.clear();
+        this->lv_display_lines_row = row;
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end = this->lv_left + wrap_width;
@@ -1053,6 +1054,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
             alerter::singleton().chime("invalid top");
         }
     } else if (this->lv_top != top) {
+        auto display_lines_valid = this->lv_display_lines_row == this->lv_top;
         auto old_top = this->lv_top;
         this->lv_top = top;
         if (this->lv_selectable) {
@@ -1068,6 +1070,35 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                 vis_line_t height;
 
                 this->get_dimensions(height, width);
+
+                if (old_top > this->lv_top && bot != -1_vl
+                    && this->lv_overlay_source != nullptr)
+                {
+                    // XXX this should be done by rows_available(), but I don't
+                    // want to monkey with that now...
+                    auto full_stop_row = display_lines_valid ? old_top : bot;
+                    if (display_lines_valid) {
+                        for (const auto& dlc : this->lv_display_lines) {
+                            if (dlc.is<main_content>()) {
+                                continue;
+                            }
+                            if (dlc.is<empty_space>()) {
+                                bot += 1_vl;
+                                continue;
+                            }
+                            bot -= 1_vl;
+                        }
+                    }
+                    std::vector<attr_line_t> overlay_rows;
+                    for (auto curr_row = this->lv_top; curr_row < full_stop_row;
+                         curr_row += 1_vl)
+                    {
+                        this->lv_overlay_source->list_value_for_overlay(
+                            *this, curr_row, overlay_rows);
+                        bot -= vis_line_t(overlay_rows.size());
+                        overlay_rows.clear();
+                    }
+                }
 
                 if (bot == -1_vl) {
                     this->set_selection_without_context(this->lv_top);

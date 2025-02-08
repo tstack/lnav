@@ -572,6 +572,7 @@ protected:
     lv_mode_t lv_mouse_mode{lv_mode_t::NONE};
     vis_line_t lv_tail_space{1};
 
+    vis_line_t lv_display_lines_row{0_vl};
     std::vector<display_line_content_t> lv_display_lines;
     unsigned int lv_scroll_top{0};
     unsigned int lv_scroll_bottom{0};
