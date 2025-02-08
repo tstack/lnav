@@ -155,7 +155,8 @@ class list_input_delegate {
 public:
     virtual ~list_input_delegate() = default;
 
-    virtual bool list_input_handle_key(listview_curses& lv, const ncinput& ch) = 0;
+    virtual bool list_input_handle_key(listview_curses& lv, const ncinput& ch)
+        = 0;
 
     virtual void list_input_handle_scroll_out(listview_curses& lv) {}
 };
@@ -309,8 +310,8 @@ public:
     vis_line_t rows_available(vis_line_t line, row_direction_t dir) const;
 
     template<typename F>
-    auto map_top_row(F func) const ->
-        typename std::invoke_result<F, const attr_line_t&>::type
+    auto map_top_row(F func) const
+        -> std::invoke_result_t<F, const attr_line_t&>
     {
         if (this->lv_top >= this->get_inner_height()) {
             return std::nullopt;
@@ -564,9 +565,7 @@ protected:
     vis_line_t lv_selection{0};
     bool lv_sync_selection_and_top{false};
 
-    timeval lv_mouse_time {
-        0, 0
-    };
+    timeval lv_mouse_time{0, 0};
     int lv_scroll_accel{1};
     int lv_scroll_velo{0};
     int lv_mouse_y{-1};

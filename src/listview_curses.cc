@@ -1214,7 +1214,8 @@ listview_curses::set_selection(vis_line_t sel)
     auto dim = this->get_dimensions();
     auto diff = std::optional<vis_line_t>{};
 
-    if (this->lv_selection >= 0_vl && this->lv_selection > this->lv_top
+    if (!this->lv_word_wrap && this->lv_selection >= 0_vl
+        && this->lv_selection > this->lv_top
         && this->lv_selection < this->lv_top + dim.first
         && (sel < this->lv_top || sel > this->lv_top + dim.first))
     {
@@ -1233,8 +1234,14 @@ listview_curses::set_selection(vis_line_t sel)
                && (this->lv_selection
                    > (this->lv_top + (dim.first - 1_vl) - this->lv_tail_space)))
     {
-        this->set_top(this->lv_selection + this->lv_tail_space
-                      - (dim.first - 1_vl));
+        auto avail = this->rows_available(this->lv_selection, RD_UP);
+        if (avail > this->lv_tail_space) {
+            avail -= this->lv_tail_space;
+        }
+        if (avail > 0_vl) {
+            avail -= 1_vl;
+        }
+        this->set_top(this->lv_selection - avail);
     }
 }
 
