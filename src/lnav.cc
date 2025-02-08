@@ -1386,7 +1386,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
 
         lnav_data.ld_window = sc.get_std_plane();
-        
+
         {
             struct termios tio;
 
@@ -1782,6 +1782,38 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                                 .append("CTRL-R"_hotkey)
                                 .append(" to reset session"));
                         lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
+                    }
+                    const auto* nc_caps
+                        = notcurses_capabilities(sc.get_notcurses());
+                    if (nc_caps->colors < 256
+                        && (std::filesystem::file_time_type::clock::now()
+                                - lnav_data.ld_last_dot_lnav_time
+                            > 24h))
+                    {
+                        auto um
+                            = lnav::console::user_message::info(
+                                  attr_line_t("The terminal ")
+                                      .append_quoted(getenv("TERM"))
+                                      .append(
+                                          " appears to have a limited color "
+                                          "palette, which can make things hard "
+                                          "to read"))
+                                  .with_reason(
+                                      attr_line_t(
+                                          "The terminal appears to only have ")
+                                          .append(lnav::roles::number(
+                                              fmt::to_string(nc_caps->colors)))
+                                          .append(" colors"))
+                                  .with_help(
+                                      attr_line_t("Try setting ")
+                                          .append("TERM"_symbol)
+                                          .append(" to ")
+                                          .append_quoted("xterm-256color"));
+                        lnav_data.ld_user_message_source.replace_with(
+                            um.to_attr_line());
+                        lnav_data.ld_user_message_view.reload_data();
+                        lnav_data.ld_user_message_expiration
+                            = std::chrono::steady_clock::now() + 20s;
                     }
 
                     lnav_data.ld_session_loaded = true;
