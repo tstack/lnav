@@ -44,10 +44,6 @@
 #include <algorithm>
 #include <set>
 
-#ifdef HAVE_X86INTRIN_H
-#    include "simdutf8check.h"
-#endif
-
 #include "base/auto_pid.hh"
 #include "base/fs_util.hh"
 #include "base/injector.bind.hh"
