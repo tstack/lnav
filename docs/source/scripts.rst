@@ -95,6 +95,8 @@ This script can help in finding log messages that are related to the focused
 message.  lnav already provides hotkeys for finding messages based on common
 fields, but this script can be used for arbitrary fields.
 
+`find-msg source <https://github.com/tstack/lnav/blob/master/src/scripts/find-msg.lnav>`_
+
 find-chained-msg
 ^^^^^^^^^^^^^^^^
 
@@ -102,8 +104,12 @@ This script is similar to :code:`find-msg`, except instead of matching a
 single field in the focused and next/previous message, the matched value
 can be in separate fields.
 
+`find-chained-msg source <https://github.com/tstack/lnav/blob/master/src/scripts/find-chained-msg.lnav>`_
+
 report-access-log
 ^^^^^^^^^^^^^^^^^
 
 This script generates a report from the :code:`access_log` table that is
 similar to the output of the `goaccess <https://goaccess.io>`_ tool.
+
+`report-access-log souurce <https://github.com/tstack/lnav/blob/master/src/scripts/report-access-log.lnav>`_

@@ -167,6 +167,16 @@ will activate a corresponding prompt:
 The command-line is by the readline library, so the usual set of keyboard
 shortcuts can be used for editing and moving within the command-line.
 
+.. note::
+
+    Commands can also be executed by pasting a snippet when focused on
+    the main view, without opening a prompt.  The pasted snippet should
+    start with the appropriate sigil, for example, the colon in
+    :code:`:echo Hello, World!`.  This functionality requires the terminal
+    to support
+    `bracketed paste <https://en.wikipedia.org/wiki/Bracketed-paste>`_
+    mode.
+
 .. _ui_views:
 
 Views
