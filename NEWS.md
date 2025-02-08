@@ -79,6 +79,8 @@ Interface changes:
   the value of the column.
   Pressing space while focused on a column in the overlay will
   hide/show it.
+* If the terminal supports less than 256 colors, a help message
+  will be displayed to try setting `TERM` to `xterm-256color`.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an
