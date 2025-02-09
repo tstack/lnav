@@ -206,10 +206,11 @@ textinput_curses::handle_mouse(mouse_event& me)
         if (this->tc_top + dim.dr_height < inner_height) {
             this->tc_top += 1;
             if (this->tc_cursor.y <= this->tc_top) {
-                this->tc_cursor.y = this->tc_top + 1;
+                this->move_cursor_by({direction_t::down, 1});
+            } else {
+                this->ensure_cursor_visible();
             }
         }
-        this->ensure_cursor_visible();
     } else if (me.me_button == mouse_button_t::BUTTON_LEFT) {
         this->tc_mode = mode_t::editing;
         auto inner_press_point = input_point{
