@@ -439,12 +439,12 @@ CREATE TABLE lnav_views (
                         tlm.tlm_anchor = ta->anchor_for_row(tc.get_top());
                     }
                     tlm.tlm_file = tc.map_top_row([](const auto& al) {
-                        return get_string_attr(al.get_attrs(), L_FILE)
-                            | [](const auto wrapper) {
-                                  auto lf = wrapper.get();
+                        return get_string_attr(al.get_attrs(), L_FILE) |
+                            [](const auto wrapper) {
+                                auto lf = wrapper.get();
 
-                                  return std::make_optional(lf->get_filename());
-                              };
+                                return std::make_optional(lf->get_filename());
+                            };
                     });
                     for (const auto& crumb : crumbs) {
                         auto poss = crumb.c_possibility_provider();
@@ -723,8 +723,8 @@ CREATE TABLE lnav_views (
             }
         }
         if (vo.vo_row_details && tc.get_overlay_source()) {
-            tc.get_overlay_source()->set_show_details_in_overlay(
-                vo.vo_row_details.value() == row_details_t::show);
+            auto enable = vo.vo_row_details.value() == row_details_t::show;
+            tc.set_show_details_in_overlay(enable);
             tc.set_needs_update();
         }
         if (vo.vo_overlay_focus && tc.get_overlay_source()) {

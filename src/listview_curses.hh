@@ -265,6 +265,8 @@ public:
         return this->lv_top;
     }
 
+    void set_show_details_in_overlay(bool val);
+
     std::optional<vis_line_t> get_overlay_selection() const
     {
         if (this->lv_overlay_focused) {
