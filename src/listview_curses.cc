@@ -1259,13 +1259,13 @@ listview_curses::set_selection(vis_line_t sel)
         this->set_top(new_top);
     }
 
+    auto avail = this->rows_available(this->lv_selection, RD_UP);
     if (this->lv_selection > 0 && this->lv_selection <= this->lv_top) {
         this->set_top(this->lv_selection - 1_vl);
     } else if (dim.first > this->lv_tail_space
                && (this->lv_selection
-                   > (this->lv_top + (dim.first - 1_vl) - this->lv_tail_space)))
+                   > (this->lv_top + (avail - 1_vl) - this->lv_tail_space)))
     {
-        auto avail = this->rows_available(this->lv_selection, RD_UP);
         if (avail > this->lv_tail_space) {
             avail -= this->lv_tail_space;
         }
