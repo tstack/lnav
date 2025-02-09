@@ -65,6 +65,7 @@ DUMMY_OBJS = \
 	test_stubs.$(OBJEXT)
 
 check_PROGRAMS = \
+    document.sections.tests \
 	drive_data_scanner \
 	drive_doc_discovery \
 	drive_line_buffer \
@@ -166,6 +167,8 @@ test_abbrev_SOURCES = test_abbrev.cc
 test_reltime_SOURCES = test_reltime.cc
 
 lnav_doctests_SOURCES = lnav_doctests.cc
+
+document_sections_tests_SOURCES = document.sections.tests.cc
 
 drive_line_buffer_SOURCES = drive_line_buffer.cc
 

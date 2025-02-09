@@ -3,6 +3,8 @@ include(CheckIncludeFile)
 include(CheckLibraryExists)
 include(CheckFunctionExists)
 
+add_compile_definitions(_GNU_SOURCE)
+
 check_type_size(off_t SIZEOF_OFF_T)
 
 check_include_file("pty.h" HAVE_PTY_H)

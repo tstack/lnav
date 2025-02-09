@@ -66,7 +66,7 @@ TEST_CASE("lnav::document::sections::basics")
 }
 )";
 
-    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+    auto meta = lnav::document::discover(INPUT).perform();
 
     meta.m_sections_tree.visit_all([](const auto& intv) {
         auto ser = intv.value.match(
@@ -88,7 +88,7 @@ TEST_CASE("lnav::document::sections::empty")
     attr_line_t INPUT
         = R"(SOCKET 1 (10) creating new listening socket on port -1)";
 
-    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+    auto meta = lnav::document::discover(INPUT).perform();
 
     meta.m_sections_tree.visit_all([](const auto& intv) {
         auto ser = intv.value.match(
@@ -123,7 +123,7 @@ DESCRIPTION
 
 )";
 
-    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+    auto meta = lnav::document::discover(INPUT).perform();
 
     CHECK(meta.m_sections_root->hn_named_children.size() == 3);
     meta.m_sections_tree.visit_all([](const auto& intv) {
@@ -175,7 +175,7 @@ index 718a2d4..10f5580 100644
  AC_ARG_VAR(SFTP_TEST_URL)
 )";
 
-    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+    auto meta = lnav::document::discover(INPUT).perform();
 
     meta.m_sections_tree.visit_all([](const auto& intv) {
         auto ser = intv.value.match(
@@ -228,7 +228,7 @@ CREATE TABLE lnav_example_log
 );
 )";
 
-    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+    auto meta = lnav::document::discover(INPUT).perform();
 
     for (const auto& sa : INPUT.al_attrs) {
         printf("attr %d:%d %s\n",
@@ -264,7 +264,7 @@ TEST_CASE("lnav::document::sections::sql")
 -->
 )";
 
-    auto meta = lnav::document::discover_structure(INPUT, line_range{0, -1});
+    auto meta = lnav::document::discover(INPUT).perform();
 
     meta.m_sections_tree.visit_all([](const auto& intv) {
         auto ser = intv.value.match(
