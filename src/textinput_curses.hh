@@ -301,6 +301,8 @@ public:
 
     void apply_highlights();
 
+    std::string replace_selection_no_change(string_fragment sf);
+
     void replace_selection(string_fragment sf);
 
     void move_cursor_by(movement move);
@@ -333,6 +335,15 @@ public:
         show_help,
     };
 
+    struct change_entry {
+        change_entry(selected_range range, std::string content)
+            : ce_range(range), ce_content(content)
+        {
+        }
+        selected_range ce_range;
+        std::string ce_content;
+    };
+
     ncplane* tc_window{nullptr};
     size_t tc_max_popup_height{5};
     int tc_left{0};
@@ -342,24 +353,32 @@ public:
     int tc_max_cursor_x{0};
     mode_t tc_mode{mode_t::editing};
     bool tc_unhandled_input{false};
+
     std::string tc_search;
     std::shared_ptr<lnav::pcre2pp::code> tc_search_code;
     std::optional<bool> tc_search_found;
     input_point tc_search_start_point;
+
     text_format_t tc_text_format{text_format_t::TF_UNKNOWN};
     std::vector<attr_line_t> tc_lines;
     lnav::document::metadata tc_doc_meta;
     highlight_map_t tc_highlights;
+
     input_point tc_cursor_anchor;
     std::optional<selected_range> tc_drag_selection;
     std::optional<selected_range> tc_selection;
+
     input_point tc_cut_location;
     std::deque<std::string> tc_clipboard;
     std::optional<selected_range> tc_complete_range;
     textview_curses tc_popup;
     plain_text_source tc_popup_source;
+
+    std::vector<change_entry> tc_change_log;
+
     textview_curses tc_help_view;
     plain_text_source tc_help_source;
+
     std::function<void(textinput_curses&)> tc_on_abort;
     std::function<void(textinput_curses&)> tc_on_change;
     std::function<void(textinput_curses&)> tc_on_completion;

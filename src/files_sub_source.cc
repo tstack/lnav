@@ -636,9 +636,25 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                           details.emplace_back(attr_line_t("    ").append(al));
                       });
             } else {
-                const auto um = lnav::console::user_message::info(attr_line_t(
-                    "The file contents did not match any log "
-                    "formats and can be accessed in the TEXT view"));
+                auto cmd
+                    = attr_line_t("lnav -m format ")
+                          .append("format-name",
+                                  VC_STYLE.value(text_attrs::with_underline()))
+                          .append(" test ")
+                          .append(lf->get_filename())
+                          .with_attr_for_all(
+                              VC_ROLE.value(role_t::VCR_QUOTED_CODE));
+                const auto um
+                    = lnav::console::user_message::info(
+
+                          "The file contents did not match any log "
+                          "formats and can be accessed in the TEXT view")
+                          .with_help(attr_line_t("If you expected this file to "
+                                                 "match a particular "
+                                                 "format, you can run the "
+                                                 "following to get more "
+                                                 "details:\n  ")
+                                         .append(cmd));
                 um.to_attr_line().rtrim().split_lines()
                     | lnav::itertools::for_each([&details](const auto& al) {
                           details.emplace_back(attr_line_t("    ").append(al));

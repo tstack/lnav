@@ -1242,6 +1242,10 @@ listview_curses::set_selection(vis_line_t sel)
         return;
     }
 
+    if (sel < 0_vl) {
+        return;
+    }
+
     auto dim = this->get_dimensions();
     auto diff = std::optional<vis_line_t>{};
 

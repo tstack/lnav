@@ -739,6 +739,17 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
+            case '_': {
+                if (!this->tc_change_log.empty()) {
+                    log_debug("undo!");
+                    auto& ce = this->tc_change_log.back();
+                    this->tc_selection = selected_range::from_key(
+                        ce.ce_range.sr_start, ce.ce_range.sr_start);
+                    this->replace_selection_no_change(ce.ce_content);
+                    this->tc_change_log.pop_back();
+                }
+                return true;
+            }
             default: {
                 this->tc_unhandled_input = true;
                 this->set_needs_update();
@@ -836,6 +847,23 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             break;
         }
+        case KEY_CTRL('_'): {
+            if (!this->tc_change_log.empty()) {
+                log_debug("undo!");
+                auto& ce = this->tc_change_log.back();
+                auto content_sf = string_fragment::from_str(ce.ce_content);
+                this->tc_selection = ce.ce_range;
+                log_debug(" range [%d:%d) - [%d:%d)",
+                          this->tc_selection->sr_start.x,
+                          this->tc_selection->sr_start.y,
+                          this->tc_selection->sr_end.x,
+                          this->tc_selection->sr_end.y);
+                this->replace_selection_no_change(content_sf);
+                this->tc_change_log.pop_back();
+            }
+            return true;
+        }
+
         case NCKEY_HOME: {
             this->move_cursor_to({0, 0});
             return true;
@@ -1089,15 +1117,16 @@ textinput_curses::apply_highlights()
     }
 }
 
-void
-textinput_curses::replace_selection(string_fragment sf)
+std::string
+textinput_curses::replace_selection_no_change(string_fragment sf)
 {
     if (!this->tc_selection) {
-        return;
+        return "";
     }
 
     std::optional<int> del_max;
     auto full_first_line = false;
+    std::string retval;
 
     auto range = std::exchange(this->tc_selection, std::nullopt).value();
     this->tc_cursor.y = range.sr_start.y;
@@ -1144,9 +1173,10 @@ textinput_curses::replace_selection(string_fragment sf)
             auto end = sel_range->lr_end == -1
                 ? al.al_string.length()
                 : al.column_to_byte_index(sel_range->lr_end);
-            this->tc_lines[curr_line].erase(start, end - start);
+            retval.append(al.al_string.substr(start, end - start));
+            al.erase(start, end - start);
             if (curr_line == range.sr_start.y) {
-                this->tc_lines[curr_line].insert(start, sf.to_string());
+                al.insert(start, sf.to_string());
                 this->tc_cursor.x = sel_range->lr_start;
             } else if (sel_range->lr_start > 0 && curr_line == range.sr_end.y) {
                 del_max = curr_line;
@@ -1183,6 +1213,28 @@ textinput_curses::replace_selection(string_fragment sf)
 
     this->tc_drag_selection = std::nullopt;
     this->update_lines();
+
+    return retval;
+}
+
+void
+textinput_curses::replace_selection(string_fragment sf)
+{
+    if (!this->tc_selection) {
+        return;
+    }
+    auto range = this->tc_selection.value();
+    auto old_text = this->replace_selection_no_change(sf);
+    log_debug("repl sel [%d:%d) - ", range.sr_start.x, range.sr_start.y);
+    if (this->tc_change_log.empty()
+        || this->tc_change_log.back().ce_range.sr_end != range.sr_start)
+    {
+        this->tc_change_log.emplace_back(
+            selected_range::from_key(range.sr_start, this->tc_cursor),
+            old_text);
+    } else {
+        this->tc_change_log.back().ce_range.sr_end = this->tc_cursor;
+    }
 }
 
 void

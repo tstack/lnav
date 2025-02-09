@@ -3262,8 +3262,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         = &lnav_data.ld_file_details_source;
     lnav_data.ld_user_message_view.set_sub_source(
         &lnav_data.ld_user_message_source);
+
+#if 0
     auto overlay_menu = std::make_shared<text_overlay_menu>();
     lnav_data.ld_file_details_view.set_overlay_source(overlay_menu.get());
+#endif
 
     for (int lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_gutter_source(new log_gutter_source());
