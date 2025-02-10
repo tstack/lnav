@@ -2008,7 +2008,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     auto old_gen
                         = lnav_data.ld_active_files.fc_files_generation;
                     while (notcurses_get_nblock(sc.get_notcurses(), &nci) > 0) {
-                        lnav_data.ld_user_message_source.clear();
+                        if (nci.evtype != NCTYPE_RELEASE) {
+                            lnav_data.ld_user_message_source.clear();
+                        }
 
                         alerter::singleton().new_input(nci);
 
@@ -3216,7 +3218,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         = &lnav_data.ld_db_preview_source[1];
     lnav_data.ld_views[LNV_DB]
         .set_reload_config_delegate(sel_reload_delegate)
-        .set_overlay_source(&lnav_data.ld_db_overlay);
+        .set_overlay_source(&lnav_data.ld_db_overlay)
+        .set_tail_space(3_vl);
     lnav_data.ld_spectro_source = std::make_unique<spectrogram_source>();
     lnav_data.ld_views[LNV_SPECTRO]
         .set_reload_config_delegate(sel_reload_delegate)
@@ -3243,6 +3246,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_views[LNV_TIMELINE].set_selectable(true);
 
     auto _timeline_cleanup = finally([] {
+        lnav_data.ld_views[LNV_TEXT].set_overlay_source(nullptr);
         lnav_data.ld_views[LNV_TIMELINE].set_sub_source(nullptr);
         lnav_data.ld_views[LNV_TIMELINE].set_overlay_source(nullptr);
     });

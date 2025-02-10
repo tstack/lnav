@@ -311,6 +311,18 @@ public:
 
     vis_line_t rows_available(vis_line_t line, row_direction_t dir) const;
 
+    struct layout_result_t {
+        vis_line_t lr_desired_row{0_vl};
+        std::vector<vis_line_t> lr_above_line_heights;
+        vis_line_t lr_desired_row_height{0_vl};
+        std::vector<vis_line_t> lr_below_line_heights;
+    };
+
+    layout_result_t layout_for_row(vis_line_t row) const;
+    vis_line_t height_for_row(vis_line_t row,
+                              vis_line_t height,
+                              unsigned long width) const;
+
     template<typename F>
     auto map_top_row(F func) const
         -> std::invoke_result_t<F, const attr_line_t&>
@@ -534,7 +546,7 @@ protected:
     void update_top_from_selection();
 
     vis_line_t get_overlay_top(vis_line_t row, size_t count, size_t total);
-    size_t get_overlay_height(size_t total, vis_line_t view_height);
+    size_t get_overlay_height(size_t total, vis_line_t view_height) const;
 
     enum class lv_mode_t {
         NONE,

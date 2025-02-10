@@ -670,7 +670,7 @@ textview_curses::handle_mouse(mouse_event& me)
             if (me.is_click_in(mouse_button_t::BUTTON_RIGHT, 0, INT_MAX)) {
                 auto* lov = this->get_overlay_source();
                 if (lov != nullptr) {
-                    lov->set_show_details_in_overlay(
+                    this->set_show_details_in_overlay(
                         !lov->get_show_details_in_overlay());
                 }
             }

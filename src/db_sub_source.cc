@@ -993,7 +993,9 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
 
         al.al_attrs.emplace_back(line_range{0, -1},
                                  DBA_COLUMN_NAME.value(hm.hm_name));
-        if (cursor->get_type() == lnav::cell_type::CT_TEXT) {
+        if (cursor->get_type() == lnav::cell_type::CT_TEXT
+            && (sf.startswith("[") || sf.startswith("{")))
+        {
             json_ptr_walk jpw;
 
             if (jpw.parse(sf.udata(), sf.length()) == yajl_status_ok
