@@ -19,6 +19,9 @@
     "ui": {
         "keymap-defs": {
             "default": {
+                "f1": {
+                    "command": ":help"
+                },
                 "x31": {
                     "command": ":goto next 10 minutes after the hour"
                 },

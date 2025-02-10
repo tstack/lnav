@@ -623,7 +623,7 @@ setup_highlights_int()
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_attrs(text_attrs::with_underline());
     hm[{highlight_source_t::INTERNAL, "md.li"}]
-        = highlighter(xpcre_compile(R"(^\s*(-|\d+\.)\s+)"))
+        = highlighter(xpcre_compile(R"(^\s*(\*|-|\d+\.)\s+)"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_LIST_GLYPH);

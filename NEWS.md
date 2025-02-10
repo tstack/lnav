@@ -81,6 +81,10 @@ Interface changes:
   hide/show it.
 * If the terminal supports less than 256 colors, a help message
   will be displayed to try setting `TERM` to `xterm-256color`.
+* Added `F1` as a hotkey to open the help view.
+* Fixed some issues with scrolling in the main view when:
+  word-wrap was enabled; log messages had tags/comments; or
+  if the parser details overlay was open.
 
 Breaking changes:
 * The `parse_url()` SQL function no longer raises an error for an
@@ -189,7 +193,7 @@ Features:
     row and dragging will scroll the view as needed;
   - shift + clicking/dragging in the main view will highlight
     lines and then toggle their bookmark status on release;
-  - double-clicking in the main view will select the underlying 
+  - double-clicking in the main view will select the underlying
     text and drag-selecting within a line will select the given
     text;
   - when double-clicking text: if the mouse pointer is inside
@@ -226,7 +230,7 @@ Features:
   - clicking in a prompt will move the cursor to the location;
   - clicking on a column in the spectrogram view will select it.
 
-  (Note that this is new work, so there are likely to be some 
+  (Note that this is new work, so there are likely to be some
   glitches.)
 * Added a `journald://` URL handler that will call `journalctl`
   and pass any query parameters as options.  For example, the

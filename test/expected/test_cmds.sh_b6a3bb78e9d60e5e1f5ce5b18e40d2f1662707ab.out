@@ -196,23 +196,23 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 
 [4mViews[0m
 
- Key(s)  Action                                            
-═══════════════════════════════════════════════════════════
- [1m?[0m       View/leave this help message.                     
- [1mq[0m       Leave the current view or quit the program when in
-         the log file view.                                
-[1m Q       Similar to [0m[1m[37m[40m q [0m[1m, except it will try to sync the top[0m
-[1m         time between the current and former views. For    [0m
-[1m         example, when leaving the spectrogram view with   [0m
-[1m         [0m[1m[37m[40m Q [0m[1m, the top time in that view will be matched to [0m
-[1m         the top time in the log view.                     [0m
-[1m TAB     Toggle focusing on the filter editor or the main  [0m
-[1m         view.                                             [0m
- ENTER   Focus on the breadcrumb bar.                      
- a/A     Restore the view that was previously popped with  
-         [37m[40m q [0m/[37m[40m Q [0m. The [37m[40m A [0m hotkey will try to match the top 
-         times between the two views.                      
-[1m X       Close the current text file or log file.          [0m
+ Key(s)   Action                                            
+════════════════════════════════════════════════════════════
+ [1m?[0m or [1mF1[0m  View/leave this help message.                     
+ [1mq[0m        Leave the current view or quit the program when in
+          the log file view.                                
+[1m Q        Similar to [0m[1m[37m[40m q [0m[1m, except it will try to sync the top[0m
+[1m          time between the current and former views. For    [0m
+[1m          example, when leaving the spectrogram view with   [0m
+[1m          [0m[1m[37m[40m Q [0m[1m, the top time in that view will be matched to [0m
+[1m          the top time in the log view.                     [0m
+[1m TAB      Toggle focusing on the filter editor or the main  [0m
+[1m          view.                                             [0m
+ ENTER    Focus on the breadcrumb bar.                      
+ a/A      Restore the view that was previously popped with  
+          [37m[40m q [0m/[37m[40m Q [0m. The [37m[40m A [0m hotkey will try to match the top 
+          times between the two views.                      
+[1m X        Close the current text file or log file.          [0m
 
 [4mSpatial Navigation[0m
 

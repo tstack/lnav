@@ -185,15 +185,15 @@ that you can always use `q` to pop the top view off of the stack.
 
 ### Views
 
-| Key(s) | Action                                                                                                                                                                                                                            |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **?**  | View/leave this help message.                                                                                                                                                                                                     |
-| **q**  | Leave the current view or quit the program when in the log file view.                                                                                                                                                             |
-| Q      | Similar to `q`, except it will try to sync the top time between the current and former views. For example, when leaving the spectrogram view with `Q`, the top time in that view will be matched to the top time in the log view. |
-| TAB    | Toggle focusing on the filter editor or the main view.                                                                                                                                                                            |
-| ENTER  | Focus on the breadcrumb bar.                                                                                                                                                                                                      |
-| a/A    | Restore the view that was previously popped with `q`/`Q`. The `A` hotkey will try to match the top times between the two views.                                                                                                   |
-| X      | Close the current text file or log file.                                                                                                                                                                                          |
+| Key(s)          | Action                                                                                                                                                                                                                            |
+|-----------------| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **?** or **F1** | View/leave this help message.                                                                                                                                                                                                     |
+| **q**           | Leave the current view or quit the program when in the log file view.                                                                                                                                                             |
+| Q               | Similar to `q`, except it will try to sync the top time between the current and former views. For example, when leaving the spectrogram view with `Q`, the top time in that view will be matched to the top time in the log view. |
+| TAB             | Toggle focusing on the filter editor or the main view.                                                                                                                                                                            |
+| ENTER           | Focus on the breadcrumb bar.                                                                                                                                                                                                      |
+| a/A             | Restore the view that was previously popped with `q`/`Q`. The `A` hotkey will try to match the top times between the two views.                                                                                                   |
+| X               | Close the current text file or log file.                                                                                                                                                                                          |
 
 ### Spatial Navigation
 

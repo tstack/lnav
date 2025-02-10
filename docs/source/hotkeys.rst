@@ -228,7 +228,7 @@ Display
 
    * - Keypress
      - Command
-   * - :kbd:`?`
+   * - :kbd:`?` or :kbd:`F1`
      - View/leave builtin help
    * - :kbd:`q`
      - Return to the previous view/quit
