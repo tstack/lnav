@@ -187,7 +187,7 @@ textinput_curses::handle_mouse(mouse_event& me)
               me.me_state,
               me.me_x,
               me.me_y);
-    this->tc_unhandled_input = false;
+    this->tc_notice = std::nullopt;
     if (this->tc_mode == mode_t::show_help) {
         return this->tc_help_view.handle_mouse(me);
     }
@@ -502,7 +502,7 @@ textinput_curses::move_cursor_to_prev_search_hit()
 bool
 textinput_curses::handle_key(const ncinput& ch)
 {
-    this->tc_unhandled_input = false;
+    this->tc_notice = std::nullopt;
     switch (this->tc_mode) {
         case mode_t::searching:
             return this->handle_search_key(ch);
@@ -740,19 +740,8 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
-            case '_': {
-                if (!this->tc_change_log.empty()) {
-                    log_debug("undo!");
-                    auto& ce = this->tc_change_log.back();
-                    this->tc_selection = selected_range::from_key(
-                        ce.ce_range.sr_start, ce.ce_range.sr_start);
-                    this->replace_selection_no_change(ce.ce_content);
-                    this->tc_change_log.pop_back();
-                }
-                return true;
-            }
             default: {
-                this->tc_unhandled_input = true;
+                this->tc_notice = notice_t::unhandled_input;
                 this->set_needs_update();
                 return false;
             }
@@ -849,9 +838,12 @@ textinput_curses::handle_key(const ncinput& ch)
             break;
         }
         case KEY_CTRL('_'): {
-            if (!this->tc_change_log.empty()) {
+            if (this->tc_change_log.empty()) {
+                this->tc_notice = notice_t::no_changes;
+                this->set_needs_update();
+            } else {
                 log_debug("undo!");
-                auto& ce = this->tc_change_log.back();
+                const auto& ce = this->tc_change_log.back();
                 auto content_sf = string_fragment::from_str(ce.ce_content);
                 this->tc_selection = ce.ce_range;
                 log_debug(" range [%d:%d) - [%d:%d)",
@@ -1031,7 +1023,7 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 this->replace_selection(string_fragment::from_c_str(utf8));
             } else {
-                this->tc_unhandled_input = true;
+                this->tc_notice = notice_t::unhandled_input;
                 this->set_needs_update();
             }
             return true;
@@ -1421,18 +1413,39 @@ textinput_curses::do_update()
     for (; y < y_max; y++) {
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
     }
-    if (this->tc_unhandled_input) {
-        auto hint
-            = attr_line_t()
-                  .append(" Notice: "_status_subtitle)
-                  .append(" Unhandled key press.  Press F1 for help")
-                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_ALERT_STATUS));
-        auto lr = line_range{0, dim.dr_width};
-        mvwattrline(this->tc_window,
-                    this->vc_y + dim.dr_height - 1,
-                    this->vc_x,
-                    hint,
-                    lr);
+    if (this->tc_notice) {
+        switch (this->tc_notice.value()) {
+            case notice_t::unhandled_input: {
+                auto hint
+                    = attr_line_t()
+                          .append(" Notice: "_status_subtitle)
+                          .append(" Unhandled key press.  Press F1 for help")
+                          .with_attr_for_all(
+                              VC_ROLE.value(role_t::VCR_ALERT_STATUS));
+                auto lr = line_range{0, dim.dr_width};
+                mvwattrline(this->tc_window,
+                            this->vc_y + dim.dr_height - 1,
+                            this->vc_x,
+                            hint,
+                            lr);
+
+                break;
+            }
+            case notice_t::no_changes: {
+                auto hint
+                    = attr_line_t()
+                          .append(" Notice: "_status_subtitle)
+                          .append(" No changes to undo")
+                          .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+                auto lr = line_range{0, dim.dr_width};
+                mvwattrline(this->tc_window,
+                            this->vc_y + dim.dr_height - 1,
+                            this->vc_x,
+                            hint,
+                            lr);
+                break;
+            }
+        }
     } else if (this->tc_mode == mode_t::searching) {
         auto search_prompt = attr_line_t(" ");
         if (this->tc_search.empty() || this->tc_search_found.has_value()) {

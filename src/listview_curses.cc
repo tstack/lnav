@@ -777,8 +777,8 @@ listview_curses::set_show_details_in_overlay(bool val)
     this->lv_overlay_source->list_value_for_overlay(
         *this, this->get_selection(), overlay_content);
     if (!overlay_content.empty()) {
-        auto overlay_height = vis_line_t(this->get_overlay_height(
-            overlay_content.size(), height));
+        auto overlay_height = vis_line_t(
+            this->get_overlay_height(overlay_content.size(), height));
         this->shift_top(overlay_height, true);
     }
 }
@@ -888,15 +888,34 @@ listview_curses::shift_selection(shift_amount_t sa)
         }
 
         this->set_selection_without_context(new_selection);
-        auto rows_avail = this->rows_available(this->lv_top, RD_DOWN);
+        auto rows_avail = height;
+        if (this->lv_display_lines_row == this->lv_top) {
+            // XXX this should be done by rows_available(), but I don't
+            // want to monkey with that now...
+            for (const auto& dlc : this->lv_display_lines) {
+                if (dlc.is<main_content>()) {
+                    continue;
+                }
+                if (dlc.is<empty_space>()) {
+                    rows_avail += 1_vl;
+                    continue;
+                }
+                rows_avail -= 1_vl;
+            }
+        } else {
+            rows_avail = this->rows_available(this->lv_top, RD_DOWN);
+        }
+
         if (this->lv_overlay_source != nullptr) {
             std::vector<attr_line_t> overlay_content;
             this->lv_overlay_source->list_value_for_overlay(
                 *this, this->get_selection(), overlay_content);
             if (!overlay_content.empty()) {
-                auto overlay_height = vis_line_t(this->get_overlay_height(
-                    overlay_content.size(), height));
-                rows_avail -= overlay_height;
+                auto overlay_height = vis_line_t(
+                    this->get_overlay_height(overlay_content.size(), height));
+                if (overlay_height < rows_avail) {
+                    rows_avail -= overlay_height;
+                }
             }
         }
         if (this->lv_selection > 0 && this->lv_selection <= this->lv_top) {
@@ -1105,10 +1124,10 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                 } else {
                     new_top -= 1_vl;
                 }
-                this->set_selection_without_context(top + sel_diff);
+                this->set_selection_without_context(new_top);
             } else {
                 auto sel_diff = this->lv_selection - old_top;
-                auto bot = this->get_bottom() - this->lv_tail_space;
+                auto bot = this->get_bottom();
                 unsigned long width;
                 vis_line_t height;
 
@@ -1148,6 +1167,7 @@ listview_curses::set_top(vis_line_t top, bool suppress_flash)
                 } else if (this->lv_selection < this->lv_top
                            || bot < this->lv_selection)
                 {
+                    bot -= this->lv_tail_space;
                     if (top + sel_diff > bot) {
                         this->set_selection_without_context(bot);
                     } else {

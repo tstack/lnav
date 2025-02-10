@@ -352,7 +352,13 @@ public:
     input_point tc_cursor;
     int tc_max_cursor_x{0};
     mode_t tc_mode{mode_t::editing};
-    bool tc_unhandled_input{false};
+
+    enum class notice_t {
+        unhandled_input,
+        no_changes,
+    };
+
+    std::optional<notice_t> tc_notice;
 
     std::string tc_search;
     std::shared_ptr<lnav::pcre2pp::code> tc_search_code;
