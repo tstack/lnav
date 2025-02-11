@@ -136,7 +136,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: install packages
-        run: brew install pcre2 sqlite ncurses xz zstd lz4 readline libarchive curl autoconf automake llvm libunistring
+        run: brew install pcre2 sqlite ncurses xz zstd lz4 readline libarchive curl autoconf automake libunistring
       - name: autogen
         run: ./autogen.sh
       - name: configure
@@ -168,7 +168,7 @@ jobs:
         if: ${{ always() }}
         with:
           # Artifact name
-          name: lnav-macos-x86_64.zip
+          name: lnav-macos-${{ matrix.arch }}.zip
           # A file, directory or wildcard pattern that describes what to upload
           path: |
             config.log
