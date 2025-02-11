@@ -25,14 +25,23 @@ on:
         type: string
 
 jobs:
-  build-musl-x86_64:
-    runs-on: ubuntu-latest
+  build-linux-musl:
+    strategy:
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            arch: x86_64
+            platform: linux/amd64
+          - runs-on: ubuntu-22.04-arm
+            arch: arm64
+            platform: linux/arm64
+    runs-on: ${{ matrix.runs-on }}
     container:
       image: tstack/lnav-build:latest
-      options: --platform linux/amd64
+      options: --platform ${{ matrix.platform }}
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
-      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-linux-musl-x86_64.zip
+      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-linux-musl-${{ matrix.arch }}.zip
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -53,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           # Artifact name
-          name: lnav-linux-musl-x86_64.zip
+          name: lnav-linux-musl-${{ matrix.arch }}.zip
           # A file, directory or wildcard pattern that describes what to upload
           path: lbuild/src/lnav
       - name: Upload musl-binary archive
