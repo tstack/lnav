@@ -60,6 +60,7 @@ pushdef([CFLAGS], CFLAGS_FOR_BUILD)dnl
 pushdef([CPPFLAGS], CPPFLAGS_FOR_BUILD)dnl
 pushdef([EXEEXT], BUILD_EXEEXT)dnl
 pushdef([LDFLAGS], LDFLAGS_FOR_BUILD)dnl
+pushdef([LIBS], LIBS_FOR_BUILD)dnl
 pushdef([OBJEXT], BUILD_OBJEXT)dnl
 pushdef([host], build)dnl
 pushdef([host_alias], build_alias)dnl
