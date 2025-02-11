@@ -39,6 +39,8 @@ jobs:
     container:
       image: tstack/lnav-build:latest
       options: --platform ${{ matrix.platform }}
+      volumes:
+        - /:/host  # Jailbreak!
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
       LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-linux-musl-${{ matrix.arch }}.zip
