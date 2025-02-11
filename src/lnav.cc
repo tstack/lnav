@@ -3246,6 +3246,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_views[LNV_TIMELINE].set_selectable(true);
 
     auto _timeline_cleanup = finally([] {
+        for (auto& tc : lnav_data.ld_views) {
+            tc.set_window(nullptr);
+        }
         lnav_data.ld_views[LNV_TEXT].set_overlay_source(nullptr);
         lnav_data.ld_views[LNV_TIMELINE].set_sub_source(nullptr);
         lnav_data.ld_views[LNV_TIMELINE].set_overlay_source(nullptr);
