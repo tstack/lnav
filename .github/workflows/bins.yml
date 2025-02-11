@@ -121,10 +121,17 @@ jobs:
           asset_content_type: application/octet-stream
 
   build-macos:
-    runs-on: macos-13
+    strategy:
+      matrix:
+        include:
+          - runs-on: macos-13
+            arch: x86_64
+          - runs-on: macos-14
+            arch: aarch64
+    runs-on: ${{ matrix.runs-on }}
     env:
       LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
-      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-x86_64-macos.zip
+      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-${{ matrix.arch }}-macos.zip
     steps:
       - name: checkout
         uses: actions/checkout@v3
