@@ -1136,7 +1136,8 @@ listview_curses::height_for_row(vis_line_t row,
     auto retval = 1_vl;
 
     if (this->lv_word_wrap) {
-        auto len = this->lv_source->listview_size_for_row(*this, row);
+        // source size plus some padding for decorations
+        auto len = this->lv_source->listview_size_for_row(*this, row) + 5;
 
         while (len > width) {
             len -= width;
