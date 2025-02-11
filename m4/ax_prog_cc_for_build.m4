@@ -108,6 +108,7 @@ popdef([host_cpu])dnl
 popdef([host_alias])dnl
 popdef([host])dnl
 popdef([OBJEXT])dnl
+popdef([LIBS])dnl
 popdef([LDFLAGS])dnl
 popdef([EXEEXT])dnl
 popdef([CPPFLAGS])dnl
@@ -136,6 +137,7 @@ dnl Finally, set Makefile variables
 dnl
 AC_SUBST(BUILD_EXEEXT)dnl
 AC_SUBST(BUILD_OBJEXT)dnl
+AC_SUBST([LIBS_FOR_BUILD])dnl
 AC_SUBST([CFLAGS_FOR_BUILD])dnl
 AC_SUBST([CPPFLAGS_FOR_BUILD])dnl
 AC_SUBST([LDFLAGS_FOR_BUILD])dnl
