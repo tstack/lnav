@@ -136,7 +136,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: install packages
-        run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl autoconf automake
+        run: brew install pcre2 sqlite ncurses xz zstd readline libarchive curl autoconf automake llvm
       - name: autogen
         run: ./autogen.sh
       - name: configure
