@@ -145,7 +145,7 @@ jobs:
             --with-libcurl=/usr \
             --with-pcre2=$(brew --prefix pcre2) \
             --with-sqlite3=$(brew --prefix sqlite3) \
-            "CPPFlAGS=-I$(brew --prefix libunistring)/include -I$(brew --prefix ncurses)/include" \
+            "CPPFLAGS=-I$(brew --prefix libunistring)/include -I$(brew --prefix ncurses)/include" \
             "CXXFLAGS=-g2 -O2" \
             'CFLAGS=-O2 -g2' \
             "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix lz4)/lib/ -L$(brew --prefix libunistring)/lib" \
