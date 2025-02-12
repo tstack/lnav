@@ -34,6 +34,10 @@ apps:
       - x11
 
 parts:
+  rustup:
+    plugin: rust
+    source: .
+    rust-channel: "1.81"
   selective-checkout:
     source: https://github.com/Lin-Buo-Ren/selective-checkout.git
     source-tag: v2.0.2
@@ -54,7 +58,10 @@ parts:
   lnav:
     after:
       - selective-checkout
+      - rustup
     plugin: autotools
+    build-environment:
+      - PATH: "${HOME}/.cargo/bin:${PATH}"
     autotools-configure-parameters:
       - CFLAGS="-O2"
       - CXXFLAGS="-O2"
@@ -66,7 +73,6 @@ parts:
       "$SNAPCRAFT_STAGE"/scriptlets/selective-checkout --debug --force-snapshot
     build-packages:
       - build-essential
-      - cargo
       - libarchive-dev
       - libcurl4-gnutls-dev
       - libpcre2-dev
@@ -77,7 +83,6 @@ parts:
       - zlib1g-dev
       - libbz2-dev
       - libgpm-dev
-      - rustc
     stage-packages:
       - zlib1g
       - git-core
