@@ -64,11 +64,10 @@ parts:
       - selective-checkout
       - rustup
     plugin: autotools
-    build-environment:
-      - PATH: "${HOME}/.cargo/bin:${PATH}"
     autotools-configure-parameters:
       - CFLAGS="-O2"
       - CXXFLAGS="-O2"
+      - PATH="${HOME}/.cargo/bin:${PATH}"
     source: https://github.com/tstack/lnav.git
     source-depth: 500
     override-pull: |
