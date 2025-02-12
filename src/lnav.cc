@@ -721,13 +721,13 @@ handle_config_ui_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         return true;
     }
 
-    if (ch.id == NCKEY_PASTE) {
-        handle_paste_content(nc, ch);
-        return true;
-    }
-
     switch (lnav_data.ld_mode) {
         case ln_mode_t::FILES:
+            if (ch.id == NCKEY_PASTE) {
+                handle_paste_content(nc, ch);
+                return true;
+            }
+
             if (ch.eff_text[0] == NCKEY_GS
                 || (ch.id == ']' && ncinput_ctrl_p(&ch)))
             {
