@@ -108,6 +108,7 @@ Bug Fixes:
 
 Maintenance:
 * Replaced ncurses with notcurses.
+* Added arm64 builds for Linux/macOS
 
 ## lnav v0.12.3
 
