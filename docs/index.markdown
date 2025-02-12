@@ -29,30 +29,41 @@ A log file viewer for the terminal
 </div>
 </div>
 
-<div class="dlrow">
-<dl>
-<dt>In Your Terminal</dt>
-<dd>
-Many logging tools, like Splunk, provide great features but are optimized for
-large-scale deployments.  They require installing and configuring servers
-before they can be effectively used.  There is still a need for a robust log
-file analyzer for the terminal.
-</dd>
-</dl>
-
+<div class="dlrow-left">
 <dl>
 <dt>Easy to Use</dt>
 <dd>
-Just point lnav to a directory and it will take care of the rest.  File formats
-are automatically detected and compressed files are unpacked on the fly.
+<div style="width: 45%; float: right">
+Just point <b>lnav</b> at a directory and it will take care of the rest.
+File formats are automatically detected and compressed files are unpacked
+on the fly.
+Online help and previews for operations make it simpler to level up your
+experience.
+</div>
+
+<div style="width: 50%; float: left; padding-left: 1em">
+<video autoplay muted loop playsinline style="width: 90%; border-radius: 8px">
+<source src="assets/images/lnav-open-help.mp4" type="video/mp4">
+</video>
+</div>
+</dd>
+</dl>
+</div>
+
+<div class="dlrow-right">
+
+<dl>
+<dt>Performant</dt>
+<dd>
+<b>lnav</b> can outperform standard terminal tools when processing log files.
+The following chart compares CPU/memory usage when working with a
+<a href="https://docs.lnav.org/en/latest/performance.html">3.3GB access log</a>.
+The chart was also generated using lnav's
+<a href="https://docs.lnav.org/en/latest/sqlext.html">SQLite Interface</a>.
+<div>
+<img src="assets/images/lnav-perf.png" alt="Chart comparing lnav's performance against standard tools" />
+</div>
 </dd>
 </dl>
 
-<dl>
-<dt>Improved Presentation</dt>
-<dd>
-Log files are a wealth of information, lnav can help highlight the parts that
-are important and filter out the noise.
-</dd>
-</dl>
 </div>

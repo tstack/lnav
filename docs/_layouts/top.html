@@ -24,11 +24,18 @@
         margin-left: 2em;
     }
 
-    .dlrow {
-        display: grid;
-        align-items: start;
-        grid-template-columns: repeat(auto-fit, minmax(22em, 1fr));
-        width: 100%;
+    .dlrow-left {
+        display: flex;
+        align-items: center;
+        margin-left: 10em;
+        width: 60%;
+    }
+
+    .dlrow-right {
+        display: flex;
+        align-items: center;
+        margin-left: 20em;
+        width: 60%;
     }
 
     p:before, #top-description:before {
