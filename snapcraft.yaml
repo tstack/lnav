@@ -56,7 +56,9 @@ parts:
       - selective-checkout
     plugin: rust
     rust-channel: stable
-    source: src/third-party/prqlc-c
+    source: .
+    override-build: ""
+    override-prime: ""
   lnav:
     after:
       - selective-checkout
