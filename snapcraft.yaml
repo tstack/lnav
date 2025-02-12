@@ -34,9 +34,6 @@ apps:
       - x11
 
 parts:
-  rustup:
-    plugin: rust
-    rust-channel: "1.81"
   selective-checkout:
     source: https://github.com/Lin-Buo-Ren/selective-checkout.git
     source-tag: v2.0.2
@@ -54,6 +51,12 @@ parts:
       - scriptlets/selective-checkout
     prime:
       - -*
+  rustup:
+    after:
+      - selective-checkout
+    plugin: rust
+    rust-channel: stable
+    source: src/third-party/prqlc-c
   lnav:
     after:
       - selective-checkout
