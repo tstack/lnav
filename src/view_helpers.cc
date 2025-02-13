@@ -50,6 +50,8 @@
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "static_file_vtab.hh"
+#include "textinput.history.hh"
+#include "textinput_curses.hh"
 #include "timeline_source.hh"
 #include "view_helpers.crumbs.hh"
 #include "view_helpers.examples.hh"
@@ -640,8 +642,6 @@ build_all_help_text()
 bool
 handle_winch(screen_curses* sc)
 {
-    static auto* filter_source = injector::get<filter_sub_source*>();
-
     if (!lnav_data.ld_winched) {
         return false;
     }
@@ -657,7 +657,6 @@ handle_winch(screen_curses* sc)
         lnav_data.ld_rl_view->do_update();
         lnav_data.ld_rl_view->window_change();
     }
-    filter_source->fss_editor->window_change();
     for (auto& stat : lnav_data.ld_status) {
         stat.window_change();
     }
@@ -682,6 +681,7 @@ layout_views()
     static constexpr auto FILES_BLURRED_WIDTH = 20U;
 
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+    static auto* filter_source = injector::get<filter_sub_source*>();
 
     unsigned int width, height;
     ncplane_dim_yx(lnav_data.ld_window, &height, &width);
@@ -879,6 +879,7 @@ layout_views()
     lnav_data.ld_filter_view.set_y(bottom + 2);
     lnav_data.ld_filter_view.set_width(width);
     lnav_data.ld_filter_view.set_visible(filters_open && vis);
+    filter_source->fss_editor->set_width(width - 26);
 
     lnav_data.ld_files_view.set_height(vis_line_t(filter_height));
     lnav_data.ld_files_view.set_y(bottom + 2);

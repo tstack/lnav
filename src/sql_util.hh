@@ -109,6 +109,8 @@ auto_mem<char, sqlite3_free> sql_quote_ident(const char* ident);
 
 std::string sql_safe_ident(const string_fragment& ident);
 
+std::string sql_quote_text(const std::string& str);
+
 int guess_type_from_pcre(const std::string& pattern, std::string& collator);
 
 const char* sqlite3_type_to_string(int type);
@@ -126,12 +128,10 @@ int sqlite_authorizer(void* pUserData,
                       const char* detail3,
                       const char* detail4);
 
-namespace lnav {
-namespace sql {
+namespace lnav::sql {
 
 auto_mem<char, sqlite3_free> mprintf(const char* fmt, ...);
 
 }
-}  // namespace lnav
 
 #endif

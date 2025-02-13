@@ -54,6 +54,7 @@ const string_fragment
         string_fragment::from_const("text/man"),
         string_fragment::from_const("text/markdown"),
         string_fragment::from_const("text/python"),
+        string_fragment::from_const("application/x-pcre"),
         string_fragment::from_const("text/rust"),
         string_fragment::from_const("application/sql"),
         string_fragment::from_const("text/xml"),

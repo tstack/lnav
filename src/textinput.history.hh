@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,58 +25,42 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file lnav_config_fwd.hh
  */
 
-#ifndef lnav_config_fwd_hh
-#define lnav_config_fwd_hh
+#ifndef textinput_history_hh
+#define textinput_history_hh
 
+#include <chrono>
 #include <functional>
+#include <optional>
 #include <string>
 
-#include "base/lnav.console.hh"
+#include "base/intern_string.hh"
+#include "base/log_level_enum.hh"
 
-class lnav_config_listener {
-public:
-    using error_reporter = const std::function<void(
-        const void*, const lnav::console::user_message& msg)>;
+namespace lnav::textinput {
 
-    static std::vector<lnav_config_listener*>& listener_list()
-    {
-        static std::vector<lnav_config_listener*> retval;
+struct history {
+    static history for_context(string_fragment name);
 
-        return retval;
-    }
+    using timestamp_t = std::chrono::system_clock::time_point;
 
-    template<typename T, std::size_t N>
-    lnav_config_listener(const T (&src_file)[N])
-        : lcl_name(string_fragment::from_const(src_file))
-    {
-        listener_list().emplace_back(this);
-    }
+    struct entry {
+        std::string e_session_id;
+        timestamp_t e_start_time;
+        std::optional<timestamp_t> e_end_time;
+        std::string e_content;
+        log_level_t e_status{log_level_t::LEVEL_INFO};
+    };
 
-    virtual ~lnav_config_listener()
-    {
-        auto iter
-            = std::find(listener_list().begin(), listener_list().end(), this);
-        if (iter != listener_list().end()) {
-            listener_list().erase(iter);
-        }
-    }
+    void insert_plain_content(string_fragment content);
 
-    virtual void reload_config(error_reporter& reporter) {}
+    using entry_handler_t = std::function<void(const entry&)>;
+    void query_entries(string_fragment str, entry_handler_t handler);
 
-    virtual void unload_config() {}
-
-    static void unload_all()
-    {
-        for (auto* lcl : listener_list()) {
-            lcl->unload_config();
-        }
-    }
-
-    string_fragment lcl_name;
+    string_fragment h_context;
 };
+
+}  // namespace lnav::textinput
 
 #endif

@@ -574,6 +574,13 @@ sql_ident_needs_quote(const char* ident)
     return false;
 }
 
+std::string
+sql_quote_text(const std::string& str)
+{
+    auto quoted_token = lnav::sql::mprintf("%Q", str.c_str());
+    return {quoted_token};
+}
+
 auto_mem<char, sqlite3_free>
 sql_quote_ident(const char* ident)
 {
@@ -1365,7 +1372,8 @@ constexpr string_attr_type<void> PRQL_STRING_ATTR("prql_string");
 constexpr string_attr_type<void> PRQL_NUMBER_ATTR("prql_number");
 constexpr string_attr_type<void> PRQL_OPERATOR_ATTR("prql_oper");
 constexpr string_attr_type<void> PRQL_PAREN_ATTR("prql_paren");
-constexpr string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR("prql_unterminated_paren");
+constexpr string_attr_type<void> PRQL_UNTERMINATED_PAREN_ATTR(
+    "prql_unterminated_paren");
 constexpr string_attr_type<void> PRQL_GARBAGE_ATTR("prql_garbage");
 constexpr string_attr_type<void> PRQL_COMMENT_ATTR("prql_comment");
 

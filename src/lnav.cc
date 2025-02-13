@@ -125,6 +125,7 @@
 #include "term_extra.hh"
 #include "termios_guard.hh"
 #include "textfile_highlighters.hh"
+#include "textinput_curses.hh"
 #include "textview_curses.hh"
 #include "timeline_source.hh"
 #include "top_status_source.hh"
@@ -1140,6 +1141,7 @@ looper()
         readline_context exec_context("exec");
         readline_context user_context("user");
         auto rlc = injector::get<std::shared_ptr<readline_curses>>();
+        auto ti = injector::get<std::shared_ptr<textinput_curses>>();
         sig_atomic_t overlay_counter = 0;
         int lpc;
 
@@ -1184,8 +1186,6 @@ looper()
         rlc->add_context(ln_mode_t::USER, user_context);
         rlc->set_save_history(!(lnav_data.ld_flags & LNF_SECURE_MODE));
         rlc->start();
-
-        filter_source->fss_editor->start();
 
         lnav_data.ld_rl_view = rlc.get();
 
@@ -1537,6 +1537,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_data.ld_filter_view.set_selectable(true);
         lnav_data.ld_filter_view.set_window(lnav_data.ld_window);
         lnav_data.ld_filter_view.set_show_scrollbar(true);
+        filter_source->fss_editor->tc_window = lnav_data.ld_window;
 
         lnav_data.ld_files_view.set_title("Files");
         lnav_data.ld_files_view.set_selectable(true);
@@ -1905,18 +1906,16 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
                 next_status_update_time = ui_clock::now() + 100ms;
             }
-            if (filter_source->fss_editing) {
-                filter_source->fss_match_view.set_needs_update();
-            }
             breadcrumb_view->do_update();
             // These updates need to be done last so their readline views can
             // put the cursor in the right place.
             switch (lnav_data.ld_mode) {
                 case ln_mode_t::FILTER:
-                case ln_mode_t::SEARCH_FILTERS:
+                case ln_mode_t::SEARCH_FILTERS: {
                     lnav_data.ld_filter_view.set_needs_update();
                     lnav_data.ld_filter_view.do_update();
                     break;
+                }
                 case ln_mode_t::SEARCH_FILES:
                 case ln_mode_t::FILES:
                 case ln_mode_t::FILE_DETAILS:
@@ -1932,6 +1931,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 && lnav_data.ld_mode != ln_mode_t::FILES)
             {
                 rlc->do_update();
+            }
+            if (filter_source->fss_editing) {
+                filter_source->fss_editor->focus();
             }
             notcurses_render(sc.get_notcurses());
 
@@ -1954,10 +1956,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                             }
                             break;
                         case ln_mode_t::FILTER:
-                            if (!filter_source->fss_editing
-                                || filter_source->fss_editor
-                                       ->consume_ready_for_input())
-                            {
+                            if (!filter_source->fss_editing) {
                                 view_curses::awaiting_user_input();
                             }
                             break;
@@ -3328,12 +3327,12 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             lnav_data.ld_vtab_manager->register_vtab(lvi);
         }
     }
-    log_info("END registering format tables")
+    log_info("END registering format tables");
 
-        load_format_extra(lnav_data.ld_db.in(),
-                          ec.ec_global_vars,
-                          lnav_data.ld_config_paths,
-                          loader_errors);
+    load_format_extra(lnav_data.ld_db.in(),
+                      ec.ec_global_vars,
+                      lnav_data.ld_config_paths,
+                      loader_errors);
     load_format_vtabs(lnav_data.ld_vtab_manager.get(), loader_errors);
 
     if (!loader_errors.empty()) {

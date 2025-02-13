@@ -529,6 +529,10 @@ highlight_syntax(text_format_t tf, attr_line_t& al)
             readline_sqlite_highlighter(al, std::nullopt);
             break;
         }
+         case text_format_t::TF_PCRE: {
+            readline_regex_highlighter(al, std::nullopt);
+            break;
+        }
          case text_format_t::TF_SHELL_SCRIPT: {
             readline_shlex_highlighter(al, std::nullopt);
             break;

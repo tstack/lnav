@@ -370,6 +370,8 @@ public:
     lnav::document::metadata tc_doc_meta;
     highlight_map_t tc_highlights;
 
+    std::string tc_suggestion;
+
     input_point tc_cursor_anchor;
     std::optional<selected_range> tc_drag_selection;
     std::optional<selected_range> tc_selection;
@@ -387,6 +389,7 @@ public:
 
     std::function<void(textinput_curses&)> tc_on_abort;
     std::function<void(textinput_curses&)> tc_on_change;
+    std::function<void(textinput_curses&)> tc_on_completion_request;
     std::function<void(textinput_curses&)> tc_on_completion;
     std::function<void(textinput_curses&)> tc_on_history;
     std::function<void(textinput_curses&)> tc_on_perform;

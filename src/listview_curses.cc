@@ -1412,3 +1412,9 @@ listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
     this->lv_source->listview_selection_changed(*this);
     this->set_needs_update();
 }
+
+int
+listview_curses::get_y_for_selection() const
+{
+    return this->get_y() + (int) (this->get_selection() - this->get_top());
+}

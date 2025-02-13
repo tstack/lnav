@@ -31,6 +31,7 @@
 #define LNAV_READLINE_POSSIBILITIES_H
 
 #include <string>
+#include <unordered_set>
 
 #include "readline_curses.hh"
 #include "textview_curses.hh"
@@ -42,6 +43,9 @@ enum class text_quoting {
     prql,
     regex,
 };
+
+std::unordered_set<std::string>
+view_text_possibilities(textview_curses& tc);
 
 void add_view_text_possibilities(readline_curses* rlc,
                                  int context,

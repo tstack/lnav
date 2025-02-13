@@ -30,19 +30,24 @@
 #ifndef filter_sub_source_hh
 #define filter_sub_source_hh
 
+#include <unordered_set>
+
 #include "plain_text_source.hh"
 #include "readline_curses.hh"
+#include "textinput.history.hh"
 #include "textview_curses.hh"
+
+class textinput_curses;
 
 class filter_sub_source
     : public text_sub_source
     , public list_input_delegate
     , public text_delegate {
 public:
-    filter_sub_source(std::shared_ptr<readline_curses> editor);
+    filter_sub_source(std::shared_ptr<textinput_curses> editor);
 
     using injectable
-        = filter_sub_source(std::shared_ptr<readline_curses> editor);
+        = filter_sub_source(std::shared_ptr<textinput_curses> editor);
 
     filter_sub_source(const filter_sub_source*) = delete;
 
@@ -75,21 +80,30 @@ public:
                            const listview_curses::display_line_content_t&,
                            mouse_event& me) override;
 
-    void rl_change(readline_curses* rc);
+    void rl_change(textinput_curses& rc);
 
-    void rl_perform(readline_curses* rc);
+    void rl_history(textinput_curses& tc);
 
-    void rl_abort(readline_curses* rc);
+    enum class completion_request_type_t {
+        partial,
+        full,
+    };
 
-    void rl_display_matches(readline_curses* rc);
+    void rl_completion_request_int(textinput_curses& tc,
+                                   completion_request_type_t crt);
 
-    void rl_display_next(readline_curses* rc);
+    void rl_completion_request(textinput_curses& tc);
 
-    readline_context fss_regex_context{"filter-regex", nullptr, false};
-    readline_context fss_sql_context{"filter-sql", nullptr, false};
-    std::shared_ptr<readline_curses> fss_editor;
-    plain_text_source fss_match_source;
-    textview_curses fss_match_view;
+    void rl_completion(textinput_curses& rc);
+
+    void rl_perform(textinput_curses& rc);
+
+    void rl_abort(textinput_curses& rc);
+
+    std::shared_ptr<textinput_curses> fss_editor;
+    lnav::textinput::history fss_regexp_history;
+    lnav::textinput::history fss_sql_history;
+    std::unordered_set<std::string> fss_view_text_possibilities;
     attr_line_t fss_curr_line;
 
     bool fss_editing{false};

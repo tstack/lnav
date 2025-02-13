@@ -51,6 +51,7 @@ enum class text_format_t : uint8_t {
     TF_MAN,
     TF_MARKDOWN,
     TF_PYTHON,
+    TF_PCRE,
     TF_RUST,
     TF_SQL,
     TF_XML,

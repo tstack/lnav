@@ -565,8 +565,9 @@ class text_detail_provider {
 public:
     virtual ~text_detail_provider() = default;
 
-    virtual std::optional<json_string>
-    text_row_details(const textview_curses& tc) = 0;
+    virtual std::optional<json_string> text_row_details(
+        const textview_curses& tc)
+        = 0;
 };
 
 /**
@@ -791,6 +792,26 @@ public:
     void save_current_search()
     {
         this->tc_previous_search = this->tc_current_search;
+    }
+
+    std::string get_input_suggestion() const
+    {
+        std::string retval;
+        if (this->tc_selected_text) {
+            retval = this->tc_selected_text->sti_value;
+        } else {
+            retval = this->tc_current_search;
+        }
+
+        if (this->tc_sub_source != nullptr) {
+            if (this->tc_sub_source->get_filters().get_filter(retval)
+                != nullptr)
+            {
+                retval.clear();
+            }
+        }
+
+        return retval;
     }
 
     void revert_search() { this->execute_search(this->tc_previous_search); }

@@ -356,6 +356,7 @@ noinst_HEADERS = \
 	text_format.hh \
 	text_overlay_menu.hh \
 	textinput_curses.hh \
+	textinput.history.hh \
 	textfile_highlighters.hh \
 	textfile_sub_source.hh \
 	textfile_sub_source.cfg.hh \
@@ -523,6 +524,7 @@ libdiag_a_SOURCES = \
 	state-extension-functions.cc \
 	sysclip.cc \
 	textinput_curses.cc \
+	textinput.history.cc \
 	textfile_highlighters.cc \
 	textview_curses.cc \
 	time-extension-functions.cc \

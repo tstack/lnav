@@ -537,6 +537,7 @@ add_library(
         text_format.cc
         text_overlay_menu.cc
         textinput_curses.cc
+        textinput.history.cc
         textfile_highlighters.cc
         textfile_sub_source.cc
         textview_curses.cc
@@ -667,6 +668,7 @@ add_library(
         text_format.hh
         text_overlay_menu.hh
         textinput_curses.hh
+        textinput.history.hh
         textfile_highlighters.hh
         textfile_sub_source.hh
         textfile_sub_source.cfg.hh

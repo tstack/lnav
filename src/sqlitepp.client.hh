@@ -49,6 +49,14 @@ bind_to_sqlite(sqlite3_stmt* stmt, int index, const struct timeval& tv)
 }
 
 inline int
+bind_to_sqlite(sqlite3_stmt* stmt, int index, const std::chrono::system_clock::time_point& tp)
+{
+    auto epoch_ts = tp.time_since_epoch().count();
+
+    return sqlite3_bind_int64(stmt, index, epoch_ts);
+}
+
+inline int
 bind_to_sqlite(sqlite3_stmt* stmt, int index, const char* str)
 {
     return sqlite3_bind_text(stmt, index, str, -1, SQLITE_TRANSIENT);

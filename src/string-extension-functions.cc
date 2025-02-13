@@ -28,6 +28,7 @@
 #include "elem_to_json.hh"
 #include "fmt/format.h"
 #include "formats/logfmt/logfmt.parser.hh"
+#include "fts_fuzzy_match.hh"
 #include "hasher.hh"
 #include "libbase64.h"
 #include "mapbox/variant.hpp"
@@ -282,6 +283,26 @@ regexp_replace(string_fragment str, string_fragment re, const char* repl)
     auto* reobj = find_re(re);
 
     return reobj->re2->replace(str, repl);
+}
+
+std::optional<int64_t>
+sql_fuzzy_match(const char* pat, const char* str)
+{
+    if (pat == nullptr) {
+        return std::nullopt;
+    }
+
+    if (pat[0] == '\0') {
+        return 1;
+    }
+
+    int score = 0;
+
+    if (!fts::fuzzy_match(pat, str, score)) {
+        return std::nullopt;
+    }
+
+    return score;
 }
 
 string_fragment
@@ -1160,6 +1181,23 @@ string_extension_functions(struct FuncDef** basic_funcs,
                         "To test if the string 'notbad.png' starts with '.jpg'",
                         "SELECT endswith('notbad.png', '.jpg')",
                     })),
+
+        sqlite_func_adapter<decltype(&sql_fuzzy_match), sql_fuzzy_match>::
+            builder(help_text(
+                        "fuzzy_match",
+                        "Perform a fuzzy match of a pattern against a "
+                        "string and return a score or NULL if the pattern was "
+                        "not matched")
+                        .sql_function()
+                        .with_parameter(help_text(
+                            "pattern", "The pattern to look for in the string"))
+                        .with_parameter(
+                            help_text("str", "The string to match against"))
+                        .with_tags({"string"})
+                        .with_example({
+                            "To match the pattern 'fo' against 'filter-out'",
+                            "SELECT fuzzy_match('fo', 'filter-out')",
+                        })),
 
         sqlite_func_adapter<decltype(&spooky_hash), spooky_hash>::builder(
             help_text("spooky_hash",

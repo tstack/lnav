@@ -535,6 +535,8 @@ public:
                                                          overlay_content,
                                                          empty_space>;
 
+    int get_y_for_selection() const;
+
 protected:
     void delegate_scroll_out()
     {

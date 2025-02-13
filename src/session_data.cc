@@ -346,9 +346,7 @@ scan_sessions()
     if (!session_id) {
         return std::nullopt;
     }
-    std::list<session_pair_t>& session_file_names
-        = lnav_data.ld_session_id[session_id.value()];
-
+    auto& session_file_names = lnav_data.ld_session_id[session_id.value()];
     session_file_names.clear();
 
     auto view_info_pattern_base

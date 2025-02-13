@@ -42,6 +42,7 @@
 #include "lnav_config.hh"
 #include "log_data_helper.hh"
 #include "log_format_ext.hh"
+#include "pcrepp/pcre2pp.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_help.hh"
@@ -167,6 +168,69 @@ struct sqlite_metadata_callbacks lnav_sql_meta_callbacks = {
 };
 
 static void
+tokenize_view_text(std::unordered_set<std::string>& accum, string_fragment text)
+{
+    data_scanner ds(text);
+
+    while (true) {
+        auto tok_res = ds.tokenize2();
+
+        if (!tok_res) {
+            break;
+        }
+        if (tok_res->tr_capture.length() < 4) {
+            continue;
+        }
+
+        switch (tok_res->tr_token) {
+            case DT_DATE:
+            case DT_TIME:
+            case DT_WHITE:
+                continue;
+            default:
+                break;
+        }
+
+        accum.emplace(tok_res->to_string());
+        switch (tok_res->tr_token) {
+            case DT_QUOTED_STRING:
+                tokenize_view_text(
+                    accum, ds.to_string_fragment(tok_res->tr_inner_capture));
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+std::unordered_set<std::string>
+view_text_possibilities(textview_curses& tc)
+{
+    std::unordered_set<std::string> retval;
+    auto* tss = tc.get_sub_source();
+    std::string accum;
+
+    if (tc.get_inner_height() > 0_vl) {
+        for (auto curr_line = tc.get_top(); curr_line <= tc.get_bottom();
+             ++curr_line)
+        {
+            std::string line;
+
+            tss->text_value_for_line(
+                tc, curr_line, line, text_sub_source::RF_RAW);
+            if (curr_line > tc.get_top()) {
+                accum.push_back('\n');
+            }
+            accum.append(line);
+        }
+
+        tokenize_view_text(retval, accum);
+    }
+
+    return retval;
+}
+
+static void
 add_text_possibilities(readline_curses* rlc,
                        int context,
                        const std::string& type,
@@ -242,13 +306,12 @@ add_view_text_possibilities(readline_curses* rlc,
                             textview_curses* tc,
                             text_quoting tq)
 {
-    text_sub_source* tss = tc->get_sub_source();
+    auto* tss = tc->get_sub_source();
 
     rlc->clear_possibilities(context, type);
 
     if (tc->get_inner_height() > 0_vl) {
-        for (vis_line_t curr_line = tc->get_top();
-             curr_line <= tc->get_bottom();
+        for (auto curr_line = tc->get_top(); curr_line <= tc->get_bottom();
              ++curr_line)
         {
             std::string line;

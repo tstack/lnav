@@ -206,8 +206,12 @@ template<
 T
 get()
 {
-    return singleton_storage<typename T::element_type,
-                             Annotations...>::get_owner();
+    if (singleton_storage<typename T::element_type>::get_scope()
+        == scope::singleton)
+    {
+        return singleton_storage<typename T::element_type>::get_owner();
+    }
+    return std::make_shared<typename T::element_type>();
 }
 
 template<typename T, std::enable_if_t<is_vector<T>::value, bool> = true>

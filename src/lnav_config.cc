@@ -78,8 +78,6 @@ static struct _lnav_config lnav_default_config;
 
 std::map<intern_string_t, source_location> lnav_config_locations;
 
-lnav_config_listener* lnav_config_listener::LISTENER_LIST;
-
 static auto a = injector::bind<archive_manager::config>::to_instance(
     +[]() { return &lnav_config.lc_archive_manager; });
 
@@ -2078,9 +2076,7 @@ save_config()
 void
 reload_config(std::vector<lnav::console::user_message>& errors)
 {
-    auto* curr = lnav_config_listener::LISTENER_LIST;
-
-    while (curr != nullptr) {
+    for (auto* curr : lnav_config_listener::listener_list()) {
         auto reporter = [&errors](const void* cfg_value,
                                   const lnav::console::user_message& errmsg) {
             log_error("configuration error: %s",
@@ -2127,6 +2123,5 @@ reload_config(std::vector<lnav::console::user_message>& errors)
         };
 
         curr->reload_config(reporter);
-        curr = curr->lcl_next;
     }
 }
