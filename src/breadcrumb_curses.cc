@@ -337,7 +337,7 @@ breadcrumb_curses::handle_key(const ncinput& ch)
         case KEY_ESCAPE:
             break;
         default:
-            if (isprint(ch.id)) {
+            if (ch.id < 0x7f && isprint(ch.id)) {
                 this->bc_current_search.push_back(ch.id);
                 this->reload_data();
                 retval = true;

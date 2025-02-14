@@ -75,7 +75,7 @@ input_dispatcher::new_input(const struct timeval& current_time,
               ch.modifiers,
               ch.id,
               ch.id,
-              isprint(ch.id) ? ch.id : ' ',
+              ch.id < 0x7f && isprint(ch.id) ? ch.id : ' ',
               ch.utf8,
               eff_str.c_str(),
               ch.evtype);
