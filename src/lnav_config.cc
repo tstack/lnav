@@ -29,6 +29,7 @@
  * @file lnav_config.cc
  */
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <regex>
@@ -116,6 +117,14 @@ static auto tssc = injector::bind<top_status_source_cfg>::to_instance(
 
 static auto ltc = injector::bind<lnav::textfile::config>::to_instance(
     +[]() { return &lnav_config.lc_textfile; });
+
+lnav_config_listener::~lnav_config_listener()
+{
+    auto iter = std::find(listener_list().begin(), listener_list().end(), this);
+    if (iter != listener_list().end()) {
+        listener_list().erase(iter);
+    }
+}
 
 bool
 check_experimental(const char* feature_name)

@@ -35,6 +35,7 @@
 #include <functional>
 #include <string>
 
+#include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 
 class lnav_config_listener {
@@ -56,14 +57,7 @@ public:
         listener_list().emplace_back(this);
     }
 
-    virtual ~lnav_config_listener()
-    {
-        auto iter
-            = std::find(listener_list().begin(), listener_list().end(), this);
-        if (iter != listener_list().end()) {
-            listener_list().erase(iter);
-        }
-    }
+    virtual ~lnav_config_listener();
 
     virtual void reload_config(error_reporter& reporter) {}
 
