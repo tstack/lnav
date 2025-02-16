@@ -148,7 +148,6 @@ AS_VAR_IF([ax_cv_curses],[yes],[],
 
 AX_PATH_LIB_ARCHIVE
 AX_CHECK_PCRE2([8], [], [AC_MSG_ERROR([pcre2 is required to build])])
-AX_PATH_LIB_READLINE
 
 AX_CODE_COVERAGE
 
@@ -194,10 +193,10 @@ dnl esac
 
 AC_DEFINE([_XOPEN_SOURCE_EXTENDED], [1], [Wide character support for ncurses])
 
-AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $READLINE_LDFLAGS $LIBARCHIVE_LDFLAGS $LIBCURL $LDFLAGS")
+AS_VAR_SET(ALL_LDFLAGS, "$SQLITE3_LDFLAGS $LIBARCHIVE_LDFLAGS $LIBCURL $LDFLAGS")
 
 AS_VAR_SET(static_lib_list,
-           ["libncurses.a libncursesw.a libreadline.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
+           ["libncurses.a libncursesw.a libsqlite3.a libz.a libtinfo.a libtinfow.a"])
 AS_VAR_SET(static_lib_list,
            ["$static_lib_list libpcre2-8.a libncursesw.a libbz2.a"])
 AS_VAR_SET(static_lib_list,

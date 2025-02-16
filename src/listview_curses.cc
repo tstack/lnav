@@ -467,7 +467,7 @@ listview_curses::do_update()
     while (this->vc_needs_update) {
         vis_line_t row;
         attr_line_t overlay_line;
-        struct line_range lr;
+        line_range lr;
         unsigned long wrap_width;
         int y = this->vc_y, bottom;
         auto role_attrs = vc.attrs_for_role(this->vc_default_role);
@@ -490,6 +490,20 @@ listview_curses::do_update()
         this->lv_source->listview_value_for_rows(*this, row, rows);
         this->lv_display_lines.clear();
         this->lv_display_lines_row = row;
+        auto x = this->vc_x;
+        uint64_t border_channels = 0;
+        if (this->lv_border_left_role) {
+            border_channels = vc.to_channels(
+                vc.attrs_for_role(this->lv_border_left_role.value()));
+            for (auto border_y = y; border_y < bottom; border_y++) {
+                ncplane_putstr_yx(
+                    this->lv_window, border_y, this->vc_x, "\u258c");
+                ncplane_set_cell_yx(
+                    this->lv_window, border_y, this->vc_x, 0, border_channels);
+            }
+            x += 1;
+            width -= 1;
+        }
         while (y < bottom) {
             lr.lr_start = this->lv_left;
             lr.lr_end = this->lv_left + wrap_width;
@@ -498,7 +512,7 @@ listview_curses::do_update()
                     *this, y - this->vc_y, bottom - this->vc_y, overlay_line))
             {
                 this->lv_display_lines.push_back(static_overlay_content{});
-                mvwattrline(this->lv_window, y, this->vc_x, overlay_line, lr);
+                mvwattrline(this->lv_window, y, x, overlay_line, lr);
                 overlay_line.clear();
                 ++y;
             } else if (row < (int) row_count) {
@@ -515,12 +529,8 @@ listview_curses::do_update()
                         // XXX mvwhline(this->lv_window, y, this->vc_x, ' ',
                         // width);
                     }
-                    write_res = mvwattrline(this->lv_window,
-                                            y,
-                                            this->vc_x,
-                                            al,
-                                            lr,
-                                            this->vc_default_role);
+                    write_res = mvwattrline(
+                        this->lv_window, y, x, al, lr, this->vc_default_role);
                     lr.lr_start = write_res.mr_chars_out;
                     lr.lr_end = write_res.mr_chars_out + width - 1;
                     ++y;
@@ -546,7 +556,7 @@ listview_curses::do_update()
                         });
                         mvwattrline(this->lv_window,
                                     y,
-                                    this->vc_x,
+                                    x,
                                     ov_menu_line,
                                     line_range{0, (int) wrap_width},
                                     role_t::VCR_ALT_ROW);
@@ -575,7 +585,7 @@ listview_curses::do_update()
                                 static_overlay_content{});
                             mvwattrline(this->lv_window,
                                         y,
-                                        this->vc_x,
+                                        x,
                                         ov_hdr,
                                         lr,
                                         role_t::VCR_STATUS_INFO);
@@ -593,14 +603,15 @@ listview_curses::do_update()
                                 VC_ROLE.value(role_t::VCR_CURSOR_LINE));
                         }
 
-                        this->lv_display_lines.emplace_back(
-                            overlay_content{row,
-                                            overlay_row,
-                                            overlay_height,
-                                            row_overlay_content.size()});
+                        this->lv_display_lines.emplace_back(overlay_content{
+                            row,
+                            overlay_row,
+                            overlay_height,
+                            row_overlay_content.size(),
+                        });
                         mvwattrline(this->lv_window,
                                     y,
-                                    this->vc_x,
+                                    x,
                                     row_overlay_content[overlay_row],
                                     lr,
                                     role_t::VCR_ALT_ROW);
@@ -648,14 +659,12 @@ listview_curses::do_update()
                                 role = bar_role;
                             }
                             attrs = vc.attrs_for_role(role);
-                            ncplane_putstr_yx(this->lv_window,
-                                              gutter_y,
-                                              this->vc_x + width - 2,
-                                              ch);
+                            ncplane_putstr_yx(
+                                this->lv_window, gutter_y, x + width - 2, ch);
                             ncplane_set_cell_yx(
                                 this->lv_window,
                                 gutter_y,
-                                this->vc_x + width - 2,
+                                x + width - 2,
                                 attrs.ta_attrs | NCSTYLE_ALTCHARSET,
                                 view_colors::to_channels(attrs));
                         }
@@ -671,7 +680,7 @@ listview_curses::do_update()
                              " ",
                              0,
                              view_colors::to_channels(role_attrs));
-                ncplane_cursor_move_yx(this->lv_window, y, this->vc_x);
+                ncplane_cursor_move_yx(this->lv_window, y, x);
                 ncplane_hline(this->lv_window, &clear_cell, width);
                 nccell_release(this->lv_window, &clear_cell);
 
@@ -725,11 +734,10 @@ listview_curses::do_update()
                     role = bar_role;
                 }
                 attrs = vc.attrs_for_role(role);
-                ncplane_putstr_yx(
-                    this->lv_window, gutter_y, this->vc_x + width - 1, ch);
+                ncplane_putstr_yx(this->lv_window, gutter_y, x + width - 1, ch);
                 ncplane_set_cell_yx(this->lv_window,
                                     gutter_y,
-                                    this->vc_x + width - 1,
+                                    x + width - 1,
                                     attrs.ta_attrs | NCSTYLE_ALTCHARSET,
                                     view_colors::to_channels(attrs));
             }
@@ -738,10 +746,8 @@ listview_curses::do_update()
         if (this->lv_show_bottom_border) {
             int bottom_y = this->vc_y + height - 1;
             for (int lpc = 0; lpc < width - 1; lpc++) {
-                ncplane_on_styles_yx(this->lv_window,
-                                     bottom_y,
-                                     this->vc_x + lpc,
-                                     NCSTYLE_UNDERLINE);
+                ncplane_on_styles_yx(
+                    this->lv_window, bottom_y, x + lpc, NCSTYLE_UNDERLINE);
             }
         }
 

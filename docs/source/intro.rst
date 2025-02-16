@@ -173,7 +173,6 @@ When compiling from source, the following dependencies are required:
 * `SQLite <http://www.sqlite.org>`_
 * `ZLib <http://wwww.zlib.net>`_
 * `Bzip2 <http://www.bzip.org>`_
-* `Readline <http://www.gnu.org/s/readline>`_
 * `libcurl <https://curl.haxx.se>`_
 * `libarchive <https://libarchive.org>`_
 * `libunistring <https://www.gnu.org/software/libunistring/>`_

@@ -33,7 +33,7 @@
 
 #include "config.h"
 
-const char* const level_names[LEVEL__MAX + 1] = {
+constexpr std::array<const char*, LEVEL__MAX> level_names = {
     "unknown",
     "trace",
     "debug5",
@@ -49,8 +49,6 @@ const char* const level_names[LEVEL__MAX + 1] = {
     "critical",
     "fatal",
     "invalid",
-
-    nullptr,
 };
 
 log_level_t

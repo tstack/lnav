@@ -27,21 +27,29 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <chrono>
+
+#include "readline_callbacks.hh"
+
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/injector.hh"
+#include "base/itertools.hh"
 #include "base/paths.hh"
 #include "bound_tags.hh"
+#include "cmd.parser.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "field_overlay_source.hh"
 #include "help_text_formatter.hh"
+#include "itertools.similar.hh"
 #include "lnav.hh"
+#include "lnav.prompt.hh"
 #include "lnav_config.hh"
 #include "log_format_loader.hh"
 #include "plain_text_source.hh"
-#include "readline_curses.hh"
 #include "readline_highlighters.hh"
+#include "scn/scan.h"
 #include "service_tags.hh"
 #include "sql_help.hh"
 #include "tailer/tailer.looper.hh"
@@ -190,11 +198,11 @@ rl_set_help()
 }
 
 static bool
-rl_sql_help(readline_curses* rc)
+rl_sql_help(textinput_curses& rc)
 {
-    auto al = attr_line_t(rc->get_line_buffer());
+    auto al = attr_line_t(rc.get_content());
     const auto& sa = al.get_attrs();
-    size_t x = rc->get_cursor_x();
+    size_t x = rc.tc_cursor.x;
     bool has_doc = false;
 
     if (x > 0) {
@@ -288,7 +296,7 @@ rl_sql_help(readline_curses* rc)
 }
 
 void
-rl_change(readline_curses* rc)
+rl_change(textinput_curses& rc)
 {
     static const std::set<std::string> COMMANDS_WITH_SQL = {
         "filter-expr",
@@ -300,6 +308,7 @@ rl_change(readline_curses* rc)
         "show-fields",
     };
 
+    static auto& prompt = lnav::prompt::get();
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
@@ -307,10 +316,12 @@ rl_change(readline_curses* rc)
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_user_message_source.clear();
 
+    log_debug("rl_change");
+
     switch (lnav_data.ld_mode) {
         case ln_mode_t::SEARCH: {
-            if (rc->get_line_buffer().empty() && tc->tc_selected_text) {
-                rc->set_suggestion(tc->tc_selected_text->sti_value);
+            if (rc.get_content().empty() && tc->tc_selected_text) {
+                rc.tc_suggestion = tc->tc_selected_text->sti_value;
             }
             break;
         }
@@ -319,11 +330,58 @@ rl_change(readline_curses* rc)
                 = injector::get<readline_context::command_map_t*,
                                 sql_cmd_map_tag>();
 
-            const auto line = rc->get_line_buffer();
+            const auto line = rc.get_content();
             std::vector<std::string> args;
 
             if (!lnav::sql::is_prql(line)) {
                 clear_preview();
+
+                switch (rc.tc_popup_type) {
+                    case textinput_curses::popup_type_t::history: {
+                        rc.tc_on_history(rc);
+                        break;
+                    }
+                    default: {
+                        auto anno_line = attr_line_t(line);
+                        annotate_sql_statement(anno_line);
+                        auto byte_x = anno_line.column_to_byte_index(
+                            prompt.p_editor.tc_cursor.x);
+
+                        auto attr_iter = rfind_string_attr_if(
+                            anno_line.al_attrs, byte_x, [](const auto&) {
+                                return true;
+                            });
+                        if (attr_iter != anno_line.al_attrs.end()
+                            && attr_iter->sa_range.lr_end == byte_x)
+                        {
+                            auto to_complete
+                                = anno_line.to_string_fragment(attr_iter)
+                                      .to_string();
+                            auto poss_strs = prompt.p_sql_completions
+                                | lnav::itertools::first()
+                                | lnav::itertools::similar_to(to_complete, 10);
+                            std::vector<attr_line_t> poss;
+
+                            for (const auto& str : poss_strs) {
+                                auto eq_range
+                                    = prompt.p_sql_completions.equal_range(str);
+
+                                for (auto iter = eq_range.first;
+                                     iter != eq_range.second;
+                                     ++iter)
+                                {
+                                    auto al
+                                        = prompt.get_sql_completion_text(*iter);
+                                    poss.emplace_back(al);
+                                }
+                            }
+                            auto left = anno_line.byte_to_column_index(
+                                attr_iter->sa_range.lr_start);
+                            rc.open_popup_for_completion(left, poss);
+                        }
+                        break;
+                    }
+                }
             }
 
             split_ws(line, args);
@@ -335,7 +393,7 @@ rl_change(readline_curses* rc)
                         const auto prompt_res = sql_cmd->c_prompt(
                             lnav_data.ld_exec_context, line);
 
-                        rc->set_suggestion(prompt_res.pr_suggestion);
+                        rc.tc_suggestion = prompt_res.pr_suggestion;
                     }
                 }
             }
@@ -347,7 +405,7 @@ rl_change(readline_curses* rc)
             static std::string last_command;
             static int generation = 0;
 
-            const auto line = rc->get_line_buffer();
+            const auto line = rc.get_content();
             std::vector<std::string> args;
             auto iter = lnav_commands.end();
 
@@ -393,6 +451,31 @@ rl_change(readline_curses* rc)
             if (iter == lnav_commands.end()
                 || (args.size() == 1 && !endswith(line, " ")))
             {
+                log_debug("unknown command: %s", args[0].c_str());
+                switch (rc.tc_popup_type) {
+                    case textinput_curses::popup_type_t::history: {
+                        rc.tc_on_history(rc);
+                        break;
+                    }
+                    default: {
+                        auto poss
+                            = lnav_commands | lnav::itertools::first()
+                            | lnav::itertools::similar_to(
+                                  args.empty() ? "" : args[0], 10)
+                            | lnav::itertools::map([](const auto& x) {
+                                  return attr_line_t()
+                                      .append(
+                                          x, VC_ROLE.value(role_t::VCR_KEYWORD))
+                                      .with_attr_for_all(
+                                          lnav::prompt::SUBST_TEXT.value(
+                                              x + " "));
+                              });
+
+                        rc.open_popup_for_completion(0, poss);
+                        break;
+                    }
+                }
+
                 lnav_data.ld_doc_source.replace_with(CMD_HELP);
                 lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
                 lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
@@ -443,6 +526,46 @@ rl_change(readline_curses* rc)
                     format_example_text_for_term(ht, eval_example, width, al);
                     lnav_data.ld_example_source.replace_with(al);
                     etc.set_needs_update();
+
+                    log_debug("pop type %d", rc.tc_popup_type);
+                    switch (rc.tc_popup_type) {
+                        case textinput_curses::popup_type_t::history: {
+                            rc.tc_on_history(rc);
+                            break;
+                        }
+                        default: {
+                            auto line_sf = string_fragment(line);
+                            auto args_sf
+                                = line_sf.split_when(string_fragment::tag1{' '})
+                                      .second;
+                            auto parsed_cmd = lnav::command::parse_for_prompt(
+                                lnav_data.ld_exec_context,
+                                args_sf,
+                                iter->second->c_help);
+                            auto x = args_sf.column_to_byte_index(
+                                rc.tc_cursor.x - args_sf.sf_begin);
+                            auto arg_pair_opt = parsed_cmd.arg_at(x);
+
+                            if (arg_pair_opt) {
+                                auto arg_pair = arg_pair_opt.value();
+                                log_debug("apair %s [%d:%d)",
+                                          arg_pair.first->ht_name,
+                                          arg_pair.second.se_origin.sf_begin,
+                                          arg_pair.second.se_origin.sf_end);
+                                auto poss = prompt.get_cmd_parameter_completion(
+                                    arg_pair.first, arg_pair.second.se_value);
+                                auto left = arg_pair.second.se_value.empty()
+                                    ? rc.tc_cursor.x
+                                    : line_sf.byte_to_column_index(
+                                          args_sf.sf_begin
+                                          + arg_pair.second.se_origin.sf_begin);
+                                rc.open_popup_for_completion(left, poss);
+                            } else {
+                                log_info("no arg at %d", x);
+                            }
+                            break;
+                        }
+                    }
                 }
 
                 if (cmd.c_prompt != nullptr) {
@@ -452,10 +575,12 @@ rl_change(readline_curses* rc)
                     if (generation == 0 && trim(line) == args[0]
                         && !prompt_res.pr_new_prompt.empty())
                     {
+#if 0
                         rc->rewrite_line(line.length(),
                                          prompt_res.pr_new_prompt);
+#endif
                     }
-                    rc->set_suggestion(prompt_res.pr_suggestion);
+                    rc.tc_suggestion = prompt_res.pr_suggestion;
                 }
 
                 lnav_data.ld_bottom_source.grep_error("");
@@ -466,7 +591,7 @@ rl_change(readline_curses* rc)
         case ln_mode_t::EXEC: {
             clear_preview();
 
-            const auto line = rc->get_line_buffer();
+            const auto line = rc.get_content();
             size_t name_end = line.find(' ');
             const auto script_name = line.substr(0, name_end);
             auto& scripts = injector::get<available_scripts&>();
@@ -496,7 +621,7 @@ rl_change(readline_curses* rc)
 }
 
 static void
-rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
+rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
 {
     static const intern_string_t SRC = intern_string::lookup("prompt");
 
@@ -530,13 +655,11 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
             lnav_data.ld_preview_generation += 1;
             clear_preview();
             auto src_guard = ec.enter_source(
-                SRC,
-                1,
-                fmt::format(FMT_STRING(":{}"), rc->get_value().get_string()));
+                SRC, 1, fmt::format(FMT_STRING(":{}"), rc.get_content()));
             readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-            auto result = execute_command(ec, rc->get_value().get_string());
+            auto result = execute_command(ec, rc.get_content());
 
             if (result.isOk()) {
                 auto msg = result.unwrap();
@@ -561,7 +684,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
         }
 
         case ln_mode_t::SQL: {
-            term_val = trim(rc->get_value().get_string());
+            term_val = trim(rc.get_content());
 
             if (!term_val.empty() && term_val[0] == '.') {
                 lnav_data.ld_bottom_source.grep_error("");
@@ -573,12 +696,11 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                     format_sql_example(PRQL_EXAMPLE));
                 lnav_data.ld_db_preview_source[0].clear();
                 lnav_data.ld_db_preview_source[1].clear();
-                rc->clear_possibilities(ln_mode_t::SQL, "prql-expr");
 
                 auto orig_prql_stmt = attr_line_t(term_val);
                 orig_prql_stmt.rtrim("| \r\n\t");
                 annotate_sql_statement(orig_prql_stmt);
-                auto cursor_x = rc->get_cursor_x();
+                auto cursor_x = rc.tc_cursor.x;
                 if (cursor_x > orig_prql_stmt.get_string().length()) {
                     cursor_x = orig_prql_stmt.length() - 1;
                 }
@@ -640,15 +762,6 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                         .set_value("Result for query: %s",
                                    prev_stage_prql.get_string().c_str());
                     if (exec_res.isOk()) {
-                        for (const auto& hdr :
-                             lnav_data.ld_db_preview_source[0].dls_headers)
-                        {
-                            rc->add_possibility(
-                                ln_mode_t::SQL,
-                                "prql-expr",
-                                lnav::prql::quote_ident(hdr.hm_name));
-                        }
-
                         lnav_data.ld_preview_view[0].set_sub_source(
                             &lnav_data.ld_db_preview_source[0]);
                         lnav_data.ld_preview_view[0].set_overlay_source(
@@ -718,13 +831,6 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                     lnav_data.ld_bottom_source.grep_error("");
                 }
 
-                rc->add_possibility(
-                    ln_mode_t::SQL, "prql-expr", lnav::sql::prql_keywords);
-                for (const auto& pair : lnav::sql::prql_functions) {
-                    rc->add_possibility(
-                        ln_mode_t::SQL, "prql-expr", pair.first);
-                }
-
                 rl_sql_help(rc);
 
                 lnav_data.ld_preview_status_source[curr_stage_index]
@@ -735,6 +841,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                          .dls_headers.empty())
                 {
                     if (curr_stage_index == 0) {
+#if 0
                         for (const auto& hdr :
                              lnav_data.ld_db_preview_source[curr_stage_index]
                                  .dls_headers)
@@ -744,6 +851,7 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                                 "prql-expr",
                                 lnav::prql::quote_ident(hdr.hm_name));
                         }
+#endif
                     }
 
                     lnav_data.ld_preview_view[curr_stage_index].set_sub_source(
@@ -771,12 +879,11 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
                 auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
                 int retcode;
 
-                retcode
-                    = sqlite3_prepare_v2(lnav_data.ld_db,
-                                         rc->get_value().get_string().c_str(),
-                                         -1,
-                                         stmt.out(),
-                                         nullptr);
+                retcode = sqlite3_prepare_v2(lnav_data.ld_db,
+                                             rc.get_content().c_str(),
+                                             -1,
+                                             stmt.out(),
+                                             nullptr);
                 if (retcode != SQLITE_OK) {
                     const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
@@ -808,11 +915,11 @@ rl_search_internal(readline_curses* rc, ln_mode_t mode, bool complete = false)
     if (!complete) {
         tc->set_selection(lnav_data.ld_search_start_line);
     }
-    tc->execute_search(rc->get_value().get_string());
+    tc->execute_search(rc.get_content());
 }
 
 void
-rl_search(readline_curses* rc)
+rl_search(textinput_curses& rc)
 {
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
@@ -821,9 +928,9 @@ rl_search(readline_curses* rc)
 }
 
 void
-lnav_rl_abort(readline_curses* rc)
+lnav_rl_abort(textinput_curses& rc)
 {
-    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
     lnav_data.ld_bottom_source.set_prompt("");
     lnav_data.ld_example_source.clear();
@@ -849,14 +956,15 @@ lnav_rl_abort(readline_curses* rc)
         default:
             break;
     }
-    lnav_data.ld_rl_view->set_value("");
+    rc.tc_inactive_value.clear();
     set_view_mode(ln_mode_t::PAGING);
 }
 
 static void
-rl_callback_int(readline_curses* rc, bool is_alt)
+rl_callback_int(textinput_curses& rc, bool is_alt)
 {
     static const intern_string_t SRC = intern_string::lookup("prompt");
+    static auto& prompt = lnav::prompt::get();
 
     textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
     exec_context& ec = lnav_data.ld_exec_context;
@@ -899,44 +1007,46 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             break;
 
         case ln_mode_t::COMMAND: {
-            rc->set_alt_value("");
+            rc.tc_alt_value.clear();
+            auto cmdline = rc.get_content();
             auto src_guard = lnav_data.ld_exec_context.enter_source(
-                SRC,
-                1,
-                fmt::format(FMT_STRING(":{}"), rc->get_value().get_string()));
+                SRC, 1, fmt::format(FMT_STRING(":{}"), cmdline));
             readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-            auto exec_res = execute_command(ec, rc->get_value().get_string());
+            auto hist_guard = prompt.p_cmd_history.start_operation(cmdline);
+            auto exec_res = execute_command(ec, cmdline);
             if (exec_res.isOk()) {
-                rc->set_value(exec_res.unwrap());
+                rc.tc_inactive_value = exec_res.unwrap();
             } else {
                 auto um = exec_res.unwrapErr();
 
+                hist_guard.og_status = log_level_t::LEVEL_ERROR;
                 lnav_data.ld_user_message_source.replace_with(
                     um.to_attr_line().rtrim());
                 lnav_data.ld_user_message_view.reload_data();
                 lnav_data.ld_user_message_expiration
                     = std::chrono::steady_clock::now() + 20s;
-                rc->set_value("");
+                rc.tc_inactive_value.clear();
             }
             ec.ec_source.back().s_content.clear();
             break;
         }
 
         case ln_mode_t::USER:
-            rc->set_alt_value("");
-            ec.ec_local_vars.top()["value"] = rc->get_value().get_string();
-            rc->set_value("");
+            rc.tc_alt_value.clear();
+            ec.ec_local_vars.top()["value"] = rc.get_content();
+            rc.tc_inactive_value.clear();
             break;
 
         case ln_mode_t::SEARCH:
         case ln_mode_t::SEARCH_FILTERS:
         case ln_mode_t::SEARCH_FILES:
         case ln_mode_t::SEARCH_SPECTRO_DETAILS:
-        case ln_mode_t::CAPTURE:
+        case ln_mode_t::CAPTURE: {
+            log_debug("search here!");
             rl_search_internal(rc, old_mode, true);
-            if (!rc->get_value().empty()) {
+            if (!rc.get_content().empty()) {
                 auto& bm = tc->get_bookmarks();
                 const auto& bv = bm[&textview_curses::BM_SEARCH];
                 auto vl = is_alt ? bv.prev(tc->get_selection())
@@ -978,28 +1088,29 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         return true;
                     });
                 }
-                rc->set_attr_value(
-                    attr_line_t("search: ").append(rc->get_value()));
-                rc->set_alt_value(HELP_MSG_2(
-                    n, N, "to move forward/backward through search results"));
+                rc.tc_inactive_value
+                    = attr_line_t("search: ").append(rc.get_content());
+                rc.tc_alt_value = HELP_MSG_2(
+                    n, N, "to move forward/backward through search results");
             }
             break;
+        }
 
         case ln_mode_t::SQL: {
-            auto sql_str = rc->get_value().get_string();
+            auto sql_str = rc.get_content();
             auto src_guard = lnav_data.ld_exec_context.enter_source(
                 SRC, 1, fmt::format(FMT_STRING(";{}"), sql_str));
             readline_lnav_highlighter(ec.ec_source.back().s_content, -1);
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 
-            rc->set_attr_value(
-                lnav::console::user_message::info(
-                    attr_line_t("executing SQL statement, press ")
-                        .append("CTRL+]"_hotkey)
-                        .append(" to cancel"))
-                    .to_attr_line());
-            rc->set_needs_update();
+            rc.tc_inactive_value
+                = lnav::console::user_message::info(
+                      attr_line_t("executing SQL statement, press ")
+                          .append("CTRL+]"_hotkey)
+                          .append(" to cancel"))
+                      .to_attr_line();
+            rc.set_needs_update();
             auto result = execute_sql(ec, sql_str, alt_msg);
             auto& dls = lnav_data.ld_db_row_source;
             attr_line_t prompt;
@@ -1027,8 +1138,8 @@ rl_callback_int(readline_curses* rc, bool is_alt)
             }
             ec.ec_source.back().s_content.clear();
 
-            rc->set_attr_value(prompt);
-            rc->set_alt_value(alt_msg);
+            rc.tc_inactive_value = prompt;
+            rc.tc_alt_value = alt_msg;
             break;
         }
 
@@ -1039,13 +1150,13 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                 lnav::paths::workdir() / "exec.XXXXXX");
 
             if (open_temp_res.isErr()) {
-                rc->set_value(fmt::format(
+                rc.tc_inactive_value = fmt::format(
                     FMT_STRING("Unable to open temporary output file: {}"),
-                    open_temp_res.unwrapErr()));
+                    open_temp_res.unwrapErr());
             } else {
                 char desc[256], timestamp[32];
                 time_t current_time = time(nullptr);
-                const auto path_and_args = rc->get_value();
+                const auto path_and_args = rc.get_content();
                 auto tmp_pair = open_temp_res.unwrap();
                 auto fd_copy = tmp_pair.second.dup();
                 auto tf = text_format_t::TF_UNKNOWN;
@@ -1057,14 +1168,10 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         std::make_pair(fdopen(tmp_pair.second.release(), "w"),
                                        fclose));
                     auto src_guard = lnav_data.ld_exec_context.enter_source(
-                        SRC,
-                        1,
-                        fmt::format(FMT_STRING("|{}"),
-                                    path_and_args.get_string()));
-                    auto exec_res
-                        = execute_file(ec, path_and_args.get_string());
+                        SRC, 1, fmt::format(FMT_STRING("|{}"), path_and_args));
+                    auto exec_res = execute_file(ec, path_and_args);
                     if (exec_res.isOk()) {
-                        rc->set_value(exec_res.unwrap());
+                        rc.tc_inactive_value = exec_res.unwrap();
                         tf = ec.ec_output_stack.back().od_format;
                     } else {
                         auto um = exec_res.unwrapErr();
@@ -1074,7 +1181,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         lnav_data.ld_user_message_view.reload_data();
                         lnav_data.ld_user_message_expiration
                             = std::chrono::steady_clock::now() + 20s;
-                        rc->set_value("");
+                        rc.tc_inactive_value.clear();
                     }
                 }
 
@@ -1089,7 +1196,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                     snprintf(desc,
                              sizeof(desc),
                              "Output of %s (%s)",
-                             path_and_args.get_string().c_str(),
+                             path_and_args.c_str(),
                              timestamp);
                     lnav_data.ld_active_files.fc_file_names[tmp_pair.first]
                         .with_filename(desc)
@@ -1099,10 +1206,7 @@ rl_callback_int(readline_curses* rc, bool is_alt)
                         .with_init_location(0_vl);
                     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
 
-                    if (lnav_data.ld_rl_view != nullptr) {
-                        lnav_data.ld_rl_view->set_alt_value(
-                            HELP_MSG_1(X, "to close the file"));
-                    }
+                    rc.tc_alt_value = HELP_MSG_1(X, "to close the file");
                 }
             }
             break;
@@ -1111,77 +1215,21 @@ rl_callback_int(readline_curses* rc, bool is_alt)
 }
 
 void
-rl_callback(readline_curses* rc)
+rl_callback(textinput_curses& rc)
 {
     rl_callback_int(rc, false);
 }
 
 void
-rl_alt_callback(readline_curses* rc)
+rl_alt_callback(textinput_curses& rc)
 {
     rl_callback_int(rc, true);
 }
 
 void
-rl_display_matches(readline_curses* rc)
+rl_completion_request(textinput_curses& rc)
 {
-    const auto& matches = rc->get_matches();
-    auto& tc = lnav_data.ld_match_view;
-    int cols;
-
-    auto width = ncplane_dim_x(lnav_data.ld_window);
-    auto max_len = rc->get_max_match_length() + 2;
-    cols = std::max(1U, width / max_len);
-
-    if (matches.empty()) {
-        lnav_data.ld_match_source.clear();
-    } else {
-        const auto current_match = rc->get_match_string();
-        int curr_col = 0;
-        attr_line_t al;
-        bool add_nl = false;
-
-        for (const auto& match : matches) {
-            if (add_nl) {
-                al.append(1, '\n');
-                add_nl = false;
-            }
-            if (match == current_match) {
-                al.append(match, VC_STYLE.value(text_attrs::with_reverse()));
-            } else {
-                al.append(match);
-            }
-            curr_col += 1;
-            if (curr_col < cols) {
-                int padding = max_len - match.size();
-
-                al.append(padding, ' ');
-            } else {
-                curr_col = 0;
-                add_nl = true;
-            }
-        }
-        lnav_data.ld_match_source.replace_with(al);
-    }
-
-    tc.reload_data();
-}
-
-void
-rl_display_next(readline_curses* rc)
-{
-    textview_curses& tc = lnav_data.ld_match_view;
-
-    if (tc.get_top() >= (tc.get_top_for_last_row() - 1)) {
-        tc.set_top(0_vl);
-    } else {
-        tc.shift_top(tc.get_height());
-    }
-}
-
-void
-rl_completion_request(readline_curses* rc)
-{
+#if 0
     isc::to<tailer::looper&, services::remote_tailer_t>().send(
         [rc](auto& tlooper) {
             auto rp_opt = humanize::network::path::from_str(
@@ -1190,10 +1238,11 @@ rl_completion_request(readline_curses* rc)
                 tlooper.complete_path(*rp_opt);
             }
         });
+#endif
 }
 
 void
-rl_focus(readline_curses* rc)
+rl_focus(textinput_curses& rc)
 {
     auto fos = (field_overlay_source*) lnav_data.ld_views[LNV_LOG]
                    .get_overlay_source();
@@ -1204,7 +1253,7 @@ rl_focus(readline_curses* rc)
 }
 
 void
-rl_blur(readline_curses* rc)
+rl_blur(textinput_curses& rc)
 {
     auto fos = (field_overlay_source*) lnav_data.ld_views[LNV_LOG]
                    .get_overlay_source();

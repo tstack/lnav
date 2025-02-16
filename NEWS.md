@@ -1,3 +1,8 @@
+## lnav v0.12.5
+
+Interface changes:
+* The prompt is now a custom implementation instead of readline.
+
 ## lnav v0.12.4
 
 Features:

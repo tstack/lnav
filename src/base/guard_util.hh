@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,29 +25,29 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file log_level.hh
  */
 
-#ifndef log_level_hh
-#define log_level_hh
+#ifndef lnav_guard_util_hh
+#define lnav_guard_util_hh
 
-#include <array>
+namespace lnav {
 
-#include <sys/types.h>
+struct guard_helper {
+    guard_helper() = default;
+    guard_helper(const guard_helper&) = delete;
+    guard_helper(guard_helper&& other) noexcept { other.gh_enabled = false; }
+    guard_helper& operator=(guard_helper&& other) noexcept
+    {
+        other.gh_enabled = false;
 
-#include "base/log_level_enum.hh"
+        return *this;
+    }
 
-extern const std::array<const char*, LEVEL__MAX> level_names;
+    operator bool() const { return this->gh_enabled; }
 
-constexpr size_t MAX_LEVEL_NAME_LEN = 8;
+    bool gh_enabled{true};
+};
 
-log_level_t string2level(const char* levelstr,
-                         ssize_t len = -1,
-                         bool exact = false);
-
-log_level_t abbrev2level(const char* levelstr, ssize_t len = -1);
-
-int levelcmp(const char* l1, ssize_t l1_len, const char* l2, ssize_t l2_len);
+}  // namespace lnav
 
 #endif

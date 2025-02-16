@@ -9,7 +9,6 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/src/fmtlib \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
     $(LIBARCHIVE_CFLAGS) \
-    $(READLINE_CFLAGS) \
     $(SQLITE3_CFLAGS) \
     $(LIBCURL_CPPFLAGS)
 

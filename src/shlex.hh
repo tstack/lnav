@@ -38,6 +38,7 @@
 #include "base/attr_line.hh"
 #include "base/intern_string.hh"
 #include "base/lnav.resolver.hh"
+#include "base/result.h"
 
 enum class shlex_token_t {
     eof,

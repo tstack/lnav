@@ -32,11 +32,31 @@
 #ifndef lnav_commands_hh
 #define lnav_commands_hh
 
-#include "readline_curses.hh"
+#include <optional>
+#include <string>
+
+#include "readline_context.hh"
 
 /**
  * Initialize the given map with the builtin lnav commands.
  */
 void init_lnav_commands(readline_context::command_map_t& cmd_map);
+
+void init_lnav_display_commands(readline_context::command_map_t& cmd_map);
+
+void init_lnav_io_commands(readline_context::command_map_t& cmd_map);
+
+std::string remaining_args(const std::string& cmdline,
+                           const std::vector<std::string>& args,
+                           size_t index = 1);
+
+string_fragment remaining_args_frag(const std::string& cmdline,
+                                    const std::vector<std::string>& args,
+                                    size_t index = 1);
+
+std::optional<std::string> find_arg(std::vector<std::string>& args,
+                                    const std::string& flag);
+
+bookmark_vector<vis_line_t> combined_user_marks(vis_bookmarks& vb);
 
 #endif

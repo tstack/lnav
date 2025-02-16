@@ -155,6 +155,41 @@ get_db()
     return retval;
 }
 
+constexpr auto INSERT_OP = R"(
+INSERT INTO lnav_history
+      (context, session_id, create_time_us, end_time_us, content, status)
+    VALUES (?, ?, ?, ?, ?, ?)
+)";
+
+history::op_guard::~op_guard()
+{
+    if (!this->og_guard_helper) {
+        return;
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto prep_res = prepare_stmt(get_db().in(),
+                                 INSERT_OP,
+                                 this->og_context,
+                                 lnav_data.ld_session_id.begin()->first,
+                                 this->og_start_time,
+                                 now,
+                                 this->og_content,
+                                 level_names[this->og_status]);
+    if (prep_res.isErr()) {
+        log_error("unable to prepare INSERT_OP: %s",
+                  prep_res.unwrapErr().c_str());
+        return;
+    }
+
+    auto stmt = prep_res.unwrap();
+    auto exec_res = stmt.execute();
+    if (exec_res.isErr()) {
+        log_error("failed to execute INSERT_OP: %s",
+                  exec_res.unwrapErr().c_str());
+    }
+}
+
 history
 history::for_context(string_fragment name)
 {

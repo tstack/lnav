@@ -729,6 +729,10 @@ static const struct json_path_container theme_styles_handlers = {
         .with_description("Styling for popup windows")
         .for_child(&lnav_theme::lt_style_popup)
         .with_children(style_config_handlers),
+    yajlpp::property_handler("popup-border")
+        .with_description("Styling for the borders of a popup window")
+        .for_child(&lnav_theme::lt_style_popup_border)
+        .with_children(style_config_handlers),
     yajlpp::property_handler("focused")
         .with_description("Styling for a focused row in a list view")
         .for_child(&lnav_theme::lt_style_focused)

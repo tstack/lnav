@@ -6,7 +6,6 @@
     "libunistring",
     "ncurses",
     "pcre2",
-    "readline",
     "sqlite3",
     "zlib"
   ]

@@ -45,6 +45,7 @@ add_library(
         fs_util.hh
         func_util.hh
         future_util.hh
+        guard_util.hh
         humanize.hh
         humanize.network.hh
         humanize.time.hh

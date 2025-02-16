@@ -29,7 +29,9 @@
 
 #include "dump_internals.hh"
 
+#include "base/injector.hh"
 #include "bound_tags.hh"
+#include "help_text_formatter.hh"
 #include "lnav.events.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"

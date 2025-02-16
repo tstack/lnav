@@ -179,10 +179,9 @@ and controlling the files that lnav is currently monitoring.
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a
-unix-timestamp into a human-readable date. The command-line is
-implemented using the readline library, so the usual set of keyboard
-shortcuts are available. Most commands and searches also support
-tab-completion.
+unix-timestamp into a human-readable date. The prompt has emacs-like
+keyboard shortcuts that can be used for editing and moving within the
+command-line.
 
 The body of the display is also used to display other content, such
 as: the help file, histograms of the log messages over time, and SQL
@@ -749,10 +748,10 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the file to append to
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, 
+  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To append marked lines to the file {TMPDIR}interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mappend-to[0m[37m[40m {TMPDIR}interesting-lines.txt             [0m
@@ -799,7 +798,7 @@ For support questions, email:
   [4mpattern[0m   The regular expression previously used with
             :highlight
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, [1m:set-text-view-mode[0m
 [4mExample[0m
 #1 To clear the highlight with the pattern 'foobar':
    [37m[40m:[0m[1m[36m[40mclear-highlight[0m[37m[40m foobar                           [0m
@@ -823,7 +822,11 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   A path or glob pattern that specifies the files to
          close
-
+[4mSee Also[0m
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
 [4m:[0m[1m[4mcomment[0m[4m [0m[4mtext[0m
 ══════════════════════════════════════════════════════════════════════
@@ -987,7 +990,7 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Disable word-wrapping for the current view
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, [1m:set-text-view-mode[0m
 
 [4m:[0m[1m[4mecho[0m[4m [[0m[4m-n[0m[4m] [0m[4mmsg[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1000,12 +1003,12 @@ For support questions, email:
   [4mmsg[0m   The message to display
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
-  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To output 'Hello, World!':
    [37m[40m:[0m[1m[36m[40mecho[0m[37m[40m Hello, World!                               [0m
@@ -1031,7 +1034,7 @@ For support questions, email:
 ══════════════════════════════════════════════════════════════════════
   Enable word-wrapping for the current view
 [4mSee Also[0m
-  [1m:disable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m
+  [1m:disable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, [1m:set-text-view-mode[0m
 
 [4m:[0m[1m[4meval[0m[4m [0m[4mcommand[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1057,12 +1060,12 @@ For support questions, email:
 [4mParameter[0m
   [4mpath[0m   The path to the file to write
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:open[0m, 
   [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, 
   [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
   [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 
 [4m:[0m[1m[4mfilter-expr[0m[4m [0m[4mexpr[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1157,7 +1160,7 @@ For support questions, email:
                be used where the field name is prefixed by the format
                name and a dot to hide any field.
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:highlight[0m, [1m:show-fields[0m
+  [1m:enable-word-wrap[0m, [1m:highlight[0m, [1m:set-text-view-mode[0m, [1m:show-fields[0m
 [4mExamples[0m
 #1 To hide the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mhide-fields[0m[37m[40m log_procname                         [0m
@@ -1227,7 +1230,7 @@ For support questions, email:
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
-  [1m:clear-highlight[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m
+  [1m:clear-highlight[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:set-text-view-mode[0m
 [4mExample[0m
 #1 To highlight numbers with three or more digits:
    [37m[40m:[0m[1m[36m[40mhighlight[0m[37m[40m [0m[1m[37m[40m\d[0m[1m[32m[40m{[0m[37m[40m3,[0m[1m[32m[40m}[0m[37m[40m                                 [0m
@@ -1296,7 +1299,11 @@ For support questions, email:
   [user@]host:/path/to/logs
 [4mParameter[0m
   [4mpath[0m   The path to the file to open
-
+[4mSee Also[0m
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:close[0m, [1m:echo[0m, [1m:export-session-to[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExamples[0m
 #1 To open the file '/path/to/file':
    [37m[40m:[0m[1m[36m[40mopen[0m[37m[40m /path/to/file                               [0m
@@ -1327,10 +1334,10 @@ For support questions, email:
 [4mParameter[0m
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-to[0m, 
   [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the focused line to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-line-to[0m[37m[40m sed -e 's/foo/bar/g'                [0m
@@ -1343,10 +1350,10 @@ For support questions, email:
 [4mParameter[0m
   [4mshell-cmd[0m   The shell command-line to execute
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, 
-  [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to 'sed' for processing:
    [37m[40m:[0m[1m[36m[40mpipe-to[0m[37m[40m sed -e s/foo/bar/g                       [0m
@@ -1439,12 +1446,12 @@ For support questions, email:
          the current redirect will be cleared
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
-  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
+  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
   [1m:rebuild[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
   [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the output of lnav commands to the file {TMPDIR}script-output.txt:
    [37m[40m:[0m[1m[36m[40mredirect-to[0m[37m[40m {TMPDIR}script-output.txt               [0m
@@ -1527,6 +1534,7 @@ For support questions, email:
   Set the minimum log level to display in the log view
 [4mParameter[0m
   [4mlog-level[0m   The new minimum log level
+              [4mValues[0m: [1munknown[0m|[1mtrace[0m|[1mdebug5[0m|[1mdebug4[0m|[1mdebug3[0m|[1mdebug2[0m|[1mdebug[0m|[1minfo[0m|[1mstats[0m|[1mnotice[0m|[1mwarning[0m|[1merror[0m|[1mcritical[0m|[1mfatal[0m|[1minvalid[0m
 
 [4mExample[0m
 #1 To set the minimum log level displayed to error:
@@ -1540,7 +1548,8 @@ For support questions, email:
 [4mParameter[0m
   [4mmode[0m   The display mode
          [4mValues[0m: [1mraw[0m|[1mrendered[0m
-
+[4mSee Also[0m
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m
 
 [4m:[0m[1m[4msh[0m[4m [0m[4m--name=<name>[0m[4m [0m[4mcmdline[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1561,7 +1570,7 @@ For support questions, email:
 [4mParameter[0m
   [4mfield-name[0m   The name of the field to show
 [4mSee Also[0m
-  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m
+  [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, [1m:set-text-view-mode[0m
 [4mExample[0m
 #1 To show all the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mshow-fields[0m[37m[40m log_procname                         [0m
@@ -1628,6 +1637,7 @@ For support questions, email:
   Switch to the given view
 [4mParameter[0m
   [4mview-name[0m   The name of the view to switch to.
+              [4mValues[0m: [1mlog[0m|[1mtext[0m|[1mhelp[0m|[1mhistogram[0m|[1mdb[0m|[1mschema[0m|[1mpretty[0m|[1mspectro[0m|[1mtimeline[0m
 
 [4mExample[0m
 #1 To switch to the 'schema' view:
@@ -1662,6 +1672,7 @@ For support questions, email:
 [4mParameter[0m
   [4mview-name[0m   The name of the view to toggle the display
               of.
+              [4mValues[0m: [1mlog[0m|[1mtext[0m|[1mhelp[0m|[1mhistogram[0m|[1mdb[0m|[1mschema[0m|[1mpretty[0m|[1mspectro[0m|[1mtimeline[0m
 
 [4mExample[0m
 #1 To switch to the 'schema' view if it is not displayed or switch back to the previous
@@ -1695,28 +1706,6 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-table-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
-══════════════════════════════════════════════════════════════════════
-  Write SQL results to the given file in a tabular format
-[4mParameters[0m
-  [4m--anonymize[0m   Anonymize the table contents
-  [4mpath[0m          The path to the file to write
-[4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
-  [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1mecholn()[0m
-[4mExample[0m
-#1 To write SQL results as text to {TMPDIR}table.txt:
-   [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m {TMPDIR}table.txt                    [0m
-   
-
-
 [4m:[0m[1m[4mwrite-csv-to[0m[4m [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   Write SQL results to the given file in CSV format
@@ -1726,13 +1715,13 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as CSV to {TMPDIR}table.csv:
    [37m[40m:[0m[1m[36m[40mwrite-csv-to[0m[37m[40m {TMPDIR}table.csv                      [0m
@@ -1748,13 +1737,13 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON to {TMPDIR}table.json:
    [37m[40m:[0m[1m[36m[40mwrite-json-to[0m[37m[40m {TMPDIR}table.json                    [0m
@@ -1770,13 +1759,13 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as JSON Lines to {TMPDIR}table.json:
    [37m[40m:[0m[1m[36m[40mwrite-jsonlines-to[0m[37m[40m {TMPDIR}table.json               [0m
@@ -1796,13 +1785,13 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the marked lines in the log view to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-raw-to[0m[37m[40m {TMPDIR}table.txt                      [0m
@@ -1819,13 +1808,13 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, 
+  [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write only the displayed text to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-screen-to[0m[37m[40m {TMPDIR}table.txt                   [0m
@@ -1841,13 +1830,13 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-to[0m, [1m:write-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, 
-  [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-to[0m, [1m:write-to[0m, 
+  [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write SQL results as text to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-table-to[0m[37m[40m {TMPDIR}table.txt                    [0m
@@ -1862,12 +1851,12 @@ For support questions, email:
   [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, 
-  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
+  [1m:export-session-to[0m, [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, 
   [1m:rebuild[0m, [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, 
   [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-view-to[0m, 
-  [1m:write-view-to[0m, [1mecholn()[0m
+  [1m:write-view-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write marked lines to the file {TMPDIR}interesting-lines.txt:
    [37m[40m:[0m[1m[36m[40mwrite-to[0m[37m[40m {TMPDIR}interesting-lines.txt              [0m
@@ -1884,13 +1873,13 @@ For support questions, email:
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 
-  [1m:export-session-to[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, [1m:redirect-to[0m, 
-  [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
-  [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, 
-  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, 
-  [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-screen-to[0m, 
-  [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, 
-  [1m:write-to[0m, [1mecholn()[0m
+  [1m:export-session-to[0m, [1m:open[0m, [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:rebuild[0m, 
+  [1m:redirect-to[0m, [1m:redirect-to[0m, [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-csv-to[0m, 
+  [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, [1m:write-jsonlines-to[0m, 
+  [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, 
+  [1m:write-screen-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-table-to[0m, 
+  [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-to[0m, [1m:xopen[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To write the top view to {TMPDIR}table.txt:
    [37m[40m:[0m[1m[36m[40mwrite-view-to[0m[37m[40m {TMPDIR}table.txt                     [0m
@@ -1902,7 +1891,11 @@ For support questions, email:
   Use an external command to open the given file(s)
 [4mParameter[0m
   [4mpath[0m   The path to the file to open
-
+[4mSee Also[0m
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
+  [1m:write-to[0m, [1m:write-view-to[0m, [1mecholn()[0m
 [4mExample[0m
 #1 To open the file '/path/to/file':
    [37m[40m:[0m[1m[36m[40mxopen[0m[37m[40m /path/to/file                              [0m
@@ -2413,10 +2406,10 @@ For support questions, email:
 [4mParameter[0m
   [4mvalue[0m   The value to write to the current output file
 [4mSee Also[0m
-  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:pipe-line-to[0m, 
-  [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
+  [1m.dump[0m, [1m.read[0m, [1m:append-to[0m, [1m:echo[0m, [1m:export-session-to[0m, [1m:open[0m, 
+  [1m:pipe-line-to[0m, [1m:pipe-to[0m, [1m:redirect-to[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 
   [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, [1m:write-screen-to[0m, [1m:write-table-to[0m, 
-  [1m:write-to[0m, [1m:write-view-to[0m
+  [1m:write-to[0m, [1m:write-view-to[0m, [1m:xopen[0m
 
 [1m[4mencode[0m[4m([0m[4mvalue[0m[4m, [0m[4malgorithm[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════

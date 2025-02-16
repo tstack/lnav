@@ -152,7 +152,6 @@ The following software packages are required to build lnav:
  [33m•[0m sqlite       - The SQLite database engine.  Version
    3.9.0 or higher is required.
  [33m•[0m ncurses      - The ncurses text UI library.
- [33m•[0m readline     - The readline line editing library.
  [33m•[0m zlib         - The zlib compression library.
  [33m•[0m bz2          - The bzip2 compression library.
  [33m•[0m libcurl      - The cURL library for downloading files

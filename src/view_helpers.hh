@@ -32,6 +32,7 @@
 #ifndef lnav_view_helpers_hh
 #define lnav_view_helpers_hh
 
+#include <array>
 #include <optional>
 
 #include "bookmarks.hh"
@@ -79,7 +80,7 @@ enum class ln_mode_t : int {
     BUSY,
 };
 
-extern const char* const lnav_view_strings[LNV__MAX + 1];
+extern const std::array<const char*, LNV__MAX> lnav_view_strings;
 extern const char* const lnav_view_titles[LNV__MAX];
 extern const char* const
     lnav_mode_strings[lnav::enums::to_underlying(ln_mode_t::BUSY) + 1];

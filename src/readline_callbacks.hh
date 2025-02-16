@@ -30,19 +30,22 @@
 #ifndef LNAV_READLINE_CALLBACKS_HH
 #define LNAV_READLINE_CALLBACKS_HH
 
-#include "readline_curses.hh"
+#include <string>
+
+#include "readline_context.hh"
+#include "textinput_curses.hh"
 
 void rl_set_help();
-void rl_change(readline_curses* rc);
-void rl_search(readline_curses* rc);
-void lnav_rl_abort(readline_curses* rc);
-void rl_callback(readline_curses* rc);
-void rl_alt_callback(readline_curses* rc);
-void rl_display_matches(readline_curses* rc);
-void rl_display_next(readline_curses* rc);
-void rl_completion_request(readline_curses* rc);
-void rl_focus(readline_curses* rc);
-void rl_blur(readline_curses* rc);
+void rl_change(textinput_curses& ti);
+void rl_search(textinput_curses& ti);
+void lnav_rl_abort(textinput_curses& ti);
+void rl_callback(textinput_curses& ti);
+void rl_alt_callback(textinput_curses& ti);
+void rl_display_matches(textinput_curses& ti);
+void rl_display_next(textinput_curses& ti);
+void rl_completion_request(textinput_curses& ti);
+void rl_focus(textinput_curses& ti);
+void rl_blur(textinput_curses& ti);
 
 readline_context::split_result_t prql_splitter(readline_context& rc,
                                                const std::string& cmdline);

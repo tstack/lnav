@@ -1138,6 +1138,8 @@ view_colors::init_roles(const lnav_theme& lt,
 
     this->get_role_attrs(role_t::VCR_POPUP)
         = this->to_attrs(lt, lt.lt_style_popup, reporter);
+    this->get_role_attrs(role_t::VCR_POPUP_BORDER)
+        = this->to_attrs(lt, lt.lt_style_popup_border, reporter);
     this->get_role_attrs(role_t::VCR_FOCUSED)
         = this->to_attrs(lt, lt.lt_style_focused, reporter);
     this->get_role_attrs(role_t::VCR_DISABLED_FOCUSED)

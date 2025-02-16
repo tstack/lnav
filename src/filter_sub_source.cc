@@ -175,6 +175,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             this->fss_editor->set_y(lv.get_y_for_selection());
             this->fss_editor->set_content("");
             this->fss_editor->tc_suggestion = top_view->get_input_suggestion();
+            this->fss_editor->set_visible(true);
             this->fss_editor->focus();
             this->fss_filter_state = true;
             ef->disable();
@@ -207,6 +208,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             this->fss_view_text_possibilities
                 = view_text_possibilities(*top_view);
             this->fss_editor->tc_suggestion = top_view->get_input_suggestion();
+            this->fss_editor->set_visible(true);
             this->fss_editor->focus();
             this->fss_filter_state = true;
             ef->disable();
@@ -231,6 +233,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 = tf->get_lang() == filter_lang_t::SQL ? text_format_t::TF_SQL
                                                        : text_format_t::TF_PCRE;
             this->fss_editor->set_y(lv.get_y_for_selection());
+            this->fss_editor->set_visible(false);
             this->fss_editor->focus();
             this->fss_editor->tc_suggestion.clear();
             this->fss_editor->set_content(tf->get_id());
@@ -495,14 +498,11 @@ filter_sub_source::rl_history(textinput_curses& tc)
 {
     switch (tc.tc_text_format) {
         case text_format_t::TF_PCRE: {
-            log_debug("pcre history");
             std::vector<attr_line_t> poss;
             this->fss_regexp_history.query_entries(
                 tc.get_content(),
                 [&poss](const auto& e) { poss.emplace_back(e.e_content); });
-            log_debug("open hist %d", poss.size());
             tc.open_popup_for_history(poss);
-            log_debug("done");
             break;
         }
         case text_format_t::TF_SQL: {
@@ -630,8 +630,6 @@ filter_sub_source::rl_perform(textinput_curses& rc)
     if (new_value.empty()) {
         this->rl_abort(rc);
     } else {
-        top_view->get_highlights().erase(
-            {highlight_source_t::PREVIEW, "preview"});
         switch (tf->get_lang()) {
             case filter_lang_t::NONE:
             case filter_lang_t::REGEX: {
@@ -697,14 +695,22 @@ filter_sub_source::rl_perform(textinput_curses& rc)
         }
     }
 
-    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
-    lnav_data.ld_filter_help_status_source.fss_prompt.clear();
-    this->fss_editor->blur();
-    this->fss_editing = false;
-    this->tss_view->vc_enabled = true;
-    this->fss_editor->set_visible(false);
     top_view->reload_data();
     this->tss_view->reload_data();
+}
+
+void
+filter_sub_source::rl_blur(textinput_curses& tc)
+{
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    top_view->get_highlights().erase(
+        {highlight_source_t::PREVIEW, "preview"});
+    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+    lnav_data.ld_filter_help_status_source.fss_prompt.clear();
+    lnav_data.ld_filter_help_status_source.fss_error.clear();
+    this->fss_editing = false;
+    tc.set_visible(false);
+    this->tss_view->vc_enabled = true;
 }
 
 void
@@ -716,16 +722,9 @@ filter_sub_source::rl_abort(textinput_curses& rc)
     auto iter = fs.begin() + this->tss_view->get_selection();
     auto tf = *iter;
 
-    lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
-    lnav_data.ld_filter_help_status_source.fss_prompt.clear();
-    lnav_data.ld_filter_help_status_source.fss_error.clear();
-    top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     top_view->reload_data();
     fs.delete_filter("");
     this->tss_view->reload_data();
-    this->fss_editor->blur();
-    this->fss_editing = false;
-    this->tss_view->vc_enabled = true;
     this->tss_view->set_needs_update();
     tf->set_enabled(this->fss_filter_state);
     tss->text_filters_changed();

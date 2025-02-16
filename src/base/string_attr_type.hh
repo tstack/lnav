@@ -99,6 +99,7 @@ enum class role_t : int32_t {
     VCR_FOCUSED,
     VCR_DISABLED_FOCUSED,
     VCR_POPUP,
+    VCR_POPUP_BORDER,
     VCR_COLOR_HINT,
 
     VCR_QUOTED_CODE,

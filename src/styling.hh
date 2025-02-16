@@ -99,6 +99,7 @@ struct lnav_theme {
     positioned_property<style_config> lt_style_error;
     positioned_property<style_config> lt_style_warning;
     positioned_property<style_config> lt_style_popup;
+    positioned_property<style_config> lt_style_popup_border;
     positioned_property<style_config> lt_style_focused;
     positioned_property<style_config> lt_style_disabled_focused;
     positioned_property<style_config> lt_style_scrollbar;

@@ -38,6 +38,7 @@
 
 #include "base/attr_line.hh"
 #include "base/intern_string.hh"
+#include "base/string_attr_type.hh"
 #include "help_text.hh"
 
 extern const string_attr_type<void> SQL_COMMAND_ATTR;

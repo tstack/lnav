@@ -302,6 +302,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "popup-border": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "focused": {
                         "color": "Black",
                         "background-color": "Silver",
@@ -1109,6 +1117,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "popup-border": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "focused": {
                         "color": "$black",
                         "background-color": "$white",
@@ -1866,6 +1882,14 @@
                     "popup": {
                         "color": "$black",
                         "background-color": "Grey37",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "popup-border": {
+                        "color": "",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -2632,6 +2656,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "popup-border": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "focused": {
                         "color": "$black",
                         "background-color": "$plaintext",
@@ -3387,8 +3419,16 @@
                         "strike": false
                     },
                     "popup": {
-                        "color": "$white",
-                        "background-color": "$cyan",
+                        "color": "#ccc",
+                        "background-color": "#333",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "popup-border": {
+                        "color": "#ff5fd7",
+                        "background-color": "#333",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -4150,6 +4190,14 @@
                     "popup": {
                         "color": "$base00",
                         "background-color": "$base3",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "popup-border": {
+                        "color": "",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -4925,6 +4973,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "popup-border": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
                     "focused": {
                         "color": "$base03",
                         "background-color": "$base01",
@@ -5690,6 +5746,14 @@
                     "popup": {
                         "color": "$base00",
                         "background-color": "$base2",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "popup-border": {
+                        "color": "",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,

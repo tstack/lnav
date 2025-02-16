@@ -63,7 +63,7 @@ sql_constraint_op_name(unsigned char op)
 }
 
 using sqlite_exec_callback = int (*)(void*, int, char**, char**);
-typedef std::vector<std::string> db_table_list_t;
+using db_table_list_t = std::vector<std::string>;
 using db_table_map_t = std::map<std::string, db_table_list_t>;
 
 struct sqlite_metadata_callbacks {

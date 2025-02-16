@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,29 +25,44 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file log_level.hh
  */
 
-#ifndef log_level_hh
-#define log_level_hh
+#ifndef lnav_cmd_parser_hh
+#define lnav_cmd_parser_hh
 
-#include <array>
+#include <map>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include <sys/types.h>
+#include "base/intern_string.hh"
+#include "base/lnav.console.hh"
+#include "base/result.h"
+#include "command_executor.hh"
+#include "help_text.hh"
+#include "shlex.hh"
 
-#include "base/log_level_enum.hh"
+namespace lnav::command {
 
-extern const std::array<const char*, LEVEL__MAX> level_names;
+struct parsed {
+    struct arg_t {
+        const help_text* a_help;
+        std::vector<shlex::split_element_t> a_values;
+    };
 
-constexpr size_t MAX_LEVEL_NAME_LEN = 8;
+    std::optional<std::pair<const help_text*, shlex::split_element_t>> arg_at(
+        int x) const;
 
-log_level_t string2level(const char* levelstr,
-                         ssize_t len = -1,
-                         bool exact = false);
+    const help_text* p_help;
+    std::map<std::string, arg_t> p_args;
+};
 
-log_level_t abbrev2level(const char* levelstr, ssize_t len = -1);
+parsed parse_for_prompt(
+    exec_context& ec, string_fragment args, const help_text& ht);
+Result<parsed, lnav::console::user_message> parse_for_call(
+    exec_context& ec, string_fragment args, const help_text& ht);
 
-int levelcmp(const char* l1, ssize_t l1_len, const char* l2, ssize_t l2_len);
+}  // namespace lnav::command
 
 #endif

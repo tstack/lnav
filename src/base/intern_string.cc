@@ -518,7 +518,7 @@ string_fragment::column_to_byte_index(const size_t col) const
         }
     }
 
-    return index;
+    return index - this->sf_begin;
 }
 
 size_t

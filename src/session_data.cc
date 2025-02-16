@@ -874,13 +874,10 @@ static const struct json_path_container view_handlers = {
     yajlpp::pattern_property_handler("(?<view_name>[\\w\\-]+)")
         .with_obj_provider<view_state, session_data_t>(
             +[](const yajlpp_provider_context& ypc, session_data_t* root) {
-                const auto* const* view_name
-                    = std::find(lnav_view_strings,
-                                lnav_view_strings + LNV__MAX,
-                                ypc.get_substr("view_name"));
-                auto view_index = view_name - lnav_view_strings;
-                if (view_index < LNV__MAX) {
-                    return &root->sd_view_states[view_index];
+                auto view_index_opt
+                    = view_from_string(ypc.get_substr("view_name").c_str());
+                if (view_index_opt) {
+                    return &root->sd_view_states[view_index_opt.value()];
                 }
 
                 log_error("unknown view name: %s",

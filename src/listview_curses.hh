@@ -537,6 +537,8 @@ public:
 
     int get_y_for_selection() const;
 
+    std::optional<role_t> lv_border_left_role;
+
 protected:
     void delegate_scroll_out()
     {

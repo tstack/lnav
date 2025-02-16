@@ -35,6 +35,7 @@
 #include <optional>
 #include <string>
 
+#include "base/guard_util.hh"
 #include "base/intern_string.hh"
 #include "base/log_level_enum.hh"
 
@@ -53,7 +54,25 @@ struct history {
         log_level_t e_status{log_level_t::LEVEL_INFO};
     };
 
+    struct op_guard {
+        string_fragment og_context;
+        string_fragment og_content;
+        timestamp_t og_start_time{std::chrono::system_clock::now()};
+        log_level_t og_status{log_level_t::LEVEL_INFO};
+        guard_helper og_guard_helper;
+
+        ~op_guard();
+    };
+
     void insert_plain_content(string_fragment content);
+
+    op_guard start_operation(string_fragment content)
+    {
+        return {
+            this->h_context,
+            content,
+        };
+    }
 
     using entry_handler_t = std::function<void(const entry&)>;
     void query_entries(string_fragment str, entry_handler_t handler);

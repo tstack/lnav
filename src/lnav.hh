@@ -54,7 +54,7 @@
 #include "log_vtab_impl.hh"
 #include "plain_text_source.hh"
 #include "preview_status_source.hh"
-#include "readline_curses.hh"
+#include "readline_context.hh"
 #include "sqlitepp.hh"
 #include "statusview_curses.hh"
 #include "textfile_sub_source.hh"
@@ -63,8 +63,6 @@
 
 class spectrogram_source;
 class spectro_status_source;
-
-extern const std::vector<std::string> lnav_zoom_strings;
 
 /** The status bars. */
 typedef enum {
@@ -121,9 +119,7 @@ struct key_repeat_history {
     int krh_key{0};
     int krh_count{0};
     vis_line_t krh_start_line{0_vl};
-    struct timeval krh_last_press_time {
-        0, 0
-    };
+    struct timeval krh_last_press_time{0, 0};
 
     void update(int ch, vis_line_t top)
     {
@@ -220,7 +216,6 @@ struct lnav_data_t {
     textview_curses* ld_last_view;
     textview_curses ld_views[LNV__MAX];
     vis_line_t ld_search_start_line;
-    readline_curses* ld_rl_view;
 
     logfile_sub_source ld_log_source;
     hist_source2 ld_hist_source2;
@@ -286,8 +281,10 @@ extern struct lnav_data_t lnav_data;
 extern verbosity_t verbosity;
 
 extern readline_context::command_map_t lnav_commands;
-extern const std::chrono::microseconds ZOOM_LEVELS[];
-extern const ssize_t ZOOM_COUNT;
+constexpr ssize_t ZOOM_COUNT = 10;
+extern const std::chrono::microseconds ZOOM_LEVELS[ZOOM_COUNT];
+
+extern const std::array<const char*, ZOOM_COUNT> lnav_zoom_strings;
 
 #define HELP_MSG_CTRL(x, msg) "Press '" ANSI_BOLD("CTRL-" #x) "' " msg
 

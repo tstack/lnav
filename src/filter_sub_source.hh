@@ -30,10 +30,9 @@
 #ifndef filter_sub_source_hh
 #define filter_sub_source_hh
 
+#include <memory>
 #include <unordered_set>
 
-#include "plain_text_source.hh"
-#include "readline_curses.hh"
 #include "textinput.history.hh"
 #include "textview_curses.hh"
 
@@ -44,7 +43,7 @@ class filter_sub_source
     , public list_input_delegate
     , public text_delegate {
 public:
-    filter_sub_source(std::shared_ptr<textinput_curses> editor);
+    explicit filter_sub_source(std::shared_ptr<textinput_curses> editor);
 
     using injectable
         = filter_sub_source(std::shared_ptr<textinput_curses> editor);
@@ -79,6 +78,8 @@ public:
     bool text_handle_mouse(textview_curses& tc,
                            const listview_curses::display_line_content_t&,
                            mouse_event& me) override;
+
+    void rl_blur(textinput_curses& tc);
 
     void rl_change(textinput_curses& rc);
 

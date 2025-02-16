@@ -322,7 +322,7 @@ handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 }
 
 int
-walk_sqlite_metadata(sqlite3* db, struct sqlite_metadata_callbacks& smc)
+walk_sqlite_metadata(sqlite3* db, sqlite_metadata_callbacks& smc)
 {
     auto_mem<char, sqlite3_free> errmsg;
     int retval;

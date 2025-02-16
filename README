@@ -21,7 +21,6 @@ The following software packages are required to build/run lnav:
   libpcre2  - The Perl Compatible Regular Expression v2 (PCRE2) library.
   sqlite    - The SQLite database engine.  Version 3.9.0 or higher is required.
   ncurses   - The ncurses text UI library.
-  readline  - The readline line editing library.
   zlib      - The zlib compression library.
   bz2       - The bzip2 compression library.
   re2c      - The re2c scanner generator.

@@ -43,6 +43,7 @@
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
+#include "lnav.prompt.hh"
 #include "md2attr_line.hh"
 #include "md4cpp.hh"
 #include "pretty_printer.hh"
@@ -61,7 +62,7 @@
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
-const char* const lnav_view_strings[LNV__MAX + 1] = {
+constexpr std::array<const char*, LNV__MAX> lnav_view_strings = {
     "log",
     "text",
     "help",
@@ -71,8 +72,6 @@ const char* const lnav_view_strings[LNV__MAX + 1] = {
     "pretty",
     "spectro",
     "timeline",
-
-    nullptr,
 };
 
 const char* const lnav_view_titles[LNV__MAX] = {
@@ -126,7 +125,7 @@ view_from_string(const char* name)
         return std::nullopt;
     }
 
-    return lnav_view_t(view_name_iter - lnav_view_strings);
+    return lnav_view_t(view_name_iter - std::begin(lnav_view_strings));
 }
 
 static void
@@ -653,10 +652,6 @@ handle_winch(screen_curses* sc)
     }
 
     lnav_data.ld_winched = false;
-    if (lnav_data.ld_rl_view != nullptr) {
-        lnav_data.ld_rl_view->do_update();
-        lnav_data.ld_rl_view->window_change();
-    }
     for (auto& stat : lnav_data.ld_status) {
         stat.window_change();
     }
@@ -682,6 +677,7 @@ layout_views()
 
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
     static auto* filter_source = injector::get<filter_sub_source*>();
+    static auto& prompt = lnav::prompt::get();
 
     unsigned int width, height;
     ncplane_dim_yx(lnav_data.ld_window, &height, &width);
@@ -784,9 +780,9 @@ layout_views()
     auto bottom_min = std::min(2U + 3U, height);
     auto bottom = clamped<int>::from(height, bottom_min, height);
 
-    lnav_data.ld_rl_view->set_y(height - 1);
-    bottom -= lnav_data.ld_rl_view->get_height();
-    lnav_data.ld_rl_view->set_width(width);
+    prompt.p_editor.set_y(height - 1);
+    bottom -= 1;
+    prompt.p_editor.set_width(width);
 
     breadcrumb_view->set_width(width);
 
@@ -1184,10 +1180,8 @@ toggle_view(textview_curses* toggle_tc)
             rebuild_hist();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_HELP]) {
             build_all_help_text();
-            if (lnav_data.ld_rl_view != nullptr) {
-                lnav_data.ld_rl_view->set_alt_value(
-                    HELP_MSG_1(q, "to return to the previous view"));
-            }
+            lnav::prompt::get().p_editor.tc_alt_value
+                = HELP_MSG_1(q, "to return to the previous view");
         }
         lnav_data.ld_last_view = nullptr;
         lnav_data.ld_view_stack.push_back(toggle_tc);
@@ -1562,7 +1556,8 @@ all_views()
     retval.push_back(&lnav_data.ld_user_message_view);
     retval.push_back(&lnav_data.ld_spectro_details_view);
     retval.push_back(&lnav_data.ld_timeline_details_view);
-    retval.push_back(lnav_data.ld_rl_view);
+    retval.push_back(&lnav::prompt::get().p_editor);
+    retval.push_back(&lnav::prompt::get().p_editor.tc_popup);
 
     return retval;
 }

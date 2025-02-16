@@ -168,10 +168,9 @@ and controlling the files that lnav is currently monitoring.
 
 Finally, the last line on the display is where you can enter search
 patterns and execute internal commands, such as converting a
-unix-timestamp into a human-readable date. The command-line is
-implemented using the readline library, so the usual set of keyboard
-shortcuts are available. Most commands and searches also support
-tab-completion.
+unix-timestamp into a human-readable date.
+The prompt has emacs-like keyboard shortcuts that can be used for editing
+and moving within the command-line.
 
 The body of the display is also used to display other content, such
 as: the help file, histograms of the log messages over time, and

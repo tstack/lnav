@@ -32,6 +32,7 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "lnav.hh"
+#include "lnav.prompt.hh"
 #include "md4cpp.hh"
 #include "readline_highlighters.hh"
 #include "sysclip.hh"
@@ -158,9 +159,11 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                               ->execute_with(
                                   cmd, std::make_pair("href", sti.sti_href));
                     if (exec_res.isOk()) {
-                        lnav_data.ld_rl_view->set_value(exec_res.unwrap());
-                        if (dls.dls_generation != previous_db_gen &&
-                            dls.dls_row_cursors.size() > 1) {
+                        lnav::prompt::get().p_editor.tc_inactive_value
+                            = exec_res.unwrap();
+                        if (dls.dls_generation != previous_db_gen
+                            && dls.dls_row_cursors.size() > 1)
+                        {
                             ensure_view(&lnav_data.ld_views[LNV_DB]);
                         }
                     }
@@ -215,7 +218,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                               ->execute_with(
                                   cmd, std::make_pair("href", sti.sti_href));
                     if (exec_res.isOk()) {
-                        lnav_data.ld_rl_view->set_value(exec_res.unwrap());
+                        lnav::prompt::get().p_editor.tc_inactive_value
+                            = exec_res.unwrap();
                     }
                 });
             start += al.length();

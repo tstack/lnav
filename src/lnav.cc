@@ -97,6 +97,7 @@
 #include "lnav.hh"
 #include "lnav.indexing.hh"
 #include "lnav.management_cli.hh"
+#include "lnav.prompt.hh"
 #include "lnav_commands.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
@@ -109,7 +110,7 @@
 #include "logfile_sub_source.hh"
 #include "md4cpp.hh"
 #include "piper.looper.hh"
-#include "readline_curses.hh"
+#include "readline_context.hh"
 #include "readline_highlighters.hh"
 #include "regexp_vtab.hh"
 #include "scn/scan.h"
@@ -167,7 +168,7 @@ using namespace md4cpp::literals;
 static std::vector<std::string> DEFAULT_FILES;
 static auto intern_lifetime = intern_string::get_table_lifetime();
 
-const std::chrono::microseconds ZOOM_LEVELS[] = {
+constexpr std::chrono::microseconds ZOOM_LEVELS[] = {
     1s,
     30s,
     60s,
@@ -211,10 +212,7 @@ public:
     constexpr operator const char*() const { return buf; }
 };
 
-const ssize_t ZOOM_COUNT
-    = sizeof(ZOOM_LEVELS) / sizeof(decltype(ZOOM_LEVELS[0]));
-
-const std::vector<std::string> lnav_zoom_strings = {
+constexpr std::array<const char*, ZOOM_COUNT> lnav_zoom_strings = {
     "1-second",
     "30-second",
     "1-minute",
@@ -412,18 +410,12 @@ handle_rl_key(notcurses* nc, const ncinput& ch, const char* keyseq)
         case NCKEY_PGDOWN:
             handle_paging_key(nc, ch, keyseq);
             break;
-        case NCKEY_ESC:
-        case NCKEY_GS:
-            lnav_data.ld_rl_view->abort();
-            break;
 
         default:
             if (ch.id == 'P' && ncinput_ctrl_p(&ch)) {
                 handle_paging_key(nc, ch, keyseq);
-            } else if (ch.id == ']' && ncinput_ctrl_p(&ch)) {
-                lnav_data.ld_rl_view->abort();
             } else {
-                lnav_data.ld_rl_view->handle_key(ch);
+                lnav::prompt::get().p_editor.handle_key(ch);
             }
             break;
     }
@@ -1007,7 +999,7 @@ struct refresh_status_bars {
         for (auto& sc : lnav_data.ld_status) {
             sc.do_update();
         }
-        lnav_data.ld_rl_view->do_update();
+        lnav::prompt::get().p_editor.do_update();
         if (handle_winch(this->rsb_screen)) {
             layout_views();
             lnav_data.ld_view_stack.do_update();
@@ -1079,9 +1071,9 @@ ui_execute_init_commands(
                                                           / "exec.XXXXXX");
 
     if (open_temp_res.isErr()) {
-        lnav_data.ld_rl_view->set_value(
-            fmt::format(FMT_STRING("Unable to open temporary output file: {}"),
-                        open_temp_res.unwrapErr()));
+        lnav::prompt::get().p_editor.tc_inactive_value = fmt::format(
+            FMT_STRING("Unable to open temporary output file: {}"),
+            open_temp_res.unwrapErr());
     } else {
         auto tmp_pair = open_temp_res.unwrap();
         auto fd_copy = tmp_pair.second.dup();
@@ -1108,10 +1100,8 @@ ui_execute_init_commands(
                 .with_init_location(0_vl);
             lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
 
-            if (lnav_data.ld_rl_view != nullptr) {
-                lnav_data.ld_rl_view->set_alt_value(
-                    HELP_MSG_1(X, "to close the file"));
-            }
+            lnav::prompt::get().p_editor.tc_alt_value
+                = HELP_MSG_1(X, "to close the file");
         }
     }
 }
@@ -1123,84 +1113,25 @@ looper()
     static auto* filter_source = injector::get<filter_sub_source*>();
     static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
 
-    try {
-        auto* sql_cmd_map = injector::get<readline_context::command_map_t*,
-                                          sql_cmd_map_tag>();
-        auto& ec = lnav_data.ld_exec_context;
+    auto& ec = lnav_data.ld_exec_context;
+    sig_atomic_t overlay_counter = 0;
 
-        readline_context command_context("cmd", &lnav_commands);
+    lnav_data.ld_log_source.lss_sorting_observer
+        = [](auto& lss, auto off, auto size) {
+              if (off == size) {
+                  lnav_data.ld_bottom_source.update_loading(0, 0);
+              } else {
+                  lnav_data.ld_bottom_source.update_loading(off, size);
+              }
+              do_observer_update(nullptr);
+          };
 
-        readline_context search_context("search", nullptr, false);
-        readline_context search_filters_context(
-            "search-filters", nullptr, false);
-        readline_context search_files_context("search-files", nullptr, false);
-        readline_context search_spectro_details_context(
-            "search-spectro-details", nullptr, false);
-        readline_context index_context("capture");
-        readline_context sql_context("sql", sql_cmd_map, false);
-        readline_context exec_context("exec");
-        readline_context user_context("user");
-        auto rlc = injector::get<std::shared_ptr<readline_curses>>();
-        auto ti = injector::get<std::shared_ptr<textinput_curses>>();
-        sig_atomic_t overlay_counter = 0;
-        int lpc;
+    auto& sb = lnav_data.ld_scroll_broadcaster;
+    auto& vsb = lnav_data.ld_view_stack_broadcaster;
 
-        command_context.set_highlighter(readline_command_highlighter);
-        search_context.set_append_character(0).set_highlighter(
-            readline_regex_highlighter);
-        search_filters_context.set_append_character(0).set_highlighter(
-            readline_regex_highlighter);
-        search_files_context.set_append_character(0).set_highlighter(
-            readline_regex_highlighter);
-        search_spectro_details_context.set_append_character(0).set_highlighter(
-            readline_regex_highlighter);
-        sql_context.set_highlighter(readline_sqlite_highlighter)
-            .set_quote_chars("\"")
-            .with_readline_var((char**) &rl_completer_word_break_characters,
-                               " \t\n(),")
-            .with_splitter(prql_splitter);
-        exec_context.set_highlighter(readline_shlex_highlighter);
-
-        lnav_data.ld_log_source.lss_sorting_observer
-            = [](auto& lss, auto off, auto size) {
-                  if (off == size) {
-                      lnav_data.ld_bottom_source.update_loading(0, 0);
-                  } else {
-                      lnav_data.ld_bottom_source.update_loading(off, size);
-                  }
-                  do_observer_update(nullptr);
-              };
-
-        auto& sb = lnav_data.ld_scroll_broadcaster;
-        auto& vsb = lnav_data.ld_view_stack_broadcaster;
-
-        rlc->add_context(ln_mode_t::COMMAND, command_context);
-        rlc->add_context(ln_mode_t::SEARCH, search_context);
-        rlc->add_context(ln_mode_t::SEARCH_FILTERS, search_filters_context);
-        rlc->add_context(ln_mode_t::SEARCH_FILES, search_files_context);
-        rlc->add_context(ln_mode_t::SEARCH_SPECTRO_DETAILS,
-                         search_spectro_details_context);
-        rlc->add_context(ln_mode_t::CAPTURE, index_context);
-        rlc->add_context(ln_mode_t::SQL, sql_context);
-        rlc->add_context(ln_mode_t::EXEC, exec_context);
-        rlc->add_context(ln_mode_t::USER, user_context);
-        rlc->set_save_history(!(lnav_data.ld_flags & LNF_SECURE_MODE));
-        rlc->start();
-
-        lnav_data.ld_rl_view = rlc.get();
-
-        lnav_data.ld_rl_view->add_possibility(
-            ln_mode_t::COMMAND, "viewname", lnav_view_strings);
-
-        lnav_data.ld_rl_view->add_possibility(
-            ln_mode_t::COMMAND, "zoomlevel", lnav_zoom_strings);
-
-        lnav_data.ld_rl_view->add_possibility(
-            ln_mode_t::COMMAND, "levelname", level_names);
-
-        auto echo_views_stmt_res = prepare_stmt(lnav_data.ld_db,
+    auto echo_views_stmt_res = prepare_stmt(lnav_data.ld_db,
 #if SQLITE_VERSION_NUMBER < 3033000
-                                                R"(
+                                            R"(
         UPDATE lnav_views_echo
           SET top = (SELECT top FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
               left = (SELECT left FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
@@ -1219,7 +1150,7 @@ looper()
                     ))
         )"
 #else
-                                                R"(
+                                            R"(
         UPDATE lnav_views_echo
           SET top = orig.top,
               left = orig.left,
@@ -1239,1093 +1170,1083 @@ looper()
                 )
         )"
 #endif
-        );
+    );
 
-        if (echo_views_stmt_res.isErr()) {
-            lnav::console::print(
-                stderr,
-                lnav::console::user_message::error(
-                    "unable to prepare UPDATE statement for lnav_views_echo "
-                    "table")
-                    .with_reason(echo_views_stmt_res.unwrapErr()));
-            return;
-        }
-        auto echo_views_stmt = echo_views_stmt_res.unwrap();
+    if (echo_views_stmt_res.isErr()) {
+        lnav::console::print(
+            stderr,
+            lnav::console::user_message::error(
+                "unable to prepare UPDATE statement for lnav_views_echo "
+                "table")
+                .with_reason(echo_views_stmt_res.unwrapErr()));
+        return;
+    }
+    auto echo_views_stmt = echo_views_stmt_res.unwrap();
 
-        if (lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled) {
-            auto mouse_note = prepare_stmt(lnav_data.ld_db, R"(
+    if (lnav_config.lc_mouse_mode == lnav_mouse_mode::disabled) {
+        auto mouse_note = prepare_stmt(lnav_data.ld_db, R"(
 INSERT INTO lnav_user_notifications (id, priority, expiration, message)
 VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         'Press <span class="-lnav_status-styles_hotkey">F2</span> to enable mouse support');
 )");
-            if (mouse_note.isErr()) {
-                lnav::console::print(
-                    stderr,
-                    lnav::console::user_message::error(
-                        "unable to prepare INSERT statement for "
-                        "lnav_user_notifications table")
-                        .with_reason(mouse_note.unwrapErr()));
-                return;
-            }
-
-            mouse_note.unwrap().execute();
-        }
-
-        (void) signal(SIGINT, sigint);
-        (void) signal(SIGTERM, sigint);
-        (void) signal(SIGWINCH, sigwinch);
-        auto _ign_signal = finally([] {
-            signal(SIGWINCH, SIG_IGN);
-            lnav_data.ld_winched = false;
-            lnav_data.ld_window = nullptr;
-        });
-
-        auto_fd errpipe[2];
-        auto_fd::pipe(errpipe);
-
-        errpipe[0].close_on_exec();
-        errpipe[1].close_on_exec();
-        auto pipe_err_handle = std::make_optional(
-            log_pipe_err(errpipe[0].release(), errpipe[1].release()));
-
-        notcurses_options nco = {};
-        nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
-        nco.loglevel = NCLOGLEVEL_PANIC;
-        auto create_screen_res = screen_curses::create(nco);
-
-        if (create_screen_res.isErr()) {
-            pipe_err_handle = std::nullopt;
-            log_error("create screen failed with: %s",
-                      create_screen_res.unwrapErr().c_str());
-            auto help_txt = attr_line_t();
-            auto term_var = getenv("TERM");
-            if (term_var == nullptr) {
-                help_txt.append("The ")
-                    .append("TERM"_symbol)
-                    .append(" environment variable is not set.  ");
-            } else {
-                help_txt.append("The ")
-                    .append("TERM"_symbol)
-                    .append(" value of ")
-                    .append_quoted(term_var)
-                    .append(" is not known.  ");
-            }
-            help_txt
-                .append(
-                    "Check for your "
-                    "terminal in ")
-                .append(
-                    "https://github.com/dankamongmen/notcurses/blob/master/TERMINALS.md"_hyperlink)
-                .append(" or use ")
-                .append_quoted("xterm-256color");
-            lnav::console::print(
-                stderr,
-                lnav::console::user_message::error("unable to open TUI")
-                    .with_reason(create_screen_res.unwrapErr())
-                    .with_help(help_txt));
+        if (mouse_note.isErr()) {
+            lnav::console::print(stderr,
+                                 lnav::console::user_message::error(
+                                     "unable to prepare INSERT statement for "
+                                     "lnav_user_notifications table")
+                                     .with_reason(mouse_note.unwrapErr()));
             return;
         }
 
-        auto sc = create_screen_res.unwrap();
-        auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());
-        auto& mouse_i = injector::get<xterm_mouse&>();
+        mouse_note.unwrap().execute();
+    }
 
-        auto _paste = finally(
-            [&sc] { notcurses_bracketed_paste_disable(sc.get_notcurses()); });
-        notcurses_bracketed_paste_enable(sc.get_notcurses());
+    (void) signal(SIGINT, sigint);
+    (void) signal(SIGTERM, sigint);
+    (void) signal(SIGWINCH, sigwinch);
+    auto _ign_signal = finally([] {
+        signal(SIGWINCH, SIG_IGN);
+        lnav_data.ld_winched = false;
+        lnav_data.ld_window = nullptr;
+    });
 
-        auto ui_cb_mouse = false;
-        ec.ec_ui_callbacks.uc_pre_stdout_write
-            = [&sc, &mouse_i, &ui_cb_mouse]() {
-                  ui_cb_mouse = mouse_i.is_enabled();
-                  if (ui_cb_mouse) {
-                      mouse_i.set_enabled(sc.get_notcurses(), false);
-                  }
-                  notcurses_leave_alternate_screen(sc.get_notcurses());
+    auto_fd errpipe[2];
+    auto_fd::pipe(errpipe);
 
-                  // notcurses sets stdio to non-blocking, which can cause an
-                  // issue when writing since there is a chance of an EAGAIN
-                  // happening
-                  const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
-                  fcntl(STDOUT_FILENO, F_SETFL, fl & ~O_NONBLOCK);
-              };
-        ec.ec_ui_callbacks.uc_post_stdout_write
-            = [&sc, &mouse_i, &ui_cb_mouse]() {
-                  const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
-                  fcntl(STDOUT_FILENO, F_SETFL, fl | O_NONBLOCK);
+    errpipe[0].close_on_exec();
+    errpipe[1].close_on_exec();
+    auto pipe_err_handle = std::make_optional(
+        log_pipe_err(errpipe[0].release(), errpipe[1].release()));
 
-                  auto nci = ncinput{};
-                  do {
-                      notcurses_get_blocking(sc.get_notcurses(), &nci);
-                      ncinput_free_paste_content(&nci);
-                  } while (nci.evtype == NCTYPE_RELEASE || ncinput_lock_p(&nci)
-                           || ncinput_modifier_p(&nci));
-                  notcurses_enter_alternate_screen(sc.get_notcurses());
+    notcurses_options nco = {};
+    nco.flags |= NCOPTION_SUPPRESS_BANNERS | NCOPTION_NO_WINCH_SIGHANDLER;
+    nco.loglevel = NCLOGLEVEL_PANIC;
+    auto create_screen_res = screen_curses::create(nco);
 
-                  if (ui_cb_mouse) {
-                      mouse_i.set_enabled(sc.get_notcurses(), true);
-                  }
-                  notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
-                  // XXX doing this refresh twice since it doesn't seem to be
-                  // enough to do it once...
-                  notcurses_render(sc.get_notcurses());
-                  notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
-              };
-        ec.ec_ui_callbacks.uc_redraw = [&sc]() {
-            notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
-        };
+    if (create_screen_res.isErr()) {
+        pipe_err_handle = std::nullopt;
+        log_error("create screen failed with: %s",
+                  create_screen_res.unwrapErr().c_str());
+        auto help_txt = attr_line_t();
+        auto term_var = getenv("TERM");
+        if (term_var == nullptr) {
+            help_txt.append("The ")
+                .append("TERM"_symbol)
+                .append(" environment variable is not set.  ");
+        } else {
+            help_txt.append("The ")
+                .append("TERM"_symbol)
+                .append(" value of ")
+                .append_quoted(term_var)
+                .append(" is not known.  ");
+        }
+        help_txt
+            .append(
+                "Check for your "
+                "terminal in ")
+            .append(
+                "https://github.com/dankamongmen/notcurses/blob/master/TERMINALS.md"_hyperlink)
+            .append(" or use ")
+            .append_quoted("xterm-256color");
+        lnav::console::print(
+            stderr,
+            lnav::console::user_message::error("unable to open TUI")
+                .with_reason(create_screen_res.unwrapErr())
+                .with_help(help_txt));
+        return;
+    }
 
-        lnav_behavior lb;
+    auto sc = create_screen_res.unwrap();
+    auto inputready_fd = notcurses_inputready_fd(sc.get_notcurses());
+    auto& mouse_i = injector::get<xterm_mouse&>();
 
-        ui_periodic_timer::singleton();
+    auto _paste = finally(
+        [&sc] { notcurses_bracketed_paste_disable(sc.get_notcurses()); });
+    notcurses_bracketed_paste_enable(sc.get_notcurses());
 
-        mouse_i.set_behavior(&lb);
-        mouse_i.set_enabled(
-            sc.get_notcurses(),
-            check_experimental("mouse")
-                || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
+    auto ui_cb_mouse = false;
+    ec.ec_ui_callbacks.uc_pre_stdout_write = [&sc, &mouse_i, &ui_cb_mouse]() {
+        ui_cb_mouse = mouse_i.is_enabled();
+        if (ui_cb_mouse) {
+            mouse_i.set_enabled(sc.get_notcurses(), false);
+        }
+        notcurses_leave_alternate_screen(sc.get_notcurses());
 
-        lnav_data.ld_window = sc.get_std_plane();
+        // notcurses sets stdio to non-blocking, which can cause an
+        // issue when writing since there is a chance of an EAGAIN
+        // happening
+        const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
+        fcntl(STDOUT_FILENO, F_SETFL, fl & ~O_NONBLOCK);
+    };
+    ec.ec_ui_callbacks.uc_post_stdout_write = [&sc, &mouse_i, &ui_cb_mouse]() {
+        const auto fl = fcntl(STDOUT_FILENO, F_GETFL, 0);
+        fcntl(STDOUT_FILENO, F_SETFL, fl | O_NONBLOCK);
 
-        {
-            struct termios tio;
+        auto nci = ncinput{};
+        do {
+            notcurses_get_blocking(sc.get_notcurses(), &nci);
+            ncinput_free_paste_content(&nci);
+        } while (nci.evtype == NCTYPE_RELEASE || ncinput_lock_p(&nci)
+                 || ncinput_modifier_p(&nci));
+        notcurses_enter_alternate_screen(sc.get_notcurses());
 
-            tcgetattr(STDIN_FILENO, &tio);
-            tio.c_cc[VSTART] = 0;
-            tio.c_cc[VSTOP] = 0;
+        if (ui_cb_mouse) {
+            mouse_i.set_enabled(sc.get_notcurses(), true);
+        }
+        notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
+        // XXX doing this refresh twice since it doesn't seem to be
+        // enough to do it once...
+        notcurses_render(sc.get_notcurses());
+        notcurses_refresh(sc.get_notcurses(), nullptr, nullptr);
+    };
+    ec.ec_ui_callbacks.uc_redraw
+        = [&sc]() { notcurses_refresh(sc.get_notcurses(), nullptr, nullptr); };
+
+    lnav_behavior lb;
+
+    ui_periodic_timer::singleton();
+
+    mouse_i.set_behavior(&lb);
+    mouse_i.set_enabled(
+        sc.get_notcurses(),
+        check_experimental("mouse")
+            || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
+
+    lnav_data.ld_window = sc.get_std_plane();
+
+    {
+        struct termios tio;
+
+        tcgetattr(STDIN_FILENO, &tio);
+        tio.c_cc[VSTART] = 0;
+        tio.c_cc[VSTOP] = 0;
 #ifdef VDSUSP
-            tio.c_cc[VDSUSP] = 0;
+        tio.c_cc[VDSUSP] = 0;
 #endif
-            tcsetattr(STDIN_FILENO, TCSANOW, &tio);
+        tcsetattr(STDIN_FILENO, TCSANOW, &tio);
+    }
+
+    auto& vc = view_colors::singleton();
+    view_colors::init(sc.get_notcurses());
+
+    auto ecb_guard
+        = lnav_data.ld_exec_context.add_msg_callback([](const auto& um) {
+              auto al = um.to_attr_line().rtrim();
+
+              if (al.get_string().find('\n') == std::string::npos) {
+                  lnav::prompt::get().p_editor.tc_inactive_value = al;
+              } else {
+                  lnav_data.ld_user_message_source.replace_with(al);
+                  lnav_data.ld_user_message_view.reload_data();
+                  lnav_data.ld_user_message_expiration
+                      = std::chrono::steady_clock::now() + 20s;
+              }
+          });
+
+    {
+        setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
+        setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
+        setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
+        setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
+        setup_highlights(lnav_data.ld_preview_view[0].get_highlights());
+        setup_highlights(lnav_data.ld_preview_view[1].get_highlights());
+
+        for (const auto& format : log_format::get_root_formats()) {
+            for (auto& hl : format->lf_highlighters) {
+                if (hl.h_attrs.empty()) {
+                    hl.with_attrs(vc.attrs_for_ident(hl.h_name));
+                }
+
+                lnav_data.ld_views[LNV_LOG].get_highlights()[{
+                    highlight_source_t::CONFIGURATION,
+                    format->get_name().to_string() + "-" + hl.h_name}]
+                    = hl;
+            }
         }
+    }
 
-        auto& vc = view_colors::singleton();
-        view_colors::init(sc.get_notcurses());
+    auto& prompt = lnav::prompt::get();
+    {
+        prompt.p_editor.tc_window = lnav_data.ld_window;
+        prompt.p_editor.tc_height = 1;
+        prompt.p_editor.tc_text_format = text_format_t::TF_LNAV_SCRIPT;
+        prompt.p_editor.tc_on_focus = rl_focus;
+        prompt.p_editor.tc_on_change = rl_change;
+        prompt.p_editor.tc_on_perform = rl_callback;
+        // prompt.set_alt_perform_action(rl_alt_callback);
+        // prompt.set_timeout_action(rl_search);
+        prompt.p_editor.tc_on_abort = lnav_rl_abort;
+        prompt.p_editor.tc_on_blur = rl_blur;
+        prompt.p_editor.tc_on_history
+            = bind_mem(&lnav::prompt::rl_history, &prompt);
+        prompt.p_editor.tc_on_completion
+            = bind_mem(&lnav::prompt::rl_completion, &prompt);
+        prompt.p_editor.tc_on_completion_request = rl_completion_request;
+        prompt.p_editor.tc_alt_value
+            = fmt::format(FMT_STRING(HELP_MSG_2(
+                              e,
+                              E,
+                              "to move forward/backward through " ANSI_ROLE_FMT(
+                                  "error") " messages")),
+                          lnav::enums::to_underlying(role_t::VCR_ERROR));
+    }
 
-        auto ecb_guard
-            = lnav_data.ld_exec_context.add_msg_callback([](const auto& um) {
-                  auto al = um.to_attr_line().rtrim();
+    lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
 
-                  if (al.get_string().find('\n') == std::string::npos) {
-                      if (lnav_data.ld_rl_view) {
-                          lnav_data.ld_rl_view->set_attr_value(al);
-                      }
-                  } else {
-                      lnav_data.ld_user_message_source.replace_with(al);
-                      lnav_data.ld_user_message_view.reload_data();
-                      lnav_data.ld_user_message_expiration
-                          = std::chrono::steady_clock::now() + 20s;
-                  }
-              });
+    sb.push_back(clear_last_user_mark);
+    sb.push_back(update_view_position);
+    vsb.push_back(
+        bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
+    vsb.push_back([](listview_curses* lv) {
+        auto* tc = dynamic_cast<textview_curses*>(lv);
 
+        tc->tc_state_event_handler(*tc);
+    });
+
+    vsb.push_back(sb);
+
+    breadcrumb_view->on_focus
+        = [](breadcrumb_curses&) { set_view_mode(ln_mode_t::BREADCRUMBS); };
+    breadcrumb_view->on_blur = [](breadcrumb_curses&) {
+        set_view_mode(ln_mode_t::PAGING);
+        lnav_data.ld_view_stack.set_needs_update();
+    };
+    breadcrumb_view->set_y(1);
+    breadcrumb_view->set_window(lnav_data.ld_window);
+    breadcrumb_view->set_line_source(lnav_crumb_source);
+    auto event_handler = [](auto&& tc) {
+        auto top_view = lnav_data.ld_view_stack.top();
+
+        if (top_view && *top_view == &tc) {
+            lnav_data.ld_bottom_source.update_search_term(tc);
+        }
+        if (!lnav::prompt::get().p_editor.vc_enabled) {
+            auto search_duration = tc.consume_search_duration();
+            if (search_duration) {
+                double secs = search_duration->count() / 1000.0;
+                lnav::prompt::get().p_editor.tc_inactive_value
+                    = attr_line_t("search completed in ")
+                          .append(lnav::roles::number(
+                              fmt::format(FMT_STRING("{:.3}"), secs)))
+                          .append(" seconds");
+            }
+        }
+    };
+    for (auto lpc = 0; lpc < LNV__MAX; lpc++) {
+        lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
+        lnav_data.ld_views[lpc].set_y(2);
+        lnav_data.ld_views[lpc].set_height(vis_line_t(-4));
+        lnav_data.ld_views[lpc].set_scroll_action(sb);
+        lnav_data.ld_views[lpc].set_search_action(update_hits);
+        lnav_data.ld_views[lpc].tc_cursor_role = role_t::VCR_CURSOR_LINE;
+        lnav_data.ld_views[lpc].tc_disabled_cursor_role
+            = role_t::VCR_DISABLED_CURSOR_LINE;
+        lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
+    }
+    lnav_data.ld_views[LNV_DB].set_supports_marks(true);
+    lnav_data.ld_views[LNV_HELP].set_supports_marks(true);
+    lnav_data.ld_views[LNV_HISTOGRAM].set_supports_marks(true);
+    lnav_data.ld_views[LNV_LOG].set_supports_marks(true);
+    lnav_data.ld_views[LNV_TEXT].set_supports_marks(true);
+    lnav_data.ld_views[LNV_SCHEMA].set_supports_marks(true);
+    lnav_data.ld_views[LNV_PRETTY].set_supports_marks(true);
+
+    lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
+    lnav_data.ld_doc_view.set_show_scrollbar(false);
+
+    lnav_data.ld_example_view.set_window(lnav_data.ld_window);
+    lnav_data.ld_example_view.set_show_scrollbar(false);
+
+    lnav_data.ld_match_view.set_window(lnav_data.ld_window);
+
+    lnav_data.ld_preview_view[0].set_window(lnav_data.ld_window);
+    lnav_data.ld_preview_view[0].set_show_scrollbar(false);
+    lnav_data.ld_preview_view[1].set_window(lnav_data.ld_window);
+    lnav_data.ld_preview_view[1].set_show_scrollbar(false);
+
+    lnav_data.ld_filter_view.set_title("Text Filters");
+    lnav_data.ld_filter_view.set_selectable(true);
+    lnav_data.ld_filter_view.set_window(lnav_data.ld_window);
+    lnav_data.ld_filter_view.set_show_scrollbar(true);
+    filter_source->fss_editor->tc_window = lnav_data.ld_window;
+
+    lnav_data.ld_files_view.set_title("Files");
+    lnav_data.ld_files_view.set_selectable(true);
+    lnav_data.ld_files_view.set_window(lnav_data.ld_window);
+    lnav_data.ld_files_view.set_show_scrollbar(true);
+    lnav_data.ld_files_view.get_disabled_highlights().insert(
+        highlight_source_t::THEME);
+    lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
+
+    lnav_data.ld_file_details_view.set_title("File Details");
+    lnav_data.ld_file_details_view.set_selectable(true);
+    lnav_data.ld_file_details_view.set_window(lnav_data.ld_window);
+    lnav_data.ld_file_details_view.set_show_scrollbar(true);
+    lnav_data.ld_file_details_view.set_supports_marks(true);
+    lnav_data.ld_file_details_view.get_disabled_highlights().insert(
+        highlight_source_t::THEME);
+    lnav_data.ld_file_details_view.tc_cursor_role
+        = role_t::VCR_DISABLED_CURSOR_LINE;
+    lnav_data.ld_file_details_view.tc_disabled_cursor_role
+        = role_t::VCR_DISABLED_CURSOR_LINE;
+
+    lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
+
+    lnav_data.ld_spectro_details_view.set_title("spectro-details");
+    lnav_data.ld_spectro_details_view.set_window(lnav_data.ld_window);
+    lnav_data.ld_spectro_details_view.set_show_scrollbar(true);
+    lnav_data.ld_spectro_details_view.set_height(5_vl);
+    lnav_data.ld_spectro_details_view.set_sub_source(
+        &lnav_data.ld_spectro_no_details_source);
+    lnav_data.ld_spectro_details_view.tc_state_event_handler = event_handler;
+    lnav_data.ld_spectro_details_view.set_scroll_action(sb);
+    lnav_data.ld_spectro_no_details_source.replace_with(
+        attr_line_t().append(lnav::roles::comment(" No details available")));
+    lnav_data.ld_spectro_source->ss_details_view
+        = &lnav_data.ld_spectro_details_view;
+    lnav_data.ld_spectro_source->ss_no_details_source
+        = &lnav_data.ld_spectro_no_details_source;
+    lnav_data.ld_spectro_source->ss_exec_context = &lnav_data.ld_exec_context;
+
+    lnav_data.ld_timeline_details_view.set_title("timeline-details");
+    lnav_data.ld_timeline_details_view.set_window(lnav_data.ld_window);
+    lnav_data.ld_timeline_details_view.set_selectable(true);
+    lnav_data.ld_timeline_details_view.set_show_scrollbar(true);
+    lnav_data.ld_timeline_details_view.set_height(5_vl);
+    lnav_data.ld_timeline_details_view.set_supports_marks(true);
+    lnav_data.ld_timeline_details_view.set_sub_source(
+        &lnav_data.ld_timeline_details_source);
+    lnav_data.ld_timeline_details_view.tc_cursor_role = role_t::VCR_CURSOR_LINE;
+    lnav_data.ld_timeline_details_view.tc_disabled_cursor_role
+        = role_t::VCR_DISABLED_CURSOR_LINE;
+
+    auto top_status_lifetime
+        = injector::bind<top_status_source>::to_scoped_singleton();
+    auto top_source = injector::get<std::shared_ptr<top_status_source>>();
+
+    lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
+        .on_click
+        = [](status_field&) { ensure_view(&lnav_data.ld_views[LNV_HELP]); };
+    lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_LINE_NUMBER)
+        .on_click
+        = [](status_field&) {
+              auto cmd = fmt::format(
+                  FMT_STRING("prompt command : 'goto {}'"),
+                  (int) lnav_data.ld_view_stack.top().value()->get_top());
+
+              execute_command(lnav_data.ld_exec_context, cmd);
+          };
+    lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_SEARCH_TERM)
+        .on_click
+        = [](status_field&) {
+              auto term
+                  = lnav_data.ld_view_stack.top().value()->get_current_search();
+              auto cmd = fmt::format(FMT_STRING("prompt search / '{}'"), term);
+
+              execute_command(lnav_data.ld_exec_context, cmd);
+          };
+
+    lnav_data.ld_status[LNS_TOP].set_y(0);
+    lnav_data.ld_status[LNS_TOP].set_default_role(role_t::VCR_INACTIVE_STATUS);
+    lnav_data.ld_status[LNS_TOP].set_data_source(top_source.get());
+    lnav_data.ld_status[LNS_BOTTOM].set_y(-2);
+    for (auto& stat_bar : lnav_data.ld_status) {
+        stat_bar.set_window(lnav_data.ld_window);
+    }
+    lnav_data.ld_status[LNS_BOTTOM].set_data_source(
+        &lnav_data.ld_bottom_source);
+    lnav_data.ld_status[LNS_FILTER].set_data_source(
+        &lnav_data.ld_filter_status_source);
+    lnav_data.ld_status[LNS_FILTER_HELP].set_data_source(
+        &lnav_data.ld_filter_help_status_source);
+    lnav_data.ld_status[LNS_DOC].set_data_source(
+        &lnav_data.ld_doc_status_source);
+    lnav_data.ld_status[LNS_PREVIEW0].set_data_source(
+        &lnav_data.ld_preview_status_source[0]);
+    lnav_data.ld_status[LNS_PREVIEW1].set_data_source(
+        &lnav_data.ld_preview_status_source[1]);
+    lnav_data.ld_spectro_status_source
+        = std::make_unique<spectro_status_source>();
+    lnav_data.ld_status[LNS_SPECTRO].set_data_source(
+        lnav_data.ld_spectro_status_source.get());
+    lnav_data.ld_status[LNS_TIMELINE].set_enabled(false);
+    lnav_data.ld_status[LNS_TIMELINE].set_data_source(
+        &lnav_data.ld_timeline_status_source);
+
+    lnav_data.ld_match_view.set_show_bottom_border(true);
+    lnav_data.ld_user_message_view.set_show_bottom_border(true);
+
+    for (auto& sc : lnav_data.ld_status) {
+        sc.window_change();
+    }
+
+    auto session_path = lnav::paths::dotlnav() / "session";
+    execute_file(ec, session_path.string());
+
+    sb(*lnav_data.ld_view_stack.top());
+    vsb(*lnav_data.ld_view_stack.top());
+
+    lnav_data.ld_view_stack.vs_change_handler
+        = [](textview_curses* tc) { lnav_data.ld_view_stack_broadcaster(tc); };
+
+    {
+        auto& id = lnav_data.ld_input_dispatcher;
+
+        id.id_escape_matcher = match_escape_seq;
+        id.id_escape_handler = handle_keyseq;
+        id.id_key_handler = handle_key;
+        id.id_mouse_handler = [&mouse_i](notcurses* nc, const ncinput& ch) {
+            mouse_i.handle_mouse(nc, ch);
+        };
+        id.id_unhandled_handler = [](const char* keyseq) {
+            auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
+            auto encoded_name = (char*) alloca(enc_len);
+
+            log_info("unbound keyseq: %s", keyseq);
+            json_ptr::encode(
+                encoded_name, enc_len, lnav_config.lc_ui_keymap.c_str());
+            // XXX we should have a hotkey for opening a prompt that is
+            // pre-filled with a suggestion that the user can complete.
+            // This quick-fix key could be used for other stuff as well
+            lnav::prompt::get().p_editor.tc_inactive_value = fmt::format(
+                FMT_STRING(ANSI_CSI ANSI_COLOR_PARAM(
+                    COLOR_YELLOW) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
+                                  "Unrecognized key" ANSI_NORM
+                                  ", bind to a command using "
+                                  "\u2014 " ANSI_BOLD(
+                                      ":config") " /ui/keymap-defs/{}/{}/"
+                                                 "command <cmd>"),
+                encoded_name,
+                keyseq);
+            alerter::singleton().chime("unrecognized key");
+        };
+    }
+
+    auto refresher_lifetime
+        = injector::bind<refresh_status_bars>::to_scoped_singleton();
+
+    auto refresher = injector::get<std::shared_ptr<refresh_status_bars>>();
+    refresher->rsb_screen = &sc;
+
+    auto refresh_guard = lnav_data.ld_status_refresher.install(
+        [refresher]() { refresher->doit(); });
+
+    auto& timer = ui_periodic_timer::singleton();
+    struct timeval current_time;
+
+    static sig_atomic_t index_counter;
+
+    set_view_mode(ln_mode_t::FILES);
+
+    timer.start_fade(index_counter, 1);
+
+    std::future<file_collection> rescan_future;
+
+    log_debug("rescan started");
+    rescan_future = std::async(std::launch::async,
+                               &file_collection::rescan_files,
+                               lnav_data.ld_active_files.copy(),
+                               false);
+    bool initial_rescan_completed = false;
+    int session_stage = 0;
+
+    // rlc.do_update();
+
+    auto next_rebuild_time = ui_clock::now();
+    auto next_status_update_time = next_rebuild_time;
+    auto next_rescan_time = next_rebuild_time;
+
+    while (lnav_data.ld_looping) {
+        auto loop_deadline = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
+
+        std::vector<struct pollfd> pollfds;
+        size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
+        size_t changes = 0;
+        int rc;
+
+        gettimeofday(&current_time, nullptr);
+
+        top_source->update_time(current_time);
+        lnav_data.ld_preview_view[0].set_needs_update();
+        lnav_data.ld_preview_view[1].set_needs_update();
+
+        layout_views();
+
+        auto scan_timeout = initial_rescan_completed ? 0s : 10ms;
+        if (rescan_future.valid()
+            && rescan_future.wait_for(scan_timeout)
+                == std::future_status::ready)
         {
-            setup_highlights(lnav_data.ld_views[LNV_LOG].get_highlights());
-            setup_highlights(lnav_data.ld_views[LNV_TEXT].get_highlights());
-            setup_highlights(lnav_data.ld_views[LNV_SCHEMA].get_highlights());
-            setup_highlights(lnav_data.ld_views[LNV_PRETTY].get_highlights());
-            setup_highlights(lnav_data.ld_preview_view[0].get_highlights());
-            setup_highlights(lnav_data.ld_preview_view[1].get_highlights());
-
-            for (const auto& format : log_format::get_root_formats()) {
-                for (auto& hl : format->lf_highlighters) {
-                    if (hl.h_attrs.empty()) {
-                        hl.with_attrs(vc.attrs_for_ident(hl.h_name));
-                    }
-
-                    lnav_data.ld_views[LNV_LOG].get_highlights()[{
-                        highlight_source_t::CONFIGURATION,
-                        format->get_name().to_string() + "-" + hl.h_name}]
-                        = hl;
-                }
-            }
-        }
-
-        rlc->set_window(lnav_data.ld_window);
-        rlc->set_focus_action(rl_focus);
-        rlc->set_change_action(rl_change);
-        rlc->set_perform_action(rl_callback);
-        rlc->set_alt_perform_action(rl_alt_callback);
-        rlc->set_timeout_action(rl_search);
-        rlc->set_abort_action(lnav_rl_abort);
-        rlc->set_display_match_action(rl_display_matches);
-        rlc->set_display_next_action(rl_display_next);
-        rlc->set_blur_action(rl_blur);
-        rlc->set_completion_request_action(rl_completion_request);
-        rlc->set_alt_value(
-            fmt::format(FMT_STRING(HELP_MSG_2(
-                            e,
-                            E,
-                            "to move forward/backward through " ANSI_ROLE_FMT(
-                                "error") " messages")),
-                        lnav::enums::to_underlying(role_t::VCR_ERROR)));
-
-        lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
-
-        sb.push_back(clear_last_user_mark);
-        sb.push_back(update_view_position);
-        vsb.push_back(
-            bind_mem(&term_extra::update_title, injector::get<term_extra*>()));
-        vsb.push_back([](listview_curses* lv) {
-            auto* tc = dynamic_cast<textview_curses*>(lv);
-
-            tc->tc_state_event_handler(*tc);
-        });
-
-        vsb.push_back(sb);
-
-        breadcrumb_view->on_focus
-            = [](breadcrumb_curses&) { set_view_mode(ln_mode_t::BREADCRUMBS); };
-        breadcrumb_view->on_blur = [](breadcrumb_curses&) {
-            set_view_mode(ln_mode_t::PAGING);
-            lnav_data.ld_view_stack.set_needs_update();
-        };
-        breadcrumb_view->set_y(1);
-        breadcrumb_view->set_window(lnav_data.ld_window);
-        breadcrumb_view->set_line_source(lnav_crumb_source);
-        auto event_handler = [](auto&& tc) {
-            auto top_view = lnav_data.ld_view_stack.top();
-
-            if (top_view && *top_view == &tc) {
-                lnav_data.ld_bottom_source.update_search_term(tc);
-            }
-            if (!lnav_data.ld_rl_view->is_active()) {
-                auto search_duration = tc.consume_search_duration();
-                if (search_duration) {
-                    double secs = search_duration->count() / 1000.0;
-                    lnav_data.ld_rl_view->set_attr_value(
-                        attr_line_t("search completed in ")
-                            .append(lnav::roles::number(
-                                fmt::format(FMT_STRING("{:.3}"), secs)))
-                            .append(" seconds"));
-                }
-            }
-        };
-        for (lpc = 0; lpc < LNV__MAX; lpc++) {
-            lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
-            lnav_data.ld_views[lpc].set_y(2);
-            lnav_data.ld_views[lpc].set_height(
-                vis_line_t(-(rlc->get_height() + 3)));
-            lnav_data.ld_views[lpc].set_scroll_action(sb);
-            lnav_data.ld_views[lpc].set_search_action(update_hits);
-            lnav_data.ld_views[lpc].tc_cursor_role = role_t::VCR_CURSOR_LINE;
-            lnav_data.ld_views[lpc].tc_disabled_cursor_role
-                = role_t::VCR_DISABLED_CURSOR_LINE;
-            lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
-        }
-        lnav_data.ld_views[LNV_DB].set_supports_marks(true);
-        lnav_data.ld_views[LNV_HELP].set_supports_marks(true);
-        lnav_data.ld_views[LNV_HISTOGRAM].set_supports_marks(true);
-        lnav_data.ld_views[LNV_LOG].set_supports_marks(true);
-        lnav_data.ld_views[LNV_TEXT].set_supports_marks(true);
-        lnav_data.ld_views[LNV_SCHEMA].set_supports_marks(true);
-        lnav_data.ld_views[LNV_PRETTY].set_supports_marks(true);
-
-        lnav_data.ld_doc_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_doc_view.set_show_scrollbar(false);
-
-        lnav_data.ld_example_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_example_view.set_show_scrollbar(false);
-
-        lnav_data.ld_match_view.set_window(lnav_data.ld_window);
-
-        lnav_data.ld_preview_view[0].set_window(lnav_data.ld_window);
-        lnav_data.ld_preview_view[0].set_show_scrollbar(false);
-        lnav_data.ld_preview_view[1].set_window(lnav_data.ld_window);
-        lnav_data.ld_preview_view[1].set_show_scrollbar(false);
-
-        lnav_data.ld_filter_view.set_title("Text Filters");
-        lnav_data.ld_filter_view.set_selectable(true);
-        lnav_data.ld_filter_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_filter_view.set_show_scrollbar(true);
-        filter_source->fss_editor->tc_window = lnav_data.ld_window;
-
-        lnav_data.ld_files_view.set_title("Files");
-        lnav_data.ld_files_view.set_selectable(true);
-        lnav_data.ld_files_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_files_view.set_show_scrollbar(true);
-        lnav_data.ld_files_view.get_disabled_highlights().insert(
-            highlight_source_t::THEME);
-        lnav_data.ld_files_view.set_overlay_source(&lnav_data.ld_files_overlay);
-
-        lnav_data.ld_file_details_view.set_title("File Details");
-        lnav_data.ld_file_details_view.set_selectable(true);
-        lnav_data.ld_file_details_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_file_details_view.set_show_scrollbar(true);
-        lnav_data.ld_file_details_view.set_supports_marks(true);
-        lnav_data.ld_file_details_view.get_disabled_highlights().insert(
-            highlight_source_t::THEME);
-        lnav_data.ld_file_details_view.tc_cursor_role
-            = role_t::VCR_DISABLED_CURSOR_LINE;
-        lnav_data.ld_file_details_view.tc_disabled_cursor_role
-            = role_t::VCR_DISABLED_CURSOR_LINE;
-
-        lnav_data.ld_user_message_view.set_window(lnav_data.ld_window);
-
-        lnav_data.ld_spectro_details_view.set_title("spectro-details");
-        lnav_data.ld_spectro_details_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_spectro_details_view.set_show_scrollbar(true);
-        lnav_data.ld_spectro_details_view.set_height(5_vl);
-        lnav_data.ld_spectro_details_view.set_sub_source(
-            &lnav_data.ld_spectro_no_details_source);
-        lnav_data.ld_spectro_details_view.tc_state_event_handler
-            = event_handler;
-        lnav_data.ld_spectro_details_view.set_scroll_action(sb);
-        lnav_data.ld_spectro_no_details_source.replace_with(
-            attr_line_t().append(
-                lnav::roles::comment(" No details available")));
-        lnav_data.ld_spectro_source->ss_details_view
-            = &lnav_data.ld_spectro_details_view;
-        lnav_data.ld_spectro_source->ss_no_details_source
-            = &lnav_data.ld_spectro_no_details_source;
-        lnav_data.ld_spectro_source->ss_exec_context
-            = &lnav_data.ld_exec_context;
-
-        lnav_data.ld_timeline_details_view.set_title("timeline-details");
-        lnav_data.ld_timeline_details_view.set_window(lnav_data.ld_window);
-        lnav_data.ld_timeline_details_view.set_selectable(true);
-        lnav_data.ld_timeline_details_view.set_show_scrollbar(true);
-        lnav_data.ld_timeline_details_view.set_height(5_vl);
-        lnav_data.ld_timeline_details_view.set_supports_marks(true);
-        lnav_data.ld_timeline_details_view.set_sub_source(
-            &lnav_data.ld_timeline_details_source);
-        lnav_data.ld_timeline_details_view.tc_cursor_role
-            = role_t::VCR_CURSOR_LINE;
-        lnav_data.ld_timeline_details_view.tc_disabled_cursor_role
-            = role_t::VCR_DISABLED_CURSOR_LINE;
-
-        auto top_status_lifetime
-            = injector::bind<top_status_source>::to_scoped_singleton();
-        auto top_source = injector::get<std::shared_ptr<top_status_source>>();
-
-        lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
-            .on_click
-            = [](status_field&) { ensure_view(&lnav_data.ld_views[LNV_HELP]); };
-        lnav_data.ld_bottom_source
-            .get_field(bottom_status_source::BSF_LINE_NUMBER)
-            .on_click
-            = [](status_field&) {
-                  auto cmd = fmt::format(
-                      FMT_STRING("prompt command : 'goto {}'"),
-                      (int) lnav_data.ld_view_stack.top().value()->get_top());
-
-                  execute_command(lnav_data.ld_exec_context, cmd);
-              };
-        lnav_data.ld_bottom_source
-            .get_field(bottom_status_source::BSF_SEARCH_TERM)
-            .on_click
-            = [](status_field&) {
-                  auto term = lnav_data.ld_view_stack.top()
-                                  .value()
-                                  ->get_current_search();
-                  auto cmd
-                      = fmt::format(FMT_STRING("prompt search / '{}'"), term);
-
-                  execute_command(lnav_data.ld_exec_context, cmd);
-              };
-
-        lnav_data.ld_status[LNS_TOP].set_y(0);
-        lnav_data.ld_status[LNS_TOP].set_default_role(
-            role_t::VCR_INACTIVE_STATUS);
-        lnav_data.ld_status[LNS_TOP].set_data_source(top_source.get());
-        lnav_data.ld_status[LNS_BOTTOM].set_y(-(rlc->get_height() + 1));
-        for (auto& stat_bar : lnav_data.ld_status) {
-            stat_bar.set_window(lnav_data.ld_window);
-        }
-        lnav_data.ld_status[LNS_BOTTOM].set_data_source(
-            &lnav_data.ld_bottom_source);
-        lnav_data.ld_status[LNS_FILTER].set_data_source(
-            &lnav_data.ld_filter_status_source);
-        lnav_data.ld_status[LNS_FILTER_HELP].set_data_source(
-            &lnav_data.ld_filter_help_status_source);
-        lnav_data.ld_status[LNS_DOC].set_data_source(
-            &lnav_data.ld_doc_status_source);
-        lnav_data.ld_status[LNS_PREVIEW0].set_data_source(
-            &lnav_data.ld_preview_status_source[0]);
-        lnav_data.ld_status[LNS_PREVIEW1].set_data_source(
-            &lnav_data.ld_preview_status_source[1]);
-        lnav_data.ld_spectro_status_source
-            = std::make_unique<spectro_status_source>();
-        lnav_data.ld_status[LNS_SPECTRO].set_data_source(
-            lnav_data.ld_spectro_status_source.get());
-        lnav_data.ld_status[LNS_TIMELINE].set_enabled(false);
-        lnav_data.ld_status[LNS_TIMELINE].set_data_source(
-            &lnav_data.ld_timeline_status_source);
-
-        lnav_data.ld_match_view.set_show_bottom_border(true);
-        lnav_data.ld_user_message_view.set_show_bottom_border(true);
-
-        for (auto& sc : lnav_data.ld_status) {
-            sc.window_change();
-        }
-
-        auto session_path = lnav::paths::dotlnav() / "session";
-        execute_file(ec, session_path.string());
-
-        sb(*lnav_data.ld_view_stack.top());
-        vsb(*lnav_data.ld_view_stack.top());
-
-        lnav_data.ld_view_stack.vs_change_handler = [](textview_curses* tc) {
-            lnav_data.ld_view_stack_broadcaster(tc);
-        };
-
-        {
-            auto& id = lnav_data.ld_input_dispatcher;
-
-            id.id_escape_matcher = match_escape_seq;
-            id.id_escape_handler = handle_keyseq;
-            id.id_key_handler = handle_key;
-            id.id_mouse_handler = [&mouse_i](notcurses* nc, const ncinput& ch) {
-                mouse_i.handle_mouse(nc, ch);
-            };
-            id.id_unhandled_handler = [](const char* keyseq) {
-                auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
-                auto encoded_name = (char*) alloca(enc_len);
-
-                log_info("unbound keyseq: %s", keyseq);
-                json_ptr::encode(
-                    encoded_name, enc_len, lnav_config.lc_ui_keymap.c_str());
-                // XXX we should have a hotkey for opening a prompt that is
-                // pre-filled with a suggestion that the user can complete.
-                // This quick-fix key could be used for other stuff as well
-                lnav_data.ld_rl_view->set_value(fmt::format(
-                    FMT_STRING(ANSI_CSI ANSI_COLOR_PARAM(
-                        COLOR_YELLOW) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
-                                      "Unrecognized key" ANSI_NORM
-                                      ", bind to a command using "
-                                      "\u2014 " ANSI_BOLD(
-                                          ":config") " /ui/keymap-defs/{}/{}/"
-                                                     "command <cmd>"),
-                    encoded_name,
-                    keyseq));
-                alerter::singleton().chime("unrecognized key");
-            };
-        }
-
-        auto refresher_lifetime
-            = injector::bind<refresh_status_bars>::to_scoped_singleton();
-
-        auto refresher = injector::get<std::shared_ptr<refresh_status_bars>>();
-        refresher->rsb_screen = &sc;
-
-        auto refresh_guard = lnav_data.ld_status_refresher.install(
-            [refresher]() { refresher->doit(); });
-
-        auto& timer = ui_periodic_timer::singleton();
-        struct timeval current_time;
-
-        static sig_atomic_t index_counter;
-
-        set_view_mode(ln_mode_t::FILES);
-
-        timer.start_fade(index_counter, 1);
-
-        std::future<file_collection> rescan_future;
-
-        log_debug("rescan started");
-        rescan_future = std::async(std::launch::async,
-                                   &file_collection::rescan_files,
-                                   lnav_data.ld_active_files.copy(),
-                                   false);
-        bool initial_rescan_completed = false;
-        int session_stage = 0;
-
-        // rlc.do_update();
-
-        auto next_rebuild_time = ui_clock::now();
-        auto next_status_update_time = next_rebuild_time;
-        auto next_rescan_time = next_rebuild_time;
-
-        while (lnav_data.ld_looping) {
-            auto loop_deadline
-                = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
-
-            std::vector<struct pollfd> pollfds;
-            size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
-            size_t changes = 0;
-            int rc;
-
-            gettimeofday(&current_time, nullptr);
-
-            top_source->update_time(current_time);
-            lnav_data.ld_preview_view[0].set_needs_update();
-            lnav_data.ld_preview_view[1].set_needs_update();
-
-            layout_views();
-
-            auto scan_timeout = initial_rescan_completed ? 0s : 10ms;
-            if (rescan_future.valid()
-                && rescan_future.wait_for(scan_timeout)
-                    == std::future_status::ready)
-            {
-                auto ui_now = ui_clock::now();
-                auto new_files = rescan_future.get();
-                auto indexing_pipers
-                    = lnav_data.ld_active_files.initial_indexing_pipers();
-                if (!initial_rescan_completed && new_files.empty()
-                    && indexing_pipers == 0)
-                {
-                    initial_rescan_completed = true;
-
-                    log_debug("initial rescan rebuild");
-                    auto rebuild_res = rebuild_indexes(loop_deadline);
-                    changes += rebuild_res.rir_changes;
-                    load_session();
-                    if (session_data.sd_save_time) {
-                        std::string ago;
-
-                        ago = humanize::time::point::from_tv(
-                                  {(time_t) session_data.sd_save_time, 0})
-                                  .as_time_ago();
-                        auto um = lnav::console::user_message::ok(
-                            attr_line_t("restored session from ")
-                                .append(lnav::roles::number(ago))
-                                .append("; press ")
-                                .append("CTRL-R"_hotkey)
-                                .append(" to reset session"));
-                        lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
-                    }
-                    const auto* nc_caps
-                        = notcurses_capabilities(sc.get_notcurses());
-                    if (nc_caps->colors < 256
-                        && (std::filesystem::file_time_type::clock::now()
-                                - lnav_data.ld_last_dot_lnav_time
-                            > 24h))
-                    {
-                        auto um
-                            = lnav::console::user_message::info(
-                                  attr_line_t("The terminal ")
-                                      .append_quoted(getenv("TERM"))
-                                      .append(
-                                          " appears to have a limited color "
-                                          "palette, which can make things hard "
-                                          "to read"))
-                                  .with_reason(
-                                      attr_line_t(
-                                          "The terminal appears to only have ")
-                                          .append(lnav::roles::number(
-                                              fmt::to_string(nc_caps->colors)))
-                                          .append(" colors"))
-                                  .with_help(
-                                      attr_line_t("Try setting ")
-                                          .append("TERM"_symbol)
-                                          .append(" to ")
-                                          .append_quoted("xterm-256color"));
-                        lnav_data.ld_user_message_source.replace_with(
-                            um.to_attr_line());
-                        lnav_data.ld_user_message_view.reload_data();
-                        lnav_data.ld_user_message_expiration
-                            = std::chrono::steady_clock::now() + 20s;
-                    }
-
-                    lnav_data.ld_session_loaded = true;
-                    session_stage += 1;
-                    loop_deadline = ui_now;
-                    log_debug("file count %d",
-                              lnav_data.ld_active_files.fc_files.size());
-                }
-                update_active_files(new_files);
-                if (!initial_rescan_completed) {
-                    auto& fview = lnav_data.ld_files_view;
-                    auto height = fview.get_inner_height();
-
-                    if (height > 0_vl) {
-                        fview.set_selection(height - 1_vl);
-                    }
-                }
-
-                rescan_future = std::future<file_collection>{};
-                next_rescan_time = ui_now + 333ms;
-            }
-
-            if (!rescan_future.valid()
-                && (session_stage < 2
-                    || (lnav_data.ld_active_files.is_below_open_file_limit()
-                        && ui_clock::now() >= next_rescan_time)))
-            {
-                rescan_future = std::async(std::launch::async,
-                                           &file_collection::rescan_files,
-                                           lnav_data.ld_active_files.copy(),
-                                           false);
-                loop_deadline = ui_clock::now() + 10ms;
-            }
-
-            {
-                auto& mlooper = injector::get<main_looper&, services::main_t>();
-
-                mlooper.get_port().process_for(0s);
-            }
-
             auto ui_now = ui_clock::now();
-            if (initial_rescan_completed) {
-                if (ui_now >= next_rebuild_time) {
-                    auto text_file_count = lnav_data.ld_text_source.size();
-                    // log_debug("BEGIN rebuild");
-                    auto rebuild_res = rebuild_indexes(loop_deadline);
-                    // log_debug("END rebuild");
-                    changes += rebuild_res.rir_changes;
-                    if (!changes && ui_clock::now() < loop_deadline) {
-                        next_rebuild_time = ui_clock::now() + 333ms;
-                    }
-                    if (changes && text_file_count
-                        && lnav_data.ld_text_source.empty()
-                        && lnav_data.ld_view_stack.top().value_or(nullptr)
-                            == &lnav_data.ld_views[LNV_TEXT])
-                    {
-                        do {
-                            lnav_data.ld_view_stack.pop_back();
-                        } while (lnav_data.ld_view_stack.top().value_or(nullptr)
-                                 != &lnav_data.ld_views[LNV_LOG]);
-                    }
-                }
-            } else {
-                lnav_data.ld_files_view.set_overlay_needs_update();
-            }
-
-            if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS
-                && breadcrumb_view->get_needs_update())
+            auto new_files = rescan_future.get();
+            auto indexing_pipers
+                = lnav_data.ld_active_files.initial_indexing_pipers();
+            if (!initial_rescan_completed && new_files.empty()
+                && indexing_pipers == 0)
             {
-                lnav_data.ld_view_stack.set_needs_update();
-            }
-            ncplane_resize_maximize(sc.get_std_plane());
-            if (lnav_data.ld_view_stack.do_update()) {
-                breadcrumb_view->set_needs_update();
-            }
-            lnav_data.ld_doc_view.do_update();
-            lnav_data.ld_example_view.do_update();
-            lnav_data.ld_match_view.do_update();
-            lnav_data.ld_preview_view[0].do_update();
-            lnav_data.ld_preview_view[1].do_update();
-            lnav_data.ld_spectro_details_view.do_update();
-            lnav_data.ld_timeline_details_view.do_update();
-            lnav_data.ld_user_message_view.do_update();
-            if (ui_clock::now() >= next_status_update_time) {
-                echo_views_stmt.execute();
-                top_source->update_user_msg();
-                for (auto& sc : lnav_data.ld_status) {
-                    sc.do_update();
-                }
-                next_status_update_time = ui_clock::now() + 100ms;
-            }
-            breadcrumb_view->do_update();
-            // These updates need to be done last so their readline views can
-            // put the cursor in the right place.
-            switch (lnav_data.ld_mode) {
-                case ln_mode_t::FILTER:
-                case ln_mode_t::SEARCH_FILTERS: {
-                    lnav_data.ld_filter_view.set_needs_update();
-                    lnav_data.ld_filter_view.do_update();
-                    break;
-                }
-                case ln_mode_t::SEARCH_FILES:
-                case ln_mode_t::FILES:
-                case ln_mode_t::FILE_DETAILS:
-                    lnav_data.ld_files_view.set_needs_update();
-                    lnav_data.ld_file_details_view.set_needs_update();
-                    lnav_data.ld_files_view.do_update();
-                    lnav_data.ld_file_details_view.do_update();
-                    break;
-                default:
-                    break;
-            }
-            if (lnav_data.ld_mode != ln_mode_t::FILTER
-                && lnav_data.ld_mode != ln_mode_t::FILES)
-            {
-                rlc->do_update();
-            }
-            if (filter_source->fss_editing) {
-                filter_source->fss_editor->focus();
-            }
-            notcurses_render(sc.get_notcurses());
+                initial_rescan_completed = true;
 
-            if (lnav_data.ld_session_loaded) {
-                // Only take input from the user after everything has loaded.
-                pollfds.push_back((struct pollfd) {inputready_fd, POLLIN, 0});
-                if (lnav_data.ld_initial_build) {
-                    switch (lnav_data.ld_mode) {
-                        case ln_mode_t::COMMAND:
-                        case ln_mode_t::SEARCH:
-                        case ln_mode_t::SEARCH_FILTERS:
-                        case ln_mode_t::SEARCH_FILES:
-                        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
-                        case ln_mode_t::SQL:
-                        case ln_mode_t::EXEC:
-                        case ln_mode_t::USER:
-                            if (rlc->consume_ready_for_input()) {
-                                // log_debug("waiting for readline input")
-                                view_curses::awaiting_user_input();
-                            }
-                            break;
-                        case ln_mode_t::FILTER:
-                            if (!filter_source->fss_editing) {
-                                view_curses::awaiting_user_input();
-                            }
-                            break;
-                        default:
-                            // log_debug("waiting for paging input");
-                            view_curses::awaiting_user_input();
-                            break;
-                    }
-                }
-            }
-
-            ps->update_poll_set(pollfds);
-            ui_now = ui_clock::now();
-            auto poll_to
-                = (!changes && ui_now < loop_deadline && session_stage >= 1)
-                ? std::chrono::duration_cast<std::chrono::milliseconds>(
-                      loop_deadline - ui_now)
-                : 0ms;
-
-            // log_debug("poll");
-            rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
-
-            gettimeofday(&current_time, nullptr);
-            if (lb.lb_last_view != nullptr) {
-                lb.lb_last_event.me_time = current_time;
-                lb.lb_last_view->handle_mouse(lb.lb_last_event);
-            }
-
-            if (rc < 0) {
-                switch (errno) {
-                    case 0:
-                    case EINTR:
-                        break;
-
-                    default:
-                        log_error("select %s", strerror(errno));
-                        lnav_data.ld_looping = false;
-                        break;
-                }
-            } else {
-                auto in_revents = pollfd_revents(pollfds, inputready_fd);
-
-                if (in_revents & (POLLHUP | POLLNVAL)) {
-                    log_info("stdin has been closed, exiting...");
-                    lnav_data.ld_looping = false;
-                } else if (in_revents & POLLIN) {
-                    ncinput nci;
-                    auto old_gen
-                        = lnav_data.ld_active_files.fc_files_generation;
-                    while (notcurses_get_nblock(sc.get_notcurses(), &nci) > 0) {
-                        if (nci.evtype != NCTYPE_RELEASE) {
-                            lnav_data.ld_user_message_source.clear();
-                        }
-
-                        alerter::singleton().new_input(nci);
-
-                        lnav_data.ld_input_dispatcher.new_input(
-                            current_time, sc.get_notcurses(), nci);
-
-                        lnav_data.ld_view_stack.top() | [&nci](auto tc) {
-                            lnav_data.ld_key_repeat_history.update(
-                                nci.id, tc->get_top());
-                        };
-                        ncinput_free_paste_content(&nci);
-
-                        if (!lnav_data.ld_looping) {
-                            // No reason to keep processing input after the
-                            // user has quit.  The view stack will also be
-                            // empty, which will cause issues.
-                            break;
-                        }
-                    }
-
-                    next_status_update_time = ui_clock::now();
-                    switch (lnav_data.ld_mode) {
-                        case ln_mode_t::PAGING:
-                        case ln_mode_t::FILTER:
-                        case ln_mode_t::FILES:
-                        case ln_mode_t::FILE_DETAILS:
-                        case ln_mode_t::SPECTRO_DETAILS:
-                        case ln_mode_t::BUSY:
-                            if (old_gen
-                                == lnav_data.ld_active_files
-                                       .fc_files_generation)
-                            {
-                                next_rescan_time = next_status_update_time + 1s;
-                            } else {
-                                next_rescan_time = next_status_update_time;
-                            }
-                            break;
-                        case ln_mode_t::BREADCRUMBS:
-                        case ln_mode_t::COMMAND:
-                        case ln_mode_t::SEARCH:
-                        case ln_mode_t::SEARCH_FILTERS:
-                        case ln_mode_t::SEARCH_FILES:
-                        case ln_mode_t::SEARCH_SPECTRO_DETAILS:
-                        case ln_mode_t::CAPTURE:
-                        case ln_mode_t::SQL:
-                        case ln_mode_t::EXEC:
-                        case ln_mode_t::USER:
-                            next_rescan_time = next_status_update_time + 1min;
-                            break;
-                    }
-                    next_rebuild_time = next_rescan_time;
-                }
-
-                auto old_mode = lnav_data.ld_mode;
-                auto old_file_names_size
-                    = lnav_data.ld_active_files.fc_file_names.size();
-
-                ps->check_poll_set(pollfds);
-                lnav_data.ld_view_stack.top() |
-                    [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
-
-                if (lnav_data.ld_mode != old_mode) {
-                    switch (lnav_data.ld_mode) {
-                        case ln_mode_t::PAGING:
-                        case ln_mode_t::FILTER:
-                        case ln_mode_t::FILES:
-                            next_rescan_time = next_status_update_time;
-                            next_rebuild_time = next_rescan_time;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                if (old_file_names_size
-                        != lnav_data.ld_active_files.fc_file_names.size()
-                    || lnav_data.ld_active_files.finished_pipers() > 0)
-                {
-                    next_rescan_time = ui_clock::now();
-                    next_rebuild_time = next_rescan_time;
-                    next_status_update_time = next_rescan_time;
-                }
-            }
-
-            if (timer.time_to_update(overlay_counter)) {
-                lnav_data.ld_view_stack.top() |
-                    [](auto tc) { tc->set_overlay_needs_update(); };
-            }
-
-            if (initial_rescan_completed && session_stage < 2
-                && (!lnav_data.ld_initial_build
-                    || timer.fade_diff(index_counter) == 0))
-            {
-                if (lnav_data.ld_mode == ln_mode_t::PAGING) {
-                    timer.start_fade(index_counter, 1);
-                } else {
-                    timer.start_fade(index_counter, 3);
-                }
-                // log_debug("initial build rebuild");
+                log_debug("initial rescan rebuild");
                 auto rebuild_res = rebuild_indexes(loop_deadline);
                 changes += rebuild_res.rir_changes;
-                if (lnav_data.ld_view_stack.top().value_or(nullptr)
-                        == &lnav_data.ld_views[LNV_TEXT]
+                load_session();
+                if (session_data.sd_save_time) {
+                    std::string ago;
+
+                    ago = humanize::time::point::from_tv(
+                              {(time_t) session_data.sd_save_time, 0})
+                              .as_time_ago();
+                    auto um = lnav::console::user_message::ok(
+                        attr_line_t("restored session from ")
+                            .append(lnav::roles::number(ago))
+                            .append("; press ")
+                            .append("CTRL-R"_hotkey)
+                            .append(" to reset session"));
+                    lnav::prompt::get().p_editor.tc_inactive_value
+                        = um.to_attr_line();
+                }
+                const auto* nc_caps
+                    = notcurses_capabilities(sc.get_notcurses());
+                if (nc_caps->colors < 256
+                    && (std::filesystem::file_time_type::clock::now()
+                            - lnav_data.ld_last_dot_lnav_time
+                        > 24h))
+                {
+                    auto um
+                        = lnav::console::user_message::info(
+                              attr_line_t("The terminal ")
+                                  .append_quoted(getenv("TERM"))
+                                  .append(" appears to have a limited color "
+                                          "palette, which can make things hard "
+                                          "to read"))
+                              .with_reason(
+                                  attr_line_t(
+                                      "The terminal appears to only have ")
+                                      .append(lnav::roles::number(
+                                          fmt::to_string(nc_caps->colors)))
+                                      .append(" colors"))
+                              .with_help(attr_line_t("Try setting ")
+                                             .append("TERM"_symbol)
+                                             .append(" to ")
+                                             .append_quoted("xterm-256color"));
+                    lnav_data.ld_user_message_source.replace_with(
+                        um.to_attr_line());
+                    lnav_data.ld_user_message_view.reload_data();
+                    lnav_data.ld_user_message_expiration
+                        = std::chrono::steady_clock::now() + 20s;
+                }
+
+                lnav_data.ld_session_loaded = true;
+                session_stage += 1;
+                loop_deadline = ui_now;
+                log_debug("file count %d",
+                          lnav_data.ld_active_files.fc_files.size());
+            }
+            update_active_files(new_files);
+            if (!initial_rescan_completed) {
+                auto& fview = lnav_data.ld_files_view;
+                auto height = fview.get_inner_height();
+
+                if (height > 0_vl) {
+                    fview.set_selection(height - 1_vl);
+                }
+            }
+
+            rescan_future = std::future<file_collection>{};
+            next_rescan_time = ui_now + 333ms;
+        }
+
+        if (!rescan_future.valid()
+            && (session_stage < 2
+                || (lnav_data.ld_active_files.is_below_open_file_limit()
+                    && ui_clock::now() >= next_rescan_time)))
+        {
+            rescan_future = std::async(std::launch::async,
+                                       &file_collection::rescan_files,
+                                       lnav_data.ld_active_files.copy(),
+                                       false);
+            loop_deadline = ui_clock::now() + 10ms;
+        }
+
+        {
+            auto& mlooper = injector::get<main_looper&, services::main_t>();
+
+            mlooper.get_port().process_for(0s);
+        }
+
+        auto ui_now = ui_clock::now();
+        if (initial_rescan_completed) {
+            if (ui_now >= next_rebuild_time) {
+                auto text_file_count = lnav_data.ld_text_source.size();
+                // log_debug("BEGIN rebuild");
+                auto rebuild_res = rebuild_indexes(loop_deadline);
+                // log_debug("END rebuild");
+                changes += rebuild_res.rir_changes;
+                if (!changes && ui_clock::now() < loop_deadline) {
+                    next_rebuild_time = ui_clock::now() + 333ms;
+                }
+                if (changes && text_file_count
                     && lnav_data.ld_text_source.empty()
-                    && lnav_data.ld_log_source.text_line_count() > 0)
+                    && lnav_data.ld_view_stack.top().value_or(nullptr)
+                        == &lnav_data.ld_views[LNV_TEXT])
                 {
-                    auto* tc_log = &lnav_data.ld_views[LNV_LOG];
-                    lnav_data.ld_view_stack.pop_back();
-
-                    lnav_data.ld_views[LNV_LOG].set_top(
-                        tc_log->get_top_for_last_row());
-                }
-                if (!lnav_data.ld_initial_build
-                    && lnav_data.ld_log_source.text_line_count() == 0
-                    && !lnav_data.ld_active_files.fc_other_files.empty()
-                    && std::any_of(
-                        lnav_data.ld_active_files.fc_other_files.begin(),
-                        lnav_data.ld_active_files.fc_other_files.end(),
-                        [](const auto& pair) {
-                            return pair.second.ofd_format
-                                == file_format_t::SQLITE_DB;
-                        }))
-                {
-                    ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
-                }
-
-                if (!lnav_data.ld_initial_build && lnav_data.ld_show_help_view)
-                {
-                    toggle_view(&lnav_data.ld_views[LNV_HELP]);
-                    lnav_data.ld_initial_build = true;
-                }
-                if (!lnav_data.ld_initial_build
-                    && lnav_data.ld_active_files.fc_file_names.empty())
-                {
-                    lnav_data.ld_initial_build = true;
-                }
-                if (rebuild_res.rir_completed
-                    && (lnav_data.ld_log_source.text_line_count() > 0
-                        || lnav_data.ld_text_source.text_line_count() > 0
-                        || lnav_data.ld_active_files.other_file_format_count(
-                               file_format_t::SQLITE_DB)
-                            > 0))
-                {
-                    log_debug("initial build completed");
-                    lnav_data.ld_initial_build = true;
-                }
-
-                if (lnav_data.ld_initial_build) {
-                    static bool ran_cleanup = false;
-                    std::vector<std::pair<
-                        Result<std::string, lnav::console::user_message>,
-                        std::string>>
-                        cmd_results;
-
-                    ui_execute_init_commands(ec, cmd_results);
-
-                    if (!cmd_results.empty()) {
-                        auto last_cmd_result = cmd_results.back();
-
-                        if (last_cmd_result.first.isOk()) {
-                            lnav_data.ld_rl_view->set_value(
-                                last_cmd_result.first.unwrap());
-                        } else {
-                            ec.ec_msg_callback_stack.back()(
-                                last_cmd_result.first.unwrapErr());
-                        }
-                        lnav_data.ld_rl_view->set_alt_value(
-                            last_cmd_result.second);
-                    }
-
-                    if (!ran_cleanup) {
-                        line_buffer::cleanup_cache();
-                        archive_manager::cleanup_cache();
-                        tailer::cleanup_cache();
-                        lnav::piper::cleanup();
-                        file_converter_manager::cleanup();
-                        ran_cleanup = true;
-                    }
-                }
-
-                if (session_stage == 1 && lnav_data.ld_initial_build
-                    && (lnav_data.ld_active_files.fc_file_names.empty()
-                        || lnav_data.ld_log_source.text_line_count() > 0
-                        || lnav_data.ld_text_source.text_line_count() > 0
-                        || !lnav_data.ld_active_files.fc_other_files.empty()))
-                {
-                    lnav::session::restore_view_states();
-                    if (lnav_data.ld_mode == ln_mode_t::FILES) {
-                        if (lnav_data.ld_log_source.text_line_count() == 0
-                            && lnav_data.ld_text_source.text_line_count() > 0
-                            && lnav_data.ld_view_stack.size() == 1)
-                        {
-                            log_debug("no logs, just text...");
-                            ensure_view(&lnav_data.ld_views[LNV_TEXT]);
-                            lnav_data.ld_rl_view->set_alt_value(HELP_MSG_2(
-                                f, F, "to switch to the next/previous file"));
-                        }
-                        if (lnav_data.ld_active_files.fc_name_to_errors
-                                ->readAccess()
-                                ->empty())
-                        {
-                            log_info("switching to paging!");
-                            set_view_mode(ln_mode_t::PAGING);
-                            lnav_data.ld_active_files.fc_files
-                                | lnav::itertools::for_each(
-                                    &logfile::dump_stats);
-
-                            check_for_file_zones();
-                        } else {
-                            lnav_data.ld_files_view.set_selection(0_vl);
-                        }
-                    }
-                    session_stage += 1;
-                    lnav_data.ld_exec_phase = lnav_exec_phase::INTERACTIVE;
-                    load_time_bookmarks();
+                    do {
+                        lnav_data.ld_view_stack.pop_back();
+                    } while (lnav_data.ld_view_stack.top().value_or(nullptr)
+                             != &lnav_data.ld_views[LNV_LOG]);
                 }
             }
+        } else {
+            lnav_data.ld_files_view.set_overlay_needs_update();
+        }
 
-            if (handle_winch(&sc)) {
-                layout_views();
+        if (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS
+            && breadcrumb_view->get_needs_update())
+        {
+            lnav_data.ld_view_stack.set_needs_update();
+        }
+        ncplane_resize_maximize(sc.get_std_plane());
+        if (lnav_data.ld_view_stack.do_update()) {
+            breadcrumb_view->set_needs_update();
+        }
+        if (prompt.p_editor.get_needs_update()) {
+            lnav_data.ld_doc_view.set_needs_update();
+            lnav_data.ld_example_view.set_needs_update();
+        }
+        lnav_data.ld_doc_view.do_update();
+        lnav_data.ld_example_view.do_update();
+        lnav_data.ld_match_view.do_update();
+        lnav_data.ld_preview_view[0].do_update();
+        lnav_data.ld_preview_view[1].do_update();
+        lnav_data.ld_spectro_details_view.do_update();
+        lnav_data.ld_timeline_details_view.do_update();
+        lnav_data.ld_user_message_view.do_update();
+        if (ui_clock::now() >= next_status_update_time) {
+            echo_views_stmt.execute();
+            top_source->update_user_msg();
+            for (auto& sc : lnav_data.ld_status) {
+                sc.do_update();
             }
+            next_status_update_time = ui_clock::now() + 100ms;
+            prompt.p_editor.tc_popup.set_needs_update();
+        }
+        breadcrumb_view->do_update();
+        // These updates need to be done last so their readline views can
+        // put the cursor in the right place.
+        switch (lnav_data.ld_mode) {
+            case ln_mode_t::FILTER:
+            case ln_mode_t::SEARCH_FILTERS: {
+                lnav_data.ld_filter_view.set_needs_update();
+                lnav_data.ld_filter_view.do_update();
+                break;
+            }
+            case ln_mode_t::SEARCH_FILES:
+            case ln_mode_t::FILES:
+            case ln_mode_t::FILE_DETAILS:
+                lnav_data.ld_files_view.set_needs_update();
+                lnav_data.ld_file_details_view.set_needs_update();
+                lnav_data.ld_files_view.do_update();
+                lnav_data.ld_file_details_view.do_update();
+                break;
+            default:
+                break;
+        }
+        if (lnav_data.ld_mode != ln_mode_t::FILTER
+            && lnav_data.ld_mode != ln_mode_t::FILES)
+        {
+            prompt.p_editor.do_update();
+        }
 
-            if (lnav_data.ld_child_terminated) {
-                lnav_data.ld_child_terminated = false;
+        if (prompt.p_editor.vc_enabled) {
+            prompt.p_editor.focus();
+        } else if (filter_source->fss_editing) {
+            filter_source->fss_editor->focus();
+        }
+        notcurses_render(sc.get_notcurses());
 
-                log_info("checking for terminated child processes");
-                for (auto iter = lnav_data.ld_children.begin();
-                     iter != lnav_data.ld_children.end();
-                     ++iter)
-                {
-                    int rc, child_stat;
+        if (lnav_data.ld_session_loaded) {
+            // Only take input from the user after everything has loaded.
+            pollfds.push_back((struct pollfd) {inputready_fd, POLLIN, 0});
+            if (lnav_data.ld_initial_build) {
+                switch (lnav_data.ld_mode) {
+                    case ln_mode_t::COMMAND:
+                    case ln_mode_t::SEARCH:
+                    case ln_mode_t::SEARCH_FILTERS:
+                    case ln_mode_t::SEARCH_FILES:
+                    case ln_mode_t::SEARCH_SPECTRO_DETAILS:
+                    case ln_mode_t::SQL:
+                    case ln_mode_t::EXEC:
+                    case ln_mode_t::USER:
+#if 0
+                            if (rlc->consume_ready_for_input()) {
+                                // log_debug("waiting for readline input")
+                            }
+#endif
+                        view_curses::awaiting_user_input();
+                        break;
+                    case ln_mode_t::FILTER:
+                        if (!filter_source->fss_editing) {
+                            view_curses::awaiting_user_input();
+                        }
+                        break;
+                    default:
+                        // log_debug("waiting for paging input");
+                        view_curses::awaiting_user_input();
+                        break;
+                }
+            }
+        }
 
-                    rc = waitpid(*iter, &child_stat, WNOHANG);
-                    if (rc == -1 || rc == 0) {
-                        continue;
+        ps->update_poll_set(pollfds);
+        ui_now = ui_clock::now();
+        auto poll_to
+            = (!changes && ui_now < loop_deadline && session_stage >= 1)
+            ? std::chrono::duration_cast<std::chrono::milliseconds>(
+                  loop_deadline - ui_now)
+            : 0ms;
+
+        // log_debug("poll");
+        rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
+
+        gettimeofday(&current_time, nullptr);
+        if (lb.lb_last_view != nullptr) {
+            lb.lb_last_event.me_time = current_time;
+            lb.lb_last_view->handle_mouse(lb.lb_last_event);
+        }
+
+        if (rc < 0) {
+            switch (errno) {
+                case 0:
+                case EINTR:
+                    break;
+
+                default:
+                    log_error("select %s", strerror(errno));
+                    lnav_data.ld_looping = false;
+                    break;
+            }
+        } else {
+            auto in_revents = pollfd_revents(pollfds, inputready_fd);
+
+            if (in_revents & (POLLHUP | POLLNVAL)) {
+                log_info("stdin has been closed, exiting...");
+                lnav_data.ld_looping = false;
+            } else if (in_revents & POLLIN) {
+                ncinput nci;
+                auto old_gen = lnav_data.ld_active_files.fc_files_generation;
+                while (notcurses_get_nblock(sc.get_notcurses(), &nci) > 0) {
+                    if (nci.evtype != NCTYPE_RELEASE) {
+                        lnav_data.ld_user_message_source.clear();
                     }
 
-                    if (WIFEXITED(child_stat)) {
-                        log_info("child %d exited with status %d",
-                                 *iter,
-                                 WEXITSTATUS(child_stat));
-                    } else if (WTERMSIG(child_stat)) {
-                        log_error("child %d terminated with signal %d",
-                                  *iter,
-                                  WTERMSIG(child_stat));
-                    } else {
-                        log_info("child %d exited");
+                    alerter::singleton().new_input(nci);
+
+                    lnav_data.ld_input_dispatcher.new_input(
+                        current_time, sc.get_notcurses(), nci);
+
+                    lnav_data.ld_view_stack.top() | [&nci](auto tc) {
+                        lnav_data.ld_key_repeat_history.update(nci.id,
+                                                               tc->get_top());
+                    };
+                    ncinput_free_paste_content(&nci);
+
+                    if (!lnav_data.ld_looping) {
+                        // No reason to keep processing input after the
+                        // user has quit.  The view stack will also be
+                        // empty, which will cause issues.
+                        break;
                     }
-                    iter = lnav_data.ld_children.erase(iter);
                 }
 
-                gather_pipers();
+                next_status_update_time = ui_clock::now();
+                switch (lnav_data.ld_mode) {
+                    case ln_mode_t::PAGING:
+                    case ln_mode_t::FILTER:
+                    case ln_mode_t::FILES:
+                    case ln_mode_t::FILE_DETAILS:
+                    case ln_mode_t::SPECTRO_DETAILS:
+                    case ln_mode_t::BUSY:
+                        if (old_gen
+                            == lnav_data.ld_active_files.fc_files_generation)
+                        {
+                            next_rescan_time = next_status_update_time + 1s;
+                        } else {
+                            next_rescan_time = next_status_update_time;
+                        }
+                        break;
+                    case ln_mode_t::BREADCRUMBS:
+                    case ln_mode_t::COMMAND:
+                    case ln_mode_t::SEARCH:
+                    case ln_mode_t::SEARCH_FILTERS:
+                    case ln_mode_t::SEARCH_FILES:
+                    case ln_mode_t::SEARCH_SPECTRO_DETAILS:
+                    case ln_mode_t::CAPTURE:
+                    case ln_mode_t::SQL:
+                    case ln_mode_t::EXEC:
+                    case ln_mode_t::USER:
+                        next_rescan_time = next_status_update_time + 1min;
+                        break;
+                }
+                next_rebuild_time = next_rescan_time;
+            }
 
+            auto old_mode = lnav_data.ld_mode;
+            auto old_file_names_size
+                = lnav_data.ld_active_files.fc_file_names.size();
+
+            ps->check_poll_set(pollfds);
+            lnav_data.ld_view_stack.top() |
+                [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
+
+            if (lnav_data.ld_mode != old_mode) {
+                switch (lnav_data.ld_mode) {
+                    case ln_mode_t::PAGING:
+                    case ln_mode_t::FILTER:
+                    case ln_mode_t::FILES:
+                        next_rescan_time = next_status_update_time;
+                        next_rebuild_time = next_rescan_time;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (old_file_names_size
+                    != lnav_data.ld_active_files.fc_file_names.size()
+                || lnav_data.ld_active_files.finished_pipers() > 0)
+            {
                 next_rescan_time = ui_clock::now();
                 next_rebuild_time = next_rescan_time;
                 next_status_update_time = next_rescan_time;
             }
+        }
 
-            if (lnav_data.ld_view_stack.empty()
-                || (lnav_data.ld_view_stack.size() == 1
-                    && starting_view_stack_size == 2
-                    && lnav_data.ld_active_files.fc_file_names.size()
-                        == lnav_data.ld_text_source.size()))
+        if (timer.time_to_update(overlay_counter)) {
+            lnav_data.ld_view_stack.top() |
+                [](auto tc) { tc->set_overlay_needs_update(); };
+        }
+
+        if (initial_rescan_completed && session_stage < 2
+            && (!lnav_data.ld_initial_build
+                || timer.fade_diff(index_counter) == 0))
+        {
+            if (lnav_data.ld_mode == ln_mode_t::PAGING) {
+                timer.start_fade(index_counter, 1);
+            } else {
+                timer.start_fade(index_counter, 3);
+            }
+            // log_debug("initial build rebuild");
+            auto rebuild_res = rebuild_indexes(loop_deadline);
+            changes += rebuild_res.rir_changes;
+            if (lnav_data.ld_view_stack.top().value_or(nullptr)
+                    == &lnav_data.ld_views[LNV_TEXT]
+                && lnav_data.ld_text_source.empty()
+                && lnav_data.ld_log_source.text_line_count() > 0)
             {
-                lnav_data.ld_looping = false;
+                auto* tc_log = &lnav_data.ld_views[LNV_LOG];
+                lnav_data.ld_view_stack.pop_back();
+
+                lnav_data.ld_views[LNV_LOG].set_top(
+                    tc_log->get_top_for_last_row());
+            }
+            if (!lnav_data.ld_initial_build
+                && lnav_data.ld_log_source.text_line_count() == 0
+                && !lnav_data.ld_active_files.fc_other_files.empty()
+                && std::any_of(lnav_data.ld_active_files.fc_other_files.begin(),
+                               lnav_data.ld_active_files.fc_other_files.end(),
+                               [](const auto& pair) {
+                                   return pair.second.ofd_format
+                                       == file_format_t::SQLITE_DB;
+                               }))
+            {
+                ensure_view(&lnav_data.ld_views[LNV_SCHEMA]);
             }
 
-            if (lnav_data.ld_sigint_count > 0) {
-                bool found_piper = false;
+            if (!lnav_data.ld_initial_build && lnav_data.ld_show_help_view) {
+                toggle_view(&lnav_data.ld_views[LNV_HELP]);
+                lnav_data.ld_initial_build = true;
+            }
+            if (!lnav_data.ld_initial_build
+                && lnav_data.ld_active_files.fc_file_names.empty())
+            {
+                lnav_data.ld_initial_build = true;
+            }
+            if (rebuild_res.rir_completed
+                && (lnav_data.ld_log_source.text_line_count() > 0
+                    || lnav_data.ld_text_source.text_line_count() > 0
+                    || lnav_data.ld_active_files.other_file_format_count(
+                           file_format_t::SQLITE_DB)
+                        > 0))
+            {
+                log_debug("initial build completed");
+                lnav_data.ld_initial_build = true;
+            }
 
-                lnav_data.ld_sigint_count = 0;
-                if (!lnav_data.ld_view_stack.empty()) {
-                    auto* tc = *lnav_data.ld_view_stack.top();
+            if (lnav_data.ld_initial_build) {
+                static bool ran_cleanup = false;
+                std::vector<
+                    std::pair<Result<std::string, lnav::console::user_message>,
+                              std::string>>
+                    cmd_results;
 
-                    if (tc->get_inner_height() > 0_vl) {
-                        std::vector<attr_line_t> rows(1);
+                ui_execute_init_commands(ec, cmd_results);
 
-                        tc->get_data_source()->listview_value_for_rows(
-                            *tc, tc->get_selection(), rows);
-                        auto& sa = rows[0].get_attrs();
-                        auto line_attr_opt = get_string_attr(sa, L_FILE);
-                        if (line_attr_opt) {
-                            auto lf = line_attr_opt.value().get();
+                if (!cmd_results.empty()) {
+                    auto& prompt = lnav::prompt::get();
+                    auto last_cmd_result = cmd_results.back();
 
-                            log_debug("file name when SIGINT: %s",
-                                      lf->get_filename().c_str());
-                            for (auto& cp : lnav_data.ld_child_pollers) {
-                                auto cp_name = cp.get_filename();
+                    if (last_cmd_result.first.isOk()) {
+                        prompt.p_editor.tc_inactive_value
+                            = last_cmd_result.first.unwrap();
+                    } else {
+                        ec.ec_msg_callback_stack.back()(
+                            last_cmd_result.first.unwrapErr());
+                    }
+                    prompt.p_editor.tc_alt_value = last_cmd_result.second;
+                }
 
-                                if (!cp_name) {
-                                    log_debug("no child_poller");
-                                    continue;
-                                }
+                if (!ran_cleanup) {
+                    line_buffer::cleanup_cache();
+                    archive_manager::cleanup_cache();
+                    tailer::cleanup_cache();
+                    lnav::piper::cleanup();
+                    file_converter_manager::cleanup();
+                    ran_cleanup = true;
+                }
+            }
 
-                                if (lf->get_filename() == cp_name.value()) {
-                                    log_debug("found it, sending signal!");
-                                    cp.send_sigint();
-                                    found_piper = true;
-                                }
+            if (session_stage == 1 && lnav_data.ld_initial_build
+                && (lnav_data.ld_active_files.fc_file_names.empty()
+                    || lnav_data.ld_log_source.text_line_count() > 0
+                    || lnav_data.ld_text_source.text_line_count() > 0
+                    || !lnav_data.ld_active_files.fc_other_files.empty()))
+            {
+                lnav::session::restore_view_states();
+                if (lnav_data.ld_mode == ln_mode_t::FILES) {
+                    if (lnav_data.ld_log_source.text_line_count() == 0
+                        && lnav_data.ld_text_source.text_line_count() > 0
+                        && lnav_data.ld_view_stack.size() == 1)
+                    {
+                        log_debug("no logs, just text...");
+                        ensure_view(&lnav_data.ld_views[LNV_TEXT]);
+                        lnav::prompt::get().p_editor.tc_alt_value = HELP_MSG_2(
+                            f, F, "to switch to the next/previous file");
+                    }
+                    if (lnav_data.ld_active_files.fc_name_to_errors
+                            ->readAccess()
+                            ->empty())
+                    {
+                        log_info("switching to paging!");
+                        set_view_mode(ln_mode_t::PAGING);
+                        lnav_data.ld_active_files.fc_files
+                            | lnav::itertools::for_each(&logfile::dump_stats);
+
+                        check_for_file_zones();
+                    } else {
+                        lnav_data.ld_files_view.set_selection(0_vl);
+                    }
+                }
+                session_stage += 1;
+                lnav_data.ld_exec_phase = lnav_exec_phase::INTERACTIVE;
+                load_time_bookmarks();
+            }
+        }
+
+        if (handle_winch(&sc)) {
+            layout_views();
+        }
+
+        if (lnav_data.ld_child_terminated) {
+            lnav_data.ld_child_terminated = false;
+
+            log_info("checking for terminated child processes");
+            for (auto iter = lnav_data.ld_children.begin();
+                 iter != lnav_data.ld_children.end();
+                 ++iter)
+            {
+                int rc, child_stat;
+
+                rc = waitpid(*iter, &child_stat, WNOHANG);
+                if (rc == -1 || rc == 0) {
+                    continue;
+                }
+
+                if (WIFEXITED(child_stat)) {
+                    log_info("child %d exited with status %d",
+                             *iter,
+                             WEXITSTATUS(child_stat));
+                } else if (WTERMSIG(child_stat)) {
+                    log_error("child %d terminated with signal %d",
+                              *iter,
+                              WTERMSIG(child_stat));
+                } else {
+                    log_info("child %d exited");
+                }
+                iter = lnav_data.ld_children.erase(iter);
+            }
+
+            gather_pipers();
+
+            next_rescan_time = ui_clock::now();
+            next_rebuild_time = next_rescan_time;
+            next_status_update_time = next_rescan_time;
+        }
+
+        if (lnav_data.ld_view_stack.empty()
+            || (lnav_data.ld_view_stack.size() == 1
+                && starting_view_stack_size == 2
+                && lnav_data.ld_active_files.fc_file_names.size()
+                    == lnav_data.ld_text_source.size()))
+        {
+            lnav_data.ld_looping = false;
+        }
+
+        if (lnav_data.ld_sigint_count > 0) {
+            bool found_piper = false;
+
+            lnav_data.ld_sigint_count = 0;
+            if (!lnav_data.ld_view_stack.empty()) {
+                auto* tc = *lnav_data.ld_view_stack.top();
+
+                if (tc->get_inner_height() > 0_vl) {
+                    std::vector<attr_line_t> rows(1);
+
+                    tc->get_data_source()->listview_value_for_rows(
+                        *tc, tc->get_selection(), rows);
+                    auto& sa = rows[0].get_attrs();
+                    auto line_attr_opt = get_string_attr(sa, L_FILE);
+                    if (line_attr_opt) {
+                        auto lf = line_attr_opt.value().get();
+
+                        log_debug("file name when SIGINT: %s",
+                                  lf->get_filename().c_str());
+                        for (auto& cp : lnav_data.ld_child_pollers) {
+                            auto cp_name = cp.get_filename();
+
+                            if (!cp_name) {
+                                log_debug("no child_poller");
+                                continue;
+                            }
+
+                            if (lf->get_filename() == cp_name.value()) {
+                                log_debug("found it, sending signal!");
+                                cp.send_sigint();
+                                found_piper = true;
                             }
                         }
                     }
                 }
-                if (!found_piper) {
-                    lnav_data.ld_looping = false;
-                }
+            }
+            if (!found_piper) {
+                lnav_data.ld_looping = false;
             }
         }
-
-        if (rescan_future.valid()) {
-            rescan_future.get();
-        }
-
-        save_session();
-    } catch (readline_curses::error& e) {
-        log_error("error: %s", strerror(e.e_err));
     }
+
+    if (rescan_future.valid()) {
+        rescan_future.get();
+    }
+
+    save_session();
 }
 
 void
@@ -2548,7 +2469,6 @@ main(int argc, char* argv[])
     lnav_data.ld_program_name = argv[0];
     add_ansi_vars(ec.ec_global_vars);
 
-    rl_readline_name = "lnav";
     lnav_data.ld_db_key_names = DEFAULT_DB_KEY_NAMES;
 
     auto dot_lnav_path = lnav::paths::dotlnav();
@@ -3358,6 +3278,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     init_lnav_commands(lnav_commands);
+    init_lnav_display_commands(lnav_commands);
+    init_lnav_io_commands(lnav_commands);
 
     lnav_data.ld_looping = true;
     set_view_mode(ln_mode_t::PAGING);
@@ -3709,7 +3631,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 #endif
             log_info("  notcurses=%s", notcurses_version());
             log_info("  pcre2=%s", pcre2_version);
-            log_info("  readline=%s", rl_library_version);
             log_info("  sqlite=%s", sqlite3_version);
             log_info("  zlib=%s", zlibVersion());
             log_info("lnav_data:");

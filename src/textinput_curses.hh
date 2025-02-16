@@ -261,6 +261,8 @@ public:
 
     textinput_curses();
 
+    textinput_curses(const textinput_curses&) = delete;
+
     void set_content(const attr_line_t& al);
 
     bool contains(int x, int y) const override;
@@ -359,6 +361,8 @@ public:
     };
 
     std::optional<notice_t> tc_notice;
+    attr_line_t tc_inactive_value;
+    attr_line_t tc_alt_value;
 
     std::string tc_search;
     std::shared_ptr<lnav::pcre2pp::code> tc_search_code;
@@ -369,6 +373,7 @@ public:
     std::vector<attr_line_t> tc_lines;
     lnav::document::metadata tc_doc_meta;
     highlight_map_t tc_highlights;
+    attr_line_t tc_prefix;
 
     std::string tc_suggestion;
 
@@ -387,6 +392,16 @@ public:
     textview_curses tc_help_view;
     plain_text_source tc_help_source;
 
+    enum class popup_type_t {
+        none,
+        completion,
+        history,
+    };
+
+    popup_type_t tc_popup_type{popup_type_t::none};
+
+    std::function<void(textinput_curses&)> tc_on_focus;
+    std::function<void(textinput_curses&)> tc_on_blur;
     std::function<void(textinput_curses&)> tc_on_abort;
     std::function<void(textinput_curses&)> tc_on_change;
     std::function<void(textinput_curses&)> tc_on_completion_request;

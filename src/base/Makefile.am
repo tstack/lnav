@@ -11,7 +11,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/third-party/notcurses/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
     $(LIBARCHIVE_CFLAGS) \
-    $(READLINE_CFLAGS) \
     $(SQLITE3_CFLAGS) \
     $(PCRE_CFLAGS) \
     $(LIBCURL_CPPFLAGS)
@@ -41,6 +40,7 @@ noinst_HEADERS = \
     fs_util.hh \
     func_util.hh \
     future_util.hh \
+    guard_util.hh \
 	humanize.hh \
 	humanize.network.hh \
 	humanize.time.hh \

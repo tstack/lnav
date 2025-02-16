@@ -1050,8 +1050,10 @@ tailer::looper::host_tailer::loop_body()
 
                 isc::to<main_looper&, services::main_t>().send(
                     [full_path](auto& mlooper) {
+#if 0
                         lnav_data.ld_rl_view->add_possibility(
                             ln_mode_t::COMMAND, "remote-path", full_path);
+#endif
                     });
                 return std::move(this->ht_state);
             });

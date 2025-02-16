@@ -164,8 +164,8 @@ will activate a corresponding prompt:
 * :kbd:`|` - The script prompt.  Enter a path to the lnav script to
   execute, along with the arguments to pass in.
 
-The command-line is by the readline library, so the usual set of keyboard
-shortcuts can be used for editing and moving within the command-line.
+The prompt has emacs-like keyboard shortcuts that can be used for editing
+and moving within the command-line.
 
 .. note::
 

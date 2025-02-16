@@ -16,7 +16,6 @@ PACKAGE_URLS = \
 	https://ftp.gnu.org/gnu/make/make-4.2.1.tar.gz \
 	ftp://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz \
 	https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.42/pcre2-10.42.tar.gz \
-	https://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz \
 	https://zlib.net/zlib-1.2.13.tar.gz \
 	https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz \
 	https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz \
@@ -59,7 +58,6 @@ osx-build:
 	cd ../ && ./autogen.sh
 	cd osx-build-dir && \
 	  ../../configure --enable-static \
-	  --with-readline=/usr/local/opt/readline \
 	  --with-sqlite3=/usr/local/opt/sqlite \
 	  --with-libarchive=/usr/local/opt/libarchive \
 	  "CXXFLAGS=-I/usr/local/opt/ncurses/include -g1 -O2" \

@@ -81,7 +81,6 @@ parts:
       - libpcre2-dev
       - libsqlite3-dev
       - libncursesw6
-      - libreadline-dev
       - libunistring-dev
       - zlib1g-dev
       - libbz2-dev

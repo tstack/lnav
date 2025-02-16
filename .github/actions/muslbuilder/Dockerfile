@@ -122,13 +122,6 @@ RUN curl -sSL https://www.libssh2.org/download/libssh2-1.11.1.tar.gz | tar xvzC 
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://ftp.gnu.org/gnu/readline/readline-8.2.tar.gz | tar xvzC /extract/ && \
-    cd /extract/readline-* && \
-    ./configure --prefix=/fake.root --disable-shared && \
-    make -j2 && \
-    make install && \
-    cd /extract && rm -rf *
-
 RUN curl -sSL https://www.libarchive.org/downloads/libarchive-3.7.7.tar.gz | tar xvzC /extract/ && \
     cd /extract/libarchive-* && \
     ./configure --prefix=/fake.root \

@@ -21,7 +21,6 @@ find_package(BZip2 REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(pcre2 CONFIG REQUIRED)
-pkg_check_modules(readline REQUIRED IMPORTED_TARGET readline)
 find_package(Curses REQUIRED)
 find_package(CURL REQUIRED)
 
@@ -31,7 +30,6 @@ set(lnav_LIBS
         BZip2::BZip2
         ${CURSES_LIBRARIES}
         PCRE2::8BIT PCRE2::16BIT PCRE2::32BIT PCRE2::POSIX
-        PkgConfig::readline
         LibArchive::LibArchive
         ZLIB::ZLIB
         ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libunistring.a

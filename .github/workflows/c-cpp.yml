@@ -20,7 +20,7 @@ jobs:
     - name: Update apt
       run: sudo apt-get update
     - name: Install packages
-      run: sudo apt-get install libncursesw5-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev libreadline-dev zlib1g-dev lcov libunistring-dev
+      run: sudo apt-get install libncursesw5-dev libsqlite3-dev libbz2-dev libcurl4-openssl-dev zlib1g-dev lcov libunistring-dev
     - name: install cpp-coveralls
       run: pip install --user cpp-coveralls
     - name: autogen
@@ -76,7 +76,6 @@ jobs:
           libsqlite3-dev
           libbz2-dev
           libcurl4-openssl-dev
-          libreadline-dev
           libunistring-dev
           pipx
           tshark
@@ -134,7 +133,6 @@ jobs:
           msys/libcurl-devel
           msys/libidn2-devel
           msys/liblzma-devel
-          msys/libreadline-devel
           msys/libsqlite-devel
           msys/libunistring-devel
           msys/ncurses-devel

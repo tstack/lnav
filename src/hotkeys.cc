@@ -41,6 +41,7 @@
 #include "config.h"
 #include "field_overlay_source.hh"
 #include "lnav.hh"
+#include "lnav.prompt.hh"
 #include "lnav_config.hh"
 #include "shlex.hh"
 #include "sql_util.hh"
@@ -52,6 +53,8 @@ using namespace lnav::roles::literals;
 bool
 handle_keyseq(const char* keyseq)
 {
+    static auto& prompt = lnav::prompt::get();
+
     const auto& km = lnav_config.lc_active_keymap;
     const auto& iter = km.km_seq_to_cmd.find(keyseq);
     if (iter == km.km_seq_to_cmd.end()) {
@@ -80,7 +83,7 @@ handle_keyseq(const char* keyseq)
                               kc.kc_cmd.pp_value);
     auto result = execute_any(ec, kc.kc_cmd.pp_value);
     if (result.isOk()) {
-        lnav_data.ld_rl_view->set_value(result.unwrap());
+        prompt.p_editor.tc_inactive_value = result.unwrap();
     } else {
         auto um = result.unwrapErr();
 
@@ -97,7 +100,7 @@ handle_keyseq(const char* keyseq)
                            &ec.ec_global_vars,
                        }))
         {
-            lnav_data.ld_rl_view->set_alt_value(expanded_msg);
+            prompt.p_editor.tc_alt_value = expanded_msg;
         }
     }
 
@@ -107,6 +110,7 @@ handle_keyseq(const char* keyseq)
 void
 handle_paste_content(notcurses* nc, const ncinput& ch)
 {
+    static auto& prompt = lnav::prompt::get();
     auto& ec = lnav_data.ld_exec_context;
 
     switch (ch.paste_content[0]) {
@@ -124,7 +128,7 @@ handle_paste_content(notcurses* nc, const ncinput& ch)
 
             auto exec_res = ec.execute(cmdline);
             if (exec_res.isOk()) {
-                lnav_data.ld_rl_view->set_value(exec_res.unwrap());
+                prompt.p_editor.tc_inactive_value = exec_res.unwrap();
             } else {
                 auto um = exec_res.unwrapErr();
 
@@ -160,6 +164,8 @@ handle_paging_key(notcurses* nc, const ncinput& ch, const char* keyseq)
     if (lnav_data.ld_view_stack.empty()) {
         return false;
     }
+
+    static auto& prompt = lnav::prompt::get();
 
     auto* tc = *lnav_data.ld_view_stack.top();
     auto& ec = lnav_data.ld_exec_context;
@@ -248,7 +254,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 clear_note.unwrap().execute();
             }
             auto um = lnav::console::user_message::ok(al);
-            lnav_data.ld_rl_view->set_attr_value(um.to_attr_line());
+            prompt.p_editor.tc_inactive_value = um.to_attr_line();
             break;
         }
 
@@ -262,9 +268,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             tc->get_bookmarks()[&textview_curses::BM_USER].clear();
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_attr_value(
-                lnav::console::user_message::ok("Cleared bookmarks")
-                    .to_attr_line());
+            prompt.p_editor.tc_inactive_value
+                = lnav::console::user_message::ok("Cleared bookmarks")
+                      .to_attr_line();
             break;
 
         case '>': {
@@ -272,8 +278,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 tc->get_top(), tc->get_bottom(), tc->get_left());
             if (range_opt && range_opt.value().second != INT_MAX) {
                 tc->set_left(range_opt.value().second);
-                lnav_data.ld_rl_view->set_alt_value(
-                    HELP_MSG_1(m, "to bookmark a line"));
+                prompt.p_editor.tc_alt_value
+                    = HELP_MSG_1(m, "to bookmark a line");
             } else {
                 alerter::singleton().chime("no more search hits to the right");
             }
@@ -291,8 +297,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 } else {
                     tc->set_left(0);
                 }
-                lnav_data.ld_rl_view->set_alt_value(
-                    HELP_MSG_1(m, "to bookmark a line"));
+                prompt.p_editor.tc_alt_value
+                    = HELP_MSG_1(m, "to bookmark a line");
             }
             break;
 
@@ -333,10 +339,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level - 1) < 0) {
                 alerter::singleton().chime("maximum zoom-in level reached");
             } else {
-                execute_command(
-                    ec,
-                    "zoom-to "
-                        + lnav_zoom_strings[lnav_data.ld_zoom_level - 1]);
+                ec.execute(
+                    fmt::format(FMT_STRING(":zoom-to {}"),
+                        +lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
             break;
 
@@ -344,10 +349,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
                 alerter::singleton().chime("maximum zoom-out level reached");
             } else {
-                execute_command(
-                    ec,
-                    "zoom-to "
-                        + lnav_zoom_strings[lnav_data.ld_zoom_level + 1]);
+                ec.execute(
+                    fmt::format(FMT_STRING(":zoom-to {}"),
+                        +lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }
             break;
 
@@ -394,8 +398,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             }
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_alt_value(
-                HELP_MSG_1(c, "to copy marked lines to the clipboard"));
+            prompt.p_editor.tc_alt_value
+                = HELP_MSG_1(c, "to copy marked lines to the clipboard");
             break;
 
         case 'K': {
@@ -428,8 +432,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             }
             tc->reload_data();
 
-            lnav_data.ld_rl_view->set_alt_value(
-                HELP_MSG_1(c, "to copy marked lines to the clipboard"));
+            prompt.p_editor.tc_alt_value
+                = HELP_MSG_1(c, "to copy marked lines to the clipboard");
             break;
         }
 
@@ -477,8 +481,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 }
 
                 if (!text_accel_p->is_time_offset_enabled()) {
-                    lnav_data.ld_rl_view->set_alt_value(
-                        HELP_MSG_1(T, "to disable elapsed-time mode"));
+                    prompt.p_editor.tc_alt_value
+                        = HELP_MSG_1(T, "to disable elapsed-time mode");
                 }
                 text_accel_p->set_time_offset(true);
                 while (next_top < tc->get_inner_height()) {
@@ -508,8 +512,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     next_top -= 1_vl;
                 }
                 if (!text_accel_p->is_time_offset_enabled()) {
-                    lnav_data.ld_rl_view->set_alt_value(
-                        HELP_MSG_1(T, "to disable elapsed-time mode"));
+                    prompt.p_editor.tc_alt_value
+                        = HELP_MSG_1(T, "to disable elapsed-time mode");
                 }
                 text_accel_p->set_time_offset(true);
                 while (0 <= next_top && next_top < tc->get_inner_height()) {
@@ -592,7 +596,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                         };
                     };
 
-                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
+                prompt.p_editor.tc_alt_value = HELP_MSG_1(/, "to search");
             }
             break;
 
@@ -605,7 +609,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                             [tc](auto line) { tc->set_selection(line); };
                     };
 
-                lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(/, "to search"));
+                prompt.p_editor.tc_alt_value = HELP_MSG_1(/, "to search");
             }
             break;
 
@@ -619,10 +623,10 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 if (!opid_opt) {
                     alerter::singleton().chime(
                         "Log message does not contain an opid");
-                    lnav_data.ld_rl_view->set_attr_value(
-                        lnav::console::user_message::error(
-                            "Log message does not contain an opid")
-                            .to_attr_line());
+                    prompt.p_editor.tc_inactive_value
+                        = lnav::console::user_message::error(
+                              "Log message does not contain an opid")
+                              .to_attr_line();
                 } else {
                     const auto& start_line = start_win_iter->get_logline();
                     unsigned int opid_hash = start_line.get_opid();
@@ -658,16 +662,16 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                         break;
                     }
                     if (found) {
-                        lnav_data.ld_rl_view->set_value("");
+                        prompt.p_editor.tc_inactive_value.clear();
                         tc->set_selection(next_win_iter->get_vis_line());
                     } else {
-                        lnav_data.ld_rl_view->set_attr_value(
-                            lnav::console::user_message::error(
-                                attr_line_t(
-                                    "No more messages found with opid: ")
-                                    .append(
-                                        lnav::roles::symbol(opid_opt.value())))
-                                .to_attr_line());
+                        prompt.p_editor.tc_inactive_value
+                            = lnav::console::user_message::error(
+                                  attr_line_t(
+                                      "No more messages found with opid: ")
+                                      .append(lnav::roles::symbol(
+                                          opid_opt.value())))
+                                  .to_attr_line();
                         alerter::singleton().chime(
                             "no more messages found with opid");
                     }
@@ -678,12 +682,12 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
         case 't':
             if (lnav_data.ld_text_source.current_file() == nullptr) {
                 alerter::singleton().chime("No text files loaded");
-                lnav_data.ld_rl_view->set_attr_value(
-                    lnav::console::user_message::error("No text files loaded")
-                        .to_attr_line());
+                prompt.p_editor.tc_inactive_value
+                    = lnav::console::user_message::error("No text files loaded")
+                          .to_attr_line();
             } else if (toggle_view(&lnav_data.ld_views[LNV_TEXT])) {
-                lnav_data.ld_rl_view->set_alt_value(
-                    HELP_MSG_2(f, F, "to switch to the next/previous file"));
+                prompt.p_editor.tc_alt_value
+                    = HELP_MSG_2(f, F, "to switch to the next/previous file");
             }
             break;
 
@@ -843,9 +847,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                                                       last_relative_time_tag>();
 
                 if (last_time.empty()) {
-                    lnav_data.ld_rl_view->set_value(
-                        "Use the 'goto' command to set the relative time to "
-                        "move by");
+                    prompt.p_editor.tc_inactive_value
+                        = "Use the 'goto' command to set the relative time to "
+                          "move by";
                 } else {
                     vis_line_t vl = tc->get_selection(), new_vl;
                     relative_time rt = last_time;
@@ -882,7 +886,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                         }
                     } while (!done);
                     tc->set_selection(vl);
-                    lnav_data.ld_rl_view->set_value(" " + rt.to_string());
+                    prompt.p_editor.tc_inactive_value = " " + rt.to_string();
                 }
             }
             break;

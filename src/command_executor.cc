@@ -46,6 +46,7 @@
 #include "help_text_formatter.hh"
 #include "lnav.hh"
 #include "lnav.indexing.hh"
+#include "lnav.prompt.hh"
 #include "lnav_config.hh"
 #include "lnav_util.hh"
 #include "log_format_loader.hh"
@@ -272,6 +273,8 @@ execute_search(const std::string& search_cmd)
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
+    static auto& prompt = lnav::prompt::get();
+
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
@@ -478,9 +481,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         curr_stmt = tail;
     }
 
-    if (lnav_data.ld_rl_view != nullptr) {
-        lnav_data.ld_rl_view->clear_value();
-    }
+    prompt.p_editor.tc_inactive_value.clear();
 
     if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
         auto& dls = *ec.ec_label_source_stack.back();
@@ -1166,6 +1167,7 @@ internal_sql_callback(exec_context& ec, sqlite3_stmt* stmt)
 std::future<std::string>
 pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 {
+    static auto& prompt = lnav::prompt::get();
     auto out = ec.get_output();
 
     if (out) {
@@ -1218,9 +1220,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
         .with_detect_format(false)
         .with_init_location(0_vl);
     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
-    if (lnav_data.ld_rl_view != nullptr) {
-        lnav_data.ld_rl_view->set_alt_value(HELP_MSG_1(X, "to close the file"));
-    }
+    prompt.p_editor.tc_alt_value = HELP_MSG_1(X, "to close the file");
 
     return lnav::futures::make_ready_future(std::string());
 }
@@ -1285,9 +1285,9 @@ exec_context::exec_context(logline_value_vector* line_values,
 Result<std::string, lnav::console::user_message>
 exec_context::execute(const std::string& cmdline)
 {
-    if (this->get_provenance<mouse_input>()
-        && !lnav_data.ld_rl_view->is_active())
-    {
+    static auto& prompt = lnav::prompt::get();
+
+    if (this->get_provenance<mouse_input>() && !prompt.p_editor.vc_enabled) {
         int context = 0;
         switch (cmdline[0]) {
             case '/':
@@ -1304,7 +1304,8 @@ exec_context::execute(const std::string& cmdline)
                 break;
         }
 
-        lnav_data.ld_rl_view->append_to_history(context, cmdline.substr(1));
+        // XXX lnav_data.ld_rl_view->append_to_history(context,
+        // cmdline.substr(1));
     }
 
     auto exec_res = execute_any(*this, cmdline);

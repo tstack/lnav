@@ -82,8 +82,12 @@
                         "background-color": "#333"
                     },
                     "popup": {
-                        "color": "$white",
-                        "background-color": "$cyan"
+                        "color": "#ccc",
+                        "background-color": "#333"
+                    },
+                    "popup-border": {
+                        "color": "#ff5fd7",
+                        "background-color": "#333"
                     },
                     "scrollbar": {
                         "color": "$black",

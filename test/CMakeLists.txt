@@ -71,14 +71,8 @@ target_include_directories(test_text_anonymizer PUBLIC ../src/third-party/doctes
 target_link_libraries(test_text_anonymizer diag)
 add_test(NAME test_text_anonymizer COMMAND test_text_anonymizer)
 
-add_executable(drive_readline_curses drive_readline_curses.cc test_stubs.cc)
-target_link_libraries(drive_readline_curses diag)
-
 add_executable(drive_view_colors drive_view_colors.cc test_stubs.cc)
 target_link_libraries(drive_view_colors diag)
-
-add_executable(drive_vt52_curses drive_vt52_curses.cc test_stubs.cc)
-target_link_libraries(drive_vt52_curses diag)
 
 add_executable(drive_listview drive_listview.cc test_stubs.cc)
 target_link_libraries(drive_listview diag)

@@ -471,6 +471,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/popup",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "popup-border": {
+                                            "description": "Styling for the borders of a popup window",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/popup-border",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "focused": {
                                             "description": "Styling for a focused row in a list view",
                                             "title": "/ui/theme-defs/<theme_name>/styles/focused",
