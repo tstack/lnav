@@ -35,8 +35,6 @@
 #include <set>
 #include <string>
 
-#include <readline/history.h>
-
 #include "base/lnav.console.hh"
 #include "base/result.h"
 #include "help_text.hh"
@@ -107,8 +105,6 @@ public:
     const std::string& get_name() const { return this->rc_name; }
 
     void load();
-
-    void set_history();
 
     void save();
 
@@ -196,7 +192,6 @@ private:
     };
 
     std::string rc_name;
-    HISTORY_STATE rc_history;
     std::map<std::string, std::set<std::string>> rc_possibilities;
     std::map<std::string, std::vector<std::string>> rc_prototypes;
     std::map<std::string, command_t*> rc_commands;
