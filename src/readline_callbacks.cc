@@ -1045,8 +1045,10 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
         case ln_mode_t::SEARCH_SPECTRO_DETAILS:
         case ln_mode_t::CAPTURE: {
             log_debug("search here!");
+            auto cmdline = rc.get_content();
             rl_search_internal(rc, old_mode, true);
-            if (!rc.get_content().empty()) {
+            if (!cmdline.empty()) {
+                auto hist_guard = prompt.p_search_history.start_operation(cmdline);
                 auto& bm = tc->get_bookmarks();
                 const auto& bv = bm[&textview_curses::BM_SEARCH];
                 auto vl = is_alt ? bv.prev(tc->get_selection())
@@ -1111,6 +1113,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                           .append(" to cancel"))
                       .to_attr_line();
             rc.set_needs_update();
+            auto hist_guard = prompt.p_sql_history.start_operation(sql_str);
             auto result = execute_sql(ec, sql_str, alt_msg);
             auto& dls = lnav_data.ld_db_row_source;
             attr_line_t prompt;
@@ -1129,6 +1132,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                     }
                 }
             } else {
+                hist_guard.og_status = log_level_t::LEVEL_ERROR;
                 auto um = result.unwrapErr();
                 lnav_data.ld_user_message_source.replace_with(
                     um.to_attr_line().rtrim());
@@ -1169,6 +1173,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                                        fclose));
                     auto src_guard = lnav_data.ld_exec_context.enter_source(
                         SRC, 1, fmt::format(FMT_STRING("|{}"), path_and_args));
+                    auto hist_guard = prompt.p_script_history.start_operation(path_and_args);
                     auto exec_res = execute_file(ec, path_and_args);
                     if (exec_res.isOk()) {
                         rc.tc_inactive_value = exec_res.unwrap();
@@ -1176,6 +1181,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                     } else {
                         auto um = exec_res.unwrapErr();
 
+                        hist_guard.og_status = log_level_t::LEVEL_ERROR;
                         lnav_data.ld_user_message_source.replace_with(
                             um.to_attr_line().rtrim());
                         lnav_data.ld_user_message_view.reload_data();

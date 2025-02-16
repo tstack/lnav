@@ -82,6 +82,22 @@ struct prompt {
     lnav::textinput::history p_search_history;
     lnav::textinput::history p_script_history;
 
+    lnav::textinput::history& get_history_for(char sigil)
+    {
+        switch (sigil) {
+            case ':':
+                return this->p_cmd_history;
+            case ';':
+                return this->p_sql_history;
+            case '/':
+                return this->p_search_history;
+            case '|':
+                return this->p_script_history;
+            default:
+                ensure(false);
+        }
+    }
+
     std::multimap<std::string, sql_item_t> p_sql_completions;
     textinput_curses p_editor;
 

@@ -245,22 +245,15 @@ prompt::refresh_sql_completions(textview_curses& tc)
 void
 prompt::rl_history(textinput_curses& tc)
 {
-    log_debug("rl history %s", tc.tc_prefix.al_string.c_str());
-    switch (tc.tc_prefix.al_string.front()) {
-        case ':': {
-            std::vector<attr_line_t> poss;
-            this->p_cmd_history.query_entries(
-                tc.get_content(), [&poss](const auto& e) {
-                    poss.emplace_back(
-                        attr_line_t()
-                            .append(e.e_content)
-                            .with_attr_for_all(SUBST_TEXT.value(e.e_content)));
-                });
-            log_debug("open hist %d", poss.size());
-            tc.open_popup_for_history(poss);
-            break;
-        }
-    }
+    auto& hist = this->get_history_for(tc.tc_prefix.al_string.front());
+    std::vector<attr_line_t> poss;
+    hist.query_entries(tc.get_content(), [&poss](const auto& e) {
+        poss.emplace_back(
+            attr_line_t()
+                .append(e.e_content)
+                .with_attr_for_all(SUBST_TEXT.value(e.e_content)));
+    });
+    tc.open_popup_for_history(poss);
 }
 
 void

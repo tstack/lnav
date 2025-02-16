@@ -59,6 +59,13 @@
 #include "vtab_module.hh"
 #include "yajlpp/json_op.hh"
 
+#if !CURL_AT_LEAST_VERSION(7, 80, 0)
+extern "C"
+{
+    const char* curl_url_strerror(CURLUcode error);
+}
+#endif
+
 static bool
 csv_needs_quoting(const std::string& str)
 {
