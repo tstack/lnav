@@ -95,13 +95,6 @@
 #include "yajlpp/json_op.hh"
 #include "yajlpp/yajlpp.hh"
 
-#if !CURL_AT_LEAST_VERSION(7, 80, 0)
-extern "C"
-{
-const char* curl_url_strerror(CURLUcode error);
-}
-#endif
-
 using namespace lnav::roles::literals;
 
 inline attr_line_t&
