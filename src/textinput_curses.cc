@@ -43,6 +43,7 @@
 #include "sysclip.hh"
 #include "ww898/cp_utf8.hpp"
 
+using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
 const attr_line_t&
@@ -198,6 +199,7 @@ textinput_curses::handle_mouse(mouse_event& me)
               me.me_x,
               me.me_y);
     this->tc_notice = std::nullopt;
+    this->tc_last_tick_after_input = std::nullopt;
     if (this->tc_mode == mode_t::show_help) {
         return this->tc_help_view.handle_mouse(me);
     }
@@ -514,6 +516,7 @@ bool
 textinput_curses::handle_key(const ncinput& ch)
 {
     this->tc_notice = std::nullopt;
+    this->tc_last_tick_after_input = std::nullopt;
     switch (this->tc_mode) {
         case mode_t::searching:
             return this->handle_search_key(ch);
@@ -1715,4 +1718,22 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
     this->tc_popup.set_selection(new_sel);
     this->tc_popup.set_visible(true);
     this->set_needs_update();
+}
+
+void
+textinput_curses::tick(ui_clock::time_point now)
+{
+    if (this->tc_last_tick_after_input) {
+        auto diff = now - this->tc_last_tick_after_input.value();
+
+        if (diff >= 750ms && !this->tc_timeout_fired) {
+            if (this->tc_on_timeout) {
+                this->tc_on_timeout(*this);
+            }
+            this->tc_timeout_fired = true;
+        }
+    } else {
+        this->tc_last_tick_after_input = now;
+        this->tc_timeout_fired = false;
+    }
 }

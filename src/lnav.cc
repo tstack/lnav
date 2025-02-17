@@ -1375,6 +1375,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         prompt.p_editor.tc_on_perform = rl_callback;
         // prompt.set_alt_perform_action(rl_alt_callback);
         // prompt.set_timeout_action(rl_search);
+        prompt.p_editor.tc_on_timeout = rl_search;
         prompt.p_editor.tc_on_abort = lnav_rl_abort;
         prompt.p_editor.tc_on_blur = rl_blur;
         prompt.p_editor.tc_on_history
@@ -1664,6 +1665,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         size_t changes = 0;
         int rc;
 
+        auto ui_now = ui_clock::now();
         gettimeofday(&current_time, nullptr);
 
         top_source->update_time(current_time);
@@ -1677,7 +1679,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             && rescan_future.wait_for(scan_timeout)
                 == std::future_status::ready)
         {
-            auto ui_now = ui_clock::now();
             auto new_files = rescan_future.get();
             auto indexing_pipers
                 = lnav_data.ld_active_files.initial_indexing_pipers();
@@ -1774,7 +1775,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             mlooper.get_port().process_for(0s);
         }
 
-        auto ui_now = ui_clock::now();
+        ui_now = ui_clock::now();
         if (initial_rescan_completed) {
             if (ui_now >= next_rebuild_time) {
                 auto text_file_count = lnav_data.ld_text_source.size();
@@ -1821,7 +1822,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_data.ld_spectro_details_view.do_update();
         lnav_data.ld_timeline_details_view.do_update();
         lnav_data.ld_user_message_view.do_update();
-        if (ui_clock::now() >= next_status_update_time) {
+        if (ui_now >= next_status_update_time) {
             echo_views_stmt.execute();
             top_source->update_user_msg();
             for (auto& sc : lnav_data.ld_status) {
@@ -1909,6 +1910,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         rc = poll(&pollfds[0], pollfds.size(), poll_to.count());
 
         gettimeofday(&current_time, nullptr);
+        ui_now = ui_clock::now();
         if (lb.lb_last_view != nullptr) {
             lb.lb_last_event.me_time = current_time;
             lb.lb_last_view->handle_mouse(lb.lb_last_event);
@@ -1958,7 +1960,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     }
                 }
 
-                next_status_update_time = ui_clock::now();
+                next_status_update_time = ui_now;
                 switch (lnav_data.ld_mode) {
                     case ln_mode_t::PAGING:
                     case ln_mode_t::FILTER:
@@ -2014,10 +2016,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     != lnav_data.ld_active_files.fc_file_names.size()
                 || lnav_data.ld_active_files.finished_pipers() > 0)
             {
-                next_rescan_time = ui_clock::now();
+                next_rescan_time = ui_now;
                 next_rebuild_time = next_rescan_time;
                 next_status_update_time = next_rescan_time;
             }
+        }
+
+        if (prompt.p_editor.vc_enabled) {
+            prompt.p_editor.tick(ui_now);
         }
 
         if (timer.time_to_update(overlay_counter)) {

@@ -1286,31 +1286,19 @@ Result<std::string, lnav::console::user_message>
 exec_context::execute(const std::string& cmdline)
 {
     static auto& prompt = lnav::prompt::get();
+    lnav::textinput::history::op_guard hist_guard;
 
     if (this->get_provenance<mouse_input>() && !prompt.p_editor.vc_enabled) {
-        int context = 0;
-        switch (cmdline[0]) {
-            case '/':
-                context = lnav::enums::to_underlying(ln_mode_t::SEARCH);
-                break;
-            case ':':
-                context = lnav::enums::to_underlying(ln_mode_t::COMMAND);
-                break;
-            case ';':
-                context = lnav::enums::to_underlying(ln_mode_t::SQL);
-                break;
-            case '|':
-                context = lnav::enums::to_underlying(ln_mode_t::EXEC);
-                break;
-        }
-
-        // XXX lnav_data.ld_rl_view->append_to_history(context,
-        // cmdline.substr(1));
+        auto& hist = prompt.get_history_for(cmdline[0]);
+        hist_guard = hist.start_operation(cmdline.substr(1));
     }
 
     auto exec_res = execute_any(*this, cmdline);
-    if (exec_res.isErr() && !this->ec_msg_callback_stack.empty()) {
-        this->ec_msg_callback_stack.back()(exec_res.unwrapErr());
+    if (exec_res.isErr()) {
+        hist_guard.og_status = log_level_t::LEVEL_ERROR;
+        if (!this->ec_msg_callback_stack.empty()) {
+            this->ec_msg_callback_stack.back()(exec_res.unwrapErr());
+        }
     }
 
     return exec_res;

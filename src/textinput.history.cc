@@ -163,7 +163,7 @@ INSERT INTO lnav_history
 
 history::op_guard::~op_guard()
 {
-    if (!this->og_guard_helper) {
+    if (!this->og_guard_helper || !this->og_context.empty()) {
         return;
     }
 

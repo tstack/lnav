@@ -61,12 +61,18 @@ struct history {
         log_level_t og_status{log_level_t::LEVEL_INFO};
         guard_helper og_guard_helper;
 
+        op_guard() = default;
+        op_guard(op_guard&&) = default;
+        op_guard(const op_guard&) = delete;
+        op_guard& operator=(const op_guard&) = delete;
+        op_guard& operator=(op_guard&&) = default;
+
         ~op_guard();
     };
 
     void insert_plain_content(string_fragment content);
 
-    op_guard start_operation(string_fragment content)
+    op_guard start_operation(string_fragment content) const
     {
         return {
             this->h_context,

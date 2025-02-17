@@ -30,6 +30,7 @@
 #ifndef textinput_curses_hh
 #define textinput_curses_hh
 
+#include <chrono>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -331,6 +332,8 @@ public:
 
     void move_cursor_to_prev_search_hit();
 
+    void tick(ui_clock::time_point now);
+
     enum class mode_t {
         editing,
         searching,
@@ -400,6 +403,9 @@ public:
 
     popup_type_t tc_popup_type{popup_type_t::none};
 
+    std::optional<ui_clock::time_point> tc_last_tick_after_input;
+    bool tc_timeout_fired{false};
+
     std::function<void(textinput_curses&)> tc_on_focus;
     std::function<void(textinput_curses&)> tc_on_blur;
     std::function<void(textinput_curses&)> tc_on_abort;
@@ -407,6 +413,7 @@ public:
     std::function<void(textinput_curses&)> tc_on_completion_request;
     std::function<void(textinput_curses&)> tc_on_completion;
     std::function<void(textinput_curses&)> tc_on_history;
+    std::function<void(textinput_curses&)> tc_on_timeout;
     std::function<void(textinput_curses&)> tc_on_perform;
 };
 
