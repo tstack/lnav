@@ -2269,9 +2269,7 @@ com_comment(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        return Ok(std::string());
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         if (ec.ec_dry_run) {
             return Ok(std::string());
         }
@@ -2320,10 +2318,8 @@ com_comment_prompt(exec_context& ec, const std::string& cmdline)
 
     if (line_meta_opt && !line_meta_opt.value()->bm_comment.empty()) {
         auto trimmed_comment = trim(line_meta_opt.value()->bm_comment);
-        auto buf = auto_buffer::alloc(trimmed_comment.size() + 16);
-        quote_content(buf, trimmed_comment, 0);
 
-        return {trim(cmdline) + " " + buf.to_string()};
+        return {trim(cmdline) + " " + trimmed_comment};
     }
 
     return {""};
@@ -4078,10 +4074,7 @@ command_prompt(std::vector<std::string>& args)
                           "commands.html") " for more details");
 
     set_view_mode(ln_mode_t::COMMAND);
-
-    prompt.p_editor.tc_prefix = ":";
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for(':');
 
     rl_set_help();
 }
@@ -4098,9 +4091,7 @@ script_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     find_format_scripts(lnav_data.ld_config_paths, scripts);
-    prompt.p_editor.tc_prefix = "|";
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for('|');
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("CTRL+]") " to abort)");
 }
@@ -4115,9 +4106,7 @@ search_prompt(std::vector<std::string>& args)
     log_debug("search prompt");
     set_view_mode(ln_mode_t::SEARCH);
     lnav_data.ld_search_start_line = tc->get_selection();
-    prompt.p_editor.tc_prefix = "/";
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for('/');
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
     lnav_data.ld_doc_status_source.set_description("");
     rl_set_help();
@@ -4134,9 +4123,7 @@ search_filters_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::SEARCH_FILTERS);
     lnav_data.ld_filter_view.reload_data();
-    prompt.p_editor.tc_prefix = "/";
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for('/');
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -4150,9 +4137,7 @@ search_files_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_FILES);
-    prompt.p_editor.tc_prefix = "/";
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for('/');
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -4165,9 +4150,8 @@ search_spectro_details_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_SPECTRO_DETAILS);
-    prompt.p_editor.tc_prefix = "/";
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for('/');
+
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -4187,9 +4171,7 @@ sql_prompt(std::vector<std::string>& args)
     set_view_mode(ln_mode_t::SQL);
     setup_logline_table(lnav_data.ld_exec_context);
     prompt.refresh_sql_completions(*tc);
-    prompt.p_editor.tc_prefix = ";";
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for(';');
 
     lnav_data.ld_doc_status_source.set_title("Query Help");
     lnav_data.ld_doc_status_source.set_description(
@@ -4217,8 +4199,7 @@ user_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::USER);
     setup_logline_table(lnav_data.ld_exec_context);
-    prompt.p_editor.set_content("");
-    prompt.p_editor.focus();
+    prompt.focus_for('\0');
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -4805,8 +4786,9 @@ readline_context::command_t STD_COMMANDS[] = {
                           "The comment can be formatted using markdown and "
                           "you can add "
                           "new-lines with '\\n'.")
-            .with_parameter(help_text("text", "The comment text")
-                                .with_format(help_parameter_format_t::HPF_TEXT))
+            .with_parameter(
+                help_text("text", "The comment text")
+                    .with_format(help_parameter_format_t::HPF_MULTILINE_TEXT))
             .with_example({"To add the comment 'This is where it all went "
                            "wrong' to the focused line",
                            "This is where it all went wrong"})

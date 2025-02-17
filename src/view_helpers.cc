@@ -658,7 +658,6 @@ handle_winch(screen_curses* sc)
     lnav_data.ld_view_stack.set_needs_update();
     lnav_data.ld_doc_view.set_needs_update();
     lnav_data.ld_example_view.set_needs_update();
-    lnav_data.ld_match_view.set_needs_update();
     lnav_data.ld_filter_view.set_needs_update();
     lnav_data.ld_files_view.set_needs_update();
     lnav_data.ld_file_details_view.set_needs_update();
@@ -732,10 +731,6 @@ layout_views()
         preview_height1 = 6;  // XXX extra height for db overlay
     }
 
-    int match_rows = lnav_data.ld_match_source.text_line_count();
-    int match_height = std::min(match_rows, (int) (height - 4) / 2);
-    lnav_data.ld_match_view.set_height(vis_line_t(match_height));
-
     int um_rows = lnav_data.ld_user_message_source.text_line_count();
     if (um_rows > 0
         && std::chrono::steady_clock::now()
@@ -780,16 +775,17 @@ layout_views()
     auto bottom_min = std::min(2U + 3U, height);
     auto bottom = clamped<int>::from(height, bottom_min, height);
 
-    prompt.p_editor.set_y(height - 1);
-    bottom -= 1;
+    auto prompt_height = prompt.p_editor.vc_enabled ? prompt.p_editor.tc_height
+                                                    : 1;
+
+    bottom -= prompt_height;
+    prompt.p_editor.set_y(bottom);
     prompt.p_editor.set_width(width);
+    prompt.p_editor.ensure_cursor_visible();
 
     breadcrumb_view->set_width(width);
 
     bool vis;
-    vis = bottom.try_consume(lnav_data.ld_match_view.get_height());
-    lnav_data.ld_match_view.set_y(bottom);
-    lnav_data.ld_match_view.set_visible(vis);
 
     vis = bottom.try_consume(um_height);
     lnav_data.ld_user_message_view.set_y(bottom);

@@ -64,6 +64,7 @@ enum class help_nargs_t {
 enum class help_parameter_format_t {
     HPF_STRING,
     HPF_TEXT,
+    HPF_MULTILINE_TEXT,
     HPF_REGEX,
     HPF_SQL,
     HPF_INTEGER,

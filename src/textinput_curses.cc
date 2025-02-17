@@ -150,7 +150,14 @@ textinput_curses::set_content(const attr_line_t& al)
 {
     auto al_copy = al;
 
+    if (!this->tc_prefix.empty()) {
+        al_copy.insert(0, this->tc_prefix);
+    }
     highlight_syntax(this->tc_text_format, al_copy);
+    if (!this->tc_prefix.empty()) {
+        // XXX yuck
+        al_copy.erase(0, this->tc_prefix.al_string.size());
+    }
     this->tc_doc_meta = lnav::document::discover(al_copy)
                             .with_text_format(this->tc_text_format)
                             .save_words()
@@ -1118,7 +1125,9 @@ textinput_curses::ensure_cursor_visible()
             this->tc_top -= 1;
         }
     }
-    if (this->tc_cursor.y + 1 >= this->tc_top + dim.dr_height) {
+    if (this->tc_height > 1
+        && this->tc_cursor.y + 1 >= this->tc_top + dim.dr_height)
+    {
         this->tc_top = (this->tc_cursor.y + 1 - dim.dr_height) + 1;
     }
     if (this->tc_top + dim.dr_height > this->tc_lines.size()) {
@@ -1320,7 +1329,6 @@ textinput_curses::move_cursor_by(movement move)
 void
 textinput_curses::move_cursor_to(input_point ip)
 {
-    this->clamp_point(ip);
     this->tc_cursor = ip;
     this->tc_drag_selection = std::nullopt;
     this->tc_selection = std::nullopt;

@@ -102,6 +102,8 @@ struct prompt {
     std::multimap<std::string, sql_item_t> p_sql_completions;
     textinput_curses p_editor;
 
+    void focus_for(char sigil);
+
     void refresh_sql_completions(textview_curses& tc);
     void insert_sql_completion(const std::string& name, const sql_item_t& item);
     const sql_item_meta& sql_item_hint(const sql_item_t& item) const;

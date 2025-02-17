@@ -60,6 +60,9 @@
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
+#define PERFORM_MSG \
+    "(Press " ANSI_BOLD("CTRL+X") " to perform operation and " ANSI_BOLD( \
+        "CTRL+]") " to abort)"
 #define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
 
 #define ANSI_RE(msg) \
@@ -152,7 +155,9 @@ const char * const PRQL_EXAMPLE =
         "  from %s | filter log_line == lnav.view.top_line\n"
     ;
 
-static const char* const LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
+static const auto LNAV_MULTILINE_CMD_PROMPT
+    = "Enter an lnav command: " PERFORM_MSG;
+static const auto LNAV_CMD_PROMPT = "Enter an lnav command: " ABORT_MSG;
 
 static attr_line_t
 format_sql_example(const char* sql_example_fmt)
@@ -536,7 +541,6 @@ rl_change(textinput_curses& rc)
                     lnav_data.ld_example_source.replace_with(al);
                     etc.set_needs_update();
 
-                    log_debug("pop type %d", rc.tc_popup_type);
                     switch (rc.tc_popup_type) {
                         case textinput_curses::popup_type_t::history: {
                             rc.tc_on_history(rc);
@@ -563,7 +567,9 @@ rl_change(textinput_curses& rc)
                                           arg_pair.second.se_origin.sf_end,
                                           arg_pair.second.se_value.c_str());
                                 auto poss = prompt.get_cmd_parameter_completion(
-                                    *tc, arg_pair.first, arg_pair.second.se_value);
+                                    *tc,
+                                    arg_pair.first,
+                                    arg_pair.second.se_value);
                                 auto left = arg_pair.second.se_value.empty()
                                     ? rc.tc_cursor.x
                                     : line_sf.byte_to_column_index(
@@ -585,14 +591,25 @@ rl_change(textinput_curses& rc)
                     if (generation == 0 && trim(line) == args[0]
                         && !prompt_res.pr_new_prompt.empty())
                     {
-#if 0
-                        rc->rewrite_line(line.length(),
-                                         prompt_res.pr_new_prompt);
-#endif
+                        prompt.p_editor.set_content(prompt_res.pr_new_prompt);
+                        prompt.p_editor.move_cursor_to(
+                            {(int) args[0].length() + 1, 0});
                     }
                     rc.tc_suggestion = prompt_res.pr_suggestion;
                 }
 
+                if (!ht.ht_parameters.empty()
+                    && ht.ht_parameters.front().ht_format
+                        == help_parameter_format_t::HPF_MULTILINE_TEXT)
+                {
+                    prompt.p_editor.tc_height = 5;
+                } else {
+                    prompt.p_editor.tc_height = 1;
+                }
+
+                lnav_data.ld_bottom_source.set_prompt(
+                    prompt.p_editor.tc_height > 1 ? LNAV_MULTILINE_CMD_PROMPT
+                                                  : LNAV_CMD_PROMPT);
                 lnav_data.ld_bottom_source.grep_error("");
                 lnav_data.ld_status[LNS_BOTTOM].window_change();
             }
@@ -634,6 +651,7 @@ static void
 rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
 {
     static const intern_string_t SRC = intern_string::lookup("prompt");
+    static auto& prompt = lnav::prompt::get();
 
     auto* tc = get_textview_for_mode(mode);
     std::string term_val;
@@ -675,7 +693,9 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                 auto msg = result.unwrap();
 
                 if (msg.empty()) {
-                    lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
+                    lnav_data.ld_bottom_source.set_prompt(
+                        prompt.p_editor.tc_height > 1 ? LNAV_MULTILINE_CMD_PROMPT
+                                                      : LNAV_CMD_PROMPT);
                     lnav_data.ld_bottom_source.grep_error("");
                 } else {
                     lnav_data.ld_bottom_source.set_prompt(msg);

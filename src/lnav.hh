@@ -199,8 +199,6 @@ struct lnav_data_t {
     textview_curses ld_file_details_view;
     plain_text_source ld_example_source;
     textview_curses ld_example_view;
-    plain_text_source ld_match_source;
-    textview_curses ld_match_view;
     plain_text_source ld_preview_source[2];
     textview_curses ld_preview_view[2];
     plain_text_source ld_user_message_source;

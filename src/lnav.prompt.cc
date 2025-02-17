@@ -176,6 +176,18 @@ prompt::get()
 }
 
 void
+prompt::focus_for(char sigil)
+{
+    this->p_editor.tc_prefix.clear();
+    if (sigil) {
+        this->p_editor.tc_prefix.al_string.push_back(sigil);
+    }
+    this->p_editor.tc_height = 1;
+    this->p_editor.set_content("");
+    this->p_editor.focus();
+}
+
+void
 prompt::refresh_sql_completions(textview_curses& tc)
 {
     static auto& ec = injector::get<exec_context&>();

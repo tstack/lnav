@@ -1458,8 +1458,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_example_view.set_window(lnav_data.ld_window);
     lnav_data.ld_example_view.set_show_scrollbar(false);
 
-    lnav_data.ld_match_view.set_window(lnav_data.ld_window);
-
     lnav_data.ld_preview_view[0].set_window(lnav_data.ld_window);
     lnav_data.ld_preview_view[0].set_show_scrollbar(false);
     lnav_data.ld_preview_view[1].set_window(lnav_data.ld_window);
@@ -1574,7 +1572,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     lnav_data.ld_status[LNS_TIMELINE].set_data_source(
         &lnav_data.ld_timeline_status_source);
 
-    lnav_data.ld_match_view.set_show_bottom_border(true);
     lnav_data.ld_user_message_view.set_show_bottom_border(true);
 
     for (auto& sc : lnav_data.ld_status) {
@@ -1816,7 +1813,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
         lnav_data.ld_doc_view.do_update();
         lnav_data.ld_example_view.do_update();
-        lnav_data.ld_match_view.do_update();
         lnav_data.ld_preview_view[0].do_update();
         lnav_data.ld_preview_view[1].do_update();
         lnav_data.ld_spectro_details_view.do_update();
@@ -3181,7 +3177,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     lnav_data.ld_doc_view.set_sub_source(&lnav_data.ld_doc_source);
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
-    lnav_data.ld_match_view.set_sub_source(&lnav_data.ld_match_source);
     lnav_data.ld_preview_view[0].set_sub_source(
         &lnav_data.ld_preview_source[0]);
     lnav_data.ld_filter_view.set_sub_source(filter_source)
