@@ -237,7 +237,7 @@ history::insert_plain_content(string_fragment content)
 constexpr auto FUZZY_QUERY = R"(
 SELECT
     session_id,
-    max(create_time_us),
+    max(create_time_us) as max_create_time,
     NULL,
     content,
     status
@@ -245,7 +245,7 @@ SELECT
   WHERE
     context = ?1 AND fuzzy_match(?2, content) IS NOT NULL
   GROUP BY content
-  ORDER BY fuzzy_match(?2, content) DESC
+  ORDER BY fuzzy_match(?2, content), max_create_time DESC
   LIMIT 50
 )";
 

@@ -32,6 +32,7 @@
 
 #include "cmd.parser.hh"
 
+#include "data_scanner.hh"
 #include "shlex.hh"
 
 namespace lnav::command {
@@ -42,7 +43,40 @@ parsed::arg_at(int x) const
     for (const auto& arg : this->p_args) {
         for (const auto& se : arg.second.a_values) {
             if (se.se_origin.sf_begin <= x && x <= se.se_origin.sf_end) {
-                return std::make_pair(arg.second.a_help, se);
+                switch (arg.second.a_help->ht_format) {
+                    case help_parameter_format_t::HPF_TEXT:
+                    case help_parameter_format_t::HPF_REGEX: {
+                        data_scanner ds(se.se_value);
+
+                        while (true) {
+                            auto tok_res = ds.tokenize2();
+
+                            if (!tok_res) {
+                                break;
+                            }
+                            auto tok = tok_res.value();
+
+                            log_debug("cap b:%d  x:%d  e:%d",
+                                      tok.tr_capture.c_begin,
+                                      x,
+                                      tok.tr_capture.c_end);
+                            if (tok.tr_capture.c_begin <= x
+                                && x <= tok.tr_capture.c_end)
+                            {
+                                return std::make_pair(
+                                    arg.second.a_help,
+                                    shlex::split_element_t{
+                                        tok.to_string_fragment(),
+                                        tok.to_string(),
+                                    });
+                            }
+                        }
+                        return std::make_pair(arg.second.a_help,
+                                              shlex::split_element_t{});
+                    }
+                    default:
+                        return std::make_pair(arg.second.a_help, se);
+                }
             }
         }
     }
@@ -114,12 +148,25 @@ parse_for(mode_t mode,
         }
 
         do {
+            const auto& se = split_args[split_index];
             switch (param.ht_format) {
+                case help_parameter_format_t::HPF_TEXT:
+                case help_parameter_format_t::HPF_REGEX: {
+                    const auto& last_se = split_args.back();
+                    auto sf = string_fragment{
+                        se.se_origin.sf_string,
+                        se.se_origin.sf_begin,
+                        last_se.se_origin.sf_end,
+                    };
+                    arg.a_values.emplace_back(
+                        shlex::split_element_t{sf, sf.to_string()});
+                    split_index = split_args.size() - 1;
+                    break;
+                }
                 case help_parameter_format_t::HPF_STRING:
                 case help_parameter_format_t::HPF_FILENAME:
                 case help_parameter_format_t::HPF_LOADED_FILE:
                 case help_parameter_format_t::HPF_FORMAT_FIELD: {
-                    const auto& se = split_args[split_index];
                     if (!param.ht_enum_values.empty()) {
                         auto enum_iter = std::find(param.ht_enum_values.begin(),
                                                    param.ht_enum_values.end(),

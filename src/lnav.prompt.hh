@@ -74,6 +74,7 @@ struct prompt {
     struct sql_item_meta {
         const char* sim_type_hint;
         const char* sim_display_suffix;
+        const char* sim_replace_suffix;
         role_t sim_role;
     };
 
@@ -108,7 +109,7 @@ struct prompt {
         const std::pair<std::string, sql_item_t>& p);
 
     std::vector<attr_line_t> get_cmd_parameter_completion(
-        const help_text* ht, const std::string& str);
+        textview_curses& tc, const help_text* ht, const std::string& str);
 
     void rl_history(textinput_curses& tc);
     void rl_completion(textinput_curses& tc);

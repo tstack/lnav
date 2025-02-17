@@ -982,10 +982,10 @@ operator==(const string_fragment& left, const intern_string_t& right)
         && (memcmp(left.data(), right.get(), left.length()) == 0);
 }
 
-inline string_fragment
+constexpr string_fragment
 operator"" _frag(const char* str, std::size_t len)
 {
-    return string_fragment::from_byte_range(str, 0, len);
+    return string_fragment{str, 0, (int) len};
 }
 
 namespace std {

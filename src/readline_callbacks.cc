@@ -451,21 +451,30 @@ rl_change(textinput_curses& rc)
             if (iter == lnav_commands.end()
                 || (args.size() == 1 && !endswith(line, " ")))
             {
-                log_debug("unknown command: %s", args[0].c_str());
                 switch (rc.tc_popup_type) {
                     case textinput_curses::popup_type_t::history: {
                         rc.tc_on_history(rc);
                         break;
                     }
                     default: {
-                        auto poss
-                            = lnav_commands | lnav::itertools::first()
+                        auto poss_str = lnav_commands | lnav::itertools::first()
                             | lnav::itertools::similar_to(
-                                  args.empty() ? "" : args[0], 10)
-                            | lnav::itertools::map([](const auto& x) {
+                                            args.empty() ? "" : args[0], 10);
+                        auto poss_width = poss_str
+                            | lnav::itertools::map(&std::string::size)
+                            | lnav::itertools::max();
+
+                        auto poss
+                            = poss_str
+                            | lnav::itertools::map([&poss_width](
+                                                       const auto& x) {
                                   return attr_line_t()
                                       .append(
                                           x, VC_ROLE.value(role_t::VCR_KEYWORD))
+                                      .append(" ")
+                                      .pad_to(poss_width.value_or(0) + 1)
+                                      .append(
+                                          lnav_commands[x]->c_help.ht_summary)
                                       .with_attr_for_all(
                                           lnav::prompt::SUBST_TEXT.value(
                                               x + " "));
@@ -548,12 +557,13 @@ rl_change(textinput_curses& rc)
 
                             if (arg_pair_opt) {
                                 auto arg_pair = arg_pair_opt.value();
-                                log_debug("apair %s [%d:%d)",
+                                log_debug("apair %s [%d:%d) -- %s",
                                           arg_pair.first->ht_name,
                                           arg_pair.second.se_origin.sf_begin,
-                                          arg_pair.second.se_origin.sf_end);
+                                          arg_pair.second.se_origin.sf_end,
+                                          arg_pair.second.se_value.c_str());
                                 auto poss = prompt.get_cmd_parameter_completion(
-                                    arg_pair.first, arg_pair.second.se_value);
+                                    *tc, arg_pair.first, arg_pair.second.se_value);
                                 auto left = arg_pair.second.se_value.empty()
                                     ? rc.tc_cursor.x
                                     : line_sf.byte_to_column_index(
@@ -1048,7 +1058,8 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
             auto cmdline = rc.get_content();
             rl_search_internal(rc, old_mode, true);
             if (!cmdline.empty()) {
-                auto hist_guard = prompt.p_search_history.start_operation(cmdline);
+                auto hist_guard
+                    = prompt.p_search_history.start_operation(cmdline);
                 auto& bm = tc->get_bookmarks();
                 const auto& bv = bm[&textview_curses::BM_SEARCH];
                 auto vl = is_alt ? bv.prev(tc->get_selection())
@@ -1173,7 +1184,8 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                                        fclose));
                     auto src_guard = lnav_data.ld_exec_context.enter_source(
                         SRC, 1, fmt::format(FMT_STRING("|{}"), path_and_args));
-                    auto hist_guard = prompt.p_script_history.start_operation(path_and_args);
+                    auto hist_guard = prompt.p_script_history.start_operation(
+                        path_and_args);
                     auto exec_res = execute_file(ec, path_and_args);
                     if (exec_res.isOk()) {
                         rc.tc_inactive_value = exec_res.unwrap();

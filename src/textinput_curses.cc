@@ -970,6 +970,10 @@ textinput_curses::handle_key(const ncinput& ch)
         case NCKEY_UP: {
             if (this->tc_popup.is_visible()) {
                 this->tc_popup.handle_key(ch);
+            } else if (this->tc_height == 1) {
+                if (this->tc_on_history) {
+                    this->tc_on_history(*this);
+                }
             } else {
                 if (ncinput_shift_p(&ch)) {
                     log_debug("up shift");
@@ -1644,8 +1648,9 @@ textinput_curses::open_popup_for_completion(
         | lnav::itertools::max();
 
     auto full_width = std::min((int) max_width.value_or(1) + 2, dim.dr_width);
-    auto popup_height
-        = vis_line_t(std::min(this->tc_max_popup_height, possibilities.size()));
+    auto new_sel = 0_vl;
+    auto popup_height = vis_line_t(
+        std::min(this->tc_max_popup_height, possibilities.size() + 1));
     auto rel_x = left;
     if (this->tc_cursor.y == 0) {
         rel_x += this->tc_prefix.column_width();
@@ -1656,6 +1661,8 @@ textinput_curses::open_popup_for_completion(
     auto rel_y = this->tc_cursor.y - this->tc_top + 1;
     if (this->vc_y + rel_y + popup_height > dim.dr_full_height) {
         rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+        std::reverse(possibilities.begin(), possibilities.end());
+        new_sel = vis_line_t(possibilities.size() - 1);
     }
 
     this->tc_complete_range = selected_range::from_key(
@@ -1667,7 +1674,8 @@ textinput_curses::open_popup_for_completion(
     this->tc_popup.set_width(full_width);
     this->tc_popup.set_height(popup_height);
     this->tc_popup.set_visible(true);
-    this->tc_popup.set_selection(0_vl);
+    this->tc_popup.set_top(0_vl);
+    this->tc_popup.set_selection(new_sel);
     this->set_needs_update();
 }
 
@@ -1681,11 +1689,14 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
 
     this->tc_popup_type = popup_type_t::history;
     auto dim = this->get_visible_dimensions();
-    auto popup_height
-        = vis_line_t(std::min(this->tc_max_popup_height, possibilities.size()));
+    auto new_sel = 0_vl;
+    auto popup_height = vis_line_t(
+        std::min(this->tc_max_popup_height, possibilities.size() + 1));
     auto rel_y = this->tc_cursor.y - this->tc_top + 1;
-    if (this->vc_y + rel_y + popup_height > dim.dr_full_height) {
+    if (this->vc_y + rel_y + popup_height >= dim.dr_full_height) {
         rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+        std::reverse(possibilities.begin(), possibilities.end());
+        new_sel = vis_line_t(possibilities.size() - 1);
     }
 
     this->tc_complete_range = selected_range::from_key(
@@ -1698,10 +1709,10 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
     this->tc_popup.set_window(this->tc_window);
     this->tc_popup.set_x(this->vc_x);
     this->tc_popup.set_y(this->vc_y + rel_y);
-    log_debug("pop width %d", this->vc_width);
     this->tc_popup.set_width(this->vc_width);
     this->tc_popup.set_height(popup_height);
+    this->tc_popup.set_top(0_vl);
+    this->tc_popup.set_selection(new_sel);
     this->tc_popup.set_visible(true);
-    this->tc_popup.set_selection(0_vl);
     this->set_needs_update();
 }

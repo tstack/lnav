@@ -39,6 +39,7 @@
 #include "itertools.similar.hh"
 #include "lnav.hh"
 #include "log_format_ext.hh"
+#include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "scn/scan.h"
 #include "shlex.hh"
@@ -165,10 +166,10 @@ prompt&
 prompt::get()
 {
     static prompt retval = {
-        textinput::history::for_context(string_fragment::from_const("sql")),
-        textinput::history::for_context(string_fragment::from_const("cmd")),
-        textinput::history::for_context(string_fragment::from_const("search")),
-        textinput::history::for_context(string_fragment::from_const("script")),
+        textinput::history::for_context("sql"_frag),
+        textinput::history::for_context("cmd"_frag),
+        textinput::history::for_context("search"_frag),
+        textinput::history::for_context("script"_frag),
     };
 
     return retval;
@@ -245,14 +246,30 @@ prompt::refresh_sql_completions(textview_curses& tc)
 void
 prompt::rl_history(textinput_curses& tc)
 {
-    auto& hist = this->get_history_for(tc.tc_prefix.al_string.front());
+    auto sigil = tc.tc_prefix.al_string.front();
+    auto& hist = this->get_history_for(sigil);
     std::vector<attr_line_t> poss;
-    hist.query_entries(tc.get_content(), [&poss](const auto& e) {
-        poss.emplace_back(
-            attr_line_t()
-                .append(e.e_content)
-                .with_attr_for_all(SUBST_TEXT.value(e.e_content)));
-    });
+    auto cb = [&poss, sigil](const auto& e) {
+        auto al = attr_line_t()
+                      .append(e.e_content)
+                      .with_attr_for_all(SUBST_TEXT.value(e.e_content));
+        switch (sigil) {
+            case ':':
+                readline_command_highlighter(al, std::nullopt);
+                break;
+            case ';':
+                readline_sqlite_highlighter(al, std::nullopt);
+                break;
+            case '/':
+                readline_regex_highlighter(al, std::nullopt);
+                break;
+        }
+        poss.emplace_back(al.move());
+    };
+    hist.query_entries(tc.get_content(), cb);
+    if (poss.empty()) {
+        hist.query_entries(""_frag, cb);
+    }
     tc.open_popup_for_history(poss);
 }
 
@@ -278,6 +295,7 @@ sql_item_visitor::operator()(const prompt::sql_keyword_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         " ",
         "",
+        " ",
         role_t::VCR_KEYWORD,
     };
 
@@ -291,6 +309,7 @@ sql_item_visitor::operator()(const prompt::sql_collation_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         " ",
         "",
+        " ",
         role_t::VCR_IDENTIFIER,
     };
 
@@ -304,6 +323,7 @@ sql_item_visitor::operator()(const prompt::sql_db_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         "\u26c1",
         "",
+        ".",
         role_t::VCR_IDENTIFIER,
     };
 
@@ -317,6 +337,7 @@ sql_item_visitor::operator()(const prompt::sql_table_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         "\U0001f143",
         "",
+        " ",
         role_t::VCR_IDENTIFIER,
     };
 
@@ -330,6 +351,7 @@ sql_item_visitor::operator()(const prompt::sql_table_valued_function_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         "\U0001D453",
         "()",
+        "(",
         role_t::VCR_FUNCTION,
     };
 
@@ -343,6 +365,7 @@ sql_item_visitor::operator()(const prompt::sql_function_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         "\U0001D453",
         "()",
+        "(",
         role_t::VCR_FUNCTION,
     };
 
@@ -355,6 +378,7 @@ sql_item_visitor::operator()(const prompt::sql_column_t&) const
 {
     static constexpr auto retval = prompt::sql_item_meta{
         "\U0001F132",
+        "",
         "",
         role_t::VCR_IDENTIFIER,
     };
@@ -369,6 +393,7 @@ sql_item_visitor::operator()(const prompt::sql_number_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         "\U0001F13D",
         "",
+        " ",
         role_t::VCR_NUMBER,
     };
 
@@ -382,6 +407,7 @@ sql_item_visitor::operator()(const prompt::sql_string_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         "\U0001f142",
         "",
+        " ",
         role_t::VCR_STRING,
     };
 
@@ -395,6 +421,7 @@ sql_item_visitor::operator()(const prompt::sql_var_t&) const
     static constexpr auto retval = prompt::sql_item_meta{
         "\U0001f145",
         "",
+        " ",
         role_t::VCR_VARIABLE,
     };
 
@@ -416,16 +443,30 @@ prompt::get_sql_completion_text(const std::pair<std::string, sql_item_t>& p)
         .append(" ")
         .append(p.first, VC_ROLE.value(item_meta.sim_role))
         .append(item_meta.sim_display_suffix)
-        .with_attr_for_all(SUBST_TEXT.value(p.first));
+        .with_attr_for_all(
+            SUBST_TEXT.value(p.first + item_meta.sim_replace_suffix));
 }
 
 std::vector<attr_line_t>
-prompt::get_cmd_parameter_completion(const help_text* ht,
+prompt::get_cmd_parameter_completion(textview_curses& tc,
+                                     const help_text* ht,
                                      const std::string& str)
 {
     log_debug("cmd comp %s", str.c_str());
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
+            case help_parameter_format_t::HPF_REGEX: {
+                std::vector<attr_line_t> retval;
+                auto poss_str = view_text_possibilities(tc)
+                    | lnav::itertools::similar_to(str, 10);
+
+                for (const auto& str : poss_str) {
+                    retval.emplace_back(
+                        attr_line_t().append(str).with_attr_for_all(
+                            SUBST_TEXT.value(lnav::pcre2pp::quote(str))));
+                }
+                return retval;
+            }
             case help_parameter_format_t::HPF_FILENAME: {
                 auto str_as_path = std::filesystem::path{str};
                 auto parent = str_as_path.parent_path();
@@ -499,7 +540,7 @@ prompt::get_cmd_parameter_completion(const help_text* ht,
         return ht->ht_enum_values | lnav::itertools::similar_to(str, 10)
             | lnav::itertools::map([](const auto& x) {
                    return attr_line_t(x).with_attr_for_all(
-                       lnav::prompt::SUBST_TEXT.value(std::string(x) + " "));
+                       SUBST_TEXT.value(std::string(x) + " "));
                });
     }
 

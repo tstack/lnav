@@ -524,20 +524,20 @@ readline_lnav_highlighter(attr_line_t& al, std::optional<int> x)
 void
 highlight_syntax(text_format_t tf, attr_line_t& al)
 {
-     switch (tf) {
+    switch (tf) {
         case text_format_t::TF_SQL: {
             readline_sqlite_highlighter(al, std::nullopt);
             break;
         }
-         case text_format_t::TF_PCRE: {
+        case text_format_t::TF_PCRE: {
             readline_regex_highlighter(al, std::nullopt);
             break;
         }
-         case text_format_t::TF_SHELL_SCRIPT: {
+        case text_format_t::TF_SHELL_SCRIPT: {
             readline_shlex_highlighter(al, std::nullopt);
             break;
         }
-         case text_format_t::TF_LNAV_SCRIPT: {
+        case text_format_t::TF_LNAV_SCRIPT: {
             readline_lnav_highlighter(al, std::nullopt);
             break;
         }
