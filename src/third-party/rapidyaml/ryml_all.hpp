@@ -1822,7 +1822,7 @@ __inline__ static void trap_instruction(void)
 {
 	/* See 'loongarch-tdep.c' in GDB source,
 	 * 'loongarch_default_breakpoint' */
-	__asm__ volatile(".inst 0x002a0005");
+	__asm__ volatile(".4byte 0x002a0005");
 }
 #else
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_SIGTRAP
