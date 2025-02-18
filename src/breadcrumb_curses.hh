@@ -43,6 +43,8 @@ public:
 
     breadcrumb_curses();
 
+    using injectable = breadcrumb_curses();
+
     void set_window(ncplane* win)
     {
         this->bc_window = win;

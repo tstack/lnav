@@ -239,9 +239,6 @@ static const std::unordered_set<std::string> DEFAULT_DB_KEY_NAMES = {
 static auto bound_pollable_supervisor
     = injector::bind<pollable_supervisor>::to_singleton();
 
-static auto bound_filter_sub_source
-    = injector::bind<filter_sub_source>::to_singleton();
-
 static auto bound_active_files = injector::bind<file_collection>::to_instance(
     +[]() { return &lnav_data.ld_active_files; });
 
@@ -263,8 +260,6 @@ static auto bound_term_extra = injector::bind<term_extra>::to_singleton();
 static auto bound_xterm_mouse = injector::bind<xterm_mouse>::to_singleton();
 
 static auto bound_scripts = injector::bind<available_scripts>::to_singleton();
-
-static auto bound_crumbs = injector::bind<breadcrumb_curses>::to_singleton();
 
 static auto bound_curl
     = injector::bind_multiple<isc::service_base>()
@@ -1109,13 +1104,18 @@ ui_execute_init_commands(
 static void
 looper()
 {
-    static auto* ps = injector::get<pollable_supervisor*>();
-    static auto* filter_source = injector::get<filter_sub_source*>();
-    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+    auto filter_sub_life
+        = injector::bind<filter_sub_source>::to_scoped_singleton();
+    auto crumb_life = injector::bind<breadcrumb_curses>::to_scoped_singleton();
+    auto* ps = injector::get<pollable_supervisor*>();
+    auto* filter_source = injector::get<filter_sub_source*>();
+    auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
 
     auto& ec = lnav_data.ld_exec_context;
     sig_atomic_t overlay_counter = 0;
 
+    lnav_data.ld_filter_view.set_sub_source(filter_source)
+        .add_input_delegate(*filter_source);
     lnav_data.ld_log_source.lss_sorting_observer
         = [](auto& lss, auto off, auto size) {
               if (off == size) {
@@ -3081,7 +3081,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
            "/usr/share/terminfo:/lib/terminfo:/usr/share/lib/terminfo",
            0);
 
-    auto* filter_source = injector::get<filter_sub_source*>();
     lnav_data.ld_vtab_manager = std::make_unique<log_vtab_manager>(
         lnav_data.ld_db, lnav_data.ld_views[LNV_LOG], lnav_data.ld_log_source);
 
@@ -3179,8 +3178,6 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_example_view.set_sub_source(&lnav_data.ld_example_source);
     lnav_data.ld_preview_view[0].set_sub_source(
         &lnav_data.ld_preview_source[0]);
-    lnav_data.ld_filter_view.set_sub_source(filter_source)
-        .add_input_delegate(*filter_source);
     lnav_data.ld_files_view.set_sub_source(&lnav_data.ld_files_source)
         .add_input_delegate(lnav_data.ld_files_source);
     lnav_data.ld_file_details_view.set_sub_source(
