@@ -188,6 +188,8 @@ public:
 
     static std::vector<bookmark_type_t*>& get_all_types();
 
+    static std::vector<const char*> get_type_names();
+
     template<typename T, std::size_t N>
     explicit bookmark_type_t(const T (&name)[N])
         : bt_name(string_fragment::from_const(name))

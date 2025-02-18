@@ -254,6 +254,12 @@ struct help_text {
         return *this;
     }
 
+    help_text& with_enum_values(const std::vector<const char*>& ev)
+    {
+        this->ht_enum_values = ev;
+        return *this;
+    }
+
     help_text& with_tags(
         const std::initializer_list<const char*>& tags) noexcept;
 

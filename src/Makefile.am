@@ -430,6 +430,7 @@ libdiag_a_SOURCES = \
 	bottom_status_source.cc \
 	breadcrumb_curses.cc \
 	cmd.parser.cc \
+	cmds.bookmarks.cc \
 	cmds.display.cc \
 	cmds.filtering.cc \
 	cmds.io.cc \

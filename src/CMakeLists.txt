@@ -448,6 +448,7 @@ add_library(
         bottom_status_source.cc
         breadcrumb_curses.cc
         cmd.parser.cc
+        cmds.bookmarks.cc
         cmds.display.cc
         cmds.filtering.cc
         cmds.io.cc

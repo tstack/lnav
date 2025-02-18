@@ -338,11 +338,6 @@ com_set_file_timezone(exec_context& ec,
     static const intern_string_t SRC = intern_string::lookup("args");
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("timezone");
-        return Ok(retval);
-    }
-
     if (args.size() == 1) {
         return ec.make_error("expecting a timezone name");
     }
@@ -977,23 +972,6 @@ com_annotate(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
-com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty() || lnav_data.ld_view_stack.empty()) {
-    } else if (!ec.ec_dry_run) {
-        auto* tc = *lnav_data.ld_view_stack.top();
-        lnav_data.ld_last_user_mark[tc] = tc->get_selection();
-        tc->toggle_user_mark(&textview_curses::BM_USER,
-                             vis_line_t(lnav_data.ld_last_user_mark[tc]));
-        tc->reload_data();
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
 com_mark_expr(exec_context& ec,
               std::string cmdline,
               std::vector<std::string>& args)
@@ -1090,115 +1068,6 @@ com_clear_mark_expr(exec_context& ec,
     } else {
         if (!ec.ec_dry_run) {
             lnav_data.ld_log_source.set_sql_marker("", nullptr);
-        }
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
-com_goto_mark(exec_context& ec,
-              std::string cmdline,
-              std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty()) {
-        args.emplace_back("mark-type");
-    } else {
-        static const std::set<const bookmark_type_t*> DEFAULT_TYPES = {
-            &textview_curses::BM_USER,
-            &textview_curses::BM_USER_EXPR,
-            &textview_curses::BM_META,
-        };
-
-        textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
-        std::set<const bookmark_type_t*> mark_types;
-
-        if (args.size() > 1) {
-            for (size_t lpc = 1; lpc < args.size(); lpc++) {
-                auto bt_opt = bookmark_type_t::find_type(args[lpc]);
-                if (!bt_opt) {
-                    auto um
-                        = lnav::console::user_message::error(
-                              attr_line_t("unknown bookmark type: ")
-                                  .append(args[lpc]))
-                              .with_snippets(ec.ec_source)
-                              .with_help(
-                                  attr_line_t("available types: ")
-                                      .join(bookmark_type_t::get_all_types()
-                                                | lnav::itertools::map(
-                                                    &bookmark_type_t::get_name)
-                                                | lnav::itertools::sorted(),
-                                            ", "))
-                              .move();
-                    return Err(um);
-                }
-                mark_types.insert(bt_opt.value());
-            }
-        } else {
-            mark_types = DEFAULT_TYPES;
-        }
-
-        if (!ec.ec_dry_run) {
-            std::optional<vis_line_t> new_top;
-
-            if (args[0] == "next-mark") {
-                auto search_from_top = search_forward_from(tc);
-
-                for (const auto& bt : mark_types) {
-                    auto bt_top
-                        = next_cluster(&bookmark_vector<vis_line_t>::next,
-                                       bt,
-                                       search_from_top);
-
-                    if (bt_top && (!new_top || bt_top < new_top.value())) {
-                        new_top = bt_top;
-                    }
-                }
-
-                if (!new_top) {
-                    auto um = lnav::console::user_message::info(fmt::format(
-                        FMT_STRING("no more {} bookmarks after here"),
-                        fmt::join(mark_types
-                                      | lnav::itertools::map(
-                                          &bookmark_type_t::get_name),
-                                  ", ")));
-
-                    return Err(um);
-                }
-            } else {
-                for (const auto& bt : mark_types) {
-                    auto bt_top
-                        = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                                       bt,
-                                       tc->get_selection());
-
-                    if (bt_top && (!new_top || bt_top > new_top.value())) {
-                        new_top = bt_top;
-                    }
-                }
-
-                if (!new_top) {
-                    auto um = lnav::console::user_message::info(fmt::format(
-                        FMT_STRING("no more {} bookmarks before here"),
-                        fmt::join(mark_types
-                                      | lnav::itertools::map(
-                                          &bookmark_type_t::get_name),
-                                  ", ")));
-
-                    return Err(um);
-                }
-            }
-
-            if (new_top) {
-                tc->get_sub_source()->get_location_history() |
-                    [new_top](auto lh) {
-                        lh->loc_history_append(new_top.value());
-                    };
-                tc->set_selection(new_top.value());
-            }
-            lnav_data.ld_bottom_source.grep_error("");
         }
     }
 
@@ -4282,13 +4151,6 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_tags({"metadata"}),
     },
 
-    {"mark",
-     com_mark,
-
-     help_text(":mark")
-         .with_summary("Toggle the bookmark state for the focused line in the "
-                       "current view")
-         .with_tags({"bookmarks"})},
     {
         "mark-expr",
         com_mark_expr,
@@ -4318,31 +4180,6 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_summary("Clear the mark expression")
          .with_opposites({"mark-expr"})
          .with_tags({"bookmarks"})},
-    {"next-mark",
-     com_goto_mark,
-
-     help_text(":next-mark")
-         .with_summary("Move to the next bookmark of the given type in the "
-                       "current view")
-         .with_parameter(help_text("type",
-                                   "The type of bookmark -- error, warning, "
-                                   "search, user, file, meta")
-                             .one_or_more())
-         .with_example({"To go to the next error", "error"})
-         .with_tags({"bookmarks", "navigation"})},
-    {"prev-mark",
-     com_goto_mark,
-
-     help_text(":prev-mark")
-         .with_summary("Move to the previous bookmark of the given "
-                       "type in the "
-                       "current view")
-         .with_parameter(help_text("type",
-                                   "The type of bookmark -- error, warning, "
-                                   "search, user, file, meta")
-                             .one_or_more())
-         .with_example({"To go to the previous error", "error"})
-         .with_tags({"bookmarks", "navigation"})},
     {"next-location",
      com_goto_location,
 

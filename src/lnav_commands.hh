@@ -42,6 +42,8 @@
  */
 void init_lnav_commands(readline_context::command_map_t& cmd_map);
 
+void init_lnav_bookmark_commands(readline_context::command_map_t& cmd_map);
+
 void init_lnav_display_commands(readline_context::command_map_t& cmd_map);
 
 void init_lnav_io_commands(readline_context::command_map_t& cmd_map);

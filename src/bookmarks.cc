@@ -106,3 +106,14 @@ bookmark_type_t::get_all_types()
 
     return all_types;
 }
+
+std::vector<const char*>
+bookmark_type_t::get_type_names()
+{
+    std::vector<const char*> retval;
+
+    for (const auto& bt : get_all_types()) {
+        retval.emplace_back(bt->get_name().data());
+    }
+    return retval;
+}
