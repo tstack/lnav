@@ -168,7 +168,8 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_STRING:
                 case help_parameter_format_t::HPF_FILENAME:
                 case help_parameter_format_t::HPF_LOADED_FILE:
-                case help_parameter_format_t::HPF_FORMAT_FIELD: {
+                case help_parameter_format_t::HPF_FORMAT_FIELD:
+                case help_parameter_format_t::HPF_TIMEZONE: {
                     if (!param.ht_enum_values.empty()) {
                         auto enum_iter = std::find(param.ht_enum_values.begin(),
                                                    param.ht_enum_values.end(),

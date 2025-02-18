@@ -273,8 +273,7 @@ com_unix_time(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (args.size() >= 2) {
+    if (args.size() >= 2) {
         bool parsed = false;
         struct tm log_time;
         time_t u_time;
@@ -598,11 +597,6 @@ com_convert_time_to(exec_context& ec,
                     std::vector<std::string>& args)
 {
     std::string retval;
-
-    if (args.empty()) {
-        args.emplace_back("timezone");
-        return Ok(retval);
-    }
 
     if (args.size() == 1) {
         return ec.make_error("expecting a timezone name");
@@ -4208,7 +4202,9 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":convert-time-to")
             .with_summary("Convert the focused timestamp to the "
                           "given timezone")
-            .with_parameter(help_text("zone", "The timezone name")),
+            .with_parameter(
+                help_text("zone", "The timezone name")
+                    .with_format(help_parameter_format_t::HPF_TIMEZONE)),
     },
     {
         "set-file-timezone",
@@ -4218,7 +4214,8 @@ readline_context::command_t STD_COMMANDS[] = {
                           "not include a timezone.  The timezone is applied "
                           "to "
                           "the focused file or the given glob pattern.")
-            .with_parameter({"zone", "The timezone name"})
+            .with_parameter(help_text{"zone", "The timezone name"}.with_format(
+                help_parameter_format_t::HPF_TIMEZONE))
             .with_parameter(help_text{"pattern",
                                       "The glob pattern to match against "
                                       "files that should use this timezone"}
@@ -4811,7 +4808,7 @@ readline_context::command_t STD_COMMANDS[] = {
         help_text(":zoom-to")
             .with_summary("Zoom the histogram view to the given level")
             .with_parameter(help_text("zoom-level", "The zoom level")
-                .with_enum_values(lnav_zoom_strings))
+                                .with_enum_values(lnav_zoom_strings))
             .with_example({"To set the zoom level to '1-week'", "1-week"}),
     },
     {"echo",

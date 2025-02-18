@@ -577,6 +577,22 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                SUBST_TEXT.value(x + " "));
                        });
             }
+            case help_parameter_format_t::HPF_TIMEZONE: {
+                std::vector<std::string> tz_strs;
+                try {
+                    for (const auto& tz : date::get_tzdb().zones) {
+                        tz_strs.emplace_back(tz.name());
+                    }
+                } catch (const std::runtime_error& e) {
+                    log_error("unable to get tzdb -- %s", e.what());
+                }
+
+                return tz_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x + " "));
+                       });
+            }
         }
     } else {
         return ht->ht_enum_values | lnav::itertools::similar_to(str, 10)

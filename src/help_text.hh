@@ -76,6 +76,7 @@ enum class help_parameter_format_t {
     HPF_FORMAT_FIELD,
     HPF_DIRECTORY,
     HPF_TIME_FILTER_POINT,
+    HPF_TIMEZONE,
 };
 
 struct help_example {
