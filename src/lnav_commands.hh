@@ -46,6 +46,8 @@ void init_lnav_display_commands(readline_context::command_map_t& cmd_map);
 
 void init_lnav_io_commands(readline_context::command_map_t& cmd_map);
 
+void init_lnav_filtering_commands(readline_context::command_map_t& cmd_map);
+
 std::string remaining_args(const std::string& cmdline,
                            const std::vector<std::string>& args,
                            size_t index = 1);

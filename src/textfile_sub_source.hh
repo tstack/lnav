@@ -42,6 +42,7 @@
 class textfile_sub_source
     : public text_sub_source
     , public vis_location_history
+    , public text_time_translator
     , public text_accel_source
     , public text_anchors {
 public:
@@ -150,6 +151,10 @@ public:
                                               direction dir) override;
 
     std::unordered_set<std::string> get_anchors() override;
+
+    std::optional<vis_line_t> row_for_time(timeval time_bucket) override;
+
+    std::optional<row_info> time_for_row(vis_line_t row) override;
 
     void quiesce() override;
 

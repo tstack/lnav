@@ -449,6 +449,7 @@ add_library(
         breadcrumb_curses.cc
         cmd.parser.cc
         cmds.display.cc
+        cmds.filtering.cc
         cmds.io.cc
         collation-functions.cc
         column_namer.cc

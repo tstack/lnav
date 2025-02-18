@@ -3280,6 +3280,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     init_lnav_commands(lnav_commands);
     init_lnav_display_commands(lnav_commands);
+    init_lnav_filtering_commands(lnav_commands);
     init_lnav_io_commands(lnav_commands);
 
     lnav_data.ld_looping = true;

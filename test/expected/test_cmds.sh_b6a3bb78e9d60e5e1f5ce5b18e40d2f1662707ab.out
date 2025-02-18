@@ -1907,6 +1907,7 @@ For support questions, email:
   Zoom the histogram view to the given level
 [4mParameter[0m
   [4mzoom-level[0m   The zoom level
+               [4mValues[0m: [1m1-second[0m|[1m30-second[0m|[1m1-minute[0m|[1m5-minute[0m|[1m15-minute[0m|[1m1-hour[0m|[1m4-hour[0m|[1m8-hour[0m|[1m1-day[0m|[1m1-week[0m
 
 [4mExample[0m
 #1 To set the zoom level to '1-week':

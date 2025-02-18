@@ -163,7 +163,9 @@ INSERT INTO lnav_history
 
 history::op_guard::~op_guard()
 {
-    if (!this->og_guard_helper || !this->og_context.empty()) {
+    if (!this->og_guard_helper || this->og_context.empty()
+        || lnav_data.ld_session_id.empty())
+    {
         return;
     }
 

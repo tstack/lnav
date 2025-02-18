@@ -547,6 +547,36 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                SUBST_TEXT.value(x + " "));
                        });
             }
+            case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
+                static const auto symbolic_times = std::vector<std::string>{
+                    "here",
+                    "now",
+                    "today",
+                    "yesterday",
+                };
+
+                auto* tss = tc.get_sub_source();
+                auto* ttt = dynamic_cast<text_time_translator*>(tss);
+                if (ttt == nullptr || !tss->tss_supports_filtering) {
+                    return {};
+                }
+
+                auto ri_opt = ttt->time_for_row(tc.get_selection());
+                if (!ri_opt) {
+                    return {};
+                }
+                auto ri = ri_opt.value();
+
+                auto all_times = symbolic_times;
+                all_times.emplace_back(
+                    lnav::to_rfc3339_string(ri.ri_time, 'T'));
+
+                return all_times | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x + " "));
+                       });
+            }
         }
     } else {
         return ht->ht_enum_values | lnav::itertools::similar_to(str, 10)

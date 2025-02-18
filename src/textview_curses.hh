@@ -256,16 +256,15 @@ public:
     struct row_info {
         row_info() = default;
 
-        row_info(struct timeval tv, int64_t id) : ri_time(tv), ri_id(id) {}
+        row_info(timeval tv, int64_t id) : ri_time(tv), ri_id(id) {}
 
-        struct timeval ri_time{0, 0};
+        timeval ri_time{0, 0};
         int64_t ri_id{-1};
     };
 
     virtual ~text_time_translator() = default;
 
-    virtual std::optional<vis_line_t> row_for_time(struct timeval time_bucket)
-        = 0;
+    virtual std::optional<vis_line_t> row_for_time(timeval time_bucket) = 0;
 
     virtual std::optional<vis_line_t> row_for(const row_info& ri)
     {
@@ -278,7 +277,59 @@ public:
 
     void ttt_scroll_invoked(textview_curses* tc);
 
+    std::optional<timeval> get_min_row_time() const
+    {
+        if (this->ttt_min_row_time == min_time_init) {
+            return std::nullopt;
+        }
+
+        return this->ttt_min_row_time;
+    }
+
+    void set_min_row_time(const timeval& tv)
+    {
+        if (this->ttt_min_row_time != tv) {
+            this->ttt_min_row_time = tv;
+            this->ttt_time_filter_generation += 1;
+        }
+    }
+
+    std::optional<timeval> get_max_row_time() const
+    {
+        if (this->ttt_max_row_time == max_time_init) {
+            return std::nullopt;
+        }
+
+        return this->ttt_max_row_time;
+    }
+
+    void set_max_row_time(const timeval& tv)
+    {
+        if (this->ttt_max_row_time != tv) {
+            this->ttt_max_row_time = tv;
+            this->ttt_time_filter_generation += 1;
+        }
+    }
+
+    void clear_min_max_row_times()
+    {
+        if (this->ttt_min_row_time != min_time_init
+            || this->ttt_max_row_time != max_time_init)
+        {
+            this->ttt_min_row_time = min_time_init;
+            this->ttt_max_row_time = max_time_init;
+            this->ttt_time_filter_generation += 1;
+        }
+    }
+
 protected:
+    static constexpr auto min_time_init = timeval{0, 0};
+    static constexpr auto max_time_init
+        = timeval{std::numeric_limits<time_t>::max(), 0};
+
+    timeval ttt_min_row_time = min_time_init;
+    timeval ttt_max_row_time = max_time_init;
+    uint32_t ttt_time_filter_generation{0};
     std::optional<row_info> ttt_top_row_info;
 };
 

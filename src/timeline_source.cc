@@ -652,8 +652,8 @@ timeline_source::rebuild_indexes()
     this->gs_preview_rows.clear();
     this->gs_preview_status_source.get_description().clear();
 
-    auto min_log_time_opt = this->gs_lss.get_min_log_time();
-    auto max_log_time_opt = this->gs_lss.get_max_log_time();
+    auto min_log_time_opt = this->get_min_row_time();
+    auto max_log_time_opt = this->get_max_row_time();
     auto max_desc_width = size_t{0};
 
     for (const auto& ld : this->gs_lss) {

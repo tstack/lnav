@@ -1627,7 +1627,7 @@ save_session_with_id(const std::string& session_id)
                     view_map.gen("filtering");
                     view_map.gen(tss->tss_apply_filters);
 
-                    filter_stack& fs = tss->get_filters();
+                    auto& fs = tss->get_filters();
 
                     view_map.gen("commands");
                     yajlpp_array cmd_array(handle);
@@ -1655,7 +1655,8 @@ save_session_with_id(const std::string& session_id)
                         cmd_array.gen("highlight " + hl.first.second);
                     }
 
-                    if (lpc == LNV_LOG) {
+                    auto* ttt = dynamic_cast<text_time_translator*>(tss);
+                    if (ttt != nullptr) {
                         for (const auto& format :
                              log_format::get_root_formats())
                         {
@@ -1680,10 +1681,8 @@ save_session_with_id(const std::string& session_id)
                             }
                         }
 
-                        auto& lss = lnav_data.ld_log_source;
-
-                        auto min_time_opt = lss.get_min_log_time();
-                        auto max_time_opt = lss.get_max_log_time();
+                        auto min_time_opt = ttt->get_min_row_time();
+                        auto max_time_opt = ttt->get_max_row_time();
                         char min_time_str[32], max_time_str[32];
 
                         if (min_time_opt) {
@@ -1701,9 +1700,12 @@ save_session_with_id(const std::string& session_id)
                                           + std::string(max_time_str));
                         }
 
-                        auto mark_expr = lss.get_sql_marker_text();
-                        if (!mark_expr.empty()) {
-                            cmd_array.gen("mark-expr " + mark_expr);
+                        if (lpc == LNV_LOG) {
+                            auto& lss = lnav_data.ld_log_source;
+                            auto mark_expr = lss.get_sql_marker_text();
+                            if (!mark_expr.empty()) {
+                                cmd_array.gen("mark-expr " + mark_expr);
+                            }
                         }
                     }
                 }
@@ -1754,6 +1756,7 @@ reset_session()
     session_data.sd_file_states.clear();
 
     for (auto& tc : lnav_data.ld_views) {
+        auto* ttt = dynamic_cast<text_time_translator*>(tc.get_sub_source());
         auto& hmap = tc.get_highlights();
         auto hl_iter = hmap.begin();
 
@@ -1764,6 +1767,10 @@ reset_session()
                 hmap.erase(hl_iter++);
             }
         }
+
+        if (ttt != nullptr) {
+            ttt->clear_min_max_row_times();
+        }
     }
 
     for (const auto& lf : lnav_data.ld_active_files.fc_files) {
@@ -1773,7 +1780,6 @@ reset_session()
     // XXX clean this up
     lnav_data.ld_log_source.set_force_rebuild();
     lnav_data.ld_log_source.set_marked_only(false);
-    lnav_data.ld_log_source.clear_min_max_log_times();
     lnav_data.ld_log_source.set_min_log_level(LEVEL_UNKNOWN);
     lnav_data.ld_log_source.set_sql_filter("", nullptr);
     lnav_data.ld_log_source.set_sql_marker("", nullptr);

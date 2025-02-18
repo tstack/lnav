@@ -123,7 +123,12 @@ remaining_args(const std::string& cmdline,
 
     require(index_in_cmdline != std::string::npos);
 
-    return cmdline.substr(index_in_cmdline);
+    auto retval = cmdline.substr(index_in_cmdline);
+    while (!retval.empty() && retval.back() == ' ') {
+        retval.pop_back();
+    }
+
+    return retval;
 }
 
 string_fragment
@@ -3120,132 +3125,6 @@ com_set_min_log_level(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
-com_hide_line(exec_context& ec,
-              std::string cmdline,
-              std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty()) {
-        args.emplace_back("move-time");
-    } else if (args.size() == 1) {
-        auto* tc = *lnav_data.ld_view_stack.top();
-        auto& lss = lnav_data.ld_log_source;
-
-        if (tc == &lnav_data.ld_views[LNV_LOG]) {
-            auto min_time_opt = lss.get_min_log_time();
-            auto max_time_opt = lss.get_max_log_time();
-            char min_time_str[32], max_time_str[32];
-
-            if (min_time_opt) {
-                sql_strftime(
-                    min_time_str, sizeof(min_time_str), min_time_opt.value());
-            }
-            if (max_time_opt) {
-                sql_strftime(
-                    max_time_str, sizeof(max_time_str), max_time_opt.value());
-            }
-            if (min_time_opt && max_time_opt) {
-                retval
-                    = fmt::format(FMT_STRING("info: hiding lines before {} and "
-                                             "after {}"),
-                                  min_time_str,
-                                  max_time_str);
-            } else if (min_time_opt) {
-                retval = fmt::format(FMT_STRING("info: hiding lines before {}"),
-                                     min_time_str);
-            } else if (max_time_opt) {
-                retval = fmt::format(FMT_STRING("info: hiding lines after {}"),
-                                     max_time_str);
-            } else {
-                retval
-                    = "info: no lines hidden by time, pass an "
-                      "absolute or "
-                      "relative time";
-            }
-        } else {
-            return ec.make_error(
-                "hiding lines by time only works in the log view");
-        }
-    } else if (args.size() >= 2) {
-        std::string all_args = remaining_args(cmdline, args);
-        auto* tc = *lnav_data.ld_view_stack.top();
-        auto* ttt = dynamic_cast<text_time_translator*>(tc->get_sub_source());
-        auto& lss = lnav_data.ld_log_source;
-        date_time_scanner dts;
-        struct timeval tv_abs;
-        std::optional<timeval> tv_opt;
-        auto parse_res = relative_time::from_str(all_args);
-
-        if (parse_res.isOk()) {
-            if (ttt != nullptr) {
-                if (tc->get_inner_height() > 0) {
-                    struct exttm tm;
-
-                    auto vl = tc->get_selection();
-                    auto log_vl_ri = ttt->time_for_row(vl);
-                    if (log_vl_ri) {
-                        tm = exttm::from_tv(log_vl_ri.value().ri_time);
-                        tv_opt = parse_res.unwrap().adjust(tm).to_timeval();
-                    }
-                }
-            } else {
-                return ec.make_error(
-                    "relative time values only work in a "
-                    "time-based view");
-            }
-        } else if (dts.convert_to_timeval(all_args, tv_abs)) {
-            tv_opt = tv_abs;
-        }
-
-        if (tv_opt && !ec.ec_dry_run) {
-            char time_text[256];
-            std::string relation;
-
-            sql_strftime(time_text, sizeof(time_text), tv_opt.value());
-            if (args[0] == "hide-lines-before") {
-                lss.set_min_log_time(tv_opt.value());
-                relation = "before";
-            } else {
-                lss.set_max_log_time(tv_opt.value());
-                relation = "after";
-            }
-
-            if (ttt != nullptr && tc != &lnav_data.ld_views[LNV_LOG]) {
-                tc->get_sub_source()->text_filters_changed();
-                tc->reload_data();
-            }
-
-            retval = fmt::format(
-                FMT_STRING("info: hiding lines {} {}"), relation, time_text);
-        }
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
-com_show_lines(exec_context& ec,
-               std::string cmdline,
-               std::vector<std::string>& args)
-{
-    std::string retval = "info: showing lines";
-
-    if (ec.ec_dry_run) {
-        retval = "";
-    } else if (!args.empty()) {
-        logfile_sub_source& lss = lnav_data.ld_log_source;
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
-
-        if (tc == &lnav_data.ld_views[LNV_LOG]) {
-            lss.clear_min_max_log_times();
-        }
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
 com_hide_unmarked(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
@@ -4498,40 +4377,12 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_tags({"navigation"}),
     },
 
-    {"help",
-     com_help,
+    {
+        "help",
+        com_help,
 
-     help_text(":help").with_summary("Open the help text view")},
-    {"hide-lines-before",
-     com_hide_line,
-
-     help_text(":hide-lines-before")
-         .with_summary("Hide lines that come before the given date")
-         .with_parameter(help_text("date", "An absolute or relative date"))
-         .with_examples({
-             {"To hide the lines before the focused line in the view", "here"},
-             {"To hide the log messages before 6 AM today", "6am"},
-         })
-         .with_tags({"filtering"})},
-    {"hide-lines-after",
-     com_hide_line,
-
-     help_text(":hide-lines-after")
-         .with_summary("Hide lines that come after the given date")
-         .with_parameter(help_text("date", "An absolute or relative date"))
-         .with_examples({
-             {"To hide the lines after the focused line in the view", "here"},
-             {"To hide the lines after 6 AM today", "6am"},
-         })
-         .with_tags({"filtering"})},
-    {"show-lines-before-and-after",
-     com_show_lines,
-
-     help_text(":show-lines-before-and-after")
-         .with_summary("Show lines that were hidden by the "
-                       "'hide-lines' commands")
-         .with_opposites({"hide-lines-before", "hide-lines-after"})
-         .with_tags({"filtering"})},
+        help_text(":help").with_summary("Open the help text view"),
+    },
     {"hide-unmarked-lines",
      com_hide_unmarked,
 
@@ -4953,13 +4804,16 @@ readline_context::command_t STD_COMMANDS[] = {
      com_redraw,
 
      help_text(":redraw").with_summary("Do a full redraw of the screen")},
-    {"zoom-to",
-     com_zoom_to,
+    {
+        "zoom-to",
+        com_zoom_to,
 
-     help_text(":zoom-to")
-         .with_summary("Zoom the histogram view to the given level")
-         .with_parameter(help_text("zoom-level", "The zoom level"))
-         .with_example({"To set the zoom level to '1-week'", "1-week"})},
+        help_text(":zoom-to")
+            .with_summary("Zoom the histogram view to the given level")
+            .with_parameter(help_text("zoom-level", "The zoom level")
+                .with_enum_values(lnav_zoom_strings))
+            .with_example({"To set the zoom level to '1-week'", "1-week"}),
+    },
     {"echo",
      com_echo,
 

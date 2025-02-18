@@ -276,46 +276,6 @@ public:
         }
     }
 
-    std::optional<timeval> get_min_log_time() const
-    {
-        if (this->lss_min_log_time.tv_sec == 0
-            && this->lss_min_log_time.tv_usec == 0)
-        {
-            return std::nullopt;
-        }
-
-        return this->lss_min_log_time;
-    }
-
-    void set_min_log_time(const struct timeval& tv)
-    {
-        if (this->lss_min_log_time != tv) {
-            this->lss_min_log_time = tv;
-            this->text_filters_changed();
-        }
-    }
-
-    std::optional<timeval> get_max_log_time() const
-    {
-        if (this->lss_max_log_time.tv_sec == std::numeric_limits<time_t>::max()
-            && this->lss_max_log_time.tv_usec == 0)
-        {
-            return std::nullopt;
-        }
-
-        return this->lss_max_log_time;
-    }
-
-    void set_max_log_time(struct timeval& tv)
-    {
-        if (this->lss_max_log_time != tv) {
-            this->lss_max_log_time = tv;
-            this->text_filters_changed();
-        }
-    }
-
-    void clear_min_max_log_times();
-
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch);
 
     void set_marked_only(bool val)
@@ -844,8 +804,6 @@ private:
     std::array<std::pair<int, size_t>, LINE_SIZE_CACHE_SIZE>
         lss_line_size_cache;
     log_level_t lss_min_log_level{LEVEL_UNKNOWN};
-    struct timeval lss_min_log_time{0, 0};
-    struct timeval lss_max_log_time{std::numeric_limits<time_t>::max(), 0};
     bool lss_marked_only{false};
     index_delegate* lss_index_delegate{nullptr};
     size_t lss_longest_line{0};

@@ -435,10 +435,19 @@ textfile_sub_source::text_filters_changed()
     this->get_filters().get_enabled_mask(filter_in_mask, filter_out_mask);
     lfo->lfo_filter_state.tfs_index.clear();
     for (uint32_t lpc = 0; lpc < lf->size(); lpc++) {
-        if (this->tss_apply_filters
-            && lfo->excluded(filter_in_mask, filter_out_mask, lpc))
-        {
-            continue;
+        if (this->tss_apply_filters) {
+            if (lfo->excluded(filter_in_mask, filter_out_mask, lpc)) {
+                continue;
+            }
+            if (lf->has_line_metadata()) {
+                auto ll = lf->begin() + lpc;
+                if (ll->get_timeval() < this->ttt_min_row_time) {
+                    continue;
+                }
+                if (this->ttt_max_row_time < ll->get_timeval()) {
+                    continue;
+                }
+            }
         }
         lfo->lfo_filter_state.tfs_index.push_back(lpc);
     }
@@ -1261,6 +1270,56 @@ textfile_sub_source::get_anchors()
     return retval;
 }
 
+struct tfs_time_cmp {
+    bool operator()(int32_t lhs, const timeval& rhs) const
+    {
+        auto ll = this->ttc_logfile->begin() + this->ttc_index[lhs];
+        return ll->get_timeval() < rhs;
+    }
+
+    logfile* ttc_logfile;
+    std::vector<uint32_t>& ttc_index;
+};
+
+std::optional<vis_line_t>
+textfile_sub_source::row_for_time(timeval time_bucket)
+{
+    auto lf = this->current_file();
+    if (!lf || !lf->has_line_metadata()) {
+        return std::nullopt;
+    }
+
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    auto& tfs = lfo->lfo_filter_state.tfs_index;
+    auto lb = std::lower_bound(
+        tfs.begin(), tfs.end(), time_bucket, tfs_time_cmp{lf.get(), tfs});
+    if (lb != tfs.end()) {
+        return vis_line_t{(int) std::distance(tfs.begin(), lb)};
+    }
+
+    return std::nullopt;
+}
+
+std::optional<text_time_translator::row_info>
+textfile_sub_source::time_for_row(vis_line_t row)
+{
+    auto lf = this->current_file();
+    if (!lf || !lf->has_line_metadata()) {
+        return std::nullopt;
+    }
+
+    auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
+    if (row < 0_vl || row >= lfo->lfo_filter_state.tfs_index.size()) {
+        return std::nullopt;
+    }
+    auto row_id = lfo->lfo_filter_state.tfs_index[row];
+    auto ll_iter = lf->begin() + row_id;
+    return row_info{
+        ll_iter->get_timeval(),
+        row_id,
+    };
+}
+
 static std::optional<vis_line_t>
 to_vis_line(const std::shared_ptr<logfile>& lf, file_off_t off)
 {
@@ -1273,7 +1332,7 @@ to_vis_line(const std::shared_ptr<logfile>& lf, file_off_t off)
 }
 
 std::optional<vis_line_t>
-textfile_sub_source::adjacent_anchor(vis_line_t vl, text_anchors::direction dir)
+textfile_sub_source::adjacent_anchor(vis_line_t vl, direction dir)
 {
     auto lf = this->current_file();
     if (!lf) {

@@ -149,7 +149,7 @@ logfile_sub_source::logfile_sub_source()
 {
     this->tss_supports_filtering = true;
     this->clear_line_size_cache();
-    this->clear_min_max_log_times();
+    this->clear_min_max_row_times();
 }
 
 std::shared_ptr<logfile>
@@ -1985,11 +1985,11 @@ logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
         return false;
     }
 
-    if (*ll < this->lss_min_log_time) {
+    if (*ll < this->ttt_min_row_time) {
         return false;
     }
 
-    if (!(*ll <= this->lss_max_log_time)) {
+    if (!(*ll <= this->ttt_max_row_time)) {
         return false;
     }
 
@@ -3089,21 +3089,6 @@ logfile_sub_source::get_filename_offset() const
     }
 
     return 0;
-}
-
-void
-logfile_sub_source::clear_min_max_log_times()
-{
-    if (this->lss_min_log_time.tv_sec != 0
-        || this->lss_min_log_time.tv_usec != 0
-        || this->lss_max_log_time.tv_sec != std::numeric_limits<time_t>::max()
-        || this->lss_max_log_time.tv_usec != 0)
-    {
-        memset(&this->lss_min_log_time, 0, sizeof(this->lss_min_log_time));
-        this->lss_max_log_time.tv_sec = std::numeric_limits<time_t>::max();
-        this->lss_max_log_time.tv_usec = 0;
-        this->text_filters_changed();
-    }
 }
 
 size_t

@@ -1,5 +1,10 @@
 ## lnav v0.12.5
 
+Features:
+* The `:comment` command will now switch the prompt to multi-line
+  mode and does syntax highlighting for Markdown directives in the
+  comment.
+
 Interface changes:
 * The prompt is now a custom implementation instead of readline.
 

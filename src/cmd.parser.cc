@@ -45,7 +45,8 @@ parsed::arg_at(int x) const
             if (se.se_origin.sf_begin <= x && x <= se.se_origin.sf_end) {
                 switch (arg.second.a_help->ht_format) {
                     case help_parameter_format_t::HPF_TEXT:
-                    case help_parameter_format_t::HPF_REGEX: {
+                    case help_parameter_format_t::HPF_REGEX:
+                    case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
                         data_scanner ds(se.se_value);
 
                         while (true) {
@@ -151,7 +152,8 @@ parse_for(mode_t mode,
             const auto& se = split_args[split_index];
             switch (param.ht_format) {
                 case help_parameter_format_t::HPF_TEXT:
-                case help_parameter_format_t::HPF_REGEX: {
+                case help_parameter_format_t::HPF_REGEX:
+                case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
                     const auto& last_se = split_args.back();
                     auto sf = string_fragment{
                         se.se_origin.sf_string,

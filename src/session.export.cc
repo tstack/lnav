@@ -470,6 +470,21 @@ SELECT content_id, format, time_offset FROM lnav_file
         }
 
         auto* tss = tc.get_sub_source();
+        auto* ttt = dynamic_cast<text_time_translator*>(tss);
+        if (ttt != nullptr) {
+            char tsbuf[128];
+            auto min_time_opt = ttt->get_min_row_time();
+            if (min_time_opt) {
+                sql_strftime(tsbuf, sizeof(tsbuf), min_time_opt.value(), 'T');
+                fmt::print(file, FMT_STRING(":hide-lines-before {}\n"), tsbuf);
+            }
+            auto max_time_opt = ttt->get_max_row_time();
+            if (max_time_opt) {
+                sql_strftime(tsbuf, sizeof(tsbuf), max_time_opt.value(), 'T');
+                fmt::print(file, FMT_STRING(":hide-lines-after {}\n"), tsbuf);
+            }
+        }
+
         auto* lss = dynamic_cast<logfile_sub_source*>(tss);
         if (lss != nullptr) {
             auto min_level = lss->get_min_log_level();
@@ -480,17 +495,6 @@ SELECT content_id, format, time_offset FROM lnav_file
                            level_names[min_level]);
             }
 
-            char tsbuf[128];
-            auto min_time_opt = lss->get_min_log_time();
-            if (min_time_opt) {
-                sql_strftime(tsbuf, sizeof(tsbuf), min_time_opt.value(), 'T');
-                fmt::print(file, FMT_STRING(":hide-lines-before {}\n"), tsbuf);
-            }
-            auto max_time_opt = lss->get_max_log_time();
-            if (max_time_opt) {
-                sql_strftime(tsbuf, sizeof(tsbuf), max_time_opt.value(), 'T');
-                fmt::print(file, FMT_STRING(":hide-lines-after {}\n"), tsbuf);
-            }
             for (const auto& ld : *lss) {
                 if (ld->is_visible()) {
                     continue;
