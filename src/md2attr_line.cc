@@ -256,9 +256,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             readline_sqlite_highlighter(block_text, block_text.length());
         } else if (lang_sf == "shell" || lang_sf == "bash") {
             readline_shlex_highlighter(block_text, block_text.length());
-        } else if (lang_sf == "console"
-                   || lang_sf.iequal(
-                       string_fragment::from_const("shellsession")))
+        } else if (lang_sf == "console" || lang_sf.iequal("shellsession"_frag))
         {
             static const auto SH_PROMPT
                 = lnav::pcre2pp::code::from_const(R"([^\$>#%]*[\$>#%]\s+)");
@@ -705,12 +703,12 @@ right_border_string(border_line_width width)
 static attr_line_t
 span_style_border(border_side side, const string_fragment& value)
 {
-    static constexpr auto NAME_THIN = string_fragment::from_const("thin");
-    static constexpr auto NAME_MEDIUM = string_fragment::from_const("medium");
-    static constexpr auto NAME_THICK = string_fragment::from_const("thick");
-    static constexpr auto NAME_SOLID = string_fragment::from_const("solid");
-    static constexpr auto NAME_DASHED = string_fragment::from_const("dashed");
-    static constexpr auto NAME_DOTTED = string_fragment::from_const("dotted");
+    static constexpr auto NAME_THIN = "thin"_frag;
+    static constexpr auto NAME_MEDIUM = "medium"_frag;
+    static constexpr auto NAME_THICK = "thick"_frag;
+    static constexpr auto NAME_SOLID = "solid"_frag;
+    static constexpr auto NAME_DASHED = "dashed"_frag;
+    static constexpr auto NAME_DOTTED = "dotted"_frag;
     static const auto& vc = view_colors::singleton();
 
     text_attrs border_attrs;
@@ -756,19 +754,15 @@ span_style_border(border_side side, const string_fragment& value)
 attr_line_t
 md2attr_line::to_attr_line(const pugi::xml_node& doc)
 {
-    static const auto NAME_IMG = string_fragment::from_const("img");
-    static const auto NAME_SPAN = string_fragment::from_const("span");
-    static const auto NAME_PRE = string_fragment::from_const("pre");
-    static const auto NAME_FG = string_fragment::from_const("color");
-    static const auto NAME_BG = string_fragment::from_const("background-color");
-    static const auto NAME_FONT_WEIGHT
-        = string_fragment::from_const("font-weight");
-    static const auto NAME_TEXT_DECO
-        = string_fragment::from_const("text-decoration");
-    static const auto NAME_BORDER_LEFT
-        = string_fragment::from_const("border-left");
-    static const auto NAME_BORDER_RIGHT
-        = string_fragment::from_const("border-right");
+    static const auto NAME_IMG = "img"_frag;
+    static const auto NAME_SPAN = "span"_frag;
+    static const auto NAME_PRE = "pre"_frag;
+    static const auto NAME_FG = "color"_frag;
+    static const auto NAME_BG = "background-color"_frag;
+    static const auto NAME_FONT_WEIGHT = "font-weight"_frag;
+    static const auto NAME_TEXT_DECO = "text-decoration"_frag;
+    static const auto NAME_BORDER_LEFT = "border-left"_frag;
+    static const auto NAME_BORDER_RIGHT = "border-right"_frag;
     static const auto& vc = view_colors::singleton();
 
     if (this->ml_source_path) {

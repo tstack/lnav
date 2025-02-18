@@ -45,7 +45,7 @@ static const struct {
 } MATCHERS[relative_time::RTT__MAX] = {
     {
         "ws",
-        lnav::pcre2pp::code::from_const("\\A\\s+\\b"),
+        lnav::pcre2pp::code::from_const("\\A\\s+(?:\\b|$)"),
     },
     {
         "am",

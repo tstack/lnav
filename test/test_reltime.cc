@@ -213,7 +213,7 @@ TEST_CASE("reltime")
 
     {
         auto rt_res
-            = relative_time::from_str(string_fragment::from_const("mon"));
+            = relative_time::from_str(string_fragment::from_const("mon "));
 
         CHECK(rt_res.isOk());
         auto rt = rt_res.unwrap();

@@ -486,7 +486,7 @@ public:
 
     bool handle_mouse(mouse_event& me) override;
 
-    bool contains(int x, int y) const override;
+    std::optional<view_curses*> contains(int x, int y) override;
 
     listview_curses& set_tail_space(vis_line_t space)
     {

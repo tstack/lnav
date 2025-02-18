@@ -239,6 +239,19 @@ struct help_text {
         return *this;
     }
 
+    bool is_trailing_arg() const
+    {
+        switch (this->ht_format) {
+            case help_parameter_format_t::HPF_TEXT:
+            case help_parameter_format_t::HPF_TIME_FILTER_POINT:
+            case help_parameter_format_t::HPF_MULTILINE_TEXT:
+            case help_parameter_format_t::HPF_REGEX:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     help_text& with_enum_values(
         const std::initializer_list<const char*>& enum_values) noexcept;
 

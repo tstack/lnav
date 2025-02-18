@@ -535,6 +535,9 @@ printf "Hello, World!" | run_cap_test env TEST_COMMENT="text view" ${lnav_test} 
   -c ":switch-to-view text"
 
 run_cap_test ${lnav_test} -Nnv \
+    -c ":hide-lines-before badbadbad"
+
+run_cap_test ${lnav_test} -Nnv \
     -c ":hide-lines-before 2009-07-20T22:59:29" \
     -c ":hide-lines-before"
 

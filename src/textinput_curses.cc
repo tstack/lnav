@@ -188,11 +188,20 @@ textinput_curses::set_content(const attr_line_t& al)
     this->set_needs_update();
 }
 
-bool
-textinput_curses::contains(int x, int y) const
+std::optional<view_curses*>
+textinput_curses::contains(int x, int y)
 {
-    return this->vc_x <= x && x < this->vc_x + this->vc_width && this->vc_y <= y
-        && y < this->vc_y + this->tc_height;
+    auto child = view_curses::contains(x, y);
+    if (child) {
+        return child;
+    }
+
+    if (this->vc_x <= x && x < this->vc_x + this->vc_width && this->vc_y <= y
+        && y < this->vc_y + this->tc_height)
+    {
+        return this;
+    }
+    return std::nullopt;
 }
 
 bool
@@ -786,10 +795,7 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->tc_complete_range = std::nullopt;
                 this->set_needs_update();
             } else {
-                this->blur();
-                if (this->tc_on_abort) {
-                    this->tc_on_abort(*this);
-                }
+                this->abort();
             }
 
             this->tc_selection = std::nullopt;
@@ -833,12 +839,12 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_on_completion(*this);
                 }
                 this->set_needs_update();
-            } else if (this->tc_lines.size() == 1
-                       && this->tc_lines.front().empty()
-                       && !this->tc_suggestion.empty())
+            } else if (!this->tc_suggestion.empty()
+                       && this->tc_lines[this->tc_cursor.y].column_width()
+                           == this->tc_cursor.x)
             {
-                this->tc_selection
-                    = selected_range::from_key(input_point{}, input_point{});
+                this->tc_selection = selected_range::from_key(this->tc_cursor,
+                                                              this->tc_cursor);
                 this->replace_selection(this->tc_suggestion);
             } else if (this->tc_height == 1) {
                 if (this->tc_on_completion_request) {
@@ -936,10 +942,7 @@ textinput_curses::handle_key(const ncinput& ch)
         }
         case NCKEY_BACKSPACE: {
             if (this->tc_lines.size() == 1 && this->tc_lines.front().empty()) {
-                this->blur();
-                if (this->tc_on_abort) {
-                    this->tc_on_abort(*this);
-                }
+                this->abort();
             } else if (!this->tc_selection) {
                 auto line_sf
                     = this->tc_lines[this->tc_cursor.y].to_string_fragment();
@@ -1368,6 +1371,9 @@ textinput_curses::update_lines()
     if (this->tc_on_change) {
         this->tc_on_change(*this);
     }
+    if (!this->tc_popup.is_visible()) {
+        this->tc_popup_type = popup_type_t::none;
+    }
 
     ensure(!this->tc_lines.empty());
 }
@@ -1446,6 +1452,15 @@ textinput_curses::blur()
 
     notcurses_cursor_disable(ncplane_notcurses(this->tc_window));
     this->set_needs_update();
+}
+
+void
+textinput_curses::abort()
+{
+    this->blur();
+    if (this->tc_on_abort) {
+        this->tc_on_abort(*this);
+    }
 }
 
 bool
@@ -1539,6 +1554,14 @@ textinput_curses::do_update()
                         },
                         VC_ROLE.value(role_t::VCR_SEARCH));
                 });
+        }
+        if (!this->tc_suggestion.empty() && !this->tc_popup.is_visible()
+            && curr_line == this->tc_cursor.y
+            && this->tc_cursor.x == al.column_width()
+            && (al.empty() || al.al_string.back() == ' '))
+        {
+            al.append(this->tc_suggestion,
+                      VC_ROLE.value(role_t::VCR_SUGGESTION));
         }
         if (curr_line == 0) {
             al.insert(0, this->tc_prefix);
@@ -1653,12 +1676,11 @@ textinput_curses::open_popup_for_completion(
 
     this->tc_popup_type = popup_type_t::completion;
     auto dim = this->get_visible_dimensions();
-    auto max_width = possibilities | lnav::itertools::map([](const auto& elem) {
-                         return elem.column_width();
-                     })
+    auto max_width = possibilities
+        | lnav::itertools::map(&attr_line_t::column_width)
         | lnav::itertools::max();
 
-    auto full_width = std::min((int) max_width.value_or(1) + 2, dim.dr_width);
+    auto full_width = std::min((int) max_width.value_or(1) + 3, dim.dr_width);
     auto new_sel = 0_vl;
     auto popup_height = vis_line_t(
         std::min(this->tc_max_popup_height, possibilities.size() + 1));
@@ -1669,9 +1691,13 @@ textinput_curses::open_popup_for_completion(
     if (rel_x + full_width > dim.dr_width) {
         rel_x = dim.dr_width - full_width;
     }
-    auto rel_y = this->tc_cursor.y - this->tc_top + 1;
-    if (this->vc_y + rel_y + popup_height > dim.dr_full_height) {
-        rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+    if (this->vc_x + rel_x > 0) {
+        rel_x -= 1;  // XXX for border
+    }
+    auto rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+    if (this->vc_y + rel_y < 0) {
+        rel_y = this->tc_cursor.y - this->tc_top + 1;
+    } else {
         std::reverse(possibilities.begin(), possibilities.end());
         new_sel = vis_line_t(possibilities.size() - 1);
     }
@@ -1703,9 +1729,10 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
     auto new_sel = 0_vl;
     auto popup_height = vis_line_t(
         std::min(this->tc_max_popup_height, possibilities.size() + 1));
-    auto rel_y = this->tc_cursor.y - this->tc_top + 1;
-    if (this->vc_y + rel_y + popup_height >= dim.dr_full_height) {
+    auto rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+    if (this->vc_y + rel_y < 0) {
         rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+    } else {
         std::reverse(possibilities.begin(), possibilities.end());
         new_sel = vis_line_t(possibilities.size() - 1);
     }
@@ -1718,6 +1745,7 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
         });
     this->tc_popup_source.replace_with(possibilities);
     this->tc_popup.set_window(this->tc_window);
+    this->tc_popup.set_title("History");
     this->tc_popup.set_x(this->vc_x);
     this->tc_popup.set_y(this->vc_y + rel_y);
     this->tc_popup.set_width(this->vc_width);

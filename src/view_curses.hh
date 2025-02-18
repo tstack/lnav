@@ -371,7 +371,7 @@ public:
 
     virtual bool handle_mouse(mouse_event& me);
 
-    virtual bool contains(int x, int y) const;
+    virtual std::optional<view_curses*> contains(int x, int y);
 
     void set_needs_update()
     {

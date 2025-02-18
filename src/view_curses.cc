@@ -194,25 +194,26 @@ view_curses::handle_mouse(mouse_event& me)
     return false;
 }
 
-bool
-view_curses::contains(int x, int y) const
+std::optional<view_curses*>
+view_curses::contains(int x, int y)
 {
     if (!this->vc_visible) {
-        return false;
+        return std::nullopt;
     }
 
     for (auto* child : this->vc_children) {
-        if (child->contains(x, y)) {
-            return true;
+        auto contains_res = child->contains(x, y);
+        if (contains_res) {
+            return contains_res;
         }
     }
     if (this->vc_x <= x
         && (this->vc_width < 0 || x < this->vc_x + this->vc_width)
         && this->vc_y == y)
     {
-        return true;
+        return this;
     }
-    return false;
+    return std::nullopt;
 }
 
 void

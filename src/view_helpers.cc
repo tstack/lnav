@@ -1504,6 +1504,14 @@ set_view_mode(ln_mode_t mode)
                 = role_t::VCR_DISABLED_CURSOR_LINE;
             break;
         }
+        case ln_mode_t::FILTER: {
+            static auto* filter_source = injector::get<filter_sub_source*>();
+
+            if (filter_source->fss_editing) {
+                filter_source->fss_editor->abort();
+            }
+            break;
+        }
         default:
             break;
     }
@@ -1539,21 +1547,20 @@ all_views()
     std::vector<view_curses*> retval;
 
     retval.push_back(breadcrumb_view);
-    for (auto& sc : lnav_data.ld_status) {
-        retval.push_back(&sc);
-    }
+    retval.push_back(&lnav::prompt::get().p_editor);
+    retval.push_back(&lnav_data.ld_filter_view);
     retval.push_back(&lnav_data.ld_doc_view);
     retval.push_back(&lnav_data.ld_example_view);
     retval.push_back(&lnav_data.ld_preview_view[0]);
     retval.push_back(&lnav_data.ld_preview_view[1]);
     retval.push_back(&lnav_data.ld_file_details_view);
     retval.push_back(&lnav_data.ld_files_view);
-    retval.push_back(&lnav_data.ld_filter_view);
     retval.push_back(&lnav_data.ld_user_message_view);
     retval.push_back(&lnav_data.ld_spectro_details_view);
     retval.push_back(&lnav_data.ld_timeline_details_view);
-    retval.push_back(&lnav::prompt::get().p_editor);
-    retval.push_back(&lnav::prompt::get().p_editor.tc_popup);
+    for (auto& sc : lnav_data.ld_status) {
+        retval.push_back(&sc);
+    }
 
     return retval;
 }
@@ -1625,38 +1632,40 @@ lnav_behavior::mouse_event(
                 if (breadcrumb_view->contains(me.me_x, me.me_y)) {
                     this->lb_last_view = breadcrumb_view;
                     break;
-                } else {
-                    set_view_mode(ln_mode_t::PAGING);
-                    lnav_data.ld_view_stack.set_needs_update();
                 }
+                set_view_mode(ln_mode_t::PAGING);
+                lnav_data.ld_view_stack.set_needs_update();
             }
 
-            auto* tc = *(lnav_data.ld_view_stack.top());
-            if (tc->contains(me.me_x, me.me_y)) {
-                me.me_press_y = me.me_y - tc->get_y();
-                me.me_press_x = me.me_x - tc->get_x();
-                this->lb_last_view = tc;
-
-                switch (lnav_data.ld_mode) {
-                    case ln_mode_t::PAGING:
-                        break;
-                    case ln_mode_t::FILES:
-                    case ln_mode_t::FILE_DETAILS:
-                    case ln_mode_t::FILTER:
-                        // Clicking on the main view when the config panels are
-                        // open should return us to paging.
-                        set_view_mode(ln_mode_t::PAGING);
-                        break;
-                    default:
-                        break;
+            this->lb_last_view = nullptr;
+            for (auto* vc : VIEWS) {
+                auto contained_by = vc->contains(me.me_x, me.me_y);
+                if (contained_by) {
+                    this->lb_last_view = contained_by.value();
+                    me.me_press_y = me.me_y - this->lb_last_view->get_y();
+                    me.me_press_x = me.me_x - this->lb_last_view->get_x();
+                    break;
                 }
-            } else {
-                for (auto* vc : VIEWS) {
-                    if (vc->contains(me.me_x, me.me_y)) {
-                        this->lb_last_view = vc;
-                        me.me_press_y = me.me_y - vc->get_y();
-                        me.me_press_x = me.me_x - vc->get_x();
-                        break;
+            }
+            if (this->lb_last_view == nullptr) {
+                auto* tc = *(lnav_data.ld_view_stack.top());
+                if (tc->contains(me.me_x, me.me_y)) {
+                    me.me_press_y = me.me_y - tc->get_y();
+                    me.me_press_x = me.me_x - tc->get_x();
+                    this->lb_last_view = tc;
+
+                    switch (lnav_data.ld_mode) {
+                        case ln_mode_t::PAGING:
+                            break;
+                        case ln_mode_t::FILES:
+                        case ln_mode_t::FILE_DETAILS:
+                        case ln_mode_t::FILTER:
+                            // Clicking on the main view when the config panels
+                            // are open should return us to paging.
+                            set_view_mode(ln_mode_t::PAGING);
+                            break;
+                        default:
+                            break;
                     }
                 }
             }

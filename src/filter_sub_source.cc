@@ -48,13 +48,13 @@ using namespace lnav::roles::literals;
 
 filter_sub_source::filter_sub_source(std::shared_ptr<textinput_curses> editor)
     : fss_editor(editor),
-      fss_regexp_history(lnav::textinput::history::for_context(
-          string_fragment::from_const("regexp-filter"))),
-      fss_sql_history(lnav::textinput::history::for_context(
-          string_fragment::from_const("sql-filter")))
+      fss_regexp_history(
+          lnav::textinput::history::for_context("regexp-filter"_frag)),
+      fss_sql_history(lnav::textinput::history::for_context("sql-filter"_frag))
 {
     this->fss_editor->set_visible(false);
     this->fss_editor->set_x(25);
+    this->fss_editor->tc_popup.set_title("Pattern");
     this->fss_editor->tc_height = 1;
     this->fss_editor->tc_on_change
         = bind_mem(&filter_sub_source::rl_change, this);
@@ -66,6 +66,7 @@ filter_sub_source::filter_sub_source(std::shared_ptr<textinput_curses> editor)
         = bind_mem(&filter_sub_source::rl_completion, this);
     this->fss_editor->tc_on_perform
         = bind_mem(&filter_sub_source::rl_perform, this);
+    this->fss_editor->tc_on_blur = bind_mem(&filter_sub_source::rl_blur, this);
     this->fss_editor->tc_on_abort
         = bind_mem(&filter_sub_source::rl_abort, this);
 }
@@ -703,8 +704,7 @@ void
 filter_sub_source::rl_blur(textinput_curses& tc)
 {
     auto* top_view = *lnav_data.ld_view_stack.top();
-    top_view->get_highlights().erase(
-        {highlight_source_t::PREVIEW, "preview"});
+    top_view->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
     lnav_data.ld_filter_help_status_source.fss_prompt.clear();
     lnav_data.ld_filter_help_status_source.fss_error.clear();

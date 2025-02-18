@@ -48,15 +48,12 @@ list_gutter_source listview_curses::DEFAULT_GUTTER_SOURCE;
 
 listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
 
-bool
-listview_curses::contains(int x, int y) const
+std::optional<view_curses*>
+listview_curses::contains(int x, int y)
 {
-    if (!this->vc_visible) {
-        return false;
-    }
-
-    if (view_curses::contains(x, y)) {
-        return true;
+    auto child = view_curses::contains(x, y);
+    if (child) {
+        return child;
     }
 
     auto dim = this->get_dimensions();
@@ -64,9 +61,9 @@ listview_curses::contains(int x, int y) const
     if (this->vc_x <= x && x < this->vc_x + dim.second && this->vc_y <= y
         && y < this->vc_y + dim.first)
     {
-        return true;
+        return this;
     }
-    return false;
+    return std::nullopt;
 }
 
 void
@@ -493,13 +490,48 @@ listview_curses::do_update()
         auto x = this->vc_x;
         uint64_t border_channels = 0;
         if (this->lv_border_left_role) {
+            this->lv_display_lines.emplace_back(empty_space{});
             border_channels = vc.to_channels(
                 vc.attrs_for_role(this->lv_border_left_role.value()));
+
+            auto al = attr_line_t("  ");
+            if (!this->lv_title.empty()) {
+                al.append(this->lv_title,
+                          VC_STYLE.value(text_attrs::with_bold()));
+            }
+            al.al_attrs.emplace_back(line_range{0, 1},
+                                     VC_GRAPHIC.value(NCACS_ULCORNER));
+            auto hline_lr = line_range{1, (int) width - 1};
+            if (!this->lv_title.empty()) {
+                al.al_attrs.emplace_back(line_range{1, 2},
+                                         VC_GRAPHIC.value(NCACS_RTEE));
+                al.al_attrs.emplace_back(
+                    line_range{
+                        2 + (int) this->lv_title.length(),
+                        2 + (int) this->lv_title.length() + 1,
+                    },
+                    VC_GRAPHIC.value(NCACS_LTEE));
+                hline_lr.lr_start += 1 + this->lv_title.length() + 1;
+            }
+            al.al_attrs.emplace_back(hline_lr, VC_GRAPHIC.value(NCACS_HLINE));
+            al.al_attrs.emplace_back(line_range{(int) width - 1, (int) width},
+                                     VC_GRAPHIC.value(NCACS_URCORNER));
+            mvwattrline(this->lv_window,
+                        y,
+                        x,
+                        al,
+                        line_range{0, (int) width},
+                        this->lv_border_left_role.value());
+
+            y += 1;
             for (auto border_y = y; border_y < bottom; border_y++) {
                 ncplane_putstr_yx(
-                    this->lv_window, border_y, this->vc_x, "\u258c");
-                ncplane_set_cell_yx(
-                    this->lv_window, border_y, this->vc_x, 0, border_channels);
+                    this->lv_window, border_y, this->vc_x, NCACS_VLINE);
+                ncplane_set_cell_yx(this->lv_window,
+                                    border_y,
+                                    x,
+                                    NCSTYLE_ALTCHARSET,
+                                    border_channels);
             }
             x += 1;
             width -= 1;
@@ -710,7 +742,8 @@ listview_curses::do_update()
             this->lv_scroll_bottom = this->lv_scroll_top
                 + std::min((int) height, (int) (coverage * (double) height));
 
-            for (unsigned int gutter_y = this->vc_y;
+            for (unsigned int gutter_y
+                 = this->vc_y + (this->lv_border_left_role ? 1 : 0);
                  gutter_y < (this->vc_y + height);
                  gutter_y++)
             {

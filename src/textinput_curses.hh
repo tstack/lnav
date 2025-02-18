@@ -266,7 +266,7 @@ public:
 
     void set_content(const attr_line_t& al);
 
-    bool contains(int x, int y) const override;
+    std::optional<view_curses*> contains(int x, int y) override;
 
     bool handle_mouse(mouse_event& me) override;
 
@@ -283,6 +283,8 @@ public:
     void focus();
 
     void blur();
+
+    void abort();
 
     std::string get_content(bool trim = false) const;
 
@@ -352,7 +354,7 @@ public:
     ncplane* tc_window{nullptr};
     size_t tc_max_popup_height{5};
     int tc_left{0};
-    size_t tc_top{0};
+    int tc_top{0};
     int tc_height{0};
     input_point tc_cursor;
     int tc_max_cursor_x{0};

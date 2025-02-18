@@ -41,29 +41,29 @@
 #include "pcrepp/pcre2pp.hh"
 #include "yajl/api/yajl_parse.h"
 
-const string_fragment
+constexpr string_fragment
     TEXT_FORMAT_STRINGS[lnav::enums::to_underlying(text_format_t::TF_UNKNOWN)
                         + 1]
     = {
-        string_fragment::from_const("application/octet-stream"),
-        string_fragment::from_const("text/c"),
-        string_fragment::from_const("text/java"),
-        string_fragment::from_const("application/json"),
-        string_fragment::from_const("text/log"),
-        string_fragment::from_const("text/x-makefile"),
-        string_fragment::from_const("text/man"),
-        string_fragment::from_const("text/markdown"),
-        string_fragment::from_const("text/python"),
-        string_fragment::from_const("application/x-pcre"),
-        string_fragment::from_const("text/rust"),
-        string_fragment::from_const("application/sql"),
-        string_fragment::from_const("text/xml"),
-        string_fragment::from_const("application/yaml"),
-        string_fragment::from_const("application/toml"),
-        string_fragment::from_const("text/x-diff"),
-        string_fragment::from_const("text/x-shellscript"),
-        string_fragment::from_const("text/x-lnav-script"),
-        string_fragment::from_const("text/plain"),
+        "application/octet-stream"_frag,
+        "text/c"_frag,
+        "text/java"_frag,
+        "application/json"_frag,
+        "text/log"_frag,
+        "text/x-makefile"_frag,
+        "text/man"_frag,
+        "text/markdown"_frag,
+        "text/python"_frag,
+        "application/x-pcre"_frag,
+        "text/rust"_frag,
+        "application/sql"_frag,
+        "text/xml"_frag,
+        "application/yaml"_frag,
+        "application/toml"_frag,
+        "text/x-diff"_frag,
+        "text/x-shellscript"_frag,
+        "text/x-lnav-script"_frag,
+        "text/plain"_frag,
 };
 
 text_format_t
