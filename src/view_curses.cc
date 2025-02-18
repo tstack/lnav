@@ -1339,8 +1339,9 @@ screen_curses::create(const notcurses_options& options)
         check_experimental("mouse")
             || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
 
-    log_info("notcurses detected terminal: %s",
-             notcurses_detected_terminal(nc));
+    auto_mem<char> term_name;
+    term_name = notcurses_detected_terminal(nc);
+    log_info("notcurses detected terminal: %s", term_name.in());
 
     return Ok(screen_curses(nc));
 }
