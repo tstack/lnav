@@ -3489,9 +3489,7 @@ com_spectrogram(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("numeric-colname");
-    } else if (ec.ec_dry_run) {
+    if (ec.ec_dry_run) {
         retval = "";
     } else if (args.size() == 2) {
         auto colname = remaining_args(cmdline, args);
@@ -4480,17 +4478,22 @@ readline_context::command_t STD_COMMANDS[] = {
                         "builtin default",
                         "/ui/clock-format"})
          .with_tags({"configuration"})},
-    {"spectrogram",
-     com_spectrogram,
+    {
+        "spectrogram",
+        com_spectrogram,
 
-     help_text(":spectrogram")
-         .with_summary("Visualize the given message field or database column "
-                       "using a spectrogram")
-         .with_parameter(help_text(
-             "field-name", "The name of the numeric field to visualize."))
-         .with_example({"To visualize the sc_bytes field in the "
-                        "access_log format",
-                        "sc_bytes"})},
+        help_text(":spectrogram")
+            .with_summary(
+                "Visualize the given message field or database column "
+                "using a spectrogram")
+            .with_parameter(
+                help_text("field-name",
+                          "The name of the numeric field to visualize.")
+                    .with_format(help_parameter_format_t::HPF_NUMERIC_FIELD))
+            .with_example({"To visualize the sc_bytes field in the "
+                           "access_log format",
+                           "sc_bytes"}),
+    },
     {"quit",
      com_quit,
 

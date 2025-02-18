@@ -144,6 +144,20 @@ struct logline_value_meta {
         return this->lvm_hidden;
     }
 
+    bool is_numeric() const
+    {
+        if (this->lvm_identifier || this->lvm_foreign_key) {
+            return false;
+        }
+        switch (this->lvm_kind) {
+            case value_kind_t::VALUE_FLOAT:
+            case value_kind_t::VALUE_INTEGER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     logline_value_meta& with_struct_name(intern_string_t name)
     {
         this->lvm_struct_name = name;
