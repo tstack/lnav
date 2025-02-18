@@ -510,6 +510,11 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #elif defined(SWIG)
    #error "please define CPU architecture macros when compiling with swig"
 
+#elif defined(__loongarch64)
+   #define C4_CPU_LOONGARCH64
+   #define C4_WORDSIZE 8
+   #define C4_BYTE_ORDER _C4EL
+
 #else
    #error "unknown CPU architecture"
 #endif
@@ -1809,6 +1814,15 @@ __inline__ static void trap_instruction(void)
 	/* See 'riscv-tdep.c' in GDB source,
 	 * 'riscv_sw_breakpoint_from_kind' */
 	__asm__ volatile(".4byte 0x00100073");
+}
+#elif defined(__loongarch64)
+	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
+__attribute__((always_inline))
+__inline__ static void trap_instruction(void)
+{
+	/* See 'loongarch-tdep.c' in GDB source,
+	 * 'loongarch_default_breakpoint' */
+	__asm__ volatile(".4byte 0x002a0005");
 }
 #else
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_SIGTRAP
@@ -7503,7 +7517,7 @@ from_chars_result from_chars_advanced(const char *first, const char *last,
        || defined(__MINGW64__)                                          \
        || defined(__s390x__)                                            \
        || (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) \
-       || defined(__EMSCRIPTEN__))
+       || defined(__EMSCRIPTEN__)) || defined(__loongarch64)
 #define FASTFLOAT_64BIT
 #elif (defined(__i386) || defined(__i386__) || defined(_M_IX86)   \
      || defined(__arm__) || defined(_M_ARM)                   \
