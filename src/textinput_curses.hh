@@ -120,6 +120,16 @@ public:
         int x{0};
         int y{0};
 
+        static input_point home() { return input_point{}; }
+
+        static input_point end()
+        {
+            return {
+                std::numeric_limits<int>::max(),
+                std::numeric_limits<int>::max(),
+            };
+        }
+
         input_point copy_with_x(int x) { return {x, this->y}; }
 
         input_point copy_with_y(int y) { return {this->x, y}; }
@@ -266,6 +276,8 @@ public:
 
     void set_content(const attr_line_t& al);
 
+    void set_height(int height);
+
     std::optional<view_curses*> contains(int x, int y) override;
 
     bool handle_mouse(mouse_event& me) override;
@@ -408,6 +420,7 @@ public:
     std::optional<ui_clock::time_point> tc_last_tick_after_input;
     bool tc_timeout_fired{false};
 
+    std::function<void(textinput_curses&)> tc_on_help;
     std::function<void(textinput_curses&)> tc_on_focus;
     std::function<void(textinput_curses&)> tc_on_blur;
     std::function<void(textinput_curses&)> tc_on_abort;

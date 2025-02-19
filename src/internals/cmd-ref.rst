@@ -1071,7 +1071,7 @@
   Open the given prompt
 
   **Parameters**
-    * **type\*** --- The type of prompt -- command, script, search, sql, user
+    * **type\*** --- The type of prompt
     * **--alt** --- Perform the alternate action for this prompt by default
     * **prompt** --- The prompt to display
     * **initial-value** --- The initial value to fill in for the prompt

@@ -365,7 +365,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
         iter = lnav_commands.find(args[0]);
     }
     if (iter == lnav_commands.end()
-        || (args.size() == 1 && !endswith(line, " ")))
+        || (args.size() == 1 && !endswith(line, " ") && !endswith(line, "\n")))
     {
         switch (rc.tc_popup_type) {
             case textinput_curses::popup_type_t::history: {
@@ -398,6 +398,8 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
             }
         }
 
+        prompt.p_editor.tc_height = std::min(
+            prompt.p_editor.tc_height, (int) prompt.p_editor.tc_lines.size());
         lnav_data.ld_doc_source.replace_with(CMD_HELP);
         lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
         lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
@@ -514,7 +516,10 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                 == help_parameter_format_t::HPF_MULTILINE_TEXT)
         {
             prompt.p_editor.tc_height = 5;
-        } else {
+        } else if (prompt.p_editor.tc_height > 1) {
+            auto ml_content = prompt.p_editor.get_content();
+            std::replace(ml_content.begin(), ml_content.end(), '\n', ' ');
+            prompt.p_editor.set_content(ml_content);
             prompt.p_editor.tc_height = 1;
         }
 
@@ -538,6 +543,10 @@ rl_change(textinput_curses& rc)
     lnav_data.ld_user_message_source.clear();
 
     log_debug("rl_change");
+
+    if (prompt.p_editor.tc_mode == textinput_curses::mode_t::show_help) {
+        return;
+    }
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::SEARCH: {

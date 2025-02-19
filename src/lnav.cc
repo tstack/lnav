@@ -1370,6 +1370,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         prompt.p_editor.tc_window = lnav_data.ld_window;
         prompt.p_editor.tc_height = 1;
         prompt.p_editor.tc_text_format = text_format_t::TF_LNAV_SCRIPT;
+        prompt.p_editor.tc_on_help = bind_mem(&lnav::prompt::rl_help, &prompt);
         prompt.p_editor.tc_on_focus = rl_focus;
         prompt.p_editor.tc_on_change = rl_change;
         prompt.p_editor.tc_on_perform = rl_callback;

@@ -140,6 +140,10 @@ textinput_curses::textinput_curses()
     this->tc_help_view.set_default_role(role_t::VCR_STATUS);
     this->tc_help_view.set_sub_source(&this->tc_help_source);
 
+    this->tc_on_help = [](textinput_curses& ti) {
+        ti.tc_mode = mode_t::show_help;
+        ti.set_needs_update();
+    };
     this->tc_help_source.replace_with(get_help_text());
 
     this->set_content("");
@@ -185,6 +189,22 @@ textinput_curses::set_content(const attr_line_t& al)
     this->tc_top = 0;
     this->tc_cursor = {};
     this->clamp_point(this->tc_cursor);
+    this->set_needs_update();
+}
+
+void
+textinput_curses::set_height(int height)
+{
+    if (this->tc_height == height) {
+        return;
+    }
+
+    this->tc_height = height;
+    if (this->tc_height == 1) {
+        if (this->tc_cursor.y != 0) {
+            this->move_cursor_to(this->tc_cursor.copy_with_y(0));
+        }
+    }
     this->set_needs_update();
 }
 
@@ -356,6 +376,9 @@ textinput_curses::handle_help_key(const ncinput& ch)
             log_debug("switching back to editing from help");
             this->tc_mode = mode_t::editing;
             this->tc_help_view.set_visible(false);
+            if (this->tc_on_change) {
+                this->tc_on_change(*this);
+            }
             this->set_needs_update();
             return true;
         }
@@ -913,11 +936,11 @@ textinput_curses::handle_key(const ncinput& ch)
         }
 
         case NCKEY_HOME: {
-            this->move_cursor_to({0, 0});
+            this->move_cursor_to(input_point::home());
             return true;
         }
         case NCKEY_END: {
-            this->move_cursor_to({0, (int) bottom});
+            this->move_cursor_to(input_point::end());
             return true;
         }
         case NCKEY_PGUP: {
@@ -1057,8 +1080,9 @@ textinput_curses::handle_key(const ncinput& ch)
             return true;
         }
         case NCKEY_F01: {
-            this->tc_mode = mode_t::show_help;
-            this->set_needs_update();
+            if (this->tc_on_help) {
+                this->tc_on_help(*this);
+            }
             return true;
         }
         default: {
@@ -1473,6 +1497,13 @@ textinput_curses::do_update()
         return retval;
     }
 
+    auto popup_height = this->tc_popup.get_height();
+    auto rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+    if (this->vc_y + rel_y < 0) {
+        rel_y = this->tc_cursor.y - this->tc_top - popup_height;
+    }
+    this->tc_popup.set_y(this->vc_y + rel_y);
+
     if (!this->vc_needs_update) {
         return view_curses::do_update();
     }
@@ -1495,7 +1526,6 @@ textinput_curses::do_update()
     }
 
     if (this->tc_mode == mode_t::show_help) {
-        log_debug("render help");
         this->tc_help_view.set_window(this->tc_window);
         this->tc_help_view.set_x(this->vc_x);
         this->tc_help_view.set_y(this->vc_y);
@@ -1738,7 +1768,7 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
     }
 
     this->tc_complete_range = selected_range::from_key(
-        input_point{},
+        input_point::home(),
         input_point{
             (int) this->tc_lines.back().column_width(),
             (int) this->tc_lines.size() - 1,

@@ -4,9 +4,15 @@ Features:
 * The `:comment` command will now switch the prompt to multi-line
   mode and does syntax highlighting for Markdown directives in the
   comment.
+* Added a `fuzzy_match()` SQL function that compares a pattern to
+  a string and returns a score.
+  The algorithm used is the same as in lnav itself.
 
 Interface changes:
 * The prompt is now a custom implementation instead of readline.
+* Pressing `F1` in the prompt will show the help text for the
+  prompt itself.
+  The size of the prompt panel is expanded for readability.
 
 ## lnav v0.12.4
 

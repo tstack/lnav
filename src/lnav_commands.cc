@@ -3611,7 +3611,7 @@ command_prompt(std::vector<std::string>& args)
                           "commands.html") " for more details");
 
     set_view_mode(ln_mode_t::COMMAND);
-    prompt.focus_for(':');
+    prompt.focus_for(':', args);
 
     rl_set_help();
 }
@@ -3628,7 +3628,7 @@ script_prompt(std::vector<std::string>& args)
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     find_format_scripts(lnav_data.ld_config_paths, scripts);
-    prompt.focus_for('|');
+    prompt.focus_for('|', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("CTRL+]") " to abort)");
 }
@@ -3643,7 +3643,7 @@ search_prompt(std::vector<std::string>& args)
     log_debug("search prompt");
     set_view_mode(ln_mode_t::SEARCH);
     lnav_data.ld_search_start_line = tc->get_selection();
-    prompt.focus_for('/');
+    prompt.focus_for('/', args);
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
     lnav_data.ld_doc_status_source.set_description("");
     rl_set_help();
@@ -3660,7 +3660,7 @@ search_filters_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::SEARCH_FILTERS);
     lnav_data.ld_filter_view.reload_data();
-    prompt.focus_for('/');
+    prompt.focus_for('/', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -3674,7 +3674,7 @@ search_files_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_FILES);
-    prompt.focus_for('/');
+    prompt.focus_for('/', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -3687,7 +3687,7 @@ search_spectro_details_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_SPECTRO_DETAILS);
-    prompt.focus_for('/');
+    prompt.focus_for('/', args);
 
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
@@ -3708,7 +3708,7 @@ sql_prompt(std::vector<std::string>& args)
     set_view_mode(ln_mode_t::SQL);
     setup_logline_table(lnav_data.ld_exec_context);
     prompt.refresh_sql_completions(*tc);
-    prompt.focus_for(';');
+    prompt.focus_for(';', args);
 
     lnav_data.ld_doc_status_source.set_title("Query Help");
     lnav_data.ld_doc_status_source.set_description(
@@ -3736,7 +3736,7 @@ user_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::USER);
     setup_logline_table(lnav_data.ld_exec_context);
-    prompt.focus_for('\0');
+    prompt.focus_for('\0', args);
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -3760,8 +3760,7 @@ com_prompt(exec_context& ec,
             {"user", user_prompt},
         };
 
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         static const intern_string_t SRC = intern_string::lookup("flags");
 
         auto lexer = shlex(cmdline);
@@ -3803,39 +3802,39 @@ com_prompt(exec_context& ec,
 }
 
 readline_context::command_t STD_COMMANDS[] = {
-    {"prompt",
-     com_prompt,
+    {
+        "prompt",
+        com_prompt,
 
-     help_text(":prompt")
-         .with_summary("Open the given prompt")
-         .with_parameter({"type",
-                          "The type of prompt -- command, script, "
-                          "search, sql, user"})
-         .with_parameter(help_text("--alt",
-                                   "Perform the alternate action "
-                                   "for this prompt by default")
-                             .optional())
-         .with_parameter(help_text("prompt", "The prompt to display")
-                             .with_enum_values({
-                                 "breadcrumb",
-                                 "command",
-                                 "script",
-                                 "search",
-                                 "sql",
-                             })
-                             .optional())
-         .with_parameter(
-             help_text("initial-value",
-                       "The initial value to fill in for the prompt")
-                 .optional())
-         .with_example({
-             "To open the command prompt with 'filter-in' already filled in",
-             "command : 'filter-in '",
-         })
-         .with_example({
-             "To ask the user a question",
-             "user 'Are you sure? '",
-         })},
+        help_text(":prompt")
+            .with_summary("Open the given prompt")
+            .with_parameter(
+                help_text{"type", "The type of prompt"}.with_enum_values({
+                    "breadcrumb",
+                    "command",
+                    "script",
+                    "search",
+                    "sql",
+                }))
+            .with_parameter(help_text("--alt",
+                                      "Perform the alternate action "
+                                      "for this prompt by default")
+                                .optional())
+            .with_parameter(
+                help_text("prompt", "The prompt to display").optional())
+            .with_parameter(
+                help_text("initial-value",
+                          "The initial value to fill in for the prompt")
+                    .optional())
+            .with_example({
+                "To open the command prompt with 'filter-in' already filled in",
+                "command : 'filter-in '",
+            })
+            .with_example({
+                "To ask the user a question",
+                "user 'Are you sure? '",
+            }),
+    },
 
     {"adjust-log-time",
      com_adjust_log_time,

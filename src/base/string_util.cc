@@ -277,11 +277,20 @@ abbreviate_str(char* str, size_t len, size_t max_len)
 void
 split_ws(const std::string& str, std::vector<std::string>& toks_out)
 {
-    std::stringstream ss(str);
-    std::string buf;
+    auto str_sf = string_fragment::from_str(str);
 
-    while (ss >> buf) {
-        toks_out.push_back(buf);
+    while (true) {
+        auto split_pair = str_sf.split_when(isspace);
+        if (split_pair.first.empty()) {
+            if (split_pair.second.empty()) {
+                break;
+            }
+            str_sf = split_pair.second;
+            continue;
+        }
+
+        toks_out.emplace_back(split_pair.first.to_string());
+        str_sf = split_pair.second;
     }
 }
 

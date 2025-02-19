@@ -102,7 +102,7 @@ struct prompt {
     std::multimap<std::string, sql_item_t> p_sql_completions;
     textinput_curses p_editor;
 
-    void focus_for(char sigil);
+    void focus_for(char sigil, const std::vector<std::string>& args);
 
     void refresh_sql_completions(textview_curses& tc);
     void insert_sql_completion(const std::string& name, const sql_item_t& item);
@@ -113,6 +113,7 @@ struct prompt {
     std::vector<attr_line_t> get_cmd_parameter_completion(
         textview_curses& tc, const help_text* ht, const std::string& str);
 
+    void rl_help(textinput_curses& tc);
     void rl_history(textinput_curses& tc);
     void rl_completion(textinput_curses& tc);
 };

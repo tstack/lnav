@@ -176,14 +176,18 @@ prompt::get()
 }
 
 void
-prompt::focus_for(char sigil)
+prompt::focus_for(char sigil, const std::vector<std::string>& args)
 {
     this->p_editor.tc_prefix.clear();
-    if (sigil) {
+    if (args.size() >= 3) {
+        this->p_editor.tc_prefix.al_string = args[2];
+    } else if (sigil) {
         this->p_editor.tc_prefix.al_string.push_back(sigil);
     }
     this->p_editor.tc_height = 1;
-    this->p_editor.set_content("");
+    this->p_editor.set_content(cget(args, 3).value_or(""));
+    this->p_editor.move_cursor_to(textinput_curses::input_point::end());
+    this->p_editor.tc_popup.set_title("");
     this->p_editor.focus();
 }
 
@@ -253,6 +257,17 @@ prompt::refresh_sql_completions(textview_curses& tc)
             this->insert_sql_completion(sql_quote_text(str), sql_string_t{});
         }
     }
+}
+
+void
+prompt::rl_help(textinput_curses& tc)
+{
+    if (tc.tc_height == 1) {
+        tc.set_height(8);
+    }
+
+    tc.tc_mode = textinput_curses::mode_t::show_help;
+    tc.set_needs_update();
 }
 
 void
