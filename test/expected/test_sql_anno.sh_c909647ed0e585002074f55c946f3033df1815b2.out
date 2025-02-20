@@ -1,6 +1,14 @@
                  SELECT foo(bar())
      sql_keyword ------
-        sql_func        ---------
+        sql_func        ----------
        sql_ident        ---
-        sql_func            ----
+       sql_paren           -
+        sql_func            -----
        sql_ident            ---
+       sql_paren               -
+       sql_paren                -
+       sql_paren                 -
+Formatted:
+SELECT
+    foo(bar())
+Cursor offset: 21

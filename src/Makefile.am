@@ -338,6 +338,7 @@ noinst_HEADERS = \
 	spectro_source.hh \
 	sqlitepp.hh \
 	sqlitepp.client.hh \
+	sql.formatter.hh \
 	sql_execute.hh \
 	sql_help.hh \
 	sql_util.hh \
@@ -521,6 +522,7 @@ libdiag_a_SOURCES = \
 	text_overlay_menu.cc \
 	textfile_sub_source.cc \
 	timer.cc \
+	sql.formatter.cc \
 	sql_commands.cc \
 	sql_util.cc \
 	state-extension-functions.cc \

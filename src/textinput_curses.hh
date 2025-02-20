@@ -326,6 +326,8 @@ public:
 
     void move_cursor_to(input_point ip);
 
+    void move_cursor_to_offset(int offset);
+
     void clamp_point(input_point& ip) const
     {
         if (ip.y < 0) {
@@ -347,6 +349,8 @@ public:
     void move_cursor_to_prev_search_hit();
 
     void tick(ui_clock::time_point now);
+
+    int get_cursor_offset() const;
 
     enum class mode_t {
         editing,
@@ -429,6 +433,7 @@ public:
     std::function<void(textinput_curses&)> tc_on_completion;
     std::function<void(textinput_curses&)> tc_on_history;
     std::function<void(textinput_curses&)> tc_on_timeout;
+    std::function<void(textinput_curses&)> tc_on_reformat;
     std::function<void(textinput_curses&)> tc_on_perform;
 };
 

@@ -3,3 +3,9 @@
       sql_string        ---------------
      sql_keyword                        ----
        sql_ident                             ----------
+Formatted:
+SELECT
+    'hello, world!'
+FROM
+    "my table"
+Cursor offset: 46

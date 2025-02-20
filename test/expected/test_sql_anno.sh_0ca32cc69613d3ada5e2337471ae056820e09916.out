@@ -14,3 +14,8 @@
        prql_fqid                                    ----
       prql_paren                                         -
 stats.count_by: Partition rows and count the number of rows in each partition
+Formatted:
+from access_log
+stats.count_by { c_ip }
+
+Cursor offset: 23

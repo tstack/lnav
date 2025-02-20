@@ -43,6 +43,7 @@
 #include "readline_possibilities.hh"
 #include "scn/scan.h"
 #include "shlex.hh"
+#include "sql.formatter.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 
@@ -271,14 +272,31 @@ prompt::rl_help(textinput_curses& tc)
 }
 
 void
+prompt::rl_reformat(textinput_curses& tc)
+{
+    switch (tc.tc_prefix.al_string.front()) {
+        case ';': {
+            auto content = attr_line_t(tc.get_content());
+            annotate_sql_statement(content);
+            auto format_res
+                = lnav::prql::format(content, tc.get_cursor_offset());
+            tc.set_content(format_res.fr_content);
+            tc.set_height(5);
+            tc.move_cursor_to_offset(format_res.fr_cursor_offset);
+            break;
+        }
+    }
+}
+
+void
 prompt::rl_history(textinput_curses& tc)
 {
     auto sigil = tc.tc_prefix.al_string.front();
     auto& hist = this->get_history_for(sigil);
+    auto width = tc.get_width() - 1;
     std::vector<attr_line_t> poss;
-    auto cb = [&poss, sigil](const auto& e) {
-        auto al = attr_line_t()
-                      .append(e.e_content)
+    auto cb = [&poss, sigil, width](const auto& e) {
+        auto al = attr_line_t::from_table_cell_content(e.e_content, width)
                       .with_attr_for_all(SUBST_TEXT.value(e.e_content));
         switch (sigil) {
             case ':':
@@ -308,6 +326,9 @@ prompt::rl_completion(textinput_curses& tc)
         = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()].tl_value;
     auto sub = get_string_attr(al.al_attrs, SUBST_TEXT)->get();
     tc.replace_selection(sub);
+    if (tc.tc_lines.size() > 1 && tc.tc_height == 1) {
+        tc.set_height(5);
+    }
 }
 
 struct sql_item_visitor {

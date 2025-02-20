@@ -157,7 +157,7 @@ textinput_curses::set_content(const attr_line_t& al)
     if (!this->tc_prefix.empty()) {
         al_copy.insert(0, this->tc_prefix);
     }
-    highlight_syntax(this->tc_text_format, al_copy);
+    highlight_syntax(this->tc_text_format, al_copy, this->tc_prefix.length());
     if (!this->tc_prefix.empty()) {
         // XXX yuck
         al_copy.erase(0, this->tc_prefix.al_string.size());
@@ -710,6 +710,14 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->update_lines();
                 return true;
             }
+            case 'l':
+            case 'L': {
+                log_debug("reformat content");
+                if (this->tc_on_reformat) {
+                    this->tc_on_reformat(*this);
+                }
+                return true;
+            }
             case 'r':
             case 'R': {
                 if (this->tc_on_history) {
@@ -1185,6 +1193,10 @@ textinput_curses::ensure_cursor_visible()
 void
 textinput_curses::apply_highlights()
 {
+    if (this->tc_text_format == text_format_t::TF_LNAV_SCRIPT) {
+        return;
+    }
+
     for (auto& line : this->tc_lines) {
         for (const auto& hl_pair : this->tc_highlights) {
             const auto& hl = hl_pair.second;
@@ -1366,11 +1378,13 @@ void
 textinput_curses::update_lines()
 {
     auto content = attr_line_t(this->get_content());
+    auto x = this->get_cursor_offset();
 
     if (!this->tc_prefix.empty()) {
         content.insert(0, this->tc_prefix);
+        x += this->tc_prefix.length();
     }
-    highlight_syntax(this->tc_text_format, content);
+    highlight_syntax(this->tc_text_format, content, x);
     if (!this->tc_prefix.empty()) {
         // XXX yuck
         content.erase(0, this->tc_prefix.al_string.size());
@@ -1802,4 +1816,36 @@ textinput_curses::tick(ui_clock::time_point now)
         this->tc_last_tick_after_input = now;
         this->tc_timeout_fired = false;
     }
+}
+
+int
+textinput_curses::get_cursor_offset() const
+{
+    int retval = 0;
+    for (auto row = size_t{0}; row < this->tc_cursor.y; row++) {
+        retval += this->tc_lines[row].al_string.size() + 1;
+    }
+    retval += this->tc_cursor.x;
+
+    return retval;
+}
+
+void
+textinput_curses::move_cursor_to_offset(int offset)
+{
+    auto new_point = input_point::home();
+    auto row = size_t{0};
+    for (; row < this->tc_lines.size() && offset > 0; row++)
+    {
+        if (offset < this->tc_lines[row].al_string.size() + 1) {
+            break;
+        }
+        offset -= this->tc_lines[row].al_string.size() + 1;
+        new_point.y += 1;
+    }
+    if (row < this->tc_lines.size()) {
+        new_point.x = this->tc_lines[row].byte_to_column_index(offset);
+    }
+
+    this->move_cursor_to(new_point);
 }

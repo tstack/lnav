@@ -78,8 +78,8 @@ Result<describe_result, std::string>
 describe(const fs::path& filename)
 {
 #if HAVE_ARCHIVE_H
-    static constexpr auto RAW_FORMAT_NAME = string_fragment::from_const("raw");
-    static constexpr auto GZ_FILTER_NAME = string_fragment::from_const("gzip");
+    static constexpr auto RAW_FORMAT_NAME = "raw"_frag;
+    static constexpr auto GZ_FILTER_NAME = "gzip"_frag;
 
     auto_mem<archive> arc(archive_read_free);
 

@@ -1,2 +1,5 @@
                  .dump /foo/bar abc
      sql_command -----
+Formatted:
+.dump
+Cursor offset: 5

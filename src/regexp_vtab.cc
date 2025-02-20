@@ -536,7 +536,7 @@ rcjFilter(sqlite3_vtab_cursor* pVtabCursor,
     pCur->c_pattern = compile_res.unwrap().to_shared();
     pCur->c_namer
         = std::make_unique<column_namer>(column_namer::language::JSON);
-    pCur->c_namer->add_column(string_fragment::from_const("__all__"));
+    pCur->c_namer->add_column("__all__"_frag);
     for (size_t lpc = 1; lpc <= pCur->c_pattern->get_capture_count(); lpc++) {
         pCur->c_namer->add_column(string_fragment::from_c_str(
             pCur->c_pattern->get_name_for_capture(lpc)));

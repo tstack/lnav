@@ -2,7 +2,7 @@
  [1m[31mreason[0m: SQL expression is invalid
 [1m[31m |      [0m  [1m[31mreason[0m: no such column: sc_status
 [1m[31m |      [0m [36m --> [0m[1m/log/watch-expressions/http-errors/expr[0m
-[1m[31m |      [0m [36m | [0m[37m[40msc_status [0m[1m[37m[40m>[0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m400[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m bad                [0m
+[1m[31m |      [0m [36m | [0m[37m[40msc_status[0m[37m[40m [0m[1m[37m[40m>[0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m400[0m[37m[40m [0m[1m[36m[40mAND[0m[37m[40m [0m[37m[40mbad[0m[37m[40m                [0m
 [36m --> [0m[1mcommand-option[0m:1
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/log/watch-expressions/http-errors/expr[0m [4m<SQL-expression>[0m

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,32 +25,40 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file readline_highlighters.hh
  */
 
-#ifndef readline_highlighters_hh
-#define readline_highlighters_hh
+#ifndef lnav_sql_formatter_hh
+#define lnav_sql_formatter_hh
+
+#include <string>
 
 #include "base/attr_line.hh"
-#include "text_format.hh"
 
-void readline_regex_highlighter(attr_line_t& line, std::optional<int> x);
+namespace lnav {
 
-void readline_command_highlighter(attr_line_t& line, std::optional<int> x);
+struct format_result {
+    std::string fr_content;
+    int fr_cursor_offset{0};
+};
 
-void readline_sqlite_highlighter_int(attr_line_t& line,
-                                     std::optional<int> x,
-                                     line_range sub);
-void readline_sqlite_highlighter(attr_line_t& line, std::optional<int> x);
+namespace prql {
 
-void readline_shlex_highlighter_int(attr_line_t& al,
-                                    std::optional<int> x,
-                                    line_range sub);
-void readline_shlex_highlighter(attr_line_t& line, std::optional<int> x);
+format_result format(const attr_line_t& al, int cursor_offset);
 
-void readline_lnav_highlighter(attr_line_t& line, std::optional<int> x);
+}  // namespace prql
 
-void highlight_syntax(text_format_t tf, attr_line_t& al, std::optional<int> x);
+namespace sql {
+
+format_result format(const attr_line_t& al, int cursor_offset);
+
+}  // namespace sql
+
+namespace db {
+
+format_result format(const attr_line_t& al, int cursor_offset);
+
+}
+
+}  // namespace lnav
 
 #endif

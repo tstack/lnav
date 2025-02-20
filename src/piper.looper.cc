@@ -80,9 +80,9 @@ public:
             = std::unordered_set<string_fragment,
                                  frag_hasher,
                                  std::equal_to<string_fragment>>{
-                string_fragment::from_const("mux_id"),
-                string_fragment::from_const("timestamp"),
-                string_fragment::from_const("body"),
+                "mux_id"_frag,
+                "timestamp"_frag,
+                "body"_frag,
             };
 
         auto* cfg = injector::get<config*>();
@@ -204,7 +204,7 @@ looper::loop()
     static constexpr auto FORCE_MTIME_UPDATE_DURATION = 8h;
     static const auto DEFAULT_ID = string_fragment{};
     static const auto OUT_OF_FRAME_ID
-        = string_fragment::from_const("_out_of_frame_");
+        = "_out_of_frame_"_frag;
     static constexpr auto FILE_TIMEOUT_BACKOFF = 30ms;
     static constexpr auto FILE_TIMEOUT_MAX = 1000ms;
 

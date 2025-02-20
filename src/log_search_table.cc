@@ -78,7 +78,7 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
         value_kind_t::VALUE_INTEGER,
         logline_value_meta::table_column{cols.size()});
     cols.emplace_back(MATCH_INDEX, SQLITE_INTEGER);
-    cn.add_column(string_fragment::from_const("__all__"));
+    cn.add_column("__all__"_frag);
     auto captures = this->lst_regex->get_captures();
     for (size_t lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
         std::string collator;

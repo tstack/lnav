@@ -1,10 +1,18 @@
                  SELECT instr(lower(abc), '123')
      sql_keyword ------
-        sql_func        -----------------------
+        sql_func        ------------------------
        sql_ident        -----
-        sql_func              ---------
+       sql_paren             -
+        sql_func              ----------
        sql_ident              -----
+       sql_paren                   -
        sql_ident                    ---
+       sql_paren                       -
        sql_comma                        -
       sql_string                          -----
+       sql_paren                               -
 instr: Finds the first occurrence of the needle within the haystack and returns the number of prior characters plus 1, or 0 if the needle was not found
+Formatted:
+SELECT
+    instr(lower(abc), '123')
+Cursor offset: 13

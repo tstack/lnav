@@ -170,7 +170,7 @@ readline_command_highlighter_int(attr_line_t& al,
     static const auto SH_PREFIXES = lnav::pcre2pp::code::from_const(
         "^:(eval|open|append-to|write-to|write-csv-to|write-json-to)");
     static const auto SQL_PREFIXES
-    = lnav::pcre2pp::code::from_const("^:(filter-expr|mark-expr)");
+        = lnav::pcre2pp::code::from_const("^:(filter-expr|mark-expr)");
     static const auto MD_PREFIXES
         = lnav::pcre2pp::code::from_const("^:comment");
     static const auto IDENT_PREFIXES
@@ -299,8 +299,9 @@ readline_sqlite_highlighter_int(attr_line_t& al,
         } else if (attr.sa_type == &SQL_IDENTIFIER_ATTR
                    || attr.sa_type == &lnav::sql::PRQL_IDENTIFIER_ATTR)
         {
-            if (x && !attr.sa_range.contains(x.value())
-                && attr.sa_range.lr_end != x.value())
+            if (!x
+                || (x && !attr.sa_range.contains(x.value())
+                    && attr.sa_range.lr_end != x.value()))
             {
                 alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_IDENTIFIER));
             }
@@ -544,23 +545,23 @@ readline_lnav_highlighter(attr_line_t& al, std::optional<int> x)
 }
 
 void
-highlight_syntax(text_format_t tf, attr_line_t& al)
+highlight_syntax(text_format_t tf, attr_line_t& al, std::optional<int> x)
 {
     switch (tf) {
         case text_format_t::TF_SQL: {
-            readline_sqlite_highlighter(al, std::nullopt);
+            readline_sqlite_highlighter(al, x);
             break;
         }
         case text_format_t::TF_PCRE: {
-            readline_regex_highlighter(al, std::nullopt);
+            readline_regex_highlighter(al, x);
             break;
         }
         case text_format_t::TF_SHELL_SCRIPT: {
-            readline_shlex_highlighter(al, std::nullopt);
+            readline_shlex_highlighter(al, x);
             break;
         }
         case text_format_t::TF_LNAV_SCRIPT: {
-            readline_lnav_highlighter(al, std::nullopt);
+            readline_lnav_highlighter(al, x);
             break;
         }
         default:

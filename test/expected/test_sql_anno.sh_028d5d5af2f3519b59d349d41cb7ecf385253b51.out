@@ -3,3 +3,9 @@
         sql_oper        -
      sql_keyword          ----
        sql_ident               ---
+Formatted:
+SELECT
+    *
+FROM
+    FOO
+Cursor offset: 25

@@ -1,6 +1,12 @@
                  SELECT lower(   abc    )
      sql_keyword ------
-        sql_func        ----------------
+        sql_func        -----------------
        sql_ident        -----
+       sql_paren             -
        sql_ident                 ---
+       sql_paren                        -
 lower: Returns a copy of the given string with all ASCII characters converted to lower case.
+Formatted:
+SELECT
+    lower(   abc    )
+Cursor offset: 18

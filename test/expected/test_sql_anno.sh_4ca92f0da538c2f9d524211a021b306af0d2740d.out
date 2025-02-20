@@ -5,3 +5,9 @@
        sql_ident               ---
      sql_garbage                  -
        sql_ident                   ---
+Formatted:
+SELECT
+    *
+FROM
+    foo . bar
+Cursor offset: 31

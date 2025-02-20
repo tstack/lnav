@@ -1,7 +1,15 @@
                  SELECT foo(bar())
      sql_keyword ------
-        sql_func        ---------
+        sql_func        ----------
        sql_ident        ---
-        sql_func            ----
+       sql_paren           -
+        sql_func            -----
        sql_ident            ---
+       sql_paren               -
+       sql_paren                -
+       sql_paren                 -
 SELECT: Query the database and return zero or more rows of data.
+Formatted:
+SELECT
+    foo(bar())
+Cursor offset: 2

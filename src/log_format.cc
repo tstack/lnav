@@ -487,7 +487,7 @@ logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
 
     switch (this->lv_meta.lvm_kind) {
         case value_kind_t::VALUE_NULL:
-            return string_fragment::from_const("null");
+            return "null"_frag;
 
         case value_kind_t::VALUE_JSON:
         case value_kind_t::VALUE_XML:
@@ -542,9 +542,9 @@ logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
 
         case value_kind_t::VALUE_BOOLEAN:
             if (this->lv_value.i) {
-                return string_fragment::from_const("true");
+                return "true"_frag;
             }
-            return string_fragment::from_const("false");
+            return "false"_frag;
             break;
         case value_kind_t::VALUE_UNKNOWN:
         case value_kind_t::VALUE__MAX:

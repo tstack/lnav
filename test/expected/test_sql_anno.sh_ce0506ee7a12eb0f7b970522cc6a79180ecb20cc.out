@@ -4,8 +4,17 @@
      sql_keyword          ----
        sql_ident               -------
        sql_comma                      -
-        sql_func                        --------------------------------------------------------------------------------
+        sql_func                        ---------------------------------------------------------------------------------
        sql_ident                        --------------
+       sql_paren                                      -
        sql_ident                                       --------
        sql_comma                                               -
       sql_string                                                 -------------------------------------------------------
+       sql_paren                                                                                                        -
+Formatted:
+SELECT
+    *
+FROM
+    vmw_log,
+    regexp_capture(log_body, '--> /SessionStats/SessionPool/Session/(?<line>[abc]+)')
+Cursor offset: 116

@@ -1,9 +1,15 @@
                  SELECT json_object('abc', 'def') ->> '$.abc'
      sql_keyword ------
-        sql_func        ------------------------
+        sql_func        -------------------------
        sql_ident        -----------
+       sql_paren                   -
       sql_string                    -----
        sql_comma                         -
       sql_string                           -----
+       sql_paren                                -
         sql_oper                                  ---
       sql_string                                      -------
+Formatted:
+SELECT
+    json_object('abc', 'def') ->> '$.abc'
+Cursor offset: 48

@@ -532,6 +532,7 @@ add_library(
         sysclip.cc
         spectro_impls.cc
         spectro_source.cc
+        sql.formatter.cc
         sql_commands.cc
         sql_util.cc
         sqlitepp.cc
@@ -660,6 +661,7 @@ add_library(
         spectro_impls.hh
         spectro_source.hh
         sqlitepp.hh
+        sql.formatter.hh
         sql_execute.hh
         sql_help.hh
         sql_util.hh

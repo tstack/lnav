@@ -1,6 +1,12 @@
                  SELECT       lower(abc)
      sql_keyword ------
-        sql_func              ---------
+        sql_func              ----------
        sql_ident              -----
+       sql_paren                   -
        sql_ident                    ---
+       sql_paren                       -
 SELECT: Query the database and return zero or more rows of data.
+Formatted:
+SELECT
+    lower(abc)
+Cursor offset: 7

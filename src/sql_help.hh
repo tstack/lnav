@@ -49,6 +49,7 @@ extern const string_attr_type<void> SQL_STRING_ATTR;
 extern const string_attr_type<void> SQL_NUMBER_ATTR;
 extern const string_attr_type<void> SQL_OPERATOR_ATTR;
 extern const string_attr_type<void> SQL_PAREN_ATTR;
+extern const string_attr_type<void> SQL_COMMA_ATTR;
 extern const string_attr_type<void> SQL_GARBAGE_ATTR;
 extern const string_attr_type<void> SQL_COMMENT_ATTR;
 

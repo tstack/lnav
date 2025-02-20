@@ -114,6 +114,7 @@ struct prompt {
         textview_curses& tc, const help_text* ht, const std::string& str);
 
     void rl_help(textinput_curses& tc);
+    void rl_reformat(textinput_curses& tc);
     void rl_history(textinput_curses& tc);
     void rl_completion(textinput_curses& tc);
 };

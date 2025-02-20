@@ -574,19 +574,19 @@ rl_change(textinput_curses& rc)
                     default: {
                         auto anno_line = attr_line_t(line);
                         annotate_sql_statement(anno_line);
-                        auto byte_x = anno_line.column_to_byte_index(
-                            prompt.p_editor.tc_cursor.x);
+                        auto cursor_offset
+                            = prompt.p_editor.get_cursor_offset();
 
                         auto attr_iter = rfind_string_attr_if(
-                            anno_line.al_attrs, byte_x, [](const auto&) {
+                            anno_line.al_attrs, cursor_offset, [](const auto&) {
                                 return true;
                             });
                         if (attr_iter != anno_line.al_attrs.end()
-                            && attr_iter->sa_range.lr_end == byte_x)
+                            && attr_iter->sa_range.lr_end == cursor_offset)
                         {
-                            auto to_complete
-                                = anno_line.to_string_fragment(attr_iter)
-                                      .to_string();
+                            auto to_complete_sf
+                                = anno_line.to_string_fragment(attr_iter);
+                            auto to_complete = to_complete_sf.to_string();
                             auto poss_strs = prompt.p_sql_completions
                                 | lnav::itertools::first()
                                 | lnav::itertools::similar_to(to_complete, 10);
@@ -605,8 +605,7 @@ rl_change(textinput_curses& rc)
                                     poss.emplace_back(al);
                                 }
                             }
-                            auto left = anno_line.byte_to_column_index(
-                                attr_iter->sa_range.lr_start);
+                            auto left = rc.tc_cursor.x - to_complete_sf.column_width();
                             rc.open_popup_for_completion(left, poss);
                         }
                         break;

@@ -1927,7 +1927,7 @@ For support questions, email:
 
 [4mExample[0m
 #1 To cast the value 1.23 as an integer:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCAST[0m[37m[40m([0m[1m[37m[40m1.23[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m INTEGER)                      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mCAST[0m[37m[40m([0m[1m[37m[40m1.23[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mINTEGER[0m[37m[40m)                      [0m
    1
 
 
@@ -2119,12 +2119,12 @@ For support questions, email:
   [1mtotal()[0m
 [4mExamples[0m
 #1 To get the average of the column 'ex_duration' from the table 'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mavg[0m[37m[40m(ex_duration) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m     [0m
    4.25
 
 #2 To get the average of the column 'ex_duration' from the table 'lnav_example_log'
    when grouped by 'ex_procname':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m ex_procname, [0m[1m[37m[40mavg[0m[37m[40m(ex_duration) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m ex_procname[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m, [0m[1m[37m[40mavg[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m
    [1m[4mex_procname[0m[1m[4m [0m[1m[4m[7mavg(ex_⋯ration)[0m[1m[4m [0m
    gw          [7m              5[0m 
    hw          [7m [0m             2 
@@ -2261,11 +2261,11 @@ For support questions, email:
 
 [4mExamples[0m
 #1 To get the count of the non-NULL rows of 'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log             [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m*[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m             [0m
    4
 
 #2 To get the count of the non-NULL values of 'log_part' from 'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m(log_part) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mcount[0m[37m[40m([0m[37m[40mlog_part[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m      [0m
    2
 
 
@@ -2570,7 +2570,7 @@ For support questions, email:
 
 [4mExample[0m
 #1 To read a file and raise an error if there is a problem:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m(data, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'cannot read: '[0m[37m[40m [0m[1m[37m[40m||[0m[37m[40m st_name, error)) [0m[1m[36m[40mFROM[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[37m[40mdata[0m[37m[40m, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'cannot read: '[0m[37m[40m [0m[1m[37m[40m||[0m[37m[40m [0m[37m[40mst_name[0m[37m[40m, [0m[37m[40merror[0m[37m[40m)) [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[1m[37m[40mfstat[0m[37m[40m([0m[35m[40m'/non-existent'[0m[37m[40m)[0m
    [1m[31m✘[0m [1m[31merror[0m: cannot read: non-existent
     [1m[31mreason[0m: No such file or directory
@@ -2616,7 +2616,7 @@ For support questions, email:
 
 [4mExamples[0m
 #1 To generate the numbers in the range [10, 14]:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m value [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m)         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m)         [0m
    [1m[4m[7m  value   [0m[1m[4m [0m
    [7m [0m       10 
    [7m  [0m      11 
@@ -2625,14 +2625,14 @@ For support questions, email:
    [7m        14[0m 
 
 #2 To generate every other number in the range [10, 14]:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m value [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)      [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m10[0m[37m[40m, [0m[1m[37m[40m14[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m)      [0m
    [1m[4m[7m  value   [0m[1m[4m [0m
    [7m [0m       10 
    [7m     [0m   12 
    [1m[7m        14[0m[1m [0m
 
 #3 To count down from five to 1:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m value [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m-1[0m[37m[40m)       [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[37m[40mvalue[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mgenerate_series[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m, [0m[1m[37m[40m5[0m[37m[40m, [0m[1m[37m[40m-1[0m[37m[40m)       [0m
    [1m[4m[7m  value   [0m[1m[4m [0m
    [7m         5[0m 
    [7m        [0m 4 
@@ -2701,16 +2701,16 @@ For support questions, email:
 [4mExamples[0m
 #1 To concatenate the values of the column 'ex_procname' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m(ex_procname) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[37m[40mex_procname[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    hw,gw,gw,gw
 
 #2 To join the values of the column 'ex_procname' using the string ', ':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m(ex_procname, [0m[35m[40m', '[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[37m[40mex_procname[0m[37m[40m, [0m[35m[40m', '[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    hw, gw, gw, gw
 
 #3 To concatenate the distinct values of the column 'ex_procname' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[1m[36m[40mDISTINCT[0m[37m[40m ex_procname) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_concat[0m[37m[40m([0m[1m[36m[40mDISTINCT[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    hw,gw
 
 
@@ -2732,7 +2732,7 @@ For support questions, email:
   [1mxpath()[0m
 [4mExample[0m
 #1 To produce a hash of all of the values of 'column1':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_spooky_hash[0m[37m[40m(column1) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'abc'[0m[37m[40m), ([0m[35m[40m'123'[0m[37m[40m))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mgroup_spooky_hash[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'abc'[0m[37m[40m), ([0m[35m[40m'123'[0m[37m[40m))[0m
    4e7a190aead058cb123c94290f29c34a
 
 
@@ -3131,7 +3131,7 @@ For support questions, email:
    ["one",2,3.3999999999999999112]
 
 #2 To create an array from a column of values:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m(column1) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[1m[37m[40m1[0m[37m[40m), ([0m[1m[37m[40m2[0m[37m[40m), ([0m[1m[37m[40m3[0m[37m[40m))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_array[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[1m[37m[40m1[0m[37m[40m), ([0m[1m[37m[40m2[0m[37m[40m), ([0m[1m[37m[40m3[0m[37m[40m))[0m
    [1,2,3]
 
 
@@ -3153,7 +3153,7 @@ For support questions, email:
    {"a":1,"b":2}
 
 #2 To create an object from a pair of columns:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m(column1, column2) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'a'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m), ([0m[35m[40m'b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mjson_group_object[0m[37m[40m([0m[37m[40mcolumn1[0m[37m[40m, [0m[37m[40mcolumn2[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m ([0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'a'[0m[37m[40m, [0m[1m[37m[40m1[0m[37m[40m), ([0m[35m[40m'b'[0m[37m[40m, [0m[1m[37m[40m2[0m[37m[40m))[0m
    {"a":1,"b":2}
 
 
@@ -3329,7 +3329,7 @@ For support questions, email:
   [1myaml_to_json()[0m
 [4mExample[0m
 #1 To iterate over an array:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,value,type,atom,fullkey,path [0m[1m[36m[40mFROM[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,[0m[37m[40mvalue[0m[37m[40m,[0m[37m[40mtype[0m[37m[40m,[0m[37m[40matom[0m[37m[40m,[0m[37m[40mfullkey[0m[37m[40m,[0m[37m[40mpath[0m[37m[40m [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[1m[37m[40mjson_tree[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
    [1m[4m key  [0m[1m[4m [0m[1m[4m     value     [0m[1m[4m [0m[1m[4m type  [0m[1m[4m [0m[1m[4m atom [0m[1m[4m [0m[1m[4m fullkey  [0m[1m[4m [0m[1m[4mpath[0m[1m[4m [0m
    <NULL> [7m[[0m[7mnull,1⋯":4.[0m5}] array   <NULL> $          $    
@@ -3705,7 +3705,7 @@ For support questions, email:
    3
 
 #2 To get the largest value from an aggregate:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m(status) [0m[1m[36m[40mFROM[0m[37m[40m http_status_codes         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmax[0m[37m[40m([0m[37m[40mstatus[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mhttp_status_codes[0m[37m[40m         [0m
    511
 
 
@@ -3727,7 +3727,7 @@ For support questions, email:
    1
 
 #2 To get the smallest value from an aggregate:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m(status) [0m[1m[36m[40mFROM[0m[37m[40m http_status_codes         [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmin[0m[37m[40m([0m[37m[40mstatus[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mhttp_status_codes[0m[37m[40m         [0m
    100
 
 
@@ -4053,7 +4053,7 @@ For support questions, email:
 
 [4mExample[0m
 #1 To raise an error if a variable is not set:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m($val, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'please set $val'[0m[37m[40m, [0m[35m[40m'because'[0m[37m[40m))[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mifnull[0m[37m[40m([0m[37m[40m$val[0m[37m[40m, [0m[1m[37m[40mraise_error[0m[37m[40m([0m[35m[40m'please set $val'[0m[37m[40m, [0m[35m[40m'because'[0m[37m[40m))[0m
    [1m[31m✘[0m [1m[31merror[0m: please set $val
     [1m[31mreason[0m: because
    [36m --> [0m[1mraise_error[0m:1
@@ -4388,8 +4388,8 @@ For support questions, email:
   [1mnth_value()[0m, [1mntile()[0m, [1mpercent_rank()[0m, [1mrank()[0m
 [4mExample[0m
 #1 To number messages from a process:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrow_number[0m[37m[40m() [0m[1m[36m[40mOVER[0m[37m[40m ([0m[1m[36m[40mPARTITION[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m ex_procname [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m log_line) [0m[1m[36m[40mAS[0m[37m[40m msg_num,[0m
-   [37m[40m   [0m[37m[40mex_procname, log_body [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mrow_number[0m[37m[40m() [0m[1m[36m[40mOVER[0m[37m[40m ([0m[1m[36m[40mPARTITION[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mex_procname[0m[37m[40m [0m[1m[36m[40mORDER[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mmsg_num[0m[37m[40m,[0m
+   [37m[40m   [0m[37m[40mex_procname[0m[37m[40m, [0m[37m[40mlog_body[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m
    [1m[4m[7m msg_num  [0m[1m[4m [0m[1m[4mex_procname[0m[1m[4m [0m[1m[4m   log_body    [0m[1m[4m [0m
    [1m[7m [0m[1m        1[0m gw          Goodbye, World! 
    [1m[7m     [0m[1m    2[0m gw          Goodbye, World! 
@@ -4489,7 +4489,7 @@ For support questions, email:
    ▂
 
 #2 To chart the values in a JSON array:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m(value) [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[0, 1, 2, 3, 4, 5, 6, 7, 8]'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msparkline[0m[37m[40m([0m[37m[40mvalue[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mjson_each[0m[37m[40m([0m[35m[40m'[0, 1, 2, 3, 4, 5, 6, 7, 8]'[0m[37m[40m)[0m
     ▁▂▃▄▅▆▇█
 
 
@@ -4712,7 +4712,7 @@ For support questions, email:
 [4mExample[0m
 #1 To sum all of the values in the column 'ex_duration' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msum[0m[37m[40m(ex_duration) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log     [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40msum[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m     [0m
    17
 
 
@@ -4775,16 +4775,16 @@ For support questions, email:
    2017-01-01 05:00:00.000
 
 #2 To group log messages into five minute buckets and count them:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m(log_time_msecs, [0m[35m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m slice, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m)[0m
-   [37m[40m   [0m[37m[40m    [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m slice[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m)[0m
+   [37m[40m   [0m[37m[40m    [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
    2017-02⋯:00.000 [7m         2[0m 
    2017-02⋯:00.000 [7m [0m        1 
    [1m2017-02⋯:00.000[0m[1m [0m[1m[7m [0m[1m        1 [0m
 
 #3 To group log messages by those before 4:30am and after:
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m(log_time_msecs, [0m[35m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m slice, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m) [0m[1m[36m[40mFROM[0m
-   [37m[40m   [0m[37m[40mlnav_example_log [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m slice[0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m) [0m[1m[36m[40mFROM[0m
+   [37m[40m   [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
             <NULL> [7m [0m        1 
    2017-02⋯:00.000 [7m         3[0m 
@@ -4827,7 +4827,7 @@ For support questions, email:
 [4mExample[0m
 #1 To total all of the values in the column 'ex_duration' from the table
    'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtotal[0m[37m[40m(ex_duration) [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log   [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtotal[0m[37m[40m([0m[37m[40mex_duration[0m[37m[40m) [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m   [0m
    17
 
 
@@ -5036,7 +5036,7 @@ For support questions, email:
 
 [4mExample[0m
 #1 To attach the database file '{TMPDIR}customers.db' with the name customers:
-   [37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'{TMPDIR}customers.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m customers  [0m
+   [37m[40m;[0m[1m[36m[40mATTACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[35m[40m'{TMPDIR}customers.db'[0m[37m[40m [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mcustomers[0m[37m[40m  [0m
    
 
 
@@ -5089,7 +5089,7 @@ For support questions, email:
 
 [4mExample[0m
 #1 To detach the database named 'customers':
-   [37m[40m;[0m[1m[36m[40mDETACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m customers                         [0m
+   [37m[40m;[0m[1m[36m[40mDETACH[0m[37m[40m [0m[1m[36m[40mDATABASE[0m[37m[40m [0m[37m[40mcustomers[0m[37m[40m                         [0m
    
 
 
@@ -5107,7 +5107,7 @@ For support questions, email:
 [4mExample[0m
 #1 To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the
    'environ' table:
-   [37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m environ [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'MSG'[0m[37m[40m, [0m[35m[40m'HELLO, WORLD!'[0m[37m[40m)[0m
+   [37m[40m;[0m[1m[36m[40mINSERT[0m[37m[40m [0m[1m[36m[40mINTO[0m[37m[40m [0m[37m[40menviron[0m[37m[40m [0m[1m[36m[40mVALUES[0m[37m[40m ([0m[35m[40m'MSG'[0m[37m[40m, [0m[35m[40m'HELLO, WORLD!'[0m[37m[40m)[0m
    
 
 
@@ -5136,7 +5136,7 @@ For support questions, email:
 
 [4mExample[0m
 #1 To select all of the columns from the table 'lnav_example_log':
-   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m lnav_example_log                    [0m
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m                    [0m
    [1m[4m[7m log_line [0m[1m[4m [0m[1m[4mlog_part[0m[1m[4m [0m[1m[4m   log_time    [0m[1m[4m [0m[1m[4mlog_actual_time[0m[1m[4m [0m[1m[4m[7mlog_idle_msecs[0m[1m[4m [0m[1m[4mlog_level[0m[1m[4m [0m[1m[4m[7m log_mark [0m[1m[4m [0m[1m[4mlog_comment[0m[1m[4m [0m[1m[4mlog_tags[0m[1m[4m [0m[1m[4mlog_filters[0m[1m[4m [0m[1m[4mex_procname[0m[1m[4m [0m[1m[4m[7mex_duration[0m[1m[4m [0m[1m[4m[7mlog_time_msecs[0m[1m[4m [0m[1m[4mlog_path[0m[1m[4m [0m[1m[4m   log_text    [0m[1m[4m [0m[1m[4m   log_body    [0m[1m[4m [0m
    [1m         0[0m <NULL>   2017-02⋯:06.100 2017-02⋯:06.100 [1m             0[0m info      [1m         0[0m <NULL>      <NULL>   <NULL>      hw          [1m[7m [0m[1m         2[0m [1m[7m [0m[1m1486094706000[0m {TMPDIR}log 2017-02⋯ World! Hello, World!   
    [1m[7m[31m   [0m[1m[31m      1[0m[31m [0m[31m<NULL>  [0m[31m [0m[31m2017-02⋯:06.200[0m[31m [0m[31m2017-02⋯:06.200[0m[31m [0m[1m[7m[31m [0m[1m[31m          100[0m[31m [0m[31merror    [0m[31m [0m[1m[31m         0[0m[31m [0m[31m<NULL>     [0m[31m [0m[31m<NULL>  [0m[31m [0m[31m<NULL>     [0m[31m [0m[31mgw         [0m[31m [0m[1m[7m[31m    [0m[1m[31m      4[0m[31m [0m[1m[7m[31m [0m[1m[31m1486094706000[0m[31m [0m[31m{TMPDIR}log[0m[31m [0m[31m2017-02⋯ World![0m[31m [0m[31mGoodbye, World! [0m
@@ -5157,7 +5157,7 @@ For support questions, email:
 
 [4mExample[0m
 #1 To mark the syslog message at line 40:
-   [37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m syslog_log [0m[1m[36m[40mSET[0m[37m[40m log_mark [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m log_line [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m40[0m
+   [37m[40m;[0m[1m[36m[40mUPDATE[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m [0m[1m[36m[40mSET[0m[37m[40m [0m[37m[40mlog_mark[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m1[0m[37m[40m [0m[1m[36m[40mWHERE[0m[37m[40m [0m[37m[40mlog_line[0m[37m[40m [0m[1m[37m[40m=[0m[37m[40m [0m[1m[37m[40m40[0m
    
 
 

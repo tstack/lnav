@@ -1,7 +1,12 @@
                  SELECT (1.5 + 2.2) AS decim
      sql_keyword ------
+       sql_paren        -
       sql_number         ---
         sql_oper             -
       sql_number               ---
+       sql_paren                  -
      sql_keyword                    --
        sql_ident                       -----
+Formatted:
+SELECT (1.5 + 2.2) AS decim
+Cursor offset: 27

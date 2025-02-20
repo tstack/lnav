@@ -1138,13 +1138,13 @@ annotate_sql_statement(attr_line_t& al)
             if (piter == sa.end()) {
                 func_range.lr_end = line.length();
             } else {
-                func_range.lr_end = piter->sa_range.lr_end - 1;
+                func_range.lr_end = piter->sa_range.lr_end;
             }
             sa.emplace_back(func_range, SQL_FUNCTION_ATTR.value());
         }
     }
 
-    remove_string_attr(sa, &SQL_PAREN_ATTR);
+    // remove_string_attr(sa, &SQL_PAREN_ATTR);
     stable_sort(sa.begin(), sa.end());
 }
 

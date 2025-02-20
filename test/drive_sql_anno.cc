@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "lnav.hh"
+#include "sql.formatter.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
@@ -70,9 +71,8 @@ main(int argc, char* argv[])
                    string(lr.length(), '-').c_str());
         }
 
+        int near = al.length();
         if (argc == 3) {
-            int near;
-
             if (sscanf(argv[2], "%d", &near) != 1) {
                 fprintf(stderr, "error: expecting an integer for third arg\n");
                 return EXIT_FAILURE;
@@ -83,6 +83,11 @@ main(int argc, char* argv[])
                 printf("%s: %s\n", ht->ht_name, ht->ht_summary);
             }
         }
+
+        auto formatted = lnav::db::format(al, near);
+
+        printf("Formatted:\n%s\n", formatted.fr_content.c_str());
+        printf("Cursor offset: %d\n", formatted.fr_cursor_offset);
     }
 
     return retval;

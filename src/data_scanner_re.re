@@ -136,6 +136,7 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
     cap_inner.c_begin = this->ds_next_offset;
     cap_inner.c_end = this->ds_next_offset;
 
+loop:
     /*!re2c
        re2c:yyfill:enable = 0;
        re2c:sentinel = 0;
@@ -385,6 +386,9 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
        }
 
        <bol> [A-Z][A-Z _\-0-9]+"\n" {
+           if (tf != text_format_t::TF_MAN) {
+              goto loop;
+           }
            CAPTURE(DT_H1);
            cap_inner.c_end -= 1;
            this->ds_bol = true;

@@ -107,7 +107,7 @@
 [1m[31m✘[0m [1m[31merror[0m: SQL expression is invalid
  [1m[31mreason[0m: unrecognized token: "'foobar"
 [36m --> [0m[1m/bad_file_format1/converter/header/expr/default[0m
-[36m | [0m[37m[40m:header [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[1m[7m[31m[40m'[0m[37m[40mfoobar                  [0m
+[36m | [0m[37m[40m:header[0m[37m[40m [0m[1m[36m[40mREGEXP[0m[37m[40m [0m[1m[7m[31m[40m'[0m[37m[40mfoobar                  [0m
 [1m[31m✘[0m [1m[31merror[0m: A command is required when a converter is defined
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-file-format/format.json[0m:3
 [36m =[0m [36mhelp[0m: The converter command transforms the file into a format that can be consumed by lnav

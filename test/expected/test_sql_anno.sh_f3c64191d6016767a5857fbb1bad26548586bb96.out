@@ -2,9 +2,22 @@
      sql_keyword ------
         sql_oper        -
      sql_keyword          ----
+       sql_paren               -
      sql_keyword                ------
        sql_ident                       ---
        sql_comma                          -
        sql_ident                            ---
      sql_keyword                                ----
        sql_ident                                     ---
+       sql_paren                                        -
+Formatted:
+SELECT
+    *
+FROM (
+    SELECT
+        foo,
+        bar
+    FROM
+        baz
+)
+Cursor offset: 78

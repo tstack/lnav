@@ -1,10 +1,18 @@
                  SELECT instr(lower(abc), '123')
      sql_keyword ------
-        sql_func        -----------------------
+        sql_func        ------------------------
        sql_ident        -----
-        sql_func              ---------
+       sql_paren             -
+        sql_func              ----------
        sql_ident              -----
+       sql_paren                   -
        sql_ident                    ---
+       sql_paren                       -
        sql_comma                        -
       sql_string                          -----
+       sql_paren                               -
 lower: Returns a copy of the given string with all ASCII characters converted to lower case.
+Formatted:
+SELECT
+    instr(lower(abc), '123')
+Cursor offset: 19
