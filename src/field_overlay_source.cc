@@ -633,14 +633,6 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                                      VC_STYLE.value(vc.attrs_for_ident(str)));
         }
 
-        if (tc != nullptr) {
-            const auto& hm = tc->get_highlights();
-            auto hl_iter = hm.find({highlight_source_t::PREVIEW, "search"});
-
-            if (hl_iter != hm.end()) {
-                hl_iter->second.annotate(al, 2);
-            }
-        }
         al.insert(0, filename_width, ' ');
         if (tc != nullptr) {
             auto hl = tc->get_highlights();

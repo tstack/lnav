@@ -524,6 +524,11 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_syslog.0
 
 run_cap_test ${lnav_test} -n \
+    -c ":mark" \
+    -c "/vmw" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
     -c ":zoom-to bad" \
     ${test_dir}/logfile_access_log.0
 

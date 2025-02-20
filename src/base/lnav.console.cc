@@ -336,6 +336,30 @@ get_fd_tty(int fd)
 }
 
 static void
+set_rev(fmt::text_style& line_style)
+{
+    if (line_style.has_emphasis()
+        && lnav::enums::to_underlying(line_style.get_emphasis())
+            & lnav::enums::to_underlying(fmt::emphasis::reverse))
+    {
+        auto old_style = line_style;
+        auto old_emph = fmt::emphasis(
+            lnav::enums::to_underlying(old_style.get_emphasis())
+            & ~lnav::enums::to_underlying(fmt::emphasis::reverse));
+        line_style = fmt::text_style{};
+        if (old_style.has_foreground()) {
+            line_style |= fmt::fg(old_style.get_foreground());
+        }
+        if (old_style.has_background()) {
+            line_style |= fmt::bg(old_style.get_background());
+        }
+        line_style |= old_emph;
+    } else {
+        line_style |= fmt::emphasis::reverse;
+    }
+}
+
+static void
 role_to_style(const role_t role,
               fmt::text_style& default_bg_style,
               fmt::text_style& default_fg_style,
@@ -349,7 +373,7 @@ role_to_style(const role_t role,
             line_style |= fmt::emphasis::bold;
             break;
         case role_t::VCR_SEARCH:
-            line_style |= fmt::emphasis::reverse;
+            set_rev(line_style);
             break;
         case role_t::VCR_ERROR:
         case role_t::VCR_DIFF_DELETE:
@@ -540,7 +564,7 @@ println(FILE* file, const attr_line_t& al)
                     auto style = saw.get();
 
                     if (style.has_style(text_attrs::style::reverse)) {
-                        line_style |= fmt::emphasis::reverse;
+                        set_rev(line_style);
                     }
                     if (style.has_style(text_attrs::style::bold)) {
                         line_style |= fmt::emphasis::bold;

@@ -37,6 +37,7 @@
 #include <cmath>
 #include <string>
 
+#include <curses.h>
 #include <zlib.h>
 
 #include "base/ansi_scrubber.hh"
@@ -502,33 +503,15 @@ view_curses::mvwattrline(ncplane* window,
                 for (auto lpc = attr_range.lr_start; lpc < attr_range.lr_end;
                      ++lpc)
                 {
+                    auto clear_rev = attrs.has_style(text_attrs::style::reverse)
+                        && resolved_line_attrs[lpc].has_style(
+                            text_attrs::style::reverse);
                     resolved_line_attrs[lpc] = attrs | resolved_line_attrs[lpc];
-                }
-#if 0
-                for (int lpc = attr_range.lr_start;
-                     lpc < attr_range.lr_end && lpc < line_width_chars;
-                     lpc++)
-                {
-                    bool clear_rev = false;
-
-                    if (graphic) {
-                        row_ch[lpc].chars[0] = graphic.value();
-                        row_ch[lpc].attr |= A_ALTCHARSET;
-                    }
-                    if (block_elem) {
-                        row_ch[lpc].chars[0] = block_elem.value();
-                    }
-                    if (row_ch[lpc].attr & A_REVERSE
-                        && attrs.ta_attrs & A_REVERSE)
-                    {
-                        clear_rev = true;
-                    }
-                    row_ch[lpc].attr |= attrs.ta_attrs;
                     if (clear_rev) {
-                        row_ch[lpc].attr &= ~A_REVERSE;
+                        resolved_line_attrs[lpc].clear_style(
+                            text_attrs::style::reverse);
                     }
                 }
-#endif
             }
         }
     }
