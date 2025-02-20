@@ -531,6 +531,127 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
     }
 }
 
+static void
+rl_sql_change(textinput_curses& rc)
+{
+    static const auto* sql_cmd_map
+        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+    static auto& prompt = lnav::prompt::get();
+
+    const auto line = rc.get_content();
+    std::vector<std::string> args;
+
+    if (!lnav::sql::is_prql(line)) {
+        clear_preview();
+    }
+
+    if (rc.tc_popup_type == textinput_curses::popup_type_t::history) {
+        rc.tc_on_history(rc);
+    } else {
+        auto anno_line = attr_line_t(line);
+        annotate_sql_statement(anno_line);
+        auto cursor_offset = prompt.p_editor.get_cursor_offset();
+
+        auto attr_iter = rfind_string_attr_if(anno_line.al_attrs,
+                                              cursor_offset,
+                                              [](const auto&) { return true; });
+        if (attr_iter != anno_line.al_attrs.end()
+            && attr_iter->sa_range.lr_end == cursor_offset)
+        {
+            auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
+            auto to_complete = to_complete_sf.to_string();
+            std::vector<std::string> poss_strs;
+            std::vector<attr_line_t> poss;
+
+            if (attr_iter->sa_range.lr_start == 0) {
+                poss_strs = *sql_cmd_map
+                    | lnav::itertools::filter_in([](const auto& pair) {
+                          return pair.second->c_dependencies.empty();
+                      })
+                    | lnav::itertools::first()
+                    | lnav::itertools::similar_to(to_complete, 10);
+                auto width = poss_strs
+                    | lnav::itertools::map(&std::string::size)
+                    | lnav::itertools::max();
+                for (const auto& str : poss_strs) {
+                    poss.emplace_back(
+                        prompt.get_db_completion_text(str, width.value_or(0)));
+                }
+            } else {
+                poss_strs = prompt.p_sql_completions | lnav::itertools::first()
+                    | lnav::itertools::similar_to(to_complete, 10);
+                for (const auto& str : poss_strs) {
+                    auto eq_range = prompt.p_sql_completions.equal_range(str);
+
+                    for (auto iter = eq_range.first; iter != eq_range.second;
+                         ++iter)
+                    {
+                        auto al = prompt.get_sql_completion_text(*iter);
+                        poss.emplace_back(al);
+                    }
+                }
+            }
+
+            auto left = rc.tc_cursor.x - to_complete_sf.column_width();
+            rc.open_popup_for_completion(left, poss);
+        }
+    }
+
+    split_ws(line, args);
+    if (!args.empty()) {
+        auto cmd_iter = sql_cmd_map->find(args[0]);
+        if (cmd_iter != sql_cmd_map->end()) {
+            const auto* sql_cmd = cmd_iter->second;
+            if (sql_cmd->c_prompt != nullptr) {
+                const auto prompt_res
+                    = sql_cmd->c_prompt(lnav_data.ld_exec_context, line);
+
+                rc.tc_suggestion = prompt_res.pr_suggestion;
+            }
+        }
+    }
+}
+
+static void
+rl_search_change(textinput_curses& rc, bool is_req)
+{
+    static const auto SEARCH_HELP
+        = help_text("search", "blah")
+              .with_parameter(
+                  help_text("pattern", "The pattern to search for")
+                      .with_format(help_parameter_format_t::HPF_REGEX));
+    static auto& prompt = lnav::prompt::get();
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+
+    auto line = rc.get_content();
+    auto line_sf = string_fragment::from_str(line);
+    if (line.empty() && tc->tc_selected_text) {
+        rc.tc_suggestion = tc->tc_selected_text->sti_value;
+    } else {
+        rc.tc_suggestion.clear();
+    }
+    if (rc.tc_suggestion.empty()) {
+        auto parse_res = lnav::command::parse_for_prompt(
+            lnav_data.ld_exec_context, line, SEARCH_HELP);
+
+        auto byte_x = line_sf.column_to_byte_index(rc.tc_cursor.x);
+        auto arg_pair_opt = parse_res.arg_at(byte_x);
+        if (arg_pair_opt) {
+            auto arg_pair = arg_pair_opt.value();
+            if (is_req) {
+                auto poss = prompt.get_cmd_parameter_completion(
+                    *tc, arg_pair.first, arg_pair.second.se_value);
+                auto left = arg_pair.second.se_value.empty()
+                    ? rc.tc_cursor.x
+                    : line_sf.byte_to_column_index(
+                          arg_pair.second.se_origin.sf_begin);
+                rc.open_popup_for_completion(left, poss);
+                rc.tc_popup.set_title(arg_pair.first->ht_name);
+            }
+        }
+    }
+}
+
 void
 rl_change(textinput_curses& rc)
 {
@@ -550,82 +671,11 @@ rl_change(textinput_curses& rc)
 
     switch (lnav_data.ld_mode) {
         case ln_mode_t::SEARCH: {
-            if (rc.get_content().empty() && tc->tc_selected_text) {
-                rc.tc_suggestion = tc->tc_selected_text->sti_value;
-            }
+            rl_search_change(rc, false);
             break;
         }
         case ln_mode_t::SQL: {
-            static const auto* sql_cmd_map
-                = injector::get<readline_context::command_map_t*,
-                                sql_cmd_map_tag>();
-
-            const auto line = rc.get_content();
-            std::vector<std::string> args;
-
-            if (!lnav::sql::is_prql(line)) {
-                clear_preview();
-
-                switch (rc.tc_popup_type) {
-                    case textinput_curses::popup_type_t::history: {
-                        rc.tc_on_history(rc);
-                        break;
-                    }
-                    default: {
-                        auto anno_line = attr_line_t(line);
-                        annotate_sql_statement(anno_line);
-                        auto cursor_offset
-                            = prompt.p_editor.get_cursor_offset();
-
-                        auto attr_iter = rfind_string_attr_if(
-                            anno_line.al_attrs, cursor_offset, [](const auto&) {
-                                return true;
-                            });
-                        if (attr_iter != anno_line.al_attrs.end()
-                            && attr_iter->sa_range.lr_end == cursor_offset)
-                        {
-                            auto to_complete_sf
-                                = anno_line.to_string_fragment(attr_iter);
-                            auto to_complete = to_complete_sf.to_string();
-                            auto poss_strs = prompt.p_sql_completions
-                                | lnav::itertools::first()
-                                | lnav::itertools::similar_to(to_complete, 10);
-                            std::vector<attr_line_t> poss;
-
-                            for (const auto& str : poss_strs) {
-                                auto eq_range
-                                    = prompt.p_sql_completions.equal_range(str);
-
-                                for (auto iter = eq_range.first;
-                                     iter != eq_range.second;
-                                     ++iter)
-                                {
-                                    auto al
-                                        = prompt.get_sql_completion_text(*iter);
-                                    poss.emplace_back(al);
-                                }
-                            }
-                            auto left = rc.tc_cursor.x - to_complete_sf.column_width();
-                            rc.open_popup_for_completion(left, poss);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            split_ws(line, args);
-            if (!args.empty()) {
-                auto cmd_iter = sql_cmd_map->find(args[0]);
-                if (cmd_iter != sql_cmd_map->end()) {
-                    const auto* sql_cmd = cmd_iter->second;
-                    if (sql_cmd->c_prompt != nullptr) {
-                        const auto prompt_res = sql_cmd->c_prompt(
-                            lnav_data.ld_exec_context, line);
-
-                        rc.tc_suggestion = prompt_res.pr_suggestion;
-                    }
-                }
-            }
+            rl_sql_change(rc);
             break;
         }
         case ln_mode_t::COMMAND: {
@@ -1286,6 +1336,13 @@ void
 rl_completion_request(textinput_curses& rc)
 {
     switch (lnav_data.ld_mode) {
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
+            rl_search_change(rc, true);
+            break;
+        }
         case ln_mode_t::COMMAND: {
             rl_cmd_change(rc, true);
             break;

@@ -414,10 +414,10 @@ operator|(const C& in, const lnav::itertools::details::nth indexer)
 }
 
 template<typename C>
-std::vector<typename C::key_type>
+std::vector<std::remove_const_t<typename C::value_type::first_type>>
 operator|(const C& in, const lnav::itertools::details::first indexer)
 {
-    std::vector<typename C::key_type> retval;
+    std::vector<std::remove_const_t<typename C::value_type::first_type>> retval;
 
     for (const auto& pair : in) {
         retval.emplace_back(pair.first);
@@ -508,10 +508,10 @@ operator|(const std::vector<std::unique_ptr<T>>& in,
 }
 
 template<typename C, typename F>
-C
+std::vector<typename C::value_type>
 operator|(const C& in, const lnav::itertools::details::filter_in<F>& filterer)
 {
-    C retval;
+    std::vector<typename C::value_type> retval;
 
     for (const auto& elem : in) {
         if (lnav::func::invoke(filterer.f_func, elem)) {
@@ -598,8 +598,8 @@ template<typename T,
          std::enable_if_t<lnav::func::is_invocable<F, T>::value, int> = 0>
 auto
 operator|(std::optional<T> in,
-          const lnav::itertools::details::flat_mapper<F>& mapper) ->
-    typename std::remove_const_t<typename std::remove_reference_t<
+          const lnav::itertools::details::flat_mapper<F>& mapper)
+    -> std::remove_const_t<std::remove_reference_t<
         decltype(lnav::func::invoke(mapper.fm_func, in.value()))>>
 {
     if (!in) {

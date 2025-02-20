@@ -36,6 +36,7 @@
 #include "base/fs_util.hh"
 #include "base/itertools.hh"
 #include "base/string_attr_type.hh"
+#include "bound_tags.hh"
 #include "itertools.similar.hh"
 #include "lnav.hh"
 #include "log_format_ext.hh"
@@ -483,7 +484,31 @@ prompt::sql_item_hint(const sql_item_t& item) const
 }
 
 attr_line_t
-prompt::get_sql_completion_text(const std::pair<std::string, sql_item_t>& p)
+prompt::get_db_completion_text(const std::string& str, int width) const
+{
+    static const auto* sql_cmd_map
+        = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
+    const auto iter = sql_cmd_map->find(str);
+    const char* summary = "";
+    if (iter->second->c_help.ht_summary != nullptr) {
+        summary = iter->second->c_help.ht_summary;
+    } else {
+        const auto help_iter = sqlite_function_help.find(str);
+        if (help_iter != sqlite_function_help.end()) {
+            summary = help_iter->second->ht_summary;
+        }
+    }
+    return attr_line_t()
+        .append(str, VC_ROLE.value(role_t::VCR_KEYWORD))
+        .append(" ")
+        .pad_to(width + 1)
+        .append(summary, VC_ROLE.value(role_t::VCR_COMMENT))
+        .with_attr_for_all(SUBST_TEXT.value(str));
+}
+
+attr_line_t
+prompt::get_sql_completion_text(
+    const std::pair<std::string, sql_item_t>& p) const
 {
     auto item_meta = this->sql_item_hint(p.second);
     return attr_line_t()
@@ -500,7 +525,6 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                      const help_text* ht,
                                      const std::string& str)
 {
-    log_debug("cmd comp %s", str.c_str());
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
             case help_parameter_format_t::HPF_REGEX: {
