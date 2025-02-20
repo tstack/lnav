@@ -1066,9 +1066,9 @@ ui_execute_init_commands(
                                                           / "exec.XXXXXX");
 
     if (open_temp_res.isErr()) {
-        lnav::prompt::get().p_editor.tc_inactive_value = fmt::format(
-            FMT_STRING("Unable to open temporary output file: {}"),
-            open_temp_res.unwrapErr());
+        lnav::prompt::get().p_editor.set_inactive_value(
+            fmt::format(FMT_STRING("Unable to open temporary output file: {}"),
+                        open_temp_res.unwrapErr()));
     } else {
         auto tmp_pair = open_temp_res.unwrap();
         auto fd_copy = tmp_pair.second.dup();
@@ -1095,8 +1095,8 @@ ui_execute_init_commands(
                 .with_init_location(0_vl);
             lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
 
-            lnav::prompt::get().p_editor.tc_alt_value
-                = HELP_MSG_1(X, "to close the file");
+            lnav::prompt::get().p_editor.set_alt_value(
+                HELP_MSG_1(X, "to close the file"));
         }
     }
 }
@@ -1334,7 +1334,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
               auto al = um.to_attr_line().rtrim();
 
               if (al.get_string().find('\n') == std::string::npos) {
-                  lnav::prompt::get().p_editor.tc_inactive_value = al;
+                  lnav::prompt::get().p_editor.set_inactive_value(al);
               } else {
                   lnav_data.ld_user_message_source.replace_with(al);
                   lnav_data.ld_user_message_view.reload_data();
@@ -1386,13 +1386,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         prompt.p_editor.tc_on_completion
             = bind_mem(&lnav::prompt::rl_completion, &prompt);
         prompt.p_editor.tc_on_completion_request = rl_completion_request;
-        prompt.p_editor.tc_alt_value
-            = fmt::format(FMT_STRING(HELP_MSG_2(
-                              e,
-                              E,
-                              "to move forward/backward through " ANSI_ROLE_FMT(
-                                  "error") " messages")),
-                          lnav::enums::to_underlying(role_t::VCR_ERROR));
+        prompt.p_editor.set_alt_value(
+            fmt::format(FMT_STRING(HELP_MSG_2(
+                            e,
+                            E,
+                            "to move forward/backward through " ANSI_ROLE_FMT(
+                                "error") " messages")),
+                        lnav::enums::to_underlying(role_t::VCR_ERROR)));
     }
 
     lnav_data.ld_view_stack.push_back(&lnav_data.ld_views[LNV_LOG]);
@@ -1428,11 +1428,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             auto search_duration = tc.consume_search_duration();
             if (search_duration) {
                 double secs = search_duration->count() / 1000.0;
-                lnav::prompt::get().p_editor.tc_inactive_value
-                    = attr_line_t("search completed in ")
-                          .append(lnav::roles::number(
-                              fmt::format(FMT_STRING("{:.3}"), secs)))
-                          .append(" seconds");
+                lnav::prompt::get().p_editor.set_inactive_value(
+                    attr_line_t("search completed in ")
+                        .append(lnav::roles::number(
+                            fmt::format(FMT_STRING("{:.3}"), secs)))
+                        .append(" seconds"));
             }
         }
     };
@@ -1609,16 +1609,15 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             // XXX we should have a hotkey for opening a prompt that is
             // pre-filled with a suggestion that the user can complete.
             // This quick-fix key could be used for other stuff as well
-            lnav::prompt::get().p_editor.tc_inactive_value = fmt::format(
-                FMT_STRING(ANSI_CSI ANSI_COLOR_PARAM(
-                    COLOR_YELLOW) ";" ANSI_BOLD_PARAM ANSI_CHAR_ATTR
-                                  "Unrecognized key" ANSI_NORM
-                                  ", bind to a command using "
-                                  "\u2014 " ANSI_BOLD(
-                                      ":config") " /ui/keymap-defs/{}/{}/"
-                                                 "command <cmd>"),
+            auto keycmd = fmt::format(
+                FMT_STRING(":config /ui/keymap-defs/{}/{}/command <cmd>"),
                 encoded_name,
                 keyseq);
+            lnav::prompt::get().p_editor.set_inactive_value(
+                attr_line_t()
+                    .append("Unrecognized key"_warning)
+                    .append(", bind to a command using \u2014 ")
+                    .append(lnav::roles::quoted_code(keycmd)));
             alerter::singleton().chime("unrecognized key");
         };
     }
@@ -1703,8 +1702,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                             .append("; press ")
                             .append("CTRL-R"_hotkey)
                             .append(" to reset session"));
-                    lnav::prompt::get().p_editor.tc_inactive_value
-                        = um.to_attr_line();
+                    lnav::prompt::get().p_editor.set_inactive_value(
+                        um.to_attr_line());
                 }
                 const auto* nc_caps
                     = notcurses_capabilities(sc.get_notcurses());
@@ -2100,13 +2099,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     auto last_cmd_result = cmd_results.back();
 
                     if (last_cmd_result.first.isOk()) {
-                        prompt.p_editor.tc_inactive_value
-                            = last_cmd_result.first.unwrap();
+                        prompt.p_editor.set_inactive_value(
+                            last_cmd_result.first.unwrap());
                     } else {
                         ec.ec_msg_callback_stack.back()(
                             last_cmd_result.first.unwrapErr());
                     }
-                    prompt.p_editor.tc_alt_value = last_cmd_result.second;
+                    prompt.p_editor.set_alt_value(last_cmd_result.second);
                 }
 
                 if (!ran_cleanup) {
@@ -2133,8 +2132,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     {
                         log_debug("no logs, just text...");
                         ensure_view(&lnav_data.ld_views[LNV_TEXT]);
-                        lnav::prompt::get().p_editor.tc_alt_value = HELP_MSG_2(
-                            f, F, "to switch to the next/previous file");
+                        lnav::prompt::get().p_editor.set_alt_value(HELP_MSG_2(
+                            f, F, "to switch to the next/previous file"));
                     }
                     if (lnav_data.ld_active_files.fc_name_to_errors
                             ->readAccess()

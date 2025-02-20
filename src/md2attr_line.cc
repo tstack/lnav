@@ -206,10 +206,12 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
             alb.append(" ")
                 .append(last_list_block.match(
                     [this, &tws](const MD_BLOCK_UL_DETAIL*) {
+                        static const std::string glyph1 = "\u2022";
+                        static const std::string glyph2 = "\u2014";
                         tws.tws_indent = 3;
                         return this->ml_list_stack.size() % 2 == 1
-                            ? "\u2022"_list_glyph
-                            : "\u2014"_list_glyph;
+                            ? lnav::roles::list_glyph(glyph1)
+                            : lnav::roles::list_glyph(glyph2);
                     },
                     [this, &tws](MD_BLOCK_OL_DETAIL ol_detail) {
                         auto retval = lnav::roles::list_glyph(

@@ -3179,12 +3179,12 @@ com_alt_msg(exec_context& ec,
     } else if (ec.ec_dry_run) {
         retval = "";
     } else if (args.size() == 1) {
-        prompt.p_editor.tc_alt_value.clear();
+        prompt.p_editor.clear_alt_value();
         retval = "";
     } else {
         std::string msg = remaining_args(cmdline, args);
 
-        prompt.p_editor.tc_alt_value = msg;
+        prompt.p_editor.set_alt_value(msg);
         retval = "";
     }
 

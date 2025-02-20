@@ -149,12 +149,12 @@ struct string_fragment {
     {
     }
 
-    bool is_valid() const
+    constexpr bool is_valid() const
     {
         return this->sf_begin != -1 && this->sf_begin <= this->sf_end;
     }
 
-    int length() const { return this->sf_end - this->sf_begin; }
+    constexpr int length() const { return this->sf_end - this->sf_begin; }
 
     Result<ssize_t, const char*> utf8_length() const;
 
@@ -164,7 +164,7 @@ struct string_fragment {
 
     size_t column_width() const;
 
-    const char* data() const { return &this->sf_string[this->sf_begin]; }
+    constexpr const char* data() const { return &this->sf_string[this->sf_begin]; }
 
     const unsigned char* udata() const
     {
@@ -176,13 +176,13 @@ struct string_fragment {
         return (char*) &this->sf_string[this->sf_begin + offset];
     }
 
-    char front() const { return this->sf_string[this->sf_begin]; }
+    constexpr char front() const { return this->sf_string[this->sf_begin]; }
 
     uint32_t front_codepoint() const;
 
-    char back() const { return this->sf_string[this->sf_end - 1]; }
+    constexpr char back() const { return this->sf_string[this->sf_end - 1]; }
 
-    void pop_back()
+    constexpr void pop_back()
     {
         if (!this->empty()) {
             this->sf_end -= 1;
@@ -200,7 +200,7 @@ struct string_fragment {
 
     string_fragment sub_cell_range(int cell_start, int cell_end) const;
 
-    const char& operator[](size_t index) const
+    constexpr const char& operator[](size_t index) const
     {
         return this->sf_string[sf_begin + index];
     }
@@ -291,7 +291,7 @@ struct string_fragment {
         return *suffix == '\0';
     }
 
-    string_fragment substr(int begin) const
+    constexpr string_fragment substr(int begin) const
     {
         return string_fragment{
             this->sf_string, this->sf_begin + begin, this->sf_end};
@@ -309,13 +309,13 @@ struct string_fragment {
             this->sf_string, this->sf_begin + begin, this->sf_begin + end};
     }
 
-    bool contains(const string_fragment& sf) const
+    constexpr bool contains(const string_fragment& sf) const
     {
         return this->sf_string == sf.sf_string && this->sf_begin <= sf.sf_begin
             && sf.sf_end <= this->sf_end;
     }
 
-    size_t count(char ch) const
+    constexpr size_t count(char ch) const
     {
         size_t retval = 0;
 

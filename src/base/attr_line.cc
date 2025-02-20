@@ -51,7 +51,7 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
     static constexpr auto LF_SYMBOL = "\u240a"sv;
     static constexpr auto CR_SYMBOL = "\u240d"sv;
     static constexpr auto REP_SYMBOL = "\ufffd"sv;
-    static const std::string ELLIPSIS = "\u22ef";
+    static constexpr auto ELLIPSIS = "\u22ef"_frag;
 
     auto has_ansi = false;
     size_t char_width = 0;
@@ -191,6 +191,7 @@ attr_line_t&
 attr_line_t::with_ansi_string(const std::string& str)
 {
     this->al_string = str;
+    this->al_attrs.clear();
     scrub_ansi_string(this->al_string, &this->al_attrs);
 
     return *this;
@@ -200,6 +201,7 @@ attr_line_t&
 attr_line_t::with_ansi_string(const string_fragment& str)
 {
     this->al_string = str.to_string();
+    this->al_attrs.clear();
     scrub_ansi_string(this->al_string, &this->al_attrs);
 
     return *this;

@@ -159,8 +159,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                               ->execute_with(
                                   cmd, std::make_pair("href", sti.sti_href));
                     if (exec_res.isOk()) {
-                        lnav::prompt::get().p_editor.tc_inactive_value
-                            = exec_res.unwrap();
+                        lnav::prompt::get().p_editor.set_inactive_value(
+                            exec_res.unwrap());
                         if (dls.dls_generation != previous_db_gen
                             && dls.dls_row_cursors.size() > 1)
                         {
@@ -218,8 +218,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                               ->execute_with(
                                   cmd, std::make_pair("href", sti.sti_href));
                     if (exec_res.isOk()) {
-                        lnav::prompt::get().p_editor.tc_inactive_value
-                            = exec_res.unwrap();
+                        lnav::prompt::get().p_editor.set_inactive_value(
+                            exec_res.unwrap());
                     }
                 });
             start += al.length();

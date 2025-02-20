@@ -320,6 +320,19 @@ public:
         return *this;
     }
 
+    attr_line_t& append(const std::pair<string_fragment, role_t> value)
+    {
+        size_t start_len = this->al_string.length();
+
+        this->al_string.append(value.first.data(), value.first.length());
+
+        line_range lr{(int) start_len, (int) this->al_string.length()};
+
+        this->al_attrs.emplace_back(lr, VC_ROLE.value(value.second));
+
+        return *this;
+    }
+
     template<typename S>
     attr_line_t& append_quoted(const std::pair<S, string_attr_pair>& value)
     {
@@ -469,6 +482,24 @@ public:
         return *this;
     }
 
+    attr_line_t& insert(size_t index, const std::string& str)
+    {
+        this->al_string.insert(index, str.data(), str.length());
+
+        shift_string_attrs(this->al_attrs, index, str.length());
+
+        return *this;
+    }
+
+    attr_line_t& insert(size_t index, string_fragment str)
+    {
+        this->al_string.insert(index, str.data(), str.length());
+
+        shift_string_attrs(this->al_attrs, index, str.length());
+
+        return *this;
+    }
+
     template<typename S>
     attr_line_t& insert(size_t index,
                         const std::pair<S, string_attr_pair>& value)
@@ -483,6 +514,23 @@ public:
         };
 
         this->al_attrs.emplace_back(lr, value.second);
+
+        return *this;
+    }
+
+    attr_line_t& insert(size_t index,
+                        const std::pair<string_fragment, role_t>& value)
+    {
+        size_t start_len = this->al_string.length();
+
+        this->insert(index, value.first);
+
+        line_range lr{
+            (int) index,
+            (int) (index + (this->al_string.length() - start_len)),
+        };
+
+        this->al_attrs.emplace_back(lr, VC_ROLE.value(value.second));
 
         return *this;
     }

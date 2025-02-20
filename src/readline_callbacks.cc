@@ -1054,7 +1054,7 @@ lnav_rl_abort(textinput_curses& rc)
         default:
             break;
     }
-    rc.tc_inactive_value.clear();
+    rc.clear_inactive_value();
     set_view_mode(ln_mode_t::PAGING);
 }
 
@@ -1105,7 +1105,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
             break;
 
         case ln_mode_t::COMMAND: {
-            rc.tc_alt_value.clear();
+            rc.clear_alt_value();
             auto cmdline = rc.get_content();
             auto src_guard = lnav_data.ld_exec_context.enter_source(
                 SRC, 1, fmt::format(FMT_STRING(":{}"), cmdline));
@@ -1115,7 +1115,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
             auto hist_guard = prompt.p_cmd_history.start_operation(cmdline);
             auto exec_res = execute_command(ec, cmdline);
             if (exec_res.isOk()) {
-                rc.tc_inactive_value = exec_res.unwrap();
+                rc.set_inactive_value(exec_res.unwrap());
             } else {
                 auto um = exec_res.unwrapErr();
 
@@ -1125,16 +1125,16 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                 lnav_data.ld_user_message_view.reload_data();
                 lnav_data.ld_user_message_expiration
                     = std::chrono::steady_clock::now() + 20s;
-                rc.tc_inactive_value.clear();
+                rc.clear_inactive_value();
             }
             ec.ec_source.back().s_content.clear();
             break;
         }
 
         case ln_mode_t::USER:
-            rc.tc_alt_value.clear();
+            rc.clear_alt_value();
             ec.ec_local_vars.top()["value"] = rc.get_content();
-            rc.tc_inactive_value.clear();
+            rc.clear_inactive_value();
             break;
 
         case ln_mode_t::SEARCH:
@@ -1189,10 +1189,10 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                         return true;
                     });
                 }
-                rc.tc_inactive_value
-                    = attr_line_t("search: ").append(rc.get_content());
-                rc.tc_alt_value = HELP_MSG_2(
-                    n, N, "to move forward/backward through search results");
+                rc.set_inactive_value(
+                    attr_line_t("search: ").append(rc.get_content()));
+                rc.set_alt_value(HELP_MSG_2(
+                    n, N, "to move forward/backward through search results"));
             }
             break;
         }
@@ -1205,12 +1205,12 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 
-            rc.tc_inactive_value
-                = lnav::console::user_message::info(
-                      attr_line_t("executing SQL statement, press ")
-                          .append("CTRL+]"_hotkey)
-                          .append(" to cancel"))
-                      .to_attr_line();
+            rc.set_inactive_value(
+                lnav::console::user_message::info(
+                    attr_line_t("executing SQL statement, press ")
+                        .append("CTRL+]"_hotkey)
+                        .append(" to cancel"))
+                    .to_attr_line());
             rc.set_needs_update();
             auto hist_guard = prompt.p_sql_history.start_operation(sql_str);
             auto result = execute_sql(ec, sql_str, alt_msg);
@@ -1241,8 +1241,8 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
             }
             ec.ec_source.back().s_content.clear();
 
-            rc.tc_inactive_value = prompt;
-            rc.tc_alt_value = alt_msg;
+            rc.set_inactive_value(prompt);
+            rc.set_alt_value(alt_msg);
             break;
         }
 
@@ -1253,9 +1253,9 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                 lnav::paths::workdir() / "exec.XXXXXX");
 
             if (open_temp_res.isErr()) {
-                rc.tc_inactive_value = fmt::format(
+                rc.set_inactive_value(fmt::format(
                     FMT_STRING("Unable to open temporary output file: {}"),
-                    open_temp_res.unwrapErr());
+                    open_temp_res.unwrapErr()));
             } else {
                 char desc[256], timestamp[32];
                 time_t current_time = time(nullptr);
@@ -1276,7 +1276,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                         path_and_args);
                     auto exec_res = execute_file(ec, path_and_args);
                     if (exec_res.isOk()) {
-                        rc.tc_inactive_value = exec_res.unwrap();
+                        rc.set_inactive_value(exec_res.unwrap());
                         tf = ec.ec_output_stack.back().od_format;
                     } else {
                         auto um = exec_res.unwrapErr();
@@ -1287,7 +1287,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                         lnav_data.ld_user_message_view.reload_data();
                         lnav_data.ld_user_message_expiration
                             = std::chrono::steady_clock::now() + 20s;
-                        rc.tc_inactive_value.clear();
+                        rc.clear_inactive_value();
                     }
                 }
 
@@ -1312,7 +1312,7 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
                         .with_init_location(0_vl);
                     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
 
-                    rc.tc_alt_value = HELP_MSG_1(X, "to close the file");
+                    rc.set_alt_value(HELP_MSG_1(X, "to close the file"));
                 }
             }
             break;

@@ -1533,10 +1533,20 @@ textinput_curses::do_update()
                         this->vc_x,
                         this->tc_inactive_value,
                         lr);
-            return true;
         }
 
-        return false;
+        if (!this->tc_alt_value.empty()
+            && this->tc_inactive_value.column_width() + 3
+                    + this->tc_alt_value.column_width()
+                < dim.dr_width)
+        {
+            auto alt_x = dim.dr_width - this->tc_alt_value.column_width();
+            auto lr = line_range{0, (int) this->tc_alt_value.column_width()};
+            mvwattrline(
+                this->tc_window, this->vc_y, alt_x, this->tc_alt_value, lr);
+        }
+
+        return true;
     }
 
     if (this->tc_mode == mode_t::show_help) {
@@ -1835,8 +1845,7 @@ textinput_curses::move_cursor_to_offset(int offset)
 {
     auto new_point = input_point::home();
     auto row = size_t{0};
-    for (; row < this->tc_lines.size() && offset > 0; row++)
-    {
+    for (; row < this->tc_lines.size() && offset > 0; row++) {
         if (offset < this->tc_lines[row].al_string.size() + 1) {
             break;
         }

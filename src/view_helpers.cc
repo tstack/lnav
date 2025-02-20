@@ -1176,8 +1176,8 @@ toggle_view(textview_curses* toggle_tc)
             rebuild_hist();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_HELP]) {
             build_all_help_text();
-            lnav::prompt::get().p_editor.tc_alt_value
-                = HELP_MSG_1(q, "to return to the previous view");
+            lnav::prompt::get().p_editor.set_alt_value(
+                HELP_MSG_1(q, "to return to the previous view"));
         }
         lnav_data.ld_last_view = nullptr;
         lnav_data.ld_view_stack.push_back(toggle_tc);

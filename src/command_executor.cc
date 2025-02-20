@@ -481,7 +481,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         curr_stmt = tail;
     }
 
-    prompt.p_editor.tc_inactive_value.clear();
+    prompt.p_editor.clear_inactive_value();
 
     if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
         auto& dls = *ec.ec_label_source_stack.back();
@@ -1220,7 +1220,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
         .with_detect_format(false)
         .with_init_location(0_vl);
     lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
-    prompt.p_editor.tc_alt_value = HELP_MSG_1(X, "to close the file");
+    prompt.p_editor.set_alt_value(HELP_MSG_1(X, "to close the file"));
 
     return lnav::futures::make_ready_future(std::string());
 }

@@ -166,7 +166,7 @@ statusview_curses::do_update()
             }
 
             if (val.length() > sf.get_width()) {
-                static const std::string ELLIPSIS = "\xE2\x8B\xAF";
+                static constexpr auto ELLIPSIS = "\xE2\x8B\xAF"_frag;
 
                 if (sf.get_width() > 11) {
                     size_t half_width = sf.get_width() / 2 - 1;

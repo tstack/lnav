@@ -352,6 +352,36 @@ public:
 
     int get_cursor_offset() const;
 
+    void clear_inactive_value()
+    {
+        this->tc_inactive_value.clear();
+        this->set_needs_update();
+    }
+
+    void set_inactive_value(const std::string& str)
+    {
+        this->tc_inactive_value.with_ansi_string(str);
+        this->set_needs_update();
+    }
+
+    void set_inactive_value(const attr_line_t& al)
+    {
+        this->tc_inactive_value = al;
+        this->set_needs_update();
+    }
+
+    void clear_alt_value()
+    {
+        this->tc_alt_value.clear();
+        this->set_needs_update();
+    }
+
+    void set_alt_value(const std::string& str)
+    {
+        this->tc_alt_value.with_ansi_string(str);
+        this->set_needs_update();
+    }
+
     enum class mode_t {
         editing,
         searching,
