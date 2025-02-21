@@ -3254,9 +3254,7 @@ com_config(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("config-option");
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         static const auto INPUT_SRC = intern_string::lookup("input");
 
         yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
@@ -3311,14 +3309,12 @@ com_config(exec_context& ec,
                         .get_description()
                         .set_value("Value of option: %s", option.c_str());
 
-                    char help_text[1024];
-
-                    snprintf(help_text,
-                             sizeof(help_text),
-                             ANSI_BOLD("%s") " " ANSI_UNDERLINE("%s") " -- %s",
-                             jph->jph_property.c_str(),
-                             jph->jph_synopsis,
-                             jph->jph_description);
+                    auto help_text = fmt::format(
+                        FMT_STRING(
+                            ANSI_BOLD("{}") " " ANSI_UNDERLINE("{}") " -- {}"),
+                        jph->jph_property.c_str(),
+                        jph->jph_synopsis,
+                        jph->jph_description);
 
                     retval = help_text;
                 } else {
@@ -4457,11 +4453,15 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":config")
          .with_summary("Read or write a configuration option")
-         .with_parameter({"option", "The path to the option to read or write"})
-         .with_parameter(help_text("value",
-                                   "The value to write.  If not given, the "
-                                   "current value is returned")
-                             .optional())
+         .with_parameter(
+             help_text{"option", "The path to the option to read or write"}
+                 .with_format(help_parameter_format_t::HPF_CONFIG_PATH))
+         .with_parameter(
+             help_text("value",
+                       "The value to write.  If not given, the "
+                       "current value is returned")
+                 .optional()
+                 .with_format(help_parameter_format_t::HPF_CONFIG_VALUE))
          .with_example({"To read the configuration of the "
                         "'/ui/clock-format' option",
                         "/ui/clock-format"})
@@ -4473,7 +4473,9 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":reset-config")
          .with_summary("Reset the configuration option to its default value")
-         .with_parameter(help_text("option", "The path to the option to reset"))
+         .with_parameter(
+             help_text("option", "The path to the option to reset")
+                 .with_format(help_parameter_format_t::HPF_CONFIG_PATH))
          .with_example({"To reset the '/ui/clock-format' option back to the "
                         "builtin default",
                         "/ui/clock-format"})

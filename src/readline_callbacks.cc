@@ -413,14 +413,11 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
 
         if (ypc.ypc_current_handler != nullptr) {
             const json_path_handler_base* jph = ypc.ypc_current_handler;
-            char help_text[1024];
-
-            snprintf(help_text,
-                     sizeof(help_text),
-                     ANSI_BOLD("%s %s") " -- %s    " ABORT_MSG,
-                     jph->jph_property.c_str(),
-                     jph->jph_synopsis,
-                     jph->jph_description);
+            auto help_text = fmt::format(
+                FMT_STRING(ANSI_BOLD("{} {}") " -- {}    " ABORT_MSG),
+                jph->jph_property.c_str(),
+                jph->jph_synopsis,
+                jph->jph_description);
             lnav_data.ld_bottom_source.set_prompt(help_text);
             lnav_data.ld_bottom_source.grep_error("");
         } else {
@@ -450,52 +447,6 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
             format_example_text_for_term(ht, eval_example, width, al);
             lnav_data.ld_example_source.replace_with(al);
             etc.set_needs_update();
-
-            switch (rc.tc_popup_type) {
-                case textinput_curses::popup_type_t::history: {
-                    rc.tc_on_history(rc);
-                    break;
-                }
-                default: {
-                    auto line_sf = string_fragment(line);
-                    auto args_sf
-                        = line_sf.split_when(string_fragment::tag1{' '}).second;
-                    auto parsed_cmd = lnav::command::parse_for_prompt(
-                        lnav_data.ld_exec_context,
-                        args_sf,
-                        iter->second->c_help);
-                    auto x = args_sf.column_to_byte_index(rc.tc_cursor.x
-                                                          - args_sf.sf_begin);
-                    auto arg_res_opt = parsed_cmd.arg_at(x);
-
-                    if (arg_res_opt) {
-                        auto arg_res = arg_res_opt.value();
-                        log_debug("apair %s [%d:%d) -- %s",
-                                  arg_res.aar_help->ht_name,
-                                  arg_res.aar_element.se_origin.sf_begin,
-                                  arg_res.aar_element.se_origin.sf_end,
-                                  arg_res.aar_element.se_value.c_str());
-                        if (is_req || arg_res.aar_required) {
-                            auto poss = prompt.get_cmd_parameter_completion(
-                                *tc,
-                                arg_res.aar_help,
-                                arg_res.aar_element.se_value.empty()
-                                    ? arg_res.aar_element.se_origin.to_string()
-                                    : arg_res.aar_element.se_value);
-                            auto left = arg_res.aar_element.se_origin.empty()
-                                ? rc.tc_cursor.x
-                                : line_sf.byte_to_column_index(
-                                      args_sf.sf_begin
-                                      + arg_res.aar_element.se_origin.sf_begin);
-                            rc.open_popup_for_completion(left, poss);
-                            rc.tc_popup.set_title(arg_res.aar_help->ht_name);
-                        }
-                    } else {
-                        log_info("no arg at %d", x);
-                    }
-                    break;
-                }
-            }
         }
 
         if (cmd.c_prompt != nullptr) {
@@ -528,6 +479,65 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                                                   : LNAV_CMD_PROMPT);
         lnav_data.ld_bottom_source.grep_error("");
         lnav_data.ld_status[LNS_BOTTOM].window_change();
+    }
+
+    if (iter != lnav_commands.end() && (args.size() > 1 || endswith(line, " ")))
+    {
+        switch (rc.tc_popup_type) {
+            case textinput_curses::popup_type_t::history: {
+                rc.tc_on_history(rc);
+                break;
+            }
+            default: {
+                auto line_sf = string_fragment(line);
+                auto args_sf
+                    = line_sf.split_when(string_fragment::tag1{' '}).second;
+                auto parsed_cmd = lnav::command::parse_for_prompt(
+                    lnav_data.ld_exec_context, args_sf, iter->second->c_help);
+                auto x = args_sf.column_to_byte_index(rc.tc_cursor.x
+                                                      - args_sf.sf_begin);
+                auto arg_res_opt = parsed_cmd.arg_at(x);
+
+                if (arg_res_opt) {
+                    auto arg_res = arg_res_opt.value();
+                    log_debug("apair %s [%d:%d) -- %s",
+                              arg_res.aar_help->ht_name,
+                              arg_res.aar_element.se_origin.sf_begin,
+                              arg_res.aar_element.se_origin.sf_end,
+                              arg_res.aar_element.se_value.c_str());
+                    auto left = arg_res.aar_element.se_origin.empty()
+                        ? rc.tc_cursor.x
+                        : line_sf.byte_to_column_index(
+                              args_sf.sf_begin
+                              + arg_res.aar_element.se_origin.sf_begin);
+                    if (arg_res.aar_help->ht_format
+                        == help_parameter_format_t::HPF_CONFIG_VALUE)
+                    {
+                        log_debug("arg path %s",
+                                  parsed_cmd.p_args["option"]
+                                      .a_values[0]
+                                      .se_value.c_str());
+                        auto poss = prompt.get_config_value_completion(
+                            parsed_cmd.p_args["option"].a_values[0].se_value,
+                            arg_res.aar_element.se_origin.to_string());
+                        rc.open_popup_for_completion(left, poss);
+                        rc.tc_popup.set_title(arg_res.aar_help->ht_name);
+                    } else if (is_req || arg_res.aar_required) {
+                        auto poss = prompt.get_cmd_parameter_completion(
+                            *tc,
+                            arg_res.aar_help,
+                            arg_res.aar_element.se_value.empty()
+                                ? arg_res.aar_element.se_origin.to_string()
+                                : arg_res.aar_element.se_value);
+                        rc.open_popup_for_completion(left, poss);
+                        rc.tc_popup.set_title(arg_res.aar_help->ht_name);
+                    }
+                } else {
+                    log_info("no arg at %d", x);
+                }
+                break;
+            }
+        }
     }
 }
 

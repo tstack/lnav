@@ -78,6 +78,8 @@ enum class help_parameter_format_t {
     HPF_DIRECTORY,
     HPF_TIME_FILTER_POINT,
     HPF_TIMEZONE,
+    HPF_CONFIG_PATH,
+    HPF_CONFIG_VALUE,
 };
 
 struct help_example {

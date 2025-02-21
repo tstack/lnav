@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
 #include <string>
 
 #include "lnav.prompt.hh"
@@ -39,6 +40,7 @@
 #include "bound_tags.hh"
 #include "itertools.similar.hh"
 #include "lnav.hh"
+#include "lnav_config.hh"
 #include "log_format_ext.hh"
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
@@ -178,11 +180,44 @@ prompt::get()
 }
 
 void
+prompt::refresh_config_completions()
+{
+    this->p_config_paths.clear();
+    this->p_config_values.clear();
+
+    auto cb = [this](const json_path_handler_base& jph,
+                     const std::string& path,
+                     const void* mem) {
+        if (startswith(jph.jph_property, "$")) {
+            return;
+        }
+        if (jph.jph_children) {
+            const auto named_caps = jph.jph_regex->get_named_captures();
+
+            for (const auto& named_cap : named_caps) {
+                auto path_obj = std::filesystem::path(path);
+                this->p_config_values[named_cap.get_name().to_string()]
+                    .emplace_back(path_obj.parent_path().filename().string());
+            }
+        } else {
+            this->p_config_paths[path] = &jph;
+        }
+    };
+    for (const auto& jph : lnav_config_handlers.jpc_children) {
+        jph.walk(cb, &lnav_config);
+    }
+}
+
+void
 prompt::focus_for(char sigil, const std::vector<std::string>& args)
 {
     switch (sigil) {
         case '|': {
             this->p_scripts = find_format_scripts(lnav_data.ld_config_paths);
+            break;
+        }
+        case ':': {
+            this->refresh_config_completions();
             break;
         }
     }
@@ -552,10 +587,8 @@ prompt::get_sql_completion_text(
 std::vector<attr_line_t>
 prompt::get_env_completion(const std::string& str)
 {
-    auto poss_strs = this->p_env_vars | lnav::itertools::first();
-    if (str.size() > 1) {
-        poss_strs = poss_strs | lnav::itertools::similar_to(str, 10);
-    }
+    auto poss_strs = this->p_env_vars | lnav::itertools::first()
+        | lnav::itertools::similar_to(str, 10);
     auto width = poss_strs | lnav::itertools::map(&std::string::size)
         | lnav::itertools::max();
 
@@ -599,6 +632,14 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                             SUBST_TEXT.value(lnav::pcre2pp::quote(str))));
                 }
                 return retval;
+            }
+            case help_parameter_format_t::HPF_CONFIG_PATH: {
+                return this->p_config_paths | lnav::itertools::first()
+                    | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x + " "));
+                       });
             }
             case help_parameter_format_t::HPF_FILENAME:
             case help_parameter_format_t::HPF_DIRECTORY: {
@@ -782,6 +823,40 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
     }
 
     return {};
+}
+
+std::vector<attr_line_t>
+prompt::get_config_value_completion(const std::string& path,
+                                    const std::string& str) const
+{
+    const auto iter = this->p_config_paths.find(path);
+    if (iter == this->p_config_paths.end()) {
+        return {};
+    }
+
+    const auto& jph = *iter->second;
+    std::vector<std::string> poss_strs;
+    if (jph.jph_bool_cb) {
+        poss_strs = {"true", "false"};
+    } else if (jph.jph_enum_values != nullptr) {
+        for (auto lpc = size_t{0}; jph.jph_enum_values[lpc].first != nullptr;
+             lpc++)
+        {
+            poss_strs.emplace_back(jph.jph_enum_values[lpc].first);
+        }
+    } else if (jph.jph_synopsis != nullptr) {
+        const auto syno_iter = this->p_config_values.find(jph.jph_synopsis);
+        if (syno_iter != this->p_config_values.end()) {
+            poss_strs = syno_iter->second;
+        }
+    }
+
+    return poss_strs | lnav::itertools::similar_to(str, 10)
+        | lnav::itertools::map([](const auto& x) {
+               return attr_line_t()
+                   .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
+                   .with_attr_for_all(SUBST_TEXT.value(x));
+           });
 }
 
 }  // namespace lnav

@@ -33,6 +33,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "base/attr_line.hh"
 #include "base/string_attr_type.hh"
@@ -101,6 +102,8 @@ struct prompt {
 
     std::map<std::string, std::string> p_env_vars;
     std::multimap<std::string, sql_item_t> p_sql_completions;
+    std::map<std::string, const json_path_handler_base*> p_config_paths;
+    std::map<std::string, std::vector<std::string>> p_config_values;
     available_scripts p_scripts;
     textinput_curses p_editor;
 
@@ -113,9 +116,12 @@ struct prompt {
     attr_line_t get_sql_completion_text(
         const std::pair<std::string, sql_item_t>& p) const;
 
+    void refresh_config_completions();
     std::vector<attr_line_t> get_cmd_parameter_completion(
         textview_curses& tc, const help_text* ht, const std::string& str);
     std::vector<attr_line_t> get_env_completion(const std::string& str);
+    std::vector<attr_line_t> get_config_value_completion(
+        const std::string& path, const std::string& str) const;
 
     void rl_help(textinput_curses& tc);
     void rl_reformat(textinput_curses& tc);

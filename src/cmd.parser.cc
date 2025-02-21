@@ -181,6 +181,8 @@ parse_for(mode_t mode,
                     split_index = split_args.size() - 1;
                     break;
                 }
+                case help_parameter_format_t::HPF_CONFIG_PATH:
+                case help_parameter_format_t::HPF_CONFIG_VALUE:
                 case help_parameter_format_t::HPF_STRING:
                 case help_parameter_format_t::HPF_FILENAME:
                 case help_parameter_format_t::HPF_DIRECTORY:

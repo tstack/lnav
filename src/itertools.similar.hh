@@ -43,7 +43,7 @@ namespace details {
 template<typename F>
 struct similar_to {
     std::optional<F> st_mapper;
-    std::string st_pattern;
+    const std::string st_pattern;
     size_t st_count{5};
 };
 
@@ -123,7 +123,7 @@ operator|(const T& in, const lnav::itertools::details::similar_to<F>& st)
         }
         pq.push(std::make_pair(score, elem));
 
-        if (pq.size() > st.st_count) {
+        if (!st.st_pattern.empty() && pq.size() > st.st_count) {
             pq.pop();
         }
     }
