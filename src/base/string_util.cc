@@ -31,6 +31,7 @@
 #include <iterator>
 #include <regex>
 #include <sstream>
+#include <string_view>
 
 #include "string_util.hh"
 
@@ -38,6 +39,8 @@
 #include "is_utf8.hh"
 #include "lnav_log.hh"
 #include "scn/scan.h"
+
+using namespace std::string_view_literals;
 
 void
 scrub_to_utf8(char* buffer, size_t length)
@@ -330,9 +333,9 @@ is_blank(const std::string& str)
 std::string
 scrub_ws(const char* in, ssize_t len)
 {
-    static const std::string TAB_SYMBOL = "\u21e5";
-    static const std::string LF_SYMBOL = "\u240a";
-    static const std::string CR_SYMBOL = "\u240d";
+    static constexpr auto TAB_SYMBOL = "\u21e5"sv;
+    static constexpr auto LF_SYMBOL = "\u240a"sv;
+    static constexpr auto CR_SYMBOL = "\u240d"sv;
 
     std::string retval;
 

@@ -167,7 +167,7 @@ safe_read(const std::string& str, std::string::size_type index)
 void
 regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
 {
-    static const char* brackets[] = {
+    static constexpr const char* brackets[] = {
         "[]",
         "{}",
         "()",

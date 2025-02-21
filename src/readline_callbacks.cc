@@ -686,26 +686,77 @@ rl_change(textinput_curses& rc)
             clear_preview();
 
             const auto line = rc.get_content();
-            size_t name_end = line.find(' ');
-            const auto script_name = line.substr(0, name_end);
-            auto& scripts = injector::get<available_scripts&>();
-            auto iter = scripts.as_scripts.find(script_name);
-
-            if (iter == scripts.as_scripts.end()
-                || iter->second[0].sm_description.empty())
-            {
-                lnav_data.ld_bottom_source.set_prompt(
-                    "Enter a script to execute: " ABORT_MSG);
+            shlex lexer(line);
+            auto split_res
+                = lexer.split(lnav_data.ld_exec_context.create_resolver());
+            if (split_res.isErr()) {
+                lnav_data.ld_bottom_source.grep_error(
+                    split_res.unwrapErr().te_msg);
             } else {
-                auto& meta = iter->second[0];
-                char help_text[1024];
+                auto split_args = split_res.unwrap();
+                auto script_name = split_args.empty() ? std::string()
+                                                      : split_args[0].se_value;
+                const auto& scripts = prompt.p_scripts;
+                const auto iter = scripts.as_scripts.find(script_name);
 
-                snprintf(help_text,
-                         sizeof(help_text),
-                         ANSI_BOLD("%s") " -- %s   " ABORT_MSG,
-                         meta.sm_synopsis.c_str(),
-                         meta.sm_description.c_str());
-                lnav_data.ld_bottom_source.set_prompt(help_text);
+                if (iter == scripts.as_scripts.end()
+                    || iter->second[0].sm_description.empty())
+                {
+                    lnav_data.ld_bottom_source.set_prompt(
+                        "Enter a script to execute: " ABORT_MSG);
+
+                    std::vector<attr_line_t> poss;
+                    auto width = scripts.as_scripts | lnav::itertools::first()
+                        | lnav::itertools::map(&std::string::size)
+                        | lnav::itertools::max();
+                    if (script_name.empty()) {
+                        poss = scripts.as_scripts
+                            | lnav::itertools::map([&width](const auto& p) {
+                                   return attr_line_t()
+                                       .append(
+                                           p.first,
+                                           VC_ROLE.value(role_t::VCR_VARIABLE))
+                                       .append(" ")
+                                       .pad_to(width.value_or(0) + 1)
+                                       .append(p.second[0].sm_description)
+                                       .with_attr_for_all(
+                                           lnav::prompt::SUBST_TEXT.value(
+                                               p.first + " "));
+                               });
+                    } else {
+                        auto x = prompt.p_editor.get_cursor_offset();
+                        if (!script_name.empty()
+                            && split_args[0].se_origin.sf_end == x)
+                        {
+                            poss = scripts.as_scripts | lnav::itertools::first()
+                                | lnav::itertools::similar_to(script_name, 10)
+                                | lnav::itertools::map([&width, &scripts](
+                                                           const auto& x) {
+                                       auto siter = scripts.as_scripts.find(x);
+                                       auto desc = siter->second[0].sm_description;
+                                       return attr_line_t()
+                                           .append(x,
+                                                   VC_ROLE.value(
+                                                       role_t::VCR_VARIABLE))
+                                           .append(" ")
+                                           .pad_to(width.value_or(0) + 1)
+                                           .append(desc)
+                                           .with_attr_for_all(
+                                               lnav::prompt::SUBST_TEXT.value(
+                                                   x + " "));
+                                   });
+                        }
+                    }
+
+                    prompt.p_editor.open_popup_for_completion(0, poss);
+                } else {
+                    auto& meta = iter->second[0];
+                    auto help_text = fmt::format(
+                        FMT_STRING(ANSI_BOLD("%s") " -- %s   " ABORT_MSG),
+                        meta.sm_synopsis,
+                        meta.sm_description);
+                    lnav_data.ld_bottom_source.set_prompt(help_text);
+                }
             }
             break;
         }

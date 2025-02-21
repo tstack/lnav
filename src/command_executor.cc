@@ -690,7 +690,6 @@ execute_file(exec_context& ec, const std::string& path_and_args)
 {
     static const intern_string_t SRC = intern_string::lookup("cmdline");
 
-    available_scripts scripts;
     std::string retval, msg;
     shlex lexer(path_and_args);
 
@@ -713,7 +712,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
         return ec.make_error("no script specified");
     }
 
-    ec.ec_local_vars.push({});
+    ec.ec_local_vars.emplace();
 
     auto script_name = split_args[0].se_value;
     auto& vars = ec.ec_local_vars.top();
@@ -735,7 +734,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
 
     std::vector<script_metadata> paths_to_exec;
 
-    find_format_scripts(lnav_data.ld_config_paths, scripts);
+    auto scripts = find_format_scripts(lnav_data.ld_config_paths);
     auto iter = scripts.as_scripts.find(script_name);
     if (iter != scripts.as_scripts.end()) {
         paths_to_exec = iter->second;

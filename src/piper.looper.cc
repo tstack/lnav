@@ -202,9 +202,8 @@ void
 looper::loop()
 {
     static constexpr auto FORCE_MTIME_UPDATE_DURATION = 8h;
-    static const auto DEFAULT_ID = string_fragment{};
-    static const auto OUT_OF_FRAME_ID
-        = "_out_of_frame_"_frag;
+    static constexpr auto DEFAULT_ID = string_fragment{};
+    static constexpr auto OUT_OF_FRAME_ID = "_out_of_frame_"_frag;
     static constexpr auto FILE_TIMEOUT_BACKOFF = 30ms;
     static constexpr auto FILE_TIMEOUT_MAX = 1000ms;
 

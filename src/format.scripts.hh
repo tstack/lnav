@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -25,42 +25,34 @@
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file log_format_loader.hh
  */
 
-#ifndef log_format_loader_hh
-#define log_format_loader_hh
+#ifndef lnav_format_scripts_hh
+#define lnav_format_scripts_hh
 
 #include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
 
-#include <sqlite3.h>
+#include "text_format.hh"
 
-#include "base/intern_string.hh"
-#include "base/lnav.console.hh"
-#include "base/lnav.resolver.hh"
-#include "yajlpp/yajlpp_def.hh"
+struct script_metadata {
+    std::filesystem::path sm_path;
+    std::string sm_name;
+    std::string sm_synopsis;
+    std::string sm_description;
+    text_format_t sm_output_format{text_format_t::TF_UNKNOWN};
+};
 
-class log_vtab_manager;
+void extract_metadata_from_file(script_metadata& meta_inout);
 
-std::vector<intern_string_t> load_format_file(
-    const std::filesystem::path& filename,
-    std::vector<lnav::console::user_message>& errors);
+struct available_scripts {
+    std::map<std::string, std::vector<script_metadata>> as_scripts;
+};
 
-void load_formats(const std::vector<std::filesystem::path>& extra_paths,
-                  std::vector<lnav::console::user_message>& errors);
+available_scripts find_format_scripts(
+    const std::vector<std::filesystem::path>& extra_paths);
 
-void load_format_vtabs(log_vtab_manager* vtab_manager,
-                       std::vector<lnav::console::user_message>& errors);
-
-void load_format_extra(sqlite3* db,
-                       const std::map<std::string, scoped_value_t>& global_vars,
-                       const std::vector<std::filesystem::path>& extra_paths,
-                       std::vector<lnav::console::user_message>& errors);
-
-extern const json_path_container format_handlers;
-extern const json_path_container root_format_handler;
 
 #endif

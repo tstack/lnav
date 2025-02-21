@@ -597,6 +597,7 @@ add_library(
         filter_observer.hh
         filter_status_source.hh
         filter_sub_source.hh
+        format.scripts.hh
         fstat_vtab.hh
         fts_fuzzy_match.hh
         grep_highlighter.hh

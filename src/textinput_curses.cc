@@ -809,6 +809,20 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
+            case ']': {
+                if (this->tc_popup.is_visible()) {
+                    this->tc_popup_type = popup_type_t::none;
+                    this->tc_popup.set_visible(false);
+                    this->tc_complete_range = std::nullopt;
+                    this->set_needs_update();
+                } else {
+                    this->abort();
+                }
+
+                this->tc_selection = std::nullopt;
+                this->tc_drag_selection = std::nullopt;
+                return true;
+            }
             default: {
                 this->tc_notice = notice_t::unhandled_input;
                 this->set_needs_update();
@@ -1461,6 +1475,9 @@ textinput_curses::focus()
         this->vc_enabled = true;
         if (this->tc_on_focus) {
             this->tc_on_focus(*this);
+        }
+        if (this->tc_on_change) {
+            this->tc_on_change(*this);
         }
         this->set_needs_update();
     }

@@ -121,13 +121,13 @@ const typed_json_path_container<loaded> loaded::handlers = typed_json_path_conta
 int
 register_events_tab(sqlite3* db)
 {
-    static const char* CREATE_EVENTS_TAB_SQL = R"(
+    static constexpr auto* CREATE_EVENTS_TAB_SQL = R"(
 CREATE TABLE lnav_events (
    ts TEXT NOT NULL DEFAULT(strftime('%Y-%m-%dT%H:%M:%f', 'now')),
    content TEXT
 )
 )";
-    static const char* DELETE_EVENTS_TRIGGER_SQL = R"(
+    static constexpr auto* DELETE_EVENTS_TRIGGER_SQL = R"(
 CREATE TRIGGER lnav_events_cleaner AFTER INSERT ON lnav_events
 BEGIN
   DELETE FROM lnav_events WHERE rowid <= NEW.rowid - 1000;
@@ -154,7 +154,7 @@ END
 void
 details::publish(sqlite3* db, const std::string& content)
 {
-    static const char* INSERT_SQL = R"(
+    static constexpr auto* INSERT_SQL = R"(
 INSERT INTO lnav_events (content) VALUES (?)
 )";
 

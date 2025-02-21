@@ -778,7 +778,7 @@ relative_time::from_usecs(std::chrono::microseconds usecs)
 std::string
 relative_time::to_string() const
 {
-    static const char* DAYS[] = {
+    static constexpr const char* DAYS[] = {
         "sun",
         "mon",
         "tue",

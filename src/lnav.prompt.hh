@@ -36,11 +36,11 @@
 
 #include "base/attr_line.hh"
 #include "base/string_attr_type.hh"
+#include "format.scripts.hh"
 #include "help_text.hh"
 #include "mapbox/variant.hpp"
 #include "textinput.history.hh"
 #include "textinput_curses.hh"
-#include "textview_curses_fwd.hh"
 
 namespace lnav {
 
@@ -100,6 +100,7 @@ struct prompt {
     }
 
     std::multimap<std::string, sql_item_t> p_sql_completions;
+    available_scripts p_scripts;
     textinput_curses p_editor;
 
     void focus_for(char sigil, const std::vector<std::string>& args);

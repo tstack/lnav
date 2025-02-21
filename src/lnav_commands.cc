@@ -3627,7 +3627,6 @@ script_prompt(std::vector<std::string>& args)
     set_view_mode(ln_mode_t::EXEC);
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
-    find_format_scripts(lnav_data.ld_config_paths, scripts);
     prompt.focus_for('|', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("CTRL+]") " to abort)");
@@ -3723,7 +3722,9 @@ sql_prompt(std::vector<std::string>& args)
     tc->set_sync_selection_and_top(true);
     tc->reload_data();
     lnav_data.ld_bottom_source.set_prompt(
-        "Enter an SQL query: (Press " ANSI_BOLD("CTRL+]") " to abort)");
+        "Enter an SQL query: (Press "
+        ANSI_BOLD("CTRL+L") " for multi-line mode and "
+        ANSI_BOLD("CTRL+]") " to abort)");
 }
 
 static void

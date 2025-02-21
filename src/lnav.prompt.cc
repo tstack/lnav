@@ -180,6 +180,13 @@ prompt::get()
 void
 prompt::focus_for(char sigil, const std::vector<std::string>& args)
 {
+    switch (sigil) {
+        case '|': {
+            this->p_scripts = find_format_scripts(lnav_data.ld_config_paths);
+            break;
+        }
+    }
+
     this->p_editor.tc_prefix.clear();
     if (args.size() >= 3) {
         this->p_editor.tc_prefix.al_string = args[2];
@@ -279,10 +286,15 @@ prompt::rl_reformat(textinput_curses& tc)
         case ';': {
             auto content = attr_line_t(tc.get_content());
             annotate_sql_statement(content);
-            auto format_res
-                = lnav::prql::format(content, tc.get_cursor_offset());
+            auto format_res = lnav::db::format(content, tc.get_cursor_offset());
             tc.set_content(format_res.fr_content);
-            tc.set_height(5);
+            if (tc.tc_height != 5) {
+                tc.set_height(5);
+                lnav_data.ld_bottom_source.set_prompt(
+                    "Enter an SQL query: (Press "
+                    ANSI_BOLD("CTRL+X") " to perform query and "
+                    ANSI_BOLD("CTRL+]") " to abort)");
+            }
             tc.move_cursor_to_offset(format_res.fr_cursor_offset);
             break;
         }
@@ -503,7 +515,7 @@ prompt::get_db_completion_text(const std::string& str, int width) const
         .append(" ")
         .pad_to(width + 1)
         .append(summary, VC_ROLE.value(role_t::VCR_COMMENT))
-        .with_attr_for_all(SUBST_TEXT.value(str));
+        .with_attr_for_all(SUBST_TEXT.value(str + " "));
 }
 
 attr_line_t

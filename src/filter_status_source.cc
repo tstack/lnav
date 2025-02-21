@@ -36,18 +36,20 @@
 #include "filter_sub_source.hh"
 #include "lnav.hh"
 
-static auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
-static auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit ";
+static constexpr auto TOGGLE_MSG = "Press " ANSI_BOLD("TAB") " to edit ";
+static constexpr auto EXIT_MSG = "Press " ANSI_BOLD("ESC") " to exit ";
 
-static auto CREATE_HELP = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
-static auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";
-static auto EDIT_HELP = ANSI_BOLD("ENTER") ": Edit";
-static auto TOGGLE_HELP = ANSI_BOLD("t") ": To ";
-static auto DELETE_HELP = ANSI_BOLD("D") ": Delete";
-static auto FILTERING_HELP = ANSI_BOLD("f") ": ";
-static auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
-static auto CLOSE_HELP = ANSI_BOLD("X") ": Close";
-static auto FOCUS_DETAILS_HELP = ANSI_BOLD("CTRL-]") ": Focus on details view";
+static constexpr auto CREATE_HELP
+    = ANSI_BOLD("i") "/" ANSI_BOLD("o") ": Create in/out";
+static constexpr auto ENABLE_HELP = ANSI_BOLD("SPC") ": ";
+static constexpr auto EDIT_HELP = ANSI_BOLD("ENTER") ": Edit";
+static constexpr auto TOGGLE_HELP = ANSI_BOLD("t") ": To ";
+static constexpr auto DELETE_HELP = ANSI_BOLD("D") ": Delete";
+static constexpr auto FILTERING_HELP = ANSI_BOLD("f") ": ";
+static constexpr auto JUMP_HELP = ANSI_BOLD("ENTER") ": Jump To";
+static constexpr auto CLOSE_HELP = ANSI_BOLD("X") ": Close";
+static constexpr auto FOCUS_DETAILS_HELP
+    = ANSI_BOLD("CTRL-]") ": Focus on details view";
 
 filter_status_source::filter_status_source()
 {

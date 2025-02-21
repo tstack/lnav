@@ -50,6 +50,7 @@
 #include "default-formats.h"
 #include "file_format.hh"
 #include "fmt/format.h"
+#include "format.scripts.hh"
 #include "lnav_config.hh"
 #include "log_format_ext.hh"
 #include "sql_execute.hh"
@@ -1674,13 +1675,14 @@ find_format_in_path(const std::filesystem::path& path,
     }
 }
 
-void
-find_format_scripts(const std::vector<std::filesystem::path>& extra_paths,
-                    available_scripts& scripts)
+available_scripts
+find_format_scripts(const std::vector<std::filesystem::path>& extra_paths)
 {
+    available_scripts retval;
     for (const auto& extra_path : extra_paths) {
-        find_format_in_path(extra_path, scripts);
+        find_format_in_path(extra_path, retval);
     }
+    return retval;
 }
 
 void
