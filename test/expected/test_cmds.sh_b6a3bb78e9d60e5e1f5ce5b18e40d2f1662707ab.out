@@ -596,7 +596,7 @@ current and previous stages of the pipeline.
 Using the top ten URLs query from earlier as an example, the PRQL
 version would be as follows:
 
- ▌[37m[40m;[0m[1m[36m[40mfrom[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m | [0m[37m[40mstats[0m[37m[40m.[0m[37m[40mcount_by[0m[37m[40m [0m[37m[40mcs_uri_stem[0m[37m[40m | [0m[1m[36m[40mtake[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m    [0m
+ ▌[37m[40m;[0m[1m[36m[40mfrom[0m[37m[40m [0m[37m[40maccess_log[0m[37m[40m | [0m[37m[40mstats.count_by[0m[37m[40m cs_uri_stem | [0m[1m[36m[40mtake[0m[37m[40m [0m[1m[37m[40m10[0m[37m[40m    [0m
 
 The first stage selects the data source, the web [37m[40m access_log [0m table in
 this case.  The [37m[40m stats.count_by [0m transform is a convenience provided

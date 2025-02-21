@@ -263,7 +263,7 @@ rl_sql_help(textinput_curses& rc)
         sa, &SQL_IDENTIFIER_ATTR, al.nearest_text(x));
     if (ident_iter == sa.end()) {
         ident_iter = find_string_attr_containing(
-            sa, &lnav::sql::PRQL_IDENTIFIER_ATTR, al.nearest_text(x));
+            sa, &lnav::sql::PRQL_FQID_ATTR, al.nearest_text(x));
     }
     if (ident_iter != sa.end()) {
         auto ident = al.get_substring(ident_iter->sa_range);
@@ -550,14 +550,95 @@ rl_sql_change(textinput_curses& rc)
 
     const auto line = rc.get_content();
     std::vector<std::string> args;
-
-    if (!lnav::sql::is_prql(line)) {
-        clear_preview();
-    }
+    auto is_prql = lnav::sql::is_prql(line);
 
     if (rc.tc_popup_type == textinput_curses::popup_type_t::history) {
         rc.tc_on_history(rc);
+    } else if (is_prql) {
+        auto anno_line = attr_line_t(line);
+        lnav::sql::annotate_prql_statement(anno_line);
+        auto cursor_offset = prompt.p_editor.get_cursor_offset();
+
+        for (const auto& attr : anno_line.al_attrs) {
+            log_debug("attr [%d:%d) %s",
+                      attr.sa_range.lr_start,
+                      attr.sa_range.lr_end,
+                      attr.sa_type->sat_name);
+        }
+
+        auto attr_iter = rfind_string_attr_if(
+            anno_line.al_attrs, cursor_offset, [](const auto& x) {
+                return x.sa_type != &lnav::sql::PRQL_STAGE_ATTR;
+            });
+        auto stage_iter = rfind_string_attr_if(
+            anno_line.al_attrs, cursor_offset, [](const auto& x) {
+                return x.sa_type == &lnav::sql::PRQL_STAGE_ATTR;
+            });
+        if (attr_iter != anno_line.al_attrs.end()) {
+            auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
+            auto to_complete = to_complete_sf.to_string();
+            std::vector<attr_line_t> poss;
+            std::string title;
+
+            log_debug("prql attr [%d:%d) %s",
+                      attr_iter->sa_range.lr_start,
+                      attr_iter->sa_range.lr_end,
+                      attr_iter->sa_type->sat_name);
+            if (attr_iter->sa_type == &lnav::sql::PRQL_PIPE_ATTR
+                || (attr_iter->sa_type == &lnav::sql::PRQL_FQID_ATTR
+                    && std::prev(attr_iter)->sa_type
+                        == &lnav::sql::PRQL_PIPE_ATTR))
+            {
+                if (attr_iter->sa_type == &lnav::sql::PRQL_PIPE_ATTR) {
+                    to_complete.clear();
+                }
+                auto poss_str
+                    = (*sql_cmd_map)
+                    | lnav::itertools::filter_in(
+                          [](const readline_context::command_map_t::value_type&
+                                 p) {
+                              return !p.second->c_dependencies.empty();
+                          })
+                    | lnav::itertools::first()
+                    | lnav::itertools::similar_to(to_complete, 10);
+                auto width = poss_str | lnav::itertools::map(&std::string::size)
+                    | lnav::itertools::max();
+
+                title = "transform";
+                poss = poss_str | lnav::itertools::map([&width](const auto& x) {
+                           const auto& ht = sql_cmd_map->at(x)->c_help;
+                           auto sub_value = x;
+                           if (!ht.ht_parameters.empty()
+                               && ht.ht_parameters[0].ht_group_start)
+                           {
+                               sub_value.push_back(' ');
+                               sub_value.append(
+                                   ht.ht_parameters[0].ht_group_start);
+                               sub_value.push_back(' ');
+                           }
+                           return attr_line_t()
+                               .append(x, VC_ROLE.value(role_t::VCR_FUNCTION))
+                               .append(" ")
+                               .pad_to(width.value_or(0) + 1)
+                               .append(ht.ht_summary)
+                               .with_attr_for_all(
+                                   lnav::prompt::SUBST_TEXT.value(sub_value));
+                       });
+            } else if (attr_iter->sa_type == &lnav::sql::PRQL_FQID_ATTR) {
+                poss = prompt.p_prql_completions | lnav::itertools::first()
+                    | lnav::itertools::similar_to(to_complete, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return prompt.get_sql_completion_text(
+                               *prompt.p_prql_completions.find(x));
+                       });
+            }
+            auto left = rc.tc_cursor.x - to_complete_sf.column_width();
+            rc.open_popup_for_completion(left, poss);
+            rc.tc_popup.set_title(title);
+        }
     } else {
+        clear_preview();
+
         auto anno_line = attr_line_t(line);
         annotate_sql_statement(anno_line);
         auto cursor_offset = prompt.p_editor.get_cursor_offset();

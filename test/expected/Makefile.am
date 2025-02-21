@@ -828,6 +828,8 @@ dist_noinst_DATA = \
     test_sql_anno.sh_331a152080d2e278b7cc0a37728eca1ded36ed72.out \
     test_sql_anno.sh_4ca92f0da538c2f9d524211a021b306af0d2740d.err \
     test_sql_anno.sh_4ca92f0da538c2f9d524211a021b306af0d2740d.out \
+    test_sql_anno.sh_61bb63e4ed637486f3c3e0b858605ffb54a3d7cd.err \
+    test_sql_anno.sh_61bb63e4ed637486f3c3e0b858605ffb54a3d7cd.out \
     test_sql_anno.sh_73814eca259e469b57bf7469787b91e8e8569b17.err \
     test_sql_anno.sh_73814eca259e469b57bf7469787b91e8e8569b17.out \
     test_sql_anno.sh_74bc5fb90a0c94a1a37d30a8e9254ea02c192a75.err \
@@ -852,8 +854,6 @@ dist_noinst_DATA = \
     test_sql_anno.sh_de46094b6e005285dc0921ef9979e36240c5042d.out \
     test_sql_anno.sh_e02dc902e91f99da7c7682e8d9ce3a40dd05b908.err \
     test_sql_anno.sh_e02dc902e91f99da7c7682e8d9ce3a40dd05b908.out \
-    test_sql_anno.sh_e7dae4ba18c42c416ed03afd8819200f63e89ac8.err \
-    test_sql_anno.sh_e7dae4ba18c42c416ed03afd8819200f63e89ac8.out \
     test_sql_anno.sh_f3c64191d6016767a5857fbb1bad26548586bb96.err \
     test_sql_anno.sh_f3c64191d6016767a5857fbb1bad26548586bb96.out \
     test_sql_coll_func.sh_077cab6e271c914daf5b221cc512853077891f35.err \

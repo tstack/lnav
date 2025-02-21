@@ -164,6 +164,19 @@ prompt::insert_sql_completion(const std::string& name, const sql_item_t& item)
         }
     }
     this->p_sql_completions.emplace(name, item);
+    auto is_prql = item.match([](sql_keyword_t) { return false; },
+                              [](sql_collation_t) { return false; },
+                              [](sql_db_t) { return false; },
+                              [](sql_table_t) { return true; },
+                              [](sql_table_valued_function_t) { return false; },
+                              [](sql_function_t) { return false; },
+                              [](sql_column_t) { return true; },
+                              [](sql_number_t) { return false; },
+                              [](sql_string_t) { return true; },
+                              [](sql_var_t) { return false; });
+    if (is_prql) {
+        this->p_prql_completions.emplace(name, item);
+    }
 }
 
 prompt&

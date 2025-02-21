@@ -1431,7 +1431,7 @@ annotate_prql_statement(attr_line_t& al)
             &PRQL_OPERATOR_ATTR,
         },
         {
-            lnav::pcre2pp::code::from_const(R"(\A\|)"),
+            lnav::pcre2pp::code::from_const(R"(\A(?:\||\n))"),
             &PRQL_PIPE_ATTR,
         },
         {
@@ -1444,7 +1444,8 @@ annotate_prql_statement(attr_line_t& al)
         },
     };
 
-    static const auto ws_pattern = lnav::pcre2pp::code::from_const(R"(\A\s+)");
+    static const auto ws_pattern
+        = lnav::pcre2pp::code::from_const(R"(\A[ \t\r]+)");
 
     const auto& line = al.get_string();
     auto& sa = al.get_attrs();
@@ -1460,6 +1461,11 @@ annotate_prql_statement(attr_line_t& al)
             if (pat_find_res) {
                 sa.emplace_back(to_line_range(pat_find_res->f_all),
                                 pat.type->value());
+                if (sa.back().sa_type == &PRQL_PIPE_ATTR
+                    && pat_find_res->f_all == "\n"_frag)
+                {
+                    sa.back().sa_range.lr_end -= 1;
+                }
                 remaining = pat_find_res->f_remaining;
                 break;
             }
@@ -1546,6 +1552,8 @@ annotate_prql_statement(attr_line_t& al)
     for (const auto& fqid_range : fqids) {
         sa.emplace_back(fqid_range, PRQL_FQID_ATTR.value());
     }
+    remove_string_attr(sa, &PRQL_IDENTIFIER_ATTR);
+    remove_string_attr(sa, &PRQL_DOT_ATTR);
 
     stable_sort(sa.begin(), sa.end());
 }

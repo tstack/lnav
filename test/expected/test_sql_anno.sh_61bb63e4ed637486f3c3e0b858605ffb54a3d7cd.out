@@ -1,0 +1,17 @@
+                 from access_log | stats.count_by cs_uri_stem | take 10
+      prql_stage ----------------
+  prql_transform ----
+       prql_fqid      ----------
+      prql_stage                 -----------------------------
+       prql_pipe                 -
+       prql_fqid                   --------------
+      prql_stage                                              ---------
+       prql_pipe                                              -
+  prql_transform                                                ----
+     prql_number                                                     --
+Formatted:
+from access_log
+stats.count_by cs_uri_stem
+take 10
+
+Cursor offset: 51

@@ -297,7 +297,7 @@ readline_sqlite_highlighter_int(attr_line_t& al,
         {
             alb.overlay_attr(lr, VC_ROLE.value(role_t::VCR_KEYWORD));
         } else if (attr.sa_type == &SQL_IDENTIFIER_ATTR
-                   || attr.sa_type == &lnav::sql::PRQL_IDENTIFIER_ATTR)
+                   || attr.sa_type == &lnav::sql::PRQL_FQID_ATTR)
         {
             if (!x
                 || (x && !attr.sa_range.contains(x.value())
