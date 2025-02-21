@@ -99,6 +99,7 @@ struct prompt {
         }
     }
 
+    std::map<std::string, std::string> p_env_vars;
     std::multimap<std::string, sql_item_t> p_sql_completions;
     available_scripts p_scripts;
     textinput_curses p_editor;
@@ -114,6 +115,7 @@ struct prompt {
 
     std::vector<attr_line_t> get_cmd_parameter_completion(
         textview_curses& tc, const help_text* ht, const std::string& str);
+    std::vector<attr_line_t> get_env_completion(const std::string& str);
 
     void rl_help(textinput_curses& tc);
     void rl_reformat(textinput_curses& tc);

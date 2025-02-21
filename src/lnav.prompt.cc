@@ -187,6 +187,23 @@ prompt::focus_for(char sigil, const std::vector<std::string>& args)
         }
     }
 
+    this->p_env_vars.clear();
+    switch (sigil) {
+        case ':':
+        case '|': {
+            for (char** var = environ; *var != nullptr; var++) {
+                auto pair_sf = string_fragment::from_c_str(*var);
+                auto split_sf = pair_sf.split_when(string_fragment::tag1{'='});
+                auto var_name = fmt::format(FMT_STRING("${}"), split_sf.first);
+
+                this->p_env_vars[var_name] = split_sf.second.to_string();
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
     this->p_editor.tc_prefix.clear();
     if (args.size() >= 3) {
         this->p_editor.tc_prefix.al_string = args[2];
@@ -533,12 +550,44 @@ prompt::get_sql_completion_text(
 }
 
 std::vector<attr_line_t>
+prompt::get_env_completion(const std::string& str)
+{
+    auto poss_strs = this->p_env_vars | lnav::itertools::first();
+    if (str.size() > 1) {
+        poss_strs = poss_strs | lnav::itertools::similar_to(str, 10);
+    }
+    auto width = poss_strs | lnav::itertools::map(&std::string::size)
+        | lnav::itertools::max();
+
+    return poss_strs | lnav::itertools::map([&width, this](const auto& x) {
+               auto arg_val
+                   = attr_line_t::from_table_cell_content(this->p_env_vars[x],
+                                                          20)
+                         .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
+               return attr_line_t()
+                   .append(x, VC_ROLE.value(role_t::VCR_VARIABLE))
+                   .append(" ")
+                   .pad_to(width.value_or(0) + 1)
+                   .append(arg_val)
+                   .with_attr_for_all(SUBST_TEXT.value(x));
+           });
+}
+
+std::vector<attr_line_t>
 prompt::get_cmd_parameter_completion(textview_curses& tc,
                                      const help_text* ht,
                                      const std::string& str)
 {
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
+            case help_parameter_format_t::HPF_TEXT: {
+                return view_text_possibilities(tc)
+                    | lnav::itertools::similar_to(str)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x));
+                       });
+            }
             case help_parameter_format_t::HPF_REGEX: {
                 std::vector<attr_line_t> retval;
                 auto poss_str = view_text_possibilities(tc)
@@ -553,6 +602,11 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
             }
             case help_parameter_format_t::HPF_FILENAME:
             case help_parameter_format_t::HPF_DIRECTORY: {
+                log_debug("file comp '%s'", str.c_str());
+                if (startswith(str, "$")) {
+                    log_debug("doing env");
+                    return this->get_env_completion(str);
+                }
                 auto str_as_path = std::filesystem::path{str};
                 auto parent = str_as_path.parent_path();
                 std::vector<std::string> poss_paths;
@@ -589,7 +643,6 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 if (ec) {
                     log_error("dir iter failed!");
                 }
-
                 return retval;
             }
             case help_parameter_format_t::HPF_LOADED_FILE: {

@@ -32,16 +32,28 @@
 
 #include "cmd.parser.hh"
 
+#include "base/itertools.enumerate.hh"
 #include "data_scanner.hh"
 #include "shlex.hh"
 
 namespace lnav::command {
 
-std::optional<std::pair<const help_text*, shlex::split_element_t>>
+std::optional<parsed::arg_at_result>
 parsed::arg_at(int x) const
 {
+    log_debug("BEGIN arg_at");
     for (const auto& arg : this->p_args) {
-        for (const auto& se : arg.second.a_values) {
+        log_debug(
+            "  arg %s[%d]", arg.first.c_str(), arg.second.a_values.size());
+        for (const auto& [index, se] :
+             lnav::itertools::enumerate(arg.second.a_values))
+        {
+            log_debug("    val [%d:%d) %.*s -> %s",
+                      se.se_origin.sf_begin,
+                      se.se_origin.sf_end,
+                      se.se_origin.length(),
+                      se.se_origin.data(),
+                      se.se_value.c_str());
             if (se.se_origin.sf_begin <= x && x <= se.se_origin.sf_end) {
                 switch (arg.second.a_help->ht_format) {
                     case help_parameter_format_t::HPF_TEXT:
@@ -64,19 +76,20 @@ parsed::arg_at(int x) const
                             if (tok.tr_capture.c_begin <= x
                                 && x <= tok.tr_capture.c_end)
                             {
-                                return std::make_pair(
+                                return arg_at_result{
                                     arg.second.a_help,
+                                    false,
                                     shlex::split_element_t{
                                         tok.to_string_fragment(),
                                         tok.to_string(),
-                                    });
+                                    }};
                             }
                         }
-                        return std::make_pair(arg.second.a_help,
-                                              shlex::split_element_t{});
+                        return arg_at_result{
+                            arg.second.a_help, false, shlex::split_element_t{}};
                     }
                     default:
-                        return std::make_pair(arg.second.a_help, se);
+                        return arg_at_result{arg.second.a_help, index == 0, se};
                 }
             }
         }
@@ -88,8 +101,11 @@ parsed::arg_at(int x) const
             || param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
             || param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE)
         {
-            return std::make_pair(p_iter->second.a_help,
-                                  shlex::split_element_t{});
+            log_debug("  or-more");
+            return arg_at_result{
+                p_iter->second.a_help,
+                p_iter->second.a_values.empty() && !param.is_trailing_arg(),
+                shlex::split_element_t{}};
         }
     }
 

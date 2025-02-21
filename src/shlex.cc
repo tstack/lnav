@@ -207,11 +207,10 @@ shlex::scan_variable_ref()
     retval.tr_frag.sf_begin = this->s_index;
     this->s_index += 1;
     if (this->s_index >= this->s_len) {
+        retval.tr_token = shlex_token_t::eof;
+        retval.tr_frag.sf_begin = this->s_len;
         retval.tr_frag.sf_end = this->s_index;
-        return Err(tokenize_error_t{
-            "invalid variable reference",
-            retval.tr_frag,
-        });
+        return Ok(retval);
     }
 
     if (this->s_str[this->s_index] == '{') {

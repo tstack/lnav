@@ -1476,9 +1476,6 @@ textinput_curses::focus()
         if (this->tc_on_focus) {
             this->tc_on_focus(*this);
         }
-        if (this->tc_on_change) {
-            this->tc_on_change(*this);
-        }
         this->set_needs_update();
     }
 

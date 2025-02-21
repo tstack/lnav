@@ -332,7 +332,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
     } else if (args[0] != last_command) {
         last_command = args[0];
         generation = 0;
-    } else {
+    } else if (args.size() > 1) {
         generation += 1;
     }
 
@@ -466,29 +466,29 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                         iter->second->c_help);
                     auto x = args_sf.column_to_byte_index(rc.tc_cursor.x
                                                           - args_sf.sf_begin);
-                    auto arg_pair_opt = parsed_cmd.arg_at(x);
+                    auto arg_res_opt = parsed_cmd.arg_at(x);
 
-                    if (arg_pair_opt) {
-                        auto arg_pair = arg_pair_opt.value();
+                    if (arg_res_opt) {
+                        auto arg_res = arg_res_opt.value();
                         log_debug("apair %s [%d:%d) -- %s",
-                                  arg_pair.first->ht_name,
-                                  arg_pair.second.se_origin.sf_begin,
-                                  arg_pair.second.se_origin.sf_end,
-                                  arg_pair.second.se_value.c_str());
-                        if (is_req
-                            || (rc.tc_popup_type
-                                    == textinput_curses::popup_type_t::none
-                                && !arg_pair.first->is_trailing_arg()))
-                        {
+                                  arg_res.aar_help->ht_name,
+                                  arg_res.aar_element.se_origin.sf_begin,
+                                  arg_res.aar_element.se_origin.sf_end,
+                                  arg_res.aar_element.se_value.c_str());
+                        if (is_req || arg_res.aar_required) {
                             auto poss = prompt.get_cmd_parameter_completion(
-                                *tc, arg_pair.first, arg_pair.second.se_value);
-                            auto left = arg_pair.second.se_value.empty()
+                                *tc,
+                                arg_res.aar_help,
+                                arg_res.aar_element.se_value.empty()
+                                    ? arg_res.aar_element.se_origin.to_string()
+                                    : arg_res.aar_element.se_value);
+                            auto left = arg_res.aar_element.se_origin.empty()
                                 ? rc.tc_cursor.x
                                 : line_sf.byte_to_column_index(
                                       args_sf.sf_begin
-                                      + arg_pair.second.se_origin.sf_begin);
+                                      + arg_res.aar_element.se_origin.sf_begin);
                             rc.open_popup_for_completion(left, poss);
-                            rc.tc_popup.set_title(arg_pair.first->ht_name);
+                            rc.tc_popup.set_title(arg_res.aar_help->ht_name);
                         }
                     } else {
                         log_info("no arg at %d", x);
@@ -635,19 +635,96 @@ rl_search_change(textinput_curses& rc, bool is_req)
             lnav_data.ld_exec_context, line, SEARCH_HELP);
 
         auto byte_x = line_sf.column_to_byte_index(rc.tc_cursor.x);
-        auto arg_pair_opt = parse_res.arg_at(byte_x);
-        if (arg_pair_opt) {
-            auto arg_pair = arg_pair_opt.value();
+        auto arg_res_opt = parse_res.arg_at(byte_x);
+        if (arg_res_opt) {
+            auto arg_pair = arg_res_opt.value();
             if (is_req) {
                 auto poss = prompt.get_cmd_parameter_completion(
-                    *tc, arg_pair.first, arg_pair.second.se_value);
-                auto left = arg_pair.second.se_value.empty()
+                    *tc, arg_pair.aar_help, arg_pair.aar_element.se_value);
+                auto left = arg_pair.aar_element.se_value.empty()
                     ? rc.tc_cursor.x
                     : line_sf.byte_to_column_index(
-                          arg_pair.second.se_origin.sf_begin);
+                          arg_pair.aar_element.se_origin.sf_begin);
                 rc.open_popup_for_completion(left, poss);
-                rc.tc_popup.set_title(arg_pair.first->ht_name);
+                rc.tc_popup.set_title(arg_pair.aar_help->ht_name);
             }
+        }
+    }
+}
+
+static void
+rl_exec_change(textinput_curses& rc, bool is_req)
+{
+    static auto& prompt = lnav::prompt::get();
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+
+    clear_preview();
+
+    const auto line = rc.get_content();
+    shlex lexer(line);
+    auto split_res = lexer.split(lnav_data.ld_exec_context.create_resolver());
+    if (split_res.isErr()) {
+        lnav_data.ld_bottom_source.grep_error(split_res.unwrapErr().te_msg);
+    } else {
+        auto split_args = split_res.unwrap();
+        auto script_name = split_args.empty() ? std::string()
+                                              : split_args[0].se_value;
+        const auto& scripts = prompt.p_scripts;
+        const auto iter = scripts.as_scripts.find(script_name);
+
+        if (iter == scripts.as_scripts.end()
+            || iter->second[0].sm_description.empty())
+        {
+            lnav_data.ld_bottom_source.set_prompt(
+                "Enter a script to execute: " ABORT_MSG);
+
+            std::vector<attr_line_t> poss;
+            auto width = scripts.as_scripts | lnav::itertools::first()
+                | lnav::itertools::map(&std::string::size)
+                | lnav::itertools::max();
+            if (script_name.empty()) {
+                poss
+                    = scripts.as_scripts
+                    | lnav::itertools::map([&width](const auto& p) {
+                          return attr_line_t()
+                              .append(p.first,
+                                      VC_ROLE.value(role_t::VCR_VARIABLE))
+                              .append(" ")
+                              .pad_to(width.value_or(0) + 1)
+                              .append(p.second[0].sm_description)
+                              .with_attr_for_all(lnav::prompt::SUBST_TEXT.value(
+                                  p.first + " "));
+                      });
+            } else {
+                auto x = prompt.p_editor.get_cursor_offset();
+                if (!script_name.empty() && split_args[0].se_origin.sf_end == x)
+                {
+                    poss = scripts.as_scripts | lnav::itertools::first()
+                        | lnav::itertools::similar_to(script_name, 10)
+                        | lnav::itertools::map([&width,
+                                                &scripts](const auto& x) {
+                               auto siter = scripts.as_scripts.find(x);
+                               auto desc = siter->second[0].sm_description;
+                               return attr_line_t()
+                                   .append(x,
+                                           VC_ROLE.value(role_t::VCR_VARIABLE))
+                                   .append(" ")
+                                   .pad_to(width.value_or(0) + 1)
+                                   .append(desc)
+                                   .with_attr_for_all(
+                                       lnav::prompt::SUBST_TEXT.value(x + " "));
+                           });
+                }
+            }
+
+            prompt.p_editor.open_popup_for_completion(0, poss);
+        } else {
+            auto& meta = iter->second[0];
+            auto help_text
+                = fmt::format(FMT_STRING(ANSI_BOLD("{}") " -- {}   " ABORT_MSG),
+                              meta.sm_synopsis,
+                              meta.sm_description);
+            lnav_data.ld_bottom_source.set_prompt(help_text);
         }
     }
 }
@@ -683,81 +760,7 @@ rl_change(textinput_curses& rc)
             break;
         }
         case ln_mode_t::EXEC: {
-            clear_preview();
-
-            const auto line = rc.get_content();
-            shlex lexer(line);
-            auto split_res
-                = lexer.split(lnav_data.ld_exec_context.create_resolver());
-            if (split_res.isErr()) {
-                lnav_data.ld_bottom_source.grep_error(
-                    split_res.unwrapErr().te_msg);
-            } else {
-                auto split_args = split_res.unwrap();
-                auto script_name = split_args.empty() ? std::string()
-                                                      : split_args[0].se_value;
-                const auto& scripts = prompt.p_scripts;
-                const auto iter = scripts.as_scripts.find(script_name);
-
-                if (iter == scripts.as_scripts.end()
-                    || iter->second[0].sm_description.empty())
-                {
-                    lnav_data.ld_bottom_source.set_prompt(
-                        "Enter a script to execute: " ABORT_MSG);
-
-                    std::vector<attr_line_t> poss;
-                    auto width = scripts.as_scripts | lnav::itertools::first()
-                        | lnav::itertools::map(&std::string::size)
-                        | lnav::itertools::max();
-                    if (script_name.empty()) {
-                        poss = scripts.as_scripts
-                            | lnav::itertools::map([&width](const auto& p) {
-                                   return attr_line_t()
-                                       .append(
-                                           p.first,
-                                           VC_ROLE.value(role_t::VCR_VARIABLE))
-                                       .append(" ")
-                                       .pad_to(width.value_or(0) + 1)
-                                       .append(p.second[0].sm_description)
-                                       .with_attr_for_all(
-                                           lnav::prompt::SUBST_TEXT.value(
-                                               p.first + " "));
-                               });
-                    } else {
-                        auto x = prompt.p_editor.get_cursor_offset();
-                        if (!script_name.empty()
-                            && split_args[0].se_origin.sf_end == x)
-                        {
-                            poss = scripts.as_scripts | lnav::itertools::first()
-                                | lnav::itertools::similar_to(script_name, 10)
-                                | lnav::itertools::map([&width, &scripts](
-                                                           const auto& x) {
-                                       auto siter = scripts.as_scripts.find(x);
-                                       auto desc = siter->second[0].sm_description;
-                                       return attr_line_t()
-                                           .append(x,
-                                                   VC_ROLE.value(
-                                                       role_t::VCR_VARIABLE))
-                                           .append(" ")
-                                           .pad_to(width.value_or(0) + 1)
-                                           .append(desc)
-                                           .with_attr_for_all(
-                                               lnav::prompt::SUBST_TEXT.value(
-                                                   x + " "));
-                                   });
-                        }
-                    }
-
-                    prompt.p_editor.open_popup_for_completion(0, poss);
-                } else {
-                    auto& meta = iter->second[0];
-                    auto help_text = fmt::format(
-                        FMT_STRING(ANSI_BOLD("%s") " -- %s   " ABORT_MSG),
-                        meta.sm_synopsis,
-                        meta.sm_description);
-                    lnav_data.ld_bottom_source.set_prompt(help_text);
-                }
-            }
+            rl_exec_change(rc, false);
             break;
         }
         default:
@@ -1396,6 +1399,10 @@ rl_completion_request(textinput_curses& rc)
         }
         case ln_mode_t::COMMAND: {
             rl_cmd_change(rc, true);
+            break;
+        }
+        case ln_mode_t::EXEC: {
+            rl_exec_change(rc, true);
             break;
         }
     }
