@@ -559,6 +559,7 @@ rl_sql_change(textinput_curses& rc)
         lnav::sql::annotate_prql_statement(anno_line);
         auto cursor_offset = prompt.p_editor.get_cursor_offset();
 
+        log_debug("curs %d", cursor_offset);
         for (const auto& attr : anno_line.al_attrs) {
             log_debug("attr [%d:%d) %s",
                       attr.sa_range.lr_start,
@@ -584,10 +585,12 @@ rl_sql_change(textinput_curses& rc)
                       attr_iter->sa_range.lr_start,
                       attr_iter->sa_range.lr_end,
                       attr_iter->sa_type->sat_name);
+            auto prev_attr_iter = std::prev(attr_iter);
             if (attr_iter->sa_type == &lnav::sql::PRQL_PIPE_ATTR
                 || (attr_iter->sa_type == &lnav::sql::PRQL_FQID_ATTR
-                    && std::prev(attr_iter)->sa_type
-                        == &lnav::sql::PRQL_PIPE_ATTR))
+                    && (prev_attr_iter->sa_type == &lnav::sql::PRQL_PIPE_ATTR
+                        || prev_attr_iter->sa_type
+                            == &lnav::sql::PRQL_STAGE_ATTR)))
             {
                 if (attr_iter->sa_type == &lnav::sql::PRQL_PIPE_ATTR) {
                     to_complete.clear();

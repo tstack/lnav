@@ -153,6 +153,7 @@ rfind_string_attr_if(const string_attrs_t& sa, ssize_t near, T predicate)
     auto nearest = sa.end();
     ssize_t last_diff = INT_MAX;
 
+
     for (auto iter = sa.begin(); iter != sa.end(); ++iter) {
         const auto& lr = iter->sa_range;
 
@@ -165,7 +166,7 @@ rfind_string_attr_if(const string_attrs_t& sa, ssize_t near, T predicate)
         }
 
         ssize_t diff = near - lr.lr_start;
-        if (diff < last_diff) {
+        if (diff <= last_diff) {
             last_diff = diff;
             nearest = iter;
         }

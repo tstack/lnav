@@ -131,6 +131,14 @@ struct line_range {
             return false;
         }
 
+        if (this->empty()) {
+            return true;
+        }
+
+        if (rhs.empty()) {
+            return false;
+        }
+
         // When the start is the same, the longer range has a lower priority
         // than the shorter range.
         if (rhs.lr_end == -1) {

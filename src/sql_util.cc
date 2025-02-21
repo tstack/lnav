@@ -1464,7 +1464,7 @@ annotate_prql_statement(attr_line_t& al)
                 if (sa.back().sa_type == &PRQL_PIPE_ATTR
                     && pat_find_res->f_all == "\n"_frag)
                 {
-                    sa.back().sa_range.lr_end -= 1;
+                    sa.back().sa_range.lr_start += 1;
                 }
                 remaining = pat_find_res->f_remaining;
                 break;
