@@ -2044,10 +2044,7 @@ com_tag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("tag");
-        return Ok(std::string());
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         if (ec.ec_dry_run) {
             return Ok(std::string());
         }
@@ -4226,30 +4223,38 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":tag")
             .with_summary("Attach tags to the focused log line")
-            .with_parameter(
-                help_text("tag", "The tags to attach").one_or_more())
+            .with_parameter(help_text("tag", "The tags to attach")
+                                .one_or_more()
+                                .with_format(help_parameter_format_t::HPF_TAG))
             .with_example({"To add the tags '#BUG123' and '#needs-review' to "
                            "the focused line",
                            "#BUG123 #needs-review"})
             .with_tags({"metadata"}),
     },
-    {"untag",
-     com_untag,
+    {
+        "untag",
+        com_untag,
 
-     help_text(":untag")
-         .with_summary("Detach tags from the focused log line")
-         .with_parameter(help_text("tag", "The tags to detach").one_or_more())
-         .with_example({"To remove the tags '#BUG123' and "
-                        "'#needs-review' from the focused line",
-                        "#BUG123 #needs-review"})
-         .with_opposites({"tag"})
-         .with_tags({"metadata"})},
+        help_text(":untag")
+            .with_summary("Detach tags from the focused log line")
+            .with_parameter(
+                help_text("tag", "The tags to detach")
+                    .one_or_more()
+                    .with_format(help_parameter_format_t::HPF_LINE_TAG))
+            .with_example({"To remove the tags '#BUG123' and "
+                           "'#needs-review' from the focused line",
+                           "#BUG123 #needs-review"})
+            .with_opposites({"tag"})
+            .with_tags({"metadata"}),
+    },
     {"delete-tags",
      com_delete_tags,
 
      help_text(":delete-tags")
          .with_summary("Remove the given tags from all log lines")
-         .with_parameter(help_text("tag", "The tags to delete").one_or_more())
+         .with_parameter(help_text("tag", "The tags to delete")
+                             .one_or_more()
+                             .with_format(help_parameter_format_t::HPF_TAG))
          .with_example({"To remove the tags '#BUG123' and "
                         "'#needs-review' from "
                         "all log lines",

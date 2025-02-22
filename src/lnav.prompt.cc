@@ -654,6 +654,37 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                SUBST_TEXT.value(x + " "));
                        });
             }
+            case help_parameter_format_t::HPF_TAG: {
+                return bookmark_metadata::KNOWN_TAGS
+                    | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::sorted()
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t()
+                               .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
+                               .with_attr_for_all(SUBST_TEXT.value(x + " "));
+                       });
+            }
+            case help_parameter_format_t::HPF_LINE_TAG: {
+                auto* lss
+                    = dynamic_cast<logfile_sub_source*>(tc.get_sub_source());
+
+                if (lss == nullptr || tc.get_inner_height() == 0) {
+                    return {};
+                }
+
+                auto bm_opt = lss->find_bookmark_metadata(tc.get_selection());
+                if (!bm_opt) {
+                    return {};
+                }
+                return bm_opt.value()->bm_tags
+                    | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::sorted()
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t()
+                               .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
+                               .with_attr_for_all(SUBST_TEXT.value(x + " "));
+                       });
+            }
             case help_parameter_format_t::HPF_FILENAME:
             case help_parameter_format_t::HPF_DIRECTORY: {
                 log_debug("file comp '%s'", str.c_str());

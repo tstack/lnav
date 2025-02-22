@@ -80,6 +80,8 @@ enum class help_parameter_format_t {
     HPF_TIMEZONE,
     HPF_CONFIG_PATH,
     HPF_CONFIG_VALUE,
+    HPF_TAG,
+    HPF_LINE_TAG,
 };
 
 struct help_example {
