@@ -694,7 +694,11 @@ view_colors::to_channels(const text_attrs& ta)
             ncchannels_set_fg_alpha(&retval, NCALPHA_TRANSPARENT);
         },
         [&retval](const palette_color& pc) {
-            ncchannels_set_fg_palindex(&retval, pc);
+            if (pc == COLOR_WHITE) {
+                ncchannels_set_fg_default(&retval);
+            } else {
+                ncchannels_set_fg_palindex(&retval, pc);
+            }
         },
         [&retval](const rgb_color& rc) {
             ncchannels_set_fg_rgb8(&retval, rc.rc_r, rc.rc_g, rc.rc_b);
@@ -707,7 +711,11 @@ view_colors::to_channels(const text_attrs& ta)
             ncchannels_set_bg_alpha(&retval, NCALPHA_TRANSPARENT);
         },
         [&retval](const palette_color& pc) {
-            ncchannels_set_bg_palindex(&retval, pc);
+            if (pc == COLOR_BLACK) {
+                ncchannels_set_bg_default(&retval);
+            } else {
+                ncchannels_set_bg_palindex(&retval, pc);
+            }
         },
         [&retval](const rgb_color& rc) {
             ncchannels_set_bg_rgb8(&retval, rc.rc_r, rc.rc_g, rc.rc_b);

@@ -86,7 +86,7 @@ rgb_color::from(const ansi_color color)
         case ansi_color::cyan:
             return rgb_color(0, 255, 255);
         case ansi_color::white:
-            return rgb_color(255, 255, 255);
+            return rgb_color(192, 192, 192);
         default:
             return rgb_color(0, 0, 0);
     }
