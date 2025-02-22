@@ -193,7 +193,7 @@ struct string_fragment {
 
     iterator end() const { return &this->sf_string[this->sf_end]; }
 
-    bool empty() const { return !this->is_valid() || length() == 0; }
+    constexpr bool empty() const { return !this->is_valid() || length() == 0; }
 
     Result<ssize_t, const char*> codepoint_to_byte_index(
         ssize_t cp_index) const;

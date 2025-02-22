@@ -1456,8 +1456,8 @@ lnav_crumb_source()
     auto view_index = top_view - lnav_data.ld_views;
     retval.emplace_back(
         lnav_view_titles[view_index],
-        attr_line_t().append(lnav::roles::status_title(
-            fmt::format(FMT_STRING(" {} "), lnav_view_titles[view_index]))),
+        attr_line_t().append(lnav::roles::status_title(fmt::format(
+            FMT_STRING(" {} \u25bc "), lnav_view_titles[view_index]))),
         view_title_poss,
         view_performer);
 
