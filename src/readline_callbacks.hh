@@ -47,8 +47,7 @@ void rl_completion_request(textinput_curses& ti);
 void rl_focus(textinput_curses& ti);
 void rl_blur(textinput_curses& ti);
 
-readline_context::split_result_t prql_splitter(readline_context& rc,
-                                               const std::string& cmdline);
+readline_context::split_result_t prql_splitter(const attr_line_t& stmt);
 
 extern const char* const RE_HELP;
 extern const char* const RE_EXAMPLE;

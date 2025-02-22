@@ -626,7 +626,9 @@ rl_sql_change(textinput_curses& rc)
                                .with_attr_for_all(
                                    lnav::prompt::SUBST_TEXT.value(sub_value));
                        });
-            } else if (attr_iter->sa_type == &lnav::sql::PRQL_FQID_ATTR) {
+            } else if (attr_iter->sa_type == &lnav::sql::PRQL_FQID_ATTR
+                       && attr_iter->sa_range.lr_end == cursor_offset)
+            {
                 poss = prompt.p_prql_completions | lnav::itertools::first()
                     | lnav::itertools::similar_to(to_complete, 10)
                     | lnav::itertools::map([](const auto& x) {
@@ -945,14 +947,17 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                 auto orig_prql_stmt = attr_line_t(term_val);
                 orig_prql_stmt.rtrim("| \r\n\t");
                 annotate_sql_statement(orig_prql_stmt);
-                auto cursor_x = rc.tc_cursor.x;
-                if (cursor_x > orig_prql_stmt.get_string().length()) {
-                    cursor_x = orig_prql_stmt.length() - 1;
+
+                auto cursor_x = rc.get_cursor_offset();
+                if (cursor_x >= orig_prql_stmt.get_string().length()) {
+                    cursor_x = orig_prql_stmt.get_string().length() - 1;
                 }
+
                 auto curr_stage_iter
                     = find_string_attr_containing(orig_prql_stmt.get_attrs(),
                                                   &lnav::sql::PRQL_STAGE_ATTR,
                                                   cursor_x);
+                ensure(curr_stage_iter != orig_prql_stmt.al_attrs.end());
                 auto curr_stage_prql = orig_prql_stmt.subline(
                     0, curr_stage_iter->sa_range.lr_end);
                 for (auto riter = curr_stage_prql.get_attrs().rbegin();
@@ -960,12 +965,18 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                      ++riter)
                 {
                     if (riter->sa_type != &lnav::sql::PRQL_STAGE_ATTR
-                        || riter->sa_range.lr_start == 0)
+                        || riter->sa_range.lr_start == 0
+                        || riter->sa_range.empty())
                     {
                         continue;
                     }
-                    curr_stage_prql.insert(riter->sa_range.lr_start,
-                                           "| take 10000 ");
+                    auto take10k = std::string("\ntake 10000 ");
+                    if (curr_stage_prql.al_string[riter->sa_range.lr_start]
+                        != '|')
+                    {
+                        take10k.append("\n ");
+                    }
+                    curr_stage_prql.insert(riter->sa_range.lr_start, take10k);
                 }
                 curr_stage_prql.rtrim();
                 curr_stage_prql.append(" | take 5");
@@ -985,14 +996,21 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                          ++riter)
                     {
                         if (riter->sa_type != &lnav::sql::PRQL_STAGE_ATTR
-                            || riter->sa_range.lr_start == 0)
+                            || riter->sa_range.lr_start == 0
+                            || riter->sa_range.empty())
                         {
                             continue;
                         }
+                        auto take10k = std::string("\ntake 10000 ");
+                        if (prev_stage_prql.al_string[riter->sa_range.lr_start]
+                            != '|')
+                        {
+                            take10k.append("\n ");
+                        }
                         prev_stage_prql.insert(riter->sa_range.lr_start,
-                                               "| take 10000 ");
+                                               take10k);
                     }
-                    prev_stage_prql.append(" | take 5");
+                    prev_stage_prql.append("\ntake 5");
 
                     curr_stage_index = 1;
                     auto src_guard = lnav_data.ld_exec_context.enter_source(
@@ -1036,7 +1054,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                         err.um_reason.get_string());
 
                     curr_stage_prql.erase(curr_stage_prql.get_string().length()
-                                          - 9);
+                                          - 8);
                     auto near = curr_stage_prql.get_string().length() - 1;
                     while (near > 0) {
                         auto paren_iter = rfind_string_attr_if(
@@ -1064,7 +1082,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                         near = paren_iter->sa_range.lr_start - 1;
                     }
 
-                    curr_stage_prql.append(" | take 5");
+                    curr_stage_prql.append("\ntake 5");
                     auto exec_termed_res
                         = execute_sql(lnav_data.ld_exec_context,
                                       curr_stage_prql.get_string(),
@@ -1537,13 +1555,11 @@ rl_blur(textinput_curses& rc)
 }
 
 readline_context::split_result_t
-prql_splitter(readline_context& rc, const std::string& cmdline)
+prql_splitter(const attr_line_t& stmt)
 {
-    auto stmt = attr_line_t(cmdline);
     readline_context::split_result_t retval;
     readline_context::stage st;
 
-    lnav::sql::annotate_prql_statement(stmt);
     for (const auto& attr : stmt.get_attrs()) {
         if (attr.sa_type == &lnav::sql::PRQL_STAGE_ATTR) {
         } else if (attr.sa_type == &lnav::sql::PRQL_PIPE_ATTR) {
@@ -1553,8 +1569,8 @@ prql_splitter(readline_context& rc, const std::string& cmdline)
             st.s_args.emplace_back(attr.sa_range);
         }
     }
-    if (!cmdline.empty() && isspace(cmdline.back())) {
-        st.s_args.emplace_back(cmdline.length(), cmdline.length());
+    if (!stmt.empty() && isspace(stmt.al_string.back())) {
+        st.s_args.emplace_back(stmt.length(), stmt.length());
     }
     retval.sr_stages.emplace_back(st);
 

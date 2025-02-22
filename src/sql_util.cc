@@ -1476,11 +1476,15 @@ annotate_prql_statement(attr_line_t& al)
     std::vector<std::pair<char, int>> groups;
     std::vector<line_range> fqids;
     std::optional<line_range> id_start;
+    const string_attr_type_base* last_attr_type = nullptr;
     bool saw_id_dot = false;
     for (const auto& attr : sa) {
-        if (groups.empty() && attr.sa_type == &PRQL_PIPE_ATTR) {
+        if (groups.empty() && attr.sa_type == &PRQL_PIPE_ATTR
+            && last_attr_type != &PRQL_PIPE_ATTR)
+        {
             stages.push_back(attr.sa_range.lr_start);
         }
+        last_attr_type = attr.sa_type;
         if (!id_start) {
             if (attr.sa_type == &PRQL_IDENTIFIER_ATTR) {
                 id_start = attr.sa_range;
