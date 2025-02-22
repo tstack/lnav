@@ -211,12 +211,6 @@ from(string_fragment sf)
         return Err(fmt::format(FMT_STRING("Could not parse color: {}"), sf));
     }
 
-    for (const auto& xc : xterm_colors()->tc_palette) {
-        if (sf.iequal(xc.xc_name)) {
-            return Ok(xc.xc_color);
-        }
-    }
-
     return Err(fmt::format(
         FMT_STRING(
             "Unknown color: '{}'.  "
@@ -281,6 +275,13 @@ color_unit::from_str(const string_fragment& sf)
         return Ok(color_unit{semantic{}});
     }
 
+    if (!sf.startswith("#")) {
+        for (const auto& xc : xterm_colors()->tc_palette) {
+            if (sf.iequal(xc.xc_name)) {
+                return Ok(from_palette(xc.xc_id));
+            }
+        }
+    }
     auto retval = TRY(from<rgb_color>(sf));
     if (retval.empty()) {
         return Ok(make_empty());

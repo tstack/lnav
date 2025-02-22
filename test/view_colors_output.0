@@ -42,8 +42,8 @@ S  14 ┋This is line: 13                                                       
 S  15 ┋This is line: 14                                                                ┋
 S  16 ┋This is line: 15                                                                ┋
 S  17 ┋before <123> after                                                              ┋
-A      ········└ fg(#000000), bg(#008080)
-A      ···········└ [39;49m
+A      ········└ inverse, fg(#008080)
+A      ···········└ [27m, [39m
 A      ··················└ [39;49m
 CTRL (B
 S  17 ┋                                                                                ┋

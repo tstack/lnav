@@ -1081,6 +1081,7 @@ build_supported_styles(tinfo* ti){
     { NCSTYLE_UNDERCURL, ESCAPE_SMULX, "Smulx", 0 },
     { NCSTYLE_ALTCHARSET, ESCAPE_SMACS, "smacs", 0 },
     { NCSTYLE_BLINK, ESCAPE_BLINK, "blink", A_BLINK },
+    { NCSTYLE_REVERSE, ESCAPE_REVERSE, "rev", A_REVERSE },
     { 0, 0, NULL, 0 }
   };
   int nocolor_stylemask = tigetnum("ncv");
@@ -1183,6 +1184,7 @@ do_terminfo_lookups(tinfo *ti, size_t* tablelen, size_t* tableused){
       { ESCAPE_SMACS, "smacs", },
       { ESCAPE_RMACS, "rmacs", },
       { ESCAPE_BLINK, "blink", },
+      { ESCAPE_REVERSE, "rev", },
     { ESCAPE_MAX, NULL, },
   };
   for(typeof(*strtdescs)* strtdesc = strtdescs ; strtdesc->esc < ESCAPE_MAX ; ++strtdesc){
@@ -1472,6 +1474,11 @@ int interrogate_terminfo(tinfo* ti, FILE* out, unsigned utf8,
   }
     if(get_escape(ti, ESCAPE_BLINK)){
         if(grow_esc_table(ti, "\e[25m", ESCAPE_NOBLINK, &tablelen, &tableused)){
+            goto err;
+        }
+    }
+    if(get_escape(ti, ESCAPE_REVERSE)){
+        if(grow_esc_table(ti, "\e[27m", ESCAPE_NOREVERSE, &tablelen, &tableused)){
             goto err;
         }
     }

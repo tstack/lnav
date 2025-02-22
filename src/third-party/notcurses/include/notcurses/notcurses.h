@@ -792,6 +792,7 @@ API void nccell_release(struct ncplane* n, nccell* c);
 #define NCSTYLE_UNDERCURL 0x0004u
 #define NCSTYLE_BOLD      0x0002u
 #define NCSTYLE_STRUCK    0x0001u
+#define NCSTYLE_REVERSE   0x1000u
 #define NCSTYLE_NONE      0
 
 // Set the specified style bits for the nccell 'c', whether they're actively

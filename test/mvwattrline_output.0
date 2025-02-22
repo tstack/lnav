@@ -27,14 +27,27 @@ CSI Erase all
 S   1 ┋Plain text                                                                      ┋
 A      └ [39;49m
 S   2 ┋        Leading tab                                                             ┋
+A      └ inverse
+A      ········└ [27m
 S   3 ┋Tab     with text                                                               ┋
+A      ·└ inverse
+A      ········└ [27m
 S   4 ┋Tab     with text #2                                                            ┋
+A      ···└ inverse
+A      ········└ [27m
 S   5 ┋Two     tabs    with text                                                       ┋
+A      ········└ inverse   │
+A      ··········└ [27m│   │
+A      ················└ inverse
+A      ····················└ [27m
 S   6 ┋Text with mixed attributes.                                                     ┋
-A      ·····└ fg(#800000), bg(#000000)
-A      ·······└ fg(#000000), bg(#800000)
-A      ·········└ [39;49m
+A      ·····└ fg(#800000)
+A      ·······└ inverse
+A      ·········└ [39m
+A      ············└ [27m
 S   7 ┋Text with unicode ▶ characters                                                  ┋
+A      ····················└ inverse │
+A      ························└ [27m│
 A      ······························└ [39;49m
 CTRL (B
 S   7 ┋                                                                                ┋

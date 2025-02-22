@@ -167,7 +167,7 @@ TEST_CASE("ptime_fmt")
 
 TEST_CASE("rgb_color from string")
 {
-    const auto name = string_fragment::from_const("SkyBlue1");
+    const auto name = string_fragment::from_const("#87d7ff");
     auto color = from<rgb_color>(name).unwrap();
     CHECK(color.rc_r == 135);
     CHECK(color.rc_g == 215);

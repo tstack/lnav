@@ -1159,7 +1159,9 @@ coerce_styles(fbuf* f, const tinfo* ti, uint16_t* curstyle,
   ret |= term_setstyle(f, *curstyle, newstyle, NCSTYLE_ALTCHARSET,
                        get_escape(ti, ESCAPE_SMACS), get_escape(ti, ESCAPE_RMACS));
   ret |= term_setstyle(f, *curstyle, newstyle, NCSTYLE_BLINK,
-                       get_escape(ti, ESCAPE_BLINK), get_escape(ti, ESCAPE_NOBLINK));
+  get_escape(ti, ESCAPE_BLINK), get_escape(ti, ESCAPE_NOBLINK));
+  ret |= term_setstyle(f, *curstyle, newstyle, NCSTYLE_REVERSE,
+                       get_escape(ti, ESCAPE_REVERSE), get_escape(ti, ESCAPE_NOREVERSE));
   // underline and undercurl are exclusive. if we set one, don't go unsetting
   // the other.
   if(newstyle & NCSTYLE_UNDERLINE){ // turn on underline, or do nothing

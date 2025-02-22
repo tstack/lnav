@@ -721,10 +721,6 @@ view_colors::to_channels(const text_attrs& ta)
             ncchannels_set_bg_rgb8(&retval, rc.rc_r, rc.rc_g, rc.rc_b);
         });
 
-    if (ta.has_style(text_attrs::style::reverse)) {
-        retval = ncchannels_reverse(retval);
-    }
-
     return retval;
 }
 
