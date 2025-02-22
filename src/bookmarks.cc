@@ -115,5 +115,9 @@ bookmark_type_t::get_type_names()
     for (const auto& bt : get_all_types()) {
         retval.emplace_back(bt->get_name().data());
     }
+    std::stable_sort(retval.begin(), retval.end(),
+        [](const char* lhs, const char* rhs) {
+            return strcmp(lhs, rhs) < 0;
+        });
     return retval;
 }

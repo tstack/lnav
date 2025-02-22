@@ -1276,7 +1276,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtype[0m   The type of bookmark -- error, warning, search,
          user, file, meta
-         [4mValues[0m: [1mfile[0m|[1merror[0m|[1mwarning[0m|[1muser[0m|[1muser-expr[0m|[1msearch[0m|[1mmeta[0m|[1mpartition[0m
+         [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
   [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-section[0m, 
   [1m:prev-location[0m, [1m:prev-mark[0m, [1m:prev-mark[0m, [1m:prev-section[0m, [1m:relative-goto[0m
@@ -1375,7 +1375,7 @@ For support questions, email:
 [4mParameter[0m
   [4mtype[0m   The type of bookmark -- error, warning, search,
          user, file, meta
-         [4mValues[0m: [1mfile[0m|[1merror[0m|[1mwarning[0m|[1muser[0m|[1muser-expr[0m|[1msearch[0m|[1mmeta[0m|[1mpartition[0m
+         [4mValues[0m: [1merror[0m|[1mfile[0m|[1mmeta[0m|[1mpartition[0m|[1msearch[0m|[1muser[0m|[1muser-expr[0m|[1mwarning[0m
 [4mSee Also[0m
   [1m:goto[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-location[0m, [1m:next-mark[0m, 
   [1m:next-mark[0m, [1m:next-section[0m, [1m:prev-location[0m, [1m:prev-section[0m, 
