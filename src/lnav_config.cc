@@ -2089,7 +2089,14 @@ save_config()
 void
 reload_config(std::vector<lnav::console::user_message>& errors)
 {
-    for (auto* curr : lnav_config_listener::listener_list()) {
+    auto listeners = lnav_config_listener::listener_list();
+    std::stable_sort(
+        listeners.begin(),
+        listeners.end(),
+        [](const lnav_config_listener* lhs, const lnav_config_listener* rhs) {
+            return lhs->lcl_name < rhs->lcl_name;
+        });
+    for (auto* curr : listeners) {
         auto reporter = [&errors](const void* cfg_value,
                                   const lnav::console::user_message& errmsg) {
             log_error("configuration error: %s",
