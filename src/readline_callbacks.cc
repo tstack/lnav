@@ -610,11 +610,10 @@ rl_sql_change(textinput_curses& rc)
                 title = "transform";
                 poss = poss_str | lnav::itertools::map([&width](const auto& x) {
                            const auto& ht = sql_cmd_map->at(x)->c_help;
-                           auto sub_value = x;
+                           auto sub_value = x + " ";
                            if (!ht.ht_parameters.empty()
                                && ht.ht_parameters[0].ht_group_start)
                            {
-                               sub_value.push_back(' ');
                                sub_value.append(
                                    ht.ht_parameters[0].ht_group_start);
                                sub_value.push_back(' ');
