@@ -39,7 +39,6 @@ BuildRequires:  ncurses-devel
 BuildRequires:  openssh
 BuildRequires:  bzip2-devel
 BuildRequires:  pcre2-devel
-BuildRequires:  readline-devel
 BuildRequires:  rust
 BuildRequires:  zlib-devel
 %if 0%{?suse_version}
@@ -70,8 +69,7 @@ autoreconf -fiv
 %configure \
      --disable-silent-rules \
      --disable-static \
-     --with-ncurses \
-     --with-readline || cat config.log
+     --with-ncurses || cat config.log
 
 %make_build
 
