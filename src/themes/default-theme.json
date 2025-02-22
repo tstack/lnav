@@ -36,7 +36,7 @@
                         "color": "semantic()"
                     },
                     "alt-text": {
-                        "background-color": "#262626"
+                        "bold": true
                     },
                     "ok": {
                         "color": "Green",
