@@ -4,7 +4,7 @@ Hotkey Reference
 ================
 
 This reference covers the keys used to control **lnav**.  Consult the `built-in
-help <https://github.com/tstack/lnav/blob/master/src/help.txt>`_ in **lnav** for
+help <https://github.com/tstack/lnav/blob/master/src/help.md>`_ in **lnav** for
 a more detailed explanation of each key.
 
 Global

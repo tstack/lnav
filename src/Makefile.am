@@ -127,11 +127,13 @@ if HAVE_CARGO
 RUST_DEPS_CPPFLAGS = -DHAVE_RUST_DEPS=1
 PRQLC_DIR = third-party/prqlc-c/target
 RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
+RUST_DEPS_TRIGGER = $(PRQLC_DIR)/release/libprqlc_c.a.dep
 
-$(RUST_DEPS_LIBS): $(srcdir)/third-party/prqlc-c/src/lib.rs $(srcdir)/third-party/prqlc-c/Cargo.toml
+$(RUST_DEPS_TRIGGER): $(srcdir)/third-party/prqlc-c/src/lib.rs $(srcdir)/third-party/prqlc-c/Cargo.toml
 	mkdir -p $(PRQLC_DIR)
 	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
 	    $(srcdir)/third-party/prqlc-c/Cargo.toml --package prqlc-c --release
+	touch $(RUST_DEPS_TRIGGER)
 
 else
 RUST_DEPS =
@@ -193,7 +195,6 @@ LDADD = \
 # css-color-names.json is from https://github.com/bahamas10/css-color-names/blob/master/css-color-names.json
 
 dist_noinst_DATA = \
-	alpha-release.sh \
 	animals.json \
 	ansi-palette.json \
 	css-color-names.json \
@@ -259,7 +260,6 @@ noinst_HEADERS = \
 	grep_proc.hh \
 	hasher.hh \
 	help.md \
-	help.txt \
 	help_text.hh \
 	help_text_formatter.hh \
 	highlighter.hh \
@@ -635,6 +635,3 @@ if HAVE_CHECK_JSONSCHEMA
 	$(CHECK_JSONSCHEMA) --schemafile $(top_srcdir)/docs/schemas/format-v1.schema.json $(FORMAT_FILES)
 	$(CHECK_JSONSCHEMA) --schemafile $(top_srcdir)/docs/schemas/config-v1.schema.json $(CONFIG_FILES)
 endif
-
-install-exec-hook:
-	bash $(srcdir)/alpha-release.sh
