@@ -42,6 +42,7 @@
 #include <time.h>
 
 #include "base/ansi_scrubber.hh"
+#include "base/attr_line.builder.hh"
 #include "base/date_time_scanner.cfg.hh"
 #include "base/fs_util.hh"
 #include "base/injector.hh"
@@ -953,16 +954,6 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 }
                 break;
             }
-            if (this->lf_format != nullptr
-                && !li.li_utf8_scan_result.is_valid())
-            {
-                log_warning("%s: invalid UTF-8 detected at %d:%d -- %s",
-                            this->lf_filename.c_str(),
-                            this->lf_index.size() + 1,
-                            li.li_utf8_scan_result.usr_valid_frag.sf_end,
-                            li.li_utf8_scan_result.usr_message);
-            }
-
             size_t old_size = this->lf_index.size();
 
             if (old_size == 0
@@ -1030,6 +1021,22 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
 
             auto sbr = read_result.unwrap();
+
+            if (!li.li_utf8_scan_result.is_valid()) {
+                attr_line_t al;
+                attr_line_builder alb(al);
+                log_warning(
+                    "%s: invalid UTF-8 detected at L%d:C%d/%d (O:%lld) -- %s",
+                    this->lf_filename.c_str(),
+                    this->lf_index.size() + 1,
+                    li.li_utf8_scan_result.usr_valid_frag.sf_end,
+                    li.li_file_range.fr_size,
+                    li.li_file_range.fr_offset,
+                    li.li_utf8_scan_result.usr_message);
+                alb.append_as_hexdump(sbr.to_string_fragment());
+                log_warning("  dump: %s", al.al_string.c_str());
+            }
+
             sbr.rtrim(is_line_ending);
 
             if (li.li_utf8_scan_result.is_valid()
