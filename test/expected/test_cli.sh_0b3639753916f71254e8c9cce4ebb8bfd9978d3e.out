@@ -192,9 +192,9 @@
                     },
                     "alt-text": {
                         "color": "",
-                        "background-color": "#262626",
+                        "background-color": "",
                         "underline": false,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },

@@ -236,7 +236,7 @@
 /ui/theme-defs/default/status-styles/warn/background-color -> default-theme.json:263
 /ui/theme-defs/default/status-styles/warn/color -> default-theme.json:262
 /ui/theme-defs/default/styles/adjusted-time/color -> default-theme.json:72
-/ui/theme-defs/default/styles/alt-text/background-color -> default-theme.json:39
+/ui/theme-defs/default/styles/alt-text/bold -> default-theme.json:39
 /ui/theme-defs/default/styles/breadcrumb/bold -> default-theme.json:131
 /ui/theme-defs/default/styles/breadcrumb/color -> default-theme.json:130
 /ui/theme-defs/default/styles/cursor-line/background-color -> default-theme.json:63
