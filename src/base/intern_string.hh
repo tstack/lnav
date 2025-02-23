@@ -976,6 +976,18 @@ operator==(const intern_string_t& left, const string_fragment& sf)
 }
 
 inline bool
+operator<(const intern_string_t& left, const string_fragment& sf)
+{
+    return left.to_string_fragment() < sf;
+}
+
+inline bool
+operator<(const string_fragment& lhs, const intern_string_t& rhs)
+{
+    return lhs < rhs.to_string_fragment();
+}
+
+inline bool
 operator==(const string_fragment& left, const intern_string_t& right)
 {
     return (left.length() == (int) right.size())

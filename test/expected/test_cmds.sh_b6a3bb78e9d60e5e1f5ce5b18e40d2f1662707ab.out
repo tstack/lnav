@@ -942,11 +942,11 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mdelete-search-table[0m[4m [0m[4mtable-name[0m
+[4m:[0m[1m[4mdelete-search-table[0m[4m [0m[4mtable-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtable-name[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
-  Create an SQL table based on a regex search
+  Delete a search table
 [4mParameter[0m
-  [4mtable-name[0m   The name of the table to create
+  [4mtable-name[0m   The name of the table to delete
 [4mSee Also[0m
   [1m:create-logline-table[0m, [1m:create-logline-table[0m, [1m:create-search-table[0m, 
   [1m:create-search-table[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, 

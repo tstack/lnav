@@ -42,6 +42,7 @@
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "log_format_ext.hh"
+#include "log_search_table.hh"
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "scn/scan.h"
@@ -862,6 +863,26 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 }
 
                 return tz_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x + " "));
+                       });
+            }
+            case help_parameter_format_t::HPF_SEARCH_TABLE: {
+                std::vector<std::string> poss_strs;
+
+                for (const auto& vt_pair : *lnav_data.ld_vtab_manager) {
+                    if (vt_pair.second->vi_provenance
+                            != log_vtab_impl::provenance_t::user
+                        || dynamic_cast<log_search_table*>(vt_pair.second.get())
+                            == nullptr)
+                    {
+                        continue;
+                    }
+                    poss_strs.emplace_back(vt_pair.first.to_string());
+                }
+
+                return poss_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
                            return attr_line_t().append(x).with_attr_for_all(
                                SUBST_TEXT.value(x + " "));

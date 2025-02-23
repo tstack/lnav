@@ -57,27 +57,13 @@ thread_local _log_vtab_data log_vtab_data;
 
 const std::unordered_set<string_fragment, frag_hasher>
     log_vtab_impl::RESERVED_COLUMNS = {
-        "log_line"_frag,
-        "log_time"_frag,
-        "log_level"_frag,
-        "log_part"_frag,
-        "log_actual_time"_frag,
-        "log_idle_msecs"_frag,
-        "log_mark"_frag,
-        "log_comment"_frag,
-        "log_tags"_frag,
-        "log_annotations"_frag,
-        "log_filters"_frag,
-        "log_opid"_frag,
-        "log_user_opid"_frag,
-        "log_format"_frag,
-        "log_format_regex"_frag,
-        "log_time_msecs"_frag,
-        "log_path"_frag,
-        "log_unique_path"_frag,
-        "log_text"_frag,
-        "log_body"_frag,
-        "log_raw_text"_frag,
+        "log_line"_frag,        "log_time"_frag,        "log_level"_frag,
+        "log_part"_frag,        "log_actual_time"_frag, "log_idle_msecs"_frag,
+        "log_mark"_frag,        "log_comment"_frag,     "log_tags"_frag,
+        "log_annotations"_frag, "log_filters"_frag,     "log_opid"_frag,
+        "log_user_opid"_frag,   "log_format"_frag,      "log_format_regex"_frag,
+        "log_time_msecs"_frag,  "log_path"_frag,        "log_unique_path"_frag,
+        "log_text"_frag,        "log_body"_frag,        "log_raw_text"_frag,
         "log_line_hash"_frag,
 };
 
@@ -192,7 +178,8 @@ log_vtab_impl::get_table_statement()
 
         oss << ");\n";
 
-        log_trace("log_vtab_impl.get_table_statement() -> %s", oss.str().c_str());
+        log_trace("log_vtab_impl.get_table_statement() -> %s",
+                  oss.str().c_str());
 
         this->vi_table_statement = oss.str();
     }
@@ -2529,13 +2516,15 @@ log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
 {
     std::string retval;
 
-    if (this->vm_impls.find(vi->get_name()) == this->vm_impls.end()) {
+    if (this->vm_impls.find(vi->get_name().to_string_fragment())
+        == this->vm_impls.end())
+    {
         std::vector<std::string> primary_keys;
         auto_mem<char, sqlite3_free> errmsg;
         auto_mem<char, sqlite3_free> sql;
         int rc;
 
-        this->vm_impls[vi->get_name()] = vi;
+        this->vm_impls[vi->get_name().to_string_fragment()] = vi;
 
         vi->get_primary_keys(primary_keys);
 
@@ -2557,7 +2546,7 @@ log_vtab_manager::register_vtab(std::shared_ptr<log_vtab_impl> vi)
 }
 
 std::string
-log_vtab_manager::unregister_vtab(intern_string_t name)
+log_vtab_manager::unregister_vtab(string_fragment name)
 {
     std::string retval;
 
@@ -2567,7 +2556,8 @@ log_vtab_manager::unregister_vtab(intern_string_t name)
         auto_mem<char, sqlite3_free> sql;
         __attribute((unused)) int rc;
 
-        sql = sqlite3_mprintf("DROP TABLE IF EXISTS %s", name.get());
+        sql = sqlite3_mprintf(
+            "DROP TABLE IF EXISTS %.*s", name.length(), name.data());
         log_debug("unregister_vtab: %s", sql.in());
         rc = sqlite3_exec(this->vm_db, sql, nullptr, nullptr, nullptr);
 
@@ -2575,6 +2565,16 @@ log_vtab_manager::unregister_vtab(intern_string_t name)
     }
 
     return retval;
+}
+
+std::shared_ptr<log_vtab_impl>
+log_vtab_manager::lookup_impl(string_fragment name) const
+{
+    const auto iter = this->vm_impls.find(name);
+    if (iter != this->vm_impls.end()) {
+        return iter->second;
+    }
+    return nullptr;
 }
 
 bool

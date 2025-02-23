@@ -262,6 +262,11 @@ public:
     static const std::unordered_set<string_fragment, frag_hasher>
         RESERVED_COLUMNS;
 
+    enum class provenance_t {
+        format,
+        user,
+    };
+
     struct vtab_column {
         vtab_column(const std::string name = "",
                     int type = SQLITE3_TEXT,
@@ -345,6 +350,7 @@ public:
         }
     }
 
+    provenance_t vi_provenance{provenance_t::format};
     bool vi_supports_indexes{true};
     int vi_column_count{0};
     string_attrs_t vi_attrs;
@@ -410,7 +416,7 @@ public:
 
 class log_vtab_manager {
 public:
-    using iterator = std::map<intern_string_t,
+    using iterator = std::map<string_fragment,
                               std::shared_ptr<log_vtab_impl>>::const_iterator;
 
     log_vtab_manager(sqlite3* db, textview_curses& tc, logfile_sub_source& lss);
@@ -421,16 +427,13 @@ public:
     logfile_sub_source* get_source() { return &this->vm_source; }
 
     std::string register_vtab(std::shared_ptr<log_vtab_impl> vi);
-    std::string unregister_vtab(intern_string_t name);
+    std::string unregister_vtab(string_fragment name);
+
+    std::shared_ptr<log_vtab_impl> lookup_impl(string_fragment name) const;
 
     std::shared_ptr<log_vtab_impl> lookup_impl(intern_string_t name) const
     {
-        auto iter = this->vm_impls.find(name);
-
-        if (iter != this->vm_impls.end()) {
-            return iter->second;
-        }
-        return nullptr;
+        return this->lookup_impl(name.to_string_fragment());
     }
 
     iterator begin() const { return this->vm_impls.begin(); }
@@ -441,7 +444,7 @@ private:
     sqlite3* vm_db;
     textview_curses& vm_textview;
     logfile_sub_source& vm_source;
-    std::map<intern_string_t, std::shared_ptr<log_vtab_impl>> vm_impls;
+    std::map<string_fragment, std::shared_ptr<log_vtab_impl>> vm_impls;
 };
 
 #endif

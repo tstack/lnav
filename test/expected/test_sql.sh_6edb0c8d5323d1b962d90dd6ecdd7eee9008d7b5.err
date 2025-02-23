@@ -1,6 +1,6 @@
 [1m[31m✘[0m [1m[31merror[0m: unknown search table -- search_test1
 [36m --> [0m[1mcommand-option[0m:1
 [36m | [0m[37m[40m:[0m[1m[36m[40mdelete-search-table[0m[37m[40m search_test1       [0m
-[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mdelete-search-table[0m[4m [0m[4mtable-name[0m
+[36m =[0m [36mhelp[0m: [4m:[0m[1m[4mdelete-search-table[0m[4m [0m[4mtable-name[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mtable-name[0m[4mN[0m[4m][0m
          ══════════════════════════════════════════════════════════════════════
-           Create an SQL table based on a regex search
+           Delete a search table

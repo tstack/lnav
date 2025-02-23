@@ -382,10 +382,10 @@
 :delete-search-table *table-name*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Create an SQL table based on a regex search
+  Delete a search table
 
   **Parameters**
-    * **table-name\*** --- The name of the table to create
+    * **table-name** --- The name of the table to delete
 
   **Examples**
     To delete the search table named 'task_durations':

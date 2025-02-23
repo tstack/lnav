@@ -185,6 +185,7 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_CONFIG_VALUE:
                 case help_parameter_format_t::HPF_TAG:
                 case help_parameter_format_t::HPF_LINE_TAG:
+                case help_parameter_format_t::HPF_SEARCH_TABLE:
                 case help_parameter_format_t::HPF_STRING:
                 case help_parameter_format_t::HPF_FILENAME:
                 case help_parameter_format_t::HPF_DIRECTORY:

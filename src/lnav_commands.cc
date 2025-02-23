@@ -1465,51 +1465,45 @@ com_create_logline_table(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (args.size() == 2) {
-        textview_curses& log_view = lnav_data.ld_views[LNV_LOG];
+    if (args.size() == 2) {
+        auto& log_view = lnav_data.ld_views[LNV_LOG];
 
         if (log_view.get_inner_height() == 0) {
             return ec.make_error("no log data available");
-        } else {
-            vis_line_t vl = log_view.get_selection();
-            content_line_t cl = lnav_data.ld_log_source.at_base(vl);
-            auto ldt = std::make_shared<log_data_table>(
-                lnav_data.ld_log_source,
-                *lnav_data.ld_vtab_manager,
-                cl,
-                intern_string::lookup(args[1]));
+        }
+        auto vl = log_view.get_selection();
+        auto cl = lnav_data.ld_log_source.at_base(vl);
+        auto ldt
+            = std::make_shared<log_data_table>(lnav_data.ld_log_source,
+                                               *lnav_data.ld_vtab_manager,
+                                               cl,
+                                               intern_string::lookup(args[1]));
+        ldt->vi_provenance = log_vtab_impl::provenance_t::user;
+        if (ec.ec_dry_run) {
+            attr_line_t al(ldt->get_table_statement());
 
-            if (ec.ec_dry_run) {
-                attr_line_t al(ldt->get_table_statement());
+            lnav_data.ld_preview_status_source[0].get_description().set_value(
+                "The following table will be created:");
+            lnav_data.ld_preview_view[0].set_sub_source(
+                &lnav_data.ld_preview_source[0]);
+            lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
+                text_format_t::TF_SQL);
 
-                lnav_data.ld_preview_status_source[0]
-                    .get_description()
-                    .set_value("The following table will be created:");
-                lnav_data.ld_preview_view[0].set_sub_source(
-                    &lnav_data.ld_preview_source[0]);
-                lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
-                    text_format_t::TF_SQL);
+            return Ok(std::string());
+        }
 
-                return Ok(std::string());
-            } else {
-                std::string errmsg;
-
-                errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
-                if (errmsg.empty()) {
-                    custom_logline_tables.insert(args[1]);
+        auto errmsg = lnav_data.ld_vtab_manager->register_vtab(ldt);
+        if (errmsg.empty()) {
+            custom_logline_tables.insert(args[1]);
 #if 0
                     if (lnav_data.ld_rl_view != NULL) {
                         lnav_data.ld_rl_view->add_possibility(
                             ln_mode_t::COMMAND, "custom-table", args[1]);
                     }
 #endif
-                    retval = "info: created new log table -- " + args[1];
-                } else {
-                    return ec.make_error("unable to create table -- {}",
-                                         errmsg);
-                }
-            }
+            retval = "info: created new log table -- " + args[1];
+        } else {
+            return ec.make_error("unable to create table -- {}", errmsg);
         }
     } else {
         return ec.make_error("expecting a table name");
@@ -1537,8 +1531,7 @@ com_delete_logline_table(exec_context& ec,
             return Ok(std::string());
         }
 
-        std::string rc = lnav_data.ld_vtab_manager->unregister_vtab(
-            intern_string::lookup(args[1]));
+        std::string rc = lnav_data.ld_vtab_manager->unregister_vtab(args[1]);
 
         if (rc.empty()) {
 #if 0
@@ -1557,8 +1550,6 @@ com_delete_logline_table(exec_context& ec,
 
     return Ok(retval);
 }
-
-static std::set<std::string> custom_search_tables;
 
 static Result<std::string, lnav::console::user_message>
 com_create_search_table(exec_context& ec,
@@ -1618,22 +1609,20 @@ com_create_search_table(exec_context& ec,
             return Ok(std::string());
         }
 
-        auto tab_iter = custom_search_tables.find(args[1]);
-        if (tab_iter != custom_search_tables.end()) {
-            lnav_data.ld_vtab_manager->unregister_vtab(tab_name);
+        lst->vi_provenance = log_vtab_impl::provenance_t::user;
+        auto existing = lnav_data.ld_vtab_manager->lookup_impl(tab_name);
+        if (existing != nullptr) {
+            if (existing->vi_provenance != log_vtab_impl::provenance_t::user) {
+                return ec.make_error(
+                    FMT_STRING("a table with the name '{}' already exists"),
+                    tab_name->to_string_fragment());
+            }
+            lnav_data.ld_vtab_manager->unregister_vtab(
+                tab_name->to_string_fragment());
         }
 
-        std::string errmsg;
-
-        errmsg = lnav_data.ld_vtab_manager->register_vtab(lst);
+        auto errmsg = lnav_data.ld_vtab_manager->register_vtab(lst);
         if (errmsg.empty()) {
-            custom_search_tables.insert(args[1]);
-#if 0
-            if (lnav_data.ld_rl_view != nullptr) {
-                lnav_data.ld_rl_view->add_possibility(
-                    ln_mode_t::COMMAND, "search-table", args[1]);
-            }
-#endif
             retval = "info: created new search table -- " + args[1];
         } else {
             return ec.make_error("unable to create table -- {}", errmsg);
@@ -1652,29 +1641,30 @@ com_delete_search_table(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("search-table");
-    } else if (args.size() == 2) {
-        auto tab_iter = custom_search_tables.find(args[1]);
-        if (tab_iter == custom_search_tables.end()) {
-            return ec.make_error("unknown search table -- {}", args[1]);
+    if (args.size() < 2) {
+        return ec.make_error("expecting a table name");
+    }
+    for (auto lpc = size_t{1}; lpc < args.size(); lpc++) {
+        auto& table_name = args[lpc];
+        auto tab = lnav_data.ld_vtab_manager->lookup_impl(table_name);
+        if (tab == nullptr
+            || dynamic_cast<log_search_table*>(tab.get()) == nullptr
+            || tab->vi_provenance != log_vtab_impl::provenance_t::user)
+        {
+            return ec.make_error("unknown search table -- {}", table_name);
         }
 
         if (ec.ec_dry_run) {
-            return Ok(std::string());
+            continue;
         }
 
-        custom_search_tables.erase(tab_iter);
-        auto rc = lnav_data.ld_vtab_manager->unregister_vtab(
-            intern_string::lookup(args[1]));
+        auto rc = lnav_data.ld_vtab_manager->unregister_vtab(args[1]);
 
         if (rc.empty()) {
             retval = "info: deleted search table";
         } else {
             return ec.make_error("{}", rc);
         }
-    } else {
-        return ec.make_error("expecting a table name");
     }
 
     return Ok(retval);
@@ -4153,9 +4143,11 @@ readline_context::command_t STD_COMMANDS[] = {
      com_delete_search_table,
 
      help_text(":delete-search-table")
-         .with_summary("Create an SQL table based on a regex search")
+         .with_summary("Delete a search table")
          .with_parameter(
-             help_text("table-name", "The name of the table to create"))
+             help_text("table-name", "The name of the table to delete")
+                 .one_or_more()
+                 .with_format(help_parameter_format_t::HPF_SEARCH_TABLE))
          .with_opposites({"create-search-table"})
          .with_tags({"vtables", "sql"})
          .with_example({"To delete the search table named 'task_durations'",

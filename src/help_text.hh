@@ -82,6 +82,7 @@ enum class help_parameter_format_t {
     HPF_CONFIG_VALUE,
     HPF_TAG,
     HPF_LINE_TAG,
+    HPF_SEARCH_TABLE,
 };
 
 struct help_example {

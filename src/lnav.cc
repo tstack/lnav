@@ -320,7 +320,8 @@ setup_logline_table(exec_context& ec)
         auto vl = log_view.get_selection();
         auto cl = lnav_data.ld_log_source.at_base(vl);
 
-        lnav_data.ld_vtab_manager->unregister_vtab(logline);
+        lnav_data.ld_vtab_manager->unregister_vtab(
+            logline.to_string_fragment());
         lnav_data.ld_vtab_manager->register_vtab(
             std::make_shared<log_data_table>(lnav_data.ld_log_source,
                                              *lnav_data.ld_vtab_manager,
