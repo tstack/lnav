@@ -40,8 +40,7 @@
 #include "fmt/format.h"
 #include "paths.hh"
 
-namespace lnav {
-namespace paths {
+namespace lnav::paths {
 
 #ifdef __CYGWIN__
 char*
@@ -117,7 +116,13 @@ dotlnav()
         }
     }
 
-    return std::filesystem::current_path();
+    std::error_code ec;
+    auto retval = std::filesystem::current_path(ec);
+    if (ec) {
+        retval = std::filesystem::temp_directory_path();
+    }
+
+    return retval;
 }
 
 std::filesystem::path
@@ -129,5 +134,4 @@ workdir()
     return tmp_path / std::filesystem::path(subdir_name);
 }
 
-}  // namespace paths
-}  // namespace lnav
+}  // namespace lnav::paths

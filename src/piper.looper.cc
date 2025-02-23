@@ -161,13 +161,25 @@ looper::get_wakeup_pipe()
     return retval;
 }
 
+static std::string
+curdir()
+{
+    std::error_code ec;
+    auto cur = std::filesystem::current_path(ec);
+    if (ec) {
+        return "";
+    }
+
+    return cur.string();
+}
+
 looper::looper(std::string name,
                auto_fd stdout_fd,
                auto_fd stderr_fd,
                options opts)
-    : l_name(std::move(name)), l_cwd(std::filesystem::current_path().string()),
-      l_env(environ_to_map()), l_stdout(std::move(stdout_fd)),
-      l_stderr(std::move(stderr_fd)), l_options(opts)
+    : l_name(std::move(name)), l_cwd(curdir()), l_env(environ_to_map()),
+      l_stdout(std::move(stdout_fd)), l_stderr(std::move(stderr_fd)),
+      l_options(opts)
 {
     size_t count = 0;
     do {

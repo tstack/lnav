@@ -129,11 +129,11 @@ PRQLC_DIR = third-party/prqlc-c/target
 RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
 RUST_DEPS_TRIGGER = $(PRQLC_DIR)/release/libprqlc_c.a.dep
 
-$(RUST_DEPS_TRIGGER): $(srcdir)/third-party/prqlc-c/src/lib.rs $(srcdir)/third-party/prqlc-c/Cargo.toml
+$(RUST_DEPS_LIBS): $(srcdir)/third-party/prqlc-c/src/lib.rs $(srcdir)/third-party/prqlc-c/Cargo.toml
 	mkdir -p $(PRQLC_DIR)
 	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
 	    $(srcdir)/third-party/prqlc-c/Cargo.toml --package prqlc-c --release
-	touch $(RUST_DEPS_TRIGGER)
+	touch $(RUST_DEPS_LIBS)
 
 else
 RUST_DEPS =
