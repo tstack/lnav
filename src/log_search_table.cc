@@ -34,8 +34,11 @@
 #include "config.h"
 #include "sql_util.hh"
 
-const static std::string MATCH_INDEX = "match_index";
+static const std::string MATCH_INDEX = "match_index";
 static auto match_index_name = intern_string::lookup("match_index");
+
+static const std::string MATCH_ROWID = "match_rowid";
+static auto match_rowid_name = intern_string::lookup("match_rowid");
 
 log_search_table::log_search_table(std::shared_ptr<lnav::pcre2pp::code> code,
                                    intern_string_t table_name)
@@ -74,10 +77,17 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
     }
 
     this->lst_column_metas.emplace_back(
+        match_rowid_name,
+        value_kind_t::VALUE_INTEGER,
+        logline_value_meta::table_column{cols.size()});
+    cols.emplace_back(MATCH_ROWID, SQLITE_INTEGER);
+    cols.back().vc_comment = "The row number of the log message that matched";
+    this->lst_column_metas.emplace_back(
         match_index_name,
         value_kind_t::VALUE_INTEGER,
         logline_value_meta::table_column{cols.size()});
     cols.emplace_back(MATCH_INDEX, SQLITE_INTEGER);
+    cols.back().vc_comment = "The index of the match within a log message";
     cn.add_column("__all__"_frag);
     auto captures = this->lst_regex->get_captures();
     for (size_t lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
@@ -117,9 +127,11 @@ log_search_table::get_columns_int(std::vector<vtab_column>& cols) const
 }
 
 void
-log_search_table::get_foreign_keys(std::unordered_set<std::string>& keys_inout) const
+log_search_table::get_foreign_keys(
+    std::unordered_set<std::string>& keys_inout) const
 {
     log_vtab_impl::get_foreign_keys(keys_inout);
+    keys_inout.emplace(MATCH_ROWID);
     keys_inout.emplace(MATCH_INDEX);
 }
 
@@ -195,6 +207,7 @@ log_search_table::next(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
+    this->lst_rowid += 1;
     this->lst_remaining = match_res->f_remaining;
     this->lst_match_index = 0;
 
@@ -210,20 +223,23 @@ log_search_table::extract(logfile* lf,
     if (this->lst_format != nullptr) {
         values = this->lst_line_values_cache;
     }
-    values.lvv_values.emplace_back(
-        this->lst_column_metas[this->lst_format_column_count],
-        this->lst_match_index);
-    for (size_t lpc = 0; lpc < this->lst_regex->get_capture_count(); lpc++) {
+    auto curr_col = this->lst_format_column_count;
+    values.lvv_values.emplace_back(this->lst_column_metas[curr_col],
+                                   this->lst_rowid);
+    curr_col += 1;
+    values.lvv_values.emplace_back(this->lst_column_metas[curr_col],
+                                   this->lst_match_index);
+    curr_col += 1;
+    for (size_t lpc = 0; lpc < this->lst_regex->get_capture_count();
+         lpc++, curr_col++)
+    {
         const auto cap = this->lst_match_data[lpc + 1];
         if (cap) {
-            values.lvv_values.emplace_back(
-                this->lst_column_metas[this->lst_format_column_count + 1 + lpc],
-                line,
-                to_line_range(cap.value()));
+            values.lvv_values.emplace_back(this->lst_column_metas[curr_col],
+                                           line,
+                                           to_line_range(cap.value()));
         } else {
-            values.lvv_values.emplace_back(
-                this->lst_column_metas[this->lst_format_column_count + 1
-                                       + lpc]);
+            values.lvv_values.emplace_back(this->lst_column_metas[curr_col]);
         }
     }
 }
@@ -251,6 +267,7 @@ log_search_table::filter(log_cursor& lc, logfile_sub_source& lss)
             this->lst_log_level.value(),
         };
     }
+    this->lst_rowid = -1;
     this->lst_match_index = -1;
 
     if (lss.lss_index_generation != this->lst_index_generation) {

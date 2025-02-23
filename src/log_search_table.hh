@@ -35,7 +35,9 @@
 #include <string>
 #include <vector>
 
+#include "base/auto_mem.hh"
 #include "log_vtab_impl.hh"
+#include "logfile.hh"
 #include "pcrepp/pcre2pp.hh"
 
 class log_search_table : public log_vtab_impl {
@@ -55,7 +57,8 @@ public:
 
     void filter(log_cursor& lc, logfile_sub_source& lss) override;
 
-    void get_foreign_keys(std::unordered_set<std::string>& keys_inout) const override;
+    void get_foreign_keys(
+        std::unordered_set<std::string>& keys_inout) const override;
 
     bool next(log_cursor& lc, logfile_sub_source& lss) override;
 
@@ -77,6 +80,7 @@ public:
     logline_value_vector lst_line_values_cache;
     auto_buffer lst_mismatch_bitmap{auto_buffer::alloc_bitmap(0)};
     uint32_t lst_index_generation{0};
+    int64_t lst_rowid{-1};
 };
 
 #endif

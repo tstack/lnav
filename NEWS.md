@@ -15,6 +15,12 @@ Features:
 * Added a `fuzzy_match()` SQL function that compares a pattern to
   a string and returns a score.
   The algorithm used is the same as in lnav itself.
+* Added a `match_rowid` column to search tables to make it easier
+  to join multiple search tables together.
+  For example, when multiple log messages occur together in the
+  same sequence.
+  You can create search tables for each line and then join them
+  to query over the whole group of messages.
 
 Bug Fixes:
 * The default terminal colors will now be used in the default theme.
