@@ -54,7 +54,7 @@ struct prompt {
     struct sql_db_t {};
     struct sql_table_t {};
     struct sql_table_valued_function_t {};
-    struct sql_function_t {};
+    struct sql_function_t { size_t sf_param_count{0}; };
     struct sql_column_t {};
     struct sql_number_t {};
     struct sql_string_t {};

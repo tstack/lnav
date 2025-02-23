@@ -494,7 +494,8 @@ line_buffer::set_fd(auto_fd& fd)
 void
 line_buffer::resize_buffer(size_t new_max)
 {
-    if (new_max <= MAX_LINE_BUFFER_SIZE
+    if (((this->lb_compressed && new_max <= MAX_COMPRESSED_BUFFER_SIZE)
+         || (!this->lb_compressed && new_max <= MAX_LINE_BUFFER_SIZE))
         && new_max > (size_t) this->lb_buffer.capacity())
     {
         /* Still need more space, try a realloc. */

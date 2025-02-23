@@ -1099,6 +1099,7 @@ textview_curses::set_sub_source(text_sub_source* src)
 std::optional<line_info>
 textview_curses::grep_value_for_line(vis_line_t line, std::string& value_out)
 {
+    // log_debug("grep line %d", line);
     if (this->tc_sub_source
         && line < (int) this->tc_sub_source->text_line_count())
     {
@@ -1112,6 +1113,7 @@ textview_curses::grep_value_for_line(vis_line_t line, std::string& value_out)
             auto new_size = erase_ansi_escapes(value_out);
             value_out.resize(new_size);
         }
+        // log_debug("  line off %lld", retval.li_file_range.fr_offset);
         return retval;
     }
 

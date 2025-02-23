@@ -16,6 +16,11 @@ Features:
   a string and returns a score.
   The algorithm used is the same as in lnav itself.
 
+Bug Fixes:
+* The default terminal colors will now be used in the default theme.
+  So, a light background with a dark foreground will be respected.
+* Improved performance for compressed files.
+
 ## lnav v0.12.4
 
 Features:

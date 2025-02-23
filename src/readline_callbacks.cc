@@ -207,7 +207,7 @@ rl_sql_help(textinput_curses& rc)
 {
     auto al = attr_line_t(rc.get_content());
     const auto& sa = al.get_attrs();
-    size_t x = rc.tc_cursor.x;
+    auto x = rc.get_cursor_offset();
     bool has_doc = false;
 
     if (x > 0) {

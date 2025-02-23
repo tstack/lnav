@@ -46,6 +46,8 @@ run_cap_test ./drive_sql_anno "SELECT (1.5 + 2.2) AS decim"
 # subqueries
 run_cap_test ./drive_sql_anno "SELECT * FROM (SELECT foo, bar FROM baz)"
 
+run_cap_test ./drive_sql_anno "SELECT * FROM (SELECT foo, bar FROM baz ORDER BY foo DESC)"
+
 run_cap_test ./drive_sql_anno \
    "SELECT * from vmw_log, regexp_capture(log_body, '--> /SessionStats/SessionPool/Session/(?<line>[abc]+)')"
 

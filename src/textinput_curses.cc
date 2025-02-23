@@ -1849,6 +1849,11 @@ textinput_curses::tick(ui_clock::time_point now)
 int
 textinput_curses::get_cursor_offset() const
 {
+    if (this->tc_cursor.y < 0 || this->tc_cursor.y >= this->tc_lines.size()) {
+        // XXX can happen during update_lines() with history/pasted insert
+        return 0;
+    }
+
     int retval = 0;
     for (auto row = size_t{0}; row < this->tc_cursor.y; row++) {
         retval += this->tc_lines[row].al_string.size() + 1;

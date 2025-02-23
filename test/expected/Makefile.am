@@ -818,6 +818,8 @@ dist_noinst_DATA = \
     test_sql_anno.sh_0a37c43350ddd7a2d0d75695be32fac083ad04a4.out \
     test_sql_anno.sh_0ca32cc69613d3ada5e2337471ae056820e09916.err \
     test_sql_anno.sh_0ca32cc69613d3ada5e2337471ae056820e09916.out \
+    test_sql_anno.sh_0d931572f5a8d935c0b189384235ad4d3fffccd6.err \
+    test_sql_anno.sh_0d931572f5a8d935c0b189384235ad4d3fffccd6.out \
     test_sql_anno.sh_1151e5b727f6b57070bf2c8f047f1d7e02b803a6.err \
     test_sql_anno.sh_1151e5b727f6b57070bf2c8f047f1d7e02b803a6.out \
     test_sql_anno.sh_1398146cf8b4f074ec8b9752f021cf47d011bebc.err \

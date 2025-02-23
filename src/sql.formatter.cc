@@ -28,6 +28,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <string>
 #include <vector>
 
@@ -115,25 +116,30 @@ format(const attr_line_t& al, int cursor_offset)
 
 namespace sql {
 
-static const std::vector CLEAR_LR = {
+static constexpr std::array<string_fragment, 4> CLEAR_LR = {
     "FROM"_frag,
     "SELECT"_frag,
     "SET"_frag,
     "WHERE"_frag,
 };
 
+static constexpr auto INDENT_SIZE = size_t{4};
+
 static void
 check_for_multi_word_clear_left(std::string& str, size_t indent)
 {
-    static const auto clear_words = std::vector<const char*>{
-        "ORDER BY",
+    static constexpr auto clear_words = std::array<const char*, 1>{
+        " ORDER BY",
     };
 
     for (const auto& words : clear_words) {
         if (endswith(str.c_str(), words)) {
             auto words_len = strlen(words);
-            str[str.length() - words_len - 1] = '\n';
-            str.insert(str.length() - words_len - 1, indent, ' ');
+            str[str.length() - words_len] = '\n';
+            if (indent > 0) {
+                str.insert(
+                    str.length() - words_len + 1, indent - INDENT_SIZE, ' ');
+            }
             break;
         }
     }
@@ -142,8 +148,6 @@ check_for_multi_word_clear_left(std::string& str, size_t indent)
 format_result
 format(const attr_line_t& al, int cursor_offset)
 {
-    static constexpr auto INDENT_SIZE = size_t{4};
-
     auto indent = size_t{0};
     string_attrs_t funcs;
     std::string retval;

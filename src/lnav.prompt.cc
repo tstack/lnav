@@ -294,7 +294,8 @@ prompt::refresh_sql_completions(textview_curses& tc)
                 this->insert_sql_completion(name, sql_keyword_t{});
                 break;
             case help_context_t::HC_SQL_FUNCTION:
-                this->insert_sql_completion(name, sql_function_t{});
+                this->insert_sql_completion(
+                    name, sql_function_t{func->ht_parameters.size()});
                 break;
             case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
                 this->insert_sql_completion(name,
@@ -486,16 +487,25 @@ sql_item_visitor::operator()(const prompt::sql_table_valued_function_t&) const
 
 template<>
 const prompt::sql_item_meta&
-sql_item_visitor::operator()(const prompt::sql_function_t&) const
+sql_item_visitor::operator()(const prompt::sql_function_t& sf) const
 {
-    static constexpr auto retval = prompt::sql_item_meta{
+    static constexpr auto retval_with_args = prompt::sql_item_meta{
         "\U0001D453",
         "()",
         "(",
         role_t::VCR_FUNCTION,
     };
+    static constexpr auto retval_no_args = prompt::sql_item_meta{
+        "\U0001D453",
+        "()",
+        "()",
+        role_t::VCR_FUNCTION,
+    };
 
-    return retval;
+    if (sf.sf_param_count == 0) {
+        return retval_no_args;
+    }
+    return retval_with_args;
 }
 
 template<>
