@@ -58,7 +58,6 @@ noinst_LIBRARIES = \
 	libtestdummy.a
 
 libtestdummy_a_SOURCES = \
-    ../src/lnav.prompt.cc \
 	test_stubs.cc
 
 DUMMY_OBJS = \
