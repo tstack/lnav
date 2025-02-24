@@ -1,0 +1,89 @@
+                 WITH
+     sql_keyword ----
+                 cte_1 AS (
+       sql_ident -----
+     sql_keyword       --
+       sql_paren          -
+                   SELECT a FROM b WHERE c = 1
+     sql_keyword   ------
+       sql_ident          -
+     sql_keyword            ----
+       sql_ident                 -
+     sql_keyword                   -----
+       sql_ident                         -
+        sql_oper                           -
+      sql_number                             -
+                 ),
+       sql_paren -
+       sql_comma  -
+                 cte_2 AS (
+       sql_ident -----
+     sql_keyword       --
+       sql_paren          -
+                   SELECT c FROM d WHERE e = 2
+     sql_keyword   ------
+       sql_ident          -
+     sql_keyword            ----
+       sql_ident                 -
+     sql_keyword                   -----
+       sql_ident                         -
+        sql_oper                           -
+      sql_number                             -
+                 ),
+       sql_paren -
+       sql_comma  -
+                 final AS (
+       sql_ident -----
+     sql_keyword       --
+       sql_paren          -
+                   SELECT * FROM cte_1 LEFT JOIN cte_2 ON b = d
+     sql_keyword   ------
+        sql_oper          -
+     sql_keyword            ----
+       sql_ident                 -----
+     sql_keyword                       ----
+     sql_keyword                            ----
+       sql_ident                                 -----
+     sql_keyword                                       --
+       sql_ident                                          -
+        sql_oper                                            -
+       sql_ident                                              -
+                 )
+       sql_paren -
+                 SELECT * FROM final;
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               -----
+     sql_garbage                    -
+Formatted:
+WITH
+    cte_1 AS (
+    SELECT
+        a
+    FROM
+        b
+    WHERE
+        c = 1
+    ),
+    cte_2 AS (
+    SELECT
+        c
+    FROM
+        d
+    WHERE
+        e = 2
+    ),
+    final AS (
+    SELECT
+        *
+    FROM
+        cte_1
+        LEFT JOIN cte_2 ON b = d
+    )
+SELECT
+    *
+FROM
+    final;
+
+Cursor offset: 304

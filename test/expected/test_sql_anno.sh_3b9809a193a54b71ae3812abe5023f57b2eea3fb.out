@@ -1,0 +1,31 @@
+                 CASE WHEN opt = 'foo' THEN 1 WHEN opt = 'bar' THEN 2 WHEN opt = 'baz' THEN 3 ELSE 4 END
+     sql_keyword ----
+     sql_keyword      ----
+       sql_ident           ---
+        sql_oper               -
+      sql_string                 -----
+     sql_keyword                       ----
+      sql_number                            -
+     sql_keyword                              ----
+       sql_ident                                   ---
+        sql_oper                                       -
+      sql_string                                         -----
+     sql_keyword                                               ----
+      sql_number                                                    -
+     sql_keyword                                                      ----
+       sql_ident                                                           ---
+        sql_oper                                                               -
+      sql_string                                                                 -----
+     sql_keyword                                                                       ----
+      sql_number                                                                            -
+     sql_keyword                                                                              ----
+      sql_number                                                                                   -
+     sql_keyword                                                                                     ---
+Formatted:
+CASE
+    WHEN opt = 'foo' THEN 1
+    WHEN opt = 'bar' THEN 2
+    WHEN opt = 'baz' THEN 3
+    ELSE 4
+END
+Cursor offset: 103
