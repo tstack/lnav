@@ -23,6 +23,7 @@ FROM (
         bar
     FROM
         baz
-    ORDER BY foo DESC
+    ORDER BY
+        foo DESC
 )
-Cursor offset: 100
+Cursor offset: 108

@@ -71,7 +71,7 @@ add_space(std::string& str, size_t indent)
 
     if (str.back() == '\n') {
         str.append(indent, ' ');
-    } else {
+    } else if (str.back() != '.') {
         str.push_back(' ');
     }
 }
@@ -116,29 +116,51 @@ format(const attr_line_t& al, int cursor_offset)
 
 namespace sql {
 
-static constexpr std::array<string_fragment, 4> CLEAR_LR = {
+static constexpr std::array<string_fragment, 6> CLEAR_LR = {
     "FROM"_frag,
+    "HAVING"_frag,
     "SELECT"_frag,
     "SET"_frag,
+    "VALUES"_frag,
     "WHERE"_frag,
 };
 
 static constexpr auto INDENT_SIZE = size_t{4};
 
 static void
-check_for_multi_word_clear_left(std::string& str, size_t indent)
+check_for_multi_word_clear(std::string& str, size_t& indent)
 {
-    static constexpr auto clear_words = std::array<const char*, 1>{
-        " ORDER BY",
+    struct clear_rules {
+        const char* word;
+        bool do_right;
+        const char* padding{""};
     };
 
-    for (const auto& words : clear_words) {
+    static constexpr auto clear_words = std::array<clear_rules, 6>{
+        {
+            {" GROUP BY", true},
+            {"INSERT INTO", true},
+            {" ON CONFLICT", false},
+            {" ORDER BY", true},
+            {" LEFT JOIN", false, "  "},
+            {"REPLACE INTO", true},
+        },
+    };
+
+    for (const auto& [words, do_right, padding] : clear_words) {
         if (endswith(str.c_str(), words)) {
             auto words_len = strlen(words);
-            str[str.length() - words_len] = '\n';
+            if (str[str.length() - words_len] == ' ') {
+                str[str.length() - words_len] = '\n';
+            }
             if (indent > 0) {
-                str.insert(
-                    str.length() - words_len + 1, indent - INDENT_SIZE, ' ');
+                indent -= INDENT_SIZE;
+                str.insert(str.length() - words_len + 1, indent, ' ');
+                str.insert(str.length() - words_len + 1, padding);
+            }
+            if (do_right) {
+                clear_right(str);
+                indent += INDENT_SIZE;
             }
             break;
         }
@@ -168,7 +190,6 @@ format(const attr_line_t& al, int cursor_offset)
                 CLEAR_LR.begin(), CLEAR_LR.end(), [&sf](const auto& x) {
                     return sf.iequal(x);
                 });
-
             if (do_clear) {
                 if (!paren_indents.empty()) {
                     paren_indents.back() = true;
@@ -185,17 +206,25 @@ format(const attr_line_t& al, int cursor_offset)
                 clear_right(retval);
                 indent += INDENT_SIZE;
             } else {
-                check_for_multi_word_clear_left(retval, indent);
+                check_for_multi_word_clear(retval, indent);
             }
         } else if (attr.sa_type == &SQL_COMMA_ATTR) {
+            retval.append(sf.data(), sf.length());
+            if (paren_indents.empty() || paren_indents.back()) {
+                clear_right(retval);
+            }
+        } else if (attr.sa_type == &SQL_COMMENT_ATTR) {
+            add_space(retval, indent);
             retval.append(sf.data(), sf.length());
             clear_right(retval);
         } else if (attr.sa_type == &SQL_PAREN_ATTR && sf.front() == '(') {
             paren_indents.push_back(false);
-            while (!retval.empty() && isspace(retval.back())) {
+            while (!retval.empty() && isspace(retval.back())
+                   && !endswith(retval, ",\n") && !endswith(retval, "VALUES\n"))
+            {
                 retval.pop_back();
             }
-            retval.push_back(' ');
+            add_space(retval, indent);
             indent += INDENT_SIZE;
             retval.append(sf.data(), sf.length());
         } else if (attr.sa_type == &SQL_PAREN_ATTR && sf.front() == ')') {
@@ -212,6 +241,8 @@ format(const attr_line_t& al, int cursor_offset)
             funcs.emplace_back(attr);
             add_space(retval, indent);
             retval.append(sf.data(), sf.length());
+        } else if (attr.sa_type == &SQL_GARBAGE_ATTR && sf.front() == '.') {
+            retval.push_back('.');
         } else {
             if (retval.empty() || retval.back() != '(') {
                 add_space(retval, indent);

@@ -1171,9 +1171,7 @@ com_highlight(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("filter");
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         const static intern_string_t PATTERN_SRC
             = intern_string::lookup("pattern");
 
@@ -1245,7 +1243,8 @@ com_clear_highlight(exec_context& ec,
         auto hm_iter = hm.find({highlight_source_t::INTERACTIVE, args[1]});
         if (hm_iter == hm.end()) {
             return ec.make_error("highlight does not exist -- {}", args[1]);
-        } else if (ec.ec_dry_run) {
+        }
+        if (ec.ec_dry_run) {
             retval = "";
         } else {
             hm.erase(hm_iter);
@@ -1271,8 +1270,7 @@ com_help(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         ensure_view(&lnav_data.ld_views[LNV_HELP]);
     }
 
@@ -1558,8 +1556,7 @@ com_create_search_table(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (args.size() >= 2) {
+    if (args.size() >= 2) {
         const static intern_string_t PATTERN_SRC
             = intern_string::lookup("pattern");
         string_fragment regex_frag;
@@ -1690,42 +1687,42 @@ com_session(exec_context& ec,
             return ec.make_error(
                 "only the highlight, filter, and word-wrap commands are "
                 "supported");
-        } else if (getenv("HOME") == NULL) {
+        }
+        if (getenv("HOME") == NULL) {
             return ec.make_error("the HOME environment variable is not set");
+        }
+        auto saved_cmd = trim(remaining_args(cmdline, args));
+        auto old_file_name = lnav::paths::dotlnav() / "session";
+        auto new_file_name = lnav::paths::dotlnav() / "session.tmp";
+
+        std::ifstream session_file(old_file_name.string());
+        std::ofstream new_session_file(new_file_name.string());
+
+        if (!new_session_file) {
+            return ec.make_error("cannot write to session file");
         } else {
-            auto saved_cmd = trim(remaining_args(cmdline, args));
-            auto old_file_name = lnav::paths::dotlnav() / "session";
-            auto new_file_name = lnav::paths::dotlnav() / "session.tmp";
+            bool added = false;
+            std::string line;
 
-            std::ifstream session_file(old_file_name.string());
-            std::ofstream new_session_file(new_file_name.string());
-
-            if (!new_session_file) {
-                return ec.make_error("cannot write to session file");
-            } else {
-                bool added = false;
-                std::string line;
-
-                if (session_file.is_open()) {
-                    while (getline(session_file, line)) {
-                        if (line == saved_cmd) {
-                            added = true;
-                            break;
-                        }
-                        new_session_file << line << std::endl;
+            if (session_file.is_open()) {
+                while (getline(session_file, line)) {
+                    if (line == saved_cmd) {
+                        added = true;
+                        break;
                     }
+                    new_session_file << line << std::endl;
                 }
-                if (!added) {
-                    new_session_file << saved_cmd << std::endl;
-
-                    log_perror(
-                        rename(new_file_name.c_str(), old_file_name.c_str()));
-                } else {
-                    log_perror(remove(new_file_name.c_str()));
-                }
-
-                retval = "info: session file saved";
             }
+            if (!added) {
+                new_session_file << saved_cmd << std::endl;
+
+                log_perror(
+                    rename(new_file_name.c_str(), old_file_name.c_str()));
+            } else {
+                log_perror(remove(new_file_name.c_str()));
+            }
+
+            retval = "info: session file saved";
         }
     } else {
         return ec.make_error("expecting a command to save to the session file");
@@ -1990,41 +1987,37 @@ com_clear_comment(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
+    if (ec.ec_dry_run) {
         return Ok(std::string());
-    } else if (ec.ec_dry_run) {
-        return Ok(std::string());
-    } else {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
-
-        if (tc != &lnav_data.ld_views[LNV_LOG]) {
-            return ec.make_error(
-                "The :clear-comment command only works in the log "
-                "view");
-        }
-        auto& lss = lnav_data.ld_log_source;
-
-        auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
-        if (line_meta_opt) {
-            bookmark_metadata& line_meta = *(line_meta_opt.value());
-
-            line_meta.bm_comment.clear();
-            if (line_meta.empty(bookmark_metadata::categories::notes)) {
-                tc->set_user_mark(
-                    &textview_curses::BM_META, tc->get_selection(), false);
-                if (line_meta.empty(bookmark_metadata::categories::any)) {
-                    lss.erase_bookmark_metadata(tc->get_selection());
-                }
-            }
-
-            lss.set_line_meta_changed();
-            lss.text_filters_changed();
-            tc->reload_data();
-
-            retval = "info: cleared comment";
-        }
-        tc->search_new_data();
     }
+    auto* tc = *lnav_data.ld_view_stack.top();
+    if (tc != &lnav_data.ld_views[LNV_LOG]) {
+        return ec.make_error(
+            "The :clear-comment command only works in the log "
+            "view");
+    }
+    auto& lss = lnav_data.ld_log_source;
+
+    auto line_meta_opt = lss.find_bookmark_metadata(tc->get_selection());
+    if (line_meta_opt) {
+        bookmark_metadata& line_meta = *(line_meta_opt.value());
+
+        line_meta.bm_comment.clear();
+        if (line_meta.empty(bookmark_metadata::categories::notes)) {
+            tc->set_user_mark(
+                &textview_curses::BM_META, tc->get_selection(), false);
+            if (line_meta.empty(bookmark_metadata::categories::any)) {
+                lss.erase_bookmark_metadata(tc->get_selection());
+            }
+        }
+
+        lss.set_line_meta_changed();
+        lss.text_filters_changed();
+        tc->reload_data();
+
+        retval = "info: cleared comment";
+    }
+    tc->search_new_data();
 
     return Ok(retval);
 }
@@ -2074,10 +2067,7 @@ com_untag(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("line-tags");
-        return Ok(std::string());
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         if (ec.ec_dry_run) {
             return Ok(std::string());
         }
@@ -2126,10 +2116,7 @@ com_delete_tags(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("tag");
-        return Ok(std::string());
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         if (ec.ec_dry_run) {
             return Ok(std::string());
         }
@@ -2236,11 +2223,9 @@ com_clear_partition(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        return Ok(std::string());
-    } else if (args.size() == 1) {
-        textview_curses& tc = lnav_data.ld_views[LNV_LOG];
-        logfile_sub_source& lss = lnav_data.ld_log_source;
+    if (args.size() == 1) {
+        auto& tc = lnav_data.ld_views[LNV_LOG];
+        auto& lss = lnav_data.ld_log_source;
         auto& bv = tc.get_bookmarks()[&textview_curses::BM_PARTITION];
         std::optional<vis_line_t> part_start;
 
@@ -2552,8 +2537,7 @@ com_toggle_filtering(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         auto tc = *lnav_data.ld_view_stack.top();
         auto tss = tc->get_sub_source();
 
@@ -2642,8 +2626,7 @@ com_reset_session(exec_context& ec,
                   std::string cmdline,
                   std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         reset_session();
         lnav_data.ld_views[LNV_LOG].reload_data();
     }
@@ -2656,8 +2639,7 @@ com_load_session(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         load_session();
         lnav::session::restore_view_states();
         lnav_data.ld_views[LNV_LOG].reload_data();
@@ -2671,8 +2653,7 @@ com_save_session(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         save_session();
     }
 
@@ -2686,9 +2667,7 @@ com_export_session_to(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("filename");
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         auto_mem<FILE> outfile(fclose);
         auto fn = trim(remaining_args(cmdline, args));
         auto to_term = false;
@@ -2781,8 +2760,7 @@ com_hide_unmarked(exec_context& ec,
 {
     std::string retval = "info: hid unmarked lines";
 
-    if (args.empty()) {
-    } else if (ec.ec_dry_run) {
+    if (ec.ec_dry_run) {
         retval = "";
     } else {
         auto* tc = *lnav_data.ld_view_stack.top();
@@ -2821,8 +2799,7 @@ com_rebuild(exec_context& ec,
             std::string cmdline,
             std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         rescan_files(true);
         rebuild_indexes_repeatedly();
     }
@@ -2834,11 +2811,6 @@ static Result<std::string, lnav::console::user_message>
 com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     static const intern_string_t SRC = intern_string::lookup("path");
-
-    if (args.empty()) {
-        args.emplace_back("dirname");
-        return Ok(std::string());
-    }
 
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
@@ -2891,11 +2863,6 @@ com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 static Result<std::string, lnav::console::user_message>
 com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    if (args.empty()) {
-        args.emplace_back("filename");
-        return Ok(std::string());
-    }
-
     if (lnav_data.ld_flags & LNF_SECURE_MODE) {
         return ec.make_error("{} -- unavailable in secure mode", args[0]);
     }
@@ -3057,8 +3024,7 @@ com_shexec(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         log_perror(system(cmdline.substr(args[0].size()).c_str()));
     }
 
@@ -3070,8 +3036,7 @@ com_poll_now(exec_context& ec,
              std::string cmdline,
              std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         isc::to<curl_looper&, services::curl_streamer_t>().send_and_wait(
             [](auto& clooper) { clooper.process_all(); });
     }
@@ -3092,8 +3057,7 @@ com_redraw(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (ec.ec_dry_run) {
+    if (ec.ec_dry_run) {
     } else if (ec.ec_ui_callbacks.uc_redraw) {
         ec.ec_ui_callbacks.uc_redraw();
     }
@@ -3106,8 +3070,7 @@ com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval = "error: expecting a message";
 
-    if (args.empty()) {
-    } else if (args.size() >= 1) {
+    if (args.size() >= 1) {
         bool lf = true;
         std::string src;
 
@@ -3162,8 +3125,7 @@ com_alt_msg(exec_context& ec,
 
     std::string retval;
 
-    if (args.empty()) {
-    } else if (ec.ec_dry_run) {
+    if (ec.ec_dry_run) {
         retval = "";
     } else if (args.size() == 1) {
         prompt.p_editor.clear_alt_value();
@@ -3183,9 +3145,7 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("*");
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         static intern_string_t EVAL_SRC = intern_string::lookup(":eval");
 
         std::string all_args = remaining_args(cmdline, args);
@@ -3530,8 +3490,7 @@ com_spectrogram(exec_context& ec,
 static Result<std::string, lnav::console::user_message>
 com_quit(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         lnav_data.ld_looping = false;
     }
     return Ok(std::string());
@@ -3605,7 +3564,6 @@ script_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     auto* tc = *lnav_data.ld_view_stack.top();
-    auto& scripts = injector::get<available_scripts&>();
 
     set_view_mode(ln_mode_t::EXEC);
 
@@ -3652,7 +3610,6 @@ search_filters_prompt(std::vector<std::string>& args)
 static void
 search_files_prompt(std::vector<std::string>& args)
 {
-    static const std::regex re_escape(R"(([.\^$*+?()\[\]{}\\|]))");
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_FILES);
@@ -4349,20 +4306,25 @@ readline_context::command_t STD_COMMANDS[] = {
              help_text("path", "The path to the file to write")
                  .with_format(help_parameter_format_t::HPF_FILENAME))
          .with_tags({"io", "scripting"})},
-    {"rebuild",
-     com_rebuild,
-     help_text(":rebuild")
-         .with_summary("Forcefully rebuild file indexes")
-         .with_tags({"scripting"})},
-    {"set-min-log-level",
-     com_set_min_log_level,
+    {
+        "rebuild",
+        com_rebuild,
+        help_text(":rebuild")
+            .with_summary("Forcefully rebuild file indexes")
+            .with_tags({"scripting"}),
+    },
+    {
+        "set-min-log-level",
+        com_set_min_log_level,
 
-     help_text(":set-min-log-level")
-         .with_summary("Set the minimum log level to display in the log view")
-         .with_parameter(help_text("log-level", "The new minimum log level")
-                             .with_enum_values(level_names))
-         .with_example(
-             {"To set the minimum log level displayed to error", "error"})},
+        help_text(":set-min-log-level")
+            .with_summary(
+                "Set the minimum log level to display in the log view")
+            .with_parameter(help_text("log-level", "The new minimum log level")
+                                .with_enum_values(level_names))
+            .with_example(
+                {"To set the minimum log level displayed to error", "error"}),
+    },
     {"redraw",
      com_redraw,
 

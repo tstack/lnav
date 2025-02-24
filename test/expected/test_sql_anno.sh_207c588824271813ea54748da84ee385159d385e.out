@@ -1,0 +1,20 @@
+                 SELECT * FROM foo LEFT JOIN mycol ORDER BY blah
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               ---
+     sql_keyword                   ----
+     sql_keyword                        ----
+       sql_ident                             -----
+     sql_keyword                                   -----
+     sql_keyword                                         --
+       sql_ident                                            ----
+Formatted:
+SELECT
+    *
+FROM
+    foo
+  LEFT JOIN mycol
+ORDER BY
+    blah
+Cursor offset: 61

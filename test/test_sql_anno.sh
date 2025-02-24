@@ -53,9 +53,21 @@ run_cap_test ./drive_sql_anno \
 
 run_cap_test ./drive_sql_anno "SELECT * FROM foo.bar"
 
+run_cap_test ./drive_sql_anno 'SELECT * FROM tbl WHERE line = $LINE OR pid = :pid'
+
 run_cap_test ./drive_sql_anno "SELECT json_object('abc', 'def') ->> '$.abc'"
 
 run_cap_test ./drive_sql_anno "SELECT 0x77, 123, 123e4"
+
+run_cap_test ./drive_sql_anno "REPLACE INTO tbl VALUES (1,'Leopard'),(2,'Dog')"
+
+run_cap_test ./drive_sql_anno "INSERT INTO tbl VALUES (1,'Leopard') ON CONFLICT DO UPDATE SET foo=1"
+
+run_cap_test ./drive_sql_anno "SELECT * FROM foo LEFT JOIN mycol ORDER BY blah"
+
+run_cap_test ./drive_sql_anno "SELECT * FROM foo WHERE name = 'John' GROUP BY some_column HAVING column > 10 ORDER BY other_column"
+
+run_cap_test ./drive_sql_anno "SELECT * FROM foo ORDER BY col1 ASC, col2 DESC"
 
 run_cap_test ./drive_sql_anno "from access_log | filter cs_method == 'GET' || cs_method == 'PUT'" 2
 

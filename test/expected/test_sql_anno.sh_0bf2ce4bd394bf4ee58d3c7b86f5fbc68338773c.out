@@ -1,0 +1,23 @@
+                 REPLACE INTO tbl VALUES (1,'Leopard'),(2,'Dog')
+     sql_keyword -------
+     sql_keyword         ----
+       sql_ident              ---
+     sql_keyword                  ------
+       sql_paren                         -
+      sql_number                          -
+       sql_comma                           -
+      sql_string                            ---------
+       sql_paren                                     -
+       sql_comma                                      -
+       sql_paren                                       -
+      sql_number                                        -
+       sql_comma                                         -
+      sql_string                                          -----
+       sql_paren                                               -
+Formatted:
+REPLACE INTO
+    tbl
+VALUES
+    (1, 'Leopard'),
+    (2, 'Dog')
+Cursor offset: 62

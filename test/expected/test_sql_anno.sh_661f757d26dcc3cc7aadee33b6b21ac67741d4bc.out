@@ -1,0 +1,33 @@
+                 SELECT * FROM foo WHERE name = 'John' GROUP BY some_column HAVING column > 10 ORDER BY other_column
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               ---
+     sql_keyword                   -----
+       sql_ident                         ----
+        sql_oper                              -
+      sql_string                                ------
+     sql_keyword                                       -----
+     sql_keyword                                             --
+       sql_ident                                                -----------
+     sql_keyword                                                            ------
+     sql_keyword                                                                   ------
+        sql_oper                                                                          -
+      sql_number                                                                            --
+     sql_keyword                                                                               -----
+     sql_keyword                                                                                     --
+       sql_ident                                                                                        ------------
+Formatted:
+SELECT
+    *
+FROM
+    foo
+WHERE
+    name = 'John'
+GROUP BY
+    some_column
+HAVING
+    COLUMN > 10
+ORDER BY
+    other_column
+Cursor offset: 123

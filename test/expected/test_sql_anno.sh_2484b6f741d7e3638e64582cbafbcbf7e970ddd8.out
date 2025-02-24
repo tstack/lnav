@@ -1,0 +1,21 @@
+                 SELECT * FROM tbl WHERE line = $LINE OR pid = :pid
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               ---
+     sql_keyword                   -----
+       sql_ident                         ----
+        sql_oper                              -
+       sql_ident                                -----
+     sql_keyword                                      --
+       sql_ident                                         ---
+        sql_oper                                             -
+       sql_ident                                               ----
+Formatted:
+SELECT
+    *
+FROM
+    tbl
+WHERE
+    line = $LINE OR pid = :pid
+Cursor offset: 62

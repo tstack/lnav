@@ -816,6 +816,8 @@ dist_noinst_DATA = \
     test_sql_anno.sh_0954ee1b20fb9cc017b93295a1ebd653c5c62b8e.out \
     test_sql_anno.sh_0a37c43350ddd7a2d0d75695be32fac083ad04a4.err \
     test_sql_anno.sh_0a37c43350ddd7a2d0d75695be32fac083ad04a4.out \
+    test_sql_anno.sh_0bf2ce4bd394bf4ee58d3c7b86f5fbc68338773c.err \
+    test_sql_anno.sh_0bf2ce4bd394bf4ee58d3c7b86f5fbc68338773c.out \
     test_sql_anno.sh_0ca32cc69613d3ada5e2337471ae056820e09916.err \
     test_sql_anno.sh_0ca32cc69613d3ada5e2337471ae056820e09916.out \
     test_sql_anno.sh_0d931572f5a8d935c0b189384235ad4d3fffccd6.err \
@@ -826,14 +828,24 @@ dist_noinst_DATA = \
     test_sql_anno.sh_1398146cf8b4f074ec8b9752f021cf47d011bebc.out \
     test_sql_anno.sh_1b29488b949c294479aa6054f80a35bc106b454b.err \
     test_sql_anno.sh_1b29488b949c294479aa6054f80a35bc106b454b.out \
+    test_sql_anno.sh_207c588824271813ea54748da84ee385159d385e.err \
+    test_sql_anno.sh_207c588824271813ea54748da84ee385159d385e.out \
+    test_sql_anno.sh_2484b6f741d7e3638e64582cbafbcbf7e970ddd8.err \
+    test_sql_anno.sh_2484b6f741d7e3638e64582cbafbcbf7e970ddd8.out \
     test_sql_anno.sh_331a152080d2e278b7cc0a37728eca1ded36ed72.err \
     test_sql_anno.sh_331a152080d2e278b7cc0a37728eca1ded36ed72.out \
+    test_sql_anno.sh_4716ebc2ec43faf484e85e5dfe37552e6a17dbe6.err \
+    test_sql_anno.sh_4716ebc2ec43faf484e85e5dfe37552e6a17dbe6.out \
     test_sql_anno.sh_4ca92f0da538c2f9d524211a021b306af0d2740d.err \
     test_sql_anno.sh_4ca92f0da538c2f9d524211a021b306af0d2740d.out \
     test_sql_anno.sh_61bb63e4ed637486f3c3e0b858605ffb54a3d7cd.err \
     test_sql_anno.sh_61bb63e4ed637486f3c3e0b858605ffb54a3d7cd.out \
+    test_sql_anno.sh_661f757d26dcc3cc7aadee33b6b21ac67741d4bc.err \
+    test_sql_anno.sh_661f757d26dcc3cc7aadee33b6b21ac67741d4bc.out \
     test_sql_anno.sh_73814eca259e469b57bf7469787b91e8e8569b17.err \
     test_sql_anno.sh_73814eca259e469b57bf7469787b91e8e8569b17.out \
+    test_sql_anno.sh_738d1913dc9cfcfa710b40ae54c25f5bbce77dac.err \
+    test_sql_anno.sh_738d1913dc9cfcfa710b40ae54c25f5bbce77dac.out \
     test_sql_anno.sh_74bc5fb90a0c94a1a37d30a8e9254ea02c192a75.err \
     test_sql_anno.sh_74bc5fb90a0c94a1a37d30a8e9254ea02c192a75.out \
     test_sql_anno.sh_7b183037479528581e1eacace7b9acae41c5aa8e.err \

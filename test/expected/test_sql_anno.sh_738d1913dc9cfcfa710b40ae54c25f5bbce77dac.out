@@ -1,0 +1,27 @@
+                 INSERT INTO tbl VALUES (1,'Leopard') ON CONFLICT DO UPDATE SET foo=1
+     sql_keyword ------
+     sql_keyword        ----
+       sql_ident             ---
+     sql_keyword                 ------
+       sql_paren                        -
+      sql_number                         -
+       sql_comma                          -
+      sql_string                           ---------
+       sql_paren                                    -
+     sql_keyword                                      --
+     sql_keyword                                         --------
+     sql_keyword                                                  --
+     sql_keyword                                                     ------
+     sql_keyword                                                            ---
+       sql_ident                                                                ---
+        sql_oper                                                                   -
+      sql_number                                                                    -
+Formatted:
+INSERT INTO
+    tbl
+VALUES
+    (1, 'Leopard')
+ON CONFLICT DO UPDATE
+SET
+    foo = 1
+Cursor offset: 83

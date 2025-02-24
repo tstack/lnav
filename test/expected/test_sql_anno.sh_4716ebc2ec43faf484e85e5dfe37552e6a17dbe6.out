@@ -1,0 +1,21 @@
+                 SELECT * FROM foo ORDER BY col1 ASC, col2 DESC
+     sql_keyword ------
+        sql_oper        -
+     sql_keyword          ----
+       sql_ident               ---
+     sql_keyword                   -----
+     sql_keyword                         --
+       sql_ident                            ----
+     sql_keyword                                 ---
+       sql_comma                                    -
+       sql_ident                                      ----
+     sql_keyword                                           ----
+Formatted:
+SELECT
+    *
+FROM
+    foo
+ORDER BY
+    col1 ASC,
+    col2 DESC
+Cursor offset: 62
