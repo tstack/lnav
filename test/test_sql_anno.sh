@@ -69,6 +69,26 @@ run_cap_test ./drive_sql_anno "SELECT * FROM foo WHERE name = 'John' GROUP BY so
 
 run_cap_test ./drive_sql_anno "SELECT * FROM foo ORDER BY col1 ASC, col2 DESC"
 
+read -r -d '' WITH_SQL_1 <<EOF
+WITH
+cte_1 AS (
+  SELECT a FROM b WHERE c = 1
+),
+cte_2 AS (
+  SELECT c FROM d WHERE e = 2
+),
+final AS (
+  SELECT * FROM cte_1 LEFT JOIN cte_2 ON b = d
+)
+SELECT * FROM final;
+EOF
+
+run_cap_test ./drive_sql_anno "$WITH_SQL_1"
+
+run_cap_test ./drive_sql_anno "CASE WHEN opt = 'foo' THEN 1 WHEN opt = 'bar' THEN 2 WHEN opt = 'baz' THEN 3 ELSE 4 END"
+
+run_cap_test ./drive_sql_anno "CASE trim(sqrt(2)) WHEN 'one' THEN 1 WHEN 'two' THEN 2 WHEN 'three' THEN 3 ELSE 4 END;"
+
 run_cap_test ./drive_sql_anno "from access_log | filter cs_method == 'GET' || cs_method == 'PUT'" 2
 
 run_cap_test ./drive_sql_anno "from access_log | stats.count_by { c_ip }" 23

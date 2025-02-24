@@ -14,7 +14,7 @@ SELECT
     *
 FROM
     foo
-  LEFT JOIN mycol
+    LEFT JOIN mycol
 ORDER BY
     blah
-Cursor offset: 61
+Cursor offset: 63

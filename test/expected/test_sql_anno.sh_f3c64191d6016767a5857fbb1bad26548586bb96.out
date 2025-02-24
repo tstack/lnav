@@ -19,5 +19,5 @@ FROM (
         bar
     FROM
         baz
-)
-Cursor offset: 78
+    )
+Cursor offset: 82

@@ -32,13 +32,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lnav.hh"
+#include "base/lnav_log.hh"
 #include "sql.formatter.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
-
-using namespace std;
 
 int
 main(int argc, char* argv[])
@@ -57,18 +55,20 @@ main(int argc, char* argv[])
     } else {
         register_sqlite_funcs(db.in(), sqlite_registration_funcs);
 
-        attr_line_t al(argv[1]);
+        auto al = attr_line_t(argv[1]);
 
         annotate_sql_statement(al);
 
-        printf("  %14s %s\n", " ", argv[1]);
-        for (auto& attr : al.get_attrs()) {
-            auto& lr = attr.sa_range;
+        for (const auto& line_al : al.split_lines()) {
+            printf("  %14s %s\n", " ", line_al.al_string.c_str());
+            for (const auto& attr : line_al.get_attrs()) {
+                const auto& lr = attr.sa_range;
 
-            printf("  %14s %s%s\n",
-                   attr.sa_type->sat_name,
-                   string(lr.lr_start, ' ').c_str(),
-                   string(lr.length(), '-').c_str());
+                printf("  %14s %s%s\n",
+                       attr.sa_type->sat_name,
+                       std::string(lr.lr_start, ' ').c_str(),
+                       std::string(lr.length(), '-').c_str());
+            }
         }
 
         int near = al.length();

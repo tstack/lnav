@@ -25,5 +25,5 @@ FROM (
         baz
     ORDER BY
         foo DESC
-)
-Cursor offset: 108
+    )
+Cursor offset: 112

@@ -269,13 +269,21 @@ textinput_curses::handle_mouse(mouse_event& me)
         }
     } else if (me.me_button == mouse_button_t::BUTTON_LEFT) {
         this->tc_mode = mode_t::editing;
+        auto adj_press_x = me.me_press_x;
+        if (me.me_press_y == 0 && me.me_press_x > 0) {
+            adj_press_x -= this->tc_prefix.column_width();
+        }
+        auto adj_x = me.me_x;
+        if (me.me_y == 0 && me.me_x > 0) {
+            adj_x -= this->tc_prefix.column_width();
+        }
         auto inner_press_point = input_point{
-            this->tc_left + me.me_press_x,
+            this->tc_left + adj_press_x,
             (int) this->tc_top + me.me_press_y,
         };
         this->clamp_point(inner_press_point);
         auto inner_point = input_point{
-            this->tc_left + me.me_x,
+            this->tc_left + adj_x,
             (int) this->tc_top + me.me_y,
         };
         this->clamp_point(inner_point);
@@ -288,8 +296,8 @@ textinput_curses::handle_mouse(mouse_event& me)
         if (me.me_state == mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK) {
             const auto& al = this->tc_lines[this->tc_cursor.y];
             auto sf = string_fragment::from_str(al.al_string);
-            auto cursor_sf = sf.sub_cell_range(this->tc_left + me.me_x,
-                                               this->tc_left + me.me_x);
+            auto cursor_sf = sf.sub_cell_range(this->tc_left + adj_x,
+                                               this->tc_left + adj_x);
             auto ds = data_scanner(sf);
 
             while (true) {
@@ -353,7 +361,7 @@ textinput_curses::handle_mouse(mouse_event& me)
             if (inner_press_point == inner_point) {
                 this->tc_selection = std::nullopt;
             } else {
-                this->tc_drag_selection = selected_range::from_mouse(
+                this->tc_selection = selected_range::from_mouse(
                     this->tc_cursor_anchor, inner_point);
             }
         }

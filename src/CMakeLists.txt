@@ -156,7 +156,7 @@ function(bin2c)
             DEPENDS bin2c "${FILE_TO_LINK}")
 endfunction(bin2c)
 
-foreach (FILE_TO_LINK animals.json ansi-palette.json css-color-names.json diseases.json emojis.json xml-entities.json xterm-palette.json help.txt help.md init.sql words.json)
+foreach (FILE_TO_LINK animals.json ansi-palette.json css-color-names.json diseases.json emojis.json xml-entities.json xterm-palette.json help.md init.sql words.json)
     string(REPLACE "." "-" DST_FILE "${FILE_TO_LINK}")
     add_custom_command(
             OUTPUT "${DST_FILE}.h" "${DST_FILE}.cc"
