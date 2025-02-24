@@ -262,6 +262,7 @@ main(int argc, char** argv)
     argv += optind;
 
     if (argc > 0) {
+        log_debug("reading file: %s", argv[0]);
         auto read_res = lnav::filesystem::read_file(argv[0]);
         if (read_res.isErr()) {
             fprintf(stderr,

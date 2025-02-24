@@ -51,6 +51,10 @@ listview_curses::listview_curses() : lv_scroll(noop_func{}) {}
 std::optional<view_curses*>
 listview_curses::contains(int x, int y)
 {
+    if (!this->vc_visible) {
+        return std::nullopt;
+    }
+
     auto child = view_curses::contains(x, y);
     if (child) {
         return child;

@@ -215,6 +215,10 @@ textinput_curses::set_height(int height)
 std::optional<view_curses*>
 textinput_curses::contains(int x, int y)
 {
+    if (!this->vc_visible) {
+        return std::nullopt;
+    }
+
     auto child = view_curses::contains(x, y);
     if (child) {
         return child;
@@ -275,8 +279,6 @@ textinput_curses::handle_mouse(mouse_event& me)
             (int) this->tc_top + me.me_y,
         };
         this->clamp_point(inner_point);
-        auto sel_range
-            = selected_range::from_mouse(inner_press_point, inner_point);
 
         this->tc_popup_type = popup_type_t::none;
         this->tc_popup.set_visible(false);
@@ -340,15 +342,19 @@ textinput_curses::handle_mouse(mouse_event& me)
             }
         } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_PRESSED) {
             this->tc_selection = std::nullopt;
-            this->tc_drag_selection = sel_range;
+            this->tc_cursor_anchor = inner_press_point;
+            this->tc_drag_selection = selected_range::from_mouse(
+                this->tc_cursor_anchor, inner_point);
         } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED) {
-            this->tc_drag_selection = sel_range;
+            this->tc_drag_selection = selected_range::from_mouse(
+                this->tc_cursor_anchor, inner_point);
         } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED) {
             this->tc_drag_selection = std::nullopt;
             if (inner_press_point == inner_point) {
                 this->tc_selection = std::nullopt;
             } else {
-                this->tc_selection = sel_range;
+                this->tc_drag_selection = selected_range::from_mouse(
+                    this->tc_cursor_anchor, inner_point);
             }
         }
         this->ensure_cursor_visible();
