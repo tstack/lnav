@@ -1,0 +1,22 @@
+                 SELECT foo FROM bar EXCEPT ALL SELECT foo FROM baz
+     sql_keyword ------
+       sql_ident        ---
+     sql_keyword            ----
+       sql_ident                 ---
+     sql_keyword                     ------
+     sql_keyword                            ---
+     sql_keyword                                ------
+       sql_ident                                       ---
+     sql_keyword                                           ----
+       sql_ident                                                ---
+Formatted:
+SELECT
+    foo
+FROM
+    bar
+EXCEPT ALL
+SELECT
+    foo
+FROM
+    baz
+Cursor offset: 66

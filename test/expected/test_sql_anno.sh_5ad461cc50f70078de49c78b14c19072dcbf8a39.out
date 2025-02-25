@@ -1,0 +1,31 @@
+                 CREATE TABLE tbl (a INT PRIMARY KEY, b TEXT, c INT NOT NULL, doggie INT NOT NULL)
+     sql_keyword ------
+     sql_keyword        -----
+       sql_ident              ---
+       sql_paren                  -
+       sql_ident                   -
+       sql_ident                     ---
+     sql_keyword                         -------
+     sql_keyword                                 ---
+       sql_comma                                    -
+       sql_ident                                      -
+       sql_ident                                        ----
+       sql_comma                                            -
+       sql_ident                                              -
+       sql_ident                                                ---
+     sql_keyword                                                    ---
+     sql_keyword                                                        ----
+       sql_comma                                                            -
+       sql_ident                                                              ------
+       sql_ident                                                                     ---
+     sql_keyword                                                                         ---
+     sql_keyword                                                                             ----
+       sql_paren                                                                                 -
+Formatted:
+CREATE TABLE tbl (
+    a INT PRIMARY KEY,
+    b TEXT,
+    c INT NOT NULL,
+    doggie INT NOT NULL
+)
+Cursor offset: 99

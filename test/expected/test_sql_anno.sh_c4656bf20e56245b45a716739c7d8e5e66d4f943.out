@@ -1,0 +1,19 @@
+                 DELETE FROM Customers WHERE CustomerName='Alfred' AND Phone=5002132
+     sql_keyword ------
+     sql_keyword        ----
+       sql_ident             ---------
+     sql_keyword                       -----
+       sql_ident                             ------------
+        sql_oper                                         -
+      sql_string                                          --------
+     sql_keyword                                                   ---
+       sql_ident                                                       -----
+        sql_oper                                                            -
+      sql_number                                                             -------
+Formatted:
+DELETE
+FROM
+    Customers
+WHERE
+    CustomerName = 'Alfred' AND Phone = 5002132
+Cursor offset: 79

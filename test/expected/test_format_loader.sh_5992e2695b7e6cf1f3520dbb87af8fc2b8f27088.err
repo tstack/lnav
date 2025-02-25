@@ -230,7 +230,7 @@
  [1m[31mreason[0m: near "TALE": syntax error
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sql/init.sql[0m:4
 [36m | [0m[32m[40m-- comment test                         [0m
-[36m | [0m[1m[36m[40mCREATE[0m[37m[40m [0m[37m[40mTALE[0m[37m[40m [0m[1m[37m[40minvalid[0m[1m[37m[40m [0m[37m[40m([0m[37m[40mx[0m[37m[40m [0m[37m[40my[0m[37m[40m [0m[37m[40mz[0m[37m[40m);            [0m
+[36m | [0m[1m[36m[40mCREATE[0m[37m[40m [0m[37m[40mTALE[0m[37m[40m [0m[37m[40minvalid[0m[37m[40m ([0m[37m[40mx[0m[37m[40m [0m[37m[40my[0m[37m[40m [0m[37m[40mz[0m[37m[40m);            [0m
 [36m | [0m[37m[40m       [0m[36m[40m^ [0m[1m[31m[40mnear "TALE": syntax error[0m[37m[40m      [0m
 [1m[31m✘[0m [1m[31merror[0m: failed to execute SQL statement
  [1m[31mreason[0m: [1m[31m✘[0m [1m[31merror[0m: “abc(” is not a valid regular expression

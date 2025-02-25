@@ -1104,22 +1104,10 @@ annotate_sql_statement(attr_line_t& al)
            != sa.end())
     {
         string_attrs_t::const_iterator piter;
-        bool found_open = false;
-        ssize_t lpc;
 
         start = iter->sa_range.lr_end;
-        for (lpc = iter->sa_range.lr_end; lpc < (int) line.length(); lpc++) {
-            if (line[lpc] == '(') {
-                found_open = true;
-                break;
-            }
-            if (!isspace(line[lpc])) {
-                break;
-            }
-        }
-
-        if (found_open) {
-            ssize_t pstart = lpc + 1;
+        if (start < line.length() && line[start] == '(') {
+            ssize_t pstart = start + 1;
             int depth = 1;
 
             while (depth > 0

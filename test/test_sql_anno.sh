@@ -89,6 +89,20 @@ run_cap_test ./drive_sql_anno "CASE WHEN opt = 'foo' THEN 1 WHEN opt = 'bar' THE
 
 run_cap_test ./drive_sql_anno "CASE trim(sqrt(2)) WHEN 'one' THEN 1 WHEN 'two' THEN 2 WHEN 'three' THEN 3 ELSE 4 END;"
 
+run_cap_test ./drive_sql_anno "CREATE TABLE tbl (a INT PRIMARY KEY, b TEXT, c INT NOT NULL, doggie INT NOT NULL)"
+
+run_cap_test ./drive_sql_anno "SELECT RANK() OVER (PARTITION BY explosion ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS amount FROM tbl"
+
+run_cap_test ./drive_sql_anno "DELETE FROM Customers WHERE CustomerName='Alfred' AND Phone=5002132"
+
+run_cap_test ./drive_sql_anno "SELECT foo FROM bar UNION ALL SELECT foo FROM baz"
+
+run_cap_test ./drive_sql_anno "SELECT foo FROM bar INTERSECT ALL SELECT foo FROM baz"
+
+run_cap_test ./drive_sql_anno "SELECT foo FROM bar EXCEPT ALL SELECT foo FROM baz"
+
+run_cap_test ./drive_sql_anno "UPDATE customers SET total_orders = order_summary.total  FROM ( SELECT * FROM bank) AS order_summary"
+
 run_cap_test ./drive_sql_anno "from access_log | filter cs_method == 'GET' || cs_method == 'PUT'" 2
 
 run_cap_test ./drive_sql_anno "from access_log | stats.count_by { c_ip }" 23

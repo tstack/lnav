@@ -1282,8 +1282,10 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
                    && sel_range->lr_end != -1
                    && sel_range->lr_start < sel_range->lr_end)
         {
-            this->tc_lines[curr_line].append(this->tc_lines[curr_line + 1]);
-            del_max = curr_line + 1;
+            if (curr_line + 1 < this->tc_lines.size()) {
+                this->tc_lines[curr_line].append(this->tc_lines[curr_line + 1]);
+                del_max = curr_line + 1;
+            }
         } else if (sel_range->lr_start == 0 && sel_range->lr_end == -1) {
             del_max = curr_line;
             if (curr_line == range.sr_start.y) {

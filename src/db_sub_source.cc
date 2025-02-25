@@ -1143,10 +1143,14 @@ db_overlay_source::list_value_for_overlay(const listview_curses& lv,
                             root.gen(cursor->get_float_as_text());
                         }
                         break;
+                    case lnav::cell_type::CT_TEXT:
+                        root.gen(cursor->get_text());
+                        break;
                 }
             }
 
-            al.append(": ").append(sf);
+            auto value_al = attr_line_t::from_table_cell_content(sf, 1000);
+            al.append(": ").append(value_al);
             al.al_attrs.emplace_back(
                 line_range{0, -1},
                 DBA_DETAILS.value(gen.to_string_fragment().to_string()));

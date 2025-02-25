@@ -1,0 +1,29 @@
+                 UPDATE customers SET total_orders = order_summary.total  FROM ( SELECT * FROM bank) AS order_summary
+     sql_keyword ------
+       sql_ident        ---------
+     sql_keyword                  ---
+       sql_ident                      ------------
+        sql_oper                                   -
+       sql_ident                                     -------------
+     sql_garbage                                                  -
+       sql_ident                                                   -----
+     sql_keyword                                                          ----
+       sql_paren                                                               -
+     sql_keyword                                                                 ------
+        sql_oper                                                                        -
+     sql_keyword                                                                          ----
+       sql_ident                                                                               ----
+       sql_paren                                                                                   -
+     sql_keyword                                                                                     --
+       sql_ident                                                                                        -------------
+Formatted:
+UPDATE customers
+SET
+    total_orders = order_summary.total
+FROM (
+    SELECT
+        *
+    FROM
+        bank
+    ) AS order_summary
+Cursor offset: 132

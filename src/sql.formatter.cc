@@ -157,14 +157,18 @@ struct keyword_attrs {
         = always_close_scope;
 };
 
-static constexpr std::array<keyword_attrs, 11> ATTRS_FOR_KW = {{
+static constexpr std::array<keyword_attrs, 15> ATTRS_FOR_KW = {{
     {"CASE"_frag, true, false, never_close_scope},
+    {"CREATE"_frag, true, false},
     {"ELSE"_frag, true, false, in_case_close_scope},
     {"END"_frag, true, false, end_close_scope},
+    {"EXCEPT"_frag, true, false},
     {"FROM"_frag, true, true},
     {"HAVING"_frag, true, true},
+    {"INTERSECT"_frag, true, false},
     {"SELECT"_frag, true, true},
     {"SET"_frag, true, true},
+    {"UNION"_frag, true, false},
     {"VALUES"_frag, true, true},
     {"WHEN"_frag, true, false, in_case_close_scope},
     {"WHERE"_frag, true, true},
@@ -200,13 +204,14 @@ check_for_multi_word_clear(std::string& str,
         const char* padding{""};
     };
 
-    static constexpr auto clear_words = std::array<clear_rules, 6>{
+    static constexpr auto clear_words = std::array<clear_rules, 7>{
         {
             {" GROUP BY", true},
             {"INSERT INTO", true},
             {" ON CONFLICT", false},
             {" ORDER BY", true},
             {" LEFT JOIN", false},
+            {" PARTITION BY", false},
             {"REPLACE INTO", true},
         },
     };
@@ -297,9 +302,17 @@ format(const attr_line_t& al, int cursor_offset)
             {
                 retval.pop_back();
             }
+            if (endswith(retval, "OVER")) {
+                paren_indents.back() = true;
+            }
             add_space(retval, indent);
-            scope_stack.emplace_back();
             retval.append(sf.data(), sf.length());
+            if (scope_stack.back() == "CREATE") {
+                clear_right(retval);
+                paren_indents.back() = true;
+            } else {
+                scope_stack.emplace_back();
+            }
         } else if (attr.sa_type == &SQL_PAREN_ATTR && sf.front() == ')') {
             if (scope_stack.size() > 1) {
                 scope_stack.pop_back();

@@ -26,6 +26,7 @@ Bug Fixes:
 * The default terminal colors will now be used in the default theme.
   So, a light background with a dark foreground will be respected.
 * Improved performance for compressed files.
+* Copying a column with a text value in the DB overlay view.
 
 ## lnav v0.12.4
 

@@ -1,0 +1,36 @@
+                 SELECT RANK() OVER (PARTITION BY explosion ORDER BY day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS amount FROM tbl
+     sql_keyword ------
+        sql_func        ------
+       sql_ident        ----
+       sql_paren            -
+       sql_paren             -
+     sql_keyword               ----
+       sql_paren                    -
+     sql_keyword                     ---------
+     sql_keyword                               --
+       sql_ident                                  ---------
+     sql_keyword                                            -----
+     sql_keyword                                                  --
+       sql_ident                                                     ---
+     sql_keyword                                                         ----
+     sql_keyword                                                              -------
+      sql_number                                                                      -
+     sql_keyword                                                                        ---------
+     sql_keyword                                                                                  ---
+     sql_keyword                                                                                      -------
+     sql_keyword                                                                                              ---
+       sql_paren                                                                                                 -
+     sql_keyword                                                                                                   --
+       sql_ident                                                                                                      ------
+     sql_keyword                                                                                                             ----
+       sql_ident                                                                                                                  ---
+Formatted:
+SELECT
+    RANK() OVER (
+        PARTITION BY explosion
+    ORDER BY
+        day ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+    ) AS amount
+FROM
+    tbl
+Cursor offset: 150
