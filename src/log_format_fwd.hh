@@ -154,7 +154,7 @@ public:
             std::chrono::microseconds t,
             log_level_t lev,
             uint8_t mod = 0,
-            uint8_t opid = 0)
+            uint16_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_time(t), ll_opid(opid),
           ll_sub_offset(0), ll_valid_utf(1), ll_level(lev), ll_module_id(mod),
           ll_meta_mark(0), ll_expr_mark(0)
@@ -167,7 +167,7 @@ public:
             const timeval& tv,
             log_level_t lev,
             uint8_t mod = 0,
-            uint8_t opid = 0)
+            uint16_t opid = 0)
         : ll_offset(off), ll_has_ansi(false), ll_opid(opid), ll_sub_offset(0),
           ll_valid_utf(1), ll_level(lev), ll_module_id(mod), ll_meta_mark(0),
           ll_expr_mark(0)
@@ -310,19 +310,15 @@ public:
 
     uint8_t get_module_id() const { return this->ll_module_id; }
 
-    void set_opid(uint8_t opid) { this->ll_opid = opid; }
+    void set_opid(uint16_t opid) { this->ll_opid = opid; }
 
-    uint8_t get_opid() const { return this->ll_opid; }
+    uint16_t get_opid() const { return this->ll_opid; }
 
     bool match_opid_hash(unsigned long hash) const
     {
-        struct {
-            unsigned int value : 6;
-        } reduced = {
-            (unsigned int) hash,
-        };
+        uint16_t reduced = (uint16_t) hash;
 
-        return this->ll_opid == reduced.value;
+        return this->ll_opid == reduced;
     }
 
     /**
@@ -389,7 +385,7 @@ private:
     file_off_t ll_offset : 63;
     uint8_t ll_has_ansi : 1;
     std::chrono::microseconds ll_time;
-    unsigned int ll_opid : 6;
+    uint16_t ll_opid;
     unsigned int ll_sub_offset : 15;
     unsigned int ll_valid_utf : 1;
     uint8_t ll_level;

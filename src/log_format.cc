@@ -1562,7 +1562,8 @@ external_log_format::scan(logfile& lf,
         const char* last;
         exttm log_time_tm;
         timeval log_tv;
-        uint8_t mod_index = 0, opid = 0;
+        uint8_t mod_index = 0;
+        uint16_t opid = 0;
         char combined_datetime_buf[512];
 
         if (fpat->p_time_field_index != -1) {
@@ -2214,8 +2215,7 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_format->convert_level(frag, jlu->jlu_batch_context));
     }
     if (jlu->jlu_format->elf_opid_field == field_name) {
-        uint8_t opid = hash_str((const char*) str, len);
-        jlu->jlu_base_line->set_opid(opid);
+        jlu->jlu_base_line->set_opid(frag.hash());
 
         auto& sbc = *jlu->jlu_batch_context;
         auto opid_iter = sbc.sbc_opids.los_opid_ranges.find(frag);
