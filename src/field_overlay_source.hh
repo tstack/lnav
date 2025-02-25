@@ -30,8 +30,11 @@
 #ifndef LNAV_FIELD_OVERLAY_SOURCE_H
 #define LNAV_FIELD_OVERLAY_SOURCE_H
 
+#include <optional>
+#include <stack>
 #include <vector>
 
+#include "base/lrucache.hpp"
 #include "listview_curses.hh"
 #include "log_data_helper.hh"
 #include "logfile_sub_source.hh"
@@ -95,6 +98,9 @@ public:
 
     std::stack<context> fos_contexts;
     logfile_sub_source& fos_lss;
+    uint32_t fos_index_generation{0};
+    cache::lru_cache<vis_line_t, std::optional<attr_line_t>> fos_anno_cache{
+        256};
     log_data_helper fos_log_helper;
     int fos_known_key_size{0};
     int fos_unknown_key_size{0};

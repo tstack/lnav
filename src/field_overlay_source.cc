@@ -526,29 +526,45 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
     if (!this->fos_contexts.empty()
         && this->fos_contexts.top().c_show_applicable_annotations)
     {
+        if (this->fos_index_generation != this->fos_lss.lss_index_generation) {
+            this->fos_anno_cache.clear();
+            this->fos_index_generation = this->fos_lss.lss_index_generation;
+        }
+
         auto file_and_line = this->fos_lss.find_line_with_file(row);
 
         if (file_and_line && !file_and_line->second->is_continued()) {
-            auto applicable_anno = lnav::log::annotate::applicable(row);
-            if (!applicable_anno.empty()
-                && (!line_meta_opt
-                    || line_meta_opt.value()->bm_annotations.la_pairs.empty()))
-            {
-                auto anno_msg
-                    = attr_line_t(" ")
-                          .append(":memo:"_emoji)
-                          .append(" Annotations available, ")
-                          .append(lv.get_selection() == row
-                                      ? "use "
-                                      : "focus on this line and use ")
-                          .append(":annotate"_quoted_code)
-                          .append(" to apply them")
-                          .append(lv.get_selection() == row ? " to this line"
-                                                            : "")
-                          .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT))
-                          .move();
+            auto get_res = this->fos_anno_cache.get(row);
+            if (get_res) {
+                auto anno_val = get_res.value();
+                if (anno_val) {
+                    dst.emplace_back(anno_val.value());
+                }
+            } else {
+                auto applicable_anno = lnav::log::annotate::applicable(row);
+                if (!applicable_anno.empty()
+                    && (!line_meta_opt
+                        || line_meta_opt.value()->bm_annotations.la_pairs.empty()))
+                {
+                    auto anno_msg
+                        = attr_line_t(" ")
+                              .append(":memo:"_emoji)
+                              .append(" Annotations available, ")
+                              .append(lv.get_selection() == row
+                                          ? "use "
+                                          : "focus on this line and use ")
+                              .append(":annotate"_quoted_code)
+                              .append(" to apply them")
+                              .append(lv.get_selection() == row ? " to this line"
+                                                                : "")
+                              .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT))
+                              .move();
 
-                dst.emplace_back(anno_msg);
+                    this->fos_anno_cache.put(row, anno_msg);
+                    dst.emplace_back(anno_msg);
+                } else {
+                    this->fos_anno_cache.put(row, std::nullopt);
+                }
             }
         }
     }
@@ -717,6 +733,7 @@ field_overlay_source::list_value_for_overlay(
     vis_line_t row,
     std::vector<attr_line_t>& value_out)
 {
+    // log_debug("value for overlay %d", row);
     if (row == lv.get_selection()) {
         this->build_field_lines(lv, row);
         value_out = this->fos_lines;

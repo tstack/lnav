@@ -306,32 +306,26 @@ listview_curses::handle_key(const ncinput& ch)
                 }
             }
 
-            auto rows_avail = this->rows_available(this->lv_top, RD_DOWN);
-            if (rows_avail == 0_vl) {
-                rows_avail = 2_vl;
-            } else if (rows_avail > 2_vl) {
-                rows_avail -= 1_vl;
-            }
-            auto top_for_last = this->get_top_for_last_row();
+            auto inner_height = this->get_inner_height();
+            if (this->lv_top + height * 2 > inner_height) {
+                // NB: getting the last row can read from the file, which can
+                // be expensive.  Use sparingly.
+                auto top_for_last = this->get_top_for_last_row();
 
-            if ((this->lv_top < top_for_last)
-                && (this->lv_top + rows_avail > top_for_last))
-            {
-                this->set_top(top_for_last);
-                if (this->lv_selection <= top_for_last) {
-                    this->set_selection(top_for_last + 1_vl);
-                }
-            } else if (this->lv_top > top_for_last) {
-                this->set_top(top_for_last);
-            } else {
-                this->shift_top(rows_avail);
-
-                auto inner_height = this->get_inner_height();
-                if (this->lv_selectable && this->lv_top >= top_for_last
-                    && inner_height > 0_vl)
-                {
+                if (this->lv_top + height > inner_height) {
                     this->set_selection(inner_height - 1_vl);
+                } else {
+                    this->set_top(top_for_last);
                 }
+            } else {
+                auto rows_avail = this->rows_available(this->lv_top, RD_DOWN);
+                if (rows_avail == 0_vl) {
+                    rows_avail = 2_vl;
+                } else if (rows_avail > 2_vl) {
+                    rows_avail -= 1_vl;
+                }
+
+                this->shift_top(rows_avail);
             }
             break;
         }

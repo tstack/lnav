@@ -346,7 +346,7 @@ filter_sub_source::text_value_for_line(textview_curses& tc,
         if (this->fss_editing && line == tc.get_selection()) {
             alb.appendf(FMT_STRING("{:>9}"), "-");
         } else {
-            alb.appendf(FMT_STRING("{:>9}"),
+            alb.appendf(FMT_STRING("{:>9L}"),
                         tss->get_filtered_count_for(tf->get_index()));
         }
     }
