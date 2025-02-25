@@ -1136,6 +1136,8 @@ line_buffer::load_next_line(file_range prev_line)
             auto buffer_offset = offset - this->lb_file_offset;
 
             if (this->lb_next_buffer_offset == buffer_offset) {
+                require(this->lb_next_line_start_index
+                        < this->lb_line_starts.size());
                 auto start_iter = this->lb_line_starts.begin()
                     + this->lb_next_line_start_index;
                 auto next_line_iter = start_iter + 1;
@@ -1165,7 +1167,7 @@ line_buffer::load_next_line(file_range prev_line)
                         lf = line_start + utf8_end;
 
                         this->lb_next_line_start_index = std::distance(
-                            this->lb_alt_line_starts.begin(), next_line_iter);
+                            this->lb_line_starts.begin(), next_line_iter);
                         this->lb_next_buffer_offset = *next_line_iter;
                     } else {
                         // log_debug("no next iter");
