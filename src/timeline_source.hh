@@ -30,7 +30,12 @@
 #ifndef lnav_timeline_source_hh
 #define lnav_timeline_source_hh
 
+#include <functional>
+#include <vector>
+
+#include "base/attr_line.hh"
 #include "base/map_util.hh"
+#include "base/progress.hh"
 #include "logfile_sub_source.hh"
 #include "plain_text_source.hh"
 #include "text_overlay_menu.hh"
@@ -91,7 +96,7 @@ public:
     std::optional<vis_line_t> row_for_time(struct timeval time_bucket) override;
     std::optional<row_info> time_for_row(vis_line_t row) override;
 
-    void rebuild_indexes();
+    bool rebuild_indexes();
 
     std::pair<timeval, timeval> get_time_bounds_for(int line);
 
@@ -176,13 +181,21 @@ public:
     timeline_opid_row_map gs_active_opids;
     timeline_desc_map gs_descriptions;
     std::vector<std::reference_wrapper<opid_row>> gs_time_order;
-    struct timeval gs_lower_bound{};
-    struct timeval gs_upper_bound{};
+    timeval gs_lower_bound{};
+    timeval gs_upper_bound{};
     size_t gs_filtered_count{0};
     std::array<size_t, logfile_filter_state::MAX_FILTERS> gs_filter_hits{};
     exec_context* gs_exec_context{nullptr};
     bool gs_preview_focused{false};
-    std::vector<text_time_translator::row_info> gs_preview_rows;
+    std::vector<row_info> gs_preview_rows;
+
+    struct progress_t {
+        size_t p_curr{0};
+        size_t p_total{0};
+    };
+
+    std::function<lnav::progress_result_t(std::optional<progress_t>)>
+        gs_index_progress;
 };
 
 class timeline_header_overlay : public text_overlay_menu {

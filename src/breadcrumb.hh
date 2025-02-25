@@ -30,7 +30,9 @@
 #ifndef lnav_breadcrumb_hh
 #define lnav_breadcrumb_hh
 
+#include <functional>
 #include <string>
+#include <vector>
 
 #include "base/attr_line.hh"
 #include "fmt/format.h"

@@ -31,8 +31,10 @@
 #define lnav_breadcrumb_curses_hh
 
 #include <functional>
+#include <optional>
 #include <vector>
 
+#include "breadcrumb.hh"
 #include "plain_text_source.hh"
 #include "textview_curses.hh"
 #include "view_curses.hh"
@@ -72,6 +74,9 @@ public:
     action on_focus{no_op_action};
     action on_blur{no_op_action};
 
+    std::function<void(breadcrumb::crumb::perform,
+                       const breadcrumb::crumb::key_t& key)>
+        bc_perform_handler;
 private:
     class search_overlay_source : public list_overlay_source {
     public:

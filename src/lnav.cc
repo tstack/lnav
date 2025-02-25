@@ -962,8 +962,9 @@ struct refresh_status_bars {
     using injectable
         = refresh_status_bars(std::shared_ptr<top_status_source> top_source);
 
-    void doit() const
+    lnav::progress_result_t doit() const
     {
+        auto retval = lnav::progress_result_t::ok;
         timeval current_time{};
         ncinput ch;
 
@@ -981,12 +982,18 @@ struct refresh_status_bars {
                 lnav_data.ld_key_repeat_history.update(ch.id, tc->get_top());
             };
 
+            if (ncinput_ctrl_p(&ch) && ch.id == ']') {
+                lnav_data.ld_bottom_source.update_loading(0, 0);
+                retval = lnav::progress_result_t::interrupt;
+            }
+
             ncinput_free_paste_content(&ch);
 
             if (!lnav_data.ld_looping) {
                 // No reason to keep processing input after the
                 // user has quit.  The view stack will also be
                 // empty, which will cause issues.
+                retval = lnav::progress_result_t::interrupt;
                 break;
             }
         }
@@ -1002,6 +1009,8 @@ struct refresh_status_bars {
         }
 
         notcurses_render(this->rsb_screen->get_notcurses());
+
+        return retval;
     }
 
     screen_curses* rsb_screen;
@@ -1419,6 +1428,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     breadcrumb_view->set_y(1);
     breadcrumb_view->set_window(lnav_data.ld_window);
     breadcrumb_view->set_line_source(lnav_crumb_source);
+    breadcrumb_view->bc_perform_handler =
+        [](breadcrumb::crumb::perform p, const breadcrumb::crumb::key_t& key) {
+            isc::to<main_looper&, services::main_t>().send(
+                [p, key](auto& mlooper) { p(key); });
+        };
     auto event_handler = [](auto&& tc) {
         auto top_view = lnav_data.ld_view_stack.top();
 
@@ -1631,6 +1645,21 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
     auto refresh_guard = lnav_data.ld_status_refresher.install(
         [refresher]() { refresher->doit(); });
+
+    {
+        auto* tss = static_cast<timeline_source*>(
+            lnav_data.ld_views[LNV_TIMELINE].get_sub_source());
+        tss->gs_index_progress
+            = [refresher](std::optional<timeline_source::progress_t> prog) {
+                  if (prog) {
+                      lnav_data.ld_bottom_source.update_loading(prog->p_curr,
+                                                                prog->p_total);
+                  } else {
+                      lnav_data.ld_bottom_source.update_loading(0, 0);
+                  }
+                  return refresher->doit();
+              };
+    }
 
     auto& timer = ui_periodic_timer::singleton();
     struct timeval current_time;

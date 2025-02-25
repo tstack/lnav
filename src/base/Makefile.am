@@ -66,6 +66,7 @@ noinst_HEADERS = \
     opt_util.hh \
     paths.hh \
     piper.file.hh \
+    progress.hh \
     result.h \
     snippet_highlighters.hh \
     string_attr_type.hh \

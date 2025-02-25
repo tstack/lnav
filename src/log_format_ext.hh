@@ -445,6 +445,10 @@ public:
     logline_value_meta get_value_meta(intern_string_t field_name,
                                       value_kind_t kind);
 
+    logline_value_meta get_value_meta(yajlpp_parse_context* ypc,
+                                      const value_def* vd,
+                                      value_kind_t kind);
+
     std::vector<lnav::console::snippet> get_snippets() const;
 
     bool jlf_hide_extra{false};

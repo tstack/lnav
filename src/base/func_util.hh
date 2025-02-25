@@ -65,8 +65,7 @@ struct noop_func {
     }
 };
 
-namespace lnav {
-namespace func {
+namespace lnav::func {
 
 class scoped_cb {
 public:
@@ -105,7 +104,7 @@ public:
         return guard{this};
     }
 
-    void operator()()
+    void operator()() const
     {
         if (s_callback) {
             s_callback();
@@ -153,7 +152,6 @@ struct is_invocable {
     static constexpr bool value = decltype(test<F, Args...>(0))::value;
 };
 
-}  // namespace func
-}  // namespace lnav
+}  // namespace lnav::func
 
 #endif

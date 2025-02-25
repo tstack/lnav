@@ -353,8 +353,7 @@ breadcrumb_curses::handle_key(const ncinput& ch)
 }
 
 void
-breadcrumb_curses::perform_selection(
-    breadcrumb_curses::perform_behavior_t behavior)
+breadcrumb_curses::perform_selection(perform_behavior_t behavior)
 {
     if (!this->bc_selected_crumb) {
         return;
@@ -379,7 +378,9 @@ breadcrumb_curses::perform_selection(
             case perform_behavior_t::always:
                 break;
         }
-        selected_crumb_ref.c_performer(new_value);
+        if (this->bc_perform_handler) {
+            this->bc_perform_handler(selected_crumb_ref.c_performer, new_value);
+        }
     } else if (!this->bc_current_search.empty()) {
         switch (selected_crumb_ref.c_expected_input) {
             case breadcrumb::crumb::expected_input_t::exact:
@@ -395,7 +396,10 @@ breadcrumb_curses::perform_selection(
                 break;
             }
             case breadcrumb::crumb::expected_input_t::anything:
-                selected_crumb_ref.c_performer(this->bc_current_search);
+                if (this->bc_perform_handler) {
+                    this->bc_perform_handler(selected_crumb_ref.c_performer,
+                                             this->bc_current_search);
+                }
                 break;
         }
     }

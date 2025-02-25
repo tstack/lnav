@@ -1160,7 +1160,7 @@ json_array_end(void* ctx)
     return 1;
 }
 
-static const struct json_path_container json_log_handlers = {
+static const json_path_container json_log_handlers = {
     yajlpp::pattern_property_handler("\\w+")
         .add_cb(read_json_null)
         .add_cb(read_json_bool)
@@ -1176,14 +1176,14 @@ static int rewrite_json_field(yajlpp_parse_context* ypc,
 static int
 rewrite_json_null(yajlpp_parse_context* ypc)
 {
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path();
+    auto jlu = (json_log_userdata*) ypc->ypc_userdata;
+    const auto* vd = jlu->get_field_def(ypc);
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+    if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
     }
     jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-        jlu->jlu_format->get_value_meta(field_name, value_kind_t::VALUE_NULL));
+        jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_NULL));
 
     return 1;
 }
@@ -1191,15 +1191,14 @@ rewrite_json_null(yajlpp_parse_context* ypc)
 static int
 rewrite_json_bool(yajlpp_parse_context* ypc, int val)
 {
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path();
+    auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
+    const auto* vd = jlu->get_field_def(ypc);
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+    if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
     }
     jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-        jlu->jlu_format->get_value_meta(field_name,
-                                        value_kind_t::VALUE_BOOLEAN),
+        jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_BOOLEAN),
         (bool) val);
     return 1;
 }
@@ -1207,51 +1206,54 @@ rewrite_json_bool(yajlpp_parse_context* ypc, int val)
 static int
 rewrite_json_int(yajlpp_parse_context* ypc, long long val)
 {
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path();
+    auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
+    const auto* vd = jlu->get_field_def(ypc);
 
-    if (jlu->jlu_format->lf_timestamp_field == field_name) {
-        long long divisor = jlu->jlu_format->elf_timestamp_divisor;
-        struct timeval tv;
+    if (vd != nullptr) {
+        const intern_string_t field_name = vd->vd_meta.lvm_name;
+        if (jlu->jlu_format->lf_timestamp_field == field_name) {
+            long long divisor = jlu->jlu_format->elf_timestamp_divisor;
+            timeval tv;
 
-        tv.tv_sec = val / divisor;
-        tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
-        jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec, jlu->jlu_exttm);
-        jlu->jlu_exttm.et_gmtoff
-            = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
-        jlu->jlu_exttm.et_flags |= ETF_MACHINE_ORIENTED | ETF_SUB_NOT_IN_FORMAT
-            | ETF_ZONE_SET | ETF_Z_FOR_UTC;
-        if (divisor == 1) {
-            jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
-        } else {
-            jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
-        }
-        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
-    } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
-        jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
-        switch (jlu->jlu_format->lf_subsecond_unit.value()) {
-            case log_format::subsecond_unit::milli:
-                jlu->jlu_exttm.et_nsec = val * 1000000;
-                jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
-                break;
-            case log_format::subsecond_unit::micro:
-                jlu->jlu_exttm.et_nsec = val * 1000;
+            tv.tv_sec = val / divisor;
+            tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
+            jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec,
+                                                       jlu->jlu_exttm);
+            jlu->jlu_exttm.et_gmtoff
+                = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
+            jlu->jlu_exttm.et_flags |= ETF_MACHINE_ORIENTED
+                | ETF_SUB_NOT_IN_FORMAT | ETF_ZONE_SET | ETF_Z_FOR_UTC;
+            if (divisor == 1) {
                 jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
-                break;
-            case log_format::subsecond_unit::nano:
-                jlu->jlu_exttm.et_nsec = val;
-                jlu->jlu_exttm.et_flags |= ETF_NANOS_SET;
-                break;
+            } else {
+                jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
+            }
+            jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
+            jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
+            switch (jlu->jlu_format->lf_subsecond_unit.value()) {
+                case log_format::subsecond_unit::milli:
+                    jlu->jlu_exttm.et_nsec = val * 1000000;
+                    jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
+                    break;
+                case log_format::subsecond_unit::micro:
+                    jlu->jlu_exttm.et_nsec = val * 1000;
+                    jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
+                    break;
+                case log_format::subsecond_unit::nano:
+                    jlu->jlu_exttm.et_nsec = val;
+                    jlu->jlu_exttm.et_flags |= ETF_NANOS_SET;
+                    break;
+            }
+            jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
         }
-        jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
     }
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+    if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
     }
     jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-        jlu->jlu_format->get_value_meta(field_name,
-                                        value_kind_t::VALUE_INTEGER),
+        jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_INTEGER),
         (int64_t) val);
     return 1;
 }
@@ -1259,50 +1261,54 @@ rewrite_json_int(yajlpp_parse_context* ypc, long long val)
 static int
 rewrite_json_double(yajlpp_parse_context* ypc, double val)
 {
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
-    const intern_string_t field_name = ypc->get_path();
+    auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
+    const auto* vd = jlu->get_field_def(ypc);
 
-    if (jlu->jlu_format->lf_timestamp_field == field_name) {
-        long long divisor = jlu->jlu_format->elf_timestamp_divisor;
-        struct timeval tv;
+    if (vd != nullptr) {
+        const intern_string_t field_name = vd->vd_meta.lvm_name;
+        if (jlu->jlu_format->lf_timestamp_field == field_name) {
+            long long divisor = jlu->jlu_format->elf_timestamp_divisor;
+            timeval tv;
 
-        tv.tv_sec = val / divisor;
-        tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
-        jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec, jlu->jlu_exttm);
-        jlu->jlu_exttm.et_gmtoff
-            = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
-        jlu->jlu_exttm.et_flags |= ETF_MACHINE_ORIENTED | ETF_SUB_NOT_IN_FORMAT
-            | ETF_ZONE_SET | ETF_Z_FOR_UTC;
-        if (divisor == 1) {
-            jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
-        } else {
-            jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
-        }
-        jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
-    } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
-        jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
-        switch (jlu->jlu_format->lf_subsecond_unit.value()) {
-            case log_format::subsecond_unit::milli:
-                jlu->jlu_exttm.et_nsec = val * 1000000;
-                jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
-                break;
-            case log_format::subsecond_unit::micro:
-                jlu->jlu_exttm.et_nsec = val * 1000;
+            tv.tv_sec = val / divisor;
+            tv.tv_usec = fmod(val, divisor) * (1000000.0 / divisor);
+            jlu->jlu_format->lf_date_time.to_localtime(tv.tv_sec,
+                                                       jlu->jlu_exttm);
+            jlu->jlu_exttm.et_gmtoff
+                = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
+            jlu->jlu_exttm.et_flags |= ETF_MACHINE_ORIENTED
+                | ETF_SUB_NOT_IN_FORMAT | ETF_ZONE_SET | ETF_Z_FOR_UTC;
+            if (divisor == 1) {
                 jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
-                break;
-            case log_format::subsecond_unit::nano:
-                jlu->jlu_exttm.et_nsec = val;
-                jlu->jlu_exttm.et_flags |= ETF_NANOS_SET;
-                break;
+            } else {
+                jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
+            }
+            jlu->jlu_exttm.et_nsec = tv.tv_usec * 1000;
+        } else if (jlu->jlu_format->lf_subsecond_field == field_name) {
+            jlu->jlu_exttm.et_flags &= ~(ETF_MICROS_SET | ETF_MILLIS_SET);
+            switch (jlu->jlu_format->lf_subsecond_unit.value()) {
+                case log_format::subsecond_unit::milli:
+                    jlu->jlu_exttm.et_nsec = val * 1000000;
+                    jlu->jlu_exttm.et_flags |= ETF_MILLIS_SET;
+                    break;
+                case log_format::subsecond_unit::micro:
+                    jlu->jlu_exttm.et_nsec = val * 1000;
+                    jlu->jlu_exttm.et_flags |= ETF_MICROS_SET;
+                    break;
+                case log_format::subsecond_unit::nano:
+                    jlu->jlu_exttm.et_nsec = val;
+                    jlu->jlu_exttm.et_flags |= ETF_NANOS_SET;
+                    break;
+            }
+            jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
         }
-        jlu->jlu_exttm.et_flags |= ETF_SUB_NOT_IN_FORMAT;
     }
 
-    if (!ypc->is_level(1) && !jlu->jlu_format->has_value_def(field_name)) {
+    if (!ypc->is_level(1) && vd == nullptr) {
         return 1;
     }
     jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-        jlu->jlu_format->get_value_meta(field_name, value_kind_t::VALUE_FLOAT),
+        jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_FLOAT),
         val);
 
     return 1;
@@ -2219,7 +2225,8 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_opid_frag = opid_iter->first;
         }
     }
-    if (jlu->jlu_format->elf_subid_field == field_name) {
+    if (!jlu->jlu_format->elf_subid_field.empty() &&
+        jlu->jlu_format->elf_subid_field == field_name) {
         jlu->jlu_subid = frag.to_string();
     }
 
@@ -2241,10 +2248,13 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                    yajl_string_props_t* props)
 {
     static const intern_string_t body_name = intern_string::lookup("body", -1);
-    json_log_userdata* jlu = (json_log_userdata*) ypc->ypc_userdata;
+    auto* jlu = (json_log_userdata*) ypc->ypc_userdata;
     intern_string_t field_name;
     const auto* vd = jlu->get_field_def(ypc);
 
+    if (!ypc->is_level(1) && vd == nullptr) {
+        return 1;
+    }
     if (vd != nullptr) {
         field_name = vd->vd_meta.lvm_name;
     } else {
@@ -2319,9 +2329,6 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                     str_offset,
                     str_offset + len));
         }
-        if (!ypc->is_level(1) && vd == nullptr) {
-            return 1;
-        }
 
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
@@ -2338,13 +2345,9 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                                    jlu->jlu_format),
                 std::string{(const char*) str, len});
         }
-        if (!ypc->is_level(1) && vd == nullptr) {
-            return 1;
-        }
 
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
-            jlu->jlu_format->get_value_meta(field_name,
-                                            value_kind_t::VALUE_TEXT),
+            jlu->jlu_format->get_value_meta(ypc, vd, value_kind_t::VALUE_TEXT),
             std::string{(const char*) str, len});
     }
 
@@ -4470,6 +4473,25 @@ external_log_format::get_value_meta(intern_string_t field_name,
     }
 
     auto lvm = iter->second->vd_meta;
+
+    lvm.lvm_kind = kind;
+    return lvm;
+}
+
+logline_value_meta
+external_log_format::get_value_meta(yajlpp_parse_context* ypc,
+                                    const value_def* vd,
+                                    value_kind_t kind)
+{
+    if (vd == nullptr) {
+        auto retval = logline_value_meta(
+            ypc->get_path(), kind, logline_value_meta::external_column{}, this);
+
+        retval.lvm_hidden = this->jlf_hide_extra;
+        return retval;
+    }
+
+    auto lvm = vd->vd_meta;
 
     lvm.lvm_kind = kind;
     return lvm;

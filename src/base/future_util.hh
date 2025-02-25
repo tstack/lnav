@@ -33,8 +33,9 @@
 #include <deque>
 #include <future>
 
-namespace lnav {
-namespace futures {
+#include "progress.hh"
+
+namespace lnav::futures {
 
 /**
  * Create a future that is ready to immediately return a result.
@@ -61,18 +62,13 @@ make_ready_future(T&& t)
 template<typename T>
 class future_queue {
 public:
-    enum class processor_result_t {
-        ok,
-        interrupt,
-    };
-
     /**
      * @param processor The function to execute with the result of a future.
      * @param max_queue_size The maximum number of futures that can be in
      * flight.
      */
     explicit future_queue(
-        std::function<processor_result_t(std::future<T>&)> processor,
+        std::function<lnav::progress_result_t(std::future<T>&)> processor,
         size_t max_queue_size = 8)
         : fq_processor(std::move(processor)), fq_max_queue_size(max_queue_size)
     {
@@ -90,7 +86,7 @@ public:
      *
      * @param f The future to add to the queue.
      */
-    processor_result_t push_back(std::future<T>&& f)
+    lnav::progress_result_t push_back(std::future<T>&& f)
     {
         this->fq_deque.emplace_back(std::move(f));
         return this->pop_to(this->fq_max_queue_size);
@@ -102,27 +98,26 @@ public:
      *
      * @param size The new desired size of the queue.
      */
-    processor_result_t pop_to(size_t size = 0)
+    lnav::progress_result_t pop_to(size_t size = 0)
     {
-        processor_result_t retval = processor_result_t::ok;
+        lnav::progress_result_t retval = lnav::progress_result_t::ok;
 
         while (this->fq_deque.size() > size) {
             if (this->fq_processor(this->fq_deque.front())
-                == processor_result_t::interrupt)
+                == lnav::progress_result_t::interrupt)
             {
-                retval = processor_result_t::interrupt;
+                retval = lnav::progress_result_t::interrupt;
             }
             this->fq_deque.pop_front();
         }
         return retval;
     }
 
-    std::function<processor_result_t(std::future<T>&)> fq_processor;
+    std::function<lnav::progress_result_t(std::future<T>&)> fq_processor;
     std::deque<std::future<T>> fq_deque;
     size_t fq_max_queue_size;
 };
 
-}  // namespace futures
-}  // namespace lnav
+}  // namespace lnav::futures
 
 #endif

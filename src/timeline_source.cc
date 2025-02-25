@@ -35,10 +35,12 @@
 
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
+#include "base/itertools.enumerate.hh"
 #include "base/itertools.hh"
 #include "base/keycodes.hh"
 #include "base/math_util.hh"
 #include "command_executor.hh"
+#include "crashd.client.hh"
 #include "intervaltree/IntervalTree.h"
 #include "lnav_util.hh"
 #include "md4cpp.hh"
@@ -629,7 +631,7 @@ timeline_source::text_size_for_line(textview_curses& tc,
     return this->gs_total_width;
 }
 
-void
+bool
 timeline_source::rebuild_indexes()
 {
     auto& bm = this->tss_view->get_bookmarks();
@@ -656,7 +658,7 @@ timeline_source::rebuild_indexes()
     auto max_log_time_opt = this->get_max_row_time();
     auto max_desc_width = size_t{0};
 
-    for (const auto& ld : this->gs_lss) {
+    for (const auto& [index, ld] : lnav::itertools::enumerate(this->gs_lss)) {
         if (ld->get_file_ptr() == nullptr) {
             continue;
         }
@@ -664,6 +666,7 @@ timeline_source::rebuild_indexes()
             continue;
         }
 
+        ld->get_file_ptr()->enable_cache();
         auto format = ld->get_file_ptr()->get_format();
         safe::ReadAccess<logfile::safe_opid_state> r_opid_map(
             ld->get_file_ptr()->get_opids());
@@ -737,6 +740,20 @@ timeline_source::rebuild_indexes()
             }
             active_iter->second.or_value.otr_description.lod_elements.clear();
         }
+
+        if (this->gs_index_progress) {
+            switch (this->gs_index_progress(
+                progress_t{index, this->gs_lss.file_count()}))
+            {
+                case lnav::progress_result_t::ok:
+                    break;
+                case lnav::progress_result_t::interrupt:
+                    return false;
+            }
+        }
+    }
+    if (this->gs_index_progress) {
+        this->gs_index_progress(std::nullopt);
     }
 
     size_t filtered_in_count = 0;
@@ -857,6 +874,8 @@ timeline_source::rebuild_indexes()
                            1 + 16 + 5 + 8 + 5 + 16 + 1 /* header */);
 
     this->tss_view->set_needs_update();
+
+    return true;
 }
 
 std::optional<vis_line_t>

@@ -154,16 +154,19 @@ open_schema_view()
     schema_tc->redo_search();
 }
 
-static void
+static bool
 open_timeline_view()
 {
     auto* timeline_tc = &lnav_data.ld_views[LNV_TIMELINE];
     auto* timeline_src
         = dynamic_cast<timeline_source*>(timeline_tc->get_sub_source());
 
-    timeline_src->rebuild_indexes();
+    if (!timeline_src->rebuild_indexes()) {
+        return false;
+    }
     timeline_tc->reload_data();
     timeline_tc->redo_search();
+    return true;
 }
 
 class pretty_sub_source : public plain_text_source {
@@ -1170,7 +1173,12 @@ toggle_view(textview_curses* toggle_tc)
         } else if (toggle_tc == &lnav_data.ld_views[LNV_PRETTY]) {
             open_pretty_view();
         } else if (toggle_tc == &lnav_data.ld_views[LNV_TIMELINE]) {
-            open_timeline_view();
+            if (!open_timeline_view()) {
+                auto al = attr_line_t().append(
+                    "interrupted while opening timeline view"_warning);
+                lnav::prompt::get().p_editor.set_inactive_value(al);
+                return false;
+            }
         } else if (toggle_tc == &lnav_data.ld_views[LNV_HISTOGRAM]) {
             // Rebuild to reflect changes in marks.
             rebuild_hist();

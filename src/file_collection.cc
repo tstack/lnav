@@ -80,8 +80,7 @@ child_poller::poll(file_collection& fc)
         });
 }
 
-file_collection::limits_t::
-limits_t()
+file_collection::limits_t::limits_t()
 {
     static constexpr rlim_t RESERVED_FDS = 32;
 
@@ -756,8 +755,7 @@ file_collection::expand_filename(
                 if (future_opt) {
                     auto fut = std::move(future_opt.value());
                     if (fq.push_back(std::move(fut))
-                        == lnav::futures::future_queue<
-                            file_collection>::processor_result_t::interrupt)
+                        == lnav::progress_result_t::interrupt)
                     {
                         break;
                     }
@@ -788,11 +786,9 @@ file_collection::rescan_files(bool required)
                 && this->fc_files.size() + retval.fc_files.size()
                     < get_limits().l_open_files)
             {
-                return lnav::futures::future_queue<
-                    file_collection>::processor_result_t::ok;
+                return lnav::progress_result_t::ok;
             }
-            return lnav::futures::future_queue<
-                file_collection>::processor_result_t::interrupt;
+            return lnav::progress_result_t::interrupt;
         });
 
     for (auto& pair : this->fc_file_names) {

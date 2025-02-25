@@ -45,6 +45,7 @@
 #include "archive_manager.hh"
 #include "base/auto_pid.hh"
 #include "base/future_util.hh"
+#include "base/string_util.hh"
 #include "file_format.hh"
 #include "logfile_fwd.hh"
 #include "safe/safe.h"
@@ -152,7 +153,7 @@ struct file_collection {
 
     std::shared_ptr<safe_name_to_errors> fc_name_to_errors{
         std::make_shared<safe_name_to_errors>()};
-    std::map<std::string, logfile_open_options> fc_file_names;
+    std::map<std::string, logfile_open_options, strnatless> fc_file_names;
     std::vector<std::shared_ptr<logfile>> fc_files;
     int fc_files_generation{0};
     std::vector<std::pair<std::shared_ptr<logfile>, std::string>>
