@@ -161,19 +161,23 @@ INSERT INTO lnav_history
     VALUES (?, ?, ?, ?, ?, ?)
 )";
 
+static const auto DEFAULT_SESSION_ID = std::string("-");
+
 history::op_guard::~op_guard()
 {
-    if (!this->og_guard_helper || this->og_context.empty()
-        || lnav_data.ld_session_id.empty())
-    {
+    if (!this->og_guard_helper || this->og_context.empty()) {
         return;
     }
+
+    const auto& session_id = lnav_data.ld_session_id.empty()
+        ? DEFAULT_SESSION_ID
+        : lnav_data.ld_session_id.begin()->first;
 
     auto now = std::chrono::system_clock::now();
     auto prep_res = prepare_stmt(get_db().in(),
                                  INSERT_OP,
                                  this->og_context,
-                                 lnav_data.ld_session_id.begin()->first,
+                                 session_id,
                                  this->og_start_time,
                                  now,
                                  this->og_content,
@@ -210,16 +214,15 @@ INSERT INTO lnav_history (context, session_id, create_time_us, content)
 void
 history::insert_plain_content(string_fragment content)
 {
-    if (lnav_data.ld_session_id.empty()) {
-        log_warning("no session, not saving history");
-        return;
-    }
+    const auto& session_id = lnav_data.ld_session_id.empty()
+        ? DEFAULT_SESSION_ID
+        : lnav_data.ld_session_id.begin()->first;
 
     auto now = std::chrono::system_clock::now();
     auto stmt_res = prepare_stmt(get_db().in(),
                                  INSERT_PLAIN,
                                  this->h_context,
-                                 lnav_data.ld_session_id.begin()->first,
+                                 session_id,
                                  now,
                                  content);
     if (stmt_res.isErr()) {
@@ -237,18 +240,21 @@ history::insert_plain_content(string_fragment content)
 }
 
 constexpr auto FUZZY_QUERY = R"(
-SELECT
-    session_id,
-    max(create_time_us) as max_create_time,
-    NULL,
-    content,
-    status
-  FROM lnav_history
-  WHERE
-    context = ?1 AND fuzzy_match(?2, content) IS NOT NULL
-  GROUP BY content
-  ORDER BY fuzzy_match(?2, content), max_create_time DESC
-  LIMIT 50
+SELECT * FROM (
+  SELECT
+      session_id,
+      max(create_time_us) as max_create_time,
+      NULL,
+      content,
+      status
+    FROM lnav_history
+    WHERE
+      context = ?1 AND fuzzy_match(?2, content) > 0
+    GROUP BY content
+    ORDER BY fuzzy_match(?2, content) DESC
+    LIMIT 50
+)
+ORDER BY max_create_time DESC
 )";
 
 void
