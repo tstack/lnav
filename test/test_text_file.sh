@@ -149,3 +149,5 @@ run_cap_test ${lnav_test} -nN \
 
 run_cap_test ${lnav_test} -n \
     ${top_srcdir}/src/scripts/lnav-pop-view.lnav
+
+run_cap_test ${lnav_test} -n ${test_dir}/textfile_ctrl.0

@@ -318,10 +318,19 @@ view_curses::mvwattrline(ncplane* window,
                 break;
 
             default: {
+                if (ch <= 0x1f) {
+                    expanded_line.push_back(0xe2);
+                    expanded_line.push_back(0x90);
+                    expanded_line.push_back(0x80 + ch);
+                    char_index += 1;
+                    lpc += 1;
+                    break;
+                }
+
                 auto exp_read_start = expanded_line.size();
                 auto lpc_start = lpc;
                 auto read_res
-                    = ww898::utf::utf8::read([&line, &expanded_line, &lpc]() {
+                    = ww898::utf::utf8::read([&line, &expanded_line, &lpc] {
                           auto ch = line[lpc++];
                           expanded_line.push_back(ch);
                           return ch;

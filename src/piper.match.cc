@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2024, Timothy Stack
+ * Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -31,8 +31,8 @@
 
 #include "base/injector.hh"
 #include "base/snippet_highlighters.hh"
-#include "readline_highlighters.hh"
 #include "piper.looper.cfg.hh"
+#include "readline_highlighters.hh"
 
 using namespace lnav::roles::literals;
 
@@ -176,4 +176,4 @@ multiplex_matcher::match(const string_fragment& line)
     return partial{};
 }
 
-}
+}  // namespace lnav::piper

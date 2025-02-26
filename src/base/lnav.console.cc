@@ -686,9 +686,19 @@ println(FILE* file, const attr_line_t& al)
                     case '\x07':
                         sub.append("\U0001F514");
                         break;
+                    case '\t':
+                    case '\n':
+                        sub.push_back(ch);
+                        break;
 
                     default:
-                        sub.append(&str[cp_start], lpc - cp_start);
+                        if (ch <= 0x1f) {
+                            sub.push_back(0xe2);
+                            sub.push_back(0x90);
+                            sub.push_back(0x80 + ch);
+                        } else {
+                            sub.append(&str[cp_start], lpc - cp_start);
+                        }
                         break;
                 }
             }
