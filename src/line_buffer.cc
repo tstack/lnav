@@ -95,7 +95,7 @@ class lock_hack {
 public:
     class guard {
     public:
-        guard() : g_lock(lock_hack::singleton()) { this->g_lock.lock(); }
+        guard() : g_lock(singleton()) { this->g_lock.lock(); }
 
         ~guard() { this->g_lock.unlock(); }
 

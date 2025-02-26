@@ -133,6 +133,11 @@ public:
         return this->lf_filename;
     }
 
+    std::filesystem::path get_path_for_key() const
+    {
+        return this->lf_actual_path.value_or(this->lf_filename);
+    }
+
     /** @return The filename as given in the constructor, excluding the path
      * prefix. */
     const std::string& get_basename() const { return this->lf_basename; }
@@ -260,12 +265,17 @@ public:
 
     Result<shared_buffer_ref, std::string> read_line(iterator ll);
 
+    enum class read_format_t {
+        plain,
+        with_framing,
+    };
+
     struct read_file_result {
         file_range rfr_range;
         std::string rfr_content;
     };
 
-    Result<read_file_result, std::string> read_file();
+    Result<read_file_result, std::string> read_file(read_format_t format);
 
     Result<shared_buffer_ref, std::string> read_range(const file_range& fr);
 

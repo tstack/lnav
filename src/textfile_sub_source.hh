@@ -31,8 +31,12 @@
 #define textfile_sub_source_hh
 
 #include <deque>
+#include <memory>
 #include <unordered_map>
 
+#include "base/attr_line.hh"
+#include "base/file_range.hh"
+#include "document.sections.hh"
 #include "filter_observer.hh"
 #include "logfile.hh"
 #include "plain_text_source.hh"
@@ -215,26 +219,26 @@ private:
         std::shared_ptr<logfile> fvs_file;
         vis_line_t fvs_top{0};
         vis_line_t fvs_selection{0};
-    };
 
-    struct rendered_file {
-        time_t rf_mtime;
-        file_off_t rf_file_indexed_size;
-        file_ssize_t rf_file_size;
-        std::unique_ptr<plain_text_source> rf_text_source;
-    };
-
-    struct metadata_state {
-        time_t ms_mtime;
-        file_ssize_t ms_file_size;
-        lnav::document::metadata ms_metadata;
+        time_t fvs_mtime;
+        file_ssize_t fvs_file_size;
+        file_off_t fvs_file_indexed_size;
+        std::string fvs_error;
+        std::unique_ptr<plain_text_source> fvs_text_source;
+        lnav::document::metadata fvs_metadata;
     };
 
     using file_iterator = std::deque<file_view_state>::iterator;
+    using const_file_iterator = std::deque<file_view_state>::const_iterator;
+
+    file_iterator current_file_state() { return this->tss_files.begin(); }
+
+    const_file_iterator current_file_state() const
+    {
+        return this->tss_files.cbegin();
+    }
 
     std::deque<file_view_state> tss_files;
-    std::unordered_map<std::string, rendered_file> tss_rendered_files;
-    std::unordered_map<std::string, metadata_state> tss_doc_metadata;
     size_t tss_line_indent_size{0};
     bool tss_completed_last_scan{true};
     attr_line_t tss_hex_line;
