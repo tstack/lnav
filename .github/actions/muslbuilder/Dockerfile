@@ -145,7 +145,7 @@ RUN curl -sSL https://curl.se/download/curl-8.10.1.tar.gz | tar xvzC /extract/ &
     make install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://www.sqlite.org/2024/sqlite-autoconf-3470000.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://www.sqlite.org/2025/sqlite-autoconf-3490100.tar.gz | tar xvzC /extract/ && \
     cd /extract/sqlite-* && \
     ./configure --disable-editline \
         --disable-shared \
