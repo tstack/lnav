@@ -151,3 +151,19 @@ run_cap_test ${lnav_test} -n \
     ${top_srcdir}/src/scripts/lnav-pop-view.lnav
 
 run_cap_test ${lnav_test} -n ${test_dir}/textfile_ctrl.0
+
+
+#####
+
+export HOME="./cfg/rotate-test-config"
+export XDG_CONFIG_HOME="./cfg/rotate-test-config/.config"
+rm -rf ./cfg/rotate-test-config
+mkdir -p $HOME/.config
+
+run_cap_test ${lnav_test} -nN -c ':config /tuning/piper/max-size 128'
+
+cat ${test_dir}/textfile_plain.0 | \
+  run_cap_test ${lnav_test} -n -d /tmp/lnav-text.err \
+    -c ';SELECT filepath FROM lnav_file'
+
+#####

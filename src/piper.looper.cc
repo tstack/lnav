@@ -577,17 +577,20 @@ looper::loop()
                     }
 
                     os.os_fd = create_res.unwrap();
-                    rotate_count += 1;
 
                     auto hdr = header{
                         current_timeval(),
-                        this->l_name,
+                        rotate_count == 0 ? this->l_name
+                                          : fmt::format(FMT_STRING("{}.{}"),
+                                                        this->l_name,
+                                                        rotate_count),
                         this->l_cwd,
                         this->l_env,
                         "",
                         line_muxid_sf.to_string(),
                         demux_output,
                     };
+                    rotate_count += 1;
                     hdr.h_demux_output = demux_output;
                     if (!line_muxid_sf.empty()) {
                         hdr.h_name = fmt::format(

@@ -5,6 +5,11 @@ Interface changes:
 * Pressing `F1` in the prompt will show the help text for the
   prompt itself.
   The size of the prompt panel is expanded for readability.
+* When reading from stdin, the files used to store the content
+  will be rotated when they cross the `/tuning/piper/max-size`
+  threshold.
+  Previously, the name of the file in the TEXT view would just
+  be "stdin", but now it includes the rotation number.
 
 Features:
 * The `:comment` command will now switch the prompt to multi-line
