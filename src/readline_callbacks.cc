@@ -522,7 +522,10 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                             arg_res.aar_element.se_origin.to_string());
                         rc.open_popup_for_completion(left, poss);
                         rc.tc_popup.set_title(arg_res.aar_help->ht_name);
-                    } else if (is_req || arg_res.aar_required) {
+                    } else if (is_req || arg_res.aar_required
+                               || rc.tc_popup_type
+                                   != textinput_curses::popup_type_t::none)
+                    {
                         auto poss = prompt.get_cmd_parameter_completion(
                             *tc,
                             arg_res.aar_help,
