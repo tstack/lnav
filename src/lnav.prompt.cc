@@ -54,6 +54,8 @@
 #include "sql_help.hh"
 #include "sql_util.hh"
 
+using namespace lnav::roles::literals;
+
 extern char** environ;
 
 namespace lnav {
@@ -974,19 +976,25 @@ prompt::rl_external_edit(textinput_curses& tc)
         return;
     }
 
+    tc.abort();
+
     auto open_res = lnav::external_editor::open(dst);
     if (open_res.isErr()) {
         auto errmsg = open_res.unwrapErr();
-
-        log_error("external editor failed: %s", errmsg.c_str());
-        tc.tc_notice = textinput_curses::notice_t::external_edit_failed;
+        auto um = lnav::console::user_message::info(
+            attr_line_t("prompt content saved to ")
+                .append_quoted(lnav::roles::file(dst))
+                .append(" (")
+                .append("failed to open external editor"_warning)
+                .append(" -- ")
+                .append(errmsg)
+                .append(")"));
+        tc.tc_inactive_value = um.to_attr_line();
         return;
     }
 
-    tc.abort();
-
     auto um = lnav::console::user_message::info(
-        "content transferred to external editor");
+        "prompt content transferred to external editor");
     tc.tc_inactive_value = um.to_attr_line();
 }
 
