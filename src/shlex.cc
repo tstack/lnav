@@ -340,7 +340,7 @@ shlex::eval(std::string& result, const scoped_resolver& vars)
     return true;
 }
 
-Result<std::vector<shlex::split_element_t>, shlex::tokenize_error_t>
+Result<std::vector<shlex::split_element_t>, shlex::split_error_t>
 shlex::split(const scoped_resolver& vars)
 {
     std::vector<split_element_t> retval;
@@ -355,7 +355,19 @@ shlex::split(const scoped_resolver& vars)
         return Ok(retval);
     }
     while (!done) {
-        auto tokenize_res = TRY(this->tokenize());
+        auto tokenize_res0 = this->tokenize();
+        if (tokenize_res0.isErr()) {
+            auto te = tokenize_res0.unwrapErr();
+            if (!retval.empty()) {
+                retval.back().se_origin.sf_end = te.te_source.sf_end;
+                retval.back().se_value.append(&this->s_str[last_index]);
+            }
+            return Err(split_error_t{
+                std::move(retval),
+                tokenize_res0.unwrapErr(),
+            });
+        }
+        auto tokenize_res = tokenize_res0.unwrap();
 
         if (start_new) {
             if (last_index < this->s_len) {

@@ -31,6 +31,7 @@
 
 #include "tailer.looper.hh"
 
+#include "base/auto_pid.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/lnav_log.hh"

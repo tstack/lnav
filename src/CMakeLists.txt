@@ -462,6 +462,7 @@ add_library(
         elem_to_json.cc
         environ_vtab.cc
         extension-functions.cc
+        external_editor.cc
         external_opener.cc
         field_overlay_source.cc
         file_collection.cc
@@ -586,6 +587,8 @@ add_library(
         doc_status_source.hh
         dump_internals.hh
         elem_to_json.hh
+        external_editor.hh
+        external_editor.cfg.hh
         external_opener.hh
         external_opener.cfg.hh
         field_overlay_source.hh

@@ -1330,6 +1330,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         tcgetattr(STDIN_FILENO, &tio);
         tio.c_cc[VSTART] = 0;
         tio.c_cc[VSTOP] = 0;
+#ifdef VDISCARD
+        tio.c_cc[VDISCARD] = 0;
+#endif
 #ifdef VDSUSP
         tio.c_cc[VDSUSP] = 0;
 #endif
@@ -1396,6 +1399,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         prompt.p_editor.tc_on_completion
             = bind_mem(&lnav::prompt::rl_completion, &prompt);
         prompt.p_editor.tc_on_completion_request = rl_completion_request;
+        prompt.p_editor.tc_on_external_open
+            = bind_mem(&lnav::prompt::rl_external_edit, &prompt);
         prompt.p_editor.set_alt_value(
             fmt::format(FMT_STRING(HELP_MSG_2(
                             e,

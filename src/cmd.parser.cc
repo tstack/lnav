@@ -59,6 +59,7 @@ parsed::arg_at(int x) const
                     case help_parameter_format_t::HPF_TEXT:
                     case help_parameter_format_t::HPF_REGEX:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
+                        std::optional<data_scanner::capture_t> cap_to_start;
                         data_scanner ds(se.se_value);
 
                         while (true) {
@@ -69,10 +70,15 @@ parsed::arg_at(int x) const
                             }
                             auto tok = tok_res.value();
 
-                            log_debug("cap b:%d  x:%d  e:%d",
+                            log_debug("cap b:%d  x:%d  e:%d %s",
                                       tok.tr_capture.c_begin,
                                       x,
-                                      tok.tr_capture.c_end);
+                                      tok.tr_capture.c_end,
+                                      data_scanner::token2name(tok.tr_token));
+                            if (cap_to_start && tok.tr_token == DT_GARBAGE) {
+                                log_debug("expanding cap");
+                                tok.tr_capture.c_begin = cap_to_start->c_begin;
+                            }
                             if (tok.tr_capture.c_begin <= x
                                 && x <= tok.tr_capture.c_end)
                             {
@@ -83,6 +89,20 @@ parsed::arg_at(int x) const
                                         tok.to_string_fragment(),
                                         tok.to_string(),
                                     }};
+                            }
+                            if (!cap_to_start && tok.tr_token != DT_WHITE) {
+                                cap_to_start = tok.tr_capture;
+                            } else {
+                                switch (tok.tr_token) {
+                                    case DT_WHITE:
+                                        cap_to_start = std::nullopt;
+                                        break;
+                                    case DT_GARBAGE:
+                                        break;
+                                    default:
+                                        cap_to_start = tok.tr_capture;
+                                        break;
+                                }
                             }
                         }
                         return arg_at_result{
@@ -132,11 +152,11 @@ parse_for(mode_t mode,
         if (mode == mode_t::call) {
             return Err(
                 lnav::console::user_message::error("unable to parse arguments")
-                    .with_reason(te.te_msg));
+                    .with_reason(te.se_error.te_msg));
         }
     }
     auto split_args = split_res.isOk() ? split_res.unwrap()
-                                       : std::vector<shlex::split_element_t>{};
+                                       : split_res.unwrapErr().se_elements;
     auto split_index = size_t{0};
 
     retval.p_help = &ht;

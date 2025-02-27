@@ -102,15 +102,21 @@ main(int argc, char* argv[])
         printf("eval -- %s\n", result.c_str());
     }
     lexer.reset();
+    std::vector<shlex::split_element_t> sresult;
     auto split_res = lexer.split(scoped_resolver{&vars});
     if (split_res.isOk()) {
-        auto sresult = split_res.unwrap();
-        printf("split:\n");
-        for (size_t lpc = 0; lpc < sresult.size(); lpc++) {
-            printf("% 3zu ", lpc);
-            put_underline(stdout, sresult[lpc].se_origin);
-            printf(" -- %s\n", sresult[lpc].se_value.c_str());
-        }
+        sresult = split_res.unwrap();
+    } else {
+        auto split_err = split_res.unwrapErr();
+
+        printf("split-error: %s\n", split_err.se_error.te_msg);
+        sresult = std::move(split_err.se_elements);
+    }
+    printf("split:\n");
+    for (size_t lpc = 0; lpc < sresult.size(); lpc++) {
+        printf("% 3zu ", lpc);
+        put_underline(stdout, sresult[lpc].se_origin);
+        printf(" -- %s\n", sresult[lpc].se_value.c_str());
     }
 
     return EXIT_SUCCESS;

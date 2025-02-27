@@ -2,6 +2,17 @@
 
 Interface changes:
 * The prompt is now a custom implementation instead of readline.
+  Some highlights:
+  - In the DB prompt, pressing `CTRL+L` will reformat the query and
+    switch the prompt to multi-line mode.
+  - Pressing `CTRL+O` in the prompt will transfer the prompt to
+    contents to Visual Studio Code or the default text editor on
+    macOS.
+    You can then edit the file and run it from the `|` prompt with:
+
+    ```lnav
+    |saved-prompt
+    ```
 * Pressing `F1` in the prompt will show the help text for the
   prompt itself.
   The size of the prompt panel is expanded for readability.
@@ -15,8 +26,6 @@ Features:
 * The `:comment` command will now switch the prompt to multi-line
   mode and does syntax highlighting for Markdown directives in the
   comment.
-* In the DB prompt, pressing `CTRL+L` will reformat the query and
-  switch the prompt to multi-line mode.
 * Added a `fuzzy_match()` SQL function that compares a pattern to
   a string and returns a score.
   The algorithm used is the same as in lnav itself.

@@ -36,8 +36,11 @@
 
 #include "base/fs_util.hh"
 #include "base/itertools.hh"
+#include "base/lnav.console.hh"
+#include "base/paths.hh"
 #include "base/string_attr_type.hh"
 #include "bound_tags.hh"
+#include "external_editor.hh"
 #include "itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
@@ -932,6 +935,59 @@ prompt::get_config_value_completion(const std::string& path,
                    .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
                    .with_attr_for_all(SUBST_TEXT.value(x));
            });
+}
+
+void
+prompt::rl_external_edit(textinput_curses& tc)
+{
+    static constexpr auto HEADER = R"(#
+# The contents of this script were transferred from the lnav prompt. After
+# editing this script to your liking, you can run it from the `|` prompt,
+# like so:
+#
+#   |saved-prompt
+#
+# If you want to save this script for future use, save it with another name
+# since this file will be overwritten the next time a prompt is tranferred.
+#
+
+)";
+
+    auto content = fmt::format(
+        FMT_STRING("{}{}{}"), HEADER, tc.tc_prefix.al_string, tc.get_content());
+    if (!endswith(content, "\n")) {
+        content.push_back('\n');
+    }
+    auto dst = lnav::paths::dotlnav() / "formats" / "installed"
+        / "saved-prompt.lnav";
+
+    auto write_res = lnav::filesystem::write_file(
+        dst,
+        content,
+        {
+            lnav::filesystem::write_file_options::backup_existing,
+        });
+    if (write_res.isErr()) {
+        auto errmsg = write_res.unwrapErr();
+        log_error("external editor failed: %s", errmsg.c_str());
+        tc.tc_notice = textinput_curses::notice_t::external_edit_failed;
+        return;
+    }
+
+    auto open_res = lnav::external_editor::open(dst);
+    if (open_res.isErr()) {
+        auto errmsg = open_res.unwrapErr();
+
+        log_error("external editor failed: %s", errmsg.c_str());
+        tc.tc_notice = textinput_curses::notice_t::external_edit_failed;
+        return;
+    }
+
+    tc.abort();
+
+    auto um = lnav::console::user_message::info(
+        "content transferred to external editor");
+    tc.tc_inactive_value = um.to_attr_line();
 }
 
 }  // namespace lnav

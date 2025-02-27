@@ -113,6 +113,22 @@
                 }
             }
         },
+        "external-editor": {
+            "impls": {
+                "VSCode": {
+                    "test": "command -v code",
+                    "command": "env VSCODE_PWD=\"$PWD\" code \"$FILE_PATH\""
+                },
+                "VSCode.app": {
+                    "test": "command -v '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'",
+                    "command": "env VSCODE_PWD=\"$PWD\" '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' \"$FILE_PATH\""
+                },
+                "zzz.MacOS": {
+                    "test": "command -v open",
+                    "command": "open -t \"$FILE_PATH\""
+                }
+            }
+        },
         "textfile": {
             "max-unformatted-line-length": 1024
         },

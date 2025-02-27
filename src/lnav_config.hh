@@ -45,6 +45,7 @@
 #include "base/lnav.console.hh"
 #include "base/result.h"
 #include "external_opener.cfg.hh"
+#include "external_editor.cfg.hh"
 #include "file_vtab.cfg.hh"
 #include "lnav_config_fwd.hh"
 #include "log.annotate.cfg.hh"
@@ -131,6 +132,7 @@ struct _lnav_config {
     logfile_sub_source_ns::config lc_log_source;
     lnav::log::annotate::config lc_log_annotations;
     lnav::external_opener::config lc_opener;
+    lnav::external_editor::config lc_external_editor;
     lnav::textfile::config lc_textfile;
 };
 

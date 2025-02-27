@@ -241,6 +241,8 @@ noinst_HEADERS = \
 	dump_internals.hh \
 	elem_to_json.hh \
 	environ_vtab.hh \
+	external_editor.hh \
+	external_editor.cfg.hh \
 	external_opener.hh \
 	external_opener.cfg.hh \
 	field_overlay_source.hh \
@@ -447,6 +449,7 @@ libdiag_a_SOURCES = \
 	elem_to_json.cc \
 	environ_vtab.cc \
 	extension-functions.cc \
+	external_editor.cc \
 	external_opener.cc \
 	field_overlay_source.cc \
 	file_collection.cc \

@@ -103,6 +103,9 @@ static auto scc = injector::bind<sysclip::config>::to_instance(
 static auto oc = injector::bind<lnav::external_opener::config>::to_instance(
     +[]() { return &lnav_config.lc_opener; });
 
+static auto ee = injector::bind<lnav::external_editor::config>::to_instance(
+    +[]() { return &lnav_config.lc_external_editor; });
+
 static auto uh = injector::bind<lnav::url_handler::config>::to_instance(
     +[]() { return &lnav_config.lc_url_handlers; });
 
@@ -1440,7 +1443,7 @@ static const json_path_container opener_impl_handlers = {
 };
 
 static const json_path_container opener_impls_handlers = {
-    yajlpp::pattern_property_handler("(?<opener_impl_name>[\\w\\-]+)")
+    yajlpp::pattern_property_handler("(?<opener_impl_name>[\\w\\-\\.]+)")
         .with_synopsis("<name>")
         .with_description("External opener implementation")
         .with_obj_provider<lnav::external_opener::impl, _lnav_config>(
@@ -1462,6 +1465,44 @@ static const struct json_path_container opener_handlers = {
     yajlpp::property_handler("impls")
         .with_description("External opener implementations")
         .with_children(opener_impls_handlers),
+};
+
+static const json_path_container editor_impl_handlers = {
+    yajlpp::property_handler("test")
+        .with_synopsis("<command>")
+        .with_description(
+            "The command that checks if an external editor is available")
+        .with_example("command -v open")
+        .for_field(&lnav::external_editor::impl::i_test_command),
+    yajlpp::property_handler("command")
+        .with_description("The command used to open text for editing")
+        .with_example("code -")
+        .for_field(&lnav::external_editor::impl::i_command),
+};
+
+static const json_path_container editor_impls_handlers = {
+    yajlpp::pattern_property_handler("(?<editor_impl_name>[\\w\\-\\.]+)")
+        .with_synopsis("<name>")
+        .with_description("External editor implementation")
+        .with_obj_provider<lnav::external_editor::impl, _lnav_config>(
+            [](const yajlpp_provider_context& ypc, _lnav_config* root) {
+                auto& retval = root->lc_external_editor
+                                   .c_impls[ypc.get_substr("editor_impl_name")];
+                return &retval;
+            })
+        .with_path_provider<_lnav_config>(
+            [](struct _lnav_config* cfg, std::vector<std::string>& paths_out) {
+                for (const auto& iter : cfg->lc_external_editor.c_impls) {
+                    paths_out.emplace_back(iter.first);
+                }
+            })
+        .with_children(editor_impl_handlers),
+};
+
+static const json_path_container editor_handlers = {
+    yajlpp::property_handler("impls")
+        .with_description("External editor implementations")
+        .with_children(editor_impls_handlers),
 };
 
 static const struct json_path_container log_source_watch_expr_handlers = {
@@ -1612,6 +1653,10 @@ static const struct json_path_container tuning_handlers = {
     yajlpp::property_handler("external-opener")
         .with_description("Settings related to opening external files/URLs")
         .with_children(opener_handlers),
+    yajlpp::property_handler("external-editor")
+        .with_description(
+            "Settings related to opening content in an external editor")
+        .with_children(editor_handlers),
     yajlpp::property_handler("textfile")
         .with_description("Settings related to text file handling")
         .with_children(textfile_handlers),

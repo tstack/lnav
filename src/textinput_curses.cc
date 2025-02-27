@@ -106,7 +106,11 @@ textinput_curses::get_help_text()
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-L"_hotkey)
-              .append("    - Reformat the contents, if available\n")
+              .append("    - Reformat the contents, if available\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-O"_hotkey)
+              .append("    - Open the contents in an external editor\n")
               .append("\n")
               .append("Searching"_h2)
               .append("\n ")
@@ -736,6 +740,14 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
+            case 'o':
+            case 'O': {
+                log_debug("opening in external editor");
+                if (this->tc_on_external_open) {
+                    this->tc_on_external_open(*this);
+                }
+                return true;
+            }
             case 'r':
             case 'R': {
                 if (this->tc_on_history) {
@@ -1126,30 +1138,35 @@ textinput_curses::handle_key(const ncinput& ch)
             return true;
         }
         default: {
-            char utf8[32];
-            size_t index = 0;
-            for (const auto eff_ch : ch.eff_text) {
-                log_debug(" eff %x", eff_ch);
-                if (eff_ch == 0) {
-                    break;
-                }
-                ww898::utf::utf8::write(eff_ch,
-                                        [&utf8, &index](const char bits) {
-                                            utf8[index] = bits;
-                                            index += 1;
-                                        });
-            }
-            if (index > 0) {
-                utf8[index] = 0;
-
-                if (!this->tc_selection) {
-                    this->tc_selection
-                        = selected_range::from_point(this->tc_cursor);
-                }
-                this->replace_selection(string_fragment::from_c_str(utf8));
-            } else {
+            if (NCKEY_F00 <= ch.id && ch.id <= NCKEY_F60) {
                 this->tc_notice = notice_t::unhandled_input;
                 this->set_needs_update();
+            } else {
+                char utf8[32];
+                size_t index = 0;
+                for (const auto eff_ch : ch.eff_text) {
+                    log_debug(" eff %x", eff_ch);
+                    if (eff_ch == 0) {
+                        break;
+                    }
+                    ww898::utf::utf8::write(eff_ch,
+                                            [&utf8, &index](const char bits) {
+                                                utf8[index] = bits;
+                                                index += 1;
+                                            });
+                }
+                if (index > 0) {
+                    utf8[index] = 0;
+
+                    if (!this->tc_selection) {
+                        this->tc_selection
+                            = selected_range::from_point(this->tc_cursor);
+                    }
+                    this->replace_selection(string_fragment::from_c_str(utf8));
+                } else {
+                    this->tc_notice = notice_t::unhandled_input;
+                    this->set_needs_update();
+                }
             }
             return true;
         }
@@ -1530,6 +1547,8 @@ void
 textinput_curses::abort()
 {
     this->blur();
+    this->tc_selection = std::nullopt;
+    this->tc_drag_selection = std::nullopt;
     if (this->tc_on_abort) {
         this->tc_on_abort(*this);
     }

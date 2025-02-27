@@ -367,37 +367,24 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
     if (iter == lnav_commands.end()
         || (args.size() == 1 && !endswith(line, " ") && !endswith(line, "\n")))
     {
-        switch (rc.tc_popup_type) {
-            case textinput_curses::popup_type_t::history: {
-                rc.tc_on_history(rc);
-                break;
-            }
-            default: {
-                auto poss_str = lnav_commands | lnav::itertools::first()
-                    | lnav::itertools::similar_to(args.empty() ? "" : args[0],
-                                                  10);
-                auto poss_width = poss_str
-                    | lnav::itertools::map(&std::string::size)
-                    | lnav::itertools::max();
+        auto poss_str = lnav_commands | lnav::itertools::first()
+            | lnav::itertools::similar_to(args.empty() ? "" : args[0], 10);
+        auto poss_width = poss_str | lnav::itertools::map(&std::string::size)
+            | lnav::itertools::max();
 
-                auto poss
-                    = poss_str
-                    | lnav::itertools::map([&poss_width](const auto& x) {
-                          return attr_line_t()
-                              .append(x, VC_ROLE.value(role_t::VCR_KEYWORD))
-                              .append(" ")
-                              .pad_to(poss_width.value_or(0) + 1)
-                              .append(lnav_commands[x]->c_help.ht_summary)
-                              .with_attr_for_all(
-                                  lnav::prompt::SUBST_TEXT.value(x + " "));
-                      });
+        auto poss
+            = poss_str | lnav::itertools::map([&poss_width](const auto& x) {
+                  return attr_line_t()
+                      .append(x, VC_ROLE.value(role_t::VCR_KEYWORD))
+                      .append(" ")
+                      .pad_to(poss_width.value_or(0) + 1)
+                      .append(lnav_commands[x]->c_help.ht_summary)
+                      .with_attr_for_all(
+                          lnav::prompt::SUBST_TEXT.value(x + " "));
+              });
 
-                rc.open_popup_for_completion(0, poss);
-                rc.tc_popup.set_title("Command");
-                break;
-            }
-        }
-
+        rc.open_popup_for_completion(0, poss);
+        rc.tc_popup.set_title("Command");
         prompt.p_editor.tc_height = std::min(
             prompt.p_editor.tc_height, (int) prompt.p_editor.tc_lines.size());
         lnav_data.ld_doc_source.replace_with(CMD_HELP);
@@ -483,63 +470,52 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
 
     if (iter != lnav_commands.end() && (args.size() > 1 || endswith(line, " ")))
     {
-        switch (rc.tc_popup_type) {
-            case textinput_curses::popup_type_t::history: {
-                rc.tc_on_history(rc);
-                break;
-            }
-            default: {
-                auto line_sf = string_fragment(line);
-                auto args_sf
-                    = line_sf.split_when(string_fragment::tag1{' '}).second;
-                auto parsed_cmd = lnav::command::parse_for_prompt(
-                    lnav_data.ld_exec_context, args_sf, iter->second->c_help);
-                auto x = args_sf.column_to_byte_index(rc.tc_cursor.x
-                                                      - args_sf.sf_begin);
-                auto arg_res_opt = parsed_cmd.arg_at(x);
+        auto line_sf = string_fragment(line);
+        auto args_sf = line_sf.split_when(string_fragment::tag1{' '}).second;
+        auto parsed_cmd = lnav::command::parse_for_prompt(
+            lnav_data.ld_exec_context, args_sf, iter->second->c_help);
+        auto x
+            = args_sf.column_to_byte_index(rc.tc_cursor.x - args_sf.sf_begin);
+        auto arg_res_opt = parsed_cmd.arg_at(x);
 
-                if (arg_res_opt) {
-                    auto arg_res = arg_res_opt.value();
-                    log_debug("apair %s [%d:%d) -- %s",
-                              arg_res.aar_help->ht_name,
-                              arg_res.aar_element.se_origin.sf_begin,
-                              arg_res.aar_element.se_origin.sf_end,
-                              arg_res.aar_element.se_value.c_str());
-                    auto left = arg_res.aar_element.se_origin.empty()
-                        ? rc.tc_cursor.x
-                        : line_sf.byte_to_column_index(
-                              args_sf.sf_begin
-                              + arg_res.aar_element.se_origin.sf_begin);
-                    if (arg_res.aar_help->ht_format
-                        == help_parameter_format_t::HPF_CONFIG_VALUE)
-                    {
-                        log_debug("arg path %s",
-                                  parsed_cmd.p_args["option"]
-                                      .a_values[0]
-                                      .se_value.c_str());
-                        auto poss = prompt.get_config_value_completion(
-                            parsed_cmd.p_args["option"].a_values[0].se_value,
-                            arg_res.aar_element.se_origin.to_string());
-                        rc.open_popup_for_completion(left, poss);
-                        rc.tc_popup.set_title(arg_res.aar_help->ht_name);
-                    } else if (is_req || arg_res.aar_required
-                               || rc.tc_popup_type
-                                   != textinput_curses::popup_type_t::none)
-                    {
-                        auto poss = prompt.get_cmd_parameter_completion(
-                            *tc,
-                            arg_res.aar_help,
-                            arg_res.aar_element.se_value.empty()
-                                ? arg_res.aar_element.se_origin.to_string()
-                                : arg_res.aar_element.se_value);
-                        rc.open_popup_for_completion(left, poss);
-                        rc.tc_popup.set_title(arg_res.aar_help->ht_name);
-                    }
-                } else {
-                    log_info("no arg at %d", x);
-                }
-                break;
+        if (arg_res_opt) {
+            auto arg_res = arg_res_opt.value();
+            log_debug("apair %s [%d:%d) -- %s",
+                      arg_res.aar_help->ht_name,
+                      arg_res.aar_element.se_origin.sf_begin,
+                      arg_res.aar_element.se_origin.sf_end,
+                      arg_res.aar_element.se_value.c_str());
+            auto left = arg_res.aar_element.se_origin.empty()
+                ? rc.tc_cursor.x
+                : line_sf.byte_to_column_index(
+                      args_sf.sf_begin
+                      + arg_res.aar_element.se_origin.sf_begin);
+            if (arg_res.aar_help->ht_format
+                == help_parameter_format_t::HPF_CONFIG_VALUE)
+            {
+                log_debug(
+                    "arg path %s",
+                    parsed_cmd.p_args["option"].a_values[0].se_value.c_str());
+                auto poss = prompt.get_config_value_completion(
+                    parsed_cmd.p_args["option"].a_values[0].se_value,
+                    arg_res.aar_element.se_origin.to_string());
+                rc.open_popup_for_completion(left, poss);
+                rc.tc_popup.set_title(arg_res.aar_help->ht_name);
+            } else if (is_req || arg_res.aar_required
+                       || rc.tc_popup_type
+                           != textinput_curses::popup_type_t::none)
+            {
+                auto poss = prompt.get_cmd_parameter_completion(
+                    *tc,
+                    arg_res.aar_help,
+                    arg_res.aar_element.se_value.empty()
+                        ? arg_res.aar_element.se_origin.to_string()
+                        : arg_res.aar_element.se_value);
+                rc.open_popup_for_completion(left, poss);
+                rc.tc_popup.set_title(arg_res.aar_help->ht_name);
             }
+        } else {
+            log_info("no arg at %d", x);
         }
     }
 }
@@ -555,9 +531,7 @@ rl_sql_change(textinput_curses& rc)
     std::vector<std::string> args;
     auto is_prql = lnav::sql::is_prql(line);
 
-    if (rc.tc_popup_type == textinput_curses::popup_type_t::history) {
-        rc.tc_on_history(rc);
-    } else if (is_prql) {
+    if (is_prql) {
         auto anno_line = attr_line_t(line);
         lnav::sql::annotate_prql_statement(anno_line);
         auto cursor_offset = prompt.p_editor.get_cursor_offset();
@@ -719,8 +693,8 @@ rl_search_change(textinput_curses& rc, bool is_req)
                   help_text("pattern", "The pattern to search for")
                       .with_format(help_parameter_format_t::HPF_REGEX));
     static auto& prompt = lnav::prompt::get();
-    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     auto line = rc.get_content();
     auto line_sf = string_fragment::from_str(line);
     if (line.empty() && tc->tc_selected_text) {
@@ -736,7 +710,9 @@ rl_search_change(textinput_curses& rc, bool is_req)
         auto arg_res_opt = parse_res.arg_at(byte_x);
         if (arg_res_opt) {
             auto arg_pair = arg_res_opt.value();
-            if (is_req) {
+            if (is_req
+                || rc.tc_popup_type != textinput_curses::popup_type_t::none)
+            {
                 auto poss = prompt.get_cmd_parameter_completion(
                     *tc, arg_pair.aar_help, arg_pair.aar_element.se_value);
                 auto left = arg_pair.aar_element.se_value.empty()
@@ -762,7 +738,8 @@ rl_exec_change(textinput_curses& rc, bool is_req)
     shlex lexer(line);
     auto split_res = lexer.split(lnav_data.ld_exec_context.create_resolver());
     if (split_res.isErr()) {
-        lnav_data.ld_bottom_source.grep_error(split_res.unwrapErr().te_msg);
+        lnav_data.ld_bottom_source.grep_error(
+            split_res.unwrapErr().se_error.te_msg);
     } else {
         auto split_args = split_res.unwrap();
         auto script_name = split_args.empty() ? std::string()
@@ -841,6 +818,11 @@ rl_change(textinput_curses& rc)
     log_debug("rl_change");
 
     if (prompt.p_editor.tc_mode == textinput_curses::mode_t::show_help) {
+        return;
+    }
+
+    if (rc.tc_popup_type == textinput_curses::popup_type_t::history) {
+        rc.tc_on_history(rc);
         return;
     }
 

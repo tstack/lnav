@@ -1,2 +1,4 @@
     \
 err ^ -- invalid escape
+split-error: invalid escape
+split:

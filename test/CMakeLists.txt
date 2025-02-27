@@ -80,6 +80,9 @@ target_link_libraries(drive_listview diag)
 add_executable(drive_logfile drive_logfile.cc test_stubs.cc)
 target_link_libraries(drive_logfile diag)
 
+add_executable(drive_shlexer drive_shlexer.cc test_stubs.cc)
+target_link_libraries(drive_shlexer diag)
+
 add_executable(drive_sql_anno drive_sql_anno.cc test_stubs.cc)
 target_link_libraries(drive_sql_anno diag)
 

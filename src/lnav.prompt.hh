@@ -128,6 +128,7 @@ struct prompt {
     void rl_reformat(textinput_curses& tc);
     void rl_history(textinput_curses& tc);
     void rl_completion(textinput_curses& tc);
+    void rl_external_edit(textinput_curses& tc);
 };
 
 }  // namespace lnav

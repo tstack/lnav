@@ -94,7 +94,12 @@ public:
         std::string se_value;
     };
 
-    Result<std::vector<split_element_t>, tokenize_error_t> split(
+    struct split_error_t {
+        std::vector<split_element_t> se_elements;
+        tokenize_error_t se_error;
+    };
+
+    Result<std::vector<split_element_t>, split_error_t> split(
         const scoped_resolver& vars);
 
     void reset()

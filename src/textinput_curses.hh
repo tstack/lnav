@@ -409,6 +409,7 @@ public:
     enum class notice_t {
         unhandled_input,
         no_changes,
+        external_edit_failed,
     };
 
     std::optional<notice_t> tc_notice;
@@ -465,6 +466,7 @@ public:
     std::function<void(textinput_curses&)> tc_on_timeout;
     std::function<void(textinput_curses&)> tc_on_reformat;
     std::function<void(textinput_curses&)> tc_on_perform;
+    std::function<void(textinput_curses&)> tc_on_external_open;
 };
 
 #endif

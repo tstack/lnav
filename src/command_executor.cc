@@ -700,9 +700,9 @@ execute_file(exec_context& ec, const std::string& path_and_args)
         auto split_err = split_args_res.unwrapErr();
         auto um = lnav::console::user_message::error(
                       "unable to parse script command-line")
-                      .with_reason(split_err.te_msg)
+                      .with_reason(split_err.se_error.te_msg)
                       .with_snippet(lnav::console::snippet::from(
-                          SRC, lexer.to_attr_line(split_err)))
+                          SRC, lexer.to_attr_line(split_err.se_error)))
                       .move();
 
         return Err(um);

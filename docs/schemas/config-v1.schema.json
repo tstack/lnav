@@ -219,7 +219,7 @@
                             "title": "/tuning/external-opener/impls",
                             "type": "object",
                             "patternProperties": {
-                                "^([\\w\\-]+)$": {
+                                "^([\\w\\-\\.]+)$": {
                                     "description": "External opener implementation",
                                     "title": "/tuning/external-opener/impls/<opener_impl_name>",
                                     "type": "object",
@@ -238,6 +238,46 @@
                                             "type": "string",
                                             "examples": [
                                                 "open"
+                                            ]
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "external-editor": {
+                    "description": "Settings related to opening content in an external editor",
+                    "title": "/tuning/external-editor",
+                    "type": "object",
+                    "properties": {
+                        "impls": {
+                            "description": "External editor implementations",
+                            "title": "/tuning/external-editor/impls",
+                            "type": "object",
+                            "patternProperties": {
+                                "^([\\w\\-\\.]+)$": {
+                                    "description": "External editor implementation",
+                                    "title": "/tuning/external-editor/impls/<editor_impl_name>",
+                                    "type": "object",
+                                    "properties": {
+                                        "test": {
+                                            "title": "/tuning/external-editor/impls/<editor_impl_name>/test",
+                                            "description": "The command that checks if an external editor is available",
+                                            "type": "string",
+                                            "examples": [
+                                                "command -v open"
+                                            ]
+                                        },
+                                        "command": {
+                                            "title": "/tuning/external-editor/impls/<editor_impl_name>/command",
+                                            "description": "The command used to open text for editing",
+                                            "type": "string",
+                                            "examples": [
+                                                "code -"
                                             ]
                                         }
                                     },
