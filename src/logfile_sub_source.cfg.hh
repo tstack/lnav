@@ -35,6 +35,12 @@
 
 namespace logfile_sub_source_ns {
 
+enum class time_column_feature_t {
+    Disabled,
+    Enabled,
+    Default,
+};
+
 struct watch_expression {
     std::string we_expr;
     bool we_enabled{true};
@@ -42,6 +48,7 @@ struct watch_expression {
 
 struct config {
     std::map<std::string, watch_expression> c_watch_exprs;
+    time_column_feature_t c_time_column{time_column_feature_t::Disabled};
 };
 
 }  // namespace logfile_sub_source_ns

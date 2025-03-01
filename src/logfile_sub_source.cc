@@ -37,6 +37,7 @@
 #include "base/ansi_scrubber.hh"
 #include "base/ansi_vars.hh"
 #include "base/fs_util.hh"
+#include "base/injector.hh"
 #include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "bookmarks.json.hh"
@@ -46,6 +47,7 @@
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
+#include "logfile_sub_source.cfg.hh"
 #include "md2attr_line.hh"
 #include "ptimec.hh"
 #include "shlex.hh"
@@ -145,7 +147,8 @@ pretty_pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
 }
 
 logfile_sub_source::logfile_sub_source()
-    : text_sub_source(1), lss_meta_grepper(*this), lss_location_history(*this)
+    : text_sub_source(1), lnav_config_listener(__FILE__),
+      lss_meta_grepper(*this), lss_location_history(*this)
 {
     this->tss_supports_filtering = true;
     this->clear_line_size_cache();
@@ -301,9 +304,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     auto format = this->lss_token_file->get_format();
 
     value_out = this->lss_token_value;
-    if (this->lss_flags & F_SCRUB) {
-        format->scrub(value_out);
-    }
 
     auto& sbr = this->lss_token_values.lvv_sbr;
 
@@ -336,6 +336,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         this->lss_token_attrs.emplace_back(lr, SA_ORIGINAL_LINE.value());
     }
 
+    std::optional<exttm> adjusted_tm;
+    auto time_attr = find_string_attr(this->lss_token_attrs, &L_TIMESTAMP);
     if (!this->lss_token_line->is_continued() && !format->lf_formatted_lines
         && (this->lss_token_file->is_time_adjusted()
             || ((format->lf_timestamp_flags & ETF_ZONE_SET
@@ -346,11 +348,12 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             || !(format->lf_timestamp_flags & ETF_MONTH_SET))
         && format->lf_date_time.dts_fmt_lock != -1)
     {
-        auto time_attr = find_string_attr(this->lss_token_attrs, &L_TIMESTAMP);
         if (time_attr != this->lss_token_attrs.end()) {
-            const struct line_range time_range = time_attr->sa_range;
-            struct timeval adjusted_time;
-            struct exttm adjusted_tm;
+            const auto time_range = time_attr->sa_range;
+            const auto time_sf = string_fragment::from_str_range(
+                this->lss_token_value, time_range.lr_start, time_range.lr_end);
+            adjusted_tm = format->tm_for_display(this->lss_token_line, time_sf);
+
             char buffer[128];
             const char* fmt;
             ssize_t len;
@@ -359,21 +362,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 || !(format->lf_timestamp_flags & ETF_DAY_SET)
                 || !(format->lf_timestamp_flags & ETF_MONTH_SET))
             {
-                adjusted_time = this->lss_token_line->get_timeval();
                 if (format->lf_timestamp_flags & ETF_NANOS_SET) {
                     fmt = "%Y-%m-%d %H:%M:%S.%N";
-                    timeval actual_tv;
-                    exttm tm;
-                    if (format->lf_date_time.scan(
-                            this->lss_token_value.data() + time_range.lr_start,
-                            time_range.length(),
-                            format->get_timestamp_formats(),
-                            &tm,
-                            actual_tv,
-                            false))
-                    {
-                        adjusted_time.tv_usec = actual_tv.tv_usec;
-                    }
                 } else if (format->lf_timestamp_flags & ETF_MICROS_SET) {
                     fmt = "%Y-%m-%d %H:%M:%S.%f";
                 } else if (format->lf_timestamp_flags & ETF_MILLIS_SET) {
@@ -381,32 +371,14 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 } else {
                     fmt = "%Y-%m-%d %H:%M:%S";
                 }
-                gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
-                adjusted_tm.et_nsec
-                    = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                          std::chrono::microseconds{adjusted_time.tv_usec})
-                          .count();
-                len = ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm);
+                len = ftime_fmt(
+                    buffer, sizeof(buffer), fmt, adjusted_tm.value());
             } else {
-                adjusted_time = this->lss_token_line->get_timeval();
-                gmtime_r(&adjusted_time.tv_sec, &adjusted_tm.et_tm);
-                adjusted_tm.et_nsec
-                    = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                          std::chrono::microseconds{adjusted_time.tv_usec})
-                          .count();
-                adjusted_tm.et_flags = format->lf_timestamp_flags;
-                if (format->lf_timestamp_flags & ETF_ZONE_SET
-                    && format->lf_date_time.dts_zoned_to_local)
-                {
-                    adjusted_tm.et_flags &= ~ETF_Z_IS_UTC;
-                }
-                adjusted_tm.et_gmtoff
-                    = format->lf_date_time.dts_local_offset_cache;
                 len = format->lf_date_time.ftime(
                     buffer,
                     sizeof(buffer),
                     format->get_timestamp_formats(),
-                    adjusted_tm);
+                    adjusted_tm.value());
             }
 
             value_out.replace(
@@ -416,10 +388,98 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         }
     }
 
-    if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
+    // Insert space for the file/search-hit markers.
+    value_out.insert(0, 1, ' ');
+    this->lss_time_column_size = 0;
+    if (this->lss_line_context == line_context_t::time_column) {
+        if (time_attr != this->lss_token_attrs.end()) {
+            this->lss_token_attrs.emplace_back(time_attr->sa_range,
+                                               SA_REPLACED.value());
+
+            const char* fmt;
+            if (this->lss_all_timestamp_flags
+                & (ETF_MICROS_SET | ETF_NANOS_SET))
+            {
+                fmt = "%H:%M:%S.%f";
+            } else if (this->lss_all_timestamp_flags & ETF_MILLIS_SET) {
+                fmt = "%H:%M:%S.%L";
+            } else {
+                fmt = "%H:%M:%S";
+            }
+            if (!adjusted_tm) {
+                const auto time_range = time_attr->sa_range;
+                const auto time_sf
+                    = string_fragment::from_str_range(this->lss_token_value,
+                                                      time_range.lr_start,
+                                                      time_range.lr_end);
+                adjusted_tm
+                    = format->tm_for_display(this->lss_token_line, time_sf);
+            }
+            char buffer[128];
+            this->lss_time_column_size
+                = ftime_fmt(buffer, sizeof(buffer), fmt, adjusted_tm.value());
+            if (this->tss_view->is_selectable()
+                && this->tss_view->get_selection() == row)
+            {
+                buffer[this->lss_time_column_size] = ' ';
+                this->lss_time_column_size += 1;
+            } else {
+                constexpr char block[] = "\u258c";
+
+                strncpy(
+                    &buffer[this->lss_time_column_size], block, sizeof(block));
+                this->lss_time_column_size += sizeof(block) - 1;
+            }
+            value_out.insert(1, buffer, this->lss_time_column_size);
+        }
+        if (format->lf_level_hideable) {
+            auto level_attr = find_string_attr(this->lss_token_attrs, &L_LEVEL);
+            if (level_attr != this->lss_token_attrs.end()) {
+                ui_icon_t icon;
+                switch (this->lss_token_line->get_msg_level()) {
+                    case LEVEL_TRACE:
+                        icon = ui_icon_t::log_level_trace;
+                        break;
+                    case LEVEL_DEBUG:
+                    case LEVEL_DEBUG2:
+                    case LEVEL_DEBUG3:
+                    case LEVEL_DEBUG4:
+                    case LEVEL_DEBUG5:
+                        icon = ui_icon_t::log_level_debug;
+                        break;
+                    case LEVEL_INFO:
+                        icon = ui_icon_t::log_level_info;
+                        break;
+                    case LEVEL_STATS:
+                        icon = ui_icon_t::log_level_stats;
+                        break;
+                    case LEVEL_NOTICE:
+                        icon = ui_icon_t::log_level_notice;
+                        break;
+                    case LEVEL_WARNING:
+                        icon = ui_icon_t::log_level_warning;
+                        break;
+                    case LEVEL_ERROR:
+                        icon = ui_icon_t::log_level_error;
+                        break;
+                    case LEVEL_CRITICAL:
+                        icon = ui_icon_t::log_level_critical;
+                        break;
+                    case LEVEL_FATAL:
+                        icon = ui_icon_t::log_level_fatal;
+                        break;
+                    default:
+                        icon = ui_icon_t::hidden;
+                        break;
+                }
+                this->lss_token_attrs.emplace_back(level_attr->sa_range,
+                                                   SA_HIDDEN.value(icon));
+            }
+        }
+    } else if (this->lss_line_context < line_context_t::none) {
         size_t file_offset_end;
         std::string name;
-        if (this->lss_flags & F_FILENAME) {
+        if (this->lss_line_context == line_context_t::filename) {
             file_offset_end = this->lss_filename_width;
             name = fmt::to_string(this->lss_token_file->get_filename());
             if (file_offset_end < name.size()) {
@@ -434,12 +494,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 this->lss_basename_width = name.size();
             }
         }
-        value_out.insert(0, 1, '|');
         value_out.insert(0, file_offset_end - name.size(), ' ');
         value_out.insert(0, name);
-    } else {
-        // Insert space for the file/search-hit markers.
-        value_out.insert(0, 1, ' ');
     }
 
     if (this->tas_display_time_offset) {
@@ -517,7 +573,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
 
         if (line_value.lv_meta.is_hidden()) {
-            value_out.emplace_back(line_value.lv_origin, SA_HIDDEN.value());
+            value_out.emplace_back(line_value.lv_origin,
+                                   SA_HIDDEN.value(ui_icon_t::hidden));
         }
 
         if (!line_value.lv_meta.lvm_identifier
@@ -578,8 +635,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                            VC_STYLE.value(vc.attrs_for_ident(
                                this->lss_token_file->get_filename())));
 
-    if (this->lss_flags & F_FILENAME || this->lss_flags & F_BASENAME) {
-        size_t file_offset_end = (this->lss_flags & F_FILENAME)
+    if (this->lss_line_context < line_context_t::none) {
+        size_t file_offset_end
+            = (this->lss_line_context == line_context_t::filename)
             ? this->lss_filename_width
             : this->lss_basename_width;
 
@@ -590,6 +648,23 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         value_out.emplace_back(lr,
                                VC_STYLE.value(vc.attrs_for_ident(
                                    this->lss_token_file->get_filename())));
+    } else if (this->lss_time_column_size > 0) {
+        shift_string_attrs(value_out, 1, this->lss_time_column_size);
+        if (this->tss_view->is_selectable()
+            && this->tss_view->get_selection() != row)
+        {
+            lr.lr_start = 1;
+            lr.lr_end = 1 + this->lss_time_column_size - 1;
+            value_out.emplace_back(lr, VC_ROLE.value(role_t::VCR_TIME_COLUMN));
+            if (this->lss_token_line->is_time_skewed()) {
+                value_out.emplace_back(lr,
+                                       VC_ROLE.value(role_t::VCR_SKEWED_TIME));
+            }
+            lr.lr_start = 1 + this->lss_time_column_size - 1;
+            lr.lr_end = 1 + this->lss_time_column_size;
+            value_out.emplace_back(
+                lr, VC_ROLE.value(role_t::VCR_TIME_COLUMN_TO_TEXT));
+        }
     }
 
     if (this->tas_display_time_offset) {
@@ -648,8 +723,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     }
 
     if (this->lss_token_file->is_time_adjusted()) {
-        struct line_range time_range
-            = find_string_attr_range(value_out, &L_TIMESTAMP);
+        auto time_range = find_string_attr_range(value_out, &L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
             value_out.emplace_back(time_range,
@@ -658,8 +732,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     }
 
     if (this->lss_token_line->is_time_skewed()) {
-        struct line_range time_range
-            = find_string_attr_range(value_out, &L_TIMESTAMP);
+        auto time_range = find_string_attr_range(value_out, &L_TIMESTAMP);
 
         if (time_range.lr_end != -1) {
             value_out.emplace_back(time_range,
@@ -821,6 +894,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     }
 
     bool time_left = true;
+    this->lss_all_timestamp_flags = 0;
     for (const auto file_index : file_order) {
         auto& ld = *(this->lss_files[file_index]);
         auto* lf = ld.get_file_ptr();
@@ -839,6 +913,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                           lf->get_filename().c_str());
                 time_left = false;
             }
+            this->lss_all_timestamp_flags
+                |= lf->get_format_ptr()->lf_timestamp_flags;
 
             if (!this->tss_view->is_paused() && time_left) {
                 switch (lf->rebuild_index(deadline)) {
@@ -3044,17 +3120,23 @@ logfile_sub_source::clear_bookmark_metadata()
 void
 logfile_sub_source::increase_line_context()
 {
-    auto old_flags = this->lss_flags;
+    auto old_context = this->lss_line_context;
 
-    if (this->lss_flags & F_FILENAME) {
-        // Nothing to do
-    } else if (this->lss_flags & F_BASENAME) {
-        this->lss_flags &= ~F_NAME_MASK;
-        this->lss_flags |= F_FILENAME;
-    } else {
-        this->lss_flags |= F_BASENAME;
+    switch (this->lss_line_context) {
+        case line_context_t::filename:
+            // nothing to do
+            break;
+        case line_context_t::basename:
+            this->lss_line_context = line_context_t::filename;
+            break;
+        case line_context_t::none:
+            this->lss_line_context = line_context_t::basename;
+            break;
+        case line_context_t::time_column:
+            this->lss_line_context = line_context_t::none;
+            break;
     }
-    if (old_flags != this->lss_flags) {
+    if (old_context != this->lss_line_context) {
         this->clear_line_size_cache();
     }
 }
@@ -3062,15 +3144,28 @@ logfile_sub_source::increase_line_context()
 bool
 logfile_sub_source::decrease_line_context()
 {
-    auto old_flags = this->lss_flags;
+    static const auto& cfg
+        = injector::get<const logfile_sub_source_ns::config&>();
+    auto old_context = this->lss_line_context;
 
-    if (this->lss_flags & F_FILENAME) {
-        this->lss_flags &= ~F_NAME_MASK;
-        this->lss_flags |= F_BASENAME;
-    } else if (this->lss_flags & F_BASENAME) {
-        this->lss_flags &= ~F_NAME_MASK;
+    switch (this->lss_line_context) {
+        case line_context_t::filename:
+            this->lss_line_context = line_context_t::basename;
+            break;
+        case line_context_t::basename:
+            this->lss_line_context = line_context_t::none;
+            break;
+        case line_context_t::none:
+            if (cfg.c_time_column
+                != logfile_sub_source_ns::time_column_feature_t::Disabled)
+            {
+                this->lss_line_context = line_context_t::time_column;
+            }
+            break;
+        case line_context_t::time_column:
+            break;
     }
-    if (old_flags != this->lss_flags) {
+    if (old_context != this->lss_line_context) {
         this->clear_line_size_cache();
 
         return true;
@@ -3082,13 +3177,14 @@ logfile_sub_source::decrease_line_context()
 size_t
 logfile_sub_source::get_filename_offset() const
 {
-    if (this->lss_flags & F_FILENAME) {
-        return this->lss_filename_width;
-    } else if (this->lss_flags & F_BASENAME) {
-        return this->lss_basename_width;
+    switch (this->lss_line_context) {
+        case line_context_t::filename:
+            return this->lss_filename_width;
+        case line_context_t::basename:
+            return this->lss_basename_width;
+        default:
+            return 0;
     }
-
-    return 0;
 }
 
 size_t
@@ -3266,4 +3362,18 @@ logfile_sub_source::text_handle_mouse(
         }
     }
     return true;
+}
+
+void
+logfile_sub_source::reload_config(error_reporter& reporter)
+{
+    static const auto& cfg
+        = injector::get<const logfile_sub_source_ns::config&>();
+
+    if (cfg.c_time_column
+            == logfile_sub_source_ns::time_column_feature_t::Default
+        && this->lss_line_context == line_context_t::none)
+    {
+        this->lss_line_context = line_context_t::time_column;
+    }
 }

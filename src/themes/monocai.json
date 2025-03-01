@@ -4,7 +4,7 @@
         "theme-defs": {
             "monocai": {
                 "vars": {
-                    "black": "#2d2a2e",
+                    "black": "Grey15",
                     "red": "#f92772",
                     "green": "#a7e22e",
                     "yellow": "#fe9720",
@@ -20,14 +20,14 @@
                         "color": "semantic()"
                     },
                     "text": {
-                        "color": "#f6f6f6",
+                        "color": "Grey89",
                         "background-color": "$black"
                     },
                     "selected-text": {
                         "background-color": "$cyan"
                     },
                     "alt-text": {
-                        "background-color": "#1c1c1c"
+                        "background-color": "Grey11"
                     },
                     "ok": {
                         "color": "$green",
@@ -66,6 +66,9 @@
                     },
                     "offset-time": {
                         "color": "$cyan"
+                    },
+                    "time-column": {
+                        "background-color": "Grey27"
                     },
                     "file-offset": {
                         "color": "#888"

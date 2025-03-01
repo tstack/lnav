@@ -1,2 +1,2 @@
-[31m2018-08-21T14:04:21.221373Z[0m[31m 38708007 [0m[31mmedusa-GpsLocator.service[0m[31m [0m[31mpython[0m[31m[[0m[31m184[0m[31m] FATAL [0m[31mGPS Reference longitude: 7.358143333[0m
+[31m2018-08-21T14:04:21.221373Z[0m[31m 38708007 [0m[31mmedusa-GpsLocator.service[0m[31m [0m[31mpython[0m[31m[[0m[31m184[0m[31m] [0m[31mFATAL[0m[31m [0m[31mGPS Reference longitude: 7.358143333[0m
 2018-08-21T14:04:21.221373Z 38708007 medusa-GpsLocator.service python[184] INFO GPS Reference latitude: 46.908706667

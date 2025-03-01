@@ -823,8 +823,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
                 ? this->tc_disabled_cursor_role.value()
                 : this->tc_cursor_role.value();
 
-            sa.emplace_back(line_range{orig_line.lr_start, -1},
-                            VC_ROLE.value(role));
+            sa.emplace_back(line_range{0, -1}, VC_ROLE.value(role));
         }
     }
 

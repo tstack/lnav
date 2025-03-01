@@ -660,6 +660,43 @@ static const json_path_container theme_icons_handlers = {
         .with_description("Icon for error messages")
         .for_child(&lnav_theme::lt_icon_error)
         .with_children(icon_config_handlers),
+
+    yajlpp::property_handler("log-level-trace")
+        .with_description("Icon for 'trace' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_trace)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-debug")
+        .with_description("Icon for 'debug' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_debug)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-info")
+        .with_description("Icon for 'info' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_info)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-stats")
+        .with_description("Icon for 'stats' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_stats)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-notice")
+        .with_description("Icon for 'notice' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_notice)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-warning")
+        .with_description("Icon for 'warning' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_warning)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-error")
+        .with_description("Icon for 'error' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_error)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-critical")
+        .with_description("Icon for 'critical' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_critical)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("log-level-fatal")
+        .with_description("Icon for 'fatal' log level")
+        .for_child(&lnav_theme::lt_icon_log_level_fatal)
+        .with_children(icon_config_handlers),
 };
 
 static const struct json_path_container theme_styles_handlers = {
@@ -723,6 +760,10 @@ static const struct json_path_container theme_styles_handlers = {
     yajlpp::property_handler("offset-time")
         .with_description("Styling for the elapsed time column")
         .for_child(&lnav_theme::lt_style_offset_time)
+        .with_children(style_config_handlers),
+    yajlpp::property_handler("time-column")
+        .with_description("Styling for the time column")
+        .for_child(&lnav_theme::lt_style_time_column)
         .with_children(style_config_handlers),
     yajlpp::property_handler("invalid-msg")
         .with_description("Styling for invalid log messages")
@@ -1165,7 +1206,35 @@ static const struct json_path_container theme_defs_handlers = {
         .with_children(theme_def_handlers),
 };
 
-static const struct json_path_container ui_handlers = {
+static const json_path_handler_base::enum_value_t _time_column_values[] = {
+    {"disabled", logfile_sub_source_ns::time_column_feature_t::Disabled},
+    {"enabled", logfile_sub_source_ns::time_column_feature_t::Enabled},
+    {"default", logfile_sub_source_ns::time_column_feature_t::Default},
+
+    json_path_handler_base::ENUM_TERMINATOR,
+};
+
+static const json_path_container log_view_handlers = {
+    yajlpp::property_handler("time-column")
+        .with_description(
+            "Display a column with the log message time and hide the "
+            "timestamp/level in the message.  Possible values: disabled - "
+            "never display the column; enabled - display the column when "
+            "initially scrolling right; default - display the column "
+            "initially.")
+        .with_enum_values(_time_column_values)
+        .with_example("enabled")
+        .for_field(&_lnav_config::lc_log_source,
+                   &logfile_sub_source_ns::config::c_time_column),
+};
+
+static const json_path_container views_handlers = {
+    yajlpp::property_handler("log")
+        .with_description("Log view settings")
+        .with_children(log_view_handlers),
+};
+
+static const json_path_container ui_handlers = {
     yajlpp::property_handler("clock-format")
         .with_synopsis("format")
         .with_description("The format for the clock displayed in "
@@ -1207,6 +1276,9 @@ static const struct json_path_container ui_handlers = {
     yajlpp::property_handler("keymap-defs")
         .with_description("Keymap definitions.")
         .with_children(keymap_defs_handlers),
+    yajlpp::property_handler("views")
+        .with_description("View-related settings")
+        .with_children(views_handlers),
 };
 
 static const struct json_path_container archive_handlers = {

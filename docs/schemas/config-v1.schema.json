@@ -417,6 +417,51 @@
                                             "description": "Icon for error messages",
                                             "title": "/ui/theme-defs/<theme_name>/icons/error",
                                             "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-trace": {
+                                            "description": "Icon for 'trace' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-trace",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-debug": {
+                                            "description": "Icon for 'debug' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-debug",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-info": {
+                                            "description": "Icon for 'info' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-info",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-stats": {
+                                            "description": "Icon for 'stats' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-stats",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-notice": {
+                                            "description": "Icon for 'notice' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-notice",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-warning": {
+                                            "description": "Icon for 'warning' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-warning",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-error": {
+                                            "description": "Icon for 'error' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-error",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-critical": {
+                                            "description": "Icon for 'critical' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-critical",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "log-level-fatal": {
+                                            "description": "Icon for 'fatal' log level",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/log-level-fatal",
+                                            "$ref": "#/definitions/icon"
                                         }
                                     },
                                     "additionalProperties": false
@@ -499,6 +544,11 @@
                                         "offset-time": {
                                             "description": "Styling for the elapsed time column",
                                             "title": "/ui/theme-defs/<theme_name>/styles/offset-time",
+                                            "$ref": "#/definitions/style"
+                                        },
+                                        "time-column": {
+                                            "description": "Styling for the time column",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/time-column",
                                             "$ref": "#/definitions/style"
                                         },
                                         "invalid-msg": {
@@ -951,6 +1001,35 @@
                                         }
                                     },
                                     "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "views": {
+                    "description": "View-related settings",
+                    "title": "/ui/views",
+                    "type": "object",
+                    "properties": {
+                        "log": {
+                            "description": "Log view settings",
+                            "title": "/ui/views/log",
+                            "type": "object",
+                            "properties": {
+                                "time-column": {
+                                    "title": "/ui/views/log/time-column",
+                                    "description": "Display a column with the log message time and hide the timestamp/level in the message.  Possible values: disabled - never display the column; enabled - display the column when initially scrolling right; default - display the column initially.",
+                                    "type": "string",
+                                    "enum": [
+                                        "disabled",
+                                        "enabled",
+                                        "default"
+                                    ],
+                                    "examples": [
+                                        "enabled"
+                                    ]
                                 }
                             },
                             "additionalProperties": false

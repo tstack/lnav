@@ -26,6 +26,9 @@
                 "identifier": true,
                 "foreign-key": true
             },
+            "level": {
+                "kind": "string"
+            },
             "src_file": {
                 "kind": "string",
                 "identifier": true

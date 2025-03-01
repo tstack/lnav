@@ -5,23 +5,23 @@
         "description": "Format specific to the ESXi syslog",
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?:\\w+ \\[(?<logger>[^ ]+)(?: op[iI][dD]=(?<opid>[^ \\]]+))?\\]\\s*)?(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+\\((?<syslog_pri>\\d+)\\))(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?<log_procname>(?:[^\\[:]+|[^:]+))(?:\\[(?<log_pid>\\d+)\\])?):\\s*(?:\\w+ \\[(?<logger>[^ ]+)(?: op[iI][dD]=(?<opid>[^ \\]]+))?\\]\\s*)?(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             },
             "host": {
-                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?:host-(?<log_pid>\\d+))?)\\s+(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
+                "pattern": "^(?<timestamp>(?:\\S{3,8}\\s+\\d{1,2} \\d{2}:\\d{2}:\\d{2}|\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z))\\s+(?<level>\\w+\\((?<syslog_pri>\\d+)\\))(?:\\[\\+\\]|\\+)?(?:(?: (?<log_syslog_tag>(?:host-(?<log_pid>\\d+))?)\\s+(?<body>.*))$|:?(?:(?: ---)? last message repeated \\d+ times?(?: ---)?))"
             },
             "notime": {
-                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2})\\s+(?<level>\\w+)\\((?<syslog_pri>\\d+)\\)\\s+(?<log_procname>[^\\[]+)\\[(?<log_pid>\\d+)\\]:\\s(?<new_time>\\d{2}:\\d{2}:\\d{2}\\.\\d+)\\s+(?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2})\\s+(?<level>\\w+\\((?<syslog_pri>\\d+)\\))\\s+(?<log_procname>[^\\[]+)\\[(?<log_pid>\\d+)\\]:\\s(?<new_time>\\d{2}:\\d{2}:\\d{2}\\.\\d+)\\s+(?<body>.*)"
             }
         },
         "level": {
-            "debug": "^Db$",
-            "info": "^In$",
-            "notice": "^No$",
-            "warning": "^Wa$",
-            "error": "^Er$",
-            "critical": "^Cr$",
-            "fatal": "^(?:Al|Em)$"
+            "debug": "^Db\\(\\d+\\)$",
+            "info": "^In\\(\\d+\\)$",
+            "notice": "^No\\(\\d+\\)$",
+            "warning": "^Wa\\(\\d+\\)$",
+            "error": "^Er\\(\\d+\\)$",
+            "critical": "^Cr\\(\\d+\\)$",
+            "fatal": "^(?:Al|Em)\\(\\d+\\)$"
         },
         "opid-field": "opid",
         "opid": {

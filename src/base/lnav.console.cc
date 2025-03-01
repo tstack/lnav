@@ -469,6 +469,25 @@ wchar_for_icon(ui_icon_t ic)
             return {L'\u26a0', role_t::VCR_WARNING};
         case ui_icon_t::error:
             return {L'\u2718', role_t::VCR_ERROR};
+
+        case ui_icon_t::log_level_trace:
+            return {L'\U0001F143', role_t::VCR_TEXT};
+        case ui_icon_t::log_level_debug:
+            return {L'\U0001F133', role_t::VCR_TEXT};
+        case ui_icon_t::log_level_info:
+            return {L'\U0001F138', role_t::VCR_TEXT};
+        case ui_icon_t::log_level_stats:
+            return {L'\U0001F142', role_t::VCR_TEXT};
+        case ui_icon_t::log_level_notice:
+            return {L'\U0001F13d', role_t::VCR_TEXT};
+        case ui_icon_t::log_level_warning:
+            return {L'\U0001F146', role_t::VCR_WARNING};
+        case ui_icon_t::log_level_error:
+            return {L'\U0001F134', role_t::VCR_ERROR};
+        case ui_icon_t::log_level_critical:
+            return {L'\U0001F132', role_t::VCR_ERROR};
+        case ui_icon_t::log_level_fatal:
+            return {L'\U0001F135', role_t::VCR_ERROR};
     }
 
     ensure(false);

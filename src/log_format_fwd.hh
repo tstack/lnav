@@ -131,6 +131,7 @@ struct scan_batch_context {
 
 extern const string_attr_type<void> L_PREFIX;
 extern const string_attr_type<void> L_TIMESTAMP;
+extern const string_attr_type<void> L_LEVEL;
 extern const string_attr_type<std::shared_ptr<logfile>> L_FILE;
 extern const string_attr_type<bookmark_metadata*> L_PARTITION;
 extern const string_attr_type<void> L_MODULE;

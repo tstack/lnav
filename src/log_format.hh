@@ -52,7 +52,9 @@
 #include "highlighter.hh"
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
+#include "logfile.hh"
 #include "pcrepp/pcre2pp.hh"
+#include "robin_hood/robin_hood.h"
 #include "shared_buffer.hh"
 
 struct sqlite3;
@@ -608,6 +610,8 @@ public:
         return intern_string_t::case_lt(lhs->get_name(), rhs->get_name());
     }
 
+    exttm tm_for_display(logfile::iterator ll, string_fragment sf);
+
     enum class subsecond_unit {
         milli,
         micro,
@@ -635,6 +639,7 @@ public:
     bool lf_is_self_describing{false};
     bool lf_time_ordered{true};
     bool lf_specialized{false};
+    bool lf_level_hideable{true};
     std::optional<int64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;

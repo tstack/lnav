@@ -179,6 +179,33 @@
                     },
                     "error": {
                         "value": "✘"
+                    },
+                    "log-level-trace": {
+                        "value": "🅃"
+                    },
+                    "log-level-debug": {
+                        "value": "🄳"
+                    },
+                    "log-level-info": {
+                        "value": "🄸"
+                    },
+                    "log-level-stats": {
+                        "value": "🅂"
+                    },
+                    "log-level-notice": {
+                        "value": "🄽"
+                    },
+                    "log-level-warning": {
+                        "value": "🅆"
+                    },
+                    "log-level-error": {
+                        "value": "🄴"
+                    },
+                    "log-level-critical": {
+                        "value": "🄲"
+                    },
+                    "log-level-fatal": {
+                        "value": "🄵"
                     }
                 },
                 "styles": {
@@ -297,6 +324,14 @@
                     "offset-time": {
                         "color": "Teal",
                         "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
+                        "background-color": "#aaa",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -994,6 +1029,33 @@
                     },
                     "error": {
 
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
                     }
                 },
                 "styles": {
@@ -1111,6 +1173,14 @@
                     },
                     "offset-time": {
                         "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -1764,6 +1834,33 @@
                     },
                     "error": {
 
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
                     }
                 },
                 "styles": {
@@ -1881,6 +1978,14 @@
                     },
                     "offset-time": {
                         "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -2533,6 +2638,33 @@
                     },
                     "error": {
 
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
                     }
                 },
                 "styles": {
@@ -2650,6 +2782,14 @@
                     },
                     "offset-time": {
                         "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -3277,7 +3417,7 @@
             },
             "monocai": {
                 "vars": {
-                    "black": "#2d2a2e",
+                    "black": "Grey15",
                     "blue": "#5394ec",
                     "cyan": "#66d9ee",
                     "green": "#a7e22e",
@@ -3303,6 +3443,33 @@
                     },
                     "error": {
 
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
                     }
                 },
                 "styles": {
@@ -3315,7 +3482,7 @@
                         "strike": false
                     },
                     "text": {
-                        "color": "#f6f6f6",
+                        "color": "Grey89",
                         "background-color": "$black",
                         "underline": false,
                         "bold": false,
@@ -3332,7 +3499,7 @@
                     },
                     "alt-text": {
                         "color": "",
-                        "background-color": "#1c1c1c",
+                        "background-color": "Grey11",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -3421,6 +3588,14 @@
                     "offset-time": {
                         "color": "$cyan",
                         "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
+                        "background-color": "Grey27",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -4072,6 +4247,33 @@
                     },
                     "error": {
 
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
                     }
                 },
                 "styles": {
@@ -4189,6 +4391,14 @@
                     },
                     "offset-time": {
                         "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -4850,6 +5060,33 @@
                     },
                     "error": {
 
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
                     }
                 },
                 "styles": {
@@ -4967,6 +5204,14 @@
                     },
                     "offset-time": {
                         "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -5628,6 +5873,33 @@
                     },
                     "error": {
 
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
                     }
                 },
                 "styles": {
@@ -5745,6 +6017,14 @@
                     },
                     "offset-time": {
                         "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -6899,6 +7179,11 @@
                     "command": ":goto last hour",
                     "alt-msg": ""
                 }
+            }
+        },
+        "views": {
+            "log": {
+                "time-column": "disabled"
             }
         }
     },

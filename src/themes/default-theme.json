@@ -18,6 +18,33 @@
                     },
                     "error": {
                         "value": "\u2718"
+                    },
+                    "log-level-trace": {
+                        "value": "\uD83C\uDD43"
+                    },
+                    "log-level-debug": {
+                        "value": "\uD83C\uDD33"
+                    },
+                    "log-level-info": {
+                        "value": "\uD83C\uDD38"
+                    },
+                    "log-level-stats": {
+                        "value": "\uD83C\uDD42"
+                    },
+                    "log-level-notice": {
+                        "value": "\uD83C\uDD3D"
+                    },
+                    "log-level-warning": {
+                        "value": "\uD83C\uDD46"
+                    },
+                    "log-level-error": {
+                        "value": "\uD83C\uDD34"
+                    },
+                    "log-level-critical": {
+                        "value": "\uD83C\uDD32"
+                    },
+                    "log-level-fatal": {
+                        "value": "\uD83C\uDD35"
                     }
                 },
                 "vars": {
@@ -76,6 +103,9 @@
                     },
                     "offset-time": {
                         "color": "Teal"
+                    },
+                    "time-column": {
+                        "background-color": "#aaa"
                     },
                     "file-offset": {
                         "color": "Silver"

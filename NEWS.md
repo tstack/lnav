@@ -26,6 +26,17 @@ Features:
 * The `:comment` command will now switch the prompt to multi-line
   mode and does syntax highlighting for Markdown directives in the
   comment.
+* Scrolling right in the LOG view when at the start of a message
+  can hide the timestamp/level fields in the message and insert a
+  shorter timestamp column on the left side.
+  The column should take less space than the existing field and
+  aligns all timestamps across all log formats.
+  This feature is gated by the `/ui/views/log/time-column`
+  setting, with the following values:
+  - `disabled`: scrolling right works as normal and does not insert
+    the time column.
+  - `enabled`: scrolling right enables the time column.
+  - `default`: the time column is enabled and the default on startup.
 * Added a `fuzzy_match()` SQL function that compares a pattern to
   a string and returns a score.
   The algorithm used is the same as in lnav itself.

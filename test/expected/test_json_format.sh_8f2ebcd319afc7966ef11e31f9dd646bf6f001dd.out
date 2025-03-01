@@ -13,9 +13,9 @@ panic: foo bar failed baz
 ⋮ abc 59 def DEBUG2 - Details...
 ⋮ abc 59 def DEBUG - Details...
 ⋮ abc 49 def STATS - 1 beat per second
-[33m⋮[0m[33m [0m[33mabc 49 def[0m[33m WARNING - [0m[33mnot looking good[0m
-[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m ERROR - [0m[31mlooking bad[0m
-[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m CRITICAL - [0m[31msooo bad[0m
-[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m FATAL - [0m[31mshoot[0m
+[33m⋮[0m[33m [0m[33mabc 49 def[0m[33m [0m[33mWARNING[0m[33m - [0m[33mnot looking good[0m
+[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31mERROR[0m[31m - [0m[31mlooking bad[0m
+[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31mCRITICAL[0m[31m - [0m[31msooo bad[0m
+[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31mFATAL[0m[31m - [0m[31mshoot[0m
 [31m  obj: { "field1" : "hi", "field2": 2 }[0m
 [31m  arr: ["hi", {"sub1": true}][0m

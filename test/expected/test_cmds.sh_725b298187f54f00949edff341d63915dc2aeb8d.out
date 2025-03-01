@@ -1,4 +1,4 @@
-⋮[7m [0m[7mabc 49 def[0m[7m 0     c.e.foo [0m[7mStarting up service[0m
-⋮[7m [0m[7mabc 49 def[0m[7m 0     c.e.foo [0m[7mShutting down service[0m
+⋮[7m [0m[7mabc 49 def[0m[7m [0m[7m0    [0m[7m c.e.foo [0m[7mStarting up service[0m
+⋮[7m [0m[7mabc 49 def[0m[7m [0m[7m0    [0m[7m c.e.foo [0m[7mShutting down service[0m
   user: steve@example.com
-[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m 10    c.e.foo [0m[31mlooking bad[0m
+[31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31m10   [0m[31m c.e.foo [0m[31mlooking bad[0m

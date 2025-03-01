@@ -52,6 +52,16 @@ enum class ui_icon_t : int32_t {
     info,
     warning,
     error,
+
+    log_level_trace,
+    log_level_debug,
+    log_level_info,
+    log_level_stats,
+    log_level_notice,
+    log_level_warning,
+    log_level_error,
+    log_level_critical,
+    log_level_fatal,
 };
 
 /** Roles that can be mapped to curses attributes using attrs_for_role() */
@@ -72,6 +82,8 @@ enum class role_t : int32_t {
     VCR_ADJUSTED_TIME,
     VCR_SKEWED_TIME,
     VCR_OFFSET_TIME,
+    VCR_TIME_COLUMN,
+    VCR_TIME_COLUMN_TO_TEXT,
     VCR_FILE_OFFSET,
     VCR_INVALID_MSG,
     VCR_STATUS, /*< Normal status line text. */
@@ -363,7 +375,8 @@ public:
 
 extern const string_attr_type<void> SA_ORIGINAL_LINE;
 extern const string_attr_type<void> SA_BODY;
-extern const string_attr_type<void> SA_HIDDEN;
+extern const string_attr_type<ui_icon_t> SA_HIDDEN;
+extern const string_attr_type<void> SA_REPLACED;
 extern const string_attr_type<intern_string_t> SA_FORMAT;
 extern const string_attr_type<void> SA_REMOVED;
 extern const string_attr_type<void> SA_PREFORMATTED;

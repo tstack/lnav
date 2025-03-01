@@ -72,7 +72,7 @@ log_level_t string2level(const char *levelstr, ssize_t len, bool exact)
      EOF = "\x00";
 
      EOF { RET(LEVEL_UNKNOWN); }
-     'trace' { RET(LEVEL_TRACE); }
+     'trace'|'verbose' { RET(LEVEL_TRACE); }
      'debug' [2-5]? @debug_level {
          if (debug_level == nullptr) {
              RET(LEVEL_DEBUG);

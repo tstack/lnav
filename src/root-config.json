@@ -11,6 +11,11 @@
         },
         "movement": {
             "mode": "cursor"
+        },
+        "views": {
+            "log": {
+                "time-column": "disabled"
+            }
         }
     },
     "log": {

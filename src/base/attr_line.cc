@@ -622,7 +622,8 @@ attr_line_t::apply_hide()
     auto& sa = this->al_attrs;
 
     for (auto& sattr : sa) {
-        if (sattr.sa_type == &SA_HIDDEN && sattr.sa_range.length() > 1) {
+        if (sattr.sa_type == &SA_HIDDEN) {
+            auto icon = sattr.sa_value.get<ui_icon_t>();
             auto& lr = sattr.sa_range;
 
             std::for_each(sa.begin(), sa.end(), [&](string_attr& attr) {
@@ -634,8 +635,21 @@ attr_line_t::apply_hide()
             this->al_string.replace(lr.lr_start, lr.length(), "\xE2\x8B\xAE");
             shift_string_attrs(sa, lr.lr_start + 1, -(lr.length() - 3));
             sattr.sa_type = &VC_ICON;
-            sattr.sa_value = ui_icon_t::hidden;
+            sattr.sa_value = icon;
             lr.lr_end = lr.lr_start + 3;
+        } else if (sattr.sa_type == &SA_REPLACED) {
+            auto& lr = sattr.sa_range;
+
+            std::for_each(sa.begin(), sa.end(), [&](string_attr& attr) {
+                if (attr.sa_type == &VC_STYLE && lr.contains(attr.sa_range)) {
+                    attr.sa_type = &SA_REMOVED;
+                }
+            });
+
+            this->al_string.erase(lr.lr_start, lr.length());
+            shift_string_attrs(sa, lr.lr_start, -lr.length());
+            sattr.sa_type = &SA_REMOVED;
+            lr.lr_end = lr.lr_start;
         }
     }
 }

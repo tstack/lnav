@@ -386,6 +386,12 @@ view_curses::mvwattrline(ncplane* window,
             ncplane_putstr_yx(
                 window, y, x, &expanded_line.c_str()[lr_bytes.lr_start]);
         }
+        nccell clear_cell;
+        nccell_init(&clear_cell);
+        nccell_prime(
+            window, &clear_cell, " ", 0, view_colors::to_channels(base_attrs));
+        ncplane_hline(
+            window, &clear_cell, lr_chars.length() - retval.mr_chars_out);
     }
 
     text_attrs resolved_line_attrs[line_width_chars + 1];
@@ -881,6 +887,16 @@ view_colors::init_roles(const lnav_theme& lt,
              lt.lt_icon_info,
              lt.lt_icon_warning,
              lt.lt_icon_error,
+
+             lt.lt_icon_log_level_trace,
+             lt.lt_icon_log_level_debug,
+             lt.lt_icon_log_level_info,
+             lt.lt_icon_log_level_stats,
+             lt.lt_icon_log_level_notice,
+             lt.lt_icon_log_level_warning,
+             lt.lt_icon_log_level_error,
+             lt.lt_icon_log_level_critical,
+             lt.lt_icon_log_level_fatal,
          })
     {
         size_t index = 0;
@@ -905,10 +921,17 @@ view_colors::init_roles(const lnav_theme& lt,
                         icon_role = role_t::VCR_INFO;
                         break;
                     case ui_icon_t::warning:
+                    case ui_icon_t::log_level_warning:
                         icon_role = role_t::VCR_WARNING;
                         break;
                     case ui_icon_t::error:
+                    case ui_icon_t::log_level_error:
+                    case ui_icon_t::log_level_fatal:
+                    case ui_icon_t::log_level_critical:
                         icon_role = role_t::VCR_ERROR;
+                        break;
+                    default:
+                        icon_role = role_t::VCR_TEXT;
                         break;
                 }
                 this->vc_icons[icon_index]
@@ -993,6 +1016,49 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_skewed_time, reporter);
     this->get_role_attrs(role_t::VCR_OFFSET_TIME)
         = this->to_attrs(lt, lt.lt_style_offset_time, reporter);
+    this->get_role_attrs(role_t::VCR_TIME_COLUMN)
+        = this->to_attrs(lt, lt.lt_style_time_column, reporter);
+    {
+        auto& time_to_text
+            = this->get_role_attrs(role_t::VCR_TIME_COLUMN_TO_TEXT);
+        auto time_attrs = this->attrs_for_role(role_t::VCR_TIME_COLUMN);
+        auto text_attrs = this->attrs_for_role(role_t::VCR_TEXT);
+        time_to_text.ra_class_name.clear();
+
+        std::optional<lab_color> fg_as_lab_opt;
+        std::optional<lab_color> bg_as_lab_opt;
+        time_to_text.ra_normal.ta_fg_color = time_attrs.ta_bg_color;
+        if (time_attrs.ta_bg_color.cu_value.is<palette_color>()) {
+            auto pal_index
+                = time_attrs.ta_bg_color.cu_value.get<palette_color>();
+            if (pal_index < vc_active_palette->tc_palette.size()) {
+                fg_as_lab_opt
+                    = vc_active_palette->tc_palette[pal_index].xc_lab_color;
+            }
+        }
+        time_to_text.ra_normal.ta_bg_color = text_attrs.ta_bg_color;
+        if (text_attrs.ta_bg_color.cu_value.is<palette_color>()) {
+            auto pal_index
+                = text_attrs.ta_bg_color.cu_value.get<palette_color>();
+            if (pal_index < vc_active_palette->tc_palette.size()) {
+                bg_as_lab_opt
+                    = vc_active_palette->tc_palette[pal_index].xc_lab_color;
+            }
+        }
+
+        if (fg_as_lab_opt && bg_as_lab_opt) {
+            auto fg_as_lab = fg_as_lab_opt.value();
+            auto bg_as_lab = bg_as_lab_opt.value();
+            auto diff = fg_as_lab.lc_l - bg_as_lab.lc_l;
+            fg_as_lab.lc_l -= diff / 4.0;
+            bg_as_lab.lc_l += diff / 4.0;
+
+            time_to_text.ra_normal.ta_fg_color
+                = vc_active_palette->match_color(fg_as_lab);
+            time_to_text.ra_normal.ta_bg_color
+                = vc_active_palette->match_color(bg_as_lab);
+        }
+    }
     this->get_role_attrs(role_t::VCR_FILE_OFFSET)
         = this->to_attrs(lt, lt.lt_style_file_offset, reporter);
     this->get_role_attrs(role_t::VCR_INVALID_MSG)

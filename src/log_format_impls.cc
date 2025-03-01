@@ -30,6 +30,7 @@
  */
 
 #include <algorithm>
+#include <chrono>
 #include <utility>
 
 #include "log_format.hh"
@@ -301,6 +302,11 @@ public:
                     LEVEL_META, line, to_line_range(level_cap->trim()));
                 values.lvv_values.back().lv_meta.lvm_format
                     = (log_format*) this;
+
+                lr = to_line_range(level_cap->trim());
+                if (lr.lr_end != line.length()) {
+                    sa.emplace_back(lr, L_LEVEL.value());
+                }
             }
         }
 
@@ -1284,8 +1290,8 @@ public:
                     if (sbr_sf_opt) {
                         auto sbr_sf = sbr_sf_opt.value().trim();
                         date_time_scanner dts;
-                        struct exttm tm;
-                        struct timeval tv;
+                        exttm tm;
+                        timeval tv;
 
                         if (dts.scan(sbr_sf.data(),
                                      sbr_sf.length(),
@@ -1555,9 +1561,11 @@ public:
     {
         auto& sbr = values.lvv_sbr;
         ws_separated_string ss(sbr.get_data(), sbr.length());
+        std::optional<line_range> date_lr;
+        std::optional<line_range> time_lr;
 
         for (auto iter = ss.begin(); iter != ss.end(); ++iter) {
-            string_fragment sf = *iter;
+            auto sf = *iter;
 
             if (iter.index() >= this->wlf_field_defs.size()) {
                 sa.emplace_back(line_range{sf.sf_begin, -1},
@@ -1574,6 +1582,11 @@ public:
             auto lr = line_range(sf.sf_begin, sf.sf_end);
 
             if (lr.is_valid()) {
+                if (fd.fd_meta.lvm_name == F_DATE) {
+                    date_lr = lr;
+                } else if (fd.fd_meta.lvm_name == F_TIME) {
+                    time_lr = lr;
+                }
                 values.lvv_values.emplace_back(fd.fd_meta, sbr, lr);
                 if (sf.startswith("\"")) {
                     auto& meta = values.lvv_values.back().lv_meta;
@@ -1591,6 +1604,17 @@ public:
                 values.lvv_values.back().lv_meta.lvm_user_hidden
                     = fd.fd_root_meta->lvm_user_hidden;
             }
+        }
+        if (time_lr) {
+            auto ts_lr = time_lr.value();
+            if (date_lr) {
+                if (date_lr->lr_end + 1 == time_lr->lr_start) {
+                    ts_lr.lr_start = date_lr->lr_start;
+                    ts_lr.lr_end = time_lr->lr_end;
+                }
+            }
+
+            sa.emplace_back(ts_lr, L_TIMESTAMP.value());
         }
         log_format::annotate(lf, line_number, sa, values, annotate_module);
     }

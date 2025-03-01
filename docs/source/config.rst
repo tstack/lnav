@@ -82,6 +82,9 @@ your liking.  The options can be changed using the :code:`:config` command.
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/default-colors
 
+.. _config_log_time_column:
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/ui/properties/views/properties/log/properties/time-column
 
 .. _themes:
 

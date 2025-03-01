@@ -238,7 +238,8 @@ class logfile_sub_source
     , public list_input_delegate
     , public text_anchors
     , public text_delegate
-    , public text_detail_provider {
+    , public text_detail_provider
+    , public lnav_config_listener {
 public:
     const static bookmark_type_t BM_FILES;
 
@@ -248,21 +249,20 @@ public:
 
     ~logfile_sub_source() = default;
 
+    enum class line_context_t : uint8_t {
+        filename,
+        basename,
+        none,
+        time_column,
+    };
+
     void increase_line_context();
 
     bool decrease_line_context();
 
     size_t get_filename_offset() const;
 
-    bool is_filename_enabled() const
-    {
-        return (bool) (this->lss_flags & F_FILENAME);
-    }
-
-    bool is_basename_enabled() const
-    {
-        return (bool) (this->lss_flags & F_BASENAME);
-    }
+    line_context_t get_line_context() const { return this->lss_line_context; }
 
     log_level_t get_min_log_level() const { return this->lss_min_log_level; }
 
@@ -742,6 +742,8 @@ public:
 
     std::optional<json_string> text_row_details(const textview_curses& tc);
 
+    void reload_config(error_reporter &reporter);
+
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }
 
@@ -753,20 +755,6 @@ protected:
 private:
     static const size_t LINE_SIZE_CACHE_SIZE = 512;
 
-    enum {
-        B_SCRUB,
-        B_FILENAME,
-        B_BASENAME,
-    };
-
-    enum {
-        F_SCRUB = (1UL << B_SCRUB),
-        F_FILENAME = (1UL << B_FILENAME),
-        F_BASENAME = (1UL << B_BASENAME),
-
-        F_NAME_MASK = (F_FILENAME | F_BASENAME),
-    };
-
     void clear_line_size_cache()
     {
         this->lss_line_size_cache.fill(std::make_pair(0, 0));
@@ -777,9 +765,10 @@ private:
 
     size_t lss_basename_width = 0;
     size_t lss_filename_width = 0;
-    unsigned long lss_flags{0};
+    line_context_t lss_line_context{line_context_t::none};
     bool lss_force_rebuild{false};
     std::vector<std::unique_ptr<logfile_data>> lss_files;
+    unsigned int lss_all_timestamp_flags{0};
 
     std::vector<uint32_t> lss_filtered_index;
     auto_mem<sqlite3_stmt> lss_preview_filter_stmt{sqlite3_finalize};
@@ -796,6 +785,7 @@ private:
     lnav::document::metadata lss_token_meta;
     int lss_token_meta_line{-1};
     int lss_token_meta_size{0};
+    size_t lss_time_column_size{0};
     logline_value_vector lss_token_values;
     int lss_token_shift_start{0};
     int lss_token_shift_size{0};

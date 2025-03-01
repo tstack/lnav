@@ -64,6 +64,7 @@ static auto intern_lifetime = intern_string::get_table_lifetime();
 
 constexpr string_attr_type<void> L_PREFIX("prefix");
 constexpr string_attr_type<void> L_TIMESTAMP("timestamp");
+constexpr string_attr_type<void> L_LEVEL("level");
 constexpr string_attr_type<std::shared_ptr<logfile>> L_FILE("file");
 constexpr string_attr_type<bookmark_metadata*> L_PARTITION("partition");
 constexpr string_attr_type<void> L_MODULE("module");
@@ -1991,9 +1992,17 @@ external_log_format::annotate(logfile* lf,
     }
 
     auto body_cap = md[pat.p_body_field_index];
+    auto level_cap = md[pat.p_level_field_index];
+
+    if (level_cap
+        && (!body_cap
+            || (body_cap && level_cap->sf_begin != body_cap->sf_begin)))
+    {
+        sa.emplace_back(to_line_range(level_cap.value()), L_LEVEL.value());
+    }
 
     for (size_t lpc = 0; lpc < pat.p_value_by_index.size(); lpc++) {
-        const indexed_value_def& ivd = pat.p_value_by_index[lpc];
+        const auto& ivd = pat.p_value_by_index[lpc];
         const scaling_factor* scaling = nullptr;
         auto cap = md[ivd.ivd_index];
         const auto& vd = *ivd.ivd_value_def;
@@ -2225,8 +2234,9 @@ read_json_field(yajlpp_parse_context* ypc,
             jlu->jlu_opid_frag = opid_iter->first;
         }
     }
-    if (!jlu->jlu_format->elf_subid_field.empty() &&
-        jlu->jlu_format->elf_subid_field == field_name) {
+    if (!jlu->jlu_format->elf_subid_field.empty()
+        && jlu->jlu_format->elf_subid_field == field_name)
+    {
         jlu->jlu_subid = frag.to_string();
     }
 
@@ -2562,6 +2572,11 @@ external_log_format::get_subline(const logline& ll,
                                 this->jlf_line_attrs.emplace_back(
                                     lr, SA_BODY.value());
                             } else if (lv_iter->lv_meta.lvm_name
+                                       == this->elf_level_field)
+                            {
+                                this->jlf_line_attrs.emplace_back(
+                                    lr, L_LEVEL.value());
+                            } else if (lv_iter->lv_meta.lvm_name
                                            == this->elf_opid_field
                                        && !lr.empty())
                             {
@@ -2631,12 +2646,16 @@ external_log_format::get_subline(const logline& ll,
                         {
                             const auto* level_name = ll.get_level_name();
                             auto level_len = strlen(level_name);
+                            lr.lr_start = this->jlf_cached_line.size();
                             this->json_append(
                                 jfe, nullptr, level_name, level_len);
                             if (jfe.jfe_auto_width) {
                                 this->json_append_to_cache(MAX_LEVEL_NAME_LEN
                                                            - level_len);
                             }
+                            lr.lr_end = this->jlf_cached_line.size();
+                            this->jlf_line_attrs.emplace_back(lr,
+                                                              L_LEVEL.value());
                         } else if (!jfe.jfe_default_value.empty()) {
                             if (!jfe.jfe_prefix.empty()) {
                                 this->json_append_to_cache(jfe.jfe_prefix);
@@ -3376,18 +3395,15 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         auto level_iter = this->elf_value_defs.find(this->elf_level_field);
         if (level_iter == this->elf_value_defs.end()) {
             auto& vd = this->elf_value_defs[this->elf_level_field];
-            if (vd.get() == nullptr) {
-                vd = std::make_shared<value_def>(
-                    this->elf_level_field,
-                    value_kind_t::VALUE_TEXT,
-                    logline_value_meta::internal_column{},
-                    this);
-                if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
-                    this->elf_value_def_order.emplace_back(vd);
-                }
+            vd = std::make_shared<value_def>(
+                this->elf_level_field,
+                value_kind_t::VALUE_TEXT,
+                logline_value_meta::internal_column{},
+                this);
+            if (this->elf_type == elf_type_t::ELF_TYPE_JSON) {
+                this->elf_value_def_order.emplace_back(vd);
             }
             vd->vd_meta.lvm_name = this->elf_level_field;
-            vd->vd_meta.lvm_kind = value_kind_t::VALUE_TEXT;
             vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
             vd->vd_internal = true;
 
@@ -3395,6 +3411,11 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                 this->elf_value_defs[LOG_LEVEL_STR] = vd;
             }
         } else {
+            if (level_iter->second->vd_meta.lvm_kind
+                != value_kind_t::VALUE_TEXT)
+            {
+                this->lf_level_hideable = false;
+            }
             this->elf_value_defs[LOG_LEVEL_STR] = level_iter->second;
         }
     }
@@ -4602,6 +4623,40 @@ log_format::find_root_format(const char* name)
         }
     }
     return nullptr;
+}
+
+exttm
+log_format::tm_for_display(logfile::iterator ll, string_fragment sf)
+{
+    auto adjusted_time = ll->get_timeval();
+    exttm retval;
+
+    if (this->lf_timestamp_flags & ETF_NANOS_SET) {
+        timeval actual_tv;
+        exttm tm;
+        if (this->lf_date_time.scan(sf.data(),
+                                    sf.length(),
+                                    this->get_timestamp_formats(),
+                                    &tm,
+                                    actual_tv,
+                                    false))
+        {
+            adjusted_time.tv_usec = actual_tv.tv_usec;
+        }
+    }
+    gmtime_r(&adjusted_time.tv_sec, &retval.et_tm);
+    retval.et_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::microseconds{adjusted_time.tv_usec})
+                         .count();
+    retval.et_flags = this->lf_timestamp_flags;
+    if (this->lf_timestamp_flags & ETF_ZONE_SET
+        && this->lf_date_time.dts_zoned_to_local)
+    {
+        retval.et_flags &= ~ETF_Z_IS_UTC;
+    }
+    retval.et_gmtoff = this->lf_date_time.dts_local_offset_cache;
+
+    return retval;
 }
 
 log_format::pattern_for_lines::pattern_for_lines(uint32_t pfl_line,

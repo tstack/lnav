@@ -74,7 +74,12 @@ The majority of these hotkeys should be available in all views.
    * - :kbd:`l`
      - :kbd:`→`
      -
-     - Right half a page
+     - Right half a page.  In the log view, pressing right while at the start
+       of the message text can hide the timestamp/level fields in the message
+       and insert a shorter timestamp column on the left side.  The column
+       should take less space than the existing field and aligns all
+       timestamps across all log formats.  This feature is gated by the
+       :ref:`/ui/views/log/time-column<config_log_time_column>` setting.
    * - :kbd:`Shift` + :kbd:`l`
      - :kbd:`Shift` + :kbd:`→`
      -
