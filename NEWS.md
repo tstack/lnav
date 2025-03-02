@@ -52,6 +52,7 @@ Bug Fixes:
   So, a light background with a dark foreground will be respected.
 * Improved performance for compressed files.
 * Copying a column with a text value in the DB overlay view.
+* Generic logs read from stdin or exec'd were not working properly.
 
 ## lnav v0.12.4
 

@@ -422,58 +422,29 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 && this->tss_view->get_selection() == row)
             {
                 buffer[this->lss_time_column_size] = ' ';
-                this->lss_time_column_size += 1;
+                buffer[this->lss_time_column_size + 1] = ' ';
+                this->lss_time_column_size += 2;
             } else {
-                constexpr char block[] = "\u258c";
+                constexpr char block[] = "\u258c ";
 
                 strncpy(
                     &buffer[this->lss_time_column_size], block, sizeof(block));
                 this->lss_time_column_size += sizeof(block) - 1;
+            }
+            if (time_attr->sa_range.lr_start != 0) {
+                buffer[this->lss_time_column_size] = ' ';
+                this->lss_time_column_size += 1;
+                this->lss_time_column_padding = 1;
+            } else {
+                this->lss_time_column_padding = 0;
             }
             value_out.insert(1, buffer, this->lss_time_column_size);
         }
         if (format->lf_level_hideable) {
             auto level_attr = find_string_attr(this->lss_token_attrs, &L_LEVEL);
             if (level_attr != this->lss_token_attrs.end()) {
-                ui_icon_t icon;
-                switch (this->lss_token_line->get_msg_level()) {
-                    case LEVEL_TRACE:
-                        icon = ui_icon_t::log_level_trace;
-                        break;
-                    case LEVEL_DEBUG:
-                    case LEVEL_DEBUG2:
-                    case LEVEL_DEBUG3:
-                    case LEVEL_DEBUG4:
-                    case LEVEL_DEBUG5:
-                        icon = ui_icon_t::log_level_debug;
-                        break;
-                    case LEVEL_INFO:
-                        icon = ui_icon_t::log_level_info;
-                        break;
-                    case LEVEL_STATS:
-                        icon = ui_icon_t::log_level_stats;
-                        break;
-                    case LEVEL_NOTICE:
-                        icon = ui_icon_t::log_level_notice;
-                        break;
-                    case LEVEL_WARNING:
-                        icon = ui_icon_t::log_level_warning;
-                        break;
-                    case LEVEL_ERROR:
-                        icon = ui_icon_t::log_level_error;
-                        break;
-                    case LEVEL_CRITICAL:
-                        icon = ui_icon_t::log_level_critical;
-                        break;
-                    case LEVEL_FATAL:
-                        icon = ui_icon_t::log_level_fatal;
-                        break;
-                    default:
-                        icon = ui_icon_t::hidden;
-                        break;
-                }
                 this->lss_token_attrs.emplace_back(level_attr->sa_range,
-                                                   SA_HIDDEN.value(icon));
+                                                   SA_REPLACED.value());
             }
         }
     } else if (this->lss_line_context < line_context_t::none) {
@@ -650,18 +621,60 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                                    this->lss_token_file->get_filename())));
     } else if (this->lss_time_column_size > 0) {
         shift_string_attrs(value_out, 1, this->lss_time_column_size);
+
+        ui_icon_t icon;
+        switch (this->lss_token_line->get_msg_level()) {
+            case LEVEL_TRACE:
+                icon = ui_icon_t::log_level_trace;
+                break;
+            case LEVEL_DEBUG:
+            case LEVEL_DEBUG2:
+            case LEVEL_DEBUG3:
+            case LEVEL_DEBUG4:
+            case LEVEL_DEBUG5:
+                icon = ui_icon_t::log_level_debug;
+                break;
+            case LEVEL_INFO:
+                icon = ui_icon_t::log_level_info;
+                break;
+            case LEVEL_STATS:
+                icon = ui_icon_t::log_level_stats;
+                break;
+            case LEVEL_NOTICE:
+                icon = ui_icon_t::log_level_notice;
+                break;
+            case LEVEL_WARNING:
+                icon = ui_icon_t::log_level_warning;
+                break;
+            case LEVEL_ERROR:
+                icon = ui_icon_t::log_level_error;
+                break;
+            case LEVEL_CRITICAL:
+                icon = ui_icon_t::log_level_critical;
+                break;
+            case LEVEL_FATAL:
+                icon = ui_icon_t::log_level_fatal;
+                break;
+            default:
+                icon = ui_icon_t::hidden;
+                break;
+        }
+        auto extra_space_size = this->lss_time_column_padding;
+        lr.lr_start = 1 + this->lss_time_column_size - 1 - extra_space_size;
+        lr.lr_end = 1 + this->lss_time_column_size - extra_space_size;
+        value_out.emplace_back(lr, VC_ICON.value(icon));
         if (this->tss_view->is_selectable()
             && this->tss_view->get_selection() != row)
         {
             lr.lr_start = 1;
-            lr.lr_end = 1 + this->lss_time_column_size - 1;
+            lr.lr_end = 1 + this->lss_time_column_size - 2 - extra_space_size;
             value_out.emplace_back(lr, VC_ROLE.value(role_t::VCR_TIME_COLUMN));
             if (this->lss_token_line->is_time_skewed()) {
                 value_out.emplace_back(lr,
                                        VC_ROLE.value(role_t::VCR_SKEWED_TIME));
             }
-            lr.lr_start = 1 + this->lss_time_column_size - 1;
-            lr.lr_end = 1 + this->lss_time_column_size;
+            lr.lr_start = 1 + this->lss_time_column_size - 2 - extra_space_size;
+            lr.lr_end = 1 + this->lss_time_column_size - 1 - extra_space_size;
             value_out.emplace_back(
                 lr, VC_ROLE.value(role_t::VCR_TIME_COLUMN_TO_TEXT));
         }
@@ -722,21 +735,21 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         }
     }
 
-    if (this->lss_token_file->is_time_adjusted()) {
-        auto time_range = find_string_attr_range(value_out, &L_TIMESTAMP);
+    if (this->lss_time_column_size == 0) {
+        if (this->lss_token_file->is_time_adjusted()) {
+            auto time_range = find_string_attr_range(value_out, &L_TIMESTAMP);
 
-        if (time_range.lr_end != -1) {
-            value_out.emplace_back(time_range,
-                                   VC_ROLE.value(role_t::VCR_ADJUSTED_TIME));
-        }
-    }
+            if (time_range.lr_end != -1) {
+                value_out.emplace_back(
+                    time_range, VC_ROLE.value(role_t::VCR_ADJUSTED_TIME));
+            }
+        } else if (this->lss_token_line->is_time_skewed()) {
+            auto time_range = find_string_attr_range(value_out, &L_TIMESTAMP);
 
-    if (this->lss_token_line->is_time_skewed()) {
-        auto time_range = find_string_attr_range(value_out, &L_TIMESTAMP);
-
-        if (time_range.lr_end != -1) {
-            value_out.emplace_back(time_range,
-                                   VC_ROLE.value(role_t::VCR_SKEWED_TIME));
+            if (time_range.lr_end != -1) {
+                value_out.emplace_back(time_range,
+                                       VC_ROLE.value(role_t::VCR_SKEWED_TIME));
+            }
         }
     }
 

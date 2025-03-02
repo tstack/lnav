@@ -786,6 +786,7 @@ private:
     int lss_token_meta_line{-1};
     int lss_token_meta_size{0};
     size_t lss_time_column_size{0};
+    size_t lss_time_column_padding{0};
     logline_value_vector lss_token_values;
     int lss_token_shift_start{0};
     int lss_token_shift_size{0};

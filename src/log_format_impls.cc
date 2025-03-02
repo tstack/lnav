@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <memory>
 #include <utility>
 
 #include "log_format.hh"
@@ -74,13 +75,15 @@ public:
         return scan_no_match{"not a piper capture"};
     }
 
+    static constexpr int TIMESTAMP_SIZE = 28;
+
     void annotate(logfile* lf,
                   uint64_t line_number,
                   string_attrs_t& sa,
                   logline_value_vector& values,
                   bool annotate_module) const override
     {
-        auto lr = line_range{0, 0};
+        auto lr = line_range{0, TIMESTAMP_SIZE};
         sa.emplace_back(lr, L_TIMESTAMP.value());
         log_format::annotate(lf, line_number, sa, values, annotate_module);
     }
@@ -89,7 +92,7 @@ public:
                      shared_buffer_ref& sbr,
                      bool full_message) override
     {
-        this->plf_cached_line.resize(32);
+        this->plf_cached_line.resize(TIMESTAMP_SIZE);
         auto tlen = sql_strftime(this->plf_cached_line.data(),
                                  this->plf_cached_line.size(),
                                  ll.get_timeval(),
@@ -127,7 +130,7 @@ public:
         auto retval = std::make_shared<piper_log_format>(*this);
 
         retval->lf_specialized = true;
-        retval->lf_timestamp_flags |= ETF_ZONE_SET;
+        retval->lf_timestamp_flags |= ETF_ZONE_SET | ETF_MICROS_SET;
         return retval;
     }
 
@@ -193,8 +196,8 @@ public:
                        shared_buffer_ref& sbr,
                        scan_batch_context& sbc) override
     {
-        struct exttm log_time;
-        struct timeval log_tv;
+        exttm log_time;
+        timeval log_tv;
         string_fragment ts;
         std::optional<string_fragment> level;
         const char* last_pos;
@@ -221,7 +224,7 @@ public:
                                         &level))
             != nullptr)
         {
-            log_level_t level_val = log_level_t::LEVEL_UNKNOWN;
+            auto level_val = log_level_t::LEVEL_UNKNOWN;
             if (level) {
                 level_val = string2level(level->data(), level->length());
             }
@@ -258,7 +261,7 @@ public:
             }
 
             dst.emplace_back(li.li_file_range.fr_offset, log_tv, level_val);
-            return scan_match{0};
+            return scan_match{5};
         }
 
         return scan_no_match{"no patterns matched"};
@@ -2114,6 +2117,7 @@ public:
                     if (kvp.first == "time" || kvp.first == "ts") {
                         sa.emplace_back(value_lr, L_TIMESTAMP.value());
                     } else if (kvp.first == "level") {
+                        sa.emplace_back(value_lr, L_LEVEL.value());
                     } else if (kvp.first == "msg") {
                         sa.emplace_back(value_lr, SA_BODY.value());
                     } else if (kvp.second.is<logfmt::parser::quoted_value>()
