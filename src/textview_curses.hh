@@ -116,7 +116,7 @@ public:
 
     void revert_to_last(logfile_filter_state& lfs, size_t rollback_size);
 
-    void add_line(logfile_filter_state& lfs,
+    bool add_line(logfile_filter_state& lfs,
                   logfile_const_iterator ll,
                   const shared_buffer_ref& line);
 

@@ -28,6 +28,7 @@
  */
 
 #include <algorithm>
+#include <chrono>
 #include <future>
 
 #include "logfile_sub_source.hh"
@@ -186,10 +187,10 @@ struct filtered_logline_cmp {
 
     bool operator()(const uint32_t& lhs, const uint32_t& rhs) const
     {
-        content_line_t cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
-        content_line_t cl_rhs = (content_line_t) llss_controller.lss_index[rhs];
-        logline* ll_lhs = this->llss_controller.find_line(cl_lhs);
-        logline* ll_rhs = this->llss_controller.find_line(cl_rhs);
+        auto cl_lhs = (content_line_t) llss_controller.lss_index[lhs];
+        auto cl_rhs = (content_line_t) llss_controller.lss_index[rhs];
+        auto ll_lhs = this->llss_controller.find_line(cl_lhs);
+        auto ll_rhs = this->llss_controller.find_line(cl_rhs);
 
         if (ll_lhs == nullptr) {
             return true;
@@ -489,9 +490,9 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         return;
     }
 
-    view_colors& vc = view_colors::singleton();
+    auto& vc = view_colors::singleton();
     logline* next_line = nullptr;
-    struct line_range lr;
+    line_range lr;
     int time_offset_end = 0;
     text_attrs attrs;
 
@@ -691,7 +692,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         value_out.emplace_back(line_range(12, 13),
                                VC_GRAPHIC.value(NCACS_VLINE));
 
-        role_t bar_role = role_t::VCR_NONE;
+        auto bar_role = role_t::VCR_NONE;
 
         switch (this->get_line_accel_direction(vis_line_t(row))) {
             case log_accel::direction_t::A_STEADY:

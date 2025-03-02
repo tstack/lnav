@@ -824,7 +824,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         size_t begin_size = this->lf_index.size();
         bool record_rusage = this->lf_index.size() == 1;
         off_t begin_index_size = this->lf_index_size;
-        size_t rollback_size = 0;
+        size_t rollback_size = 0, rollback_index_start = 0;
 
         if (record_rusage) {
             getrusage(RUSAGE_SELF, &begin_rusage);
@@ -846,6 +846,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 rollback_size += 1;
             }
             this->lf_index.pop_back();
+            rollback_index_start = this->lf_index.size();
             rollback_size += 1;
 
             if (!this->lf_index.empty()) {
@@ -1059,8 +1060,18 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lf_index_size = li.li_file_range.next_offset();
 
             if (this->lf_logline_observer != nullptr) {
-                this->lf_logline_observer->logline_new_lines(
+                auto nl_rc = this->lf_logline_observer->logline_new_lines(
                     *this, this->begin() + old_size, this->end(), sbr);
+                if (rollback_size > 0 && old_size == rollback_index_start
+                    && nl_rc)
+                {
+                    log_debug(
+                        "%s: rollbacked line %zu matched filter, forcing "
+                        "full sort",
+                        this->lf_filename.c_str(),
+                        rollback_index_start);
+                    sort_needed = true;
+                }
             }
 
             if (this->lf_logfile_observer != nullptr) {

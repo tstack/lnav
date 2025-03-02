@@ -37,7 +37,7 @@
 #include "log_format.hh"
 #include "shared_buffer.hh"
 
-void
+bool
 line_filter_observer::logline_new_lines(const logfile& lf,
                                         logfile::const_iterator ll_begin,
                                         logfile::const_iterator ll_end,
@@ -47,9 +47,11 @@ line_filter_observer::logline_new_lines(const logfile& lf,
 
     require(&lf == this->lfo_filter_state.tfs_logfile.get());
 
+    auto retval = false;
+
     this->lfo_filter_state.resize(lf.size());
     if (this->lfo_filter_stack.empty()) {
-        return;
+        return retval;
     }
 
     for (; ll_begin != ll_end; ++ll_begin) {
@@ -65,10 +67,14 @@ line_filter_observer::logline_new_lines(const logfile& lf,
             if (offset
                 >= this->lfo_filter_state.tfs_filter_count[filter->get_index()])
             {
-                filter->add_line(this->lfo_filter_state, ll_begin, sbr_copy);
+                retval = filter->add_line(
+                             this->lfo_filter_state, ll_begin, sbr_copy)
+                    || retval;
             }
         }
     }
+
+    return retval;
 }
 
 void

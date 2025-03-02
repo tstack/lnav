@@ -52,7 +52,7 @@ public:
         }
     }
 
-    void logline_new_lines(const logfile& lf,
+    bool logline_new_lines(const logfile& lf,
                            logfile::const_iterator ll_baegin,
                            logfile::const_iterator ll_end,
                            const shared_buffer_ref& sbr) override;

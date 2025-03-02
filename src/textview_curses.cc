@@ -77,20 +77,21 @@ text_filter::revert_to_last(logfile_filter_state& lfs, size_t rollback_size)
     }
 }
 
-void
+bool
 text_filter::add_line(logfile_filter_state& lfs,
                       logfile::const_iterator ll,
                       const shared_buffer_ref& line)
 {
-    bool match_state = this->matches(line_source{*lfs.tfs_logfile, ll}, line);
-
     if (ll->is_message()) {
         this->end_of_message(lfs);
     }
+    auto retval = this->matches(line_source{*lfs.tfs_logfile, ll}, line);
 
     lfs.tfs_message_matched[this->lf_index]
-        = lfs.tfs_message_matched[this->lf_index] || match_state;
+        = lfs.tfs_message_matched[this->lf_index] || retval;
     lfs.tfs_lines_for_message[this->lf_index] += 1;
+
+    return retval;
 }
 
 void

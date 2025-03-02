@@ -544,7 +544,7 @@ public:
     virtual void logline_restart(const logfile& lf, file_size_t rollback_size)
         = 0;
 
-    virtual void logline_new_lines(const logfile& lf,
+    virtual bool logline_new_lines(const logfile& lf,
                                    logfile::const_iterator ll_begin,
                                    logfile::const_iterator ll_end,
                                    const shared_buffer_ref& sbr)
