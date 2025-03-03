@@ -87,6 +87,12 @@ parsed::arg_at(int x) const
                         }
                         return arg_at_result{arg.second.a_help, false, {}};
                     }
+                    case help_parameter_format_t::HPF_ALL_FILTERS:
+                    case help_parameter_format_t::HPF_ENABLED_FILTERS:
+                    case help_parameter_format_t::HPF_DISABLED_FILTERS:
+                    case help_parameter_format_t::HPF_HIGHLIGHTS: {
+                        return arg_at_result{arg.second.a_help, true, se};
+                    }
                     case help_parameter_format_t::HPF_TEXT:
                     case help_parameter_format_t::HPF_REGEX:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
@@ -222,7 +228,11 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_REGEX:
                 case help_parameter_format_t::HPF_SQL:
                 case help_parameter_format_t::HPF_SQL_EXPR:
-                case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
+                case help_parameter_format_t::HPF_TIME_FILTER_POINT:
+                case help_parameter_format_t::HPF_ALL_FILTERS:
+                case help_parameter_format_t::HPF_ENABLED_FILTERS:
+                case help_parameter_format_t::HPF_DISABLED_FILTERS:
+                case help_parameter_format_t::HPF_HIGHLIGHTS: {
                     auto sf = string_fragment{
                         se.se_origin.sf_string,
                         se.se_origin.sf_begin,
@@ -244,7 +254,10 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_LOADED_FILE:
                 case help_parameter_format_t::HPF_FORMAT_FIELD:
                 case help_parameter_format_t::HPF_NUMERIC_FIELD:
-                case help_parameter_format_t::HPF_TIMEZONE: {
+                case help_parameter_format_t::HPF_TIMEZONE:
+                case help_parameter_format_t::HPF_FILE_WITH_ZONE:
+                case help_parameter_format_t::HPF_VISIBLE_FILES:
+                case help_parameter_format_t::HPF_HIDDEN_FILES: {
                     if (!param.ht_enum_values.empty()) {
                         auto enum_iter = std::find(param.ht_enum_values.begin(),
                                                    param.ht_enum_values.end(),

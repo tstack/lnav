@@ -343,6 +343,36 @@ com_disable_filter(exec_context& ec,
     return Ok(retval);
 }
 
+static Result<std::string, lnav::console::user_message>
+com_delete_filter(exec_context& ec,
+                  std::string cmdline,
+                  std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (args.empty()) {
+        args.emplace_back("all-filters");
+    } else if (args.size() > 1) {
+        auto* tc = *lnav_data.ld_view_stack.top();
+        auto* tss = tc->get_sub_source();
+        auto& fs = tss->get_filters();
+
+        args[1] = remaining_args(cmdline, args);
+        if (ec.ec_dry_run) {
+            retval = "";
+        } else if (fs.delete_filter(args[1])) {
+            retval = "info: deleted filter";
+            tss->text_filters_changed();
+        } else {
+            return ec.make_error("unknown filter -- {}", args[1]);
+        }
+    } else {
+        return ec.make_error("expecting a filter to delete");
+    }
+
+    return Ok(retval);
+}
+
 static readline_context::command_t FILTERING_COMMANDS[] = {
     {
         "hide-lines-before",
@@ -428,8 +458,10 @@ static readline_context::command_t FILTERING_COMMANDS[] = {
 
         help_text(":enable-filter")
             .with_summary("Enable a previously created and disabled filter")
-            .with_parameter(help_text(
-                "pattern", "The regular expression used in the filter command"))
+            .with_parameter(
+                help_text("pattern",
+                          "The regular expression used in the filter command")
+                    .with_format(help_parameter_format_t::HPF_DISABLED_FILTERS))
             .with_tags({"filtering"})
             .with_opposites({"disable-filter"})
             .with_example({"To enable the disabled filter with the "
@@ -443,11 +475,29 @@ static readline_context::command_t FILTERING_COMMANDS[] = {
 
         help_text(":disable-filter")
             .with_summary("Disable a filter created with filter-in/filter-out")
-            .with_parameter(help_text(
-                "pattern", "The regular expression used in the filter command"))
+            .with_parameter(
+                help_text("pattern",
+                          "The regular expression used in the filter command")
+                    .with_format(help_parameter_format_t::HPF_ENABLED_FILTERS))
             .with_tags({"filtering"})
             .with_opposites({"filter-out", "filter-in"})
             .with_example({"To disable the filter with the pattern 'last "
+                           "message repeated'",
+                           "last message repeated"}),
+    },
+    {
+        "delete-filter",
+        com_delete_filter,
+
+        help_text(":delete-filter")
+            .with_summary("Delete the filter created with " ANSI_BOLD(
+                ":filter-in") " or " ANSI_BOLD(":filter-out"))
+            .with_parameter(
+                help_text("pattern", "The regular expression to match")
+                    .with_format(help_parameter_format_t::HPF_ALL_FILTERS))
+            .with_opposites({"filter-in", "filter-out"})
+            .with_tags({"filtering"})
+            .with_example({"To delete the filter with the pattern 'last "
                            "message repeated'",
                            "last message repeated"}),
     },

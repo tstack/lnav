@@ -952,6 +952,32 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                SUBST_TEXT.value(x + " "));
                        });
             }
+            case help_parameter_format_t::HPF_FILE_WITH_ZONE: {
+                static auto& safe_options_hier
+                    = injector::get<lnav::safe_file_options_hier&>();
+
+                std::vector<std::string> poss_str;
+                {
+                    safe::ReadAccess<safe_file_options_hier> options_hier(
+                        safe_options_hier);
+                    for (const auto& hier_pair :
+                         options_hier->foh_path_to_collection)
+                    {
+                        for (const auto& coll_pair :
+                             hier_pair.second.foc_pattern_to_options)
+                        {
+                            poss_str.emplace_back(coll_pair.first);
+                        }
+                    }
+                }
+
+                return poss_str | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(
+                                   fmt::to_string(std::filesystem::path(x))));
+                       });
+            }
             case help_parameter_format_t::HPF_SEARCH_TABLE: {
                 std::vector<std::string> poss_strs;
 
@@ -970,6 +996,69 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     | lnav::itertools::map([](const auto& x) {
                            return attr_line_t().append(x).with_attr_for_all(
                                SUBST_TEXT.value(x + " "));
+                       });
+            }
+            case help_parameter_format_t::HPF_HIDDEN_FILES:
+            case help_parameter_format_t::HPF_VISIBLE_FILES: {
+                std::vector<std::string> poss_strs;
+
+                for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+                    if (lf.get() == nullptr) {
+                        continue;
+                    }
+
+                    auto escaped_fn = fmt::to_string(lf->get_filename());
+                    lnav_data.ld_log_source.find_data(lf) |
+                        [&escaped_fn, ht_format = ht->ht_format, &poss_strs](
+                            auto ld) {
+                            if ((ld->is_visible()
+                                 && ht_format
+                                     == help_parameter_format_t::
+                                         HPF_VISIBLE_FILES)
+                                || (!ld->is_visible()
+                                    && ht_format
+                                        == help_parameter_format_t::
+                                            HPF_HIDDEN_FILES))
+                            {
+                                poss_strs.emplace_back(escaped_fn);
+                            }
+                        };
+                }
+                return poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x + " "));
+                       });
+            }
+            case help_parameter_format_t::HPF_ALL_FILTERS:
+            case help_parameter_format_t::HPF_ENABLED_FILTERS:
+            case help_parameter_format_t::HPF_DISABLED_FILTERS: {
+                std::vector<std::string> poss_strs;
+                const auto& fs = tc.get_sub_source()->get_filters();
+
+                for (const auto& filt : fs) {
+                    if (ht->ht_format
+                        == help_parameter_format_t::HPF_DISABLED_FILTERS)
+                    {
+                        if (filt->is_enabled()) {
+                            continue;
+                        }
+                    } else if (ht->ht_format
+                               == help_parameter_format_t::HPF_ENABLED_FILTERS)
+                    {
+                        if (!filt->is_enabled()) {
+                            continue;
+                        }
+                    }
+                    if (filt->get_lang() == filter_lang_t::REGEX) {
+                        poss_strs.emplace_back(filt->get_id());
+                    }
+                }
+
+                return poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x));
                        });
             }
         }

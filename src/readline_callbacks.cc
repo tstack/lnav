@@ -446,6 +446,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                 prompt.p_editor.set_content(prompt_res.pr_new_prompt);
                 prompt.p_editor.move_cursor_to({(int) args[0].length() + 1, 0});
                 generation += 1;
+                iter = lnav_commands.end();
             }
             rc.tc_suggestion = prompt_res.pr_suggestion;
         }

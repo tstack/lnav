@@ -539,11 +539,6 @@ com_clear_file_timezone(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("file-with-zone");
-        return Ok(retval);
-    }
-
     if (args.size() != 2) {
         return ec.make_error("expecting a single file path or pattern");
     }
@@ -978,63 +973,60 @@ com_mark_expr(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty() || lnav_data.ld_view_stack.empty()) {
-        args.emplace_back("filter-expr-syms");
-    } else if (args.size() < 2) {
+    if (args.size() < 2) {
         return ec.make_error("expecting an SQL expression");
-    } else if (*lnav_data.ld_view_stack.top() != &lnav_data.ld_views[LNV_LOG]) {
+    }
+    if (*lnav_data.ld_view_stack.top() != &lnav_data.ld_views[LNV_LOG]) {
         return ec.make_error(":mark-expr is only supported for the LOG view");
-    } else {
-        auto expr = remaining_args(cmdline, args);
-        auto stmt_str = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), expr);
+    }
+    auto expr = remaining_args(cmdline, args);
+    auto stmt_str = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), expr);
 
-        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
 #ifdef SQLITE_PREPARE_PERSISTENT
-        auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
-                                          stmt_str.c_str(),
-                                          stmt_str.size(),
-                                          SQLITE_PREPARE_PERSISTENT,
-                                          stmt.out(),
-                                          nullptr);
+    auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
+                                      stmt_str.c_str(),
+                                      stmt_str.size(),
+                                      SQLITE_PREPARE_PERSISTENT,
+                                      stmt.out(),
+                                      nullptr);
 #else
-        auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
-                                          stmt_str.c_str(),
-                                          stmt_str.size(),
-                                          stmt.out(),
-                                          nullptr);
+    auto retcode = sqlite3_prepare_v2(lnav_data.ld_db.in(),
+                                      stmt_str.c_str(),
+                                      stmt_str.size(),
+                                      stmt.out(),
+                                      nullptr);
 #endif
-        if (retcode != SQLITE_OK) {
-            const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
-            auto expr_al
-                = attr_line_t(expr)
-                      .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
-                      .move();
-            readline_sqlite_highlighter(expr_al, std::nullopt);
-            auto um
-                = lnav::console::user_message::error(
+    if (retcode != SQLITE_OK) {
+        const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
+        auto expr_al
+            = attr_line_t(expr)
+                  .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE))
+                  .move();
+        readline_sqlite_highlighter(expr_al, std::nullopt);
+        auto um = lnav::console::user_message::error(
                       attr_line_t("invalid mark expression: ").append(expr_al))
                       .with_reason(errmsg)
                       .with_snippets(ec.ec_source)
                       .move();
 
-            return Err(um);
+        return Err(um);
+    }
+
+    auto& lss = lnav_data.ld_log_source;
+    if (ec.ec_dry_run) {
+        auto set_res = lss.set_preview_sql_filter(stmt.release());
+
+        if (set_res.isErr()) {
+            return Err(set_res.unwrapErr());
         }
+        lnav_data.ld_preview_status_source[0].get_description().set_value(
+            "Matches are highlighted in the text view");
+    } else {
+        auto set_res = lss.set_sql_marker(expr, stmt.release());
 
-        auto& lss = lnav_data.ld_log_source;
-        if (ec.ec_dry_run) {
-            auto set_res = lss.set_preview_sql_filter(stmt.release());
-
-            if (set_res.isErr()) {
-                return Err(set_res.unwrapErr());
-            }
-            lnav_data.ld_preview_status_source[0].get_description().set_value(
-                "Matches are highlighted in the text view");
-        } else {
-            auto set_res = lss.set_sql_marker(expr, stmt.release());
-
-            if (set_res.isErr()) {
-                return Err(set_res.unwrapErr());
-            }
+        if (set_res.isErr()) {
+            return Err(set_res.unwrapErr());
         }
     }
 
@@ -1233,9 +1225,7 @@ com_clear_highlight(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("highlight");
-    } else if (args.size() > 1 && args[1][0] != '$') {
+    if (args.size() > 1 && args[1][0] != '$') {
         textview_curses* tc = *lnav_data.ld_view_stack.top();
         auto& hm = tc->get_highlights();
 
@@ -1278,45 +1268,13 @@ com_help(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 }
 
 static Result<std::string, lnav::console::user_message>
-com_delete_filter(exec_context& ec,
-                  std::string cmdline,
-                  std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty()) {
-        args.emplace_back("all-filters");
-    } else if (args.size() > 1) {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
-        text_sub_source* tss = tc->get_sub_source();
-        filter_stack& fs = tss->get_filters();
-
-        args[1] = remaining_args(cmdline, args);
-        if (ec.ec_dry_run) {
-            retval = "";
-        } else if (fs.delete_filter(args[1])) {
-            retval = "info: deleted filter";
-            tss->text_filters_changed();
-        } else {
-            return ec.make_error("unknown filter -- {}", args[1]);
-        }
-    } else {
-        return ec.make_error("expecting a filter to delete");
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
 com_filter_expr(exec_context& ec,
                 std::string cmdline,
                 std::vector<std::string>& args)
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("filter-expr-syms");
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         textview_curses* tc = *lnav_data.ld_view_stack.top();
 
         if (tc != &lnav_data.ld_views[LNV_LOG]) {
@@ -1427,8 +1385,7 @@ com_enable_word_wrap(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         lnav_data.ld_views[LNV_LOG].set_word_wrap(true);
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(true);
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(true);
@@ -1444,8 +1401,7 @@ com_disable_word_wrap(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (!ec.ec_dry_run) {
+    if (!ec.ec_dry_run) {
         lnav_data.ld_views[LNV_LOG].set_word_wrap(false);
         lnav_data.ld_views[LNV_TEXT].set_word_wrap(false);
         lnav_data.ld_views[LNV_PRETTY].set_word_wrap(false);
@@ -1674,8 +1630,7 @@ com_session(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (ec.ec_dry_run) {
+    if (ec.ec_dry_run) {
         retval = "";
     } else if (args.size() >= 2) {
         /* XXX put these in a map */
@@ -1865,53 +1820,6 @@ com_file_visibility(exec_context& ec,
             make_visible ? "showing" : "hiding",
             log_file_count,
             text_file_count);
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
-com_hide_file(exec_context& ec,
-              std::string cmdline,
-              std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty()) {
-        args.emplace_back("visible-files");
-    } else {
-        return com_file_visibility(ec, cmdline, args);
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
-com_show_file(exec_context& ec,
-              std::string cmdline,
-              std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty()) {
-        args.emplace_back("hidden-files");
-    } else {
-        return com_file_visibility(ec, cmdline, args);
-    }
-
-    return Ok(retval);
-}
-
-static Result<std::string, lnav::console::user_message>
-com_show_only_this_file(exec_context& ec,
-                        std::string cmdline,
-                        std::vector<std::string>& args)
-{
-    std::string retval;
-
-    if (args.empty()) {
-    } else {
-        return com_file_visibility(ec, cmdline, args);
     }
 
     return Ok(retval);
@@ -3829,10 +3737,11 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_summary("Clear the timezone setting for the "
                           "focused file or "
                           "the given glob pattern.")
-            .with_parameter(help_text{"pattern",
-                                      "The glob pattern to match against files "
-                                      "that should "
-                                      "no longer use this timezone"})
+            .with_parameter(
+                help_text{"pattern",
+                          "The glob pattern to match against files "
+                          "that should no longer use this timezone"}
+                    .with_format(help_parameter_format_t::HPF_FILE_WITH_ZONE))
             .with_tags({"file-options"}),
         com_clear_file_timezone_prompt,
     },
@@ -3978,26 +3887,15 @@ readline_context::command_t STD_COMMANDS[] = {
 
      help_text(":clear-highlight")
          .with_summary("Remove a previously set highlight regular expression")
-         .with_parameter(help_text("pattern",
-                                   "The regular expression previously used "
-                                   "with :highlight"))
+         .with_parameter(
+             help_text("pattern",
+                       "The regular expression previously used "
+                       "with :highlight")
+                 .with_format(help_parameter_format_t::HPF_HIGHLIGHTS))
          .with_tags({"display"})
          .with_opposites({"highlight"})
          .with_example(
              {"To clear the highlight with the pattern 'foobar'", "foobar"})},
-    {"delete-filter",
-     com_delete_filter,
-
-     help_text(":delete-filter")
-         .with_summary("Delete the filter created with " ANSI_BOLD(
-             ":filter-in") " or " ANSI_BOLD(":filter-out"))
-         .with_parameter(
-             help_text("pattern", "The regular expression to match"))
-         .with_opposites({"filter-in", "filter-out"})
-         .with_tags({"filtering"})
-         .with_example({"To delete the filter with the pattern 'last "
-                        "message repeated'",
-                        "last message repeated"})},
     {
         "filter-expr",
         com_filter_expr,
@@ -4106,34 +4004,44 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_tags({"vtables", "sql"})
          .with_example({"To delete the search table named 'task_durations'",
                         "task_durations"})},
-    {"hide-file",
-     com_hide_file,
+    {
+        "hide-file",
+        com_file_visibility,
 
-     help_text(":hide-file")
-         .with_summary("Hide the given file(s) and skip indexing until it "
-                       "is shown again.  If no path is given, the current "
-                       "file in the view is hidden")
-         .with_parameter(help_text{"path",
-                                   "A path or glob pattern that "
-                                   "specifies the files to hide"}
-                             .zero_or_more())
-         .with_opposites({"show-file"})},
-    {"show-file",
-     com_show_file,
+        help_text(":hide-file")
+            .with_summary("Hide the given file(s) and skip indexing until it "
+                          "is shown again.  If no path is given, the current "
+                          "file in the view is hidden")
+            .with_parameter(
+                help_text{"path",
+                          "A path or glob pattern that "
+                          "specifies the files to hide"}
+                    .with_format(help_parameter_format_t::HPF_VISIBLE_FILES)
+                    .zero_or_more())
+            .with_opposites({"show-file"}),
+    },
+    {
+        "show-file",
+        com_file_visibility,
 
-     help_text(":show-file")
-         .with_summary("Show the given file(s) and resume indexing.")
-         .with_parameter(help_text{"path",
-                                   "The path or glob pattern that "
-                                   "specifies the files to show"}
-                             .zero_or_more())
-         .with_opposites({"hide-file"})},
-    {"show-only-this-file",
-     com_show_only_this_file,
+        help_text(":show-file")
+            .with_summary("Show the given file(s) and resume indexing.")
+            .with_parameter(
+                help_text{"path",
+                          "The path or glob pattern that "
+                          "specifies the files to show"}
+                    .with_format(help_parameter_format_t::HPF_HIDDEN_FILES)
+                    .zero_or_more())
+            .with_opposites({"hide-file"}),
+    },
+    {
+        "show-only-this-file",
+        com_file_visibility,
 
-     help_text(":show-only-this-file")
-         .with_summary("Show only the file for the focused line in the view")
-         .with_opposites({"hide-file"})},
+        help_text(":show-only-this-file")
+            .with_summary("Show only the file for the focused line in the view")
+            .with_opposites({"hide-file"}),
+    },
     {
         "comment",
         com_comment,

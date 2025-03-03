@@ -73,6 +73,22 @@ help_text::with_example(const help_example& example) noexcept
     return *this;
 }
 
+bool
+help_text::is_trailing_arg() const
+{
+    switch (this->ht_format) {
+        case help_parameter_format_t::HPF_TEXT:
+        case help_parameter_format_t::HPF_TIME_FILTER_POINT:
+        case help_parameter_format_t::HPF_MULTILINE_TEXT:
+        case help_parameter_format_t::HPF_REGEX:
+        case help_parameter_format_t::HPF_SQL:
+        case help_parameter_format_t::HPF_SQL_EXPR:
+            return true;
+        default:
+            return false;
+    }
+}
+
 help_text&
 help_text::with_enum_values(
     const std::initializer_list<const char*>& enum_values) noexcept

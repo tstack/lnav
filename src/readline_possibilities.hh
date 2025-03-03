@@ -47,12 +47,6 @@ std::unordered_set<std::string>
 view_text_possibilities(textview_curses& tc);
 
 void add_env_possibilities(ln_mode_t context);
-void add_filter_possibilities(textview_curses* tc);
-void add_mark_possibilities();
-void add_config_possibilities();
-void add_tag_possibilities();
-void add_file_possibilities();
 void add_recent_netlocs_possibilities();
-void add_tz_possibilities(ln_mode_t context);
 
 #endif  // LNAV_READLINE_POSSIBILITIES_H
