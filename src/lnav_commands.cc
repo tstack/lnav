@@ -2264,198 +2264,191 @@ com_summarize(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("colname");
-        return Ok(retval);
-    } else if (!setup_logline_table(ec)) {
+    if (!setup_logline_table(ec)) {
         return ec.make_error("no log data available");
-    } else if (args.size() == 1) {
+    }
+    if (args.size() == 1) {
         return ec.make_error("no columns specified");
-    } else {
-        auto_mem<char, sqlite3_free> query_frag;
-        std::vector<std::string> other_columns;
-        std::vector<std::string> num_columns;
-        const auto& top_source = ec.ec_source.back();
-        sql_progress_guard progress_guard(sql_progress,
-                                          sql_progress_finished,
-                                          top_source.s_location,
-                                          top_source.s_content);
-        auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
-        int retcode;
-        std::string query;
+    }
+    auto_mem<char, sqlite3_free> query_frag;
+    std::vector<std::string> other_columns;
+    std::vector<std::string> num_columns;
+    const auto& top_source = ec.ec_source.back();
+    sql_progress_guard progress_guard(sql_progress,
+                                      sql_progress_finished,
+                                      top_source.s_location,
+                                      top_source.s_content);
+    auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+    int retcode;
+    std::string query;
 
-        query = "SELECT ";
-        for (size_t lpc = 1; lpc < args.size(); lpc++) {
-            if (lpc > 1)
-                query += ", ";
-            query += args[lpc];
-        }
-        query += " FROM logline ";
-
-        retcode = sqlite3_prepare_v2(
-            lnav_data.ld_db.in(), query.c_str(), -1, stmt.out(), nullptr);
-        if (retcode != SQLITE_OK) {
-            const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
-
-            return ec.make_error("{}", errmsg);
-        }
-
-        switch (sqlite3_step(stmt.in())) {
-            case SQLITE_OK:
-            case SQLITE_DONE: {
-                return ec.make_error("no data");
-            } break;
-            case SQLITE_ROW:
-                break;
-            default: {
-                const char* errmsg;
-
-                errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                return ec.make_error("{}", errmsg);
-            } break;
-        }
-
-        if (ec.ec_dry_run) {
-            return Ok(std::string());
-        }
-
-        for (int lpc = 0; lpc < sqlite3_column_count(stmt.in()); lpc++) {
-            switch (sqlite3_column_type(stmt.in(), lpc)) {
-                case SQLITE_INTEGER:
-                case SQLITE_FLOAT:
-                    num_columns.push_back(args[lpc + 1]);
-                    break;
-                default:
-                    other_columns.push_back(args[lpc + 1]);
-                    break;
-            }
-        }
-
-        query = "SELECT";
-        for (auto iter = other_columns.begin(); iter != other_columns.end();
-             ++iter)
-        {
-            if (iter != other_columns.begin()) {
-                query += ",";
-            }
-            query_frag
-                = sqlite3_mprintf(" %s as \"c_%s\", count(*) as \"count_%s\"",
-                                  iter->c_str(),
-                                  iter->c_str(),
-                                  iter->c_str());
-            query += query_frag;
-        }
-
-        if (!other_columns.empty() && !num_columns.empty()) {
+    query = "SELECT ";
+    for (size_t lpc = 1; lpc < args.size(); lpc++) {
+        if (lpc > 1)
             query += ", ";
-        }
+        query += args[lpc];
+    }
+    query += " FROM logline ";
 
-        for (auto iter = num_columns.begin(); iter != num_columns.end(); ++iter)
-        {
-            if (iter != num_columns.begin()) {
-                query += ",";
-            }
-            query_frag = sqlite3_mprintf(
-                " sum(\"%s\"), "
-                " min(\"%s\"), "
-                " avg(\"%s\"), "
-                " median(\"%s\"), "
-                " stddev(\"%s\"), "
-                " max(\"%s\") ",
-                iter->c_str(),
-                iter->c_str(),
-                iter->c_str(),
-                iter->c_str(),
-                iter->c_str(),
-                iter->c_str());
-            query += query_frag;
-        }
+    retcode = sqlite3_prepare_v2(
+        lnav_data.ld_db.in(), query.c_str(), -1, stmt.out(), nullptr);
+    if (retcode != SQLITE_OK) {
+        const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
 
-        query
-            += (" FROM logline "
-                "WHERE (logline.log_part is null or "
-                "startswith(logline.log_part, '.') = 0) ");
+        return ec.make_error("{}", errmsg);
+    }
 
-        for (auto iter = other_columns.begin(); iter != other_columns.end();
-             ++iter)
-        {
-            if (iter == other_columns.begin()) {
-                query += " GROUP BY ";
-            } else {
-                query += ",";
-            }
-            query_frag = sqlite3_mprintf(" \"c_%s\"", iter->c_str());
-            query += query_frag;
-        }
+    switch (sqlite3_step(stmt.in())) {
+        case SQLITE_OK:
+        case SQLITE_DONE: {
+            return ec.make_error("no data");
+        } break;
+        case SQLITE_ROW:
+            break;
+        default: {
+            const char* errmsg;
 
-        for (auto iter = other_columns.begin(); iter != other_columns.end();
-             ++iter)
-        {
-            if (iter == other_columns.begin()) {
-                query += " ORDER BY ";
-            } else {
-                query += ",";
-            }
-            query_frag = sqlite3_mprintf(
-                " \"count_%s\" desc, \"c_%s\" collate "
-                "naturalnocase asc",
-                iter->c_str(),
-                iter->c_str());
-            query += query_frag;
-        }
-        log_debug("query %s", query.c_str());
-
-        db_label_source& dls = lnav_data.ld_db_row_source;
-
-        dls.clear();
-        retcode = sqlite3_prepare_v2(
-            lnav_data.ld_db.in(), query.c_str(), -1, stmt.out(), nullptr);
-
-        if (retcode != SQLITE_OK) {
-            const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
-
+            errmsg = sqlite3_errmsg(lnav_data.ld_db);
             return ec.make_error("{}", errmsg);
-        } else if (stmt == nullptr) {
-            retval = "";
-        } else {
-            bool done = false;
+        } break;
+    }
 
-            ec.ec_sql_callback(ec, stmt.in());
-            while (!done) {
-                retcode = sqlite3_step(stmt.in());
+    if (ec.ec_dry_run) {
+        return Ok(std::string());
+    }
 
-                switch (retcode) {
-                    case SQLITE_OK:
-                    case SQLITE_DONE:
-                        done = true;
-                        break;
-
-                    case SQLITE_ROW:
-                        ec.ec_sql_callback(ec, stmt.in());
-                        break;
-
-                    default: {
-                        const char* errmsg;
-
-                        errmsg = sqlite3_errmsg(lnav_data.ld_db);
-                        return ec.make_error("{}", errmsg);
-                    }
-                }
-            }
-
-            if (retcode == SQLITE_DONE) {
-                lnav_data.ld_views[LNV_LOG].reload_data();
-                lnav_data.ld_views[LNV_DB].reload_data();
-                lnav_data.ld_views[LNV_DB].set_left(0);
-
-                if (dls.dls_row_cursors.size() > 0) {
-                    ensure_view(&lnav_data.ld_views[LNV_DB]);
-                }
-            }
-
-            lnav_data.ld_bottom_source.update_loading(0, 0);
-            lnav_data.ld_status[LNS_BOTTOM].do_update();
+    for (int lpc = 0; lpc < sqlite3_column_count(stmt.in()); lpc++) {
+        switch (sqlite3_column_type(stmt.in(), lpc)) {
+            case SQLITE_INTEGER:
+            case SQLITE_FLOAT:
+                num_columns.push_back(args[lpc + 1]);
+                break;
+            default:
+                other_columns.push_back(args[lpc + 1]);
+                break;
         }
+    }
+
+    query = "SELECT";
+    for (auto iter = other_columns.begin(); iter != other_columns.end(); ++iter)
+    {
+        if (iter != other_columns.begin()) {
+            query += ",";
+        }
+        query_frag
+            = sqlite3_mprintf(" %s as \"c_%s\", count(*) as \"count_%s\"",
+                              iter->c_str(),
+                              iter->c_str(),
+                              iter->c_str());
+        query += query_frag;
+    }
+
+    if (!other_columns.empty() && !num_columns.empty()) {
+        query += ", ";
+    }
+
+    for (auto iter = num_columns.begin(); iter != num_columns.end(); ++iter) {
+        if (iter != num_columns.begin()) {
+            query += ",";
+        }
+        query_frag = sqlite3_mprintf(
+            " sum(\"%s\"), "
+            " min(\"%s\"), "
+            " avg(\"%s\"), "
+            " median(\"%s\"), "
+            " stddev(\"%s\"), "
+            " max(\"%s\") ",
+            iter->c_str(),
+            iter->c_str(),
+            iter->c_str(),
+            iter->c_str(),
+            iter->c_str(),
+            iter->c_str());
+        query += query_frag;
+    }
+
+    query
+        += (" FROM logline "
+            "WHERE (logline.log_part is null or "
+            "startswith(logline.log_part, '.') = 0) ");
+
+    for (auto iter = other_columns.begin(); iter != other_columns.end(); ++iter)
+    {
+        if (iter == other_columns.begin()) {
+            query += " GROUP BY ";
+        } else {
+            query += ",";
+        }
+        query_frag = sqlite3_mprintf(" \"c_%s\"", iter->c_str());
+        query += query_frag;
+    }
+
+    for (auto iter = other_columns.begin(); iter != other_columns.end(); ++iter)
+    {
+        if (iter == other_columns.begin()) {
+            query += " ORDER BY ";
+        } else {
+            query += ",";
+        }
+        query_frag = sqlite3_mprintf(
+            " \"count_%s\" desc, \"c_%s\" collate "
+            "naturalnocase asc",
+            iter->c_str(),
+            iter->c_str());
+        query += query_frag;
+    }
+    log_debug("query %s", query.c_str());
+
+    db_label_source& dls = lnav_data.ld_db_row_source;
+
+    dls.clear();
+    retcode = sqlite3_prepare_v2(
+        lnav_data.ld_db.in(), query.c_str(), -1, stmt.out(), nullptr);
+
+    if (retcode != SQLITE_OK) {
+        const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
+
+        return ec.make_error("{}", errmsg);
+    } else if (stmt == nullptr) {
+        retval = "";
+    } else {
+        bool done = false;
+
+        ec.ec_sql_callback(ec, stmt.in());
+        while (!done) {
+            retcode = sqlite3_step(stmt.in());
+
+            switch (retcode) {
+                case SQLITE_OK:
+                case SQLITE_DONE:
+                    done = true;
+                    break;
+
+                case SQLITE_ROW:
+                    ec.ec_sql_callback(ec, stmt.in());
+                    break;
+
+                default: {
+                    const char* errmsg;
+
+                    errmsg = sqlite3_errmsg(lnav_data.ld_db);
+                    return ec.make_error("{}", errmsg);
+                }
+            }
+        }
+
+        if (retcode == SQLITE_DONE) {
+            lnav_data.ld_views[LNV_LOG].reload_data();
+            lnav_data.ld_views[LNV_DB].reload_data();
+            lnav_data.ld_views[LNV_DB].set_left(0);
+
+            if (dls.dls_row_cursors.size() > 0) {
+                ensure_view(&lnav_data.ld_views[LNV_DB]);
+            }
+        }
+
+        lnav_data.ld_bottom_source.update_loading(0, 0);
+        lnav_data.ld_status[LNS_BOTTOM].do_update();
     }
 
     return Ok(retval);
@@ -4242,18 +4235,21 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_example({"To add the command ':highlight foobar' to "
                         "the session file",
                         ":highlight foobar"})},
-    {"summarize",
-     com_summarize,
+    {
+        "summarize",
+        com_summarize,
 
-     help_text(":summarize")
-         .with_summary("Execute a SQL query that computes the "
-                       "characteristics "
-                       "of the values in the given column")
-         .with_parameter(
-             help_text("column-name", "The name of the column to analyze."))
-         .with_example({"To get a summary of the sc_bytes column in the "
-                        "access_log table",
-                        "sc_bytes"})},
+        help_text(":summarize")
+            .with_summary("Execute a SQL query that computes the "
+                          "characteristics "
+                          "of the values in the given column")
+            .with_parameter(
+                help_text("column-name", "The name of the column to analyze.")
+                    .with_format(help_parameter_format_t::HPF_FORMAT_FIELD))
+            .with_example({"To get a summary of the sc_bytes column in the "
+                           "access_log table",
+                           "sc_bytes"}),
+    },
     {"switch-to-view",
      com_switch_to_view,
 
