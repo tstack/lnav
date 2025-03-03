@@ -536,10 +536,10 @@ data_parser::pairup(data_parser::schema_id_t* schema,
             this->dp_msg_format->append("#");
         }
         if ((size_t) this->dp_msg_format_begin
-            < this->dp_scanner->get_input().length())
+            < this->dp_scanner->get_input().sf_end)
         {
-            auto last = this->dp_scanner->get_input().substr(
-                this->dp_msg_format_begin);
+            auto last = this->dp_scanner->get_input();
+            last.sf_begin = this->dp_msg_format_begin;
 
             switch (last.front()) {
                 case '\'':
@@ -919,32 +919,32 @@ data_parser::get_string_up_to_value(const data_parser::element& elem)
         = elem.e_token == DNT_PAIR ? elem.e_sub_elements->back() : elem;
 
     if (this->dp_msg_format_begin <= val_elem.e_capture.c_begin) {
-        auto leading_and_key = data_scanner::capture_t(
+        auto leading_and_key_cap = data_scanner::capture_t(
             this->dp_msg_format_begin, val_elem.e_capture.c_begin);
-        auto str = this->dp_scanner->get_input().data();
-        if (leading_and_key.length() >= 2) {
-            switch (str[leading_and_key.c_end - 1]) {
+        auto leading_and_key_sf
+            = this->dp_scanner->to_string_fragment(leading_and_key_cap);
+        if (leading_and_key_cap.length() >= 2) {
+            switch (leading_and_key_sf.back()) {
                 case '\'':
                 case '"':
-                    leading_and_key.c_end -= 1;
-                    switch (str[leading_and_key.c_end - 1]) {
+                    leading_and_key_sf.pop_back();
+                    switch (leading_and_key_sf.back()) {
                         case 'r':
                         case 'u':
-                            leading_and_key.c_end -= 1;
+                            leading_and_key_sf.pop_back();
                             break;
                     }
                     break;
             }
-            switch (str[leading_and_key.c_begin]) {
+            switch (leading_and_key_sf.front()) {
                 case '\'':
                 case '"':
-                    leading_and_key.c_begin += 1;
+                    leading_and_key_sf.sf_begin += 1;
                     break;
             }
         }
         this->dp_msg_format_begin = val_elem.e_capture.c_end;
-        return this->dp_scanner->to_string_fragment(leading_and_key)
-            .to_string();
+        return leading_and_key_sf.to_string();
     } else {
         this->dp_msg_format_begin = val_elem.e_capture.c_end;
     }

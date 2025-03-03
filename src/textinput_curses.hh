@@ -352,6 +352,12 @@ public:
 
     int get_cursor_offset() const;
 
+    bool is_cursor_at_end_of_line() const
+    {
+        return this->tc_cursor.x
+            == this->tc_lines[this->tc_cursor.y].column_width();
+    }
+
     void clear_inactive_value()
     {
         this->tc_inactive_value.clear();

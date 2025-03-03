@@ -514,6 +514,20 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                         : arg_res.aar_element.se_value);
                 rc.open_popup_for_completion(left, poss);
                 rc.tc_popup.set_title(arg_res.aar_help->ht_name);
+            } else if (arg_res.aar_help->ht_format
+                           == help_parameter_format_t::HPF_REGEX
+                       && arg_res.aar_element.se_value.empty()
+                       && rc.is_cursor_at_end_of_line())
+            {
+                auto re_arg = parsed_cmd.p_args[arg_res.aar_help->ht_name];
+                if (!re_arg.a_values.empty()) {
+                    rc.tc_suggestion = prompt.get_regex_suggestion(
+                        *tc, re_arg.a_values[0].se_value);
+                } else {
+                    rc.tc_suggestion.clear();
+                }
+            } else {
+                rc.tc_suggestion.clear();
             }
         } else {
             log_info("no arg at %d", x);
@@ -689,7 +703,7 @@ static void
 rl_search_change(textinput_curses& rc, bool is_req)
 {
     static const auto SEARCH_HELP
-        = help_text("search", "blah")
+        = help_text("search", "search the view for a pattern")
               .with_parameter(
                   help_text("pattern", "The pattern to search for")
                       .with_format(help_parameter_format_t::HPF_REGEX));
@@ -722,7 +736,16 @@ rl_search_change(textinput_curses& rc, bool is_req)
                           arg_pair.aar_element.se_origin.sf_begin);
                 rc.open_popup_for_completion(left, poss);
                 rc.tc_popup.set_title(arg_pair.aar_help->ht_name);
+            } else if (arg_pair.aar_element.se_value.empty()
+                       && rc.is_cursor_at_end_of_line())
+            {
+                rc.tc_suggestion = prompt.get_regex_suggestion(*tc, line);
+            } else {
+                log_debug("not at end of line");
+                rc.tc_suggestion.clear();
             }
+        } else {
+            log_debug("no arg");
         }
     }
 }

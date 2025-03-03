@@ -164,7 +164,8 @@ public:
         this->cleanup_end();
     }
 
-    explicit data_scanner(string_fragment sf) : ds_input(sf)
+    explicit data_scanner(string_fragment sf)
+        : ds_input(sf), ds_init_offset(sf.sf_begin), ds_next_offset(sf.sf_begin)
     {
         this->cleanup_end();
     }
@@ -200,16 +201,18 @@ public:
 
         std::string to_string() const
         {
-            return {&this->tr_data[this->tr_capture.c_begin],
-                    (size_t) this->tr_capture.length()};
+            return {
+                &this->tr_data[this->tr_capture.c_begin],
+                (size_t) this->tr_capture.length(),
+            };
         }
     };
 
     std::optional<tokenize_result> tokenize2(text_format_t tf
-                                                = text_format_t::TF_UNKNOWN);
+                                             = text_format_t::TF_UNKNOWN);
 
     std::optional<tokenize_result> find_matching_bracket(text_format_t tf,
-                                                            tokenize_result tr);
+                                                         tokenize_result tr);
 
     void reset() { this->ds_next_offset = this->ds_init_offset; }
 
@@ -219,7 +222,8 @@ public:
 
     string_fragment to_string_fragment(capture_t cap) const
     {
-        return this->ds_input.sub_range(cap.c_begin, cap.c_end);
+        return string_fragment{
+            this->ds_input.sf_string, cap.c_begin, cap.c_end};
     }
 
 private:
@@ -228,7 +232,7 @@ private:
     bool is_credit_card(string_fragment frag) const;
 
     std::optional<tokenize_result> tokenize_int(text_format_t tf
-                                                   = text_format_t::TF_UNKNOWN);
+                                                = text_format_t::TF_UNKNOWN);
 
     std::string ds_line;
     shared_buffer_ref ds_sbr;

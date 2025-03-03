@@ -3709,6 +3709,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     {
                         lnav_data.ld_flags |= LNF_HEADLESS;
                         verbosity = verbosity_t::standard;
+                        lnav_data.ld_views[LNV_LOG].set_top(0_vl);
+                        lnav_data.ld_views[LNV_TEXT].set_top(0_vl);
                     }
                 }
             }

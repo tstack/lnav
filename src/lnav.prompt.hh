@@ -122,6 +122,8 @@ struct prompt {
     attr_line_t get_db_completion_text(const std::string& str, int width) const;
     attr_line_t get_sql_completion_text(
         const std::pair<std::string, sql_item_t>& p) const;
+    std::string get_regex_suggestion(textview_curses& tc,
+                                     const std::string& pattern) const;
 
     void refresh_config_completions();
     std::vector<attr_line_t> get_cmd_parameter_completion(

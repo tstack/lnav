@@ -40,6 +40,7 @@
 #include "base/paths.hh"
 #include "base/string_attr_type.hh"
 #include "bound_tags.hh"
+#include "data_scanner.hh"
 #include "external_editor.hh"
 #include "itertools.similar.hh"
 #include "lnav.hh"
@@ -1074,6 +1075,76 @@ prompt::rl_external_edit(textinput_curses& tc)
     auto um = lnav::console::user_message::info(
         "prompt content transferred to external editor");
     tc.tc_inactive_value = um.to_attr_line();
+}
+
+std::string
+prompt::get_regex_suggestion(textview_curses& tc,
+                             const std::string& pattern) const
+{
+    auto compile_res = lnav::pcre2pp::code::from(pattern, PCRE2_CASELESS);
+    std::string retval;
+
+    if (compile_res.isErr()) {
+        log_error(
+            "failed to compile search pattern for finding "
+            "suggestion: %s",
+            compile_res.unwrapErr().get_message().c_str());
+        return retval;
+    }
+
+    auto code = compile_res.unwrap();
+
+    tc.map_top_row([&retval, &code](const attr_line_t& al) {
+        auto md = lnav::pcre2pp::match_data::unitialized();
+        auto found_opt = code.capture_from(al.to_string_fragment())
+                             .into(md)
+                             .matches()
+                             .ignore_error();
+        if (found_opt) {
+            data_scanner ds(found_opt->f_remaining);
+            auto tok = ds.tokenize2();
+            if (tok) {
+                retval = tok->to_string();
+                log_debug(
+                    "matched pattern in focused line, setting suggestion: %s",
+                    retval.c_str());
+            } else {
+                log_debug(
+                    "no token found after search pattern found "
+                    "in focused line");
+            }
+        } else {
+            log_debug("search pattern not found in focused line");
+        }
+    });
+
+    if (retval.empty()) {
+        auto md = lnav::pcre2pp::match_data::unitialized();
+        for (auto curr_line = tc.get_top(); curr_line <= tc.get_bottom();
+             ++curr_line)
+        {
+            std::string line;
+
+            tc.get_sub_source()->text_value_for_line(
+                tc, curr_line, line, text_sub_source::RF_RAW);
+            auto found_opt
+                = code.capture_from(line).into(md).matches().ignore_error();
+            if (found_opt) {
+                data_scanner ds(found_opt->f_remaining);
+                auto tok = ds.tokenize2();
+                if (tok) {
+                    retval = tok->to_string();
+                    log_debug("matched pattern in view, setting suggestion: %s",
+                              retval.c_str());
+                    break;
+                }
+            } else {
+                log_debug("search pattern not found in view");
+            }
+        }
+    }
+
+    return retval;
 }
 
 }  // namespace lnav

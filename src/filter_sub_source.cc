@@ -39,6 +39,7 @@
 #include "data_scanner.hh"
 #include "itertools.similar.hh"
 #include "lnav.hh"
+#include "lnav.prompt.hh"
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "sql_util.hh"
@@ -519,6 +520,9 @@ void
 filter_sub_source::rl_completion_request_int(textinput_curses& tc,
                                              completion_request_type_t crt)
 {
+    static auto& prompt = lnav::prompt::get();
+
+    auto* top_view = *lnav_data.ld_view_stack.top();
     auto& al = tc.tc_lines[tc.tc_cursor.y];
     auto al_sf = al.to_string_fragment().sub_cell_range(0, tc.tc_cursor.x);
     std::string prefix;
@@ -528,6 +532,10 @@ filter_sub_source::rl_completion_request_int(textinput_curses& tc,
     switch (crt) {
         case completion_request_type_t::partial: {
             if (al_sf.endswith(" ")) {
+                if (tc.is_cursor_at_end_of_line()) {
+                    tc.tc_suggestion
+                        = prompt.get_regex_suggestion(*top_view, al.al_string);
+                }
                 return;
             }
 

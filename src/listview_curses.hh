@@ -323,12 +323,16 @@ public:
                               vis_line_t height,
                               unsigned long width) const;
 
-    template<typename F>
-    auto map_top_row(F func) const
-        -> std::invoke_result_t<F, const attr_line_t&>
+    template<typename F,
+             typename R = std::invoke_result_t<F, const attr_line_t&>>
+    auto map_top_row(F func) const -> R
     {
         if (this->lv_top >= this->get_inner_height()) {
-            return std::nullopt;
+            if constexpr (std::is_same_v<R, void>) {
+                return;
+            } else {
+                return std::nullopt;
+            }
         }
 
         std::vector<attr_line_t> top_line{1};

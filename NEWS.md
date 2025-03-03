@@ -13,6 +13,12 @@ Interface changes:
     ```lnav
     |saved-prompt
     ```
+  - When editing a regular expression, like the search prompt or
+    for a filter, if the current pattern matches a line in the
+    view, the following will be suggested.
+    For example, if the view has the text "foo bar baz" and you
+    type "foo ", the prompt will suggest "bar" and you can then
+    press `TAB` to complete.
 * Pressing `F1` in the prompt will show the help text for the
   prompt itself.
   The size of the prompt panel is expanded for readability.
@@ -51,6 +57,7 @@ Bug Fixes:
 * The default terminal colors will now be used in the default theme.
   So, a light background with a dark foreground will be respected.
 * Improved performance for compressed files.
+* Improved performance for the timeline view.
 * Copying a column with a text value in the DB overlay view.
 * Generic logs read from stdin or exec'd were not working properly.
 

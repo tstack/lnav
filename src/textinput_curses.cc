@@ -911,6 +911,7 @@ textinput_curses::handle_key(const ncinput& ch)
         }
         case NCKEY_TAB: {
             if (this->tc_popup.is_visible()) {
+                log_debug("performing completion");
                 this->tc_popup_type = popup_type_t::none;
                 this->tc_popup.set_visible(false);
                 if (this->tc_on_completion) {
@@ -918,17 +919,19 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 this->set_needs_update();
             } else if (!this->tc_suggestion.empty()
-                       && this->tc_lines[this->tc_cursor.y].column_width()
-                           == this->tc_cursor.x)
+                       && this->is_cursor_at_end_of_line())
             {
+                log_debug("inserting suggestion");
                 this->tc_selection = selected_range::from_key(this->tc_cursor,
                                                               this->tc_cursor);
                 this->replace_selection(this->tc_suggestion);
             } else if (this->tc_height == 1) {
+                log_debug("requesting completion at %d", this->tc_cursor.x);
                 if (this->tc_on_completion_request) {
                     this->tc_on_completion_request(*this);
                 }
             } else if (!this->tc_selection) {
+                log_debug("indenting line");
                 auto indent_amount = 4;
                 auto line_sf
                     = this->tc_lines[this->tc_cursor.y].to_string_fragment();

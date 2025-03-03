@@ -2895,7 +2895,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                           .perform();
                 // XXX discover_structure() changes `al`, have to recompute
                 // stuff
-                sf = string_fragment::from_str(al.get_string());
+                sf = al.to_string_fragment();
                 body_opt = get_string_attr(al.get_attrs(), SA_BODY);
             } else {
                 this->lss_token_meta = lnav::document::metadata{};
@@ -2908,7 +2908,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
         auto sf_body
             = sf.sub_range(body_opt->saw_string_attr->sa_range.lr_start,
                            body_opt->saw_string_attr->sa_range.lr_end);
-        file_off_t line_offset = 0;
+        file_off_t line_offset = body_opt->saw_string_attr->sa_range.lr_start;
         file_off_t line_end_offset = sf.length();
         size_t line_number = 0;
 

@@ -50,7 +50,7 @@ parsed::arg_at(int x) const
         for (const auto& [index, se] :
              lnav::itertools::enumerate(arg.second.a_values))
         {
-            log_debug("    val [%d:%d) %.*s -> %s",
+            log_debug("    val [%d:%d) '%.*s' -> '%s'",
                       se.se_origin.sf_begin,
                       se.se_origin.sf_end,
                       se.se_origin.length(),
@@ -61,6 +61,7 @@ parsed::arg_at(int x) const
                     case help_parameter_format_t::HPF_SQL:
                     case help_parameter_format_t::HPF_SQL_EXPR: {
                         auto al = attr_line_t(se.se_value);
+                        auto al_x = x - se.se_origin.sf_begin;
 
                         annotate_sql_statement(al);
                         for (const auto& attr : al.al_attrs) {
@@ -70,8 +71,8 @@ parsed::arg_at(int x) const
                             {
                                 continue;
                             }
-                            if (attr.sa_range.lr_start <= x
-                                && x <= attr.sa_range.lr_end)
+                            if (attr.sa_range.lr_start <= al_x
+                                && al_x <= attr.sa_range.lr_end)
                             {
                                 auto sf = al.to_string_fragment(attr);
                                 return arg_at_result{
@@ -90,7 +91,7 @@ parsed::arg_at(int x) const
                     case help_parameter_format_t::HPF_REGEX:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
                         std::optional<data_scanner::capture_t> cap_to_start;
-                        data_scanner ds(se.se_value);
+                        data_scanner ds(se.se_origin);
 
                         while (true) {
                             auto tok_res = ds.tokenize2();
@@ -147,7 +148,7 @@ parsed::arg_at(int x) const
 
     for (const auto& param : this->p_help->ht_parameters) {
         const auto p_iter = this->p_args.find(param.ht_name);
-        if (p_iter->second.a_values.empty()
+        if ((p_iter->second.a_values.empty() || param.is_trailing_arg())
             || param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
             || param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE)
         {
@@ -222,11 +223,10 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_SQL:
                 case help_parameter_format_t::HPF_SQL_EXPR:
                 case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
-                    const auto& last_se = split_args.back();
                     auto sf = string_fragment{
                         se.se_origin.sf_string,
                         se.se_origin.sf_begin,
-                        last_se.se_origin.sf_end,
+                        args.sf_end - args.sf_begin,
                     };
                     arg.a_values.emplace_back(
                         shlex::split_element_t{sf, sf.to_string()});
