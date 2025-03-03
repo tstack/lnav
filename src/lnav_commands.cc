@@ -3553,7 +3553,7 @@ command_prompt(std::vector<std::string>& args)
                           "commands.html") " for more details");
 
     set_view_mode(ln_mode_t::COMMAND);
-    prompt.focus_for(':', args);
+    prompt.focus_for(*tc, ':', args);
 
     rl_set_help();
 }
@@ -3568,7 +3568,7 @@ script_prompt(std::vector<std::string>& args)
     set_view_mode(ln_mode_t::EXEC);
 
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
-    prompt.focus_for('|', args);
+    prompt.focus_for(*tc, '|', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("CTRL+]") " to abort)");
 }
@@ -3583,7 +3583,7 @@ search_prompt(std::vector<std::string>& args)
     log_debug("search prompt");
     set_view_mode(ln_mode_t::SEARCH);
     lnav_data.ld_search_start_line = tc->get_selection();
-    prompt.focus_for('/', args);
+    prompt.focus_for(*tc, '/', args);
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
     lnav_data.ld_doc_status_source.set_description("");
     rl_set_help();
@@ -3599,8 +3599,9 @@ search_filters_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_FILTERS);
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     lnav_data.ld_filter_view.reload_data();
-    prompt.focus_for('/', args);
+    prompt.focus_for(*tc, '/', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -3613,7 +3614,8 @@ search_files_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_FILES);
-    prompt.focus_for('/', args);
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+    prompt.focus_for(*tc, '/', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
@@ -3626,7 +3628,8 @@ search_spectro_details_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
 
     set_view_mode(ln_mode_t::SEARCH_SPECTRO_DETAILS);
-    prompt.focus_for('/', args);
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+    prompt.focus_for(*tc, '/', args);
 
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
@@ -3646,8 +3649,7 @@ sql_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::SQL);
     setup_logline_table(lnav_data.ld_exec_context);
-    prompt.refresh_sql_completions(*tc);
-    prompt.focus_for(';', args);
+    prompt.focus_for(*tc, ';', args);
 
     lnav_data.ld_doc_status_source.set_title("Query Help");
     lnav_data.ld_doc_status_source.set_description(
@@ -3677,7 +3679,7 @@ user_prompt(std::vector<std::string>& args)
 
     set_view_mode(ln_mode_t::USER);
     setup_logline_table(lnav_data.ld_exec_context);
-    prompt.focus_for('\0', args);
+    prompt.focus_for(*tc, '\0', args);
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].do_update();
@@ -3892,13 +3894,14 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":mark-expr")
             .with_summary("Set the bookmark expression")
-            .with_parameter(help_text("expr",
-                                      "The SQL expression to evaluate for each "
-                                      "log message.  "
-                                      "The message values can be accessed "
-                                      "using column names "
-                                      "prefixed with a colon")
-                                .with_format(help_parameter_format_t::HPF_SQL))
+            .with_parameter(
+                help_text("expr",
+                          "The SQL expression to evaluate for each "
+                          "log message.  "
+                          "The message values can be accessed "
+                          "using column names "
+                          "prefixed with a colon")
+                    .with_format(help_parameter_format_t::HPF_SQL_EXPR))
             .with_opposites({"clear-mark-expr"})
             .with_tags({"bookmarks"})
             .with_example({"To mark lines from 'dhclient' that "
@@ -4008,13 +4011,14 @@ readline_context::command_t STD_COMMANDS[] = {
 
         help_text(":filter-expr")
             .with_summary("Set the filter expression")
-            .with_parameter(help_text("expr",
-                                      "The SQL expression to evaluate for each "
-                                      "log message.  "
-                                      "The message values can be accessed "
-                                      "using column names "
-                                      "prefixed with a colon")
-                                .with_format(help_parameter_format_t::HPF_SQL))
+            .with_parameter(
+                help_text("expr",
+                          "The SQL expression to evaluate for each "
+                          "log message.  "
+                          "The message values can be accessed "
+                          "using column names "
+                          "prefixed with a colon")
+                    .with_format(help_parameter_format_t::HPF_SQL_EXPR))
             .with_opposites({"clear-filter-expr"})
             .with_tags({"filtering"})
             .with_example({"To set a filter expression that matched syslog "

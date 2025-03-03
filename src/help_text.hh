@@ -67,6 +67,7 @@ enum class help_parameter_format_t {
     HPF_MULTILINE_TEXT,
     HPF_REGEX,
     HPF_SQL,
+    HPF_SQL_EXPR,
     HPF_INTEGER,
     HPF_NUMBER,
     HPF_DATETIME,
@@ -252,6 +253,8 @@ struct help_text {
             case help_parameter_format_t::HPF_TIME_FILTER_POINT:
             case help_parameter_format_t::HPF_MULTILINE_TEXT:
             case help_parameter_format_t::HPF_REGEX:
+            case help_parameter_format_t::HPF_SQL:
+            case help_parameter_format_t::HPF_SQL_EXPR:
                 return true;
             default:
                 return false;

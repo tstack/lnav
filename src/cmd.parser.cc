@@ -35,6 +35,8 @@
 #include "base/itertools.enumerate.hh"
 #include "data_scanner.hh"
 #include "shlex.hh"
+#include "sql_help.hh"
+#include "sql_util.hh"
 
 namespace lnav::command {
 
@@ -56,6 +58,34 @@ parsed::arg_at(int x) const
                       se.se_value.c_str());
             if (se.se_origin.sf_begin <= x && x <= se.se_origin.sf_end) {
                 switch (arg.second.a_help->ht_format) {
+                    case help_parameter_format_t::HPF_SQL:
+                    case help_parameter_format_t::HPF_SQL_EXPR: {
+                        auto al = attr_line_t(se.se_value);
+
+                        annotate_sql_statement(al);
+                        for (const auto& attr : al.al_attrs) {
+                            if (attr.sa_type != &SQL_IDENTIFIER_ATTR
+                                && attr.sa_type != &SQL_STRING_ATTR
+                                && attr.sa_type != &SQL_KEYWORD_ATTR)
+                            {
+                                continue;
+                            }
+                            if (attr.sa_range.lr_start <= x
+                                && x <= attr.sa_range.lr_end)
+                            {
+                                auto sf = al.to_string_fragment(attr);
+                                return arg_at_result{
+                                    arg.second.a_help,
+                                    false,
+                                    {
+                                        sf,
+                                        sf.to_string(),
+                                    },
+                                };
+                            }
+                        }
+                        return arg_at_result{arg.second.a_help, false, {}};
+                    }
                     case help_parameter_format_t::HPF_TEXT:
                     case help_parameter_format_t::HPF_REGEX:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
@@ -189,6 +219,8 @@ parse_for(mode_t mode,
             switch (param.ht_format) {
                 case help_parameter_format_t::HPF_TEXT:
                 case help_parameter_format_t::HPF_REGEX:
+                case help_parameter_format_t::HPF_SQL:
+                case help_parameter_format_t::HPF_SQL_EXPR:
                 case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
                     const auto& last_se = split_args.back();
                     auto sf = string_fragment{

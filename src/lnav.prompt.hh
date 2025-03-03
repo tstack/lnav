@@ -54,12 +54,15 @@ struct prompt {
     struct sql_db_t {};
     struct sql_table_t {};
     struct sql_table_valued_function_t {};
-    struct sql_function_t { size_t sf_param_count{0}; };
+    struct sql_function_t {
+        size_t sf_param_count{0};
+    };
     struct sql_column_t {};
     struct sql_number_t {};
     struct sql_string_t {};
     struct sql_collation_t {};
     struct sql_var_t {};
+    struct sql_field_var_t {};
 
     using sql_item_t = mapbox::util::variant<sql_keyword_t,
                                              sql_collation_t,
@@ -70,7 +73,8 @@ struct prompt {
                                              sql_column_t,
                                              sql_number_t,
                                              sql_string_t,
-                                             sql_var_t>;
+                                             sql_var_t,
+                                             sql_field_var_t>;
 
     struct sql_item_meta {
         const char* sim_type_hint;
@@ -108,7 +112,9 @@ struct prompt {
     available_scripts p_scripts;
     textinput_curses p_editor;
 
-    void focus_for(char sigil, const std::vector<std::string>& args);
+    void focus_for(textview_curses& tc,
+                   char sigil,
+                   const std::vector<std::string>& args);
 
     void refresh_sql_completions(textview_curses& tc);
     void insert_sql_completion(const std::string& name, const sql_item_t& item);

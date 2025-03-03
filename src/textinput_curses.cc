@@ -162,6 +162,7 @@ textinput_curses::set_content(const attr_line_t& al)
 {
     auto al_copy = al;
 
+    log_debug("setting content: %s", al.al_string.c_str());
     if (!this->tc_prefix.empty()) {
         al_copy.insert(0, this->tc_prefix);
     }
@@ -689,7 +690,9 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_clipboard.emplace_back(new_clip);
                     this->replace_selection(string_fragment{});
                 } else {
-                    log_debug("cutting to end of line %d", this->tc_cursor.y);
+                    log_debug("cutting from %d to end of line %d",
+                              this->tc_cursor.x,
+                              this->tc_cursor.y);
                     if (this->tc_cursor != this->tc_cut_location) {
                         log_debug("  cursor moved, clearing clipboard");
                         this->tc_clipboard.clear();

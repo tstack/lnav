@@ -52,8 +52,8 @@ struct parsed {
     };
 
     struct arg_at_result {
-        const help_text* aar_help;
-        bool aar_required;
+        const help_text* aar_help{nullptr};
+        bool aar_required{false};
         shlex::split_element_t aar_element;
     };
 
@@ -66,6 +66,7 @@ struct parsed {
 parsed parse_for_prompt(exec_context& ec,
                         string_fragment args,
                         const help_text& ht);
+
 Result<parsed, lnav::console::user_message> parse_for_call(exec_context& ec,
                                                            string_fragment args,
                                                            const help_text& ht);

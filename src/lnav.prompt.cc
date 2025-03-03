@@ -179,7 +179,8 @@ prompt::insert_sql_completion(const std::string& name, const sql_item_t& item)
                               [](sql_column_t) { return true; },
                               [](sql_number_t) { return false; },
                               [](sql_string_t) { return true; },
-                              [](sql_var_t) { return false; });
+                              [](sql_var_t) { return false; },
+                              [](sql_field_var_t) { return false; });
     if (is_prql) {
         this->p_prql_completions.emplace(name, item);
     }
@@ -228,7 +229,9 @@ prompt::refresh_config_completions()
 }
 
 void
-prompt::focus_for(char sigil, const std::vector<std::string>& args)
+prompt::focus_for(textview_curses& tc,
+                  char sigil,
+                  const std::vector<std::string>& args)
 {
     switch (sigil) {
         case '|': {
@@ -237,6 +240,48 @@ prompt::focus_for(char sigil, const std::vector<std::string>& args)
         }
         case ':': {
             this->refresh_config_completions();
+            this->refresh_sql_completions(tc);
+
+            static constexpr const char* BUILTIN_VARS[] = {
+                ":log_level",
+                ":log_time",
+                ":log_time_msecs",
+                ":log_mark",
+                ":log_comment",
+                ":log_tags",
+                ":log_opid",
+                ":log_format",
+                ":log_path",
+                ":log_unique_path",
+                ":log_text",
+                ":log_body",
+                ":log_raw_text",
+            };
+
+            for (const auto& var : BUILTIN_VARS) {
+                this->insert_sql_completion(var, sql_field_var_t{});
+            }
+
+            tc.map_top_row([this](const auto& al) {
+                auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
+                if (attr_opt) {
+                    auto format_name = attr_opt->get();
+                    auto format
+                        = log_format::find_root_format(format_name.c_str());
+                    for (const auto& lvm : format->get_value_metadata()) {
+                        auto var_name
+                            = fmt::format(":{}", lvm.lvm_name.c_str());
+                        this->insert_sql_completion(var_name,
+                                                    sql_field_var_t{});
+                    }
+                }
+                return std::nullopt;
+            });
+
+            break;
+        }
+        case ';': {
+            this->refresh_sql_completions(tc);
             break;
         }
     }
@@ -570,6 +615,20 @@ sql_item_visitor::operator()(const prompt::sql_var_t&) const
     return retval;
 }
 
+template<>
+const prompt::sql_item_meta&
+sql_item_visitor::operator()(const prompt::sql_field_var_t&) const
+{
+    static constexpr auto retval = prompt::sql_item_meta{
+        "\U0001f145",
+        "",
+        " ",
+        role_t::VCR_VARIABLE,
+    };
+
+    return retval;
+}
+
 const prompt::sql_item_meta&
 prompt::sql_item_hint(const sql_item_t& item) const
 {
@@ -642,6 +701,25 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
 {
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
+            case help_parameter_format_t::HPF_SQL_EXPR: {
+                auto poss_strs = this->p_sql_completions
+                    | lnav::itertools::first()
+                    | lnav::itertools::similar_to(str, 10);
+                std::vector<attr_line_t> poss;
+
+                for (const auto& str : poss_strs) {
+                    auto eq_range = this->p_sql_completions.equal_range(str);
+
+                    for (auto iter = eq_range.first; iter != eq_range.second;
+                         ++iter)
+                    {
+                        auto al = this->get_sql_completion_text(*iter);
+                        poss.emplace_back(al);
+                    }
+                }
+
+                return poss;
+            }
             case help_parameter_format_t::HPF_TEXT: {
                 return view_text_possibilities(tc)
                     | lnav::itertools::similar_to(str)

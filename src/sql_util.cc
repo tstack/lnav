@@ -994,7 +994,7 @@ sql_keyword_re()
 constexpr string_attr_type<void> SQL_COMMAND_ATTR("sql_command");
 constexpr string_attr_type<void> SQL_KEYWORD_ATTR("sql_keyword");
 constexpr string_attr_type<void> SQL_IDENTIFIER_ATTR("sql_ident");
-constexpr string_attr_type<void> SQL_FUNCTION_ATTR("sql_func");
+constexpr string_attr_type<std::string> SQL_FUNCTION_ATTR("sql_func");
 constexpr string_attr_type<void> SQL_STRING_ATTR("sql_string");
 constexpr string_attr_type<void> SQL_NUMBER_ATTR("sql_number");
 constexpr string_attr_type<void> SQL_OPERATOR_ATTR("sql_oper");
@@ -1128,7 +1128,10 @@ annotate_sql_statement(attr_line_t& al)
             } else {
                 func_range.lr_end = piter->sa_range.lr_end;
             }
-            sa.emplace_back(func_range, SQL_FUNCTION_ATTR.value());
+            auto func_name = al.to_string_fragment(iter);
+            sa.emplace_back(
+                func_range,
+                SQL_FUNCTION_ATTR.value(tolower(func_name.to_string())));
         }
     }
 
@@ -1197,9 +1200,8 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
             return false;
         }
 
-        const std::string& str = al.get_string();
-        const line_range& lr = sa.sa_range;
-        int lpc;
+        const auto& str = al.get_string();
+        const auto& lr = sa.sa_range;
 
         if (sa.sa_type == &SQL_FUNCTION_ATTR) {
             if (!sa.sa_range.contains(x)) {
@@ -1207,7 +1209,8 @@ find_sql_help_for_line(const attr_line_t& al, size_t x)
             }
         }
 
-        for (lpc = lr.lr_start; lpc < lr.lr_end; lpc++) {
+        auto lpc = lr.lr_start;
+        for (; lpc < lr.lr_end; lpc++) {
             if (!isalnum(str[lpc]) && str[lpc] != '_') {
                 break;
             }
