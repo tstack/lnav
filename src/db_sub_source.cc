@@ -134,6 +134,13 @@ db_label_source::text_value_for_line(textview_curses& tc,
         }
 
         auto cell_length = al.utf8_length_or_length();
+        if (actual_col_size < cell_length) {
+            log_warning(
+                "invalid column size: actual_col_size=%d < cell_length=%d",
+                actual_col_size,
+                cell_length);
+            cell_length = actual_col_size;
+        }
         const auto padding = actual_col_size - cell_length;
         auto lpadding = 0;
         auto rpadding = padding;
@@ -444,7 +451,9 @@ db_label_source::push_column(const column_value_t& sv)
             this->dls_cell_container.push_int_cell(i);
         },
         [this, &width](double d) {
-            width = count_digits(d);
+            char buffer[1];
+            auto fmt_res = fmt::format_to_n(buffer, 0, FMT_STRING("{}"), d);
+            width = fmt_res.size;
             this->dls_cell_container.push_float_cell(d);
         },
         [this, &width](null_value_t) {

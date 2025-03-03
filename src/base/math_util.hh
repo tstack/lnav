@@ -30,6 +30,8 @@
 #ifndef lnav_math_util_hh
 #define lnav_math_util_hh
 
+#include <cmath>
+
 #include <sys/types.h>
 
 #undef rounddown
@@ -154,7 +156,7 @@ private:
 };
 
 template<typename T>
-size_t
+std::enable_if_t<std::is_integral_v<T>, size_t>
 count_digits(T n)
 {
     return n == 0 ? 1 : 1 + std::floor(std::log10(std::abs(n)));

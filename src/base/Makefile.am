@@ -117,6 +117,7 @@ test_base_SOURCES = \
     humanize.time.tests.cc \
     intern_string.tests.cc \
     lnav.gzip.tests.cc \
+    math_util.tests.cc \
     string_util.tests.cc \
     test_base.cc
 

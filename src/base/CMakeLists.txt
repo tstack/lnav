@@ -104,6 +104,7 @@ add_executable(
         humanize.time.tests.cc
         intern_string.tests.cc
         lnav.gzip.tests.cc
+        math_util.tests.cc
         string_util.tests.cc
         network.tcp.tests.cc
         test_base.cc)
