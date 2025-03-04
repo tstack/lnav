@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memory>
+
 #include "filter_sub_source.hh"
 
 #include "base/attr_line.builder.hh"
@@ -35,6 +37,7 @@
 #include "base/itertools.hh"
 #include "base/opt_util.hh"
 #include "bound_tags.hh"
+#include "cmd.parser.hh"
 #include "config.h"
 #include "data_scanner.hh"
 #include "itertools.similar.hh"
@@ -82,6 +85,8 @@ filter_sub_source::register_view(textview_curses* tc)
 bool
 filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 {
+    static auto& prompt = lnav::prompt::get();
+
     if (this->fss_editing) {
         return this->fss_editor->handle_key(ch);
     }
@@ -234,6 +239,10 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             this->fss_editor->tc_text_format
                 = tf->get_lang() == filter_lang_t::SQL ? text_format_t::TF_SQL
                                                        : text_format_t::TF_PCRE;
+            if (tf->get_lang() == filter_lang_t::SQL) {
+                prompt.refresh_sql_completions(*top_view);
+                prompt.refresh_sql_expr_completions(*top_view);
+            }
             this->fss_editor->set_y(lv.get_y_for_selection());
             this->fss_editor->set_visible(true);
             this->fss_editor->tc_suggestion.clear();
@@ -520,14 +529,27 @@ void
 filter_sub_source::rl_completion_request_int(textinput_curses& tc,
                                              completion_request_type_t crt)
 {
+    static const auto FILTER_HELP
+        = help_text("filter", "filter the view by a pattern")
+              .with_parameter(
+                  help_text("pattern", "The pattern to filter by")
+                      .with_format(help_parameter_format_t::HPF_REGEX));
+    static const auto FILTER_EXPR_HELP
+        = help_text("filter-expr", "filter the view by a SQL expression")
+              .with_parameter(
+                  help_text("expr", "The expression to evaluate")
+                      .with_format(help_parameter_format_t::HPF_SQL_EXPR));
     static auto& prompt = lnav::prompt::get();
 
     auto* top_view = *lnav_data.ld_view_stack.top();
     auto& al = tc.tc_lines[tc.tc_cursor.y];
     auto al_sf = al.to_string_fragment().sub_cell_range(0, tc.tc_cursor.x);
     std::string prefix;
-    int left = tc.tc_cursor.x;
-    int similar_count = 10;
+    auto is_regex = tc.tc_text_format == text_format_t::TF_PCRE;
+    auto parse_res = lnav::command::parse_for_prompt(
+        lnav_data.ld_exec_context,
+        al_sf,
+        is_regex ? FILTER_HELP : FILTER_EXPR_HELP);
 
     switch (crt) {
         case completion_request_type_t::partial: {
@@ -538,73 +560,38 @@ filter_sub_source::rl_completion_request_int(textinput_curses& tc,
                 }
                 return;
             }
-
-            data_scanner ds(al_sf);
-
-            std::optional<data_scanner::tokenize_result> last_tok;
-            while (true) {
-                auto tok_res = ds.tokenize2(tc.tc_text_format);
-                if (!tok_res.has_value()) {
-                    break;
-                }
-
-                last_tok = tok_res;
-            }
-
-            if (!last_tok.has_value()) {
-                return;
-            }
-            switch (last_tok->tr_token) {
-                case DT_CONSTANT:
-                case DT_SYMBOL:
-                case DT_WORD:
-                case DT_ID:
-                case DT_NUMBER:
-                case DT_UUID:
-                case DT_IPV4_ADDRESS:
-                case DT_IPV6_ADDRESS:
-                case DT_URL:
-                case DT_DATE:
-                case DT_TIME:
-                case DT_DATE_TIME:
-                case DT_MAC_ADDRESS:
-                case DT_PATH:
-                case DT_EMAIL:
-                case DT_UNIT:
-                case DT_HEX_NUMBER:
-                case DT_VERSION_NUMBER:
-                case DT_OCTAL_NUMBER:
-                case DT_CREDIT_CARD_NUMBER:
-                    break;
-                default:
-                    return;
-            }
-            prefix = last_tok->to_string_fragment().to_string();
-            if (prefix.empty()) {
-                return;
-            }
-            left = last_tok->tr_capture.c_begin;
             break;
         }
         case completion_request_type_t::full:
-            similar_count = this->fss_view_text_possibilities.size();
             break;
     }
 
-    auto poss = this->fss_view_text_possibilities
-        | lnav::itertools::similar_to(prefix, similar_count)
-        | lnav::itertools::map([&tc](const auto& x) {
-                    switch (tc.tc_text_format) {
-                        case text_format_t::TF_PCRE:
-                            return attr_line_t(lnav::pcre2pp::quote(x));
-                        case text_format_t::TF_SQL:
-                            return attr_line_t(sql_quote_text(x));
-                        default:
-                            ensure(false);
-                    }
-                });
-    if (!poss.empty()) {
-        tc.open_popup_for_completion(al.byte_to_column_index(left), poss);
+    auto byte_x = al_sf.column_to_byte_index(tc.tc_cursor.x);
+    auto arg_res_opt = parse_res.arg_at(byte_x);
+    if (arg_res_opt) {
+        auto arg_pair = arg_res_opt.value();
+        if (crt == completion_request_type_t::full
+            || tc.tc_popup_type != textinput_curses::popup_type_t::none)
+        {
+            auto poss = prompt.get_cmd_parameter_completion(
+                *top_view, arg_pair.aar_help, arg_pair.aar_element.se_value);
+            auto left = arg_pair.aar_element.se_value.empty()
+                ? tc.tc_cursor.x
+                : al_sf.byte_to_column_index(
+                      arg_pair.aar_element.se_origin.sf_begin);
+            tc.open_popup_for_completion(left, poss);
+            tc.tc_popup.set_title(arg_pair.aar_help->ht_name);
+        } else if (arg_pair.aar_element.se_value.empty()
+                   && tc.is_cursor_at_end_of_line())
+        {
+            tc.tc_suggestion
+                = prompt.get_regex_suggestion(*top_view, al.al_string);
+        } else {
+            log_debug("not at end of line");
+            tc.tc_suggestion.clear();
+        }
+    } else {
+        log_debug("no arg");
     }
 }
 
@@ -617,11 +604,9 @@ filter_sub_source::rl_completion_request(textinput_curses& tc)
 void
 filter_sub_source::rl_completion(textinput_curses& tc)
 {
-    tc.tc_selection = tc.tc_complete_range;
-    const auto& repl
-        = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()]
-              .tl_value.to_string_fragment();
-    tc.replace_selection(repl);
+    static auto& prompt = lnav::prompt::get();
+
+    prompt.rl_completion(tc);
 }
 
 void

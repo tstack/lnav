@@ -117,6 +117,7 @@ struct prompt {
                    const std::vector<std::string>& args);
 
     void refresh_sql_completions(textview_curses& tc);
+    void refresh_sql_expr_completions(textview_curses& tc);
     void insert_sql_completion(const std::string& name, const sql_item_t& item);
     const sql_item_meta& sql_item_hint(const sql_item_t& item) const;
     attr_line_t get_db_completion_text(const std::string& str, int width) const;

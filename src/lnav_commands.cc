@@ -58,7 +58,6 @@
 #include "curl_looper.hh"
 #include "date/tz.h"
 #include "db_sub_source.hh"
-#include "external_opener.hh"
 #include "field_overlay_source.hh"
 #include "hasher.hh"
 #include "itertools.similar.hh"
@@ -76,7 +75,6 @@
 #include "ptimec.hh"
 #include "readline_callbacks.hh"
 #include "readline_highlighters.hh"
-#include "readline_possibilities.hh"
 #include "relative_time.hh"
 #include "scn/scan.h"
 #include "service_tags.hh"
@@ -87,7 +85,6 @@
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 #include "sysclip.hh"
-#include "tailer/tailer.looper.hh"
 #include "url_handler.cfg.hh"
 #include "url_loader.hh"
 #include "vtab_module.hh"
@@ -1367,12 +1364,9 @@ com_clear_filter_expr(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else {
-        if (!ec.ec_dry_run) {
-            lnav_data.ld_log_source.set_sql_filter("", nullptr);
-            lnav_data.ld_log_source.text_filters_changed();
-        }
+    if (!ec.ec_dry_run) {
+        lnav_data.ld_log_source.set_sql_filter("", nullptr);
+        lnav_data.ld_log_source.text_filters_changed();
     }
 
     return Ok(retval);
@@ -2098,14 +2092,12 @@ com_partition_name(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        return Ok(std::string());
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         if (ec.ec_dry_run) {
             retval = "";
         } else {
-            textview_curses& tc = lnav_data.ld_views[LNV_LOG];
-            logfile_sub_source& lss = lnav_data.ld_log_source;
+            auto& tc = lnav_data.ld_views[LNV_LOG];
+            auto& lss = lnav_data.ld_log_source;
 
             args[1] = trim(remaining_args(cmdline, args));
 
@@ -2369,18 +2361,14 @@ com_add_test(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-    } else if (args.size() > 1) {
+    if (args.size() > 1) {
         return ec.make_error("not expecting any arguments");
-    } else if (ec.ec_dry_run) {
-    } else {
-        textview_curses* tc = *lnav_data.ld_view_stack.top();
+    }
+    if (!ec.ec_dry_run) {
+        auto* tc = *lnav_data.ld_view_stack.top();
 
-        bookmark_vector<vis_line_t>& bv
-            = tc->get_bookmarks()[&textview_curses::BM_USER];
-        bookmark_vector<vis_line_t>::iterator iter;
-
-        for (iter = bv.begin(); iter != bv.end(); ++iter) {
+        auto& bv = tc->get_bookmarks()[&textview_curses::BM_USER];
+        for (auto iter = bv.begin(); iter != bv.end(); ++iter) {
             auto_mem<FILE> file(fclose);
             char path[PATH_MAX];
             std::string line;
@@ -3284,43 +3272,40 @@ com_reset_config(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("config-option");
-    } else if (args.size() == 1) {
+    if (args.size() == 1) {
         return ec.make_error("expecting a configuration option to reset");
-    } else {
-        static const auto INPUT_SRC = intern_string::lookup("input");
+    }
+    static const auto INPUT_SRC = intern_string::lookup("input");
 
-        yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
-        std::string option = args[1];
+    yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
+    std::string option = args[1];
 
-        while (!option.empty() && option.back() == '/') {
-            option.pop_back();
+    while (!option.empty() && option.back() == '/') {
+        option.pop_back();
+    }
+    lnav_config = rollback_lnav_config;
+    ypc.set_path(option).with_obj(lnav_config);
+    ypc.ypc_active_paths.insert(option);
+    ypc.update_callbacks();
+
+    if (option == "*"
+        || (ypc.ypc_current_handler != nullptr
+            || !ypc.ypc_handler_stack.empty()))
+    {
+        if (!ec.ec_dry_run) {
+            reset_config(option);
+            rollback_lnav_config = lnav_config;
+            if (!(lnav_data.ld_flags & LNF_SECURE_MODE)) {
+                save_config();
+            }
         }
-        lnav_config = rollback_lnav_config;
-        ypc.set_path(option).with_obj(lnav_config);
-        ypc.ypc_active_paths.insert(option);
-        ypc.update_callbacks();
-
-        if (option == "*"
-            || (ypc.ypc_current_handler != nullptr
-                || !ypc.ypc_handler_stack.empty()))
-        {
-            if (!ec.ec_dry_run) {
-                reset_config(option);
-                rollback_lnav_config = lnav_config;
-                if (!(lnav_data.ld_flags & LNF_SECURE_MODE)) {
-                    save_config();
-                }
-            }
-            if (option == "*") {
-                retval = "info: reset all options";
-            } else {
-                retval = "info: reset option -- " + option;
-            }
+        if (option == "*") {
+            retval = "info: reset all options";
         } else {
-            return ec.make_error("unknown configuration option -- {}", option);
+            retval = "info: reset option -- " + option;
         }
+    } else {
+        return ec.make_error("unknown configuration option -- {}", option);
     }
 
     return Ok(retval);

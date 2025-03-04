@@ -230,6 +230,43 @@ prompt::refresh_config_completions()
 }
 
 void
+prompt::refresh_sql_expr_completions(textview_curses& tc)
+{
+    static constexpr const char* BUILTIN_VARS[] = {
+        ":log_level",
+        ":log_time",
+        ":log_time_msecs",
+        ":log_mark",
+        ":log_comment",
+        ":log_tags",
+        ":log_opid",
+        ":log_format",
+        ":log_path",
+        ":log_unique_path",
+        ":log_text",
+        ":log_body",
+        ":log_raw_text",
+    };
+
+    for (const auto& var : BUILTIN_VARS) {
+        this->insert_sql_completion(var, sql_field_var_t{});
+    }
+
+    tc.map_top_row([this](const auto& al) {
+        auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
+        if (attr_opt) {
+            auto format_name = attr_opt->get();
+            auto format = log_format::find_root_format(format_name.c_str());
+            for (const auto& lvm : format->get_value_metadata()) {
+                auto var_name = fmt::format(":{}", lvm.lvm_name.c_str());
+                this->insert_sql_completion(var_name, sql_field_var_t{});
+            }
+        }
+        return std::nullopt;
+    });
+}
+
+void
 prompt::focus_for(textview_curses& tc,
                   char sigil,
                   const std::vector<std::string>& args)
@@ -242,43 +279,7 @@ prompt::focus_for(textview_curses& tc,
         case ':': {
             this->refresh_config_completions();
             this->refresh_sql_completions(tc);
-
-            static constexpr const char* BUILTIN_VARS[] = {
-                ":log_level",
-                ":log_time",
-                ":log_time_msecs",
-                ":log_mark",
-                ":log_comment",
-                ":log_tags",
-                ":log_opid",
-                ":log_format",
-                ":log_path",
-                ":log_unique_path",
-                ":log_text",
-                ":log_body",
-                ":log_raw_text",
-            };
-
-            for (const auto& var : BUILTIN_VARS) {
-                this->insert_sql_completion(var, sql_field_var_t{});
-            }
-
-            tc.map_top_row([this](const auto& al) {
-                auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
-                if (attr_opt) {
-                    auto format_name = attr_opt->get();
-                    auto format
-                        = log_format::find_root_format(format_name.c_str());
-                    for (const auto& lvm : format->get_value_metadata()) {
-                        auto var_name
-                            = fmt::format(":{}", lvm.lvm_name.c_str());
-                        this->insert_sql_completion(var_name,
-                                                    sql_field_var_t{});
-                    }
-                }
-                return std::nullopt;
-            });
-
+            this->refresh_sql_expr_completions(tc);
             break;
         }
         case ';': {
@@ -1028,6 +1029,23 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     | lnav::itertools::map([](const auto& x) {
                            return attr_line_t().append(x).with_attr_for_all(
                                SUBST_TEXT.value(x + " "));
+                       });
+            }
+            case help_parameter_format_t::HPF_HIGHLIGHTS: {
+                std::vector<std::string> poss_strs;
+                const auto& hl_map = tc.get_highlights();
+
+                for (const auto& hl : hl_map) {
+                    if (hl.first.first == highlight_source_t::INTERACTIVE) {
+                        poss_strs.emplace_back(
+                            hl.second.h_regex->get_pattern());
+                    }
+                }
+
+                return poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x));
                        });
             }
             case help_parameter_format_t::HPF_ALL_FILTERS:

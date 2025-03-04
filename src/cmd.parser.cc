@@ -65,25 +65,45 @@ parsed::arg_at(int x) const
 
                         annotate_sql_statement(al);
                         for (const auto& attr : al.al_attrs) {
+                            if (al_x < attr.sa_range.lr_start
+                                || attr.sa_range.lr_end < al_x)
+                            {
+                                continue;
+                            }
+
+                            auto sf = al.to_string_fragment(attr);
+                            if (attr.sa_type == &SQL_GARBAGE_ATTR
+                                && attr.sa_range.length() == 1)
+                            {
+                                switch (al.al_string[attr.sa_range.lr_start]) {
+                                    case ':':
+                                    case '$':
+                                    case '@':
+                                        return arg_at_result{
+                                            arg.second.a_help,
+                                            false,
+                                            {
+                                                sf,
+                                                sf.to_string(),
+                                            },
+                                        };
+                                }
+                            }
+
                             if (attr.sa_type != &SQL_IDENTIFIER_ATTR
                                 && attr.sa_type != &SQL_STRING_ATTR
                                 && attr.sa_type != &SQL_KEYWORD_ATTR)
                             {
                                 continue;
                             }
-                            if (attr.sa_range.lr_start <= al_x
-                                && al_x <= attr.sa_range.lr_end)
-                            {
-                                auto sf = al.to_string_fragment(attr);
-                                return arg_at_result{
-                                    arg.second.a_help,
-                                    false,
-                                    {
-                                        sf,
-                                        sf.to_string(),
-                                    },
-                                };
-                            }
+                            return arg_at_result{
+                                arg.second.a_help,
+                                false,
+                                {
+                                    sf,
+                                    sf.to_string(),
+                                },
+                            };
                         }
                         return arg_at_result{arg.second.a_help, false, {}};
                     }
