@@ -166,6 +166,23 @@ mouse_event::is_double_click_in(mouse_button_t button, line_range lr) const
 }
 
 bool
+view_curses::do_update()
+{
+    bool retval = false;
+
+    this->vc_needs_update = false;
+
+    if (!this->vc_visible) {
+        return retval;
+    }
+
+    for (auto* child : this->vc_children) {
+        retval = child->do_update() || retval;
+    }
+    return retval;
+}
+
+bool
 view_curses::handle_mouse(mouse_event& me)
 {
     if (me.me_state != mouse_button_state_t::BUTTON_STATE_DRAGGED) {

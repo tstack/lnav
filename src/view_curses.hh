@@ -353,21 +353,7 @@ public:
     /**
      * Update the curses display.
      */
-    virtual bool do_update()
-    {
-        bool retval = false;
-
-        this->vc_needs_update = false;
-
-        if (!this->vc_visible) {
-            return retval;
-        }
-
-        for (auto* child : this->vc_children) {
-            retval = child->do_update() || retval;
-        }
-        return retval;
-    }
+    virtual bool do_update();
 
     virtual bool handle_mouse(mouse_event& me);
 

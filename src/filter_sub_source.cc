@@ -206,11 +206,11 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
 
             this->fss_editor->tc_text_format = text_format_t::TF_PCRE;
             this->fss_editor->set_y(lv.get_y_for_selection());
+            this->fss_editor->set_visible(true);
             this->fss_editor->set_content("");
             this->fss_view_text_possibilities
                 = view_text_possibilities(*top_view);
             this->fss_editor->tc_suggestion = top_view->get_input_suggestion();
-            this->fss_editor->set_visible(true);
             this->fss_editor->focus();
             this->fss_filter_state = true;
             ef->disable();
@@ -235,12 +235,12 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
                 = tf->get_lang() == filter_lang_t::SQL ? text_format_t::TF_SQL
                                                        : text_format_t::TF_PCRE;
             this->fss_editor->set_y(lv.get_y_for_selection());
-            this->fss_editor->set_visible(false);
-            this->fss_editor->focus();
+            this->fss_editor->set_visible(true);
             this->fss_editor->tc_suggestion.clear();
             this->fss_editor->set_content(tf->get_id());
             this->fss_view_text_possibilities
                 = view_text_possibilities(*top_view);
+            this->fss_editor->focus();
             this->fss_filter_state = tf->is_enabled();
             tf->disable();
             tss->text_filters_changed();
