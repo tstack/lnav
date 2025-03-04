@@ -29,6 +29,11 @@ run_cap_test ${lnav_test} -nN \
     -c ":open logfile_access_log.0"
 
 run_cap_test ${lnav_test} -nN \
+    -c ":cd ${top_srcdir}" \
+    -c ";SELECT * FROM environ WHERE name = 'PWD'" \
+    -c ":write-json-to -"
+
+run_cap_test ${lnav_test} -nN \
     -e "echo Hello, World!"
 
 run_cap_test ${lnav_test} -nN \

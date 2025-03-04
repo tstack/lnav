@@ -2800,6 +2800,7 @@ com_cd(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
     if (!ec.ec_dry_run) {
         chdir(split_args[0].c_str());
+        setenv("PWD", split_args[0].c_str(), 1);
     }
 
     return Ok(std::string());
