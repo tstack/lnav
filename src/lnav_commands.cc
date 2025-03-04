@@ -192,6 +192,38 @@ combined_user_marks(vis_bookmarks& vb)
 }
 
 static Result<std::string, lnav::console::user_message>
+com_write_debug_log_to(exec_context& ec,
+                       std::string cmdline,
+                       std::vector<std::string>& args)
+{
+    if (args.size() < 2) {
+        return ec.make_error("expecting a file path");
+    }
+
+    std::string retval;
+    auto path = std::filesystem::path(args[1]);
+
+    auto open_res = lnav::filesystem::create_file(path, O_WRONLY, 0600);
+    if (open_res.isErr()) {
+        const auto errmsg = open_res.unwrapErr();
+        auto um = lnav::console::user_message::error(
+                      attr_line_t("unable to open file for write: ")
+                          .append(lnav::roles::file(path)))
+                      .with_reason(errmsg);
+        return Err(um);
+    }
+
+    {
+        auto fd = open_res.unwrap();
+        log_write_ring_to(fd);
+    }
+
+    retval = fmt::format(FMT_STRING("info: wrote debug log to -- {}"), path);
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
 com_adjust_log_time(exec_context& ec,
                     std::string cmdline,
                     std::vector<std::string>& args)
@@ -4349,10 +4381,21 @@ readline_context::command_t STD_COMMANDS[] = {
                            "access_log format",
                            "sc_bytes"}),
     },
-    {"quit",
-     com_quit,
+    {
+        "quit",
+        com_quit,
 
-     help_text(":quit").with_summary("Quit lnav")},
+        help_text(":quit").with_summary("Quit lnav"),
+    },
+    {
+        "write-debug-log-to",
+        com_write_debug_log_to,
+        help_text(":write-debug-log-to")
+            .with_summary("Write lnav's internal debug log to the given path")
+            .with_parameter(
+                help_text("path", "The destination path for the debug log")
+                    .with_format(help_parameter_format_t::HPF_FILENAME)),
+    },
 };
 
 static std::unordered_map<char const*, std::vector<char const*>> aliases = {

@@ -88,22 +88,20 @@ log_pipe_err_handle log_pipe_err(int readfd, int writefd);
 void log_set_thread_prefix(std::string prefix);
 void log_backtrace(lnav_log_level_t level);
 
+void log_write_ring_to(int fd);
+
 struct log_state_dumper {
-public:
     log_state_dumper();
 
     virtual ~log_state_dumper();
 
-    virtual void log_state(){
-
-    };
+    virtual void log_state() {}
 
     log_state_dumper(const log_state_dumper&) = delete;
     log_state_dumper& operator=(const log_state_dumper&) = delete;
 };
 
 struct log_crash_recoverer {
-public:
     log_crash_recoverer();
 
     virtual ~log_crash_recoverer();

@@ -55,6 +55,8 @@ Features:
   same sequence.
   You can create search tables for each line and then join them
   to query over the whole group of messages.
+* Added a `:write-debug-log-to` command that can be used to write
+  lnav's internal debug log to a file.
 
 Bug Fixes:
 * The default terminal colors will now be used in the default theme.

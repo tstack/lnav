@@ -1579,6 +1579,20 @@
 ----
 
 
+.. _write_debug_log_to:
+
+:write-debug-log-to *path*
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Write lnav's internal debug log to the given path
+
+  **Parameters**
+    * **path\*** --- The destination path for the debug log
+
+
+----
+
+
 .. _write_json_to:
 
 :write-json-to *\[--anonymize\]* *path*

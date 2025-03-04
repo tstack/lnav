@@ -44,8 +44,7 @@
 #include "intern_string.hh"
 #include "result.h"
 
-namespace lnav {
-namespace filesystem {
+namespace lnav::filesystem {
 
 inline bool
 is_glob(const std::string& fn)
@@ -75,11 +74,9 @@ openp(const std::filesystem::path& path, int flags, mode_t mode)
     return open(path.c_str(), flags, mode);
 }
 
-std::optional<std::filesystem::path>
-self_path();
+std::optional<std::filesystem::path> self_path();
 
-time_t
-self_mtime();
+time_t self_mtime();
 
 Result<std::filesystem::path, std::string> realpath(
     const std::filesystem::path& path);
@@ -162,8 +159,7 @@ public:
     auto_fd lh_fd;
 };
 
-}  // namespace filesystem
-}  // namespace lnav
+}  // namespace lnav::filesystem
 
 namespace fmt {
 template<>

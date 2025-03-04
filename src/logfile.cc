@@ -483,7 +483,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         best_match = std::make_pair(curr.get(), sm);
                         prev_index_size = this->lf_index.size();
                     } else {
-                        log_info(
+                        log_trace(
                             "  scan with format (%s) matched, but "
                             "is low quality (%d)",
                             curr->get_name().c_str(),

@@ -53,6 +53,7 @@
 
 #include <algorithm>
 #include <mutex>
+#include <optional>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -123,7 +124,12 @@ static struct {
     off_t lr_frag_start;
     off_t lr_frag_end;
     char lr_data[BUFFER_SIZE];
-} log_ring = {0, BUFFER_SIZE, 0, {}};
+} log_ring = {
+    0,
+    BUFFER_SIZE,
+    0,
+    {},
+};
 
 static constexpr const char* const LEVEL_NAMES[] = {
     "T",
@@ -354,7 +360,7 @@ log_msg_extra(const char* fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    auto line = log_alloc();
+    auto* line = log_alloc();
     auto rc = vsnprintf(line, MAX_LOG_LINE_SIZE - 1, fmt, args);
     log_ring.lr_length += rc;
     lnav_log_file | [&](auto file) {
@@ -381,15 +387,25 @@ void
 log_backtrace(lnav_log_level_t level)
 {
 #ifdef HAVE_EXECINFO_H
-    int frame_count;
     void* frames[128];
 
-    frame_count = backtrace(frames, 128);
-    auto bt = backtrace_symbols(frames, frame_count);
+    const auto frame_count = backtrace(frames, 128);
+    auto* bt = backtrace_symbols(frames, frame_count);
     for (int lpc = 0; lpc < frame_count; lpc++) {
         log_msg(level, __FILE__, __LINE__, "%s", bt[lpc]);
     }
 #endif
+}
+
+void
+log_write_ring_to(int fd)
+{
+    if (log_ring.lr_frag_start < (off_t) BUFFER_SIZE) {
+        (void) write(fd,
+                     &log_ring.lr_data[log_ring.lr_frag_start],
+                     log_ring.lr_frag_end - log_ring.lr_frag_start);
+    }
+    (void) write(fd, log_ring.lr_data, log_ring.lr_length);
 }
 
 #pragma GCC diagnostic push
@@ -434,12 +450,7 @@ sigabrt(int sig, siginfo_t* info, void* ctx)
              "%s/latest-crash.log",
              lnav_log_crash_dir);
     if ((fd = open(crash_path, O_CREAT | O_TRUNC | O_RDWR, 0600)) != -1) {
-        if (log_ring.lr_frag_start < (off_t) BUFFER_SIZE) {
-            (void) write(fd,
-                         &log_ring.lr_data[log_ring.lr_frag_start],
-                         log_ring.lr_frag_end - log_ring.lr_frag_start);
-        }
-        (void) write(fd, log_ring.lr_data, log_ring.lr_length);
+        log_write_ring_to(fd);
 #ifdef HAVE_EXECINFO_H
         backtrace_symbols_fd(frames, frame_count, fd);
 #endif
@@ -634,14 +645,12 @@ log_abort()
     _exit(1);
 }
 
-log_pipe_err_handle::
-log_pipe_err_handle(log_pipe_err_handle&& other) noexcept
+log_pipe_err_handle::log_pipe_err_handle(log_pipe_err_handle&& other) noexcept
 {
     this->h_old_stderr_fd = std::exchange(other.h_old_stderr_fd, -1);
 }
 
-log_pipe_err_handle::~
-log_pipe_err_handle()
+log_pipe_err_handle::~log_pipe_err_handle()
 {
     if (this->h_old_stderr_fd != -1) {
         dup2(std::exchange(this->h_old_stderr_fd, -1), STDERR_FILENO);
@@ -685,14 +694,12 @@ log_pipe_err(int readfd, int writefd)
     return retval;
 }
 
-log_state_dumper::
-log_state_dumper()
+log_state_dumper::log_state_dumper()
 {
     DUMPER_LIST().push_back(this);
 }
 
-log_state_dumper::~
-log_state_dumper()
+log_state_dumper::~log_state_dumper()
 {
     auto iter = std::find(DUMPER_LIST().begin(), DUMPER_LIST().end(), this);
     if (iter != DUMPER_LIST().end()) {
@@ -700,14 +707,12 @@ log_state_dumper()
     }
 }
 
-log_crash_recoverer::
-log_crash_recoverer()
+log_crash_recoverer::log_crash_recoverer()
 {
     CRASH_LIST().push_back(this);
 }
 
-log_crash_recoverer::~
-log_crash_recoverer()
+log_crash_recoverer::~log_crash_recoverer()
 {
     auto iter = std::find(CRASH_LIST().begin(), CRASH_LIST().end(), this);
 
