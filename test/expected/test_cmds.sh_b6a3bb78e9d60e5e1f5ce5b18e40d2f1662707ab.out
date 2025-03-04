@@ -768,6 +768,11 @@ For support questions, email:
   [1m:sh[0m, [1m:write-csv-to[0m, [1m:write-json-to[0m, [1m:write-jsonlines-to[0m, [1m:write-raw-to[0m, 
   [1m:write-screen-to[0m, [1m:write-table-to[0m, [1m:write-to[0m, [1m:write-view-to[0m
 
+[4m:[0m[1m[4mclear-adjusted-log-time[0m
+══════════════════════════════════════════════════════════════════════
+  Clear the adjusted time for the focused line in the view
+
+
 [4m:[0m[1m[4mclear-comment[0m
 ══════════════════════════════════════════════════════════════════════
   Clear the comment attached to the focused log line

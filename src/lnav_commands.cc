@@ -242,11 +242,10 @@ com_adjust_log_time(exec_context& ec,
         vis_line_t top_line;
         struct exttm tm;
         struct tm base_tm;
-        std::shared_ptr<logfile> lf;
 
         top_line = lnav_data.ld_views[LNV_LOG].get_selection();
         top_content = lss.at(top_line);
-        lf = lss.find(top_content);
+        auto lf = lss.find(top_content);
 
         auto& ll = (*lf)[top_content];
 
@@ -292,6 +291,27 @@ com_adjust_log_time(exec_context& ec,
     }
 
     return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
+com_clear_adjusted_log_time(exec_context& ec,
+                            std::string cmdline,
+                            std::vector<std::string>& args)
+{
+    if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
+        return ec.make_error("no log messages");
+    }
+
+    auto& lss = lnav_data.ld_log_source;
+    auto sel_line = lnav_data.ld_views[LNV_LOG].get_selection();
+    auto sel_pair = lss.find_line_with_file(sel_line);
+    if (sel_pair) {
+        auto lf = sel_pair->first;
+        lf->clear_time_offset();
+        lss.set_force_rebuild();
+    }
+
+    return Ok(std::string("info: cleared time offset"));
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -3710,7 +3730,17 @@ readline_context::command_t STD_COMMANDS[] = {
                     .with_format(help_parameter_format_t::HPF_ADJUSTED_TIME))
             .with_example({"To set the focused timestamp to a given date",
                            "2017-01-02T05:33:00"})
-            .with_example({"To set the focused timestamp back an hour", "-1h"}),
+            .with_example({"To set the focused timestamp back an hour", "-1h"})
+            .with_opposites({"clear-adjusted-log-time"}),
+    },
+    {
+        "clear-adjusted-log-time",
+        com_clear_adjusted_log_time,
+
+        help_text(":clear-adjusted-log-time")
+            .with_summary(
+                "Clear the adjusted time for the focused line in the view")
+            .with_opposites({":adjust-log-time"}),
     },
 
     {"unix-time",

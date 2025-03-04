@@ -57,6 +57,8 @@ Features:
   to query over the whole group of messages.
 * Added a `:write-debug-log-to` command that can be used to write
   lnav's internal debug log to a file.
+* Added a `:clear-adjusted-log-time` command to clear the time offset
+  set by the `:adjust-log-time` command.
 
 Bug Fixes:
 * The default terminal colors will now be used in the default theme.

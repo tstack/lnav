@@ -101,6 +101,17 @@
 ----
 
 
+.. _clear_adjusted_log_time:
+
+:clear-adjusted-log-time
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Clear the adjusted time for the focused line in the view
+
+
+----
+
+
 .. _clear_comment:
 
 :clear-comment

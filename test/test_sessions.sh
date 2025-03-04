@@ -101,6 +101,11 @@ run_cap_test ${lnav_test} -n \
 
 run_cap_test ${lnav_test} -n \
     -c ":load-session" \
+    -c ":clear-adjusted-log-time" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":load-session" \
     -c ":reset-session" \
     -c ":save-session" \
     -c ":test-comment reset adjusted time" \
