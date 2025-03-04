@@ -111,6 +111,7 @@ struct prompt {
     std::map<std::string, std::vector<std::string>> p_config_values;
     available_scripts p_scripts;
     textinput_curses p_editor;
+    bool p_alt_mode{false};
 
     void focus_for(textview_curses& tc,
                    char sigil,

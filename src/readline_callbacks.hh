@@ -30,8 +30,6 @@
 #ifndef LNAV_READLINE_CALLBACKS_HH
 #define LNAV_READLINE_CALLBACKS_HH
 
-#include <string>
-
 #include "readline_context.hh"
 #include "textinput_curses.hh"
 
@@ -40,7 +38,6 @@ void rl_change(textinput_curses& ti);
 void rl_search(textinput_curses& ti);
 void lnav_rl_abort(textinput_curses& ti);
 void rl_callback(textinput_curses& ti);
-void rl_alt_callback(textinput_curses& ti);
 void rl_display_matches(textinput_curses& ti);
 void rl_display_next(textinput_curses& ti);
 void rl_completion_request(textinput_curses& ti);

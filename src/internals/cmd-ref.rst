@@ -1595,7 +1595,7 @@
 :write-debug-log-to *path*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Write lnav's internal debug log to the given path
+  Write lnav's internal debug log to the given path.  This can be useful if the `-d` flag was not passed on the command line
 
   **Parameters**
     * **path\*** --- The destination path for the debug log

@@ -200,25 +200,30 @@ com_write_debug_log_to(exec_context& ec,
         return ec.make_error("expecting a file path");
     }
 
-    std::string retval;
-    auto path = std::filesystem::path(args[1]);
+    if (lnav_log_file.has_value()) {
+        return ec.make_error("debug log is already being written to a file");
+    }
 
-    auto open_res = lnav::filesystem::create_file(path, O_WRONLY, 0600);
-    if (open_res.isErr()) {
-        const auto errmsg = open_res.unwrapErr();
+    std::string retval;
+    if (ec.ec_dry_run) {
+        return Ok(retval);
+    }
+
+    auto fp = fopen(args[1].c_str(), "we");
+    if (fp == nullptr) {
         auto um = lnav::console::user_message::error(
                       attr_line_t("unable to open file for write: ")
-                          .append(lnav::roles::file(path)))
-                      .with_reason(errmsg);
+                          .append(lnav::roles::file(args[1])))
+                      .with_errno_reason();
         return Err(um);
     }
+    auto fd = fileno(fp);
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    log_write_ring_to(fd);
+    lnav_log_level = lnav_log_level_t::TRACE;
+    lnav_log_file = fp;
 
-    {
-        auto fd = open_res.unwrap();
-        log_write_ring_to(fd);
-    }
-
-    retval = fmt::format(FMT_STRING("info: wrote debug log to -- {}"), path);
+    retval = fmt::format(FMT_STRING("info: wrote debug log to -- {}"), args[1]);
 
     return Ok(retval);
 }
@@ -3627,7 +3632,9 @@ com_prompt(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
 {
-    static std::map<std::string, std::function<void(std::vector<std::string>&)>>
+    static auto& prompt = lnav::prompt::get();
+    static const std::map<std::string,
+                          std::function<void(std::vector<std::string>&)>>
         PROMPT_TYPES = {
             {"breadcrumb", breadcrumb_prompt},
             {"command", command_prompt},
@@ -3663,10 +3670,9 @@ com_prompt(exec_context& ec,
 
         auto alt_flag
             = std::find(split_args.begin(), split_args.end(), "--alt");
-        auto is_alt = false;
-        if (alt_flag != split_args.end()) {
+        prompt.p_alt_mode = alt_flag != split_args.end();
+        if (prompt.p_alt_mode) {
             split_args.erase(alt_flag);
-            is_alt = true;
         }
 
         auto prompter = PROMPT_TYPES.find(split_args[1]);
@@ -3676,7 +3682,6 @@ com_prompt(exec_context& ec,
         }
 
         prompter->second(split_args);
-        // XXX lnav_data.ld_rl_view->set_alt_focus(is_alt);
     }
     return Ok(std::string());
 }
@@ -4421,7 +4426,9 @@ readline_context::command_t STD_COMMANDS[] = {
         "write-debug-log-to",
         com_write_debug_log_to,
         help_text(":write-debug-log-to")
-            .with_summary("Write lnav's internal debug log to the given path")
+            .with_summary(
+                "Write lnav's internal debug log to the given path.  This can "
+                "be useful if the `-d` flag was not passed on the command line")
             .with_parameter(
                 help_text("path", "The destination path for the debug log")
                     .with_format(help_parameter_format_t::HPF_FILENAME)),

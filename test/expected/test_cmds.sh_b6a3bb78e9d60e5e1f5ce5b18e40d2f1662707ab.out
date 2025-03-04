@@ -1736,7 +1736,8 @@ For support questions, email:
 
 [4m:[0m[1m[4mwrite-debug-log-to[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
-  Write lnav's internal debug log to the given path
+  Write lnav's internal debug log to the given path.  This can be
+  useful if the `-d` flag was not passed on the command line
 [4mParameter[0m
   [4mpath[0m   The destination path for the debug log
 

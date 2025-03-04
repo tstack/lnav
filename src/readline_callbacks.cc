@@ -1233,11 +1233,12 @@ lnav_rl_abort(textinput_curses& rc)
     set_view_mode(ln_mode_t::PAGING);
 }
 
-static void
-rl_callback_int(textinput_curses& rc, bool is_alt)
+void
+rl_callback(textinput_curses& rc)
 {
     static const intern_string_t SRC = intern_string::lookup("prompt");
     static auto& prompt = lnav::prompt::get();
+    auto is_alt = prompt.p_alt_mode;
 
     textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
     exec_context& ec = lnav_data.ld_exec_context;
@@ -1493,18 +1494,6 @@ rl_callback_int(textinput_curses& rc, bool is_alt)
             break;
         }
     }
-}
-
-void
-rl_callback(textinput_curses& rc)
-{
-    rl_callback_int(rc, false);
-}
-
-void
-rl_alt_callback(textinput_curses& rc)
-{
-    rl_callback_int(rc, true);
 }
 
 void

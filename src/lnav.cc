@@ -1389,8 +1389,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         prompt.p_editor.tc_on_focus = rl_focus;
         prompt.p_editor.tc_on_change = rl_change;
         prompt.p_editor.tc_on_perform = rl_callback;
-        // prompt.set_alt_perform_action(rl_alt_callback);
-        // prompt.set_timeout_action(rl_search);
         prompt.p_editor.tc_on_timeout = rl_search;
         prompt.p_editor.tc_on_abort = lnav_rl_abort;
         prompt.p_editor.tc_on_blur = rl_blur;
@@ -2666,7 +2664,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     static const std::string DEFAULT_DEBUG_LOG = "/dev/null";
 
-    lnav_data.ld_debug_log_name = DEFAULT_DEBUG_LOG;
+    // lnav_data.ld_debug_log_name = DEFAULT_DEBUG_LOG;
 
     std::vector<std::string> file_args;
     std::vector<lnav::console::user_message> arg_errors;
@@ -2843,11 +2841,13 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         lnav_log_level = lnav_log_level_t::TRACE;
     }
 
-    lnav_log_file = make_optional_from_nullable(
-        fopen(lnav_data.ld_debug_log_name.c_str(), "ae"));
-    lnav_log_file |
-        [](auto* file) { fcntl(fileno(file), F_SETFD, FD_CLOEXEC); };
-    log_info("lnav started");
+    if (!lnav_data.ld_debug_log_name.empty()) {
+        lnav_log_file = make_optional_from_nullable(
+            fopen(lnav_data.ld_debug_log_name.c_str(), "ae"));
+        lnav_log_file |
+            [](auto* file) { fcntl(fileno(file), F_SETFD, FD_CLOEXEC); };
+    }
+    log_info("lnav started %d", lnav_log_file.has_value());
 
     {
         static auto builtin_formats
