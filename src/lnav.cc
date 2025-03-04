@@ -3154,8 +3154,8 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_views[LNV_LOG].set_reload_config_delegate(sel_reload_delegate);
     lnav_data.ld_views[LNV_PRETTY].set_reload_config_delegate(
         sel_reload_delegate);
-    auto text_header_source
-        = std::make_shared<textfile_header_overlay>(&lnav_data.ld_text_source);
+    auto text_header_source = std::make_shared<textfile_header_overlay>(
+        &lnav_data.ld_text_source, &lnav_data.ld_log_source);
     lnav_data.ld_views[LNV_TEXT].set_overlay_source(text_header_source.get());
     lnav_data.ld_views[LNV_TEXT].set_sub_source(&lnav_data.ld_text_source);
     lnav_data.ld_views[LNV_TEXT].set_reload_config_delegate(

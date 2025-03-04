@@ -249,7 +249,9 @@ private:
 
 class textfile_header_overlay : public text_overlay_menu {
 public:
-    explicit textfile_header_overlay(textfile_sub_source* src);
+    explicit textfile_header_overlay(
+        textfile_sub_source* src,
+        text_sub_source* log_src);
 
     bool list_static_overlay(const listview_curses& lv,
                              int y,
@@ -258,6 +260,7 @@ public:
 
 private:
     textfile_sub_source* tho_src;
+    text_sub_source* tho_log_src;
 };
 
 #endif

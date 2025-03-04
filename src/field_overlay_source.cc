@@ -37,6 +37,7 @@
 #include "log_format_ext.hh"
 #include "log_vtab_impl.hh"
 #include "md2attr_line.hh"
+#include "msg.text.hh"
 #include "ptimec.hh"
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
@@ -544,7 +545,8 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                 auto applicable_anno = lnav::log::annotate::applicable(row);
                 if (!applicable_anno.empty()
                     && (!line_meta_opt
-                        || line_meta_opt.value()->bm_annotations.la_pairs.empty()))
+                        || line_meta_opt.value()
+                               ->bm_annotations.la_pairs.empty()))
                 {
                     auto anno_msg
                         = attr_line_t(" ")
@@ -555,9 +557,11 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
                                           : "focus on this line and use ")
                               .append(":annotate"_quoted_code)
                               .append(" to apply them")
-                              .append(lv.get_selection() == row ? " to this line"
-                                                                : "")
-                              .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT))
+                              .append(lv.get_selection() == row
+                                          ? " to this line"
+                                          : "")
+                              .with_attr_for_all(
+                                  VC_ROLE.value(role_t::VCR_COMMENT))
                               .move();
 
                     this->fos_anno_cache.put(row, anno_msg);
@@ -739,6 +743,34 @@ field_overlay_source::list_value_for_overlay(
         value_out = this->fos_lines;
     }
     this->build_meta_line(lv, value_out, row);
+}
+
+bool
+field_overlay_source::list_static_overlay(const listview_curses& lv,
+                                          int y,
+                                          int bottom,
+                                          attr_line_t& value_out)
+{
+    const std::vector<attr_line_t>* lines = nullptr;
+    if (this->fos_lss.text_line_count() == 0) {
+        if (this->fos_tss.text_line_count() == 0) {
+            lines = lnav::messages::view::no_files();
+        } else {
+            lines = lnav::messages::view::only_text_files();
+        }
+    }
+
+    if (lines != nullptr && y < lines->size()) {
+        value_out = lines->at(y);
+        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+        if (y == lines->size() - 1) {
+            value_out.with_attr_for_all(
+                VC_STYLE.value(text_attrs::with_underline()));
+        }
+        return true;
+    }
+
+    return false;
 }
 
 std::optional<attr_line_t>

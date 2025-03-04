@@ -35,6 +35,7 @@
 #include "base/fs_util.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
+#include "fts_fuzzy_match.hh"
 #include "lnav.hh"
 #include "sql_execute.hh"
 #include "sql_util.hh"
@@ -219,12 +220,8 @@ history::insert_plain_content(string_fragment content)
         : lnav_data.ld_session_id.begin()->first;
 
     auto now = std::chrono::system_clock::now();
-    auto stmt_res = prepare_stmt(get_db().in(),
-                                 INSERT_PLAIN,
-                                 this->h_context,
-                                 session_id,
-                                 now,
-                                 content);
+    auto stmt_res = prepare_stmt(
+        get_db().in(), INSERT_PLAIN, this->h_context, session_id, now, content);
     if (stmt_res.isErr()) {
         log_error("unable to prepare plain history content insert: %s",
                   stmt_res.unwrapErr().c_str());
@@ -251,7 +248,7 @@ SELECT * FROM (
     WHERE
       context = ?1 AND fuzzy_match(?2, content) > 0
     GROUP BY content
-    ORDER BY fuzzy_match(?2, content) DESC
+    ORDER BY fuzzy_match(?2, content) DESC, max_create_time DESC
     LIMIT 50
 )
 ORDER BY max_create_time DESC

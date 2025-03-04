@@ -310,6 +310,7 @@ noinst_HEADERS = \
 	mapbox/variant_visitor.hpp \
 	md2attr_line.hh \
 	md4cpp.hh \
+	msg.text.hh \
 	piper.header.hh \
 	piper.looper.hh \
 	piper.looper.cfg.hh \
@@ -492,6 +493,7 @@ libdiag_a_SOURCES = \
 	logfile_sub_source.cc \
 	md2attr_line.cc \
 	md4cpp.cc \
+	msg.text.cc \
 	network-extension-functions.cc \
 	data_parser.cc \
 	piper.header.cc \

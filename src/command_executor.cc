@@ -523,6 +523,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             dls.dls_generation += 1;
             if (!dls.dls_row_cursors.empty()) {
                 lnav_data.ld_views[LNV_DB].reload_data();
+                lnav_data.ld_views[LNV_DB].set_top(0_vl);
                 lnav_data.ld_views[LNV_DB].set_left(0);
                 if (lnav_data.ld_flags & LNF_HEADLESS) {
                     if (ec.ec_local_vars.size() == 1) {

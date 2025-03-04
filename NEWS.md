@@ -27,6 +27,9 @@ Interface changes:
   threshold.
   Previously, the name of the file in the TEXT view would just
   be "stdin", but now it includes the rotation number.
+* The LOG and TEXT views will now display a message if they
+  contain no content to make it clear to the user that they
+  need to switch views or `:open` a file.
 
 Features:
 * The `:comment` command will now switch the prompt to multi-line

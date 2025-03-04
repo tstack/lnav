@@ -505,6 +505,7 @@ add_library(
         logfile_sub_source.cc
         md2attr_line.cc
         md4cpp.cc
+        msg.text.cc
         network-extension-functions.cc
         data_scanner.cc
         data_scanner_re.cc
@@ -637,6 +638,7 @@ add_library(
         logfile_stats.hh
         md2attr_line.hh
         md4cpp.hh
+        msg.text.hh
         file_converter_manager.hh
         piper.looper.cfg.hh
         piper.looper.hh

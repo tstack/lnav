@@ -45,6 +45,7 @@
 #include "data_scanner.hh"
 #include "lnav.events.hh"
 #include "md2attr_line.hh"
+#include "msg.text.hh"
 #include "pretty_printer.hh"
 #include "scn/scan.h"
 #include "sql_util.hh"
@@ -1536,8 +1537,9 @@ textfile_sub_source::get_effective_view_mode() const
     return retval;
 }
 
-textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src)
-    : tho_src(src)
+textfile_header_overlay::textfile_header_overlay(textfile_sub_source* src,
+                                                 text_sub_source* log_src)
+    : tho_src(src), tho_log_src(log_src)
 {
 }
 
@@ -1547,6 +1549,25 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
                                              int bottom,
                                              attr_line_t& value_out)
 {
+    const std::vector<attr_line_t>* lines = nullptr;
+    if (this->tho_src->text_line_count() == 0) {
+        if (this->tho_log_src->text_line_count() == 0) {
+            lines = lnav::messages::view::no_files();
+        } else {
+            lines = lnav::messages::view::only_log_files();
+        }
+    }
+
+    if (lines != nullptr && y < lines->size()) {
+        value_out = lines->at(y);
+        value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+        if (y == lines->size() - 1) {
+            value_out.with_attr_for_all(
+                VC_STYLE.value(text_attrs::with_underline()));
+        }
+        return true;
+    }
+
     if (y != 0) {
         return false;
     }

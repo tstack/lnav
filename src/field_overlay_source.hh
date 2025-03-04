@@ -39,13 +39,12 @@
 #include "log_data_helper.hh"
 #include "logfile_sub_source.hh"
 #include "text_overlay_menu.hh"
-#include "textfile_sub_source.hh"
 
 class field_overlay_source : public text_overlay_menu {
 public:
     explicit field_overlay_source(logfile_sub_source& lss,
-                                  textfile_sub_source& tss)
-        : fos_lss(lss), fos_log_helper(lss)
+                                  text_sub_source& tss)
+        : fos_lss(lss), fos_tss(tss), fos_log_helper(lss)
     {
     }
 
@@ -56,6 +55,11 @@ public:
         this->fos_lines.clear();
         this->fos_meta_lines.clear();
     }
+
+    bool list_static_overlay(const listview_curses& lv,
+                             int y,
+                             int bottom,
+                             attr_line_t& value_out) override;
 
     std::optional<attr_line_t> list_header_for_overlay(
         const listview_curses& lv, vis_line_t vl) override;
@@ -98,6 +102,7 @@ public:
 
     std::stack<context> fos_contexts;
     logfile_sub_source& fos_lss;
+    text_sub_source& fos_tss;
     uint32_t fos_index_generation{0};
     cache::lru_cache<vis_line_t, std::optional<attr_line_t>> fos_anno_cache{
         256};
