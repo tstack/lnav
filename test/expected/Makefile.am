@@ -390,6 +390,8 @@ dist_noinst_DATA = \
     test_json_format.sh_dfff27a651650a04d93de9a06ab5480e94ce3a79.out \
     test_json_format.sh_e36401aa54bc61de71f8dcbe66ea16effa59ea52.err \
     test_json_format.sh_e36401aa54bc61de71f8dcbe66ea16effa59ea52.out \
+    test_json_format.sh_eb316389dd36295ceebfa23cf39727fa8314fa91.err \
+    test_json_format.sh_eb316389dd36295ceebfa23cf39727fa8314fa91.out \
     test_json_format.sh_f6db98502e24192143576adf49dafef7494c768c.err \
     test_json_format.sh_f6db98502e24192143576adf49dafef7494c768c.out \
     test_json_format.sh_f740026626ab554dacb249762d8be7d6539b8c6e.err \

@@ -71,6 +71,7 @@ enum class help_parameter_format_t {
     HPF_INTEGER,
     HPF_NUMBER,
     HPF_DATETIME,
+    HPF_ADJUSTED_TIME,
     HPF_ENUM,
     HPF_FILENAME,
     HPF_LOADED_FILE,

@@ -1031,6 +1031,38 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                SUBST_TEXT.value(x + " "));
                        });
             }
+            case help_parameter_format_t::HPF_ADJUSTED_TIME: {
+                static const auto symbolic_times = std::vector<std::string>{
+                    "-1h",
+                    "-5m",
+                    "-1s",
+                    "+1s",
+                    "+5m",
+                    "+1h",
+                };
+
+                auto* tss = tc.get_sub_source();
+                auto* ttt = dynamic_cast<text_time_translator*>(tss);
+                if (ttt == nullptr || !tss->tss_supports_filtering) {
+                    return {};
+                }
+
+                auto ri_opt = ttt->time_for_row(tc.get_selection());
+                if (!ri_opt) {
+                    return {};
+                }
+                auto ri = ri_opt.value();
+
+                auto all_times = symbolic_times;
+                all_times.insert(all_times.begin(),
+                                 lnav::to_rfc3339_string(ri.ri_time, 'T'));
+
+                return all_times | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                           return attr_line_t().append(x).with_attr_for_all(
+                               SUBST_TEXT.value(x + " "));
+                       });
+            }
             case help_parameter_format_t::HPF_HIGHLIGHTS: {
                 std::vector<std::string> poss_strs;
                 const auto& hl_map = tc.get_highlights();

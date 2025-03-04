@@ -2285,7 +2285,7 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             || (jlu->jlu_format->lf_timestamp_flags
                 & (ETF_MICROS_SET | ETF_NANOS_SET | ETF_ZONE_SET)))
         {
-            struct timeval tv;
+            timeval tv;
 
             const auto* last = jlu->jlu_format->lf_date_time.scan(
                 (const char*) str,
@@ -2306,6 +2306,13 @@ rewrite_json_field(yajlpp_parse_context* ypc,
                     jlu->jlu_format->lf_date_time.relock(ls);
                 }
             }
+            if (jlu->jlu_exttm.et_flags & ETF_ZONE_SET
+                && jlu->jlu_format->lf_date_time.dts_zoned_to_local)
+            {
+                jlu->jlu_exttm.et_flags &= ~ETF_Z_IS_UTC;
+            }
+            jlu->jlu_exttm.et_gmtoff
+                = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
             jlu->jlu_format->lf_date_time.ftime(
                 time_buf,
                 sizeof(time_buf),
@@ -2315,13 +2322,6 @@ rewrite_json_field(yajlpp_parse_context* ypc,
             sql_strftime(
                 time_buf, sizeof(time_buf), jlu->jlu_line->get_timeval(), 'T');
         }
-        if (jlu->jlu_exttm.et_flags & ETF_ZONE_SET
-            && jlu->jlu_format->lf_date_time.dts_zoned_to_local)
-        {
-            jlu->jlu_exttm.et_flags &= ~ETF_Z_IS_UTC;
-        }
-        jlu->jlu_exttm.et_gmtoff
-            = jlu->jlu_format->lf_date_time.dts_local_offset_cache;
         jlu->jlu_format->jlf_line_values.lvv_values.emplace_back(
             jlu->jlu_format->get_value_meta(field_name,
                                             value_kind_t::VALUE_TEXT),

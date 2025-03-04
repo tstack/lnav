@@ -44,15 +44,8 @@
 #include "lnav_config.hh"
 #include "log_data_helper.hh"
 #include "log_format_ext.hh"
-#include "pcrepp/pcre2pp.hh"
-#include "service_tags.hh"
 #include "session_data.hh"
-#include "sql_help.hh"
-#include "sql_util.hh"
-#include "sqlite-extension-func.hh"
-#include "sysclip.hh"
 #include "tailer/tailer.looper.hh"
-#include "yajlpp/yajlpp_def.hh"
 
 static void
 tokenize_view_text(std::unordered_set<std::string>& accum, string_fragment text)

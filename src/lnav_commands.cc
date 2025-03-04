@@ -198,11 +198,10 @@ com_adjust_log_time(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("line-time");
-    } else if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
+    if (lnav_data.ld_views[LNV_LOG].get_inner_height() == 0) {
         return ec.make_error("no log messages");
-    } else if (args.size() >= 2) {
+    }
+    if (args.size() >= 2) {
         auto& lss = lnav_data.ld_log_source;
         struct timeval top_time, time_diff;
         struct timeval new_time = {0, 0};
@@ -3665,20 +3664,22 @@ readline_context::command_t STD_COMMANDS[] = {
             }),
     },
 
-    {"adjust-log-time",
-     com_adjust_log_time,
+    {
+        "adjust-log-time",
+        com_adjust_log_time,
 
-     help_text(":adjust-log-time")
-         .with_summary(
-             "Change the timestamps of the focused file to be relative "
-             "to the given date")
-         .with_parameter(
-             help_text("timestamp",
-                       "The new timestamp for the focused line in the view")
-                 .with_format(help_parameter_format_t::HPF_DATETIME))
-         .with_example({"To set the focused timestamp to a given date",
-                        "2017-01-02T05:33:00"})
-         .with_example({"To set the focused timestamp back an hour", "-1h"})},
+        help_text(":adjust-log-time")
+            .with_summary(
+                "Change the timestamps of the focused file to be relative "
+                "to the given date")
+            .with_parameter(
+                help_text("timestamp",
+                          "The new timestamp for the focused line in the view")
+                    .with_format(help_parameter_format_t::HPF_ADJUSTED_TIME))
+            .with_example({"To set the focused timestamp to a given date",
+                           "2017-01-02T05:33:00"})
+            .with_example({"To set the focused timestamp back an hour", "-1h"}),
+    },
 
     {"unix-time",
      com_unix_time,

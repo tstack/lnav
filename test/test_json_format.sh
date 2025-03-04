@@ -17,6 +17,10 @@ run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     ${test_dir}/logfile_json.json
 
+run_cap_test env TZ=America/New_York ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json.json
+
 run_cap_test ${lnav_test} -n \
     -I ${test_dir} \
     -c ':filter-in up service' \
