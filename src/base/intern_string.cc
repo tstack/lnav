@@ -560,7 +560,7 @@ string_fragment::byte_to_column_index(const size_t byte_index) const
 static bool
 iswordbreak(wchar_t wchar)
 {
-    const uint32_t mask
+    static constexpr uint32_t mask
         = UC_CATEGORY_MASK_L | UC_CATEGORY_MASK_N | UC_CATEGORY_MASK_Pc;
     return !uc_is_general_category_withtable(wchar, mask);
 }

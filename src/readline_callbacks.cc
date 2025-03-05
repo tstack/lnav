@@ -1236,6 +1236,7 @@ lnav_rl_abort(textinput_curses& rc)
             break;
     }
     rc.clear_inactive_value();
+
     set_view_mode(ln_mode_t::PAGING);
 }
 
@@ -1274,7 +1275,8 @@ rl_callback(textinput_curses& rc)
             break;
     }
 
-    auto old_mode = std::exchange(lnav_data.ld_mode, new_mode);
+    auto old_mode = lnav_data.ld_mode;
+    set_view_mode(new_mode);
     switch (old_mode) {
         case ln_mode_t::BREADCRUMBS:
         case ln_mode_t::PAGING:

@@ -550,9 +550,18 @@ load_ncinput(inputctx* ictx, ncinput *tni){
     ni->id = NCKEY_BACKSPACE;
   }else if(ni->id > 0 && ni->id <= 26 && ni->id != '\t'){
     ni->id = ni->id + 'A' - 1;
-    ni->modifiers |= NCKEY_MOD_CTRL;
+      ni->modifiers |= NCKEY_MOD_CTRL;
+  }else if(ni->id == 28) {
+      ni->id = '\\';
+      ni->modifiers |= NCKEY_MOD_CTRL;
   }else if(ni->id == 29) {
       ni->id = ']';
+      ni->modifiers |= NCKEY_MOD_CTRL;
+  }else if(ni->id == 30) {
+      ni->id = '^';
+      ni->modifiers |= NCKEY_MOD_CTRL;
+  }else if (ni->id == 31) {
+      ni->id = '_';
       ni->modifiers |= NCKEY_MOD_CTRL;
   }
   if(++ictx->iwrite == ictx->isize){

@@ -288,7 +288,7 @@ readline_sqlite_highlighter_int(attr_line_t& al,
     annotate_sql_statement(anno_sql);
 
     for (const auto& attr : anno_sql.al_attrs) {
-        line_range lr{
+        auto lr = line_range{
             sub.lr_start + attr.sa_range.lr_start,
             sub.lr_start + attr.sa_range.lr_end,
         };

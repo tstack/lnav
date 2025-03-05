@@ -97,16 +97,32 @@ breadcrumb_curses::do_update()
         }
 
         this->bc_displayed_crumbs.emplace_back(
-            line_range{(int) accum_width,
-                       (int) (accum_width + elem_width),
-                       line_range::unit::codepoint},
+            line_range{
+                (int) accum_width,
+                (int) (accum_width + elem_width),
+                line_range::unit::codepoint,
+            },
             crumb_index);
         crumbs_line.append(" \uff1a"_breadcrumb);
     }
 
+    if (!this->vc_enabled) {
+        for (auto& attr : crumbs_line.al_attrs) {
+            if (attr.sa_type != &VC_ROLE) {
+                continue;
+            }
+
+            auto role = attr.sa_value.get<role_t>();
+            if (role == role_t::VCR_STATUS_TITLE) {
+                attr.sa_value = role_t::VCR_STATUS_DISABLED_TITLE;
+            }
+        }
+    }
+
     line_range lr{0, static_cast<int>(width)};
-    mvwattrline(
-        this->bc_window, this->vc_y, 0, crumbs_line, lr, role_t::VCR_STATUS);
+    auto default_role = this->vc_enabled ? role_t::VCR_STATUS
+                                         : role_t::VCR_INACTIVE_STATUS;
+    mvwattrline(this->bc_window, this->vc_y, 0, crumbs_line, lr, default_role);
 
     if (this->bc_selected_crumb) {
         this->bc_match_view.set_x(sel_crumb_offset);

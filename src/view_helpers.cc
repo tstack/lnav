@@ -1136,8 +1136,26 @@ eval_example(const help_text& ht, const help_example& ex)
 bool
 toggle_view(textview_curses* toggle_tc)
 {
-    textview_curses* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
-    bool retval = false;
+    auto* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
+    auto retval = false;
+
+    switch (lnav_data.ld_mode) {
+        case ln_mode_t::SQL:
+        case ln_mode_t::COMMAND:
+        case ln_mode_t::EXEC:
+        case ln_mode_t::USER:
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
+            log_debug("blocking toggle of view while in mode %s",
+                      lnav_mode_strings[lnav::enums::to_underlying(
+                          lnav_data.ld_mode)]);
+            return false;
+        }
+        default:
+            break;
+    }
 
     require(toggle_tc != nullptr);
     require(toggle_tc >= &lnav_data.ld_views[0]);
@@ -1207,7 +1225,7 @@ bool
 ensure_view(textview_curses* expected_tc)
 {
     auto* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
-    bool retval = true;
+    auto retval = true;
 
     if (tc != expected_tc) {
         toggle_view(expected_tc);
@@ -1464,10 +1482,11 @@ lnav_crumb_source()
 
     auto* top_view = top_view_opt.value();
     auto view_index = top_view - lnav_data.ld_views;
+    auto view_str
+        = fmt::format(FMT_STRING(" {} \u25bc "), lnav_view_titles[view_index]);
     retval.emplace_back(
         lnav_view_titles[view_index],
-        attr_line_t().append(lnav::roles::status_title(fmt::format(
-            FMT_STRING(" {} \u25bc "), lnav_view_titles[view_index]))),
+        attr_line_t().append(lnav::roles::status_title(view_str)),
         view_title_poss,
         view_performer);
 
@@ -1509,6 +1528,22 @@ set_view_mode(ln_mode_t mode)
             lnav_data.ld_view_stack.set_needs_update();
             break;
         }
+        case ln_mode_t::SQL:
+        case ln_mode_t::EXEC:
+        case ln_mode_t::USER:
+        case ln_mode_t::BUSY:
+        case ln_mode_t::COMMAND:
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
+            if (mode != ln_mode_t::PAGING) {
+                log_debug("prompt is active, ignoring change to mode %s",
+                          lnav_mode_strings[lnav::enums::to_underlying(mode)]);
+                return;
+            }
+            break;
+        }
         case ln_mode_t::FILE_DETAILS: {
             lnav_data.ld_file_details_view.tc_cursor_role
                 = role_t::VCR_DISABLED_CURSOR_LINE;
@@ -1525,9 +1560,18 @@ set_view_mode(ln_mode_t mode)
         default:
             break;
     }
+    breadcrumb_view->vc_enabled = true;
     switch (mode) {
-        case ln_mode_t::SEARCH: {
+        case ln_mode_t::SQL:
+        case ln_mode_t::EXEC:
+        case ln_mode_t::USER:
+        case ln_mode_t::COMMAND:
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
             lnav_data.ld_status[LNS_DOC].set_needs_update();
+            breadcrumb_view->vc_enabled = false;
             break;
         }
         case ln_mode_t::BREADCRUMBS: {

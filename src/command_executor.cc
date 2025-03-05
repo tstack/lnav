@@ -506,6 +506,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             cached_chunks);
     }
     gettimeofday(&end_tv, nullptr);
+    lnav_data.ld_mode = old_mode;
     if (retcode == SQLITE_DONE) {
         if (lnav_data.ld_log_source.is_line_meta_changed()) {
             lnav_data.ld_log_source.text_filters_changed();

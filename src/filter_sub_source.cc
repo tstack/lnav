@@ -28,10 +28,12 @@
  */
 
 #include <memory>
+#include <utility>
 
 #include "filter_sub_source.hh"
 
 #include "base/attr_line.builder.hh"
+#include "base/auto_mem.hh"
 #include "base/enum_util.hh"
 #include "base/func_util.hh"
 #include "base/itertools.hh"
@@ -51,7 +53,7 @@
 using namespace lnav::roles::literals;
 
 filter_sub_source::filter_sub_source(std::shared_ptr<textinput_curses> editor)
-    : fss_editor(editor),
+    : fss_editor(std::move(editor)),
       fss_regexp_history(
           lnav::textinput::history::for_context("regexp-filter"_frag)),
       fss_sql_history(lnav::textinput::history::for_context("sql-filter"_frag))
@@ -398,9 +400,9 @@ filter_sub_source::text_size_for_line(textview_curses& tc,
                                       int line,
                                       text_sub_source::line_flags_t raw)
 {
-    textview_curses* top_view = *lnav_data.ld_view_stack.top();
-    text_sub_source* tss = top_view->get_sub_source();
-    filter_stack& fs = tss->get_filters();
+    auto* top_view = *lnav_data.ld_view_stack.top();
+    auto* tss = top_view->get_sub_source();
+    auto& fs = tss->get_filters();
     auto tf = *(fs.begin() + line);
 
     return 8 + tf->get_id().size();
@@ -463,6 +465,9 @@ filter_sub_source::rl_change(textinput_curses& rc)
             break;
         }
         case filter_lang_t::SQL: {
+            this->rl_completion_request_int(rc,
+                                            completion_request_type_t::partial);
+
             auto full_sql
                 = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), new_value);
             auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);

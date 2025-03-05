@@ -41,6 +41,7 @@
 #include "data_scanner.hh"
 #include "readline_highlighters.hh"
 #include "sysclip.hh"
+#include "unictype.h"
 #include "ww898/cp_utf8.hpp"
 
 using namespace std::chrono_literals;
@@ -64,6 +65,13 @@ textinput_curses::get_help_text()
               .append("CTRL-X"_hotkey)
               .append("    - Save and exit the editor\n ")
               .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("HOME"_hotkey)
+              .append("      - Move to the beginning of the buffer\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("END"_hotkey)
+              .append("       - Move to the end of the buffer\n ")
               .append(" ")
               .append("CTRL-A"_hotkey)
               .append("    - Move to the beginning of the line\n ")
@@ -105,12 +113,23 @@ textinput_curses::get_help_text()
               .append(" - Accept a completion suggestion\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
+              .append("CTRL-_"_hotkey)
+              .append(" - Undo a change\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
               .append("CTRL-L"_hotkey)
               .append("    - Reformat the contents, if available\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-O"_hotkey)
               .append("    - Open the contents in an external editor\n")
+              .append("\n")
+              .append("History"_h2)
+              .append("\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("CTRL-R"_hotkey)
+              .append(" - Search history using current contents\n")
               .append("\n")
               .append("Searching"_h2)
               .append("\n ")
@@ -162,7 +181,6 @@ textinput_curses::set_content(const attr_line_t& al)
 {
     auto al_copy = al;
 
-    log_debug("setting content: %s", al.al_string.c_str());
     if (!this->tc_prefix.empty()) {
         al_copy.insert(0, this->tc_prefix);
     }
@@ -194,6 +212,8 @@ textinput_curses::set_content(const attr_line_t& al)
     } else {
         this->apply_highlights();
     }
+    this->tc_change_log.clear();
+    this->tc_notice = std::nullopt;
     this->tc_left = 0;
     this->tc_top = 0;
     this->tc_cursor = {};
@@ -633,7 +653,12 @@ textinput_curses::handle_key(const ncinput& ch)
     }
 
     if (ncinput_ctrl_p(&ch)) {
-        switch (ch.id) {
+        auto chid = ch.id;
+
+        if (ncinput_shift_p(&ch) && chid == '-') {
+            chid = '_';  // XXX
+        }
+        switch (chid) {
             case 'a':
             case 'A': {
                 this->move_cursor_to(this->tc_cursor.copy_with_x(0));
@@ -760,11 +785,13 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             case 's':
             case 'S': {
-                log_debug("switching to search mode from edit");
-                this->tc_mode = mode_t::searching;
-                this->tc_search_start_point = this->tc_cursor;
-                this->tc_search_found = std::nullopt;
-                this->set_needs_update();
+                if (this->tc_height > 1) {
+                    log_debug("switching to search mode from edit");
+                    this->tc_mode = mode_t::searching;
+                    this->tc_search_start_point = this->tc_cursor;
+                    this->tc_search_found = std::nullopt;
+                    this->set_needs_update();
+                }
                 return true;
             }
             case 'u':
@@ -856,6 +883,25 @@ textinput_curses::handle_key(const ncinput& ch)
                 this->tc_drag_selection = std::nullopt;
                 return true;
             }
+            case '_': {
+                if (this->tc_change_log.empty()) {
+                    this->tc_notice = notice_t::no_changes;
+                    this->set_needs_update();
+                } else {
+                    log_debug("undo!");
+                    const auto& ce = this->tc_change_log.back();
+                    auto content_sf = string_fragment::from_str(ce.ce_content);
+                    this->tc_selection = ce.ce_range;
+                    log_debug(" range [%d:%d) - [%d:%d)",
+                              this->tc_selection->sr_start.x,
+                              this->tc_selection->sr_start.y,
+                              this->tc_selection->sr_end.x,
+                              this->tc_selection->sr_end.y);
+                    this->replace_selection_no_change(content_sf);
+                    this->tc_change_log.pop_back();
+                }
+                return true;
+            }
             default: {
                 this->tc_notice = notice_t::unhandled_input;
                 this->set_needs_update();
@@ -867,17 +913,21 @@ textinput_curses::handle_key(const ncinput& ch)
     switch (chid) {
         case NCKEY_ESC:
         case KEY_CTRL(']'): {
-            if (this->tc_popup.is_visible()) {
-                this->tc_popup_type = popup_type_t::none;
-                this->tc_popup.set_visible(false);
-                this->tc_complete_range = std::nullopt;
-                this->set_needs_update();
+            if (this->tc_notice) {
+                this->tc_notice = std::nullopt;
             } else {
-                this->abort();
-            }
+                if (this->tc_popup.is_visible()) {
+                    this->tc_popup_type = popup_type_t::none;
+                    this->tc_popup.set_visible(false);
+                    this->tc_complete_range = std::nullopt;
+                    this->set_needs_update();
+                } else {
+                    this->abort();
+                }
 
-            this->tc_selection = std::nullopt;
-            this->tc_drag_selection = std::nullopt;
+                this->tc_selection = std::nullopt;
+                this->tc_drag_selection = std::nullopt;
+            }
             return true;
         }
         case NCKEY_ENTER: {
@@ -973,26 +1023,6 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             return true;
         }
-        case KEY_CTRL('_'): {
-            if (this->tc_change_log.empty()) {
-                this->tc_notice = notice_t::no_changes;
-                this->set_needs_update();
-            } else {
-                log_debug("undo!");
-                const auto& ce = this->tc_change_log.back();
-                auto content_sf = string_fragment::from_str(ce.ce_content);
-                this->tc_selection = ce.ce_range;
-                log_debug(" range [%d:%d) - [%d:%d)",
-                          this->tc_selection->sr_start.x,
-                          this->tc_selection->sr_start.y,
-                          this->tc_selection->sr_end.x,
-                          this->tc_selection->sr_end.y);
-                this->replace_selection_no_change(content_sf);
-                this->tc_change_log.pop_back();
-            }
-            return true;
-        }
-
         case NCKEY_HOME: {
             this->move_cursor_to(input_point::home());
             return true;
@@ -1371,14 +1401,20 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
 void
 textinput_curses::replace_selection(string_fragment sf)
 {
+    static constexpr uint32_t mask
+        = UC_CATEGORY_MASK_L | UC_CATEGORY_MASK_N | UC_CATEGORY_MASK_Pc;
+
     if (!this->tc_selection) {
         return;
     }
     auto range = this->tc_selection.value();
     auto old_text = this->replace_selection_no_change(sf);
+    auto is_wordbreak = !sf.empty()
+        && !uc_is_general_category_withtable(sf.front_codepoint(), mask);
     log_debug("repl sel [%d:%d) - ", range.sr_start.x, range.sr_start.y);
     if (this->tc_change_log.empty()
-        || this->tc_change_log.back().ce_range.sr_end != range.sr_start)
+        || this->tc_change_log.back().ce_range.sr_end != range.sr_start
+        || is_wordbreak)
     {
         this->tc_change_log.emplace_back(
             selected_range::from_key(range.sr_start, this->tc_cursor),
@@ -1495,6 +1531,7 @@ textinput_curses::get_visible_dimensions() const
 std::string
 textinput_curses::get_content(bool trim) const
 {
+    auto need_lf = false;
     std::string retval;
 
     for (const auto& al : this->tc_lines) {
@@ -1503,10 +1540,11 @@ textinput_curses::get_content(bool trim) const
         if (trim) {
             line_sf = line_sf.rtrim(" ");
         }
-        if (!retval.empty()) {
+        if (need_lf) {
             retval.push_back('\n');
         }
         retval.append(line_sf.data(), line_sf.length());
+        need_lf = true;
     }
     return retval;
 }
@@ -1522,7 +1560,9 @@ textinput_curses::focus()
         this->set_needs_update();
     }
 
-    if (this->tc_mode == mode_t::show_help) {
+    if (this->tc_mode == mode_t::show_help
+        || (this->tc_height && this->tc_notice))
+    {
         notcurses_cursor_disable(ncplane_notcurses(this->tc_window));
         return;
     }

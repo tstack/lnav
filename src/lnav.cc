@@ -1802,7 +1802,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
 
         {
-            auto& mlooper = injector::get<main_looper&, services::main_t>();
+            static auto& mlooper
+                = injector::get<main_looper&, services::main_t>();
 
             mlooper.get_port().process_for(0s);
         }

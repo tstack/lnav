@@ -215,7 +215,7 @@ view_curses::handle_mouse(mouse_event& me)
 std::optional<view_curses*>
 view_curses::contains(int x, int y)
 {
-    if (!this->vc_visible) {
+    if (!this->vc_visible || !this->vc_enabled) {
         return std::nullopt;
     }
 

@@ -317,6 +317,96 @@ Query Prompts
    * - :kbd:`Ctrl` + :kbd:`]`
      - Abort the prompt
 
+Prompt
+------
+
+After activating the prompt, the following shortcuts are available for
+editing:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 6 6 20
+
+    * - Keypress
+      -
+      - Command
+    * - :kbd:`Escape`
+      -
+      - Depending on the mode: close the completion popup; exit search
+        mode; cancel the prompt
+    * - :kbd:`Enter`
+      -
+      - In single line mode, exit the prompt and perform the operation.
+        In multi-line mode, insert a new line.
+    * - :kbd:`Ctrl` + :kbd:`X`
+      -
+      - Exit the prompt and perform the operation
+    * - :kbd:`F1`
+      -
+      - Open the help text for the prompt
+    * - :kbd:`←`
+      -
+      - Move left one character
+    * - :kbd:`→`
+      -
+      - Move right one character
+    * - :kbd:`Shift` + :kbd:`←`
+      -
+      - Move left one character and include it in the selection
+    * - :kbd:`Shift` + :kbd:`→`
+      -
+      - Move right one character and include it in the selection
+    * - :kbd:`↑`
+      -
+      - In single-line mode, search the history with the current contents.
+        In multi-line mode, move the cursor up a line.  If a popup is open,
+        move the selection up.
+    * - :kbd:`↓`
+      -
+      - In multi-line mode, move the cursor down a line.  If a popup is open,
+        move the selection down.
+    * - :kbd:`Ctrl` + :kbd:`A`
+      -
+      - Move to the beginning of the line
+    * - :kbd:`Ctrl` + :kbd:`E`
+      -
+      - Move to the end of the line
+    * - :kbd:`Ctrl` + :kbd:`K`
+      -
+      - Cut to the end of the line into the clipboard
+    * - :kbd:`Ctrl` + :kbd:`U`
+      -
+      - Cut from the beginning of the line to the cursor into the clipboard
+    * - :kbd:`Ctrl` + :kbd:`W`
+      -
+      - Cut from the beginning of the previous word into the clipboard
+    * - :kbd:`Ctrl` + :kbd:`Y`
+      -
+      - Paste the clipboard contents
+    * - :kbd:`Tab`
+      - :kbd:`Enter`
+      - Accept a completion suggestion
+    * - :kbd:`Ctrl` + :kbd:`_`
+      -
+      - Undo a change
+    * - :kbd:`Ctrl` + :kbd:`L`
+      -
+      - In the SQL prompt, reformat the contents of the prompt and switch
+        to multi-line mode
+    * - :kbd:`Ctrl` + :kbd:`O`
+      -
+      - Save the contents of the prompt in a script file named
+        :code:`saved-prompt` and, if available, open the file in
+        the :ref:`configured external editor <config_external_editor>`
+    * - :kbd:`Ctrl` + :kbd:`S`
+      -
+      - In multi-line mode, switch to search mode.  If already in search
+        mode, find the next occurrence.
+    * - :kbd:`Ctrl` + :kbd:`R`
+      -
+      - In search mode, search for the previous occurrence.  Otherwise,
+        search history using current contents of the prompt
+
 Customizing
 -----------
 

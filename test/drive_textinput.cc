@@ -304,7 +304,7 @@ main(int argc, char** argv)
 
         auto nco = notcurses_options{};
         nco.flags |= NCOPTION_SUPPRESS_BANNERS;
-        nco.loglevel = NCLOGLEVEL_INFO;
+        nco.loglevel = NCLOGLEVEL_PANIC;
         auto sc = screen_curses::create(nco).unwrap();
         view_colors::singleton().init(sc.get_notcurses());
         auto looping = true;
