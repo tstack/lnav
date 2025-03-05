@@ -3749,14 +3749,18 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_opposites({":adjust-log-time"}),
     },
 
-    {"unix-time",
-     com_unix_time,
+    {
+        "unix-time",
+        com_unix_time,
 
-     help_text(":unix-time")
-         .with_summary("Convert epoch time to a human-readable form")
-         .with_parameter(help_text("seconds", "The epoch timestamp to convert")
-                             .with_format(help_parameter_format_t::HPF_INTEGER))
-         .with_example({"To convert the epoch time 1490191111", "1490191111"})},
+        help_text(":unix-time")
+            .with_summary("Convert epoch time to a human-readable form")
+            .with_parameter(
+                help_text("seconds", "The epoch timestamp to convert")
+                    .with_format(help_parameter_format_t::HPF_INTEGER))
+            .with_example(
+                {"To convert the epoch time 1490191111", "1490191111"}),
+    },
     {
         "convert-time-to",
         com_convert_time_to,
@@ -3805,34 +3809,39 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":current-time")
          .with_summary("Print the current time in human-readable form and "
                        "seconds since the epoch")},
-    {"goto",
-     com_goto,
+    {
+        "goto",
+        com_goto,
 
-     help_text(":goto")
-         .with_summary("Go to the given location in the top view")
-         .with_parameter(
-             help_text("line#|N%|timestamp|#anchor",
-                       "A line number, percent into the file, timestamp, "
-                       "or an anchor in a text file"))
-         .with_examples(
-             {{"To go to line 22", "22"},
-              {"To go to the line 75% of the way into the view", "75%"},
-              {"To go to the first message on the first day of "
-               "2017",
-               "2017-01-01"},
-              {"To go to the Screenshots section", "#screenshots"}})
-         .with_tags({"navigation"})},
-    {"relative-goto",
-     com_relative_goto,
-
-     help_text(":relative-goto")
-         .with_summary("Move the current view up or down by the given amount")
-         .with_parameter({"line-count|N%", "The amount to move the view by."})
-         .with_examples({
-             {"To move 22 lines down in the view", "+22"},
-             {"To move 10 percent back in the view", "-10%"},
-         })
-         .with_tags({"navigation"})},
+        help_text(":goto")
+            .with_summary("Go to the given location in the top view")
+            .with_parameter(
+                help_text("line#|N%|timestamp|#anchor",
+                          "A line number, percent into the file, timestamp, "
+                          "or an anchor in a text file"))
+            .with_examples(
+                {{"To go to line 22", "22"},
+                 {"To go to the line 75% of the way into the view", "75%"},
+                 {"To go to the first message on the first day of "
+                  "2017",
+                  "2017-01-01"},
+                 {"To go to the Screenshots section", "#screenshots"}})
+            .with_tags({"navigation"}),
+    },
+    {
+        "relative-goto",
+        com_relative_goto,
+        help_text(":relative-goto")
+            .with_summary(
+                "Move the current view up or down by the given amount")
+            .with_parameter(
+                {"line-count|N%", "The amount to move the view by."})
+            .with_examples({
+                {"To move 22 lines down in the view", "+22"},
+                {"To move 10 percent back in the view", "-10%"},
+            })
+            .with_tags({"navigation"}),
+    },
 
     {
         "annotate",
@@ -3936,20 +3945,23 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_tags({"display"})
          .with_example(
              {"To highlight numbers with three or more digits", R"(\d{3,})"})},
-    {"clear-highlight",
-     com_clear_highlight,
+    {
+        "clear-highlight",
+        com_clear_highlight,
 
-     help_text(":clear-highlight")
-         .with_summary("Remove a previously set highlight regular expression")
-         .with_parameter(
-             help_text("pattern",
-                       "The regular expression previously used "
-                       "with :highlight")
-                 .with_format(help_parameter_format_t::HPF_HIGHLIGHTS))
-         .with_tags({"display"})
-         .with_opposites({"highlight"})
-         .with_example(
-             {"To clear the highlight with the pattern 'foobar'", "foobar"})},
+        help_text(":clear-highlight")
+            .with_summary(
+                "Remove a previously set highlight regular expression")
+            .with_parameter(
+                help_text("pattern",
+                          "The regular expression previously used "
+                          "with :highlight")
+                    .with_format(help_parameter_format_t::HPF_HIGHLIGHTS))
+            .with_tags({"display"})
+            .with_opposites({"highlight"})
+            .with_example(
+                {"To clear the highlight with the pattern 'foobar'", "foobar"}),
+    },
     {
         "filter-expr",
         com_filter_expr,
@@ -3969,14 +3981,11 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_example({"To set a filter expression that matched syslog "
                            "messages from 'syslogd'",
                            ":log_procname = 'syslogd'"})
-            .with_example({"To set a filter expression that "
-                           "matches log messages "
-                           "where "
-                           "'id' is followed by a number and "
-                           "contains the string "
-                           "'foo'",
-                           ":log_body REGEXP 'id\\d+' AND "
-                           ":log_body REGEXP 'foo'"}),
+            .with_example(
+                {"To set a filter expression that matches log "
+                 "messages where 'id' is followed by a number and contains the "
+                 "string 'foo'",
+                 ":log_body REGEXP 'id\\d+' AND :log_body REGEXP 'foo'"}),
 
         com_filter_expr_prompt,
     },
@@ -4176,7 +4185,8 @@ readline_context::command_t STD_COMMANDS[] = {
          .with_summary(
              "Mark the focused line in the log view as the start of a "
              "new partition with the given name")
-         .with_parameter(help_text("name", "The name for the new partition"))
+         .with_parameter(help_text("name", "The name for the new partition")
+                             .with_format(help_parameter_format_t::HPF_TEXT))
          .with_example(
              {"To mark the focused line as the start of the partition "
               "named 'boot #1'",

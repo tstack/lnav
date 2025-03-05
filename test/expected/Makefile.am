@@ -902,6 +902,8 @@ dist_noinst_DATA = \
     test_sql_coll_func.sh_180ad44fe073cc9642da642af1f442adfd98ec62.out \
     test_sql_coll_func.sh_2230714a0b2ab6aca9ddfe686734f313cef5a96b.err \
     test_sql_coll_func.sh_2230714a0b2ab6aca9ddfe686734f313cef5a96b.out \
+    test_sql_coll_func.sh_5263051ff39722f978ac76b8ad8d413f2739c222.err \
+    test_sql_coll_func.sh_5263051ff39722f978ac76b8ad8d413f2739c222.out \
     test_sql_coll_func.sh_68515cfd0a50880f6dfc8f9810c9e761493ebb12.err \
     test_sql_coll_func.sh_68515cfd0a50880f6dfc8f9810c9e761493ebb12.out \
     test_sql_coll_func.sh_6de2a86c53883ec4430b98edd06b0c0cdf23e741.err \

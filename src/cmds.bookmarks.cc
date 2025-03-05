@@ -36,7 +36,7 @@ com_mark(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 {
     std::string retval;
 
-    if (args.empty() || lnav_data.ld_view_stack.empty()) {
+    if (lnav_data.ld_view_stack.empty()) {
     } else if (!ec.ec_dry_run) {
         auto* tc = *lnav_data.ld_view_stack.top();
         lnav_data.ld_last_user_mark[tc] = tc->get_selection();
@@ -55,24 +55,20 @@ com_goto_mark(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("mark-type");
-    } else {
-        static const std::set<const bookmark_type_t*> DEFAULT_TYPES = {
-            &textview_curses::BM_USER,
-            &textview_curses::BM_USER_EXPR,
-            &textview_curses::BM_META,
-        };
+    static const std::set<const bookmark_type_t*> DEFAULT_TYPES = {
+        &textview_curses::BM_USER,
+        &textview_curses::BM_USER_EXPR,
+        &textview_curses::BM_META,
+    };
 
-        textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
-        std::set<const bookmark_type_t*> mark_types;
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+    std::set<const bookmark_type_t*> mark_types;
 
-        if (args.size() > 1) {
-            for (size_t lpc = 1; lpc < args.size(); lpc++) {
-                auto bt_opt = bookmark_type_t::find_type(args[lpc]);
-                if (!bt_opt) {
-                    auto um
-                        = lnav::console::user_message::error(
+    if (args.size() > 1) {
+        for (size_t lpc = 1; lpc < args.size(); lpc++) {
+            auto bt_opt = bookmark_type_t::find_type(args[lpc]);
+            if (!bt_opt) {
+                auto um = lnav::console::user_message::error(
                               attr_line_t("unknown bookmark type: ")
                                   .append(args[lpc]))
                               .with_snippets(ec.ec_source)
@@ -84,74 +80,68 @@ com_goto_mark(exec_context& ec,
                                                 | lnav::itertools::sorted(),
                                             ", "))
                               .move();
-                    return Err(um);
+                return Err(um);
+            }
+            mark_types.insert(bt_opt.value());
+        }
+    } else {
+        mark_types = DEFAULT_TYPES;
+    }
+
+    if (!ec.ec_dry_run) {
+        std::optional<vis_line_t> new_top;
+
+        if (args[0] == "next-mark") {
+            auto search_from_top = search_forward_from(tc);
+
+            for (const auto& bt : mark_types) {
+                auto bt_top = next_cluster(
+                    &bookmark_vector<vis_line_t>::next, bt, search_from_top);
+
+                if (bt_top && (!new_top || bt_top < new_top.value())) {
+                    new_top = bt_top;
                 }
-                mark_types.insert(bt_opt.value());
+            }
+
+            if (!new_top) {
+                auto um = lnav::console::user_message::info(fmt::format(
+                    FMT_STRING("no more {} bookmarks after here"),
+                    fmt::join(
+                        mark_types
+                            | lnav::itertools::map(&bookmark_type_t::get_name),
+                        ", ")));
+
+                return Err(um);
             }
         } else {
-            mark_types = DEFAULT_TYPES;
-        }
+            for (const auto& bt : mark_types) {
+                auto bt_top = next_cluster(&bookmark_vector<vis_line_t>::prev,
+                                           bt,
+                                           tc->get_selection());
 
-        if (!ec.ec_dry_run) {
-            std::optional<vis_line_t> new_top;
-
-            if (args[0] == "next-mark") {
-                auto search_from_top = search_forward_from(tc);
-
-                for (const auto& bt : mark_types) {
-                    auto bt_top
-                        = next_cluster(&bookmark_vector<vis_line_t>::next,
-                                       bt,
-                                       search_from_top);
-
-                    if (bt_top && (!new_top || bt_top < new_top.value())) {
-                        new_top = bt_top;
-                    }
-                }
-
-                if (!new_top) {
-                    auto um = lnav::console::user_message::info(fmt::format(
-                        FMT_STRING("no more {} bookmarks after here"),
-                        fmt::join(mark_types
-                                      | lnav::itertools::map(
-                                          &bookmark_type_t::get_name),
-                                  ", ")));
-
-                    return Err(um);
-                }
-            } else {
-                for (const auto& bt : mark_types) {
-                    auto bt_top
-                        = next_cluster(&bookmark_vector<vis_line_t>::prev,
-                                       bt,
-                                       tc->get_selection());
-
-                    if (bt_top && (!new_top || bt_top > new_top.value())) {
-                        new_top = bt_top;
-                    }
-                }
-
-                if (!new_top) {
-                    auto um = lnav::console::user_message::info(fmt::format(
-                        FMT_STRING("no more {} bookmarks before here"),
-                        fmt::join(mark_types
-                                      | lnav::itertools::map(
-                                          &bookmark_type_t::get_name),
-                                  ", ")));
-
-                    return Err(um);
+                if (bt_top && (!new_top || bt_top > new_top.value())) {
+                    new_top = bt_top;
                 }
             }
 
-            if (new_top) {
-                tc->get_sub_source()->get_location_history() |
-                    [new_top](auto lh) {
-                        lh->loc_history_append(new_top.value());
-                    };
-                tc->set_selection(new_top.value());
+            if (!new_top) {
+                auto um = lnav::console::user_message::info(fmt::format(
+                    FMT_STRING("no more {} bookmarks before here"),
+                    fmt::join(
+                        mark_types
+                            | lnav::itertools::map(&bookmark_type_t::get_name),
+                        ", ")));
+
+                return Err(um);
             }
-            lnav_data.ld_bottom_source.grep_error("");
         }
+
+        if (new_top) {
+            tc->get_sub_source()->get_location_history() |
+                [new_top](auto lh) { lh->loc_history_append(new_top.value()); };
+            tc->set_selection(new_top.value());
+        }
+        lnav_data.ld_bottom_source.grep_error("");
     }
 
     return Ok(retval);

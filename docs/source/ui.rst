@@ -308,9 +308,13 @@ DB
 ^^
 
 The DB view shows the results of queries done through the SQLite interface.
-You can execute a query by pressing :kbd:`;` and then entering a SQL statement.
+You can execute a query by pressing :kbd:`;` and then entering a SQL or
+PRQL [#]_ statement.
 
 Press :kbd:`v` to switch to the database result view.
+
+.. [#] lnav must be compiled in an environment with Rust/Cargo available
+   for PRQL support.
 
 HELP
 ^^^^
@@ -318,7 +322,7 @@ HELP
 The help view displays the builtin help text.  While in the help view, the
 breadcrumb bar can be used to navigate to different sections of the document.
 
-Press :kbd:`?` to switch to the help view.
+Press :kbd:`?` to switch to the help view or use the command :code:`:help`.
 
 HIST
 ^^^^

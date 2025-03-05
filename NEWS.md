@@ -59,6 +59,8 @@ Features:
   lnav's internal debug log to a file.
 * Added a `:clear-adjusted-log-time` command to clear the time offset
   set by the `:adjust-log-time` command.
+* Added a `measure_with_units` collation function that can compare
+  numbers with unit suffixes, like "10KB" or "1.2ms".
 
 Bug Fixes:
 * The default terminal colors will now be used in the default theme.

@@ -35,6 +35,8 @@
 #include <string.h>
 #include <sys/socket.h>
 
+#include "base/humanize.hh"
+#include "base/intern_string.hh"
 #include "base/strnatcmp.h"
 #include "config.h"
 #include "log_level.hh"
@@ -64,7 +66,7 @@ try_inet_pton(int p_len, const char* p, char* n)
 static int
 convert_v6_to_v4(int family, char* n)
 {
-    struct in6_addr* ia = (struct in6_addr*) n;
+    auto* ia = (struct in6_addr*) n;
 
     if (family == AF_INET6
         && (IN6_IS_ADDR_V4COMPAT(ia) || IN6_IS_ADDR_V4MAPPED(ia)))
@@ -140,6 +142,32 @@ sql_loglevelcmp(
     return levelcmp((const char*) a_in, a_len, (const char*) b_in, b_len);
 }
 
+static int
+sql_measure_with_units(
+    void* ptr, int a_len, const void* a_in, int b_len, const void* b_in)
+{
+    auto a_sf = string_fragment::from_bytes((const char*) a_in, a_len);
+    auto b_sf = string_fragment::from_bytes((const char*) b_in, b_len);
+
+    auto a_opt = humanize::try_from<double>(a_sf);
+    auto b_opt = humanize::try_from<double>(b_sf);
+
+    if (a_opt && b_opt) {
+        auto a_val = a_opt.value();
+        auto b_val = b_opt.value();
+
+        if (a_val < b_val) {
+            return -1;
+        }
+        if (a_val == b_val) {
+            return 0;
+        }
+        return 1;
+    }
+
+    return sql_strnatcasecmp(nullptr, a_len, a_in, b_len, b_in);
+}
+
 int
 register_collation_functions(sqlite3* db)
 {
@@ -150,6 +178,8 @@ register_collation_functions(sqlite3* db)
         db, "naturalnocase", SQLITE_UTF8, nullptr, sql_strnatcasecmp);
     sqlite3_create_collation(
         db, "loglevel", SQLITE_UTF8, nullptr, sql_loglevelcmp);
+    sqlite3_create_collation(
+        db, "measure_with_units", SQLITE_UTF8, nullptr, sql_measure_with_units);
 
     return 0;
 }

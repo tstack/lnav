@@ -537,7 +537,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
 }
 
 static void
-rl_sql_change(textinput_curses& rc)
+rl_sql_change(textinput_curses& rc, bool is_req)
 {
     static const auto* sql_cmd_map
         = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
@@ -546,6 +546,8 @@ rl_sql_change(textinput_curses& rc)
     const auto line = rc.get_content();
     std::vector<std::string> args;
     auto is_prql = lnav::sql::is_prql(line);
+
+    log_debug("rl_sql_change");
 
     if (is_prql) {
         auto anno_line = attr_line_t(line);
@@ -640,12 +642,13 @@ rl_sql_change(textinput_curses& rc)
         annotate_sql_statement(anno_line);
         auto cursor_offset = prompt.p_editor.get_cursor_offset();
 
-        auto attr_iter = rfind_string_attr_if(anno_line.al_attrs,
-                                              cursor_offset,
-                                              [](const auto&) { return true; });
-        if (attr_iter != anno_line.al_attrs.end()
-            && attr_iter->sa_range.lr_end == cursor_offset)
-        {
+        auto attr_iter = rfind_string_attr_if(
+            anno_line.al_attrs,
+            cursor_offset,
+            [cursor_offset](const string_attr& attr) {
+                return attr.sa_range.lr_end == cursor_offset;
+            });
+        if (attr_iter != anno_line.al_attrs.end()) {
             auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
             auto to_complete = to_complete_sf.to_string();
             std::vector<std::string> poss_strs;
@@ -852,12 +855,15 @@ rl_change(textinput_curses& rc)
     }
 
     switch (lnav_data.ld_mode) {
-        case ln_mode_t::SEARCH: {
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
             rl_search_change(rc, false);
             break;
         }
         case ln_mode_t::SQL: {
-            rl_sql_change(rc);
+            rl_sql_change(rc, false);
             break;
         }
         case ln_mode_t::COMMAND: {
@@ -1240,8 +1246,8 @@ rl_callback(textinput_curses& rc)
     static auto& prompt = lnav::prompt::get();
     auto is_alt = prompt.p_alt_mode;
 
-    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
-    exec_context& ec = lnav_data.ld_exec_context;
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto& ec = lnav_data.ld_exec_context;
     std::string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
@@ -1509,6 +1515,10 @@ rl_completion_request(textinput_curses& rc)
         }
         case ln_mode_t::COMMAND: {
             rl_cmd_change(rc, true);
+            break;
+        }
+        case ln_mode_t::SQL: {
+            rl_sql_change(rc, true);
             break;
         }
         case ln_mode_t::EXEC: {

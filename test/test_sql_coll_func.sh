@@ -27,3 +27,5 @@ run_cap_test ./drive_sql "select 'w' < 'e' collate loglevel"
 run_cap_test ./drive_sql "select 'e' < 'w' collate loglevel"
 
 run_cap_test ./drive_sql "select 'info' collate loglevel between 'trace' and 'fatal'"
+
+run_cap_test ./drive_sql "SELECT '10GB' < '1B' COLLATE measure_with_units"

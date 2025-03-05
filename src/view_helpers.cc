@@ -763,6 +763,8 @@ layout_views()
     switch (lnav_data.ld_mode) {
         case ln_mode_t::FILES:
         case ln_mode_t::FILTER:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
             filter_height = 5;
             break;
         case ln_mode_t::FILE_DETAILS:
@@ -1279,7 +1281,7 @@ moveto_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
                const bookmark_type_t* bt,
                vis_line_t top)
 {
-    textview_curses* tc = get_textview_for_mode(lnav_data.ld_mode);
+    auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     auto new_top = next_cluster(f, bt, top);
 
     if (!new_top) {

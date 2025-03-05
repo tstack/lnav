@@ -246,6 +246,13 @@ Collators
   values.  For example, "foo10" would be considered greater than "foo2".
 * **naturalnocase** - The same as naturalcase, but case-insensitive.
 * **ipaddress** - Compare IPv4/IPv6 addresses.
+* **loglevel** - Compare log levels.
+* **measure_with_units** - Compare numbers with unit suffixes.  The
+  currently supported suffixes are:
+
+  - Sizes with an E/P/T/G/M/K prefix.
+  - Seconds with an f/p/n/u/m prefix.
+  - Durations of the form :code:`HH:MM:SS` or :code:`HH:MM:SS`
 
 Reference
 ---------

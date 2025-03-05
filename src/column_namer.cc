@@ -33,12 +33,13 @@
 
 #include "column_namer.hh"
 
+#include "base/intern_string.hh"
 #include "base/itertools.hh"
 #include "base/lnav_log.hh"
 #include "config.h"
 #include "sql_util.hh"
 
-const string_fragment column_namer::BUILTIN_COL = "col"_frag;
+constexpr string_fragment column_namer::BUILTIN_COL = "col"_frag;
 
 column_namer::column_namer(language lang) : cn_language(lang)
 {
@@ -108,7 +109,7 @@ column_namer::add_column(const string_fragment& in_name)
 
         fmt::format_to(
             std::back_inserter(buf), FMT_STRING("{}_{}"), base_name, num);
-        log_debug("column name already exists (%.*s), trying (%.*s)",
+        log_trace("column name already exists (%.*s), trying (%.*s)",
                   retval.length(),
                   retval.data(),
                   buf.size(),

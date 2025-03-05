@@ -29,6 +29,7 @@
 
 #include <filesystem>
 #include <string>
+#include <unordered_set>
 
 #include "lnav.prompt.hh"
 
@@ -41,6 +42,7 @@
 #include "base/string_attr_type.hh"
 #include "bound_tags.hh"
 #include "data_scanner.hh"
+#include "db_sub_source.hh"
 #include "external_editor.hh"
 #include "itertools.similar.hh"
 #include "lnav.hh"
@@ -846,18 +848,26 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
             case help_parameter_format_t::HPF_FORMAT_FIELD: {
                 std::unordered_set<std::string> field_names;
 
-                tc.map_top_row([&field_names](const auto& al) {
-                    auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
-                    if (attr_opt) {
-                        auto format_name = attr_opt->get();
-                        auto format
-                            = log_format::find_root_format(format_name.c_str());
-                        for (const auto& lvm : format->get_value_metadata()) {
-                            field_names.emplace(lvm.lvm_name.to_string());
-                        }
+                auto* tss = tc.get_sub_source();
+                auto* dls = dynamic_cast<db_label_source*>(tss);
+                if (dls != nullptr) {
+                    for (const auto& hdr : dls->dls_headers) {
+                        field_names.emplace(hdr.hm_name);
                     }
-                    return std::nullopt;
-                });
+                } else {
+                    tc.map_top_row([&field_names](const auto& al) {
+                        auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
+                        if (attr_opt) {
+                            auto format_name = attr_opt->get();
+                            auto format
+                                = log_format::find_root_format(format_name.c_str());
+                            for (const auto& lvm : format->get_value_metadata()) {
+                                field_names.emplace(lvm.lvm_name.to_string());
+                            }
+                        }
+                        return std::nullopt;
+                    });
+                }
 
                 if (field_names.empty()) {
                     for (const auto& format : log_format::get_root_formats()) {
