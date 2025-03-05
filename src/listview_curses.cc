@@ -93,9 +93,7 @@ listview_curses::update_top_from_selection()
         return;
     }
 
-    if (this->lv_sync_selection_and_top || height <= this->lv_tail_space
-        || this->lv_top > this->lv_selection)
-    {
+    if (this->lv_sync_selection_and_top || height <= this->lv_tail_space) {
         this->set_top(this->lv_selection);
         return;
     }
@@ -103,7 +101,10 @@ listview_curses::update_top_from_selection()
     auto layout = this->layout_for_row(this->lv_selection);
     auto min_top_for_sel
         = vis_line_t(this->lv_selection - layout.lr_above_line_heights.size());
-    if (this->lv_top < min_top_for_sel) {
+    if (this->lv_top > this->lv_selection) {
+        this->set_top(this->lv_selection
+                      - vis_line_t(layout.lr_above_line_heights.size()) / 2_vl);
+    } else if (this->lv_top < min_top_for_sel) {
         this->set_top(min_top_for_sel);
     } else if (this->lv_top == this->lv_selection) {
         if (!layout.lr_above_line_heights.empty()) {
