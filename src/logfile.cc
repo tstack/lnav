@@ -29,6 +29,7 @@
  * @file logfile.cc
  */
 
+#include <filesystem>
 #include <utility>
 
 #include "logfile.hh"

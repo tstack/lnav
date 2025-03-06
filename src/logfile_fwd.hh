@@ -34,10 +34,12 @@
 
 #include <chrono>
 #include <string>
+#include <vector>
 
 #include <sys/stat.h>
 
 #include "file_format.hh"
+#include "mapbox/variant.hpp"
 #include "piper.looper.hh"
 #include "text_format.hh"
 #include "vis_line.hh"
@@ -56,7 +58,10 @@ enum class logfile_name_source {
     REMOTE,
 };
 
-using file_location_t = mapbox::util::variant<vis_line_t, std::string>;
+struct file_location_tail {};
+
+using file_location_t
+    = mapbox::util::variant<file_location_tail, vis_line_t, std::string>;
 
 struct logfile_open_options_base {
     std::string loo_filename;
