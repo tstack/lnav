@@ -146,7 +146,8 @@ private:
 
     static void sigalrm(int sig);
 
-    volatile sig_atomic_t upt_counter;
+    volatile sig_atomic_t upt_counter{0};
+    std::optional<std::chrono::steady_clock::time_point> upt_deadline;
 };
 
 class alerter {

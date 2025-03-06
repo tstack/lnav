@@ -61,9 +61,13 @@ const struct itimerval ui_periodic_timer::INTERVAL = {
     {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
 };
 
-ui_periodic_timer::ui_periodic_timer() : upt_counter(0)
+ui_periodic_timer::ui_periodic_timer()
 {
     struct sigaction sa;
+
+    if (getenv("lnav_test") != nullptr) {
+        this->upt_deadline = std::chrono::steady_clock::now() + 5s;
+    }
 
     sa.sa_handler = ui_periodic_timer::sigalrm;
     sa.sa_flags = SA_RESTART;
@@ -85,7 +89,14 @@ ui_periodic_timer::singleton()
 void
 ui_periodic_timer::sigalrm(int sig)
 {
-    singleton().upt_counter += 1;
+    auto& upt = singleton();
+
+    if (upt.upt_deadline
+        && std::chrono::steady_clock::now() > upt.upt_deadline.value())
+    {
+        abort();
+    }
+    upt.upt_counter += 1;
 }
 
 alerter&
