@@ -530,6 +530,11 @@ send_initial_queries(tinfo* ti, unsigned minimal, unsigned noaltscreen,
       return -1;
     }
     total += strlen(SMCUP);
+
+    const char* enacs = tigetstr("enacs");
+    if (enacs != NULL) {
+      tty_emit(enacs, fd);
+    }
   }
   if(blocking_write(fd, DSRCPR, strlen(DSRCPR))){
     return -1;
@@ -565,6 +570,10 @@ int enter_alternate_screen(int fd, FILE* ttyfp, tinfo* ti, unsigned drain){
     if(term_emit(popcolors, ttyfp, true)){
       return -1;
     }
+  }
+  const char* enacs = tigetstr("enacs");
+  if (enacs != NULL) {
+    tty_emit(enacs, fd);
   }
   const char* smcup = get_escape(ti, ESCAPE_SMCUP);
   if(smcup == NULL){
