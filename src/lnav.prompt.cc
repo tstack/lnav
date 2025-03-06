@@ -826,6 +826,16 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     auto parent = str_as_path.parent_path();
                     std::error_code ec;
 
+                    log_trace("not a remote path: %s", str.c_str());
+                    if (ht->ht_format == help_parameter_format_t::HPF_FILENAME)
+                    {
+                        isc::to<tailer::looper&, services::remote_tailer_t>()
+                            .send_and_wait([&poss_paths](auto& tlooper) {
+                                poss_paths = tlooper.active_netlocs();
+                            });
+                        poss_paths.insert(recent_refs.rr_netlocs.begin(),
+                                          recent_refs.rr_netlocs.end());
+                    }
                     if (parent.empty()) {
                         parent = ".";
                     }
@@ -841,22 +851,6 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                             continue;
                         }
                         poss_paths.emplace(std::move(path_str));
-                    }
-                    if (ht->ht_format == help_parameter_format_t::HPF_FILENAME)
-                    {
-                        isc::to<tailer::looper&, services::remote_tailer_t>()
-                            .send_and_wait([&poss_paths](auto& tlooper) {
-                                poss_paths = tlooper.active_netlocs();
-                            });
-                        poss_paths.insert(recent_refs.rr_netlocs.begin(),
-                                          recent_refs.rr_netlocs.end());
-
-                        if (!str.empty()) {
-                            if (rp_opt) {
-                            } else {
-                                log_trace("not a remote path: %s", str.c_str());
-                            }
-                        }
                     }
                 }
 
