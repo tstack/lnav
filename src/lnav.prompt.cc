@@ -47,6 +47,7 @@
 #include "itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
+#include "log_data_table.hh"
 #include "log_format_ext.hh"
 #include "log_search_table.hh"
 #include "readline_highlighters.hh"
@@ -859,9 +860,10 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
                         if (attr_opt) {
                             auto format_name = attr_opt->get();
-                            auto format
-                                = log_format::find_root_format(format_name.c_str());
-                            for (const auto& lvm : format->get_value_metadata()) {
+                            auto format = log_format::find_root_format(
+                                format_name.c_str());
+                            for (const auto& lvm : format->get_value_metadata())
+                            {
                                 field_names.emplace(lvm.lvm_name.to_string());
                             }
                         }
@@ -989,14 +991,31 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                    fmt::to_string(std::filesystem::path(x))));
                        });
             }
+            case help_parameter_format_t::HPF_LOGLINE_TABLE:
             case help_parameter_format_t::HPF_SEARCH_TABLE: {
                 std::vector<std::string> poss_strs;
 
                 for (const auto& vt_pair : *lnav_data.ld_vtab_manager) {
+                    auto is_search_table
+                        = dynamic_cast<log_search_table*>(vt_pair.second.get())
+                        != nullptr;
+                    auto is_data_table
+                        = dynamic_cast<log_data_table*>(vt_pair.second.get())
+                        != nullptr;
                     if (vt_pair.second->vi_provenance
-                            != log_vtab_impl::provenance_t::user
-                        || dynamic_cast<log_search_table*>(vt_pair.second.get())
-                            == nullptr)
+                        != log_vtab_impl::provenance_t::user)
+                    {
+                        continue;
+                    }
+                    if (ht->ht_format
+                            == help_parameter_format_t::HPF_SEARCH_TABLE
+                        && !is_search_table)
+                    {
+                        continue;
+                    }
+                    if (ht->ht_format
+                            == help_parameter_format_t::HPF_LOGLINE_TABLE
+                        && !is_data_table)
                     {
                         continue;
                     }

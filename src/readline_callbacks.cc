@@ -1563,6 +1563,7 @@ rl_blur(textinput_curses& rc)
         tc.set_sync_selection_and_top(false);
     }
     lnav_data.ld_preview_generation += 1;
+    lnav_data.ld_bottom_source.grep_error("");
 }
 
 readline_context::split_result_t

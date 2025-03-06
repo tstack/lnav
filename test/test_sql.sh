@@ -952,3 +952,7 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT * FROM access_log" \
     -c ":hide-fields bad" \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line FROM vmw_log WHERE log_opid = '7e1280cf'" \
+    ${test_dir}/logfile_vpxd.0

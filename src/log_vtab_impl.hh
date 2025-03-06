@@ -138,7 +138,7 @@ struct msg_range {
 
 struct log_cursor {
     struct opid_hash {
-        unsigned int value : 6;
+        uint16_t value;
     };
 
     struct string_constraint {

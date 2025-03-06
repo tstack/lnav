@@ -1658,8 +1658,8 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                     iter->second.otr_range.tr_end);
                             }
 
-                            opid_val = log_cursor::opid_hash{
-                                static_cast<unsigned int>(
+                            opid_val
+                                = log_cursor::opid_hash{static_cast<uint16_t>(
                                     hash_str(opid.data(), opid.length()))};
                             break;
                         }

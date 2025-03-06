@@ -597,6 +597,7 @@ textinput_curses::move_cursor_to_prev_search_hit()
 bool
 textinput_curses::handle_key(const ncinput& ch)
 {
+    auto notice_was_set = this->tc_notice.has_value();
     this->tc_notice = std::nullopt;
     this->tc_last_tick_after_input = std::nullopt;
     switch (this->tc_mode) {
@@ -913,8 +914,7 @@ textinput_curses::handle_key(const ncinput& ch)
     switch (chid) {
         case NCKEY_ESC:
         case KEY_CTRL(']'): {
-            if (this->tc_notice) {
-                this->tc_notice = std::nullopt;
+            if (notice_was_set) {
             } else {
                 if (this->tc_popup.is_visible()) {
                     this->tc_popup_type = popup_type_t::none;
@@ -1691,8 +1691,6 @@ textinput_curses::do_update()
             if (sel_lr) {
                 al.al_attrs.emplace_back(
                     sel_lr.value(), VC_STYLE.value(text_attrs::with_reverse()));
-            } else {
-                log_error("  no range");
             }
         }
         if (this->tc_mode == mode_t::searching

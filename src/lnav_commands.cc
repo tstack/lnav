@@ -1523,9 +1523,7 @@ com_delete_logline_table(exec_context& ec,
 {
     std::string retval;
 
-    if (args.empty()) {
-        args.emplace_back("custom-table");
-    } else if (args.size() == 2) {
+    if (args.size() == 2) {
         if (custom_logline_tables.find(args[1]) == custom_logline_tables.end())
         {
             return ec.make_error("unknown logline table -- {}", args[1]);
@@ -4027,7 +4025,8 @@ readline_context::command_t STD_COMMANDS[] = {
      help_text(":delete-logline-table")
          .with_summary("Delete a table created with create-logline-table")
          .with_parameter(
-             help_text("table-name", "The name of the table to delete"))
+             help_text("table-name", "The name of the table to delete")
+                 .with_format(help_parameter_format_t::HPF_LOGLINE_TABLE))
          .with_opposites({"delete-logline-table"})
          .with_tags({"vtables", "sql"})
          .with_example({"To delete the logline-style table named "
