@@ -166,4 +166,9 @@ cat ${test_dir}/textfile_plain.0 | \
   run_cap_test ${lnav_test} -n -d /tmp/lnav-text.err \
     -c ';SELECT filepath FROM lnav_file ORDER BY filepath DESC'
 
+${lnav_test} -Nn -c ':config /tuning/textfile/max-unformatted-line-length 20'
+
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/textfile_ansi.0
+
 #####

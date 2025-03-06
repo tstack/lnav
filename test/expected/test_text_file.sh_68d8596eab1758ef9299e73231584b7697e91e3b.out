@@ -1,0 +1,5 @@
+[1m[4m[35mⓘ[0m[4m The following is a rendered view of the content.  Use [0m[4m[37m[40m:set-text-view-mode raw[0m[4m to view the raw version of this text[0m
+{
+    [31mExample[0m: foo,
+    bar: [32mbaz[0m 
+}

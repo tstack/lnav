@@ -1020,8 +1020,10 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                 auto read_res = lf->read_file(logfile::read_format_t::plain);
                 if (read_res.isOk()) {
                     auto read_file_res = read_res.unwrap();
-                    data_scanner ds(read_file_res.rfr_content);
-                    pretty_printer pp(&ds, {});
+                    auto orig_al = attr_line_t(read_file_res.rfr_content);
+                    scrub_ansi_string(orig_al.al_string, &orig_al.al_attrs);
+                    data_scanner ds(orig_al.al_string);
+                    pretty_printer pp(&ds, orig_al.al_attrs);
                     attr_line_t pretty_al;
 
                     pp.append_to(pretty_al);
