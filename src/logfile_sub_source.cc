@@ -223,7 +223,8 @@ logfile_sub_source::find_from_time(const timeval& start) const
                                      start,
                                      filtered_logline_cmp(*this));
     if (lb != this->lss_filtered_index.end()) {
-        return vis_line_t(lb - this->lss_filtered_index.begin());
+        auto retval = std::distance(this->lss_filtered_index.begin(), lb);
+        return vis_line_t(retval);
     }
 
     return std::nullopt;
@@ -3270,7 +3271,9 @@ logfile_sub_source::row_for(const row_info& ri)
             ++lb;
         }
 
-        return vis_line_t(first_lb - this->lss_filtered_index.begin());
+        const auto dst
+            = std::distance(this->lss_filtered_index.begin(), first_lb);
+        return vis_line_t(dst);
     }
 
     return std::nullopt;

@@ -137,10 +137,6 @@ struct msg_range {
 };
 
 struct log_cursor {
-    struct opid_hash {
-        uint16_t value;
-    };
-
     struct string_constraint {
         unsigned char sc_op;
         std::string sc_value;
@@ -221,7 +217,7 @@ struct log_cursor {
     std::optional<level_constraint> lc_level_constraint;
     intern_string_t lc_format_name;
     intern_string_t lc_pattern_name;
-    std::optional<opid_hash> lc_opid;
+    std::optional<uint16_t> lc_opid;
     std::vector<string_constraint> lc_log_path;
     logfile* lc_last_log_path_match{nullptr};
     logfile* lc_last_log_path_mismatch{nullptr};

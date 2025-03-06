@@ -243,7 +243,7 @@ log_vtab_impl::extract(logfile* lf,
                        uint64_t line_number,
                        logline_value_vector& values)
 {
-    auto format = lf->get_format();
+    auto format = lf->get_format_ptr();
 
     this->vi_attrs.clear();
     format->annotate(lf, line_number, this->vi_attrs, values, false);
@@ -312,7 +312,7 @@ log_vtab_impl::is_valid(log_cursor& lc, logfile_sub_source& lss)
         }
     }
 
-    if (lc.lc_opid && lf_iter->get_opid() != lc.lc_opid.value().value) {
+    if (lc.lc_opid && !lf_iter->match_opid_hash(lc.lc_opid.value())) {
         return false;
     }
 
@@ -804,10 +804,11 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             struct timeval actual_tv;
                             struct exttm tm;
 
-                            if (lf->get_format()->lf_date_time.scan(
+                            if (lf->get_format_ptr()->lf_date_time.scan(
                                     time_src,
                                     time_range.length(),
-                                    lf->get_format()->get_timestamp_formats(),
+                                    lf->get_format_ptr()
+                                        ->get_timestamp_formats(),
                                     &tm,
                                     actual_tv,
                                     false))
@@ -989,7 +990,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                     }
                     case log_footer_columns::format_regex: {
                         auto pat_name
-                            = lf->get_format()->get_pattern_name(line_number);
+                            = lf->get_format_ptr()->get_pattern_name(line_number);
                         sqlite3_result_text(ctx,
                                             pat_name.get(),
                                             pat_name.size(),
@@ -1493,7 +1494,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
     p_cur->log_cursor.lc_indexed_lines_range = msg_range::empty();
 
     std::optional<vtab_time_range> log_time_range;
-    std::optional<log_cursor::opid_hash> opid_val;
+    std::optional<uint16_t> opid_val;
     std::vector<log_cursor::string_constraint> log_path_constraints;
     std::vector<log_cursor::string_constraint> log_unique_path_constraints;
 
@@ -1658,9 +1659,7 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                                     iter->second.otr_range.tr_end);
                             }
 
-                            opid_val
-                                = log_cursor::opid_hash{static_cast<uint16_t>(
-                                    hash_str(opid.data(), opid.length()))};
+                            opid_val = opid.hash();
                             break;
                         }
                         case log_footer_columns::path: {
@@ -2593,7 +2592,7 @@ log_format_vtab_impl::next(log_cursor& lc, logfile_sub_source& lss)
         return false;
     }
 
-    auto format = lf->get_format();
+    auto format = lf->get_format_ptr();
     if (format->get_name() == this->lfvi_format.get_name()) {
         return true;
     }
