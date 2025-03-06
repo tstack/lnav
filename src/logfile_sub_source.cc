@@ -2701,7 +2701,7 @@ void
 logfile_sub_source::text_crumbs_for_line(int line,
                                          std::vector<breadcrumb::crumb>& crumbs)
 {
-    static intern_string_t SRC = intern_string::lookup("crumb");
+    static const intern_string_t SRC = intern_string::lookup("__crumb");
     text_sub_source::text_crumbs_for_line(line, crumbs);
 
     if (this->lss_filtered_index.empty()) {
@@ -2792,7 +2792,12 @@ logfile_sub_source::text_crumbs_for_line(int line,
         },
         [ec = this->lss_exec_context](const auto& format_name) {
             static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1), top)
+     SET selection = ifnull(
+         (SELECT log_line FROM all_logs WHERE log_format = $format_name LIMIT 1),
+         (SELECT raise_error(
+            'Could not find format: ' || $format_name,
+            'The corresponding log messages might have been filtered out'))
+       )
      WHERE name = 'log'
 )";
 
@@ -2822,7 +2827,12 @@ logfile_sub_source::text_crumbs_for_line(int line,
         },
         [ec = this->lss_exec_context](const auto& uniq_path) {
             static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-     SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1), top)
+     SET selection = ifnull(
+          (SELECT log_line FROM all_logs WHERE log_unique_path = $uniq_path LIMIT 1),
+          (SELECT raise_error(
+            'Could not find file: ' || $uniq_path,
+            'The corresponding log messages might have been filtered out'))
+         )
      WHERE name = 'log'
 )";
 
@@ -2845,6 +2855,13 @@ logfile_sub_source::text_crumbs_for_line(int line,
     format->annotate(lf.get(), file_line_number, al.get_attrs(), values);
 
     if (values.lvv_opid_value) {
+        static const std::string MOVE_STMT = R"(;UPDATE lnav_views
+          SET selection = ifnull(
+            (SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1),
+            (SELECT raise_error('Could not find opid: ' || $opid,
+                                'The corresponding log messages might have been filtered out')))
+          WHERE name = 'log'
+        )";
         crumbs.emplace_back(
             values.lvv_opid_value.value(),
             attr_line_t().append(
@@ -2867,11 +2884,6 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 return retval;
             },
             [ec = this->lss_exec_context](const auto& opid) {
-                static const std::string MOVE_STMT = R"(;UPDATE lnav_views
-                         SET selection = ifnull((SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1), top)
-                         WHERE name = 'log'
-                    )";
-
                 auto src_guard = ec->enter_source(SRC, 1, MOVE_STMT);
                 ec->execute_with(
                     MOVE_STMT,

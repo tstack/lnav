@@ -133,6 +133,21 @@ user_message::warning(const attr_line_t& al)
     return retval;
 }
 
+user_message&
+user_message::remove_internal_snippets()
+{
+    auto new_end = std::remove_if(
+        this->um_snippets.begin(),
+        this->um_snippets.end(),
+        [](const snippet& snip) {
+            return snip.s_location.sl_source.to_string_fragment().startswith(
+                "__");
+        });
+    this->um_snippets.erase(new_end, this->um_snippets.end());
+
+    return *this;
+}
+
 attr_line_t
 user_message::to_attr_line(std::set<render_flags> flags) const
 {

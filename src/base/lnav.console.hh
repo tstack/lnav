@@ -133,6 +133,8 @@ struct user_message {
         return *this;
     }
 
+    user_message& remove_internal_snippets();
+
     template<typename C>
     user_message& with_snippets(C snippets)
     {
