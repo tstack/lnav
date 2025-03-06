@@ -109,6 +109,7 @@ struct prompt {
     std::map<std::string, sql_item_t> p_prql_completions;
     std::map<std::string, const json_path_handler_base*> p_config_paths;
     std::map<std::string, std::vector<std::string>> p_config_values;
+    std::set<std::string> p_remote_paths;
     available_scripts p_scripts;
     textinput_curses p_editor;
     bool p_alt_mode{false};

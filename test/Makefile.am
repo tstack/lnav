@@ -125,6 +125,9 @@ LDADD = \
     $(top_builddir)/src/yajlpp/libyajlpp.a \
     $(top_builddir)/src/base/libbase.a \
     $(top_builddir)/src/pugixml/libpugixml.a \
+	$(top_builddir)/src/tailer/libtailerservice.a \
+	$(top_builddir)/src/tailer/libtailercommon.a \
+	$(top_builddir)/src/tailer/libtailerpp.a \
     $(top_builddir)/src/third-party/base64/lib/libbase64.a \
     $(top_builddir)/src/third-party/date/src/libdatepp.a \
 	$(top_builddir)/src/third-party/notcurses/src/lib/liblnavnotcurses.a \

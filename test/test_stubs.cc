@@ -95,4 +95,16 @@ void
 force_linking(services::remote_tailer_t anno)
 {
 }
+
+template<>
+void
+force_linking(services::main_t anno)
+{
+}
 }  // namespace injector
+
+bool
+update_active_files(file_collection& new_files)
+{
+    return false;
+}

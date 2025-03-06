@@ -36,6 +36,7 @@
 #include <glob.h>
 
 #include "base/fs_util.hh"
+#include "base/humanize.network.hh"
 #include "base/itertools.hh"
 #include "base/lnav.console.hh"
 #include "base/paths.hh"
@@ -53,10 +54,13 @@
 #include "readline_highlighters.hh"
 #include "readline_possibilities.hh"
 #include "scn/scan.h"
+#include "service_tags.hh"
+#include "session_data.hh"
 #include "shlex.hh"
 #include "sql.formatter.hh"
 #include "sql_help.hh"
 #include "sql_util.hh"
+#include "tailer/tailer.looper.hh"
 
 using namespace lnav::roles::literals;
 
@@ -274,6 +278,7 @@ prompt::focus_for(textview_curses& tc,
                   char sigil,
                   const std::vector<std::string>& args)
 {
+    this->p_remote_paths.clear();
     switch (sigil) {
         case '|': {
             this->p_scripts = find_format_scripts(lnav_data.ld_config_paths);
@@ -785,32 +790,74 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                        });
             }
             case help_parameter_format_t::HPF_FILENAME:
+            case help_parameter_format_t::HPF_LOCAL_FILENAME:
             case help_parameter_format_t::HPF_DIRECTORY: {
-                log_debug("file comp '%s'", str.c_str());
                 if (startswith(str, "$")) {
-                    log_debug("doing env");
                     return this->get_env_completion(str);
                 }
-                auto str_as_path = std::filesystem::path{str};
-                auto parent = str_as_path.parent_path();
-                std::vector<std::string> poss_paths;
-                std::error_code ec;
 
-                if (parent.empty()) {
-                    parent = ".";
-                }
-                for (const auto& entry :
-                     std::filesystem::directory_iterator(parent, ec))
+                std::set<std::string> poss_paths;
+
+                auto rp_opt = humanize::network::path::from_str(str);
+                if (ht->ht_format == help_parameter_format_t::HPF_FILENAME
+                    && rp_opt)
                 {
-                    auto path_str = entry.path().string();
-                    if (entry.is_directory()) {
-                        path_str.push_back('/');
-                    } else if (ht->ht_format
-                               == help_parameter_format_t::HPF_DIRECTORY)
-                    {
-                        continue;
+                    auto rp_path = rp_opt.value();
+                    auto remote_prefix
+                        = fmt::format(FMT_STRING("{}"), rp_path.p_locality);
+
+                    log_info("completing remote path: %s -- %s",
+                             remote_prefix.c_str(),
+                             rp_path.p_path.c_str());
+                    isc::to<tailer::looper&, services::remote_tailer_t>().send(
+                        [rp_path](auto& tlooper) {
+                            tlooper.complete_path(rp_path);
+                        });
+
+                    for (const auto& poss_rpath : this->p_remote_paths) {
+                        if (!startswith(poss_rpath, remote_prefix)) {
+                            continue;
+                        }
+
+                        poss_paths.emplace(poss_rpath);
                     }
-                    poss_paths.emplace_back(path_str);
+                } else {
+                    auto str_as_path = std::filesystem::path{str};
+                    auto parent = str_as_path.parent_path();
+                    std::error_code ec;
+
+                    if (parent.empty()) {
+                        parent = ".";
+                    }
+                    for (const auto& entry :
+                         std::filesystem::directory_iterator(parent, ec))
+                    {
+                        auto path_str = entry.path().string();
+                        if (entry.is_directory()) {
+                            path_str.push_back('/');
+                        } else if (ht->ht_format
+                                   == help_parameter_format_t::HPF_DIRECTORY)
+                        {
+                            continue;
+                        }
+                        poss_paths.emplace(std::move(path_str));
+                    }
+                    if (ht->ht_format == help_parameter_format_t::HPF_FILENAME)
+                    {
+                        isc::to<tailer::looper&, services::remote_tailer_t>()
+                            .send_and_wait([&poss_paths](auto& tlooper) {
+                                poss_paths = tlooper.active_netlocs();
+                            });
+                        poss_paths.insert(recent_refs.rr_netlocs.begin(),
+                                          recent_refs.rr_netlocs.end());
+
+                        if (!str.empty()) {
+                            if (rp_opt) {
+                            } else {
+                                log_trace("not a remote path: %s", str.c_str());
+                            }
+                        }
+                    }
                 }
 
                 auto retval = poss_paths | lnav::itertools::similar_to(str, 10)
@@ -824,9 +871,6 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                       .with_attr_for_all(
                                           SUBST_TEXT.value(escaped_path));
                               });
-                if (ec) {
-                    log_error("dir iter failed!");
-                }
                 return retval;
             }
             case help_parameter_format_t::HPF_LOADED_FILE: {

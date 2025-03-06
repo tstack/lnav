@@ -272,6 +272,7 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_SEARCH_TABLE:
                 case help_parameter_format_t::HPF_STRING:
                 case help_parameter_format_t::HPF_FILENAME:
+                case help_parameter_format_t::HPF_LOCAL_FILENAME:
                 case help_parameter_format_t::HPF_DIRECTORY:
                 case help_parameter_format_t::HPF_LOADED_FILE:
                 case help_parameter_format_t::HPF_FORMAT_FIELD:

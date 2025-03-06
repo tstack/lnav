@@ -74,6 +74,7 @@ enum class help_parameter_format_t {
     HPF_ADJUSTED_TIME,
     HPF_ENUM,
     HPF_FILENAME,
+    HPF_LOCAL_FILENAME,
     HPF_LOADED_FILE,
     HPF_FORMAT_FIELD,
     HPF_NUMERIC_FIELD,

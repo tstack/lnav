@@ -4275,7 +4275,7 @@ readline_context::command_t STD_COMMANDS[] = {
                        "restore the current session")
          .with_parameter(
              help_text("path", "The path to the file to write")
-                 .with_format(help_parameter_format_t::HPF_FILENAME))
+                 .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
          .with_tags({"io", "scripting"})},
     {
         "rebuild",
@@ -4441,7 +4441,7 @@ readline_context::command_t STD_COMMANDS[] = {
                 "be useful if the `-d` flag was not passed on the command line")
             .with_parameter(
                 help_text("path", "The destination path for the debug log")
-                    .with_format(help_parameter_format_t::HPF_FILENAME)),
+                    .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME)),
     },
 };
 

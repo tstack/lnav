@@ -31,6 +31,8 @@
 
 #include "tailer.looper.hh"
 
+#include <lnav.prompt.hh>
+
 #include "base/auto_pid.hh"
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
@@ -371,7 +373,8 @@ tailer::looper::host_tailer::for_host(const std::string& netloc)
             }
 
             if (next_res.is<string_fragment_producer::error>()) {
-                return Err(next_res.get<string_fragment_producer::error>().what);
+                return Err(
+                    next_res.get<string_fragment_producer::error>().what);
             }
 
             auto sf = next_res.get<string_fragment>();
@@ -1051,10 +1054,9 @@ tailer::looper::host_tailer::loop_body()
 
                 isc::to<main_looper&, services::main_t>().send(
                     [full_path](auto& mlooper) {
-#if 0
-                        lnav_data.ld_rl_view->add_possibility(
-                            ln_mode_t::COMMAND, "remote-path", full_path);
-#endif
+                        static auto& prompt = lnav::prompt::get();
+
+                        prompt.p_remote_paths.insert(full_path);
                     });
                 return std::move(this->ht_state);
             });
