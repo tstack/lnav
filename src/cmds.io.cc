@@ -795,7 +795,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     for (auto fn : split_args) {
-        auto file_loc = file_location_t{mapbox::util::no_init{}};
+        auto file_loc = file_location_t{file_location_tail{}};
 
         if (access(fn.c_str(), R_OK) != 0) {
             auto colon_index = fn.rfind(':');
@@ -807,11 +807,16 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
                 if (scan_res) {
                     fn = fn.substr(0, colon_index);
+                    log_debug(
+                        "opening %s at line %d", fn.c_str(), scan_res->value());
                     file_loc = vis_line_t(scan_res->value());
                 }
             } else if (hash_index != std::string::npos) {
-                file_loc = fn.substr(hash_index);
+                auto hash_loc = fn.substr(hash_index);
+                file_loc = hash_loc;
                 fn = fn.substr(0, hash_index);
+                log_debug(
+                    "opening %s at anchor %s", fn.c_str(), hash_loc.c_str());
             }
             loo.with_init_location(file_loc);
         }

@@ -2951,12 +2951,6 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         lnav_data.ld_files_to_front.emplace_back(display_name,
                                                  file_location_tail{});
 
-#if 0
-        if (lnav_data.ld_rl_view != nullptr) {
-            lnav_data.ld_rl_view->set_alt_value(
-                HELP_MSG_CTRL(C, "to send SIGINT to child process"));
-        }
-#endif
         return Ok(fmt::format(FMT_STRING("info: executing -- {}"), carg));
     }
 

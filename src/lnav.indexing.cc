@@ -252,29 +252,34 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             }
 
             std::optional<vis_line_t> new_top_opt;
-            cb.front_top.match(
-                [](file_location_tail tail) {
-                    log_info("file open request to tail");
-                },
-                [&new_top_opt](vis_line_t vl) {
-                    log_info("file open request to jump to line: %d", (int) vl);
-                    if (vl < 0_vl) {
-                        vl += lnav_data.ld_views[LNV_TEXT].get_inner_height();
-                    }
-                    if (vl < lnav_data.ld_views[LNV_TEXT].get_inner_height()) {
-                        new_top_opt = vl;
-                    }
-                },
-                [&new_top_opt](const std::string& loc) {
-                    log_info("file open request to jump to anchor: %s",
-                             loc.c_str());
-                    auto* ta = dynamic_cast<text_anchors*>(
-                        lnav_data.ld_views[LNV_TEXT].get_sub_source());
+            if (cb.front_top.valid()) {
+                cb.front_top.match(
+                    [](file_location_tail tail) {
+                        log_info("file open request to tail");
+                    },
+                    [&new_top_opt](vis_line_t vl) {
+                        log_info("file open request to jump to line: %d",
+                                 (int) vl);
+                        if (vl < 0_vl) {
+                            vl += lnav_data.ld_views[LNV_TEXT]
+                                      .get_inner_height();
+                        }
+                        if (vl
+                            < lnav_data.ld_views[LNV_TEXT].get_inner_height()) {
+                            new_top_opt = vl;
+                        }
+                    },
+                    [&new_top_opt](const std::string& loc) {
+                        log_info("file open request to jump to anchor: %s",
+                                 loc.c_str());
+                        auto* ta = dynamic_cast<text_anchors*>(
+                            lnav_data.ld_views[LNV_TEXT].get_sub_source());
 
-                    if (ta != nullptr) {
-                        new_top_opt = ta->row_for_anchor(loc);
-                    }
-                });
+                        if (ta != nullptr) {
+                            new_top_opt = ta->row_for_anchor(loc);
+                        }
+                    });
+            }
             if (new_top_opt) {
                 log_info("  setting requested top line: %d",
                          (int) new_top_opt.value());

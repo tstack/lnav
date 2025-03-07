@@ -3360,7 +3360,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 
     for (const auto& file_path_str : file_args) {
         auto file_path_without_trailer = file_path_str;
-        auto file_loc = file_location_t{mapbox::util::no_init{}};
+        auto file_loc = file_location_t{file_location_tail{}};
         auto_mem<char> abspath;
         struct stat st;
 

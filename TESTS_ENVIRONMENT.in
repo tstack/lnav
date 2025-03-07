@@ -110,6 +110,7 @@ run_cap_test() {
     export test_hash=$(echo "${full_cmd}" | shasum | cut -f 1 -d ' ')
     echo "${full_cmd}" > ${test_file_base}_${test_hash}.cmd
     timeout 10s "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err
+    printf "Exit code: $?"
 
     sed -ibak \
         -e "s;${prefix}/etc;{prefix}/etc;g" \
