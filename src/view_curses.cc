@@ -513,6 +513,8 @@ view_curses::mvwattrline(ncplane* window,
 
                 ncplane_putwc_yx(window, y, x + attr_range.lr_start, be.value);
                 attrs = vc.attrs_for_role(be.role);
+                // clear the BG color, it interferes with the cursor BG
+                attrs.ta_bg_color = styling::color_unit::make_empty();
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
             } else if (iter->sa_type == &SA_LEVEL) {
