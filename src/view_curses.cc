@@ -413,6 +413,10 @@ view_curses::mvwattrline(ncplane* window,
         if (lr_bytes.lr_start < (int) expanded_line.size()) {
             ncplane_putstr_yx(
                 window, y, x, &expanded_line.c_str()[lr_bytes.lr_start]);
+        } else {
+            // Need to move the cursor so the hline call below goes to the
+            // right place
+            ncplane_cursor_move_yx(window, y, x);
         }
         nccell clear_cell;
         nccell_init(&clear_cell);
@@ -566,11 +570,8 @@ view_curses::mvwattrline(ncplane* window,
 
         cell_attrs.ta_fg_color = vc.ansi_to_theme_color(cell_attrs.ta_fg_color);
         cell_attrs.ta_bg_color = vc.ansi_to_theme_color(cell_attrs.ta_bg_color);
-        ncplane_set_cell_yx(window,
-                            y,
-                            x + lpc,
-                            cell_attrs.ta_attrs,
-                            view_colors::to_channels(cell_attrs));
+        auto chan = view_colors::to_channels(cell_attrs);
+        ncplane_set_cell_yx(window, y, x + lpc, cell_attrs.ta_attrs, chan);
 #if 0
         if (desired_fg == desired_bg) {
             if (desired_bg >= 0
