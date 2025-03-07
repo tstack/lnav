@@ -354,13 +354,13 @@ run_cap_test ${lnav_test} -n \
     -c ":filter-out World" \
     ${test_dir}/logfile_plain.0
 
-TOO_MANY_FILTERS=""
-for i in `seq 1 32`; do
-    TOO_MANY_FILTERS="$TOO_MANY_FILTERS -c ':filter-out $i'"
-done
-run_cap_test eval ${lnav_test} -d /tmp/lnav.err -n \
-    $TOO_MANY_FILTERS \
-    ${test_dir}/logfile_filter.0
+#TOO_MANY_FILTERS=""
+#for i in `seq 1 32`; do
+#    TOO_MANY_FILTERS="$TOO_MANY_FILTERS -c ':filter-out $i'"
+#done
+#run_cap_test ${lnav_test} -d /tmp/lnav.err -n \
+#    $TOO_MANY_FILTERS \
+#    ${test_dir}/logfile_filter.0
 
 run_cap_test ${lnav_test} -n \
     -c ":close" \

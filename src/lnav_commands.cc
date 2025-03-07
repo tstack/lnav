@@ -2949,7 +2949,7 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             [](auto& fc, auto& child) {},
         });
         lnav_data.ld_files_to_front.emplace_back(display_name,
-                                                 file_location_t{0_vl});
+                                                 file_location_tail{});
 
 #if 0
         if (lnav_data.ld_rl_view != nullptr) {
