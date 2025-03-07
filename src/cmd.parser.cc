@@ -245,6 +245,7 @@ parse_for(mode_t mode,
             const auto& se = split_args[split_index];
             switch (param.ht_format) {
                 case help_parameter_format_t::HPF_TEXT:
+                case help_parameter_format_t::HPF_MULTILINE_TEXT:
                 case help_parameter_format_t::HPF_REGEX:
                 case help_parameter_format_t::HPF_SQL:
                 case help_parameter_format_t::HPF_SQL_EXPR:
@@ -263,6 +264,10 @@ parse_for(mode_t mode,
                     split_index = split_args.size() - 1;
                     break;
                 }
+                case help_parameter_format_t::HPF_INTEGER:
+                case help_parameter_format_t::HPF_ENUM:
+                case help_parameter_format_t::HPF_NUMBER:
+                case help_parameter_format_t::HPF_DATETIME:
                 case help_parameter_format_t::HPF_CONFIG_PATH:
                 case help_parameter_format_t::HPF_CONFIG_VALUE:
                 case help_parameter_format_t::HPF_TAG:

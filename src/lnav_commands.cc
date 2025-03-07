@@ -3443,44 +3443,6 @@ command_prompt(std::vector<std::string>& args)
     static auto& prompt = lnav::prompt::get();
     auto* tc = *lnav_data.ld_view_stack.top();
 
-    if (lnav_data.ld_views[LNV_LOG].get_inner_height() > 0) {
-        auto& lss = lnav_data.ld_log_source;
-        auto& log_view = lnav_data.ld_views[LNV_LOG];
-        content_line_t cl = lss.at(log_view.get_selection());
-        std::shared_ptr<logfile> lf = lss.find(cl);
-        auto ll = lf->begin() + cl;
-        log_data_helper ldh(lss);
-
-        lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
-        ldh.parse_line(log_view.get_selection(), true);
-
-        if (tc == &lnav_data.ld_views[LNV_DB]) {
-            auto& dls = lnav_data.ld_db_row_source;
-
-            for (auto& dls_header : dls.dls_headers) {
-                if (!dls_header.is_graphable()) {
-                    continue;
-                }
-            }
-        } else {
-            for (auto& ldh_line_value : ldh.ldh_line_values.lvv_values) {
-                auto& meta = ldh_line_value.lv_meta;
-
-                if (!meta.lvm_format) {
-                    continue;
-                }
-
-                const auto* stats
-                    = meta.lvm_format.value()->stats_for_value(meta.lvm_name);
-
-                if (stats == nullptr) {
-                    continue;
-                }
-            }
-        }
-        ldh.clear();
-    }
-
     rollback_lnav_config = lnav_config;
     lnav_data.ld_doc_status_source.set_title("Command Help");
     lnav_data.ld_doc_status_source.set_description(

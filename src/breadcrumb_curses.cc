@@ -52,6 +52,7 @@ breadcrumb_curses::breadcrumb_curses()
     this->bc_match_view.set_height(0_vl);
     this->bc_match_view.set_show_scrollbar(true);
     this->bc_match_view.set_default_role(role_t::VCR_POPUP);
+    this->bc_match_view.set_head_space(0_vl);
     this->add_child_view(&this->bc_match_view);
 }
 

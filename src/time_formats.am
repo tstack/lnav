@@ -53,14 +53,14 @@ TIME_FORMATS = \
     "%Y %b %d %a %H:%M:%S.%L" \
     "%Y %b %d %H:%M:%S.%L" \
     "%Y %b %d %H:%M:%S" \
-    "%a %b %d %H:%M:%S %Y" \
-    "%a %b %d %H:%M:%S.%f %Y" \
-    "%a %b %d %H:%M:%S:%f %Y" \
-    "%a %b %d %H:%M:%S %Z %Y" \
-    "%a %b %d %I:%M:%S %p %Z %Y" \
-    "%a %b %d %H:%M:%S " \
-    "%a %b %d %H:%M:%S.%L " \
-    "%a %b %d %H:%M " \
+    "%a %b %e %H:%M:%S %Y" \
+    "%a %b %e %H:%M:%S.%f %Y" \
+    "%a %b %e %H:%M:%S:%f %Y" \
+    "%a %b %e %H:%M:%S %Z %Y" \
+    "%a %b %e %I:%M:%S %p %Z %Y" \
+    "%a %b %e %H:%M:%S " \
+    "%a %b %e %H:%M:%S.%L " \
+    "%a %b %e %H:%M " \
     "%a %b %e %H:%M:%S %Z %Y" \
     "%d/%m/%y %H:%M:%S" \
     "%d/%b/%Y:%H:%M:%S %z" \

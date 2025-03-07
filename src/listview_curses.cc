@@ -106,11 +106,12 @@ listview_curses::update_top_from_selection()
                       - vis_line_t(layout.lr_above_line_heights.size()) / 2_vl);
     } else if (this->lv_top < min_top_for_sel) {
         this->set_top(min_top_for_sel);
-    } else if (this->lv_top == this->lv_selection) {
+    } else if (this->lv_top == this->lv_selection && this->lv_head_space > 0_vl)
+    {
         if (!layout.lr_above_line_heights.empty()) {
             auto avail_height = height - layout.lr_desired_row_height;
             if (layout.lr_above_line_heights.front() < avail_height) {
-                this->lv_top -= 1_vl;
+                this->lv_top -= this->lv_head_space;
             }
         }
     }

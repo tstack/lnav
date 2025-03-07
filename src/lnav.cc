@@ -3143,6 +3143,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
             }))
 #endif
         .add_input_delegate(lnav_data.ld_log_source)
+        .set_head_space(0_vl)
         .set_tail_space(2_vl)
         .set_overlay_source(log_fos);
     auto sel_reload_delegate = [](textview_curses& tc) {

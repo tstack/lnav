@@ -492,6 +492,15 @@ public:
 
     std::optional<view_curses*> contains(int x, int y) override;
 
+    listview_curses& set_head_space(vis_line_t space)
+    {
+        this->lv_head_space = space;
+
+        return *this;
+    }
+
+    vis_line_t get_head_space() const { return this->lv_head_space; }
+
     listview_curses& set_tail_space(vis_line_t space)
     {
         this->lv_tail_space = space;
@@ -592,7 +601,8 @@ protected:
     int lv_scroll_velo{0};
     int lv_mouse_y{-1};
     lv_mode_t lv_mouse_mode{lv_mode_t::NONE};
-    vis_line_t lv_tail_space{1};
+    vis_line_t lv_head_space{1_vl};
+    vis_line_t lv_tail_space{1_vl};
 
     vis_line_t lv_display_lines_row{0_vl};
     std::vector<display_line_content_t> lv_display_lines;

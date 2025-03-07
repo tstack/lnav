@@ -2854,7 +2854,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     }
     format->annotate(lf.get(), file_line_number, al.get_attrs(), values);
 
-    if (values.lvv_opid_value) {
+    {
         static const std::string MOVE_STMT = R"(;UPDATE lnav_views
           SET selection = ifnull(
             (SELECT log_line FROM all_logs WHERE log_opid = $opid LIMIT 1),
@@ -2862,12 +2862,17 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                 'The corresponding log messages might have been filtered out')))
           WHERE name = 'log'
         )";
+        static const std::string ELLIPSIS = "\u22ef";
+
+        auto opid_display = values.lvv_opid_value.has_value()
+            ? lnav::roles::identifier(values.lvv_opid_value.value())
+            : lnav::roles::hidden(ELLIPSIS);
         crumbs.emplace_back(
-            values.lvv_opid_value.value(),
-            attr_line_t().append(
-                lnav::roles::identifier(values.lvv_opid_value.value())),
+            values.lvv_opid_value.has_value() ? values.lvv_opid_value.value()
+                                              : "",
+            attr_line_t().append(opid_display),
             [this]() -> std::vector<breadcrumb::possibility> {
-                std::vector<breadcrumb::possibility> retval;
+                std::set<std::string> poss_strs;
 
                 for (const auto& file_data : this->lss_files) {
                     if (file_data->get_file_ptr() == nullptr) {
@@ -2877,9 +2882,18 @@ logfile_sub_source::text_crumbs_for_line(int line,
                         file_data->get_file_ptr()->get_opids());
 
                     for (const auto& pair : r_opid_map->los_opid_ranges) {
-                        retval.emplace_back(pair.first.to_string());
+                        poss_strs.emplace(pair.first.to_string());
                     }
                 }
+
+                std::vector<breadcrumb::possibility> retval;
+
+                std::transform(poss_strs.begin(),
+                               poss_strs.end(),
+                               std::back_inserter(retval),
+                               [](const auto& opid_str) {
+                                   return breadcrumb::possibility(opid_str);
+                               });
 
                 return retval;
             },

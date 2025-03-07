@@ -145,6 +145,32 @@ textinput_curses::get_help_text()
     return retval;
 }
 
+class textinput_mouse_delegate : public text_delegate {
+public:
+    textinput_mouse_delegate(textinput_curses* input) : tmd_input(input) {}
+
+    bool text_handle_mouse(textview_curses& tc,
+                           const listview_curses::display_line_content_t& dlc,
+                           mouse_event& me) override
+    {
+        if (me.me_button == mouse_button_t::BUTTON_LEFT
+            && me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED
+            && dlc.is<listview_curses::main_content>())
+        {
+            ncinput ch{};
+
+            ch.id = NCKEY_TAB;
+            ch.eff_text[0] = '\t';
+            ch.eff_text[1] = '\0';
+            return this->tmd_input->handle_key(ch);
+        }
+
+        return false;
+    }
+
+    textinput_curses* tmd_input;
+};
+
 textinput_curses::textinput_curses()
 {
     this->vc_enabled = false;
@@ -155,10 +181,13 @@ textinput_curses::textinput_curses()
     this->tc_popup.lv_border_left_role = role_t::VCR_POPUP_BORDER;
     this->tc_popup.set_visible(false);
     this->tc_popup.set_title("textinput popup");
+    this->tc_popup.set_head_space(0_vl);
     this->tc_popup.set_selectable(true);
     this->tc_popup.set_show_scrollbar(true);
     this->tc_popup.set_default_role(role_t::VCR_POPUP);
     this->tc_popup.set_sub_source(&this->tc_popup_source);
+    this->tc_popup.set_delegate(
+        std::make_shared<textinput_mouse_delegate>(this));
 
     this->vc_children.emplace_back(&this->tc_help_view);
     this->tc_help_view.set_visible(false);
@@ -597,8 +626,12 @@ textinput_curses::move_cursor_to_prev_search_hit()
 bool
 textinput_curses::handle_key(const ncinput& ch)
 {
-    auto notice_was_set = this->tc_notice.has_value();
-    this->tc_notice = std::nullopt;
+    if (this->tc_notice) {
+        this->tc_notice = std::nullopt;
+        if (this->tc_height == 1) {
+            return true;
+        }
+    }
     this->tc_last_tick_after_input = std::nullopt;
     switch (this->tc_mode) {
         case mode_t::searching:
@@ -914,20 +947,17 @@ textinput_curses::handle_key(const ncinput& ch)
     switch (chid) {
         case NCKEY_ESC:
         case KEY_CTRL(']'): {
-            if (notice_was_set) {
+            if (this->tc_popup.is_visible()) {
+                this->tc_popup_type = popup_type_t::none;
+                this->tc_popup.set_visible(false);
+                this->tc_complete_range = std::nullopt;
+                this->set_needs_update();
             } else {
-                if (this->tc_popup.is_visible()) {
-                    this->tc_popup_type = popup_type_t::none;
-                    this->tc_popup.set_visible(false);
-                    this->tc_complete_range = std::nullopt;
-                    this->set_needs_update();
-                } else {
-                    this->abort();
-                }
-
-                this->tc_selection = std::nullopt;
-                this->tc_drag_selection = std::nullopt;
+                this->abort();
             }
+
+            this->tc_selection = std::nullopt;
+            this->tc_drag_selection = std::nullopt;
             return true;
         }
         case NCKEY_ENTER: {
@@ -1746,6 +1776,21 @@ textinput_curses::do_update()
                           .append(" Notice: "_status_subtitle)
                           .append(" No changes to undo")
                           .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+                auto lr = line_range{0, dim.dr_width};
+                mvwattrline(this->tc_window,
+                            this->vc_y + dim.dr_height - 1,
+                            this->vc_x,
+                            hint,
+                            lr);
+                break;
+            }
+            case notice_t::external_edit_failed: {
+                auto hint
+                    = attr_line_t()
+                          .append(" Error: "_status_subtitle)
+                          .append(" Unable to write file for external edit")
+                          .with_attr_for_all(
+                              VC_ROLE.value(role_t::VCR_ALERT_STATUS));
                 auto lr = line_range{0, dim.dr_width};
                 mvwattrline(this->tc_window,
                             this->vc_y + dim.dr_height - 1,
