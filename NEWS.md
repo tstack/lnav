@@ -30,6 +30,9 @@ Interface changes:
 * The LOG and TEXT views will now display a message if they
   contain no content to make it clear to the user that they
   need to switch views or `:open` a file.
+* The HIST view now supports bookmarks, so you can use the usual
+  hotkeys to just to the next/previous time segment with
+  errors/warnings/marks.
 
 Features:
 * The `:comment` command will now switch the prompt to multi-line
@@ -63,6 +66,7 @@ Features:
   numbers with unit suffixes, like "10KB" or "1.2ms".
 
 Bug Fixes:
+* Should start up in tmux and line drawing should show up now as well.
 * The default terminal colors will now be used in the default theme.
   So, a light background with a dark foreground will be respected.
 * Improved performance for compressed files.

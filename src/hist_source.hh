@@ -38,6 +38,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "base/enum_util.hh"
 #include "base/lnav_log.hh"
 #include "mapbox/variant.hpp"
 #include "strong_int.hh"
@@ -289,14 +290,14 @@ class hist_source2
     : public text_sub_source
     , public text_time_translator {
 public:
-    typedef enum {
+    enum class hist_type_t : uint8_t {
         HT_NORMAL,
         HT_WARNING,
         HT_ERROR,
         HT_MARK,
 
         HT__MAX
-    } hist_type_t;
+    };
 
     hist_source2() { this->clear(); }
 
@@ -356,7 +357,17 @@ private:
 
     struct bucket_t {
         std::chrono::microseconds b_time;
-        hist_value b_values[HT__MAX];
+        hist_value b_values[lnav::enums::to_underlying(hist_type_t::HT__MAX)];
+
+        hist_value& value_for(hist_type_t ht)
+        {
+            return this->b_values[lnav::enums::to_underlying(ht)];
+        }
+
+        const hist_value& value_for(hist_type_t ht) const
+        {
+            return this->b_values[lnav::enums::to_underlying(ht)];
+        }
     };
 
     static constexpr int64_t BLOCK_SIZE = 100;

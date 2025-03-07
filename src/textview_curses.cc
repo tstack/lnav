@@ -172,7 +172,7 @@ text_accel_source::get_time_offset_for_line(textview_curses& tc, vis_line_t vl)
     } else {
         auto prev_row
             = std::max(prev_umark.value_or(0_vl), prev_emark.value_or(0_vl));
-        auto first_line = this->text_accel_get_line(prev_row);
+        auto* first_line = this->text_accel_get_line(prev_row);
         auto start_tv = first_line->get_timeval();
         diff_tv = curr_tv - start_tv;
     }
@@ -986,7 +986,7 @@ textview_curses::set_user_mark(const bookmark_type_t* bm,
                                vis_line_t vl,
                                bool marked)
 {
-    bookmark_vector<vis_line_t>& bv = this->tc_bookmarks[bm];
+    auto& bv = this->tc_bookmarks[bm];
     bookmark_vector<vis_line_t>::iterator iter;
 
     if (marked) {

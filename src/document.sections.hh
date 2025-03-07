@@ -69,6 +69,8 @@ struct hier_node {
 
     std::optional<size_t> child_index(const hier_node* hn) const;
 
+    std::optional<section_key_t> child_key(const hier_node *hn) const;
+
     struct child_neighbors_result {
         std::optional<const hier_node*> cnr_previous;
         std::optional<const hier_node*> cnr_next;

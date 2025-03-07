@@ -76,16 +76,32 @@ hier_node::child_index(const hier_node* hn) const
     return std::nullopt;
 }
 
+std::optional<section_key_t>
+hier_node::child_key(const hier_node* hn) const
+{
+    for (const auto& named_pair : this->hn_named_children) {
+        if (named_pair.second == hn) {
+            return named_pair.first;
+        }
+    }
+
+    auto index_opt = this->child_index(hn);
+    if (index_opt) {
+        return section_key_t{index_opt.value()};
+    }
+
+    return std::nullopt;
+}
+
 std::optional<hier_node::child_neighbors_result>
-hier_node::child_neighbors(const lnav::document::hier_node* hn,
-                           file_off_t offset) const
+hier_node::child_neighbors(const hier_node* hn, file_off_t offset) const
 {
     auto index_opt = this->child_index(hn);
     if (!index_opt) {
         return std::nullopt;
     }
 
-    hier_node::child_neighbors_result retval;
+    child_neighbors_result retval;
 
     if (index_opt.value() == 0) {
         if (this->hn_parent != nullptr) {
@@ -159,7 +175,7 @@ hier_node::line_neighbors(size_t ln) const
         return std::nullopt;
     }
 
-    hier_node::child_neighbors_result retval;
+    child_neighbors_result retval;
 
     for (const auto& child : this->hn_children) {
         if (child->hn_line_number > ln) {

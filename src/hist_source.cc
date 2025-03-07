@@ -33,6 +33,7 @@
 #include "config.h"
 #include "fmt/chrono.h"
 #include "hist_source_T.hh"
+#include "textinput_curses.hh"
 
 std::optional<vis_line_t>
 hist_source2::row_for_time(timeval tv_bucket)
@@ -83,10 +84,10 @@ hist_source2::text_value_for_line(textview_curses& tc,
     fmt::format_to(
         std::back_inserter(value_out),
         FMT_STRING(" {:8L} normal  {:8L} errors  {:8L} warnings  {:8L} marks"),
-        rint(bucket.b_values[HT_NORMAL].hv_value),
-        rint(bucket.b_values[HT_ERROR].hv_value),
-        rint(bucket.b_values[HT_WARNING].hv_value),
-        rint(bucket.b_values[HT_MARK].hv_value));
+        rint(bucket.value_for(hist_type_t::HT_NORMAL).hv_value),
+        rint(bucket.value_for(hist_type_t::HT_ERROR).hv_value),
+        rint(bucket.value_for(hist_type_t::HT_WARNING).hv_value),
+        rint(bucket.value_for(hist_type_t::HT_MARK).hv_value));
 
     return {};
 }
@@ -101,7 +102,12 @@ hist_source2::text_attrs_for_line(textview_curses& tc,
     auto width = dim.second;
     int left = 0;
 
-    for (int lpc = 0; lpc < HT__MAX; lpc++) {
+    if (width > 0 && tc.get_show_scrollbar()) {
+        width -= 1;
+    }
+    for (int lpc = 0; lpc < lnav::enums::to_underlying(hist_type_t::HT__MAX);
+         lpc++)
+    {
         this->hs_chart.chart_attrs_for_value(tc,
                                              left,
                                              width,
@@ -133,7 +139,7 @@ hist_source2::add_value(std::chrono::microseconds ts,
 
     auto& bucket = this->find_bucket(this->hs_current_row);
     bucket.b_time = ts;
-    bucket.b_values[htype].hv_value += value;
+    bucket.value_for(htype).hv_value += value;
 
     this->hs_needs_flush = true;
 }
@@ -144,11 +150,14 @@ hist_source2::init()
     auto& vc = view_colors::singleton();
 
     this->hs_chart.with_show_state(stacked_bar_chart_base::show_all{})
-        .with_attrs_for_ident(HT_NORMAL, vc.attrs_for_role(role_t::VCR_TEXT))
-        .with_attrs_for_ident(HT_WARNING,
+        .with_attrs_for_ident(hist_type_t::HT_NORMAL,
+                              vc.attrs_for_role(role_t::VCR_TEXT))
+        .with_attrs_for_ident(hist_type_t::HT_WARNING,
                               vc.attrs_for_role(role_t::VCR_WARNING))
-        .with_attrs_for_ident(HT_ERROR, vc.attrs_for_role(role_t::VCR_ERROR))
-        .with_attrs_for_ident(HT_MARK, vc.attrs_for_role(role_t::VCR_COMMENT));
+        .with_attrs_for_ident(hist_type_t::HT_ERROR,
+                              vc.attrs_for_role(role_t::VCR_ERROR))
+        .with_attrs_for_ident(hist_type_t::HT_MARK,
+                              vc.attrs_for_role(role_t::VCR_COMMENT));
 }
 
 void
@@ -159,6 +168,9 @@ hist_source2::clear()
     this->hs_last_ts = std::chrono::microseconds::zero();
     this->hs_blocks.clear();
     this->hs_chart.clear();
+    if (this->tss_view != nullptr) {
+        this->tss_view->get_bookmarks().clear();
+    }
     this->init();
 }
 
@@ -168,9 +180,36 @@ hist_source2::end_of_row()
     if (this->hs_current_row >= 0) {
         auto& last_bucket = this->find_bucket(this->hs_current_row);
 
-        for (size_t lpc = 0; lpc < HT__MAX; lpc++) {
-            this->hs_chart.add_value((const hist_type_t) lpc,
-                                     last_bucket.b_values[lpc].hv_value);
+        for (size_t lpc = 0;
+             lpc < lnav::enums::to_underlying(hist_type_t::HT__MAX);
+             lpc++)
+        {
+            auto& hv = last_bucket.b_values[lpc];
+            this->hs_chart.add_value((const hist_type_t) lpc, hv.hv_value);
+
+            if (hv.hv_value > 0.0) {
+                const bookmark_type_t* bt = nullptr;
+                switch ((hist_type_t) lpc) {
+                    case hist_type_t::HT_WARNING: {
+                        bt = &textview_curses::BM_WARNINGS;
+                        break;
+                    }
+                    case hist_type_t::HT_ERROR: {
+                        bt = &textview_curses::BM_ERRORS;
+                        break;
+                    }
+                    case hist_type_t::HT_MARK: {
+                        bt = &textview_curses::BM_META;
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                if (bt != nullptr) {
+                    auto& bm = this->tss_view->get_bookmarks();
+                    bm[bt].insert_once(vis_line_t(this->hs_current_row));
+                }
+            }
         }
         this->hs_chart.next_row();
     }
