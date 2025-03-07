@@ -795,7 +795,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     }
 
     for (auto fn : split_args) {
-        auto file_loc = file_location_t{0_vl};
+        auto file_loc = file_location_t{mapbox::util::no_init{}};
 
         if (access(fn.c_str(), R_OK) != 0) {
             auto colon_index = fn.rfind(':');
