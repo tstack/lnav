@@ -91,7 +91,7 @@ jobs:
       - name: make
         run: make -j4
       - name: make distcheck
-        run: make distcheck -j4 || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
+        run: timeout 15m make distcheck -j4 || (test -e lnav-*/_build/sub/src/tailer/test-suite.log && cat lnav-*/_build/sub/src/tailer/test-suite.log && false) || (test -e lnav-*/_build/sub/test/test-suite.log && cat lnav-*/_build/sub/test/test-suite.log && false)
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
