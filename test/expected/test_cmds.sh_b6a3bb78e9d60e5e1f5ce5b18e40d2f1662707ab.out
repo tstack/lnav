@@ -919,7 +919,7 @@ For support questions, email:
 
 [4m:[0m[1m[4mdelete-filter[0m[4m [0m[4mpattern[0m
 ══════════════════════════════════════════════════════════════════════
-  Delete the filter created with [1m:filter-in[0m or [1m:filter-out[0m
+  Delete the filter created with ':filter-in' or ':filter-out'
 [4mParameter[0m
   [4mpattern[0m   The regular expression to match
 [4mSee Also[0m
@@ -2613,7 +2613,7 @@ For support questions, email:
 [4mExample[0m
 #1 To match the pattern 'fo' against 'filter-out':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mfuzzy_match[0m[37m[40m([0m[35m[40m'fo'[0m[37m[40m, [0m[35m[40m'filter-out'[0m[37m[40m)            [0m
-   107
+   137
 
 
 [1m[4mgenerate_series[0m[4m([0m[4mstart[0m[4m, [0m[4mstop[0m[4m, [[0m[4mstep[0m[4m])[0m

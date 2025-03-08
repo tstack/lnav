@@ -1299,6 +1299,8 @@ view_colors::init_roles(const lnav_theme& lt,
         this->get_role_attrs(role_t::VCR_SELECTED_TEXT) = this->to_attrs(
             default_theme, default_theme.lt_style_selected_text, reporter);
     }
+    this->get_role_attrs(role_t::VCR_FUZZY_MATCH)
+        = this->to_attrs(lt, lt.lt_style_fuzzy_match, reporter);
 
     this->get_role_attrs(role_t::VCR_RE_SPECIAL)
         = this->to_attrs(lt, lt.lt_style_re_special, reporter);

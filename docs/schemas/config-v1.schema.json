@@ -486,6 +486,11 @@
                                             "title": "/ui/theme-defs/<theme_name>/styles/selected-text",
                                             "$ref": "#/definitions/style"
                                         },
+                                        "fuzzy-match": {
+                                            "description": "Styling for characters found in fuzzy match",
+                                            "title": "/ui/theme-defs/<theme_name>/styles/fuzzy-match",
+                                            "$ref": "#/definitions/style"
+                                        },
                                         "alt-text": {
                                             "description": "Styling for plain text when alternating",
                                             "title": "/ui/theme-defs/<theme_name>/styles/alt-text",

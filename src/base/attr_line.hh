@@ -678,6 +678,8 @@ public:
 
     void apply_hide();
 
+    attr_line_t& highlight_fuzzy_matches(const std::string& pattern);
+
     attr_line_t move() & { return std::move(*this); }
     attr_line_t move() && { return std::move(*this); }
 

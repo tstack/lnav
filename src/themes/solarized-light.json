@@ -34,6 +34,11 @@
                     "selected-text": {
                         "background-color": "$cyan"
                     },
+                    "fuzzy-match": {
+                        "color": "$orange",
+                        "underline": true,
+                        "bold": true
+                    },
                     "alt-text": {
                         "background-color": "$base2"
                     },

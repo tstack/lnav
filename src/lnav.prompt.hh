@@ -122,8 +122,11 @@ struct prompt {
     void refresh_sql_expr_completions(textview_curses& tc);
     void insert_sql_completion(const std::string& name, const sql_item_t& item);
     const sql_item_meta& sql_item_hint(const sql_item_t& item) const;
-    attr_line_t get_db_completion_text(const std::string& str, int width) const;
+    attr_line_t get_db_completion_text(const std::string& pattern,
+                                       const std::string& str,
+                                       int width) const;
     attr_line_t get_sql_completion_text(
+        const std::string& pattern,
         const std::pair<std::string, sql_item_t>& p) const;
     std::string get_regex_suggestion(textview_curses& tc,
                                      const std::string& pattern) const;
@@ -134,6 +137,9 @@ struct prompt {
     std::vector<attr_line_t> get_env_completion(const std::string& str);
     std::vector<attr_line_t> get_config_value_completion(
         const std::string& path, const std::string& str) const;
+
+    void highlight_match_chars(const std::string& str,
+                               std::vector<attr_line_t>& poss);
 
     void rl_help(textinput_curses& tc);
     void rl_reformat(textinput_curses& tc);

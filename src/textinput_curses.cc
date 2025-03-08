@@ -1655,14 +1655,12 @@ textinput_curses::do_update()
     if (!this->vc_enabled) {
         ncplane_erase_region(
             this->tc_window, this->vc_y, this->vc_x, 1, dim.dr_width);
-        if (!this->tc_inactive_value.empty()) {
-            auto lr = line_range{this->tc_left, this->tc_left + dim.dr_width};
-            mvwattrline(this->tc_window,
-                        this->vc_y,
-                        this->vc_x,
-                        this->tc_inactive_value,
-                        lr);
-        }
+        auto lr = line_range{this->tc_left, this->tc_left + dim.dr_width};
+        mvwattrline(this->tc_window,
+                    this->vc_y,
+                    this->vc_x,
+                    this->tc_inactive_value,
+                    lr);
 
         if (!this->tc_alt_value.empty()
             && this->tc_inactive_value.column_width() + 3

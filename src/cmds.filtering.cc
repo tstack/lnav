@@ -490,8 +490,8 @@ static readline_context::command_t FILTERING_COMMANDS[] = {
         com_delete_filter,
 
         help_text(":delete-filter")
-            .with_summary("Delete the filter created with " ANSI_BOLD(
-                ":filter-in") " or " ANSI_BOLD(":filter-out"))
+            .with_summary(
+                "Delete the filter created with ':filter-in' or ':filter-out'")
             .with_parameter(
                 help_text("pattern", "The regular expression to match")
                     .with_format(help_parameter_format_t::HPF_ALL_FILTERS))

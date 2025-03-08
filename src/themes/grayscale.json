@@ -24,6 +24,10 @@
                         "color": "",
                         "background-color": ""
                     },
+                    "fuzzy-match": {
+                        "underline": true,
+                        "bold": true
+                    },
                     "alt-text": {
                         "bold": true
                     },

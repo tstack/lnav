@@ -26,6 +26,11 @@
                     "selected-text": {
                         "background-color": "$cyan"
                     },
+                    "fuzzy-match": {
+                        "color": "$yellow",
+                        "underline": true,
+                        "bold": true
+                    },
                     "alt-text": {
                         "background-color": "#1c1c1c"
                     },

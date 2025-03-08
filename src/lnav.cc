@@ -3855,6 +3855,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     vis_line_t y;
 
                     tc = *lnav_data.ld_view_stack.top();
+                    // turn off scrollbar since some stuff will resize to
+                    // account for it.
+                    tc->set_show_scrollbar(false);
                     view_index = tc - lnav_data.ld_views;
                     switch (view_index) {
                         case LNV_DB:

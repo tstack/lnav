@@ -151,6 +151,9 @@ breadcrumb_curses::reload_data()
                                   this->bc_current_search,
                                   128)
         | lnav::itertools::sort_with(breadcrumb::possibility::sort_cmp);
+    for (auto& al : this->bc_similar_values) {
+        al.p_display_value.highlight_fuzzy_matches(this->bc_current_search);
+    }
     if (selected_crumb_ref.c_key.is<std::string>()
         && selected_crumb_ref.c_expected_input
             != breadcrumb::crumb::expected_input_t::anything)

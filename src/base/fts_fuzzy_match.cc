@@ -200,7 +200,8 @@ fuzzy_internal::fuzzy_match_recursive(const char* pattern,
                     outScore += camel_bonus;
 
                 // Separator
-                bool neighborSeparator = neighbor == '_' || neighbor == ' ';
+                bool neighborSeparator = neighbor == '_' || neighbor == ' '
+                    || neighbor == '-';
                 if (neighborSeparator)
                     outScore += separator_bonus;
             } else {

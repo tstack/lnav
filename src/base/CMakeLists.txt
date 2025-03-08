@@ -10,6 +10,7 @@ add_library(
         color_spaces.cc
         date_time_scanner.cc
         fs_util.cc
+        fts_fuzzy_match.cc
         humanize.cc
         humanize.network.cc
         humanize.time.cc
@@ -43,6 +44,7 @@ add_library(
         enum_util.hh
         from_trait.hh
         fs_util.hh
+        fts_fuzzy_match.hh
         func_util.hh
         future_util.hh
         guard_util.hh

@@ -233,6 +233,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "fuzzy-match": {
+                        "color": "Olive",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "",
@@ -1083,6 +1091,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "fuzzy-match": {
+                        "color": "$orange",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "#1c1c1c",
@@ -1888,6 +1904,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "fuzzy-match": {
+                        "color": "$orange",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "",
@@ -2689,6 +2713,14 @@
                         "background-color": "",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "fuzzy-match": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -3497,6 +3529,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "fuzzy-match": {
+                        "color": "$orange",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "Grey11",
@@ -4298,6 +4338,14 @@
                         "background-color": "$cyan",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "fuzzy-match": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -5114,6 +5162,14 @@
                         "italic": false,
                         "strike": false
                     },
+                    "fuzzy-match": {
+                        "color": "$orange",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
                     "alt-text": {
                         "color": "",
                         "background-color": "$base02",
@@ -5924,6 +5980,14 @@
                         "background-color": "$cyan",
                         "underline": false,
                         "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "fuzzy-match": {
+                        "color": "$orange",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },

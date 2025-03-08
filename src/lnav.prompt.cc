@@ -434,9 +434,11 @@ prompt::rl_history(textinput_curses& tc)
     auto sigil = tc.tc_prefix.al_string.front();
     auto& hist = this->get_history_for(sigil);
     auto width = tc.get_width() - 1;
+    auto pattern = tc.get_content();
     std::vector<attr_line_t> poss;
-    auto cb = [&poss, sigil, width](const auto& e) {
+    auto cb = [&poss, sigil, width, &pattern](const auto& e) {
         auto al = attr_line_t::from_table_cell_content(e.e_content, width)
+                      .highlight_fuzzy_matches(pattern)
                       .with_attr_for_all(SUBST_TEXT.value(e.e_content));
         switch (sigil) {
             case ':':
@@ -451,7 +453,7 @@ prompt::rl_history(textinput_curses& tc)
         }
         poss.emplace_back(al.move());
     };
-    hist.query_entries(tc.get_content(), cb);
+    hist.query_entries(pattern, cb);
     if (poss.empty()) {
         hist.query_entries(""_frag, cb);
     }
@@ -646,7 +648,9 @@ prompt::sql_item_hint(const sql_item_t& item) const
 }
 
 attr_line_t
-prompt::get_db_completion_text(const std::string& str, int width) const
+prompt::get_db_completion_text(const std::string& pattern,
+                               const std::string& str,
+                               int width) const
 {
     static const auto* sql_cmd_map
         = injector::get<readline_context::command_map_t*, sql_cmd_map_tag>();
@@ -662,6 +666,7 @@ prompt::get_db_completion_text(const std::string& str, int width) const
     }
     return attr_line_t()
         .append(str, VC_ROLE.value(role_t::VCR_KEYWORD))
+        .highlight_fuzzy_matches(pattern)
         .append(" ")
         .pad_to(width + 1)
         .append(summary, VC_ROLE.value(role_t::VCR_COMMENT))
@@ -670,13 +675,15 @@ prompt::get_db_completion_text(const std::string& str, int width) const
 
 attr_line_t
 prompt::get_sql_completion_text(
+    const std::string& pattern,
     const std::pair<std::string, sql_item_t>& p) const
 {
     auto item_meta = this->sql_item_hint(p.second);
     return attr_line_t()
-        .append(item_meta.sim_type_hint)
-        .append(" ")
         .append(p.first, VC_ROLE.value(item_meta.sim_role))
+        .highlight_fuzzy_matches(pattern)
+        .insert(0, " ")
+        .insert(0, item_meta.sim_type_hint)
         .append(item_meta.sim_display_suffix)
         .with_attr_for_all(
             SUBST_TEXT.value(p.first + item_meta.sim_replace_suffix));
@@ -690,13 +697,15 @@ prompt::get_env_completion(const std::string& str)
     auto width = poss_strs | lnav::itertools::map(&std::string::size)
         | lnav::itertools::max();
 
-    return poss_strs | lnav::itertools::map([&width, this](const auto& x) {
+    return poss_strs
+        | lnav::itertools::map([&width, &str, this](const auto& x) {
                auto arg_val
                    = attr_line_t::from_table_cell_content(this->p_env_vars[x],
                                                           20)
                          .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT));
                return attr_line_t()
                    .append(x, VC_ROLE.value(role_t::VCR_VARIABLE))
+                   .highlight_fuzzy_matches(str)
                    .append(" ")
                    .pad_to(width.value_or(0) + 1)
                    .append(arg_val)
@@ -709,13 +718,13 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                                      const help_text* ht,
                                      const std::string& str)
 {
+    std::vector<attr_line_t> retval;
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
             case help_parameter_format_t::HPF_SQL_EXPR: {
                 auto poss_strs = this->p_sql_completions
                     | lnav::itertools::first()
                     | lnav::itertools::similar_to(str, 10);
-                std::vector<attr_line_t> poss;
 
                 for (const auto& str : poss_strs) {
                     auto eq_range = this->p_sql_completions.equal_range(str);
@@ -723,23 +732,22 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     for (auto iter = eq_range.first; iter != eq_range.second;
                          ++iter)
                     {
-                        auto al = this->get_sql_completion_text(*iter);
-                        poss.emplace_back(al);
+                        auto al = this->get_sql_completion_text(str, *iter);
+                        retval.emplace_back(al);
                     }
                 }
-
-                return poss;
+                break;
             }
             case help_parameter_format_t::HPF_TEXT: {
-                return view_text_possibilities(tc)
+                retval = view_text_possibilities(tc)
                     | lnav::itertools::similar_to(str)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_REGEX: {
-                std::vector<attr_line_t> retval;
                 auto poss_str = view_text_possibilities(tc)
                     | lnav::itertools::similar_to(str, 10);
 
@@ -748,25 +756,27 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         attr_line_t().append(str).with_attr_for_all(
                             SUBST_TEXT.value(lnav::pcre2pp::quote(str))));
                 }
-                return retval;
+                break;
             }
             case help_parameter_format_t::HPF_CONFIG_PATH: {
-                return this->p_config_paths | lnav::itertools::first()
+                retval = this->p_config_paths | lnav::itertools::first()
                     | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_TAG: {
-                return bookmark_metadata::KNOWN_TAGS
+                retval = bookmark_metadata::KNOWN_TAGS
                     | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::sorted()
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t()
-                               .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
-                               .with_attr_for_all(SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t()
+                                 .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
+                                 .with_attr_for_all(SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_LINE_TAG: {
                 auto* lss
@@ -780,14 +790,15 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 if (!bm_opt) {
                     return {};
                 }
-                return bm_opt.value()->bm_tags
+                retval = bm_opt.value()->bm_tags
                     | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::sorted()
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t()
-                               .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
-                               .with_attr_for_all(SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t()
+                                 .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
+                                 .with_attr_for_all(SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_FILENAME:
             case help_parameter_format_t::HPF_LOCAL_FILENAME:
@@ -854,18 +865,18 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     }
                 }
 
-                auto retval = poss_paths | lnav::itertools::similar_to(str, 10)
+                retval = poss_paths | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& path_str) {
-                                  auto escaped_path = shlex::escape(path_str);
-                                  if (!endswith(path_str, "/")) {
-                                      escaped_path.push_back(' ');
-                                  }
-                                  return attr_line_t()
-                                      .append(path_str)
-                                      .with_attr_for_all(
-                                          SUBST_TEXT.value(escaped_path));
-                              });
-                return retval;
+                             auto escaped_path = shlex::escape(path_str);
+                             if (!endswith(path_str, "/")) {
+                                 escaped_path.push_back(' ');
+                             }
+                             return attr_line_t()
+                                 .append(path_str)
+                                 .with_attr_for_all(
+                                     SUBST_TEXT.value(escaped_path));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_LOADED_FILE: {
                 std::vector<std::string> files;
@@ -878,11 +889,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     files.emplace_back(escaped_fn);
                 }
 
-                return files | lnav::itertools::similar_to(str, 10)
+                retval = files | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_FORMAT_FIELD: {
                 std::unordered_set<std::string> field_names;
@@ -917,11 +929,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     }
                 }
 
-                return field_names | lnav::itertools::similar_to(str, 10)
+                retval = field_names | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_NUMERIC_FIELD: {
                 std::unordered_set<std::string> field_names;
@@ -939,11 +952,13 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         auto attr_opt = get_string_attr(al.al_attrs, SA_FORMAT);
                         if (attr_opt) {
                             auto format_name = attr_opt->get();
-                            auto format
-                                = log_format::find_root_format(format_name.c_str());
-                            for (const auto& lvm : format->get_value_metadata()) {
+                            auto format = log_format::find_root_format(
+                                format_name.c_str());
+                            for (const auto& lvm : format->get_value_metadata())
+                            {
                                 if (lvm.is_numeric()) {
-                                    field_names.emplace(lvm.lvm_name.to_string());
+                                    field_names.emplace(
+                                        lvm.lvm_name.to_string());
                                 }
                             }
                         }
@@ -961,11 +976,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     }
                 }
 
-                return field_names | lnav::itertools::similar_to(str, 10)
+                retval = field_names | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
                 static const auto symbolic_times = std::vector<std::string>{
@@ -991,11 +1007,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 all_times.emplace_back(
                     lnav::to_rfc3339_string(ri.ri_time, 'T'));
 
-                return all_times | lnav::itertools::similar_to(str, 10)
+                retval = all_times | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_TIMEZONE: {
                 std::vector<std::string> tz_strs;
@@ -1007,11 +1024,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     log_error("unable to get tzdb -- %s", e.what());
                 }
 
-                return tz_strs | lnav::itertools::similar_to(str, 10)
+                retval = tz_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_FILE_WITH_ZONE: {
                 static auto& safe_options_hier
@@ -1032,12 +1050,13 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     }
                 }
 
-                return poss_str | lnav::itertools::similar_to(str, 10)
+                retval = poss_str | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(
-                                   fmt::to_string(std::filesystem::path(x))));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(
+                                     fmt::to_string(std::filesystem::path(x))));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_LOGLINE_TABLE:
             case help_parameter_format_t::HPF_SEARCH_TABLE: {
@@ -1070,11 +1089,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     poss_strs.emplace_back(vt_pair.first.to_string());
                 }
 
-                return poss_strs | lnav::itertools::similar_to(str, 10)
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_HIDDEN_FILES:
             case help_parameter_format_t::HPF_VISIBLE_FILES: {
@@ -1102,11 +1122,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                             }
                         };
                 }
-                return poss_strs | lnav::itertools::similar_to(str, 10)
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_ADJUSTED_TIME: {
                 static const auto symbolic_times = std::vector<std::string>{
@@ -1134,11 +1155,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 all_times.insert(all_times.begin(),
                                  lnav::to_rfc3339_string(ri.ri_time, 'T'));
 
-                return all_times | lnav::itertools::similar_to(str, 10)
+                retval = all_times | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x + " "));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x + " "));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_HIGHLIGHTS: {
                 std::vector<std::string> poss_strs;
@@ -1151,11 +1173,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     }
                 }
 
-                return poss_strs | lnav::itertools::similar_to(str, 10)
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x));
+                         });
+                break;
             }
             case help_parameter_format_t::HPF_ALL_FILTERS:
             case help_parameter_format_t::HPF_ENABLED_FILTERS:
@@ -1182,22 +1205,25 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     }
                 }
 
-                return poss_strs | lnav::itertools::similar_to(str, 10)
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
                     | lnav::itertools::map([](const auto& x) {
-                           return attr_line_t().append(x).with_attr_for_all(
-                               SUBST_TEXT.value(x));
-                       });
+                             return attr_line_t().append(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x));
+                         });
+                break;
             }
         }
     } else {
-        return ht->ht_enum_values | lnav::itertools::similar_to(str, 10)
+        retval = ht->ht_enum_values | lnav::itertools::similar_to(str, 10)
             | lnav::itertools::map([](const auto& x) {
-                   return attr_line_t(x).with_attr_for_all(
-                       SUBST_TEXT.value(std::string(x) + " "));
-               });
+                     return attr_line_t(x).with_attr_for_all(
+                         SUBST_TEXT.value(std::string(x) + " "));
+                 });
     }
 
-    return {};
+    this->highlight_match_chars(str, retval);
+
+    return retval;
 }
 
 std::vector<attr_line_t>
@@ -1227,9 +1253,10 @@ prompt::get_config_value_completion(const std::string& path,
     }
 
     return poss_strs | lnav::itertools::similar_to(str, 10)
-        | lnav::itertools::map([](const auto& x) {
+        | lnav::itertools::map([&str](const auto& x) {
                return attr_line_t()
                    .append(x, VC_ROLE.value(role_t::VCR_SYMBOL))
+                   .highlight_fuzzy_matches(str)
                    .with_attr_for_all(SUBST_TEXT.value(x));
            });
 }
@@ -1361,6 +1388,18 @@ prompt::get_regex_suggestion(textview_curses& tc,
     }
 
     return retval;
+}
+
+void
+prompt::highlight_match_chars(const std::string& str,
+                              std::vector<attr_line_t>& poss)
+{
+    if (str.empty()) {
+        return;
+    }
+    for (auto& al : poss) {
+        al.highlight_fuzzy_matches(str);
+    }
 }
 
 }  // namespace lnav

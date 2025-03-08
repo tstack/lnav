@@ -37,6 +37,7 @@
 #include "ansi_scrubber.hh"
 #include "auto_mem.hh"
 #include "config.h"
+#include "fts_fuzzy_match.hh"
 #include "intervaltree/IntervalTree.h"
 #include "lnav_log.hh"
 #include "pcrepp/pcre2pp.hh"
@@ -728,6 +729,37 @@ attr_line_t::column_to_byte_index(size_t column) const
 {
     return string_fragment::from_str(this->al_string)
         .column_to_byte_index(column);
+}
+
+attr_line_t&
+attr_line_t::highlight_fuzzy_matches(const std::string& pattern)
+{
+    if (pattern.empty()) {
+        return *this;
+    }
+
+    constexpr size_t MATCH_COUNT = 256;
+    uint8_t matches[MATCH_COUNT];
+    int score;
+
+    memset(matches, 0, sizeof(matches));
+    if (!fts::fuzzy_match(pattern.c_str(),
+                          this->al_string.c_str(),
+                          score,
+                          matches,
+                          MATCH_COUNT))
+    {
+        return *this;
+    }
+
+    for (auto lpc = size_t{0}; (lpc == 0 || matches[lpc]) && lpc < MATCH_COUNT;
+         lpc++)
+    {
+        auto lr = line_range{matches[lpc], matches[lpc] + 1};
+        this->al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_FUZZY_MATCH));
+    }
+
+    return *this;
 }
 
 line_range

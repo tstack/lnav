@@ -35,7 +35,6 @@
 #include "base/fs_util.hh"
 #include "base/lnav_log.hh"
 #include "base/paths.hh"
-#include "fts_fuzzy_match.hh"
 #include "lnav.hh"
 #include "sql_execute.hh"
 #include "sql_util.hh"

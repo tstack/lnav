@@ -347,7 +347,7 @@
 :delete-filter *pattern*
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Delete the filter created with [1m:filter-in[0m or [1m:filter-out[0m
+  Delete the filter created with ':filter-in' or ':filter-out'
 
   **Parameters**
     * **pattern\*** --- The regular expression to match

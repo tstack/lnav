@@ -372,16 +372,17 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
         auto poss_width = poss_str | lnav::itertools::map(&std::string::size)
             | lnav::itertools::max();
 
-        auto poss
-            = poss_str | lnav::itertools::map([&poss_width](const auto& x) {
-                  return attr_line_t()
-                      .append(x, VC_ROLE.value(role_t::VCR_KEYWORD))
-                      .append(" ")
-                      .pad_to(poss_width.value_or(0) + 1)
-                      .append(lnav_commands[x]->c_help.ht_summary)
-                      .with_attr_for_all(
-                          lnav::prompt::SUBST_TEXT.value(x + " "));
-              });
+        auto poss = poss_str
+            | lnav::itertools::map([&args, &poss_width](const auto& x) {
+                        return attr_line_t()
+                            .append(x, VC_ROLE.value(role_t::VCR_KEYWORD))
+                            .highlight_fuzzy_matches(cget(args, 0).value_or(""))
+                            .append(" ")
+                            .pad_to(poss_width.value_or(0) + 1)
+                            .append(lnav_commands[x]->c_help.ht_summary)
+                            .with_attr_for_all(
+                                lnav::prompt::SUBST_TEXT.value(x + " "));
+                    });
 
         rc.open_popup_for_completion(0, poss);
         rc.tc_popup.set_title("Command");
@@ -603,7 +604,9 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                     | lnav::itertools::max();
 
                 title = "transform";
-                poss = poss_str | lnav::itertools::map([&width](const auto& x) {
+                poss = poss_str
+                    | lnav::itertools::map([&width,
+                                            &to_complete](const auto& x) {
                            const auto& ht = sql_cmd_map->at(x)->c_help;
                            auto sub_value = x + " ";
                            if (!ht.ht_parameters.empty()
@@ -615,6 +618,7 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                            }
                            return attr_line_t()
                                .append(x, VC_ROLE.value(role_t::VCR_FUNCTION))
+                               .highlight_fuzzy_matches(to_complete)
                                .append(" ")
                                .pad_to(width.value_or(0) + 1)
                                .append(ht.ht_summary)
@@ -626,9 +630,9 @@ rl_sql_change(textinput_curses& rc, bool is_req)
             {
                 poss = prompt.p_prql_completions | lnav::itertools::first()
                     | lnav::itertools::similar_to(to_complete, 10)
-                    | lnav::itertools::map([](const auto& x) {
+                    | lnav::itertools::map([&to_complete](const auto& x) {
                            return prompt.get_sql_completion_text(
-                               *prompt.p_prql_completions.find(x));
+                               to_complete, *prompt.p_prql_completions.find(x));
                        });
             }
             auto left = rc.tc_cursor.x - to_complete_sf.column_width();
@@ -665,8 +669,8 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                     | lnav::itertools::map(&std::string::size)
                     | lnav::itertools::max();
                 for (const auto& str : poss_strs) {
-                    poss.emplace_back(
-                        prompt.get_db_completion_text(str, width.value_or(0)));
+                    poss.emplace_back(prompt.get_db_completion_text(
+                        to_complete, str, width.value_or(0)));
                 }
             } else {
                 poss_strs = prompt.p_sql_completions | lnav::itertools::first()
@@ -677,7 +681,8 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                     for (auto iter = eq_range.first; iter != eq_range.second;
                          ++iter)
                     {
-                        auto al = prompt.get_sql_completion_text(*iter);
+                        auto al = prompt.get_sql_completion_text(to_complete,
+                                                                 *iter);
                         poss.emplace_back(al);
                     }
                 }
@@ -804,13 +809,14 @@ rl_exec_change(textinput_curses& rc, bool is_req)
                 {
                     poss = scripts.as_scripts | lnav::itertools::first()
                         | lnav::itertools::similar_to(script_name, 10)
-                        | lnav::itertools::map([&width,
-                                                &scripts](const auto& x) {
+                        | lnav::itertools::map([&width, &script_name, &scripts](
+                                                   const auto& x) {
                                auto siter = scripts.as_scripts.find(x);
                                auto desc = siter->second[0].sm_description;
                                return attr_line_t()
                                    .append(x,
                                            VC_ROLE.value(role_t::VCR_VARIABLE))
+                                   .highlight_fuzzy_matches(script_name)
                                    .append(" ")
                                    .pad_to(width.value_or(0) + 1)
                                    .append(desc)

@@ -163,6 +163,7 @@ enum class role_t : int32_t {
     VCR_SEP_REF_ACC,
     VCR_SUGGESTION,
     VCR_SELECTED_TEXT,
+    VCR_FUZZY_MATCH,
 
     VCR__MAX
 };
