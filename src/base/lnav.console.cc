@@ -395,6 +395,7 @@ role_to_style(const role_t role,
             line_style
                 |= fmt::fg(fmt::terminal_color::red) | fmt::emphasis::bold;
             break;
+        case role_t::VCR_HIDDEN:
         case role_t::VCR_WARNING:
         case role_t::VCR_RE_REPEAT:
             line_style |= fmt::fg(fmt::terminal_color::yellow);

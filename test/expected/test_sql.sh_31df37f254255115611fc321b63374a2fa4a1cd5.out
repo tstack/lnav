@@ -1,2 +1,2 @@
 [1m[4m                                                replicate('foobar', 120)                                                [0m[1m[4m [0m
-foobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar⋯oobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar 
+foobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar[33m⋯[0moobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobarfoobar 

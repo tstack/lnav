@@ -1,2 +1,2 @@
 [1m[4mbasename(filepath) [0m[1m[4m [0m[1m[4m     descriptor     [0m[1m[4m [0m[1m[4m    mimetype    [0m[1m[4m [0m[1m[4m                                           content                                            [0m[1m[4m [0m
-logfile_syslog.1.gz net.zlib.gzip.header application/json {␊    "name": "logfile_syslog.1",␊    "mtime": "2007-11-03T09:23:00.000",␊    "comment": ""␊}␊ 
+logfile_syslog.1.gz net.zlib.gzip.header application/json {[33m␊[0m    "name": "logfile_syslog.1",[33m␊[0m    "mtime": "2007-11-03T09:23:00.000",[33m␊[0m    "comment": ""[33m␊[0m}[33m␊[0m 

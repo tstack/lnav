@@ -1,2 +1,2 @@
 [1m[4m  st_name   [0m[1m[4m [0m[1m[4mst_type[0m[1m[4m [0m[1m[4mst_mode[0m[1m[4m [0m[1m[4m[7m st_nlink [0m[1m[4m [0m[1m[4m[7m st_size  [0m[1m[4m [0m[1m[4m       st_mtime        [0m[1m[4m [0m[1m[4merror [0m[1m[4m [0m[1m[4m     data     [0m[1m[4m [0m
-fstat-hw.dat reg         420 [1m[7m         1[0m [1m[7m        14[0m 2007-11-03 09:23:00.000 <NULL> Hello, World!␊ 
+fstat-hw.dat reg         420 [1m[7m         1[0m [1m[7m        14[0m 2007-11-03 09:23:00.000 <NULL> Hello, World![33m␊[0m 

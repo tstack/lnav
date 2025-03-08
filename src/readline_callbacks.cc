@@ -267,7 +267,7 @@ rl_sql_help(textinput_curses& rc)
     }
     if (ident_iter != sa.end()) {
         auto ident = al.get_substring(ident_iter->sa_range);
-        auto intern_ident = intern_string::lookup(ident);
+        const intern_string_t intern_ident = intern_string::lookup(ident);
         auto vtab = lnav_data.ld_vtab_manager->lookup_impl(intern_ident);
         auto vtab_module_iter = vtab_module_ddls.find(intern_ident);
         std::string ddl;
@@ -288,10 +288,8 @@ rl_sql_help(textinput_curses& rc)
             lnav_data.ld_preview_view[0].set_sub_source(
                 &lnav_data.ld_preview_source[0]);
             lnav_data.ld_preview_view[0].set_overlay_source(nullptr);
-            lnav_data.ld_preview_source[0]
-                .replace_with(ddl)
-                .set_text_format(text_format_t::TF_SQL)
-                .truncate_to(30);
+            lnav_data.ld_preview_source[0].replace_with(ddl).set_text_format(
+                text_format_t::TF_SQL);
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Definition for table -- %s", ident.c_str());
         }
@@ -844,6 +842,7 @@ rl_change(textinput_curses& rc)
     static auto& prompt = lnav::prompt::get();
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
+    rc.tc_suggestion.clear();
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);

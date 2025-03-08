@@ -500,6 +500,7 @@ libdiag_a_SOURCES = \
 	plain_text_source.cc \
 	pollable.cc \
 	pretty_printer.cc \
+	preview_status_source.cc \
 	ptimec_rt.cc \
 	readline_callbacks.cc \
 	readline_highlighters.cc \

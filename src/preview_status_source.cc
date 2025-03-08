@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,40 +27,29 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef lnav_preview_status_source_hh
-#define lnav_preview_status_source_hh
+#include "preview_status_source.hh"
 
-#include "statusview_curses.hh"
+static constexpr char HIDE_TOGGLE_MSG[] = "Press CTRL+P to hide \u25bc ";
+static constexpr char SHOW_TOGGLE_MSG[] = "Press CTRL+P to show \u25b2 ";
 
-class preview_status_source : public status_data_source {
-public:
-    typedef enum {
-        TSF_TITLE,
-        TSF_STITCH_TITLE,
-        TSF_DESCRIPTION,
-        TSF_TOGGLE,
+preview_status_source::preview_status_source()
+{
+    this->tss_fields[TSF_TITLE].set_width(14);
+    this->tss_fields[TSF_TITLE].set_role(role_t::VCR_STATUS_TITLE);
+    this->tss_fields[TSF_TITLE].set_value(" Preview Data ");
+    this->tss_fields[TSF_STITCH_TITLE].set_width(2);
+    this->tss_fields[TSF_STITCH_TITLE].set_stitch_value(
+        role_t::VCR_STATUS_STITCH_TITLE_TO_NORMAL,
+        role_t::VCR_STATUS_STITCH_NORMAL_TO_TITLE);
+    this->tss_fields[TSF_DESCRIPTION].set_share(1);
+    this->tss_fields[TSF_TOGGLE].set_width(strlen(HIDE_TOGGLE_MSG) + 1);
+    this->tss_fields[TSF_TOGGLE].set_value(HIDE_TOGGLE_MSG);
+    this->tss_fields[TSF_TOGGLE].right_justify(true);
+}
 
-        TSF__MAX
-    } field_t;
-
-    preview_status_source();
-
-    size_t statusview_fields() override { return TSF__MAX; }
-
-    status_field& statusview_value_for_field(int field) override
-    {
-        return this->tss_fields[field];
-    }
-
-    status_field& get_description()
-    {
-        return this->tss_fields[TSF_DESCRIPTION];
-    }
-
-    void update_toggle_msg(bool shown);
-
-private:
-    status_field tss_fields[TSF__MAX];
-};
-
-#endif
+void
+preview_status_source::update_toggle_msg(bool shown)
+{
+    this->tss_fields[TSF_TOGGLE].set_value(shown ? HIDE_TOGGLE_MSG
+                                                 : SHOW_TOGGLE_MSG);
+}

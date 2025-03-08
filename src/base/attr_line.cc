@@ -141,7 +141,10 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
             auto copy_len = index - copy_start;
             retval.al_string.append(&content[copy_start], copy_len);
             copy_start = index + 1;
+            auto lr = line_range{(int) retval.al_string.size(), -1};
             retval.al_string.append(replacement);
+            lr.lr_end = retval.al_string.size();
+            retval.al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_HIDDEN));
             replacement = ""sv;
         }
     }
@@ -165,6 +168,9 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
         auto bytes_to_remove = remove_up_to_bytes - bytes_to_keep_at_front;
         retval.erase(bytes_to_keep_at_front, bytes_to_remove);
         retval.insert(bytes_to_keep_at_front, ELLIPSIS);
+        auto lr = line_range{(int) bytes_to_keep_at_front,
+                             (int) bytes_to_keep_at_front + ELLIPSIS.length()};
+        retval.al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_HIDDEN));
     }
 
     return retval;

@@ -514,6 +514,7 @@ add_library(
         piper.match.cc
         plain_text_source.cc
         pretty_printer.cc
+        preview_status_source.cc
         pugixml/pugixml.cpp
         readline_callbacks.cc
         readline_highlighters.cc

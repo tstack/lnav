@@ -290,9 +290,7 @@ std::multimap<std::string, const help_text*> sqlite_function_help;
 static int
 handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct sqlite_metadata_callbacks* smc;
-
-    smc = (struct sqlite_metadata_callbacks*) ptr;
+    auto* smc = (struct sqlite_metadata_callbacks*) ptr;
 
     smc->smc_db_list[colvalues[1]] = std::vector<std::string>();
     if (!smc->smc_database_list) {
@@ -303,14 +301,14 @@ handle_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 }
 
 struct table_list_data {
-    struct sqlite_metadata_callbacks* tld_callbacks;
+    sqlite_metadata_callbacks* tld_callbacks;
     db_table_map_t::iterator* tld_iter;
 };
 
 static int
 handle_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct table_list_data* tld = (struct table_list_data*) ptr;
+    auto* tld = (struct table_list_data*) ptr;
 
     (*tld->tld_iter)->second.emplace_back(colvalues[0]);
     if (!tld->tld_callbacks->smc_table_list) {
@@ -349,7 +347,7 @@ walk_sqlite_metadata(sqlite3* db, sqlite_metadata_callbacks& smc)
     for (auto iter = smc.smc_db_list.begin(); iter != smc.smc_db_list.end();
          ++iter)
     {
-        struct table_list_data tld = {&smc, &iter};
+        table_list_data tld = {&smc, &iter};
         auto_mem<char, sqlite3_free> query;
 
         query = sqlite3_mprintf(
@@ -420,8 +418,8 @@ schema_collation_list(void* ptr, int ncols, char** colvalues, char** colnames)
 static int
 schema_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct sqlite_metadata_callbacks* smc = (sqlite_metadata_callbacks*) ptr;
-    std::string& schema_out = *((std::string*) smc->smc_userdata);
+    auto smc = (sqlite_metadata_callbacks*) ptr;
+    auto& schema_out = *((std::string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> attach_sql;
 
     attach_sql = sqlite3_mprintf(
@@ -435,8 +433,8 @@ schema_db_list(void* ptr, int ncols, char** colvalues, char** colnames)
 static int
 schema_table_list(void* ptr, int ncols, char** colvalues, char** colnames)
 {
-    struct sqlite_metadata_callbacks* smc = (sqlite_metadata_callbacks*) ptr;
-    std::string& schema_out = *((std::string*) smc->smc_userdata);
+    auto smc = (sqlite_metadata_callbacks*) ptr;
+    auto& schema_out = *((std::string*) smc->smc_userdata);
     auto_mem<char, sqlite3_free> create_sql;
 
     create_sql = sqlite3_mprintf("%s;\n", colvalues[1]);
@@ -461,7 +459,7 @@ schema_foreign_key_list(void* ptr, int ncols, char** colvalues, char** colnames)
 void
 dump_sqlite_schema(sqlite3* db, std::string& schema_out)
 {
-    struct sqlite_metadata_callbacks schema_sql_meta_callbacks = {
+    sqlite_metadata_callbacks schema_sql_meta_callbacks = {
         schema_collation_list,
         schema_db_list,
         schema_table_list,

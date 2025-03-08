@@ -719,7 +719,7 @@ layout_views()
 
     int preview_height0 = lnav_data.ld_preview_hidden
         ? 0
-        : lnav_data.ld_preview_view[0].get_inner_height();
+        : std::min(10_vl, lnav_data.ld_preview_view[0].get_inner_height());
     if (!lnav_data.ld_preview_hidden
         && lnav_data.ld_preview_view[0].get_overlay_source() != nullptr)
     {

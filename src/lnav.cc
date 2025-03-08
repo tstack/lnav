@@ -1581,6 +1581,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         &lnav_data.ld_filter_help_status_source);
     lnav_data.ld_status[LNS_DOC].set_data_source(
         &lnav_data.ld_doc_status_source);
+    lnav_data.ld_preview_status_source[0]
+        .statusview_value_for_field(preview_status_source::TSF_TOGGLE)
+        .on_click
+        = [](status_field&) {
+            lnav_data.ld_preview_status_source->update_toggle_msg(
+                lnav_data.ld_preview_hidden);
+            lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
+          };
     lnav_data.ld_status[LNS_PREVIEW0].set_data_source(
         &lnav_data.ld_preview_status_source[0]);
     lnav_data.ld_status[LNS_PREVIEW1].set_data_source(

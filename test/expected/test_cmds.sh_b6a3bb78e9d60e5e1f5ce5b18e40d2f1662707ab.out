@@ -3345,7 +3345,7 @@ For support questions, email:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[36m[40mkey[0m[37m[40m,[0m[37m[40mvalue[0m[37m[40m,[0m[37m[40mtype[0m[37m[40m,[0m[37m[40matom[0m[37m[40m,[0m[37m[40mfullkey[0m[37m[40m,[0m[37m[40mpath[0m[37m[40m [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[1m[37m[40mjson_tree[0m[37m[40m([0m[35m[40m'[null,1,"two",{"three":4.5}]'[0m[37m[40m)[0m
    [1m[4m key  [0m[1m[4m [0m[1m[4m     value     [0m[1m[4m [0m[1m[4m type  [0m[1m[4m [0m[1m[4m atom [0m[1m[4m [0m[1m[4m fullkey  [0m[1m[4m [0m[1m[4mpath[0m[1m[4m [0m
-   <NULL> [7m[[0m[7mnull,1⋯":4.[0m5}] array   <NULL> $          $    
+   <NULL> [7m[[0m[7mnull,1[0m[7m[33m⋯[0m[7m":4.[0m5}] array   <NULL> $          $    
         0          <NULL> null    <NULL> $[0]       $    
    [1m     1[0m[1m [0m[1m              1[0m[1m [0m[1minteger[0m[1m [0m[1m     1[0m[1m [0m[1m$[1]      [0m[1m [0m[1m$    [0m
    [1m     2[0m[1m [0m[1m            two[0m[1m [0m[1mtext   [0m[1m [0m[1m   two[0m[1m [0m[1m$[2]      [0m[1m [0m[1m$    [0m
@@ -4198,8 +4198,8 @@ For support questions, email:
 #1 To extract the key/value pairs 'a'/1 and 'b'/2 from the string 'a=1; b=2':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mregexp_capture_into_json[0m[37m[40m([0m[35m[40m'a=1; b=2'[0m[37m[40m, [0m[35m[40m'(\w+)=(\d+)'[0m[37m[40m)[0m
    [1m[4mmatch_index[0m[1m[4m [0m[1m[4m    content    [0m[1m[4m [0m
-             0 [7m{[0m"col_0⋯l_1":1} 
-             1 [7m{"col_0⋯l_1":2}[0m 
+             0 [7m{[0m"col_0[33m⋯[0ml_1":1} 
+             1 [7m{"col_0[0m[7m[33m⋯[0m[7ml_1":2}[0m 
 
 
 [1m[4mregexp_match[0m[4m([0m[4mre[0m[4m, [0m[4mstr[0m[4m)[0m
@@ -4791,16 +4791,16 @@ For support questions, email:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'5m'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m)[0m
    [37m[40m   [0m[37m[40m    [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
-   2017-02⋯:00.000 [7m         2[0m 
-   2017-02⋯:00.000 [7m [0m        1 
-   [1m2017-02⋯:00.000[0m[1m [0m[1m[7m [0m[1m        1 [0m
+   2017-02[33m⋯[0m:00.000 [7m         2[0m 
+   2017-02[33m⋯[0m:00.000 [7m [0m        1 
+   [1m2017-02[0m[1m[33m⋯[0m[1m:00.000[0m[1m [0m[1m[7m [0m[1m        1 [0m
 
 #3 To group log messages by those before 4:30am and after:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mtimeslice[0m[37m[40m([0m[37m[40mlog_time_msecs[0m[37m[40m, [0m[35m[40m'before 4:30am'[0m[37m[40m) [0m[1m[36m[40mAS[0m[37m[40m [0m[37m[40mslice[0m[37m[40m, [0m[1m[37m[40mcount[0m[37m[40m([0m[1m[37m[40m1[0m[37m[40m) [0m[1m[36m[40mFROM[0m
    [37m[40m   [0m[37m[40mlnav_example_log[0m[37m[40m [0m[1m[36m[40mGROUP[0m[37m[40m [0m[1m[36m[40mBY[0m[37m[40m [0m[37m[40mslice[0m
    [1m[4m     slice     [0m[1m[4m [0m[1m[4m[7m count(1) [0m[1m[4m [0m
             <NULL> [7m [0m        1 
-   2017-02⋯:00.000 [7m         3[0m 
+   2017-02[33m⋯[0m:00.000 [7m         3[0m 
 
 
 [1m[4mtimezone[0m[4m([0m[4mtz[0m[4m, [0m[4mts[0m[4m)[0m
@@ -4999,8 +4999,8 @@ For support questions, email:
 #1 To select the XML nodes on the path '/abc/def':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def'[0m[37m[40m, [0m[35m[40m'<abc><def a="b">Hello</def><def>Bye</def></abc>'[0m[37m[40m)[0m
    [1m[4m    result     [0m[1m[4m [0m[1m[4m node_path [0m[1m[4m [0m[1m[4mnode_attr[0m[1m[4m [0m[1m[4mnode_text[0m[1m[4m [0m
-   <def a=⋯</def>␊ /abc/def[1] {"a":"b"} Hello     
-   <def>Bye</def>␊ /abc/def[2] {}        Bye       
+   <def a=[33m⋯[0m</def>[33m␊[0m /abc/def[1] {"a":"b"} Hello     
+   <def>Bye</def>[33m␊[0m /abc/def[2] {}        Bye       
 
 #2 To select all 'a' attributes on the path '/abc/def':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[1m[37m[40mxpath[0m[37m[40m([0m[35m[40m'/abc/def/@a'[0m[37m[40m, [0m[35m[40m'<abc><def[0m
@@ -5151,10 +5151,10 @@ For support questions, email:
 #1 To select all of the columns from the table 'lnav_example_log':
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40mlnav_example_log[0m[37m[40m                    [0m
    [1m[4m[7m log_line [0m[1m[4m [0m[1m[4mlog_part[0m[1m[4m [0m[1m[4m   log_time    [0m[1m[4m [0m[1m[4mlog_actual_time[0m[1m[4m [0m[1m[4m[7mlog_idle_msecs[0m[1m[4m [0m[1m[4mlog_level[0m[1m[4m [0m[1m[4m[7m log_mark [0m[1m[4m [0m[1m[4mlog_comment[0m[1m[4m [0m[1m[4mlog_tags[0m[1m[4m [0m[1m[4mlog_filters[0m[1m[4m [0m[1m[4mex_procname[0m[1m[4m [0m[1m[4m[7mex_duration[0m[1m[4m [0m[1m[4m[7mlog_time_msecs[0m[1m[4m [0m[1m[4mlog_path[0m[1m[4m [0m[1m[4m   log_text    [0m[1m[4m [0m[1m[4m   log_body    [0m[1m[4m [0m
-   [1m         0[0m <NULL>   2017-02⋯:06.100 2017-02⋯:06.100 [1m             0[0m info      [1m         0[0m <NULL>      <NULL>   <NULL>      hw          [1m[7m [0m[1m         2[0m [1m[7m [0m[1m1486094706000[0m {TMPDIR}log 2017-02⋯ World! Hello, World!   
-   [1m[7m[31m   [0m[1m[31m      1[0m[31m [0m[31m<NULL>  [0m[31m [0m[31m2017-02⋯:06.200[0m[31m [0m[31m2017-02⋯:06.200[0m[31m [0m[1m[7m[31m [0m[1m[31m          100[0m[31m [0m[31merror    [0m[31m [0m[1m[31m         0[0m[31m [0m[31m<NULL>     [0m[31m [0m[31m<NULL>  [0m[31m [0m[31m<NULL>     [0m[31m [0m[31mgw         [0m[31m [0m[1m[7m[31m    [0m[1m[31m      4[0m[31m [0m[1m[7m[31m [0m[1m[31m1486094706000[0m[31m [0m[31m{TMPDIR}log[0m[31m [0m[31m2017-02⋯ World![0m[31m [0m[31mGoodbye, World! [0m
-   [1m[7m[33m       [0m[1m[33m  2[0m[1m[33m [0m[1m[33mnew     [0m[1m[33m [0m[1m[33m2017-02⋯:06.200[0m[1m[33m [0m[1m[33m2017-02⋯:06.200[0m[1m[33m [0m[1m[7m[33m       12[0m[1m[33m00000[0m[1m[33m [0m[1m[33mwarn     [0m[1m[33m [0m[1m[33m         0[0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33m<NULL>  [0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33mgw         [0m[1m[33m [0m[1m[7m[33m [0m[1m[33m         1[0m[1m[33m [0m[1m[7m[33m 14860[0m[1m[33m95906000[0m[1m[33m [0m[1m[33m{TMPDIR}log[0m[1m[33m [0m[1m[33m2017-02⋯ World![0m[1m[33m [0m[1m[33mGoodbye, World! [0m
-   [1m[7m         3[0m[1m [0m[1mnew     [0m[1m [0m[1m2017-02⋯:06.200[0m[1m [0m[1m2017-02⋯:06.200[0m[1m [0m[1m[7m       1800000[0m[1m [0m[1mdebug    [0m[1m [0m[1m         0[0m[1m [0m[1m<NULL>     [0m[1m [0m[1m<NULL>  [0m[1m [0m[1m<NULL>     [0m[1m [0m[1mgw         [0m[1m [0m[1m[7m         10[0m[1m [0m[1m[7m 1486097706000[0m[1m [0m[1m{TMPDIR}log[0m[1m [0m[1m2017-02⋯ World![0m[1m [0m[1mGoodbye, World! [0m
+   [1m         0[0m <NULL>   2017-02[33m⋯[0m:06.100 2017-02[33m⋯[0m:06.100 [1m             0[0m info      [1m         0[0m <NULL>      <NULL>   <NULL>      hw          [1m[7m [0m[1m         2[0m [1m[7m [0m[1m1486094706000[0m {TMPDIR}log 2017-02[33m⋯[0m World! Hello, World!   
+   [1m[7m[31m   [0m[1m[31m      1[0m[31m [0m[31m<NULL>  [0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m:06.200[0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m:06.200[0m[31m [0m[1m[7m[31m [0m[1m[31m          100[0m[31m [0m[31merror    [0m[31m [0m[1m[31m         0[0m[31m [0m[31m<NULL>     [0m[31m [0m[31m<NULL>  [0m[31m [0m[31m<NULL>     [0m[31m [0m[31mgw         [0m[31m [0m[1m[7m[31m    [0m[1m[31m      4[0m[31m [0m[1m[7m[31m [0m[1m[31m1486094706000[0m[31m [0m[31m{TMPDIR}log[0m[31m [0m[31m2017-02[0m[33m⋯[0m[31m World![0m[31m [0m[31mGoodbye, World! [0m
+   [1m[7m[33m       [0m[1m[33m  2[0m[1m[33m [0m[1m[33mnew     [0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m:06.200[0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m:06.200[0m[1m[33m [0m[1m[7m[33m       12[0m[1m[33m00000[0m[1m[33m [0m[1m[33mwarn     [0m[1m[33m [0m[1m[33m         0[0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33m<NULL>  [0m[1m[33m [0m[1m[33m<NULL>     [0m[1m[33m [0m[1m[33mgw         [0m[1m[33m [0m[1m[7m[33m [0m[1m[33m         1[0m[1m[33m [0m[1m[7m[33m 14860[0m[1m[33m95906000[0m[1m[33m [0m[1m[33m{TMPDIR}log[0m[1m[33m [0m[1m[33m2017-02[0m[1m[33m⋯[0m[1m[33m World![0m[1m[33m [0m[1m[33mGoodbye, World! [0m
+   [1m[7m         3[0m[1m [0m[1mnew     [0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m:06.200[0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m:06.200[0m[1m [0m[1m[7m       1800000[0m[1m [0m[1mdebug    [0m[1m [0m[1m         0[0m[1m [0m[1m<NULL>     [0m[1m [0m[1m<NULL>  [0m[1m [0m[1m<NULL>     [0m[1m [0m[1mgw         [0m[1m [0m[1m[7m         10[0m[1m [0m[1m[7m 1486097706000[0m[1m [0m[1m{TMPDIR}log[0m[1m [0m[1m2017-02[0m[1m[33m⋯[0m[1m World![0m[1m [0m[1mGoodbye, World! [0m
 
 
 [1m[4m[36mUPDATE[0m[4m [0m[4mtable[0m[4m [0m[1m[4m[36mSET[0m[4m [0m[4mcolumn-name[0m[4m1[0m[4m [0m[1m[4m[36m=[0m[4m [0m[4mexpr[0m[4m1[0m[4m [, ... [0m[4mcolumn-name[0m[4mN[0m[4m [0m[1m[4m[36m=[0m[4m [0m[4mexpr[0m[4mN[0m[4m] [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m][0m

@@ -1,4 +1,4 @@
-⋮ abc 49 def 0     c.e.foo Starting up service
-⋮ abc 49 def 0     c.e.foo Shutting down service
+[33m⋮[0m abc 49 def 0     c.e.foo Starting up service
+[33m⋮[0m abc 49 def 0     c.e.foo Shutting down service
   user: steve@example.com
 [31m⋮[0m[31m [0m[31mabc 49 def[0m[31m [0m[31m10   [0m[31m c.e.foo [0m[31mlooking bad[0m

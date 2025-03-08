@@ -33,6 +33,8 @@ Interface changes:
 * The HIST view now supports bookmarks, so you can use the usual
   hotkeys to just to the next/previous time segment with
   errors/warnings/marks.
+* In table cells, control characters are replaced with unicode
+  symbols and highlighted with the 'hidden' style from the theme.
 
 Features:
 * The `:comment` command will now switch the prompt to multi-line

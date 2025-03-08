@@ -1,2 +1,2 @@
 [1m[4mshell_exec('echo hi')[0m[1m[4m [0m
-hi␊                   
+hi[33m␊[0m                   
