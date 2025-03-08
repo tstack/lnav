@@ -93,6 +93,12 @@ def hw(name):
 > [!CAUTION]
 > Advises about risks or negative outcomes of certain actions.
 
+## Tasks
+
+* [x] Bibimbap
+* [x] Waffles
+* [ ] Tacos
+
 ## Table
 
 |  ID |    Name     | Description   |

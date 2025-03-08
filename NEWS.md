@@ -64,6 +64,7 @@ Features:
   set by the `:adjust-log-time` command.
 * Added a `measure_with_units` collation function that can compare
   numbers with unit suffixes, like "10KB" or "1.2ms".
+* Render task marks in markdown.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.

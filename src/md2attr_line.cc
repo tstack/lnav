@@ -197,6 +197,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
         last_block.append(block_text);
     } else if (bl.is<MD_BLOCK_LI_DETAIL*>()) {
         auto last_list_block = this->ml_list_stack.back();
+        auto li_detail = bl.get<MD_BLOCK_LI_DETAIL*>();
         text_wrap_settings tws = {0, 60};
 
         attr_line_builder alb(last_block);
@@ -205,13 +206,22 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
             alb.append(" ")
                 .append(last_list_block.match(
-                    [this, &tws](const MD_BLOCK_UL_DETAIL*) {
+                    [this, li_detail, &tws](const MD_BLOCK_UL_DETAIL*) {
                         static const std::string glyph1 = "\u2022";
                         static const std::string glyph2 = "\u2014";
+                        static const std::string unchecked = "[ ]";
+                        static const std::string checked = "[\u2713]";
                         tws.tws_indent = 3;
-                        return this->ml_list_stack.size() % 2 == 1
-                            ? lnav::roles::list_glyph(glyph1)
-                            : lnav::roles::list_glyph(glyph2);
+
+                        if (li_detail->is_task) {
+                            return lnav::roles::list_glyph(
+                                li_detail->task_mark == ' ' ? unchecked
+                                                            : checked);
+                        }
+
+                        return lnav::roles::list_glyph(
+                            this->ml_list_stack.size() % 2 == 1 ? glyph1
+                                                                : glyph2);
                     },
                     [this, &tws](MD_BLOCK_OL_DETAIL ol_detail) {
                         auto retval = lnav::roles::list_glyph(
