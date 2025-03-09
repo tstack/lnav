@@ -1533,16 +1533,6 @@ rl_completion_request(textinput_curses& rc)
             break;
         }
     }
-#if 0
-    isc::to<tailer::looper&, services::remote_tailer_t>().send(
-        [rc](auto& tlooper) {
-            auto rp_opt = humanize::network::path::from_str(
-                rc->get_remote_complete_path());
-            if (rp_opt) {
-                tlooper.complete_path(*rp_opt);
-            }
-        });
-#endif
 }
 
 void

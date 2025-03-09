@@ -289,7 +289,7 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                          (int) text_view.get_selection());
                 scroll_downs[LNV_TEXT] = false;
             } else {
-                log_warning("could not jump to requested line");
+                log_info("no line requested");
             }
         }
         if (cb.did_promotion && deadline) {

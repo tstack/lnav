@@ -1421,7 +1421,10 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
     this->tc_cursor.y += repl_lines;
 
     this->tc_drag_selection = std::nullopt;
-    this->update_lines();
+    if (retval == sf) {
+    } else {
+        this->update_lines();
+    }
 
     ensure(!this->tc_lines.empty());
 
@@ -1439,18 +1442,22 @@ textinput_curses::replace_selection(string_fragment sf)
     }
     auto range = this->tc_selection.value();
     auto old_text = this->replace_selection_no_change(sf);
-    auto is_wordbreak = !sf.empty()
-        && !uc_is_general_category_withtable(sf.front_codepoint(), mask);
-    log_debug("repl sel [%d:%d) - ", range.sr_start.x, range.sr_start.y);
-    if (this->tc_change_log.empty()
-        || this->tc_change_log.back().ce_range.sr_end != range.sr_start
-        || is_wordbreak)
-    {
-        this->tc_change_log.emplace_back(
-            selected_range::from_key(range.sr_start, this->tc_cursor),
-            old_text);
+    if (old_text == sf) {
+        log_trace("no-op replacement");
     } else {
-        this->tc_change_log.back().ce_range.sr_end = this->tc_cursor;
+        auto is_wordbreak = !sf.empty()
+            && !uc_is_general_category_withtable(sf.front_codepoint(), mask);
+        log_debug("repl sel [%d:%d) - ", range.sr_start.x, range.sr_start.y);
+        if (this->tc_change_log.empty()
+            || this->tc_change_log.back().ce_range.sr_end != range.sr_start
+            || is_wordbreak)
+        {
+            this->tc_change_log.emplace_back(
+                selected_range::from_key(range.sr_start, this->tc_cursor),
+                old_text);
+        } else {
+            this->tc_change_log.back().ce_range.sr_end = this->tc_cursor;
+        }
     }
 }
 

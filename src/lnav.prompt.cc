@@ -463,10 +463,10 @@ prompt::rl_history(textinput_curses& tc)
 void
 prompt::rl_completion(textinput_curses& tc)
 {
-    tc.tc_selection = tc.tc_complete_range;
     const auto& al
         = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()].tl_value;
     auto sub = get_string_attr(al.al_attrs, SUBST_TEXT)->get();
+    tc.tc_selection = tc.tc_complete_range;
     tc.replace_selection(sub);
     if (tc.tc_lines.size() > 1 && tc.tc_height == 1) {
         tc.set_height(5);
@@ -850,6 +850,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                     if (parent.empty()) {
                         parent = ".";
                     }
+                    log_trace("completing directory: %s", parent.c_str());
                     for (const auto& entry :
                          std::filesystem::directory_iterator(parent, ec))
                     {
@@ -863,12 +864,17 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         }
                         poss_paths.emplace(std::move(path_str));
                     }
+                    if (ht->ht_format == help_parameter_format_t::HPF_DIRECTORY
+                        && !ec)
+                    {
+                        poss_paths.emplace(parent.string() + "/");
+                    }
                 }
 
                 retval = poss_paths | lnav::itertools::similar_to(str, 10)
-                    | lnav::itertools::map([](const auto& path_str) {
+                    | lnav::itertools::map([&str](const auto& path_str) {
                              auto escaped_path = shlex::escape(path_str);
-                             if (!endswith(path_str, "/")) {
+                             if (!endswith(path_str, "/") || path_str == str) {
                                  escaped_path.push_back(' ');
                              }
                              return attr_line_t()

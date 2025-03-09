@@ -1585,9 +1585,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         .statusview_value_for_field(preview_status_source::TSF_TOGGLE)
         .on_click
         = [](status_field&) {
-            lnav_data.ld_preview_status_source->update_toggle_msg(
-                lnav_data.ld_preview_hidden);
-            lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
+              lnav_data.ld_preview_status_source->update_toggle_msg(
+                  lnav_data.ld_preview_hidden);
+              lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
           };
     lnav_data.ld_status[LNS_PREVIEW0].set_data_source(
         &lnav_data.ld_preview_status_source[0]);
@@ -2237,12 +2237,16 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             next_status_update_time = next_rescan_time;
         }
 
-        if (lnav_data.ld_view_stack.empty()
-            || (lnav_data.ld_view_stack.size() == 1
-                && starting_view_stack_size == 2
-                && lnav_data.ld_active_files.fc_file_names.size()
-                    == lnav_data.ld_text_source.size()))
+        if (lnav_data.ld_view_stack.empty()) {
+            log_info("no more views, exiting...");
+            lnav_data.ld_looping = false;
+        } else if (lnav_data.ld_view_stack.size() == 1
+                   && starting_view_stack_size == 2
+                   && lnav_data.ld_log_source.file_count() == 0
+                   && lnav_data.ld_active_files.fc_file_names.size()
+                       == lnav_data.ld_text_source.size())
         {
+            log_info("text view popped and no other files, exiting...");
             lnav_data.ld_looping = false;
         }
 
@@ -2283,6 +2287,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 }
             }
             if (!found_piper) {
+                log_info("user requested exit...");
                 lnav_data.ld_looping = false;
             }
         }
