@@ -1388,6 +1388,10 @@ rl_callback(textinput_curses& rc)
 
         case ln_mode_t::SQL: {
             auto sql_str = rc.get_content();
+
+            if (sql_str.empty()) {
+                return;
+            }
             auto src_guard = lnav_data.ld_exec_context.enter_source(
                 SRC, 1, fmt::format(FMT_STRING(";{}"), sql_str));
             readline_lnav_highlighter(ec.ec_source.back().s_content, -1);

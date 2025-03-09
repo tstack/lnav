@@ -357,12 +357,12 @@ editing:
       -
       - Move right one character and include it in the selection
     * - :kbd:`↑`
-      -
+      - :kbd:`Ctrl` + :kbd:`P`
       - In single-line mode, search the history with the current contents.
         In multi-line mode, move the cursor up a line.  If a popup is open,
         move the selection up.
     * - :kbd:`↓`
-      -
+      - :kbd:`Ctrl` + :kbd:`N`
       - In multi-line mode, move the cursor down a line.  If a popup is open,
         move the selection down.
     * - :kbd:`Ctrl` + :kbd:`A`

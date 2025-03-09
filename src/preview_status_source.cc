@@ -29,8 +29,8 @@
 
 #include "preview_status_source.hh"
 
-static constexpr char HIDE_TOGGLE_MSG[] = "Press CTRL+P to hide \u25bc ";
-static constexpr char SHOW_TOGGLE_MSG[] = "Press CTRL+P to show \u25b2 ";
+static constexpr char HIDE_TOGGLE_MSG[] = "Press F3 to hide \u25bc ";
+static constexpr char SHOW_TOGGLE_MSG[] = "Press F3 to show \u25b2 ";
 
 preview_status_source::preview_status_source()
 {

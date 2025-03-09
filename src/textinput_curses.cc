@@ -81,6 +81,14 @@ textinput_curses::get_help_text()
               .append("    - Move to the end of the line\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
+              .append("CTRL-N"_hotkey)
+              .append("    - Move down one line\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append(" ")
+              .append("CTRL-P"_hotkey)
+              .append("    - Move up one line\n ")
+              .append("\u2022"_list_glyph)
               .append("ALT  \u2190"_hotkey)
               .append("    - Move to the previous word\n ")
               .append("\u2022"_list_glyph)
@@ -623,6 +631,61 @@ textinput_curses::move_cursor_to_prev_search_hit()
     this->set_needs_update();
 }
 
+void
+textinput_curses::command_down(const ncinput& ch)
+{
+    if (this->tc_popup.is_visible()) {
+        this->tc_popup.handle_key(ch);
+    } else {
+        auto inner_height = this->tc_lines.size();
+        if (ncinput_shift_p(&ch)) {
+            if (!this->tc_selection) {
+                this->tc_cursor_anchor = this->tc_cursor;
+            }
+        }
+        if (this->tc_cursor.y + 1 < inner_height) {
+            this->move_cursor_by({direction_t::down, 1});
+        } else {
+            this->move_cursor_to({
+                (int) this->tc_lines[this->tc_cursor.y].column_width(),
+                (int) this->tc_lines.size() - 1,
+            });
+        }
+        if (ncinput_shift_p(&ch)) {
+            this->tc_selection = selected_range::from_key(
+                this->tc_cursor_anchor, this->tc_cursor);
+        }
+    }
+}
+
+void
+textinput_curses::command_up(const ncinput& ch)
+{
+    if (this->tc_popup.is_visible()) {
+        this->tc_popup.handle_key(ch);
+    } else if (this->tc_height == 1) {
+        if (this->tc_on_history) {
+            this->tc_on_history(*this);
+        }
+    } else {
+        if (ncinput_shift_p(&ch)) {
+            log_debug("up shift");
+            if (!this->tc_selection) {
+                this->tc_cursor_anchor = this->tc_cursor;
+            }
+        }
+        if (this->tc_cursor.y > 0) {
+            this->move_cursor_by({direction_t::up, 1});
+        } else {
+            this->move_cursor_to({0, 0});
+        }
+        if (ncinput_shift_p(&ch)) {
+            this->tc_selection = selected_range::from_key(
+                this->tc_cursor_anchor, this->tc_cursor);
+        }
+    }
+}
+
 bool
 textinput_curses::handle_key(const ncinput& ch)
 {
@@ -687,8 +750,6 @@ textinput_curses::handle_key(const ncinput& ch)
     }
 
     if (ncinput_ctrl_p(&ch)) {
-        auto chid = ch.id;
-
         if (ncinput_shift_p(&ch) && chid == '-') {
             chid = '_';  // XXX
         }
@@ -802,6 +863,11 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
                 return true;
             }
+            case 'n':
+            case 'N': {
+                chid = NCKEY_DOWN;
+                break;
+            }
             case 'o':
             case 'O': {
                 log_debug("opening in external editor");
@@ -809,6 +875,11 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_on_external_open(*this);
                 }
                 return true;
+            }
+            case 'p':
+            case 'P': {
+                chid = NCKEY_UP;
+                break;
             }
             case 'r':
             case 'R': {
@@ -1122,53 +1193,11 @@ textinput_curses::handle_key(const ncinput& ch)
             return true;
         }
         case NCKEY_UP: {
-            if (this->tc_popup.is_visible()) {
-                this->tc_popup.handle_key(ch);
-            } else if (this->tc_height == 1) {
-                if (this->tc_on_history) {
-                    this->tc_on_history(*this);
-                }
-            } else {
-                if (ncinput_shift_p(&ch)) {
-                    log_debug("up shift");
-                    if (!this->tc_selection) {
-                        this->tc_cursor_anchor = this->tc_cursor;
-                    }
-                }
-                if (this->tc_cursor.y > 0) {
-                    this->move_cursor_by({direction_t::up, 1});
-                } else {
-                    this->move_cursor_to({0, 0});
-                }
-                if (ncinput_shift_p(&ch)) {
-                    this->tc_selection = selected_range::from_key(
-                        this->tc_cursor_anchor, this->tc_cursor);
-                }
-            }
+            this->command_up(ch);
             return true;
         }
         case NCKEY_DOWN: {
-            if (this->tc_popup.is_visible()) {
-                this->tc_popup.handle_key(ch);
-            } else {
-                if (ncinput_shift_p(&ch)) {
-                    if (!this->tc_selection) {
-                        this->tc_cursor_anchor = this->tc_cursor;
-                    }
-                }
-                if (this->tc_cursor.y + 1 < inner_height) {
-                    this->move_cursor_by({direction_t::down, 1});
-                } else {
-                    this->move_cursor_to({
-                        (int) this->tc_lines[this->tc_cursor.y].column_width(),
-                        (int) this->tc_lines.size() - 1,
-                    });
-                }
-                if (ncinput_shift_p(&ch)) {
-                    this->tc_selection = selected_range::from_key(
-                        this->tc_cursor_anchor, this->tc_cursor);
-                }
-            }
+            this->command_down(ch);
             return true;
         }
         case NCKEY_LEFT: {

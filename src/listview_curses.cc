@@ -104,7 +104,8 @@ listview_curses::update_top_from_selection()
     if (this->lv_top > this->lv_selection) {
         if (this->lv_head_space > 0_vl) {
             this->set_top(this->lv_selection
-                          - vis_line_t(layout.lr_above_line_heights.size()) / 2_vl);
+                          - vis_line_t(layout.lr_above_line_heights.size())
+                              / 2_vl);
         } else {
             this->lv_top = this->lv_selection;
         }
@@ -237,12 +238,14 @@ listview_curses::handle_key(const ncinput& ch)
 
         case '\r':
         case 'j':
+        case KEY_CTRL('N'):
         case NCKEY_DOWN:
         case NCKEY_ENTER:
             this->shift_selection(shift_amount_t::down_line);
             break;
 
         case 'k':
+        case KEY_CTRL('P'):
         case NCKEY_UP:
             this->shift_selection(shift_amount_t::up_line);
             break;

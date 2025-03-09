@@ -388,6 +388,10 @@ public:
         this->set_needs_update();
     }
 
+    void command_down(const ncinput& ch);
+
+    void command_up(const ncinput& ch);
+
     enum class mode_t {
         editing,
         searching,

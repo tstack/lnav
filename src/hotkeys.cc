@@ -893,7 +893,9 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             }
             break;
 
-        case KEY_CTRL('p'):
+        case NCKEY_F03:
+            lnav_data.ld_preview_status_source->update_toggle_msg(
+                lnav_data.ld_preview_hidden);
             lnav_data.ld_preview_hidden = !lnav_data.ld_preview_hidden;
             break;
 

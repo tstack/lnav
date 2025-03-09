@@ -402,17 +402,14 @@ handle_rl_key(notcurses* nc, const ncinput& ch, const char* keyseq)
             mouse_i.set_enabled(nc, !mouse_i.is_enabled());
             break;
         }
+        case NCKEY_F03:
         case NCKEY_PGUP:
         case NCKEY_PGDOWN:
             handle_paging_key(nc, ch, keyseq);
             break;
 
         default:
-            if (ch.id == 'P' && ncinput_ctrl_p(&ch)) {
-                handle_paging_key(nc, ch, keyseq);
-            } else {
-                lnav::prompt::get().p_editor.handle_key(ch);
-            }
+            lnav::prompt::get().p_editor.handle_key(ch);
             break;
     }
 }
@@ -1691,8 +1688,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     bool initial_rescan_completed = false;
     int session_stage = 0;
 
-    // rlc.do_update();
-
     auto next_rebuild_time = ui_clock::now();
     auto next_status_update_time = next_rebuild_time;
     auto next_rescan_time = next_rebuild_time;
@@ -1700,7 +1695,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     while (lnav_data.ld_looping) {
         auto loop_deadline = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
 
-        std::vector<struct pollfd> pollfds;
+        std::vector<pollfd> pollfds;
         size_t starting_view_stack_size = lnav_data.ld_view_stack.size();
         size_t changes = 0;
         int rc;
