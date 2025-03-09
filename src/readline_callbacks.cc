@@ -1173,6 +1173,20 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
 
                     lnav_data.ld_bottom_source.grep_error(
                         fmt::format(FMT_STRING("SQL error: {}"), errmsg));
+
+#if defined(HAVE_SQLITE3_ERROR_OFFSET)
+                    {
+                        auto erroff = sqlite3_error_offset(lnav_data.ld_db);
+
+                        if (erroff >= 0) {
+                            auto mark = rc.get_point_for_offset(erroff);
+                            auto um
+                                = lnav::console::user_message::error(errmsg);
+
+                            rc.add_mark(mark, um);
+                        }
+                    }
+#endif
                 } else {
                     lnav_data.ld_bottom_source.grep_error("");
                 }

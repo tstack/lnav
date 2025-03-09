@@ -153,6 +153,45 @@ textinput_curses::get_help_text()
     return retval;
 }
 
+const std::vector<attr_line_t>&
+textinput_curses::unhandled_input()
+{
+    static const auto retval = std::vector{
+        attr_line_t()
+            .append(" Notice: "_status_subtitle)
+            .append(" Unhandled key press.  Press F1 for help")
+            .with_attr_for_all(VC_ROLE.value(role_t::VCR_ALERT_STATUS)),
+    };
+
+    return retval;
+}
+
+const std::vector<attr_line_t>&
+textinput_curses::no_changes()
+{
+    static const auto retval = std::vector{
+        attr_line_t()
+            .append(" Notice: "_status_subtitle)
+            .append(" No changes to undo")
+            .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS)),
+    };
+
+    return retval;
+}
+
+const std::vector<attr_line_t>&
+textinput_curses::external_edit_failed()
+{
+    static const auto retval = std::vector{
+        attr_line_t()
+            .append(" Error: "_status_subtitle)
+            .append(" Unable to write file for external edit")
+            .with_attr_for_all(VC_ROLE.value(role_t::VCR_ALERT_STATUS)),
+    };
+
+    return retval;
+}
+
 class textinput_mouse_delegate : public text_delegate {
 public:
     textinput_mouse_delegate(textinput_curses* input) : tmd_input(input) {}
@@ -250,6 +289,7 @@ textinput_curses::set_content(const attr_line_t& al)
         this->apply_highlights();
     }
     this->tc_change_log.clear();
+    this->tc_marks.clear();
     this->tc_notice = std::nullopt;
     this->tc_left = 0;
     this->tc_top = 0;
@@ -691,8 +731,15 @@ textinput_curses::handle_key(const ncinput& ch)
 {
     if (this->tc_notice) {
         this->tc_notice = std::nullopt;
-        if (this->tc_height == 1) {
-            return true;
+        switch (ch.id) {
+            case NCKEY_F01:
+            case NCKEY_UP:
+            case NCKEY_DOWN:
+            case NCKEY_LEFT:
+            case NCKEY_RIGHT:
+                break;
+            default:
+                return true;
         }
     }
     this->tc_last_tick_after_input = std::nullopt;
@@ -990,7 +1037,7 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             case '_': {
                 if (this->tc_change_log.empty()) {
-                    this->tc_notice = notice_t::no_changes;
+                    this->tc_notice = no_changes();
                     this->set_needs_update();
                 } else {
                     log_debug("undo!");
@@ -1008,7 +1055,7 @@ textinput_curses::handle_key(const ncinput& ch)
                 return true;
             }
             default: {
-                this->tc_notice = notice_t::unhandled_input;
+                this->tc_notice = unhandled_input();
                 this->set_needs_update();
                 return false;
             }
@@ -1234,7 +1281,7 @@ textinput_curses::handle_key(const ncinput& ch)
         }
         default: {
             if (NCKEY_F00 <= ch.id && ch.id <= NCKEY_F60) {
-                this->tc_notice = notice_t::unhandled_input;
+                this->tc_notice = unhandled_input();
                 this->set_needs_update();
             } else {
                 char utf8[32];
@@ -1259,7 +1306,7 @@ textinput_curses::handle_key(const ncinput& ch)
                     }
                     this->replace_selection(string_fragment::from_c_str(utf8));
                 } else {
-                    this->tc_notice = notice_t::unhandled_input;
+                    this->tc_notice = unhandled_input();
                     this->set_needs_update();
                 }
             }
@@ -1563,6 +1610,7 @@ textinput_curses::update_lines()
     }
     this->ensure_cursor_visible();
 
+    this->tc_marks.clear();
     this->tc_popup.set_visible(false);
     this->tc_complete_range = std::nullopt;
     if (this->tc_on_change) {
@@ -1784,53 +1832,22 @@ textinput_curses::do_update()
         auto mvw_res = mvwattrline(this->tc_window, y, this->vc_x, al, lr);
     }
     for (; y < y_max; y++) {
+        static constexpr auto EMPTY_LR = line_range::empty_at(0);
+
+        auto al = attr_line_t();
         ncplane_erase_region(this->tc_window, y, this->vc_x, 1, dim.dr_width);
+        mvwattrline(
+            this->tc_window, y, this->vc_x, al, EMPTY_LR, role_t::VCR_ALT_ROW);
     }
     if (this->tc_notice) {
-        switch (this->tc_notice.value()) {
-            case notice_t::unhandled_input: {
-                auto hint
-                    = attr_line_t()
-                          .append(" Notice: "_status_subtitle)
-                          .append(" Unhandled key press.  Press F1 for help")
-                          .with_attr_for_all(
-                              VC_ROLE.value(role_t::VCR_ALERT_STATUS));
-                auto lr = line_range{0, dim.dr_width};
-                mvwattrline(this->tc_window,
-                            this->vc_y + dim.dr_height - 1,
-                            this->vc_x,
-                            hint,
-                            lr);
+        auto notice_lines = this->tc_notice.value();
+        auto avail_height = std::min(dim.dr_height, (int) notice_lines.size());
+        auto notice_y = this->vc_y + dim.dr_height - avail_height;
 
-                break;
-            }
-            case notice_t::no_changes: {
-                auto hint
-                    = attr_line_t()
-                          .append(" Notice: "_status_subtitle)
-                          .append(" No changes to undo")
-                          .with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
-                auto lr = line_range{0, dim.dr_width};
-                mvwattrline(this->tc_window,
-                            this->vc_y + dim.dr_height - 1,
-                            this->vc_x,
-                            hint,
-                            lr);
-                break;
-            }
-            case notice_t::external_edit_failed: {
-                auto hint
-                    = attr_line_t()
-                          .append(" Error: "_status_subtitle)
-                          .append(" Unable to write file for external edit")
-                          .with_attr_for_all(
-                              VC_ROLE.value(role_t::VCR_ALERT_STATUS));
-                auto lr = line_range{0, dim.dr_width};
-                mvwattrline(this->tc_window,
-                            this->vc_y + dim.dr_height - 1,
-                            this->vc_x,
-                            hint,
-                            lr);
+        for (auto& al : notice_lines) {
+            auto lr = line_range{0, dim.dr_width};
+            mvwattrline(this->tc_window, notice_y++, this->vc_x, al, lr);
+            if (notice_y >= y_max) {
                 break;
             }
         }
@@ -1857,6 +1874,22 @@ textinput_curses::do_update()
                     this->vc_x,
                     search_prompt,
                     lr);
+    } else if (this->tc_height > 1) {
+        auto mark_iter = this->tc_marks.find(this->tc_cursor);
+
+        if (mark_iter != this->tc_marks.end()) {
+            auto mark_lines = mark_iter->second.to_attr_line().split_lines();
+            auto avail_height = std::min(dim.dr_height, (int) mark_lines.size());
+            auto notice_y = this->vc_y + dim.dr_height - avail_height;
+            for (auto& al : mark_lines) {
+                al.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+                auto lr = line_range{0, dim.dr_width};
+                mvwattrline(this->tc_window, notice_y++, this->vc_x, al, lr);
+                if (notice_y >= y_max) {
+                    break;
+                }
+            }
+        }
     }
 
     if (this->tc_height > 1) {
@@ -2021,21 +2054,43 @@ textinput_curses::get_cursor_offset() const
     return retval;
 }
 
-void
-textinput_curses::move_cursor_to_offset(int offset)
+textinput_curses::input_point
+textinput_curses::get_point_for_offset(int offset) const
 {
-    auto new_point = input_point::home();
+    auto retval = input_point::home();
     auto row = size_t{0};
     for (; row < this->tc_lines.size() && offset > 0; row++) {
         if (offset < this->tc_lines[row].al_string.size() + 1) {
             break;
         }
         offset -= this->tc_lines[row].al_string.size() + 1;
-        new_point.y += 1;
+        retval.y += 1;
     }
     if (row < this->tc_lines.size()) {
-        new_point.x = this->tc_lines[row].byte_to_column_index(offset);
+        retval.x = this->tc_lines[row].byte_to_column_index(offset);
     }
 
-    this->move_cursor_to(new_point);
+    return retval;
+}
+
+void
+textinput_curses::add_mark(input_point pos,
+                           const lnav::console::user_message& msg)
+{
+    if (pos.y < 0 || pos.y >= this->tc_lines.size()) {
+        log_error("invalid mark position: %d:%d", pos.x, pos.y);
+        return;
+    }
+
+    if (this->tc_marks.count(pos) > 0) {
+        return;
+    }
+
+    auto& line = this->tc_lines[pos.y];
+    auto byte_x = (int) line.column_to_byte_index(pos.x);
+    auto lr = line_range{byte_x, byte_x + 1};
+    line.al_attrs.emplace_back(lr, VC_ROLE.value(role_t::VCR_ERROR));
+    line.al_attrs.emplace_back(lr, VC_STYLE.value(text_attrs::with_reverse()));
+
+    this->tc_marks.emplace(pos, msg);
 }

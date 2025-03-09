@@ -3,8 +3,9 @@
 Interface changes:
 * The prompt is now a custom implementation instead of readline.
   Some highlights:
-  - In the DB prompt, pressing `CTRL+L` will reformat the query and
-    switch the prompt to multi-line mode.
+  - In the DB prompt: pressing `CTRL+L` will reformat the query and
+    switch the prompt to multi-line mode; error locations will be
+    highlighted.
   - Pressing `CTRL+O` in the prompt will transfer the prompt to
     contents to Visual Studio Code or the default text editor on
     macOS.

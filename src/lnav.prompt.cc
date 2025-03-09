@@ -422,7 +422,8 @@ prompt::rl_reformat(textinput_curses& tc)
                     ANSI_BOLD("CTRL+X") " to perform query and "
                     ANSI_BOLD("CTRL+]") " to abort)");
             }
-            tc.move_cursor_to_offset(format_res.fr_cursor_offset);
+            tc.move_cursor_to(
+                tc.get_point_for_offset(format_res.fr_cursor_offset));
             break;
         }
     }
@@ -1300,7 +1301,7 @@ prompt::rl_external_edit(textinput_curses& tc)
     if (write_res.isErr()) {
         auto errmsg = write_res.unwrapErr();
         log_error("external editor failed: %s", errmsg.c_str());
-        tc.tc_notice = textinput_curses::notice_t::external_edit_failed;
+        tc.tc_notice = textinput_curses::external_edit_failed();
         return;
     }
 
