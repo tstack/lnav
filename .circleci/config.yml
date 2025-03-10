@@ -26,7 +26,7 @@ jobs:
             || cat config.log
       - run: make -j2 || true
       - run: env DUMP_CRASH=1 src/lnav -V
-      - run: make check -j2 || (test -e test/test-suite.log && cat test/test-suite.log && false)
+      - run: make check -j2 || (test -e src/tailer/test-suite.log && cat src/tailer/test-suite.log && false) || (test -e test/test-suite.log && cat test/test-suite.log && false)
 workflows:
   build-and-test:
     jobs:
