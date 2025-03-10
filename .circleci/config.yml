@@ -10,7 +10,7 @@ jobs:
     resource_class: macos.m1.medium.gen1
     steps:
       - checkout
-      - run: brew install pcre2 sqlite ncurses xz zstd libarchive curl autoconf automake libunistring
+      - run: brew install pcre2 sqlite ncurses xz zstd libarchive curl autoconf automake libunistring coreutils
       - run: ./autogen.sh
       - run: >-
           ./configure \
