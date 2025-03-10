@@ -113,6 +113,7 @@ parsed::arg_at(int x) const
                     case help_parameter_format_t::HPF_HIGHLIGHTS: {
                         return arg_at_result{arg.second.a_help, true, se};
                     }
+                    case help_parameter_format_t::HPF_CONFIG_VALUE:
                     case help_parameter_format_t::HPF_TEXT:
                     case help_parameter_format_t::HPF_REGEX:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
@@ -251,6 +252,7 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_SQL_EXPR:
                 case help_parameter_format_t::HPF_TIME_FILTER_POINT:
                 case help_parameter_format_t::HPF_ALL_FILTERS:
+                case help_parameter_format_t::HPF_CONFIG_VALUE:
                 case help_parameter_format_t::HPF_ENABLED_FILTERS:
                 case help_parameter_format_t::HPF_DISABLED_FILTERS:
                 case help_parameter_format_t::HPF_HIGHLIGHTS: {
@@ -269,7 +271,6 @@ parse_for(mode_t mode,
                 case help_parameter_format_t::HPF_NUMBER:
                 case help_parameter_format_t::HPF_DATETIME:
                 case help_parameter_format_t::HPF_CONFIG_PATH:
-                case help_parameter_format_t::HPF_CONFIG_VALUE:
                 case help_parameter_format_t::HPF_TAG:
                 case help_parameter_format_t::HPF_ADJUSTED_TIME:
                 case help_parameter_format_t::HPF_LINE_TAG:

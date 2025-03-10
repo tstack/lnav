@@ -1320,6 +1320,7 @@ exec_context::add_error_context(lnav::console::user_message& um)
 
     if (um.um_snippets.empty()) {
         um.with_snippets(this->ec_source);
+        um.remove_internal_snippets();
     }
 
     if (this->ec_current_help != nullptr && um.um_help.empty()) {

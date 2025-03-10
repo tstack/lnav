@@ -120,7 +120,10 @@
                     },
                     "popup": {
                         "color": "Silver",
-                        "background-color": "Teal"
+                        "background-color": "Grey"
+                    },
+                    "popup-border": {
+                        "color": "Purple"
                     },
                     "scrollbar": {
                         "color": "Black",
@@ -207,7 +210,7 @@
                         "background-color": "#121212"
                     },
                     "keyword": {
-                        "color": "#00f"
+                        "color": "Navy"
                     },
                     "string": {
                         "color": "Green",

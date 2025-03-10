@@ -4,7 +4,12 @@
         "theme-defs": {
             "dracula": {
                 "vars": {
-                    "black": "#282A36",
+                    "background": "#282A36",
+                    "bglight": "#343746",
+                    "bgdark": "#21222C",
+                    "foreground": "#F8F8F2",
+                    "selection": "#44475A",
+                    "black": "#21222C",
                     "red": "#FF5555",
                     "green": "#50FA7B",
                     "yellow": "#F1FA8C",
@@ -22,11 +27,11 @@
                         "color": "semantic()"
                     },
                     "text": {
-                        "color": "#f6f6f6",
-                        "background-color": "$black"
+                        "color": "#F8F8F2",
+                        "background-color": "$background"
                     },
                     "selected-text": {
-                        "background-color": "$cyan"
+                        "background-color": "$foreground"
                     },
                     "fuzzy-match": {
                         "color": "$orange",
@@ -58,8 +63,11 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "#44475A",
+                        "background-color": "$selection",
                         "bold": true
+                    },
+                    "time-column": {
+                        "background-color": "$bglight"
                     },
                     "disabled-cursor-line": {
                         "color": "$cyan",
@@ -89,8 +97,11 @@
                         "background-color": "#333"
                     },
                     "popup": {
-                        "color": "$black",
-                        "background-color": "$cyan"
+                        "color": "$foreground",
+                        "background-color": "$bglight"
+                    },
+                    "popup-border": {
+                        "background-color": "$bgdark"
                     },
                     "scrollbar": {
                         "color": "$black",

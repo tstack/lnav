@@ -355,14 +355,14 @@
                     },
                     "popup": {
                         "color": "Silver",
-                        "background-color": "Teal",
+                        "background-color": "Grey",
                         "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
                     },
                     "popup-border": {
-                        "color": "",
+                        "color": "Purple",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -564,7 +564,7 @@
                         "strike": false
                     },
                     "keyword": {
-                        "color": "#00f",
+                        "color": "Navy",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -1009,15 +1009,20 @@
             },
             "dracula": {
                 "vars": {
-                    "black": "#282A36",
+                    "background": "#282A36",
+                    "bgdark": "#21222C",
+                    "bglight": "#343746",
+                    "black": "#21222C",
                     "blue": "#BD93F9",
                     "cyan": "#8BE9FD",
+                    "foreground": "#F8F8F2",
                     "green": "#50FA7B",
                     "magenta": "#FF79C6",
                     "orange": "#FFB86C",
                     "pink": "#FF79C6",
                     "purple": "#BD93F9",
                     "red": "#FF5555",
+                    "selection": "#44475A",
                     "semantic_highlight_color": "semantic()",
                     "white": "#F8F8F2",
                     "yellow": "#F1FA8C"
@@ -1076,8 +1081,8 @@
                         "strike": false
                     },
                     "text": {
-                        "color": "#f6f6f6",
-                        "background-color": "$black",
+                        "color": "#F8F8F2",
+                        "background-color": "$background",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -1085,7 +1090,7 @@
                     },
                     "selected-text": {
                         "color": "",
-                        "background-color": "$cyan",
+                        "background-color": "$foreground",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -1149,7 +1154,7 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "#44475A",
+                        "background-color": "$selection",
                         "underline": false,
                         "bold": true,
                         "italic": false,
@@ -1197,7 +1202,7 @@
                     },
                     "time-column": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "$bglight",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -1212,8 +1217,8 @@
                         "strike": false
                     },
                     "popup": {
-                        "color": "$black",
-                        "background-color": "$cyan",
+                        "color": "$foreground",
+                        "background-color": "$bglight",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -1221,7 +1226,7 @@
                     },
                     "popup-border": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "$bgdark",
                         "underline": false,
                         "bold": false,
                         "italic": false,

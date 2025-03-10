@@ -53,6 +53,7 @@
 #include "base/string_util.hh"
 #include "bound_tags.hh"
 #include "breadcrumb_curses.hh"
+#include "cmd.parser.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "curl_looper.hh"
@@ -3132,19 +3133,74 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     return Ok(retval);
 }
 
+static auto CONFIG_HELP
+    = help_text(":config")
+          .with_summary("Read or write a configuration option")
+          .with_parameter(
+              help_text{"option", "The path to the option to read or write"}
+                  .with_format(help_parameter_format_t::HPF_CONFIG_PATH))
+          .with_parameter(
+              help_text("value",
+                        "The value to write.  If not given, the "
+                        "current value is returned")
+                  .optional()
+                  .with_format(help_parameter_format_t::HPF_CONFIG_VALUE))
+          .with_example({"To read the configuration of the "
+                         "'/ui/clock-format' option",
+                         "/ui/clock-format"})
+          .with_example({"To set the '/ui/dim-text' option to 'false'",
+                         "/ui/dim-text false"})
+          .with_tags({"configuration"});
+
 static Result<std::string, lnav::console::user_message>
 com_config(exec_context& ec,
            std::string cmdline,
            std::vector<std::string>& args)
 {
+    static auto& prompt = lnav::prompt::get();
+
     std::string retval;
 
     if (args.size() > 1) {
-        static const auto INPUT_SRC = intern_string::lookup("input");
+        static const intern_string_t INPUT_SRC = intern_string::lookup("input");
+
+        auto cmdline_sf = string_fragment::from_str(cmdline);
+        auto parse_res = lnav::command::parse_for_call(
+            ec,
+            cmdline_sf.split_pair(string_fragment::tag1{' '})->second,
+            CONFIG_HELP);
+        if (parse_res.isErr()) {
+            return Err(parse_res.unwrapErr());
+        }
+        auto parsed_args = parse_res.unwrap();
+
+        log_debug("config dry run %d %d",
+                  args.size(),
+                  prompt.p_editor.tc_popup.is_visible());
+        if (ec.ec_dry_run && args.size() == 2
+            && prompt.p_editor.tc_popup.is_visible())
+        {
+            prompt.p_editor.tc_popup.map_top_row(
+                [&parsed_args](const attr_line_t& al) {
+                    auto sub_opt = get_string_attr(al.al_attrs,
+                                                   lnav::prompt::SUBST_TEXT);
+                    if (sub_opt) {
+                        auto sub = sub_opt->get();
+
+                        log_debug("doing dry run with popup value");
+                        auto& value_arg = parsed_args.p_args["value"];
+                        value_arg.a_help = &CONFIG_HELP.ht_parameters[1];
+                        value_arg.a_values.emplace_back(
+                            shlex::split_element_t{{}, sub});
+                    } else {
+                        log_debug("completion does not have attr");
+                    }
+                });
+        }
 
         yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
         std::vector<lnav::console::user_message> errors, errors_ignored;
-        std::string option = args[1];
+        const auto& option = parsed_args.p_args["option"].a_values[0].se_value;
 
         lnav_config = rollback_lnav_config;
         ypc.set_path(option)
@@ -3176,8 +3232,11 @@ com_config(exec_context& ec,
             }
 
             auto old_value = gen.to_string_fragment().to_string();
+            const auto& option_value = parsed_args.p_args["value"];
 
-            if (args.size() == 2 || ypc.ypc_current_handler == nullptr) {
+            if (option_value.a_values.empty()
+                || ypc.ypc_current_handler == nullptr)
+            {
                 lnav_config = rollback_lnav_config;
                 reload_config(errors);
 
@@ -3212,7 +3271,7 @@ com_config(exec_context& ec,
                 return ec.make_error(":config {} -- unavailable in secure mode",
                                      option);
             } else {
-                auto value = remaining_args(cmdline, args, 2);
+                const auto& value = option_value.a_values[0].se_value;
                 bool changed = false;
 
                 if (ec.ec_dry_run) {
@@ -3263,9 +3322,8 @@ com_config(exec_context& ec,
                         == lnav::console::user_message::level::error)
                     {
                         break;
-                    } else {
-                        errors.pop_back();
                     }
+                    errors.pop_back();
                 }
 
                 if (!errors.empty()) {
@@ -3284,9 +3342,8 @@ com_config(exec_context& ec,
                             == lnav::console::user_message::level::error)
                         {
                             break;
-                        } else {
-                            errors.pop_back();
                         }
+                        errors.pop_back();
                     }
 
                     if (!errors.empty()) {
@@ -4334,26 +4391,11 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_tags({"scripting"}),
     },
 
-    {"config",
-     com_config,
-
-     help_text(":config")
-         .with_summary("Read or write a configuration option")
-         .with_parameter(
-             help_text{"option", "The path to the option to read or write"}
-                 .with_format(help_parameter_format_t::HPF_CONFIG_PATH))
-         .with_parameter(
-             help_text("value",
-                       "The value to write.  If not given, the "
-                       "current value is returned")
-                 .optional()
-                 .with_format(help_parameter_format_t::HPF_CONFIG_VALUE))
-         .with_example({"To read the configuration of the "
-                        "'/ui/clock-format' option",
-                        "/ui/clock-format"})
-         .with_example({"To set the '/ui/dim-text' option to 'false'",
-                        "/ui/dim-text false"})
-         .with_tags({"configuration"})},
+    {
+        "config",
+        com_config,
+        CONFIG_HELP,
+    },
     {"reset-config",
      com_reset_config,
 
