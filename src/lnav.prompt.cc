@@ -437,16 +437,23 @@ prompt::rl_history(textinput_curses& tc)
     auto width = tc.get_width() - 1;
     auto pattern = tc.get_content();
     std::vector<attr_line_t> poss;
-    auto cb = [&poss, sigil, width, &pattern](const auto& e) {
+    auto cb = [&poss, sigil, width, &pattern](
+                  const textinput::history::entry& e) {
+        auto icon = e.e_status == log_level_t::LEVEL_ERROR ? ui_icon_t::error
+                                                           : ui_icon_t::ok;
         auto al = attr_line_t::from_table_cell_content(e.e_content, width)
                       .highlight_fuzzy_matches(pattern)
                       .with_attr_for_all(SUBST_TEXT.value(e.e_content));
         switch (sigil) {
             case ':':
                 readline_command_highlighter(al, std::nullopt);
+                al.insert(0, "  ");
+                al.al_attrs.emplace_back(line_range{0, 1}, VC_ICON.value(icon));
                 break;
             case ';':
                 readline_sqlite_highlighter(al, std::nullopt);
+                al.insert(0, "  ");
+                al.al_attrs.emplace_back(line_range{0, 1}, VC_ICON.value(icon));
                 break;
             case '/':
                 readline_regex_highlighter(al, std::nullopt);

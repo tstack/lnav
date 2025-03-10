@@ -20,6 +20,8 @@ Interface changes:
     For example, if the view has the text "foo bar baz" and you
     type "foo ", the prompt will suggest "bar" and you can then
     press `TAB` to complete.
+  - In the history listing, an icon indicates if the command or
+    query succeeded or failed.
 * Pressing `F1` in the prompt will show the help text for the
   prompt itself.
   The size of the prompt panel is expanded for readability.
