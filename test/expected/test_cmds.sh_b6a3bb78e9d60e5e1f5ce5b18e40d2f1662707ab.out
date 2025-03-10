@@ -1178,7 +1178,7 @@ For support questions, email:
 
 [4m:[0m[1m[4mhide-file[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
-  Hide the given file(s) and skip indexing until it is shown again.   
+  Hide the given file(s) and skip indexing until it is shown again.
   If no path is given, the current file in the view is hidden
 [4mParameter[0m
   [4mpath[0m   A path or glob pattern that specifies the files to
@@ -3019,7 +3019,7 @@ For support questions, email:
 
 [1m[4mjson_concat[0m[4m([0m[4mjson[0m[4m, [0m[4mvalue[0m[4m, ...)[0m
 ══════════════════════════════════════════════════════════════════════
-  Returns an array with the given values concatenated onto the end.   
+  Returns an array with the given values concatenated onto the end.
   If the initial value is null, the result will be an array with the
   given elements.  If the initial value is an array, the result will
   be an array with the given values at the end.  If the initial value

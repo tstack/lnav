@@ -254,8 +254,20 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
             std::optional<vis_line_t> new_top_opt;
             if (cb.front_top.valid()) {
                 cb.front_top.match(
-                    [](file_location_tail tail) {
-                        log_info("file open request to tail");
+                    [&new_top_opt, &cb](file_location_tail tail) {
+                        switch (cb.front_file->get_text_format()) {
+                            case text_format_t::TF_UNKNOWN:
+                            case text_format_t::TF_LOG:
+                                log_info("file open request to tail");
+                                break;
+                            default:
+                                log_info("file open is %s, moving to top",
+                                         fmt::to_string(
+                                             cb.front_file->get_text_format())
+                                             .c_str());
+                                new_top_opt = 0_vl;
+                                break;
+                        }
                     },
                     [&new_top_opt](vis_line_t vl) {
                         log_info("file open request to jump to line: %d",

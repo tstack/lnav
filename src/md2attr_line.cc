@@ -197,8 +197,11 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
         last_block.append(block_text);
     } else if (bl.is<MD_BLOCK_LI_DETAIL*>()) {
         auto last_list_block = this->ml_list_stack.back();
-        auto li_detail = bl.get<MD_BLOCK_LI_DETAIL*>();
-        text_wrap_settings tws = {0, 60};
+        const auto* li_detail = bl.get<MD_BLOCK_LI_DETAIL*>();
+        auto tws = text_wrap_settings{
+            0,
+            63 - (int) (this->ml_list_stack.size() * 3),
+        };
 
         attr_line_builder alb(last_block);
         {
@@ -324,7 +327,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
         for (auto& line : code_lines) {
             line.pad_to(std::max(max_width + 4, size_t{40}))
                 .with_attr_for_all(VC_ROLE.value(role_t::VCR_QUOTED_CODE));
-            padded_text.append(lnav::string::attrs::preformatted(" "))
+            padded_text.append(" ")
                 .append("\u258c"_code_border)
                 .append(line)
                 .append("\n");
@@ -384,7 +387,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
         auto quoted_lines = wrapped_text.split_lines();
         auto max_width = quoted_lines
             | lnav::itertools::map(&attr_line_t::column_width)
-            | lnav::itertools::max(0);
+            | lnav::itertools::max(tws.tws_width);
         attr_line_t padded_text;
 
         for (auto& line : quoted_lines) {

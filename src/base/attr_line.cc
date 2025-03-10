@@ -244,6 +244,8 @@ consume(const string_fragment text)
     static const auto SPACE_RE
         = lnav::pcre2pp::code::from_const(R"((*UTF)^\s)");
 
+    require(text.is_valid());
+
     if (text.empty()) {
         return eof{text};
     }
@@ -270,16 +272,8 @@ consume(const string_fragment text)
         return space{split_res.first, split_res.second};
     }
 
-    auto csize_res = ww898::utf::utf8::char_size(
-        [&text]() { return std::make_pair(text.front(), text.length()); });
-
-    if (csize_res.isErr()) {
-        auto split_res = text.split_n(1);
-
-        return corrupt{split_res->first, split_res->second};
-    }
-
-    auto split_res = text.split_n(csize_res.unwrap());
+    auto next_char_byte_index = text.column_to_byte_index(1);
+    auto split_res = text.split_n(next_char_byte_index);
 
     return word{split_res->first, split_res->second};
 }
@@ -314,6 +308,8 @@ attr_line_t::insert(size_t index,
                     const attr_line_t& al,
                     text_wrap_settings* tws)
 {
+    require(!tws || tws->tws_width > 0);
+
     if (index < this->al_string.length()) {
         shift_string_attrs(this->al_attrs, index, al.al_string.length());
     }
@@ -323,7 +319,7 @@ attr_line_t::insert(size_t index,
     for (const auto& sa : al.al_attrs) {
         this->al_attrs.emplace_back(sa);
 
-        line_range& lr = this->al_attrs.back().sa_range;
+        auto& lr = this->al_attrs.back().sa_range;
 
         lr.shift(0, index);
         if (lr.lr_end == -1) {
@@ -335,7 +331,8 @@ attr_line_t::insert(size_t index,
         return *this;
     }
 
-    auto starting_line_index = this->al_string.rfind('\n', index);
+    auto starting_line_index = index == 0 ? std::string::npos
+                                          : this->al_string.rfind('\n', index - 1);
     if (starting_line_index == std::string::npos) {
         starting_line_index = 0;
     } else {
@@ -378,12 +375,20 @@ attr_line_t::insert(size_t index,
         auto pre_iter = find_string_attr_containing(
             this->al_attrs, &SA_PREFORMATTED, text_to_wrap.sf_begin);
         if (pre_iter != this->al_attrs.end()) {
+            require_ge(pre_iter->sa_range.lr_start, text_to_wrap.sf_begin);
             auto pre_len = pre_iter->sa_range.lr_end - text_to_wrap.sf_begin;
             auto pre_lf = text_to_wrap.find('\n');
-            if (pre_lf && pre_lf.value() < pre_len) {
+            if (pre_lf && pre_lf.value() + 1 < pre_len) {
                 pre_len = pre_lf.value() + 1;
+                auto lr_copy = pre_iter->sa_range;
+                const_cast<int&>(pre_iter->sa_range.lr_end)
+                    = pre_iter->sa_range.lr_start + pre_len;
+                this->al_attrs.emplace_back(lr_copy, SA_PREFORMATTED.value());
+                this->al_attrs.back().sa_range.lr_start
+                    = lr_copy.lr_start + pre_len;
             }
 
+            require_ge(text_to_wrap.length(), pre_len);
             auto pre_pair = text_to_wrap.split_n(pre_len);
             next_chunk = text_stream::word{
                 pre_pair->first,
@@ -395,9 +400,8 @@ attr_line_t::insert(size_t index,
         }
 
         text_to_wrap = next_chunk.match(
-            [&](text_stream::word word) {
-                auto ch_count
-                    = word.w_word.utf8_length().unwrapOr(word.w_word.length());
+            [&](const text_stream::word& word) {
+                auto ch_count = word.w_word.column_width();
 
                 if (line_ch_count > line_indent_count && !last_was_pre
                     && (line_ch_count + ch_count) > usable_width)
@@ -421,8 +425,8 @@ attr_line_t::insert(size_t index,
                     auto trailing_space_count = 0;
                     if (!last_word.empty()) {
                         trailing_space_count
-                            = word.w_word.sf_begin - last_word.sf_begin;
-                        this->erase(last_word.sf_begin, trailing_space_count);
+                            = word.w_word.sf_begin - last_word.sf_end;
+                        this->erase(last_word.sf_end, trailing_space_count);
                     }
                     return word.w_remaining
                         .erase_before(this->al_string.data(),
@@ -439,7 +443,7 @@ attr_line_t::insert(size_t index,
 
                 return word.w_remaining;
             },
-            [&](text_stream::space space) {
+            [&](const text_stream::space& space) {
                 if (space.s_value == "\n") {
                     line_ch_count = 0;
                     line_indent_count = 0;
@@ -448,8 +452,7 @@ attr_line_t::insert(size_t index,
                 }
 
                 if (line_ch_count > 0) {
-                    auto ch_count = space.s_value.utf8_length().unwrapOr(
-                        space.s_value.length());
+                    auto ch_count = space.s_value.column_width();
 
                     if ((line_ch_count + ch_count) > usable_width
                         && find_string_attr_containing(this->al_attrs,
@@ -467,15 +470,18 @@ attr_line_t::insert(size_t index,
                         auto trailing_space_count = 0;
                         if (!last_word.empty()) {
                             trailing_space_count
-                                = space.s_value.sf_begin - last_word.sf_begin;
+                                = space.s_value.sf_begin - last_word.sf_end;
                             this->erase(last_word.sf_end, trailing_space_count);
                         }
+                        last_word.clear();
 
-                        return space.s_remaining
-                            .erase_before(
-                                this->al_string.data(),
-                                space.s_value.length() + trailing_space_count)
-                            .prepend(this->al_string.data(), 1);
+                        auto retval
+                            = space.s_remaining
+                                  .erase_before(this->al_string.data(),
+                                                space.s_value.length()
+                                                    + trailing_space_count)
+                                  .prepend(this->al_string.data(), 1);
+                        return retval;
                     }
                     line_ch_count += ch_count;
                 } else if (find_string_attr_containing(this->al_attrs,
@@ -494,7 +500,7 @@ attr_line_t::insert(size_t index,
             [](text_stream::eof eof) { return eof.e_remaining; });
 
         if (next_chunk.is<text_stream::word>()) {
-            last_word = text_to_wrap;
+            last_word = next_chunk.get<text_stream::word>().w_word;
         }
         last_was_pre = (pre_iter != this->al_attrs.end());
 

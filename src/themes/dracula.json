@@ -5,8 +5,10 @@
             "dracula": {
                 "vars": {
                     "background": "#282A36",
+                    "bglighter": "#424450",
                     "bglight": "#343746",
                     "bgdark": "#21222C",
+                    "bgdarker": "#191A21",
                     "foreground": "#F8F8F2",
                     "selection": "#44475A",
                     "black": "#21222C",
@@ -27,11 +29,11 @@
                         "color": "semantic()"
                     },
                     "text": {
-                        "color": "#F8F8F2",
+                        "color": "$foreground",
                         "background-color": "$background"
                     },
                     "selected-text": {
-                        "background-color": "$foreground"
+                        "background-color": "$bgdarker"
                     },
                     "fuzzy-match": {
                         "color": "$orange",
@@ -39,7 +41,7 @@
                         "bold": true
                     },
                     "alt-text": {
-                        "background-color": "#1c1c1c"
+                        "background-color": "$bgdarker"
                     },
                     "ok": {
                         "color": "$green",
@@ -98,14 +100,14 @@
                     },
                     "popup": {
                         "color": "$foreground",
-                        "background-color": "$bglight"
+                        "background-color": "$bgdarker"
                     },
                     "popup-border": {
-                        "background-color": "$bgdark"
+                        "background-color": "$bgdarker"
                     },
                     "scrollbar": {
-                        "color": "$black",
-                        "background-color": "#888"
+                        "color": "$background",
+                        "background-color": "$foreground"
                     },
                     "h1": {
                         "color": "$purple",
@@ -148,25 +150,25 @@
                     },
                     "quote-border": {
                         "color": "#666",
-                        "background-color": "#444"
+                        "background-color": "$bgdarker"
                     },
                     "quoted-text": {
                         "color": "$yellow",
-                        "background-color": "#444"
+                        "background-color": "$bgdarker"
                     },
                     "footnote-border": {
                         "color": "$blue",
-                        "background-color": "#444"
+                        "background-color": "$bgdarker"
                     },
                     "footnote-text": {
                         "color": "$cyan",
-                        "background-color": "#444"
+                        "background-color": "$bgdarker"
                     },
                     "snippet-border": {
                         "color": "$cyan"
                     },
                     "indent-guide": {
-                        "color": "#444"
+                        "color": "$bglighter"
                     }
                 },
                 "syntax-styles": {
@@ -285,7 +287,7 @@
                         "background-color": "#353535"
                     },
                     "warn": {
-                        "color": "$yellow",
+                        "color": "$orange",
                         "background-color": "#353535"
                     },
                     "alert": {
@@ -310,7 +312,7 @@
                 },
                 "log-level-styles": {
                     "warning": {
-                        "color": "$yellow"
+                        "color": "$orange"
                     },
                     "error": {
                         "color": "$red"
