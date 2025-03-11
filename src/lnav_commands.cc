@@ -4142,9 +4142,8 @@ readline_context::command_t STD_COMMANDS[] = {
                           "comment will be "
                           "displayed right below the log message it is "
                           "associated with. "
-                          "The comment can be formatted using markdown and "
-                          "you can add "
-                          "new-lines with '\\n'.")
+                          "The comment can contain Markdown directives for "
+                          "styling and linking.")
             .with_parameter(
                 help_text("text", "The comment text")
                     .with_format(help_parameter_format_t::HPF_MULTILINE_TEXT))

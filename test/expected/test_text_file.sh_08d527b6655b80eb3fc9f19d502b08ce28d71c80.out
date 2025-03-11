@@ -1,14 +1,14 @@
 [32m<!-- This is a comment for testing purposes -->[0m
 
-[![Build](https://github.com/tstack/lnav/workflows/ci-build/badge.svg)](https://github.com/tstack/lnav/actions?[4mquery[0m=workflow%3Aci-build)
-[![Docs](https://readthedocs.org/projects/lnav/badge/?[4mversion[0m=latest&[4mstyle[0m=plastic)](https://docs.lnav.org)
-[![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?[4mbranch[0m=master)](https://coveralls.io/github/tstack/lnav?[4mbranch[0m=master)
-[![lnav](https://snapcraft.io/lnav/badge.svg)](https://snapcraft.io/lnav)
-[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20LNAV%20Guru-006BFF)](https://gurubase.io/g/lnav)
+[34m[[0m![Build](https://github.com/tstack/lnav/workflows/ci-build/badge.svg)[34m]([0mhttps://github.com/tstack/lnav/actions?[4mquery[0m=workflow%3Aci-build[34m)[0m
+[34m[[0m![Docs](https://readthedocs.org/projects/lnav/badge/?[4mversion[0m=latest&[4mstyle[0m=plastic)[34m]([0mhttps://docs.lnav.org[34m)[0m
+[34m[[0m![Coverage Status](https://coveralls.io/repos/github/tstack/lnav/badge.svg?[4mbranch[0m=master)[34m]([0mhttps://coveralls.io/github/tstack/lnav?[4mbranch[0m=master[34m)[0m
+[34m[[0m![lnav](https://snapcraft.io/lnav/badge.svg)[34m]([0mhttps://snapcraft.io/lnav[34m)[0m
+[34m[[0m![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20LNAV%20Guru-006BFF)[34m]([0mhttps://gurubase.io/g/lnav[34m)[0m
 
-[<img [4msrc[0m=[35m"https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg"[0m [4mheight[0m=[35m"20"[0m [4malt[0m=[35m"Discord Logo"[0m/>](https://discord.gg/erBPnKwz7R)
+[34m[[0m<img [4msrc[0m=[35m"https://assets-global.website-files.com/6257adef93867e50d84d30e2/62594fddd654fc29fcc07359_cb48d2a8d4991281d7a6a95d2f58195e.svg"[0m [4mheight[0m=[35m"20"[0m [4malt[0m=[35m"Discord Logo"[0m/>[34m]([0mhttps://discord.gg/erBPnKwz7R[34m)[0m
 
-[4m_This is the source repository for [0m[1m[4m**lnav**[0m[4m, visit [https://lnav.org](https://lnav.org) for a high level overview._[0m
+[4m_This is the source repository for [0m[1m[4m**lnav**[0m[4m, visit [0m[4m[34m[[0m[4mhttps://lnav.org[0m[4m[34m]([0m[4mhttps://lnav.org[0m[4m[34m)[0m[4m for a high level overview._[0m
 
 [1m[35m# LNAV -- The Logfile Navigator[0m
 
@@ -20,17 +20,17 @@ set of files/directories, [1m**lnav**[0m will:
 [33m-[0m merge the files by time into a single view;
 [33m-[0m tail the files, follow renames, find new files in directories;
 [33m-[0m build an index of errors and warnings;
-[33m-[0m [pretty-print JSON-lines](https://docs.lnav.org/en/latest/formats.html#json-lines).
+[33m-[0m [34m[[0mpretty-print JSON-lines[34m]([0mhttps://docs.lnav.org/en/latest/formats.html#json-lines[34m)[0m.
 
 Then, in the [1m**lnav**[0m TUI, you can:
 
-[33m-[0m jump quickly to the previous/next error ([press [35m`e`[0m/[35m`E`[0m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
-[33m-[0m search using regular expressions ([press [35m`/`[0m](https://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation));
-[33m-[0m highlight text with a regular expression ([[35m`:highlight`[0m](https://docs.lnav.org/en/latest/commands.html#highlight-pattern) command);
-[33m-[0m filter messages using [regular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions](https://docs.lnav.org/en/latest/usage.html#sqlite-expression);
-[33m-[0m pretty-print structured text ([press [35m`P`[0m](https://docs.lnav.org/en/latest/ui.html#pretty));
-[33m-[0m view a histogram of messages over time ([press [35m`i`[0m](https://docs.lnav.org/en/latest/ui.html#hist));
-[33m-[0m analyze messages using SQLite ([press [35m`;`[0m](https://docs.lnav.org/en/latest/sqlext.html))
+[33m-[0m jump quickly to the previous/next error ([34m[[0mpress [35m`e`[0m/[35m`E`[0m[34m]([0mhttps://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation[34m)[0m);
+[33m-[0m search using regular expressions ([34m[[0mpress [35m`/`[0m[34m]([0mhttps://docs.lnav.org/en/latest/hotkeys.html#spatial-navigation[34m)[0m);
+[33m-[0m highlight text with a regular expression ([34m[[0m[35m`:highlight`[0m[34m]([0mhttps://docs.lnav.org/en/latest/commands.html#highlight-pattern[34m)[0m command);
+[33m-[0m filter messages using [34m[[0mregular expressions](https://docs.lnav.org/en/latest/usage.html#regular-expression-match) or [SQLite expressions[34m]([0mhttps://docs.lnav.org/en/latest/usage.html#sqlite-expression[34m)[0m;
+[33m-[0m pretty-print structured text ([34m[[0mpress [35m`P`[0m[34m]([0mhttps://docs.lnav.org/en/latest/ui.html#pretty[34m)[0m);
+[33m-[0m view a histogram of messages over time ([34m[[0mpress [35m`i`[0m[34m]([0mhttps://docs.lnav.org/en/latest/ui.html#hist[34m)[0m);
+[33m-[0m analyze messages using SQLite ([34m[[0mpress [35m`;`[0m[34m]([0mhttps://docs.lnav.org/en/latest/sqlext.html[34m)[0m)
 
 [1m## Screenshot[0m
 
@@ -38,7 +38,7 @@ The following screenshot shows a mix of syslog and web access log
 files.  Failed requests are shown in red.  Identifiers, like IP
 address and PIDs are semantically highlighted.
 
-[![Screenshot](docs/assets/images/lnav-front-page.png)](docs/assets/images/lnav-front-page.png)
+[34m[[0m![Screenshot](docs/assets/images/lnav-front-page.png)[34m]([0mdocs/assets/images/lnav-front-page.png[34m)[0m
 
 [1m## Why not [0m[1m**just**[0m[1m use [0m[1m[35m`tail`[0m[1m/[0m[1m[35m`grep`[0m[1m/[0m[1m[35m`less`[0m[1m?[0m
 
@@ -57,16 +57,16 @@ You can SSH into a demo node to play with lnav before installing.
 The [35m"playground"[0m account starts lnav with a couple of log files as
 an example:
 
-[[35m`$ ssh playground@demo.lnav.org`[0m](ssh://playground@demo.lnav.org)
+[34m[[0m[35m`$ ssh playground@demo.lnav.org`[0m[34m]([0mssh://playground@demo.lnav.org[34m)[0m
 
 The [35m"tutorial 1"[0m account is an interactive tutorial that can teach 
 you the basics of operation:
 
-[[35m`$ ssh tutorial1@demo.lnav.org`[0m](ssh://tutorial1@demo.lnav.org)
+[34m[[0m[35m`$ ssh tutorial1@demo.lnav.org`[0m[34m]([0mssh://tutorial1@demo.lnav.org[34m)[0m
 
 [1m## Installation[0m
 
-[Download a statically-linked binary for Linux/MacOS from the release page](https://github.com/tstack/lnav/releases/latest#release-artifacts)
+[34m[[0mDownload a statically-linked binary for Linux/MacOS from the release page[34m]([0mhttps://github.com/tstack/lnav/releases/latest#release-artifacts[34m)[0m
 
 [4m### Brew on MacOS[0m
 
@@ -90,7 +90,7 @@ the log messages that were recognized[^1]. You can then use the
 usual hotkeys to move around the view (arrow keys or
 [35m`j`[0m/[35m`k`[0m/[35m`h`[0m/[35m`l`[0m to move down/up/left/right).
 
-See the [Usage section](https://docs.lnav.org/en/latest/usage.html)
+See the [34m[[0mUsage section[34m]([0mhttps://docs.lnav.org/en/latest/usage.html[34m)[0m
 of the online documentation for more information.
 
 [^1]: Files that do not contain log messages can be seen in the 
@@ -101,13 +101,13 @@ of the online documentation for more information.
 On systems running [35m`systemd-journald`[0m, you can use [35m`lnav`[0m as the pager:
 
 [35m```[0m
-[35m$ journalctl | lnav[0m
+[35m$ journalctl [0m[35m|[0m[35m lnav[0m
 [35m```[0m
 
 or in follow mode:
 
 [35m```[0m
-[35m$ journalctl -f | lnav[0m
+[35m$ journalctl -f [0m[35m|[0m[35m lnav[0m
 [35m```[0m
 
 Since [35m`journalctl`[0m's default output format omits the year, if you are
@@ -115,14 +115,14 @@ viewing logs which span multiple years you will need to change the
 output format to include the year, otherwise [35m`lnav`[0m gets confused:
 
 [35m```[0m
-[35m$ journalctl -o short-iso | lnav[0m
+[35m$ journalctl -o short-iso [0m[35m|[0m[35m lnav[0m
 [35m```[0m
 
 It is also possible to use [35m`journalctl`[0m's json output format and [35m`lnav`[0m
 will make use of additional fields such as PRIORITY and \_SYSTEMD_UNIT:
 
 [35m```[0m
-[35m$ journalctl -o json | lnav[0m
+[35m$ journalctl -o json [0m[35m|[0m[35m lnav[0m
 [35m```[0m
 
 In case some MESSAGE fields contain special characters such as
@@ -131,14 +131,14 @@ specifying [35m`journalctl`[0m's [35m`-a`[0m option might be preferable in o
 to output those messages still in a non-binary representation:
 
 [35m```[0m
-[35m$ journalctl -a -o json | lnav[0m
+[35m$ journalctl -a -o json [0m[35m|[0m[35m lnav[0m
 [35m```[0m
 
 If using systemd v236 or newer, the output fields can be limited to
 the ones actually recognized by [35m`lnav`[0m for increased efficiency:
 
 [35m```[0m
-[35m$ journalctl -o json --output-fields=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT | lnav[0m
+[35m$ journalctl -o json --output-fields=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT [0m[35m|[0m[35m lnav[0m
 [35m```[0m
 
 If your system has been running for a long time, for increased
@@ -153,19 +153,19 @@ of log lines fed into [35m`lnav`[0m via [35m`journalctl`[0m's [35m`-b`[0m 
 Please file issues on this repository or use the discussions section.
 The following alternatives are also available:
 
-[33m-[0m [support@lnav.org](mailto:support@lnav.org)
-[33m-[0m [Discord](https://discord.gg/erBPnKwz7R)
-[33m-[0m [Google Groups](https://groups.google.com/g/lnav)
+[33m-[0m [34m[[0msupport@lnav.org[34m]([0mmailto:support@lnav.org[34m)[0m
+[33m-[0m [34m[[0mDiscord[34m]([0mhttps://discord.gg/erBPnKwz7R[34m)[0m
+[33m-[0m [34m[[0mGoogle Groups[34m]([0mhttps://groups.google.com/g/lnav[34m)[0m
 
 [1m## Links[0m
 
-[33m-[0m [Main Site](https://lnav.org)
-[33m-[0m [[1m**Documentation**[0m](https://docs.lnav.org) on Read the Docs
-[33m-[0m [Internal Architecture](ARCHITECTURE.md)
+[33m-[0m [34m[[0mMain Site[34m]([0mhttps://lnav.org[34m)[0m
+[33m-[0m [34m[[0m[1m**Documentation**[0m[34m]([0mhttps://docs.lnav.org[34m)[0m on Read the Docs
+[33m-[0m [34m[[0mInternal Architecture[34m]([0mARCHITECTURE.md[34m)[0m
 
 [1m## Contributing[0m
 
-[33m-[0m [Become a Sponsor on GitHub](https://github.com/sponsors/tstack)
+[33m-[0m [34m[[0mBecome a Sponsor on GitHub[34m]([0mhttps://github.com/sponsors/tstack[34m)[0m
 
 [4m### Building From Source[0m
 
@@ -199,5 +199,5 @@ Run [35m`./autogen.sh`[0m if compiling from a cloned repository.
 
 [1m## See Also[0m
 
-[Angle-grinder](https://github.com/rcoh/angle-grinder) is a tool to slice and dice log files on the command-line.
+[34m[[0mAngle-grinder[34m]([0mhttps://github.com/rcoh/angle-grinder[34m)[0m is a tool to slice and dice log files on the command-line.
 If you're familiar with the SumoLogic query language, you might find this tool more comfortable to work with.

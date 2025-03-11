@@ -222,7 +222,7 @@
 :comment *text*
 ^^^^^^^^^^^^^^^
 
-  Attach a comment to the focused log line.  The comment will be displayed right below the log message it is associated with. The comment can be formatted using markdown and you can add new-lines with '\n'.
+  Attach a comment to the focused log line.  The comment will be displayed right below the log message it is associated with. The comment can contain Markdown directives for styling and linking.
 
   **Parameters**
     * **text\*** --- The comment text

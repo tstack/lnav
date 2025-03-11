@@ -134,35 +134,35 @@ view (reachable by pressing [37m[40m t [0m).
 On systems running [37m[40m systemd-journald [0m, you can use [37m[40m lnav [0m as the
 pager:
 
- ▌[37m[40m$ journalctl | lnav                     [0m
+ ▌[37m[40m$ journalctl [0m[37m[40m|[0m[37m[40m lnav                     [0m
 
 or in follow mode:
 
- ▌[37m[40m$ journalctl -f | lnav                  [0m
+ ▌[37m[40m$ journalctl -f [0m[37m[40m|[0m[37m[40m lnav                  [0m
 
 Since [37m[40m journalctl [0m's default output format omits the year, if you are
 viewing logs which span multiple years you will need to change the
 output format to include the year, otherwise [37m[40m lnav [0m gets confused:
 
- ▌[37m[40m$ journalctl -o short-iso | lnav        [0m
+ ▌[37m[40m$ journalctl -o short-iso [0m[37m[40m|[0m[37m[40m lnav        [0m
 
 It is also possible to use [37m[40m journalctl [0m's json output format and
 [37m[40m lnav [0mwill make use of additional fields such as PRIORITY and
 _SYSTEMD_UNIT:
 
- ▌[37m[40m$ journalctl -o json | lnav             [0m
+ ▌[37m[40m$ journalctl -o json [0m[37m[40m|[0m[37m[40m lnav             [0m
 
 In case some MESSAGE fields contain special characters such as ANSI
 color codes which are considered as unprintable by journalctl,
 specifying [37m[40m journalctl [0m's [37m[40m -a [0m option might be preferable in order to
 output those messages still in a non-binary representation:
 
- ▌[37m[40m$ journalctl -a -o json | lnav          [0m
+ ▌[37m[40m$ journalctl -a -o json [0m[37m[40m|[0m[37m[40m lnav          [0m
 
 If using systemd v236 or newer, the output fields can be limited to
 the ones actually recognized by [37m[40m lnav [0m for increased efficiency:
 
- ▌[37m[40m$ journalctl -o json --output-fields=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT | lnav    [0m
+ ▌[37m[40m$ journalctl -o json --output-fields=MESSAGE,PRIORITY,_PID,SYSLOG_IDENTIFIER,_SYSTEMD_UNIT [0m[37m[40m|[0m[37m[40m lnav    [0m
 
 If your system has been running for a long time, for increased
 efficiency you may want to limit the number of log lines fed into

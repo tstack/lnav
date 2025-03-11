@@ -46,10 +46,10 @@ see that, your decoder crashed somehow before, which should always be
 cause for concern.
 
 All lines in this file are exactly 79 characters long (plus the line
-feed). In addition, all lines end with [35m"|"[0m, except for the two test
+feed). In addition, all lines end with [35m"[0m[35m|[0m[35m"[0m, except for the two test
 lines 2.1.1 and 2.2.1, which contain non-printable ASCII controls
 U+0000 and U+007F. If you display this file with a fixed-width font,
-these [35m"|"[0m characters should all line up in column 79 (right margin).
+these [35m"[0m[35m|[0m[35m"[0m characters should all line up in column 79 (right margin).
 This allows you to test quickly, whether your UTF-8 decoder finds the
 correct number of characters in every line, that is whether each
 malformed sequences is replaced by a single replacement character.
@@ -58,7 +58,7 @@ Note that, as an alternative to the notion of malformed sequence used
 here, it is also a perfectly acceptable (and in some situations even
 preferable) solution to represent each individual byte of a malformed
 sequence with a replacement character. If you follow this strategy in
-your decoder, then please ignore the [35m"|"[0m column.
+your decoder, then please ignore the [35m"[0m[35m|[0m[35m"[0m column.
 
 
 Here come the tests:                                                          |

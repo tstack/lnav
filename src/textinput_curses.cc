@@ -730,7 +730,7 @@ bool
 textinput_curses::handle_key(const ncinput& ch)
 {
     static const auto PREFIX_RE = lnav::pcre2pp::code::from_const(
-        R"(^\s*((?:-|\*|1\.)\s+(?:\[( |x|X)\]\s+)?)?)");
+        R"(^\s*((?:-|\*|1\.|>)\s+(?:\[( |x|X)\]\s+)?)?)");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (this->tc_notice) {
@@ -1229,7 +1229,9 @@ textinput_curses::handle_key(const ncinput& ch)
                                      .matches()
                                      .ignore_error();
 
-                if (match_opt && !match_opt->f_all.empty()) {
+                if (match_opt && !match_opt->f_all.empty()
+                    && match_opt->f_all.sf_end == this->tc_cursor.x)
+                {
                     if (md[1]) {
                         this->tc_selection = selected_range::from_key(
                             this->tc_cursor.copy_with_x(md[1]->sf_begin),
