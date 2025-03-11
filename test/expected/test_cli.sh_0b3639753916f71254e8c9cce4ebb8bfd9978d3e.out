@@ -1016,6 +1016,7 @@
                     "bglighter": "#424450",
                     "black": "#21222C",
                     "blue": "#BD93F9",
+                    "comment": "#6272A4",
                     "cyan": "#8BE9FD",
                     "foreground": "#F8F8F2",
                     "green": "#50FA7B",
@@ -1445,7 +1446,7 @@
                         "strike": false
                     },
                     "comment": {
-                        "color": "#6272A4",
+                        "color": "$comment",
                         "background-color": "",
                         "underline": false,
                         "bold": false,

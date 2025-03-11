@@ -11,6 +11,7 @@
                     "bgdarker": "#191A21",
                     "foreground": "#F8F8F2",
                     "selection": "#44475A",
+                    "comment": "#6272A4",
                     "black": "#21222C",
                     "red": "#FF5555",
                     "green": "#50FA7B",
@@ -193,7 +194,7 @@
                         "bold": true
                     },
                     "comment": {
-                        "color": "#6272A4"
+                        "color": "$comment"
                     },
                     "doc-directive": {
                         "color": "$pink"

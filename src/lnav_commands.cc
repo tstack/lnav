@@ -73,6 +73,8 @@
 #include "log_format_loader.hh"
 #include "log_search_table.hh"
 #include "log_search_table_fwd.hh"
+#include "md2attr_line.hh"
+#include "md4cpp.hh"
 #include "ptimec.hh"
 #include "readline_callbacks.hh"
 #include "readline_highlighters.hh"
@@ -1882,7 +1884,22 @@ com_comment(exec_context& ec,
     std::string retval;
 
     if (args.size() > 1) {
+        args[1] = trim(remaining_args(cmdline, args));
+
         if (ec.ec_dry_run) {
+            md2attr_line mdal;
+
+            auto parse_res = md4cpp::parse(args[1], mdal);
+            if (parse_res.isOk()) {
+                auto al = parse_res.unwrap();
+                lnav_data.ld_preview_status_source[0]
+                    .get_description()
+                    .set_value("Comment rendered as markdown:");
+                lnav_data.ld_preview_view[0].set_sub_source(
+                    &lnav_data.ld_preview_source[0]);
+                lnav_data.ld_preview_source[0].replace_with(al);
+            }
+
             return Ok(std::string());
         }
         auto* tc = *lnav_data.ld_view_stack.top();
@@ -1893,7 +1910,6 @@ com_comment(exec_context& ec,
         }
         auto& lss = lnav_data.ld_log_source;
 
-        args[1] = trim(remaining_args(cmdline, args));
         auto unquoted = auto_buffer::alloc(args[1].size() + 1);
         auto unquoted_len = unquote_content(
             unquoted.in(), args[1].c_str(), args[1].size(), 0);
