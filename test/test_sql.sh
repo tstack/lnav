@@ -956,3 +956,19 @@ run_cap_test ${lnav_test} -n \
 run_cap_test ${lnav_test} -n \
     -c ";SELECT log_line FROM vmw_log WHERE log_opid = '7e1280cf'" \
     ${test_dir}/logfile_vpxd.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line_link FROM access_log WHERE log_line = 1" \
+    -c ';SELECT log_line FROM access_log WHERE log_line_link = $log_line_link' \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line_link FROM access_log WHERE log_line = 1" \
+    -c ';SELECT log_line FROM access_log WHERE log_line_link > $log_line_link' \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line_link FROM access_log WHERE log_line = 1" \
+    -c ':switch-to-view log' \
+    -c ':eval :goto $log_line_link' \
+    ${test_dir}/logfile_access_log.0

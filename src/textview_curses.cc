@@ -719,6 +719,34 @@ textview_curses::handle_mouse(mouse_event& me)
                     }
                 }
             }
+            if (mouse_line.is<overlay_content>()) {
+                const auto& oc = mouse_line.get<overlay_content>();
+                std::vector<attr_line_t> ov_lines;
+
+                this->lv_overlay_source->list_value_for_overlay(
+                    *this, oc.oc_main_line, ov_lines);
+                const auto& al = ov_lines[oc.oc_line];
+                auto line_sf = string_fragment::from_str(al.get_string());
+                auto cursor_sf = line_sf.sub_cell_range(
+                    this->lv_left + me.me_x, this->lv_left + me.me_x);
+                auto link_iter = find_string_attr_containing(
+                    al.get_attrs(), &VC_HYPERLINK, cursor_sf.sf_begin);
+                if (link_iter != al.get_attrs().end()) {
+                    auto href = link_iter->sa_value.get<std::string>();
+                    auto* ta = dynamic_cast<text_anchors*>(this->tc_sub_source);
+
+                    if (me.me_button == mouse_button_t::BUTTON_LEFT
+                        && ta != nullptr && startswith(href, "#")
+                        && !startswith(href, "#/frontmatter"))
+                    {
+                        auto row_opt = ta->row_for_anchor(href);
+
+                        if (row_opt.has_value()) {
+                            this->set_selection(row_opt.value());
+                        }
+                    }
+                }
+            }
             if (this->tc_delegate != nullptr) {
                 this->tc_delegate->text_handle_mouse(*this, mouse_line, me);
             }

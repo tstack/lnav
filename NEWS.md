@@ -70,6 +70,20 @@ Features:
   set by the `:adjust-log-time` command.
 * Added a `measure_with_units` collation function that can compare
   numbers with unit suffixes, like "10KB" or "1.2ms".
+* Log messages now have permalinks that can be used to reference them
+  from other locations.
+  The permalink for a message is shown in the parser details overlay
+  (activated by pressing `p`).
+  Selecting the "Permalink:" line in the overlay and then pressing
+  `c` will copy the link to your clipboard.
+  The link is also available in the `log_line_link` column of the
+  log tables.
+  These permalinks can be used with the `:goto` command to move to
+  the log message.
+  They can also be used in log message comments as targets for
+  Markdown links, which can be clicked to jump to the message.
+* The `CTRL` + `O` shortcut is now bound to the `:prev-location`
+  command, so you can jump back to a previous location.
 * Render task marks in markdown.
 
 Bug Fixes:

@@ -156,6 +156,8 @@ public:
 
         std::optional<bookmark_metadata*> get_metadata() const;
 
+        Result<auto_buffer, std::string> get_line_hash() const;
+
         struct metadata_edit_guard {
             ~metadata_edit_guard();
 

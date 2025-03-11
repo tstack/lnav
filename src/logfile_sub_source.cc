@@ -45,17 +45,20 @@
 #include "command_executor.hh"
 #include "config.h"
 #include "field_overlay_source.hh"
+#include "hasher.hh"
 #include "k_merge_tree.h"
 #include "lnav_util.hh"
 #include "log_accel.hh"
 #include "logfile_sub_source.cfg.hh"
 #include "md2attr_line.hh"
 #include "ptimec.hh"
+#include "scn/scan.h"
 #include "shlex.hh"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
 
+using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
 
 const bookmark_type_t logfile_sub_source::BM_FILES("file");
@@ -2494,9 +2497,8 @@ logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
                 this->li_line_number
                     = std::distance(this->li_file->begin(), this->li_logline);
                 break;
-            } else {
-                --vl;
             }
+            --vl;
         }
     }
 }
@@ -2565,6 +2567,22 @@ logline_window::logmsg_info::get_metadata() const
         return std::nullopt;
     }
     return &bm_iter->second;
+}
+
+Result<auto_buffer, std::string>
+logline_window::logmsg_info::get_line_hash() const
+{
+    auto sbr = TRY(this->li_file->read_line(this->li_logline));
+    auto outbuf = auto_buffer::alloc(3 + hasher::STRING_SIZE);
+    outbuf.push_back('v');
+    outbuf.push_back('1');
+    outbuf.push_back(':');
+    hasher line_hasher;
+    line_hasher.update(sbr.get_data(), sbr.length())
+        .update(this->get_file_line_number())
+        .to_string(outbuf);
+
+    return Ok(std::move(outbuf));
 }
 
 logline_window::logmsg_info::metadata_edit_guard::~metadata_edit_guard()
@@ -3308,6 +3326,46 @@ logfile_sub_source::row_for(const row_info& ri)
 std::optional<vis_line_t>
 logfile_sub_source::row_for_anchor(const std::string& id)
 {
+    if (startswith(id, "#msg")) {
+        static const auto ANCHOR_RE
+            = lnav::pcre2pp::code::from_const(R"(#msg([0-9a-fA-F]+)-(.+))");
+        thread_local auto md = lnav::pcre2pp::match_data::unitialized();
+
+        if (ANCHOR_RE.capture_from(id).into(md).found_p()) {
+            auto scan_res = scn::scan<int64_t>(md[1]->to_string_view(), "{:x}");
+            if (scan_res) {
+                auto ts_low = std::chrono::microseconds{scan_res->value()};
+                auto ts_high = ts_low + 1us;
+
+                auto low_vl = this->row_for_time(to_timeval(ts_low));
+                auto high_vl = this->row_for_time(to_timeval(ts_high));
+                if (low_vl) {
+                    auto lw = this->window_at(
+                        low_vl.value(),
+                        high_vl.value_or(low_vl.value() + 1_vl));
+
+                    for (const auto& li : lw) {
+                        auto hash_res = li.get_line_hash();
+                        if (hash_res.isErr()) {
+                            auto errmsg = hash_res.unwrapErr();
+
+                            log_error("unable to get line hash: %s",
+                                      errmsg.c_str());
+                            continue;
+                        }
+
+                        auto hash = hash_res.unwrap();
+                        if (hash == md[2]) {
+                            return li.get_vis_line();
+                        }
+                    }
+                }
+            }
+        }
+
+        return std::nullopt;
+    }
+
     auto& vb = this->tss_view->get_bookmarks();
     const auto& bv = vb[&textview_curses::BM_PARTITION];
 
@@ -3359,6 +3417,24 @@ logfile_sub_source::anchor_for_row(vis_line_t vl)
     auto line_meta = this->get_bookmark_metadata_context(
         vl, bookmark_metadata::categories::partition);
     if (!line_meta.bmc_current_metadata) {
+        auto lw = window_at(vl);
+
+        for (const auto& li : lw) {
+            auto hash_res = li.get_line_hash();
+            if (hash_res.isErr()) {
+                auto errmsg = hash_res.unwrapErr();
+                log_error("unable to compute line hash: %s", errmsg.c_str());
+                break;
+            }
+            auto hash = hash_res.unwrap();
+            auto retval = fmt::format(
+                FMT_STRING("#msg{:016x}-{}"),
+                li.get_logline().get_time<std::chrono::microseconds>().count(),
+                hash);
+
+            return retval;
+        }
+
         return std::nullopt;
     }
 

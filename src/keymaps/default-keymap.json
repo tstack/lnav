@@ -152,13 +152,16 @@
                 "x55": {
                     "command": ":prev-mark"
                 },
+                "x0f": {
+                    "command": ":prev-location"
+                },
                 "x7d": {
                     "command": ":next-section",
-                    "alt-msg": "${keymap_def_prev_location}"
+                    "alt-msg": "${keymap_def_prev_section}"
                 },
                 "x7b": {
                     "command": ":prev-section",
-                    "alt-msg": "${keymap_def_next_location}"
+                    "alt-msg": "${keymap_def_next_section}"
                 },
                 "x3f": {
                     "command": ":toggle-view help"

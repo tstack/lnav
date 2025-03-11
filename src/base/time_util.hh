@@ -317,4 +317,16 @@ to_us(const timeval& tv)
         + std::chrono::microseconds{tv.tv_usec};
 }
 
+inline timeval
+to_timeval(std::chrono::microseconds us)
+{
+    return {
+        std::chrono::duration_cast<std::chrono::seconds>(us).count(),
+        (int) (us.count()
+               % std::chrono::duration_cast<std::chrono::microseconds>(
+                     std::chrono::seconds{1})
+                     .count()),
+    };
+}
+
 #endif

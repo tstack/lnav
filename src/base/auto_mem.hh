@@ -42,7 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "base/result.h"
+#include "fmt/format.h"
 
 using free_func_t = void (*)(void*);
 
@@ -424,6 +424,16 @@ struct text_auto_buffer {
 
 struct blob_auto_buffer {
     auto_buffer inner;
+};
+
+template<>
+struct fmt::formatter<auto_buffer> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(const auto_buffer& buf, FormatContext& ctx) const
+    {
+        return formatter<string_view>::format(
+            string_view{buf.begin(), buf.size()}, ctx);
+    }
 };
 
 #endif

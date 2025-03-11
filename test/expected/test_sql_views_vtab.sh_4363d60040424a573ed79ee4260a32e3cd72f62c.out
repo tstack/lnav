@@ -1,5 +1,6 @@
 2023-03-24T14:26:16.243Z renovate[7] INFO     Dependency extraction complete
  Received Time: [1m2023-03-24T14:26:16.243+0000[0m — [1min the future[0m  Format: [1m%Y-%m-%dT%H:%M:%S.%L%z[0m  Default Zone: [32mnone[0m
+ Permalink: #msg0005f7a62d108738-v1:b1dd529a02ea3fb9f81d8697991f2251
  Known message fields for table [1mbunyan_log[0m:
  | [1m[32m◆[0m 📊 name     = renovate
  | [32m◇[0m 📊 hostname = renovate-gitlab-67c4bcb5-9ggbv

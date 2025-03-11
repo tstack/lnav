@@ -6823,6 +6823,11 @@
                     "command": ":write-screen-to -",
                     "alt-msg": ""
                 },
+                "x0f": {
+                    "id": "",
+                    "command": ":prev-location",
+                    "alt-msg": ""
+                },
                 "x12": {
                     "id": "",
                     "command": ":reset-session",
@@ -7041,7 +7046,7 @@
                 "x7b": {
                     "id": "",
                     "command": ":prev-section",
-                    "alt-msg": "${keymap_def_next_location}"
+                    "alt-msg": "${keymap_def_next_section}"
                 },
                 "x7c": {
                     "id": "",
@@ -7051,7 +7056,7 @@
                 "x7d": {
                     "id": "",
                     "command": ":next-section",
-                    "alt-msg": "${keymap_def_prev_location}"
+                    "alt-msg": "${keymap_def_prev_section}"
                 }
             },
             "fr": {

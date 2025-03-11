@@ -64,7 +64,7 @@ const std::unordered_set<string_fragment, frag_hasher>
         "log_user_opid"_frag,   "log_format"_frag,      "log_format_regex"_frag,
         "log_time_msecs"_frag,  "log_path"_frag,        "log_unique_path"_frag,
         "log_text"_frag,        "log_body"_frag,        "log_raw_text"_frag,
-        "log_line_hash"_frag,
+        "log_line_hash"_frag,   "log_line_link"_frag,
 };
 
 static const char* const LOG_COLUMNS = R"(  (
@@ -94,7 +94,8 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_text         TEXT HIDDEN,                       -- The full text of the log message
   log_body         TEXT HIDDEN,                       -- The body of the log message
   log_raw_text     TEXT HIDDEN,                       -- The raw text from the log file
-  log_line_hash    TEXT HIDDEN                        -- A hash of the first line of the log message
+  log_line_hash    TEXT HIDDEN,                       -- A hash of the first line of the log message
+  log_line_link    TEXT HIDDEN                        -- The permalink for the log message
 )";
 
 enum class log_footer_columns : uint32_t {
@@ -117,6 +118,7 @@ enum class log_footer_columns : uint32_t {
     body,
     raw_text,
     line_hash,
+    line_link,
 };
 
 const std::string&
@@ -989,8 +991,8 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::format_regex: {
-                        auto pat_name
-                            = lf->get_format_ptr()->get_pattern_name(line_number);
+                        auto pat_name = lf->get_format_ptr()->get_pattern_name(
+                            line_number);
                         sqlite3_result_text(ctx,
                                             pat_name.get(),
                                             pat_name.size(),
@@ -1077,27 +1079,31 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         break;
                     }
                     case log_footer_columns::line_hash: {
-                        auto read_res = lf->read_line(ll);
-
-                        if (read_res.isErr()) {
-                            auto msg = fmt::format(
-                                FMT_STRING("unable to read line -- {}"),
-                                read_res.unwrapErr());
-                            sqlite3_result_error(
-                                ctx, msg.c_str(), msg.length());
+                        auto lw
+                            = vt->lss->window_at(vc->log_cursor.lc_curr_line);
+                        for (const auto& li : lw) {
+                            auto hash_res = li.get_line_hash();
+                            if (hash_res.isErr()) {
+                                auto msg = fmt::format(
+                                    FMT_STRING("unable to read line -- {}"),
+                                    hash_res.unwrapErr());
+                                sqlite3_result_error(
+                                    ctx, msg.c_str(), msg.length());
+                            } else {
+                                to_sqlite(ctx,
+                                          text_auto_buffer{hash_res.unwrap()});
+                            }
+                            break;
+                        }
+                        break;
+                    }
+                    case log_footer_columns::line_link: {
+                        auto anchor_opt = vt->lss->anchor_for_row(
+                            vc->log_cursor.lc_curr_line);
+                        if (anchor_opt) {
+                            to_sqlite(ctx, anchor_opt.value());
                         } else {
-                            auto sbr = read_res.unwrap();
-                            hasher line_hasher;
-
-                            auto outbuf
-                                = auto_buffer::alloc(3 + hasher::STRING_SIZE);
-                            outbuf.push_back('v');
-                            outbuf.push_back('1');
-                            outbuf.push_back(':');
-                            line_hasher.update(sbr.get_data(), sbr.length())
-                                .update(cl)
-                                .to_string(outbuf);
-                            to_sqlite(ctx, text_auto_buffer{std::move(outbuf)});
+                            sqlite3_result_null(ctx);
                         }
                         break;
                     }
@@ -1743,6 +1749,24 @@ vt_filter(sqlite3_vtab_cursor* p_vtc,
                         case log_footer_columns::raw_text:
                         case log_footer_columns::line_hash:
                             break;
+                        case log_footer_columns::line_link: {
+                            if (sqlite3_value_type(argv[lpc]) != SQLITE3_TEXT) {
+                                continue;
+                            }
+                            auto permalink
+                                = from_sqlite<std::string>()(argc, argv, lpc);
+                            auto row_opt = vt->lss->row_for_anchor(permalink);
+                            if (row_opt) {
+                                p_cur->log_cursor.update(
+                                    op,
+                                    row_opt.value(),
+                                    log_cursor::constraint_t::unique);
+                            } else {
+                                log_trace("could not find link: %s",
+                                          permalink.c_str());
+                            }
+                            break;
+                        }
                     }
                 } else {
                     const auto* value
@@ -2180,6 +2204,13 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::raw_text:
                         case log_footer_columns::line_hash:
                             break;
+                        case log_footer_columns::line_link: {
+                            argvInUse += 1;
+                            indexes.push_back(constraint);
+                            p_info->aConstraintUsage[lpc].argvIndex = argvInUse;
+                            index_desc.emplace_back("log_line_link = ?");
+                            break;
+                        }
                     }
                 } else if (op == SQLITE_INDEX_CONSTRAINT_EQ) {
                     argvInUse += 1;

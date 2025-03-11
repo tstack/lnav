@@ -274,7 +274,7 @@ listview_curses::handle_key(const ncinput& ch)
                         overlay_content.size(), height));
 
                     if (this->lv_selection + overlay_height >= bot) {
-                        this->shift_top(overlay_height, true);
+                        this->set_top(this->lv_selection, true);
                     }
                     this->lv_source->listview_selection_changed(*this);
                     this->set_needs_update();

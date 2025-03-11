@@ -307,4 +307,30 @@ enum class text_align_t {
     end,
 };
 
+inline string_fragment
+to_string_fragment(const auto_buffer& buf)
+{
+    return string_fragment::from_bytes(buf.begin(), buf.size());
+}
+
+inline bool
+operator==(const auto_buffer& buf, const string_fragment& sf)
+{
+    if (buf.size() != sf.length()) {
+        return false;
+    }
+
+    return memcmp(buf.begin(), sf.data(), sf.length()) == 0;
+}
+
+inline bool
+operator==(const string_fragment& sf, const auto_buffer& buf)
+{
+    if (buf.size() != sf.length()) {
+        return false;
+    }
+
+    return memcmp(buf.begin(), sf.data(), sf.length()) == 0;
+}
+
 #endif

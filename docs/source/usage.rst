@@ -281,8 +281,12 @@ types of information can be saved:
 
 :comments: Free-form text can be attached to a log message with the
   :ref:`:comment<comment>` command.  The comment will be shown
-  underneath the message. If the text contains markdown syntax,
+  underneath the message. If the text contains Markdown syntax,
   it will be rendered to the best of the terminal's ability.
+  The comment can reference other log messages using Markdown links
+  with the target being the permalink of the other log message.
+  You can then click the link to jump to the other message and then
+  press :kbd:`Ctrl` + :kbd:`O` to jump back.
   You can press :kbd:`u` and :kbd:`Shift` + :kbd:`u` to jump to the
   next/previous marked line.  A regular search will also match the
   comment text.
