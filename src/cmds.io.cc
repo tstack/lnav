@@ -1199,7 +1199,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                         file_range range;
 
                         lb.set_fd(preview_fd);
-                        for (int lpc = 0; lpc < 24; lpc++) {
+                        for (int lpc = 0; lpc < 100; lpc++) {
                             auto load_result = lb.load_next_line(range);
 
                             if (load_result.isErr()) {

@@ -43,6 +43,7 @@ Features:
 * The `:comment` command will now switch the prompt to multi-line
   mode and does syntax highlighting for Markdown directives in the
   comment.
+  The rendered Markdown will also now be shown in the preview panel.
 * Scrolling right in the LOG view when at the start of a message
   can hide the timestamp/level fields in the message and insert a
   shorter timestamp column on the left side.

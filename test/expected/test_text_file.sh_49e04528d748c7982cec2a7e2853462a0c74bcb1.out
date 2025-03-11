@@ -1,0 +1,134 @@
+{
+[35m"comment"[0m: [35m"This is JSON front-matter"[0m
+}
+
+[1m[35m# Table of Contents[0m
+
+[33m-[0m [Table of Contents](#table-of-contents)
+    [33m-[0m [Test](#test)
+    [33m-[0m [Github Alerts](#github-alerts)
+    [33m-[0m [Table](#table)
+
+[1m## Test[0m
+
+[33m*[0m One
+[33m*[0m Two
+[33m*[0m Three
+
+<img [4msrc[0m=[35m"../docs/lnav-tui.png"[0m />
+
+<img [4msrc[0m=[35m"../docs/lnav-architecture.png"[0m [4malt[0m=[35m"The internal architecture of lnav"[0m />
+
+<span [4mstyle[0m="color: #f00; font-weight: bold">Bold red</span>
+
+~~Strikethrough~~
+
+[3m*italic*[0m
+
+[1m**bold**[0m
+
+[4m_underline_[0m
+
+<span [4mstyle[0m=[35m"text-decoration: underline; background-color: darkblue"[0m>
+Underline</span>
+
+<pre>
+  Hello,
+  <span [4mclass[0m=[35m"name"[0m>World</span>!
+</pre>
+
+Goodbye, <span [4mstyle[0m=[35m"border-left: solid cyan; border-right: dashed green"[0m>
+World</span>!
+
+[35m```foolang[0m
+[35mfoo bar bar[0m
+[35mbaz "xyz"[0m
+[35m```[0m
+
+[35m```c[0m
+[35m/*[0m
+[35m [0m[35m*[0m[35m This program prints "Hello, World!"[0m
+[35m */[0m
+
+[35m#include <stdio.h>[0m
+
+[35mint main() {[0m
+[35m  [0m[35m [0m[35m printf("Hello, World!\n");[0m
+[35m}[0m
+[35m```[0m
+
+[35m```python[0m
+[35mdef hw(name):[0m
+[35m  [0m[35m [0m[35m """[0m
+[35m  [0m[35m [0m[35m This function prints "Hello, <name>!"[0m
+[35m  [0m[35m [0m[35m """[0m
+
+[35m  [0m[35m [0m[35m print(f"Hello, {name}!")  # test comment[0m
+[35m```[0m
+
+[35m```xml[0m
+[35m<?xml version="1.0" encoding="utf-8" ?>[0m
+[35m<books>[0m
+[35m  [0m[35m [0m[35m <!-- Line comment -->[0m
+[35m  [0m[35m [0m[35m <book id="100">[0m
+[35m  [0m[35m [0m[35m [0m[35m [0m[35m   <author>Finnegan</author>[0m
+[35m  [0m[35m [0m[35m </book>[0m
+[35m</books>[0m
+[35m```[0m
+
+[1m## Github Alerts[0m
+
+> [!NOTE]
+> Useful information that users should know, even when skimming content.
+
+> [!TIP]
+> Helpful advice for doing things better or more easily.
+
+> [!IMPORTANT]
+> Key information users need to know to achieve their goal.
+
+> [!WARNING]
+> Urgent info that needs immediate user attention to avoid problems.
+
+> [!CAUTION]
+> Advises about risks or negative outcomes of certain actions.
+
+[1m## Tasks[0m
+
+[33m*[0m [33m[x][0m Bibimbap
+[33m*[0m [33m[x][0m Waffles
+[33m*[0m [33m[ ][0m Tacos
+
+[1m## Table[0m
+
+|  ID |    Name     | Description   |
+|----:|:-----------:|---------------|
+|   1 |     One     | The first     |
+|   2 |     Two     | The second    |
+|   3 |    Three    | The third     |
+|   4 |    Four     | The fourth    |
+|  .. |     ..      | ..            |
+| 100 | One Hundred | The hundredth |
+
+| abc        | def |
+|------------|-----|
+| foo \| bar | ddd |
+
+<table>
+<tr>
+<th>
+Foo
+</th>
+<td>
+Bar
+</td>
+</tr>
+<tr>
+<th>
+Foo
+</th>
+<td>
+Bar
+</td>
+</tr>
+</table>

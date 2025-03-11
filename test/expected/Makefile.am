@@ -1440,6 +1440,8 @@ dist_noinst_DATA = \
     test_text_file.sh_265a8a5825e6c7dbc85cbe496dab6be7a349f3db.out \
     test_text_file.sh_4226123565a53b4e3f80e602c1f294721e8e07bf.err \
     test_text_file.sh_4226123565a53b4e3f80e602c1f294721e8e07bf.out \
+    test_text_file.sh_49e04528d748c7982cec2a7e2853462a0c74bcb1.err \
+    test_text_file.sh_49e04528d748c7982cec2a7e2853462a0c74bcb1.out \
     test_text_file.sh_4dd174410d702a7b4be794fb6fa2c8889bd768d6.err \
     test_text_file.sh_4dd174410d702a7b4be794fb6fa2c8889bd768d6.out \
     test_text_file.sh_56dff3ab530f95792c923d650a9aa7f06e69e736.err \

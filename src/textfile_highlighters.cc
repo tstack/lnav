@@ -608,12 +608,15 @@ setup_highlights_int()
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_H4);
     hm[{highlight_source_t::INTERNAL, "md.bold"}]
-        = highlighter(xpcre_compile(R"((?:^|\s+|\pP)(\*\*[^\*\n]+\*\*)(?:$|\s+|\pP))"))
+        = highlighter(
+              xpcre_compile(R"((?:^|\s+|\pP)(\*\*[^\*\n]+\*\*)(?:$|\s+|\pP))"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_attrs(text_attrs::with_bold());
     hm[{highlight_source_t::INTERNAL, "md.italic"}]
-        = highlighter(xpcre_compile(R"((?:^|\s+|[^\PP\*])(\*[^\*\n]+\*)(?:$|\s+|[^\PP\*]))"))
+        = highlighter(
+              xpcre_compile(
+                  R"((?:^|\s+|[^\PP\*])(\*[^\*\n]+\*)(?:$|\s+|[^\PP\*]))"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_attrs(text_attrs::with_italic());
@@ -623,7 +626,7 @@ setup_highlights_int()
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_attrs(text_attrs::with_underline());
     hm[{highlight_source_t::INTERNAL, "md.li"}]
-        = highlighter(xpcre_compile(R"(^\s*(\*|-|\d+\.)\s+)"))
+        = highlighter(xpcre_compile(R"(^\s*(\*|-|\d+\.)\s+(\[(?: |x|X)\])?)"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_LIST_GLYPH);
