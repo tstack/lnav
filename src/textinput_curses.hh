@@ -41,8 +41,8 @@
 #include <vector>
 
 #include "base/attr_line.hh"
-#include "base/lnav.console.hh"
 #include "base/line_range.hh"
+#include "base/lnav.console.hh"
 #include "document.sections.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "plain_text_source.hh"
@@ -227,8 +227,22 @@ public:
 
         bool contains(const input_point& ip) const
         {
-            return this->sr_start.y <= ip.y && ip.y <= this->sr_end.y
-                && this->sr_start.x <= ip.x && ip.x <= this->sr_end.x;
+            auto lr_opt = this->range_for_line(ip.y);
+            if (!lr_opt) {
+                return false;
+            }
+
+            return lr_opt->lr_start <= ip.x && ip.x <= lr_opt->lr_end;
+        }
+
+        bool contains_exclusive(const input_point& ip) const
+        {
+            auto lr_opt = this->range_for_line(ip.y);
+            if (!lr_opt) {
+                return false;
+            }
+
+            return lr_opt->lr_start <= ip.x && ip.x < lr_opt->lr_end;
         }
 
         std::optional<line_range> range_for_line(int y) const

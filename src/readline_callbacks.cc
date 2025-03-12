@@ -442,7 +442,12 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
             if (generation == 0 && trim(line) == args[0]
                 && !prompt_res.pr_new_prompt.empty())
             {
-                prompt.p_editor.set_content(prompt_res.pr_new_prompt);
+                log_debug("replacing prompt with one suggested by command");
+                prompt.p_editor.tc_selection
+                    = textinput_curses::selected_range::from_key(
+                        textinput_curses::input_point::home(),
+                        prompt.p_editor.tc_cursor);
+                prompt.p_editor.replace_selection(prompt_res.pr_new_prompt);
                 prompt.p_editor.move_cursor_to({(int) args[0].length() + 1, 0});
                 generation += 1;
                 iter = lnav_commands.end();

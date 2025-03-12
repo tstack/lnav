@@ -1051,11 +1051,12 @@ textinput_curses::handle_key(const ncinput& ch)
                     const auto& ce = this->tc_change_log.back();
                     auto content_sf = string_fragment::from_str(ce.ce_content);
                     this->tc_selection = ce.ce_range;
-                    log_debug(" range [%d:%d) - [%d:%d)",
+                    log_debug(" range [%d:%d) - [%d:%d) - %s",
                               this->tc_selection->sr_start.x,
                               this->tc_selection->sr_start.y,
                               this->tc_selection->sr_end.x,
-                              this->tc_selection->sr_end.y);
+                              this->tc_selection->sr_end.y,
+                              ce.ce_content.c_str());
                     this->replace_selection_no_change(content_sf);
                     this->tc_change_log.pop_back();
                 }
@@ -1281,11 +1282,15 @@ textinput_curses::handle_key(const ncinput& ch)
                 if (!this->tc_selection) {
                     this->tc_cursor_anchor = this->tc_cursor;
                 }
-            }
-            this->move_cursor_by({direction_t::left, 1});
-            if (ncinput_shift_p(&ch)) {
+                this->move_cursor_by({direction_t::left, 1});
                 this->tc_selection = selected_range::from_key(
                     this->tc_cursor_anchor, this->tc_cursor);
+            } else if (this->tc_selection) {
+                this->tc_cursor = this->tc_selection->sr_start;
+                this->tc_selection = std::nullopt;
+                this->set_needs_update();
+            } else {
+                this->move_cursor_by({direction_t::left, 1});
             }
             return true;
         }
@@ -1294,11 +1299,15 @@ textinput_curses::handle_key(const ncinput& ch)
                 if (!this->tc_selection) {
                     this->tc_cursor_anchor = this->tc_cursor;
                 }
-            }
-            this->move_cursor_by({direction_t::right, 1});
-            if (ncinput_shift_p(&ch)) {
+                this->move_cursor_by({direction_t::right, 1});
                 this->tc_selection = selected_range::from_key(
                     this->tc_cursor_anchor, this->tc_cursor);
+            } else if (this->tc_selection) {
+                this->tc_cursor = this->tc_selection->sr_end;
+                this->tc_selection = std::nullopt;
+                this->set_needs_update();
+            } else {
+                this->move_cursor_by({direction_t::right, 1});
             }
             return true;
         }
@@ -1493,12 +1502,14 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
                    && sel_range->lr_end != -1
                    && sel_range->lr_start < sel_range->lr_end)
         {
+            // Del deleting line feed
             if (curr_line + 1 < this->tc_lines.size()) {
                 this->tc_lines[curr_line].append(this->tc_lines[curr_line + 1]);
                 retval.push_back('\n');
                 del_max = curr_line + 1;
             }
         } else if (sel_range->lr_start == 0 && sel_range->lr_end == -1) {
+            log_debug("delete full line");
             retval.append(this->tc_lines[curr_line].al_string);
             retval.push_back('\n');
             del_max = curr_line;
@@ -1508,17 +1519,18 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
             }
         } else {
             auto& al = this->tc_lines[curr_line];
-
             auto start = al.column_to_byte_index(sel_range->lr_start);
             auto end = sel_range->lr_end == -1
                 ? al.al_string.length()
                 : al.column_to_byte_index(sel_range->lr_end);
+
             retval.append(al.al_string.substr(start, end - start));
             al.erase(start, end - start);
-            if (curr_line == range.sr_start.y) {
+            if (full_first_line || curr_line == range.sr_start.y) {
                 al.insert(start, sf.to_string());
                 this->tc_cursor.x = sel_range->lr_start;
             } else if (sel_range->lr_start > 0 && curr_line == range.sr_end.y) {
+                log_debug("odd condition...");
                 del_max = curr_line;
                 this->tc_lines[curr_line - 1].append(this->tc_lines[curr_line]);
             }
@@ -1572,6 +1584,7 @@ textinput_curses::replace_selection(string_fragment sf)
         return;
     }
     auto range = this->tc_selection.value();
+    auto change_pos = this->tc_change_log.size();
     auto old_text = this->replace_selection_no_change(sf);
     if (old_text == sf) {
         log_trace("no-op replacement");
@@ -1595,7 +1608,16 @@ textinput_curses::replace_selection(string_fragment sf)
                       redo_range.sr_start.y,
                       redo_range.sr_end.x,
                       redo_range.sr_end.y);
-            this->tc_change_log.emplace_back(redo_range, old_text);
+            if (change_pos < this->tc_change_log.size()) {
+                // XXX an on_change handler can run and do its own replacement
+                // before we get a change to add or entry
+                log_debug("inserting change log at %d", change_pos);
+                this->tc_change_log.insert(
+                    std::next(this->tc_change_log.begin(), change_pos),
+                    change_entry{redo_range, old_text});
+            } else {
+                this->tc_change_log.emplace_back(redo_range, old_text);
+            }
         } else {
             auto& last_range = this->tc_change_log.back().ce_range;
             last_range.sr_end = this->tc_cursor;
@@ -1746,7 +1768,9 @@ textinput_curses::focus()
     }
 
     if (this->tc_mode == mode_t::show_help
-        || (this->tc_height && this->tc_notice))
+        || (this->tc_height && this->tc_notice)
+        || (this->tc_selection
+            && this->tc_selection->contains_exclusive(this->tc_cursor)))
     {
         notcurses_cursor_disable(ncplane_notcurses(this->tc_window));
         return;
