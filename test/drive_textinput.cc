@@ -420,6 +420,7 @@ main(int argc, char** argv)
         mouse_i.set_behavior(&db);
         mouse_i.set_enabled(sc.get_notcurses(), true);
 
+        tc.focus();
         while (looping) {
             tc.do_update();
             log_debug("doing render");

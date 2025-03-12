@@ -1484,6 +1484,7 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
                     = this->tc_lines[curr_line - 1].column_width();
                 this->tc_cursor.y = curr_line - 1;
                 this->tc_lines[curr_line - 1].append(this->tc_lines[curr_line]);
+                retval.push_back('\n');
                 del_max = curr_line;
                 full_first_line = true;
             }
@@ -1494,9 +1495,12 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
         {
             if (curr_line + 1 < this->tc_lines.size()) {
                 this->tc_lines[curr_line].append(this->tc_lines[curr_line + 1]);
+                retval.push_back('\n');
                 del_max = curr_line + 1;
             }
         } else if (sel_range->lr_start == 0 && sel_range->lr_end == -1) {
+            retval.append(this->tc_lines[curr_line].al_string);
+            retval.push_back('\n');
             del_max = curr_line;
             if (curr_line == range.sr_start.y) {
                 log_debug("full first");
@@ -1574,16 +1578,32 @@ textinput_curses::replace_selection(string_fragment sf)
     } else {
         auto is_wordbreak = !sf.empty()
             && !uc_is_general_category_withtable(sf.front_codepoint(), mask);
-        log_debug("repl sel [%d:%d) - ", range.sr_start.x, range.sr_start.y);
+        log_debug("repl sel [%d:%d) - cursor [%d:%d)",
+                  range.sr_start.x,
+                  range.sr_start.y,
+                  this->tc_cursor.x,
+                  this->tc_cursor.y);
         if (this->tc_change_log.empty()
             || this->tc_change_log.back().ce_range.sr_end != range.sr_start
             || is_wordbreak)
         {
-            this->tc_change_log.emplace_back(
-                selected_range::from_key(range.sr_start, this->tc_cursor),
-                old_text);
+            auto redo_range = selected_range::from_key(
+                range.sr_start.x < 0 ? this->tc_cursor : range.sr_start,
+                this->tc_cursor);
+            log_debug("  redo range [%d:%d] - [%d:%d]",
+                      redo_range.sr_start.x,
+                      redo_range.sr_start.y,
+                      redo_range.sr_end.x,
+                      redo_range.sr_end.y);
+            this->tc_change_log.emplace_back(redo_range, old_text);
         } else {
-            this->tc_change_log.back().ce_range.sr_end = this->tc_cursor;
+            auto& last_range = this->tc_change_log.back().ce_range;
+            last_range.sr_end = this->tc_cursor;
+            log_debug("extending undo range [%d:%d] - [%d:%d]",
+                      last_range.sr_start.x,
+                      last_range.sr_start.y,
+                      last_range.sr_end.x,
+                      last_range.sr_end.y);
         }
     }
 }

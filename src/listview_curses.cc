@@ -1432,7 +1432,9 @@ void
 listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
 {
     if (sel) {
-        if (sel.value() == this->lv_focused_overlay_selection) {
+        if (this->lv_overlay_focused
+            && sel.value() == this->lv_focused_overlay_selection)
+        {
             return;
         }
 
@@ -1445,9 +1447,18 @@ listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
                 this->lv_focused_overlay_selection = 0_vl;
             } else if (sel.value() >= overlay_content.size()) {
                 this->lv_focused_overlay_selection
-                    = vis_line_t(overlay_content.size());
+                    = vis_line_t(overlay_content.size()) - 1_vl;
             } else {
                 this->lv_focused_overlay_selection = sel.value();
+            }
+
+            const auto [height, width] = this->get_dimensions();
+            auto bot = this->get_bottom();
+            auto overlay_height = vis_line_t(
+                this->get_overlay_height(overlay_content.size(), height));
+
+            if (this->lv_selection + overlay_height >= bot) {
+                this->set_top(this->lv_selection, true);
             }
         }
     } else {

@@ -396,6 +396,8 @@ sigchld(int sig)
 static void
 handle_rl_key(notcurses* nc, const ncinput& ch, const char* keyseq)
 {
+    static auto& prompt = lnav::prompt::get();
+
     switch (ch.eff_text[0]) {
         case NCKEY_F02: {
             auto& mouse_i = injector::get<xterm_mouse&>();
@@ -403,13 +405,19 @@ handle_rl_key(notcurses* nc, const ncinput& ch, const char* keyseq)
             break;
         }
         case NCKEY_F03:
+            handle_paging_key(nc, ch, keyseq);
+            break;
         case NCKEY_PGUP:
         case NCKEY_PGDOWN:
-            handle_paging_key(nc, ch, keyseq);
+            if (prompt.p_editor.tc_height == 1) {
+                handle_paging_key(nc, ch, keyseq);
+            } else {
+                prompt.p_editor.handle_key(ch);
+            }
             break;
 
         default:
-            lnav::prompt::get().p_editor.handle_key(ch);
+            prompt.p_editor.handle_key(ch);
             break;
     }
 }
