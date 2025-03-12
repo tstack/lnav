@@ -708,12 +708,15 @@ yajlpp_parse_context::update_callbacks(const json_path_container* orig_handlers,
 
     if (!this->ypc_active_paths.empty()) {
         std::string curr_path(&this->ypc_path[0], this->ypc_path.size() - 1);
+        auto path_iter = this->ypc_active_paths.find(curr_path);
 
-        if (this->ypc_active_paths.find(curr_path)
-            == this->ypc_active_paths.end())
-        {
+        if (path_iter == this->ypc_active_paths.end()) {
             return;
         }
+        path_iter->second += 1;
+        log_trace("%s: found active path: %s",
+                  this->ypc_source.c_str(),
+                  curr_path.c_str());
     }
 
     if (child_start == 0 && !this->ypc_obj_stack.empty()) {

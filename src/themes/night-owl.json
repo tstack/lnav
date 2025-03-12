@@ -16,7 +16,6 @@
                 },
                 "styles": {
                     "identifier": {
-                        "background-color": "#011627",
                         "color": "semantic()"
                     },
                     "text": {
@@ -24,7 +23,7 @@
                         "background-color": "#011627"
                     },
                     "selected-text": {
-                        "background-color": "$cyan"
+                        "background-color": "#4373c2"
                     },
                     "fuzzy-match": {
                         "color": "$yellow",
@@ -56,13 +55,15 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "$red",
-                        "bold": true,
-                        "underline": true
+                        "background-color": "#28505d",
+                        "bold": true
                     },
                     "disabled-cursor-line": {
                         "color": "$cyan",
-                        "background-color": "#5f005f"
+                        "background-color": "#18202d"
+                    },
+                    "time-column": {
+                        "background-color": "#112637"
                     },
                     "adjusted-time": {
                         "color": "$magenta"
@@ -88,8 +89,12 @@
                         "background-color": "#333"
                     },
                     "popup": {
-                        "color": "$base00",
-                        "background-color": "$base3"
+                        "color": "#fff",
+                        "background-color": "#011627"
+                    },
+                    "popup-border": {
+                        "color": "#5f7e97",
+                        "background-color": "#011627"
                     },
                     "scrollbar": {
                         "color": "$black",

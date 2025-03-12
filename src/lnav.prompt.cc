@@ -677,7 +677,7 @@ prompt::get_db_completion_text(const std::string& pattern,
         .highlight_fuzzy_matches(pattern)
         .append(" ")
         .pad_to(width + 1)
-        .append(summary, VC_ROLE.value(role_t::VCR_COMMENT))
+        .append(summary)
         .with_attr_for_all(SUBST_TEXT.value(str + " "));
 }
 

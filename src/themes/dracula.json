@@ -34,7 +34,7 @@
                         "background-color": "$background"
                     },
                     "selected-text": {
-                        "background-color": "$bgdarker"
+                        "background-color": "#02778f"
                     },
                     "fuzzy-match": {
                         "color": "$orange",

@@ -899,6 +899,14 @@ struct json_path_handler : public json_path_handler_base {
              std::enable_if_t<LastIs<std::string, Args...>::value, bool> = true>
     json_path_handler& for_field(Args... args)
     {
+        this->add_cb(null_field_cb);
+        this->jph_null_cb = [args...](yajlpp_parse_context* ypc) {
+            auto* obj = ypc->ypc_obj_stack.top();
+
+            json_path_handler::get_field(obj, args...).clear();
+
+            return 1;
+        };
         this->add_cb(str_field_cb2);
         this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
                                      const string_fragment& value_str,

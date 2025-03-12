@@ -3226,7 +3226,7 @@ com_config(exec_context& ec,
                     errors.push_back(msg);
                 }
             });
-        ypc.ypc_active_paths.insert(option);
+        ypc.ypc_active_paths[option] = 0;
         ypc.update_callbacks();
 
         const auto* jph = ypc.ypc_current_handler;
@@ -3407,7 +3407,7 @@ com_reset_config(exec_context& ec,
     }
     lnav_config = rollback_lnav_config;
     ypc.set_path(option).with_obj(lnav_config);
-    ypc.ypc_active_paths.insert(option);
+    ypc.ypc_active_paths[option] = 0;
     ypc.update_callbacks();
 
     if (option == "*"

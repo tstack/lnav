@@ -1975,15 +1975,15 @@ load_config_from(_lnav_config& lconfig,
     }
 }
 
-static bool
-load_default_config(struct _lnav_config& config_obj,
+static size_t
+load_default_config(_lnav_config& config_obj,
                     const std::string& path,
                     const bin_src_file& bsf,
                     std::vector<lnav::console::user_message>& errors)
 {
     yajlpp_parse_context ypc_builtin(intern_string::lookup(bsf.get_name()),
                                      &lnav_config_handlers);
-    struct config_userdata ud(errors);
+    config_userdata ud(errors);
 
     auto handle
         = yajlpp::alloc_handle(&ypc_builtin.ypc_callbacks, &ypc_builtin);
@@ -1995,7 +1995,7 @@ load_default_config(struct _lnav_config& config_obj,
 
     if (path != "*") {
         ypc_builtin.ypc_ignore_unused = true;
-        ypc_builtin.ypc_active_paths.insert(path);
+        ypc_builtin.ypc_active_paths[path] = 0;
     }
 
     yajl_config(handle, yajl_allow_comments, 1);
@@ -2003,18 +2003,18 @@ load_default_config(struct _lnav_config& config_obj,
     auto sfp = bsf.to_string_fragment_producer();
     ypc_builtin.parse_doc(*sfp);
 
-    return path == "*" || ypc_builtin.ypc_active_paths.empty();
+    return path == "*" ? 1 : ypc_builtin.ypc_active_paths[path];
 }
 
-static bool
+static size_t
 load_default_configs(_lnav_config& config_obj,
                      const std::string& path,
                      std::vector<lnav::console::user_message>& errors)
 {
-    auto retval = false;
+    size_t retval = 0;
 
     for (auto& bsf : lnav_config_json) {
-        retval = load_default_config(config_obj, path, bsf, errors) || retval;
+        retval += load_default_config(config_obj, path, bsf, errors);
     }
 
     return retval;
@@ -2128,9 +2128,11 @@ reset_config(const std::string& path)
 {
     std::vector<lnav::console::user_message> errors;
 
-    load_default_configs(lnav_config, path, errors);
+    log_debug("resetting path: %s", path.c_str());
+
+    auto count = load_default_configs(lnav_config, path, errors);
     if (path != "*") {
-        static const auto INPUT_SRC = intern_string::lookup("input");
+        static const intern_string_t INPUT_SRC = intern_string::lookup("input");
 
         yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
         ypc.set_path(path)
@@ -2138,9 +2140,9 @@ reset_config(const std::string& path)
             .with_error_reporter([&errors](const auto& ypc, auto msg) {
                 errors.push_back(msg);
             });
-        ypc.ypc_active_paths.insert(path);
+        ypc.ypc_active_paths[path] = 0;
         ypc.update_callbacks();
-        const json_path_handler_base* jph = ypc.ypc_current_handler;
+        const auto* jph = ypc.ypc_current_handler;
 
         if (!ypc.ypc_handler_stack.empty()) {
             jph = ypc.ypc_handler_stack.back();
@@ -2156,6 +2158,8 @@ reset_config(const std::string& path)
 
             ypc.ypc_obj_stack.pop();
             jph->jph_obj_deleter(provider_ctx, ypc.ypc_obj_stack.top());
+        } else if (count == 0 && ypc.ypc_callbacks.yajl_null) {
+            ypc.ypc_callbacks.yajl_null(&ypc);
         }
     }
 

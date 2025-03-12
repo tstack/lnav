@@ -65,13 +65,15 @@
                     },
                     "cursor-line": {
                         "color": "$cyan",
-                        "background-color": "$red",
-                        "bold": true,
-                        "underline": true
+                        "background-color": "$base02",
+                        "bold": true
                     },
                     "disabled-cursor-line": {
                         "color": "$cyan",
                         "background-color": "#5f005f"
+                    },
+                    "time-column": {
+                        "background-color": "$base02"
                     },
                     "adjusted-time": {
                         "color": "$magenta"
@@ -90,7 +92,11 @@
                     },
                     "popup": {
                         "color": "$base00",
-                        "background-color": "$base3"
+                        "background-color": "#00212b"
+                    },
+                    "popup-border": {
+                        "color": "#2aa198",
+                        "background-color": "#00212b"
                     },
                     "scrollbar": {
                         "color": "$base03",

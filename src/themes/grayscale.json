@@ -21,8 +21,8 @@
                         "bold": true
                     },
                     "text": {
-                        "color": "",
-                        "background-color": ""
+                        "color": "$white",
+                        "background-color": "$black"
                     },
                     "fuzzy-match": {
                         "underline": true,
@@ -54,12 +54,17 @@
                     "cursor-line": {
                         "color": "#fff",
                         "background-color": "#555",
-                        "bold": true,
-                        "underline": true
+                        "bold": true
                     },
                     "disabled-cursor-line": {
                         "color": "#888",
                         "background-color": "#333"
+                    },
+                    "selected-text": {
+                        "color": "#888"
+                    },
+                    "time-column": {
+                        "background-color": "#444"
                     },
                     "adjusted-time": {
                         "color": "$magenta"
@@ -86,7 +91,7 @@
                     },
                     "popup": {
                         "color": "$plaintext",
-                        "background-color": "#626262"
+                        "background-color": "#424242"
                     },
                     "scrollbar": {
                         "color": "$black",

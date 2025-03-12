@@ -736,21 +736,24 @@ listview_curses::do_update()
         }
 
         if (this->lv_show_scrollbar) {
+            auto scroll_offset = (this->lv_border_left_role ? 1 : 0);
+            auto avail_height = height - scroll_offset;
             double progress = 1.0;
             double coverage = 1.0;
-            double adjusted_height = (double) row_count / (double) height;
+            double adjusted_height = (double) row_count / (double) avail_height;
 
             if (row_count > 0) {
                 progress = (double) this->lv_top / (double) row_count;
-                coverage = (double) height / (double) row_count;
+                coverage = (double) avail_height / (double) row_count;
             }
 
-            this->lv_scroll_top = (int) (progress * (double) height);
+            this->lv_scroll_top
+                = scroll_offset + (int) (progress * (double) avail_height);
             this->lv_scroll_bottom = this->lv_scroll_top
-                + std::min((int) height, (int) (coverage * (double) height));
+                + std::min((int) avail_height,
+                           (int) (coverage * (double) avail_height));
 
-            for (unsigned int gutter_y
-                 = this->vc_y + (this->lv_border_left_role ? 1 : 0);
+            for (unsigned int gutter_y = this->vc_y + scroll_offset;
                  gutter_y < (this->vc_y + height);
                  gutter_y++)
             {
