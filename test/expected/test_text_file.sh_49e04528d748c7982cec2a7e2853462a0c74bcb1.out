@@ -7,7 +7,9 @@
 [33m-[0m [34m[[0mTable of Contents[34m]([0m#table-of-contents[34m)[0m
     [33m-[0m [34m[[0mTest[34m]([0m#test[34m)[0m
     [33m-[0m [34m[[0mGithub Alerts[34m]([0m#github-alerts[34m)[0m
-    [33m-[0m [34m[[0mTable[34m]([0m#table[34m)[0m
+    [33m-[0m [34m[[0mTable[34m][[0m1[34m][0m
+
+[34m[[0m1[34m]:[0m #table
 
 [1m## Test[0m
 
@@ -92,6 +94,11 @@ World</span>!
 
 > [!CAUTION]
 > Advises about risks or negative outcomes of certain actions.
+
+[1m## Blockquotes[0m
+
+> > He said
+> She said
 
 [1m## Tasks[0m
 

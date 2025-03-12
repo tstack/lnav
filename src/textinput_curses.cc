@@ -1405,6 +1405,9 @@ textinput_curses::ensure_cursor_visible()
     if (this->tc_cursor.x >= this->tc_left + (dim.dr_width - 2)) {
         this->tc_left = (this->tc_cursor.x - dim.dr_width) + 2;
     }
+    if (this->tc_top < 0) {
+        this->tc_top = 0;
+    }
     if (this->tc_top >= this->tc_cursor.y) {
         this->tc_top = this->tc_cursor.y;
         if (this->tc_top > 0) {

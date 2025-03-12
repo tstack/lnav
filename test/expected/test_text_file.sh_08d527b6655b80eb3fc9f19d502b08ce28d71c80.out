@@ -93,7 +93,7 @@ usual hotkeys to move around the view (arrow keys or
 See the [34m[[0mUsage section[34m]([0mhttps://docs.lnav.org/en/latest/usage.html[34m)[0m
 of the online documentation for more information.
 
-[^1]: Files that do not contain log messages can be seen in the 
+[34m[^[0m1[34m][0m[34m:[0m Files that do not contain log messages can be seen in the 
       TEXT view (reachable by pressing [35m`t`[0m).
 
 [4m### Usage with [0m[4m[35m`systemd-journald`[0m

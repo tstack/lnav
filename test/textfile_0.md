@@ -7,7 +7,9 @@
 - [Table of Contents](#table-of-contents)
     - [Test](#test)
     - [Github Alerts](#github-alerts)
-    - [Table](#table)
+    - [Table][1]
+
+[1]: #table
 
 ## Test
 
@@ -92,6 +94,11 @@ def hw(name):
 
 > [!CAUTION]
 > Advises about risks or negative outcomes of certain actions.
+
+## Blockquotes
+
+> > He said
+> She said
 
 ## Tasks
 
