@@ -1518,6 +1518,7 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
                 full_first_line = true;
             }
         } else {
+            log_debug("partial line change");
             auto& al = this->tc_lines[curr_line];
             auto start = al.column_to_byte_index(sel_range->lr_start);
             auto end = sel_range->lr_end == -1
@@ -1525,14 +1526,19 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
                 : al.column_to_byte_index(sel_range->lr_end);
 
             retval.append(al.al_string.substr(start, end - start));
+            if (sel_range->lr_end == -1) {
+                retval.push_back('\n');
+            }
             al.erase(start, end - start);
             if (full_first_line || curr_line == range.sr_start.y) {
                 al.insert(start, sf.to_string());
                 this->tc_cursor.x = sel_range->lr_start;
-            } else if (sel_range->lr_start > 0 && curr_line == range.sr_end.y) {
-                log_debug("odd condition...");
+            }
+            if (!full_first_line && sel_range->lr_start == 0
+                && range.sr_start.y < curr_line && curr_line == range.sr_end.y)
+            {
                 del_max = curr_line;
-                this->tc_lines[curr_line - 1].append(this->tc_lines[curr_line]);
+                this->tc_lines[range.sr_start.y].append(al);
             }
         }
     }
