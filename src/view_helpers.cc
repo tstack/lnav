@@ -649,6 +649,7 @@ handle_winch(screen_curses* sc)
     }
 
     if (sc) {
+        tcsetattr(STDIN_FILENO, TCSANOW, &sc->sc_termios);
         notcurses_refresh(sc->get_notcurses(), nullptr, nullptr);
         notcurses_render(sc->get_notcurses());
         notcurses_refresh(sc->get_notcurses(), nullptr, nullptr);

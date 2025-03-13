@@ -164,10 +164,12 @@ public:
         this->cleanup_end();
     }
 
-    explicit data_scanner(string_fragment sf)
+    explicit data_scanner(string_fragment sf, bool do_cleanup = true)
         : ds_input(sf), ds_init_offset(sf.sf_begin), ds_next_offset(sf.sf_begin)
     {
-        this->cleanup_end();
+        if (do_cleanup) {
+            this->cleanup_end();
+        }
     }
 
     explicit data_scanner(const shared_buffer_ref& line, size_t off, size_t end)

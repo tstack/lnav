@@ -118,7 +118,7 @@ parsed::arg_at(int x) const
                     case help_parameter_format_t::HPF_REGEX:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
                         std::optional<data_scanner::capture_t> cap_to_start;
-                        data_scanner ds(se.se_origin);
+                        data_scanner ds(se.se_origin, false);
 
                         while (true) {
                             auto tok_res = ds.tokenize2();
@@ -133,7 +133,11 @@ parsed::arg_at(int x) const
                                       x,
                                       tok.tr_capture.c_end,
                                       data_scanner::token2name(tok.tr_token));
-                            if (cap_to_start && tok.tr_token == DT_GARBAGE) {
+                            if (cap_to_start
+                                && (tok.tr_token == DT_GARBAGE
+                                    || tok.tr_token == DT_DOT
+                                    || tok.tr_token == DT_ESCAPED_CHAR))
+                            {
                                 log_debug("expanding cap");
                                 tok.tr_capture.c_begin = cap_to_start->c_begin;
                             }
@@ -156,6 +160,8 @@ parsed::arg_at(int x) const
                                         cap_to_start = std::nullopt;
                                         break;
                                     case DT_GARBAGE:
+                                    case DT_DOT:
+                                    case DT_ESCAPED_CHAR:
                                         break;
                                     default:
                                         cap_to_start = tok.tr_capture;

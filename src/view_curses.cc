@@ -1438,10 +1438,24 @@ screen_curses::create(const notcurses_options& options)
     term_name = notcurses_detected_terminal(nc);
     log_info("notcurses detected terminal: %s", term_name.in());
 
-    return Ok(screen_curses(nc));
+    auto retval = screen_curses(nc);
+
+    tcgetattr(STDIN_FILENO, &retval.sc_termios);
+    retval.sc_termios.c_cc[VSTART] = 0;
+    retval.sc_termios.c_cc[VSTOP] = 0;
+#ifdef VDISCARD
+    retval.sc_termios.c_cc[VDISCARD] = 0;
+#endif
+#ifdef VDSUSP
+    retval.sc_termios.c_cc[VDSUSP] = 0;
+#endif
+    tcsetattr(STDIN_FILENO, TCSANOW, &retval.sc_termios);
+
+    return Ok(std::move(retval));
 }
 
 screen_curses::screen_curses(screen_curses&& other) noexcept
-    : sc_notcurses(std::exchange(other.sc_notcurses, nullptr))
+    : sc_termios(other.sc_termios),
+      sc_notcurses(std::exchange(other.sc_notcurses, nullptr))
 {
 }

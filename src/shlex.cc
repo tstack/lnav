@@ -358,7 +358,10 @@ shlex::split(const scoped_resolver& vars)
         auto tokenize_res0 = this->tokenize();
         if (tokenize_res0.isErr()) {
             auto te = tokenize_res0.unwrapErr();
-            if (!retval.empty()) {
+            if (retval.empty()) {
+                auto sf = string_fragment::from_bytes(this->s_str, this->s_len);
+                retval.emplace_back(split_element_t{sf, sf.to_string()});
+            } else {
                 retval.back().se_origin.sf_end = te.te_source.sf_end;
                 retval.back().se_value.append(&this->s_str[last_index]);
             }

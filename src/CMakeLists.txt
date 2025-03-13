@@ -252,8 +252,9 @@ set(CONFIG_FILES
         keymaps/uk-keymap.json
         keymaps/us-keymap.json
         themes/default-theme.json
-        themes/grayscale.json
+        themes/dracula.json
         themes/eldar.json
+        themes/grayscale.json
         themes/monocai.json
         themes/night-owl.json
         themes/solarized-dark.json

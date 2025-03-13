@@ -42,6 +42,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <termios.h>
 
 #include "base/attr_line.hh"
 #include "base/enum_util.hh"
@@ -96,6 +97,7 @@ public:
         return notcurses_stdplane(this->sc_notcurses);
     }
 
+    termios sc_termios;
 private:
     explicit screen_curses(notcurses* nc) : sc_notcurses(nc) {}
 

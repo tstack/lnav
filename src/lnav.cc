@@ -1219,6 +1219,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     (void) signal(SIGINT, sigint);
     (void) signal(SIGTERM, sigint);
     (void) signal(SIGWINCH, sigwinch);
+    (void) signal(SIGCONT, sigwinch);
     auto _ign_signal = finally([] {
         signal(SIGWINCH, SIG_IGN);
         lnav_data.ld_winched = false;
@@ -1328,21 +1329,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             || lnav_config.lc_mouse_mode == lnav_mouse_mode::enabled);
 
     lnav_data.ld_window = sc.get_std_plane();
-
-    {
-        struct termios tio;
-
-        tcgetattr(STDIN_FILENO, &tio);
-        tio.c_cc[VSTART] = 0;
-        tio.c_cc[VSTOP] = 0;
-#ifdef VDISCARD
-        tio.c_cc[VDISCARD] = 0;
-#endif
-#ifdef VDSUSP
-        tio.c_cc[VDSUSP] = 0;
-#endif
-        tcsetattr(STDIN_FILENO, TCSANOW, &tio);
-    }
 
     auto& vc = view_colors::singleton();
     view_colors::init(sc.get_notcurses());

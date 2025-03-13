@@ -100,6 +100,13 @@ fuzzy_internal::fuzzy_match_recursive(const char* pattern,
     // Loop through pattern and str looking for a match
     bool first_match = true;
     while (*pattern != '\0' && *str != '\0') {
+        if (*pattern == '\\') {
+            pattern += 1;
+            continue;
+        }
+        if (*str == '\\') {
+            pattern += 1;
+        }
         // Found match
         if (tolower(*pattern) == tolower(*str)) {
             // Supplied matches buffer was too short
