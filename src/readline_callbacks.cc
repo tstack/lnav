@@ -753,7 +753,9 @@ rl_search_change(textinput_curses& rc, bool is_req)
             {
                 rc.tc_suggestion = prompt.get_regex_suggestion(*tc, line);
             } else {
-                log_debug("not at end of line");
+                log_debug("not at end of line %d %d",
+                          arg_pair.aar_element.se_value.empty(),
+                          rc.is_cursor_at_end_of_line());
                 rc.tc_suggestion.clear();
             }
         } else {

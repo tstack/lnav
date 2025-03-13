@@ -91,10 +91,21 @@ TEST_CASE("lnav::command::parse_for_prompt")
                       .with_format(help_parameter_format_t::HPF_REGEX));
 
     exec_context ec;
-    auto sf = "abc\\"_frag;
-    auto parse_res = lnav::command::parse_for_prompt(ec, sf, SEARCH_HELP);
-    auto arg = parse_res.arg_at(4);
-
+    {
+        auto sf = "Word "_frag;
+        auto parse_res = lnav::command::parse_for_prompt(ec, sf, SEARCH_HELP);
+        auto arg = parse_res.arg_at(5);
+        CHECK(arg.has_value());
+        CHECK(arg->aar_help == &SEARCH_HELP.ht_parameters[0]);
+        CHECK(arg->aar_element.se_origin.empty());
+    }
+    {
+        auto sf = "abc\\"_frag;
+        auto parse_res = lnav::command::parse_for_prompt(ec, sf, SEARCH_HELP);
+        auto arg = parse_res.arg_at(4);
+        CHECK(arg.has_value());
+        CHECK(arg->aar_element.se_value == "abc\\");
+    }
 }
 
 TEST_CASE("shlex::split")

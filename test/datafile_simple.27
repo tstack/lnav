@@ -1,0 +1,13 @@
+             Installing ldap-snap-1-SNAPSHOT from $SNAP_HOME/ldap/target/ldap-build
+ key  11:11            ^                                                             
+  id  11:31             ^------------------^                                         ldap-snap-1-SNAPSHOT
+pair  11:31             ^------------------^                                         ldap-snap-1-SNAPSHOT
+ key  37:37                                      ^                                   
+path  37:70                                       ^-------------------------------^  $SNAP_HOME/ldap/target/ldap-build
+pair  37:70                                       ^-------------------------------^  $SNAP_HOME/ldap/target/ldap-build
+msg         :Installing ldap-snap-1-SNAPSHOT from $SNAP_HOME/ldap/target/ldap-build
+format      :Installing # from #
+{
+    "col_0": "ldap-snap-1-SNAPSHOT",
+    "col_1": "$SNAP_HOME/ldap/target/ldap-build"
+}

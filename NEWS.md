@@ -16,7 +16,7 @@ Interface changes:
     ```
   - When editing a regular expression, like the search prompt or
     for a filter, if the current pattern matches a line in the
-    view, the following will be suggested.
+    view, the following word will be suggested.
     For example, if the view has the text "foo bar baz" and you
     type "foo ", the prompt will suggest "bar" and you can then
     press `TAB` to complete.

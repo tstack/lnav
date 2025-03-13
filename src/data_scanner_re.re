@@ -348,7 +348,9 @@ loop:
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};
        }
        <init, bol> [a-zA-Z0-9]+":/""/"?[^\x00\x16\x1b\r\n\t '"[\](){}]+[/a-zA-Z0-9\-=&?%] { RET(DT_URL); }
-       <init, bol> ("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
+       <init, bol> "$"("!"|"?"|"#"|[a-zA-Z0-9_]+) / [^/] { RET(DT_ID); }
+       <init, bol> "${"("!"|"?"|"#"|[a-zA-Z0-9_]+)"}" { RET(DT_ID); }
+       <init, bol> ("$"[a-zA-Z0-9_]+)?("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
        <init, bol> (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
        <init, bol> (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
        <init, bol> [0-9a-fA-F][0-9a-fA-F]((":"|"-")[0-9a-fA-F][0-9a-fA-F])+ {

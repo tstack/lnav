@@ -142,7 +142,8 @@ parsed::arg_at(int x) const
                                 tok.tr_capture.c_begin = cap_to_start->c_begin;
                             }
                             if (tok.tr_capture.c_begin <= x
-                                && x <= tok.tr_capture.c_end)
+                                && x <= tok.tr_capture.c_end &&
+                                tok.tr_token != DT_WHITE)
                             {
                                 return arg_at_result{
                                     arg.second.a_help,
