@@ -1,13 +1,17 @@
-             Installing ldap-snap-1-SNAPSHOT from $SNAP_HOME/ldap/target/ldap-build
- key  11:11            ^                                                             
-  id  11:31             ^------------------^                                         ldap-snap-1-SNAPSHOT
-pair  11:31             ^------------------^                                         ldap-snap-1-SNAPSHOT
- key  37:37                                      ^                                   
-path  37:70                                       ^-------------------------------^  $SNAP_HOME/ldap/target/ldap-build
-pair  37:70                                       ^-------------------------------^  $SNAP_HOME/ldap/target/ldap-build
-msg         :Installing ldap-snap-1-SNAPSHOT from $SNAP_HOME/ldap/target/ldap-build
-format      :Installing # from #
+             Installing ldap-snap-1-SNAPSHOT from $SNAP_HOME/ldap/target/ldap-build by com.snaplogic.cc.service.NeighborConnectivityTester.lambda$submit$0
+ key  11:11            ^                                                                                                                                    
+  id  11:31             ^------------------^                                                                                                                ldap-snap-1-SNAPSHOT
+pair  11:31             ^------------------^                                                                                                                ldap-snap-1-SNAPSHOT
+ key  37:37                                      ^                                                                                                          
+path  37:70                                       ^-------------------------------^                                                                         $SNAP_HOME/ldap/target/ldap-build
+pair  37:70                                       ^-------------------------------^                                                                         $SNAP_HOME/ldap/target/ldap-build
+ key  74:74                                                                           ^                                                                     
+  id  74:141                                                                           ^-----------------------------------------------------------------^  com.snaplogic.cc.service.NeighborConnectivityTester.lambda$submit$0
+pair  74:141                                                                           ^-----------------------------------------------------------------^  com.snaplogic.cc.service.NeighborConnectivityTester.lambda$submit$0
+msg         :Installing ldap-snap-1-SNAPSHOT from $SNAP_HOME/ldap/target/ldap-build by com.snaplogic.cc.service.NeighborConnectivityTester.lambda$submit$0
+format      :Installing # from # by #
 {
     "col_0": "ldap-snap-1-SNAPSHOT",
-    "col_1": "$SNAP_HOME/ldap/target/ldap-build"
+    "col_1": "$SNAP_HOME/ldap/target/ldap-build",
+    "col_2": "com.snaplogic.cc.service.NeighborConnectivityTester.lambda$submit$0"
 }
