@@ -1524,7 +1524,7 @@ rl_callback(textinput_curses& rc)
                         .with_detect_format(false)
                         .with_text_format(tf)
                         .with_init_location(0_vl);
-                    lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
+                    lnav_data.ld_files_to_front.emplace_back(desc);
 
                     rc.set_alt_value(HELP_MSG_1(X, "to close the file"));
                 }

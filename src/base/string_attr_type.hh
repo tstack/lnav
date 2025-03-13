@@ -420,6 +420,15 @@ namespace roles {
 
 template<typename S>
 std::pair<S, string_attr_pair>
+for_flag(S str, bool flag)
+{
+    return std::make_pair(
+        std::move(str),
+        VC_ROLE.value(flag ? role_t::VCR_OK : role_t::VCR_ERROR));
+}
+
+template<typename S>
+std::pair<S, string_attr_pair>
 error(S str)
 {
     return std::make_pair(std::move(str), VC_ROLE.value(role_t::VCR_ERROR));

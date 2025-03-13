@@ -493,6 +493,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
             auto path = lf->get_filename();
             auto actual_path = lf->get_actual_path();
             auto format = lf->get_format();
+            const auto& open_opts = lf->get_open_options();
 
             details.emplace_back(attr_line_t()
                                      .appendf(FMT_STRING("{}"), path.filename())
@@ -609,6 +610,40 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                                              .append(lnav::roles::symbol(
                                                  file_options.fo_default_zone
                                                      .pp_value->name())));
+                }
+            }
+
+            {
+                details.emplace_back(
+                    attr_line_t()
+                        .append("Provenance"_h3)
+                        .right_justify(NAME_WIDTH)
+                        .append(": ")
+                        .append(fmt::to_string(open_opts.loo_source)));
+                details.emplace_back(
+                    attr_line_t()
+                        .append("Flags"_h3)
+                        .right_justify(NAME_WIDTH)
+                        .append(": ")
+                        .append(lnav::roles::for_flag(
+                            "\u2022", open_opts.loo_include_in_session))
+                        .append("include-in-session")
+                        .append(", ")
+                        .append(lnav::roles::for_flag(
+                            "\u2022", open_opts.loo_detect_format))
+                        .append("detect-format"));
+                if (open_opts.loo_init_location.valid()) {
+                    auto loc = open_opts.loo_init_location.match(
+                        [](file_location_tail) { return std::string("tail"); },
+                        [](vis_line_t vl) {
+                            return fmt::format(FMT_STRING("L{:L}"), (int) vl);
+                        },
+                        [](std::string section) { return section; });
+                    details.emplace_back(attr_line_t()
+                                             .append("Initial Location"_h3)
+                                             .right_justify(NAME_WIDTH)
+                                             .append(": ")
+                                             .append(loc));
                 }
             }
 

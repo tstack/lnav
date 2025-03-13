@@ -1108,7 +1108,7 @@ ui_execute_init_commands(
                 .with_detect_format(false)
                 .with_text_format(tf)
                 .with_init_location(0_vl);
-            lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME, 0_vl);
+            lnav_data.ld_files_to_front.emplace_back(OUTPUT_NAME);
 
             lnav::prompt::get().p_editor.set_alt_value(
                 HELP_MSG_1(X, "to close the file"));
@@ -1958,6 +1958,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
         } else {
             auto in_revents = pollfd_revents(pollfds, inputready_fd);
+            auto old_file_names_size
+                = lnav_data.ld_active_files.fc_file_names.size();
+            auto old_files_to_front_size = lnav_data.ld_files_to_front.size();
 
             if (in_revents & (POLLHUP | POLLNVAL)) {
                 log_info("stdin has been closed, exiting...");
@@ -2022,8 +2025,6 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
 
             auto old_mode = lnav_data.ld_mode;
-            auto old_file_names_size
-                = lnav_data.ld_active_files.fc_file_names.size();
 
             ps->check_poll_set(pollfds);
             lnav_data.ld_view_stack.top() |
@@ -2043,6 +2044,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
             if (old_file_names_size
                     != lnav_data.ld_active_files.fc_file_names.size()
+                || old_files_to_front_size != lnav_data.ld_files_to_front.size()
                 || lnav_data.ld_active_files.finished_pipers() > 0)
             {
                 next_rescan_time = ui_now;
@@ -3413,11 +3415,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
 #endif
         else if (lnav::filesystem::is_glob(file_path))
         {
-            lnav_data.ld_active_files.fc_file_names[file_path].with_tail(
+            lnav_data.ld_active_files.fc_file_names[file_path].with_follow(
                 !(lnav_data.ld_flags & LNF_HEADLESS));
         } else if (lnav::filesystem::statp(file_path, &st) == -1) {
             if (file_path_str.find(':') != std::string::npos) {
-                lnav_data.ld_active_files.fc_file_names[file_path].with_tail(
+                lnav_data.ld_active_files.fc_file_names[file_path].with_follow(
                     !(lnav_data.ld_flags & LNF_HEADLESS));
             } else {
                 lnav::console::print(
@@ -3474,11 +3476,10 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
         } else {
             lnav_data.ld_active_files.fc_file_names.emplace(
                 abspath.in(),
-                logfile_open_options().with_init_location(file_loc).with_tail(
+                logfile_open_options().with_init_location(file_loc).with_follow(
                     !(lnav_data.ld_flags & LNF_HEADLESS)));
             if (file_loc.valid()) {
-                lnav_data.ld_files_to_front.emplace_back(abspath.in(),
-                                                         file_loc);
+                lnav_data.ld_files_to_front.emplace_back(abspath.in());
             }
         }
     }
@@ -3594,7 +3595,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                     stdin_dir = stdin_piper.get_out_dir();
                     auto& loo = lnav_data.ld_active_files
                                     .fc_file_names[stdin_piper.get_name()];
-                    loo.with_piper(stdin_piper).with_include_in_session(false);
+                    loo.with_piper(stdin_piper)
+                        .with_include_in_session(
+                            lnav_data.ld_treat_stdin_as_log);
                     if (lnav_data.ld_treat_stdin_as_log) {
                         loo.with_text_format(text_format_t::TF_LOG);
                     }

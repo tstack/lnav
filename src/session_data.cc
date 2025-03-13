@@ -317,7 +317,7 @@ compute_session_id()
         has_files = true;
         h.update(ld_file_name.first);
     }
-    for (auto& lf : lnav_data.ld_active_files.fc_files) {
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
         if (lf->is_valid_filename()) {
             continue;
         }
@@ -326,7 +326,7 @@ compute_session_id()
         }
 
         has_files = true;
-        h.update(lf->get_filename());
+        h.update(lf->get_content_id());
     }
     if (!has_files) {
         return std::nullopt;
@@ -1838,7 +1838,8 @@ lnav::session::restore_view_states()
         if (view_index == LNV_TEXT) {
             auto lf = lnav_data.ld_text_source.current_file();
             if (lf != nullptr) {
-                has_loc = lf->get_open_options().loo_init_location.valid();
+                const auto& init_loc = lf->get_open_options().loo_init_location;
+                has_loc = init_loc.valid() || init_loc.is<file_location_tail>();
                 if (!has_loc) {
                     switch (lf->get_text_format()) {
                         case text_format_t::TF_UNKNOWN:

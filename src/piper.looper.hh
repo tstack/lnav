@@ -57,7 +57,7 @@ using safe_demux_info = safe::Safe<demux_info>;
 
 struct options {
     bool o_demux{false};
-    bool o_tail{true};
+    bool o_follow{true};
 
     options& with_demux(bool v)
     {
@@ -65,9 +65,9 @@ struct options {
         return *this;
     }
 
-    options& with_tail(bool v)
+    options& with_follow(bool v)
     {
-        this->o_tail = v;
+        this->o_follow = v;
         return *this;
     }
 };

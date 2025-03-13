@@ -298,6 +298,19 @@ SELECT content_id, format, time_offset FROM lnav_file
             raw_files.insert(file_path_str);
         }
     }
+    for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+        if (lf->is_valid_filename()) {
+            continue;
+        }
+        if (!lf->get_open_options().loo_include_in_session) {
+            continue;
+        }
+
+        const auto& open_options = lf->get_open_options();
+        if (open_options.loo_piper) {
+            raw_files.emplace(open_options.loo_piper->get_url());
+        }
+    }
     for (const auto& file_path_str : raw_files) {
         fmt::print(
             file, FMT_STRING(":open {}\n"), replace_home_dir(file_path_str));

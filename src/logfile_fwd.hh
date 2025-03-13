@@ -58,6 +58,27 @@ enum class logfile_name_source {
     REMOTE,
 };
 
+template<>
+struct fmt::formatter<logfile_name_source> : formatter<string_view> {
+    template<typename FormatContext>
+    auto format(logfile_name_source lns, FormatContext& ctx)
+    {
+        string_view name = "unknown";
+        switch (lns) {
+            case logfile_name_source::USER:
+                name = "user";
+                break;
+            case logfile_name_source::ARCHIVE:
+                name = "archive";
+                break;
+            case logfile_name_source::REMOTE:
+                name = "remote";
+                break;
+        }
+        return formatter<string_view>::format(name, ctx);
+    }
+};
+
 struct file_location_tail {};
 
 using file_location_t
@@ -73,7 +94,7 @@ struct logfile_open_options_base {
     bool loo_is_visible{true};
     bool loo_non_utf_is_visible{true};
     ssize_t loo_visible_size_limit{-1};
-    bool loo_tail{true};
+    bool loo_follow{true};
     file_format_t loo_file_format{file_format_t::UNKNOWN};
     std::optional<std::string> loo_format_name;
     std::optional<text_format_t> loo_text_format;
@@ -147,9 +168,9 @@ struct logfile_open_options : public logfile_open_options_base {
         return *this;
     }
 
-    logfile_open_options& with_tail(bool val)
+    logfile_open_options& with_follow(bool val)
     {
-        this->loo_tail = val;
+        this->loo_follow = val;
 
         return *this;
     }

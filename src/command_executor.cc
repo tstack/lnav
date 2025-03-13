@@ -1221,7 +1221,7 @@ pipe_callback(exec_context& ec, const std::string& cmdline, auto_fd& fd)
         .with_include_in_session(false)
         .with_detect_format(false)
         .with_init_location(0_vl);
-    lnav_data.ld_files_to_front.emplace_back(desc, 0_vl);
+    lnav_data.ld_files_to_front.emplace_back(desc);
     prompt.p_editor.set_alt_value(HELP_MSG_1(X, "to close the file"));
 
     return lnav::futures::make_ready_future(std::string());

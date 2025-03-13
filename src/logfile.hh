@@ -222,6 +222,11 @@ public:
         this->lf_options.with_include_in_session(enabled);
     }
 
+    void set_init_location(file_location_t loc)
+    {
+        this->lf_options.with_init_location(loc);
+    }
+
     void reset_state();
 
     bool is_time_adjusted() const

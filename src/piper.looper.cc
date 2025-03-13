@@ -431,7 +431,7 @@ looper::loop()
                 }
 
                 if (li.li_file_range.empty()) {
-                    if (!this->l_options.o_tail) {
+                    if (!this->l_options.o_follow) {
                         log_info("%s: reached EOF, exiting",
                                  this->l_name.c_str());
                         this->l_looping = false;

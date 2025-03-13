@@ -2965,8 +2965,7 @@ com_sh(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             std::move(child),
             [](auto& fc, auto& child) {},
         });
-        lnav_data.ld_files_to_front.emplace_back(display_name,
-                                                 file_location_tail{});
+        lnav_data.ld_files_to_front.emplace_back(display_name);
 
         return Ok(fmt::format(FMT_STRING("info: executing -- {}"), carg));
     }

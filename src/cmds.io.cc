@@ -785,7 +785,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
     auto split_args = split_args_res.unwrap()
         | lnav::itertools::map([](const auto& elem) { return elem.se_value; });
 
-    std::vector<std::pair<std::string, file_location_t>> files_to_front;
+    std::vector<std::string> files_to_front;
     std::vector<std::string> closed_files;
     logfile_open_options loo;
 
@@ -833,7 +833,8 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     break;
                 }
 
-                files_to_front.emplace_back(fn, file_loc);
+                lf->set_init_location(file_loc);
+                files_to_front.emplace_back(fn);
                 retval = "";
                 break;
             }
@@ -896,7 +897,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     lnav_data.ld_active_files.fc_files_generation += 1;
                     isc::to<curl_looper&, services::curl_streamer_t>().send(
                         [ul](auto& clooper) { clooper.add_request(ul); });
-                    lnav_data.ld_files_to_front.emplace_back(fn, file_loc);
+                    lnav_data.ld_files_to_front.emplace_back(fn);
                     closed_files.push_back(fn);
                     retval = "info: opened URL";
                 } else {
@@ -961,9 +962,10 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
                 retval = "info: watching -- " + fn;
             } else if (lnav::filesystem::is_glob(fn.c_str())) {
+                loo.with_init_location(file_loc);
                 fc.fc_file_names.emplace(fn, loo);
                 files_to_front.emplace_back(
-                    loo.loo_filename.empty() ? fn : loo.loo_filename, file_loc);
+                    loo.loo_filename.empty() ? fn : loo.loo_filename);
                 retval = "info: watching -- " + fn;
             } else if (stat(fn.c_str(), &st) == -1) {
                 if (fn.find(':') != std::string::npos) {
@@ -1059,13 +1061,35 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 return Err(um);
             } else {
                 fn = abspath.in();
-                fc.fc_file_names.emplace(fn, loo);
-                retval = "info: opened -- " + fn;
-                files_to_front.emplace_back(fn, file_loc);
 
-                closed_files.push_back(fn);
-                if (!loo.loo_filename.empty()) {
-                    closed_files.push_back(loo.loo_filename);
+                file_iter = lnav_data.ld_active_files.fc_files.begin();
+                for (; file_iter != lnav_data.ld_active_files.fc_files.end();
+                     ++file_iter)
+                {
+                    auto lf = *file_iter;
+
+                    if (lf->get_filename() == fn) {
+                        if (lf->get_format() != nullptr) {
+                            retval = "info: log file already loaded";
+                            break;
+                        }
+
+                        lf->set_init_location(file_loc);
+                        files_to_front.emplace_back(fn);
+                        retval = "";
+                        break;
+                    }
+                }
+                if (file_iter == lnav_data.ld_active_files.fc_files.end()) {
+                    loo.with_init_location(file_loc);
+                    fc.fc_file_names.emplace(fn, loo);
+                    retval = "info: opened -- " + fn;
+                    files_to_front.emplace_back(fn);
+
+                    closed_files.push_back(fn);
+                    if (!loo.loo_filename.empty()) {
+                        closed_files.push_back(loo.loo_filename);
+                    }
                 }
 #if 0
                 if (lnav_data.ld_rl_view != nullptr) {

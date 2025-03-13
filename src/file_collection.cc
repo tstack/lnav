@@ -440,7 +440,7 @@ file_collection::watch_logfile(const std::string& filename,
                         = lnav::filesystem::open_file(filename, O_RDONLY);
                     if (open_res.isOk()) {
                         auto looper_options = lnav::piper::options{};
-                        looper_options.with_tail(loo.loo_tail);
+                        looper_options.with_follow(loo.loo_follow);
                         auto create_res
                             = lnav::piper::create_looper(filename,
                                                          open_res.unwrap(),

@@ -163,7 +163,7 @@ struct lnav_data_t {
     std::vector<std::filesystem::path> ld_config_paths;
     file_collection ld_active_files;
     std::list<child_poller> ld_child_pollers;
-    std::list<std::pair<std::string, file_location_t>> ld_files_to_front;
+    std::list<std::string> ld_files_to_front;
     bool ld_stdout_used;
     std::atomic_uint32_t ld_sigint_count{0};
     sig_atomic_t ld_looping{true};

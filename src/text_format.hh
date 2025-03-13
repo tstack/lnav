@@ -67,9 +67,8 @@ extern const string_fragment
     TEXT_FORMAT_STRINGS[lnav::enums::to_underlying(text_format_t::TF_UNKNOWN)
                         + 1];
 
-namespace fmt {
 template<>
-struct formatter<text_format_t> : formatter<string_view> {
+struct fmt::formatter<text_format_t> : formatter<string_view> {
     template<typename FormatContext>
     auto format(text_format_t tf, FormatContext& ctx)
     {
@@ -83,7 +82,6 @@ struct formatter<text_format_t> : formatter<string_view> {
         return formatter<string_view>::format(name, ctx);
     }
 };
-}  // namespace fmt
 
 /**
  * Try to detect the format of the given text file fragment.

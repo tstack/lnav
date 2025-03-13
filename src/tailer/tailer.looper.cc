@@ -160,7 +160,7 @@ tailer::looper::loop_body()
                 if (std::any_of(
                         rpq.rpq_new_paths.begin(),
                         rpq.rpq_new_paths.end(),
-                        [](const auto& pair) { return !pair.second.loo_tail; }))
+                        [](const auto& pair) { return !pair.second.loo_follow; }))
                 {
                     rpq.send_synced_to_main(netloc);
                     to_erase.push_back(netloc);
@@ -652,14 +652,14 @@ tailer::looper::host_tailer::loop_body()
                 auto desired_iter = conn.c_desired_paths.find(pe.pe_path);
                 if (desired_iter != conn.c_desired_paths.end()) {
                     report_error(this->get_display_path(pe.pe_path), pe.pe_msg);
-                    if (!desired_iter->second.loo_tail) {
+                    if (!desired_iter->second.loo_follow) {
                         conn.c_desired_paths.erase(desired_iter);
                     }
                 } else {
                     auto child_iter = conn.c_child_paths.find(pe.pe_path);
 
                     if (child_iter != conn.c_child_paths.end()
-                        && !child_iter->second.loo_tail)
+                        && !child_iter->second.loo_follow)
                     {
                         conn.c_child_paths.erase(child_iter);
                     }
@@ -763,7 +763,7 @@ tailer::looper::host_tailer::loop_body()
                             fc.fc_file_names[lpath_str]
                                 .with_filename(custom_name)
                                 .with_source(logfile_name_source::REMOTE)
-                                .with_tail(loo.loo_tail)
+                                .with_follow(loo.loo_follow)
                                 .with_non_utf_visibility(false)
                                 .with_visible_size_limit(256 * 1024);
                             update_active_files(fc);
@@ -898,7 +898,7 @@ tailer::looper::host_tailer::loop_body()
                     auto iter = conn.c_desired_paths.find(ps.ps_path);
 
                     if (iter != conn.c_desired_paths.end()) {
-                        if (iter->second.loo_tail) {
+                        if (iter->second.loo_follow) {
                             conn.c_synced_desired_paths.insert(ps.ps_path);
                         } else {
                             log_info("synced desired path: %s",
@@ -910,7 +910,7 @@ tailer::looper::host_tailer::loop_body()
                     auto iter = conn.c_child_paths.find(ps.ps_path);
 
                     if (iter != conn.c_child_paths.end()) {
-                        if (iter->second.loo_tail) {
+                        if (iter->second.loo_follow) {
                             conn.c_synced_child_paths.insert(ps.ps_path);
                         } else {
                             log_info("synced child path: %s",
@@ -981,7 +981,7 @@ tailer::looper::host_tailer::loop_body()
                     auto iter = conn.c_desired_paths.find(pl.pl_path);
 
                     if (iter != conn.c_desired_paths.end()) {
-                        if (iter->second.loo_tail) {
+                        if (iter->second.loo_follow) {
                             conn.c_synced_desired_paths.insert(pl.pl_path);
                         } else {
                             log_info("synced desired path: %s",
@@ -993,7 +993,7 @@ tailer::looper::host_tailer::loop_body()
                     auto iter = conn.c_child_paths.find(pl.pl_path);
 
                     if (iter != conn.c_child_paths.end()) {
-                        if (iter->second.loo_tail) {
+                        if (iter->second.loo_follow) {
                             conn.c_synced_child_paths.insert(pl.pl_path);
                         } else {
                             log_info("synced child path: %s",
@@ -1144,13 +1144,13 @@ tailer::looper::remote_path_queue::send_synced_to_main(
     std::set<std::string> synced_files;
 
     for (const auto& pair : this->rpq_new_paths) {
-        if (!pair.second.loo_tail) {
+        if (!pair.second.loo_follow) {
             synced_files.emplace(
                 fmt::format(FMT_STRING("{}{}"), netloc, pair.first));
         }
     }
     for (const auto& pair : this->rpq_existing_paths) {
-        if (!pair.second.loo_tail) {
+        if (!pair.second.loo_follow) {
             synced_files.emplace(
                 fmt::format(FMT_STRING("{}{}"), netloc, pair.first));
         }
