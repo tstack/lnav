@@ -94,6 +94,9 @@ Bug Fixes:
 * Improved performance for the timeline view.
 * Copying a column with a text value in the DB overlay view.
 * Generic logs read from stdin or exec'd were not working properly.
+* The `:export-session-to` command will now include `:open` commands
+  for log files that were piped in to lnav or executed with the `:sh`
+  command.
 
 ## lnav v0.12.4
 
