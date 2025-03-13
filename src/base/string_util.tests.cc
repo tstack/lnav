@@ -31,9 +31,26 @@
 
 #include "base/string_util.hh"
 
+#include "base/fts_fuzzy_match.hh"
 #include "base/strnatcmp.h"
 #include "config.h"
 #include "doctest/doctest.h"
+
+TEST_CASE("fuzzy_match")
+{
+    {
+        // escape sequences should be ignored
+        const char* str = "com.example.foo";
+        const char* pattern1 = "c\\.e\\.f";
+        const char* pattern2 = "c.e.f";
+
+        int score1, score2;
+        CHECK(fts::fuzzy_match(pattern1, str, score1));
+        CHECK(fts::fuzzy_match(pattern2, str, score2));
+
+        CHECK(score1 == score2);
+    }
+}
 
 TEST_CASE("endswith")
 {
