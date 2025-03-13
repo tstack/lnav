@@ -291,7 +291,11 @@ dist_noinst_DATA = \
 	datafile_simple.20 \
 	datafile_simple.21 \
 	datafile_simple.22 \
+	datafile_simple.23 \
+	datafile_simple.24 \
+	datafile_simple.25 \
 	datafile_simple.26 \
+	datafile_simple.27 \
 	datafile_xml.0 \
 	dhcp.pcapng \
 	dhcp-trunc.pcapng \
