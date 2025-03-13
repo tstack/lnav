@@ -37,7 +37,8 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v4
         with:
-          context: ${{ github.workspace }}/.github/actions/muslbuilder/
+          context: ${{ github.workspace }}
+          file: .github/actions/muslbuilder/Dockerfile
           platforms: linux/amd64, linux/arm/v7, linux/arm64
           push: true
           tags: ${{ env.CONTAINER_TAG }}

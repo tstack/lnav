@@ -161,9 +161,17 @@ RUN curl -sSL https://www.sqlite.org/2025/sqlite-autoconf-3490100.tar.gz | tar x
     make install && \
     cd /extract && rm -rf *
 
-FROM --platform=$TARGETPLATFORM alpine:latest
+FROM --platform=$TARGETPLATFORM alpine:latest AS rust-builder
 
-COPY --from=depsbuilder /fake.root /fake.root
+RUN apk add --no-cache \
+        cargo \
+        g++
+
+WORKDIR /build/prqlc-c
+COPY src/third-party/prqlc-c .
+RUN cargo build --release --package prqlc-c
+
+FROM --platform=$TARGETPLATFORM alpine:latest
 
 LABEL com.github.actions.name="C++ MUSL Builder Slim"
 LABEL com.github.actions.description="Provides a C++ MUSL environment"
@@ -182,5 +190,13 @@ RUN apk add --no-cache \
     rust \
     zip
 
-COPY entrypoint.sh /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+
+COPY --from=depsbuilder /fake.root /fake.root
+COPY --from=rust-builder /build/prqlc-c/target/release/libprqlc_c.a /opt/prebuilt/libprqlc_c.a
+ENV PRQLC_C_PATH=/opt/prebuilt/libprqlc_c.a
+ENV LNAV_BUILD_STATIC=yes
+ENV LNAV_BUILD_ENV=/fake.root
+ENV PATH=/fake.root/bin:$PATH
+
+COPY .github/actions/muslbuilder/entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
