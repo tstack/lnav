@@ -564,6 +564,7 @@ DISTCLEANFILES = \
 	*.tmpbak \
 	*.xz \
 	exported-session.0.lnav \
+	exported-sh-session.0.lnav \
 	exported-stdin-session.0.lnav \
 	hw.txt \
 	hw2.txt \
