@@ -383,7 +383,7 @@ db_label_source::update_time_column(const string_fragment& sf)
     }
     if (!this->dls_time_column.empty() && tv < this->dls_time_column.back()) {
         this->dls_time_column_invalidated_at = this->dls_time_column.size();
-        this->dls_time_column_index = SIZE_T_MAX;
+        this->dls_time_column_index = SIZE_MAX;
         this->dls_time_column.clear();
     } else {
         this->dls_time_column.push_back(tv);
@@ -639,11 +639,11 @@ db_label_source::clear()
     this->dls_row_cursors.clear();
     this->dls_cell_container.reset();
     this->dls_time_column.clear();
-    this->dls_time_column_index = SIZE_T_MAX;
+    this->dls_time_column_index = SIZE_MAX;
     this->dls_cell_width.clear();
     this->dls_row_styles.clear();
     this->dls_row_styles_have_errors = false;
-    this->dls_row_style_column = SIZE_T_MAX;
+    this->dls_row_style_column = SIZE_MAX;
     this->dls_level_column = std::nullopt;
     this->dls_cell_allocator.reset();
     if (this->tss_view != nullptr) {
