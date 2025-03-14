@@ -113,6 +113,8 @@ struct prompt {
     available_scripts p_scripts;
     textinput_curses p_editor;
     bool p_alt_mode{false};
+    std::string p_pre_history_content;
+    bool p_replace_from_history{false};
 
     void focus_for(textview_curses& tc,
                    char sigil,
@@ -144,7 +146,11 @@ struct prompt {
     void rl_help(textinput_curses& tc);
     void rl_reformat(textinput_curses& tc);
     void rl_history(textinput_curses& tc);
+    void rl_history_list(textinput_curses& tc);
+    void rl_history_search(textinput_curses& tc);
     void rl_completion(textinput_curses& tc);
+    void rl_popup_change(textinput_curses& tc);
+    void rl_popup_cancel(textinput_curses& tc);
     void rl_external_edit(textinput_curses& tc);
 };
 

@@ -748,7 +748,7 @@ rl_search_change(textinput_curses& rc, bool is_req)
                           arg_pair.aar_element.se_origin.sf_begin);
                 rc.open_popup_for_completion(left, poss);
                 rc.tc_popup.set_title(arg_pair.aar_help->ht_name);
-            } else if (arg_pair.aar_element.se_value.empty()
+            } else if (!line.empty() && arg_pair.aar_element.se_value.empty()
                        && rc.is_cursor_at_end_of_line())
             {
                 rc.tc_suggestion = prompt.get_regex_suggestion(*tc, line);
@@ -861,8 +861,10 @@ rl_change(textinput_curses& rc)
         return;
     }
 
-    if (rc.tc_popup_type == textinput_curses::popup_type_t::history) {
-        rc.tc_on_history(rc);
+    if (rc.tc_popup_type == textinput_curses::popup_type_t::history
+        && !prompt.p_replace_from_history)
+    {
+        rc.tc_on_history_search(rc);
         return;
     }
 

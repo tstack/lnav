@@ -1379,12 +1379,18 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = bind_mem(&lnav::prompt::rl_reformat, &prompt);
         prompt.p_editor.tc_on_focus = rl_focus;
         prompt.p_editor.tc_on_change = rl_change;
+        prompt.p_editor.tc_on_popup_change
+            = bind_mem(&lnav::prompt::rl_popup_change, &prompt);
+        prompt.p_editor.tc_on_popup_cancel
+            = bind_mem(&lnav::prompt::rl_popup_cancel, &prompt);
         prompt.p_editor.tc_on_perform = rl_callback;
         prompt.p_editor.tc_on_timeout = rl_search;
         prompt.p_editor.tc_on_abort = lnav_rl_abort;
         prompt.p_editor.tc_on_blur = rl_blur;
-        prompt.p_editor.tc_on_history
-            = bind_mem(&lnav::prompt::rl_history, &prompt);
+        prompt.p_editor.tc_on_history_list
+            = bind_mem(&lnav::prompt::rl_history_list, &prompt);
+        prompt.p_editor.tc_on_history_search
+            = bind_mem(&lnav::prompt::rl_history_search, &prompt);
         prompt.p_editor.tc_on_completion
             = bind_mem(&lnav::prompt::rl_completion, &prompt);
         prompt.p_editor.tc_on_completion_request = rl_completion_request;

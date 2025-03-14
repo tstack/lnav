@@ -487,9 +487,12 @@ public:
     std::function<void(textinput_curses&)> tc_on_blur;
     std::function<void(textinput_curses&)> tc_on_abort;
     std::function<void(textinput_curses&)> tc_on_change;
+    std::function<void(textinput_curses&)> tc_on_popup_change;
+    std::function<void(textinput_curses&)> tc_on_popup_cancel;
     std::function<void(textinput_curses&)> tc_on_completion_request;
     std::function<void(textinput_curses&)> tc_on_completion;
-    std::function<void(textinput_curses&)> tc_on_history;
+    std::function<void(textinput_curses&)> tc_on_history_list;
+    std::function<void(textinput_curses&)> tc_on_history_search;
     std::function<void(textinput_curses&)> tc_on_timeout;
     std::function<void(textinput_curses&)> tc_on_reformat;
     std::function<void(textinput_curses&)> tc_on_perform;

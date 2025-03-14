@@ -72,6 +72,7 @@ textinput_curses::get_help_text()
               .append(" ")
               .append("END"_hotkey)
               .append("       - Move to the end of the buffer\n ")
+              .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-A"_hotkey)
               .append("    - Move to the beginning of the line\n ")
@@ -85,10 +86,10 @@ textinput_curses::get_help_text()
               .append("    - Move down one line\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
-              .append(" ")
               .append("CTRL-P"_hotkey)
               .append("    - Move up one line\n ")
               .append("\u2022"_list_glyph)
+              .append(" ")
               .append("ALT  \u2190"_hotkey)
               .append("    - Move to the previous word\n ")
               .append("\u2022"_list_glyph)
@@ -122,7 +123,7 @@ textinput_curses::get_help_text()
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-_"_hotkey)
-              .append(" - Undo a change\n ")
+              .append("    - Undo a change\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-L"_hotkey)
@@ -134,6 +135,10 @@ textinput_curses::get_help_text()
               .append("\n")
               .append("History"_h2)
               .append("\n ")
+              .append("\u2022"_list_glyph)
+              .append(" ")
+              .append("\u2191"_hotkey)
+              .append("      - Select content from the history\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-R"_hotkey)
@@ -678,6 +683,9 @@ textinput_curses::command_down(const ncinput& ch)
 {
     if (this->tc_popup.is_visible()) {
         this->tc_popup.handle_key(ch);
+        if (this->tc_on_popup_change) {
+            this->tc_on_popup_change(*this);
+        }
     } else {
         ssize_t inner_height = this->tc_lines.size();
         if (ncinput_shift_p(&ch)) {
@@ -705,9 +713,12 @@ textinput_curses::command_up(const ncinput& ch)
 {
     if (this->tc_popup.is_visible()) {
         this->tc_popup.handle_key(ch);
+        if (this->tc_on_popup_change) {
+            this->tc_on_popup_change(*this);
+        }
     } else if (this->tc_height == 1) {
-        if (this->tc_on_history) {
-            this->tc_on_history(*this);
+        if (this->tc_on_history_list) {
+            this->tc_on_history_list(*this);
         }
     } else {
         if (ncinput_shift_p(&ch)) {
@@ -937,8 +948,8 @@ textinput_curses::handle_key(const ncinput& ch)
             }
             case 'r':
             case 'R': {
-                if (this->tc_on_history) {
-                    this->tc_on_history(*this);
+                if (this->tc_on_history_search) {
+                    this->tc_on_history_search(*this);
                 }
                 return true;
             }
@@ -1077,6 +1088,9 @@ textinput_curses::handle_key(const ncinput& ch)
         case NCKEY_ESC:
         case KEY_CTRL(']'): {
             if (this->tc_popup.is_visible()) {
+                if (this->tc_on_popup_cancel) {
+                    this->tc_on_popup_cancel(*this);
+                }
                 this->tc_popup_type = popup_type_t::none;
                 this->tc_popup.set_visible(false);
                 this->tc_complete_range = std::nullopt;
@@ -2128,6 +2142,9 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
     this->tc_popup.set_top(0_vl);
     this->tc_popup.set_selection(new_sel);
     this->tc_popup.set_visible(true);
+    if (this->tc_on_popup_change) {
+        this->tc_on_popup_change(*this);
+    }
     this->set_needs_update();
 }
 

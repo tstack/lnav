@@ -431,6 +431,21 @@ prompt::rl_reformat(textinput_curses& tc)
 }
 
 void
+prompt::rl_history_list(textinput_curses& tc)
+{
+    this->p_pre_history_content = tc.get_content();
+    this->p_replace_from_history = true;
+    this->rl_history(tc);
+}
+
+void
+prompt::rl_history_search(textinput_curses& tc)
+{
+    this->p_replace_from_history = false;
+    this->rl_history(tc);
+}
+
+void
 prompt::rl_history(textinput_curses& tc)
 {
     auto sigil = tc.tc_prefix.al_string.front();
@@ -472,6 +487,12 @@ prompt::rl_history(textinput_curses& tc)
 void
 prompt::rl_completion(textinput_curses& tc)
 {
+    if (this->p_replace_from_history) {
+        this->p_editor.blur();
+        this->p_editor.tc_on_perform(tc);
+        return;
+    }
+
     const auto& al
         = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()].tl_value;
     auto sub = get_string_attr(al.al_attrs, SUBST_TEXT)->get();
@@ -480,6 +501,38 @@ prompt::rl_completion(textinput_curses& tc)
     if (tc.tc_lines.size() > 1 && tc.tc_height == 1) {
         tc.set_height(5);
     }
+}
+
+void
+prompt::rl_popup_cancel(textinput_curses& tc)
+{
+    tc.set_content(this->p_pre_history_content);
+}
+
+void
+prompt::rl_popup_change(textinput_curses& tc)
+{
+    if (tc.tc_popup_type != textinput_curses::popup_type_t::history) {
+        return;
+    }
+    if (!this->p_replace_from_history) {
+        return;
+    }
+
+    const auto& al
+        = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()].tl_value;
+    auto sub = get_string_attr(al.al_attrs, SUBST_TEXT)->get();
+    tc.set_content(sub);
+    if (tc.tc_lines.size() > 1 && tc.tc_height == 1) {
+        tc.set_height(5);
+    }
+    tc.tc_complete_range = textinput_curses::selected_range::from_key(
+        textinput_curses::input_point::home(),
+        textinput_curses::input_point{
+            (int) tc.tc_lines[tc.tc_lines.size() - 1].column_width(),
+            (int) tc.tc_lines.size() - 1,
+        });
+    tc.move_cursor_to(textinput_curses::input_point::end());
 }
 
 struct sql_item_visitor {
@@ -1364,7 +1417,7 @@ prompt::get_regex_suggestion(textview_curses& tc,
             data_scanner ds(found_opt->f_remaining);
             auto tok = ds.tokenize2();
             if (tok) {
-                retval = tok->to_string();
+                retval = lnav::pcre2pp::quote(tok->to_string());
                 log_debug(
                     "matched pattern in focused line, setting suggestion: %s",
                     retval.c_str());
@@ -1393,7 +1446,7 @@ prompt::get_regex_suggestion(textview_curses& tc,
                 data_scanner ds(found_opt->f_remaining);
                 auto tok = ds.tokenize2();
                 if (tok) {
-                    retval = tok->to_string();
+                    retval = lnav::pcre2pp::quote(tok->to_string());
                     log_debug("matched pattern in view, setting suggestion: %s",
                               retval.c_str());
                     break;

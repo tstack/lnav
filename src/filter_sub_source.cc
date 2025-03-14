@@ -61,7 +61,9 @@ filter_sub_source::filter_sub_source(std::shared_ptr<textinput_curses> editor)
     this->fss_editor->tc_height = 1;
     this->fss_editor->tc_on_change
         = bind_mem(&filter_sub_source::rl_change, this);
-    this->fss_editor->tc_on_history
+    this->fss_editor->tc_on_history_search
+        = bind_mem(&filter_sub_source::rl_history, this);
+    this->fss_editor->tc_on_history_list
         = bind_mem(&filter_sub_source::rl_history, this);
     this->fss_editor->tc_on_completion_request
         = bind_mem(&filter_sub_source::rl_completion_request, this);
