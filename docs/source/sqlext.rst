@@ -153,6 +153,9 @@ The columns in the log tables are made up of several builtins along with
 the values captured by the log format specification.  Use the :code:`.schema`
 command in the SQL prompt to examine a dump of the current database schema.
 
+.. note:: Unless explicitly stated, builtin columns are read-only and cannot
+   be changed by an :code:`UPDATE`.
+
 The following columns are builtin and included in a :code:`SELECT *`:
 
   :log_line: The line number for the message in the log view.
