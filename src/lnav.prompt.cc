@@ -506,7 +506,11 @@ prompt::rl_completion(textinput_curses& tc)
 void
 prompt::rl_popup_cancel(textinput_curses& tc)
 {
-    tc.set_content(this->p_pre_history_content);
+    if (tc.tc_popup_type == textinput_curses::popup_type_t::history
+        && this->p_replace_from_history)
+    {
+        tc.set_content(this->p_pre_history_content);
+    }
 }
 
 void
