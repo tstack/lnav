@@ -41,8 +41,14 @@
 #include <unistd.h>
 
 #include "auto_fd.hh"
+#include "fmt/format.h"
 #include "intern_string.hh"
 #include "result.h"
+
+struct file_location_tail {};
+
+using file_location_t
+    = mapbox::util::variant<file_location_tail, int, std::string>;
 
 namespace lnav::filesystem {
 
@@ -55,6 +61,9 @@ is_glob(const std::string& fn)
 }
 
 std::string escape_path(const std::filesystem::path& p);
+
+std::pair<std::string, file_location_t>
+split_file_location(const std::string& path);
 
 inline int
 statp(const std::filesystem::path& path, struct stat* buf)
@@ -161,12 +170,10 @@ public:
 
 }  // namespace lnav::filesystem
 
-namespace fmt {
 template<>
-struct formatter<std::filesystem::path> : formatter<string_view> {
+struct fmt::formatter<std::filesystem::path> : formatter<string_view> {
     auto format(const std::filesystem::path& p, format_context& ctx)
         -> decltype(ctx.out()) const;
 };
-}  // namespace fmt
 
 #endif

@@ -635,8 +635,8 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 if (open_opts.loo_init_location.valid()) {
                     auto loc = open_opts.loo_init_location.match(
                         [](file_location_tail) { return std::string("tail"); },
-                        [](vis_line_t vl) {
-                            return fmt::format(FMT_STRING("L{:L}"), (int) vl);
+                        [](int vl) {
+                            return fmt::format(FMT_STRING("L{:L}"), vl);
                         },
                         [](std::string section) { return section; });
                     details.emplace_back(attr_line_t()

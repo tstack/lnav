@@ -3363,33 +3363,11 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     }
 
     for (const auto& file_path_str : file_args) {
-        auto file_path_without_trailer = file_path_str;
-        auto file_loc = file_location_t{mapbox::util::no_init{}};
+        auto [file_path_without_trailer, file_loc]
+            = lnav::filesystem::split_file_location(file_path_str);
         auto_mem<char> abspath;
         struct stat st;
 
-        auto colon_index = file_path_str.rfind(':');
-        if (colon_index != std::string::npos) {
-            auto top_range
-                = std::string_view{&file_path_str[colon_index + 1],
-                                   file_path_str.size() - colon_index - 1};
-            auto scan_res = scn::scan_value<int>(top_range);
-
-            if (scan_res) {
-                file_path_without_trailer
-                    = file_path_str.substr(0, colon_index);
-                file_loc = vis_line_t(scan_res->value());
-            } else {
-                log_info(
-                    "did not parse line number from file path with colon: %s",
-                    file_path_str.c_str());
-            }
-        }
-        auto hash_index = file_path_str.rfind('#');
-        if (hash_index != std::string::npos) {
-            file_loc = file_path_str.substr(hash_index);
-            file_path_without_trailer = file_path_str.substr(0, hash_index);
-        }
         auto file_path = std::filesystem::path(
             stat(file_path_without_trailer.c_str(), &st) == 0
                 ? file_path_without_trailer

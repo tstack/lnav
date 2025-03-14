@@ -38,11 +38,11 @@
 
 #include <sys/stat.h>
 
+#include "base/fs_util.hh"
 #include "file_format.hh"
 #include "mapbox/variant.hpp"
 #include "piper.looper.hh"
 #include "text_format.hh"
-#include "vis_line.hh"
 
 using ui_clock = std::chrono::steady_clock;
 
@@ -78,11 +78,6 @@ struct fmt::formatter<logfile_name_source> : formatter<string_view> {
         return formatter<string_view>::format(name, ctx);
     }
 };
-
-struct file_location_tail {};
-
-using file_location_t
-    = mapbox::util::variant<file_location_tail, vis_line_t, std::string>;
 
 struct logfile_open_options_base {
     std::string loo_filename;

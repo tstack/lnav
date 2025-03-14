@@ -273,16 +273,15 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
                                 break;
                         }
                     },
-                    [&new_top_opt](vis_line_t vl) {
-                        log_info("file open request to jump to line: %d",
-                                 (int) vl);
-                        if (vl < 0_vl) {
+                    [&new_top_opt](int vl) {
+                        log_info("file open request to jump to line: %d", vl);
+                        if (vl < 0) {
                             vl += lnav_data.ld_views[LNV_TEXT]
                                       .get_inner_height();
                         }
                         if (vl
                             < lnav_data.ld_views[LNV_TEXT].get_inner_height()) {
-                            new_top_opt = vl;
+                            new_top_opt = vis_line_t(vl);
                         }
                     },
                     [&new_top_opt](const std::string& loc) {

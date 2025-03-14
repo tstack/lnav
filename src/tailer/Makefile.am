@@ -87,6 +87,7 @@ drive_tailer_SOURCES = \
 drive_tailer_LDADD = \
     libtailercommon.a \
     libtailerpp.a \
+	$(top_builddir)/src/third-party/scnlib/src/libscnlib.a \
     ../base/libbase.a \
     ../fmtlib/libcppfmt.a
 

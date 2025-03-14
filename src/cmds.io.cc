@@ -798,26 +798,9 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         auto file_loc = file_location_t{file_location_tail{}};
 
         if (access(fn.c_str(), R_OK) != 0) {
-            auto colon_index = fn.rfind(':');
-            auto hash_index = fn.rfind('#');
-            if (colon_index != std::string::npos) {
-                auto top_range = std::string_view{&fn[colon_index + 1],
-                                                  fn.size() - colon_index - 1};
-                auto scan_res = scn::scan_value<int>(top_range);
-
-                if (scan_res) {
-                    fn = fn.substr(0, colon_index);
-                    log_debug(
-                        "opening %s at line %d", fn.c_str(), scan_res->value());
-                    file_loc = vis_line_t(scan_res->value());
-                }
-            } else if (hash_index != std::string::npos) {
-                auto hash_loc = fn.substr(hash_index);
-                file_loc = hash_loc;
-                fn = fn.substr(0, hash_index);
-                log_debug(
-                    "opening %s at anchor %s", fn.c_str(), hash_loc.c_str());
-            }
+            auto pair = lnav::filesystem::split_file_location(fn);
+            fn = pair.first;
+            file_loc = pair.second;
             loo.with_init_location(file_loc);
         }
 

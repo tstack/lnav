@@ -27,7 +27,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
 #include <fstream>
+#include <utility>
 
 #include "fs_util.hh"
 
@@ -39,6 +41,7 @@
 #include "itertools.hh"
 #include "lnav_log.hh"
 #include "opt_util.hh"
+#include "scn/scan.h"
 
 #ifdef HAVE_LIBPROC_H
 #    include <libproc.h>
@@ -127,6 +130,33 @@ escape_path(const std::filesystem::path& p)
     }
 
     return retval;
+}
+
+std::pair<std::string, file_location_t>
+split_file_location(const std::string& file_path_str)
+{
+    auto hash_index = file_path_str.rfind('#');
+    if (hash_index != std::string::npos) {
+        return std::make_pair(file_path_str.substr(0, hash_index),
+                              file_path_str.substr(hash_index));
+    }
+
+    auto colon_index = file_path_str.rfind(':');
+    if (colon_index != std::string::npos) {
+        auto top_range
+            = std::string_view{&file_path_str[colon_index + 1],
+                               file_path_str.size() - colon_index - 1};
+        auto scan_res = scn::scan_value<int>(top_range);
+
+        if (scan_res && scan_res->range().empty()) {
+            return std::make_pair(file_path_str.substr(0, colon_index),
+                                  scan_res->value());
+        }
+        log_info("did not parse line number from file path with colon: %s",
+                 file_path_str.c_str());
+    }
+
+    return std::make_pair(file_path_str, file_location_tail{});
 }
 
 Result<std::filesystem::path, std::string>
