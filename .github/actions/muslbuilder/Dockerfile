@@ -108,7 +108,7 @@ RUN curl -sSL https://ftp.gnu.org/gnu/ncurses/ncurses-6.4.tar.gz | tar xvzC /ext
     make -j2 install && \
     cd /extract && rm -rf *
 
-RUN curl -sSL https://www.openssl.org/source/openssl-1.0.2n.tar.gz | tar xvzC /extract/ && \
+RUN curl -sSL https://www.openssl.org/source/openssl-1.0.2u.tar.gz | tar xvzC /extract/ && \
     cd /extract/openssl-* && \
     ./config --prefix=/fake.root no-shared -fPIC && \
     make -j2 && \
