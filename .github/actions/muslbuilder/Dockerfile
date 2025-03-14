@@ -21,16 +21,20 @@ ENV SQLITE_CFLAGS="\
     "
 
 ENV NCURSES_FALLBACKS="\
+alacritty,\
 ansi,\
 cygwin,\
 Eterm,\
 Eterm-256color,\
+foot,\
 gnome,\
 gnome-256color,\
+kitty,\
 konsole,\
 konsole-256color,\
 linux,\
 putty,\
+rio,\
 rxvt,\
 rxvt-256color,\
 screen,\
@@ -40,6 +44,7 @@ tmux,\
 tmux-256color,\
 vt100,\
 vt220,\
+wezterm,\
 xterm,\
 xterm-256color\
 "
