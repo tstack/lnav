@@ -31,11 +31,11 @@
 #define lnav_piper_header_hh
 
 #include "base/piper.file.hh"
-#include "yajlpp/yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
 
 namespace lnav::piper {
 
-extern const typed_json_path_container<lnav::piper::header> header_handlers;
+extern const typed_json_path_container<header> header_handlers;
 
 }
 

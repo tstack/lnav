@@ -58,7 +58,7 @@ from_selection(vis_line_t sel_vis)
     {
         safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
 
-        if (sel < errs->size()) {
+        if (sel < (ssize_t) errs->size()) {
             auto iter = errs->begin();
 
             std::advance(iter, sel);
@@ -69,7 +69,7 @@ from_selection(vis_line_t sel_vis)
         sel -= errs->size();
     }
 
-    if (sel < fc.fc_other_files.size()) {
+    if (sel < (ssize_t) fc.fc_other_files.size()) {
         auto iter = fc.fc_other_files.begin();
 
         std::advance(iter, sel);
@@ -78,7 +78,7 @@ from_selection(vis_line_t sel_vis)
 
     sel -= fc.fc_other_files.size();
 
-    if (sel < fc.fc_files.size()) {
+    if (sel < (ssize_t) fc.fc_files.size()) {
         auto iter = fc.fc_files.begin();
 
         std::advance(iter, sel);
@@ -275,7 +275,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
     {
         safe::ReadAccess<safe_name_to_errors> errs(*fc.fc_name_to_errors);
 
-        if (line < errs->size()) {
+        if (line < (ssize_t) errs->size()) {
             auto iter = std::next(errs->begin(), line);
             auto path = std::filesystem::path(iter->first);
             auto fn = fmt::to_string(path.filename());
@@ -299,7 +299,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         line -= errs->size();
     }
 
-    if (line < fc.fc_other_files.size()) {
+    if (line < (ssize_t) fc.fc_other_files.size()) {
         auto iter = std::next(fc.fc_other_files.begin(), line);
         auto path = std::filesystem::path(iter->first);
         auto fn = fmt::to_string(path);
@@ -318,7 +318,7 @@ files_sub_source::text_value_for_line(textview_curses& tc,
         if (selected) {
             al.with_attr_for_all(VC_ROLE.value(cursor_role));
         }
-        if (line == fc.fc_other_files.size() - 1) {
+        if (line == (ssize_t) fc.fc_other_files.size() - 1) {
             al.with_attr_for_all(VC_STYLE.value(text_attrs::with_underline()));
         }
 

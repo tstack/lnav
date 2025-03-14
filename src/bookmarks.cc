@@ -34,6 +34,7 @@
 #include "base/itertools.hh"
 #include "bookmarks.json.hh"
 #include "config.h"
+#include "yajlpp/yajlpp_def.hh"
 
 std::unordered_set<std::string> bookmark_metadata::KNOWN_TAGS;
 
@@ -79,6 +80,7 @@ bookmark_metadata::empty(bookmark_metadata::categories props) const
         case categories::opid:
             return this->bm_opid.empty();
     }
+    ensure(false);
 }
 
 void
@@ -115,8 +117,8 @@ bookmark_type_t::get_type_names()
     for (const auto& bt : get_all_types()) {
         retval.emplace_back(bt->get_name().data());
     }
-    std::stable_sort(retval.begin(), retval.end(),
-        [](const char* lhs, const char* rhs) {
+    std::stable_sort(
+        retval.begin(), retval.end(), [](const char* lhs, const char* rhs) {
             return strcmp(lhs, rhs) < 0;
         });
     return retval;

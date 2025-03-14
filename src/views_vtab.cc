@@ -1127,7 +1127,7 @@ CREATE TABLE lnav_view_filters (
     {
         auto* mod_vt = (vtab_module<lnav_view_filters>::vtab*) tab;
         auto view_index = lnav_view_t(rowid >> 32);
-        auto filter_index = rowid & 0xffffffffLL;
+        auto filter_index = rowid & 0xffffffffULL;
         auto& tc = lnav_data.ld_views[view_index];
         auto* tss = tc.get_sub_source();
         auto& fs = tss->get_filters();

@@ -58,10 +58,10 @@ attr_line_t::from_table_cell_content(const string_fragment& content,
     size_t char_width = 0;
     attr_line_t retval;
     std::string_view replacement;
-    size_t copy_start = 0;
+    int copy_start = 0;
 
     retval.al_string.reserve(max_char_width);
-    for (size_t index = 0; index < content.length(); ++index) {
+    for (int index = 0; index < content.length(); ++index) {
         const auto ch = content.udata()[index];
 
         switch (ch) {
@@ -401,7 +401,7 @@ attr_line_t::insert(size_t index,
 
         text_to_wrap = next_chunk.match(
             [&](const text_stream::word& word) {
-                auto ch_count = word.w_word.column_width();
+                ssize_t ch_count = word.w_word.column_width();
 
                 if (line_ch_count > line_indent_count && !last_was_pre
                     && (line_ch_count + ch_count) > usable_width)
@@ -452,7 +452,7 @@ attr_line_t::insert(size_t index,
                 }
 
                 if (line_ch_count > 0) {
-                    auto ch_count = space.s_value.column_width();
+                    ssize_t ch_count = space.s_value.column_width();
 
                     if ((line_ch_count + ch_count) > usable_width
                         && find_string_attr_containing(this->al_attrs,
@@ -721,7 +721,7 @@ attr_line_t::erase(size_t pos, size_t len)
 attr_line_t&
 attr_line_t::pad_to(ssize_t size)
 {
-    const auto curr_len = this->column_width();
+    const ssize_t curr_len = this->column_width();
 
     if (curr_len < size) {
         this->append((size - curr_len), ' ');

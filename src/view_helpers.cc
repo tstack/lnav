@@ -943,11 +943,8 @@ update_hits(textview_curses* tc)
             unsigned long width;
             vis_line_t height;
             attr_line_t all_matches;
-            char linebuf[64];
             int last_line = tc->get_inner_height();
-
-            snprintf(linebuf, sizeof(linebuf), "%d", last_line);
-            auto max_line_width = static_cast<int>(strlen(linebuf));
+            auto max_line_width = count_digits(last_line);
 
             tc->get_dimensions(height, width);
             vl += height;
@@ -968,12 +965,11 @@ update_hits(textview_curses* tc)
                     attr_line_t al;
 
                     tc->textview_value_for_row(prev_vl.value(), al);
-                    snprintf(linebuf,
-                             sizeof(linebuf),
-                             "L%*d: ",
-                             max_line_width,
-                             (int) prev_vl.value());
-                    all_matches.append(linebuf).append(al);
+                    all_matches
+                        .appendf(FMT_STRING("L{:{}}"),
+                                 (int) prev_vl.value(),
+                                 max_line_width)
+                        .append(al);
                     preview_count += 1;
                 }
             }
@@ -996,12 +992,9 @@ update_hits(textview_curses* tc)
                 if (preview_count > 0) {
                     all_matches.append("\n");
                 }
-                snprintf(linebuf,
-                         sizeof(linebuf),
-                         "L%*d: ",
-                         max_line_width,
-                         (int) vl);
-                all_matches.append(linebuf).append(al);
+                all_matches
+                    .appendf(FMT_STRING("L{:{}}"), (int) vl, max_line_width)
+                    .append(al);
                 preview_count += 1;
             }
 
@@ -1668,7 +1661,7 @@ lnav_behavior::mouse_event(
     auto width = ncplane_dim_x(lnav_data.ld_window);
 
     me.me_x = x;
-    if (me.me_x >= width) {
+    if (me.me_x >= (ssize_t) width) {
         me.me_x = width - 1;
     }
     me.me_y = y - 1;

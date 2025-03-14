@@ -528,7 +528,7 @@ timeline_source::text_value_for_line(textview_curses& tc,
                                      std::string& value_out,
                                      text_sub_source::line_flags_t flags)
 {
-    if (line < this->gs_time_order.size()) {
+    if (line < (ssize_t) this->gs_time_order.size()) {
         const auto& row = this->gs_time_order[line].get();
         auto duration
             = row.or_value.otr_range.tr_end - row.or_value.otr_range.tr_begin;
@@ -569,7 +569,7 @@ timeline_source::text_attrs_for_line(textview_curses& tc,
                                      int line,
                                      string_attrs_t& value_out)
 {
-    if (line < this->gs_time_order.size()) {
+    if (line < (ssize_t) this->gs_time_order.size()) {
         const auto& row = this->gs_time_order[line].get();
 
         value_out = this->gs_rendered_line.get_attrs();

@@ -57,6 +57,7 @@
 #include "sql_util.hh"
 #include "vtab_module.hh"
 #include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
@@ -432,8 +433,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             } else {
                 constexpr char block[] = "\u258c ";
 
-                strncpy(
-                    &buffer[this->lss_time_column_size], block, sizeof(block));
+                strcpy(&buffer[this->lss_time_column_size], block);
                 this->lss_time_column_size += sizeof(block) - 1;
             }
             if (time_attr->sa_range.lr_start != 0) {
@@ -2955,7 +2955,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                            body_opt->saw_string_attr->sa_range.lr_end);
         file_off_t line_offset = body_opt->saw_string_attr->sa_range.lr_start;
         file_off_t line_end_offset = sf.length();
-        size_t line_number = 0;
+        ssize_t line_number = 0;
 
         for (const auto& sf_line : sf_body.split_lines()) {
             if (line_number >= msg_line_number) {

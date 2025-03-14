@@ -41,7 +41,7 @@
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/lnav.resolver.hh"
-#include "yajlpp/yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
 
 class log_vtab_manager;
 

@@ -44,12 +44,12 @@ using namespace lnav::roles::literals;
 static void
 ryml_error_to_um(const char* msg, size_t len, ryml::Location loc, void* ud)
 {
-    intern_string_t src = intern_string::lookup(
+    const intern_string_t src = intern_string::lookup(
         string_fragment::from_bytes(loc.name.data(), loc.name.size()));
-    auto& sf = *(static_cast<string_fragment*>(ud));
+    const auto& sf = *(static_cast<string_fragment*>(ud));
     auto msg_str = string_fragment::from_bytes(msg, len).trim().to_string();
 
-    if (loc.offset == sf.length()) {
+    if ((ssize_t) loc.offset == sf.length()) {
         loc.line -= 1;
     }
     auto snippet_line

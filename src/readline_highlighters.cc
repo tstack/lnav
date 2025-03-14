@@ -88,7 +88,7 @@ find_matching_bracket(
     }
 
     if (line[x] == left && is_bracket(line, x, is_lit)) {
-        for (size_t lpc = x + 1; lpc < sub.lr_end; lpc++) {
+        for (auto lpc = x + 1; lpc < sub.lr_end; lpc++) {
             if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
                 depth += 1;
             } else if (line[lpc] == right && is_bracket(line, lpc, is_lit)) {
@@ -111,7 +111,7 @@ find_matching_bracket(
 
     depth = 0;
 
-    for (size_t lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
+    for (auto lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
         if (line[lpc] == left && is_bracket(line, lpc, is_lit)) {
             depth += 1;
             if (!first_left) {
@@ -224,7 +224,7 @@ readline_command_highlighter_int(attr_line_t& al,
     if (IDENT_PREFIXES.find_in(in_frag).ignore_error()
         && ws_index != std::string::npos)
     {
-        size_t start = ws_index, last;
+        ssize_t start = ws_index, last;
 
         do {
             for (; start < sub.length() && isspace(line[start]); start++)

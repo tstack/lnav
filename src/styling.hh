@@ -40,7 +40,6 @@
 #include "base/log_level_enum.hh"
 #include "base/string_util.hh"
 #include "yajlpp/yajlpp.hh"
-#include "yajlpp/yajlpp_def.hh"
 
 struct term_color {
     short xc_id;

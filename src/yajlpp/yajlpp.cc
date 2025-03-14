@@ -1439,7 +1439,7 @@ json_path_handler_base::validate_string(yajlpp_parse_context& ypc,
                              .with_reason("empty values are not allowed")
                              .with_snippet(ypc.get_snippet())
                              .with_help(this->get_help_text(&ypc)));
-    } else if (sf.length() < this->jph_min_length) {
+    } else if (sf.length() < (ssize_t) this->jph_min_length) {
         ypc.report_error(
             lnav::console::user_message::error(
                 attr_line_t()

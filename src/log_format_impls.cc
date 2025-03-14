@@ -307,7 +307,7 @@ public:
                     = (log_format*) this;
 
                 lr = to_line_range(level_cap->trim());
-                if (lr.lr_end != line.length()) {
+                if (lr.lr_end != (ssize_t) line.length()) {
                     sa.emplace_back(lr, L_LEVEL.value());
                 }
             }

@@ -1742,7 +1742,7 @@ external_log_format::scan(logfile& lf,
                 continue;
             }
 
-            auto cap_size = md.capture_size(ivd.ivd_index);
+            ssize_t cap_size = md.capture_size(ivd.ivd_index);
             auto& lvs = this->lf_value_stats[ivd.ivd_value_def->vd_meta
                                                  .lvm_values_index.value()];
 

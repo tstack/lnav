@@ -1104,7 +1104,7 @@ annotate_sql_statement(attr_line_t& al)
         string_attrs_t::const_iterator piter;
 
         start = iter->sa_range.lr_end;
-        if (start < line.length() && line[start] == '(') {
+        if (start < (ssize_t) line.length() && line[start] == '(') {
             ssize_t pstart = start + 1;
             int depth = 1;
 

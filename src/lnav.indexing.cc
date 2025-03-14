@@ -35,6 +35,7 @@
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_util.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 using namespace std::chrono_literals;
 using namespace lnav::roles::literals;
@@ -48,7 +49,7 @@ public:
 
     indexing_result logfile_indexing(const logfile* lf,
                                      file_off_t off,
-                                     file_size_t total) override
+                                     file_ssize_t total) override
     {
         static sig_atomic_t index_counter = 0;
 
@@ -65,7 +66,7 @@ public:
             off = total;
         }
 
-        if ((((size_t) off == total) && (this->lo_last_offset != off))
+        if (((off == total) && (this->lo_last_offset != off))
             || ui_periodic_timer::singleton().time_to_update(index_counter))
         {
             if (off == total) {

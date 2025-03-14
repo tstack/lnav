@@ -63,10 +63,10 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
     }
     auto title = " Actions "_status_title;
     auto left = std::max(0, sti.sti_x - 2);
-    auto dim = lv.get_dimensions();
+    auto [height, width] = lv.get_dimensions();
 
-    if (left + MENU_WIDTH >= dim.second) {
-        left = dim.second - MENU_WIDTH;
+    if (left + MENU_WIDTH >= (ssize_t) width) {
+        left = width - MENU_WIDTH;
     }
 
     this->los_menu_items.clear();

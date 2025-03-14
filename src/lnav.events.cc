@@ -30,6 +30,7 @@
 #include "lnav.events.hh"
 
 #include "sqlitepp.client.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 namespace lnav::events {
 

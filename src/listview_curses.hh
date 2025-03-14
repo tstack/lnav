@@ -537,8 +537,8 @@ public:
     struct overlay_content {
         vis_line_t oc_main_line;
         vis_line_t oc_line;
-        size_t oc_height{0};
-        size_t oc_inner_height{0};
+        vis_line_t oc_height{0};
+        vis_line_t oc_inner_height{0};
     };
     struct empty_space {};
 
@@ -563,7 +563,7 @@ protected:
     void update_top_from_selection();
 
     vis_line_t get_overlay_top(vis_line_t row, size_t count, size_t total);
-    size_t get_overlay_height(size_t total, vis_line_t view_height) const;
+    vis_line_t get_overlay_height(size_t total, vis_line_t view_height) const;
 
     enum class lv_mode_t {
         NONE,
@@ -606,8 +606,8 @@ protected:
 
     vis_line_t lv_display_lines_row{0_vl};
     std::vector<display_line_content_t> lv_display_lines;
-    unsigned int lv_scroll_top{0};
-    unsigned int lv_scroll_bottom{0};
+    int lv_scroll_top{0};
+    int lv_scroll_bottom{0};
 };
 
 #endif

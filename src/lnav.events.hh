@@ -34,7 +34,8 @@
 
 #include <sqlite3.h>
 
-#include "yajlpp/yajlpp_def.hh"
+#include "base/lnav.resolver.hh"
+#include "yajlpp/yajlpp.hh"
 
 namespace lnav::events {
 

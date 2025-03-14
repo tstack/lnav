@@ -49,11 +49,12 @@
 #include "piper.looper.cfg.hh"
 #include "piper.match.hh"
 #include "robin_hood/robin_hood.h"
+#include "yajlpp/yajlpp_def.hh"
 
 using namespace std::chrono_literals;
 
 static ssize_t
-write_line_meta(int fd, struct timeval& tv, log_level_t level, off_t woff)
+write_line_meta(int fd, timeval& tv, log_level_t level, file_off_t woff)
 {
     char time_str[64];
     auto fmt_res = fmt::format_to_n(time_str,
@@ -237,8 +238,8 @@ looper::loop()
     } captured_fds[2];
     struct out_state {
         auto_fd os_fd;
-        off_t os_woff{0};
-        off_t os_last_woff{0};
+        file_off_t os_woff{0};
+        file_off_t os_last_woff{0};
         std::string os_hash_id;
         std::optional<log_level_t> os_level;
     };
@@ -253,8 +254,8 @@ looper::loop()
     ArenaAlloc::Alloc<char> sf_allocator{64 * 1024};
     bool demux_attempted = false;
     date_time_scanner dts;
-    struct timeval line_tv;
-    struct exttm line_tm;
+    timeval line_tv;
+    exttm line_tm;
     auto file_timeout = 0ms;
     multiplex_matcher mmatcher;
 
@@ -615,7 +616,7 @@ looper::loop()
                     uint32_t meta_size = htonl(hdr_str.length());
                     auto prc = write(
                         os.os_fd.get(), HEADER_MAGIC, sizeof(HEADER_MAGIC));
-                    if (prc < sizeof(HEADER_MAGIC)) {
+                    if (prc < (ssize_t) sizeof(HEADER_MAGIC)) {
                         log_error("unable to write file header: %s -- %s",
                                   this->l_name.c_str(),
                                   strerror(errno));
@@ -623,7 +624,7 @@ looper::loop()
                     }
                     os.os_woff += prc;
                     prc = write(os.os_fd.get(), &meta_size, sizeof(meta_size));
-                    if (prc < sizeof(meta_size)) {
+                    if (prc < (ssize_t) sizeof(meta_size)) {
                         log_error("unable to write file header: %s -- %s",
                                   this->l_name.c_str(),
                                   strerror(errno));
@@ -632,7 +633,7 @@ looper::loop()
                     os.os_woff += prc;
                     prc = write(
                         os.os_fd.get(), hdr_str.c_str(), hdr_str.size());
-                    if (prc < hdr_str.size()) {
+                    if (prc < (ssize_t) hdr_str.size()) {
                         log_error("unable to write file header: %s -- %s",
                                   this->l_name.c_str(),
                                   strerror(errno));

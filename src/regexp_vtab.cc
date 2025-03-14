@@ -96,7 +96,7 @@ CREATE TABLE regexp_capture (
 
         int next()
         {
-            if (this->c_index >= (this->c_match_data.get_count() - 1)) {
+            if (this->c_index >= (int) (this->c_match_data.get_count() - 1)) {
                 auto match_res = this->c_pattern->capture_from(this->c_content)
                                      .at(this->c_remaining)
                                      .into(this->c_match_data)

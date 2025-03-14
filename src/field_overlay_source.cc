@@ -770,10 +770,10 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
         }
     }
 
-    if (lines != nullptr && y < lines->size()) {
+    if (lines != nullptr && y < (ssize_t) lines->size()) {
         value_out = lines->at(y);
         value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
-        if (y == lines->size() - 1) {
+        if (y == (ssize_t) lines->size() - 1) {
             value_out.with_attr_for_all(
                 VC_STYLE.value(text_attrs::with_underline()));
         }

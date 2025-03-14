@@ -198,6 +198,9 @@ private:
 
 struct json_path_container;
 
+template<typename T>
+struct typed_json_path_container;
+
 struct json_path_handler_base {
     struct enum_value_t {
         template<typename T>

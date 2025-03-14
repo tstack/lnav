@@ -231,7 +231,7 @@ hist_source2::bucket_t&
 hist_source2::find_bucket(int64_t index)
 {
     const auto block_index = index / BLOCK_SIZE;
-    if (block_index >= this->hs_blocks.size()) {
+    if (block_index >= (ssize_t) this->hs_blocks.size()) {
         this->hs_blocks.resize(block_index + 1);
     }
     auto& bb = this->hs_blocks[block_index];

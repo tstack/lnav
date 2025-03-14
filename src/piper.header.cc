@@ -29,6 +29,8 @@
 
 #include "piper.header.hh"
 
+#include "yajlpp/yajlpp_def.hh"
+
 namespace lnav::piper {
 
 static const json_path_container header_env_handlers = {

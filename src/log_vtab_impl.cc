@@ -668,7 +668,8 @@ vt_next_no_rowid(sqlite3_vtab_cursor* cur)
         } else if (vc->log_cursor.is_eof()) {
             done = true;
         } else {
-            require(vc->log_cursor.lc_curr_line < vt->lss->text_line_count());
+            require(vc->log_cursor.lc_curr_line
+                    < (ssize_t) vt->lss->text_line_count());
 
             if (!vc->log_cursor.lc_indexed_lines.empty()
                 && vc->log_cursor.lc_indexed_lines_range.contains(

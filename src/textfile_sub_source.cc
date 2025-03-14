@@ -51,6 +51,7 @@
 #include "sql_util.hh"
 #include "sqlitepp.hh"
 #include "textfile_sub_source.cfg.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;
 
@@ -159,7 +160,9 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-    if (lfo == nullptr || line >= lfo->lfo_filter_state.tfs_index.size()) {
+    if (lfo == nullptr
+        || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
+    {
         value_out.clear();
         return {};
     }
@@ -218,7 +221,7 @@ textfile_sub_source::text_attrs_for_line(textview_curses& tc,
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
         if (lfo != nullptr && row >= 0
-            && row < lfo->lfo_filter_state.tfs_index.size())
+            && row < (ssize_t) lfo->lfo_filter_state.tfs_index.size())
         {
             auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[row];
 
@@ -324,7 +327,7 @@ textfile_sub_source::text_size_for_line(textview_curses& tc,
             auto* lfo = dynamic_cast<line_filter_observer*>(
                 lf->get_logline_observer());
             if (lfo == nullptr || line < 0
-                || line >= lfo->lfo_filter_state.tfs_index.size())
+                || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
             {
             } else {
                 auto read_res = lf->read_line(
@@ -480,7 +483,7 @@ textfile_sub_source::scroll_invoked(textview_curses* tc)
     auto line = tc->get_selection();
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
     if (lfo == nullptr || line < 0_vl
-        || line >= lfo->lfo_filter_state.tfs_index.size())
+        || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
     {
         return;
     }
@@ -596,7 +599,9 @@ textfile_sub_source::text_crumbs_for_line(
     if (lf->has_line_metadata()) {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-        if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+        if (line < 0
+            || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
+        {
             return;
         }
         auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
@@ -613,7 +618,9 @@ textfile_sub_source::text_crumbs_for_line(
     } else {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-        if (line < 0 || line >= lfo->lfo_filter_state.tfs_index.size()) {
+        if (line < 0
+            || line >= (ssize_t) lfo->lfo_filter_state.tfs_index.size())
+        {
             return;
         }
         auto ll_iter = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
@@ -940,7 +947,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                                         um.um_reason.al_string.c_str());
                                 });
                         if (ypc.parse_doc(content_sf)) {
-                            auto consumed = ypc.ypc_total_consumed;
+                            ssize_t consumed = ypc.ypc_total_consumed;
                             if (consumed < content_sf.length()
                                 && content_sf[consumed] == '\n')
                             {
@@ -1281,7 +1288,7 @@ textfile_sub_source::time_for_row(vis_line_t row)
     }
 
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-    if (row < 0_vl || row >= lfo->lfo_filter_state.tfs_index.size()) {
+    if (row < 0_vl || row >= (ssize_t) lfo->lfo_filter_state.tfs_index.size()) {
         return std::nullopt;
     }
     auto row_id = lfo->lfo_filter_state.tfs_index[row];
@@ -1330,7 +1337,7 @@ textfile_sub_source::adjacent_anchor(vis_line_t vl, direction dir)
     auto& md = curr_iter->fvs_metadata;
     const auto* lfo
         = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-    if (vl >= lfo->lfo_filter_state.tfs_index.size()
+    if (vl >= (ssize_t) lfo->lfo_filter_state.tfs_index.size()
         || md.m_sections_root == nullptr)
     {
         return std::nullopt;
@@ -1458,7 +1465,7 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
 
     const auto& lf = curr_iter->fvs_file;
     auto* lfo = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
-    if (vl >= lfo->lfo_filter_state.tfs_index.size()) {
+    if (vl >= (ssize_t) lfo->lfo_filter_state.tfs_index.size()) {
         return std::nullopt;
     }
     auto& md = curr_iter->fvs_metadata;
@@ -1560,10 +1567,10 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
         }
     }
 
-    if (lines != nullptr && y < lines->size()) {
+    if (lines != nullptr && y < (ssize_t) lines->size()) {
         value_out = lines->at(y);
         value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
-        if (y == lines->size() - 1) {
+        if (y == (ssize_t) lines->size() - 1) {
             value_out.with_attr_for_all(
                 VC_STYLE.value(text_attrs::with_underline()));
         }

@@ -343,7 +343,7 @@ scrub_ws(const char* in, ssize_t len)
         retval.reserve(len);
     }
 
-    for (size_t lpc = 0; (len == -1 && in[lpc]) || (len >= 0 && lpc < len);
+    for (ssize_t lpc = 0; (len == -1 && in[lpc]) || (len >= 0 && lpc < len);
          lpc++)
     {
         auto ch = in[lpc];

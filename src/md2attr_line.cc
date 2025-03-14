@@ -434,7 +434,7 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
                     continue;
                 }
                 auto col_len = row.r_columns[lpc].c_contents.column_width();
-                if (col_len > max_col_sizes[lpc]) {
+                if ((ssize_t) col_len > max_col_sizes[lpc]) {
                     max_col_sizes[lpc] = col_len;
                 }
             }
@@ -505,7 +505,8 @@ md2attr_line::leave_block(const md4cpp::event_handler::block& bl)
 
                         if (col < col_sizes.size()) {
                             if (col_sizes[col]
-                                > cell.cl_lines[line_index].column_width())
+                                > (ssize_t) cell.cl_lines[line_index]
+                                      .column_width())
                             {
                                 padding = col_sizes[col]
                                     - cell.cl_lines[line_index].column_width();
@@ -700,6 +701,7 @@ left_border_string(border_line_width width)
         case border_line_width::thick:
             return "\u258C";
     }
+    ensure(false);
 }
 
 static const char*
@@ -713,6 +715,7 @@ right_border_string(border_line_width width)
         case border_line_width::thick:
             return "\u2590";
     }
+    ensure(false);
 }
 
 static attr_line_t

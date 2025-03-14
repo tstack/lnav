@@ -39,6 +39,7 @@
 #include "sql_help.hh"
 #include "view_helpers.examples.hh"
 #include "yajlpp/yajlpp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 namespace lnav {
 

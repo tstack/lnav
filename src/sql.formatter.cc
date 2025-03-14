@@ -100,7 +100,7 @@ format(const attr_line_t& al, int cursor_offset)
 
             if (attr.sa_range.contains(cursor_offset)) {
                 auto diff = attr.sa_range.lr_end - cursor_offset - trimmed_size;
-                if (diff > 0 && diff < retval.length()) {
+                if (diff > 0 && diff < (ssize_t) retval.length()) {
                     cursor_retval = retval.length() - diff;
                 } else {
                     cursor_retval = retval.length();
@@ -346,7 +346,7 @@ format(const attr_line_t& al, int cursor_offset)
             if (retval.back() == '\n') {
                 diff += 1;
             }
-            if (diff < retval.length()) {
+            if (diff < (ssize_t) retval.length()) {
                 cursor_retval = retval.length() - diff;
             } else {
                 cursor_retval = retval.length();

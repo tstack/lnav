@@ -347,13 +347,13 @@ public:
         if (ip.y < 0) {
             ip.y = 0;
         }
-        if (ip.y >= this->tc_lines.size()) {
+        if (ip.y >= (int) this->tc_lines.size()) {
             ip.y = this->tc_lines.size() - 1;
         }
         if (ip.x < 0) {
             ip.x = 0;
         }
-        if (ip.x >= this->tc_lines[ip.y].column_width()) {
+        if (ip.x >= (ssize_t) this->tc_lines[ip.y].column_width()) {
             ip.x = this->tc_lines[ip.y].column_width();
         }
     }
@@ -371,7 +371,7 @@ public:
     bool is_cursor_at_end_of_line() const
     {
         return this->tc_cursor.x
-            == this->tc_lines[this->tc_cursor.y].column_width();
+            == (ssize_t) this->tc_lines[this->tc_cursor.y].column_width();
     }
 
     void clear_inactive_value()

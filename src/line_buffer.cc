@@ -58,6 +58,7 @@
 #include "line_buffer.hh"
 #include "piper.header.hh"
 #include "scn/scan.h"
+#include "yajlpp/yajlpp_def.hh"
 
 using namespace std::chrono_literals;
 
@@ -497,7 +498,7 @@ line_buffer::resize_buffer(size_t new_max)
 {
     if (((this->lb_compressed && new_max <= MAX_COMPRESSED_BUFFER_SIZE)
          || (!this->lb_compressed && new_max <= MAX_LINE_BUFFER_SIZE))
-        && new_max > (size_t) this->lb_buffer.capacity())
+        && !this->lb_buffer.has_capacity_for(new_max))
     {
         /* Still need more space, try a realloc. */
         this->lb_share_manager.invalidate_refs();
@@ -510,7 +511,7 @@ line_buffer::ensure_available(file_off_t start,
                               ssize_t max_length,
                               scan_direction dir)
 {
-    ssize_t prefill, available;
+    ssize_t prefill;
 
     require(this->lb_compressed || max_length <= MAX_LINE_BUFFER_SIZE);
 
@@ -542,7 +543,7 @@ line_buffer::ensure_available(file_off_t start,
                 break;
             case scan_direction::backward: {
                 auto padded_max_length = max_length * 4;
-                if (padded_max_length < this->lb_buffer.capacity()) {
+                if (this->lb_buffer.has_capacity_for(padded_max_length)) {
                     start = std::max(
                         file_off_t{0},
                         static_cast<file_off_t>(start
@@ -561,7 +562,9 @@ line_buffer::ensure_available(file_off_t start,
              * If the start is near the end of the file, move the offset back a
              * bit so we can get more of the file in the cache.
              */
-            if (start + this->lb_buffer.capacity() > this->lb_file_size) {
+            if (start + (ssize_t) this->lb_buffer.capacity()
+                > this->lb_file_size)
+            {
                 this->lb_file_offset = this->lb_file_size
                     - std::min(this->lb_file_size,
                                (file_ssize_t) this->lb_buffer.capacity());
@@ -576,11 +579,10 @@ line_buffer::ensure_available(file_off_t start,
         prefill = start - this->lb_file_offset;
     }
     require(this->lb_file_offset <= start);
-    require(prefill <= this->lb_buffer.size());
+    require(prefill <= (ssize_t) this->lb_buffer.size());
 
-    available = this->lb_buffer.capacity() - (start - this->lb_file_offset);
-    require(available <= this->lb_buffer.capacity());
-
+    ssize_t available
+        = this->lb_buffer.capacity() - (start - this->lb_file_offset);
     if (max_length > available) {
         // log_debug("need more space!");
         /*
@@ -627,8 +629,9 @@ line_buffer::load_next_buffer()
                           start + this->lb_alt_buffer.value().size(),
                           this->lb_alt_buffer.value().available());
             this->lb_compressed_offset = gi->get_source_offset();
-            if (rc != -1 && (rc < this->lb_alt_buffer.value().available())
-                && (start + this->lb_alt_buffer.value().size() + rc
+            if (rc != -1
+                && rc < (ssize_t) this->lb_alt_buffer.value().available()
+                && (start + (ssize_t) this->lb_alt_buffer.value().size() + rc
                     > this->lb_file_size))
             {
                 this->lb_file_size
@@ -691,8 +694,9 @@ line_buffer::load_next_buffer()
             this->lb_compressed_offset = lseek(bzfd, 0, SEEK_SET);
             BZ2_bzclose(bz_file);
 
-            if (rc != -1 && (rc < (this->lb_alt_buffer.value().available()))
-                && (start + this->lb_alt_buffer.value().size() + rc
+            if (rc != -1
+                && (rc < (ssize_t) (this->lb_alt_buffer.value().available()))
+                && (start + (ssize_t) this->lb_alt_buffer.value().size() + rc
                     > this->lb_file_size))
             {
                 this->lb_file_size
@@ -711,7 +715,7 @@ line_buffer::load_next_buffer()
     }
     // XXX For some reason, cygwin is giving us a bogus return value when
     // up to the end of the file.
-    if (rc > (this->lb_alt_buffer.value().available())) {
+    if (rc > (ssize_t) this->lb_alt_buffer.value().available()) {
         rc = -1;
 #ifdef ENODATA
         errno = ENODATA;
@@ -892,7 +896,7 @@ line_buffer::fill_range(file_off_t start,
                               this->lb_file_offset + this->lb_buffer.size(),
                               this->lb_buffer.available());
                 this->lb_compressed_offset = gi->get_source_offset();
-                if (rc != -1 && (rc < this->lb_buffer.available())) {
+                if (rc != -1 && (rc < (ssize_t) this->lb_buffer.available())) {
                     this->lb_file_size
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
                 }
@@ -954,7 +958,7 @@ line_buffer::fill_range(file_off_t start,
                 this->lb_compressed_offset = lseek(bzfd, 0, SEEK_SET);
                 BZ2_bzclose(bz_file);
 
-                if (rc != -1 && (rc < (this->lb_buffer.available()))) {
+                if (rc != -1 && (rc < (ssize_t) this->lb_buffer.available())) {
                     this->lb_file_size
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
                 }
@@ -987,7 +991,7 @@ line_buffer::fill_range(file_off_t start,
         }
         // XXX For some reason, cygwin is giving us a bogus return value when
         // up to the end of the file.
-        if (rc > (this->lb_buffer.available())) {
+        if (rc > (ssize_t) this->lb_buffer.available()) {
             rc = -1;
 #ifdef ENODATA
             errno = ENODATA;
@@ -1101,7 +1105,9 @@ line_buffer::load_next_line(file_range prev_line)
     retval.li_file_range.fr_offset = offset;
     if (this->lb_buffer.empty() || !this->in_range(offset)) {
         this->fill_range(offset, this->lb_buffer.capacity());
-    } else if (offset == this->lb_file_offset + this->lb_buffer.size()) {
+    } else if (offset
+               == this->lb_file_offset + (ssize_t) this->lb_buffer.size())
+    {
         if (!this->fill_range(offset, INITIAL_REQUEST_SIZE)) {
             retval.li_file_range.fr_offset = offset;
             retval.li_file_range.fr_size = 0;
@@ -1284,7 +1290,7 @@ line_buffer::load_next_line(file_range prev_line)
         }
     }
 
-    ensure(retval.li_file_range.fr_size <= this->lb_buffer.size());
+    ensure(retval.li_file_range.fr_size <= (ssize_t) this->lb_buffer.size());
     ensure(this->invariant());
 #if 0
     log_debug("got line part %d %d",

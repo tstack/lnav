@@ -471,7 +471,7 @@ plain_text_source::anchor_for_row(vis_line_t vl)
 {
     std::optional<std::string> retval;
 
-    if (vl > this->tds_lines.size()
+    if (vl > (ssize_t) this->tds_lines.size()
         || this->tds_doc_sections.m_sections_root == nullptr)
     {
         return retval;
@@ -508,7 +508,7 @@ plain_text_source::anchor_for_row(vis_line_t vl)
 std::optional<vis_line_t>
 plain_text_source::adjacent_anchor(vis_line_t vl, direction dir)
 {
-    if (vl > this->tds_lines.size()
+    if (vl > (ssize_t) this->tds_lines.size()
         || this->tds_doc_sections.m_sections_root == nullptr)
     {
         return std::nullopt;

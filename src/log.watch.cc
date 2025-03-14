@@ -40,10 +40,9 @@
 #include "readline_highlighters.hh"
 #include "sql_util.hh"
 #include "sqlitepp.hh"
+#include "yajlpp/yajlpp_def.hh"
 
-namespace lnav {
-namespace log {
-namespace watch {
+namespace lnav::log::watch {
 
 struct compiled_watch_expr {
     auto_mem<sqlite3_stmt> cwe_stmt{sqlite3_finalize};
@@ -385,6 +384,4 @@ eval_with(logfile& lf, logfile::iterator ll)
     }
 }
 
-}  // namespace watch
-}  // namespace log
-}  // namespace lnav
+}  // namespace lnav::log::watch

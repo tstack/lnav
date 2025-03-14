@@ -1133,7 +1133,7 @@ looper()
         .add_input_delegate(*filter_source);
     lnav_data.ld_log_source.lss_sorting_observer
         = [](auto& lss, auto off, auto size) {
-              if (off == size) {
+              if (off == (file_ssize_t) size) {
                   lnav_data.ld_bottom_source.update_loading(0, 0);
               } else {
                   lnav_data.ld_bottom_source.update_loading(off, size);

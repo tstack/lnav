@@ -61,6 +61,7 @@
 #include "sql_help.hh"
 #include "sql_util.hh"
 #include "tailer/tailer.looper.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;
 
@@ -729,6 +730,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
     std::vector<attr_line_t> retval;
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
+            case help_parameter_format_t::HPF_SQL:
             case help_parameter_format_t::HPF_SQL_EXPR: {
                 auto poss_strs = this->p_sql_completions
                     | lnav::itertools::first()
@@ -746,6 +748,7 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 }
                 break;
             }
+            case help_parameter_format_t::HPF_MULTILINE_TEXT:
             case help_parameter_format_t::HPF_TEXT: {
                 retval = view_text_possibilities(tc)
                     | lnav::itertools::similar_to(str)

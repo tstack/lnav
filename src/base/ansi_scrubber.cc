@@ -484,7 +484,9 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
         cp_dst += cp_len;
         str.resize(cp_dst);
     }
-    if (sa != nullptr && last_origin_end > 0 && last_origin_end != str.size()) {
+    if (sa != nullptr && last_origin_end > 0
+        && last_origin_end != (ssize_t) str.size())
+    {
         tmp_sa.emplace_back(line_range{(int) last_origin_end, (int) str.size()},
                             SA_ORIGIN_OFFSET.value(erased));
     }

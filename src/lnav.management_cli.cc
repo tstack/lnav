@@ -51,6 +51,7 @@
 #include "piper.header.hh"
 #include "regex101.import.hh"
 #include "session_data.hh"
+#include "yajlpp/yajlpp_def.hh"
 
 using namespace lnav::roles::literals;
 

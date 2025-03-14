@@ -337,7 +337,7 @@ textinput_curses::contains(int x, int y)
 bool
 textinput_curses::handle_mouse(mouse_event& me)
 {
-    auto inner_height = this->tc_lines.size();
+    ssize_t inner_height = this->tc_lines.size();
 
     log_debug("mouse here! button=%d state=%d x=%d y=%d",
               me.me_button,
@@ -608,7 +608,9 @@ textinput_curses::move_cursor_to_next_search_hit()
         this->tc_search_start_point.y = 0;
     }
     this->tc_search_found = false;
-    for (auto y = this->tc_search_start_point.y; y < this->tc_lines.size(); y++)
+    for (auto y = this->tc_search_start_point.y;
+         y < (ssize_t) this->tc_lines.size();
+         y++)
     {
         thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
@@ -677,7 +679,7 @@ textinput_curses::command_down(const ncinput& ch)
     if (this->tc_popup.is_visible()) {
         this->tc_popup.handle_key(ch);
     } else {
-        auto inner_height = this->tc_lines.size();
+        ssize_t inner_height = this->tc_lines.size();
         if (ncinput_shift_p(&ch)) {
             if (!this->tc_selection) {
                 this->tc_cursor_anchor = this->tc_cursor;
@@ -878,7 +880,8 @@ textinput_curses::handle_key(const ncinput& ch)
                         this->tc_cursor,
                         this->tc_cursor.copy_with_x(al.column_width()));
                     if (this->tc_selection->empty()
-                        && this->tc_cursor.y + 1 < this->tc_lines.size())
+                        && this->tc_cursor.y + 1
+                            < (ssize_t) this->tc_lines.size())
                     {
                         this->tc_clipboard.back().push_back('\n');
                         this->tc_selection = selected_range::from_key(
@@ -1201,7 +1204,7 @@ textinput_curses::handle_key(const ncinput& ch)
             return true;
         }
         case NCKEY_PGDOWN: {
-            if (this->tc_cursor.y < bottom) {
+            if (this->tc_cursor.y < (ssize_t) bottom) {
                 this->move_cursor_by(
                     {direction_t::down, (size_t) dim.dr_height});
             }
@@ -1386,13 +1389,15 @@ textinput_curses::ensure_cursor_visible()
     if (this->tc_cursor.y < 0) {
         this->tc_cursor.y = 0;
     }
-    if (this->tc_cursor.y >= this->tc_lines.size()) {
+    if (this->tc_cursor.y >= (ssize_t) this->tc_lines.size()) {
         this->tc_cursor.y = this->tc_lines.size() - 1;
     }
     if (this->tc_cursor.x < 0) {
         this->tc_cursor.x = 0;
     }
-    if (this->tc_cursor.x >= this->tc_lines[this->tc_cursor.y].column_width()) {
+    if (this->tc_cursor.x
+        >= (ssize_t) this->tc_lines[this->tc_cursor.y].column_width())
+    {
         this->tc_cursor.x = this->tc_lines[this->tc_cursor.y].column_width();
     }
 
@@ -1419,8 +1424,8 @@ textinput_curses::ensure_cursor_visible()
     {
         this->tc_top = (this->tc_cursor.y + 1 - dim.dr_height) + 1;
     }
-    if (this->tc_top + dim.dr_height > this->tc_lines.size()) {
-        if (this->tc_lines.size() > dim.dr_height) {
+    if (this->tc_top + dim.dr_height > (ssize_t) this->tc_lines.size()) {
+        if ((ssize_t) this->tc_lines.size() > dim.dr_height) {
             this->tc_top = this->tc_lines.size() - dim.dr_height + 1;
         } else {
             this->tc_top = 0;
@@ -1433,7 +1438,9 @@ textinput_curses::ensure_cursor_visible()
         this->tc_complete_range = std::nullopt;
     }
 
-    if (this->tc_cursor.x == this->tc_lines[this->tc_cursor.y].column_width()) {
+    if (this->tc_cursor.x
+        == (ssize_t) this->tc_lines[this->tc_cursor.y].column_width())
+    {
         if (this->tc_cursor.x >= this->tc_max_cursor_x) {
             this->tc_max_cursor_x = this->tc_cursor.x;
         }
@@ -1501,12 +1508,12 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
                 full_first_line = true;
             }
         } else if (sel_range->lr_start
-                       == this->tc_lines[curr_line].column_width()
+                       == (ssize_t) this->tc_lines[curr_line].column_width()
                    && sel_range->lr_end != -1
                    && sel_range->lr_start < sel_range->lr_end)
         {
             // Del deleting line feed
-            if (curr_line + 1 < this->tc_lines.size()) {
+            if (curr_line + 1 < (ssize_t) this->tc_lines.size()) {
                 this->tc_lines[curr_line].append(this->tc_lines[curr_line + 1]);
                 retval.push_back('\n');
                 del_max = curr_line + 1;
@@ -1660,9 +1667,10 @@ textinput_curses::move_cursor_by(movement move)
         }
     }
     if (move.hm_dir == direction_t::right
-        && this->tc_cursor.x > this->tc_lines[this->tc_cursor.y].column_width())
+        && this->tc_cursor.x
+            > (ssize_t) this->tc_lines[this->tc_cursor.y].column_width())
     {
-        if (this->tc_cursor.y + 1 < this->tc_lines.size()) {
+        if (this->tc_cursor.y + 1 < (ssize_t) this->tc_lines.size()) {
             this->tc_cursor.x = 0;
             this->tc_cursor.y += 1;
         }
@@ -1733,11 +1741,11 @@ textinput_curses::get_visible_dimensions() const
     ncplane_dim_yx(
         this->tc_window, &retval.dr_full_height, &retval.dr_full_width);
 
-    if (this->vc_y < retval.dr_full_height) {
+    if (this->vc_y < (ssize_t) retval.dr_full_height) {
         retval.dr_height = std::min((int) retval.dr_full_height - this->vc_y,
                                     this->tc_height);
     }
-    if (this->vc_x < retval.dr_full_width) {
+    if (this->vc_x < (ssize_t) retval.dr_full_width) {
         retval.dr_width = std::min((long) retval.dr_full_width - this->vc_x,
                                    this->vc_width);
     }
@@ -1851,8 +1859,8 @@ textinput_curses::do_update()
                     lr);
 
         if (!this->tc_alt_value.empty()
-            && this->tc_inactive_value.column_width() + 3
-                    + this->tc_alt_value.column_width()
+            && (ssize_t) (this->tc_inactive_value.column_width() + 3
+                          + this->tc_alt_value.column_width())
                 < dim.dr_width)
         {
             auto alt_x = dim.dr_width - this->tc_alt_value.column_width();
@@ -1875,7 +1883,7 @@ textinput_curses::do_update()
     }
 
     retval = true;
-    auto row_count = this->tc_lines.size();
+    ssize_t row_count = this->tc_lines.size();
     auto y = this->vc_y;
     auto y_max = this->vc_y + dim.dr_height;
     if (row_count == 1 && this->tc_lines[0].empty()
@@ -1924,7 +1932,7 @@ textinput_curses::do_update()
         }
         if (!this->tc_suggestion.empty() && !this->tc_popup.is_visible()
             && curr_line == this->tc_cursor.y
-            && this->tc_cursor.x == al.column_width()
+            && this->tc_cursor.x == (ssize_t) al.column_width()
             && (al.empty() || al.al_string.back() == ' '))
         {
             al.append(this->tc_suggestion,
@@ -1933,7 +1941,7 @@ textinput_curses::do_update()
         if (curr_line == 0) {
             al.insert(0, this->tc_prefix);
         }
-        auto mvw_res = mvwattrline(this->tc_window, y, this->vc_x, al, lr);
+        mvwattrline(this->tc_window, y, this->vc_x, al, lr);
     }
     for (; y < y_max; y++) {
         static constexpr auto EMPTY_LR = line_range::empty_at(0);
@@ -2052,7 +2060,7 @@ textinput_curses::open_popup_for_completion(
     auto new_sel = 0_vl;
     auto popup_height = vis_line_t(
         std::min(this->tc_max_popup_height, possibilities.size() + 1));
-    auto rel_x = left;
+    ssize_t rel_x = left;
     if (this->tc_cursor.y == 0) {
         rel_x += this->tc_prefix.column_width();
     }
@@ -2093,7 +2101,6 @@ textinput_curses::open_popup_for_history(std::vector<attr_line_t> possibilities)
     }
 
     this->tc_popup_type = popup_type_t::history;
-    auto dim = this->get_visible_dimensions();
     auto new_sel = 0_vl;
     auto popup_height = vis_line_t(
         std::min(this->tc_max_popup_height, possibilities.size() + 1));
@@ -2145,13 +2152,15 @@ textinput_curses::tick(ui_clock::time_point now)
 int
 textinput_curses::get_cursor_offset() const
 {
-    if (this->tc_cursor.y < 0 || this->tc_cursor.y >= this->tc_lines.size()) {
+    if (this->tc_cursor.y < 0
+        || this->tc_cursor.y >= (ssize_t) this->tc_lines.size())
+    {
         // XXX can happen during update_lines() with history/pasted insert
         return 0;
     }
 
     int retval = 0;
-    for (auto row = size_t{0}; row < this->tc_cursor.y; row++) {
+    for (auto row = 0; row < this->tc_cursor.y; row++) {
         retval += this->tc_lines[row].al_string.size() + 1;
     }
     retval += this->tc_cursor.x;
@@ -2165,7 +2174,7 @@ textinput_curses::get_point_for_offset(int offset) const
     auto retval = input_point::home();
     auto row = size_t{0};
     for (; row < this->tc_lines.size() && offset > 0; row++) {
-        if (offset < this->tc_lines[row].al_string.size() + 1) {
+        if (offset < (ssize_t) this->tc_lines[row].al_string.size() + 1) {
             break;
         }
         offset -= this->tc_lines[row].al_string.size() + 1;
@@ -2182,7 +2191,7 @@ void
 textinput_curses::add_mark(input_point pos,
                            const lnav::console::user_message& msg)
 {
-    if (pos.y < 0 || pos.y >= this->tc_lines.size()) {
+    if (pos.y < 0 || pos.y >= (ssize_t) this->tc_lines.size()) {
         log_error("invalid mark position: %d:%d", pos.x, pos.y);
         return;
     }

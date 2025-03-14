@@ -1331,7 +1331,7 @@ logfile::read_file(read_format_t format)
             retval.rfr_content.append(22, '\x16');
         }
         retval.rfr_content.append(sbr.get_data(), sbr.length());
-        if (retval.rfr_content.size() < this->lf_stat.st_size) {
+        if ((file_ssize_t) retval.rfr_content.size() < this->lf_stat.st_size) {
             retval.rfr_content.push_back('\n');
         }
     }
@@ -1440,7 +1440,7 @@ logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
 {
     auto next_line = ll;
     file_range::metadata meta;
-    size_t retval;
+    file_ssize_t retval;
 
     if (!include_continues && this->lf_next_line_cache) {
         if (ll->get_offset() == (*this->lf_next_line_cache).first) {
@@ -1475,7 +1475,7 @@ logfile::message_byte_length(logfile::const_iterator ll, bool include_continues)
         }
     }
 
-    return {(file_ssize_t) retval, meta};
+    return {retval, meta};
 }
 
 Result<shared_buffer_ref, std::string>

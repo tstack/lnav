@@ -64,8 +64,8 @@ line_filter_observer::logline_new_lines(const logfile& lf,
             if (filter->lf_deleted) {
                 continue;
             }
-            if (offset
-                >= this->lfo_filter_state.tfs_filter_count[filter->get_index()])
+            if (offset >= (ssize_t) this->lfo_filter_state
+                              .tfs_filter_count[filter->get_index()])
             {
                 retval = filter->add_line(
                              this->lfo_filter_state, ll_begin, sbr_copy)

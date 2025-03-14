@@ -69,7 +69,7 @@ snippet::from_content_with_offset(intern_string_t src,
     retval.s_content
         = content.subline(line_with_context.sf_begin,
                           line_with_error.sf_end - line_with_context.sf_begin);
-    if (line_with_error.sf_end >= retval.s_content.get_string().size()) {
+    if (line_with_error.sf_end >= (int) retval.s_content.get_string().size()) {
         retval.s_content.append("\n");
     }
     retval.s_content.append(pointer).append(

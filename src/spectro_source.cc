@@ -213,10 +213,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
                                            vis_line_t row,
                                            std::vector<attr_line_t>& value_out)
 {
-    vis_line_t height;
-    unsigned long width;
-
-    lv.get_dimensions(height, width);
+    auto [height, width] = lv.get_dimensions();
     width -= 2;
 
     auto sel = lv.get_selection();
@@ -256,7 +253,7 @@ spectrogram_source::list_value_for_overlay(const listview_curses& lv,
 
         retval.al_attrs.emplace_back(line_range{0, -1},
                                      VC_ROLE.value(role_t::VCR_STATUS_INFO));
-        if (desc.length() + 8 > width) {
+        if (desc.length() + 8 > (ssize_t) width) {
             desc.clear();
         }
 

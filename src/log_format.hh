@@ -640,7 +640,7 @@ public:
     bool lf_time_ordered{true};
     bool lf_specialized{false};
     bool lf_level_hideable{true};
-    std::optional<int64_t> lf_max_unrecognized_lines;
+    std::optional<uint64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;
 

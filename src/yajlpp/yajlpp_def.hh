@@ -1682,9 +1682,6 @@ private:
 };
 
 template<typename T>
-struct typed_json_path_container;
-
-template<typename T>
 struct yajlpp_formatter {
     const T& yf_obj;
     const typed_json_path_container<T>& yf_container;
@@ -1710,7 +1707,7 @@ struct yajlpp_formatter {
 };
 
 template<typename T>
-struct typed_json_path_container : public json_path_container {
+struct typed_json_path_container : json_path_container {
     typed_json_path_container(std::initializer_list<json_path_handler> children)
         : json_path_container(children)
     {

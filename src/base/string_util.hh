@@ -316,7 +316,7 @@ to_string_fragment(const auto_buffer& buf)
 inline bool
 operator==(const auto_buffer& buf, const string_fragment& sf)
 {
-    if (buf.size() != sf.length()) {
+    if ((int) buf.size() != sf.length()) {
         return false;
     }
 
@@ -326,7 +326,7 @@ operator==(const auto_buffer& buf, const string_fragment& sf)
 inline bool
 operator==(const string_fragment& sf, const auto_buffer& buf)
 {
-    if (buf.size() != sf.length()) {
+    if ((int) buf.size() != sf.length()) {
         return false;
     }
 

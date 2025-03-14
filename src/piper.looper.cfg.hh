@@ -30,13 +30,15 @@
 #ifndef piper_looper_cfg_hh
 #define piper_looper_cfg_hh
 
+#include <chrono>
 #include <map>
 #include <string>
 
 #include <stdint.h>
 
+#include "base/file_range.hh"
 #include "pcrepp/pcre2pp.hh"
-#include "yajlpp/yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
 
 namespace lnav::piper {
 
@@ -52,7 +54,7 @@ struct demux_def {
 };
 
 struct config {
-    uint64_t c_max_size{10ULL * 1024ULL * 1024ULL};
+    file_off_t c_max_size{10LL * 1024LL * 1024LL};
     uint32_t c_rotations{4};
     std::chrono::seconds c_ttl{std::chrono::hours(48)};
 

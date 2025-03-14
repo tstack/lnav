@@ -80,7 +80,7 @@ public:
      */
     virtual indexing_result logfile_indexing(const logfile* lf,
                                              file_off_t off,
-                                             file_size_t total)
+                                             file_ssize_t total)
         = 0;
 };
 

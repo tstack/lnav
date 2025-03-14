@@ -535,9 +535,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
             *(this->dp_msg_format) += this->get_string_up_to_value(fiter);
             this->dp_msg_format->append("#");
         }
-        if ((size_t) this->dp_msg_format_begin
-            < this->dp_scanner->get_input().sf_end)
-        {
+        if (this->dp_msg_format_begin < this->dp_scanner->get_input().sf_end) {
             auto last = this->dp_scanner->get_input();
             last.sf_begin = this->dp_msg_format_begin;
 

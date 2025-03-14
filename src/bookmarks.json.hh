@@ -31,7 +31,7 @@
 #define lnav_bookmarks_json_hh
 
 #include "bookmarks.hh"
-#include "yajlpp/yajlpp_def.hh"
+#include "yajlpp/yajlpp.hh"
 
 extern typed_json_path_container<logmsg_annotations>
     logmsg_annotations_handlers;
