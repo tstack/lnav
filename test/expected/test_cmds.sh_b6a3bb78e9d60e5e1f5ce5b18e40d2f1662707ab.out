@@ -1793,6 +1793,7 @@ For support questions, email:
 [4mParameters[0m
   [4m--view={log,db}[0m   The view to use as the source
                     of data
+                    [4mValues[0m: [1mlog[0m|[1mdb[0m
   [4m--anonymize[0m       Anonymize the lines
   [4mpath[0m              The path to the file to write
 [4mSee Also[0m

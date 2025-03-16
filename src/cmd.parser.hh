@@ -61,6 +61,7 @@ struct parsed {
 
     const help_text* p_help;
     std::map<std::string, arg_t> p_args;
+    std::vector<shlex::split_element_t> p_free_args;
 };
 
 parsed parse_for_prompt(exec_context& ec,

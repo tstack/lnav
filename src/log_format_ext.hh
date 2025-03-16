@@ -117,15 +117,6 @@ public:
         factory_container<lnav::pcre2pp::code> lp_pcre;
     };
 
-    struct yajl_handle_deleter {
-        void operator()(yajl_handle handle) const
-        {
-            if (handle != nullptr) {
-                yajl_free(handle);
-            }
-        }
-    };
-
     external_log_format(const intern_string_t name)
         : elf_level_field(intern_string::lookup("level", -1)),
           elf_body_field(intern_string::lookup("body", -1)),

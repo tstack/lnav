@@ -292,8 +292,12 @@ dist_noinst_DATA = \
     test_config.sh_eec3768ebc201ca63bca1411270965f78db1abfc.out \
     test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.err \
     test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.out \
+    test_demux.sh_4ea9d5b2fd18fcae48cd3dc9d8fd7ae517ca0b2a.err \
+    test_demux.sh_4ea9d5b2fd18fcae48cd3dc9d8fd7ae517ca0b2a.out \
     test_demux.sh_7dd0e59e85769234d589a8a945cf2f80542b7dd1.err \
     test_demux.sh_7dd0e59e85769234d589a8a945cf2f80542b7dd1.out \
+    test_demux.sh_7fe671a697d452ffc56a49ddb605538b23fe744e.err \
+    test_demux.sh_7fe671a697d452ffc56a49ddb605538b23fe744e.out \
     test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.err \
     test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.out \
     test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.err \

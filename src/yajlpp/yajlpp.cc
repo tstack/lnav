@@ -867,7 +867,7 @@ yajlpp_parse_context::array_end(void* ctx)
 int
 yajlpp_parse_context::handle_unused(void* ctx)
 {
-    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
+    auto* ypc = (yajlpp_parse_context*) ctx;
 
     if (ypc->ypc_ignore_unused) {
         return 1;
@@ -934,8 +934,9 @@ yajlpp_parse_context::handle_unused(void* ctx)
 
         attr_line_t help_text;
 
-        if (accepted_handlers->jpc_children.size() == 1
-            && accepted_handlers->jpc_children.front().jph_is_array)
+        if (accepted_handlers == nullptr) {
+        } else if (accepted_handlers->jpc_children.size() == 1
+                   && accepted_handlers->jpc_children.front().jph_is_array)
         {
             const auto& jph = accepted_handlers->jpc_children.front();
 
@@ -968,7 +969,7 @@ yajlpp_parse_context::handle_unused(void* ctx)
 int
 yajlpp_parse_context::handle_unused_or_delete(void* ctx)
 {
-    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
+    auto* ypc = (yajlpp_parse_context*) ctx;
 
     if (!ypc->ypc_handler_stack.empty()
         && ypc->ypc_handler_stack.back()->jph_obj_deleter)
@@ -993,18 +994,18 @@ yajlpp_parse_context::handle_unused_or_delete(void* ctx)
 }
 
 const yajl_callbacks yajlpp_parse_context::DEFAULT_CALLBACKS = {
-    yajlpp_parse_context::handle_unused_or_delete,
-    (int (*)(void*, int)) yajlpp_parse_context::handle_unused,
-    (int (*)(void*, long long)) yajlpp_parse_context::handle_unused,
-    (int (*)(void*, double)) yajlpp_parse_context::handle_unused,
+    handle_unused_or_delete,
+    (int (*)(void*, int)) handle_unused,
+    (int (*)(void*, long long)) handle_unused,
+    (int (*)(void*, double)) handle_unused,
     nullptr,
     (int (*)(void*, const unsigned char*, size_t, yajl_string_props_t*))
-        yajlpp_parse_context::handle_unused,
-    yajlpp_parse_context::map_start,
-    yajlpp_parse_context::map_key,
-    yajlpp_parse_context::map_end,
-    yajlpp_parse_context::array_start,
-    yajlpp_parse_context::array_end,
+        handle_unused,
+    map_start,
+    map_key,
+    map_end,
+    array_start,
+    array_end,
 };
 
 yajl_status

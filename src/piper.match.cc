@@ -33,6 +33,7 @@
 #include "base/snippet_highlighters.hh"
 #include "piper.looper.cfg.hh"
 #include "readline_highlighters.hh"
+#include "yajlpp/json_ptr.hh"
 
 using namespace lnav::roles::literals;
 
@@ -42,6 +43,39 @@ multiplex_matcher::match_result
 multiplex_matcher::match(const string_fragment& line)
 {
     const auto& cfg = injector::get<const config&>();
+
+    if (line.startswith("{") && line.endswith("}\n")) {
+        json_ptr_walk jpw;
+
+        jpw.parse_fully(line);
+
+        log_info("trying JSON demux");
+        for (const auto& demux_pair : cfg.c_demux_json_definitions) {
+            log_info(" JSON demuxer: %s", demux_pair.first.c_str());
+            const auto& djd = demux_pair.second;
+            auto found_timestamp = false;
+            auto found_mux_id = false;
+            auto found_body = false;
+
+            for (const auto& triple : jpw.jpw_values) {
+                auto ptr = string_fragment::from_str(triple.wt_ptr).substr(1);
+
+                if (ptr == djd.djd_timestamp) {
+                    found_timestamp = true;
+                } else if (ptr == djd.djd_mux_id) {
+                    found_mux_id = true;
+                } else if (ptr == djd.djd_body) {
+                    found_body = true;
+                }
+            }
+
+            if (found_timestamp && found_mux_id && found_body) {
+                log_info("  matched!");
+                return found_json{demux_pair.first};
+            }
+        }
+    }
+
     auto md = lnav::pcre2pp::match_data::unitialized();
 
     for (const auto& demux_pair : cfg.c_demux_definitions) {
@@ -99,7 +133,7 @@ multiplex_matcher::match(const string_fragment& line)
                             .append(lnav::roles::number(
                                 fmt::to_string(this->mm_line_count))));
                     this->mm_details.emplace_back(match_um);
-                    return found{demux_pair.first};
+                    return found_regex{demux_pair.first};
                 }
                 auto config_al
                     = attr_line_t()

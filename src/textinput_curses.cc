@@ -1105,11 +1105,11 @@ textinput_curses::handle_key(const ncinput& ch)
         }
         case NCKEY_ENTER: {
             if (this->tc_popup.is_visible()) {
-                this->tc_popup_type = popup_type_t::none;
                 this->tc_popup.set_visible(false);
                 if (this->tc_on_completion) {
                     this->tc_on_completion(*this);
                 }
+                this->tc_popup_type = popup_type_t::none;
                 this->set_needs_update();
             } else if (this->tc_height == 1) {
                 this->blur();

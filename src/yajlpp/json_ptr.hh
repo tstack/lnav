@@ -61,7 +61,22 @@ public:
         return this->parse((const unsigned char*) buffer, len);
     }
 
+    yajl_status parse(const string_fragment& sf)
+    {
+        return this->parse(sf.udata(), sf.length());
+    }
+
     yajl_status complete_parse();
+
+    yajl_status parse_fully(const string_fragment& sf)
+    {
+        auto retval = this->parse(sf);
+        if (retval == yajl_status_ok) {
+            retval = this->complete_parse();
+        }
+
+        return retval;
+    }
 
     void update_error_msg(yajl_status status,
                           const unsigned char* buffer,

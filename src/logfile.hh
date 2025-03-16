@@ -482,7 +482,7 @@ protected:
                         const line_info& li,
                         scan_batch_context& sbc);
 
-    void set_format_base_time(log_format* lf);
+    void set_format_base_time(log_format* lf, const line_info& li);
 
 private:
     logfile(std::filesystem::path filename, const logfile_open_options& loo);

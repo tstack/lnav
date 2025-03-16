@@ -41,6 +41,13 @@
                 "enabled": false,
                 "pattern": "^(?<mux_id>[a-zA-Z][\\w\\-]{3,}) (?<container_type>[a-zA-Z][\\w\\-]{3,}) (?<body>.*)"
             }
+        },
+        "demux-json": {
+            "graylog": {
+                "enabled": false,
+                "mux_id": "source",
+                "body": "message"
+            }
         }
     },
     "tuning": {

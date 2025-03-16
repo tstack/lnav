@@ -45,6 +45,7 @@
 #include "data_scanner.hh"
 #include "db_sub_source.hh"
 #include "external_editor.hh"
+#include "fmt/ranges.h"
 #include "itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
@@ -185,6 +186,7 @@ prompt::insert_sql_completion(const std::string& name, const sql_item_t& item)
                               [](sql_table_t) { return true; },
                               [](sql_table_valued_function_t) { return false; },
                               [](sql_function_t) { return false; },
+                              [](prql_function_t) { return true; },
                               [](sql_column_t) { return true; },
                               [](sql_number_t) { return false; },
                               [](sql_string_t) { return true; },
@@ -266,7 +268,8 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
             auto format_name = attr_opt->get();
             auto format = log_format::find_root_format(format_name.c_str());
             for (const auto& lvm : format->get_value_metadata()) {
-                auto var_name = fmt::format(":{}", lvm.lvm_name.c_str());
+                auto var_name
+                    = fmt::format(FMT_STRING(":{}"), lvm.lvm_name.c_str());
                 this->insert_sql_completion(var_name, sql_field_var_t{});
             }
         }
@@ -358,6 +361,11 @@ prompt::refresh_sql_completions(textview_curses& tc)
             case help_context_t::HC_SQL_FUNCTION:
                 this->insert_sql_completion(
                     name, sql_function_t{func->ht_parameters.size()});
+                if (!func->ht_prql_path.empty()) {
+                    auto prql_name = fmt::format(
+                        FMT_STRING("{}"), fmt::join(func->ht_prql_path, "."));
+                    this->insert_sql_completion(prql_name, prql_function_t{});
+                }
                 break;
             case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
                 this->insert_sql_completion(name,
@@ -487,7 +495,9 @@ prompt::rl_history(textinput_curses& tc)
 void
 prompt::rl_completion(textinput_curses& tc)
 {
-    if (this->p_replace_from_history) {
+    if (this->p_editor.tc_popup_type == textinput_curses::popup_type_t::history
+        && this->p_replace_from_history)
+    {
         this->p_editor.blur();
         this->p_editor.tc_on_perform(tc);
         return;
@@ -639,6 +649,20 @@ sql_item_visitor::operator()(const prompt::sql_function_t& sf) const
 
 template<>
 const prompt::sql_item_meta&
+sql_item_visitor::operator()(const prompt::prql_function_t&) const
+{
+    static constexpr auto retval = prompt::sql_item_meta{
+        "\U0001D453",
+        "",
+        " ",
+        role_t::VCR_FUNCTION,
+    };
+
+    return retval;
+}
+
+template<>
+const prompt::sql_item_meta&
 sql_item_visitor::operator()(const prompt::sql_column_t&) const
 {
     static constexpr auto retval = prompt::sql_item_meta{
@@ -781,10 +805,26 @@ prompt::get_env_completion(const std::string& str)
 
 std::vector<attr_line_t>
 prompt::get_cmd_parameter_completion(textview_curses& tc,
+                                     const help_text* cmd_ht,
                                      const help_text* ht,
                                      const std::string& str)
 {
     std::vector<attr_line_t> retval;
+
+    if (cmd_ht == ht) {
+        retval = cmd_ht->ht_parameters
+            | lnav::itertools::map([](const help_text& param) {
+                     return std::string(param.ht_name);
+                 })
+            | lnav::itertools::similar_to(str, 10)
+            | lnav::itertools::map([](const auto& x) {
+                     return attr_line_t().append(x).with_attr_for_all(
+                         SUBST_TEXT.value(x + " "));
+                 });
+
+        return retval;
+    }
+
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
             case help_parameter_format_t::HPF_SQL:

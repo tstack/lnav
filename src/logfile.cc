@@ -312,9 +312,11 @@ logfile::reset_state() -> void
 }
 
 void
-logfile::set_format_base_time(log_format* lf)
+logfile::set_format_base_time(log_format* lf, const line_info& li)
 {
-    time_t file_time = this->lf_line_buffer.get_file_time();
+    time_t file_time = li.li_timestamp.tv_sec != 0
+        ? li.li_timestamp.tv_sec
+        : this->lf_line_buffer.get_file_time();
 
     if (file_time == 0) {
         file_time = this->lf_stat.st_mtime;
@@ -323,7 +325,7 @@ logfile::set_format_base_time(log_format* lf)
     if (!this->lf_cached_base_time
         || this->lf_cached_base_time.value() != file_time)
     {
-        struct tm new_base_tm;
+        tm new_base_tm;
         this->lf_cached_base_time = file_time;
         localtime_r(&file_time, &new_base_tm);
         this->lf_cached_base_tm = new_base_tm;
@@ -429,7 +431,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
 
             scan_count += 1;
             curr->clear();
-            this->set_format_base_time(curr.get());
+            this->set_format_base_time(curr.get(), li);
             log_format::scan_result_t scan_res{mapbox::util::no_init{}};
             if (this->lf_format != nullptr
                 && this->lf_format->lf_root_format == curr.get())
@@ -540,7 +542,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             this->lf_text_format = text_format_t::TF_LOG;
             this->lf_format = curr->specialized();
             this->lf_format_quality = winner.second.sm_quality;
-            this->set_format_base_time(this->lf_format.get());
+            this->set_format_base_time(this->lf_format.get(), li);
             if (this->lf_format->lf_date_time.dts_fmt_lock != -1) {
                 this->lf_content_id
                     = hasher().update(sbr.get_data(), sbr.length()).to_string();

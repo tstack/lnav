@@ -1714,7 +1714,7 @@ static readline_context::command_t IO_COMMANDS[] = {
                           "lines in the "
                           "current view")
             .with_parameter(
-                help_text("--anonymize", "Anonymize the lines").optional())
+                help_text("--anonymize", "Anonymize the lines").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -1730,8 +1730,7 @@ static readline_context::command_t IO_COMMANDS[] = {
         help_text(":write-csv-to")
             .with_summary("Write SQL results to the given file in CSV format")
             .with_parameter(
-                help_text("--anonymize", "Anonymize the row contents")
-                    .optional())
+                help_text("--anonymize", "Anonymize the row contents").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -1746,8 +1745,7 @@ static readline_context::command_t IO_COMMANDS[] = {
         help_text(":write-json-to")
             .with_summary("Write SQL results to the given file in JSON format")
             .with_parameter(
-                help_text("--anonymize", "Anonymize the JSON values")
-                    .optional())
+                help_text("--anonymize", "Anonymize the JSON values").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -1763,8 +1761,7 @@ static readline_context::command_t IO_COMMANDS[] = {
             .with_summary("Write SQL results to the given file in "
                           "JSON Lines format")
             .with_parameter(
-                help_text("--anonymize", "Anonymize the JSON values")
-                    .optional())
+                help_text("--anonymize", "Anonymize the JSON values").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -1781,8 +1778,7 @@ static readline_context::command_t IO_COMMANDS[] = {
             .with_summary("Write SQL results to the given file in a "
                           "tabular format")
             .with_parameter(
-                help_text("--anonymize", "Anonymize the table contents")
-                    .optional())
+                help_text("--anonymize", "Anonymize the table contents").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -1802,9 +1798,10 @@ static readline_context::command_t IO_COMMANDS[] = {
                 "file.")
             .with_parameter(help_text("--view={log,db}",
                                       "The view to use as the source of data")
-                                .optional())
+                                .optional()
+                                .with_enum_values({"log", "db"}))
             .with_parameter(
-                help_text("--anonymize", "Anonymize the lines").optional())
+                help_text("--anonymize", "Anonymize the lines").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -1821,7 +1818,7 @@ static readline_context::command_t IO_COMMANDS[] = {
             .with_summary("Write the text in the top view to the given file "
                           "without any formatting")
             .with_parameter(
-                help_text("--anonymize", "Anonymize the lines").optional())
+                help_text("--anonymize", "Anonymize the lines").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
@@ -1838,7 +1835,7 @@ static readline_context::command_t IO_COMMANDS[] = {
                 "Write the displayed text or SQL results to the given "
                 "file without any formatting")
             .with_parameter(
-                help_text("--anonymize", "Anonymize the lines").optional())
+                help_text("--anonymize", "Anonymize the lines").flag())
             .with_parameter(
                 help_text("path", "The path to the file to write")
                     .with_format(help_parameter_format_t::HPF_LOCAL_FILENAME))
