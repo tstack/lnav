@@ -57,7 +57,7 @@ struct demux_json_def {
     bool djd_enabled{true};
     std::string djd_mux_id;
     std::string djd_body;
-    std::string djd_timestamp{"timestamp"};
+    std::string djd_timestamp;
 };
 
 struct config {

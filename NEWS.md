@@ -85,6 +85,12 @@ Features:
 * The `CTRL` + `O` shortcut is now bound to the `:prev-location`
   command, so you can jump back to a previous location.
 * Render task marks in markdown.
+* The demultiplexing feature has been extended to support JSON-lines
+  input files.
+  For example, an
+  [export of search results from Graylog](https://go2docs.graylog.org/current/interacting_with_your_log_data/export_search_results.html)
+  can automatically be split into separate streams based on the
+  `source` property.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.

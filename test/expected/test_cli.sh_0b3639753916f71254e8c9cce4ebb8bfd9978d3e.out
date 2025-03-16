@@ -7303,9 +7303,9 @@
         "demux-json": {
             "graylog": {
                 "enabled": false,
+                "timestamp": "timestamp",
                 "mux_id": "source",
-                "body": "message",
-                "timestamp": "timestamp"
+                "body": "message"
             }
         }
     },

@@ -1166,6 +1166,11 @@
                                     "description": "Indicates whether this demuxer will be used at the demuxing stage (defaults to 'true')",
                                     "type": "boolean"
                                 },
+                                "timestamp": {
+                                    "title": "/log/demux-json/<name>/timestamp",
+                                    "description": "The pointer to the timestamp of the message",
+                                    "type": "string"
+                                },
                                 "mux_id": {
                                     "title": "/log/demux-json/<name>/mux_id",
                                     "description": "The pointer to the ID for demultiplexing",
@@ -1174,11 +1179,6 @@
                                 "body": {
                                     "title": "/log/demux-json/<name>/body",
                                     "description": "The pointer to the property that contains the log message",
-                                    "type": "string"
-                                },
-                                "timestamp": {
-                                    "title": "/log/demux-json/<name>/timestamp",
-                                    "description": "The pointer to the timestamp of the message",
                                     "type": "string"
                                 }
                             },

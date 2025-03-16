@@ -331,7 +331,7 @@ so the content can be styled as desired.
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/annotations/patternProperties/^([\w\.\-]+)$
 
 Demultiplexing (v0.12.3+)
-^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------
 
 Files that contain a mix of content from different sources, like
 the output of :code:`docker compose logs`, can be automatically
@@ -344,9 +344,12 @@ extracts the identifier, the log message, and an optional
 timestamp.  Once extracted, lines are distributed to separate files
 based on the identifier.
 
-Demultiplexers are defined in the main configuration under
-the :code:`/log/demux` path.  The pattern for the demuxer
-has the following known capture names:
+Demultiplexing can be done on plain text files using a regular expression
+or JSON-lines files where the JSON contains certain properties.
+
+Demultiplexers that are based on regular expressions are defined in
+the main configuration under the :code:`/log/demux` path. The pattern
+for the demuxer has the following known capture names:
 
 :mux_id: (required) Captures the unique identifier.
 
@@ -363,7 +366,7 @@ in the file metadata that can be accessed by the
 :code:`lnav_file_metadata` table.
 
 Example
-+++++++
+^^^^^^^
 
 .. code-block:: json
 
@@ -380,7 +383,7 @@ Example
   }
 
 Sample Input Document:
------------------------
+++++++++++++++++++++++
 
 .. code-block:: text
 
@@ -390,7 +393,7 @@ Sample Input Document:
   ===== END =====
 
 Demuxed Output Files:
-----------------------
++++++++++++++++++++++
 
 File: `pod-1`
 
@@ -403,6 +406,24 @@ File: `pod-2`
 .. code-block:: text
 
   2024-12-12T08:01:00.456Z Another log message
+
+
+JSON-Lines Demultiplexing (v0.13.0+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Demultiplexers for JSON-lines files are defined in the main
+configuration under the :code:`/log/demux-json` path.  The
+configuration needs to specify the following three properties:
+
+:timestamp: (optional) The timestamp for the log message.
+  If this is available and the log message does not have
+  it's own timestamp, this will be used instead.
+
+:mux_id: (required) Captures the unique identifier for the
+  source of the log message.
+
+:body: (required) Captures the body of the log message
+  that should be written to the file.
 
 
 Behavior Details
@@ -431,6 +452,8 @@ JSON Schema Reference
 ^^^^^^^^^^^^^^^^^^^^^
 
 .. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/demux/patternProperties/^([\w\-\.]+)$
+
+.. jsonschema:: ../schemas/config-v1.schema.json#/properties/log/properties/demux-json/patternProperties/^([\w\-\.]+)$
 
 .. _tuning:
 

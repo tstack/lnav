@@ -1311,6 +1311,10 @@ static const typed_json_path_container<lnav::piper::demux_json_def>
             .with_description("Indicates whether this demuxer will be used at "
                               "the demuxing stage (defaults to 'true')")
             .for_field(&lnav::piper::demux_json_def::djd_enabled),
+        yajlpp::property_handler("timestamp")
+            .with_synopsis("<json-ptr>")
+            .with_description("The pointer to the timestamp of the message")
+            .for_field(&lnav::piper::demux_json_def::djd_timestamp),
         yajlpp::property_handler("mux_id")
             .with_synopsis("<json-ptr>")
             .with_description("The pointer to the ID for demultiplexing")
@@ -1320,10 +1324,6 @@ static const typed_json_path_container<lnav::piper::demux_json_def>
             .with_description(
                 "The pointer to the property that contains the log message")
             .for_field(&lnav::piper::demux_json_def::djd_body),
-        yajlpp::property_handler("timestamp")
-            .with_synopsis("<json-ptr>")
-            .with_description("The pointer to the timestamp of the message")
-            .for_field(&lnav::piper::demux_json_def::djd_timestamp),
 };
 
 static const json_path_container demux_json_defs_handlers = {

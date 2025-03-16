@@ -53,14 +53,14 @@ multiplex_matcher::match(const string_fragment& line)
         for (const auto& demux_pair : cfg.c_demux_json_definitions) {
             log_info(" JSON demuxer: %s", demux_pair.first.c_str());
             const auto& djd = demux_pair.second;
-            auto found_timestamp = false;
+            std::optional<bool> found_timestamp;
             auto found_mux_id = false;
             auto found_body = false;
 
             for (const auto& triple : jpw.jpw_values) {
                 auto ptr = string_fragment::from_str(triple.wt_ptr).substr(1);
 
-                if (ptr == djd.djd_timestamp) {
+                if (!djd.djd_timestamp.empty() && ptr == djd.djd_timestamp) {
                     found_timestamp = true;
                 } else if (ptr == djd.djd_mux_id) {
                     found_mux_id = true;
@@ -69,7 +69,9 @@ multiplex_matcher::match(const string_fragment& line)
                 }
             }
 
-            if (found_timestamp && found_mux_id && found_body) {
+            if ((!found_timestamp || found_timestamp.value()) && found_mux_id
+                && found_body)
+            {
                 log_info("  matched!");
                 return found_json{demux_pair.first};
             }
