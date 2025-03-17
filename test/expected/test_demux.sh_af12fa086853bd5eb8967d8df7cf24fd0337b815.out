@@ -1,0 +1,4 @@
+[1m[4m                                filepath                                [0m[1m[4m [0m[1m[4m     metadata      [0m[1m[4m [0m
+{test_dir}/logfile_muxed_syslog.0.2/logfile_syslog.2 {"host":"veridian"} 
+{test_dir}/logfile_muxed_syslog.0/logfile_syslog.0   {"host":"veridian"} 
+[1m{test_dir}/logfile_muxed_syslog.0.1/logfile_syslog.3[0m[1m [0m[1m{"host":"Tims-Air"} [0m
