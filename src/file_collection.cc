@@ -608,7 +608,6 @@ file_collection::watch_logfile(const std::string& filename,
 
         return std::async(std::launch::async, std::move(func));
     }
-    log_trace("file already open: %s", filename.c_str());
 
     auto lf = *file_iter;
 

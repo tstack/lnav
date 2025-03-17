@@ -103,6 +103,8 @@ Bug Fixes:
 * The `:export-session-to` command will now include `:open` commands
   for log files that were piped in to lnav or executed with the `:sh`
   command.
+* The `:set-file-timezone` command was not working correctly in some 
+  cases.
 
 ## lnav v0.12.4
 

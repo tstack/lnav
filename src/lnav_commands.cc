@@ -520,7 +520,8 @@ com_set_file_timezone_prompt(exec_context& ec, const std::string& cmdline)
             auto match_res = options_hier->match(pattern_arg);
             if (match_res) {
                 file_zone = match_res->second.fo_default_zone.pp_value->name();
-                pattern_arg = lnav::filesystem::escape_path(match_res->first);
+                pattern_arg = lnav::filesystem::escape_path(
+                    match_res->first, lnav::filesystem::path_type::pattern);
 
                 auto new_prompt = fmt::format(FMT_STRING("{} {} {}"),
                                               trim(cmdline),

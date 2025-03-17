@@ -17,6 +17,10 @@ START_TIME = datetime.datetime.fromtimestamp(1490191111)
 
 try:
     shutil.rmtree("/tmp/demo")
+except OSError:
+    pass
+
+try:
     os.makedirs("/tmp/demo")
 except OSError:
     pass

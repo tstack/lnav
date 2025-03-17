@@ -60,10 +60,16 @@ is_glob(const std::string& fn)
             || fn.find('[') != std::string::npos);
 }
 
-std::string escape_path(const std::filesystem::path& p);
+enum class path_type {
+    normal,
+    pattern,
+};
 
-std::pair<std::string, file_location_t>
-split_file_location(const std::string& path);
+std::string escape_path(const std::filesystem::path& p,
+                        path_type pt = path_type::normal);
+
+std::pair<std::string, file_location_t> split_file_location(
+    const std::string& path);
 
 inline int
 statp(const std::filesystem::path& path, struct stat* buf)

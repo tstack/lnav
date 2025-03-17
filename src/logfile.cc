@@ -246,6 +246,9 @@ logfile::file_options_have_changed()
         if (this->lf_file_options_generation == options_hier->foh_generation) {
             return false;
         }
+        log_info("checking new generation of file options: %d -> %d",
+                 this->lf_file_options_generation,
+                 options_hier->foh_generation);
         auto new_options = options_hier->match(this->get_filename());
         if (this->lf_file_options == new_options) {
             this->lf_file_options_generation = options_hier->foh_generation;

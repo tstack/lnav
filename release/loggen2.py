@@ -13,11 +13,6 @@ ACCESS_LOG_DATE_FMT = "%d/%b/%Y:%H:%M:%S"
 GENERIC_DATE_FMT = "%Y-%m-%dT%H:%M:%S.%%s"
 
 try:
-    shutil.rmtree("/tmp/demo")
-except OSError:
-    pass
-
-try:
     os.makedirs("/tmp/demo")
 except OSError:
     pass
@@ -95,6 +90,16 @@ TEST_STATUS = [
     200,
     200,
     200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
     404,
     404,
     404,
@@ -141,19 +146,13 @@ TEST_AGENTS = [
     "Roku4640X/DVP-7.70 (297.70E04154A)",
 ]
 
-START_TIME = datetime.datetime.fromtimestamp(1692700000)
-ACCESS_LOG_CURR_TIME = START_TIME
-SYSLOG_LOG_CURR_TIME = START_TIME
-
-
 def access_log_msgs():
-    global ACCESS_LOG_CURR_TIME
     while True:
-        ACCESS_LOG_CURR_TIME += datetime.timedelta(seconds=random.randrange(1, 5))
+        curr_time = datetime.datetime.now(datetime.UTC)
         yield '%s - %s [%s +0000] "%s %s %s" %s %s "%s" "%s"\n' % (
             random.choice(TEST_ADDRESSES),
             random.choice(TEST_USERNAMES),
-            ACCESS_LOG_CURR_TIME.strftime(ACCESS_LOG_DATE_FMT),
+            curr_time.strftime(ACCESS_LOG_DATE_FMT),
             random.choice(TEST_METHODS),
             random.choice(TEST_URLS),
             random.choice(TEST_VERSIONS),
@@ -189,11 +188,10 @@ TEST_MSGS = [
 
 
 def syslog_msgs():
-    global SYSLOG_LOG_CURR_TIME
     while True:
-        SYSLOG_LOG_CURR_TIME += datetime.timedelta(seconds=random.randrange(1, 5))
+        curr_time = datetime.datetime.now(datetime.UTC)
         yield '%s frontend3 %s: %s\n' % (
-            SYSLOG_LOG_CURR_TIME.strftime(SYSLOG_DATE_FMT),
+            curr_time.strftime(SYSLOG_DATE_FMT),
             random.choice(TEST_PROCS),
             random.choice(TEST_MSGS),
         )
@@ -210,11 +208,14 @@ FILES = [
     ("/tmp/demo/messages", syslog_msgs()),
 ]
 
+for fname, _gen in FILES:
+    try:
+        os.remove(fname)
+    except OSError:
+        pass
+
 COUNTER = 0
 while COUNTER < 5000:
-    loop_inc = datetime.timedelta(seconds=random.weibullvariate(1, 1.5) * 500)
-    ACCESS_LOG_CURR_TIME += loop_inc
-    SYSLOG_LOG_CURR_TIME += loop_inc
     for fname, gen in FILES:
         for i in range(random.randrange(4, 8)):
             COUNTER += 1
@@ -224,12 +225,12 @@ while COUNTER < 5000:
                     prefix = line[:50]
                     suffix = line[50:]
                     fp.write(prefix)
-                    # time.sleep(random.uniform(0.5, 0.6))
+                    time.sleep(random.uniform(0.5, 0.6))
                     fp.write(suffix)
                 else:
                     fp.write(next(gen))
                 # if random.uniform(0.0, 1.0) < 0.010:
                 #    fp.truncate(0)
-            time.sleep(random.uniform(0.01, 0.02))
+            time.sleep(random.uniform(0.5, 0.6))
             # if random.uniform(0.0, 1.0) < 0.001:
             #    os.remove(fname)
