@@ -1898,6 +1898,7 @@ build_cflow_automaton(inputctx* ictx){
     // CSI ? 6 3 ; Ps c ("VT320")
     // CSI ? 6 4 ; Ps c ("VT420")
     // CSI ? 6 5 ; Ps c (WezTerm, VT5xx?)
+    { "[?\\Nc", da1_attrs_cb, },
     { "[?\\N;\\Dc", da1_attrs_cb, },
     { "[?1;0;\\NS", xtsmgraphics_cregs_cb, },
     { "[?2;0;\\N;\\NS", xtsmgraphics_sixel_cb, },
