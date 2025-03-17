@@ -486,12 +486,11 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
 
         if (arg_res_opt) {
             auto arg_res = arg_res_opt.value();
-            log_debug(
-                "apair %s [%d:%d) -- %s",
-                arg_res.aar_help->ht_name,
-                arg_res.aar_element.se_origin.sf_begin,
-                arg_res.aar_element.se_origin.sf_end,
-                arg_res.aar_element.se_value.c_str());
+            log_debug("apair %s [%d:%d) -- %s",
+                      arg_res.aar_help->ht_name,
+                      arg_res.aar_element.se_origin.sf_begin,
+                      arg_res.aar_element.se_origin.sf_end,
+                      arg_res.aar_element.se_value.c_str());
             auto left = arg_res.aar_element.se_origin.empty()
                 ? rc.tc_cursor.x
                 : line_sf.byte_to_column_index(

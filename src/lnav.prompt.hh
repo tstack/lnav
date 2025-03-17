@@ -119,6 +119,7 @@ struct prompt {
     bool p_alt_mode{false};
     std::string p_pre_history_content;
     bool p_replace_from_history{false};
+    int32_t p_history_changes{0};
 
     void focus_for(textview_curses& tc,
                    char sigil,

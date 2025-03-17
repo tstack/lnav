@@ -282,6 +282,7 @@ prompt::focus_for(textview_curses& tc,
                   char sigil,
                   const std::vector<std::string>& args)
 {
+    this->p_editor.tc_suggestion.clear();
     this->p_remote_paths.clear();
     switch (sigil) {
         case '|': {
@@ -443,6 +444,7 @@ prompt::rl_history_list(textinput_curses& tc)
 {
     this->p_pre_history_content = tc.get_content();
     this->p_replace_from_history = true;
+    this->p_history_changes = 0;
     this->rl_history(tc);
 }
 
@@ -516,7 +518,7 @@ prompt::rl_completion(textinput_curses& tc)
 void
 prompt::rl_popup_cancel(textinput_curses& tc)
 {
-    if (tc.tc_popup_type == textinput_curses::popup_type_t::history
+    if (false && tc.tc_popup_type == textinput_curses::popup_type_t::history
         && this->p_replace_from_history)
     {
         tc.set_content(this->p_pre_history_content);
@@ -533,10 +535,18 @@ prompt::rl_popup_change(textinput_curses& tc)
         return;
     }
 
+    if (this->p_history_changes > 0 && !this->p_editor.tc_change_log.empty()) {
+        this->p_editor.tc_change_log.pop_back();
+    }
+
     const auto& al
         = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()].tl_value;
     auto sub = get_string_attr(al.al_attrs, SUBST_TEXT)->get();
-    tc.set_content(sub);
+    tc.tc_selection
+        = tc.clamp_selection(textinput_curses::selected_range::from_key(
+            textinput_curses::input_point::home(),
+            textinput_curses::input_point::end()));
+    tc.replace_selection(sub);
     if (tc.tc_lines.size() > 1 && tc.tc_height == 1) {
         tc.set_height(5);
     }
@@ -547,6 +557,7 @@ prompt::rl_popup_change(textinput_curses& tc)
             (int) tc.tc_lines.size() - 1,
         });
     tc.move_cursor_to(textinput_curses::input_point::end());
+    this->p_history_changes += 1;
 }
 
 struct sql_item_visitor {
