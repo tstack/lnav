@@ -329,7 +329,7 @@ looper::loop()
         outfds;
     size_t rotate_count = 0;
     std::optional<demux_def> curr_demux_def;
-    const demux_json_def* curr_demux_json_def;
+    const demux_json_def* curr_demux_json_def = nullptr;
     auto md = lnav::pcre2pp::match_data::unitialized();
     ArenaAlloc::Alloc<char> sf_allocator{64 * 1024};
     ArenaAlloc::Alloc<char> json_allocator{64 * 1024};
