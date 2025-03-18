@@ -3073,13 +3073,13 @@ struct initial_responses* inputlayer_get_responses(inputctx* ictx){
       struct timeval wait_start_tv, curr_tv, diff_tv;
       loginfo("inputlayer_get_resp wait");
       gettimeofday(&wait_start_tv, NULL);
-      struct timespec ts = {wait_start_tv.tv_sec + 1, 0};
+      struct timespec ts = {wait_start_tv.tv_sec + 5, 0};
   pthread_mutex_lock(&ictx->ilock);
   while(ictx->initdata || !ictx->initdata_complete){
     pthread_cond_timedwait(&ictx->icond, &ictx->ilock, &ts);
       gettimeofday(&curr_tv, NULL);
       timersub(&curr_tv, &wait_start_tv, &diff_tv);
-      if (diff_tv.tv_sec > 1) {
+      if (diff_tv.tv_sec > 5) {
           logpanic("timedout waiting for initial response");
           return NULL;
       }
