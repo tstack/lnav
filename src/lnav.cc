@@ -1813,7 +1813,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         ui_now = ui_clock::now();
         if (initial_rescan_completed) {
-            if (ui_now >= next_rebuild_time) {
+            auto* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
+            if (tc != nullptr
+                && (tc->tc_text_selection_active || tc->tc_selected_text))
+            {
+                // skip rebuild while text is selected
+            } else if (ui_now >= next_rebuild_time) {
                 auto text_file_count = lnav_data.ld_text_source.size();
                 // log_debug("BEGIN rebuild");
                 auto rebuild_res = rebuild_indexes(loop_deadline);

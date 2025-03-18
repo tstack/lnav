@@ -193,6 +193,9 @@ parsed::arg_at(int x) const
     }
 
     for (const auto& param : this->p_help->ht_parameters) {
+        if (startswith(param.ht_name, "-")) {
+            continue;
+        }
         const auto p_iter = this->p_args.find(param.ht_name);
         if ((p_iter->second.a_values.empty() || param.is_trailing_arg())
             || param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
@@ -342,6 +345,31 @@ parse_for(mode_t mode,
         } while (split_index < split_args.size()
                  && (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
                      || param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE));
+    }
+
+    for (auto free_iter = retval.p_free_args.begin();
+         free_iter != retval.p_free_args.end();)
+    {
+        auto free_sf = string_fragment::from_str(free_iter->se_value);
+        auto [flag_name, flag_value]
+            = free_sf.split_when(string_fragment::tag1{'='});
+        auto consumed = false;
+        for (const auto& param : ht.ht_parameters) {
+            if (param.ht_name == flag_name) {
+                retval.p_args[param.ht_name].a_values.emplace_back(
+                    shlex::split_element_t{
+                        free_iter->se_origin.substr(flag_name.length() + 1),
+                        flag_value.to_string(),
+                    });
+                consumed = true;
+                break;
+            }
+        }
+        if (consumed) {
+            free_iter = retval.p_free_args.erase(free_iter);
+        } else {
+            ++free_iter;
+        }
     }
 
     return Ok(retval);

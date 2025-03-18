@@ -1785,17 +1785,16 @@ For support questions, email:
    
 
 
-[4m:[0m[1m[4mwrite-raw-to[0m[4m [[0m[4m--view={log,db}[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
+[4m:[0m[1m[4mwrite-raw-to[0m[4m [[0m[4m--view[0m[4m] [[0m[4m--anonymize[0m[4m] [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
   In the log view, write the original log file content of the marked
   messages to the file.  In the DB view, the contents of the cells are
   written to the output file.
 [4mParameters[0m
-  [4m--view={log,db}[0m   The view to use as the source
-                    of data
-                    [4mValues[0m: [1mlog[0m|[1mdb[0m
-  [4m--anonymize[0m       Anonymize the lines
-  [4mpath[0m              The path to the file to write
+  [4m--view[0m        The view to use as the source of data
+                [4mValues[0m: [1mlog[0m|[1mdb[0m
+  [4m--anonymize[0m   Anonymize the lines
+  [4mpath[0m          The path to the file to write
 [4mSee Also[0m
   [1m.dump[0m, [1m.read[0m, [1m:alt-msg[0m, [1m:append-to[0m, [1m:cd[0m, [1m:create-logline-table[0m, 
   [1m:create-search-table[0m, [1m:echo[0m, [1m:echo[0m, [1m:eval[0m, [1m:export-session-to[0m, 

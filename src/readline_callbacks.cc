@@ -522,7 +522,6 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                 rc.tc_popup.set_title(arg_res.aar_help->ht_name);
             } else if (arg_res.aar_help->ht_format
                            == help_parameter_format_t::HPF_REGEX
-                       && arg_res.aar_element.se_value.empty()
                        && rc.is_cursor_at_end_of_line())
             {
                 auto re_arg = parsed_cmd.p_args[arg_res.aar_help->ht_name];

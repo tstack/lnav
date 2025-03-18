@@ -1796,10 +1796,10 @@ static readline_context::command_t IO_COMMANDS[] = {
                 "of the marked messages to the file.  In the DB view, "
                 "the contents of the cells are written to the output "
                 "file.")
-            .with_parameter(help_text("--view={log,db}",
-                                      "The view to use as the source of data")
-                                .optional()
-                                .with_enum_values({"log", "db"}))
+            .with_parameter(
+                help_text("--view", "The view to use as the source of data")
+                    .optional()
+                    .with_enum_values({"log", "db"}))
             .with_parameter(
                 help_text("--anonymize", "Anonymize the lines").flag())
             .with_parameter(

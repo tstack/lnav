@@ -198,7 +198,6 @@ def syslog_msgs():
 
 
 try:
-    shutil.rmtree("/tmp/demo")
     os.makedirs("/tmp/demo")
 except OSError:
     pass

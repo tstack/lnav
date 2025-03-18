@@ -518,11 +518,6 @@ prompt::rl_completion(textinput_curses& tc)
 void
 prompt::rl_popup_cancel(textinput_curses& tc)
 {
-    if (false && tc.tc_popup_type == textinput_curses::popup_type_t::history
-        && this->p_replace_from_history)
-    {
-        tc.set_content(this->p_pre_history_content);
-    }
 }
 
 void
@@ -824,13 +819,21 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
 
     if (cmd_ht == ht) {
         retval = cmd_ht->ht_parameters
-            | lnav::itertools::map([](const help_text& param) {
-                     return std::string(param.ht_name);
-                 })
-            | lnav::itertools::similar_to(str, 10)
-            | lnav::itertools::map([](const auto& x) {
-                     return attr_line_t().append(x).with_attr_for_all(
-                         SUBST_TEXT.value(x + " "));
+            | lnav::itertools::similar_to(
+                     [](const help_text& param) {
+                         return std::string(param.ht_name);
+                     },
+                     str,
+                     10)
+            | lnav::itertools::map([](const help_text& x) {
+                     auto sub = std::string(x.ht_name);
+                     if (x.ht_format == help_parameter_format_t::HPF_NONE) {
+                         sub += " ";
+                     } else {
+                         sub += "=";
+                     }
+                     return attr_line_t().append(x.ht_name).with_attr_for_all(
+                         SUBST_TEXT.value(sub));
                  });
 
         return retval;
@@ -1449,6 +1452,10 @@ std::string
 prompt::get_regex_suggestion(textview_curses& tc,
                              const std::string& pattern) const
 {
+    if (is_blank(pattern)) {
+        return "";
+    }
+
     auto compile_res = lnav::pcre2pp::code::from(pattern, PCRE2_CASELESS);
     std::string retval;
 
