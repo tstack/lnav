@@ -808,6 +808,13 @@ check_output "able to select a continued line?" <<EOF
 EOF
 
 
+run_cap_test ${lnav_test} -n \
+    -c ":create-search-table est_size estimated size (?<size>\d+\.\d+ \w+)" \
+    -c ";SELECT log_line, size FROM est_size ORDER BY size DESC" \
+    -c ":write-csv-to -" \
+    ${test_dir}/logfile_spark.0
+
+
 run_test ${lnav_test} -n \
     -c ":create-search-table search_test1 (\w+), world!" \
     -c ";select col_0 from search_test1" \

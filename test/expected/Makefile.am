@@ -744,6 +744,8 @@ dist_noinst_DATA = \
     test_sql.sh_7593b39f4be6fd2124ec7cf10835ee015d475b16.out \
     test_sql.sh_764306f0e5f610ba71f521ba3d19fe158ece0ba5.err \
     test_sql.sh_764306f0e5f610ba71f521ba3d19fe158ece0ba5.out \
+    test_sql.sh_7b60c83d3bf0560fc8ddf7a4a1eca20e5ad22d80.err \
+    test_sql.sh_7b60c83d3bf0560fc8ddf7a4a1eca20e5ad22d80.out \
     test_sql.sh_7f664c9cda0ae1c48333e21051b5e0eeafd5b4bc.err \
     test_sql.sh_7f664c9cda0ae1c48333e21051b5e0eeafd5b4bc.out \
     test_sql.sh_8020c6cb608768442dcad31490a85467a389a894.err \

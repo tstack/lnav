@@ -856,22 +856,31 @@ sql_execute_script(sqlite3* db,
     sql_compile_script(db, global_vars, src_name, script, errors);
 }
 
-static struct {
+static const struct {
     int sqlite_type;
     const char* collator;
     const char* sample;
 } TYPE_TEST_VALUE[] = {
     {SQLITE3_TEXT, "", "foobar"},
-    {SQLITE_INTEGER, "", "123"},
     {SQLITE_FLOAT, "", "123.0"},
+    {SQLITE_INTEGER, "", "123"},
     {SQLITE_TEXT, "ipaddress", "127.0.0.1"},
+    {SQLITE_TEXT, "measure_with_units", "123ms"},
+    {SQLITE_TEXT, "measure_with_units", "123 ms"},
+    {SQLITE_TEXT, "measure_with_units", "123KB"},
+    {SQLITE_TEXT, "measure_with_units", "123 KB"},
+    {SQLITE_TEXT, "measure_with_units", "123Kbps"},
+    {SQLITE_TEXT, "measure_with_units", "123.0 Kbps"},
+    {SQLITE_TEXT, "measure_with_units", "123.0KB"},
+    {SQLITE_TEXT, "measure_with_units", "123.0 KB"},
+    {SQLITE_TEXT, "measure_with_units", "123.0Kbps"},
+    {SQLITE_TEXT, "measure_with_units", "123.0 Kbps"},
 };
 
 int
 guess_type_from_pcre(const std::string& pattern, std::string& collator)
 {
-    static const std::vector<int> number_matches = {1, 2};
-
+    log_info("guessing SQL type from pattern: %s", pattern.c_str());
     auto compile_res = lnav::pcre2pp::code::from(pattern);
     if (compile_res.isErr()) {
         return SQLITE3_TEXT;
@@ -884,14 +893,22 @@ guess_type_from_pcre(const std::string& pattern, std::string& collator)
 
     collator.clear();
     for (const auto& test_value : TYPE_TEST_VALUE) {
-        auto find_res
+        log_info("  testing sample: %s", test_value.sample);
+        const auto find_res
             = re.find_in(string_fragment::from_c_str(test_value.sample),
                          PCRE2_ANCHORED)
                   .ignore_error();
         if (find_res && find_res->f_all.sf_begin == 0
             && find_res->f_remaining.empty())
         {
+            log_info("    matched!");
             matches.push_back(index);
+            break;
+        }
+        if (!find_res) {
+            log_info("    mismatch");
+        } else if (!find_res->f_remaining.empty()) {
+            log_info("    incomplete match");
         }
 
         index += 1;
@@ -900,9 +917,6 @@ guess_type_from_pcre(const std::string& pattern, std::string& collator)
     if (matches.size() == 1) {
         retval = TYPE_TEST_VALUE[matches.front()].sqlite_type;
         collator = TYPE_TEST_VALUE[matches.front()].collator;
-    } else if (matches == number_matches) {
-        retval = SQLITE_FLOAT;
-        collator = "";
     }
 
     return retval;
@@ -924,7 +938,7 @@ sqlite3_type_to_string(int type)
             return "BLOB";
     }
 
-    ensure("Invalid sqlite type");
+    ensure(!!!"Invalid sqlite type");
 
     return nullptr;
 }
