@@ -576,10 +576,8 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
     {
         auto& bm = lv.get_bookmarks();
         const auto& bv = bm[&BM_FILES];
-        bool is_first_for_file
-            = binary_search(bv.begin(), bv.end(), vis_line_t(row));
-        bool is_last_for_file
-            = binary_search(bv.begin(), bv.end(), vis_line_t(row + 1));
+        bool is_first_for_file = bv.bv_tree.exists(vis_line_t(row));
+        bool is_last_for_file = bv.bv_tree.exists(vis_line_t(row + 1));
         auto graph = NCACS_VLINE;
         if (is_first_for_file) {
             if (is_last_for_file) {
@@ -595,10 +593,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         if (!(this->lss_token_flags & RF_FULL)) {
             const auto& bv_search = bm[&textview_curses::BM_SEARCH];
 
-            if (binary_search(std::begin(bv_search),
-                              std::end(bv_search),
-                              vis_line_t(row)))
-            {
+            if (bv_search.bv_tree.exists(vis_line_t(row))) {
                 lr.lr_start = 0;
                 lr.lr_end = 1;
                 value_out.emplace_back(
@@ -1086,12 +1081,6 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             std::distance(this->lss_filtered_index.begin(), filt_row_iter));
         search_start = vis_line_t(this->lss_filtered_index.size());
 
-        auto bm_range = vis_bm[&textview_curses::BM_USER_EXPR].equal_range(
-            search_start, -1_vl);
-        auto bm_new_size = std::distance(
-            vis_bm[&textview_curses::BM_USER_EXPR].begin(), bm_range.first);
-        vis_bm[&textview_curses::BM_USER_EXPR].resize(bm_new_size);
-
         if (this->lss_index_delegate) {
             this->lss_index_delegate->index_start(*this);
             for (const auto row_in_full_index : this->lss_filtered_index) {
@@ -1384,10 +1373,7 @@ logfile_sub_source::text_update_marks(vis_bookmarks& bm)
         auto lf = this->find_file_ptr(cl);
 
         for (auto& lss_user_mark : this->lss_user_marks) {
-            if (binary_search(lss_user_mark.second.begin(),
-                              lss_user_mark.second.end(),
-                              orig_cl))
-            {
+            if (lss_user_mark.second.bv_tree.exists(orig_cl)) {
                 bm[lss_user_mark.first].insert_once(vl);
 
                 if (lss_user_mark.first == &textview_curses::BM_USER) {
@@ -2108,23 +2094,21 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
     }
 
     content_line_t cl = this->at(line);
-    std::vector<content_line_t>::iterator lb;
 
     if (bm == &textview_curses::BM_USER) {
-        logline* ll = this->find_line(cl);
+        auto* ll = this->find_line(cl);
 
         ll->set_mark(added);
     }
-    lb = std::lower_bound(
-        this->lss_user_marks[bm].begin(), this->lss_user_marks[bm].end(), cl);
+    auto lb = this->lss_user_marks[bm].bv_tree.lower_bound(cl);
     if (added) {
-        if (lb == this->lss_user_marks[bm].end() || *lb != cl) {
-            this->lss_user_marks[bm].insert(lb, cl);
+        if (lb == this->lss_user_marks[bm].bv_tree.end() || *lb != cl) {
+            this->lss_user_marks[bm].bv_tree.insert(cl);
         }
-    } else if (lb != this->lss_user_marks[bm].end() && *lb == cl) {
-        require(lb != this->lss_user_marks[bm].end());
+    } else if (lb != this->lss_user_marks[bm].bv_tree.end() && *lb == cl) {
+        require(lb != this->lss_user_marks[bm].bv_tree.end());
 
-        this->lss_user_marks[bm].erase(lb);
+        this->lss_user_marks[bm].bv_tree.erase(lb);
     }
     if (bm == &textview_curses::BM_META
         && this->lss_meta_grepper.gps_proc != nullptr)
@@ -2137,18 +2121,15 @@ logfile_sub_source::text_mark(const bookmark_type_t* bm,
 void
 logfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
 {
-    std::vector<content_line_t>::iterator iter;
-
     if (bm == &textview_curses::BM_USER) {
-        for (iter = this->lss_user_marks[bm].begin();
-             iter != this->lss_user_marks[bm].end();)
+        for (auto iter = this->lss_user_marks[bm].bv_tree.begin();
+             iter != this->lss_user_marks[bm].bv_tree.end();
+             ++iter)
         {
             this->find_line(*iter)->set_mark(false);
-            iter = this->lss_user_marks[bm].erase(iter);
         }
-    } else {
-        this->lss_user_marks[bm].clear();
     }
+    this->lss_user_marks[bm].clear();
 }
 
 void
@@ -2159,22 +2140,28 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
     iter = std::find_if(
         this->lss_files.begin(), this->lss_files.end(), logfile_data_eq(lf));
     if (iter != this->lss_files.end()) {
-        bookmarks<content_line_t>::type::iterator mark_iter;
         int file_index = iter - this->lss_files.begin();
 
         (*iter)->clear();
-        for (mark_iter = this->lss_user_marks.begin();
-             mark_iter != this->lss_user_marks.end();
-             ++mark_iter)
-        {
+        for (auto& user_mark : this->lss_user_marks) {
             auto mark_curr = content_line_t(file_index * MAX_LINES_PER_FILE);
             auto mark_end
                 = content_line_t((file_index + 1) * MAX_LINES_PER_FILE);
-            auto& bv = mark_iter->second;
+            auto& bv = user_mark.second;
             auto file_range = bv.equal_range(mark_curr, mark_end);
 
             if (file_range.first != file_range.second) {
-                bv.erase(file_range.first, file_range.second);
+                auto to_del = std::vector<content_line_t>{};
+                for (auto file_iter = file_range.first;
+                     file_iter != file_range.second;
+                     ++file_iter)
+                {
+                    to_del.emplace_back(*file_iter);
+                }
+
+                for (auto cl : to_del) {
+                    bv.bv_tree.erase(cl);
+                }
             }
         }
 
@@ -2415,7 +2402,7 @@ logfile_sub_source::meta_grepper::grep_initial_line(vis_line_t start,
     if (bv.empty()) {
         return -1_vl;
     }
-    return *bv.begin();
+    return *bv.bv_tree.begin();
 }
 
 void
@@ -2744,7 +2731,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 const auto& bv = vb[&textview_curses::BM_PARTITION];
                 std::vector<breadcrumb::possibility> retval;
 
-                for (const auto& vl : bv) {
+                for (const auto& vl : bv.bv_tree) {
                     auto meta_opt = this->find_bookmark_metadata(vl);
                     if (!meta_opt || meta_opt.value()->bm_name.empty()) {
                         continue;
@@ -3096,10 +3083,11 @@ logfile_sub_source::get_bookmark_metadata_context(
     }
 
     const auto& bv = bv_iter->second;
-    auto vl_iter = std::lower_bound(bv.begin(), bv.end(), vl + 1_vl);
+    auto vl_iter = bv.bv_tree.lower_bound(vl + 1_vl);
 
     std::optional<vis_line_t> next_line;
-    for (auto next_vl_iter = vl_iter; next_vl_iter != bv.end(); ++next_vl_iter)
+    for (auto next_vl_iter = vl_iter; next_vl_iter != bv.bv_tree.end();
+         ++next_vl_iter)
     {
         auto bm_opt = this->find_bookmark_metadata(*next_vl_iter);
         if (!bm_opt) {
@@ -3111,7 +3099,7 @@ logfile_sub_source::get_bookmark_metadata_context(
             break;
         }
     }
-    if (vl_iter == bv.begin()) {
+    if (vl_iter == bv.bv_tree.begin()) {
         return bookmark_metadata_context{std::nullopt, std::nullopt, next_line};
     }
 
@@ -3125,7 +3113,7 @@ logfile_sub_source::get_bookmark_metadata_context(
             }
         }
 
-        if (vl_iter == bv.begin()) {
+        if (vl_iter == bv.bv_tree.begin()) {
             return bookmark_metadata_context{
                 std::nullopt, std::nullopt, next_line};
         }
@@ -3369,7 +3357,7 @@ logfile_sub_source::row_for_anchor(const std::string& id)
     auto& vb = this->tss_view->get_bookmarks();
     const auto& bv = vb[&textview_curses::BM_PARTITION];
 
-    for (const auto& vl : bv) {
+    for (const auto& vl : bv.bv_tree) {
         auto meta_opt = this->find_bookmark_metadata(vl);
         if (!meta_opt || meta_opt.value()->bm_name.empty()) {
             continue;
@@ -3449,7 +3437,7 @@ logfile_sub_source::get_anchors()
     const auto& bv = vb[&textview_curses::BM_PARTITION];
     std::unordered_set<std::string> retval;
 
-    for (const auto& vl : bv) {
+    for (const auto& vl : bv.bv_tree) {
         auto meta_opt = this->find_bookmark_metadata(vl);
         if (!meta_opt || meta_opt.value()->bm_name.empty()) {
             continue;

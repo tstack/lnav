@@ -1,7 +1,7 @@
-{"timestamp":"2007-11-03 06:23:38.000","source":"logfile_syslog.0","message":"Nov  3 09:23:38 veridian automount[7998]: lookup(file): lookup for foobar failed","host":"veridian"}
-{"timestamp":"2007-11-03 06:23:38.000","source":"logfile_syslog.0","message":"Nov  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt","host":"veridian"}
-{"timestamp":"2007-11-03 06:23:38.000","source":"logfile_syslog.0","message":"Nov  3 09:23:38 veridian automount[7999]: lookup(file): lookup for opt failed","host":"veridian"}
-{"timestamp":"2007-11-03 06:47:02.000","source":"logfile_syslog.0","message":"Nov  3 09:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages","host":"veridian"}
+{"timestamp":"2007-11-03 06:24:38.000","source":"logfile_syslog.0","message":"Nov  3 09:23:38 veridian automount[7998]: lookup(file): lookup for foobar failed","host":"veridian"}
+{"timestamp":"2007-11-03 06:24:38.000","source":"logfile_syslog.0","message":"Nov  3 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt","host":"veridian"}
+{"timestamp":"2007-11-03 06:24:38.000","source":"logfile_syslog.0","message":"Nov  3 09:23:38 veridian automount[7999]: lookup(file): lookup for opt failed","host":"veridian"}
+{"timestamp":"2007-11-03 06:48:02.000","source":"logfile_syslog.0","message":"Nov  3 09:47:02 veridian sudo: timstack : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=root ; COMMAND=/usr/bin/tail /var/log/messages","host":"veridian"}
 {"timestamp":"2022-08-16 00:10:45.000","source":"logfile_syslog.3","message":"Aug 16 00:10:45 Tims-Air syslogd[314]: ASL Sender Statistics","host":"Tims-Air"}
 {"timestamp":"2022-08-16 00:28:56.000","source":"logfile_syslog.3","message":"Aug 16 00:28:56 Tims-Air syslogd[314]: ASL Sender Statistics","host":"Tims-Air"}
 {"timestamp":"2022-08-16 00:32:15.000","source":"logfile_syslog.3","message":"Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:\n\tASL Module \"com.apple.cdscheduler\" claims selected messages.\n\tThose messages may not appear in standard system log files or in the ASL database.","host":"Tims-Air"}

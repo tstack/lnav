@@ -921,11 +921,20 @@ layout_views()
 void
 update_hits(textview_curses* tc)
 {
+    static sig_atomic_t counter = 0;
+    static auto& timer = ui_periodic_timer::singleton();
+
 #if 0
     if (isendwin()) {
         return;
     }
 #endif
+
+    if (!timer.time_to_update(counter)
+        && lnav_data.ld_mode != ln_mode_t::SEARCH)
+    {
+        return;
+    }
 
     auto top_tc = lnav_data.ld_view_stack.top();
 
@@ -1246,7 +1255,7 @@ next_cluster(std::optional<vis_line_t> (bookmark_vector<vis_line_t>::*f)(
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
     auto& bm = tc->get_bookmarks();
     auto& bv = bm[bt];
-    bool top_is_marked = binary_search(bv.begin(), bv.end(), top);
+    bool top_is_marked = bv.bv_tree.exists(top);
     vis_line_t last_top(top), tc_height;
     std::optional<vis_line_t> new_top = top;
     unsigned long tc_width;

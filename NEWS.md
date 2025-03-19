@@ -98,6 +98,7 @@ Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.
 * The default terminal colors will now be used in the default theme.
   So, a light background with a dark foreground will be respected.
+* Improved performance of searches with lots of hits.
 * Improved performance for compressed files.
 * Improved performance for the timeline view.
 * Copying a column with a text value in the DB overlay view.

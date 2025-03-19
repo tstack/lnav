@@ -594,9 +594,9 @@ com_save_to(exec_context& ec,
             size_t count = 0;
             std::string line;
 
-            for (auto iter = all_user_marks.begin();
-                 iter != all_user_marks.end();
-                 iter++, count++)
+            for (auto iter = all_user_marks.bv_tree.begin();
+                 iter != all_user_marks.bv_tree.end();
+                 ++iter, count++)
             {
                 if (ec.ec_dry_run && count > 10) {
                     break;
@@ -678,7 +678,8 @@ com_save_to(exec_context& ec,
             ov_al.clear();
             ++y;
         }
-        for (auto iter = all_user_marks.begin(); iter != all_user_marks.end();
+        for (auto iter = all_user_marks.bv_tree.begin();
+             iter != all_user_marks.bv_tree.end();
              ++iter, count++)
         {
             if (ec.ec_dry_run && count > 10) {
@@ -1593,7 +1594,9 @@ com_pipe_to(exec_context& ec,
                     log_perror(write(child_fds[0].write_end(), "\n", 1));
                 }
             } else {
-                for (iter = bv.begin(); iter != bv.end(); ++iter) {
+                for (iter = bv.bv_tree.begin(); iter != bv.bv_tree.end();
+                     ++iter)
+                {
                     tc->grep_value_for_line(*iter, line);
                     if (write(
                             child_fds[0].write_end(), line.c_str(), line.size())

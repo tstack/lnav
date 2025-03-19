@@ -185,10 +185,10 @@ combined_user_marks(vis_bookmarks& vb)
     const auto& bv_expr = vb[&textview_curses::BM_USER_EXPR];
     bookmark_vector<vis_line_t> retval;
 
-    for (const auto& row : bv) {
+    for (const auto& row : bv.bv_tree) {
         retval.insert_once(row);
     }
-    for (const auto& row : bv_expr) {
+    for (const auto& row : bv_expr.bv_tree) {
         retval.insert_once(row);
     }
     return retval;
@@ -2122,7 +2122,7 @@ com_delete_tags(exec_context& ec,
         auto& lss = lnav_data.ld_log_source;
         auto& vbm = tc->get_bookmarks()[&textview_curses::BM_META];
 
-        for (auto iter = vbm.begin(); iter != vbm.end();) {
+        for (auto iter = vbm.bv_tree.begin(); iter != vbm.bv_tree.end();) {
             auto line_meta_opt = lss.find_bookmark_metadata(*iter);
 
             if (!line_meta_opt) {
@@ -2136,14 +2136,14 @@ com_delete_tags(exec_context& ec,
             }
 
             if (line_meta->empty(bookmark_metadata::categories::notes)) {
-                size_t off = std::distance(vbm.begin(), iter);
+                size_t off = std::distance(vbm.bv_tree.begin(), iter);
                 auto vl = *iter;
                 tc->set_user_mark(&textview_curses::BM_META, vl, false);
                 if (line_meta->empty(bookmark_metadata::categories::any)) {
                     lss.erase_bookmark_metadata(vl);
                 }
 
-                iter = std::next(vbm.begin(), off);
+                iter = std::next(vbm.bv_tree.begin(), off);
             } else {
                 ++iter;
             }
@@ -2201,7 +2201,7 @@ com_clear_partition(exec_context& ec,
         auto& bv = tc.get_bookmarks()[&textview_curses::BM_PARTITION];
         std::optional<vis_line_t> part_start;
 
-        if (binary_search(bv.begin(), bv.end(), tc.get_selection())) {
+        if (bv.bv_tree.exists(tc.get_selection())) {
             part_start = tc.get_selection();
         } else {
             part_start = bv.prev(tc.get_selection());
@@ -2440,7 +2440,7 @@ com_add_test(exec_context& ec,
         auto* tc = *lnav_data.ld_view_stack.top();
 
         auto& bv = tc->get_bookmarks()[&textview_curses::BM_USER];
-        for (auto iter = bv.begin(); iter != bv.end(); ++iter) {
+        for (auto iter = bv.bv_tree.begin(); iter != bv.bv_tree.end(); ++iter) {
             auto_mem<FILE> file(fclose);
             char path[PATH_MAX];
             std::string line;

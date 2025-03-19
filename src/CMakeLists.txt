@@ -749,6 +749,13 @@ add_library(
 
         third-party/prqlc-c/prqlc.cxx.hh
         third-party/prqlc-c/prqlc.cxx.cc
+
+        third-party/tlx/die/core.hpp
+        third-party/tlx/container/btree.hpp
+        third-party/tlx/container/btree_map.hpp
+        third-party/tlx/container/btree_multimap.hpp
+        third-party/tlx/container/btree_multiset.hpp
+        third-party/tlx/container/btree_set.hpp
 )
 
 set(lnav_SRCS lnav.cc)
