@@ -98,7 +98,8 @@ yaml_extension_functions(struct FuncDef** basic_funcs,
                 .with_example({
                     "To convert the document \"abc: def\"",
                     "SELECT yaml_to_json('abc: def')",
-                })),
+                }))
+            .with_result_subtype(),
 
         {nullptr},
     };
