@@ -169,6 +169,7 @@ jobs:
         ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
         mkdir -p lib/terminfo/78
         cp -r /usr/lib/terminfo/78/xterm-256color lib/terminfo/78/
+        mkdir -p ../lnav
         zip -r ../lnav/lnav-${{ github.ref_name }}-windows-amd64.zip lnav lib
     - name: '💉 Basic test'
       run: |
