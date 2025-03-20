@@ -1139,12 +1139,7 @@ com_goto_location(exec_context& ec,
                         ? lh->loc_history_back(tc->get_selection())
                         : lh->loc_history_forward(tc->get_selection());
                 }
-                | [tc](auto new_top) {
-                      tc->set_selection(new_top);
-                      if (tc->is_selectable()) {
-                          tc->set_top(new_top - 2_vl, false);
-                      }
-                  };
+                | [tc](auto new_top) { tc->set_selection(new_top); };
         };
     }
 

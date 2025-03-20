@@ -336,8 +336,7 @@ textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
         }
         if (pair.first != pair.second) {
             auto to_del = std::vector<vis_line_t>{};
-            for (auto file_iter = pair.first;
-                 file_iter != pair.second;
+            for (auto file_iter = pair.first; file_iter != pair.second;
                  ++file_iter)
             {
                 to_del.emplace_back(*file_iter);
@@ -752,6 +751,10 @@ textview_curses::handle_mouse(mouse_event& me)
                         auto row_opt = ta->row_for_anchor(href);
 
                         if (row_opt.has_value()) {
+                            this->tc_sub_source->get_location_history() |
+                                [&oc](auto lh) {
+                                    lh->loc_history_append(oc.oc_main_line);
+                                };
                             this->set_selection(row_opt.value());
                         }
                     }
