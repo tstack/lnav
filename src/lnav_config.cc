@@ -1305,13 +1305,41 @@ static const struct json_path_container archive_handlers = {
                    &archive_manager::config::amc_cache_ttl),
 };
 
-static const struct typed_json_path_container<lnav::piper::demux_def>
+static const typed_json_path_container<lnav::piper::demux_json_def>
+    demux_json_def_handlers = {
+        yajlpp::property_handler("enabled")
+            .with_description("Indicates whether this demuxer will be used at "
+                              "the demuxing stage (defaults to 'true')")
+            .for_field(&lnav::piper::demux_json_def::djd_enabled),
+        yajlpp::property_handler("timestamp")
+            .with_synopsis("<json-ptr>")
+            .with_description("The pointer to the timestamp of the message")
+            .for_field(&lnav::piper::demux_json_def::djd_timestamp),
+        yajlpp::property_handler("mux_id")
+            .with_synopsis("<json-ptr>")
+            .with_description("The pointer to the ID for demultiplexing")
+            .for_field(&lnav::piper::demux_json_def::djd_mux_id),
+        yajlpp::property_handler("body")
+            .with_synopsis("<json-ptr>")
+            .with_description(
+                "The pointer to the property that contains the log message")
+            .for_field(&lnav::piper::demux_json_def::djd_body),
+};
+
+static const json_path_container demux_json_defs_handlers = {
+    yajlpp::pattern_property_handler("(?<name>[\\w\\-\\.]+)")
+        .with_description("The definition of a JSON demultiplexer")
+        .with_children(demux_json_def_handlers)
+        .for_field(&_lnav_config::lc_piper,
+                   &lnav::piper::config::c_demux_json_definitions),
+};
+
+static const typed_json_path_container<lnav::piper::demux_def>
     demux_def_handlers = {
-    yajlpp::property_handler("enabled")
-        .with_description(
-            "Indicates whether this demuxer will be used at the demuxing stage "
-            "(defaults to 'true')")
-        .for_field(&lnav::piper::demux_def::dd_enabled),
+        yajlpp::property_handler("enabled")
+            .with_description("Indicates whether this demuxer will be used at "
+                              "the demuxing stage (defaults to 'true')")
+            .for_field(&lnav::piper::demux_def::dd_enabled),
         yajlpp::property_handler("pattern")
             .with_synopsis("<regex>")
             .with_description(
@@ -1325,7 +1353,7 @@ static const struct typed_json_path_container<lnav::piper::demux_def>
             .for_field(&lnav::piper::demux_def::dd_control_pattern),
 };
 
-static const struct json_path_container demux_defs_handlers = {
+static const json_path_container demux_defs_handlers = {
     yajlpp::pattern_property_handler("(?<name>[\\w\\-\\.]+)")
         .with_description("The definition of a demultiplexer")
         .with_children(demux_def_handlers)
@@ -1678,6 +1706,9 @@ static const struct json_path_container log_source_handlers = {
     yajlpp::property_handler("demux")
         .with_description("Demultiplexer definitions")
         .with_children(demux_defs_handlers),
+    yajlpp::property_handler("demux-json")
+        .with_description("JSON Demultiplexer definitions")
+        .with_children(demux_json_defs_handlers),
 };
 
 static const struct json_path_container url_scheme_handlers = {

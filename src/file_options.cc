@@ -92,12 +92,16 @@ file_options_collection::to_json() const
 std::optional<std::pair<std::string, file_options>>
 file_options_collection::match(const std::string& path) const
 {
-    auto iter = this->foc_pattern_to_options.find(path);
+    const auto iter = this->foc_pattern_to_options.find(path);
     if (iter != this->foc_pattern_to_options.end()) {
+        log_trace("  file options exact match: %s", path.c_str());
         return *iter;
     }
 
     for (const auto& pair : this->foc_pattern_to_options) {
+        log_trace("  file options pattern check: %s ~ %s",
+                  path.c_str(),
+                  pair.first.c_str());
         auto rc = fnmatch(pair.first.c_str(), path.c_str(), FNM_PATHNAME);
 
         if (rc == 0) {
@@ -108,6 +112,15 @@ file_options_collection::match(const std::string& path) const
                       pair.first.c_str(),
                       path.c_str(),
                       strerror(errno));
+        }
+    }
+
+    for (const auto& pair : this->foc_pattern_to_options) {
+        log_trace("  file options prefix check: %s ~ %s",
+                  path.c_str(),
+                  pair.first.c_str());
+        if (startswith(path, pair.first)) {
+            return pair;
         }
     }
 

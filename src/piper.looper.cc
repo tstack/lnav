@@ -75,7 +75,7 @@ class piper_config_listener : public lnav_config_listener {
 public:
     piper_config_listener() : lnav_config_listener(__FILE__) {}
 
-    void reload_config(lnav_config_listener::error_reporter& reporter) override
+    void reload_config(error_reporter& reporter) override
     {
         static const auto KNOWN_CAPTURES
             = std::unordered_set<string_fragment,
@@ -154,6 +154,50 @@ environ_to_map()
     return retval;
 }
 
+struct demux_json_userdata {
+    const demux_json_def* dju_def;
+    ArenaAlloc::Alloc<char>* dju_arena;
+    string_fragment dju_timestamp;
+    string_fragment dju_mux_id;
+    string_fragment dju_body;
+    std::vector<std::pair<string_fragment, string_fragment>> dju_meta;
+
+    void clear()
+    {
+        this->dju_timestamp.clear();
+        this->dju_mux_id.clear();
+        this->dju_body.clear();
+        this->dju_meta.clear();
+    }
+};
+
+static int
+demux_json_string(yajlpp_parse_context* ypc,
+                  const unsigned char* str,
+                  size_t len,
+                  yajl_string_props_t* props)
+{
+    auto* dju = static_cast<demux_json_userdata*>(ypc->ypc_userdata);
+    auto path_sf = ypc->get_path_as_string_fragment();
+    auto value_sf = string_fragment::from_bytes(str, len);
+
+    if (path_sf == dju->dju_def->djd_timestamp) {
+        dju->dju_timestamp = value_sf;
+    } else if (path_sf == dju->dju_def->djd_mux_id) {
+        dju->dju_mux_id = value_sf;
+    } else if (path_sf == dju->dju_def->djd_body) {
+        dju->dju_body = value_sf;
+    } else {
+        dju->dju_meta.emplace_back(path_sf.to_owned(*dju->dju_arena), value_sf);
+    }
+
+    return 1;
+}
+
+static const json_path_container demux_json_handlers = {
+    yajlpp::pattern_property_handler("\\w+").add_cb(demux_json_string),
+};
+
 auto_pipe&
 looper::get_wakeup_pipe()
 {
@@ -211,9 +255,44 @@ enum class read_mode_t {
     line,
 };
 
+struct alloc_header {
+    uint64_t ah_size;
+    char ah_bits[];
+};
+
+static void*
+arena_alloc(void* ctx, size_t sz)
+{
+    auto* arena = static_cast<ArenaAlloc::Alloc<char>*>(ctx);
+
+    auto* header = (alloc_header*) arena->allocate(sizeof(alloc_header) + sz);
+    header->ah_size = sz;
+    return &header->ah_bits;
+}
+
+static void*
+arena_realloc(void* ctx, void* ptr, size_t sz)
+{
+    auto* arena = static_cast<ArenaAlloc::Alloc<char>*>(ctx);
+    auto* new_header
+        = (alloc_header*) arena->allocate(sizeof(alloc_header) + sz);
+
+    if (ptr != nullptr) {
+        auto* header = (alloc_header*) (((char*) ptr) - sizeof(alloc_header));
+        memcpy(&new_header->ah_bits, &header->ah_bits, header->ah_size);
+    }
+    return &new_header->ah_size;
+}
+
+static void
+arena_free(void* ctx, void* ptr)
+{
+}
+
 void
 looper::loop()
 {
+    static const intern_string_t SRC = intern_string::lookup("demux");
     static constexpr auto FORCE_MTIME_UPDATE_DURATION = 8h;
     static constexpr auto DEFAULT_ID = string_fragment{};
     static constexpr auto OUT_OF_FRAME_ID = "_out_of_frame_"_frag;
@@ -221,7 +300,7 @@ looper::loop()
     static constexpr auto FILE_TIMEOUT_MAX = 1000ms;
 
     const auto& cfg = injector::get<const config&>();
-    struct pollfd pfd[3];
+    pollfd pfd[3];
     struct {
         line_buffer lb;
         file_range last_range;
@@ -250,14 +329,26 @@ looper::loop()
         outfds;
     size_t rotate_count = 0;
     std::optional<demux_def> curr_demux_def;
+    const demux_json_def* curr_demux_json_def = nullptr;
     auto md = lnav::pcre2pp::match_data::unitialized();
     ArenaAlloc::Alloc<char> sf_allocator{64 * 1024};
+    ArenaAlloc::Alloc<char> json_allocator{64 * 1024};
     bool demux_attempted = false;
     date_time_scanner dts;
     timeval line_tv;
     exttm line_tm;
     auto file_timeout = 0ms;
     multiplex_matcher mmatcher;
+    yajlpp_parse_context ypc{SRC};
+    auto_mem<yajl_handle_t> yhandle(yajl_free);
+    auto yallocs = yajl_alloc_funcs{
+        arena_alloc, arena_realloc, arena_free, &json_allocator};
+    demux_json_userdata dju;
+
+    dju.dju_arena = &json_allocator;
+    ypc.set_static_handler(demux_json_handlers.jpc_children[0]);
+    ypc.ypc_userdata = &dju;
+    ypc.ypc_ignore_unused = true;
 
     log_info("starting loop to capture: %s (%d %d)",
              this->l_name.c_str(),
@@ -464,7 +555,8 @@ looper::loop()
                 auto line_muxid_sf = DEFAULT_ID;
                 auto body_sf = sbr.to_string_fragment();
                 auto ts_sf = string_fragment{};
-                if (!curr_demux_def && !demux_attempted) {
+                if (!curr_demux_def && !curr_demux_json_def && !demux_attempted)
+                {
                     log_trace("demux input line: %s",
                               fmt::format(FMT_STRING("{:?}"), body_sf).c_str());
 
@@ -475,7 +567,7 @@ looper::loop()
                     }
                     demux_attempted = match_res.match(
                         [this, &curr_demux_def, &cfg](
-                            multiplex_matcher::found f) {
+                            multiplex_matcher::found_regex f) {
                             curr_demux_def
                                 = cfg.c_demux_definitions.find(f.f_id)->second;
                             {
@@ -483,6 +575,19 @@ looper::loop()
                                     this->l_demux_info);
 
                                 di->di_name = f.f_id;
+                            }
+                            return true;
+                        },
+                        [this, &curr_demux_json_def, &cfg](
+                            multiplex_matcher::found_json f) {
+                            curr_demux_json_def
+                                = &cfg.c_demux_json_definitions.find(f.fj_id)
+                                       ->second;
+                            {
+                                safe::WriteAccess<safe_demux_info> di(
+                                    this->l_demux_info);
+
+                                di->di_name = f.fj_id;
                             }
                             return true;
                         },
@@ -494,12 +599,30 @@ looper::loop()
                     }
                 }
                 std::optional<log_level_t> demux_level;
-                if (curr_demux_def
-                    && curr_demux_def->dd_pattern.pp_value
-                           ->capture_from(body_sf)
-                           .into(md)
-                           .matches()
-                           .ignore_error())
+                if (curr_demux_json_def != nullptr) {
+                    yhandle.reset();
+                    json_allocator.reset();
+                    yhandle.reset(
+                        yajl_alloc(&ypc.ypc_callbacks, &yallocs, &ypc));
+                    ypc.with_handle(yhandle.in());
+                    dju.dju_def = curr_demux_json_def;
+                    dju.clear();
+
+                    if (ypc.parse_doc(body_sf)) {
+                        ts_sf = dju.dju_timestamp;
+                        line_muxid_sf = dju.dju_mux_id;
+                        body_sf = dju.dju_body;
+                    } else {
+                        demux_output = demux_output_t::invalid;
+                        line_muxid_sf = OUT_OF_FRAME_ID;
+                        demux_level = LEVEL_ERROR;
+                    }
+                } else if (curr_demux_def
+                           && curr_demux_def->dd_pattern.pp_value
+                                  ->capture_from(body_sf)
+                                  .into(md)
+                                  .matches()
+                                  .ignore_error())
                 {
                     auto muxid_cap_opt
                         = md[curr_demux_def->dd_muxid_capture_index];
@@ -598,16 +721,25 @@ looper::loop()
                             FMT_STRING("{}/{}"), hdr.h_name, line_muxid_sf);
                         hdr.h_timezone = "UTC";
 
-                        for (const auto& meta_cap :
-                             curr_demux_def->dd_meta_capture_indexes)
-                        {
-                            auto mc_opt = md[meta_cap.second];
-                            if (!mc_opt) {
-                                continue;
-                            }
+                        if (curr_demux_def) {
+                            for (const auto& meta_cap :
+                                 curr_demux_def->dd_meta_capture_indexes)
+                            {
+                                auto mc_opt = md[meta_cap.second];
+                                if (!mc_opt) {
+                                    continue;
+                                }
 
-                            hdr.h_demux_meta[meta_cap.first]
-                                = mc_opt.value().to_string();
+                                hdr.h_demux_meta[meta_cap.first]
+                                    = mc_opt.value().to_string();
+                            }
+                        } else if (curr_demux_json_def) {
+                            for (const auto& [meta_key, meta_value] :
+                                 dju.dju_meta)
+                            {
+                                hdr.h_demux_meta[meta_key.to_string()]
+                                    = meta_value.to_string();
+                            }
                         }
                     }
 

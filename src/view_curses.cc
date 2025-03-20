@@ -57,8 +57,8 @@
 using namespace std::chrono_literals;
 
 const struct itimerval ui_periodic_timer::INTERVAL = {
-    {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
-    {0, std::chrono::duration_cast<std::chrono::microseconds>(350ms).count()},
+    {0, std::chrono::duration_cast<std::chrono::microseconds>(100ms).count()},
+    {0, std::chrono::duration_cast<std::chrono::microseconds>(100ms).count()},
 };
 
 ui_periodic_timer::ui_periodic_timer()

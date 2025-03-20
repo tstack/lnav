@@ -1691,6 +1691,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     auto next_rebuild_time = ui_clock::now();
     auto next_status_update_time = next_rebuild_time;
     auto next_rescan_time = next_rebuild_time;
+    auto got_user_input = true;
+    sig_atomic_t render_counter = 0;
 
     while (lnav_data.ld_looping) {
         auto loop_deadline = ui_clock::now() + (session_stage == 0 ? 3s : 50ms);
@@ -1813,7 +1815,12 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         ui_now = ui_clock::now();
         if (initial_rescan_completed) {
-            if (ui_now >= next_rebuild_time) {
+            auto* tc = lnav_data.ld_view_stack.top().value_or(nullptr);
+            if (tc != nullptr
+                && (tc->tc_text_selection_active || tc->tc_selected_text))
+            {
+                // skip rebuild while text is selected
+            } else if (ui_now >= next_rebuild_time) {
                 auto text_file_count = lnav_data.ld_text_source.size();
                 // log_debug("BEGIN rebuild");
                 auto rebuild_res = rebuild_indexes(loop_deadline);
@@ -1898,7 +1905,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         } else if (filter_source->fss_editing) {
             filter_source->fss_editor->focus();
         }
-        notcurses_render(sc.get_notcurses());
+        if (got_user_input || timer.time_to_update(render_counter)) {
+            notcurses_render(sc.get_notcurses());
+        }
 
         if (lnav_data.ld_session_loaded) {
             // Only take input from the user after everything has loaded.
@@ -1951,6 +1960,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lb.lb_last_view->handle_mouse(lb.lb_last_event);
         }
 
+        got_user_input = false;
         if (rc < 0) {
             switch (errno) {
                 case 0:
@@ -1972,6 +1982,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 log_info("stdin has been closed, exiting...");
                 lnav_data.ld_looping = false;
             } else if (in_revents & POLLIN) {
+                got_user_input = true;
                 ncinput nci;
                 auto old_gen = lnav_data.ld_active_files.fc_files_generation;
                 while (notcurses_get_nblock(sc.get_notcurses(), &nci) > 0) {
@@ -2033,8 +2044,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             auto old_mode = lnav_data.ld_mode;
 
             ps->check_poll_set(pollfds);
-            lnav_data.ld_view_stack.top() |
-                [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
+            lnav_data.ld_view_stack.top() | [](auto tc) { update_hits(tc); };
 
             if (lnav_data.ld_mode != old_mode) {
                 switch (lnav_data.ld_mode) {
@@ -2047,12 +2057,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                     default:
                         break;
                 }
+                got_user_input = true;
             }
             if (old_file_names_size
                     != lnav_data.ld_active_files.fc_file_names.size()
                 || old_files_to_front_size != lnav_data.ld_files_to_front.size()
                 || lnav_data.ld_active_files.finished_pipers() > 0)
             {
+                got_user_input = true;
                 next_rescan_time = ui_now;
                 next_rebuild_time = next_rescan_time;
                 next_status_update_time = next_rescan_time;
@@ -2195,6 +2207,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
 
         if (handle_winch(&sc)) {
+            got_user_input = true;
             layout_views();
         }
 
@@ -2351,8 +2364,7 @@ wait_for_children()
         }
 
         ps->check_poll_set(pollfds);
-        lnav_data.ld_view_stack.top() |
-            [](auto tc) { lnav_data.ld_bottom_source.update_hits(tc); };
+        lnav_data.ld_view_stack.top() | [](auto tc) { update_hits(tc); };
     } while (lnav_data.ld_looping);
 }
 

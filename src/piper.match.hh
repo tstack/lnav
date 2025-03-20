@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2024, Timothy Stack
+ * Copyright (c) 2024, Timothy Stack
  *
  * All rights reserved.
  *
@@ -32,6 +32,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
@@ -41,14 +42,18 @@ namespace lnav::piper {
 
 class multiplex_matcher {
 public:
-    struct found {
+    struct found_regex {
         std::string f_id;
+    };
+    struct found_json {
+        std::string fj_id;
     };
 
     struct partial {};
     struct not_found {};
 
-    using match_result = mapbox::util::variant<found, partial, not_found>;
+    using match_result
+        = mapbox::util::variant<found_regex, found_json, partial, not_found>;
 
     match_result match(const string_fragment& line);
 
@@ -59,6 +64,6 @@ private:
     size_t mm_line_count{0};
 };
 
-}
+}  // namespace lnav::piper
 
 #endif

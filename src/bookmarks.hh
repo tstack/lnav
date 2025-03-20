@@ -32,14 +32,15 @@
 #ifndef bookmarks_hh
 #define bookmarks_hh
 
-#include <algorithm>
 #include <map>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
+#include "tlx/container/btree_set.hpp"
 
 struct logmsg_annotations {
     std::map<std::string, std::string> la_pairs;
@@ -109,13 +110,27 @@ struct bookmark_metadata {
  * @note The vector is expected to be sorted.
  */
 template<typename LineType>
-class bookmark_vector : public std::vector<LineType> {
-    using base_vector = std::vector<LineType>;
-
+class bookmark_vector {
 public:
-    using size_type = typename base_vector::size_type;
-    using iterator = typename base_vector::iterator;
-    using const_iterator = typename base_vector::const_iterator;
+    using iterator = typename tlx::btree_set<LineType>::iterator;
+    using const_iterator = typename tlx::btree_set<LineType>::const_iterator;
+
+    tlx::btree_set<LineType> bv_tree;
+
+    std::size_t size() const
+    {
+        return this->bv_tree.size();
+    }
+
+    void clear()
+    {
+        this->bv_tree.clear();
+    }
+
+    bool empty() const
+    {
+        return this->bv_tree.empty();
+    }
 
     /**
      * Insert a bookmark into this vector, but only if it is not already in the
@@ -123,32 +138,20 @@ public:
      *
      * @param vl The line to bookmark.
      */
-    iterator insert_once(LineType vl)
+    std::pair<iterator, bool> insert_once(LineType vl)
     {
-        iterator retval;
-
-        require(vl >= 0);
-
-        auto lb = std::lower_bound(this->begin(), this->end(), vl);
-        if (lb == this->end() || *lb != vl) {
-            this->insert(lb, vl);
-            retval = this->end();
-        } else {
-            retval = lb;
-        }
-
-        return retval;
+        return this->bv_tree.insert(vl);
     }
 
     std::pair<iterator, iterator> equal_range(LineType start, LineType stop)
     {
-        auto lb = std::lower_bound(this->begin(), this->end(), start);
+        auto lb = this->bv_tree.lower_bound(start);
 
         if (stop == LineType(-1)) {
-            return std::make_pair(lb, this->end());
+            return std::make_pair(lb, this->bv_tree.end());
         }
 
-        auto up = std::upper_bound(this->begin(), this->end(), stop);
+        auto up = this->bv_tree.upper_bound(stop);
 
         return std::make_pair(lb, up);
     }
@@ -211,8 +214,8 @@ bookmark_vector<LineType>::next(LineType start) const
 
     require(start >= -1);
 
-    auto ub = std::upper_bound(this->cbegin(), this->cend(), start);
-    if (ub != this->cend()) {
+    auto ub = this->bv_tree.upper_bound(start);
+    if (ub != this->bv_tree.end()) {
         retval = *ub;
     }
 
@@ -229,9 +232,9 @@ bookmark_vector<LineType>::prev(LineType start) const
 
     require(start >= 0);
 
-    auto lb = std::lower_bound(this->cbegin(), this->cend(), start);
-    if (lb != this->cbegin()) {
-        lb -= 1;
+    auto lb = this->bv_tree.lower_bound(start);
+    if (lb != this->bv_tree.begin()) {
+        --lb;
         retval = *lb;
     }
 

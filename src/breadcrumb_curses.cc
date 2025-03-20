@@ -63,6 +63,10 @@ breadcrumb_curses::do_update()
         return false;
     }
 
+    if (!this->vc_needs_update) {
+        return false;
+    }
+
     size_t sel_crumb_offset = 0;
     auto width = ncplane_dim_x(this->bc_window);
     auto crumbs = this->bc_focused_crumbs.empty() ? this->bc_line_source()

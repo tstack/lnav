@@ -292,10 +292,16 @@ dist_noinst_DATA = \
     test_config.sh_eec3768ebc201ca63bca1411270965f78db1abfc.out \
     test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.err \
     test_demux.sh_090b34f84229c02aad7ab2f1cea20cfcf94446d5.out \
+    test_demux.sh_4ea9d5b2fd18fcae48cd3dc9d8fd7ae517ca0b2a.err \
+    test_demux.sh_4ea9d5b2fd18fcae48cd3dc9d8fd7ae517ca0b2a.out \
     test_demux.sh_7dd0e59e85769234d589a8a945cf2f80542b7dd1.err \
     test_demux.sh_7dd0e59e85769234d589a8a945cf2f80542b7dd1.out \
+    test_demux.sh_7fe671a697d452ffc56a49ddb605538b23fe744e.err \
+    test_demux.sh_7fe671a697d452ffc56a49ddb605538b23fe744e.out \
     test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.err \
     test_demux.sh_ac2a283ce1a4a3d99b0a9de4e9b72bbd9637cf61.out \
+    test_demux.sh_af12fa086853bd5eb8967d8df7cf24fd0337b815.err \
+    test_demux.sh_af12fa086853bd5eb8967d8df7cf24fd0337b815.out \
     test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.err \
     test_demux.sh_b640a3b46494e680a84cf042514ed465e39d8f38.out \
     test_demux.sh_babab3536a2fc7c2a99847fa355b50d40a51763d.err \
@@ -422,6 +428,8 @@ dist_noinst_DATA = \
     test_logfile.sh_4f6472800fd625a8ffe16a1f392053590246c1a2.out \
     test_logfile.sh_6602faf7817c494c33e32da7ee95f13aa9210d01.err \
     test_logfile.sh_6602faf7817c494c33e32da7ee95f13aa9210d01.out \
+    test_logfile.sh_6e91affb9eb4f61e9073d62117cdb29d1e8c2230.err \
+    test_logfile.sh_6e91affb9eb4f61e9073d62117cdb29d1e8c2230.out \
     test_logfile.sh_7c2e11488bccc59458b5775db4b90de964858259.err \
     test_logfile.sh_7c2e11488bccc59458b5775db4b90de964858259.out \
     test_logfile.sh_82d65f4dac07b1623f8202444d5b9144096e8243.err \
@@ -738,6 +746,8 @@ dist_noinst_DATA = \
     test_sql.sh_7593b39f4be6fd2124ec7cf10835ee015d475b16.out \
     test_sql.sh_764306f0e5f610ba71f521ba3d19fe158ece0ba5.err \
     test_sql.sh_764306f0e5f610ba71f521ba3d19fe158ece0ba5.out \
+    test_sql.sh_7b60c83d3bf0560fc8ddf7a4a1eca20e5ad22d80.err \
+    test_sql.sh_7b60c83d3bf0560fc8ddf7a4a1eca20e5ad22d80.out \
     test_sql.sh_7f664c9cda0ae1c48333e21051b5e0eeafd5b4bc.err \
     test_sql.sh_7f664c9cda0ae1c48333e21051b5e0eeafd5b4bc.out \
     test_sql.sh_8020c6cb608768442dcad31490a85467a389a894.err \

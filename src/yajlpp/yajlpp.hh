@@ -762,6 +762,15 @@ struct json_string {
 
 void dump_schema_to(const json_path_container& jpc, const char* internals_dir);
 
+struct yajl_handle_deleter {
+    void operator()(yajl_handle handle) const
+    {
+        if (handle != nullptr) {
+            yajl_free(handle);
+        }
+    }
+};
+
 namespace yajlpp {
 
 auto_mem<yajl_handle_t> alloc_handle(const yajl_callbacks* cb, void* cu);

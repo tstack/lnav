@@ -28,11 +28,14 @@
  */
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
 #include "cmd.parser.hh"
 
+#include "base/attr_line.hh"
 #include "base/itertools.enumerate.hh"
+#include "base/lnav_log.hh"
 #include "data_scanner.hh"
 #include "shlex.hh"
 #include "sql_help.hh"
@@ -44,6 +47,15 @@ std::optional<parsed::arg_at_result>
 parsed::arg_at(int x) const
 {
     log_debug("BEGIN arg_at");
+    for (const auto& se : this->p_free_args) {
+        if (se.se_origin.sf_begin <= x && x <= se.se_origin.sf_end) {
+            log_debug("  free arg [%d:%d) '%s'",
+                      se.se_origin.sf_begin,
+                      se.se_origin.sf_end,
+                      se.se_value.c_str());
+            return arg_at_result{this->p_help, false, se};
+        }
+    }
     for (const auto& arg : this->p_args) {
         log_debug(
             "  arg %s[%d]", arg.first.c_str(), arg.second.a_values.size());
@@ -142,8 +154,8 @@ parsed::arg_at(int x) const
                                 tok.tr_capture.c_begin = cap_to_start->c_begin;
                             }
                             if (tok.tr_capture.c_begin <= x
-                                && x <= tok.tr_capture.c_end &&
-                                tok.tr_token != DT_WHITE)
+                                && x <= tok.tr_capture.c_end
+                                && tok.tr_token != DT_WHITE)
                             {
                                 return arg_at_result{
                                     arg.second.a_help,
@@ -181,6 +193,9 @@ parsed::arg_at(int x) const
     }
 
     for (const auto& param : this->p_help->ht_parameters) {
+        if (startswith(param.ht_name, "-")) {
+            continue;
+        }
         const auto p_iter = this->p_args.find(param.ht_name);
         if ((p_iter->second.a_values.empty() || param.is_trailing_arg())
             || param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
@@ -251,69 +266,110 @@ parse_for(mode_t mode,
 
         do {
             const auto& se = split_args[split_index];
-            switch (param.ht_format) {
-                case help_parameter_format_t::HPF_TEXT:
-                case help_parameter_format_t::HPF_MULTILINE_TEXT:
-                case help_parameter_format_t::HPF_REGEX:
-                case help_parameter_format_t::HPF_SQL:
-                case help_parameter_format_t::HPF_SQL_EXPR:
-                case help_parameter_format_t::HPF_TIME_FILTER_POINT:
-                case help_parameter_format_t::HPF_ALL_FILTERS:
-                case help_parameter_format_t::HPF_CONFIG_VALUE:
-                case help_parameter_format_t::HPF_ENABLED_FILTERS:
-                case help_parameter_format_t::HPF_DISABLED_FILTERS:
-                case help_parameter_format_t::HPF_HIGHLIGHTS: {
-                    auto sf = string_fragment{
-                        se.se_origin.sf_string,
-                        se.se_origin.sf_begin,
-                        args.sf_end - args.sf_begin,
-                    };
-                    arg.a_values.emplace_back(
-                        shlex::split_element_t{sf, sf.to_string()});
-                    split_index = split_args.size() - 1;
-                    break;
-                }
-                case help_parameter_format_t::HPF_INTEGER:
-                case help_parameter_format_t::HPF_ENUM:
-                case help_parameter_format_t::HPF_NUMBER:
-                case help_parameter_format_t::HPF_DATETIME:
-                case help_parameter_format_t::HPF_CONFIG_PATH:
-                case help_parameter_format_t::HPF_TAG:
-                case help_parameter_format_t::HPF_ADJUSTED_TIME:
-                case help_parameter_format_t::HPF_LINE_TAG:
-                case help_parameter_format_t::HPF_LOGLINE_TABLE:
-                case help_parameter_format_t::HPF_SEARCH_TABLE:
-                case help_parameter_format_t::HPF_STRING:
-                case help_parameter_format_t::HPF_FILENAME:
-                case help_parameter_format_t::HPF_LOCAL_FILENAME:
-                case help_parameter_format_t::HPF_DIRECTORY:
-                case help_parameter_format_t::HPF_LOADED_FILE:
-                case help_parameter_format_t::HPF_FORMAT_FIELD:
-                case help_parameter_format_t::HPF_NUMERIC_FIELD:
-                case help_parameter_format_t::HPF_TIMEZONE:
-                case help_parameter_format_t::HPF_FILE_WITH_ZONE:
-                case help_parameter_format_t::HPF_VISIBLE_FILES:
-                case help_parameter_format_t::HPF_HIDDEN_FILES: {
-                    if (!param.ht_enum_values.empty()) {
-                        auto enum_iter = std::find(param.ht_enum_values.begin(),
-                                                   param.ht_enum_values.end(),
-                                                   se.se_value);
-                        if (enum_iter == param.ht_enum_values.end()) {
-                            if (mode == mode_t::call) {
-                                return Err(lnav::console::user_message::error(
-                                    "bad enum"));
+            if (se.se_value == "-" || startswith(se.se_value, "--")) {
+                retval.p_free_args.emplace_back(se);
+            } else {
+                switch (param.ht_format) {
+                    case help_parameter_format_t::HPF_TEXT:
+                    case help_parameter_format_t::HPF_MULTILINE_TEXT:
+                    case help_parameter_format_t::HPF_REGEX:
+                    case help_parameter_format_t::HPF_SQL:
+                    case help_parameter_format_t::HPF_SQL_EXPR:
+                    case help_parameter_format_t::HPF_TIME_FILTER_POINT:
+                    case help_parameter_format_t::HPF_ALL_FILTERS:
+                    case help_parameter_format_t::HPF_CONFIG_VALUE:
+                    case help_parameter_format_t::HPF_ENABLED_FILTERS:
+                    case help_parameter_format_t::HPF_DISABLED_FILTERS:
+                    case help_parameter_format_t::HPF_HIGHLIGHTS: {
+                        auto sf = string_fragment{
+                            se.se_origin.sf_string,
+                            se.se_origin.sf_begin,
+                            args.sf_end - args.sf_begin,
+                        };
+                        arg.a_values.emplace_back(
+                            shlex::split_element_t{sf, sf.to_string()});
+                        split_index = split_args.size() - 1;
+                        break;
+                    }
+                    case help_parameter_format_t::HPF_INTEGER:
+                    case help_parameter_format_t::HPF_ENUM:
+                    case help_parameter_format_t::HPF_NUMBER:
+                    case help_parameter_format_t::HPF_DATETIME:
+                    case help_parameter_format_t::HPF_CONFIG_PATH:
+                    case help_parameter_format_t::HPF_TAG:
+                    case help_parameter_format_t::HPF_ADJUSTED_TIME:
+                    case help_parameter_format_t::HPF_LINE_TAG:
+                    case help_parameter_format_t::HPF_LOGLINE_TABLE:
+                    case help_parameter_format_t::HPF_SEARCH_TABLE:
+                    case help_parameter_format_t::HPF_STRING:
+                    case help_parameter_format_t::HPF_FILENAME:
+                    case help_parameter_format_t::HPF_LOCAL_FILENAME:
+                    case help_parameter_format_t::HPF_DIRECTORY:
+                    case help_parameter_format_t::HPF_LOADED_FILE:
+                    case help_parameter_format_t::HPF_FORMAT_FIELD:
+                    case help_parameter_format_t::HPF_NUMERIC_FIELD:
+                    case help_parameter_format_t::HPF_TIMEZONE:
+                    case help_parameter_format_t::HPF_FILE_WITH_ZONE:
+                    case help_parameter_format_t::HPF_VISIBLE_FILES:
+                    case help_parameter_format_t::HPF_HIDDEN_FILES: {
+                        if (!param.ht_enum_values.empty()) {
+                            auto enum_iter
+                                = std::find(param.ht_enum_values.begin(),
+                                            param.ht_enum_values.end(),
+                                            se.se_value);
+                            if (enum_iter == param.ht_enum_values.end()) {
+                                if (mode == mode_t::call) {
+                                    return Err(
+                                        lnav::console::user_message::error(
+                                            "bad enum"));
+                                }
                             }
                         }
-                    }
 
-                    arg.a_values.emplace_back(se);
-                    break;
+                        arg.a_values.emplace_back(se);
+                        break;
+                    }
+                    case help_parameter_format_t::HPF_NONE: {
+                        if (se.se_value != param.ht_name) {
+                            log_debug("skip flag '%s' '%s'",
+                                      se.se_value.c_str(),
+                                      param.ht_name);
+                            continue;
+                        }
+                        arg.a_values.emplace_back(se);
+                        break;
+                    }
                 }
             }
             split_index += 1;
         } while (split_index < split_args.size()
                  && (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
                      || param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE));
+    }
+
+    for (auto free_iter = retval.p_free_args.begin();
+         free_iter != retval.p_free_args.end();)
+    {
+        auto free_sf = string_fragment::from_str(free_iter->se_value);
+        auto [flag_name, flag_value]
+            = free_sf.split_when(string_fragment::tag1{'='});
+        auto consumed = false;
+        for (const auto& param : ht.ht_parameters) {
+            if (param.ht_name == flag_name) {
+                retval.p_args[param.ht_name].a_values.emplace_back(
+                    shlex::split_element_t{
+                        free_iter->se_origin.substr(flag_name.length() + 1),
+                        flag_value.to_string(),
+                    });
+                consumed = true;
+                break;
+            }
+        }
+        if (consumed) {
+            free_iter = retval.p_free_args.erase(free_iter);
+        } else {
+            ++free_iter;
+        }
     }
 
     return Ok(retval);

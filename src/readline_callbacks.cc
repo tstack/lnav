@@ -513,6 +513,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
             {
                 auto poss = prompt.get_cmd_parameter_completion(
                     *tc,
+                    &iter->second->c_help,
                     arg_res.aar_help,
                     arg_res.aar_element.se_value.empty()
                         ? arg_res.aar_element.se_origin.to_string()
@@ -521,7 +522,6 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                 rc.tc_popup.set_title(arg_res.aar_help->ht_name);
             } else if (arg_res.aar_help->ht_format
                            == help_parameter_format_t::HPF_REGEX
-                       && arg_res.aar_element.se_value.empty()
                        && rc.is_cursor_at_end_of_line())
             {
                 auto re_arg = parsed_cmd.p_args[arg_res.aar_help->ht_name];
@@ -741,7 +741,10 @@ rl_search_change(textinput_curses& rc, bool is_req)
                 || rc.tc_popup_type != textinput_curses::popup_type_t::none)
             {
                 auto poss = prompt.get_cmd_parameter_completion(
-                    *tc, arg_pair.aar_help, arg_pair.aar_element.se_value);
+                    *tc,
+                    &SEARCH_HELP,
+                    arg_pair.aar_help,
+                    arg_pair.aar_element.se_value);
                 auto left = arg_pair.aar_element.se_value.empty()
                     ? rc.tc_cursor.x
                     : line_sf.byte_to_column_index(

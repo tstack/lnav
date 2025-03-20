@@ -1,0 +1,24 @@
+[31mNov 03 09:23:38[0m[31m [0m[31mveridian[0m[31m [0m[31mautomount[0m[31m[[0m[31m7998[0m[31m][0m[31m: [0m[31mlookup(file): lookup for foobar failed[0m
+Nov 03 09:23:38 veridian automount[16442]: attempting to mount entry /auto/opt
+[31mNov 03 09:23:38[0m[31m [0m[31mveridian[0m[31m [0m[31mautomount[0m[31m[[0m[31m7999[0m[31m][0m[31m: [0m[31mlookup(file): lookup for opt failed[0m
+[4mNov 03 09:47:02[0m[4m [0m[4mveridian[0m[4m [0m[4msudo[0m[4m: [0m[4mtimstack[0m[4m : TTY=pts/6 ; PWD=/auto/wstimstack/rpms/lbuild/test ; USER=[0m[4mroot[0m[4m ; COMMAND=/usr/bin/tail /var/log/messages[0m
+Aug 16 00:10:45 Tims-Air syslogd[314]: ASL Sender Statistics
+Aug 16 00:28:56 Tims-Air syslogd[314]: ASL Sender Statistics
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.cdscheduler" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.install" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.authd" sharing output destination "/var/log/asl" with ASL Module "com.apple.asl".
+	Output parameters from ASL Module "com.apple.asl" override any specified in ASL Module "com.apple.authd".
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.authd" sharing output destination "/var/log/system.log" with ASL Module "com.apple.asl".
+	Output parameters from ASL Module "com.apple.asl" override any specified in ASL Module "com.apple.authd".
+Aug 16 00:32:15 Tims-Air syslogd[314]: Configuration Notice:
+	ASL Module "com.apple.authd" claims selected messages.
+[4m	Those messages may not appear in standard system log files or in the ASL database.[0m
+Nov 03 09:23:38 veridian foo[7998]: eth0 is up
+Nov 03 09:23:38 veridian foo[16442]: eth1 is up
+Nov 03 09:23:38 veridian foo[7999]: eth0 is down

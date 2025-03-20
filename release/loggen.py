@@ -12,6 +12,16 @@ SYSLOG_DATE_FMT = "%b %d %H:%M:%S"
 ACCESS_LOG_DATE_FMT = "%d/%b/%Y:%H:%M:%S"
 GENERIC_DATE_FMT = "%Y-%m-%dT%H:%M:%S.%%s"
 
+try:
+    shutil.rmtree("/tmp/demo")
+except OSError:
+    pass
+
+try:
+    os.makedirs("/tmp/demo")
+except OSError:
+    pass
+
 TEST_ADDRESSES = (
         ["192.0.2.55"] * 20 +
         ["192.0.2.44"] * 20 +

@@ -403,32 +403,38 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             break;
 
         case 'K': {
-            int new_mark;
-
-            if (lnav_data.ld_last_user_mark.find(tc)
-                    == lnav_data.ld_last_user_mark.end()
-                || !tc->is_line_visible(
-                    vis_line_t(lnav_data.ld_last_user_mark[tc])))
-            {
-                new_mark = tc->get_selection();
+            if (tc->is_selectable()) {
+                tc->toggle_user_mark(&textview_curses::BM_USER,
+                                     tc->get_selection());
+                tc->shift_selection(listview_curses::shift_amount_t::up_line);
             } else {
-                new_mark = lnav_data.ld_last_user_mark[tc];
-            }
+                int new_mark;
 
-            tc->toggle_user_mark(&textview_curses::BM_USER,
-                                 vis_line_t(new_mark));
-            if (new_mark == tc->get_selection() && tc->get_top() > 0_vl) {
-                tc->shift_top(-1_vl);
-            }
-            if (new_mark > 0) {
-                lnav_data.ld_last_user_mark[tc] = new_mark - 1;
-            } else {
-                lnav_data.ld_last_user_mark[tc] = new_mark;
-                alerter::singleton().chime("no more lines to mark");
-            }
-            lnav_data.ld_select_start[tc] = tc->get_selection();
-            if (tc->is_selectable() && tc->get_selection() > 0_vl) {
-                tc->set_selection(tc->get_selection() - 1_vl);
+                if (lnav_data.ld_last_user_mark.find(tc)
+                        == lnav_data.ld_last_user_mark.end()
+                    || !tc->is_line_visible(
+                        vis_line_t(lnav_data.ld_last_user_mark[tc])))
+                {
+                    new_mark = tc->get_selection();
+                } else {
+                    new_mark = lnav_data.ld_last_user_mark[tc];
+                }
+
+                tc->toggle_user_mark(&textview_curses::BM_USER,
+                                     vis_line_t(new_mark));
+                if (new_mark == tc->get_selection() && tc->get_top() > 0_vl) {
+                    tc->shift_top(-1_vl);
+                }
+                if (new_mark > 0) {
+                    lnav_data.ld_last_user_mark[tc] = new_mark - 1;
+                } else {
+                    lnav_data.ld_last_user_mark[tc] = new_mark;
+                    alerter::singleton().chime("no more lines to mark");
+                }
+                lnav_data.ld_select_start[tc] = tc->get_selection();
+                if (tc->is_selectable() && tc->get_selection() > 0_vl) {
+                    tc->set_selection(tc->get_selection() - 1_vl);
+                }
             }
             tc->reload_data();
 

@@ -62,6 +62,7 @@ enum class help_nargs_t {
 };
 
 enum class help_parameter_format_t {
+    HPF_NONE,
     HPF_STRING,
     HPF_TEXT,
     HPF_MULTILINE_TEXT,
@@ -229,6 +230,13 @@ struct help_text {
     help_text& with_default_value(const char* defval)
     {
         this->ht_default_value = defval;
+        return *this;
+    }
+
+    help_text& flag() noexcept
+    {
+        this->ht_nargs = help_nargs_t::HN_OPTIONAL;
+        this->ht_format = help_parameter_format_t::HPF_NONE;
         return *this;
     }
 

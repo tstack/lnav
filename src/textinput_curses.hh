@@ -358,6 +358,14 @@ public:
         }
     }
 
+    selected_range clamp_selection(selected_range range)
+    {
+        this->clamp_point(range.sr_start);
+        this->clamp_point(range.sr_end);
+
+        return range;
+    }
+
     void move_cursor_to_next_search_hit();
 
     void move_cursor_to_prev_search_hit();
@@ -481,6 +489,7 @@ public:
 
     std::optional<ui_clock::time_point> tc_last_tick_after_input;
     bool tc_timeout_fired{false};
+    bool tc_in_popup_change{false};
 
     std::function<void(textinput_curses&)> tc_on_help;
     std::function<void(textinput_curses&)> tc_on_focus;

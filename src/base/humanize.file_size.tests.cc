@@ -74,6 +74,13 @@ TEST_CASE("humanize::try_from")
         CHECK(try_res.value() == 123.4 * 1024 * 1024 * 1024);
     }
     {
+        auto file_size = string_fragment::from_const(" 123.4 GB");
+        auto try_res = humanize::try_from<double>(file_size);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 123.4 * 1024 * 1024 * 1024);
+    }
+    {
         auto secs = string_fragment::from_const("1.2s");
         auto try_res = humanize::try_from<double>(secs);
 
@@ -82,6 +89,13 @@ TEST_CASE("humanize::try_from")
     }
     {
         auto secs = string_fragment::from_const("1ms");
+        auto try_res = humanize::try_from<double>(secs);
+
+        CHECK(try_res.has_value());
+        CHECK(try_res.value() == 0.001);
+    }
+    {
+        auto secs = string_fragment::from_const("1 ms");
         auto try_res = humanize::try_from<double>(secs);
 
         CHECK(try_res.has_value());

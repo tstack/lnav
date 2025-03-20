@@ -335,7 +335,17 @@ textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
             }
         }
         if (pair.first != pair.second) {
-            search_bv.erase(pair.first, pair.second);
+            auto to_del = std::vector<vis_line_t>{};
+            for (auto file_iter = pair.first;
+                 file_iter != pair.second;
+                 ++file_iter)
+            {
+                to_del.emplace_back(*file_iter);
+            }
+
+            for (auto cl : to_del) {
+                search_bv.bv_tree.erase(cl);
+            }
         }
     }
 
@@ -348,7 +358,7 @@ textview_curses::grep_end_batch(grep_proc<vis_line_t>& gp)
     if (this->tc_follow_deadline.tv_sec
         && this->tc_follow_selection == this->get_selection())
     {
-        struct timeval now;
+        timeval now;
 
         gettimeofday(&now, nullptr);
         if (this->tc_follow_deadline < now) {
@@ -866,10 +876,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
 
     const auto& user_marks = this->tc_bookmarks[&BM_USER];
     const auto& user_expr_marks = this->tc_bookmarks[&BM_USER_EXPR];
-    if (std::binary_search(user_marks.begin(), user_marks.end(), row)
-        || std::binary_search(
-            user_expr_marks.begin(), user_expr_marks.end(), row))
-    {
+    if (user_marks.bv_tree.exists(row) || user_expr_marks.bv_tree.exists(row)) {
         sa.emplace_back(line_range{orig_line.lr_start, -1},
                         VC_STYLE.value(text_attrs::with_reverse()));
     }
@@ -1015,15 +1022,11 @@ textview_curses::set_user_mark(const bookmark_type_t* bm,
                                bool marked)
 {
     auto& bv = this->tc_bookmarks[bm];
-    bookmark_vector<vis_line_t>::iterator iter;
 
     if (marked) {
         bv.insert_once(vl);
     } else {
-        iter = std::lower_bound(bv.begin(), bv.end(), vl);
-        if (iter != bv.end() && *iter == vl) {
-            bv.erase(iter);
-        }
+        bv.bv_tree.erase(vl);
     }
     if (this->tc_sub_source) {
         this->tc_sub_source->text_mark(bm, vl, marked);
@@ -1056,15 +1059,7 @@ textview_curses::toggle_user_mark(const bookmark_type_t* bm,
     }
     for (auto curr_line = start_line; curr_line <= end_line; ++curr_line) {
         auto& bv = this->tc_bookmarks[bm];
-        bool added;
-
-        auto iter = bv.insert_once(curr_line);
-        if (iter == bv.end()) {
-            added = true;
-        } else {
-            bv.erase(iter);
-            added = false;
-        }
+        auto [insert_iter, added] = bv.insert_once(curr_line);
         if (this->tc_sub_source) {
             this->tc_sub_source->text_mark(bm, curr_line, added);
         }

@@ -70,6 +70,8 @@ Features:
   set by the `:adjust-log-time` command.
 * Added a `measure_with_units` collation function that can compare
   numbers with unit suffixes, like "10KB" or "1.2ms".
+  The `:create-search-table` will also use this collation function
+  for capture patterns that are likely to capture a number with a unit.
 * Log messages now have permalinks that can be used to reference them
   from other locations.
   The permalink for a message is shown in the parser details overlay
@@ -85,11 +87,18 @@ Features:
 * The `CTRL` + `O` shortcut is now bound to the `:prev-location`
   command, so you can jump back to a previous location.
 * Render task marks in markdown.
+* The demultiplexing feature has been extended to support JSON-lines
+  input files.
+  For example, an
+  [export of search results from Graylog](https://go2docs.graylog.org/current/interacting_with_your_log_data/export_search_results.html)
+  can automatically be split into separate streams based on the
+  `source` property.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.
 * The default terminal colors will now be used in the default theme.
   So, a light background with a dark foreground will be respected.
+* Improved performance of searches with lots of hits.
 * Improved performance for compressed files.
 * Improved performance for the timeline view.
 * Copying a column with a text value in the DB overlay view.
@@ -97,6 +106,8 @@ Bug Fixes:
 * The `:export-session-to` command will now include `:open` commands
   for log files that were piped in to lnav or executed with the `:sh`
   command.
+* The `:set-file-timezone` command was not working correctly in some 
+  cases.
 
 ## lnav v0.12.4
 

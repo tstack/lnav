@@ -367,6 +367,7 @@ dist_noinst_DATA = \
 	logfile_leveltest.0 \
 	logfile_logfmt.0 \
 	logfile_multiline.0 \
+	logfile_muxed_syslog.0 \
 	logfile_nested_json.json \
 	logfile_nextcloud.0 \
 	logfile_openam.0 \
@@ -378,6 +379,7 @@ dist_noinst_DATA = \
 	logfile_rollover.0 \
 	logfile_rollover.1 \
 	logfile_shop_access_log.0 \
+	logfile_spark.0 \
 	logfile_strace_log.0 \
 	logfile_syslog.0 \
 	logfile_syslog.1 \

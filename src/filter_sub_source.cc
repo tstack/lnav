@@ -578,7 +578,10 @@ filter_sub_source::rl_completion_request_int(textinput_curses& tc,
             || tc.tc_popup_type != textinput_curses::popup_type_t::none)
         {
             auto poss = prompt.get_cmd_parameter_completion(
-                *top_view, arg_pair.aar_help, arg_pair.aar_element.se_value);
+                *top_view,
+                &FILTER_HELP,
+                arg_pair.aar_help,
+                arg_pair.aar_element.se_value);
             auto left = arg_pair.aar_element.se_value.empty()
                 ? tc.tc_cursor.x
                 : al_sf.byte_to_column_index(

@@ -126,18 +126,18 @@ void
 bottom_status_source::update_marks(listview_curses* lc)
 {
     auto* tc = static_cast<textview_curses*>(lc);
-    vis_bookmarks& bm = tc->get_bookmarks();
+    auto& bm = tc->get_bookmarks();
     status_field& sf = this->bss_fields[BSF_HITS];
 
     if (bm.find(&textview_curses::BM_SEARCH) != bm.end()) {
-        bookmark_vector<vis_line_t>& bv = bm[&textview_curses::BM_SEARCH];
+        const auto& bv = bm[&textview_curses::BM_SEARCH];
 
         if (!bv.empty() || !tc->get_current_search().empty()) {
             auto vl = tc->get_selection();
-            auto lb = std::lower_bound(bv.begin(), bv.end(), vl);
-            if (lb != bv.end() && *lb == vl) {
+            auto lb = bv.bv_tree.find(vl);
+            if (lb != bv.bv_tree.end()) {
                 sf.set_value("  Hit %'d of %'d for ",
-                             std::distance(bv.begin(), lb) + 1,
+                             (lb - bv.bv_tree.begin()) + 1,
                              tc->get_match_count());
             } else {
                 sf.set_value("  %'d hits for ", tc->get_match_count());

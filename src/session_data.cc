@@ -1016,7 +1016,10 @@ save_user_bookmarks(sqlite3* db,
 {
     auto& lss = lnav_data.ld_log_source;
 
-    for (auto iter = user_marks.begin(); iter != user_marks.end(); ++iter) {
+    for (auto iter = user_marks.bv_tree.begin();
+         iter != user_marks.bv_tree.end();
+         ++iter)
+    {
         content_line_t cl = *iter;
         auto lf = lss.find(cl);
         if (lf == nullptr) {

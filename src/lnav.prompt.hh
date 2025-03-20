@@ -31,6 +31,7 @@
 #define lnav_prompt_hh
 
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,6 +43,7 @@
 #include "mapbox/variant.hpp"
 #include "textinput.history.hh"
 #include "textinput_curses.hh"
+#include "yajlpp/yajlpp.hh"
 
 namespace lnav {
 
@@ -57,6 +59,7 @@ struct prompt {
     struct sql_function_t {
         size_t sf_param_count{0};
     };
+    struct prql_function_t {};
     struct sql_column_t {};
     struct sql_number_t {};
     struct sql_string_t {};
@@ -70,6 +73,7 @@ struct prompt {
                                              sql_table_t,
                                              sql_table_valued_function_t,
                                              sql_function_t,
+                                             prql_function_t,
                                              sql_column_t,
                                              sql_number_t,
                                              sql_string_t,
@@ -115,6 +119,7 @@ struct prompt {
     bool p_alt_mode{false};
     std::string p_pre_history_content;
     bool p_replace_from_history{false};
+    int32_t p_history_changes{0};
 
     void focus_for(textview_curses& tc,
                    char sigil,
@@ -135,7 +140,10 @@ struct prompt {
 
     void refresh_config_completions();
     std::vector<attr_line_t> get_cmd_parameter_completion(
-        textview_curses& tc, const help_text* ht, const std::string& str);
+        textview_curses& tc,
+        const help_text* cmd_ht,
+        const help_text* ht,
+        const std::string& str);
     std::vector<attr_line_t> get_env_completion(const std::string& str);
     std::vector<attr_line_t> get_config_value_completion(
         const std::string& path, const std::string& str) const;

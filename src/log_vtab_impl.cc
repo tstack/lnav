@@ -760,10 +760,10 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                             sqlite3_result_null(ctx);
                         } else {
                             vis_line_t curr_line(vc->log_cursor.lc_curr_line);
-                            auto iter = lower_bound(
-                                bv.begin(), bv.end(), curr_line + 1_vl);
+                            auto iter
+                                = bv.bv_tree.lower_bound(curr_line + 1_vl);
 
-                            if (iter != bv.begin()) {
+                            if (iter != bv.bv_tree.begin()) {
                                 --iter;
                                 auto line_meta_opt
                                     = vt->lss->find_bookmark_metadata(*iter);
@@ -2364,9 +2364,7 @@ vt_update(sqlite3_vtab* tab,
         bool has_meta = log_comment != nullptr || log_tags.has_value()
             || log_annos.has_value();
 
-        if (std::binary_search(bv_meta.begin(), bv_meta.end(), vrowid)
-            && !has_meta)
-        {
+        if (bv_meta.bv_tree.exists(vrowid) && !has_meta) {
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);
             vt->lss->set_line_meta_changed();
         }

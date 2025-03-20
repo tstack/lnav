@@ -44,6 +44,8 @@
 detect_file_format_result
 detect_file_format(const std::filesystem::path& filename)
 {
+    log_debug("detecting format of file: %s", filename.c_str());
+
     detect_file_format_result retval = {file_format_t::UNKNOWN};
     auto describe_res = archive_manager::describe(filename);
     if (describe_res.isOk()
@@ -81,6 +83,7 @@ detect_file_format(const std::filesystem::path& filename)
                     case text_format_t::TF_UNKNOWN:
                     case text_format_t::TF_BINARY:
                     case text_format_t::TF_LOG:
+                    case text_format_t::TF_JSON:
                         log_info("file does not have a known text format: %s",
                                  filename.c_str());
                         break;
@@ -132,11 +135,20 @@ detect_file_format(const std::filesystem::path& filename)
                     auto match_res = mm.match(sbr.to_string_fragment());
 
                     looping = match_res.match(
-                        [&retval,
-                         &filename](lnav::piper::multiplex_matcher::found f) {
-                            log_info("%s: is multiplexed using %s",
+                        [&retval, &filename](
+                            lnav::piper::multiplex_matcher::found_regex f) {
+                            log_info("%s: is multiplexed using pattern %s",
                                      filename.c_str(),
                                      f.f_id.c_str());
+                            retval.dffr_file_format
+                                = file_format_t::MULTIPLEXED;
+                            return false;
+                        },
+                        [&retval, &filename](
+                            lnav::piper::multiplex_matcher::found_json f) {
+                            log_info("%s: is multiplexed using JSON %s",
+                                     filename.c_str(),
+                                     f.fj_id.c_str());
                             retval.dffr_file_format
                                 = file_format_t::MULTIPLEXED;
                             return false;

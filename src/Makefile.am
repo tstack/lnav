@@ -419,7 +419,13 @@ THIRD_PARTY_SRCS = \
     third-party/prqlc-c/prqlc.cxx.cc \
     third-party/robin_hood/robin_hood.h \
 	third-party/sqlite/ext/dbdump.c \
-	third-party/sqlite/ext/series.c
+	third-party/sqlite/ext/series.c \
+    third-party/tlx/die/core.hpp \
+    third-party/tlx/container/btree.hpp \
+    third-party/tlx/container/btree_map.hpp \
+    third-party/tlx/container/btree_multimap.hpp \
+    third-party/tlx/container/btree_multiset.hpp \
+    third-party/tlx/container/btree_set.hpp
 
 libdatascanner_a_SOURCES = \
 	data_scanner.cc \

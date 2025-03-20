@@ -56,7 +56,7 @@ try_from(const string_fragment& sf)
     };
 
     static const auto code = lnav::pcre2pp::code::from_const(
-        R"(^\s*(?:([\-\+]?\d+)|([\-\+]?\d+\.\d+(?:[eE][\-\+]\d+)?)|([\-\+]?\d+(?:\.\d+)?[ KMGTPE]?[Bb](?:ps)?)|([\-\+]?\d+(?:\.\d+)?[ munpf]?)s|(\d{1,2}:\d{2}:\d{2}(?:\.\d{1,6})?)|(\d{1,2}:\d{2}(?:\.\d{1,6})?))\s*$)");
+        R"(^\s*(?:([\-\+]?\d+)|([\-\+]?\d+\.\d+(?:[eE][\-\+]\d+)?)|([\-\+]?\d+(?:\.\d+)?\s*[KMGTPE]?[Bb](?:ps)?)|([\-\+]?\d+(?:\.\d+)?\s*[munpf]?)s|(\d{1,2}:\d{2}:\d{2}(?:\.\d{1,6})?)|(\d{1,2}:\d{2}(?:\.\d{1,6})?))\s*$)");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (!code.capture_from(sf).into(md).found_p()) {
@@ -81,8 +81,12 @@ try_from(const string_fragment& sf)
         const auto unit_range = scan_res->range();
         auto retval = scan_res->value();
 
-        if (unit_range.size() == 2) {
-            switch (unit_range[0]) {
+        if (unit_range.size() >= 2) {
+            size_t start = 0;
+            while (isspace(unit_range[start])) {
+                start += 1;
+            }
+            switch (unit_range[start]) {
                 case 'E':
                     retval *= 1024.0;
                 case 'P':
@@ -107,7 +111,11 @@ try_from(const string_fragment& sf)
         auto retval = scan_res->value();
 
         if (!unit_range.empty()) {
-            switch (unit_range[0]) {
+            size_t start = 0;
+            while (isspace(unit_range[start])) {
+                start += 1;
+            }
+            switch (unit_range[start]) {
                 case 'f':
                     retval /= 1000.0;
                 case 'p':

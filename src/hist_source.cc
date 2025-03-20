@@ -165,7 +165,7 @@ hist_source2::clear()
 {
     this->hs_line_count = 0;
     this->hs_current_row = -1;
-    this->hs_last_ts = std::chrono::microseconds::zero();
+    this->hs_last_ts = std::chrono::microseconds::min();
     this->hs_blocks.clear();
     this->hs_chart.clear();
     if (this->tss_view != nullptr) {
