@@ -992,6 +992,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                               if (is_utf8(sbr_str).is_valid()) {
                                   auto new_size = erase_ansi_escapes(sbr_str);
                                   sbr_str.resize(new_size);
+                              } else {
+                                  return text_format_t::TF_BINARY;
                               }
                               return detect_text_format(sbr_str, path);
                           })

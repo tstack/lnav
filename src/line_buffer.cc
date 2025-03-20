@@ -283,10 +283,15 @@ line_buffer::gz_indexed::stream_data(void* buf, size_t size)
                 // stream
                 continue_stream();
             } else if (err != Z_OK) {
-                log_error(" inflate-error at %d: %d  %s",
+                log_error(" inflate-error at offset %d: %d  %s",
                           this->strm.total_in,
                           (int) err,
                           this->strm.msg ? this->strm.msg : "");
+                this->parent->lb_decompress_error = fmt::format(
+                    FMT_STRING("inflate-error at offset {}: {}  {}"),
+                    this->strm.total_in,
+                    err,
+                    this->strm.msg ? this->strm.msg : "");
                 break;
             }
 
@@ -367,6 +372,8 @@ line_buffer::gz_indexed::read(void* buf, size_t offset, size_t size)
 
 line_buffer::line_buffer()
 {
+    this->lb_gz_file.writeAccess()->parent = this;
+
     ensure(this->invariant());
 }
 
@@ -636,6 +643,9 @@ line_buffer::load_next_buffer()
             {
                 this->lb_file_size
                     = (start + this->lb_alt_buffer.value().size() + rc);
+                log_info("fd(%d): set file size to %llu",
+                         this->lb_fd.get(),
+                         this->lb_file_size);
             }
 #if 0
             log_debug("async decomp end  %d+%d:%d",
@@ -701,6 +711,9 @@ line_buffer::load_next_buffer()
             {
                 this->lb_file_size
                     = (start + this->lb_alt_buffer.value().size() + rc);
+                log_info("fd(%d): set file size to %llu",
+                         this->lb_fd.get(),
+                         this->lb_file_size);
             }
         }
     }
@@ -899,6 +912,10 @@ line_buffer::fill_range(file_off_t start,
                 if (rc != -1 && (rc < (ssize_t) this->lb_buffer.available())) {
                     this->lb_file_size
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
+                    log_info("fd(%d): rc (%d) -- set file size to %llu",
+                             this->lb_fd.get(),
+                             rc,
+                             this->lb_file_size);
                 }
             }
 #if 0
@@ -961,6 +978,9 @@ line_buffer::fill_range(file_off_t start,
                 if (rc != -1 && (rc < (ssize_t) this->lb_buffer.available())) {
                     this->lb_file_size
                         = (this->lb_file_offset + this->lb_buffer.size() + rc);
+                    log_info("fd(%d): set file size to %llu",
+                             this->lb_fd.get(),
+                             this->lb_file_size);
                 }
             }
         }

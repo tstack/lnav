@@ -440,6 +440,8 @@ dist_noinst_DATA = \
     test_logfile.sh_9a35dc7e0d53309435fb97f097efe43adcfbc87f.out \
     test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.err \
     test_logfile.sh_a7037efd0c4bbf51940137a44e57d94e9307e83e.out \
+    test_logfile.sh_adc83b19e793491b1c6ea0fd8b46cd9f32e592fc.err \
+    test_logfile.sh_adc83b19e793491b1c6ea0fd8b46cd9f32e592fc.out \
     test_logfile.sh_bcf123ebd1c59c46a513f3fadd442bb7ab345843.err \
     test_logfile.sh_bcf123ebd1c59c46a513f3fadd442bb7ab345843.out \
     test_logfile.sh_c18e14a26d8261c9f72747118a469266121d5459.err \

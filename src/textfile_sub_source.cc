@@ -85,7 +85,7 @@ textfile_sub_source::text_line_count()
         {
             const auto& lf = curr_iter->fvs_file;
             if (lf->get_text_format() == text_format_t::TF_BINARY) {
-                const auto fsize = lf->get_stat().st_size;
+                const auto fsize = lf->get_content_size();
                 retval = fsize / 16;
                 if (fsize % 16) {
                     retval += 1;
@@ -127,7 +127,7 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
 
     if (lf->get_text_format() == text_format_t::TF_BINARY) {
         this->tss_hex_line.clear();
-        auto fsize = lf->get_stat().st_size;
+        auto fsize = lf->get_content_size();
         auto fr = file_range{line * 16};
         fr.fr_size = std::min((file_ssize_t) 16, fsize - fr.fr_offset);
 
