@@ -1857,6 +1857,30 @@ lnav::session::restore_view_states()
                     }
                 }
             }
+        } else if (view_index == LNV_LOG) {
+            file_location_t log_loc{mapbox::util::no_init{}};
+            for (const auto& ld : lnav_data.ld_log_source) {
+                const auto* lf = ld->get_file_ptr();
+                if (lf == nullptr) {
+                    continue;
+                }
+
+                const auto& init_loc = lf->get_open_options().loo_init_location;
+                if (init_loc.valid() && init_loc.is<std::string>()) {
+                    has_loc = true;
+                    log_loc = init_loc;
+                }
+            }
+
+            if (log_loc.valid()) {
+                auto anchor = log_loc.get<std::string>();
+                auto row_opt = lnav_data.ld_log_source.row_for_anchor(anchor);
+                if (row_opt) {
+                    log_info("setting LOG view to desired loc: %s",
+                             anchor.c_str());
+                    lnav_data.ld_views[LNV_LOG].set_selection(row_opt.value());
+                }
+            }
         }
 
         if (!has_loc && vs.vs_top >= 0

@@ -166,7 +166,8 @@ split_file_location(const std::string& file_path_str)
                  file_path_str.c_str());
     }
 
-    return std::make_pair(file_path_str, file_location_tail{});
+    return std::make_pair(file_path_str,
+                          file_location_t{mapbox::util::no_init{}});
 }
 
 Result<std::filesystem::path, std::string>
