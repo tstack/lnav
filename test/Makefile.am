@@ -418,6 +418,7 @@ dist_noinst_DATA = \
 	textfile_0.md \
 	textfile_ansi.0 \
 	textfile_ansi_expanding.0 \
+	textfile_broken_gz.txt.gz \
 	textfile_ctrl.0 \
 	textfile_json_indented.0 \
 	textfile_json_long.0 \
