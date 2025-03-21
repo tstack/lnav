@@ -790,6 +790,9 @@ textview_curses::apply_highlights(attr_line_t& al,
     }
 
     auto source_format = this->tc_sub_source->get_text_format();
+    if (source_format == text_format_t::TF_BINARY) {
+        return;
+    }
     for (const auto& tc_highlight : this->tc_highlights) {
         bool internal_hl
             = tc_highlight.first.first == highlight_source_t::INTERNAL

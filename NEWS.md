@@ -34,9 +34,9 @@ Interface changes:
   contain no content to make it clear to the user that they
   need to switch views or `:open` a file.
 * The HIST view now supports bookmarks, so you can use the usual
-  hotkeys to just to the next/previous time segment with
+  hotkeys to move to the next/previous time segment with
   errors/warnings/marks.
-* In table cells, control characters are replaced with unicode
+* In table cells, control characters are replaced with Unicode
   symbols and highlighted with the 'hidden' style from the theme.
 
 Features:
