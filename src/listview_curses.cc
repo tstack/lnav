@@ -183,9 +183,8 @@ listview_curses::reload_data()
                 auto curr_sel = this->get_selection();
 
                 if (curr_sel == -1_vl) {
-                    curr_sel = 0_vl;
+                    this->set_selection_without_context(0_vl);
                 }
-                this->set_selection_without_context(curr_sel);
             }
 
             this->update_top_from_selection();
@@ -969,7 +968,8 @@ listview_curses::handle_mouse(mouse_event& me)
                             this->lv_mouse_time = me.me_time;
                             this->lv_focused_overlay_top -= 1_vl;
                             if (this->lv_focused_overlay_selection
-                                >= this->lv_focused_overlay_top + (oc.oc_height - 1_vl))
+                                >= this->lv_focused_overlay_top
+                                    + (oc.oc_height - 1_vl))
                             {
                                 this->lv_focused_overlay_selection
                                     = this->lv_focused_overlay_top

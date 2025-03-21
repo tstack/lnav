@@ -108,6 +108,8 @@ Bug Fixes:
   command.
 * The `:set-file-timezone` command was not working correctly in some 
   cases.
+* The location of views should be restored from the session when filters
+  are active.
 
 ## lnav v0.12.4
 

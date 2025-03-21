@@ -290,7 +290,7 @@ public:
 
     textinput_curses(const textinput_curses&) = delete;
 
-    void set_content(const attr_line_t& al);
+    void set_content(std::string al);
 
     void set_height(int height);
 
@@ -303,6 +303,8 @@ public:
     bool handle_search_key(const ncinput& ch);
 
     bool handle_key(const ncinput& ch);
+
+    void content_to_lines(std::string content, int x);
 
     void update_lines();
 

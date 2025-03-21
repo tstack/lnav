@@ -864,6 +864,7 @@ read_files(yajlpp_parse_context* ypc,
 static const struct json_path_container view_def_handlers = {
     json_path_handler("top_line").for_field(&view_state::vs_top),
     json_path_handler("focused_line").for_field(&view_state::vs_selection),
+    json_path_handler("anchor").for_field(&view_state::vs_anchor),
     json_path_handler("search").for_field(&view_state::vs_search),
     json_path_handler("word_wrap").for_field(&view_state::vs_word_wrap),
     json_path_handler("filtering").for_field(&view_state::vs_filtering),
@@ -1595,6 +1596,7 @@ save_session_with_id(const std::string& session_id)
 
                 for (int lpc = 0; lpc < LNV__MAX; lpc++) {
                     auto& tc = lnav_data.ld_views[lpc];
+                    auto* ta = dynamic_cast<text_anchors*>(tc.get_sub_source());
 
                     top_view_map.gen(lnav_view_strings[lpc]);
 
@@ -1614,6 +1616,15 @@ save_session_with_id(const std::string& session_id)
                     {
                         view_map.gen("focused_line");
                         view_map.gen((long long) tc.get_selection());
+
+                        if (ta != nullptr) {
+                            auto anchor_opt
+                                = ta->anchor_for_row(tc.get_selection());
+                            if (anchor_opt) {
+                                view_map.gen("anchor");
+                                view_map.gen(anchor_opt.value());
+                            }
+                        }
                     }
 
                     view_map.gen("search");
@@ -1836,6 +1847,7 @@ lnav::session::restore_view_states()
     for (size_t view_index = 0; view_index < LNV__MAX; view_index++) {
         const auto& vs = session_data.sd_view_states[view_index];
         auto& tview = lnav_data.ld_views[view_index];
+        auto* ta = dynamic_cast<text_anchors*>(tview.get_sub_source());
         bool has_loc = false;
 
         if (view_index == LNV_TEXT) {
@@ -1878,27 +1890,9 @@ lnav::session::restore_view_states()
                 if (row_opt) {
                     log_info("setting LOG view to desired loc: %s",
                              anchor.c_str());
-                    lnav_data.ld_views[LNV_LOG].set_selection(row_opt.value());
+                    tview.set_selection(row_opt.value());
                 }
             }
-        }
-
-        if (!has_loc && vs.vs_top >= 0
-            && (view_index == LNV_LOG || tview.get_top() == 0_vl
-                || tview.get_top() == tview.get_top_for_last_row()))
-        {
-            log_info("restoring %s view top: %d",
-                     lnav_view_strings[view_index],
-                     vs.vs_top);
-            lnav_data.ld_views[view_index].set_top(vis_line_t(vs.vs_top), true);
-            lnav_data.ld_views[view_index].set_selection(-1_vl);
-        }
-        if (!has_loc && vs.vs_selection) {
-            log_info("restoring %s view selection: %d",
-                     lnav_view_strings[view_index],
-                     vs.vs_selection.value());
-            lnav_data.ld_views[view_index].set_selection(
-                vis_line_t(vs.vs_selection.value()));
         }
 
         if (!vs.vs_search.empty()) {
@@ -1934,6 +1928,42 @@ lnav::session::restore_view_states()
                 };
             }
         }
+
+        if (!has_loc && vs.vs_top >= 0
+            && (view_index == LNV_LOG || tview.get_top() == 0_vl
+                || tview.get_top() == tview.get_top_for_last_row()))
+        {
+            log_info("restoring %s view top: %d",
+                     lnav_view_strings[view_index],
+                     vs.vs_top);
+            tview.set_top(vis_line_t(vs.vs_top), true);
+            tview.set_selection(-1_vl);
+        }
+        if (!has_loc && vs.vs_selection) {
+            log_info("restoring %s view selection: %d",
+                     lnav_view_strings[view_index],
+                     vs.vs_selection.value());
+            tview.set_selection(vis_line_t(vs.vs_selection.value()));
+        }
+        if (ta != nullptr && vs.vs_anchor && !vs.vs_anchor->empty()) {
+            auto curr_anchor = ta->anchor_for_row(tview.get_selection());
+
+            if (!curr_anchor || curr_anchor.value() != vs.vs_anchor.value()) {
+                log_info("%s view anchor mismatch %s != %s",
+                         lnav_view_strings[view_index],
+                         curr_anchor.value_or("").c_str(),
+                         vs.vs_anchor.value().c_str());
+
+                auto row_opt = ta->row_for_anchor(vs.vs_anchor.value());
+                if (row_opt) {
+                    tview.set_selection(row_opt.value());
+                }
+            }
+        }
+        log_info("%s view actual top/selection: %d/%d",
+                 lnav_view_strings[view_index],
+                 tview.get_top(),
+                 tview.get_selection());
     }
 }
 

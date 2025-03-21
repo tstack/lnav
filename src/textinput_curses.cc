@@ -258,34 +258,25 @@ textinput_curses::textinput_curses()
 }
 
 void
-textinput_curses::set_content(const attr_line_t& al)
+textinput_curses::content_to_lines(std::string content, int x)
 {
-    auto al_copy = al;
+    auto al = attr_line_t(content);
 
     if (!this->tc_prefix.empty()) {
-        al_copy.insert(0, this->tc_prefix);
+        al.insert(0, this->tc_prefix);
+        x += this->tc_prefix.length();
     }
-    highlight_syntax(this->tc_text_format, al_copy, this->tc_prefix.length());
+    highlight_syntax(this->tc_text_format, al, x);
     if (!this->tc_prefix.empty()) {
         // XXX yuck
-        al_copy.erase(0, this->tc_prefix.al_string.size());
+        al.erase(0, this->tc_prefix.al_string.size());
     }
-    this->tc_doc_meta = lnav::document::discover(al_copy)
+    this->tc_doc_meta = lnav::document::discover(al)
                             .with_text_format(this->tc_text_format)
                             .save_words()
                             .perform();
-    lnav::document::hier_node::depth_first(
-        this->tc_doc_meta.m_sections_root.get(),
-        [this](lnav::document::hier_node* hn) {
-            log_debug("hier_node: %p %s",
-                      hn,
-                      fmt::format(FMT_STRING("{}"),
-                                  this->tc_doc_meta.path_for_range(
-                                      hn->hn_start, hn->hn_start))
-                          .c_str());
-        });
-    this->tc_lines = al_copy.split_lines();
-    if (endswith(al_copy.al_string, "\n")) {
+    this->tc_lines = al.split_lines();
+    if (endswith(al.al_string, "\n")) {
         this->tc_lines.emplace_back();
     }
     if (this->tc_lines.empty()) {
@@ -293,6 +284,13 @@ textinput_curses::set_content(const attr_line_t& al)
     } else {
         this->apply_highlights();
     }
+}
+
+void
+textinput_curses::set_content(std::string content)
+{
+    this->content_to_lines(std::move(content), this->tc_prefix.length());
+
     this->tc_change_log.clear();
     this->tc_marks.clear();
     this->tc_notice = std::nullopt;
@@ -1601,6 +1599,10 @@ textinput_curses::replace_selection_no_change(string_fragment sf)
 
     this->tc_drag_selection = std::nullopt;
     if (retval == sf) {
+        if (!sf.empty()) {
+            this->content_to_lines(this->get_content(),
+                                   this->get_cursor_offset());
+        }
     } else {
         this->update_lines();
     }
@@ -1713,31 +1715,8 @@ textinput_curses::move_cursor_to(input_point ip)
 void
 textinput_curses::update_lines()
 {
-    auto content = attr_line_t(this->get_content());
-    auto x = this->get_cursor_offset();
-
-    if (!this->tc_prefix.empty()) {
-        content.insert(0, this->tc_prefix);
-        x += this->tc_prefix.length();
-    }
-    highlight_syntax(this->tc_text_format, content, x);
-    if (!this->tc_prefix.empty()) {
-        // XXX yuck
-        content.erase(0, this->tc_prefix.al_string.size());
-    }
-    this->tc_doc_meta = lnav::document::discover(content)
-                            .with_text_format(this->tc_text_format)
-                            .save_words()
-                            .perform();
-    this->tc_lines = content.split_lines();
-    if (endswith(content.al_string, "\n")) {
-        this->tc_lines.emplace_back();
-    }
-    if (this->tc_lines.empty()) {
-        this->tc_lines.emplace_back();
-    } else {
-        this->apply_highlights();
-    }
+    const auto x = this->get_cursor_offset();
+    this->content_to_lines(this->get_content(), x);
     this->ensure_cursor_visible();
 
     this->tc_marks.clear();
