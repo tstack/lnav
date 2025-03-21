@@ -3628,6 +3628,7 @@ sql_prompt(std::vector<std::string>& args)
     fos->fos_contexts.top().c_show = true;
     tc->set_sync_selection_and_top(true);
     tc->reload_data();
+    tc->set_overlay_selection(3_vl);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press "
         ANSI_BOLD("CTRL+L") " for multi-line mode and "

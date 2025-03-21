@@ -778,11 +778,10 @@ layout_views()
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
-    auto bottom_min = std::min(2U + 3U, height);
-    auto bottom = clamped<int>::from(height, bottom_min, height);
-
     auto prompt_height = prompt.p_editor.vc_enabled ? prompt.p_editor.tc_height
                                                     : 1;
+    auto min_height = std::min(prompt_height + 1U + 10 + 2U, height);
+    auto bottom = clamped<int>::from(height, min_height, height);
 
     bottom -= prompt_height;
     prompt.p_editor.set_y(bottom);
@@ -791,9 +790,7 @@ layout_views()
 
     breadcrumb_view->set_width(width);
 
-    bool vis;
-
-    vis = bottom.try_consume(um_height);
+    auto vis = bottom.try_consume(um_height);
     lnav_data.ld_user_message_view.set_y(bottom);
     lnav_data.ld_user_message_view.set_visible(vis);
 

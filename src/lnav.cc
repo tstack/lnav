@@ -1850,12 +1850,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_view_stack.set_needs_update();
         }
         ncplane_resize_maximize(sc.get_std_plane());
-        if (lnav_data.ld_view_stack.do_update()) {
-            breadcrumb_view->set_needs_update();
-        }
         if (prompt.p_editor.get_needs_update()) {
             lnav_data.ld_doc_view.set_needs_update();
             lnav_data.ld_example_view.set_needs_update();
+            lnav_data.ld_view_stack.set_needs_update();
+        }
+        if (lnav_data.ld_view_stack.do_update()) {
+            breadcrumb_view->set_needs_update();
         }
         lnav_data.ld_doc_view.do_update();
         lnav_data.ld_example_view.do_update();
