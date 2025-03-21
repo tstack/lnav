@@ -803,15 +803,44 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     // Check the previous stat against the last to see if things are wonky.
     if (this->lf_named_file && (is_truncated || is_user_provided_and_rewritten))
     {
-        log_info("overwritten file detected, closing -- %s  new: %" PRId64
-                 "/%" PRId64 "  old: %" PRId64 "/%" PRId64,
-                 this->lf_filename.c_str(),
-                 st.st_size,
-                 st.st_mtime,
-                 this->lf_stat.st_size,
-                 this->lf_stat.st_mtime);
-        this->close();
-        return rebuild_result_t::NO_NEW_LINES;
+        auto is_overwritten = true;
+        if (this->lf_format != nullptr) {
+            const auto first_line = this->lf_index.begin();
+            auto read_res = this->read_line(first_line);
+            if (read_res.isOk()) {
+                auto sbr = read_res.unwrap();
+                if (first_line->has_ansi()) {
+                    sbr.erase_ansi();
+                }
+                auto curr_content_id
+                    = hasher().update(sbr.get_data(), sbr.length()).to_string();
+
+                log_info(
+                    "%s: overwrite content_id double check: old:%s; now:%s",
+                    this->lf_filename.c_str(),
+                    this->lf_content_id.c_str(),
+                    curr_content_id.c_str());
+                if (this->lf_content_id == curr_content_id) {
+                    is_overwritten = false;
+                }
+            } else {
+                auto errmsg = read_res.unwrapErr();
+                log_error("unable to read first line for overwrite check: %s",
+                          errmsg.c_str());
+            }
+        }
+
+        if (is_overwritten) {
+            log_info("overwritten file detected, closing -- %s  new: %" PRId64
+                     "/%" PRId64 "  old: %" PRId64 "/%" PRId64,
+                     this->lf_filename.c_str(),
+                     st.st_size,
+                     st.st_mtime,
+                     this->lf_stat.st_size,
+                     this->lf_stat.st_mtime);
+            this->close();
+            return rebuild_result_t::NO_NEW_LINES;
+        }
     }
 
     if (this->lf_text_format == text_format_t::TF_BINARY) {
@@ -1267,9 +1296,12 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 this->lf_index.reserve(this->lf_index.size() + est_rem);
             }
         }
-    } else if (this->lf_sort_needed) {
-        retval = rebuild_result_t::NEW_ORDER;
-        this->lf_sort_needed = false;
+    } else {
+        this->lf_stat = st;
+        if (this->lf_sort_needed) {
+            retval = rebuild_result_t::NEW_ORDER;
+            this->lf_sort_needed = false;
+        }
     }
 
     this->lf_index_time
