@@ -677,6 +677,55 @@ textinput_curses::move_cursor_to_prev_search_hit()
 }
 
 void
+textinput_curses::command_indent(indent_mode_t mode)
+{
+    log_debug("indenting line: %d", this->tc_cursor.y);
+    int indent_amount;
+    switch (mode) {
+        case indent_mode_t::left:
+        case indent_mode_t::clear_left:
+            indent_amount = 0;
+            break;
+        case indent_mode_t::right:
+            indent_amount = 4;
+            break;
+    }
+    auto line_sf = this->tc_lines[this->tc_cursor.y].to_string_fragment();
+    const auto [before, after]
+        = line_sf.split_when([](auto ch) { return !isspace(ch); });
+    auto indent_iter = std::lower_bound(this->tc_doc_meta.m_indents.begin(),
+                                        this->tc_doc_meta.m_indents.end(),
+                                        before.length());
+    if (indent_iter != this->tc_doc_meta.m_indents.end()) {
+        if (mode == indent_mode_t::left || mode == indent_mode_t::clear_left) {
+            if (indent_iter == this->tc_doc_meta.m_indents.begin()) {
+                indent_amount = 0;
+            } else {
+                indent_amount = *std::prev(indent_iter);
+            }
+        } else if (before.empty()) {
+            indent_amount = *indent_iter;
+        } else {
+            auto next_indent_iter = std::next(indent_iter);
+            if (next_indent_iter == this->tc_doc_meta.m_indents.end()) {
+                indent_amount += *indent_iter;
+            } else {
+                indent_amount = *next_indent_iter;
+            }
+        }
+    }
+    auto sel_len = (before.empty() && mode == indent_mode_t::clear_left)
+        ? line_sf.column_width()
+        : before.length();
+    this->tc_selection = selected_range::from_key(
+        this->tc_cursor.copy_with_x(0), this->tc_cursor.copy_with_x(sel_len));
+    auto indent = std::string(indent_amount, ' ');
+    auto old_cursor = this->tc_cursor;
+    this->replace_selection(indent);
+    this->tc_cursor.x = indent.length() - sel_len + old_cursor.x;
+}
+
+void
 textinput_curses::command_down(const ncinput& ch)
 {
     if (this->tc_popup.is_visible()) {
@@ -1130,10 +1179,15 @@ textinput_curses::handle_key(const ncinput& ch)
                                      .matches()
                                      .ignore_error();
                 if (match_opt) {
-                    indent.append(match_opt->f_all.data(),
-                                  match_opt->f_all.length());
-                    if (md[2] && md[2]->front() != ' ') {
-                        indent[1 + md[2]->sf_begin] = ' ';
+                    if (!al.empty() && match_opt->f_all.length() == al.length())
+                    {
+                        this->command_indent(indent_mode_t::clear_left);
+                    } else {
+                        indent.append(match_opt->f_all.data(),
+                                      match_opt->f_all.length());
+                        if (md[2] && md[2]->front() != ' ') {
+                            indent[1 + md[2]->sf_begin] = ' ';
+                        }
                     }
                 }
                 this->replace_selection(indent);
@@ -1163,45 +1217,9 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_on_completion_request(*this);
                 }
             } else if (!this->tc_selection) {
-                log_debug("indenting line");
-                auto indent_amount = 4;
-                auto line_sf
-                    = this->tc_lines[this->tc_cursor.y].to_string_fragment();
-                const auto [before, after]
-                    = line_sf.split_when([](auto ch) { return !isspace(ch); });
-                auto indent_iter
-                    = std::lower_bound(this->tc_doc_meta.m_indents.begin(),
-                                       this->tc_doc_meta.m_indents.end(),
-                                       before.length());
-                if (indent_iter != this->tc_doc_meta.m_indents.end()) {
-                    if (ncinput_shift_p(&ch)) {
-                        if (indent_iter == this->tc_doc_meta.m_indents.begin())
-                        {
-                            indent_amount = 0;
-                        } else {
-                            indent_amount = *std::prev(indent_iter);
-                        }
-                    } else if (before.empty()) {
-                        indent_amount = *indent_iter;
-                    } else {
-                        auto next_indent_iter = std::next(indent_iter);
-                        if (next_indent_iter
-                            == this->tc_doc_meta.m_indents.end())
-                        {
-                            indent_amount += *indent_iter;
-                        } else {
-                            indent_amount = *next_indent_iter;
-                        }
-                    }
-                }
-                this->tc_selection = selected_range::from_key(
-                    this->tc_cursor.copy_with_x(0),
-                    this->tc_cursor.copy_with_x(before.length()));
-                auto indent = std::string(indent_amount, ' ');
-                auto old_cursor = this->tc_cursor;
-                this->replace_selection(indent);
-                this->tc_cursor.x
-                    = indent.length() - before.length() + old_cursor.x;
+                this->command_indent(ncinput_shift_p(&ch)
+                                         ? indent_mode_t::left
+                                         : indent_mode_t::right);
             }
             return true;
         }

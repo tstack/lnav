@@ -6,6 +6,8 @@ Interface changes:
   - In the DB prompt: pressing `CTRL+L` will reformat the query and
     switch the prompt to multi-line mode; error locations will be
     highlighted.
+  - In multi-line mode, you can click and drag the status bar above
+    the prompt to resize the prompt.
   - Pressing `CTRL+O` in the prompt will transfer the prompt to
     contents to Visual Studio Code or the default text editor on
     macOS.
@@ -106,7 +108,7 @@ Bug Fixes:
 * The `:export-session-to` command will now include `:open` commands
   for log files that were piped in to lnav or executed with the `:sh`
   command.
-* The `:set-file-timezone` command was not working correctly in some 
+* The `:set-file-timezone` command was not working correctly in some
   cases.
 * The location of views should be restored from the session when filters
   are active.

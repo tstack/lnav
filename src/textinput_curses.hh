@@ -418,6 +418,14 @@ public:
 
     void command_up(const ncinput& ch);
 
+    enum class indent_mode_t {
+        right,
+        left,
+        clear_left,
+    };
+
+    void command_indent(indent_mode_t mode);
+
     void add_mark(input_point pos, const lnav::console::user_message& msg);
 
     enum class mode_t {

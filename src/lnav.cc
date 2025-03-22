@@ -1541,6 +1541,19 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         = injector::bind<top_status_source>::to_scoped_singleton();
     auto top_source = injector::get<std::shared_ptr<top_status_source>>();
 
+    lnav_data.ld_bottom_source.on_drag = [](mouse_event& me) {
+        static auto& prompt = lnav::prompt::get();
+
+        if (!prompt.p_editor.vc_enabled || prompt.p_editor.tc_height == 1) {
+            return;
+        }
+
+        auto full_height = (int) ncplane_dim_y(prompt.p_editor.tc_window);
+        auto max_height = full_height - 16;
+        auto new_height
+            = std::max(2, full_height - (prompt.p_editor.get_y() + me.me_y));
+        prompt.p_editor.set_height(std::min(max_height, new_height));
+    };
     lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
         .on_click
         = [](status_field&) { ensure_view(&lnav_data.ld_views[LNV_HELP]); };
@@ -1956,10 +1969,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         gettimeofday(&current_time, nullptr);
         ui_now = ui_clock::now();
-        if (lb.lb_last_view != nullptr) {
-            lb.lb_last_event.me_time = current_time;
-            lb.lb_last_view->handle_mouse(lb.lb_last_event);
-        }
+        lb.tick(current_time);
 
         got_user_input = false;
         if (rc < 0) {

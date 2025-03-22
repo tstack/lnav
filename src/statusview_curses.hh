@@ -158,6 +158,8 @@ public:
      * @return A reference to the field at the given index.
      */
     virtual status_field& statusview_value_for_field(int field) = 0;
+
+    std::function<void(mouse_event&)> on_drag;
 };
 
 /**

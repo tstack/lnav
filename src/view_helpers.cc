@@ -780,7 +780,7 @@ layout_views()
 
     auto prompt_height = prompt.p_editor.vc_enabled ? prompt.p_editor.tc_height
                                                     : 1;
-    auto min_height = std::min(prompt_height + 1U + 10 + 2U, height);
+    auto min_height = std::min(1U + 10 + 2U, height);
     auto bottom = clamped<int>::from(height, min_height, height);
 
     bottom -= prompt_height;
@@ -1679,6 +1679,7 @@ lnav_behavior::mouse_event(
         me.me_press_y = this->lb_last_event.me_press_y;
     }
 
+    this->lb_last_real_event = me;
     switch (me.me_state) {
         case mouse_button_state_t::BUTTON_STATE_PRESSED:
         case mouse_button_state_t::BUTTON_STATE_DOUBLE_CLICK: {
@@ -1747,4 +1748,21 @@ lnav_behavior::mouse_event(
     {
         this->lb_last_view = nullptr;
     }
+}
+
+void
+lnav_behavior::tick(const timeval& now)
+{
+    if (this->lb_last_view == nullptr
+        || this->lb_last_event.me_state
+            != mouse_button_state_t::BUTTON_STATE_DRAGGED)
+    {
+        return;
+    }
+
+    this->lb_last_event = this->lb_last_real_event;
+    this->lb_last_event.me_y -= this->lb_last_view->get_y();
+    this->lb_last_event.me_x -= this->lb_last_view->get_x();
+    this->lb_last_event.me_time = now;
+    this->lb_last_view->handle_mouse(this->lb_last_event);
 }
