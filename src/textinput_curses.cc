@@ -690,7 +690,8 @@ textinput_curses::command_indent(indent_mode_t mode)
             indent_amount = 4;
             break;
     }
-    auto line_sf = this->tc_lines[this->tc_cursor.y].to_string_fragment();
+    auto& al = this->tc_lines[this->tc_cursor.y];
+    auto line_sf = al.to_string_fragment();
     const auto [before, after]
         = line_sf.split_when([](auto ch) { return !isspace(ch); });
     auto indent_iter = std::lower_bound(this->tc_doc_meta.m_indents.begin(),
@@ -794,7 +795,7 @@ bool
 textinput_curses::handle_key(const ncinput& ch)
 {
     static const auto PREFIX_RE = lnav::pcre2pp::code::from_const(
-        R"(^\s*((?:-|\*|1\.|>)\s+(?:\[( |x|X)\]\s+)?)?)");
+        R"(^\s*((?:-|\*|1\.|>)(?:\s+\[( |x|X)\])?\s*)?)");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (this->tc_notice) {
@@ -1168,18 +1169,28 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_on_perform(*this);
                 }
             } else {
+                const auto& al = this->tc_lines[this->tc_cursor.y];
                 if (!this->tc_selection) {
-                    this->tc_selection
-                        = selected_range::from_point(this->tc_cursor);
+                    auto al_sf = al.to_string_fragment();
+                    auto prefix_sf = al_sf.rtrim(" ");
+                    this->tc_selection = selected_range::from_key(
+                        this->tc_cursor.copy_with_x(prefix_sf.column_width()),
+                        this->tc_cursor.copy_with_x(al_sf.column_width()));
                 }
                 auto indent = std::string("\n");
-                const auto& al = this->tc_lines[this->tc_cursor.y];
                 auto match_opt = PREFIX_RE.capture_from(al.to_string_fragment())
                                      .into(md)
                                      .matches()
                                      .ignore_error();
                 if (match_opt) {
-                    if (!al.empty() && match_opt->f_all.length() == al.length())
+                    auto is_comment = al.al_attrs
+                        | lnav::itertools::find_if([](const string_attr& sa) {
+                                          return (sa.sa_type == &VC_ROLE)
+                                              && sa.sa_value.get<role_t>()
+                                              == role_t::VCR_COMMENT;
+                                      });
+                    if (!is_comment && !al.empty()
+                        && match_opt->f_all.length() == al.length())
                     {
                         this->command_indent(indent_mode_t::clear_left);
                     } else {
@@ -1255,8 +1266,8 @@ textinput_curses::handle_key(const ncinput& ch)
             if (this->tc_lines.size() == 1 && this->tc_lines.front().empty()) {
                 this->abort();
             } else if (!this->tc_selection) {
-                auto line_sf
-                    = this->tc_lines[this->tc_cursor.y].to_string_fragment();
+                const auto& al = this->tc_lines[this->tc_cursor.y];
+                auto line_sf = al.to_string_fragment();
                 const auto [before, after]
                     = line_sf
                           .split_n(
@@ -1270,7 +1281,13 @@ textinput_curses::handle_key(const ncinput& ch)
                 if (match_opt && !match_opt->f_all.empty()
                     && match_opt->f_all.sf_end == this->tc_cursor.x)
                 {
-                    if (md[1]) {
+                    auto is_comment = al.al_attrs
+                        | lnav::itertools::find_if([](const string_attr& sa) {
+                                          return (sa.sa_type == &VC_ROLE)
+                                              && sa.sa_value.get<role_t>()
+                                              == role_t::VCR_COMMENT;
+                                      });
+                    if (!is_comment && md[1]) {
                         this->tc_selection = selected_range::from_key(
                             this->tc_cursor.copy_with_x(md[1]->sf_begin),
                             this->tc_cursor);
