@@ -233,6 +233,8 @@ line_buffer::gz_indexed::open(int fd, lnav::gzip::header& hd)
                     break;
                 case 1:
                     hd.h_mtime.tv_sec = gz_hd.time;
+                    name[sizeof(name) - 1] = '\0';
+                    comment[sizeof(comment) - 1] = '\0';
                     hd.h_name = std::string((char*) name);
                     hd.h_comment = std::string((char*) comment);
                     log_info(
