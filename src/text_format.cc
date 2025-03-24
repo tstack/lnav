@@ -41,29 +41,26 @@
 #include "pcrepp/pcre2pp.hh"
 #include "yajl/api/yajl_parse.h"
 
-constexpr string_fragment
-    TEXT_FORMAT_STRINGS[lnav::enums::to_underlying(text_format_t::TF_UNKNOWN)
-                        + 1]
-    = {
-        "application/octet-stream"_frag,
-        "text/c"_frag,
-        "text/java"_frag,
-        "application/json"_frag,
-        "text/log"_frag,
-        "text/x-makefile"_frag,
-        "text/man"_frag,
-        "text/markdown"_frag,
-        "text/python"_frag,
-        "application/x-pcre"_frag,
-        "text/rust"_frag,
-        "application/sql"_frag,
-        "text/xml"_frag,
-        "application/yaml"_frag,
-        "application/toml"_frag,
-        "text/x-diff"_frag,
-        "text/x-shellscript"_frag,
-        "text/x-lnav-script"_frag,
-        "text/plain"_frag,
+constexpr string_fragment TEXT_FORMAT_STRINGS[text_format_count] = {
+    "application/octet-stream"_frag,
+    "text/c"_frag,
+    "text/java"_frag,
+    "application/json"_frag,
+    "text/log"_frag,
+    "text/x-makefile"_frag,
+    "text/man"_frag,
+    "text/markdown"_frag,
+    "text/python"_frag,
+    "application/x-pcre"_frag,
+    "text/rust"_frag,
+    "application/sql"_frag,
+    "text/xml"_frag,
+    "application/yaml"_frag,
+    "application/toml"_frag,
+    "text/x-diff"_frag,
+    "text/x-shellscript"_frag,
+    "text/x-lnav-script"_frag,
+    "text/plain"_frag,
 };
 
 text_format_t

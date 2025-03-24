@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,30 +27,37 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "string_attr_type.hh"
+#ifndef lnav_script_parser_hh
+#define lnav_script_parser_hh
 
-#include "config.h"
+#include <optional>
+#include <string>
 
-constexpr string_attr_type<void> SA_ORIGINAL_LINE("original_line");
-constexpr string_attr_type<void> SA_BODY("body");
-constexpr string_attr_type<ui_icon_t> SA_HIDDEN("hidden");
-constexpr string_attr_type<void> SA_REPLACED("replaced");
-constexpr string_attr_type<intern_string_t> SA_FORMAT("format");
-constexpr string_attr_type<void> SA_REMOVED("removed");
-constexpr string_attr_type<void> SA_PREFORMATTED("preformatted");
-constexpr string_attr_type<std::string> SA_INVALID("invalid");
-constexpr string_attr_type<std::string> SA_ERROR("error");
-constexpr string_attr_type<int64_t> SA_LEVEL("level");
-constexpr string_attr_type<int64_t> SA_ORIGIN_OFFSET("origin-offset");
-constexpr string_attr_type<text_format_t> SA_QUOTED_TEXT("quoted-text");
+#include "base/intern_string.hh"
+#include "base/lnav.console.hh"
+#include "base/result.h"
 
-constexpr string_attr_type<role_t> VC_ROLE("role");
-constexpr string_attr_type<role_t> VC_ROLE_FG("role-fg");
-constexpr string_attr_type<text_attrs> VC_STYLE("style");
-constexpr string_attr_type<const char *> VC_GRAPHIC("graphic");
-constexpr string_attr_type<block_elem_t> VC_BLOCK_ELEM("block-elem");
-constexpr string_attr_type<styling::color_unit> VC_FOREGROUND("foreground");
-constexpr string_attr_type<styling::color_unit> VC_BACKGROUND("background");
-constexpr string_attr_type<std::string> VC_HYPERLINK("hyperlink");
-constexpr string_attr_type<ui_icon_t> VC_ICON("icon");
-constexpr string_attr_type<ui_command> VC_COMMAND("command");
+namespace lnav::script {
+
+struct parser {
+    std::string p_source;
+    std::optional<std::string> p_cmdline;
+    int p_line_number{0};
+    int p_starting_line_number{0};
+
+    explicit parser(std::string src) : p_source(std::move(src)) {}
+
+    virtual ~parser() = default;
+
+    Result<void, lnav::console::user_message> push_back(string_fragment line);
+
+    Result<void, lnav::console::user_message> final();
+
+    virtual Result<void, lnav::console::user_message> handle_command(
+        const std::string& cmd)
+        = 0;
+};
+
+}  // namespace lnav::script
+
+#endif

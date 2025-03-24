@@ -1479,7 +1479,7 @@ public:
                             common_iter = emp_res.first;
                         }
                         fd.fd_root_meta = &common_iter->second;
-                    } else if (sf == "date" || sf == "time") {
+                    } else if (sf.is_one_of("date", "time")) {
                         this->wlf_field_defs.emplace_back(
                             intern_string::lookup(sf));
                         auto& fd = this->wlf_field_defs.back();
@@ -1893,7 +1893,7 @@ struct logfmt_pair_handler {
 
     bool process_value(const string_fragment& value_frag)
     {
-        if (this->lph_key_frag == "time" || this->lph_key_frag == "ts") {
+        if (this->lph_key_frag.is_one_of("time", "ts")) {
             if (!this->lph_dt_scanner.scan(value_frag.data(),
                                            value_frag.length(),
                                            nullptr,
@@ -2114,7 +2114,7 @@ public:
                     auto value_lr
                         = line_range{value_frag.sf_begin, value_frag.sf_end};
 
-                    if (kvp.first == "time" || kvp.first == "ts") {
+                    if (kvp.first.is_one_of("time", "ts")) {
                         sa.emplace_back(value_lr, L_TIMESTAMP.value());
                     } else if (kvp.first == "level") {
                         sa.emplace_back(value_lr, L_LEVEL.value());

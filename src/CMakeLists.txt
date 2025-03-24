@@ -489,6 +489,7 @@ add_library(
         lnav.indexing.cc
         lnav.management_cli.cc
         lnav.prompt.cc
+        lnav.script.parser.cc
         lnav_commands.cc
         lnav_config.cc
         lnav_util.cc
@@ -616,6 +617,8 @@ add_library(
         lnav.events.hh
         lnav.indexing.hh
         lnav.management_cli.hh
+        lnav.prompt.hh
+        lnav.script.parser.hh
         lnav_config.hh
         lnav_config_fwd.hh
         lnav_util.hh

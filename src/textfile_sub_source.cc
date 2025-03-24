@@ -968,7 +968,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                              read_file_res.rfr_content.size());
                     md2attr_line mdal;
 
-                    mdal.with_source_path(lf->get_actual_path());
+                    mdal.add_lnav_script_icons().with_source_path(
+                        lf->get_actual_path());
                     auto parse_res = md4cpp::parse(content_sf, mdal);
 
                     iter->fvs_mtime = st.st_mtime;
@@ -1046,8 +1047,10 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         iter->fvs_text_source->register_view(this->tss_view);
                         iter->fvs_text_source->replace_with(pretty_al);
                     } else {
-                        log_error("unable to read file to pretty-print: %s -- file is not valid UTF-8",
-                                  lf->get_path_for_key().c_str());
+                        log_error(
+                            "unable to read file to pretty-print: %s -- file "
+                            "is not valid UTF-8",
+                            lf->get_path_for_key().c_str());
                         iter->fvs_mtime = st.st_mtime;
                         iter->fvs_file_indexed_size = lf->get_index_size();
                         iter->fvs_file_size = st.st_size;

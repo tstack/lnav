@@ -795,7 +795,7 @@ bool
 textinput_curses::handle_key(const ncinput& ch)
 {
     static const auto PREFIX_RE = lnav::pcre2pp::code::from_const(
-        R"(^\s*((?:-|\*|1\.|>)(?:\s+\[( |x|X)\])?\s*)?)");
+        R"(^\s*((?:-|\*|1\.|>)(?:\s+\[( |x|X)\])?\s*))");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (this->tc_notice) {
@@ -1170,35 +1170,45 @@ textinput_curses::handle_key(const ncinput& ch)
                 }
             } else {
                 const auto& al = this->tc_lines[this->tc_cursor.y];
-                if (!this->tc_selection) {
-                    auto al_sf = al.to_string_fragment();
-                    auto prefix_sf = al_sf.rtrim(" ");
-                    this->tc_selection = selected_range::from_key(
-                        this->tc_cursor.copy_with_x(prefix_sf.column_width()),
-                        this->tc_cursor.copy_with_x(al_sf.column_width()));
-                }
+                auto al_sf = al.to_string_fragment();
+                auto prefix_sf = al_sf.rtrim(" ");
                 auto indent = std::string("\n");
-                auto match_opt = PREFIX_RE.capture_from(al.to_string_fragment())
-                                     .into(md)
-                                     .matches()
-                                     .ignore_error();
-                if (match_opt) {
-                    auto is_comment = al.al_attrs
-                        | lnav::itertools::find_if([](const string_attr& sa) {
-                                          return (sa.sa_type == &VC_ROLE)
-                                              && sa.sa_value.get<role_t>()
-                                              == role_t::VCR_COMMENT;
-                                      });
-                    if (!is_comment && !al.empty()
-                        && match_opt->f_all.length() == al.length())
-                    {
-                        this->command_indent(indent_mode_t::clear_left);
-                    } else {
-                        indent.append(match_opt->f_all.data(),
-                                      match_opt->f_all.length());
-                        if (md[2] && md[2]->front() != ' ') {
-                            indent[1 + md[2]->sf_begin] = ' ';
+                if (!this->tc_selection) {
+                    log_debug("checking for prefix");
+                    auto match_opt = PREFIX_RE.capture_from(al_sf)
+                                         .into(md)
+                                         .matches()
+                                         .ignore_error();
+                    if (match_opt) {
+                        this->tc_selection = selected_range::from_key(
+                            this->tc_cursor.copy_with_x(
+                                prefix_sf.column_width()),
+                            this->tc_cursor.copy_with_x(al_sf.column_width()));
+                        auto is_comment
+                            = al.al_attrs
+                            | lnav::itertools::find_if(
+                                  [](const string_attr& sa) {
+                                      return (sa.sa_type == &VC_ROLE)
+                                          && sa.sa_value.get<role_t>()
+                                          == role_t::VCR_COMMENT;
+                                  });
+                        if (!is_comment && !al.empty()
+                            && match_opt->f_all.length() == al.length())
+                        {
+                            this->command_indent(indent_mode_t::clear_left);
+                        } else {
+                            indent.append(match_opt->f_all.data(),
+                                          match_opt->f_all.length());
+                            if (md[2] && md[2]->front() != ' ') {
+                                indent[1 + md[2]->sf_begin] = ' ';
+                            }
                         }
+                    } else {
+                        this->tc_selection
+                            = selected_range::from_point(this->tc_cursor);
+                        log_debug("no prefix, replace point: [%d:%d]",
+                                  this->tc_selection->sr_start.x,
+                                  this->tc_selection->sr_start.y);
                     }
                 }
                 this->replace_selection(indent);
@@ -1279,8 +1289,7 @@ textinput_curses::handle_key(const ncinput& ch)
                                      .ignore_error();
 
                 if (match_opt && !match_opt->f_all.empty()
-                    && match_opt->f_all.sf_end == this->tc_cursor.x)
-                {
+                    && match_opt->f_all.sf_end == this->tc_cursor.x) {
                     auto is_comment = al.al_attrs
                         | lnav::itertools::find_if([](const string_attr& sa) {
                                           return (sa.sa_type == &VC_ROLE)
@@ -1296,6 +1305,7 @@ textinput_curses::handle_key(const ncinput& ch)
                         this->replace_selection(indent);
                         return true;
                     }
+                } else {
                     auto indent_iter
                         = std::lower_bound(this->tc_doc_meta.m_indents.begin(),
                                            this->tc_doc_meta.m_indents.end(),

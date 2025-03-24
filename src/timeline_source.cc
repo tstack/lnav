@@ -1100,7 +1100,6 @@ void
 timeline_source::text_crumbs_for_line(int line,
                                       std::vector<breadcrumb::crumb>& crumbs)
 {
-    static intern_string_t SRC = intern_string::lookup("crumb");
     text_sub_source::text_crumbs_for_line(line, crumbs);
 
     if (line >= this->gs_time_order.size()) {
@@ -1118,8 +1117,7 @@ timeline_source::text_crumbs_for_line(int line,
                             auto cmd
                                 = fmt::format(FMT_STRING(":goto {}"),
                                               ts.template get<std::string>());
-                            auto src_guard = ec->enter_source(SRC, 1, cmd);
-                            ec->execute(cmd);
+                            ec->execute(INTERNAL_SRC_LOC, cmd);
                         });
     crumbs.back().c_expected_input
         = breadcrumb::crumb::expected_input_t::anything;

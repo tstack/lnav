@@ -280,7 +280,7 @@ private:
     role_attrs vc_role_attrs[lnav::enums::to_underlying(role_t::VCR__MAX)];
     styling::color_unit vc_ansi_to_theme[8];
     short vc_highlight_colors[HI_COLOR_COUNT];
-    block_elem_t vc_icons[lnav::enums::to_underlying(ui_icon_t::log_level_fatal) + 1];
+    block_elem_t vc_icons[ui_icon_count];
 };
 
 enum class mouse_button_t {

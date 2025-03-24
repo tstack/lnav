@@ -153,7 +153,9 @@ to_json(yajlpp_gen& gen, const attr_line_t& al)
                     [&](const string_fragment& sf) { elem_map.gen(sf); },
                     [&](const block_elem_t& be) { elem_map.gen(""); },
                     [&](const styling::color_unit& rgb) { elem_map.gen(""); },
-                    [&](const ui_icon_t& ic) { elem_map.gen(""); });
+                    [&](const ui_icon_t& ic) { elem_map.gen(""); },
+                    [&](const ui_command& uc) { elem_map.gen(""); },
+                    [&](const text_format_t tf) { elem_map.gen(""); });
             }
         }
     }

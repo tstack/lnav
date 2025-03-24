@@ -46,6 +46,8 @@ Features:
   mode and does syntax highlighting for Markdown directives in the
   comment.
   The rendered Markdown will also now be shown in the preview panel.
+* lnav code blocks in Markdown content now have a play button (▶)
+  next to commands that you can click on to run the command.
 * Scrolling right in the LOG view when at the start of a message
   can hide the timestamp/level fields in the message and insert a
   shorter timestamp column on the left side.

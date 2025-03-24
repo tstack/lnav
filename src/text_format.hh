@@ -39,33 +39,10 @@
 
 #include "base/enum_util.hh"
 #include "base/intern_string.hh"
+#include "base/text_format_enum.hh"
 #include "fmt/format.h"
 
-enum class text_format_t : uint8_t {
-    TF_BINARY,
-    TF_C_LIKE,
-    TF_JAVA,
-    TF_JSON,
-    TF_LOG,
-    TF_MAKEFILE,
-    TF_MAN,
-    TF_MARKDOWN,
-    TF_PYTHON,
-    TF_PCRE,
-    TF_RUST,
-    TF_SQL,
-    TF_XML,
-    TF_YAML,
-    TF_TOML,
-    TF_DIFF,
-    TF_SHELL_SCRIPT,
-    TF_LNAV_SCRIPT,
-    TF_UNKNOWN,
-};
-
-extern const string_fragment
-    TEXT_FORMAT_STRINGS[lnav::enums::to_underlying(text_format_t::TF_UNKNOWN)
-                        + 1];
+extern const string_fragment TEXT_FORMAT_STRINGS[text_format_count];
 
 template<>
 struct fmt::formatter<text_format_t> : formatter<string_view> {

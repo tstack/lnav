@@ -727,6 +727,9 @@ textview_curses::handle_mouse(mouse_event& me)
                         };
                     }
                 }
+                if (this->tc_on_click) {
+                    this->tc_on_click(*this, al, cursor_sf.sf_begin);
+                }
             }
             if (mouse_line.is<overlay_content>()) {
                 const auto& oc = mouse_line.get<overlay_content>();
@@ -758,6 +761,9 @@ textview_curses::handle_mouse(mouse_event& me)
                             this->set_selection(row_opt.value());
                         }
                     }
+                }
+                if (this->tc_on_click) {
+                    this->tc_on_click(*this, al, cursor_sf.sf_begin);
                 }
             }
             if (this->tc_delegate != nullptr) {

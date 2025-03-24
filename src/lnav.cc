@@ -1451,6 +1451,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
         }
     };
+    auto click_handler = [](textview_curses& tc, const attr_line_t& al, int x) {
+        auto cmd_iter
+            = find_string_attr_containing(al.get_attrs(), &VC_COMMAND, x);
+        if (cmd_iter != al.al_attrs.end()) {
+            auto cmd = cmd_iter->sa_value.get<ui_command>();
+            lnav_data.ld_exec_context.execute(cmd.uc_location, cmd.uc_command);
+        }
+    };
     for (auto lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
         lnav_data.ld_views[lpc].set_y(2);
@@ -1461,6 +1469,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_data.ld_views[lpc].tc_disabled_cursor_role
             = role_t::VCR_DISABLED_CURSOR_LINE;
         lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
+        lnav_data.ld_views[lpc].tc_on_click = click_handler;
     }
     lnav_data.ld_views[LNV_DB].set_supports_marks(true);
     lnav_data.ld_views[LNV_HELP].set_supports_marks(true);

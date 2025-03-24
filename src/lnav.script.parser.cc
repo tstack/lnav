@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2020, Timothy Stack
+ * Copyright (c) 2025, Timothy Stack
  *
  * All rights reserved.
  *
@@ -27,30 +27,58 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "string_attr_type.hh"
+#include "lnav.script.parser.hh"
 
-#include "config.h"
+namespace lnav::script {
 
-constexpr string_attr_type<void> SA_ORIGINAL_LINE("original_line");
-constexpr string_attr_type<void> SA_BODY("body");
-constexpr string_attr_type<ui_icon_t> SA_HIDDEN("hidden");
-constexpr string_attr_type<void> SA_REPLACED("replaced");
-constexpr string_attr_type<intern_string_t> SA_FORMAT("format");
-constexpr string_attr_type<void> SA_REMOVED("removed");
-constexpr string_attr_type<void> SA_PREFORMATTED("preformatted");
-constexpr string_attr_type<std::string> SA_INVALID("invalid");
-constexpr string_attr_type<std::string> SA_ERROR("error");
-constexpr string_attr_type<int64_t> SA_LEVEL("level");
-constexpr string_attr_type<int64_t> SA_ORIGIN_OFFSET("origin-offset");
-constexpr string_attr_type<text_format_t> SA_QUOTED_TEXT("quoted-text");
+Result<void, lnav::console::user_message>
+parser::push_back(string_fragment line)
+{
+    this->p_line_number += 1;
 
-constexpr string_attr_type<role_t> VC_ROLE("role");
-constexpr string_attr_type<role_t> VC_ROLE_FG("role-fg");
-constexpr string_attr_type<text_attrs> VC_STYLE("style");
-constexpr string_attr_type<const char *> VC_GRAPHIC("graphic");
-constexpr string_attr_type<block_elem_t> VC_BLOCK_ELEM("block-elem");
-constexpr string_attr_type<styling::color_unit> VC_FOREGROUND("foreground");
-constexpr string_attr_type<styling::color_unit> VC_BACKGROUND("background");
-constexpr string_attr_type<std::string> VC_HYPERLINK("hyperlink");
-constexpr string_attr_type<ui_icon_t> VC_ICON("icon");
-constexpr string_attr_type<ui_command> VC_COMMAND("command");
+    if (line.trim().empty()) {
+        if (this->p_cmdline) {
+            this->p_cmdline = this->p_cmdline.value() + "\n";
+        }
+        return Ok();
+    }
+    if (line[0] == '#') {
+        return Ok();
+    }
+
+    switch (line[0]) {
+        case ':':
+        case '/':
+        case ';':
+        case '|':
+            if (this->p_cmdline) {
+                TRY(this->handle_command(trim(this->p_cmdline.value())));
+            }
+
+            this->p_starting_line_number = this->p_line_number;
+            this->p_cmdline = line.to_string();
+            break;
+        default:
+            if (this->p_cmdline) {
+                this->p_cmdline = fmt::format(
+                    FMT_STRING("{}{}"), this->p_cmdline.value(), line);
+            } else {
+                TRY(this->handle_command(fmt::format(FMT_STRING(":{}"), line)));
+            }
+            break;
+    }
+
+    return Ok();
+}
+
+Result<void, lnav::console::user_message>
+parser::final()
+{
+    if (this->p_cmdline) {
+        TRY(this->handle_command(trim(this->p_cmdline.value())));
+    }
+
+    return Ok();
+}
+
+}  // namespace lnav::script

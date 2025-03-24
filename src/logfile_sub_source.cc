@@ -796,11 +796,11 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
                     FMT_STRING(
                         "filter expression evaluation failed with -- {}"),
                     eval_res.unwrapErr().to_attr_line().get_string());
+                auto cu = styling::color_unit::from_palette(palette_color{
+                    lnav::enums::to_underlying(ansi_color::yellow)});
                 value_out.emplace_back(line_range{0, -1}, SA_ERROR.value(msg));
-                value_out.emplace_back(
-                    line_range{0, 1},
-                    VC_BACKGROUND.value(palette_color{
-                        lnav::enums::to_underlying(ansi_color::yellow)}));
+                value_out.emplace_back(line_range{0, 1},
+                                       VC_BACKGROUND.value(cu));
             }
         }
     }
@@ -1592,13 +1592,9 @@ logfile_sub_source::list_input_handle_key(listview_curses& lv,
                             break;
                     }
                     if (!cmd.empty()) {
-                        static intern_string_t SRC
-                            = intern_string::lookup("hotkey");
-                        auto src_guard
-                            = this->lss_exec_context->enter_source(SRC, 1, cmd);
                         this->lss_exec_context
                             ->with_provenance(exec_context::mouse_input{})
-                            ->execute(cmd);
+                            ->execute(INTERNAL_SRC_LOC, cmd);
                     }
                 }
                 return true;
@@ -2706,7 +2702,6 @@ void
 logfile_sub_source::text_crumbs_for_line(int line,
                                          std::vector<breadcrumb::crumb>& crumbs)
 {
-    static const intern_string_t SRC = intern_string::lookup("__crumb");
     text_sub_source::text_crumbs_for_line(line, crumbs);
 
     if (this->lss_filtered_index.empty()) {
@@ -2747,8 +2742,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
             [ec = this->lss_exec_context](const auto& part) {
                 auto cmd = fmt::format(FMT_STRING(":goto {}"),
                                        part.template get<std::string>());
-                auto src_guard = ec->enter_source(SRC, 1, cmd);
-                ec->execute(cmd);
+                ec->execute(INTERNAL_SRC_LOC, cmd);
             });
     }
 
@@ -2769,8 +2763,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                             auto cmd
                                 = fmt::format(FMT_STRING(":goto {}"),
                                               ts.template get<std::string>());
-                            auto src_guard = ec->enter_source(SRC, 1, cmd);
-                            ec->execute(cmd);
+                            ec->execute(INTERNAL_SRC_LOC, cmd);
                         });
     crumbs.back().c_expected_input
         = breadcrumb::crumb::expected_input_t::anything;
@@ -2806,8 +2799,8 @@ logfile_sub_source::text_crumbs_for_line(int line,
      WHERE name = 'log'
 )";
 
-            auto src_guard = ec->enter_source(SRC, 1, MOVE_STMT);
             ec->execute_with(
+                INTERNAL_SRC_LOC,
                 MOVE_STMT,
                 std::make_pair("format_name",
                                format_name.template get<std::string>()));
@@ -2841,8 +2834,8 @@ logfile_sub_source::text_crumbs_for_line(int line,
      WHERE name = 'log'
 )";
 
-            auto src_guard = ec->enter_source(SRC, 1, MOVE_STMT);
             ec->execute_with(
+                INTERNAL_SRC_LOC,
                 MOVE_STMT,
                 std::make_pair("uniq_path",
                                uniq_path.template get<std::string>()));
@@ -2903,8 +2896,8 @@ logfile_sub_source::text_crumbs_for_line(int line,
                 return retval;
             },
             [ec = this->lss_exec_context](const auto& opid) {
-                auto src_guard = ec->enter_source(SRC, 1, MOVE_STMT);
                 ec->execute_with(
+                    INTERNAL_SRC_LOC,
                     MOVE_STMT,
                     std::make_pair("opid", opid.template get<std::string>()));
             });

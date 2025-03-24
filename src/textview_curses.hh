@@ -906,6 +906,8 @@ public:
     bool tc_text_selection_active{false};
     display_line_content_t tc_press_line;
     int tc_press_left{0};
+    std::function<void(textview_curses&, const attr_line_t&, int x)>
+        tc_on_click;
 
 protected:
     class grep_highlighter {

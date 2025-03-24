@@ -278,6 +278,7 @@ noinst_HEADERS = \
 	lnav.indexing.hh \
 	lnav.management_cli.hh \
     lnav.prompt.hh \
+    lnav.script.parser.hh \
 	lnav_commands.hh \
 	lnav_config.hh \
 	lnav_config_fwd.hh \
@@ -479,6 +480,7 @@ libdiag_a_SOURCES = \
 	line_buffer.cc \
 	listview_curses.cc \
 	lnav.prompt.cc \
+	lnav.script.parser.cc \
 	lnav_commands.cc \
 	lnav_config.cc \
 	lnav_util.cc \

@@ -928,6 +928,9 @@ view_colors::init_roles(const lnav_theme& lt,
              lt.lt_icon_log_level_error,
              lt.lt_icon_log_level_critical,
              lt.lt_icon_log_level_fatal,
+
+             lt.lt_icon_play,
+             lt.lt_icon_edit,
          })
     {
         size_t index = 0;
@@ -960,6 +963,9 @@ view_colors::init_roles(const lnav_theme& lt,
                     case ui_icon_t::log_level_fatal:
                     case ui_icon_t::log_level_critical:
                         icon_role = role_t::VCR_ERROR;
+                        break;
+                    case ui_icon_t::play:
+                        icon_role = role_t::VCR_OK;
                         break;
                     default:
                         icon_role = role_t::VCR_TEXT;

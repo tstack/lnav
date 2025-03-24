@@ -1911,9 +1911,10 @@ com_comment(exec_context& ec,
             unquoted.in(), args[1].c_str(), args[1].size(), 0);
         unquoted.resize(unquoted_len + 1);
 
-        tc->set_user_mark(&textview_curses::BM_META, tc->get_selection(), true);
+        auto vl = ec.ec_top_line;
+        tc->set_user_mark(&textview_curses::BM_META, vl, true);
 
-        auto& line_meta = lss.get_bookmark_metadata(tc->get_selection());
+        auto& line_meta = lss.get_bookmark_metadata(vl);
 
         line_meta.bm_comment = unquoted.in();
         lss.set_line_meta_changed();
@@ -3136,7 +3137,8 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         for (auto line : content.split_lines()) {
             TRY(me.push_back(line));
         }
-        retval = TRY(me.final());
+        TRY(me.final());
+        retval = std::move(me.me_last_result);
     } else {
         return ec.make_error("expecting a command or query to evaluate");
     }
@@ -3518,6 +3520,7 @@ command_prompt(std::vector<std::string>& args)
                           "commands.html") " for more details");
 
     set_view_mode(ln_mode_t::COMMAND);
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     prompt.focus_for(*tc, ':', args);
 
     rl_set_help();
@@ -3547,6 +3550,7 @@ search_prompt(std::vector<std::string>& args)
 
     log_debug("search prompt");
     set_view_mode(ln_mode_t::SEARCH);
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     lnav_data.ld_search_start_line = tc->get_selection();
     prompt.focus_for(*tc, '/', args);
     lnav_data.ld_doc_status_source.set_title("Syntax Help");

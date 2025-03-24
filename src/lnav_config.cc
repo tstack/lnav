@@ -697,6 +697,15 @@ static const json_path_container theme_icons_handlers = {
         .with_description("Icon for 'fatal' log level")
         .for_child(&lnav_theme::lt_icon_log_level_fatal)
         .with_children(icon_config_handlers),
+
+    yajlpp::property_handler("play")
+        .with_description("Icon for a 'play' button")
+        .for_child(&lnav_theme::lt_icon_play)
+        .with_children(icon_config_handlers),
+    yajlpp::property_handler("edit")
+        .with_description("Icon for a 'edit' button")
+        .for_child(&lnav_theme::lt_icon_edit)
+        .with_children(icon_config_handlers),
 };
 
 static const struct json_path_container theme_styles_handlers = {

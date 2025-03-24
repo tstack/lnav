@@ -1424,28 +1424,24 @@ rl_callback(textinput_curses& rc)
             ec.ec_source.back().s_content.with_attr_for_all(
                 VC_ROLE.value(role_t::VCR_QUOTED_CODE));
 
-            rc.set_inactive_value(
-                lnav::console::user_message::info(
-                    attr_line_t("executing SQL statement, press ")
-                        .append("CTRL+]"_hotkey)
-                        .append(" to cancel"))
-                    .to_attr_line());
-            rc.set_needs_update();
             auto hist_guard = prompt.p_sql_history.start_operation(sql_str);
-            auto result = execute_sql(ec, sql_str, alt_msg);
             auto& dls = lnav_data.ld_db_row_source;
-            attr_line_t prompt;
+            auto before_dls_gen = dls.dls_generation;
+            auto result = execute_sql(ec, sql_str, alt_msg);
+            attr_line_t res;
 
             if (result.isOk()) {
                 auto msg = result.unwrap();
 
                 if (!msg.empty()) {
-                    prompt = lnav::console::user_message::ok(
-                                 attr_line_t("SQL Result: ")
-                                     .append(attr_line_t::from_ansi_str(
-                                         msg.c_str())))
-                                 .to_attr_line();
-                    if (dls.dls_row_cursors.size() > 1) {
+                    res = lnav::console::user_message::ok(
+                              attr_line_t("SQL Result: ")
+                                  .append(
+                                      attr_line_t::from_ansi_str(msg.c_str())))
+                              .to_attr_line();
+                    if (before_dls_gen != dls.dls_generation
+                        && dls.dls_row_cursors.size() > 1)
+                    {
                         ensure_view(&lnav_data.ld_views[LNV_DB]);
                     }
                 }
@@ -1460,7 +1456,7 @@ rl_callback(textinput_curses& rc)
             }
             ec.ec_source.back().s_content.clear();
 
-            rc.set_inactive_value(prompt);
+            rc.set_inactive_value(res);
             rc.set_alt_value(alt_msg);
             break;
         }

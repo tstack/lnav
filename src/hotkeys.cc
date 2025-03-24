@@ -124,9 +124,7 @@ handle_paste_content(notcurses* nc, const ncinput& ch)
 
             auto paste_sf = string_fragment::from_c_str(ch.paste_content);
             auto cmdline = lf_re.replace(paste_sf, "\n");
-            auto sg = ec.enter_source(SRC, 0, cmdline);
-
-            auto exec_res = ec.execute(cmdline);
+            auto exec_res = ec.execute(source_location{SRC, 1}, cmdline);
             if (exec_res.isOk()) {
                 prompt.p_editor.set_inactive_value(exec_res.unwrap());
             } else {
@@ -339,7 +337,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level - 1) < 0) {
                 alerter::singleton().chime("maximum zoom-in level reached");
             } else {
-                ec.execute(fmt::format(
+                ec.execute(INTERNAL_SRC_LOC, fmt::format(
                     FMT_STRING(":zoom-to {}"),
                     +lnav_zoom_strings[lnav_data.ld_zoom_level - 1]));
             }
@@ -349,7 +347,7 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
             if ((lnav_data.ld_zoom_level + 1) >= ZOOM_COUNT) {
                 alerter::singleton().chime("maximum zoom-out level reached");
             } else {
-                ec.execute(fmt::format(
+                ec.execute(INTERNAL_SRC_LOC, fmt::format(
                     FMT_STRING(":zoom-to {}"),
                     +lnav_zoom_strings[lnav_data.ld_zoom_level + 1]));
             }

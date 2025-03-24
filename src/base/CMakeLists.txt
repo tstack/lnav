@@ -75,6 +75,7 @@ add_library(
         snippet_highlighters.hh
         string_attr_type.hh
         strnatcmp.h
+        text_format_enum.hh
         time_util.hh
         types.hh
 

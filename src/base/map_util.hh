@@ -36,14 +36,15 @@
 #include <type_traits>
 #include <vector>
 
-namespace lnav {
-namespace map {
+namespace lnav::map {
 
 template<typename C>
-std::optional<
-    std::reference_wrapper<std::conditional_t<std::is_const<C>::value,
+std::optional<std::conditional_t<
+    std::is_trivially_copyable_v<typename C::mapped_type>,
+    typename C::mapped_type,
+    std::reference_wrapper<std::conditional_t<std::is_const_v<C>,
                                               const typename C::mapped_type,
-                                              typename C::mapped_type>>>
+                                              typename C::mapped_type>>>>
 find(C& container, const typename C::key_type& key)
 {
     auto iter = container.find(key);
@@ -119,7 +120,6 @@ public:
     }
 };
 
-}  // namespace map
-}  // namespace lnav
+}  // namespace lnav::map
 
 #endif
