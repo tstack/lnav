@@ -60,6 +60,7 @@ constexpr string_fragment TEXT_FORMAT_STRINGS[text_format_count] = {
     "text/x-diff"_frag,
     "text/x-shellscript"_frag,
     "text/x-lnav-script"_frag,
+    "text/x-rst"_frag,
     "text/plain"_frag,
 };
 
@@ -96,6 +97,7 @@ detect_text_format(string_fragment sf,
     static const auto MARKDOWN_EXT = std::filesystem::path(".markdown");
     static const auto SH_EXT = std::filesystem::path(".sh");
     static const auto LNAV_EXT = std::filesystem::path(".lnav");
+    static const auto RST_EXT = std::filesystem::path(".rst");
 
     static const auto DIFF_MATCHERS = lnav::pcre2pp::code::from_const(
         R"(^--- .*\n\+\+\+ .*\n)", PCRE2_MULTILINE);
@@ -216,12 +218,16 @@ detect_text_format(string_fragment sf,
             return text_format_t::TF_MAKEFILE;
         }
 
-        if (stem == SH_EXT) {
+        if (ext == SH_EXT) {
             return text_format_t::TF_SHELL_SCRIPT;
         }
 
-        if (stem == LNAV_EXT) {
+        if (ext == LNAV_EXT) {
             return text_format_t::TF_LNAV_SCRIPT;
+        }
+
+        if (ext == RST_EXT) {
+            return text_format_t::TF_RESTRUCTURED_TEXT;
         }
     }
 

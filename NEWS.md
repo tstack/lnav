@@ -97,6 +97,10 @@ Features:
   [export of search results from Graylog](https://go2docs.graylog.org/current/interacting_with_your_log_data/export_search_results.html)
   can automatically be split into separate streams based on the
   `source` property.
+* Added an `lnav_focused_msg` SQL VIEW that returns a single row
+  with the columns from the `all_logs` table for the currently
+  focused log message.  An `UPDATE` of the mutable columns will
+  update the corresponding row in the `all_logs` table.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.

@@ -522,14 +522,18 @@ textinput_curses::handle_search_key(const ncinput& ch)
             }
             case 's':
             case 'S': {
-                this->tc_search_start_point = this->tc_cursor;
-                this->move_cursor_to_next_search_hit();
+                if (!this->tc_search.empty()) {
+                    this->tc_search_start_point = this->tc_cursor;
+                    this->move_cursor_to_next_search_hit();
+                }
                 return true;
             }
             case 'r':
             case 'R': {
-                this->tc_search_start_point = this->tc_cursor;
-                this->move_cursor_to_prev_search_hit();
+                if (!this->tc_search.empty()) {
+                    this->tc_search_start_point = this->tc_cursor;
+                    this->move_cursor_to_prev_search_hit();
+                }
                 return true;
             }
         }
@@ -606,6 +610,10 @@ textinput_curses::handle_search_key(const ncinput& ch)
 void
 textinput_curses::move_cursor_to_next_search_hit()
 {
+    if (this->tc_search_code == nullptr) {
+        return;
+    }
+
     auto x = this->tc_search_start_point.x;
     if (this->tc_search_found && !this->tc_search_found.value()) {
         this->tc_search_start_point.y = 0;
@@ -796,6 +804,8 @@ textinput_curses::handle_key(const ncinput& ch)
 {
     static const auto PREFIX_RE = lnav::pcre2pp::code::from_const(
         R"(^\s*((?:-|\*|1\.|>)(?:\s+\[( |x|X)\])?\s*))");
+    static const auto PREFIX_OR_WS_RE = lnav::pcre2pp::code::from_const(
+        R"(^\s*((?:-|\*|1\.|>)?(?:\s+\[( |x|X)\])?\s+))");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (this->tc_notice) {
@@ -1175,11 +1185,12 @@ textinput_curses::handle_key(const ncinput& ch)
                 auto indent = std::string("\n");
                 if (!this->tc_selection) {
                     log_debug("checking for prefix");
-                    auto match_opt = PREFIX_RE.capture_from(al_sf)
+                    auto match_opt = PREFIX_OR_WS_RE.capture_from(al_sf)
                                          .into(md)
                                          .matches()
                                          .ignore_error();
                     if (match_opt) {
+                        log_debug("has prefix");
                         this->tc_selection = selected_range::from_key(
                             this->tc_cursor.copy_with_x(
                                 prefix_sf.column_width()),
@@ -1195,13 +1206,18 @@ textinput_curses::handle_key(const ncinput& ch)
                         if (!is_comment && !al.empty()
                             && match_opt->f_all.length() == al.length())
                         {
+                            log_debug("clear left");
                             this->command_indent(indent_mode_t::clear_left);
-                        } else {
+                        } else if (this->is_cursor_at_end_of_line()) {
                             indent.append(match_opt->f_all.data(),
                                           match_opt->f_all.length());
                             if (md[2] && md[2]->front() != ' ') {
                                 indent[1 + md[2]->sf_begin] = ' ';
                             }
+                        } else {
+                            indent.append(match_opt->f_all.length(), ' ');
+                            this->tc_selection
+                                = selected_range::from_point(this->tc_cursor);
                         }
                     } else {
                         this->tc_selection
@@ -1289,7 +1305,8 @@ textinput_curses::handle_key(const ncinput& ch)
                                      .ignore_error();
 
                 if (match_opt && !match_opt->f_all.empty()
-                    && match_opt->f_all.sf_end == this->tc_cursor.x) {
+                    && match_opt->f_all.sf_end == this->tc_cursor.x)
+                {
                     auto is_comment = al.al_attrs
                         | lnav::itertools::find_if([](const string_attr& sa) {
                                           return (sa.sa_type == &VC_ROLE)
@@ -1311,12 +1328,8 @@ textinput_curses::handle_key(const ncinput& ch)
                                            this->tc_doc_meta.m_indents.end(),
                                            this->tc_cursor.x);
                     if (indent_iter != this->tc_doc_meta.m_indents.end()) {
-                        if (indent_iter == this->tc_doc_meta.m_indents.begin())
+                        if (indent_iter != this->tc_doc_meta.m_indents.begin())
                         {
-                            this->tc_selection = selected_range::from_key(
-                                this->tc_cursor.copy_with_x(0),
-                                this->tc_cursor);
-                        } else {
                             auto prev_indent_iter = std::prev(indent_iter);
                             this->tc_selection = selected_range::from_key(
                                 this->tc_cursor.copy_with_x(*prev_indent_iter),
