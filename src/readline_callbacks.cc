@@ -770,6 +770,12 @@ rl_search_change(textinput_curses& rc, bool is_req)
 static void
 rl_exec_change(textinput_curses& rc, bool is_req)
 {
+    static const auto EXEC_HELP
+        = help_text("exec", "execute a script")
+              .with_parameter(
+                  help_text("arg", "Arguments for the script")
+                      .with_format(help_parameter_format_t::HPF_TEXT));
+
     static auto& prompt = lnav::prompt::get();
     auto* tc = get_textview_for_mode(lnav_data.ld_mode);
 
@@ -788,9 +794,7 @@ rl_exec_change(textinput_curses& rc, bool is_req)
         const auto& scripts = prompt.p_scripts;
         const auto iter = scripts.as_scripts.find(script_name);
 
-        if (iter == scripts.as_scripts.end()
-            || iter->second[0].sm_description.empty())
-        {
+        if (iter == scripts.as_scripts.end()) {
             lnav_data.ld_bottom_source.set_prompt(
                 "Enter a script to execute: " ABORT_MSG);
 
@@ -837,11 +841,48 @@ rl_exec_change(textinput_curses& rc, bool is_req)
             prompt.p_editor.open_popup_for_completion(0, poss);
         } else {
             auto& meta = iter->second[0];
-            auto help_text
-                = fmt::format(FMT_STRING(ANSI_BOLD("{}") " -- {}   " ABORT_MSG),
-                              meta.sm_synopsis,
-                              meta.sm_description);
-            lnav_data.ld_bottom_source.set_prompt(help_text);
+
+            if (!iter->second[0].sm_description.empty()) {
+                auto help_text = fmt::format(
+                    FMT_STRING(ANSI_BOLD("{}") " -- {}   " ABORT_MSG),
+                    meta.sm_synopsis,
+                    meta.sm_description);
+                lnav_data.ld_bottom_source.set_prompt(help_text);
+            }
+
+            auto line_sf = to_string_fragment(line);
+            auto parse_res = lnav::command::parse_for_prompt(
+                lnav_data.ld_exec_context, line, EXEC_HELP);
+            auto byte_x = line_sf.column_to_byte_index(rc.tc_cursor.x);
+            auto arg_res_opt = parse_res.arg_at(byte_x);
+            if (arg_res_opt) {
+                auto arg_pair = arg_res_opt.value();
+                if (is_req
+                    || rc.tc_popup_type != textinput_curses::popup_type_t::none)
+                {
+                    auto poss = prompt.get_cmd_parameter_completion(
+                        *tc,
+                        &EXEC_HELP,
+                        arg_pair.aar_help,
+                        arg_pair.aar_element.se_value);
+                    auto left = arg_pair.aar_element.se_value.empty()
+                        ? rc.tc_cursor.x
+                        : line_sf.byte_to_column_index(
+                              arg_pair.aar_element.se_origin.sf_begin);
+                    rc.open_popup_for_completion(left, poss);
+                    rc.tc_popup.set_title(arg_pair.aar_help->ht_name);
+                } else if (!line.empty()
+                           && arg_pair.aar_element.se_value.empty()
+                           && rc.is_cursor_at_end_of_line())
+                {
+                    rc.tc_suggestion = prompt.get_regex_suggestion(*tc, line);
+                } else {
+                    log_debug("not at end of line %d %d",
+                              arg_pair.aar_element.se_value.empty(),
+                              rc.is_cursor_at_end_of_line());
+                    rc.tc_suggestion.clear();
+                }
+            }
         }
     }
 }
@@ -1558,6 +1599,9 @@ rl_completion_request(textinput_curses& rc)
             rl_exec_change(rc, true);
             break;
         }
+
+        default:
+            break;
     }
 }
 
