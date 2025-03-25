@@ -3845,7 +3845,8 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(
                 help_text("line#|N%|timestamp|#anchor",
                           "A line number, percent into the file, timestamp, "
-                          "or an anchor in a text file"))
+                          "or an anchor in a text file")
+                    .with_format(help_parameter_format_t::HPF_LOCATION))
             .with_examples(
                 {{"To go to line 22", "22"},
                  {"To go to the line 75% of the way into the view", "75%"},

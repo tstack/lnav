@@ -127,6 +127,7 @@ parsed::arg_at(int x) const
                     }
                     case help_parameter_format_t::HPF_CONFIG_VALUE:
                     case help_parameter_format_t::HPF_TEXT:
+                    case help_parameter_format_t::HPF_LOCATION:
                     case help_parameter_format_t::HPF_REGEX:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT: {
                         std::optional<data_scanner::capture_t> cap_to_start;
@@ -273,6 +274,7 @@ parse_for(mode_t mode,
                     case help_parameter_format_t::HPF_TEXT:
                     case help_parameter_format_t::HPF_MULTILINE_TEXT:
                     case help_parameter_format_t::HPF_REGEX:
+                    case help_parameter_format_t::HPF_LOCATION:
                     case help_parameter_format_t::HPF_SQL:
                     case help_parameter_format_t::HPF_SQL_EXPR:
                     case help_parameter_format_t::HPF_TIME_FILTER_POINT:
