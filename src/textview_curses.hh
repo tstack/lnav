@@ -888,6 +888,7 @@ public:
                           const line_range& body,
                           const line_range& orig_line);
 
+    bool tc_interactive{false};
     std::function<void(textview_curses&)> tc_state_event_handler;
 
     std::optional<role_t> tc_cursor_role;

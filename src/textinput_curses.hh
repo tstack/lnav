@@ -38,6 +38,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/attr_line.hh"
@@ -428,6 +429,8 @@ public:
 
     void add_mark(input_point pos, const lnav::console::user_message& msg);
 
+    void sync_to_sysclip() const;
+
     enum class mode_t {
         editing,
         searching,
@@ -436,7 +439,7 @@ public:
 
     struct change_entry {
         change_entry(selected_range range, std::string content)
-            : ce_range(range), ce_content(content)
+            : ce_range(range), ce_content(std::move(content))
         {
         }
         selected_range ce_range;

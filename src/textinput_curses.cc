@@ -372,6 +372,37 @@ textinput_curses::handle_mouse(mouse_event& me)
                 this->ensure_cursor_visible();
             }
         }
+    } else if (me.me_button == mouse_button_t::BUTTON_RIGHT) {
+        if (this->tc_selection) {
+            std::string content;
+            auto range = this->tc_selection;
+            auto add_nl = false;
+            for (auto y = range->sr_start.y;
+                 y <= range->sr_end.y && y < this->tc_lines.size();
+                 ++y)
+            {
+                if (add_nl) {
+                    content.push_back('\n');
+                }
+                auto sel_range = range->range_for_line(y);
+                if (!sel_range) {
+                    continue;
+                }
+
+                const auto& al = this->tc_lines[y];
+                auto byte_start = al.column_to_byte_index(sel_range->lr_start);
+                auto byte_end = al.column_to_byte_index(sel_range->lr_end);
+                auto al_sf = string_fragment::from_str_range(
+                    al.al_string, byte_start, byte_end);
+                content.append(al_sf.data(), al_sf.length());
+                add_nl = true;
+            }
+
+            this->tc_clipboard.clear();
+            this->tc_cut_location = this->tc_cursor;
+            this->tc_clipboard.emplace_back(content);
+            this->sync_to_sysclip();
+        }
     } else if (me.me_button == mouse_button_t::BUTTON_LEFT) {
         this->tc_mode = mode_t::editing;
         auto adj_press_x = me.me_press_x;
@@ -943,7 +974,6 @@ textinput_curses::handle_key(const ncinput& ch)
                         log_debug("  cursor moved, clearing clipboard");
                         this->tc_clipboard.clear();
                     }
-                    this->tc_cut_location = this->tc_cursor;
                     auto& al = this->tc_lines[this->tc_cursor.y];
                     auto byte_index
                         = al.column_to_byte_index(this->tc_cursor.x);
@@ -962,22 +992,9 @@ textinput_curses::handle_key(const ncinput& ch)
                             input_point{0, this->tc_cursor.y + 1});
                     }
                     this->replace_selection(string_fragment{});
+                    this->tc_cut_location = this->tc_cursor;
                 }
-                {
-                    auto clip_open_res
-                        = sysclip::open(sysclip::type_t::GENERAL);
-
-                    if (clip_open_res.isOk()) {
-                        auto clip_file = clip_open_res.unwrap();
-                        fprintf(clip_file.in(),
-                                "%s",
-                                this->tc_clipboard.back().c_str());
-                    } else {
-                        auto err_msg = clip_open_res.unwrapErr();
-                        log_error("unable to open clipboard: %s",
-                                  err_msg.c_str());
-                    }
-                }
+                this->sync_to_sysclip();
                 this->tc_drag_selection = std::nullopt;
                 this->update_lines();
                 return true;
@@ -1031,11 +1048,17 @@ textinput_curses::handle_key(const ncinput& ch)
                 log_debug("cutting to beginning of line");
                 auto& al = this->tc_lines[this->tc_cursor.y];
                 auto byte_index = al.column_to_byte_index(this->tc_cursor.x);
+                if (this->tc_cursor != this->tc_cut_location) {
+                    log_debug("  cursor moved, clearing clipboard");
+                    this->tc_clipboard.clear();
+                }
                 this->tc_clipboard.emplace_back(
                     al.subline(0, byte_index).al_string);
+                this->sync_to_sysclip();
                 this->tc_selection = selected_range::from_key(
                     this->tc_cursor.copy_with_x(0), this->tc_cursor);
                 this->replace_selection(string_fragment{});
+                this->tc_cut_location = this->tc_cursor;
                 this->tc_selection = std::nullopt;
                 this->tc_drag_selection = std::nullopt;
                 this->update_lines();
@@ -1060,6 +1083,7 @@ textinput_curses::handle_key(const ncinput& ch)
                     auto prev_word = al_sf.sub_cell_range(
                         prev_word_start_opt.value(), this->tc_cursor.x);
                     this->tc_clipboard.emplace_front(prev_word.to_string());
+                    this->sync_to_sysclip();
                     this->tc_selection = selected_range::from_key(
                         this->tc_cursor.copy_with_x(
                             prev_word_start_opt.value()),
@@ -1753,6 +1777,7 @@ textinput_curses::move_cursor_by(movement move)
         if (this->tc_cursor.y + 1 < (ssize_t) this->tc_lines.size()) {
             this->tc_cursor.x = 0;
             this->tc_cursor.y += 1;
+            this->tc_max_cursor_x = 0;
         }
     }
     this->clamp_point(this->tc_cursor);
@@ -1884,6 +1909,22 @@ textinput_curses::abort()
     this->tc_drag_selection = std::nullopt;
     if (this->tc_on_abort) {
         this->tc_on_abort(*this);
+    }
+}
+
+void
+textinput_curses::sync_to_sysclip() const
+{
+    auto clip_open_res = sysclip::open(sysclip::type_t::GENERAL);
+
+    if (clip_open_res.isOk()) {
+        auto clip_file = clip_open_res.unwrap();
+        fmt::print(clip_file.in(),
+                   FMT_STRING("{}"),
+                   fmt::join(this->tc_clipboard, ""));
+    } else {
+        auto err_msg = clip_open_res.unwrapErr();
+        log_error("unable to open clipboard: %s", err_msg.c_str());
     }
 }
 

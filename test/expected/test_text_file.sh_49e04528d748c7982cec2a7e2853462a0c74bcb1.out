@@ -78,6 +78,12 @@ World</span>!
 [35m</books>[0m
 [35m```[0m
 
+[35m~~~lnav[0m
+[35m;SELECT * FROM syslog_log[0m
+
+[35m:filter-out spam[0m
+[35m~~~[0m
+
 [1m## Github Alerts[0m
 
 > [!NOTE]

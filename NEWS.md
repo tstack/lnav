@@ -24,6 +24,10 @@ Interface changes:
     press `TAB` to complete.
   - In the history listing, an icon indicates if the command or
     query succeeded or failed.
+  - Mouse input works as expected: left-click positions the cursor
+    in a given location, and a click-drag will select text.
+    A right-click will copy the selected text to the system
+    clipboard.
 * Pressing `F1` in the prompt will show the help text for the
   prompt itself.
   The size of the prompt panel is expanded for readability.

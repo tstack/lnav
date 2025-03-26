@@ -968,8 +968,10 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                              read_file_res.rfr_content.size());
                     md2attr_line mdal;
 
-                    mdal.add_lnav_script_icons().with_source_path(
-                        lf->get_actual_path());
+                    mdal.with_source_path(lf->get_actual_path());
+                    if (this->tss_view->tc_interactive) {
+                        mdal.add_lnav_script_icons();
+                    }
                     auto parse_res = md4cpp::parse(content_sf, mdal);
 
                     iter->fvs_mtime = st.st_mtime;

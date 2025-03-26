@@ -623,7 +623,10 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             file_and_line->first->get_filename().filename().string(),
             std::distance(file_and_line->first->begin(),
                           file_and_line->second)));
-        mdal.add_lnav_script_icons().with_source_id(comment_id);
+        mdal.with_source_id(comment_id);
+        if (tc->tc_interactive) {
+            mdal.add_lnav_script_icons();
+        }
         auto parse_res = md4cpp::parse(line_meta.bm_comment, mdal);
         if (parse_res.isOk()) {
             al = parse_res.unwrap();

@@ -1470,6 +1470,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             = role_t::VCR_DISABLED_CURSOR_LINE;
         lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
         lnav_data.ld_views[lpc].tc_on_click = click_handler;
+        lnav_data.ld_views[lpc].tc_interactive = true;
     }
     lnav_data.ld_views[LNV_DB].set_supports_marks(true);
     lnav_data.ld_views[LNV_HELP].set_supports_marks(true);

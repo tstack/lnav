@@ -35,6 +35,7 @@
 #include "base/ansi_scrubber.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.hh"
+#include "base/lnav_log.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "data_scanner.hh"

@@ -78,6 +78,12 @@ def hw(name):
 </books>
 ```
 
+~~~lnav
+;SELECT * FROM syslog_log
+
+:filter-out spam
+~~~
+
 ## Github Alerts
 
 > [!NOTE]
