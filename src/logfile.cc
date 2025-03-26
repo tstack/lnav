@@ -806,7 +806,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         auto is_overwritten = true;
         if (this->lf_format != nullptr) {
             const auto first_line = this->lf_index.begin();
-            auto read_res = this->read_line(first_line);
+            const auto first_line_range
+                = this->get_file_range(first_line, false);
+            auto read_res = this->read_range(first_line_range);
             if (read_res.isOk()) {
                 auto sbr = read_res.unwrap();
                 if (first_line->has_ansi()) {
