@@ -43,6 +43,33 @@
 
 namespace lnav::command {
 
+static bool
+is_separator(data_token_t tok)
+{
+    switch (tok) {
+        case DT_COLON:
+        case DT_EQUALS:
+        case DT_COMMA:
+        case DT_SEMI:
+        case DT_EMDASH:
+        case DT_LCURLY:
+        case DT_RCURLY:
+        case DT_LSQUARE:
+        case DT_RSQUARE:
+        case DT_LPAREN:
+        case DT_RPAREN:
+        case DT_LANGLE:
+        case DT_RANGLE:
+        case DT_LINE:
+        case DT_WHITE:
+        case DT_DOT:
+        case DT_ESCAPED_CHAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
 std::optional<parsed::arg_at_result>
 parsed::arg_at(int x) const
 {
@@ -126,6 +153,7 @@ parsed::arg_at(int x) const
                         return arg_at_result{arg.second.a_help, true, se};
                     }
                     case help_parameter_format_t::HPF_CONFIG_VALUE:
+                    case help_parameter_format_t::HPF_MULTILINE_TEXT:
                     case help_parameter_format_t::HPF_TEXT:
                     case help_parameter_format_t::HPF_LOCATION:
                     case help_parameter_format_t::HPF_REGEX:
@@ -156,8 +184,11 @@ parsed::arg_at(int x) const
                             }
                             if (tok.tr_capture.c_begin <= x
                                 && x <= tok.tr_capture.c_end
-                                && tok.tr_token != DT_WHITE)
+                                && !is_separator(tok.tr_token))
                             {
+                                log_debug(
+                                    "  in token %s",
+                                    data_scanner::token2name(tok.tr_token));
                                 return arg_at_result{
                                     arg.second.a_help,
                                     false,
@@ -183,6 +214,7 @@ parsed::arg_at(int x) const
                                 }
                             }
                         }
+                        log_debug("end of input");
                         return arg_at_result{
                             arg.second.a_help, false, shlex::split_element_t{}};
                     }

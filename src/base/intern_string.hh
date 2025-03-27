@@ -36,6 +36,7 @@
 #include <ostream>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 #include <assert.h>
@@ -162,6 +163,15 @@ struct string_fragment {
 
     size_t byte_to_column_index(size_t byte_index) const;
 
+    std::tuple<int, int> byte_to_column_index(size_t byte_start,
+                                              size_t byte_end) const
+    {
+        return {
+            this->byte_to_column_index(byte_start),
+            this->byte_to_column_index(byte_end),
+        };
+    }
+
     size_t column_width() const;
 
     constexpr const char* data() const
@@ -264,7 +274,7 @@ struct string_fragment {
 
     bool operator!=(const char* str) const { return !(*this == str); }
 
-    template<typename...Args>
+    template<typename... Args>
     bool is_one_of(Args... args) const
     {
         return (this->operator==(args) || ...);

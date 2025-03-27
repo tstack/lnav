@@ -98,6 +98,7 @@
                         "background-color": "#888"
                     },
                     "h1": {
+                        "bold": true,
                         "underline": true
                     },
                     "h2": {
@@ -110,10 +111,10 @@
                         "underline": true
                     },
                     "h5": {
-                        "underline": true
+                        "italic": true
                     },
                     "h6": {
-                        "underline": true
+                        "italic": true
                     },
                     "hr": {
                         "color": "#444"

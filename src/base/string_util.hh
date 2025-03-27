@@ -254,6 +254,21 @@ struct strnatless {
     }
 };
 
+struct strnatcaseless {
+    bool operator()(const std::string& lhs, const std::string& rhs) const
+    {
+        return strnatcasecmp(lhs.size(), lhs.data(), rhs.size(), rhs.data())
+            < 0;
+    }
+
+    bool operator()(const string_fragment& lhs,
+                    const string_fragment& rhs) const
+    {
+        return strnatcasecmp(lhs.length(), lhs.data(), rhs.length(), rhs.data())
+            < 0;
+    }
+};
+
 namespace lnav {
 class tainted_string {
 public:

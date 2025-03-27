@@ -191,6 +191,19 @@ loop:
            cap_inner.c_end -= 1;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};
        }
+       <init, bol> ("f"|"u"|"r")?'"'('\\''"'|[^\x00\x16\x1b\n"\\]|'""')*[\x00] {
+           CAPTURE(DT_QUOTED_STRING);
+           switch (this->ds_input.sf_string[cap_inner.c_begin]) {
+           case 'f':
+           case 'u':
+           case 'r':
+               cap_inner.c_begin += 1;
+               break;
+           }
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};
+       }
        <init, bol> ("f"|"u"|"r")?'"""' {
            CAPTURE(DT_QUOTED_STRING);
            switch (this->ds_input.sf_string[cap_inner.c_begin]) {
@@ -339,6 +352,27 @@ loop:
        }
 
        <init, bol> ("f"|"u"|"r")?"'"('\\'[^\x00]|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {
+           CAPTURE(DT_QUOTED_STRING);
+           if (tf == text_format_t::TF_RUST) {
+               auto sf = this->to_string_fragment(cap_all);
+               auto split_res = sf.split_when([](char ch) { return ch != '\'' && !isalnum(ch); });
+               cap_all.c_end = split_res.first.sf_end;
+               cap_inner.c_end = split_res.first.sf_end;
+               this->ds_next_offset = cap_all.c_end;
+               return tokenize_result{DT_SYMBOL, cap_all, cap_inner, this->ds_input.sf_string};
+           }
+           switch (this->ds_input.sf_string[cap_inner.c_begin]) {
+           case 'f':
+           case 'u':
+           case 'r':
+               cap_inner.c_begin += 1;
+               break;
+           }
+           cap_inner.c_begin += 1;
+           cap_inner.c_end -= 1;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};
+       }
+       <init, bol> ("f"|"u"|"r")?"'"('\\'"'"|[^\x00\x16\x1b\n'\\]|"''")*[\x00] {
            CAPTURE(DT_QUOTED_STRING);
            if (tf == text_format_t::TF_RUST) {
                auto sf = this->to_string_fragment(cap_all);

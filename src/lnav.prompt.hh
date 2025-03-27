@@ -66,6 +66,7 @@ struct prompt {
     struct sql_collation_t {};
     struct sql_var_t {};
     struct sql_field_var_t {};
+    struct sql_format_column_t {};
 
     using sql_item_t = mapbox::util::variant<sql_keyword_t,
                                              sql_collation_t,
@@ -78,7 +79,8 @@ struct prompt {
                                              sql_number_t,
                                              sql_string_t,
                                              sql_var_t,
-                                             sql_field_var_t>;
+                                             sql_field_var_t,
+                                             sql_format_column_t>;
 
     struct sql_item_meta {
         const char* sim_type_hint;
@@ -109,7 +111,7 @@ struct prompt {
     }
 
     std::map<std::string, std::string> p_env_vars;
-    std::multimap<std::string, sql_item_t> p_sql_completions;
+    std::multimap<std::string, sql_item_t, strnatcaseless> p_sql_completions;
     std::map<std::string, sql_item_t> p_prql_completions;
     std::map<std::string, const json_path_handler_base*> p_config_paths;
     std::map<std::string, std::vector<std::string>> p_config_values;
@@ -119,6 +121,7 @@ struct prompt {
     bool p_alt_mode{false};
     std::string p_pre_history_content;
     bool p_replace_from_history{false};
+    bool p_in_completion{false};
     int32_t p_history_changes{0};
 
     void focus_for(textview_curses& tc,

@@ -1306,17 +1306,17 @@
                     "h5": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "h6": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "hr": {
@@ -2912,7 +2912,7 @@
                         "color": "",
                         "background-color": "",
                         "underline": true,
-                        "bold": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
@@ -2943,17 +2943,17 @@
                     "h5": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "h6": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "hr": {
@@ -4546,15 +4546,15 @@
                         "strike": false
                     },
                     "h1": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
-                        "underline": true,
-                        "bold": false,
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "h2": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
                         "underline": true,
                         "bold": false,
@@ -4562,9 +4562,9 @@
                         "strike": false
                     },
                     "h3": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
@@ -4580,17 +4580,17 @@
                     "h5": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "h6": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "hr": {
@@ -5373,15 +5373,15 @@
                         "strike": false
                     },
                     "h1": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
-                        "underline": true,
-                        "bold": false,
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "h2": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
                         "underline": true,
                         "bold": false,
@@ -5389,9 +5389,9 @@
                         "strike": false
                     },
                     "h3": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
@@ -5407,17 +5407,17 @@
                     "h5": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "h6": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "hr": {
@@ -6200,15 +6200,15 @@
                         "strike": false
                     },
                     "h1": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
-                        "underline": true,
-                        "bold": false,
+                        "underline": false,
+                        "bold": true,
                         "italic": false,
                         "strike": false
                     },
                     "h2": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
                         "underline": true,
                         "bold": false,
@@ -6216,9 +6216,9 @@
                         "strike": false
                     },
                     "h3": {
-                        "color": "",
+                        "color": "$magenta",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
@@ -6234,17 +6234,17 @@
                     "h5": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "h6": {
                         "color": "",
                         "background-color": "",
-                        "underline": true,
+                        "underline": false,
                         "bold": false,
-                        "italic": false,
+                        "italic": true,
                         "strike": false
                     },
                     "hr": {

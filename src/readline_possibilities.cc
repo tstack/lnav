@@ -58,7 +58,7 @@ tokenize_view_text(std::unordered_set<std::string>& accum, string_fragment text)
         if (!tok_res) {
             break;
         }
-        if (tok_res->tr_capture.length() < 4) {
+        if (tok_res->tr_capture.length() < 3) {
             continue;
         }
 

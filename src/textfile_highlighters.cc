@@ -656,7 +656,7 @@ setup_highlights_int()
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_DOC_DIRECTIVE);
     hm[{highlight_source_t::INTERNAL, "md.blockquote"}]
-        = highlighter(xpcre_compile(R"(^\s*(>[ \t]+.*))"))
+        = highlighter(xpcre_compile(R"(^\s*(>(?:[ \t]+.*|$)))"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_QUOTED_TEXT);

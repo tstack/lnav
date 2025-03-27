@@ -7,14 +7,14 @@ pair   0:3   ^-^          a=1
  num   6:7         ^      2
  val   6:7         ^      2
 pair   4:7       ^-^      b=2
- key  11:11            ^  
-quot  11:12             ^  
- val  11:12             ^  
-pair  11:12             ^  
+ key   9:9           ^    
+quot   9:11           ^^  ""
+ val   9:11           ^^  ""
+pair   9:11           ^^  ""
 msg         :a=1 b=2 """
-format      :a=# b=# ""#
+format      :a=# b=# #
 {
     "a": 1,
     "b": 2,
-    "col_0": "\u0000"
+    "col_0": "\"\""
 }

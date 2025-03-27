@@ -1439,6 +1439,9 @@ listview_curses::get_overlay_height(size_t total, vis_line_t view_height) const
 void
 listview_curses::set_overlay_selection(std::optional<vis_line_t> sel)
 {
+    if (this->lv_overlay_source == nullptr) {
+        return;
+    }
     if (sel) {
         if (this->lv_overlay_focused
             && sel.value() == this->lv_focused_overlay_selection)

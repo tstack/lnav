@@ -330,8 +330,15 @@ public:
 
     bool do_update() override;
 
-    void open_popup_for_completion(size_t left,
+    void open_popup_for_completion(line_range crange,
                                    std::vector<attr_line_t> possibilities);
+
+    void open_popup_for_completion(
+        int left, const std::vector<attr_line_t>& possibilities)
+    {
+        this->open_popup_for_completion(line_range{left, this->tc_cursor.x},
+                                        possibilities);
+    }
 
     void open_popup_for_history(std::vector<attr_line_t> possibilities);
 

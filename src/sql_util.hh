@@ -73,6 +73,7 @@ struct sqlite_metadata_callbacks {
     sqlite_exec_callback smc_table_info;
     sqlite_exec_callback smc_foreign_key_list;
     void* smc_userdata{nullptr};
+    std::string smc_table_name;
     db_table_map_t smc_db_list{};
 };
 

@@ -191,7 +191,8 @@ prompt::insert_sql_completion(const std::string& name, const sql_item_t& item)
                               [](sql_number_t) { return false; },
                               [](sql_string_t) { return true; },
                               [](sql_var_t) { return false; },
-                              [](sql_field_var_t) { return false; });
+                              [](sql_field_var_t) { return false; },
+                              [](sql_format_column_t) { return false; });
     if (is_prql) {
         this->p_prql_completions.emplace(name, item);
     }
@@ -258,8 +259,10 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
         ":log_raw_text",
     };
 
+    this->insert_sql_completion("log_line", sql_format_column_t{});
     for (const auto& var : BUILTIN_VARS) {
         this->insert_sql_completion(var, sql_field_var_t{});
+        this->insert_sql_completion(&var[1], sql_format_column_t{});
     }
 
     tc.map_top_row([this](const auto& al) {
@@ -271,6 +274,8 @@ prompt::refresh_sql_expr_completions(textview_curses& tc)
                 auto var_name
                     = fmt::format(FMT_STRING(":{}"), lvm.lvm_name.c_str());
                 this->insert_sql_completion(var_name, sql_field_var_t{});
+                this->insert_sql_completion(lvm.lvm_name.to_string(),
+                                            sql_format_column_t{});
             }
         }
         return std::nullopt;
@@ -430,7 +435,7 @@ prompt::rl_reformat(textinput_curses& tc)
                 lnav_data.ld_bottom_source.set_prompt(
                     "Enter an SQL query: (Press "
                     ANSI_BOLD("CTRL+X") " to perform query and "
-                    ANSI_BOLD("CTRL+]") " to abort)");
+                    ANSI_BOLD("Esc") " to abort)");
             }
             tc.move_cursor_to(
                 tc.get_point_for_offset(format_res.fr_cursor_offset));
@@ -505,6 +510,7 @@ prompt::rl_completion(textinput_curses& tc)
         return;
     }
 
+    this->p_in_completion = true;
     const auto& al
         = tc.tc_popup_source.get_lines()[tc.tc_popup.get_selection()].tl_value;
     auto sub = get_string_attr(al.al_attrs, SUBST_TEXT)->get();
@@ -513,6 +519,7 @@ prompt::rl_completion(textinput_curses& tc)
     if (tc.tc_lines.size() > 1 && tc.tc_height == 1) {
         tc.set_height(5);
     }
+    this->p_in_completion = false;
 }
 
 void
@@ -732,6 +739,20 @@ sql_item_visitor::operator()(const prompt::sql_field_var_t&) const
         "",
         " ",
         role_t::VCR_VARIABLE,
+    };
+
+    return retval;
+}
+
+template<>
+const prompt::sql_item_meta&
+sql_item_visitor::operator()(const prompt::sql_format_column_t&) const
+{
+    static constexpr auto retval = prompt::sql_item_meta{
+        "\U0001F132",
+        "",
+        " ",
+        role_t::VCR_IDENTIFIER,
     };
 
     return retval;

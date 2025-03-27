@@ -83,11 +83,15 @@ textinput_curses::get_help_text()
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-N"_hotkey)
-              .append("    - Move down one line\n ")
+              .append(
+                  "    - Move down one line.  If a popup is open, move the "
+                  "selection down.\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("CTRL-P"_hotkey)
-              .append("    - Move up one line\n ")
+              .append(
+                  "    - Move up one line.  If a popup is open, move the "
+                  "selection up.\n ")
               .append("\u2022"_list_glyph)
               .append(" ")
               .append("ALT  \u2190"_hotkey)
@@ -719,6 +723,11 @@ void
 textinput_curses::command_indent(indent_mode_t mode)
 {
     log_debug("indenting line: %d", this->tc_cursor.y);
+
+    if (this->tc_cursor.y == 0 && !this->tc_prefix.empty()) {
+        return;
+    }
+
     int indent_amount;
     switch (mode) {
         case indent_mode_t::left:
@@ -836,7 +845,7 @@ textinput_curses::handle_key(const ncinput& ch)
     static const auto PREFIX_RE = lnav::pcre2pp::code::from_const(
         R"(^\s*((?:-|\*|1\.|>)(?:\s+\[( |x|X)\])?\s*))");
     static const auto PREFIX_OR_WS_RE = lnav::pcre2pp::code::from_const(
-        R"(^\s*((?:-|\*|1\.|>)?(?:\s+\[( |x|X)\])?\s+))");
+        R"(^\s*(>\s*|(?:-|\*|1\.)?(?:\s+\[( |x|X)\])?\s+))");
     thread_local auto md = lnav::pcre2pp::match_data::unitialized();
 
     if (this->tc_notice) {
@@ -1228,6 +1237,7 @@ textinput_curses::handle_key(const ncinput& ch)
                                           == role_t::VCR_COMMENT;
                                   });
                         if (!is_comment && !al.empty()
+                            && !md[1]->startswith(">")
                             && match_opt->f_all.length() == al.length())
                         {
                             log_debug("clear left");
@@ -1278,6 +1288,21 @@ textinput_curses::handle_key(const ncinput& ch)
                     this->tc_on_completion_request(*this);
                 }
             } else if (!this->tc_selection) {
+                if (!ncinput_shift_p(&ch)
+                    && (this->tc_cursor.x > 0
+                        && this->tc_lines[this->tc_cursor.y].al_string.back()
+                            != ' '))
+                {
+                    log_debug("requesting completion at %d", this->tc_cursor.x);
+                    if (this->tc_on_completion_request) {
+                        this->tc_on_completion_request(*this);
+                    }
+                    if (!this->tc_popup.is_visible()) {
+                        this->command_indent(indent_mode_t::right);
+                    }
+                    return true;
+                }
+
                 this->command_indent(ncinput_shift_p(&ch)
                                          ? indent_mode_t::left
                                          : indent_mode_t::right);
@@ -1341,7 +1366,8 @@ textinput_curses::handle_key(const ncinput& ch)
                         this->tc_selection = selected_range::from_key(
                             this->tc_cursor.copy_with_x(md[1]->sf_begin),
                             this->tc_cursor);
-                        auto indent = std::string(md[1]->length(), ' ');
+                        auto indent = std::string(
+                            md[1]->startswith(">") ? 0 : md[1]->length(), ' ');
 
                         this->replace_selection(indent);
                         return true;
@@ -2037,8 +2063,7 @@ textinput_curses::do_update()
         }
         if (!this->tc_suggestion.empty() && !this->tc_popup.is_visible()
             && curr_line == this->tc_cursor.y
-            && this->tc_cursor.x == (ssize_t) al.column_width()
-            && (al.empty() || al.al_string.back() == ' '))
+            && this->tc_cursor.x == (ssize_t) al.column_width())
         {
             al.append(this->tc_suggestion,
                       VC_ROLE.value(role_t::VCR_SUGGESTION));
@@ -2148,7 +2173,7 @@ textinput_curses::do_update()
 
 void
 textinput_curses::open_popup_for_completion(
-    size_t left, std::vector<attr_line_t> possibilities)
+    line_range crange, std::vector<attr_line_t> possibilities)
 {
     if (possibilities.empty()) {
         this->tc_popup_type = popup_type_t::none;
@@ -2165,7 +2190,7 @@ textinput_curses::open_popup_for_completion(
     auto new_sel = 0_vl;
     auto popup_height = vis_line_t(
         std::min(this->tc_max_popup_height, possibilities.size() + 1));
-    ssize_t rel_x = left;
+    ssize_t rel_x = crange.lr_start;
     if (this->tc_cursor.y == 0) {
         rel_x += this->tc_prefix.column_width();
     }
@@ -2183,8 +2208,9 @@ textinput_curses::open_popup_for_completion(
         new_sel = vis_line_t(possibilities.size() - 1);
     }
 
-    this->tc_complete_range = selected_range::from_key(
-        this->tc_cursor.copy_with_x(left), this->tc_cursor);
+    this->tc_complete_range
+        = selected_range::from_key(this->tc_cursor.copy_with_x(crange.lr_start),
+                                   this->tc_cursor.copy_with_x(crange.lr_end));
     this->tc_popup_source.replace_with(possibilities);
     this->tc_popup.set_window(this->tc_window);
     this->tc_popup.set_x(this->vc_x + rel_x);

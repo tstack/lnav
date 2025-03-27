@@ -62,8 +62,8 @@ using namespace lnav::roles::literals;
 
 #define PERFORM_MSG \
     "(Press " ANSI_BOLD("CTRL+X") " to perform operation and " ANSI_BOLD( \
-        "CTRL+]") " to abort)"
-#define ABORT_MSG "(Press " ANSI_BOLD("CTRL+]") " to abort)"
+        "Esc") " to abort)"
+#define ABORT_MSG "(Press " ANSI_BOLD("Esc") " to abort)"
 
 #define ANSI_RE(msg) \
     ANSI_CSI ANSI_BOLD_PARAM ";" ANSI_COLOR_PARAM(COLOR_CYAN) "m" msg ANSI_NORM
@@ -476,7 +476,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
 
     if (iter != lnav_commands.end() && (args.size() > 1 || endswith(line, " ")))
     {
-        auto line_sf = string_fragment(line);
+        auto line_sf = string_fragment::from_str(line);
         auto args_sf = line_sf.split_when(string_fragment::tag1{' '}).second;
         auto parsed_cmd = lnav::command::parse_for_prompt(
             lnav_data.ld_exec_context, args_sf, iter->second->c_help);
@@ -491,11 +491,13 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                       arg_res.aar_element.se_origin.sf_begin,
                       arg_res.aar_element.se_origin.sf_end,
                       arg_res.aar_element.se_value.c_str());
-            auto left = arg_res.aar_element.se_origin.empty()
-                ? rc.tc_cursor.x
-                : line_sf.byte_to_column_index(
-                      args_sf.sf_begin
-                      + arg_res.aar_element.se_origin.sf_begin);
+            auto start_point = rc.get_point_for_offset(
+                args_sf.sf_begin + arg_res.aar_element.se_origin.sf_begin);
+            auto end_point = rc.get_point_for_offset(
+                args_sf.sf_begin + arg_res.aar_element.se_origin.sf_end);
+            auto crange = arg_res.aar_element.se_origin.empty()
+                ? line_range{rc.tc_cursor.x, rc.tc_cursor.x}
+                : line_range{start_point.x, end_point.x};
             if (arg_res.aar_help->ht_format
                 == help_parameter_format_t::HPF_CONFIG_VALUE)
             {
@@ -505,12 +507,14 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                 auto poss = prompt.get_config_value_completion(
                     parsed_cmd.p_args["option"].a_values[0].se_value,
                     arg_res.aar_element.se_origin.to_string());
-                rc.open_popup_for_completion(left, poss);
+                rc.open_popup_for_completion(crange, poss);
                 rc.tc_popup.set_title(arg_res.aar_help->ht_name);
             } else if (is_req || arg_res.aar_required
-                       || rc.tc_popup_type
-                           != textinput_curses::popup_type_t::none)
+                       || (!arg_res.aar_element.se_origin.empty()
+                           && rc.tc_popup_type
+                               != textinput_curses::popup_type_t::none))
             {
+                log_debug(" req %d %d", is_req, arg_res.aar_required);
                 auto poss = prompt.get_cmd_parameter_completion(
                     *tc,
                     &iter->second->c_help,
@@ -518,10 +522,11 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                     arg_res.aar_element.se_value.empty()
                         ? arg_res.aar_element.se_origin.to_string()
                         : arg_res.aar_element.se_value);
-                rc.open_popup_for_completion(left, poss);
+                rc.open_popup_for_completion(crange, poss);
                 rc.tc_popup.set_title(arg_res.aar_help->ht_name);
             } else if (arg_res.aar_help->ht_format
                            == help_parameter_format_t::HPF_REGEX
+                       && arg_res.aar_element.se_value.empty()
                        && rc.is_cursor_at_end_of_line())
             {
                 auto re_arg = parsed_cmd.p_args[arg_res.aar_help->ht_name];
@@ -548,12 +553,41 @@ rl_sql_change(textinput_curses& rc, bool is_req)
     static auto& prompt = lnav::prompt::get();
 
     const auto line = rc.get_content();
+    const auto line_sf = string_fragment::from_str(line);
     std::vector<std::string> args;
     auto is_prql = lnav::sql::is_prql(line);
 
     log_debug("rl_sql_change");
 
-    if (is_prql) {
+    if (line.empty() || line.find(' ') == std::string::npos) {
+        log_debug("completing DB command");
+        auto poss_str = (*sql_cmd_map)
+            | lnav::itertools::filter_in([](const auto& cmd_pair) {
+                            return cmd_pair.second->c_dependencies.empty();
+                        })
+            | lnav::itertools::first() | lnav::itertools::similar_to(line, 10);
+        auto poss_width = poss_str | lnav::itertools::map(&std::string::size)
+            | lnav::itertools::max();
+
+        auto poss = poss_str
+            | lnav::itertools::map([&args, &poss_width](const auto& x) {
+                        const auto* summary
+                            = sql_cmd_map->at(x)->c_help.ht_summary
+                            ? sql_cmd_map->at(x)->c_help.ht_summary
+                            : sqlite_function_help.find(x)->second->ht_summary;
+                        return attr_line_t()
+                            .append(x, VC_ROLE.value(role_t::VCR_KEYWORD))
+                            .highlight_fuzzy_matches(cget(args, 0).value_or(""))
+                            .append(" ")
+                            .pad_to(poss_width.value_or(0) + 1)
+                            .append(summary)
+                            .with_attr_for_all(
+                                lnav::prompt::SUBST_TEXT.value(x + " "));
+                    });
+
+        rc.open_popup_for_completion(0, poss);
+        rc.tc_popup.set_title("DB Command");
+    } else if (is_prql) {
         auto anno_line = attr_line_t(line);
         lnav::sql::annotate_prql_statement(anno_line);
         auto cursor_offset = prompt.p_editor.get_cursor_offset();
@@ -638,22 +672,26 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                                to_complete, *prompt.p_prql_completions.find(x));
                        });
             }
-            auto left = rc.tc_cursor.x - to_complete_sf.column_width();
-            rc.open_popup_for_completion(left, poss);
+            auto crange
+                = std::make_from_tuple<line_range>(line_sf.byte_to_column_index(
+                    to_complete_sf.sf_begin, to_complete_sf.sf_end));
+            rc.open_popup_for_completion(crange, poss);
             rc.tc_popup.set_title(title);
         }
-    } else {
+    } else if (!prompt.p_in_completion) {
+        // change was not from a completion
         clear_preview();
 
-        auto anno_line = attr_line_t(line);
+        auto anno_line = rc.tc_lines[rc.tc_cursor.y];
         annotate_sql_statement(anno_line);
-        auto cursor_offset = prompt.p_editor.get_cursor_offset();
+        auto cursor_offset = anno_line.column_to_byte_index(rc.tc_cursor.x);
 
         auto attr_iter = rfind_string_attr_if(
             anno_line.al_attrs,
             cursor_offset,
             [cursor_offset](const string_attr& attr) {
-                return attr.sa_range.lr_end == cursor_offset;
+                return attr.sa_range.lr_start <= cursor_offset
+                    && cursor_offset <= attr.sa_range.lr_end;
             });
         if (attr_iter != anno_line.al_attrs.end()) {
             auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
@@ -661,38 +699,46 @@ rl_sql_change(textinput_curses& rc, bool is_req)
             std::vector<std::string> poss_strs;
             std::vector<attr_line_t> poss;
 
-            if (attr_iter->sa_range.lr_start == 0) {
-                poss_strs = *sql_cmd_map
-                    | lnav::itertools::filter_in([](const auto& pair) {
-                          return pair.second->c_dependencies.empty();
-                      })
-                    | lnav::itertools::first()
-                    | lnav::itertools::similar_to(to_complete, 10);
-                auto width = poss_strs
-                    | lnav::itertools::map(&std::string::size)
-                    | lnav::itertools::max();
-                for (const auto& str : poss_strs) {
-                    poss.emplace_back(prompt.get_db_completion_text(
-                        to_complete, str, width.value_or(0)));
-                }
-            } else {
-                poss_strs = prompt.p_sql_completions | lnav::itertools::first()
-                    | lnav::itertools::similar_to(to_complete, 10);
-                for (const auto& str : poss_strs) {
-                    auto eq_range = prompt.p_sql_completions.equal_range(str);
+            log_debug("SQL complete: %s -- %s",
+                      attr_iter->sa_type->sat_name,
+                      to_complete.c_str());
+            poss_strs = prompt.p_sql_completions | lnav::itertools::first()
+                | lnav::itertools::similar_to(to_complete, 10);
+            for (const auto& str : poss_strs) {
+                auto eq_range = prompt.p_sql_completions.equal_range(str);
 
-                    for (auto iter = eq_range.first; iter != eq_range.second;
-                         ++iter)
-                    {
-                        auto al = prompt.get_sql_completion_text(to_complete,
-                                                                 *iter);
-                        poss.emplace_back(al);
-                    }
+                for (auto iter = eq_range.first; iter != eq_range.second;
+                     ++iter)
+                {
+                    auto al
+                        = prompt.get_sql_completion_text(to_complete, *iter);
+                    poss.emplace_back(al);
                 }
             }
 
-            auto left = rc.tc_cursor.x - to_complete_sf.column_width();
-            rc.open_popup_for_completion(left, poss);
+            auto crange
+                = std::make_from_tuple<line_range>(line_sf.byte_to_column_index(
+                    to_complete_sf.sf_begin, to_complete_sf.sf_end));
+            log_debug(
+                "sql complete range [%d:%d)", crange.lr_start, crange.lr_end);
+            rc.open_popup_for_completion(crange, poss);
+            rc.tc_popup.set_title("");
+        } else if (is_req) {
+            std::vector<attr_line_t> poss;
+
+            for (const auto& sql_pair : prompt.p_sql_completions) {
+                const auto& item = sql_pair.second;
+                auto add = item.is<lnav::prompt::sql_table_t>()
+                    || item.is<lnav::prompt::sql_function_t>()
+                    || item.is<lnav::prompt::sql_format_column_t>();
+                if (!add) {
+                    continue;
+                }
+
+                poss.emplace_back(prompt.get_sql_completion_text("", sql_pair));
+            }
+            rc.open_popup_for_completion(rc.tc_cursor.x, poss);
+            rc.tc_popup.set_title("");
         }
     }
 
@@ -737,19 +783,29 @@ rl_search_change(textinput_curses& rc, bool is_req)
         auto arg_res_opt = parse_res.arg_at(byte_x);
         if (arg_res_opt) {
             auto arg_pair = arg_res_opt.value();
+            log_debug("apair %s [%d:%d) -- %s",
+                      arg_pair.aar_help->ht_name,
+                      arg_pair.aar_element.se_origin.sf_begin,
+                      arg_pair.aar_element.se_origin.sf_end,
+                      arg_pair.aar_element.se_value.c_str());
             if (is_req
-                || rc.tc_popup_type != textinput_curses::popup_type_t::none)
+                || (!arg_pair.aar_element.se_origin.empty()
+                    && rc.tc_popup_type
+                        != textinput_curses::popup_type_t::none))
             {
                 auto poss = prompt.get_cmd_parameter_completion(
                     *tc,
                     &SEARCH_HELP,
                     arg_pair.aar_help,
                     arg_pair.aar_element.se_value);
-                auto left = arg_pair.aar_element.se_value.empty()
-                    ? rc.tc_cursor.x
-                    : line_sf.byte_to_column_index(
-                          arg_pair.aar_element.se_origin.sf_begin);
-                rc.open_popup_for_completion(left, poss);
+
+                auto crange = arg_pair.aar_element.se_origin.empty()
+                    ? line_range{rc.tc_cursor.x, rc.tc_cursor.x}
+                    : std::make_from_tuple<line_range>(
+                          line_sf.byte_to_column_index(
+                              arg_pair.aar_element.se_origin.sf_begin,
+                              arg_pair.aar_element.se_origin.sf_end));
+                rc.open_popup_for_completion(crange, poss);
                 rc.tc_popup.set_title(arg_pair.aar_help->ht_name);
             } else if (!line.empty() && arg_pair.aar_element.se_value.empty()
                        && rc.is_cursor_at_end_of_line())
@@ -865,11 +921,11 @@ rl_exec_change(textinput_curses& rc, bool is_req)
                         &EXEC_HELP,
                         arg_pair.aar_help,
                         arg_pair.aar_element.se_value);
-                    auto left = arg_pair.aar_element.se_value.empty()
-                        ? rc.tc_cursor.x
-                        : line_sf.byte_to_column_index(
-                              arg_pair.aar_element.se_origin.sf_begin);
-                    rc.open_popup_for_completion(left, poss);
+                    auto crange = std::make_from_tuple<line_range>(
+                        line_sf.byte_to_column_index(
+                            arg_pair.aar_element.se_origin.sf_begin,
+                            arg_pair.aar_element.se_origin.sf_end));
+                    rc.open_popup_for_completion(crange, poss);
                     rc.tc_popup.set_title(arg_pair.aar_help->ht_name);
                 } else if (!line.empty()
                            && arg_pair.aar_element.se_value.empty()
@@ -959,6 +1015,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
         case ln_mode_t::SEARCH_FILES:
         case ln_mode_t::SEARCH_SPECTRO_DETAILS:
             name = "$search";
+            clear_preview();
             break;
 
         case ln_mode_t::CAPTURE:
@@ -1519,6 +1576,8 @@ rl_callback(textinput_curses& rc)
                 auto tmp_pair = open_temp_res.unwrap();
                 auto fd_copy = tmp_pair.second.dup();
                 auto tf = text_format_t::TF_UNKNOWN;
+                auto& dls = lnav_data.ld_db_row_source;
+                auto before_dls_gen = dls.dls_generation;
 
                 {
                     exec_context::output_guard og(
@@ -1569,6 +1628,10 @@ rl_callback(textinput_curses& rc)
                     lnav_data.ld_files_to_front.emplace_back(desc);
 
                     rc.set_alt_value(HELP_MSG_1(X, "to close the file"));
+                } else if (before_dls_gen != dls.dls_generation
+                           && dls.dls_row_cursors.size() > 1)
+                {
+                    ensure_view(&lnav_data.ld_views[LNV_DB]);
                 }
             }
             break;
@@ -1619,14 +1682,16 @@ rl_focus(textinput_curses& rc)
 void
 rl_blur(textinput_curses& rc)
 {
-    auto fos = (field_overlay_source*) lnav_data.ld_views[LNV_LOG]
-                   .get_overlay_source();
+    auto* fos = (field_overlay_source*) lnav_data.ld_views[LNV_LOG]
+                    .get_overlay_source();
 
     fos->fos_contexts.pop();
     ensure(!fos->fos_contexts.empty());
     for (auto& tc : lnav_data.ld_views) {
         tc.set_sync_selection_and_top(false);
     }
+    lnav_data.ld_view_stack.top() |
+        [](auto* tc) { tc->set_overlay_selection(std::nullopt); };
     lnav_data.ld_preview_generation += 1;
     lnav_data.ld_bottom_source.grep_error("");
 }

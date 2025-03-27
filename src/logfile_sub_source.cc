@@ -3470,10 +3470,18 @@ logfile_sub_source::reload_config(error_reporter& reporter)
     static const auto& cfg
         = injector::get<const logfile_sub_source_ns::config&>();
 
-    if (cfg.c_time_column
-            == logfile_sub_source_ns::time_column_feature_t::Default
-        && this->lss_line_context == line_context_t::none)
-    {
-        this->lss_line_context = line_context_t::time_column;
+    switch (cfg.c_time_column) {
+        case logfile_sub_source_ns::time_column_feature_t::Default:
+            if (this->lss_line_context == line_context_t::none) {
+                this->lss_line_context = line_context_t::time_column;
+            }
+            break;
+        case logfile_sub_source_ns::time_column_feature_t::Disabled:
+            if (this->lss_line_context == line_context_t::time_column) {
+                this->lss_line_context = line_context_t::none;
+            }
+            break;
+        case logfile_sub_source_ns::time_column_feature_t::Enabled:
+            break;
     }
 }

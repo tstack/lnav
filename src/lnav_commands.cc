@@ -3538,7 +3538,7 @@ script_prompt(std::vector<std::string>& args)
     lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     prompt.focus_for(*tc, '|', args);
     lnav_data.ld_bottom_source.set_prompt(
-        "Enter a script to execute: (Press " ANSI_BOLD("CTRL+]") " to abort)");
+        "Enter a script to execute: (Press " ANSI_BOLD("Esc") " to abort)");
 }
 
 static void
@@ -3559,7 +3559,7 @@ search_prompt(std::vector<std::string>& args)
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
-        ANSI_BOLD("CTRL+]") " to abort)");
+        ANSI_BOLD("Esc") " to abort)");
 }
 
 static void
@@ -3574,7 +3574,7 @@ search_filters_prompt(std::vector<std::string>& args)
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
-        ANSI_BOLD("CTRL+]") " to abort)");
+        ANSI_BOLD("Esc") " to abort)");
 }
 
 static void
@@ -3588,7 +3588,7 @@ search_files_prompt(std::vector<std::string>& args)
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
-        ANSI_BOLD("CTRL+]") " to abort)");
+        ANSI_BOLD("Esc") " to abort)");
 }
 
 static void
@@ -3603,7 +3603,7 @@ search_spectro_details_prompt(std::vector<std::string>& args)
     lnav_data.ld_bottom_source.set_prompt(
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
-        ANSI_BOLD("CTRL+]") " to abort)");
+        ANSI_BOLD("Esc") " to abort)");
 }
 
 static void
@@ -3636,7 +3636,7 @@ sql_prompt(std::vector<std::string>& args)
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press "
         ANSI_BOLD("CTRL+L") " for multi-line mode and "
-        ANSI_BOLD("CTRL+]") " to abort)");
+        ANSI_BOLD("Esc") " to abort)");
 }
 
 static void

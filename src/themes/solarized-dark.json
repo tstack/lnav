@@ -111,22 +111,24 @@
                         "background-color": "$base02"
                     },
                     "h1": {
-                        "underline": true
+                        "color": "$magenta",
+                        "bold": true
                     },
                     "h2": {
+                        "color": "$magenta",
                         "underline": true
                     },
                     "h3": {
-                        "underline": true
+                        "color": "$magenta"
                     },
                     "h4": {
                         "underline": true
                     },
                     "h5": {
-                        "underline": true
+                        "italic": true
                     },
                     "h6": {
-                        "underline": true
+                        "italic": true
                     },
                     "hr": {
                         "color": "#444"

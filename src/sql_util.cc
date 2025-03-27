@@ -366,11 +366,11 @@ walk_sqlite_metadata(sqlite3* db, sqlite_metadata_callbacks& smc)
              ++table_iter)
         {
             auto_mem<char, sqlite3_free> table_query;
-            std::string& table_name = *table_iter;
+            smc.smc_table_name = *table_iter;
 
             table_query = sqlite3_mprintf("pragma %Q.table_xinfo(%Q)",
                                           iter->first.c_str(),
-                                          table_name.c_str());
+                                          smc.smc_table_name.c_str());
             if (table_query == nullptr) {
                 return SQLITE_NOMEM;
             }
@@ -386,7 +386,7 @@ walk_sqlite_metadata(sqlite3* db, sqlite_metadata_callbacks& smc)
 
             table_query = sqlite3_mprintf("pragma %Q.foreign_key_list(%Q)",
                                           iter->first.c_str(),
-                                          table_name.c_str());
+                                          smc.smc_table_name.c_str());
             if (table_query == nullptr) {
                 return SQLITE_NOMEM;
             }

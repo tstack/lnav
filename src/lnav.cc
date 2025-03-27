@@ -1452,11 +1452,23 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         }
     };
     auto click_handler = [](textview_curses& tc, const attr_line_t& al, int x) {
+        if (tc.tc_selected_text) {
+            return;
+        }
+        static auto& ec = lnav_data.ld_exec_context;
         auto cmd_iter
             = find_string_attr_containing(al.get_attrs(), &VC_COMMAND, x);
         if (cmd_iter != al.al_attrs.end()) {
             auto cmd = cmd_iter->sa_value.get<ui_command>();
-            lnav_data.ld_exec_context.execute(cmd.uc_location, cmd.uc_command);
+            ec.execute(cmd.uc_location, cmd.uc_command);
+        }
+        auto link_iter
+            = find_string_attr_containing(al.get_attrs(), &VC_HYPERLINK, x);
+        if (link_iter != al.al_attrs.end()) {
+            ec.execute_with(
+                INTERNAL_SRC_LOC,
+                ":xopen $href",
+                std::make_pair("href", link_iter->sa_value.get<std::string>()));
         }
     };
     for (auto lpc = 0; lpc < LNV__MAX; lpc++) {
