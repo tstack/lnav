@@ -538,6 +538,11 @@ looper::loop()
                 }
 
                 if (li.li_partial && !cap.lb.is_pipe_closed()) {
+                    if (!cap.lb.is_pipe() && !this->l_options.o_follow) {
+                        log_info("%s: reached EOF on partial read, exiting",
+                                 this->l_name.c_str());
+                        this->l_looping = false;
+                    }
                     break;
                 }
 

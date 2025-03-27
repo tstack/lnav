@@ -22,3 +22,4 @@ redis-1  | 1:M 25 Apr 2024 05:54:43.948 * DB saved on disk
 out of frame line 1
 out of frame line 2
 redis-1  | 1:M 25 Apr 2024 05:54:43.948 # Redis is now ready to exit, bye bye...
+redis-1  | 1:
