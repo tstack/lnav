@@ -164,7 +164,10 @@ struct string_fragment {
 
     size_t column_width() const;
 
-    constexpr const char* data() const { return &this->sf_string[this->sf_begin]; }
+    constexpr const char* data() const
+    {
+        return &this->sf_string[this->sf_begin];
+    }
 
     const unsigned char* udata() const
     {
@@ -252,15 +255,20 @@ struct string_fragment {
             == 0;
     }
 
-    bool operator==(const char* str) const
+    template<std::size_t N>
+    bool operator==(const char (&str)[N]) const
     {
-        size_t len = strlen(str);
-
-        return len == (size_t) this->length()
-            && strncmp(this->data(), str, this->length()) == 0;
+        return (N - 1) == (size_t) this->length()
+            && strncmp(this->data(), str, N - 1) == 0;
     }
 
     bool operator!=(const char* str) const { return !(*this == str); }
+
+    template<typename...Args>
+    bool is_one_of(Args... args) const
+    {
+        return (this->operator==(args) || ...);
+    }
 
     bool startswith(const char* prefix) const
     {

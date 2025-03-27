@@ -130,7 +130,7 @@ public:
             int apply(z_streamp s);
         };
 
-    private:
+        line_buffer* parent;
         z_stream strm{}; /*< gzip streams structure */
         std::vector<indexDict>
             syncpoints; /*< indexed dictionaries as discovered */
@@ -273,6 +273,11 @@ public:
 
     size_t line_count_guess() const { return this->lb_line_starts.size(); }
 
+    const std::string& get_decompress_error() const
+    {
+        return this->lb_decompress_error;
+    }
+
     static void cleanup_cache();
 
 private:
@@ -388,6 +393,8 @@ private:
     std::optional<auto_fd> lb_cached_fd;
 
     file_header_t lb_header{mapbox::util::no_init{}};
+
+    std::string lb_decompress_error;
 };
 
 #endif

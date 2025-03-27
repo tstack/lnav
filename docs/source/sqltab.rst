@@ -19,7 +19,9 @@ the following tables/views:
 * `lnav_view_filters`_
 * `lnav_view_filter_stats`_
 * `lnav_view_filters_and_stats`_
+* `lnav_top_view`_
 * `all_logs`_
+* `lnav_focused_msg`_
 * `http_status_codes`_
 * `regexp_capture(<string>, <regex>)`_
 
@@ -265,6 +267,11 @@ lnav_view_filters_and_stats
 The :code:`lnav_view_filters_and_stats` view joins the :code:`lnav_view_filters`
 table with the :code:`lnav_view_filter_stats` table into a single view for ease of use.
 
+lnav_top_view
+-------------
+
+The :code:`lnav_top_view` view returns the row for the top view on the view stack.
+
 all_logs
 --------
 
@@ -273,6 +280,12 @@ all_logs
 The :code:`all_logs` table lets you query the format derived from the **lnav**
 log message parser that is used to automatically extract data, see
 :ref:`data-ext` for more details.
+
+lnav_focused_msg
+----------------
+
+The :code:`lnav_focused_msg` view returns the row for the focused log
+message from the :code:`all_logs` table.
 
 http_status_codes
 -----------------

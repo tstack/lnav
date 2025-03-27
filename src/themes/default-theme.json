@@ -45,6 +45,12 @@
                     },
                     "log-level-fatal": {
                         "value": "\uD83C\uDD35"
+                    },
+                    "play": {
+                        "value": "\u25b6"
+                    },
+                    "edit": {
+                        "value": "\u270F\uFE0F"
                     }
                 },
                 "vars": {

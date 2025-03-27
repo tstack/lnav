@@ -73,6 +73,7 @@ noinst_HEADERS = \
     string_attr_type.hh \
     string_util.hh \
     strnatcmp.h \
+    text_format_enum.hh \
     time_util.hh \
     types.hh
 

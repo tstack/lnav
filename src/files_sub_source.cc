@@ -503,6 +503,16 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 attr_line_t("  ")
                     .append(":open_file_folder:"_emoji)
                     .appendf(FMT_STRING(" {}"), path.parent_path()));
+
+            const auto& decompress_err = lf->get_decompress_error();
+            if (!decompress_err.empty()) {
+                details.emplace_back(
+                    attr_line_t("  ")
+                        .append("Error"_h2)
+                        .append(": ")
+                        .append(lnav::roles::error(decompress_err)));
+            }
+
             const auto notes = lf->get_notes();
             if (!notes.empty()) {
                 details.emplace_back(

@@ -267,6 +267,10 @@ statusview_curses::handle_mouse(mouse_event& me)
             find_res.value()->df_field_index);
 
         sf.on_click(sf);
+    } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED) {
+        if (this->sc_source->on_drag) {
+            this->sc_source->on_drag(me);
+        }
     }
 
     return true;

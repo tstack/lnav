@@ -6,6 +6,8 @@ Interface changes:
   - In the DB prompt: pressing `CTRL+L` will reformat the query and
     switch the prompt to multi-line mode; error locations will be
     highlighted.
+  - In multi-line mode, you can click and drag the status bar above
+    the prompt to resize the prompt.
   - Pressing `CTRL+O` in the prompt will transfer the prompt to
     contents to Visual Studio Code or the default text editor on
     macOS.
@@ -22,6 +24,10 @@ Interface changes:
     press `TAB` to complete.
   - In the history listing, an icon indicates if the command or
     query succeeded or failed.
+  - Mouse input works as expected: left-click positions the cursor
+    in a given location, and a click-drag will select text.
+    A right-click will copy the selected text to the system
+    clipboard.
 * Pressing `F1` in the prompt will show the help text for the
   prompt itself.
   The size of the prompt panel is expanded for readability.
@@ -34,9 +40,9 @@ Interface changes:
   contain no content to make it clear to the user that they
   need to switch views or `:open` a file.
 * The HIST view now supports bookmarks, so you can use the usual
-  hotkeys to just to the next/previous time segment with
+  hotkeys to move to the next/previous time segment with
   errors/warnings/marks.
-* In table cells, control characters are replaced with unicode
+* In table cells, control characters are replaced with Unicode
   symbols and highlighted with the 'hidden' style from the theme.
 
 Features:
@@ -44,6 +50,8 @@ Features:
   mode and does syntax highlighting for Markdown directives in the
   comment.
   The rendered Markdown will also now be shown in the preview panel.
+* lnav code blocks in Markdown content now have a play button (▶)
+  next to commands that you can click on to run the command.
 * Scrolling right in the LOG view when at the start of a message
   can hide the timestamp/level fields in the message and insert a
   shorter timestamp column on the left side.
@@ -93,6 +101,10 @@ Features:
   [export of search results from Graylog](https://go2docs.graylog.org/current/interacting_with_your_log_data/export_search_results.html)
   can automatically be split into separate streams based on the
   `source` property.
+* Added an `lnav_focused_msg` SQL VIEW that returns a single row
+  with the columns from the `all_logs` table for the currently
+  focused log message.  An `UPDATE` of the mutable columns will
+  update the corresponding row in the `all_logs` table.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.
@@ -106,8 +118,10 @@ Bug Fixes:
 * The `:export-session-to` command will now include `:open` commands
   for log files that were piped in to lnav or executed with the `:sh`
   command.
-* The `:set-file-timezone` command was not working correctly in some 
+* The `:set-file-timezone` command was not working correctly in some
   cases.
+* The location of views should be restored from the session when filters
+  are active.
 
 ## lnav v0.12.4
 

@@ -36,7 +36,9 @@
 #include <vector>
 
 #include "base/attr_line.hh"
+#include "base/intern_string.hh"
 #include "base/result.h"
+#include "mapbox/variant.hpp"
 #include "md4cpp.hh"
 
 namespace pugi {
@@ -50,6 +52,21 @@ public:
     md2attr_line& with_source_path(std::optional<std::filesystem::path> path)
     {
         this->ml_source_path = path;
+        if (path) {
+            this->ml_source_id = intern_string::lookup(path->c_str());
+        }
+        return *this;
+    }
+
+    md2attr_line& with_source_id(intern_string_t id)
+    {
+        this->ml_source_id = id;
+        return *this;
+    }
+
+    md2attr_line& add_lnav_script_icons()
+    {
+        this->ml_add_lnav_script_icons = true;
         return *this;
     }
 
@@ -100,6 +117,9 @@ private:
     attr_line_t to_attr_line(const pugi::xml_node& doc);
 
     std::optional<std::filesystem::path> ml_source_path;
+    intern_string_t ml_source_id;
+    bool ml_add_lnav_script_icons{false};
+
     std::vector<attr_line_t> ml_blocks;
     std::vector<list_block_t> ml_list_stack;
     std::vector<table_t> ml_tables;

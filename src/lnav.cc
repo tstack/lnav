@@ -1451,6 +1451,14 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
         }
     };
+    auto click_handler = [](textview_curses& tc, const attr_line_t& al, int x) {
+        auto cmd_iter
+            = find_string_attr_containing(al.get_attrs(), &VC_COMMAND, x);
+        if (cmd_iter != al.al_attrs.end()) {
+            auto cmd = cmd_iter->sa_value.get<ui_command>();
+            lnav_data.ld_exec_context.execute(cmd.uc_location, cmd.uc_command);
+        }
+    };
     for (auto lpc = 0; lpc < LNV__MAX; lpc++) {
         lnav_data.ld_views[lpc].set_window(lnav_data.ld_window);
         lnav_data.ld_views[lpc].set_y(2);
@@ -1461,6 +1469,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         lnav_data.ld_views[lpc].tc_disabled_cursor_role
             = role_t::VCR_DISABLED_CURSOR_LINE;
         lnav_data.ld_views[lpc].tc_state_event_handler = event_handler;
+        lnav_data.ld_views[lpc].tc_on_click = click_handler;
+        lnav_data.ld_views[lpc].tc_interactive = true;
     }
     lnav_data.ld_views[LNV_DB].set_supports_marks(true);
     lnav_data.ld_views[LNV_HELP].set_supports_marks(true);
@@ -1541,6 +1551,19 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         = injector::bind<top_status_source>::to_scoped_singleton();
     auto top_source = injector::get<std::shared_ptr<top_status_source>>();
 
+    lnav_data.ld_bottom_source.on_drag = [](mouse_event& me) {
+        static auto& prompt = lnav::prompt::get();
+
+        if (!prompt.p_editor.vc_enabled || prompt.p_editor.tc_height == 1) {
+            return;
+        }
+
+        auto full_height = (int) ncplane_dim_y(prompt.p_editor.tc_window);
+        auto max_height = full_height - 16;
+        auto new_height
+            = std::max(2, full_height - (prompt.p_editor.get_y() + me.me_y));
+        prompt.p_editor.set_height(std::min(max_height, new_height));
+    };
     lnav_data.ld_bottom_source.get_field(bottom_status_source::BSF_HELP)
         .on_click
         = [](status_field&) { ensure_view(&lnav_data.ld_views[LNV_HELP]); };
@@ -1850,12 +1873,13 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             lnav_data.ld_view_stack.set_needs_update();
         }
         ncplane_resize_maximize(sc.get_std_plane());
-        if (lnav_data.ld_view_stack.do_update()) {
-            breadcrumb_view->set_needs_update();
-        }
         if (prompt.p_editor.get_needs_update()) {
             lnav_data.ld_doc_view.set_needs_update();
             lnav_data.ld_example_view.set_needs_update();
+            lnav_data.ld_view_stack.set_needs_update();
+        }
+        if (lnav_data.ld_view_stack.do_update()) {
+            breadcrumb_view->set_needs_update();
         }
         lnav_data.ld_doc_view.do_update();
         lnav_data.ld_example_view.do_update();
@@ -1955,10 +1979,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         gettimeofday(&current_time, nullptr);
         ui_now = ui_clock::now();
-        if (lb.lb_last_view != nullptr) {
-            lb.lb_last_event.me_time = current_time;
-            lb.lb_last_view->handle_mouse(lb.lb_last_event);
-        }
+        lb.tick(current_time);
 
         got_user_input = false;
         if (rc < 0) {

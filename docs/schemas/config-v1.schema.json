@@ -462,6 +462,16 @@
                                             "description": "Icon for 'fatal' log level",
                                             "title": "/ui/theme-defs/<theme_name>/icons/log-level-fatal",
                                             "$ref": "#/definitions/icon"
+                                        },
+                                        "play": {
+                                            "description": "Icon for a 'play' button",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/play",
+                                            "$ref": "#/definitions/icon"
+                                        },
+                                        "edit": {
+                                            "description": "Icon for a 'edit' button",
+                                            "title": "/ui/theme-defs/<theme_name>/icons/edit",
+                                            "$ref": "#/definitions/icon"
                                         }
                                     },
                                     "additionalProperties": false

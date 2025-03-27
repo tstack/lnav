@@ -66,6 +66,10 @@ Goodbye, [36m▌[0m World[32m╏[0m!
  ▌[37m[40m    </book>                                [0m
  ▌[37m[40m</books>                                   [0m
 
+ ▌[37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40m*[0m[37m[40m [0m[1m[36m[40mFROM[0m[37m[40m [0m[37m[40msyslog_log[0m[37m[40m               [0m
+ ▌[37m[40m                                        [0m
+ ▌[37m[40m:[0m[1m[36m[40mfilter-out[0m[37m[40m spam                        [0m
+
 [1mGithub Alerts[0m
 
  [34m▌[0m[34mⓘ  Note[0m                                                      

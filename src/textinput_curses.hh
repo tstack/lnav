@@ -38,6 +38,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/attr_line.hh"
@@ -290,7 +291,7 @@ public:
 
     textinput_curses(const textinput_curses&) = delete;
 
-    void set_content(const attr_line_t& al);
+    void set_content(std::string al);
 
     void set_height(int height);
 
@@ -303,6 +304,8 @@ public:
     bool handle_search_key(const ncinput& ch);
 
     bool handle_key(const ncinput& ch);
+
+    void content_to_lines(std::string content, int x);
 
     void update_lines();
 
@@ -416,7 +419,17 @@ public:
 
     void command_up(const ncinput& ch);
 
+    enum class indent_mode_t {
+        right,
+        left,
+        clear_left,
+    };
+
+    void command_indent(indent_mode_t mode);
+
     void add_mark(input_point pos, const lnav::console::user_message& msg);
+
+    void sync_to_sysclip() const;
 
     enum class mode_t {
         editing,
@@ -426,7 +439,7 @@ public:
 
     struct change_entry {
         change_entry(selected_range range, std::string content)
-            : ce_range(range), ce_content(content)
+            : ce_range(range), ce_content(std::move(content))
         {
         }
         selected_range ce_range;

@@ -172,14 +172,26 @@ struct parse_userdata {
     std::string pu_error_msg;
 };
 
-static event_handler::block
-build_block(MD_BLOCKTYPE type, void* detail)
+void
+event_handler::set_line_number_from(const char* text)
+{
+    if (this->eh_fragment.begin() <= text && text < this->eh_fragment.end()) {
+        auto off = text - this->eh_fragment.begin();
+
+        this->eh_tree->visit_overlapping(off, off + 1, [this](const auto& cintv) {
+            this->eh_line_number = cintv.value;
+        });
+    }
+}
+
+event_handler::block
+event_handler::build_block(MD_BLOCKTYPE type, void* detail)
 {
     switch (type) {
         case MD_BLOCK_DOC:
-            return event_handler::block_doc{};
+            return block_doc{};
         case MD_BLOCK_QUOTE:
-            return event_handler::block_quote{};
+            return block_quote{};
         case MD_BLOCK_UL:
             return static_cast<MD_BLOCK_UL_DETAIL*>(detail);
         case MD_BLOCK_OL:
@@ -187,25 +199,29 @@ build_block(MD_BLOCKTYPE type, void* detail)
         case MD_BLOCK_LI:
             return static_cast<MD_BLOCK_LI_DETAIL*>(detail);
         case MD_BLOCK_HR:
-            return event_handler::block_hr{};
+            return block_hr{};
         case MD_BLOCK_H:
             return static_cast<MD_BLOCK_H_DETAIL*>(detail);
-        case MD_BLOCK_CODE:
-            return static_cast<MD_BLOCK_CODE_DETAIL*>(detail);
+        case MD_BLOCK_CODE: {
+            auto retval = static_cast<MD_BLOCK_CODE_DETAIL*>(detail);
+
+            this->set_line_number_from(retval->lang.text);
+            return retval;
+        }
         case MD_BLOCK_HTML:
-            return event_handler::block_html{};
+            return block_html{};
         case MD_BLOCK_P:
-            return event_handler::block_p{};
+            return block_p{};
         case MD_BLOCK_TABLE:
             return static_cast<MD_BLOCK_TABLE_DETAIL*>(detail);
         case MD_BLOCK_THEAD:
-            return event_handler::block_thead{};
+            return block_thead{};
         case MD_BLOCK_TBODY:
-            return event_handler::block_tbody{};
+            return block_tbody{};
         case MD_BLOCK_TR:
-            return event_handler::block_tr{};
+            return block_tr{};
         case MD_BLOCK_TH:
-            return event_handler::block_th{};
+            return block_th{};
         case MD_BLOCK_TD:
             return static_cast<MD_BLOCK_TD_DETAIL*>(detail);
     }
@@ -213,24 +229,24 @@ build_block(MD_BLOCKTYPE type, void* detail)
     return {};
 }
 
-static event_handler::span
-build_span(MD_SPANTYPE type, void* detail)
+event_handler::span
+event_handler::build_span(MD_SPANTYPE type, void* detail)
 {
     switch (type) {
         case MD_SPAN_EM:
-            return event_handler::span_em{};
+            return span_em{};
         case MD_SPAN_STRONG:
-            return event_handler::span_strong{};
+            return span_strong{};
         case MD_SPAN_A:
             return static_cast<MD_SPAN_A_DETAIL*>(detail);
         case MD_SPAN_IMG:
             return static_cast<MD_SPAN_IMG_DETAIL*>(detail);
         case MD_SPAN_CODE:
-            return event_handler::span_code{};
+            return span_code{};
         case MD_SPAN_DEL:
-            return event_handler::span_del{};
+            return span_del{};
         case MD_SPAN_U:
-            return event_handler::span_u{};
+            return span_u{};
         default:
             break;
     }
@@ -243,7 +259,8 @@ md4cpp_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata)
 {
     auto* pu = static_cast<parse_userdata*>(userdata);
 
-    auto enter_res = pu->pu_handler.enter_block(build_block(type, detail));
+    auto enter_res
+        = pu->pu_handler.enter_block(pu->pu_handler.build_block(type, detail));
     if (enter_res.isErr()) {
         pu->pu_error_msg = enter_res.unwrapErr();
         return 1;
@@ -256,8 +273,8 @@ static int
 md4cpp_leave_block(MD_BLOCKTYPE type, void* detail, void* userdata)
 {
     auto* pu = static_cast<parse_userdata*>(userdata);
-
-    auto leave_res = pu->pu_handler.leave_block(build_block(type, detail));
+    auto leave_res
+        = pu->pu_handler.leave_block(pu->pu_handler.build_block(type, detail));
     if (leave_res.isErr()) {
         pu->pu_error_msg = leave_res.unwrapErr();
         return 1;
@@ -271,7 +288,8 @@ md4cpp_enter_span(MD_SPANTYPE type, void* detail, void* userdata)
 {
     auto* pu = static_cast<parse_userdata*>(userdata);
 
-    auto enter_res = pu->pu_handler.enter_span(build_span(type, detail));
+    auto enter_res
+        = pu->pu_handler.enter_span(pu->pu_handler.build_span(type, detail));
     if (enter_res.isErr()) {
         pu->pu_error_msg = enter_res.unwrapErr();
         return 1;
@@ -285,7 +303,8 @@ md4cpp_leave_span(MD_SPANTYPE type, void* detail, void* userdata)
 {
     auto* pu = static_cast<parse_userdata*>(userdata);
 
-    auto leave_res = pu->pu_handler.leave_span(build_span(type, detail));
+    auto leave_res
+        = pu->pu_handler.leave_span(pu->pu_handler.build_span(type, detail));
     if (leave_res.isErr()) {
         pu->pu_error_msg = leave_res.unwrapErr();
         return 1;
@@ -320,7 +339,21 @@ parse(const string_fragment& sf, event_handler& eh)
                         scan_res.usr_message));
     }
 
+    auto eols = std::vector<event_handler::line_type_t>{};
+    int lineno = 1;
+
+    auto rest_sf = sf;
+    while (!rest_sf.empty()) {
+        auto split_pair = rest_sf.split_when(string_fragment::tag1{'\n'});
+        auto line_sf = split_pair.first;
+
+        eols.emplace_back(line_sf.sf_begin, line_sf.sf_end, lineno++);
+        rest_sf = split_pair.second;
+    }
+
     MD_PARSER parser = {0};
+    eh.eh_fragment = sf;
+    eh.eh_tree = std::make_unique<event_handler::lines_tree_t>(std::move(eols));
     auto pu = parse_userdata{eh};
 
     parser.abi_version = 0;

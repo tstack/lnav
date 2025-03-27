@@ -257,15 +257,18 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             return true;
         }
         case 'n': {
-            lnav_data.ld_exec_context.execute(":next-mark search");
+            lnav_data.ld_exec_context.execute(INTERNAL_SRC_LOC,
+                                              ":next-mark search");
             return true;
         }
         case 'N': {
-            lnav_data.ld_exec_context.execute(":prev-mark search");
+            lnav_data.ld_exec_context.execute(INTERNAL_SRC_LOC,
+                                              ":prev-mark search");
             return true;
         }
         case '/': {
-            lnav_data.ld_exec_context.execute(":prompt search-filters");
+            lnav_data.ld_exec_context.execute(INTERNAL_SRC_LOC,
+                                              ":prompt search-filters");
             return true;
         }
         default:

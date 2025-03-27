@@ -35,6 +35,7 @@
 #include "base/ansi_scrubber.hh"
 #include "base/humanize.time.hh"
 #include "base/injector.hh"
+#include "base/lnav_log.hh"
 #include "base/time_util.hh"
 #include "config.h"
 #include "data_scanner.hh"
@@ -336,8 +337,7 @@ textview_curses::grep_begin(grep_proc<vis_line_t>& gp,
         }
         if (pair.first != pair.second) {
             auto to_del = std::vector<vis_line_t>{};
-            for (auto file_iter = pair.first;
-                 file_iter != pair.second;
+            for (auto file_iter = pair.first; file_iter != pair.second;
                  ++file_iter)
             {
                 to_del.emplace_back(*file_iter);
@@ -728,6 +728,9 @@ textview_curses::handle_mouse(mouse_event& me)
                         };
                     }
                 }
+                if (this->tc_on_click) {
+                    this->tc_on_click(*this, al, cursor_sf.sf_begin);
+                }
             }
             if (mouse_line.is<overlay_content>()) {
                 const auto& oc = mouse_line.get<overlay_content>();
@@ -752,9 +755,16 @@ textview_curses::handle_mouse(mouse_event& me)
                         auto row_opt = ta->row_for_anchor(href);
 
                         if (row_opt.has_value()) {
+                            this->tc_sub_source->get_location_history() |
+                                [&oc](auto lh) {
+                                    lh->loc_history_append(oc.oc_main_line);
+                                };
                             this->set_selection(row_opt.value());
                         }
                     }
+                }
+                if (this->tc_on_click) {
+                    this->tc_on_click(*this, al, cursor_sf.sf_begin);
                 }
             }
             if (this->tc_delegate != nullptr) {
@@ -787,6 +797,9 @@ textview_curses::apply_highlights(attr_line_t& al,
     }
 
     auto source_format = this->tc_sub_source->get_text_format();
+    if (source_format == text_format_t::TF_BINARY) {
+        return;
+    }
     for (const auto& tc_highlight : this->tc_highlights) {
         bool internal_hl
             = tc_highlight.first.first == highlight_source_t::INTERNAL

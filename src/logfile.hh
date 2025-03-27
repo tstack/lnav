@@ -167,6 +167,15 @@ public:
 
     int get_index_generation() const { return this->lf_index_generation; }
 
+    file_ssize_t get_content_size() const
+    {
+        auto lb_size = this->lf_line_buffer.get_file_size();
+        if (lb_size != -1) {
+            return lb_size;
+        }
+        return this->lf_stat.st_size;
+    }
+
     std::optional<const_iterator> line_for_offset(file_off_t off) const;
 
     /**
@@ -469,6 +478,11 @@ public:
     }
 
     size_t estimated_remaining_lines() const;
+
+    const std::string& get_decompress_error() const
+    {
+        return this->lf_line_buffer.get_decompress_error();
+    }
 
 protected:
     /**

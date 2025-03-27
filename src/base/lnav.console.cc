@@ -504,6 +504,11 @@ wchar_for_icon(ui_icon_t ic)
             return {L'\U0001F132', role_t::VCR_ERROR};
         case ui_icon_t::log_level_fatal:
             return {L'\U0001F135', role_t::VCR_ERROR};
+
+        case ui_icon_t::play:
+            return {L'\u25b6', role_t::VCR_TEXT};
+        case ui_icon_t::edit:
+            return {L'\u270f', role_t::VCR_TEXT};
     }
 
     ensure(false);

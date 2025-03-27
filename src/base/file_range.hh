@@ -83,8 +83,21 @@ struct source_location {
     {
     }
 
+    bool operator==(const source_location& rhs) const
+    {
+        return this->sl_source == rhs.sl_source
+            && this->sl_line_number == rhs.sl_line_number;
+    }
+
     intern_string_t sl_source;
     int32_t sl_line_number;
 };
+
+#define INTERNAL_SRC_LOC \
+    (+[]() { \
+        static const intern_string_t PATH \
+            = intern_string::lookup("__" __FILE__); \
+        return source_location{PATH, __LINE__}; \
+    })()
 
 #endif

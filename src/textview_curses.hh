@@ -888,6 +888,7 @@ public:
                           const line_range& body,
                           const line_range& orig_line);
 
+    bool tc_interactive{false};
     std::function<void(textview_curses&)> tc_state_event_handler;
 
     std::optional<role_t> tc_cursor_role;
@@ -906,6 +907,8 @@ public:
     bool tc_text_selection_active{false};
     display_line_content_t tc_press_line;
     int tc_press_left{0};
+    std::function<void(textview_curses&, const attr_line_t&, int x)>
+        tc_on_click;
 
 protected:
     class grep_highlighter {

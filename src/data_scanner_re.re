@@ -276,6 +276,12 @@ loop:
            goto yyc_codeblock;
        }
 
+       <init, bol> "~~~" {
+           CAPTURE(DT_CODE_BLOCK);
+           cap_inner.c_begin += 3;
+           goto yyc_codeblock;
+       }
+
        <codeblock> [\x00] {
            CAPTURE(DT_CODE_BLOCK);
            cap_inner.c_end -= 1;
@@ -283,6 +289,12 @@ loop:
        }
 
        <codeblock> "```" {
+           CAPTURE(DT_CODE_BLOCK);
+           cap_inner.c_end -= 3;
+           return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};
+       }
+
+       <codeblock> "~~~" {
            CAPTURE(DT_CODE_BLOCK);
            cap_inner.c_end -= 3;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};

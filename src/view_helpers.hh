@@ -110,9 +110,12 @@ textview_curses* get_textview_for_mode(ln_mode_t mode);
 
 class lnav_behavior : public mouse_behavior {
 public:
-    void mouse_event(notcurses* nc, int button, bool release, int x, int y) override;
+    void mouse_event(
+        notcurses* nc, int button, bool release, int x, int y) override;
+    void tick(const timeval& now);
 
     view_curses* lb_last_view{nullptr};
+    struct mouse_event lb_last_real_event;
     struct mouse_event lb_last_event;
     struct mouse_event lb_last_release_event;
 };

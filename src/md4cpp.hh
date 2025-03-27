@@ -30,6 +30,7 @@
 #ifndef lnav_md4cpp_hh
 #define lnav_md4cpp_hh
 
+#include <functional>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -37,6 +38,7 @@
 
 #include "base/intern_string.hh"
 #include "base/result.h"
+#include "intervaltree/IntervalTree.h"
 #include "mapbox/variant.hpp"
 #include "md4c/md4c.h"
 
@@ -115,11 +117,22 @@ public:
     virtual Result<void, std::string> text(MD_TEXTTYPE tt,
                                            const string_fragment& sf)
         = 0;
+
+    void set_line_number_from(const char* text);
+    block build_block(MD_BLOCKTYPE type, void* detail);
+    span build_span(MD_SPANTYPE type, void* detail);
+
+    using line_type_t = interval_tree::Interval<size_t, int>;
+    using lines_tree_t = interval_tree::IntervalTree<size_t, int>;
+
+    string_fragment eh_fragment;
+    std::unique_ptr<lines_tree_t> eh_tree;
+    int eh_line_number{0};
 };
 
 namespace details {
 Result<void, std::string> parse(const string_fragment& sf, event_handler& eh);
-}
+}  // namespace details
 
 template<typename T>
 class typed_event_handler : public event_handler {

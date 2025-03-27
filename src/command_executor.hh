@@ -46,6 +46,7 @@
 #include "db_sub_source.hh"
 #include "fmt/format.h"
 #include "help_text.hh"
+#include "lnav.script.parser.hh"
 #include "vis_line.hh"
 
 struct exec_context;
@@ -220,9 +221,14 @@ struct exec_context {
 
     sql_callback_guard push_callback(sql_callback_t cb);
 
+    source_guard enter_source(source_location, const std::string& content);
+
     source_guard enter_source(intern_string_t path,
                               int line_number,
-                              const std::string& content);
+                              const std::string& content)
+    {
+        return this->enter_source(source_location{path, line_number}, content);
+    }
 
     struct db_source_guard {
         explicit db_source_guard(exec_context* context) : dsg_context(context)
@@ -291,30 +297,33 @@ struct exec_context {
     }
 
     Result<std::string, lnav::console::user_message> execute(
-        const std::string& cmdline);
+        source_location loc, const std::string& cmdline);
 
     using kv_pair_t = std::pair<std::string, std::string>;
 
     Result<std::string, lnav::console::user_message> execute_with_int(
-        const std::string& cmdline)
+        source_location loc, const std::string& cmdline)
     {
-        return this->execute(cmdline);
+        return this->execute(loc, cmdline);
     }
 
     template<typename... Args>
     Result<std::string, lnav::console::user_message> execute_with_int(
-        const std::string& cmdline, kv_pair_t pair, Args... args)
+        source_location loc,
+        const std::string& cmdline,
+        kv_pair_t pair,
+        Args... args)
     {
         this->ec_local_vars.top().emplace(pair);
-        return this->execute_with_int(cmdline, args...);
+        return this->execute_with_int(loc, cmdline, args...);
     }
 
     template<typename... Args>
     Result<std::string, lnav::console::user_message> execute_with(
-        const std::string& cmdline, Args... args)
+        source_location loc, const std::string& cmdline, Args... args)
     {
         this->ec_local_vars.push({});
-        auto retval = this->execute_with_int(cmdline, args...);
+        auto retval = this->execute_with_int(loc, cmdline, args...);
         this->ec_local_vars.pop();
 
         return retval;
@@ -379,23 +388,18 @@ Result<std::string, lnav::console::user_message> execute_command(
 Result<std::string, lnav::console::user_message> execute_sql(
     exec_context& ec, const std::string& sql, std::string& alt_msg);
 
-class multiline_executor {
+class multiline_executor : public lnav::script::parser {
 public:
     exec_context& me_exec_context;
-    std::string me_source;
-    std::optional<std::string> me_cmdline;
-    int me_line_number{0};
-    int me_starting_line_number{0};
     std::string me_last_result;
 
-    multiline_executor(exec_context& ec, std::string src)
-        : me_exec_context(ec), me_source(src)
+    multiline_executor(exec_context& ec, const std::string& src)
+        : parser(src), me_exec_context(ec)
     {
     }
 
-    Result<void, lnav::console::user_message> push_back(string_fragment line);
-
-    Result<std::string, lnav::console::user_message> final();
+    Result<void, lnav::console::user_message> handle_command(
+        const std::string& cmd) override;
 };
 
 Result<std::string, lnav::console::user_message> execute_file(

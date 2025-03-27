@@ -1340,6 +1340,41 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                          });
                 break;
             }
+            case help_parameter_format_t::HPF_LOCATION: {
+                auto* ta = dynamic_cast<text_anchors*>(tc.get_sub_source());
+                auto* ttt
+                    = dynamic_cast<text_time_translator*>(tc.get_sub_source());
+
+                std::vector<std::string> poss_strs;
+
+                if (ttt != nullptr) {
+                    poss_strs.emplace_back("-1 day");
+                    poss_strs.emplace_back("-1h");
+                    poss_strs.emplace_back("-30m");
+                    poss_strs.emplace_back("-15m");
+                    poss_strs.emplace_back("-5m");
+                    poss_strs.emplace_back("-1m");
+                    poss_strs.emplace_back("+1m");
+                    poss_strs.emplace_back("+5m");
+                    poss_strs.emplace_back("+15m");
+                    poss_strs.emplace_back("+30m");
+                    poss_strs.emplace_back("+1h");
+                    poss_strs.emplace_back("+1 day");
+                }
+                if (ta != nullptr) {
+                    auto anchors = ta->get_anchors();
+
+                    poss_strs.insert(
+                        poss_strs.end(), anchors.begin(), anchors.end());
+                }
+
+                retval = poss_strs | lnav::itertools::similar_to(str, 10)
+                    | lnav::itertools::map([](const auto& x) {
+                             return attr_line_t(x).with_attr_for_all(
+                                 SUBST_TEXT.value(x));
+                         });
+                break;
+            }
         }
     } else {
         retval = ht->ht_enum_values | lnav::itertools::similar_to(str, 10)

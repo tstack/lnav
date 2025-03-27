@@ -67,6 +67,7 @@ jobs:
           libsqlite3-dev
           libbz2-dev
           libcurl4-openssl-dev
+          libunistring-dev
           zlib1g-dev
       - name: autogen
         run: ./autogen.sh

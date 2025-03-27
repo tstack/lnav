@@ -465,13 +465,10 @@ setup_highlights_int()
                             "see|since|throws|todo|version)"))
               .with_role(role_t::VCR_DOC_DIRECTIVE);
     hm[{highlight_source_t::INTERNAL, "var"}]
-        = highlighter(
-              xpcre_compile("(?:"
-                            "(?:var\\s+)?([\\-\\w]+)\\s*[!=+\\-*/|&^]?=|"
-                            "(?<!\\$)\\$(\\w+)|"
-                            "(?<!\\$)\\$\\((\\w+)\\)|"
-                            "(?<!\\$)\\$\\{(\\w+)\\}"
-                            ")"))
+        = highlighter(xpcre_compile("([a-zA-Z][a-zA-Z0-9_\\-]*)\\s*=|"
+                                    "\\$([a-zA-Z0-9_\\.]+)|"
+                                    "\\$\\{([a-zA-Z0-9_\\.]+)\\}|"
+                                    "\\$\\(([a-zA-Z0-9_\\.]+)\\)"))
               .with_nestable(false)
               .with_role(role_t::VCR_VARIABLE);
     hm[{highlight_source_t::INTERNAL, "yaml.var"}]
@@ -626,7 +623,8 @@ setup_highlights_int()
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_attrs(text_attrs::with_underline());
     hm[{highlight_source_t::INTERNAL, "md.li"}]
-        = highlighter(xpcre_compile(R"(^\s*(\*|\+|-|\d+\.)\s+(\[(?: |x|X)\])?)"))
+        = highlighter(
+              xpcre_compile(R"(^\s*(\*|\+|-|\d+\.)\s+(\[(?: |x|X)\])?)"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_LIST_GLYPH);
@@ -639,7 +637,7 @@ setup_highlights_int()
         = highlighter(xpcre_compile(R"((\[).+(\]\[)[^\)]+(\]))"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
-    .with_role(role_t::VCR_FOOTNOTE_BORDER);
+              .with_role(role_t::VCR_FOOTNOTE_BORDER);
     hm[{highlight_source_t::INTERNAL, "md.linkref"}]
         = highlighter(xpcre_compile(R"((\[\^?).+(\]:)\s+)"))
               .with_nestable(true)
@@ -651,11 +649,9 @@ setup_highlights_int()
                   R"(^\s*>[ \t](\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]))"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
-    .with_role(role_t::VCR_DOC_DIRECTIVE);
+              .with_role(role_t::VCR_DOC_DIRECTIVE);
     hm[{highlight_source_t::INTERNAL, "md.hr"}]
-        = highlighter(
-              xpcre_compile(
-                  R"((\*{3,}|-{3,}|_{3,}|={3,}))"))
+        = highlighter(xpcre_compile(R"((\*{3,}|-{3,}|_{3,}|={3,}))"))
               .with_nestable(true)
               .with_text_format(text_format_t::TF_MARKDOWN)
               .with_role(role_t::VCR_DOC_DIRECTIVE);
@@ -663,7 +659,7 @@ setup_highlights_int()
         = highlighter(xpcre_compile(R"(^\s*(>[ \t]+.*))"))
               .with_nestable(false)
               .with_text_format(text_format_t::TF_MARKDOWN)
-    .with_role(role_t::VCR_QUOTED_TEXT);
+              .with_role(role_t::VCR_QUOTED_TEXT);
     hm[{highlight_source_t::INTERNAL, "md.footnote"}]
         = highlighter(xpcre_compile(R"((\[\^\d+\]))"))
               .with_nestable(false)

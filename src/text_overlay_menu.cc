@@ -96,7 +96,8 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
             exec_context ec(&values, internal_sql_callback, pipe_callback);
 
             auto exec_res
-                = ec.execute_with("|lnav-link-callback $href $filepath",
+                = ec.execute_with(INTERNAL_SRC_LOC,
+                                  "|lnav-link-callback $href $filepath",
                                   std::make_pair("href", sti.sti_href),
                                   std::make_pair("filepath", filepath));
             if (exec_res.isOk()) {
@@ -123,7 +124,6 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
 
     retval.emplace_back(attr_line_t().pad_to(left).append(title));
     {
-        static intern_string_t SRC = intern_string::lookup("menu");
         attr_line_t al;
 
         int start = left;
@@ -151,13 +151,13 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                                       lnav::pcre2pp::quote(value));
                     auto& dls = lnav_data.ld_db_row_source;
                     auto previous_db_gen = dls.dls_generation;
-                    auto src_guard
-                        = lnav_data.ld_exec_context.enter_source(SRC, 1, cmd);
                     auto exec_res
                         = lnav_data.ld_exec_context
                               .with_provenance(exec_context::mouse_input{})
                               ->execute_with(
-                                  cmd, std::make_pair("href", sti.sti_href));
+                                  INTERNAL_SRC_LOC,
+                                  cmd,
+                                  std::make_pair("href", sti.sti_href));
                     if (exec_res.isOk()) {
                         lnav::prompt::get().p_editor.set_inactive_value(
                             exec_res.unwrap());
@@ -184,11 +184,9 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                 [](const std::string& value) {
                     auto cmd = fmt::format(FMT_STRING("/{}"),
                                            lnav::pcre2pp::quote(value));
-                    auto src_guard
-                        = lnav_data.ld_exec_context.enter_source(SRC, 1, cmd);
                     lnav_data.ld_exec_context
                         .with_provenance(exec_context::mouse_input{})
-                        ->execute(cmd);
+                        ->execute(INTERNAL_SRC_LOC, cmd);
                 });
         }
         retval.emplace_back(attr_line_t().pad_to(left).append(al));
@@ -216,7 +214,9 @@ text_overlay_menu::list_overlay_menu(const listview_curses& lv, vis_line_t row)
                         = lnav_data.ld_exec_context
                               .with_provenance(exec_context::mouse_input{})
                               ->execute_with(
-                                  cmd, std::make_pair("href", sti.sti_href));
+                                  INTERNAL_SRC_LOC,
+                                  cmd,
+                                  std::make_pair("href", sti.sti_href));
                     if (exec_res.isOk()) {
                         lnav::prompt::get().p_editor.set_inactive_value(
                             exec_res.unwrap());

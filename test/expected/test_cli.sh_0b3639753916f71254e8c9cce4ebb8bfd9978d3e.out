@@ -206,6 +206,12 @@
                     },
                     "log-level-fatal": {
                         "value": "🄵"
+                    },
+                    "play": {
+                        "value": "▶"
+                    },
+                    "edit": {
+                        "value": "✏️"
                     }
                 },
                 "styles": {
@@ -1072,6 +1078,12 @@
                     },
                     "log-level-fatal": {
 
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
+
                     }
                 },
                 "styles": {
@@ -1885,6 +1897,12 @@
                     },
                     "log-level-fatal": {
 
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
+
                     }
                 },
                 "styles": {
@@ -2696,6 +2714,12 @@
 
                     },
                     "log-level-fatal": {
+
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
 
                     }
                 },
@@ -3510,6 +3534,12 @@
                     },
                     "log-level-fatal": {
 
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
+
                     }
                 },
                 "styles": {
@@ -4321,6 +4351,12 @@
 
                     },
                     "log-level-fatal": {
+
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
 
                     }
                 },
@@ -5143,6 +5179,12 @@
                     },
                     "log-level-fatal": {
 
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
+
                     }
                 },
                 "styles": {
@@ -5963,6 +6005,12 @@
 
                     },
                     "log-level-fatal": {
+
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
 
                     }
                 },

@@ -106,7 +106,7 @@ run_test() {
 
 run_cap_test() {
     LAST_CAP_TEST=("test: $@")
-    local full_cmd=$(echo "${LAST_CAP_TEST[@]}" | sed -e "s;${test_dir};{test_dir};g" -e "s;${top_srcdir};{top_srcdir};g")
+    local full_cmd=$(echo "${LAST_CAP_TEST[@]}" | LC_ALL=C sed -e "s;${test_dir};{test_dir};g" -e "s;${top_srcdir};{top_srcdir};g")
     export test_hash=$(echo "${full_cmd}" | shasum | cut -f 1 -d ' ')
     echo "${full_cmd}" > ${test_file_base}_${test_hash}.cmd
     timeout 10s "$@" > ${test_file_base}_${test_hash}.out 2> ${test_file_base}_${test_hash}.err

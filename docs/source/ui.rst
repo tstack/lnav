@@ -145,7 +145,8 @@ The second to last line is the bottom status bar, which shows the following:
 * the loading indicator.
 
 When the interactive prompt is active, this bar can show the prompt
-description, help text, or error message.
+description, help text, or error message.  You can also click and
+drag this bar to resize the prompt when in multi-line mode.
 
 Prompt
 ------

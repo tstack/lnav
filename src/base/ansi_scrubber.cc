@@ -131,6 +131,7 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
     size_t cp_start = std::string::npos;
     int last_origin_end = 0;
     int erased = 0;
+    size_t tmp_sa_open = 0;
 
     std::replace(str.begin(), str.end(), '\0', ' ');
     auto matcher = regex.capture_from(str).into(md);
@@ -446,16 +447,18 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
                 shift_string_attrs(*sa, sf.sf_begin, -sf.length());
 
                 if (has_attrs) {
-                    for (auto rit = tmp_sa.rbegin(); rit != tmp_sa.rend();
-                         rit++)
-                    {
-                        if (rit->sa_range.lr_end != -1) {
+                    for (auto tmp_sa_curr = tmp_sa_open;
+                        tmp_sa_curr < tmp_sa.size();
+                        tmp_sa_curr++) {
+                        auto& sa = tmp_sa[tmp_sa_curr];
+                        if (sa.sa_range.lr_end != -1) {
                             continue;
                         }
-                        rit->sa_range.lr_end = cp_dst;
+                        sa.sa_range.lr_end = cp_dst;
                     }
                     lr.lr_start = cp_dst;
                     lr.lr_end = -1;
+                    tmp_sa_open = tmp_sa.size();
                     if (!attrs.empty()) {
                         tmp_sa.emplace_back(lr, VC_STYLE.value(attrs));
                     }

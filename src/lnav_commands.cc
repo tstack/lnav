@@ -1139,12 +1139,7 @@ com_goto_location(exec_context& ec,
                         ? lh->loc_history_back(tc->get_selection())
                         : lh->loc_history_forward(tc->get_selection());
                 }
-                | [tc](auto new_top) {
-                      tc->set_selection(new_top);
-                      if (tc->is_selectable()) {
-                          tc->set_top(new_top - 2_vl, false);
-                      }
-                  };
+                | [tc](auto new_top) { tc->set_selection(new_top); };
         };
     }
 
@@ -1916,9 +1911,10 @@ com_comment(exec_context& ec,
             unquoted.in(), args[1].c_str(), args[1].size(), 0);
         unquoted.resize(unquoted_len + 1);
 
-        tc->set_user_mark(&textview_curses::BM_META, tc->get_selection(), true);
+        auto vl = ec.ec_top_line;
+        tc->set_user_mark(&textview_curses::BM_META, vl, true);
 
-        auto& line_meta = lss.get_bookmark_metadata(tc->get_selection());
+        auto& line_meta = lss.get_bookmark_metadata(vl);
 
         line_meta.bm_comment = unquoted.in();
         lss.set_line_meta_changed();
@@ -3141,7 +3137,8 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         for (auto line : content.split_lines()) {
             TRY(me.push_back(line));
         }
-        retval = TRY(me.final());
+        TRY(me.final());
+        retval = std::move(me.me_last_result);
     } else {
         return ec.make_error("expecting a command or query to evaluate");
     }
@@ -3523,6 +3520,7 @@ command_prompt(std::vector<std::string>& args)
                           "commands.html") " for more details");
 
     set_view_mode(ln_mode_t::COMMAND);
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     prompt.focus_for(*tc, ':', args);
 
     rl_set_help();
@@ -3552,6 +3550,7 @@ search_prompt(std::vector<std::string>& args)
 
     log_debug("search prompt");
     set_view_mode(ln_mode_t::SEARCH);
+    lnav_data.ld_exec_context.ec_top_line = tc->get_selection();
     lnav_data.ld_search_start_line = tc->get_selection();
     prompt.focus_for(*tc, '/', args);
     lnav_data.ld_doc_status_source.set_title("Syntax Help");
@@ -3633,6 +3632,7 @@ sql_prompt(std::vector<std::string>& args)
     fos->fos_contexts.top().c_show = true;
     tc->set_sync_selection_and_top(true);
     tc->reload_data();
+    tc->set_overlay_selection(3_vl);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter an SQL query: (Press "
         ANSI_BOLD("CTRL+L") " for multi-line mode and "
@@ -3845,7 +3845,8 @@ readline_context::command_t STD_COMMANDS[] = {
             .with_parameter(
                 help_text("line#|N%|timestamp|#anchor",
                           "A line number, percent into the file, timestamp, "
-                          "or an anchor in a text file"))
+                          "or an anchor in a text file")
+                    .with_format(help_parameter_format_t::HPF_LOCATION))
             .with_examples(
                 {{"To go to line 22", "22"},
                  {"To go to the line 75% of the way into the view", "75%"},

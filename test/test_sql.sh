@@ -979,3 +979,12 @@ run_cap_test ${lnav_test} -n \
     -c ':switch-to-view log' \
     -c ':eval :goto $log_line_link' \
     ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT * FROM lnav_focused_msg" \
+    ${test_dir}/logfile_access_log.0
+
+run_cap_test ${lnav_test} -n \
+    -c ";UPDATE lnav_focused_msg SET log_mark = 1" \
+    -c ":switch-to-view log" \
+    ${test_dir}/logfile_access_log.0

@@ -61,6 +61,7 @@ file_needs_reformatting(const std::shared_ptr<logfile> lf)
     static const auto& cfg = injector::get<const lnav::textfile::config&>();
 
     switch (lf->get_text_format()) {
+        case text_format_t::TF_BINARY:
         case text_format_t::TF_DIFF:
             return false;
         default:
@@ -85,7 +86,7 @@ textfile_sub_source::text_line_count()
         {
             const auto& lf = curr_iter->fvs_file;
             if (lf->get_text_format() == text_format_t::TF_BINARY) {
-                const auto fsize = lf->get_stat().st_size;
+                const auto fsize = lf->get_content_size();
                 retval = fsize / 16;
                 if (fsize % 16) {
                     retval += 1;
@@ -127,7 +128,7 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
 
     if (lf->get_text_format() == text_format_t::TF_BINARY) {
         this->tss_hex_line.clear();
-        auto fsize = lf->get_stat().st_size;
+        auto fsize = lf->get_content_size();
         auto fr = file_range{line * 16};
         fr.fr_size = std::min((file_ssize_t) 16, fsize - fr.fr_offset);
 
@@ -968,6 +969,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     md2attr_line mdal;
 
                     mdal.with_source_path(lf->get_actual_path());
+                    if (this->tss_view->tc_interactive) {
+                        mdal.add_lnav_script_icons();
+                    }
                     auto parse_res = md4cpp::parse(content_sf, mdal);
 
                     iter->fvs_mtime = st.st_mtime;
@@ -1027,22 +1031,33 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                 auto read_res = lf->read_file(logfile::read_format_t::plain);
                 if (read_res.isOk()) {
                     auto read_file_res = read_res.unwrap();
-                    auto orig_al = attr_line_t(read_file_res.rfr_content);
-                    scrub_ansi_string(orig_al.al_string, &orig_al.al_attrs);
-                    data_scanner ds(orig_al.al_string);
-                    pretty_printer pp(&ds, orig_al.al_attrs);
-                    attr_line_t pretty_al;
+                    if (read_file_res.rfr_range.fr_metadata.m_valid_utf) {
+                        auto orig_al = attr_line_t(read_file_res.rfr_content);
+                        scrub_ansi_string(orig_al.al_string, &orig_al.al_attrs);
+                        data_scanner ds(orig_al.al_string);
+                        pretty_printer pp(&ds, orig_al.al_attrs);
+                        attr_line_t pretty_al;
 
-                    pp.append_to(pretty_al);
-                    iter->fvs_mtime = st.st_mtime;
-                    iter->fvs_file_indexed_size = lf->get_index_size();
-                    iter->fvs_file_size = st.st_size;
-                    iter->fvs_text_source
-                        = std::make_unique<plain_text_source>();
-                    iter->fvs_text_source->set_text_format(
-                        lf->get_text_format());
-                    iter->fvs_text_source->register_view(this->tss_view);
-                    iter->fvs_text_source->replace_with(pretty_al);
+                        pp.append_to(pretty_al);
+                        iter->fvs_mtime = st.st_mtime;
+                        iter->fvs_file_indexed_size = lf->get_index_size();
+                        iter->fvs_file_size = st.st_size;
+                        iter->fvs_text_source
+                            = std::make_unique<plain_text_source>();
+                        iter->fvs_text_source->set_text_format(
+                            lf->get_text_format());
+                        iter->fvs_text_source->register_view(this->tss_view);
+                        iter->fvs_text_source->replace_with(pretty_al);
+                    } else {
+                        log_error(
+                            "unable to read file to pretty-print: %s -- file "
+                            "is not valid UTF-8",
+                            lf->get_path_for_key().c_str());
+                        iter->fvs_mtime = st.st_mtime;
+                        iter->fvs_file_indexed_size = lf->get_index_size();
+                        iter->fvs_file_size = st.st_size;
+                        iter->fvs_error = "file is not valid UTF-8";
+                    }
                 } else {
                     auto errmsg = read_res.unwrapErr();
                     log_error("unable to read file to pretty-print: %s -- %s",

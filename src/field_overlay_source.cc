@@ -65,8 +65,8 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         return;
     }
 
-    content_line_t cl = lss.at(row);
-    std::shared_ptr<logfile> file = lss.find(cl);
+    auto cl = lss.at(row);
+    auto file = lss.find(cl);
     auto ll = file->begin() + cl;
     auto format = file->get_format();
     bool display = false;
@@ -618,6 +618,15 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
         md2attr_line mdal;
         attr_line_t al;
 
+        auto comment_id = intern_string::lookup(fmt::format(
+            FMT_STRING("{}-line{}-comment"),
+            file_and_line->first->get_filename().filename().string(),
+            std::distance(file_and_line->first->begin(),
+                          file_and_line->second)));
+        mdal.with_source_id(comment_id);
+        if (tc->tc_interactive) {
+            mdal.add_lnav_script_icons();
+        }
         auto parse_res = md4cpp::parse(line_meta.bm_comment, mdal);
         if (parse_res.isOk()) {
             al = parse_res.unwrap();
@@ -679,6 +688,7 @@ field_overlay_source::build_meta_line(const listview_curses& lv,
             attr_line_t al;
             md2attr_line mdal;
 
+            mdal.add_lnav_script_icons();
             dst.push_back(
                 attr_line_t()
                     .append(filename_width, ' ')
