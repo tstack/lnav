@@ -1,7 +1,7 @@
 blinker==1.8.2
 click==8.1.7
 Flask==3.0.3
-gunicorn==22.0.0
+gunicorn==23.0.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==2.1.5
