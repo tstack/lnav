@@ -459,7 +459,9 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
             && ht.ht_parameters.front().ht_format
                 == help_parameter_format_t::HPF_MULTILINE_TEXT)
         {
-            prompt.p_editor.tc_height = 5;
+            if (prompt.p_editor.tc_height == 1) {
+                prompt.p_editor.set_height(5);
+            }
         } else if (prompt.p_editor.tc_height > 1) {
             auto ml_content = prompt.p_editor.get_content();
             std::replace(ml_content.begin(), ml_content.end(), '\n', ' ');
@@ -694,35 +696,41 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                     && cursor_offset <= attr.sa_range.lr_end;
             });
         if (attr_iter != anno_line.al_attrs.end()) {
-            auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
-            auto to_complete = to_complete_sf.to_string();
-            std::vector<std::string> poss_strs;
-            std::vector<attr_line_t> poss;
+            if (is_req || attr_iter->sa_type != &SQL_NUMBER_ATTR
+                || rc.tc_popup_type
+                    == textinput_curses::popup_type_t::completion)
+            {
+                auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
+                auto to_complete = to_complete_sf.to_string();
+                std::vector<std::string> poss_strs;
+                std::vector<attr_line_t> poss;
 
-            log_debug("SQL complete: %s -- %s",
-                      attr_iter->sa_type->sat_name,
-                      to_complete.c_str());
-            poss_strs = prompt.p_sql_completions | lnav::itertools::first()
-                | lnav::itertools::similar_to(to_complete, 10);
-            for (const auto& str : poss_strs) {
-                auto eq_range = prompt.p_sql_completions.equal_range(str);
+                log_debug("SQL complete: %s -- %s",
+                          attr_iter->sa_type->sat_name,
+                          to_complete.c_str());
+                poss_strs = prompt.p_sql_completion_terms
+                    | lnav::itertools::similar_to(to_complete, 10);
+                for (const auto& str : poss_strs) {
+                    auto eq_range = prompt.p_sql_completions.equal_range(str);
 
-                for (auto iter = eq_range.first; iter != eq_range.second;
-                     ++iter)
-                {
-                    auto al
-                        = prompt.get_sql_completion_text(to_complete, *iter);
-                    poss.emplace_back(al);
+                    for (auto iter = eq_range.first; iter != eq_range.second;
+                         ++iter)
+                    {
+                        auto al = prompt.get_sql_completion_text(to_complete,
+                                                                 *iter);
+                        poss.emplace_back(al);
+                    }
                 }
-            }
 
-            auto crange
-                = std::make_from_tuple<line_range>(line_sf.byte_to_column_index(
-                    to_complete_sf.sf_begin, to_complete_sf.sf_end));
-            log_debug(
-                "sql complete range [%d:%d)", crange.lr_start, crange.lr_end);
-            rc.open_popup_for_completion(crange, poss);
-            rc.tc_popup.set_title("");
+                auto crange = std::make_from_tuple<line_range>(
+                    line_sf.byte_to_column_index(to_complete_sf.sf_begin,
+                                                 to_complete_sf.sf_end));
+                log_debug("sql complete range [%d:%d)",
+                          crange.lr_start,
+                          crange.lr_end);
+                rc.open_popup_for_completion(crange, poss);
+                rc.tc_popup.set_title("");
+            }
         } else if (is_req) {
             std::vector<attr_line_t> poss;
 

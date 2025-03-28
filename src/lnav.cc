@@ -1455,12 +1455,17 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
         if (tc.tc_selected_text) {
             return;
         }
+        static auto& prompt = lnav::prompt::get();
         static auto& ec = lnav_data.ld_exec_context;
         auto cmd_iter
             = find_string_attr_containing(al.get_attrs(), &VC_COMMAND, x);
         if (cmd_iter != al.al_attrs.end()) {
             auto cmd = cmd_iter->sa_value.get<ui_command>();
-            ec.execute(cmd.uc_location, cmd.uc_command);
+            auto exec_res = ec.execute(cmd.uc_location, cmd.uc_command);
+            if (exec_res.isOk()) {
+                auto val = exec_res.unwrap();
+                prompt.p_editor.set_inactive_value(val);
+            }
         }
         auto link_iter
             = find_string_attr_containing(al.get_attrs(), &VC_HYPERLINK, x);

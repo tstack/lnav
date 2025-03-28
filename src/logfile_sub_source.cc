@@ -2841,6 +2841,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
                                uniq_path.template get<std::string>()));
         });
 
+    shared_buffer sb;
     logline_value_vector values;
     auto& sbr = values.lvv_sbr;
 
@@ -2849,6 +2850,7 @@ logfile_sub_source::text_crumbs_for_line(int line,
     if (sbr.get_metadata().m_has_ansi) {
         // bleh
         scrub_ansi_string(al.get_string(), &al.al_attrs);
+        sbr.share(sb, al.al_string.data(), al.al_string.size());
     }
     format->annotate(lf.get(), file_line_number, al.get_attrs(), values);
 

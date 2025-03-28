@@ -1046,7 +1046,7 @@ annotate_sql_statement(attr_line_t& al)
         },
         {
             lnav::pcre2pp::code::from_const(
-                R"(\A-?\d+(?:\.\d+)?(?:[eE][\-\+]?\d+)?)"),
+                R"(\A-?\d+(?:\.\d+)?(?:[eE][\-\+]?\d+)?\b)"),
             &SQL_NUMBER_ATTR,
         },
         {
@@ -1063,6 +1063,10 @@ annotate_sql_statement(attr_line_t& al)
             lnav::pcre2pp::code::from_const(
                 R"(\A(\*|\->{1,2}|<|>|=|!|\-|\+|\|\|))"),
             &SQL_OPERATOR_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(R"(\A[0-9][a-zA-Z0-9\-\._]+)"),
+            &SQL_GARBAGE_ATTR,
         },
         {
             lnav::pcre2pp::code::from_const(R"(\A.)"),

@@ -133,6 +133,31 @@ register_help(prql_hier& phier, const help_text& ht)
     }
 }
 
+static void
+insert_sql_help(help_text& root, const help_text& curr)
+{
+    if (curr.ht_flag_name) {
+        sqlite_function_help.insert(
+            std::make_pair(toupper(curr.ht_flag_name), &root));
+    } else {
+        sqlite_function_help.insert(
+            std::make_pair(toupper(curr.ht_name), &root));
+    }
+    for (const auto& param : curr.ht_parameters) {
+        if (param.ht_flag_name) {
+            insert_sql_help(root, param);
+        }
+        if (param.ht_format == help_parameter_format_t::HPF_NONE
+            && param.ht_nargs == help_nargs_t::HN_OPTIONAL)
+        {
+            insert_sql_help(root, param);
+        }
+        for (const auto& eval : param.ht_enum_values) {
+            sqlite_function_help.emplace(eval, &root);
+        }
+    }
+}
+
 int
 register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 {
@@ -1305,12 +1330,12 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("CREATE", "Assign a name to a SELECT statement")
             .sql_keyword()
-            .with_parameter(help_text("TEMP").optional())
+            .with_parameter(help_text("TEMP").flag())
             .with_parameter(help_text("").with_flag_name("VIEW"))
             .with_parameter(
                 help_text("IF NOT EXISTS",
                           "Do not create the view if it already exists")
-                    .optional())
+                    .flag())
             .with_parameter(
                 help_text("schema-name.", "The database to create the view in")
                     .optional())
@@ -1322,9 +1347,9 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("CREATE", "Create a table")
             .sql_keyword()
-            .with_parameter(help_text("TEMP").optional())
+            .with_parameter(help_text("TEMP").flag())
             .with_parameter(help_text("").with_flag_name("TABLE"))
-            .with_parameter(help_text("IF NOT EXISTS").optional())
+            .with_parameter(help_text("IF NOT EXISTS").flag())
             .with_parameter(help_text("schema-name.").optional())
             .with_parameter(help_text("table-name"))
             .with_parameter(help_text("select-stmt").with_flag_name("AS")),
@@ -1341,28 +1366,28 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
         help_text("DROP", "Drop an index")
             .sql_keyword()
             .with_parameter(help_text("").with_flag_name("INDEX"))
-            .with_parameter(help_text("IF EXISTS").optional())
+            .with_parameter(help_text("IF EXISTS").flag())
             .with_parameter(help_text("schema-name.").optional())
             .with_parameter(help_text("index-name")),
 
         help_text("DROP", "Drop a table")
             .sql_keyword()
             .with_parameter(help_text("").with_flag_name("TABLE"))
-            .with_parameter(help_text("IF EXISTS").optional())
+            .with_parameter(help_text("IF EXISTS").flag())
             .with_parameter(help_text("schema-name.").optional())
             .with_parameter(help_text("table-name")),
 
         help_text("DROP", "Drop a view")
             .sql_keyword()
             .with_parameter(help_text("").with_flag_name("VIEW"))
-            .with_parameter(help_text("IF EXISTS").optional())
+            .with_parameter(help_text("IF EXISTS").flag())
             .with_parameter(help_text("schema-name.").optional())
             .with_parameter(help_text("view-name")),
 
         help_text("DROP", "Drop a trigger")
             .sql_keyword()
             .with_parameter(help_text("").with_flag_name("TRIGGER"))
-            .with_parameter(help_text("IF EXISTS").optional())
+            .with_parameter(help_text("IF EXISTS").flag())
             .with_parameter(help_text("schema-name.").optional())
             .with_parameter(help_text("trigger-name")),
 
@@ -1407,14 +1432,19 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 help_text("ordering-term",
                           "The values to use when ordering the result set.")
                     .with_flag_name("ORDER BY")
-                    .zero_or_more())
+                    .zero_or_more()
+                    .with_parameter(
+                        help_text("direction",
+                                  "The direction, ASCending or DESCending")
+                            .optional()
+                            .with_enum_values({"ASC", "DESC"})))
             .with_parameter(
                 help_text("limit-expr", "The maximum number of rows to return.")
                     .with_flag_name("LIMIT")
                     .zero_or_more())
-            .with_example(
-                {"To select all of the columns from the table 'lnav_example_log'",
-                 "SELECT * FROM lnav_example_log"}),
+            .with_example({"To select all of the columns from the table "
+                           "'lnav_example_log'",
+                           "SELECT * FROM lnav_example_log"}),
 
         help_text("WITH",
                   "Create a temporary view that exists only for the duration "
@@ -1496,7 +1526,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("expr", "Match an expression against a glob pattern.")
             .sql_infix()
-            .with_parameter(help_text("NOT").optional())
+            .with_parameter(help_text("NOT").flag())
             .with_parameter(
                 help_text("pattern", "The glob pattern to match against.")
                     .with_flag_name("GLOB"))
@@ -1507,7 +1537,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("expr", "Match an expression against a text pattern.")
             .sql_infix()
-            .with_parameter(help_text("NOT").optional())
+            .with_parameter(help_text("NOT").flag())
             .with_parameter(
                 help_text("pattern", "The pattern to match against.")
                     .with_flag_name("LIKE"))
@@ -1518,7 +1548,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("expr", "Match an expression against a regular expression.")
             .sql_infix()
-            .with_parameter(help_text("NOT").optional())
+            .with_parameter(help_text("NOT").flag())
             .with_parameter(
                 help_text("pattern", "The regular expression to match against.")
                     .with_flag_name("REGEXP"))
@@ -1540,7 +1570,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("expr", "Test if an expression is between two values.")
             .sql_infix()
-            .with_parameter(help_text("NOT").optional())
+            .with_parameter(help_text("NOT").flag())
             .with_parameter(
                 help_text("low", "The low point").with_flag_name("BETWEEN"))
             .with_parameter(
@@ -1584,14 +1614,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
     if (!help_registration_done) {
         for (auto& ht : idents) {
-            sqlite_function_help.insert(make_pair(toupper(ht.ht_name), &ht));
-            for (const auto& param : ht.ht_parameters) {
-                if (!param.ht_flag_name) {
-                    continue;
-                }
-                sqlite_function_help.insert(
-                    make_pair(toupper(param.ht_flag_name), &ht));
-            }
+            insert_sql_help(ht, ht);
         }
     }
 

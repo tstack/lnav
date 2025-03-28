@@ -76,10 +76,11 @@ Features:
   lnav's internal debug log to a file.
 * Added a `:clear-adjusted-log-time` command to clear the time offset
   set by the `:adjust-log-time` command.
-* Added a `measure_with_units` collation function that can compare
-  numbers with unit suffixes, like "10KB" or "1.2ms".
-  The `:create-search-table` will also use this collation function
-  for capture patterns that are likely to capture a number with a unit.
+* Added a `measure_with_units` SQLite collation function that can
+  compare numbers with unit suffixes, like "10KB" or "1.2ms".
+  The `:create-search-table` command will also use this collation
+  function for capture patterns that are likely to capture a number
+  with a unit.
 * Log messages now have permalinks that can be used to reference them
   from other locations.
   The permalink for a message is shown in the parser details overlay

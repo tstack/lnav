@@ -289,6 +289,21 @@ TEST_CASE("get_captures-namedq")
     CHECK(re.get_captures()[0].sf_end == 11);
 }
 
+TEST_CASE("get_captures-empty")
+{
+    auto re
+        = lnav::pcre2pp::code::from_const("(?<size>[]+), free (?<free>[^)]+)");
+
+    CHECK(re.get_captures().size() == 1);
+    CHECK(re.get_captures()[0].sf_begin == 0);
+    CHECK(re.get_captures()[0].sf_end == 33);
+
+    auto re2
+        = lnav::pcre2pp::code::from_const("(?<size>[^]+), free (?<free>[^)]+)");
+
+    CHECK(re2.get_captures().size() == 1);
+}
+
 TEST_CASE("anchored")
 {
     auto re = lnav::pcre2pp::code::from_const(

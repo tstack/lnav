@@ -52,7 +52,7 @@ World</span>!
 [35m [0m[35m*[0m[35m This program prints "Hello, World!"[0m
 [35m */[0m
 
-[35m#include <stdio.h>[0m
+[35m#include <[0m[35mstdio.h[0m[35m>[0m
 
 [35mint main() {[0m
 [35m  [0m[35m [0m[35m printf("Hello, World!\n");[0m
@@ -62,20 +62,20 @@ World</span>!
 [35m```python[0m
 [35mdef hw(name):[0m
 [35m  [0m[35m [0m[35m """[0m
-[35m  [0m[35m [0m[35m This function prints "Hello, <name>!"[0m
+[35m  [0m[35m [0m[35m This function prints "Hello, <[0m[35mname[0m[35m>!"[0m
 [35m  [0m[35m [0m[35m """[0m
 
 [35m  [0m[35m [0m[35m print(f"Hello, {name}!")  # test comment[0m
 [35m```[0m
 
 [35m```xml[0m
-[35m<?xml version="1.0" encoding="utf-8" ?>[0m
-[35m<books>[0m
+[35m<[0m[35m?xml[0m[35m version="1.0" encoding="utf-8" ?>[0m
+[35m<[0m[35mbooks[0m[35m>[0m
 [35m  [0m[35m [0m[35m <!-- Line comment -->[0m
-[35m  [0m[35m [0m[35m <book id="100">[0m
-[35m  [0m[35m [0m[35m [0m[35m [0m[35m   <author>Finnegan</author>[0m
-[35m  [0m[35m [0m[35m </book>[0m
-[35m</books>[0m
+[35m  [0m[35m [0m[35m <[0m[35mbook[0m[35m id="100">[0m
+[35m  [0m[35m [0m[35m [0m[35m [0m[35m   <[0m[35mauthor[0m[35m>Finnegan</[0m[35mauthor[0m[35m>[0m
+[35m  [0m[35m [0m[35m </[0m[35mbook[0m[35m>[0m
+[35m</[0m[35mbooks[0m[35m>[0m
 [35m```[0m
 
 [35m~~~lnav[0m

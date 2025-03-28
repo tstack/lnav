@@ -291,6 +291,7 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
     };
     std::vector<open_interval_t> open_intervals;
     auto root_node = std::make_unique<hier_node>();
+    const auto sf = string_fragment::from_str(al.get_string());
 
     for (const auto& hdr_attr : headers) {
         const auto role = hdr_attr.sa_value.get<role_t>();
@@ -301,7 +302,6 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
         for (auto& oi : open_intervals) {
             if (oi.oi_level >= role_num) {
                 // close out this section
-                auto sf = string_fragment::from_str(al.get_string());
                 auto left_sf = sf.find_left_boundary(
                     hdr_attr.sa_range.lr_start, string_fragment::tag1{'\n'});
                 if (left_sf.sf_begin > 0) {

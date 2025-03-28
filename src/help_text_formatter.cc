@@ -34,6 +34,8 @@
 
 #include "base/ansi_scrubber.hh"
 #include "base/attr_line.builder.hh"
+#include "base/itertools.enumerate.hh"
+#include "base/itertools.hh"
 #include "base/string_util.hh"
 #include "config.h"
 #include "fmt/format.h"
@@ -75,6 +77,20 @@ get_related(const help_text& ht)
     }
 
     return retval;
+}
+
+static void
+add_enum_param(attr_line_t& out, const help_text& enum_param)
+{
+    out.append(" ");
+    if (enum_param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+        out.append("[");
+    }
+    out.join(
+        enum_param.ht_enum_values, VC_ROLE.value(role_t::VCR_KEYWORD), "|");
+    if (enum_param.ht_nargs == help_nargs_t::HN_OPTIONAL) {
+        out.append("]");
+    }
 }
 
 void
@@ -281,24 +297,35 @@ format_help_text_for_term(const help_text& ht,
                         {
                             out.append("1"_variable);
                         }
-                        if (param.ht_parameters[0].ht_flag_name) {
-                            out.append(" ")
-                                .append(lnav::roles::keyword(
-                                    param.ht_parameters[0].ht_flag_name))
-                                .append(" ");
+                        if (param.ht_parameters[0].is_enum()) {
+                            add_enum_param(out, param.ht_parameters[0]);
+                        } else {
+                            if (param.ht_parameters[0].ht_flag_name) {
+                                out.append(" ")
+                                    .append(lnav::roles::keyword(
+                                        param.ht_parameters[0].ht_flag_name))
+                                    .append(" ");
+                            }
+                            out.append(lnav::roles::variable(
+                                param.ht_parameters[0].ht_name));
+                            out.append("1"_variable);
                         }
-                        out.append(lnav::roles::variable(
-                            param.ht_parameters[0].ht_name));
                     }
                 }
                 if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
                     || param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE)
                 {
-                    bool needs_comma = param.ht_parameters.empty()
+                    auto needs_comma
+                        = (param.ht_parameters
+                           | lnav::itertools::filter_out(&help_text::is_enum))
+                              .empty()
                         || !param.ht_flag_name;
 
-                    out.append("1"_variable)
-                        .append(" [")
+                    if (param.ht_parameters.empty()) {
+                        out.append("1"_variable);
+                    }
+
+                    out.append(" [")
                         .append(needs_comma ? ", " : "")
                         .append("...")
                         .append(needs_comma ? "" : " ")
@@ -310,16 +337,22 @@ format_help_text_for_term(const help_text& ht,
                         .append(lnav::roles::variable(param.ht_name))
                         .append("N"_variable);
                     if (!param.ht_parameters.empty()) {
-                        if (param.ht_parameters[0].ht_flag_name) {
-                            out.append(" ")
-                                .append(lnav::roles::keyword(
-                                    param.ht_parameters[0].ht_flag_name))
-                                .append(" ");
-                        }
+                        if (param.ht_parameters[0].is_enum()) {
+                            add_enum_param(out, param.ht_parameters[0]);
+                        } else if (param.ht_parameters[0].is_flag()) {
+                            out.append(" ");
+                        } else {
+                            if (param.ht_parameters[0].ht_flag_name) {
+                                out.append(" ")
+                                    .append(lnav::roles::keyword(
+                                        param.ht_parameters[0].ht_flag_name))
+                                    .append(" ");
+                            }
 
-                        out.append(lnav::roles::variable(
-                                       param.ht_parameters[0].ht_name))
-                            .append("N"_variable);
+                            out.append(lnav::roles::variable(
+                                           param.ht_parameters[0].ht_name))
+                                .append("N"_variable);
+                        }
                     }
                     out.append("]");
                 }

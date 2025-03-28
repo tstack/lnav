@@ -234,6 +234,14 @@ struct help_text {
         return *this;
     }
 
+    bool is_flag() const
+    {
+        return this->ht_nargs == help_nargs_t::HN_OPTIONAL
+            && this->ht_format == help_parameter_format_t::HPF_NONE;
+    }
+
+    bool is_enum() const { return !this->ht_enum_values.empty(); }
+
     help_text& flag() noexcept
     {
         this->ht_nargs = help_nargs_t::HN_OPTIONAL;

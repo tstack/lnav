@@ -112,7 +112,8 @@ struct prompt {
 
     std::map<std::string, std::string> p_env_vars;
     std::multimap<std::string, sql_item_t, strnatcaseless> p_sql_completions;
-    std::map<std::string, sql_item_t> p_prql_completions;
+    std::set<std::string, strnatless> p_sql_completion_terms;
+    std::map<std::string, sql_item_t, strnatcaseless> p_prql_completions;
     std::map<std::string, const json_path_handler_base*> p_config_paths;
     std::map<std::string, std::vector<std::string>> p_config_values;
     std::set<std::string> p_remote_paths;

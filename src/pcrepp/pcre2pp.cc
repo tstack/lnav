@@ -173,6 +173,7 @@ code::get_capture_count() const
 std::vector<string_fragment>
 code::get_captures() const
 {
+    int class_start = 0;
     bool in_class = false, in_escape = false, in_literal = false;
     auto pat_frag = string_fragment::from_str(this->p_pattern);
     std::vector<string_fragment> cap_in_progress;
@@ -185,7 +186,9 @@ code::get_captures() const
                 in_literal = true;
             }
         } else if (in_class) {
-            if (this->p_pattern[lpc] == ']') {
+            if (lpc == class_start + 1 && this->p_pattern[lpc] == '^') {
+                class_start = lpc;
+            } else if (lpc > class_start + 1 && this->p_pattern[lpc] == ']') {
                 in_class = false;
             }
             if (this->p_pattern[lpc] == '\\') {
@@ -204,6 +207,7 @@ code::get_captures() const
                     break;
                 case '[':
                     in_class = true;
+                    class_start = lpc;
                     break;
                 case '(':
                     cap_in_progress.emplace_back(pat_frag.sub_range(lpc, lpc));

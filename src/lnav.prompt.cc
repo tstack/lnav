@@ -306,6 +306,10 @@ prompt::focus_for(textview_curses& tc,
         }
     }
 
+    for (const auto& [key, item] : this->p_sql_completions) {
+        this->p_sql_completion_terms.emplace(key);
+    }
+
     this->p_env_vars.clear();
     switch (sigil) {
         case ':':
@@ -329,7 +333,7 @@ prompt::focus_for(textview_curses& tc,
     } else if (sigil) {
         this->p_editor.tc_prefix.al_string.push_back(sigil);
     }
-    this->p_editor.tc_height = 1;
+    this->p_editor.set_height(1);
     this->p_editor.set_content(cget(args, 3).value_or(""));
     this->p_editor.move_cursor_to(textinput_curses::input_point::end());
     this->p_editor.tc_popup.set_title("");
@@ -365,12 +369,18 @@ prompt::refresh_sql_completions(textview_curses& tc)
                 this->insert_sql_completion(name, sql_keyword_t{});
                 break;
             case help_context_t::HC_SQL_FUNCTION:
-                this->insert_sql_completion(
-                    name, sql_function_t{func->ht_parameters.size()});
-                if (!func->ht_prql_path.empty()) {
-                    auto prql_name = fmt::format(
-                        FMT_STRING("{}"), fmt::join(func->ht_prql_path, "."));
-                    this->insert_sql_completion(prql_name, prql_function_t{});
+                if (name == func->ht_name) {
+                    this->insert_sql_completion(
+                        name, sql_function_t{func->ht_parameters.size()});
+                    if (!func->ht_prql_path.empty()) {
+                        auto prql_name
+                            = fmt::format(FMT_STRING("{}"),
+                                          fmt::join(func->ht_prql_path, "."));
+                        this->insert_sql_completion(prql_name,
+                                                    prql_function_t{});
+                    }
+                } else {
+                    this->insert_sql_completion(name, sql_keyword_t{});
                 }
                 break;
             case help_context_t::HC_SQL_TABLE_VALUED_FUNCTION:
@@ -430,7 +440,7 @@ prompt::rl_reformat(textinput_curses& tc)
             annotate_sql_statement(content);
             auto format_res = lnav::db::format(content, tc.get_cursor_offset());
             tc.set_content(format_res.fr_content);
-            if (tc.tc_height != 5) {
+            if (tc.tc_height == 1) {
                 tc.set_height(5);
                 lnav_data.ld_bottom_source.set_prompt(
                     "Enter an SQL query: (Press "
