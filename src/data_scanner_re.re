@@ -136,7 +136,6 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
     cap_inner.c_begin = this->ds_next_offset;
     cap_inner.c_end = this->ds_next_offset;
 
-loop:
     /*!re2c
        re2c:yyfill:enable = 0;
        re2c:sentinel = 0;
@@ -434,10 +433,15 @@ loop:
        }
 
        <bol> [A-Z][A-Z _\-0-9]+"\n" {
-           if (tf != text_format_t::TF_MAN) {
-              goto loop;
-           }
            CAPTURE(DT_H1);
+           if (tf != text_format_t::TF_MAN) {
+               auto sf = this->to_string_fragment(cap_all);
+               auto split_res = sf.split_when(isspace);
+               cap_all.c_end = split_res.first.sf_end;
+               cap_inner.c_end = split_res.first.sf_end;
+               this->ds_next_offset = cap_all.c_end;
+               return tokenize_result{DT_SYMBOL, cap_all, cap_inner, this->ds_input.sf_string};
+           }
            cap_inner.c_end -= 1;
            this->ds_bol = true;
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};

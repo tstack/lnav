@@ -356,3 +356,24 @@ TEST_CASE("data_scanner quote")
         dp.parse();
     }
 }
+
+TEST_CASE("data_scanner quote3")
+{
+    static const char INPUT[] = "\nC0\n\n\"000\"00";
+
+    {
+        data_scanner ds(string_fragment::from_const(INPUT));
+
+        auto tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_LINE);
+        tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_SYMBOL);
+        printf(" %d:%d\n", tok_res->tr_capture.c_begin, tok_res->tr_capture.c_end);
+        tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_LINE);
+        tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_LINE);
+        tok_res = ds.tokenize2();
+        CHECK(tok_res->tr_token == DT_QUOTED_STRING);
+    }
+}
