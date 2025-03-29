@@ -872,6 +872,12 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
 
     if (ht->ht_enum_values.empty()) {
         switch (ht->ht_format) {
+            case help_parameter_format_t::HPF_NONE:
+            case help_parameter_format_t::HPF_STRING:
+            case help_parameter_format_t::HPF_NUMBER:
+            case help_parameter_format_t::HPF_INTEGER:
+            case help_parameter_format_t::HPF_CONFIG_VALUE:
+                break;
             case help_parameter_format_t::HPF_SQL:
             case help_parameter_format_t::HPF_SQL_EXPR: {
                 auto poss_strs = this->p_sql_completions

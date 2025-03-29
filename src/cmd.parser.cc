@@ -326,9 +326,7 @@ parse_for(mode_t mode,
                         break;
                     }
                     case help_parameter_format_t::HPF_INTEGER:
-                    case help_parameter_format_t::HPF_ENUM:
                     case help_parameter_format_t::HPF_NUMBER:
-                    case help_parameter_format_t::HPF_DATETIME:
                     case help_parameter_format_t::HPF_CONFIG_PATH:
                     case help_parameter_format_t::HPF_TAG:
                     case help_parameter_format_t::HPF_ADJUSTED_TIME:
