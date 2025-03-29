@@ -202,7 +202,7 @@ json_ptr::encode(char* dst, size_t dst_len, const char* src, size_t src_len)
             case '/':
             case '~':
             case '#':
-                if (retval < dst_len) {
+                if (retval + 1 < dst_len) {
                     dst[retval] = '~';
                     retval += 1;
                     if (src[lpc] == '~') {
