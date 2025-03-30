@@ -497,16 +497,19 @@ postpaint_cell(notcurses* nc, const tinfo* ti, nccell* lastframe, unsigned dimx,
 //       with rasterization--factor out the single cell iteration...
 // FIXME can we not do the blend a single time here, if we track sums in
 //       paint()? tried this before and didn't get a win...
-static void
+static int
 postpaint(notcurses* nc, const tinfo* ti, nccell* lastframe,
           unsigned dimy, unsigned dimx, struct crender* rvec, egcpool* pool){
 //fprintf(stderr, "POSTPAINT BEGINS! %zu %p %d/%d\n", sizeof(*rvec), rvec, dimy, dimx);
+    int totaldamage = 0;
   for(unsigned y = 0 ; y < dimy ; ++y){
     for(unsigned x = 0 ; x < dimx ; ++x){
       struct crender* crender = &rvec[fbcellidx(y, dimx, x)];
       postpaint_cell(nc, ti, lastframe, dimx, crender, pool, y, &x);
+        totaldamage += crender->s.damaged;
     }
   }
+    return totaldamage;
 }
 
 // merging one plane down onto another is basically just performing a render
@@ -1520,16 +1523,18 @@ int ncpile_rasterize(ncplane* n){
   ncpile* pile = ncplane_pile(n);
   struct notcurses* nc = ncpile_notcurses(pile);
   const struct tinfo* ti = &ncplane_notcurses_const(n)->tcache;
-  postpaint(nc, ti, nc->lastframe, pile->dimy, pile->dimx, pile->crender, &nc->pool);
-  clock_gettime(CLOCK_MONOTONIC, &rasterdone);
-  int bytes = notcurses_rasterize(nc, pile, &nc->rstate.f);
-  clock_gettime(CLOCK_MONOTONIC, &writedone);
-  pthread_mutex_lock(&nc->stats.lock);
-    // accepts negative |bytes| as an indication of failure
-    update_raster_bytes(&nc->stats.s, bytes);
-    update_raster_stats(&rasterdone, &start, &nc->stats.s);
-    update_write_stats(&writedone, &rasterdone, &nc->stats.s, bytes);
-  pthread_mutex_unlock(&nc->stats.lock);
+    int bytes = 0;
+  if (postpaint(nc, ti, nc->lastframe, pile->dimy, pile->dimx, pile->crender, &nc->pool) > 0) {
+      clock_gettime(CLOCK_MONOTONIC, &rasterdone);
+      bytes = notcurses_rasterize(nc, pile, &nc->rstate.f);
+      clock_gettime(CLOCK_MONOTONIC, &writedone);
+      pthread_mutex_lock(&nc->stats.lock);
+      // accepts negative |bytes| as an indication of failure
+      update_raster_bytes(&nc->stats.s, bytes);
+      update_raster_stats(&rasterdone, &start, &nc->stats.s);
+      update_write_stats(&writedone, &rasterdone, &nc->stats.s, bytes);
+      pthread_mutex_unlock(&nc->stats.lock);
+  }
   // we want to refresh if the screen geometry changed (or if we were just
   // woken up from SIGSTOP), but we mustn't do so until after rasterizing
   // the solved rvec, since this might result in a geometry update.

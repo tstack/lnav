@@ -2219,7 +2219,10 @@ int ncplane_putnstr_aligned(struct ncplane* n, int y, ncalign_e align, size_t s,
 
 int ncplane_hline_interp(ncplane* n, const nccell* c, unsigned len,
                          uint64_t c1, uint64_t c2){
-  if(len <= 0){
+  if (len == 0) {
+    return 0;
+  }
+  if(len < 0){
     logerror("passed invalid length %u", len);
     return -1;
   }
