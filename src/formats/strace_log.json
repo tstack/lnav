@@ -7,7 +7,7 @@
         "multiline": false,
         "regex": {
             "std": {
-                "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+(?: \\(\\w+\\w\\))?)|\\?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
+                "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) (?<syscall>\\w+)\\((?<body>.*)\\)\\s+=\\s+(?:(?<rc>[-\\w]+(?: \\((?<rc_extra>.+)\\))?)|\\?)(?: (?<errno>\\w+) \\([^\\)]+\\))?(?: <(?<duration>\\d+\\.\\d+)>)?$"
             },
             "signal": {
                 "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) --- (?<signame>\\w+) (?<siginfo>.*) ---$"
@@ -29,6 +29,9 @@
             "rc": {
                 "kind": "integer",
                 "foreign-key": true
+            },
+            "rc_extra": {
+                "kind": "string"
             },
             "duration": {
                 "kind": "float"
@@ -63,6 +66,9 @@
             },
             {
                 "line": "1743339613.701907 poll([{fd=11, events=POLLIN}], 1, 49) = 0 (Timeout)"
+            },
+            {
+                "line": "1743341007.534738 poll([{fd=10, events=POLLIN}, {fd=14, events=POLLIN}, {fd=37, events=POLLIN}], 3, 0) = 1 ([{fd=37, revents=POLLIN}])"
             },
             {
                 "line": "1743339626.018554 +++ exited with 0 +++"
