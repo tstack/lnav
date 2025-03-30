@@ -30,6 +30,7 @@
 #  define MAPBOX_VARIANT_DEPRECATED [[deprecated]]
 #endif
 
+#define NDEBUG
 
 #ifdef _MSC_VER
 // https://msdn.microsoft.com/en-us/library/bw1hbe6y.aspx
@@ -261,7 +262,9 @@ struct variant_helper<T, Types...>
     {
         if (old_type_index == sizeof...(Types))
         {
-            new (new_value) T(std::move(*reinterpret_cast<T*>(old_value)));
+            if constexpr (!std::is_empty_v<T>) {
+                new (new_value) T(std::move(*reinterpret_cast<T*>(old_value)));
+            }
         }
         else
         {
@@ -273,7 +276,9 @@ struct variant_helper<T, Types...>
     {
         if (old_type_index == sizeof...(Types))
         {
-            new (new_value) T(*reinterpret_cast<const T*>(old_value));
+            if constexpr (!std::is_empty_v<T>) {
+                new (new_value) T(*reinterpret_cast<const T*>(old_value));
+            }
         }
         else
         {
@@ -563,7 +568,9 @@ public:
     VARIANT_INLINE variant(T&& val) noexcept(std::is_nothrow_constructible<typename Traits::target_type, T&&>::value)
         : type_index(Traits::index)
     {
-        new (&data) typename Traits::target_type(std::forward<T>(val));
+        if constexpr (!std::is_empty_v<T>) {
+            new (&data) typename Traits::target_type(std::forward<T>(val));
+        }
     }
 
     VARIANT_INLINE variant(variant<Types...> const& old)

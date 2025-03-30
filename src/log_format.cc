@@ -4080,7 +4080,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                         hd.hd_color.pp_path.to_string())))
                                 .with_reason(msg)
                                 .with_snippet(hd.hd_color.to_snippet()));
-                        return styling::color_unit::make_empty();
+                        return styling::color_unit::EMPTY;
                     }));
         }
 
@@ -4101,7 +4101,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                 .with_reason(msg)
                                 .with_snippet(
                                     hd.hd_background_color.to_snippet()));
-                        return styling::color_unit::make_empty();
+                        return styling::color_unit::EMPTY;
                     }));
         }
 

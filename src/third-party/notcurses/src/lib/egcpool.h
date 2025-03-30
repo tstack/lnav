@@ -93,6 +93,10 @@ utf8_codepoint_length(unsigned char c){
 // to use wcwidth() anyway FIXME except this doesn't work with 16-bit wchar_t!
 static inline int
 utf8_egc_len(const char* gcluster, int* colcount){
+  if (*gcluster >= 0 && *gcluster <= 127) {
+    *colcount = 1;
+    return 1;
+  }
   size_t ret = 0;
   *colcount = 0;
   int r;

@@ -134,10 +134,8 @@ statusview_curses::do_update()
                     if (sa.sa_type == &VC_STYLE) {
                         auto sa_attrs = sa.sa_value.get<text_attrs>();
                         sa_attrs.clear_style(text_attrs::style::reverse);
-                        sa_attrs.ta_fg_color
-                            = styling::color_unit::make_empty();
-                        sa_attrs.ta_bg_color
-                            = styling::color_unit::make_empty();
+                        sa_attrs.ta_fg_color = styling::color_unit::EMPTY;
+                        sa_attrs.ta_bg_color = styling::color_unit::EMPTY;
                         sa.sa_value = sa_attrs;
                     } else if (sa.sa_type == &VC_ROLE) {
                         if (sa.sa_value.get<role_t>()

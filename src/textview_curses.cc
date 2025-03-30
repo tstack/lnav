@@ -250,7 +250,7 @@ textview_curses::reload_config(error_reporter& reporter)
                                          .append_quoted(sc.sc_color))
                                      .with_reason(msg));
                         invalid = true;
-                        return styling::color_unit::make_empty();
+                        return styling::color_unit::EMPTY;
                     }));
             attrs.ta_bg_color = vc.match_color(
                 styling::color_unit::from_str(bg_color).unwrapOrElse(
@@ -261,7 +261,7 @@ textview_curses::reload_config(error_reporter& reporter)
                                          .append_quoted(sc.sc_background_color))
                                      .with_reason(msg));
                         invalid = true;
-                        return styling::color_unit::make_empty();
+                        return styling::color_unit::EMPTY;
                     }));
             if (invalid) {
                 continue;

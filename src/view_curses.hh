@@ -412,7 +412,13 @@ public:
 
     int get_x() const { return this->vc_x; }
 
-    void set_width(long width) { this->vc_width = width; }
+    void set_width(long width)
+    {
+        if (this->vc_width != width) {
+            this->vc_width = width;
+            this->set_needs_update();
+        }
+    }
 
     long get_width() const { return this->vc_width; }
 

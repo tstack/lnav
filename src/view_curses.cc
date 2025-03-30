@@ -518,7 +518,7 @@ view_curses::mvwattrline(ncplane* window,
                 ncplane_putwc_yx(window, y, x + attr_range.lr_start, be.value);
                 attrs = vc.attrs_for_role(be.role);
                 // clear the BG color, it interferes with the cursor BG
-                attrs.ta_bg_color = styling::color_unit::make_empty();
+                attrs.ta_bg_color = styling::color_unit::EMPTY;
             } else if (iter->sa_type == &VC_STYLE) {
                 attrs = iter->sa_value.get<text_attrs>();
             } else if (iter->sa_type == &SA_LEVEL) {
@@ -866,7 +866,7 @@ view_colors::to_attrs(const lnav_theme& lt,
                 lnav::console::user_message::error(
                     attr_line_t("invalid color -- ").append_quoted(sc.sc_color))
                     .with_reason(msg));
-            return styling::color_unit::make_empty();
+            return styling::color_unit::EMPTY;
         });
     auto bg = styling::color_unit::from_str(bg_color).unwrapOrElse(
         [&](const auto& msg) {
@@ -875,7 +875,7 @@ view_colors::to_attrs(const lnav_theme& lt,
                          attr_line_t("invalid background color -- ")
                              .append_quoted(sc.sc_background_color))
                          .with_reason(msg));
-            return styling::color_unit::make_empty();
+            return styling::color_unit::EMPTY;
         });
 
     fg = this->match_color(fg);

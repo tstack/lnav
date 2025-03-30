@@ -30,6 +30,8 @@
 #ifndef color_spaces_hh
 #define color_spaces_hh
 
+#include <string>
+
 #include "result.h"
 #include "intern_string.hh"
 #include "mapbox/variant.hpp"
@@ -143,7 +145,7 @@ class color_unit {
 public:
     static Result<color_unit, std::string> from_str(const string_fragment& sf);
 
-    static color_unit make_empty() { return color_unit{transparent{}}; }
+    static const color_unit EMPTY;
 
     static color_unit from_rgb(const rgb_color& rgb)
     {

@@ -755,7 +755,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
 
     if (!this->lss_token_line->is_continued()) {
         if (this->lss_preview_filter_stmt != nullptr) {
-            auto color = styling::color_unit::make_empty();
+            auto color = styling::color_unit::EMPTY;
             auto eval_res
                 = this->eval_sql_filter(this->lss_preview_filter_stmt.in(),
                                         this->lss_token_file_data,

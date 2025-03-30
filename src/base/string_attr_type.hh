@@ -303,8 +303,8 @@ struct text_attrs {
     }
 
     uint32_t ta_attrs{0};
-    styling::color_unit ta_fg_color{styling::color_unit::make_empty()};
-    styling::color_unit ta_bg_color{styling::color_unit::make_empty()};
+    styling::color_unit ta_fg_color{styling::color_unit::EMPTY};
+    styling::color_unit ta_bg_color{styling::color_unit::EMPTY};
     std::optional<text_align_t> ta_align;
 };
 

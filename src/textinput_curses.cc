@@ -1511,7 +1511,15 @@ textinput_curses::handle_key(const ncinput& ch)
 void
 textinput_curses::ensure_cursor_visible()
 {
+    if (!this->vc_enabled) {
+        return;
+    }
+
     auto dim = this->get_visible_dimensions();
+    auto orig_top = this->tc_top;
+    auto orig_left = this->tc_left;
+    auto orig_cursor = this->tc_cursor;
+    auto orig_max_cursor_x = this->tc_max_cursor_x;
 
     this->clamp_point(this->tc_cursor);
     if (this->tc_cursor.y < 0) {
@@ -1577,7 +1585,12 @@ textinput_curses::ensure_cursor_visible()
         this->tc_max_cursor_x = this->tc_cursor.x;
     }
 
-    this->set_needs_update();
+    if (orig_top != this->tc_top || orig_left != this->tc_left
+        || orig_cursor != this->tc_cursor
+        || orig_max_cursor_x != this->tc_max_cursor_x)
+    {
+        this->set_needs_update();
+    }
 }
 
 void
@@ -1830,6 +1843,7 @@ textinput_curses::update_lines()
 {
     const auto x = this->get_cursor_offset();
     this->content_to_lines(this->get_content(), x);
+    this->set_needs_update();
     this->ensure_cursor_visible();
 
     this->tc_marks.clear();
@@ -2004,6 +2018,7 @@ textinput_curses::do_update()
                 this->tc_window, this->vc_y, alt_x, this->tc_alt_value, lr);
         }
 
+        this->vc_needs_update = false;
         return true;
     }
 

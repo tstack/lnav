@@ -284,7 +284,7 @@ color_unit::from_str(const string_fragment& sf)
     }
     auto retval = TRY(from<rgb_color>(sf));
     if (retval.empty()) {
-        return Ok(make_empty());
+        return Ok(EMPTY);
     }
 
     return Ok(color_unit{retval});

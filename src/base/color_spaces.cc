@@ -31,9 +31,9 @@
 #include <cmath>
 
 #include "color_spaces.hh"
-#include "from_trait.hh"
 
 #include "config.h"
+#include "from_trait.hh"
 
 bool
 rgb_color::operator<(const rgb_color& rhs) const
@@ -198,7 +198,8 @@ to_ansi_color(const rgb_color& color)
     double lowest_delta = std::numeric_limits<double>::max();
     for (uint8_t lpc = 0; lpc < term_colors.size(); ++lpc) {
         if (const auto this_delta = term_colors[lpc].deltaE(desired);
-            this_delta < lowest_delta) {
+            this_delta < lowest_delta)
+        {
             lowest_delta = this_delta;
             retval = ansi_color{lpc};
         }
@@ -229,3 +230,9 @@ lab_color::sufficient_contrast(const lab_color& other) const
     return (std::signbit(this->lc_a) != std::signbit(other.lc_a)
             || std::signbit(this->lc_b) != std::signbit(other.lc_b));
 }
+
+namespace styling {
+
+const color_unit color_unit::EMPTY = color_unit{transparent{}};
+
+}  // namespace styling
