@@ -292,6 +292,7 @@ rl_sql_help(textinput_curses& rc)
                 text_format_t::TF_SQL);
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Definition for table -- %s", ident.c_str());
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
         }
     }
 
@@ -390,6 +391,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
         lnav_data.ld_example_source.replace_with(CMD_EXAMPLE);
         lnav_data.ld_bottom_source.set_prompt(LNAV_CMD_PROMPT);
         lnav_data.ld_bottom_source.grep_error("");
+        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     } else if (args[0] == "config" && args.size() > 1) {
         static const auto INPUT_SRC = intern_string::lookup("input");
         yajlpp_parse_context ypc(INPUT_SRC, &lnav_config_handlers);
@@ -410,6 +412,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
             lnav_data.ld_bottom_source.grep_error(
                 "Unknown configuration option: " + args[1]);
         }
+        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     } else if ((args[0] != "filter-expr" && args[0] != "mark-expr")
                || !rl_sql_help(rc))
     {
@@ -473,7 +476,7 @@ rl_cmd_change(textinput_curses& rc, bool is_req)
                                                   ? LNAV_MULTILINE_CMD_PROMPT
                                                   : LNAV_CMD_PROMPT);
         lnav_data.ld_bottom_source.grep_error("");
-        lnav_data.ld_status[LNS_BOTTOM].window_change();
+        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     }
 
     if (iter != lnav_commands.end() && (args.size() > 1 || endswith(line, " ")))
@@ -851,6 +854,7 @@ rl_exec_change(textinput_curses& rc, bool is_req)
     if (split_res.isErr()) {
         lnav_data.ld_bottom_source.grep_error(
             split_res.unwrapErr().se_error.te_msg);
+        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     } else {
         auto split_args = split_res.unwrap();
         auto script_name = split_args.empty() ? std::string()
@@ -861,6 +865,7 @@ rl_exec_change(textinput_curses& rc, bool is_req)
         if (iter == scripts.as_scripts.end()) {
             lnav_data.ld_bottom_source.set_prompt(
                 "Enter a script to execute: " ABORT_MSG);
+            lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 
             std::vector<attr_line_t> poss;
             auto width = scripts.as_scripts | lnav::itertools::first()
@@ -912,6 +917,7 @@ rl_exec_change(textinput_curses& rc, bool is_req)
                     meta.sm_synopsis,
                     meta.sm_description);
                 lnav_data.ld_bottom_source.set_prompt(help_text);
+                lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
             }
 
             auto line_sf = to_string_fragment(line);
@@ -1062,6 +1068,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                 lnav_data.ld_bottom_source.grep_error(
                     result.unwrapErr().um_message.get_string());
             }
+            lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 
             lnav_data.ld_preview_view[0].reload_data();
 
@@ -1074,6 +1081,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
 
             if (!term_val.empty() && term_val[0] == '.') {
                 lnav_data.ld_bottom_source.grep_error("");
+                lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
             } else if (lnav::sql::is_prql(term_val)) {
                 std::string alt_msg;
 
@@ -1163,6 +1171,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                         .get_description()
                         .set_value("Result for query: %s",
                                    prev_stage_prql.get_string().c_str());
+                    lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                     if (exec_res.isOk()) {
                         lnav_data.ld_preview_view[0].set_sub_source(
                             &lnav_data.ld_db_preview_source[0]);
@@ -1191,6 +1200,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                 if (exec_res.isErr()) {
                     lnav_data.ld_bottom_source.grep_error(
                         err.um_reason.get_string());
+                    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 
                     curr_stage_prql.erase(curr_stage_prql.get_string().length()
                                           - 8);
@@ -1231,6 +1241,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                     }
                 } else {
                     lnav_data.ld_bottom_source.grep_error("");
+                    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
                 }
 
                 rl_sql_help(rc);
@@ -1239,6 +1250,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                     .get_description()
                     .set_value("Result for query: %s",
                                curr_stage_prql.get_string().c_str());
+                lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                 if (!lnav_data.ld_db_preview_source[curr_stage_index]
                          .dls_headers.empty())
                 {
@@ -1277,6 +1289,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
             if (!sqlite3_complete(term_val.c_str())) {
                 lnav_data.ld_bottom_source.grep_error(
                     "SQL error: incomplete statement");
+                lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
             } else {
                 auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
                 int retcode;
@@ -1308,6 +1321,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                 } else {
                     lnav_data.ld_bottom_source.grep_error("");
                 }
+                lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
             }
 
             if (!rl_sql_help(rc)) {
@@ -1361,6 +1375,7 @@ lnav_rl_abort(textinput_curses& rc)
     reload_config(errors);
 
     lnav_data.ld_bottom_source.grep_error("");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     switch (lnav_data.ld_mode) {
         case ln_mode_t::SEARCH:
             tc->set_selection(lnav_data.ld_search_start_line);
@@ -1389,6 +1404,7 @@ rl_callback(textinput_curses& rc)
     std::string alt_msg;
 
     lnav_data.ld_bottom_source.set_prompt("");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     lnav_data.ld_doc_source.clear();
     lnav_data.ld_example_source.clear();
     clear_preview();
@@ -1684,7 +1700,19 @@ rl_focus(textinput_curses& rc)
 
     fos->fos_contexts.emplace("", false, true, true);
 
-    get_textview_for_mode(lnav_data.ld_mode)->save_current_search();
+    switch (lnav_data.ld_mode) {
+        case ln_mode_t::SEARCH:
+        case ln_mode_t::SEARCH_FILES:
+        case ln_mode_t::SEARCH_FILTERS:
+        case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
+            auto* tc = get_textview_for_mode(lnav_data.ld_mode);
+            tc->save_current_search();
+            tc->execute_search("");
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void
@@ -1702,6 +1730,7 @@ rl_blur(textinput_curses& rc)
         [](auto* tc) { tc->set_overlay_selection(std::nullopt); };
     lnav_data.ld_preview_generation += 1;
     lnav_data.ld_bottom_source.grep_error("");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
 readline_context::split_result_t

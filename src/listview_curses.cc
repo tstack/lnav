@@ -500,23 +500,23 @@ listview_curses::do_update()
                 vc.attrs_for_role(this->lv_border_left_role.value()));
 
             auto al = attr_line_t("  ");
-            if (!this->lv_title.empty()) {
-                al.append(this->lv_title,
+            if (!this->vc_title.empty()) {
+                al.append(this->vc_title,
                           VC_STYLE.value(text_attrs::with_bold()));
             }
             al.al_attrs.emplace_back(line_range{0, 1},
                                      VC_GRAPHIC.value(NCACS_ULCORNER));
             auto hline_lr = line_range{1, (int) width - 1};
-            if (!this->lv_title.empty()) {
+            if (!this->vc_title.empty()) {
                 al.al_attrs.emplace_back(line_range{1, 2},
                                          VC_GRAPHIC.value(NCACS_RTEE));
                 al.al_attrs.emplace_back(
                     line_range{
-                        2 + (int) this->lv_title.length(),
-                        2 + (int) this->lv_title.length() + 1,
+                        2 + (int) this->vc_title.length(),
+                        2 + (int) this->vc_title.length() + 1,
                     },
                     VC_GRAPHIC.value(NCACS_LTEE));
-                hline_lr.lr_start += 1 + this->lv_title.length() + 1;
+                hline_lr.lr_start += 1 + this->vc_title.length() + 1;
             }
             al.al_attrs.emplace_back(hline_lr, VC_GRAPHIC.value(NCACS_HLINE));
             al.al_attrs.emplace_back(line_range{(int) width - 1, (int) width},

@@ -2527,7 +2527,7 @@ void ncplane_yx(const ncplane* n, int* y, int* x){
 
 // special case of ncplane_erase_region()
 void ncplane_erase(ncplane* n){
-  loginfo("erasing %dx%d plane", n->leny, n->lenx);
+  logdebug("erasing %dx%d plane", n->leny, n->lenx);
   if(n->sprite){
     sprixel_hide(n->sprite);
     destroy_tam(n);
@@ -2598,7 +2598,7 @@ int ncplane_erase_region(ncplane* n, int ystart, int xstart, int ylen, int xlen)
     n->x = tmpx;
     return 0;
   }
-  loginfo("erasing %d/%d - %d/%d", ystart, xstart, ystart + ylen, xstart + xlen);
+  logdebug("erasing %d/%d - %d/%d", ystart, xstart, ystart + ylen, xstart + xlen);
   for(int y = ystart ; y < ystart + ylen ; ++y){
     for(int x = xstart ; x < xstart + xlen ; ++x){
       nccell_release(n, &n->fb[nfbcellidx(n, y, x)]);

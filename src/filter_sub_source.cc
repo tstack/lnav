@@ -176,7 +176,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             lv.reload_data();
 
             this->fss_editing = true;
-            this->tss_view->vc_enabled = false;
+            this->tss_view->set_enabled(false);
             this->fss_view_text_possibilities
                 = view_text_possibilities(*top_view);
             this->fss_editor->tc_text_format = text_format_t::TF_PCRE;
@@ -208,7 +208,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             lv.reload_data();
 
             this->fss_editing = true;
-            this->tss_view->vc_enabled = false;
+            this->tss_view->set_enabled(false);
 
             this->fss_editor->tc_text_format = text_format_t::TF_PCRE;
             this->fss_editor->set_y(lv.get_y_for_selection());
@@ -235,7 +235,7 @@ filter_sub_source::list_input_handle_key(listview_curses& lv, const ncinput& ch)
             auto tf = *(fs.begin() + lv.get_selection());
 
             this->fss_editing = true;
-            this->tss_view->vc_enabled = false;
+            this->tss_view->set_enabled(false);
 
             this->fss_editor->tc_text_format
                 = tf->get_lang() == filter_lang_t::SQL ? text_format_t::TF_SQL
@@ -713,7 +713,7 @@ filter_sub_source::rl_blur(textinput_curses& tc)
     lnav_data.ld_filter_help_status_source.fss_error.clear();
     this->fss_editing = false;
     tc.set_visible(false);
-    this->tss_view->vc_enabled = true;
+    this->tss_view->set_enabled(true);
 }
 
 void

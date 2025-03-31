@@ -74,6 +74,7 @@ public:
             } else {
                 lnav_data.ld_bottom_source.update_loading(off, total);
             }
+            lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
             do_observer_update(lf);
             this->lo_last_offset = off;
         }

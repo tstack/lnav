@@ -98,6 +98,7 @@ public:
     }
 
     termios sc_termios;
+
 private:
     explicit screen_curses(notcurses* nc) : sc_notcurses(nc) {}
 
@@ -353,6 +354,10 @@ class view_curses {
 public:
     virtual ~view_curses() = default;
 
+    void set_title(const std::string& title) { this->vc_title = title; }
+
+    const std::string& get_title() const { return this->vc_title; }
+
     /**
      * Update the curses display.
      */
@@ -364,24 +369,49 @@ public:
 
     void set_needs_update()
     {
-        this->vc_needs_update = true;
-        for (auto* child : this->vc_children) {
-            child->set_needs_update();
+        if (this->is_visible()) {
+            this->vc_needs_update = true;
+            for (auto* child : this->vc_children) {
+                child->set_needs_update();
+            }
         }
     }
+
+    void clear_needs_update() { this->vc_needs_update = false; }
 
     bool get_needs_update() const { return this->vc_needs_update; }
 
     view_curses& add_child_view(view_curses* child)
     {
         this->vc_children.push_back(child);
+        this->set_needs_update();
 
         return *this;
     }
 
     void set_default_role(role_t role) { this->vc_default_role = role; }
 
-    void set_visible(bool value) { this->vc_visible = value; }
+    void set_enabled(bool value)
+    {
+        if (value != this->vc_enabled) {
+            this->vc_enabled = value;
+            this->set_needs_update();
+        }
+    }
+
+    bool is_enabled() const { return this->vc_enabled; }
+
+    void set_visible(bool value)
+    {
+        if (this->vc_visible != value) {
+            this->vc_visible = value;
+            if (value) {
+                this->set_needs_update();
+            } else {
+                this->vc_needs_update = false;
+            }
+        }
+    }
 
     bool is_visible() const { return this->vc_visible; }
 
@@ -437,9 +467,9 @@ public:
                                           const struct line_range& lr,
                                           role_t base_role = role_t::VCR_TEXT);
 
-    bool vc_enabled{true};
-
 protected:
+    std::string vc_title;
+    bool vc_enabled{true};
     bool vc_visible{true};
     /** Flag to indicate if a display update is needed. */
     bool vc_needs_update{true};

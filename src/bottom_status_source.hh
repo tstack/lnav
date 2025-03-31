@@ -75,9 +75,9 @@ public:
 
     void update_percent(listview_curses* lc);
 
-    void update_marks(listview_curses* lc);
+    bool update_marks(listview_curses* lc);
 
-    void update_hits(textview_curses* tc);
+    bool update_hits(textview_curses* tc);
 
     void update_loading(file_off_t off, file_ssize_t total);
 

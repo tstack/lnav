@@ -59,10 +59,9 @@ top_status_source::top_status_source(auto_sqlite3& db,
     this->tss_fields[TSF_USER_MSG].set_role(role_t::VCR_STATUS_INFO);
 }
 
-void
+bool
 top_status_source::update_time(const timeval& current_time)
 {
-    auto& sf = this->tss_fields[TSF_TIME];
     char buffer[32];
     tm current_tm;
 
@@ -71,7 +70,12 @@ top_status_source::update_time(const timeval& current_time)
              sizeof(buffer) - 1,
              this->tss_config.tssc_clock_format.c_str(),
              localtime_r(&current_time.tv_sec, &current_tm));
-    sf.set_value(buffer);
+    auto& sf = this->tss_fields[TSF_TIME];
+    if (sf.get_value().al_string != buffer) {
+        sf.set_value(buffer);
+        return true;
+    }
+    return false;
 }
 
 void
@@ -83,11 +87,10 @@ top_status_source::update_time()
     this->update_time(tv);
 }
 
-void
+bool
 top_status_source::update_user_msg()
 {
-    auto& al = this->tss_fields[TSF_USER_MSG].get_value();
-    al.clear();
+    auto al = attr_line_t();
 
     this->tss_user_msgs_stmt.reset();
     auto fetch_res = this->tss_user_msgs_stmt.fetch_row<std::string>();
@@ -119,4 +122,12 @@ top_status_source::update_user_msg()
                       fe.fe_msg.c_str());
         });
     this->tss_user_msgs_stmt.reset();
+
+    auto& curr_msg = this->tss_fields[TSF_USER_MSG].get_value();
+    if (al.al_string != curr_msg.al_string) {
+        curr_msg = al;
+        return true;
+    }
+
+    return false;
 }

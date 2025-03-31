@@ -1521,10 +1521,20 @@ cellcmp_and_dupfar(egcpool* dampool, nccell* damcell,
                    const ncplane* srcplane, const nccell* srccell){
   if(damcell->stylemask == srccell->stylemask){
     if(damcell->channels == srccell->channels){
-      const char* srcegc = nccell_extended_gcluster(srcplane, srccell);
-      const char* damegc = pool_extended_gcluster(dampool, damcell);
-      if(strcmp(damegc, srcegc) == 0){
-        return 0; // EGC match
+      bool damsimple = cell_simple_p(damcell);
+      bool srcsimple = cell_simple_p(srccell);
+      if (damsimple == srcsimple) {
+        if (damsimple) {
+          if (damcell->gcluster == srccell->gcluster) {
+            return 0;
+          }
+        } else {
+          const char* srcegc = nccell_extended_gcluster(srcplane, srccell);
+          const char* damegc = pool_extended_gcluster(dampool, damcell);
+          if(strcmp(damegc, srcegc) == 0){
+            return 0; // EGC match
+          }
+        }
       }
     }
   }

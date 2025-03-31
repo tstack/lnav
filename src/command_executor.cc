@@ -86,6 +86,7 @@ sql_progress(const log_cursor& lc)
 
         if (off >= 0 && off <= total) {
             lnav_data.ld_bottom_source.update_loading(off, total);
+            lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
         }
         lnav_data.ld_status_refresher();
     }
@@ -107,6 +108,7 @@ sql_progress_finished()
     }
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     lnav_data.ld_status_refresher();
     lnav_data.ld_views[LNV_DB].redo_search();
 }
@@ -337,6 +339,7 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     lnav_data.ld_mode = ln_mode_t::BUSY;
     auto mode_fin = finally([old_mode]() { lnav_data.ld_mode = old_mode; });
     lnav_data.ld_bottom_source.grep_error("");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 
     if (startswith(stmt_str, ".")) {
         std::vector<std::string> args;
@@ -1256,7 +1259,7 @@ exec_context::execute(source_location loc, const std::string& cmdline)
     if (!this->ec_label_source_stack.empty()) {
         before_dls_gen = this->ec_label_source_stack.back()->dls_generation;
     }
-    if (this->get_provenance<mouse_input>() && !prompt.p_editor.vc_enabled) {
+    if (this->get_provenance<mouse_input>() && !prompt.p_editor.is_enabled()) {
         auto& hist = prompt.get_history_for(cmdline[0]);
         hist_guard = hist.start_operation(cmdline.substr(1));
     }

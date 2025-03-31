@@ -39,6 +39,7 @@
 #include "document.sections.hh"
 #include "environ_vtab.hh"
 #include "filter_sub_source.hh"
+#include "hasher.hh"
 #include "help-md.h"
 #include "intervaltree/IntervalTree.h"
 #include "lnav.hh"
@@ -778,8 +779,8 @@ layout_views()
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
-    auto prompt_height = prompt.p_editor.vc_enabled ? prompt.p_editor.tc_height
-                                                    : 1;
+    auto prompt_height
+        = prompt.p_editor.is_enabled() ? prompt.p_editor.tc_height : 1;
     auto min_height = std::min(1U + 10 + 2U, height);
     auto bottom = clamped<int>::from(height, min_height, height);
 
@@ -936,11 +937,15 @@ update_hits(textview_curses* tc)
     auto top_tc = lnav_data.ld_view_stack.top();
 
     if (top_tc && tc == *top_tc) {
-        lnav_data.ld_bottom_source.update_hits(tc);
+        if (lnav_data.ld_bottom_source.update_hits(tc)) {
+            lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+        }
 
         if (lnav_data.ld_mode == ln_mode_t::SEARCH) {
             constexpr auto MAX_MATCH_COUNT = 10_vl;
-            const auto PREVIEW_SIZE = MAX_MATCH_COUNT + 1_vl;
+            constexpr auto PREVIEW_SIZE = MAX_MATCH_COUNT + 1_vl;
+
+            static hasher::array_t last_preview_hash;
 
             int preview_count = 0;
             auto& bm = tc->get_bookmarks();
@@ -1004,16 +1009,23 @@ update_hits(textview_curses* tc)
                 preview_count += 1;
             }
 
-            if (preview_count > 0) {
+            auto match_hash = hasher().update(all_matches.al_string).to_array();
+            if (preview_count > 0
+                && (match_hash != last_preview_hash
+                    || lnav_data.ld_preview_view[0].get_sub_source()
+                        == nullptr))
+            {
+                log_debug("updating search preview");
                 lnav_data.ld_preview_status_source[0]
                     .get_description()
                     .set_value("Matching lines for search");
+                lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
                 lnav_data.ld_preview_source[0]
                     .replace_with(all_matches)
                     .set_text_format(text_format_t::TF_UNKNOWN);
-                lnav_data.ld_preview_view[0].set_needs_update();
+                last_preview_hash = match_hash;
             }
         }
     }
@@ -1167,6 +1179,8 @@ toggle_view(textview_curses* toggle_tc)
     lnav_data.ld_preview_status_source[0].get_description().clear();
     lnav_data.ld_preview_view[1].set_sub_source(nullptr);
     lnav_data.ld_preview_status_source[1].get_description().clear();
+    lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
+    lnav_data.ld_status[LNS_PREVIEW1].set_needs_update();
 
     if (tc == toggle_tc) {
         if (lnav_data.ld_view_stack.size() == 1) {
@@ -1537,7 +1551,10 @@ set_view_mode(ln_mode_t mode)
         case ln_mode_t::SEARCH_FILES:
         case ln_mode_t::SEARCH_FILTERS:
         case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
-            if (mode != ln_mode_t::PAGING) {
+            if (mode != ln_mode_t::PAGING && mode != ln_mode_t::FILES
+                && mode != ln_mode_t::FILTER
+                && mode != ln_mode_t::SPECTRO_DETAILS)
+            {
                 log_debug("prompt is active, ignoring change to mode %s",
                           lnav_mode_strings[lnav::enums::to_underlying(mode)]);
                 return;
@@ -1560,7 +1577,7 @@ set_view_mode(ln_mode_t mode)
         default:
             break;
     }
-    breadcrumb_view->vc_enabled = true;
+    breadcrumb_view->set_enabled(true);
     switch (mode) {
         case ln_mode_t::SQL:
         case ln_mode_t::EXEC:
@@ -1571,7 +1588,7 @@ set_view_mode(ln_mode_t mode)
         case ln_mode_t::SEARCH_FILTERS:
         case ln_mode_t::SEARCH_SPECTRO_DETAILS: {
             lnav_data.ld_status[LNS_DOC].set_needs_update();
-            breadcrumb_view->vc_enabled = false;
+            breadcrumb_view->set_enabled(false);
             break;
         }
         case ln_mode_t::BREADCRUMBS: {
@@ -1582,10 +1599,27 @@ set_view_mode(ln_mode_t mode)
             lnav_data.ld_status[LNS_FILTER].set_needs_update();
             lnav_data.ld_file_details_view.tc_cursor_role
                 = role_t::VCR_CURSOR_LINE;
+            lnav_data.ld_view_stack.top().value()->set_enabled(false);
             break;
         }
-        default:
+        case ln_mode_t::FILES:
+        case ln_mode_t::FILTER:
+        case ln_mode_t::SPECTRO_DETAILS: {
+            breadcrumb_view->set_enabled(false);
+            lnav_data.ld_view_stack.top().value()->set_enabled(false);
             break;
+        }
+        case ln_mode_t::PAGING: {
+            lnav_data.ld_view_stack.top().value()->set_enabled(true);
+            break;
+        }
+        case ln_mode_t::BUSY: {
+            lnav_data.ld_view_stack.top().value()->set_enabled(false);
+            break;
+        }
+        case ln_mode_t::CAPTURE: {
+            break;
+        }
     }
     log_info("changing mode from %s to %s",
              lnav_mode_strings[lnav::enums::to_underlying(lnav_data.ld_mode)],

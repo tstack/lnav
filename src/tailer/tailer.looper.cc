@@ -157,10 +157,11 @@ tailer::looper::loop_body()
 
             if (create_res.isErr()) {
                 report_error(netloc, create_res.unwrapErr());
-                if (std::any_of(
-                        rpq.rpq_new_paths.begin(),
-                        rpq.rpq_new_paths.end(),
-                        [](const auto& pair) { return !pair.second.loo_follow; }))
+                if (std::any_of(rpq.rpq_new_paths.begin(),
+                                rpq.rpq_new_paths.end(),
+                                [](const auto& pair) {
+                                    return !pair.second.loo_follow;
+                                }))
                 {
                     rpq.send_synced_to_main(netloc);
                     to_erase.push_back(netloc);
@@ -234,6 +235,7 @@ tailer::looper::load_preview(int64_t id, const network::path& path)
                         .clear();
                     lnav_data.ld_preview_source[0].clear();
                     lnav_data.ld_bottom_source.grep_error(msg);
+                    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
                 });
             return;
         }
@@ -562,6 +564,7 @@ tailer::looper::host_tailer::load_preview(int64_t id, const std::string& path)
                     .get_description()
                     .set_cylon(false)
                     .set_value(msg);
+                lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
             });
         },
         [&](const synced& s) { require(false); });
@@ -1020,6 +1023,7 @@ tailer::looper::host_tailer::loop_body()
                             .clear();
                         lnav_data.ld_preview_source[0].clear();
                         lnav_data.ld_bottom_source.grep_error(ppe.ppe_msg);
+                        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
                     });
 
                 return std::move(this->ht_state);
@@ -1041,6 +1045,7 @@ tailer::looper::host_tailer::loop_body()
                             .set_value("For file: %s:%s",
                                        netloc.c_str(),
                                        ppd.ppd_path.c_str());
+                        lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                         lnav_data.ld_preview_source[0]
                             .replace_with(str)
                             .set_text_format(detect_text_format(str));

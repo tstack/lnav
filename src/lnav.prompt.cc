@@ -446,6 +446,7 @@ prompt::rl_reformat(textinput_curses& tc)
                     "Enter an SQL query: (Press "
                     ANSI_BOLD("CTRL+X") " to perform query and "
                     ANSI_BOLD("Esc") " to abort)");
+                lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
             }
             tc.move_cursor_to(
                 tc.get_point_for_offset(format_res.fr_cursor_offset));
@@ -561,6 +562,8 @@ prompt::rl_popup_change(textinput_curses& tc)
     tc.replace_selection(sub);
     if (tc.tc_lines.size() > 1 && tc.tc_height == 1) {
         tc.set_height(5);
+    } else {
+        tc.set_height(1);
     }
     tc.tc_complete_range = textinput_curses::selected_range::from_key(
         textinput_curses::input_point::home(),

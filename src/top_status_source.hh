@@ -57,11 +57,11 @@ public:
         return this->tss_fields[field];
     }
 
-    void update_time(const struct timeval& current_time);
+    bool update_time(const struct timeval& current_time);
 
     void update_time();
 
-    void update_user_msg();
+    bool update_user_msg();
 
 private:
     const top_status_source_cfg& tss_config;

@@ -56,7 +56,7 @@ public:
     virtual ~status_field() = default;
 
     /** @param value The new value for this field. */
-    void set_value(std::string value);
+    bool set_value(std::string value);
 
     /**
      * Set the new value for this field using a formatted string.
@@ -64,17 +64,17 @@ public:
      * @param fmt The format string.
      * @param ... Arguments for the format.
      */
-    status_field& set_value(const char* fmt, ...)
+    bool set_value(const char* fmt, ...)
     {
         char buffer[256];
         va_list args;
 
         va_start(args, fmt);
         vsnprintf(buffer, sizeof(buffer), fmt, args);
-        this->set_value(std::string(buffer));
+        auto retval = this->set_value(std::string(buffer));
         va_end(args);
 
-        return *this;
+        return retval;
     }
 
     void set_stitch_value(role_t left, role_t right);
@@ -102,7 +102,14 @@ public:
     /** @return True if this field's value is an empty string. */
     bool empty() const { return this->sf_value.get_string().empty(); }
 
-    void clear() { this->sf_value.clear(); }
+    bool clear()
+    {
+        if (!this->sf_value.empty()) {
+            this->sf_value.clear();
+            return true;
+        }
+        return false;
+    }
 
     /** @param role The color role for this field. */
     void set_role(role_t role) { this->sf_role = role; }
@@ -175,7 +182,13 @@ public:
     void set_window(ncplane* win) { this->sc_window = win; }
     ncplane* get_window() { return this->sc_window; }
 
-    void set_enabled(bool value) { this->sc_enabled = value; }
+    void set_enabled(bool value)
+    {
+        if (this->sc_enabled != value) {
+            this->sc_enabled = value;
+            this->set_needs_update();
+        }
+    }
     bool get_enabled() const { return this->sc_enabled; }
 
     void window_change();

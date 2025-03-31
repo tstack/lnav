@@ -1079,6 +1079,7 @@ com_mark_expr(exec_context& ec,
         }
         lnav_data.ld_preview_status_source[0].get_description().set_value(
             "Matches are highlighted in the text view");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
     } else {
         auto set_res = lss.set_sql_marker(expr, stmt.release());
 
@@ -1248,6 +1249,7 @@ com_highlight(exec_context& ec,
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the view");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
 
             retval = "";
         } else {
@@ -1378,6 +1380,7 @@ com_filter_expr(exec_context& ec,
             }
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "Matches are highlighted in the text view");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
         } else {
             lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
             auto set_res
@@ -1487,6 +1490,7 @@ com_create_logline_table(exec_context& ec,
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The following table will be created:");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
             lnav_data.ld_preview_view[0].set_sub_source(
                 &lnav_data.ld_preview_source[0]);
             lnav_data.ld_preview_source[0].replace_with(al).set_text_format(
@@ -1600,6 +1604,7 @@ com_create_search_table(exec_context& ec,
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The following table will be created:");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
 
             lnav_data.ld_preview_view[0].set_sub_source(
                 &lnav_data.ld_preview_source[0]);
@@ -1891,6 +1896,7 @@ com_comment(exec_context& ec,
                 lnav_data.ld_preview_status_source[0]
                     .get_description()
                     .set_value("Comment rendered as markdown:");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
                 lnav_data.ld_preview_source[0].replace_with(al);
@@ -2416,7 +2422,7 @@ com_summarize(exec_context& ec,
         }
 
         lnav_data.ld_bottom_source.update_loading(0, 0);
-        lnav_data.ld_status[LNS_BOTTOM].do_update();
+        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     }
 
     return Ok(retval);
@@ -3043,6 +3049,7 @@ com_echo(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
         if (ec.ec_dry_run) {
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The text to output:");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
             lnav_data.ld_preview_view[0].set_sub_source(
                 &lnav_data.ld_preview_source[0]);
             lnav_data.ld_preview_source[0].replace_with(attr_line_t(retval));
@@ -3123,6 +3130,7 @@ com_eval(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
 
             lnav_data.ld_preview_status_source[0].get_description().set_value(
                 "The command to be executed:");
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
 
             lnav_data.ld_preview_view[0].set_sub_source(
                 &lnav_data.ld_preview_source[0]);
@@ -3265,6 +3273,7 @@ com_config(exec_context& ec,
                     lnav_data.ld_preview_status_source[0]
                         .get_description()
                         .set_value("Value of option: %s", option.c_str());
+                    lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
 
                     auto help_text = fmt::format(
                         FMT_STRING(
@@ -3539,6 +3548,7 @@ script_prompt(std::vector<std::string>& args)
     prompt.focus_for(*tc, '|', args);
     lnav_data.ld_bottom_source.set_prompt(
         "Enter a script to execute: (Press " ANSI_BOLD("Esc") " to abort)");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
 static void
@@ -3560,6 +3570,7 @@ search_prompt(std::vector<std::string>& args)
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
         ANSI_BOLD("Esc") " to abort)");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
 static void
@@ -3575,6 +3586,7 @@ search_filters_prompt(std::vector<std::string>& args)
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
         ANSI_BOLD("Esc") " to abort)");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
 static void
@@ -3589,6 +3601,7 @@ search_files_prompt(std::vector<std::string>& args)
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
         ANSI_BOLD("Esc") " to abort)");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
 static void
@@ -3604,6 +3617,7 @@ search_spectro_details_prompt(std::vector<std::string>& args)
         "Search for:  "
         "(Press " ANSI_BOLD("CTRL+J") " to jump to a previous hit and "
         ANSI_BOLD("Esc") " to abort)");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
 static void
@@ -3626,7 +3640,7 @@ sql_prompt(std::vector<std::string>& args)
                          "sqlext.html") " for more details");
     rl_set_help();
     lnav_data.ld_bottom_source.update_loading(0, 0);
-    lnav_data.ld_status[LNS_BOTTOM].do_update();
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 
     auto* fos = (field_overlay_source*) log_view.get_overlay_source();
     fos->fos_contexts.top().c_show = true;
@@ -3634,9 +3648,9 @@ sql_prompt(std::vector<std::string>& args)
     tc->reload_data();
     tc->set_overlay_selection(3_vl);
     lnav_data.ld_bottom_source.set_prompt(
-        "Enter an SQL query: (Press "
-        ANSI_BOLD("CTRL+L") " for multi-line mode and "
-        ANSI_BOLD("Esc") " to abort)");
+        "Enter an SQL query: (Press " ANSI_BOLD(
+            "CTRL+L") " for multi-line mode and " ANSI_BOLD("Esc") " to "
+                                                                   "abort)");
 }
 
 static void
@@ -3652,7 +3666,7 @@ user_prompt(std::vector<std::string>& args)
     prompt.focus_for(*tc, '\0', args);
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
-    lnav_data.ld_status[LNS_BOTTOM].do_update();
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
 }
 
 static Result<std::string, lnav::console::user_message>

@@ -736,6 +736,7 @@ com_save_to(exec_context& ec,
             .truncate_to(10);
         lnav_data.ld_preview_status_source[0].get_description().set_value(
             "First lines of file: %s", split_args[0].c_str());
+        lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
     } else {
         retval = fmt::format(FMT_STRING("info: Wrote {:L} rows to {}"),
                              line_count,
@@ -1099,6 +1100,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     .get_description()
                     .set_cylon(true)
                     .set_value("Loading %s...", fn_str.c_str());
+                lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                 lnav_data.ld_preview_view[0].set_sub_source(
                     &lnav_data.ld_preview_source[0]);
                 lnav_data.ld_preview_source[0].clear();
@@ -1132,6 +1134,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     lnav_data.ld_preview_status_source[0]
                         .get_description()
                         .set_value("The following files will be loaded:");
+                    lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
                     lnav_data.ld_preview_view[0].set_sub_source(
                         &lnav_data.ld_preview_source[0]);
                     lnav_data.ld_preview_source[0].replace_with(al);
@@ -1262,6 +1265,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 lnav_data.ld_preview_status_source[0]
                     .get_description()
                     .set_value("For file: %s", fn.c_str());
+                lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
             }
         }
     } else {

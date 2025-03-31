@@ -175,10 +175,6 @@ public:
     listview_curses(const listview_curses&) = delete;
     listview_curses(listview_curses&) = delete;
 
-    void set_title(const std::string& title) { this->lv_title = title; }
-
-    const std::string& get_title() const { return this->lv_title; }
-
     /** @param src The data source delegate. */
     void set_data_source(list_data_source* src)
     {
@@ -514,9 +510,9 @@ public:
     {
         log_debug("listview_curses=%p", this);
         log_debug(
-            "  lv_title=%s; vc_y=%u; lv_top=%d; lv_left=%d; lv_height=%d; "
+            "  vc_title=%s; vc_y=%u; lv_top=%d; lv_left=%d; lv_height=%d; "
             "lv_selection=%d; inner_height=%d",
-            this->lv_title.c_str(),
+            this->vc_title.c_str(),
             this->vc_y,
             (int) this->lv_top,
             this->lv_left,
@@ -574,7 +570,6 @@ protected:
 
     static list_gutter_source DEFAULT_GUTTER_SOURCE;
 
-    std::string lv_title;
     list_data_source* lv_source{nullptr}; /*< The data source delegate. */
     std::list<list_input_delegate*> lv_input_delegates;
     list_overlay_source* lv_overlay_source{nullptr};

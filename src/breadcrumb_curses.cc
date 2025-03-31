@@ -64,7 +64,7 @@ breadcrumb_curses::do_update()
     }
 
     if (!this->vc_needs_update) {
-        return false;
+        return view_curses::do_update();
     }
 
     size_t sel_crumb_offset = 0;

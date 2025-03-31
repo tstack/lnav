@@ -43,15 +43,19 @@ status_field::no_op_action(status_field&)
 {
 }
 
-void
+bool
 status_field::set_value(std::string value)
 {
+    if (value == this->sf_value.al_string) {
+        return false;
+    }
     auto& sa = this->sf_value.get_attrs();
 
     sa.clear();
 
     scrub_ansi_string(value, &sa);
     this->sf_value.with_string(value);
+    return true;
 }
 
 void
@@ -66,7 +70,7 @@ status_field::do_cylon()
         ? cycle_pos
         : (this->sf_width - (cycle_pos - this->sf_width) - 1);
     auto stop = std::min(start + 3, this->sf_width);
-    struct line_range lr(std::max<long>(start, 0L), stop);
+    line_range lr(std::max<long>(start, 0L), stop);
     const auto& vc = view_colors::singleton();
 
     auto attrs = vc.attrs_for_role(role_t::VCR_ACTIVE_STATUS);
@@ -80,7 +84,7 @@ void
 status_field::set_stitch_value(role_t left, role_t right)
 {
     auto& sa = this->sf_value.get_attrs();
-    struct line_range lr(0, 1);
+    line_range lr(0, 1);
 
     this->sf_value.get_string() = "::";
     sa.clear();
@@ -93,6 +97,10 @@ status_field::set_stitch_value(role_t left, role_t right)
 bool
 statusview_curses::do_update()
 {
+    if (!this->vc_needs_update) {
+        return view_curses::do_update();
+    }
+
     int left = 0;
     auto& vc = view_colors::singleton();
     unsigned int width, height;
@@ -193,6 +201,7 @@ statusview_curses::do_update()
                 field);
         }
     }
+    this->vc_needs_update = false;
 
     return true;
 }
@@ -246,7 +255,10 @@ statusview_curses::window_change()
         remaining -= (actual_width - sf->get_min_width());
         total_shares -= sf->get_share();
 
-        sf->set_width(actual_width);
+        if (sf->get_width() != actual_width) {
+            sf->set_width(actual_width);
+            this->set_needs_update();
+        }
     }
 }
 

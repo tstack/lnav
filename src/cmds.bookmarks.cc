@@ -142,6 +142,7 @@ com_goto_mark(exec_context& ec,
             tc->set_selection(new_top.value());
         }
         lnav_data.ld_bottom_source.grep_error("");
+        lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
     }
 
     return Ok(retval);

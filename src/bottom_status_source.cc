@@ -122,12 +122,13 @@ bottom_status_source::update_percent(listview_curses* lc)
     sf.set_value("%3d%% ", (int) percent);
 }
 
-void
+bool
 bottom_status_source::update_marks(listview_curses* lc)
 {
     auto* tc = static_cast<textview_curses*>(lc);
     auto& bm = tc->get_bookmarks();
     status_field& sf = this->bss_fields[BSF_HITS];
+    auto retval = false;
 
     if (bm.find(&textview_curses::BM_SEARCH) != bm.end()) {
         const auto& bv = bm[&textview_curses::BM_SEARCH];
@@ -136,24 +137,26 @@ bottom_status_source::update_marks(listview_curses* lc)
             auto vl = tc->get_selection();
             auto lb = bv.bv_tree.find(vl);
             if (lb != bv.bv_tree.end()) {
-                sf.set_value("  Hit %'d of %'d for ",
-                             (lb - bv.bv_tree.begin()) + 1,
-                             tc->get_match_count());
+                retval = sf.set_value("  Hit %'d of %'d for ",
+                                      (lb - bv.bv_tree.begin()) + 1,
+                                      tc->get_match_count());
             } else {
-                sf.set_value("  %'d hits for ", tc->get_match_count());
+                retval = sf.set_value("  %'d hits for ", tc->get_match_count());
             }
         } else {
-            sf.clear();
+            retval = sf.clear();
         }
     } else {
-        sf.clear();
+        retval = sf.clear();
     }
+    return retval;
 }
 
-void
+bool
 bottom_status_source::update_hits(textview_curses* tc)
 {
     auto& sf = this->bss_fields[BSF_HITS];
+    bool retval = false;
     role_t new_role;
 
     if (tc->is_searching()) {
@@ -163,14 +166,22 @@ bottom_status_source::update_hits(textview_curses* tc)
         } else {
             new_role = role_t::VCR_ACTIVE_STATUS2;
         }
-        sf.set_cylon(true);
+        if (!sf.is_cylon()) {
+            sf.set_cylon(true);
+            retval = true;
+        }
     } else {
         new_role = role_t::VCR_STATUS;
-        sf.set_cylon(false);
+        if (sf.is_cylon()) {
+            sf.set_cylon(false);
+            sf.clear(); // clear cylon style attribute
+            retval = true;
+        }
     }
     // this->bss_error.clear();
     sf.set_role(new_role);
-    this->update_marks(tc);
+    retval = this->update_marks(tc) || retval;
+    return retval;
 }
 
 void

@@ -871,7 +871,7 @@ textview_curses::textview_value_for_row(vis_line_t row, attr_line_t& value_out)
         }
 
         if (sel_start <= row && row <= sel_end) {
-            auto role = this->get_overlay_selection()
+            auto role = (this->get_overlay_selection() || !this->vc_enabled)
                 ? this->tc_disabled_cursor_role.value()
                 : this->tc_cursor_role.value();
 

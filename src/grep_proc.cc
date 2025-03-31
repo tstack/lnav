@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "base/auto_pid.hh"
+#include "base/itertools.enumerate.hh"
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
 #include "base/string_util.hh"
@@ -78,10 +79,15 @@ grep_proc<LineType>::start()
         this->gp_sink->grep_quiesce();
     }
 
-    log_debug("grep_proc(%p): start", this);
+    log_info(
+        "grep_proc(%p): start with highest %d", this, this->gp_highest_line);
     if (this->gp_child_started || this->gp_queue.empty()) {
         log_debug("grep_proc(%p): nothing to do?", this);
         return;
+    }
+    for (const auto& [index, elem] : lnav::itertools::enumerate(this->gp_queue))
+    {
+        log_info("  queue[%d]: [%d:%d)", index, elem.first, elem.second);
     }
 
     auto_pipe in_pipe(STDIN_FILENO);
@@ -193,7 +199,7 @@ grep_proc<LineType>::child_loop()
             }
         }
 
-        if (stop_line == -1) {
+        if (line != -1 && stop_line == -1) {
             // When scanning to the end of the source, we need to return the
             // highest line that was seen so that the next request that
             // continues from the end works properly.

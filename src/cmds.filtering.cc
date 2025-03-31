@@ -219,6 +219,7 @@ com_filter(exec_context& ec,
 
                 retval = "";
             }
+            lnav_data.ld_status[LNS_PREVIEW0].set_needs_update();
         } else {
             auto lt = (args[0] == "filter-out") ? text_filter::EXCLUDE
                                                 : text_filter::INCLUDE;

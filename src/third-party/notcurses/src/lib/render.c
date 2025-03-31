@@ -310,7 +310,7 @@ paint(ncplane* p, struct crender* rvec, int dstleny, int dstlenx,
           crender->hcfg = cell_fchannel(targc);
         }
         unsigned fgblends = crender->s.fgblends;
-        cell_blend_fchannel(ncplane_notcurses(p), targc, cell_fchannel(vis), &fgblends);
+        cell_blend_fchannel(p->pile->nc, targc, cell_fchannel(vis), &fgblends);
         crender->s.fgblends = fgblends;
         // crender->highcontrast can only be true if we just set it, since we're
         // about to set targc opaque based on crender->highcontrast (and this
@@ -336,14 +336,14 @@ paint(ncplane* p, struct crender* rvec, int dstleny, int dstlenx,
             vis = &p->basecell;
           }
           unsigned bgblends = crender->s.bgblends;
-          cell_blend_bchannel(ncplane_notcurses(p), targc, cell_bchannel(vis), &bgblends);
+          cell_blend_bchannel(p->pile->nc, targc, cell_bchannel(vis), &bgblends);
           crender->s.bgblends = bgblends;
         }else{ // use the local foreground; we're stacking blittings
           if(nccell_fg_default_p(vis)){
             vis = &p->basecell;
           }
           unsigned bgblends = crender->s.bgblends;
-          cell_blend_bchannel(ncplane_notcurses(p), targc, cell_fchannel(vis), &bgblends);
+          cell_blend_bchannel(p->pile->nc, targc, cell_fchannel(vis), &bgblends);
           crender->s.bgblends = bgblends;
           crender->s.blittedquads = 0;
         }
@@ -1522,7 +1522,7 @@ int ncpile_rasterize(ncplane* n){
   clock_gettime(CLOCK_MONOTONIC, &start);
   ncpile* pile = ncplane_pile(n);
   struct notcurses* nc = ncpile_notcurses(pile);
-  const struct tinfo* ti = &ncplane_notcurses_const(n)->tcache;
+  const struct tinfo* ti = &n->pile->nc->tcache;
     int bytes = 0;
   if (postpaint(nc, ti, nc->lastframe, pile->dimy, pile->dimx, pile->crender, &nc->pool) > 0) {
       clock_gettime(CLOCK_MONOTONIC, &rasterdone);
@@ -1540,7 +1540,7 @@ int ncpile_rasterize(ncplane* n){
   // the solved rvec, since this might result in a geometry update.
   if(sigcont_seen_for_render){
     sigcont_seen_for_render = 0;
-    notcurses_refresh(ncplane_notcurses(n), NULL, NULL);
+    notcurses_refresh(n->pile->nc, NULL, NULL);
   }
   if(bytes < 0){
     return -1;
@@ -1572,7 +1572,7 @@ engorge_crender_vector(ncpile* p){
 }
 
 int ncpile_render(ncplane* n){
-  scroll_lastframe(ncplane_notcurses(n), ncplane_pile(n)->scrolls);
+  scroll_lastframe(n->pile->nc, n->pile->scrolls);
   struct timespec start, renderdone;
   clock_gettime(CLOCK_MONOTONIC, &start);
   notcurses* nc = ncplane_notcurses(n);
