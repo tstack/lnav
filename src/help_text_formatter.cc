@@ -254,12 +254,15 @@ format_help_text_for_term(const help_text& ht,
         case help_context_t::HC_SQL_KEYWORD: {
             size_t line_start = out.get_string().length();
             bool break_all = false;
-            bool is_infix = ht.ht_context == help_context_t::HC_SQL_INFIX;
+            auto is_infix = ht.ht_context == help_context_t::HC_SQL_INFIX;
 
             if (is_infix) {
                 out.append(ht.ht_name);
             } else {
                 out.append(lnav::roles::keyword(ht.ht_name));
+            }
+            if (ht.ht_group_start) {
+                out.ensure_space().append(ht.ht_group_start);
             }
             for (const auto& param : ht.ht_parameters) {
                 if (break_all
@@ -293,9 +296,17 @@ format_help_text_for_term(const help_text& ht,
                              VC_ROLE.value(role_t::VCR_KEYWORD),
                              "|");
                 } else if (param.ht_name[0]) {
+                    for (const auto& sub_param : param.ht_parameters) {
+                        if (sub_param.is_flag()) {
+                            out.ensure_space()
+                                .append("[")
+                                .append(sub_param.ht_name)
+                                .append("]");
+                        }
+                    }
                     out.ensure_space().append(
                         lnav::roles::variable(param.ht_name));
-                    if (!param.ht_parameters.empty()) {
+                    if (param.ht_parameters.size() == 1) {
                         if (param.ht_nargs == help_nargs_t::HN_ZERO_OR_MORE
                             || param.ht_nargs == help_nargs_t::HN_ONE_OR_MORE)
                         {
@@ -369,6 +380,9 @@ format_help_text_for_term(const help_text& ht,
                 {
                     out.append("]");
                 }
+            }
+            if (ht.ht_group_end) {
+                out.ensure_space().append(ht.ht_group_end);
             }
             out.with_attr(string_attr{
                 line_range{(int) line_start, (int) out.get_string().length()},

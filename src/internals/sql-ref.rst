@@ -13,8 +13,6 @@ SELECT *\[filter\]* *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grou
     * **cond** --- The conditions used to select the rows to return.
     * **grouping-expr** --- The expression to use when grouping rows.
     * **ordering-term** --- The values to use when ordering the result set.
-
-      * **direction** --- The direction, ASCending or DESCending
     * **limit-expr** --- The maximum number of rows to return.
 
   **Examples**
@@ -151,6 +149,20 @@ CAST(*expr* AS *type-name*)
 ----
 
 
+.. _infix_collate:
+
+ordering-term COLLATE *\[collation-name\]* *\[direction\]* *\[null-handling\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  The values to use in ordering result rows
+
+  **Parameters**
+    * **direction** --- The direction, ASCending or DESCending
+
+
+----
+
+
 .. _case_end:
 
 CASE *\[base-expr\]* WHEN *cmp-expr* ELSE *\[else-expr\]* END 
@@ -236,6 +248,25 @@ DELETE FROM *table-name* WHERE *\[cond\]*
 ----
 
 
+.. _infix_is:
+
+expr IS *expr*
+^^^^^^^^^^^^^^
+
+  Test the distinctness of an expression
+
+  **Examples**
+    To check if 10 is between 5 and 10:
+
+    .. code-block::  custsqlite
+
+      ;SELECT 10 BETWEEN 5 AND 10
+      1
+
+
+----
+
+
 .. _drop_index:
 
 DROP INDEX  *\[IF EXISTS\]* *\[schema-name.\]* *index-name*
@@ -280,6 +311,51 @@ DROP TRIGGER  *\[IF EXISTS\]* *\[schema-name.\]* *trigger-name*
 ----
 
 
+.. _infix_like_escape:
+
+expr *\[NOT\]* LIKE *pattern* ESCAPE *\[escape\]*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Match an expression against a text pattern.
+
+  **Parameters**
+    * **pattern\*** --- The pattern to match against.
+    * **escape** --- Character used to escape a % or _ in the pattern
+
+  **Examples**
+    To check if a value matches the pattern 'Hello, %!':
+
+    .. code-block::  custsqlite
+
+      ;SELECT 'Hello, World!' LIKE 'Hello, %!'
+      1
+
+
+----
+
+
+.. _infix:
+
+select-stmt
+^^^^^^^^^^^
+
+  Execute a query and return 0 if no rows match or 1 otherwise
+
+
+----
+
+
+.. _infix_where:
+
+FILTER WHERE *expr*
+^^^^^^^^^^^^^^^^^^^
+
+  Condition for rows to include in the aggregate
+
+
+----
+
+
 .. _infix_glob:
 
 expr *\[NOT\]* GLOB *pattern*
@@ -302,22 +378,37 @@ expr *\[NOT\]* GLOB *pattern*
 ----
 
 
-.. _infix_like:
+.. _insert_into:
 
-expr *\[NOT\]* LIKE *pattern*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INSERT INTO  *\[schema-name.\]* *table-name* *column-name* VALUES *expr*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  Match an expression against a text pattern.
-
-  **Parameters**
-    * **pattern\*** --- The pattern to match against.
+  Insert rows into a table
 
   **Examples**
-    To check if a value matches the pattern 'Hello, %!':
+    To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' table:
 
     .. code-block::  custsqlite
 
-      ;SELECT 'Hello, World!' LIKE 'Hello, %!'
+      ;INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')
+
+
+----
+
+
+.. _infix:
+
+expr *\[nullness\]*
+^^^^^^^^^^^^^^^^^^^
+
+  Check an expression against NULL
+
+  **Examples**
+    To check if a value is not NULL:
+
+    .. code-block::  custsqlite
+
+      ;SELECT 'abc' NOT NULL
       1
 
 
@@ -346,19 +437,12 @@ expr *\[NOT\]* REGEXP *pattern*
 ----
 
 
-.. _insert_into:
+.. _infix:
 
-INSERT INTO  *\[schema-name.\]* *table-name* *column-name* VALUES *expr*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+select-stmt
+^^^^^^^^^^^
 
-  Insert rows into a table
-
-  **Examples**
-    To insert the pair containing 'MSG' and 'HELLO, WORLD!' into the 'environ' table:
-
-    .. code-block::  custsqlite
-
-      ;INSERT INTO environ VALUES ('MSG', 'HELLO, WORLD!')
+  Execute a query and return 1 if no rows match or 0 otherwise
 
 
 ----

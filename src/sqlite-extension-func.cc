@@ -140,7 +140,7 @@ insert_sql_help(help_text& root, const help_text& curr)
     if (curr.ht_flag_name) {
         sqlite_function_help.insert(
             std::make_pair(toupper(curr.ht_flag_name), &root));
-    } else {
+    } else if (isupper(curr.ht_name[0])) {
         sqlite_function_help.insert(
             std::make_pair(toupper(curr.ht_name), &root));
     }
@@ -1482,12 +1482,7 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 help_text("ordering-term",
                           "The values to use when ordering the result set.")
                     .with_flag_name("ORDER BY")
-                    .zero_or_more()
-                    .with_parameter(
-                        help_text("direction",
-                                  "The direction, ASCending or DESCending")
-                            .optional()
-                            .with_enum_values({"ASC", "DESC"})))
+                    .zero_or_more())
             .with_parameter(
                 help_text("limit-expr", "The maximum number of rows to return.")
                     .with_flag_name("LIMIT")
@@ -1591,6 +1586,11 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_parameter(
                 help_text("pattern", "The pattern to match against.")
                     .with_flag_name("LIKE"))
+            .with_parameter(
+                help_text("escape",
+                          "Character used to escape a % or _ in the pattern")
+                    .with_flag_name("ESCAPE")
+                    .optional())
             .with_example({
                 "To check if a value matches the pattern 'Hello, %!'",
                 "SELECT 'Hello, World!' LIKE 'Hello, %!'",
@@ -1605,6 +1605,17 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
             .with_example({
                 "To check if a value matches the pattern 'file-\\d+'",
                 "SELECT 'file-23' REGEXP 'file-\\d+'",
+            }),
+
+        help_text("expr", "Check an expression against NULL")
+            .sql_infix()
+            .with_parameter(
+                help_text("nullness")
+                    .with_enum_values({"ISNULL", "NOTNULL", "NOT NULL"})
+                    .optional())
+            .with_example({
+                "To check if a value is not NULL",
+                "SELECT 'abc' NOT NULL",
             }),
 
         help_text("expr", "Assign a collating sequence to the expression.")
@@ -1633,6 +1644,53 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 "To check if 10 is between 5 and 10",
                 "SELECT 10 BETWEEN 5 AND 10",
             }),
+
+        help_text("expr", "Test the distinctness of an expression")
+            .sql_infix()
+            .with_parameter(
+                help_text("expr")
+                    .with_flag_name("IS")
+                    .with_parameter(help_text("NOT").flag())
+                    .with_parameter(help_text("DISTINCT FROM").flag()))
+            .with_example({
+                "To check if 10 is between 5 and 10",
+                "SELECT 10 BETWEEN 5 AND 10",
+            }),
+
+        help_text("ordering-term")
+            .sql_infix()
+            .with_summary("The values to use in ordering result rows")
+            .with_parameter(help_text("collation-name")
+                                .with_flag_name("COLLATE")
+                                .optional())
+            .with_parameter(
+                help_text("direction", "The direction, ASCending or DESCending")
+                    .optional()
+                    .with_enum_values({"ASC", "DESC"}))
+            .with_parameter(
+                help_text("null-handling")
+                    .optional()
+                    .with_enum_values({"NULLS FIRST", "NULLS LAST"})),
+
+        help_text("select-stmt")
+            .with_summary(
+                "Execute a query and return 0 if no rows match or 1 otherwise")
+            .sql_infix()
+            .with_grouping("(", ")")
+            .with_flag_name("EXISTS"),
+
+        help_text("select-stmt")
+            .with_summary(
+                "Execute a query and return 1 if no rows match or 0 otherwise")
+            .sql_infix()
+            .with_grouping("(", ")")
+            .with_flag_name("NOT EXISTS"),
+
+        help_text("FILTER")
+            .with_summary("Condition for rows to include in the aggregate")
+            .sql_infix()
+            .with_grouping("(", ")")
+            .with_parameter(help_text("expr").with_flag_name("WHERE")),
 
         help_text("OVER", "Executes the preceding function over a window")
             .sql_keyword()
