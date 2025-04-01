@@ -699,9 +699,14 @@ rl_sql_change(textinput_curses& rc, bool is_req)
                     && cursor_offset <= attr.sa_range.lr_end;
             });
         if (attr_iter != anno_line.al_attrs.end()) {
-            if (is_req || attr_iter->sa_type != &SQL_NUMBER_ATTR
-                || rc.tc_popup_type
-                    == textinput_curses::popup_type_t::completion)
+            if (!is_req && attr_iter->sa_type == &SQL_HEX_LIT_ATTR
+                && attr_iter->sa_range.length() == 2)
+            {
+            } else if (is_req
+                       || (attr_iter->sa_type != &SQL_NUMBER_ATTR
+                           && attr_iter->sa_type != &SQL_HEX_LIT_ATTR)
+                       || rc.tc_popup_type
+                           == textinput_curses::popup_type_t::completion)
             {
                 auto to_complete_sf = anno_line.to_string_fragment(attr_iter);
                 auto to_complete = to_complete_sf.to_string();

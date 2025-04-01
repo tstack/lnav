@@ -127,7 +127,9 @@ unquote_content(char* dst, const char* str, size_t len, char quote_char)
 size_t
 unquote(char* dst, const char* str, size_t len)
 {
-    if (str[0] == 'f' || str[0] == 'r' || str[0] == 'u' || str[0] == 'R') {
+    if (str[0] == 'f' || str[0] == 'r' || str[0] == 'u' || str[0] == 'R'
+        || str[0] == 'x' || str[0] == 'X')
+    {
         str += 1;
         len -= 1;
     }

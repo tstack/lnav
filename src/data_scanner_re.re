@@ -350,7 +350,7 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
            return tokenize_result{token_out, cap_all, cap_inner, this->ds_input.sf_string};
        }
 
-       <init, bol> ("f"|"u"|"r")?"'"('\\'[^\x00]|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {
+       <init, bol> ("f"|"u"|"r"|"x"|"X")?"'"('\\'[^\x00]|"''"|[^\x00\x16\x1b\n'\\])*"'"/[^sS] {
            CAPTURE(DT_QUOTED_STRING);
            if (tf == text_format_t::TF_RUST) {
                auto sf = this->to_string_fragment(cap_all);
@@ -364,6 +364,8 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
            case 'f':
            case 'u':
            case 'r':
+           case 'x':
+           case 'X':
                cap_inner.c_begin += 1;
                break;
            }
@@ -385,6 +387,8 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
            case 'f':
            case 'u':
            case 'r':
+           case 'x':
+           case 'X':
                cap_inner.c_begin += 1;
                break;
            }

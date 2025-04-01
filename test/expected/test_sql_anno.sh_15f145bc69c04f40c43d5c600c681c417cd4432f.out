@@ -1,0 +1,7 @@
+                 SELECT x'aab
+     sql_keyword ------
+     sql_hex_lit        -----
+Formatted:
+SELECT
+    x'aab
+Cursor offset: 16

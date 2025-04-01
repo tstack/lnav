@@ -46,6 +46,7 @@ extern const string_attr_type<void> SQL_KEYWORD_ATTR;
 extern const string_attr_type<void> SQL_IDENTIFIER_ATTR;
 extern const string_attr_type<std::string> SQL_FUNCTION_ATTR;
 extern const string_attr_type<void> SQL_STRING_ATTR;
+extern const string_attr_type<void> SQL_HEX_LIT_ATTR;
 extern const string_attr_type<void> SQL_NUMBER_ATTR;
 extern const string_attr_type<void> SQL_OPERATOR_ATTR;
 extern const string_attr_type<void> SQL_PAREN_ATTR;

@@ -51,7 +51,7 @@
 [1m[31m✘[0m [1m[31merror[0m: “^(?<timestamp>\d+: (?<body>.*)$” is not a valid regular expression
  [1m[31mreason[0m: missing closing parenthesis
 [36m --> [0m[1m/bad_regex_log/regex/std/pattern[0m
-[36m | [0m[1m[36m[40m^[0m[1m[7m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mtimestamp>[0m[1m[37m[40m\d[0m[1m[36m[40m+[0m[37m[40m: [0m[1m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mbody>[0m[1m[36m[40m.[0m[1m[36m[40m*[0m[1m[32m[40m)[0m[1m[36m[40m$[0m[37m[40m                             [0m
+[36m | [0m[1m[36m[40m^[0m[1m[7m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mtimestamp[0m[1m[36m[40m>[0m[1m[37m[40m\d[0m[1m[36m[40m+[0m[37m[40m: [0m[1m[32m[40m([0m[1m[32m[40m?[0m[1m[36m[40m<[0m[37m[40mbody[0m[1m[36m[40m>[0m[1m[36m[40m.[0m[1m[36m[40m*[0m[1m[32m[40m)[0m[1m[36m[40m$[0m[37m[40m                             [0m
 [36m | [0m[37m[40m                               [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:6
 [36m | [0m[37m[40m                "pattern": "^(?<timestamp>\\d+: (?<body>.*)$"[0m
@@ -119,7 +119,7 @@
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-regex/format.json[0m:20
 [36m | [0m[37m[40m1428634687123; foo                      [0m
 [36m | [0m[37m[40m              [0m[1m[31m[40m^ matched up to here[0m[37m[40m      [0m
-[36m =[0m [36mnote[0m: [1mincomplete-match[0m = [1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m;
+[36m =[0m [36mnote[0m: [1mincomplete-match[0m = [1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m;
 [36m =[0m [36mhelp[0m: update the regular expression to fully capture the sample message
 [1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "abc: foo"
  [1m[31mreason[0m: unrecognized timestamp -- abc
@@ -143,7 +143,7 @@
 [1m[31m✘[0m [1m[31merror[0m: invalid pattern: “[1mwith-level[0m”
  [1m[31mreason[0m: pattern does not match entire multiline sample message
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:41
-[36m =[0m [36mnote[0m: [1mwith-level[0m = [1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel>[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m
+[36m =[0m [36mnote[0m: [1mwith-level[0m = [1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m
 [36m =[0m [36mhelp[0m: use “.*” to match new-lines
 [1m[31m✘[0m [1m[31merror[0m: invalid sample log message: "1428634687123; foo bar"
  [1m[31mreason[0m: sample does not match any patterns
@@ -154,10 +154,10 @@
                               [36m^ [0m[1msemi[0m[36m matched up to here[0m
                          [36m^ [0m[1mstd[0m[36m matched up to here[0m
                          [36m^ [0m[1mwith-level[0m[36m matched up to here[0m
-[36m =[0m [36mnote[0m: [1mbad-time  [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\w[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
-         [1msemi      [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m; [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
-         [1mstd       [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mpid>[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m”
-         [1mwith-level[0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp>[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel>[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody>[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
+[36m =[0m [36mnote[0m: [1mbad-time  [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
+         [1msemi      [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m; [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
+         [1mstd       [0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m: [1m[32m([0m[1m[32m?[0m[1m[36m<[0mpid[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m[36m.[0m[1m[36m*[0m[1m[32m)[0m[1m[36m$[0m”
+         [1mwith-level[0m = “[1m[36m^[0m[1m[32m([0m[1m[32m?[0m[1m[36m<[0mtimestamp[1m[36m>[0m[1m\d[0m[1m[36m+[0m[1m[32m)[0m\| [1m[32m([0m[1m[32m?[0m[1m[36m<[0mlevel[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m [1m[32m([0m[1m[32m?[0m[1m[36m<[0mbody[1m[36m>[0m[1m\w[0m[1m[36m+[0m[1m[32m)[0m[1m[36m$[0m”
 [33m⚠[0m [33mwarning[0m: invalid pattern: “[1m/bad_sample_log/regex/semi[0m”
    [33mreason[0m: pattern does not match any samples
 [36m --> [0m[1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m:10

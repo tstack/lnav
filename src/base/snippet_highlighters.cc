@@ -29,6 +29,8 @@
 
 #include "snippet_highlighters.hh"
 
+#include <lnav_log.hh>
+
 #include "attr_line.builder.hh"
 #include "pcrepp/pcre2pp.hh"
 
@@ -179,6 +181,7 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
     const auto& line = al.get_string();
     attr_line_builder alb(al);
     bool backslash_is_quoted = false;
+    bool in_cap_name = false;
 
     for (auto lpc = sub.lr_start; lpc < sub.lr_end; lpc++) {
         if (lpc == 0 || line[lpc - 1] != '\\') {
@@ -223,6 +226,7 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
                             alb.overlay_attr(
                                 line_range(lpc + 1, lpc + 2),
                                 VC_ROLE.value(role_t::VCR_RE_SPECIAL));
+                            in_cap_name = true;
                         }
                     } else {
                         alb.overlay_attr(lr,
@@ -236,27 +240,35 @@ regex_highlighter(attr_line_t& al, std::optional<int> x, line_range sub)
                     break;
                 }
                 case '>': {
-                    static const auto CAP_RE
-                        = lnav::pcre2pp::code::from_const(R"(\(\?\<\w+$)");
+                    if (in_cap_name) {
+                        static const auto CAP_RE
+                            = lnav::pcre2pp::code::from_const(R"(\?\<\w+$)");
 
-                    auto capture_start
-                        = string_fragment::from_str_range(
-                              line, sub.lr_start, lpc)
-                              .find_left_boundary(lpc - sub.lr_start - 1,
-                                                  string_fragment::tag1{'('});
+                        auto capture_start
+                            = string_fragment::from_str_range(
+                                  line, sub.lr_start, lpc)
+                                  .find_left_boundary(
+                                      lpc - sub.lr_start - 1,
+                                      string_fragment::tag1{'('});
 
-                    auto cap_find_res
-                        = CAP_RE.find_in(capture_start).ignore_error();
+                        auto cap_find_res
+                            = CAP_RE.find_in(capture_start).ignore_error();
 
-                    if (cap_find_res) {
-                        alb.overlay_attr(
-                            line_range(capture_start.sf_begin
-                                           + cap_find_res->f_all.sf_begin + 3,
-                                       capture_start.sf_begin
-                                           + cap_find_res->f_all.sf_end),
-                            VC_ROLE.value(role_t::VCR_IDENTIFIER));
-                        alb.overlay_attr(line_range(lpc, lpc + 1),
-                                         VC_ROLE.value(role_t::VCR_RE_SPECIAL));
+                        if (cap_find_res) {
+                            auto id_lr = line_range{
+                                cap_find_res->f_all.sf_begin + 2,
+                                cap_find_res->f_all.sf_end,
+                            };
+                            if (!x || !id_lr.contains(x.value())) {
+                                alb.overlay_attr(
+                                    id_lr,
+                                    VC_ROLE.value(role_t::VCR_IDENTIFIER));
+                            }
+                            alb.overlay_attr(
+                                line_range(lpc, lpc + 1),
+                                VC_ROLE.value(role_t::VCR_RE_SPECIAL));
+                        }
+                        in_cap_name = false;
                     }
                     break;
                 }

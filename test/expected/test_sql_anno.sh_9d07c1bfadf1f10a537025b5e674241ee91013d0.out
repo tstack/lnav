@@ -1,0 +1,7 @@
+                 SELECT x'aabb'
+     sql_keyword ------
+     sql_hex_lit        -------
+Formatted:
+SELECT
+    x'aabb'
+Cursor offset: 18

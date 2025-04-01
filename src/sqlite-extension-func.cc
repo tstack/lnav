@@ -36,6 +36,7 @@
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "config.h"
+#include "help_text.hh"
 #include "sql_help.hh"
 
 extern "C"
@@ -284,6 +285,27 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 {"To get the first non-null value from three parameters",
                  "SELECT coalesce(null, 0, null)"}),
 
+        help_text("concat",
+                  "Returns a string that is the concatenation of all non-NULL "
+                  "arguments")
+            .sql_function()
+            .with_parameter(help_text("X", "The values to concatenate together")
+                                .one_or_more())
+            .with_tags({"string"})
+            .with_example({"To concatenate a label and number",
+                           "SELECT concat('Size: ', 1234)"}),
+
+        help_text("concat_ws",
+                  "Returns a string that is the concatenation of all non-NULL "
+                  "arguments separated by the first argument")
+            .sql_function()
+            .with_parameter(help_text("sep", "The separator"))
+            .with_parameter(help_text("X", "The values to concatenate together")
+                                .one_or_more())
+            .with_tags({"string"})
+            .with_example({"To separate numbers with a comma",
+                           "SELECT concat_ws(',', 1, 2, 3, 4)"}),
+
         help_text("glob", "Match a string against Unix glob pattern")
             .sql_function()
             .with_parameter({"pattern", "The glob pattern"})
@@ -449,6 +471,20 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 {"To test if 1 is different from 1", "SELECT nullif(1, 1)"})
             .with_example(
                 {"To test if 1 is different from 2", "SELECT nullif(1, 2)"}),
+
+        help_text("octet_length",
+                  "Returns the number of bytes in the given string as encoded "
+                  "in the database")
+            .sql_function()
+            .with_parameter({"X", "The value to examine"})
+            .with_example({
+                "To get the number of bytes for a string",
+                "SELECT octet_length('Hello, World!')",
+            })
+            .with_example({
+                "To get the number of bytes for a number",
+                "SELECT octet_length(42)",
+            }),
 
         help_text("printf",
                   "Returns a string with this functions arguments substituted "
@@ -643,6 +679,17 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
                 {"To get the type of the number 1", "SELECT typeof(1)"})
             .with_example({"To get the type of the string 'abc'",
                            "SELECT typeof('abc')"}),
+
+        help_text("unhex")
+            .with_summary("Returns a blob value that is a decoding of the "
+                          "given hex string")
+            .sql_function()
+            .with_tags({"string"})
+            .with_parameter({"X", "The hex string to decode"})
+            .with_example({
+                "To decode the string 'Hello' encoded in hex",
+                "SELECT unhex('48656c6c6f')",
+            }),
 
         help_text("unicode",
                   "Returns the numeric unicode code point corresponding to the "

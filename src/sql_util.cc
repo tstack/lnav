@@ -1008,6 +1008,7 @@ constexpr string_attr_type<void> SQL_KEYWORD_ATTR("sql_keyword");
 constexpr string_attr_type<void> SQL_IDENTIFIER_ATTR("sql_ident");
 constexpr string_attr_type<std::string> SQL_FUNCTION_ATTR("sql_func");
 constexpr string_attr_type<void> SQL_STRING_ATTR("sql_string");
+constexpr string_attr_type<void> SQL_HEX_LIT_ATTR("sql_hex_lit");
 constexpr string_attr_type<void> SQL_NUMBER_ATTR("sql_number");
 constexpr string_attr_type<void> SQL_OPERATOR_ATTR("sql_oper");
 constexpr string_attr_type<void> SQL_PAREN_ATTR("sql_paren");
@@ -1035,6 +1036,11 @@ annotate_sql_statement(attr_line_t& al)
         {
             lnav::pcre2pp::code::from(keyword_re_str, PCRE2_CASELESS).unwrap(),
             &SQL_KEYWORD_ATTR,
+        },
+        {
+            lnav::pcre2pp::code::from_const(
+                R"(\A(?:x|X)'(?:(?:[0-9a-fA-F]{2})+'|[0-9a-fA-F]*$))"),
+            &SQL_HEX_LIT_ATTR,
         },
         {
             lnav::pcre2pp::code::from_const(R"(\A'[^']*('(?:'[^']*')*|$))"),

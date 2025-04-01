@@ -103,6 +103,10 @@ run_cap_test ./drive_sql_anno "SELECT foo FROM bar EXCEPT ALL SELECT foo FROM ba
 
 run_cap_test ./drive_sql_anno "UPDATE customers SET total_orders = order_summary.total  FROM ( SELECT * FROM bank) AS order_summary"
 
+run_cap_test ./drive_sql_anno "SELECT x'aabb'"
+
+run_cap_test ./drive_sql_anno "SELECT x'aab"
+
 run_cap_test ./drive_sql_anno "from access_log | filter cs_method == 'GET' || cs_method == 'PUT'" 2
 
 run_cap_test ./drive_sql_anno "from access_log | stats.count_by { c_ip }" 23

@@ -43,6 +43,7 @@
 #include <time.h>
 
 #include "base/attr_line.hh"
+#include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/time_util.hh"
 
@@ -54,7 +55,7 @@ extern const std::unordered_map<unsigned char, const char*>
 inline const char*
 sql_constraint_op_name(unsigned char op)
 {
-    auto iter = sql_constraint_names.find(op);
+    const auto iter = sql_constraint_names.find(op);
     if (iter == sql_constraint_names.end()) {
         return "??";
     }
