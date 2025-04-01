@@ -1410,6 +1410,9 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
         help_text("SELECT",
                   "Query the database and return zero or more rows of data.")
             .sql_keyword()
+            .with_parameter(help_text("filter", "Additional processing of rows")
+                                .optional()
+                                .with_enum_values({"DISTINCT", "ALL"}))
             .with_parameter(
                 help_text(
                     "result-column",

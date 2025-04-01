@@ -5130,10 +5130,12 @@ For support questions, email:
   [4mwindow-name[0m   The name of the window definition
 
 
-[1m[4m[36mSELECT[0m[4m [0m[4mresult-column[0m[4m1[0m[4m [, ... [0m[4mresult-column[0m[4mN[0m[4m] [[0m[1m[4m[36mFROM[0m[4m [0m[4mtable[0m[4m1[0m[4m [, ... [0m[4mtable[0m[4mN[0m[4m]] [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m] [[0m[1m[4m[36mGROUP BY[0m[4m [0m[4mgrouping-expr[0m[4m1[0m[4m [, ... [0m[4mgrouping-expr[0m[4mN[0m[4m]] [[0m[1m[4m[36mORDER BY[0m[4m [0m[4mordering-term[0m[4m1[0m[4m [[0m[1m[4m[36mASC[0m[4m|[0m[1m[4m[36mDESC[0m[4m] [, ... [0m[4mordering-term[0m[4mN[0m[4m [[0m[1m[4m[36mASC[0m[4m|[0m[1m[4m[36mDESC[0m[4m]]] [[0m[1m[4m[36mLIMIT[0m[4m [0m[4mlimit-expr[0m[4m1[0m[4m [, ... [0m[4mlimit-expr[0m[4mN[0m[4m]][0m
+[1m[4m[36mSELECT[0m[4m [[0m[1m[4m[36mDISTINCT[0m[4m|[0m[1m[4m[36mALL[0m[4m] [0m[4mresult-column[0m[4m1[0m[4m [, ... [0m[4mresult-column[0m[4mN[0m[4m] [[0m[1m[4m[36mFROM[0m[4m [0m[4mtable[0m[4m1[0m[4m [, ... [0m[4mtable[0m[4mN[0m[4m]] [[0m[1m[4m[36mWHERE[0m[4m [0m[4mcond[0m[4m] [[0m[1m[4m[36mGROUP BY[0m[4m [0m[4mgrouping-expr[0m[4m1[0m[4m [, ... [0m[4mgrouping-expr[0m[4mN[0m[4m]] [[0m[1m[4m[36mORDER BY[0m[4m [0m[4mordering-term[0m[4m1[0m[4m [[0m[1m[4m[36mASC[0m[4m|[0m[1m[4m[36mDESC[0m[4m] [, ... [0m[4mordering-term[0m[4mN[0m[4m [[0m[1m[4m[36mASC[0m[4m|[0m[1m[4m[36mDESC[0m[4m]]] [[0m[1m[4m[36mLIMIT[0m[4m [0m[4mlimit-expr[0m[4m1[0m[4m [, ... [0m[4mlimit-expr[0m[4mN[0m[4m]][0m
 ══════════════════════════════════════════════════════════════════════
   Query the database and return zero or more rows of data.
 [4mParameters[0m
+  [4mfilter[0m          Additional processing of rows
+                  [4mValues[0m: [1mDISTINCT[0m|[1mALL[0m
   [4mresult-column[0m   The expression used to generate a
                   result for this column.
   [4mtable[0m           The table(s) to query for data

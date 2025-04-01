@@ -1,4 +1,38 @@
 
+.. _select:
+
+SELECT *\[filter\]* *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grouping-expr* ORDER BY *ordering-term* LIMIT *limit-expr*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Query the database and return zero or more rows of data.
+
+  **Parameters**
+    * **filter** --- Additional processing of rows
+    * **result-column** --- The expression used to generate a result for this column.
+    * **table** --- The table(s) to query for data
+    * **cond** --- The conditions used to select the rows to return.
+    * **grouping-expr** --- The expression to use when grouping rows.
+    * **ordering-term** --- The values to use when ordering the result set.
+
+      * **direction** --- The direction, ASCending or DESCending
+    * **limit-expr** --- The maximum number of rows to return.
+
+  **Examples**
+    To select all of the columns from the table 'lnav_example_log':
+
+    .. code-block::  custsqlite
+
+      ;SELECT * FROM lnav_example_log
+       log_line  log_part    log_time     log_actual_time log_idle_msecs log_level  log_mark  log_comment log_tags log_filters ex_procname ex_duration log_time_msecs log_path    log_text        log_body     
+               0 <NULL>   2017-02⋯:06.100 2017-02⋯:06.100              0 info               0 <NULL>      <NULL>   <NULL>      hw                    2  1486094706000 /tmp/log 2017-02⋯ World! Hello, World!   
+               1 <NULL>   2017-02⋯:06.200 2017-02⋯:06.200            100 error              0 <NULL>      <NULL>   <NULL>      gw                    4  1486094706000 /tmp/log 2017-02⋯ World! Goodbye, World! 
+               2 new      2017-02⋯:06.200 2017-02⋯:06.200        1200000 warn               0 <NULL>      <NULL>   <NULL>      gw                    1  1486095906000 /tmp/log 2017-02⋯ World! Goodbye, World! 
+               3 new      2017-02⋯:06.200 2017-02⋯:06.200        1800000 debug              0 <NULL>      <NULL>   <NULL>      gw                   10  1486097706000 /tmp/log 2017-02⋯ World! Goodbye, World! 
+
+
+----
+
+
 .. _infix_between_and:
 
 expr *\[NOT\]* BETWEEN *low* AND *hi*
@@ -112,39 +146,6 @@ CAST(*expr* AS *type-name*)
 
       ;SELECT CAST(1.23 AS INTEGER)
       1
-
-
-----
-
-
-.. _select:
-
-SELECT *result-column* FROM *table* WHERE *\[cond\]* GROUP BY *grouping-expr* ORDER BY *ordering-term* LIMIT *limit-expr*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-  Query the database and return zero or more rows of data.
-
-  **Parameters**
-    * **result-column** --- The expression used to generate a result for this column.
-    * **table** --- The table(s) to query for data
-    * **cond** --- The conditions used to select the rows to return.
-    * **grouping-expr** --- The expression to use when grouping rows.
-    * **ordering-term** --- The values to use when ordering the result set.
-
-      * **direction** --- The direction, ASCending or DESCending
-    * **limit-expr** --- The maximum number of rows to return.
-
-  **Examples**
-    To select all of the columns from the table 'lnav_example_log':
-
-    .. code-block::  custsqlite
-
-      ;SELECT * FROM lnav_example_log
-       log_line  log_part    log_time     log_actual_time log_idle_msecs log_level  log_mark  log_comment log_tags log_filters ex_procname ex_duration log_time_msecs log_path    log_text        log_body     
-               0 <NULL>   2017-02⋯:06.100 2017-02⋯:06.100              0 info               0 <NULL>      <NULL>   <NULL>      hw                    2  1486094706000 /tmp/log 2017-02⋯ World! Hello, World!   
-               1 <NULL>   2017-02⋯:06.200 2017-02⋯:06.200            100 error              0 <NULL>      <NULL>   <NULL>      gw                    4  1486094706000 /tmp/log 2017-02⋯ World! Goodbye, World! 
-               2 new      2017-02⋯:06.200 2017-02⋯:06.200        1200000 warn               0 <NULL>      <NULL>   <NULL>      gw                    1  1486095906000 /tmp/log 2017-02⋯ World! Goodbye, World! 
-               3 new      2017-02⋯:06.200 2017-02⋯:06.200        1800000 debug              0 <NULL>      <NULL>   <NULL>      gw                   10  1486097706000 /tmp/log 2017-02⋯ World! Goodbye, World! 
 
 
 ----

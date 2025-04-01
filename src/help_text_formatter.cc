@@ -288,7 +288,11 @@ format_help_text_for_term(const help_text& ht,
                     out.ensure_space().append(
                         lnav::roles::keyword(param.ht_group_start));
                 }
-                if (param.ht_name[0]) {
+                if (!param.ht_enum_values.empty()) {
+                    out.join(param.ht_enum_values,
+                             VC_ROLE.value(role_t::VCR_KEYWORD),
+                             "|");
+                } else if (param.ht_name[0]) {
                     out.ensure_space().append(
                         lnav::roles::variable(param.ht_name));
                     if (!param.ht_parameters.empty()) {
