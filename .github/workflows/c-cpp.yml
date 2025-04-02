@@ -158,6 +158,7 @@ jobs:
     - name: '🚧 Make (do not use -j)'
       run: |
         set -x
+        cd ../lnav-build
         make CFLAGS="-c"
         strip -s src/lnav.exe
     - name: '📦 Package for distribution'
