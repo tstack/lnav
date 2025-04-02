@@ -142,7 +142,7 @@ jobs:
       run: |
         set -x
         ./autogen.sh
-        mkdir -p ../lnav-build ../lnav/configure
+        mkdir -p ../lnav-build 
         cd ../lnav-build
         export PREFIX=$PWD/lnav
         touch config.log
