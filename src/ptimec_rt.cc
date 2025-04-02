@@ -108,6 +108,7 @@ ptime_fmt(const char* fmt,
                     FMT_CASE('H', H);
                     FMT_CASE('i', i);
                     FMT_CASE('6', 6);
+                    FMT_CASE('9', 9);
                     FMT_CASE('I', I);
                     FMT_CASE('d', d);
                     FMT_CASE('e', e);
@@ -160,6 +161,7 @@ ftime_fmt(char* dst, size_t len, const char* fmt, const struct exttm& tm)
                     FTIME_FMT_CASE('H', H);
                     FTIME_FMT_CASE('i', i);
                     FTIME_FMT_CASE('6', 6);
+                    FTIME_FMT_CASE('9', 9);
                     FTIME_FMT_CASE('I', I);
                     FTIME_FMT_CASE('d', d);
                     FTIME_FMT_CASE('e', e);

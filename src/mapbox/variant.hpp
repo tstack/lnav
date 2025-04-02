@@ -30,17 +30,17 @@
 #  define MAPBOX_VARIANT_DEPRECATED [[deprecated]]
 #endif
 
-#define NDEBUG
+#define VARIANT_NDEBUG
 
 #ifdef _MSC_VER
 // https://msdn.microsoft.com/en-us/library/bw1hbe6y.aspx
-# ifdef NDEBUG
+# ifdef VARIANT_NDEBUG
 #  define VARIANT_INLINE __forceinline
 # else
 #  define VARIANT_INLINE //__declspec(noinline)
 # endif
 #else
-# ifdef NDEBUG
+# ifdef VARIANT_NDEBUG
 #  define VARIANT_INLINE //inline __attribute__((always_inline))
 # else
 #  define VARIANT_INLINE __attribute__((noinline))

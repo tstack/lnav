@@ -587,9 +587,47 @@ ptime_6(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 inline void
 ftime_6(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 {
-    int64_t t = tm2sec(&tm.et_tm);
+    int64_t t = tm2sec(&tm.et_tm) * 1000000LL;
 
     t += tm.et_nsec / 1000;
+    snprintf(&dst[off_inout], len - off_inout, "%" PRId64, t);
+    off_inout = strlen(dst);
+}
+
+inline bool
+ptime_9(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+{
+    uint64_t epoch_ns = 0;
+    lnav::time64_t epoch;
+
+    while (off_inout < len && isdigit(str[off_inout])) {
+        epoch_ns *= 10;
+        epoch_ns += str[off_inout] - '0';
+        off_inout += 1;
+    }
+
+    dst->et_nsec = epoch_ns % 1000000000ULL;
+    epoch = (epoch_ns / 1000000000ULL);
+
+    if (epoch >= MAX_TIME_T) {
+        return false;
+    }
+
+    secs2tm(epoch, &dst->et_tm);
+    dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_NANOS_SET
+        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
+        | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
+
+    return (epoch_ns > 0);
+}
+
+inline void
+ftime_9(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
+{
+    int64_t t = tm2sec(&tm.et_tm) * 1000000000LL;
+
+    t += tm.et_nsec;
     snprintf(&dst[off_inout], len - off_inout, "%" PRId64, t);
     off_inout = strlen(dst);
 }

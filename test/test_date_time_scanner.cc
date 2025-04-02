@@ -209,10 +209,10 @@ TEST_CASE("date_time_scanner")
 
         if (setlocale(LC_TIME, "fr_FR.UTF-8") != nullptr) {
             CHECK(dts.scan(en_date, strlen(en_date), nullptr, &en_tm, en_tv)
-                   != nullptr);
+                  != nullptr);
             dts.clear();
             CHECK(dts.scan(fr_date, strlen(fr_date), nullptr, &fr_tm, fr_tv)
-                   != nullptr);
+                  != nullptr);
         }
     }
 
@@ -275,6 +275,26 @@ TEST_CASE("date_time_scanner")
         assert(ts_end - ts == 15);
         auto rc = dts.ftime(buf, sizeof(buf), fmt, tm);
         assert(rc == 15);
+        assert(strcmp(ts, buf) == 0);
+    }
+
+    {
+        const auto* ts = "1743570493000000014";
+        const char* fmt[] = {
+            "%9",
+            nullptr,
+        };
+        char buf[64];
+        date_time_scanner dts;
+        exttm tm;
+        timeval tv;
+
+        const auto* ts_end = dts.scan(ts, strlen(ts), fmt, &tm, tv);
+        assert(ts_end - ts == 19);
+        assert(tv.tv_sec == 1743570493);
+        assert(tm.et_nsec == 14);
+        auto rc = ftime_fmt(buf, sizeof(buf), fmt[0], tm);
+        assert(rc == 19);
         assert(strcmp(ts, buf) == 0);
     }
 }

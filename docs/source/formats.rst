@@ -263,6 +263,7 @@ object with the following fields:
   :%q: Seconds from the epoch as a hexidecimal number.
   :%i: Milliseconds from the epoch.
   :%6: Microseconds from the epoch.
+  :%9: Nanoseconds from the epoch.
 
 :timestamp-divisor: For JSON logs with numeric timestamps, this value is used
   to divide the timestamp by to get the number of seconds and fractional
