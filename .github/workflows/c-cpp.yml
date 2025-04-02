@@ -101,7 +101,7 @@ jobs:
           path: src/lnav
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -142,10 +142,11 @@ jobs:
       run: |
         set -x
         ./autogen.sh
-        mkdir -p ../lnav-build
+        mkdir -p ../lnav-build ../lnav/configure
         cd ../lnav-build
         export PREFIX=$PWD/lnav
-        ../lnav/configure \
+        touch config.log
+        $GITHUB_WORKSPACE/configure \
                     --enable-static \
                     LDFLAGS="-static" \
                     CPPFLAGS="-I../src -I../../lnav/src -I../../lnav/src/fmtlib -O2 -DNCURSES_STATIC" \
@@ -157,7 +158,7 @@ jobs:
     - name: '🚧 Make (do not use -j)'
       run: |
         set -x
-        cd ../lnav-build
+        
         make CFLAGS="-c"
         strip -s src/lnav.exe
     - name: '📦 Package for distribution'
