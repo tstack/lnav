@@ -106,6 +106,7 @@ Features:
   with the columns from the `all_logs` table for the currently
   focused log message.  An `UPDATE` of the mutable columns will
   update the corresponding row in the `all_logs` table.
+* Add timestamp format `%9` for nanoseconds from the epoch.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.

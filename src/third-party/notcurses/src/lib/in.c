@@ -891,6 +891,16 @@ kitty_cb(inputctx* ictx){
 }
 
 static int
+kitty_gbg(inputctx* ictx)
+{
+    const unsigned char* upos = strchr(ictx->amata.matchstart, 'u');
+    logerror("unknown kitty keyboard sequence: %.*s",
+             upos - ictx->amata.matchstart,
+             ictx->amata.matchstart + 1);
+    return 2;
+}
+
+static int
 kitty_cb_atxtn(inputctx* ictx, int n, int with_event){
   uint32_t txt[5]={0};
   unsigned val = amata_next_numeric(&ictx->amata, "\x1b[", ';');
@@ -1838,6 +1848,8 @@ build_cflow_automaton(inputctx* ictx){
     { "[\\Nu", kitty_cb_simple, },
     { "[\\N;\\N~", wezterm_cb, },
     { "[\\N;\\Nu", kitty_cb, },
+      // iTerm sends this garbage for some reason
+    { "[\\N:\\Nu", kitty_gbg, },
     { "[\\N;\\N;\\Nu", kitty_cb_atxt1, },
     { "[\\N;\\N;\\N;\\Nu", kitty_cb_atxt2, },
     { "[\\N;\\N;\\N;\\N;\\Nu", kitty_cb_atxt3, },
