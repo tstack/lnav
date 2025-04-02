@@ -142,7 +142,7 @@ jobs:
       run: |
         set -x
         ./autogen.sh
-        mkdir -p ../lnav-build ../lnav/configure
+        mkdir -p ../lnav-build 
         cd ../lnav-build
         export PREFIX=$PWD/lnav
         touch config.log
@@ -158,7 +158,6 @@ jobs:
     - name: '🚧 Make (do not use -j)'
       run: |
         set -x
-        
         make CFLAGS="-c"
         strip -s src/lnav.exe
     - name: '📦 Package for distribution'
