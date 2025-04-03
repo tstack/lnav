@@ -226,6 +226,9 @@ EOF
   error: unable to open file: /test-logs.tgz
  reason: unable to create directory: rotmp/lnav-user-NNN-work/archives -- Permission denied
 EOF
+
+    run_cap_test env TMPDIR=logfile-tmp ${lnav_test} -n \
+        ${srcdir}/abs-archive.tar.gz
 fi
 
 touch unreadable.log

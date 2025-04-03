@@ -318,7 +318,8 @@ extract(const std::string& filename, const extract_cb& cb)
 
         auto_mem<archive_entry> wentry(archive_entry_free);
         wentry = archive_entry_clone(entry);
-        auto desired_pathname = fs::path(archive_entry_pathname(entry));
+        auto desired_pathname
+            = fs::path(archive_entry_pathname(entry)).relative_path();
         if (strcmp(format_name, "raw") == 0 && filter_count >= 2) {
             desired_pathname = fs::path(filename).filename();
         }
