@@ -7,10 +7,6 @@
 <link rel="icon" type="image/png" href="/assets/images/favicon.png">
 
 <style>
-    main {
-        margin: 0 50px;
-    }
-
     #top-description {
         font-size: xx-large;
         margin-top: 3em;
@@ -23,21 +19,8 @@
         margin-top: 2em;
     }
 
-    .dlrow-left {
-        display: flex;
-        align-items: center;
-    }
-
-    .dlrow-right {
-        display: flex;
-        align-items: center;
-    }
-
-    p:before, #top-description:before {
-        content: "";
-        width: 6em;
-        display: block;
-        overflow: hidden;
+    #intro p {
+        width: auto;
     }
 
     .section h2 {
@@ -63,28 +46,10 @@
 
     .section-contents p {
         margin-top: 2em;
+        margin-left: 1em;
+        margin-right: 1em;
         width: 30em;
         font-size: large;
-    }
-
-    dl {
-        display: grid;
-        grid-template-rows: auto auto;
-        grid-auto-flow: column;
-    }
-    dl dt {
-        font-weight: normal;
-        font-size: x-large;
-        border-bottom: 1px solid #8d8;
-        text-align: center;
-        margin: 20px 30px;
-        height: 2em;
-    }
-    dl dd {
-        margin: 0 30px 20px 30px;
-        min-height: 3em;
-        color: #828282;
-        font-size: medium;
     }
 </style>
 
