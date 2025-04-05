@@ -174,7 +174,7 @@ bottom_status_source::update_hits(textview_curses* tc)
         new_role = role_t::VCR_STATUS;
         if (sf.is_cylon()) {
             sf.set_cylon(false);
-            sf.clear(); // clear cylon style attribute
+            sf.clear();  // clear cylon style attribute
             retval = true;
         }
     }
@@ -185,7 +185,9 @@ bottom_status_source::update_hits(textview_curses* tc)
 }
 
 void
-bottom_status_source::update_loading(file_off_t off, file_ssize_t total)
+bottom_status_source::update_loading(file_off_t off,
+                                     file_ssize_t total,
+                                     const char* term)
 {
     auto& sf = this->bss_fields[BSF_LOADING];
 
@@ -223,7 +225,7 @@ bottom_status_source::update_loading(file_off_t off, file_ssize_t total)
 
             sf.set_cylon(true);
             sf.set_role(role_t::VCR_ACTIVE_STATUS2);
-            sf.set_value(" Loading %2d%% ", pct);
+            sf.set_value(" %s %2d%% ", term, pct);
         }
     }
 }

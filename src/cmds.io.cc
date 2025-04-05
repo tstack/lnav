@@ -106,6 +106,20 @@ yajl_writer(void* context, const char* str, size_t len)
 }
 
 static void
+write_progress(size_t row, size_t total)
+{
+    static const auto& ui_timer = ui_periodic_timer::singleton();
+    static sig_atomic_t write_counter = 0;
+
+    if (!ui_timer.time_to_update(write_counter)) {
+        return;
+    }
+    lnav_data.ld_bottom_source.update_loading(row, total, "Writing");
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+    lnav_data.ld_status_refresher();
+}
+
+static void
 json_write_row(yajl_gen handle,
                int row,
                lnav::text_anonymizer& ta,
@@ -113,6 +127,10 @@ json_write_row(yajl_gen handle,
 {
     auto& dls = lnav_data.ld_db_row_source;
     yajlpp_map obj_map(handle);
+
+    if (row > 0 && row % 1000 == 0) {
+        write_progress(row, dls.dls_row_cursors.size());
+    }
 
     auto cursor = dls.dls_row_cursors[row].sync();
     for (size_t col = 0; col < dls.dls_headers.size();
@@ -331,11 +349,12 @@ com_save_to(exec_context& ec,
         fprintf(outfile, "\n");
 
         ArenaAlloc::Alloc<char> cell_alloc{1024};
-        for (const auto& row_cursor : dls.dls_row_cursors) {
+        for (auto row = size_t{0}; row < dls.dls_row_cursors.size(); row++) {
             if (ec.ec_dry_run && line_count > 10) {
                 break;
             }
 
+            auto& row_cursor = dls.dls_row_cursors[row];
             first = true;
             auto cursor = row_cursor.sync();
             for (size_t lpc = 0; lpc < dls.dls_headers.size();
@@ -353,6 +372,10 @@ com_save_to(exec_context& ec,
                 cell_alloc.reset();
             }
             fprintf(outfile, "\n");
+
+            if (row > 0 && row % 1000 == 0) {
+                write_progress(row, dls.dls_row_cursors.size());
+            }
 
             line_count += 1;
         }
@@ -451,6 +474,10 @@ com_save_to(exec_context& ec,
             }
             fprintf(outfile,
                     tf == text_format_t::TF_MARKDOWN ? "|\n" : "\u2502\n");
+
+            if (row > 0 && row % 1000 == 0) {
+                write_progress(row, dls.dls_row_cursors.size());
+            }
 
             line_count += 1;
         }
@@ -565,11 +592,13 @@ com_save_to(exec_context& ec,
     } else if (args[0] == "write-raw-to") {
         if (tc == &lnav_data.ld_views[LNV_DB]) {
             ArenaAlloc::Alloc<char> cell_alloc{1024};
-            for (const auto& row_cursor : dls.dls_row_cursors) {
+            for (auto row = size_t{0}; row < dls.dls_row_cursors.size(); row++)
+            {
                 if (ec.ec_dry_run && line_count > 10) {
                     break;
                 }
 
+                const auto& row_cursor = dls.dls_row_cursors[row];
                 auto cursor = row_cursor.sync();
                 for (size_t lpc = 0; lpc < dls.dls_headers.size();
                      lpc++, cursor = cursor->next())
@@ -584,6 +613,10 @@ com_save_to(exec_context& ec,
                 }
                 fprintf(outfile, "\n");
 
+                if (row > 0 && row % 1000 == 0) {
+                    write_progress(row, dls.dls_row_cursors.size());
+                }
+
                 line_count += 1;
             }
         } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
@@ -591,14 +624,13 @@ com_save_to(exec_context& ec,
             bookmark_vector<vis_line_t> visited;
             auto& lss = lnav_data.ld_log_source;
             std::vector<attr_line_t> rows(1);
-            size_t count = 0;
             std::string line;
 
             for (auto iter = all_user_marks.bv_tree.begin();
                  iter != all_user_marks.bv_tree.end();
-                 ++iter, count++)
+                 ++iter)
             {
-                if (ec.ec_dry_run && count > 10) {
+                if (ec.ec_dry_run && line_count > 10) {
                     break;
                 }
                 auto cl = lss.at(*iter);
@@ -631,6 +663,9 @@ com_save_to(exec_context& ec,
                         outfile, "%.*s\n", (int) sbr.length(), sbr.get_data());
                 }
 
+                if (line_count > 0 && line_count % 1000 == 0) {
+                    write_progress(line_count, all_user_marks.size());
+                }
                 line_count += 1;
             }
         }
@@ -662,7 +697,6 @@ com_save_to(exec_context& ec,
         auto* fos = dynamic_cast<field_overlay_source*>(los);
         std::vector<attr_line_t> rows(1);
         attr_line_t ov_al;
-        size_t count = 0;
 
         if (fos != nullptr) {
             fos->fos_contexts.push(
@@ -680,9 +714,9 @@ com_save_to(exec_context& ec,
         }
         for (auto iter = all_user_marks.bv_tree.begin();
              iter != all_user_marks.bv_tree.end();
-             ++iter, count++)
+             ++iter)
         {
-            if (ec.ec_dry_run && count > 10) {
+            if (ec.ec_dry_run && line_count > 10) {
                 break;
             }
             tc->listview_value_for_rows(*tc, *iter, rows);
@@ -701,6 +735,9 @@ com_save_to(exec_context& ec,
                     line_count += 1;
                     ++y;
                 }
+            }
+            if (line_count > 0 && line_count % 1000 == 0) {
+                write_progress(line_count, all_user_marks.size());
             }
             line_count += 1;
         }
@@ -746,6 +783,10 @@ com_save_to(exec_context& ec,
         closer(toclose);
     }
     outfile = nullptr;
+
+    lnav_data.ld_bottom_source.update_loading(0, 0);
+    lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+    lnav_data.ld_status_refresher();
 
     return Ok(retval);
 }

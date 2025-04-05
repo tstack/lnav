@@ -79,7 +79,9 @@ public:
 
     bool update_hits(textview_curses* tc);
 
-    void update_loading(file_off_t off, file_ssize_t total);
+    void update_loading(file_off_t off,
+                        file_ssize_t total,
+                        const char* term = "Loading");
 
 private:
     status_field bss_prompt{1024, role_t::VCR_STATUS};
