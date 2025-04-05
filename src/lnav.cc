@@ -970,6 +970,13 @@ struct refresh_status_bars {
 
     lnav::progress_result_t doit() const
     {
+        static auto& prompt = lnav::prompt::get();
+        static const auto cancel_msg
+            = lnav::console::user_message::info(
+                  attr_line_t("performing operation, press ")
+                      .append("CTRL+]"_hotkey)
+                      .append(" to cancel"))
+                  .to_attr_line();
         auto retval = lnav::progress_result_t::ok;
         timeval current_time{};
         ncinput ch;
@@ -1005,6 +1012,18 @@ struct refresh_status_bars {
             }
         }
 
+        if (lnav_data.ld_bottom_source
+                .get_field(bottom_status_source::BSF_LOADING)
+                .empty())
+        {
+            prompt.p_editor.clear_inactive_value();
+        } else if (prompt.p_editor.tc_inactive_value.al_string
+                   != cancel_msg.al_string)
+        {
+            prompt.p_editor.set_inactive_value(cancel_msg);
+        }
+
+        lnav_data.ld_view_stack.do_update();
         if (this->rsb_top_source->update_time(current_time)) {
             lnav_data.ld_status[LNS_TOP].set_needs_update();
         }
@@ -1711,7 +1730,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     refresher->rsb_screen = &sc;
 
     auto refresh_guard = lnav_data.ld_status_refresher.install(
-        [refresher]() { refresher->doit(); });
+        [refresher]() { return refresher->doit(); });
 
     {
         auto* tss = static_cast<timeline_source*>(

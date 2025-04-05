@@ -275,8 +275,6 @@ execute_search(const std::string& search_cmd)
 Result<std::string, lnav::console::user_message>
 execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 {
-    static auto& prompt = lnav::prompt::get();
-
     auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
     timeval start_tv, end_tv;
     std::string stmt_str = trim(sql);
@@ -360,14 +358,6 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
     }
 
     ec.ec_accumulator->clear();
-
-    prompt.p_editor.set_inactive_value(
-        lnav::console::user_message::info(
-            attr_line_t("executing SQL statement, press ")
-                .append("CTRL+]"_hotkey)
-                .append(" to cancel"))
-            .to_attr_line());
-    prompt.p_editor.set_needs_update();
 
     require(!ec.ec_source.empty());
     const auto& source = ec.ec_source.back();
@@ -492,8 +482,6 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
 
         curr_stmt = tail;
     }
-
-    prompt.p_editor.clear_inactive_value();
 
     if (last_is_readonly && !ec.ec_label_source_stack.empty()) {
         auto& dls = *ec.ec_label_source_stack.back();

@@ -1416,6 +1416,7 @@ rl_callback(textinput_curses& rc)
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "preview"});
     tc->get_highlights().erase({highlight_source_t::PREVIEW, "bodypreview"});
     lnav_data.ld_log_source.set_preview_sql_filter(nullptr);
+    layout_views();
 
     auto new_mode = ln_mode_t::PAGING;
 

@@ -33,6 +33,8 @@
 #include <functional>
 #include <utility>
 
+#include "progress.hh"
+
 template<typename F, typename FrontArg>
 decltype(auto)
 bind_mem(F&& f, FrontArg&& frontArg)
@@ -97,22 +99,24 @@ public:
         scoped_cb* g_owner;
     };
 
-    guard install(std::function<void()> cb)
+    guard install(std::function<progress_result_t()> cb)
     {
         this->s_callback = std::move(cb);
 
         return guard{this};
     }
 
-    void operator()() const
+    progress_result_t operator()() const
     {
         if (s_callback) {
-            s_callback();
+            return s_callback();
         }
+
+        return progress_result_t::ok;
     }
 
 private:
-    std::function<void()> s_callback;
+    std::function<progress_result_t()> s_callback;
 };
 
 template<typename Fn,

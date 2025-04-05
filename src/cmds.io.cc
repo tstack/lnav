@@ -105,18 +105,18 @@ yajl_writer(void* context, const char* str, size_t len)
     fwrite(str, len, 1, file);
 }
 
-static void
+static lnav::progress_result_t
 write_progress(size_t row, size_t total)
 {
     static const auto& ui_timer = ui_periodic_timer::singleton();
     static sig_atomic_t write_counter = 0;
 
     if (!ui_timer.time_to_update(write_counter)) {
-        return;
+        return lnav::progress_result_t::ok;
     }
     lnav_data.ld_bottom_source.update_loading(row, total, "Writing");
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-    lnav_data.ld_status_refresher();
+    return lnav_data.ld_status_refresher();
 }
 
 static void
@@ -127,10 +127,6 @@ json_write_row(yajl_gen handle,
 {
     auto& dls = lnav_data.ld_db_row_source;
     yajlpp_map obj_map(handle);
-
-    if (row > 0 && row % 1000 == 0) {
-        write_progress(row, dls.dls_row_cursors.size());
-    }
 
     auto cursor = dls.dls_row_cursors[row].sync();
     for (size_t col = 0; col < dls.dls_headers.size();
@@ -374,7 +370,11 @@ com_save_to(exec_context& ec,
             fprintf(outfile, "\n");
 
             if (row > 0 && row % 1000 == 0) {
-                write_progress(row, dls.dls_row_cursors.size());
+                if (write_progress(row, dls.dls_row_cursors.size())
+                    == lnav::progress_result_t::interrupt)
+                {
+                    break;
+                }
             }
 
             line_count += 1;
@@ -476,7 +476,11 @@ com_save_to(exec_context& ec,
                     tf == text_format_t::TF_MARKDOWN ? "|\n" : "\u2502\n");
 
             if (row > 0 && row % 1000 == 0) {
-                write_progress(row, dls.dls_row_cursors.size());
+                if (write_progress(row, dls.dls_row_cursors.size())
+                    == lnav::progress_result_t::interrupt)
+                {
+                    break;
+                }
             }
 
             line_count += 1;
@@ -511,6 +515,13 @@ com_save_to(exec_context& ec,
                 }
 
                 json_write_row(gen, row, ta, anonymize);
+                if (row > 0 && row % 1000 == 0) {
+                    if (write_progress(row, dls.dls_row_cursors.size())
+                        == lnav::progress_result_t::interrupt)
+                    {
+                        break;
+                    }
+                }
                 line_count += 1;
             }
         }
@@ -527,6 +538,13 @@ com_save_to(exec_context& ec,
 
             json_write_row(gen, row, ta, anonymize);
             yajl_gen_reset(gen, "\n");
+            if (row > 0 && row % 1000 == 0) {
+                if (write_progress(row, dls.dls_row_cursors.size())
+                    == lnav::progress_result_t::interrupt)
+                {
+                    break;
+                }
+            }
             line_count += 1;
         }
     } else if (args[0] == "write-screen-to") {
@@ -614,7 +632,11 @@ com_save_to(exec_context& ec,
                 fprintf(outfile, "\n");
 
                 if (row > 0 && row % 1000 == 0) {
-                    write_progress(row, dls.dls_row_cursors.size());
+                    if (write_progress(row, dls.dls_row_cursors.size())
+                        == lnav::progress_result_t::interrupt)
+                    {
+                        break;
+                    }
                 }
 
                 line_count += 1;
@@ -664,7 +686,11 @@ com_save_to(exec_context& ec,
                 }
 
                 if (line_count > 0 && line_count % 1000 == 0) {
-                    write_progress(line_count, all_user_marks.size());
+                    if (write_progress(line_count, all_user_marks.size())
+                        == lnav::progress_result_t::interrupt)
+                    {
+                        break;
+                    }
                 }
                 line_count += 1;
             }
@@ -737,7 +763,11 @@ com_save_to(exec_context& ec,
                 }
             }
             if (line_count > 0 && line_count % 1000 == 0) {
-                write_progress(line_count, all_user_marks.size());
+                if (write_progress(line_count, all_user_marks.size())
+                    == lnav::progress_result_t::interrupt)
+                {
+                    break;
+                }
             }
             line_count += 1;
         }
