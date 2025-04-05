@@ -71,9 +71,77 @@ AC_CHECK_FUNC(mkostemp,
 
 AC_STRUCT_TIMEZONE
 
+AC_ARG_ENABLE([release],
+    AS_HELP_STRING([--enable-release],
+        [Enable release features]))
+
 AC_ARG_ENABLE([static],
-              AS_HELP_STRING([--enable-static],
-                             [Enable static linking]))
+    AS_HELP_STRING([--enable-static],
+        [Enable static linking. Also accepts LNAV_BUILD_STATIC="yes" environment value]),
+        [],
+        [
+            if test x"${LNAV_BUILD_STATIC}" = x"yes"; then
+                enable_static="yes"
+            fi
+            if test x"${enable_release}" = x"yes"; then
+                enable_static="yes"
+            fi
+        ]
+)
+
+AC_ARG_WITH([build-env],
+    AS_HELP_STRING(
+        [--with-build-env=<path>],
+        [Path for searching binaries, libraries, and includes. Also accepts LNAV_BUILD_ENV environment value]
+    ),
+    [
+
+        if test "x$with_build_env" = "xyes"; then
+            AC_MSG_ERROR([--with-build-env requires a path argument])
+        else
+            if test "x$with_build_env" != "xno"; then
+                build_env="$with_build_env"
+                with_build_env="yes"
+            fi
+        fi
+    ],
+    [
+        if test -n "$LNAV_BUILD_ENV"; then
+            AC_MSG_NOTICE([using LNAV_BUILD_ENV="$LNAV_BUILD_ENV"])
+            build_env="$LNAV_BUILD_ENV"
+            with_build_env="yes"
+        fi
+    ]
+)
+
+if test "x$with_build_env" = "xyes"; then
+    LDFLAGS="-L$build_env/lib $LDFLAGS"
+    CPPFLAGS="-I$build_env/include -I$build_env/include/ncursesw $CPPFLAGS"
+fi
+
+if test x"${enable_release}" = x"yes"; then
+    CFLAGS="-g1 -gz=zlib -O2 $CFLAGS"
+    CXXFLAGS="-g1 -gz=zlib -O2 $CXXFLAGS"
+fi
+
+if test x"${enable_static}" = x"yes"; then
+    case "$host_os" in
+    darwin*)
+        STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first"
+        ;;
+    *)
+        LDFLAGS="-static $LDFLAGS"
+        case "$host_os" in
+        mingw*|cygwin*|msys*)
+            # Windows-like systems: do not add -no-pie.
+            ;;
+        *)
+            LDFLAGS="-no-pie $LDFLAGS"
+            ;;
+        esac
+        ;;
+    esac
+fi
 
 AC_SEARCH_LIBS(openpty, util)
 AC_SEARCH_LIBS(gzseek, z, [], [AC_MSG_ERROR([libz required to build])])
@@ -151,7 +219,7 @@ AS_VAR_IF([ax_cv_curses],[yes],[],
     AC_MSG_ERROR([requires an X/Open-compatible Curses library with color])dnl
 )
 
-AX_PATH_LIB_ARCHIVE
+AX_PATH_LIB_ARCHIVE([$enable_static])
 AX_CHECK_PCRE2([8], [], [AC_MSG_ERROR([pcre2 is required to build])])
 
 AX_CODE_COVERAGE
@@ -214,12 +282,6 @@ AS_VAR_SET(static_lib_list,
            ["$static_lib_list librtmp.a libiconv.a liblz4.a liblber.a libunistring.a"])
 
 if test x"${enable_static}" = x"yes"; then
-    case "$host_os" in
-    darwin*)
-        STATIC_LDFLAGS="$STATIC_LDFLAGS -Wl,-search_paths_first"
-        ;;
-    esac
-
     AX_CHECK_LINK_FLAG([-static-libgcc], [STATIC_LDFLAGS="$STATIC_LDFLAGS -static-libgcc"])
 
     STATIC_LDFLAGS="$STATIC_LDFLAGS -L`pwd`/src/static-libs"
@@ -302,6 +364,22 @@ AS_IF([test $? -eq 0],
     AC_DEFINE_UNQUOTED([VCS_PACKAGE_STRING], ["$PACKAGE_STRING"], [VCS package string]))
 
 AM_CONDITIONAL(HAVE_CARGO, test x"$CARGO_CMD" != x"")
+if test x"$CARGO_CMD" != x""; then
+    AC_ARG_VAR([PRQLC_C_PATH], [Path to prebuilt libprqlc_c.a])
+    if test -n "$PRQLC_C_PATH" && test -f "$PRQLC_C_PATH"; then
+        rust_deps_libs_value="$PRQLC_C_PATH"
+        prebuilt_rust_deps=yes
+    else
+        rust_deps_libs_value="third-party/prqlc-c/target/release/libprqlc_c.a"
+        prebuilt_rust_deps=no
+    fi
+else
+    rust_deps_libs_value=""
+fi
+AC_SUBST([rust_deps_libs_value])
+AM_CONDITIONAL([USE_PREBUILT_RUST_DEPS], [test "$prebuilt_rust_deps" = "yes"])
+
+
 AM_CONDITIONAL(HAVE_LIBCURL, test x"$LIBCURL" != x"")
 AM_CONDITIONAL([CROSS_COMPILING], [ test x"$cross_compiling" != x"no" ])
 AM_CONDITIONAL(HAVE_CHECK_JSONSCHEMA, test x"$CHECK_JSONSCHEMA" != x"")
