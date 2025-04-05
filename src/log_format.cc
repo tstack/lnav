@@ -1376,7 +1376,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
             return scan_no_match{"line is not a JSON object"};
         }
 
-        ll.set_time(dst.back().get_timeval());
+        ll.set_time(dst.back().get_time<std::chrono::microseconds>());
         ll.set_level(LEVEL_INVALID);
         dst.emplace_back(ll);
         return scan_match{0};
@@ -1390,6 +1390,9 @@ external_log_format::scan_json(std::vector<logline>& dst,
         log_debug("skipping partial line at offset %d",
                   li.li_file_range.fr_offset);
         if (this->lf_specialized) {
+            if (!dst.empty()) {
+                ll.set_time(dst.back().get_time<std::chrono::microseconds>());
+            }
             ll.set_level(LEVEL_INVALID);
             dst.emplace_back(ll);
         }
@@ -1419,6 +1422,10 @@ external_log_format::scan_json(std::vector<logline>& dst,
     {
         if (ll.get_time<std::chrono::microseconds>().count() == 0) {
             if (this->lf_specialized) {
+                if (!dst.empty()) {
+                    ll.set_time(
+                        dst.back().get_time<std::chrono::microseconds>());
+                }
                 ll.set_ignore(true);
                 dst.emplace_back(ll);
                 return scan_match{0};

@@ -1748,6 +1748,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     bool initial_rescan_completed = false;
     int session_stage = 0;
 
+    auto rescan_needed = false;
     auto next_rebuild_time = ui_clock::now();
     auto next_status_update_time = next_rebuild_time;
     auto next_rescan_time = next_rebuild_time;
@@ -1842,7 +1843,11 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 log_debug("file count %d",
                           lnav_data.ld_active_files.fc_files.size());
             }
+            auto old_gen = lnav_data.ld_active_files.fc_files_generation;
             update_active_files(new_files);
+            if (old_gen != lnav_data.ld_active_files.fc_files_generation) {
+                next_rebuild_time = ui_now;
+            }
             if (!initial_rescan_completed) {
                 auto& fview = lnav_data.ld_files_view;
                 auto height = fview.get_inner_height();
@@ -1853,7 +1858,8 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             }
 
             rescan_future = std::future<file_collection>{};
-            next_rescan_time = ui_now + 333ms;
+            next_rescan_time
+                = ui_now + (std::exchange(rescan_needed, false) ? 0ms : 333ms);
         }
 
         if (!rescan_future.valid()
@@ -1891,6 +1897,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                 if (!changes && ui_clock::now() < loop_deadline) {
                     next_rebuild_time = ui_clock::now() + 333ms;
                 }
+                if (rebuild_res.rir_rescan_needed) {
+                    rescan_needed = true;
+                    next_rescan_time = loop_deadline = ui_now;
+                }
                 if (changes && text_file_count
                     && lnav_data.ld_text_source.empty()
                     && lnav_data.ld_view_stack.top().value_or(nullptr)
@@ -1918,8 +1928,9 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             log_trace("preview updated, update prompt");
             prompt.p_editor.set_needs_update();
         }
-        if (filter_source->fss_editing &&
-            filter_source->fss_editor->get_needs_update()) {
+        if (filter_source->fss_editing
+            && filter_source->fss_editor->get_needs_update())
+        {
             lnav_data.ld_filter_view.set_needs_update();
         }
         if ((lnav_data.ld_files_view.is_visible()

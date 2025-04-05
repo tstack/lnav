@@ -320,10 +320,13 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     std::vector<std::shared_ptr<logfile>> closed_files;
     for (auto& lf : lnav_data.ld_active_files.fc_files) {
         if (!lf->exists() || lf->is_closed()) {
-            log_info("closed log file: %s", lf->get_filename().c_str());
+            log_info("%s file: %s",
+                     !lf->exists() ? "deleted" : "closed",
+                     lf->get_filename().c_str());
             lnav_data.ld_text_source.remove(lf);
             lnav_data.ld_log_source.remove_file(lf);
             closed_files.emplace_back(lf);
+            retval.rir_rescan_needed = true;
         }
     }
     if (!closed_files.empty()) {

@@ -763,6 +763,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             iter = this->tss_files.erase(iter);
             this->detach_observer(lf);
             closed_files.emplace_back(lf);
+            retval.rr_rescan_needed = true;
             continue;
         }
 

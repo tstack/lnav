@@ -38,6 +38,7 @@ void rebuild_hist();
 struct rebuild_indexes_result_t {
     size_t rir_changes{0};
     bool rir_completed{true};
+    bool rir_rescan_needed{false};
 };
 
 rebuild_indexes_result_t rebuild_indexes(

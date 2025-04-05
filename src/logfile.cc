@@ -303,8 +303,7 @@ logfile::exists() const
 
     auto st = stat_res.unwrap();
     return this->lf_stat.st_dev == st.st_dev
-        && this->lf_stat.st_ino == st.st_ino
-        && this->lf_stat.st_size <= st.st_size;
+        && this->lf_stat.st_ino == st.st_ino;
 }
 
 auto
@@ -832,7 +831,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             }
         }
 
-        if (is_overwritten) {
+        if (is_truncated || is_overwritten) {
             log_info("overwritten file detected, closing -- %s  new: %" PRId64
                      "/%" PRId64 "  old: %" PRId64 "/%" PRId64,
                      this->lf_filename.c_str(),
@@ -887,16 +886,41 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             rollback_size += 1;
 
             if (!this->lf_index.empty()) {
-                auto last_line = this->lf_index.end();
-                --last_line;
-                auto check_line_off = last_line->get_offset();
+                auto last_line = std::prev(this->lf_index.end());
+                if (last_line != this->lf_index.begin()) {
+                    auto prev_line = std::prev(last_line);
+                    this->lf_line_buffer.flush_at(prev_line->get_offset());
+                    auto prev_len_res
+                        = this->message_byte_length(prev_line, false);
+
+                    auto read_result = this->lf_line_buffer.read_range({
+                        prev_line->get_offset(),
+                        prev_len_res.mlr_length + 1,
+                    });
+                    if (read_result.isErr()) {
+                        log_info(
+                            "overwritten file detected, closing -- %s (%s)",
+                            this->lf_filename.c_str(),
+                            read_result.unwrapErr().c_str());
+                        this->close();
+                        return rebuild_result_t::INVALID;
+                    }
+
+                    auto sbr = read_result.unwrap();
+                    if (!sbr.to_string_fragment().endswith("\n")) {
+                        log_info("overwritten file detected, closing -- %s",
+                                 this->lf_filename.c_str());
+                        this->close();
+                        return rebuild_result_t::INVALID;
+                    }
+                } else {
+                    this->lf_line_buffer.flush_at(last_line->get_offset());
+                }
                 auto last_length_res
                     = this->message_byte_length(last_line, false);
-                log_debug("flushing at %" PRIu64, check_line_off);
-                this->lf_line_buffer.flush_at(check_line_off);
 
                 auto read_result = this->lf_line_buffer.read_range({
-                    check_line_off,
+                    last_line->get_offset(),
                     last_length_res.mlr_length,
                 });
 
@@ -1286,7 +1310,14 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 this->lf_allocator.getNumBytesAllocated());
         }
 
-        if (sort_needed) {
+        if (begin_size > this->lf_index.size()) {
+            log_info("overwritten file detected, closing -- %s",
+                     this->lf_filename.c_str());
+            this->close();
+            return rebuild_result_t::INVALID;
+        }
+
+        if (sort_needed || begin_size > this->lf_index.size()) {
             retval = rebuild_result_t::NEW_ORDER;
         } else {
             retval = rebuild_result_t::NEW_LINES;

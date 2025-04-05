@@ -125,6 +125,7 @@ public:
     struct rescan_result_t {
         size_t rr_new_data{0};
         bool rr_scan_completed{true};
+        bool rr_rescan_needed{false};
     };
 
     rescan_result_t rescan_files(scan_callback& callback,
