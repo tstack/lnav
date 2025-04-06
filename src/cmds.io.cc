@@ -549,13 +549,13 @@ com_save_to(exec_context& ec,
         }
     } else if (args[0] == "write-screen-to") {
         bool wrapped = tc->get_word_wrap();
-        vis_line_t orig_top = tc->get_top();
+        auto orig_top = tc->get_top();
         auto inner_height = tc->get_inner_height();
 
         tc->set_word_wrap(to_term);
 
-        vis_line_t top = tc->get_top();
-        vis_line_t bottom = tc->get_bottom();
+        auto top = tc->get_top();
+        auto bottom = tc->get_bottom();
         if (lnav_data.ld_flags & LNF_HEADLESS && inner_height > 0_vl) {
             bottom = inner_height - 1_vl;
         }
@@ -577,12 +577,12 @@ com_save_to(exec_context& ec,
         }
         tc->listview_value_for_rows(*tc, top, rows);
         for (auto& al : rows) {
-            wrapped_count += vis_line_t((al.length() - 1) / (dim.second - 2));
             if (anonymize) {
                 al.al_attrs.clear();
                 al.al_string = ta.next(al.al_string);
             }
-            write_line_to(outfile, al);
+            auto cols_out = write_line_to(outfile, al);
+            wrapped_count += vis_line_t(cols_out / (dim.second - 2));
 
             ++y;
             if (los != nullptr) {

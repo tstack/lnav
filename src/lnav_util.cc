@@ -86,19 +86,22 @@ is_dev_null(int fd)
     return is_dev_null(fd_stat);
 }
 
-void
+size_t
 write_line_to(FILE* outfile, const attr_line_t& al)
 {
     const auto& al_attrs = al.get_attrs();
-    auto lr = find_string_attr_range(al_attrs, &SA_ORIGINAL_LINE);
+    const auto lr = find_string_attr_range(al_attrs, &SA_ORIGINAL_LINE);
 
     if (lr.empty() || !lr.is_valid() || lr.lr_start > 1) {
         // If the line is prefixed with some extra information, include that
         // in the output.  For example, the log file name or time offset.
         lnav::console::println(outfile, al);
-    } else {
-        lnav::console::println(outfile, al.subline(lr.lr_start, lr.length()));
+        return al.column_width();
     }
+    const auto sub_al = al.subline(lr.lr_start, lr.length());
+    lnav::console::println(outfile, sub_al);
+
+    return sub_al.column_width();
 }
 
 namespace lnav {

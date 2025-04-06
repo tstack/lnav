@@ -139,7 +139,7 @@ finally(A act)  // deduce action type
     return final_action<A>{act};
 }
 
-void write_line_to(FILE* outfile, const attr_line_t& al);
+size_t write_line_to(FILE* outfile, const attr_line_t& al);
 
 namespace lnav {
 
