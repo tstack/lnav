@@ -1343,6 +1343,7 @@ view_colors::init_roles(const lnav_theme& lt,
                 = this->to_attrs(lt, level_iter->second, reporter);
         }
     }
+    this->vc_level_attrs[LEVEL_UNKNOWN] = this->vc_level_attrs[LEVEL_INFO];
 
     for (int32_t role_index = 0;
          role_index < lnav::enums::to_underlying(role_t::VCR__MAX);

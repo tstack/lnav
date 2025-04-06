@@ -171,10 +171,10 @@ textfile_sub_source::text_value_for_line(textview_curses& tc,
     const auto ll = lf->begin() + lfo->lfo_filter_state.tfs_index[line];
     auto read_result = lf->read_line(ll);
     this->tss_line_indent_size = 0;
+    this->tss_plain_line_attrs.clear();
     if (read_result.isOk()) {
         auto sbr = read_result.unwrap();
         value_out = to_string(sbr);
-        this->tss_plain_line_attrs.clear();
         if (sbr.get_metadata().m_has_ansi) {
             scrub_ansi_string(value_out, &this->tss_plain_line_attrs);
         }
