@@ -1361,8 +1361,7 @@ public:
         }
 
         if (found_time) {
-            exttm tm = time_tm;
-            timeval tv;
+            auto tm = time_tm;
 
             if (found_date) {
                 tm.et_tm.tm_year = date_tm.et_tm.tm_year;
@@ -1372,7 +1371,7 @@ public:
                 tm.et_tm.tm_yday = date_tm.et_tm.tm_yday;
             }
 
-            tv = tm.to_timeval();
+            auto tv = tm.to_timeval();
             if (!this->lf_specialized) {
                 for (auto& ll : dst) {
                     ll.set_ignore(true);

@@ -16,6 +16,9 @@ printf '#Date:\t3/9/3/0\x85 2\n0\n' | run_cap_test \
 printf '[8.0000]0\n' | run_cap_test \
     env TEST_COMMENT="zero timestamp" ${lnav_test} -n
 
+printf '#Fields: date time 0 date\n2000/2 00:00 0 2000/80' | run_cap_test \
+    env TEST_COMMENT="invalid w3c #1451" ${lnav_test} -n
+
 cat > rollover_in.0 <<EOF
 2600/2 0 00:00:00 0:
 00:2 0 00:00:00 0:

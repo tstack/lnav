@@ -615,9 +615,8 @@ ptime_9(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 
     secs2tm(epoch, &dst->et_tm);
     dst->et_flags = ETF_DAY_SET | ETF_MONTH_SET | ETF_YEAR_SET | ETF_HOUR_SET
-        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_NANOS_SET
-        | ETF_MACHINE_ORIENTED | ETF_EPOCH_TIME | ETF_ZONE_SET
-        | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
+        | ETF_MINUTE_SET | ETF_SECOND_SET | ETF_NANOS_SET | ETF_MACHINE_ORIENTED
+        | ETF_EPOCH_TIME | ETF_ZONE_SET | ETF_SUB_NOT_IN_FORMAT | ETF_Z_FOR_UTC;
 
     return (epoch_ns > 0);
 }
@@ -789,25 +788,27 @@ inline bool
 ptime_m(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     off_t orig_off = off_inout;
+    int val = 0;
 
     PTIME_CONSUME(1, {
         if (str[off_inout] < '0' || str[off_inout] > '9') {
             return false;
         }
-        dst->et_tm.tm_mon = str[off_inout] - '0';
+        val = str[off_inout] - '0';
     });
     if (off_inout < len) {
         if (str[off_inout] >= '0' && str[off_inout] <= '9') {
-            dst->et_tm.tm_mon *= 10;
-            dst->et_tm.tm_mon += str[off_inout] - '0';
+            val *= 10;
+            val += str[off_inout] - '0';
             off_inout += 1;
         }
     }
 
-    dst->et_tm.tm_mon -= 1;
+    val -= 1;
 
-    if (dst->et_tm.tm_mon >= 0 && dst->et_tm.tm_mon <= 11) {
+    if (val >= 0 && val <= 11) {
         dst->et_flags |= ETF_MONTH_SET;
+        dst->et_tm.tm_mon = val;
         return true;
     }
 

@@ -219,10 +219,11 @@ static time_t BAD_DATE = -1;
 time_t
 tm2sec(const struct tm* t)
 {
+    static const int dayoffset[12]
+        = {306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275};
+
     int year;
     time_t days, secs;
-    const int dayoffset[12]
-        = {306, 337, 0, 31, 61, 92, 122, 153, 184, 214, 245, 275};
 
     year = t->tm_year;
 
@@ -364,8 +365,9 @@ secs2tm(lnav::time64_t tim, struct tm* res)
     res->tm_year = y - YEAR_BASE;
     res->tm_yday = days;
     ip = mon_yday[isleap(y)];
-    for (y = 11; days < (long int) ip[y]; --y)
+    for (y = 11; days < (long int) ip[y]; --y) {
         continue;
+    }
     days -= ip[y];
     res->tm_mon = y;
     res->tm_mday = days + 1;
