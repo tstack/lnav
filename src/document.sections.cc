@@ -448,6 +448,8 @@ public:
 
         mb.mb_text_format = this->sw_discover_builder.db_text_format;
         while (true) {
+            require(this->sw_depth == this->sw_container_tokens.size());
+
             auto tokenize_res = this->sw_scanner.tokenize2(
                 this->sw_discover_builder.db_text_format);
             if (!tokenize_res) {
@@ -514,6 +516,9 @@ public:
                                 term = std::nullopt;
                             }
                             this->sw_interval_state.pop_back();
+                            if (!found && this->sw_depth > 0) {
+                                this->sw_depth -= 1;
+                            }
                             this->sw_hier_stage
                                 = std::move(this->sw_hier_nodes.back());
                             this->sw_hier_nodes.pop_back();
@@ -729,6 +734,8 @@ public:
                     break;
                 }
             }
+
+            ensure(this->sw_depth == this->sw_container_tokens.size());
         }
         this->flush_values();
 

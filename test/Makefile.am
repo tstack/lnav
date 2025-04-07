@@ -487,6 +487,7 @@ dist_noinst_DATA = \
 	tui-captures/tui_help.0
 
 TESTS = \
+    document.sections.tests \
     lnav_doctests \
     test_abbrev \
 	test_ansi_scrubber \

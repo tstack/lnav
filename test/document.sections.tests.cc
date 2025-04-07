@@ -123,7 +123,9 @@ DESCRIPTION
 
 )";
 
-    auto meta = lnav::document::discover(INPUT).perform();
+    auto meta = lnav::document::discover(INPUT)
+                    .with_text_format(text_format_t::TF_MAN)
+                    .perform();
 
     CHECK(meta.m_sections_root->hn_named_children.size() == 3);
     meta.m_sections_tree.visit_all([](const auto& intv) {
@@ -279,4 +281,22 @@ TEST_CASE("lnav::document::sections::sql")
                 printf("  child: %p %s\n", pair.second, pair.first.c_str());
             }
         });
+}
+
+TEST_CASE("lnav::document::sections::afl1")
+{
+    attr_line_t INPUT = "{(</:>(\n---\x00\n+++\x00\n(";
+
+    auto meta = lnav::document::discover(INPUT).perform();
+
+    CHECK(meta.m_sections_root->hn_children.empty());
+}
+
+TEST_CASE("lnav::document::sections::afl2")
+{
+    attr_line_t INPUT = "{(</:>(\n---\x000\n+++\x000\n0";
+
+    auto meta = lnav::document::discover(INPUT).perform();
+
+    CHECK(meta.m_sections_root->hn_children.empty());
 }
