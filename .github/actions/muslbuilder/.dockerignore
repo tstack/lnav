@@ -1,0 +1,6 @@
+*   # Ignore everything in the root context except for:
+
+!src/third-party/prqlc-c/
+
+!.github/actions/muslbuilder/
+!.github/actions/muslbuilder/*

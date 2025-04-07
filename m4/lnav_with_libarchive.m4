@@ -29,24 +29,23 @@ dnl
 dnl @file lnav_with_libarchive.m4
 dnl
 AC_DEFUN([AX_PATH_LIB_ARCHIVE],[dnl
-AC_MSG_CHECKING([lib archive])
 AC_ARG_WITH(libarchive,
 [  --with-libarchive[[=prefix]]],,
      with_libarchive="yes")
-if test ".$with_libarchive" = ".no" ; then
-  AC_MSG_RESULT([disabled])
-  m4_ifval($2,$2)
-else
-  AC_MSG_RESULT([(testing)])
+
+libarchive_static=$1
+if test x"$libarchive_static" = x"yes" ; then
+  LIBARCHIVE_REQ_LIBS="-llzma -llz4"
+fi
+
+if test ".$with_libarchive" != ".no" ; then
   AC_CHECK_LIB(archive, archive_read_new)
   AC_CHECK_HEADERS(archive.h)
   if test "$ac_cv_lib_archive_archive_read_new" = "yes" && \
-     test "x$ac_cv_header_archive_h" = xyes; then
-     LIBARCHIVE_LIBS="-larchive"
-     AC_MSG_CHECKING([lib archive])
-     AC_MSG_RESULT([$LIBARCHIVE_LIBS])
-     m4_ifval($1,$1)
+     test "x$ac_cv_header_archive_h" = xyes ; then
+     LIBARCHIVE_LIBS="-larchive $LIBARCHIVE_REQ_LIBS"
   else
+     AC_MSG_NOTICE([checking libarchive with "$with_libarchive" path considered])
      unset ac_cv_header_archive_h
      OLDLDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS -L$with_libarchive/lib"
      OLDCPPFLAGS="$CPPFLAGS" ; CPPFLAGS="$CPPFLAGS -I$with_libarchive/include"
@@ -56,19 +55,17 @@ else
      LDFLAGS="$OLDLDFLAGS"
      if test "$ac_cv_lib_archive_archive_read_new" = "yes" && \
         test "x$ac_cv_header_archive_h" = xyes; then
-        AC_MSG_RESULT(.setting LIBARCHIVE_LIBS -L$with_libarchive/lib -larchive)
         LIBARCHIVE_LDFLAGS="-L$with_libarchive/lib"
-        LIBARCHIVE_LIBS="-larchive"
+        LIBARCHIVE_LIBS="-larchive $LIBARCHIVE_REQ_LIBS"
         test -d "$with_libarchive/include" && LIBARCHIVE_CFLAGS="-I$with_libarchive/include"
-        AC_MSG_CHECKING([lib archive])
-        AC_MSG_RESULT([$LIBARCHIVE_LIBS])
-        m4_ifval($1,$1)
      else
-        AC_MSG_CHECKING([lib archive])
-        AC_MSG_RESULT([[no]])
-        m4_ifval($2,$2)
+        AC_MSG_NOTICE([required libarchive files not found])
      fi
   fi
+fi
+
+if test -n "$LIBARCHIVE_LIBS"; then
+  AC_MSG_NOTICE([.setting LIBARCHIVE_LIBS=$LIBARCHIVE_LIBS , LIBARCHIVE_LDFLAGS=$LIBARCHIVE_LDFLAGS , LIBARCHIVE_CFLAGS=$LIBARCHIVE_CFLAGS])
 fi
 AC_SUBST([LIBARCHIVE_LIBS])
 AC_SUBST([LIBARCHIVE_LDFLAGS])

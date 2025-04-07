@@ -126,14 +126,17 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS) $(USER_CXXFLAGS)
 if HAVE_CARGO
 RUST_DEPS_CPPFLAGS = -DHAVE_RUST_DEPS=1
 PRQLC_DIR = third-party/prqlc-c/target
-RUST_DEPS_LIBS = $(PRQLC_DIR)/release/libprqlc_c.a
+RUST_DEPS_LIBS = @rust_deps_libs_value@
 RUST_DEPS_TRIGGER = $(PRQLC_DIR)/release/libprqlc_c.a.dep
 
+if !USE_PREBUILT_RUST_DEPS
 $(RUST_DEPS_LIBS): $(srcdir)/third-party/prqlc-c/src/lib.rs $(srcdir)/third-party/prqlc-c/Cargo.toml
 	mkdir -p $(PRQLC_DIR)
 	env CARGO_TARGET_DIR=third-party/prqlc-c/target $(CARGO_CMD) build --manifest-path \
 	    $(srcdir)/third-party/prqlc-c/Cargo.toml --package prqlc-c --release
 	touch $(RUST_DEPS_LIBS)
+endif
+
 
 else
 RUST_DEPS =

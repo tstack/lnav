@@ -60,7 +60,11 @@ jobs:
       - name: list
         run: find /fake.root
       - name: make
-        run: /entrypoint.sh
+        run: >-
+          ./autogen.sh
+          mkdir lbuild && cd lbuild &&
+          ../configure --enable-release &&
+          make -j$(nproc)
       - name: Build musl package
         if: ${{ inputs.lnav_version_number != '' }}
         run: >-
@@ -111,8 +115,12 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: tstack/lnav-build:latest
-          options: -v ${{ github.workspace }}:/lnav -e GITHUB_WORKSPACE=/lnav --platform ${{ matrix.container-platform }}
-          run: /entrypoint.sh
+          options: -v ${{ github.workspace }}:/lnav --platform ${{ matrix.container-platform }}
+          run: >-
+            ./autogen.sh
+            mkdir lbuild && cd lbuild &&
+            ../configure --enable-release &&
+            make -j$(nproc)
       - name: Build musl package
         if: ${{ inputs.lnav_version_number != '' }}
         run: >-
@@ -171,7 +179,7 @@ jobs:
             'CFLAGS=-O2 -g2' \
             "LDFLAGS=-L$(brew --prefix ncurses)/lib -L$(brew --prefix xz)/lib -L$(brew --prefix zstd)/lib/ -L$(brew --prefix lz4)/lib/ -L$(brew --prefix libunistring)/lib" \
             --with-libarchive=$(brew --prefix libarchive) \
-            "LIBS=-llzma -lzstd -liconv -llz4 -lbz2 -lz -lpcre2-8"
+            "LIBS= -lzstd -liconv -lbz2 -lz -lpcre2-8"
       - name: make
         run: make -j2
       - name: Build macos package

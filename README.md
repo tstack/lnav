@@ -197,6 +197,16 @@ $ make
 $ sudo make install
 ```
 
+#### Build Using Docker
+
+To build lnav from your local source without installing all dependencies locally, use our Docker build environment by running:
+
+```console
+$ ./docker-run.sh ./autogen.sh
+$ ./docker-run.sh ./configure
+$ ./docker-run.sh make -j4
+```
+
 ## See Also
 
 [Angle-grinder](https://github.com/rcoh/angle-grinder) is a tool to slice and dice log files on the command-line.
