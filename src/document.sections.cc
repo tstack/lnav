@@ -246,25 +246,25 @@ static void
 discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
 {
     const auto& orig_attrs = al.get_attrs();
-    auto headers = orig_attrs
-        | lnav::itertools::filter_in([](const string_attr& attr) {
-                       if (attr.sa_type != &VC_ROLE) {
-                           return false;
-                       }
+    auto headers
+        = orig_attrs | lnav::itertools::filter_in([](const string_attr& attr) {
+              if (attr.sa_type != &VC_ROLE || !attr.sa_range.is_valid()) {
+                  return false;
+              }
 
-                       const auto role = attr.sa_value.get<role_t>();
-                       switch (role) {
-                           case role_t::VCR_H1:
-                           case role_t::VCR_H2:
-                           case role_t::VCR_H3:
-                           case role_t::VCR_H4:
-                           case role_t::VCR_H5:
-                           case role_t::VCR_H6:
-                               return true;
-                           default:
-                               return false;
-                       }
-                   })
+              const auto role = attr.sa_value.get<role_t>();
+              switch (role) {
+                  case role_t::VCR_H1:
+                  case role_t::VCR_H2:
+                  case role_t::VCR_H3:
+                  case role_t::VCR_H4:
+                  case role_t::VCR_H5:
+                  case role_t::VCR_H6:
+                      return true;
+                  default:
+                      return false;
+              }
+          })
         | lnav::itertools::sort_by(&string_attr::sa_range);
 
     // Remove headers from quoted text
@@ -326,7 +326,6 @@ discover_metadata_int(const attr_line_t& al, metadata_builder& mb)
             auto* parent_node = new_open_intervals.empty()
                 ? root_node.get()
                 : new_open_intervals.back().oi_node.get();
-            auto sf = string_fragment::from_str(al.get_string());
             auto left_sf = sf.find_left_boundary(hdr_attr.sa_range.lr_start,
                                                  string_fragment::tag1{'\n'});
             new_open_intervals.emplace_back(

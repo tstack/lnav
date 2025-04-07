@@ -448,23 +448,29 @@ scrub_ansi_string(std::string& str, string_attrs_t* sa)
 
                 if (has_attrs) {
                     for (auto tmp_sa_curr = tmp_sa_open;
-                        tmp_sa_curr < tmp_sa.size();
-                        tmp_sa_curr++) {
+                         tmp_sa_curr < tmp_sa.size();
+                         tmp_sa_curr++)
+                    {
                         auto& sa = tmp_sa[tmp_sa_curr];
                         if (sa.sa_range.lr_end != -1) {
                             continue;
                         }
                         sa.sa_range.lr_end = cp_dst;
+                        if (sa.sa_range.empty()) {
+                            sa.sa_type = &SA_INVALID;
+                        }
                     }
-                    lr.lr_start = cp_dst;
-                    lr.lr_end = -1;
-                    tmp_sa_open = tmp_sa.size();
-                    if (!attrs.empty()) {
-                        tmp_sa.emplace_back(lr, VC_STYLE.value(attrs));
+                    if (sf.sf_end < str.size()) {
+                        lr.lr_start = cp_dst;
+                        lr.lr_end = -1;
+                        tmp_sa_open = tmp_sa.size();
+                        if (!attrs.empty()) {
+                            tmp_sa.emplace_back(lr, VC_STYLE.value(attrs));
+                        }
+                        role | [&lr, &tmp_sa](role_t r) {
+                            tmp_sa.emplace_back(lr, VC_ROLE.value(r));
+                        };
                     }
-                    role | [&lr, &tmp_sa](role_t r) {
-                        tmp_sa.emplace_back(lr, VC_ROLE.value(r));
-                    };
                 }
                 if (cp_dst > 0) {
                     tmp_sa.emplace_back(

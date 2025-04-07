@@ -49,6 +49,16 @@ main(int argc, char* argv[])
     printf("BEGIN test\n");
 
     {
+        auto input = std::string("\x1b[66O\x1b[66O");
+        string_attrs_t sa;
+        scrub_ansi_string(input, &sa);
+
+        assert(input.empty());
+        assert(sa.size() == 1);
+        assert(sa[0].sa_type == &SA_INVALID);
+    }
+
+    {
         std::string zero_width = "\x16 1 \x16 2 \x16";
         string_attrs_t sa;
 
