@@ -116,7 +116,7 @@ write_progress(size_t row, size_t total)
     }
     lnav_data.ld_bottom_source.update_loading(row, total, "Writing");
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-    return lnav_data.ld_status_refresher();
+    return lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
 }
 
 static void
@@ -816,7 +816,7 @@ com_save_to(exec_context& ec,
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-    lnav_data.ld_status_refresher();
+    lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
 
     return Ok(retval);
 }

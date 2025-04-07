@@ -88,7 +88,7 @@ sql_progress(const log_cursor& lc)
             lnav_data.ld_bottom_source.update_loading(off, total);
             lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
         }
-        lnav_data.ld_status_refresher();
+        lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
     }
 
     return 0;
@@ -109,7 +109,7 @@ sql_progress_finished()
 
     lnav_data.ld_bottom_source.update_loading(0, 0);
     lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-    lnav_data.ld_status_refresher();
+    lnav_data.ld_status_refresher(lnav::func::op_type::blocking);
     lnav_data.ld_views[LNV_DB].redo_search();
 }
 

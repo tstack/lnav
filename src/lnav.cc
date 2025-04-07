@@ -968,8 +968,9 @@ struct refresh_status_bars {
     using injectable
         = refresh_status_bars(std::shared_ptr<top_status_source> top_source);
 
-    lnav::progress_result_t doit() const
+    lnav::progress_result_t doit(lnav::func::op_type ot) const
     {
+        static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
         static auto& prompt = lnav::prompt::get();
         static const auto cancel_msg
             = lnav::console::user_message::info(
@@ -1012,9 +1013,10 @@ struct refresh_status_bars {
             }
         }
 
-        if (lnav_data.ld_bottom_source
-                .get_field(bottom_status_source::BSF_LOADING)
-                .empty())
+        if (ot == lnav::func::op_type::interactive) {
+        } else if (lnav_data.ld_bottom_source
+                       .get_field(bottom_status_source::BSF_LOADING)
+                       .empty())
         {
             prompt.p_editor.clear_inactive_value();
         } else if (prompt.p_editor.tc_inactive_value.al_string
@@ -1030,6 +1032,7 @@ struct refresh_status_bars {
         for (auto& sc : lnav_data.ld_status) {
             sc.do_update();
         }
+        breadcrumb_view->do_update();
         lnav::prompt::get().p_editor.do_update();
         if (handle_winch(this->rsb_screen)) {
             layout_views();
@@ -1730,7 +1733,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
     refresher->rsb_screen = &sc;
 
     auto refresh_guard = lnav_data.ld_status_refresher.install(
-        [refresher]() { return refresher->doit(); });
+        [refresher](lnav::func::op_type ot) { return refresher->doit(ot); });
 
     {
         auto* tss = static_cast<timeline_source*>(
@@ -1744,7 +1747,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
                       lnav_data.ld_bottom_source.update_loading(0, 0);
                   }
                   lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
-                  return refresher->doit();
+                  return refresher->doit(lnav::func::op_type::blocking);
               };
     }
 

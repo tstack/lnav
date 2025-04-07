@@ -645,6 +645,9 @@ build_all_help_text()
 bool
 handle_winch(screen_curses* sc)
 {
+    static auto* breadcrumb_view = injector::get<breadcrumb_curses*>();
+    static auto& prompt = lnav::prompt::get();
+
     if (!lnav_data.ld_winched) {
         return false;
     }
@@ -660,6 +663,8 @@ handle_winch(screen_curses* sc)
     for (auto& stat : lnav_data.ld_status) {
         stat.window_change();
     }
+    breadcrumb_view->set_needs_update();
+    prompt.p_editor.set_needs_update();
     lnav_data.ld_view_stack.set_needs_update();
     lnav_data.ld_doc_view.set_needs_update();
     lnav_data.ld_example_view.set_needs_update();

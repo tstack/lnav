@@ -1144,7 +1144,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         li.li_file_range.next_offset()),
                     st.st_size);
 
-                if (indexing_res == logfile_observer::indexing_result::BREAK) {
+                if (indexing_res == lnav::progress_result_t::interrupt) {
                     break;
                 }
             }
@@ -1479,7 +1479,7 @@ logfile::reobserve_from(iterator iter)
         if (this->lf_logfile_observer != nullptr) {
             auto indexing_res = this->lf_logfile_observer->logfile_indexing(
                 this, offset, this->size());
-            if (indexing_res == logfile_observer::indexing_result::BREAK) {
+            if (indexing_res == lnav::progress_result_t::interrupt) {
                 break;
             }
         }

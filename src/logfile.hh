@@ -46,6 +46,7 @@
 
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/lnav_log.hh"
+#include "base/progress.hh"
 #include "base/result.h"
 #include "bookmarks.hh"
 #include "byte_array.hh"
@@ -67,20 +68,15 @@ class logfile_observer {
 public:
     virtual ~logfile_observer() = default;
 
-    enum class indexing_result {
-        CONTINUE,
-        BREAK,
-    };
-
     /**
      * @param lf The logfile object that is doing the indexing.
      * @param off The current offset in the file being processed.
      * @param total The total size of the file.
      * @return false
      */
-    virtual indexing_result logfile_indexing(const logfile* lf,
-                                             file_off_t off,
-                                             file_ssize_t total)
+    virtual lnav::progress_result_t logfile_indexing(const logfile* lf,
+                                                     file_off_t off,
+                                                     file_ssize_t total)
         = 0;
 };
 
