@@ -6986,6 +6986,11 @@
                     "command": ":goto last 20 minutes after the hour",
                     "alt-msg": ""
                 },
+                "x42": {
+                    "id": "",
+                    "command": ";UPDATE lnav_top_view SET selection = CASE WHEN name = 'log' AND log_msg_line() != selection THEN log_msg_line() ELSE max(0, selection - inner_height / 10) END",
+                    "alt-msg": ""
+                },
                 "x45": {
                     "id": "",
                     "command": ":prev-mark error",

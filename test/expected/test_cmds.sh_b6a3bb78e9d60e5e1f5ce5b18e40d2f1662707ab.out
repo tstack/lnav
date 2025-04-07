@@ -223,41 +223,42 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
 [1m SPACE/PgDn  Move down a page.                                 [0m
 [1m CTRL+d      Move down by half a page.                         [0m
  b/PgUp      Move up a page.                                   
- CTRL+u      Move up by half a page.                           
+ B           Move to the first line of a log message.          
+[1m CTRL+u      Move up by half a page.                           [0m
 [1m j/↓         Move down a line.                                 [0m
-[1m k/↑         Move up a line.                                   [0m
+ k/↑         Move up a line.                                   
  h/←         Move to the left. In the log view, moving left    
              will reveal the source log file names for each    
              line. Pressing again will reveal the full path.   
- l/→         Move to the right.                                
+[1m l/→         Move to the right.                                [0m
 [1m H/Shift ←   Move to the left by a smaller increment.          [0m
-[1m L/Shift →   Move to the right by a smaller increment.         [0m
+ L/Shift →   Move to the right by a smaller increment.         
  e/E         Move to the next/previous error.                  
- w/W         Move to the next/previous warning.                
+[1m w/W         Move to the next/previous warning.                [0m
 [1m n/N         Move to the next/previous search hit. When pressed[0m
 [1m             repeatedly within a short time, the view will move[0m
 [1m             at least a full page at a time instead of moving  [0m
 [1m             to the next hit.                                  [0m
-[1m f/F         Move to the next/previous file. In the log view,  [0m
-[1m             this moves to the next line from a different file.[0m
-[1m             In the text view, this rotates the view to the    [0m
-[1m             next file.                                        [0m
+ f/F         Move to the next/previous file. In the log view,  
+             this moves to the next line from a different file.
+             In the text view, this rotates the view to the    
+             next file.                                        
  >/<         Move horizontally to the next/previous search hit.
- o/O         Move forward/backward to the log message with a   
-             matching 'operation ID' (opid) field.             
+[1m o/O         Move forward/backward to the log message with a   [0m
+[1m             matching 'operation ID' (opid) field.             [0m
 [1m u/U         Move forward/backward through any user bookmarks  [0m
 [1m             you have added using the 'm' key. This hotkey will[0m
 [1m             also jump to the start of any log partitions that [0m
 [1m             have been created with the 'partition-name'       [0m
 [1m             command.                                          [0m
-[1m s/S         Move to the next/previous "slow down" in the log  [0m
-[1m             message rate. A slow down is detected by measuring[0m
-[1m             how quickly the message rate has changed over the [0m
-[1m             previous several messages. For example, if one    [0m
-[1m             message is logged every second for five seconds   [0m
-[1m             and then the last message arrives five seconds    [0m
-[1m             later, the last message will be highlighted as a  [0m
-[1m             slow down.                                        [0m
+ s/S         Move to the next/previous "slow down" in the log  
+             message rate. A slow down is detected by measuring
+             how quickly the message rate has changed over the 
+             previous several messages. For example, if one    
+             message is logged every second for five seconds   
+             and then the last message arrives five seconds    
+             later, the last message will be highlighted as a  
+             slow down.                                        
  {/}         Move to the previous/next section in the view.  In
              the LOG view, this moves through partitions.  In  
              other views, it moves through sections of         

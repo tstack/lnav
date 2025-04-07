@@ -64,6 +64,9 @@
                 "x5e": {
                     "command": ":goto last hour"
                 },
+                "x42": {
+                    "command": ";UPDATE lnav_top_view SET selection = CASE WHEN name = 'log' AND log_msg_line() != selection THEN log_msg_line() ELSE max(0, selection - inner_height / 10) END"
+                },
                 "x06": {
                     "command": ";UPDATE lnav_view_filters SET enabled = 1 - enabled WHERE view_name = (SELECT name FROM lnav_view_stack WHERE name in ('log', 'text') ORDER BY rowid DESC LIMIT 1)"
                 },

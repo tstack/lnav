@@ -49,6 +49,11 @@ The majority of these hotkeys should be available in all views.
      - :kbd:`Backspace`
      - :kbd:`PgUp`
      - Up a page
+   * - :kbd:`Shift` + :kbd:`b`
+     -
+     -
+     - Move to the first line of a multi-line log message.  If the currently
+       focused line is the first, move up by a tenth of the content height.
    * - :kbd:`Ctrl` + :kbd:`u`
      -
      -

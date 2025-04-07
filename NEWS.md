@@ -44,6 +44,9 @@ Interface changes:
   errors/warnings/marks.
 * In table cells, control characters are replaced with Unicode
   symbols and highlighted with the 'hidden' style from the theme.
+* The `Shift` + `B` hotkey will now jump to the start of a log
+  message in the LOG view if the currently focused line is in the
+  middle of a multi-line log message.
 
 Features:
 * The `:comment` command will now switch the prompt to multi-line
