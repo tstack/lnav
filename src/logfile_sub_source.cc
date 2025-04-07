@@ -3295,7 +3295,11 @@ logfile_sub_source::row_for(const row_info& ri)
             if (ll->get_timeval() != ri.ri_time) {
                 break;
             }
-            ++lb;
+            auto next_lb = std::next(lb);
+            if (next_lb == this->lss_filtered_index.end()) {
+                break;
+            }
+            lb = next_lb;
         }
 
         const auto dst
