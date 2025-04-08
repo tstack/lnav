@@ -47,6 +47,9 @@ Interface changes:
 * The `Shift` + `B` hotkey will now jump to the start of a log
   message in the LOG view if the currently focused line is in the
   middle of a multi-line log message.
+* When the `:hide-unmarked-lines` command is used in the LOG
+  view, if any line in a message is marked, the entire message
+  will be shown.
 
 Features:
 * The `:comment` command will now switch the prompt to multi-line

@@ -369,6 +369,7 @@ textinput_curses::handle_mouse(mouse_event& me)
             } else {
                 this->ensure_cursor_visible();
             }
+            this->set_needs_update();
         }
     } else if (me.me_button == mouse_button_t::BUTTON_SCROLL_DOWN) {
         auto dim = this->get_visible_dimensions();
@@ -379,6 +380,7 @@ textinput_curses::handle_mouse(mouse_event& me)
             } else {
                 this->ensure_cursor_visible();
             }
+            this->set_needs_update();
         }
     } else if (me.me_button == mouse_button_t::BUTTON_RIGHT) {
         if (this->tc_selection) {

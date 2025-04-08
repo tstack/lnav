@@ -56,6 +56,13 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
+    -c ":goto 1" \
+    -c ":mark" \
+    -c ":hide-unmarked-lines" \
+    -c ":goto 0" \
+    ${test_dir}/logfile_multiline.0
+
+run_cap_test ${lnav_test} -n \
     -c ":unix-time" \
     "${test_dir}/logfile_access_log.*"
 

@@ -2053,8 +2053,27 @@ logfile_sub_source::eval_sql_filter(sqlite3_stmt* stmt,
 bool
 logfile_sub_source::check_extra_filters(iterator ld, logfile::iterator ll)
 {
-    if (this->lss_marked_only && !(ll->is_marked() || ll->is_expr_marked())) {
-        return false;
+    if (this->lss_marked_only) {
+        auto found_mark = ll->is_marked() || ll->is_expr_marked();
+        auto to_start_ll = ll;
+        while (!found_mark && to_start_ll->is_continued()) {
+            if (to_start_ll->is_marked() || to_start_ll->is_expr_marked()) {
+                found_mark = true;
+            }
+            --to_start_ll;
+        }
+        auto to_end_ll = std::next(ll);
+        while (!found_mark && to_end_ll != (*ld)->get_file_ptr()->end()
+               && to_end_ll->is_continued())
+        {
+            if (to_end_ll->is_marked() || to_end_ll->is_expr_marked()) {
+                found_mark = true;
+            }
+            ++to_end_ll;
+        }
+        if (!found_mark) {
+            return false;
+        }
     }
 
     if (ll->get_msg_level() < this->lss_min_log_level) {
@@ -2444,7 +2463,12 @@ logline_window::begin()
         return this->end();
     }
 
-    return {this->lw_source, this->lw_start_line};
+    auto retval = iterator{this->lw_source, this->lw_start_line};
+    while (!retval->is_valid() && retval != this->end()) {
+        ++retval;
+    }
+
+    return retval;
 }
 
 logline_window::iterator
@@ -2468,15 +2492,14 @@ logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
     if (this->li_line < vis_line_t(this->li_source.text_line_count())) {
         while (true) {
             auto pair_opt = this->li_source.find_line_with_file(vl);
-
             if (!pair_opt) {
                 break;
             }
 
-            auto line_pair = pair_opt.value();
-            if (line_pair.second->is_message()) {
-                this->li_file = line_pair.first.get();
-                this->li_logline = line_pair.second;
+            auto& [lf, ll] = pair_opt.value();
+            if (ll->is_message()) {
+                this->li_file = lf.get();
+                this->li_logline = ll;
                 this->li_line_number
                     = std::distance(this->li_file->begin(), this->li_logline);
                 break;
@@ -2484,6 +2507,12 @@ logline_window::logmsg_info::logmsg_info(logfile_sub_source& lss, vis_line_t vl)
             --vl;
         }
     }
+}
+
+bool
+logline_window::logmsg_info::is_valid() const
+{
+    return this->li_file != nullptr;
 }
 
 void
@@ -2508,9 +2537,8 @@ logline_window::logmsg_info::next_msg()
             this->li_line_number
                 = std::distance(this->li_file->begin(), this->li_logline);
             break;
-        } else {
-            ++this->li_line;
         }
+        ++this->li_line;
     }
 }
 

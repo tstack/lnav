@@ -180,10 +180,12 @@ public:
     private:
         friend iterator;
         friend metadata_edit_guard;
+        friend logline_window;
 
         void next_msg();
         void prev_msg();
         void load_msg() const;
+        bool is_valid() const;
 
         logfile_sub_source& li_source;
         vis_line_t li_line;
@@ -425,7 +427,7 @@ public:
 
     logfile* find_file_ptr(content_line_t& line) const
     {
-        auto retval
+        auto* retval
             = this->lss_files[line / MAX_LINES_PER_FILE]->get_file_ptr();
         line = content_line_t(line % MAX_LINES_PER_FILE);
 
@@ -463,18 +465,18 @@ public:
     std::optional<std::pair<std::shared_ptr<logfile>, logfile::iterator>>
     find_line_with_file(vis_line_t vl) const
     {
-        if (vl >= 0_vl && vl <= vis_line_t(this->lss_filtered_index.size())) {
+        if (vl >= 0_vl && vl < vis_line_t(this->lss_filtered_index.size())) {
             return this->find_line_with_file(this->at(vl));
         }
 
         return std::nullopt;
     }
 
-    std::optional<vis_line_t> find_from_time(const struct timeval& start) const;
+    std::optional<vis_line_t> find_from_time(const timeval& start) const;
 
     std::optional<vis_line_t> find_from_time(time_t start) const
     {
-        struct timeval tv = {start, 0};
+        const auto tv = timeval{start, 0};
 
         return this->find_from_time(tv);
     }
@@ -512,7 +514,9 @@ public:
 
     content_line_t at_base(vis_line_t vl)
     {
-        while (this->find_line(this->at(vl))->get_sub_offset() != 0) {
+        while (vl > 0_vl
+               && this->find_line(this->at(vl))->get_sub_offset() != 0)
+        {
             --vl;
         }
 
@@ -744,7 +748,7 @@ public:
 
     std::optional<json_string> text_row_details(const textview_curses& tc);
 
-    void reload_config(error_reporter &reporter);
+    void reload_config(error_reporter& reporter);
 
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }

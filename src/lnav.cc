@@ -316,19 +316,21 @@ setup_logline_table(exec_context& ec)
     bool retval = false;
 
     if (log_view.get_inner_height()) {
-        static intern_string_t logline = intern_string::lookup("logline");
+        static const intern_string_t logline = intern_string::lookup("logline");
         auto vl = log_view.get_selection();
         auto cl = lnav_data.ld_log_source.at_base(vl);
-
-        lnav_data.ld_vtab_manager->unregister_vtab(
-            logline.to_string_fragment());
-        lnav_data.ld_vtab_manager->register_vtab(
-            std::make_shared<log_data_table>(lnav_data.ld_log_source,
-                                             *lnav_data.ld_vtab_manager,
-                                             cl,
-                                             logline));
-
-        retval = true;
+        auto file_and_line_opt
+            = lnav_data.ld_log_source.find_line_with_file(cl);
+        if (file_and_line_opt && file_and_line_opt->second->is_message()) {
+            lnav_data.ld_vtab_manager->unregister_vtab(
+                logline.to_string_fragment());
+            lnav_data.ld_vtab_manager->register_vtab(
+                std::make_shared<log_data_table>(lnav_data.ld_log_source,
+                                                 *lnav_data.ld_vtab_manager,
+                                                 cl,
+                                                 logline));
+            retval = true;
+        }
     }
 
     auto& db_key_names = lnav_data.ld_db_key_names;

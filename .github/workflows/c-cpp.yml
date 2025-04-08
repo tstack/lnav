@@ -101,7 +101,7 @@ jobs:
           path: src/lnav
 
   build-windows:
-    runs-on: self-hosted
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:

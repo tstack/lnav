@@ -384,26 +384,46 @@ open_pretty_view()
 
         for (auto vl = log_tc->get_top(); vl <= log_tc->get_bottom(); ++vl) {
             auto cl = lss.at(vl);
-            auto lf = lss.find(cl);
+            auto lf = lss.find_file_ptr(cl);
             auto ll = lf->begin() + cl;
-            shared_buffer_ref sbr;
 
             if (line_count > 0_vl && !ll->is_message()) {
                 continue;
             }
-            auto ll_start = lf->message_start(ll);
-            attr_line_t al;
-
             if (vl == log_tc->get_selection()) {
                 pretty_selected_line = line_count;
             }
+            auto flags = text_sub_source::RF_FULL | text_sub_source::RF_REWRITE;
+            if (line_count == 0_vl) {
+                auto ll_start = lf->message_start(ll);
 
-            vl -= vis_line_t(std::distance(ll_start, ll));
-            lss.text_value_for_line(
-                *log_tc,
-                vl,
-                al.get_string(),
-                text_sub_source::RF_FULL | text_sub_source::RF_REWRITE);
+                while (ll_start != ll) {
+                    if (vl <= 0_vl) {
+                        flags = 0;
+                        break;
+                    }
+                    vl -= 1_vl;
+                    auto prev_cl = lss.at(vl);
+                    auto prev_lf = lss.find_file_ptr(prev_cl);
+                    auto prev_ll = lf->begin() + prev_cl;
+                    if (prev_lf != lf) {
+                        flags = 0;
+                        break;
+                    }
+                    if (prev_ll->is_message()) {
+                        flags = 0;
+                        break;
+                    }
+                    if (prev_ll == ll_start) {
+                        flags = 0;
+                        break;
+                    }
+                }
+            } else if (ll->is_continued()) {
+                flags = 0;
+            }
+            attr_line_t al;
+            lss.text_value_for_line(*log_tc, vl, al.get_string(), flags);
             lss.text_attrs_for_line(*log_tc, vl, al.get_attrs());
             {
                 const auto orig_lr
@@ -557,11 +577,11 @@ open_pretty_view()
     pts->replace_with_mutable(full_text,
                               top_tc->get_sub_source()->get_text_format());
     pretty_tc->set_sub_source(pts);
-    if (lnav_data.ld_last_pretty_print_top != log_tc->get_top()) {
+    if (lnav_data.ld_last_pretty_print_top != top_tc->get_top()) {
         pretty_tc->set_top(0_vl);
     }
     pretty_tc->set_selection(pretty_selected_line.value_or(0_vl));
-    lnav_data.ld_last_pretty_print_top = log_tc->get_top();
+    lnav_data.ld_last_pretty_print_top = top_tc->get_top();
     pretty_tc->redo_search();
 }
 
