@@ -147,10 +147,10 @@ jobs:
           export PREFIX=$PWD/lnav
           touch config.log
           # Corrected CPPFLAGS with proper source directory paths
-          $GITHUB_WORKSPACE/configure \
+          ../lnav/configure \
                       --enable-static \
                       LDFLAGS="-static" \
-                      CPPFLAGS="-I$GITHUB_WORKSPACE/src -I$GITHUB_WORKSPACE/src/fmtlib -O2 -DNCURSES_STATIC" \
+                      CPPFLAGS="-O2" \
                       CXXFLAGS="-fPIC" \
                       CFLAGS="-fPIC" \
                       LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
