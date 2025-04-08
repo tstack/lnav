@@ -252,7 +252,7 @@ jobs:
           ./autogen.sh
           mkdir -p ../lnav-build 
           cd ../lnav-build
-          export PREFIX=$PWD/lnav
+          export PREFIX=$PWD/${{ env.LNAV_BASENAME }}
           touch config.log
           # Corrected CPPFLAGS with proper source directory paths
           ../lnav/configure \
@@ -291,7 +291,7 @@ jobs:
         run: |
           set -x
           cd ../lnav-build
-          export PREFIX=$PWD/lnav
+          export PREFIX=$PWD/${{ env.LNAV_BASENAME }}
           $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
       - name: "⬆️ Upload a Build Artifact"
         uses: actions/upload-artifact@v4
