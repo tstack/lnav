@@ -150,7 +150,7 @@ jobs:
           ../lnav/configure \
                       --enable-static \
                       LDFLAGS="-static" \
-                      CPPFLAGS="-O2" \
+                      CPPFLAGS="-O2 -DNCURSES_STATIC" \
                       CXXFLAGS="-fPIC" \
                       CFLAGS="-fPIC" \
                       LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
