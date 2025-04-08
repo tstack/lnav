@@ -203,3 +203,109 @@ jobs:
           asset_path: ${{ env.LNAV_ZIPNAME }}
           asset_name: ${{ env.LNAV_ZIPNAME }}
           asset_content_type: application/octet-stream
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { icon: "🟦", sys: MSYS, arch: x86_64 }
+          - { icon: "🟦", sys: MSYS, arch: arm64 }
+    name: ${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.arch }}
+    env:
+      LNAV_BASENAME: lnav-${{ inputs.lnav_version_number }}
+      LNAV_ZIPNAME: lnav-${{ inputs.lnav_version_number }}-windows-${{ matrix.arch }}.zip
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: "🧰 Checkout"
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: "${{ matrix.icon }} Setup MSYS2"
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.sys}}
+          update: true
+          install: >-
+            autoconf
+            automake
+            gcc
+            git
+            make
+            zip
+            msys/libarchive-devel
+            msys/libbz2-devel
+            msys/libcurl-devel
+            msys/libidn2-devel
+            msys/liblzma-devel
+            msys/libsqlite-devel
+            msys/libunistring-devel
+            msys/ncurses-devel
+            msys/pcre2-devel
+            msys/zlib-devel
+      - name: "🔧 Generate and configure"
+        run: |
+          set -x
+          ./autogen.sh
+          mkdir -p ../lnav-build 
+          cd ../lnav-build
+          export PREFIX=$PWD/lnav
+          touch config.log
+          # Corrected CPPFLAGS with proper source directory paths
+          ../lnav/configure \
+                      --enable-static \
+                      LDFLAGS="-static" \
+                      CPPFLAGS="-O2 -DNCURSES_STATIC" \
+                      CXXFLAGS="-fPIC" \
+                      CFLAGS="-fPIC" \
+                      LIBS="-larchive -lssh2 -llzma -llz4 -lz -lzstd -lssl -lcrypto -liconv -lunistring -lbrotlicommon -lcrypt32" \
+                      --sysconfdir=/etc \
+                      --prefix=$PREFIX || cat config.log
+      - name: "🚧 Make (do not use -j)"
+        run: |
+          set -x
+          pwd
+          ls -la
+          cd ../lnav-build
+          pwd
+          ls -la
+          ls -l Makefile
+          make CFLAGS="-c"
+          strip -s src/lnav.exe
+      - name: "📦 Package for distribution"
+        run: |
+          set -x
+          cd ../lnav-build
+          export PREFIX=$PWD/${{ env.LNAV_BASENAME }}
+          mkdir -p $PREFIX
+          make install
+          ldd $PREFIX/bin/lnav.exe | grep /usr | cut -d' ' -f3 | xargs -I {} cp {} $PREFIX/bin/
+          mkdir -p $PREFIX/lib/terminfo/78
+          cp -r /usr/lib/terminfo/78/xterm-256color $PREFIX/lib/terminfo/78/
+          cp ../lnav/README ../lnav/NEWS.md .
+          zip -r ../lnav/${{ env.LNAV_ZIPNAME }} ${{ env.LNAV_BASENAME }}
+      - name: "💉 Basic test"
+        run: |
+          set -x
+          cd ../lnav-build
+          export PREFIX=$PWD/lnav
+          $PREFIX/bin/lnav.exe -n ../lnav/test/logfile_multiline.0
+      - name: "⬆️ Upload a Build Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: lnav-windows-${{ matrix.arch }}.zip
+          path: ${{ env.LNAV_ZIPNAME }}
+          if-no-files-found: error
+      - name: Upload windows archive
+        uses: actions/upload-release-asset@v1.0.2
+        if: ${{ inputs.upload_url != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ${{ env.LNAV_ZIPNAME }}
+          asset_name: ${{ env.LNAV_ZIPNAME }}
+          asset_content_type: application/octet-stream
