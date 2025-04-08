@@ -804,7 +804,7 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     // Only invalidate the meta if the file is small, or we
                     // found some meta previously.
                     if ((st.st_mtime != iter->fvs_mtime
-                         || st.st_size != iter->fvs_file_size)
+                         || lf->get_index_size() != iter->fvs_file_size)
                         && (st.st_size < 10 * 1024 || iter->fvs_file_size == 0
                             || !iter->fvs_metadata.m_sections_tree.empty()))
                     {
