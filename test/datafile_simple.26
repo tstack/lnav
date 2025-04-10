@@ -1,20 +1,25 @@
-             a=1 b=2 """
- key   0:1   ^            a
- num   2:3     ^          1
- val   2:3     ^          1
-pair   0:3   ^-^          a=1
- key   4:5       ^        b
- num   6:7         ^      2
- val   6:7         ^      2
-pair   4:7       ^-^      b=2
- key   9:9           ^    
-quot   9:11           ^^  ""
- val   9:11           ^^  ""
-pair   9:11           ^^  ""
-msg         :a=1 b=2 """
-format      :a=# b=# #
+             a=1 b=2 c=#foo-bar """
+ key   0:1   ^                       a
+ num   2:3     ^                     1
+ val   2:3     ^                     1
+pair   0:3   ^-^                     a=1
+ key   4:5       ^                   b
+ num   6:7         ^                 2
+ val   6:7         ^                 2
+pair   4:7       ^-^                 b=2
+ key   8:9           ^               c
+anch  10:18            ^------^      #foo-bar
+ val  10:18            ^------^      #foo-bar
+pair   8:18          ^--------^      c=#foo-bar
+ key  20:20                     ^    
+quot  20:22                      ^^  ""
+ val  20:22                      ^^  ""
+pair  20:22                      ^^  ""
+msg         :a=1 b=2 c=#foo-bar """
+format      :a=# b=# c=# #
 {
     "a": 1,
     "b": 2,
+    "c": "#foo-bar",
     "col_0": "\"\""
 }

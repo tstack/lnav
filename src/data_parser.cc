@@ -148,6 +148,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                             case DT_WHITE:
                                 break;
                             case DT_ID:
+                            case DT_ANCHOR:
                             case DT_QUOTED_STRING:
                             case DT_URL:
                             case DT_PATH:
@@ -482,6 +483,7 @@ data_parser::pairup(data_parser::schema_id_t* schema,
                 case DT_XML_EMPTY_TAG:
                 case DT_UUID:
                 case DT_URL:
+                case DT_ANCHOR:
                 case DT_PATH:
                 case DT_DATE:
                 case DT_TIME:
@@ -731,6 +733,7 @@ data_parser::end_of_value(data_parser::element_list_t& el_stack,
                     case DT_QUOTED_STRING:
                     case DT_URL:
                     case DT_PATH:
+                    case DT_ANCHOR:
                     case DT_MAC_ADDRESS:
                     case DT_DATE:
                     case DT_TIME:
@@ -996,6 +999,7 @@ dfs_prefix_next(data_format_state_t state, data_token_t next_token)
                 case DT_LANGLE:
                 case DT_RANGLE:
                 case DT_EMPTY_CONTAINER:
+                case DT_ANCHOR:
                     break;
 
                 default:
@@ -1341,6 +1345,7 @@ data_parser::element::is_value() const
         case DT_HEX_NUMBER:
         case DT_EMAIL:
         case DT_CONSTANT:
+        case DT_ANCHOR:
             return true;
         default:
             return false;
