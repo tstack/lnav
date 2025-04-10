@@ -443,7 +443,9 @@ logline_value::to_string() const
                                 == value_kind_t::VALUE_W3C_QUOTED
                             ? unquote_w3c
                             : unquote;
-                        char unquoted_str[this->lv_frag.length()];
+                        stack_buf allocator;
+                        auto* unquoted_str
+                            = allocator.allocate(this->lv_frag.length());
                         size_t unquoted_len;
 
                         unquoted_len = unquote_func(unquoted_str,
@@ -516,8 +518,10 @@ logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
                         auto unquote_func = this->lv_meta.lvm_kind
                                 == value_kind_t::VALUE_W3C_QUOTED
                             ? unquote_w3c
-                            : unquote;
-                        char unquoted_str[this->lv_frag.length()];
+                        : unquote;
+                        stack_buf allocator;
+                        auto* unquoted_str
+                            = allocator.allocate(this->lv_frag.length());
                         size_t unquoted_len;
 
                         unquoted_len = unquote_func(unquoted_str,
@@ -928,12 +932,31 @@ struct json_log_userdata {
         yajlpp_parse_context* ypc)
     {
         const auto field_frag = ypc->get_path_as_string_fragment();
-        auto vd_iter
-            = this->jlu_format->elf_value_def_frag_map.find(field_frag);
+        auto* format = this->jlu_format;
 
-        if (vd_iter != this->jlu_format->elf_value_def_frag_map.end()) {
+        if (this->jlu_read_order_index < format->elf_value_def_read_order.size()
+            && format->elf_value_def_read_order[this->jlu_read_order_index]
+                    .first
+                == field_frag)
+        {
+            return format
+                ->elf_value_def_read_order[this->jlu_read_order_index++]
+                .second;
+        }
+
+        format->elf_value_def_read_order.resize(this->jlu_read_order_index);
+        auto vd_iter = format->elf_value_def_frag_map.find(field_frag);
+        if (vd_iter != format->elf_value_def_frag_map.end()) {
+            format->elf_value_def_read_order.emplace_back(vd_iter->first,
+                                                          vd_iter->second);
+            this->jlu_read_order_index += 1;
             return vd_iter->second;
         }
+
+        auto owned_frag = field_frag.to_owned(format->elf_allocator);
+        format->elf_value_def_frag_map[owned_frag] = nullptr;
+        format->elf_value_def_read_order.emplace_back(owned_frag, nullptr);
+        this->jlu_read_order_index += 1;
         return nullptr;
     }
 
@@ -970,6 +993,7 @@ struct json_log_userdata {
     std::optional<string_fragment> jlu_opid_frag;
     std::optional<std::string> jlu_subid;
     exttm jlu_exttm;
+    size_t jlu_read_order_index{0};
 };
 
 static int read_json_field(yajlpp_parse_context* ypc,

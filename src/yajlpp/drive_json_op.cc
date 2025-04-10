@@ -55,7 +55,10 @@ handle_start_map(void* ctx)
 }
 
 static int
-handle_map_key(void* ctx, const unsigned char* key, size_t len)
+handle_map_key(void* ctx,
+               const unsigned char* key,
+               size_t len,
+               yajl_string_props_t* props)
 {
     json_op* jo = (json_op*) ctx;
     yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
@@ -110,7 +113,10 @@ handle_number(void* ctx, const char* numberVal, size_t numberLen)
 }
 
 static int
-handle_string(void* ctx, const unsigned char* stringVal, size_t len, yajl_string_props_t*)
+handle_string(void* ctx,
+              const unsigned char* stringVal,
+              size_t len,
+              yajl_string_props_t*)
 {
     json_op* jo = (json_op*) ctx;
     yajl_gen gen = (yajl_gen) jo->jo_ptr_data;

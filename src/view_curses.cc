@@ -29,10 +29,6 @@
  * @file view_curses.cc
  */
 
-#ifdef __CYGWIN__
-#    include <alloca.h>
-#endif
-
 #include <chrono>
 #include <cmath>
 #include <string>

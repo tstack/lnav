@@ -69,6 +69,7 @@ noinst_HEADERS = \
     piper.file.hh \
     progress.hh \
     result.h \
+    short_alloc.h \
     snippet_highlighters.hh \
     string_attr_type.hh \
     string_util.hh \

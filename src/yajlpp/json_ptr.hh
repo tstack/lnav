@@ -42,6 +42,7 @@
 
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
+#include "base/short_alloc.h"
 #include "yajl/api/yajl_parse.h"
 #include "yajl/api/yajl_tree.h"
 
@@ -127,19 +128,9 @@ public:
         ERR_INVALID_INDEX,
     };
 
-    static size_t encode(char* dst,
-                         size_t dst_len,
-                         const char* src,
-                         size_t src_len = -1);
+    static string_fragment encode(string_fragment in, stack_buf& buf);
 
-    static std::string encode_str(const char* src, size_t src_len = -1);
-    static std::string encode_str(const std::string& src)
-    {
-        return encode_str(src.c_str(), src.size());
-    }
-
-    static size_t decode(char* dst, const char* src, ssize_t src_len = -1);
-    static std::string decode(const string_fragment& sf);
+    static string_fragment decode(string_fragment in, stack_buf& buf);
 
     json_ptr(const char* value) : jp_value(value), jp_pos(value) {}
 

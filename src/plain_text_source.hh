@@ -93,7 +93,7 @@ public:
 
     size_t text_line_count() override { return this->tds_lines.size(); }
 
-    bool empty() const { return this->tds_lines.empty(); }
+    bool empty() const override { return this->tds_lines.empty(); }
 
     size_t text_line_width(textview_curses& curses) override;
 

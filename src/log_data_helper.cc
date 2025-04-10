@@ -121,7 +121,9 @@ log_data_helper::parse_line(content_line_t line, bool allow_middle)
             if (ldh_line_value.lv_meta.lvm_column
                     .is<logline_value_meta::external_column>())
             {
-                char buf[ldh_line_value.lv_meta.lvm_name.size() + 2];
+                stack_buf allocator;
+                auto* buf = allocator.allocate(
+                    ldh_line_value.lv_meta.lvm_name.size() + 2);
 
                 auto rc = fmt::format_to(
                     buf, FMT_STRING("/{}"), ldh_line_value.lv_meta.lvm_name);

@@ -84,6 +84,7 @@ yajl_tok yajl_lex_lex(yajl_lexer lexer, const unsigned char * jsonText,
 yajl_tok yajl_lex_peek(yajl_lexer lexer, const unsigned char * jsonText,
                        size_t jsonTextLen, size_t offset);
 
+void yajl_need_key(yajl_lexer lexer, unsigned int val);
 
 typedef enum {
     yajl_lex_e_ok = 0,

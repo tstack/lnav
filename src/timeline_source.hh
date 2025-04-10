@@ -61,6 +61,8 @@ public:
                              statusview_curses& preview_status_view,
                              timeline_status_source& preview_status_source);
 
+    bool empty() const override { return false; }
+
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
 
     bool text_handle_mouse(textview_curses& tc,

@@ -258,6 +258,19 @@ public:
 
     const char* begin() const { return this->ab_buffer; }
 
+    char* data() { return this->ab_buffer; }
+
+    const char* data() const { return this->ab_buffer; }
+
+    char& operator[](size_t index) { return this->ab_buffer[index]; }
+
+    const char& operator[](size_t index) const
+    {
+        return this->ab_buffer[index];
+    }
+
+    char back() const { return this->ab_buffer[this->ab_size - 1]; }
+
     char* next_available() { return &this->ab_buffer[this->ab_size]; }
 
     auto_buffer& push_back(char ch)

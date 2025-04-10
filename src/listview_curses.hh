@@ -71,11 +71,6 @@ public:
                                          vis_line_t row)
         = 0;
 
-    virtual std::string listview_source_name(const listview_curses& lv)
-    {
-        return "";
-    }
-
     virtual bool listview_is_row_selectable(const listview_curses& lv,
                                             vis_line_t row)
     {

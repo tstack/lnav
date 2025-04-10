@@ -334,6 +334,9 @@ public:
     std::vector<std::shared_ptr<value_def>> elf_value_def_order;
     robin_hood::unordered_map<string_fragment, value_def*, frag_hasher>
         elf_value_def_frag_map;
+    std::vector<std::pair<string_fragment, value_def*>>
+        elf_value_def_read_order;
+    ArenaAlloc::Alloc<char> elf_allocator{4096};
     std::vector<std::shared_ptr<value_def>> elf_numeric_value_defs;
     size_t elf_column_count{0};
     double elf_timestamp_divisor{1.0};

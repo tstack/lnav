@@ -303,6 +303,8 @@ public:
 
     ~hist_source2() override = default;
 
+    bool empty() const override { return false; }
+
     void init();
 
     void set_time_slice(std::chrono::microseconds slice)

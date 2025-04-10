@@ -773,7 +773,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
 {
     const std::vector<attr_line_t>* lines = nullptr;
     if (this->fos_lss.text_line_count() == 0) {
-        if (this->fos_tss.text_line_count() == 0) {
+        if (this->fos_tss.empty()) {
             lines = lnav::messages::view::no_files();
         } else {
             lines = lnav::messages::view::only_text_files();

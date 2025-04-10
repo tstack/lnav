@@ -381,8 +381,10 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
             /* only difference between these two states is that in
              * start '}' is valid, whereas in need_key, we've parsed
              * a comma, and a string key _must_ follow */
+            yajl_need_key(hand->lexer, 1);
             tok = yajl_lex_lex(hand->lexer, jsonText, jsonTextLen,
                                offset, &buf, &bufLen, &str_props);
+            yajl_need_key(hand->lexer, 1);
             switch (tok) {
                 case yajl_tok_eof:
                     return yajl_status_ok;
@@ -400,7 +402,7 @@ yajl_do_parse(yajl_handle hand, const unsigned char * jsonText,
                 case yajl_tok_string:
                     if (hand->callbacks && hand->callbacks->yajl_map_key) {
                         _CC_CHK(hand->callbacks->yajl_map_key(hand->ctx, buf,
-                                                              bufLen));
+                                                              bufLen, &str_props));
                     }
                     yajl_bs_set(hand->stateStack, yajl_state_map_sep);
                     goto around_again;

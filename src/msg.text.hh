@@ -39,6 +39,7 @@ namespace lnav::messages::view {
 const std::vector<attr_line_t>* no_files();
 const std::vector<attr_line_t>* only_text_files();
 const std::vector<attr_line_t>* only_log_files();
+const std::vector<attr_line_t>* empty_file();
 
 }  // namespace lnav::messages::view
 

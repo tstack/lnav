@@ -122,6 +122,8 @@ class spectrogram_source
 public:
     ~spectrogram_source() override = default;
 
+    bool empty() const override { return this->ss_details_source == nullptr; }
+
     void invalidate()
     {
         this->ss_cached_bounds.sb_count = 0;

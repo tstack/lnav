@@ -27,12 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <optional>
+
 #include "spectro_impls.hh"
 
 #include "base/itertools.hh"
 #include "lnav.hh"
 #include "logfile_sub_source.hh"
-#include "scn/scan.h"
+#include "textview_curses.hh"
 
 using namespace lnav::roles::literals;
 
@@ -41,6 +43,8 @@ class filtered_sub_source
     , public text_time_translator
     , public list_overlay_source {
 public:
+    bool empty() const override { return this->fss_delegate->empty(); }
+
     size_t text_line_count() override { return this->fss_lines.size(); }
 
     line_info text_value_for_line(textview_curses& tc,

@@ -446,9 +446,10 @@ com_set_file_timezone(exec_context& ec,
                 options_hier->foh_generation += 1;
                 auto& coll = options_hier->foh_path_to_collection["/"];
 
-                log_info("setting timezone for %s to %s",
+                log_info("setting timezone for %s to %s (%s)",
                          pattern.c_str(),
-                         args[1].c_str());
+                         args[1].c_str(),
+                         tz->name().c_str());
                 coll.foc_pattern_to_options[pattern] = lnav::file_options{
                     {intern_string_t{}, source_location{}, tz},
                 };

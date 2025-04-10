@@ -440,6 +440,8 @@ public:
 
     virtual void register_view(textview_curses* tc) { this->tss_view = tc; }
 
+    virtual bool empty() const = 0;
+
     /**
      * @return The total number of lines available from the source.
      */
@@ -521,11 +523,6 @@ public:
      * @param bm The bookmarks data structure used by the text view.
      */
     virtual void text_update_marks(vis_bookmarks& bm) {}
-
-    virtual std::string text_source_name(const textview_curses& tv)
-    {
-        return "";
-    }
 
     filter_stack& get_filters() { return this->tss_filters; }
 
@@ -729,13 +726,6 @@ public:
     size_t listview_size_for_row(const listview_curses& lv, vis_line_t row)
     {
         return this->tc_sub_source->text_size_for_line(*this, row);
-    }
-
-    std::string listview_source_name(const listview_curses& lv)
-    {
-        return this->tc_sub_source == nullptr
-            ? ""
-            : this->tc_sub_source->text_source_name(*this);
     }
 
     std::optional<line_info> grep_value_for_line(vis_line_t line,

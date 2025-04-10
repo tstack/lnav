@@ -7,10 +7,6 @@
 // you can do whatever you want with this stuff.  If we meet some day, and you
 // think this stuff is worth it, you can buy me a beer in return.  Sandro Sigala
 
-#ifdef __CYGWIN__
-#    include <alloca.h>
-#endif
-
 #include <assert.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -219,7 +215,7 @@ main(int argc, char** argv)
     fprintf(cfile, "#include \"bin2c.hh\"\n");
     fprintf(cfile, "\n");
 
-    struct file_meta* meta = alloca(sizeof(struct file_meta) * argc);
+    struct file_meta* meta = malloc(sizeof(struct file_meta) * argc);
 
     memset(meta, 0, sizeof(struct file_meta) * argc);
     for (int lpc = 0; lpc < argc; lpc++) {

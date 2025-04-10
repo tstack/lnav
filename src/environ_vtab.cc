@@ -34,6 +34,7 @@
 
 #include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
+#include "base/short_alloc.h"
 #include "config.h"
 
 extern char** environ;
@@ -256,7 +257,8 @@ vt_update(sqlite3_vtab* tab,
         const char* var = (const char*) index;
         const char* eq = strchr(var, '=');
         size_t namelen = eq - var;
-        char name[namelen + 1];
+        stack_buf allocator;
+        auto* name = allocator.allocate(namelen + 1);
 
         memcpy(name, var, namelen);
         name[namelen] = '\0';

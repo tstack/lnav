@@ -32,10 +32,6 @@
  * a bit.
  */
 
-#ifdef __CYGWIN__
-#    include <alloca.h>
-#endif
-
 #include <locale.h>
 #include <signal.h>
 #include <stdio.h>
@@ -1706,12 +1702,10 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
             mouse_i.handle_mouse(nc, ch);
         };
         id.id_unhandled_handler = [](const char* keyseq) {
-            auto enc_len = lnav_config.lc_ui_keymap.size() * 2;
-            auto encoded_name = (char*) alloca(enc_len);
-
+            stack_buf allocator;
             log_info("unbound keyseq: %s", keyseq);
-            json_ptr::encode(
-                encoded_name, enc_len, lnav_config.lc_ui_keymap.c_str());
+            auto encoded_name
+                = json_ptr::encode(lnav_config.lc_ui_keymap, allocator);
             // XXX we should have a hotkey for opening a prompt that is
             // pre-filled with a suggestion that the user can complete.
             // This quick-fix key could be used for other stuff as well
@@ -3022,7 +3016,9 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
     lnav_data.ld_config_paths.insert(lnav_data.ld_config_paths.begin(),
                                      "/etc/lnav");
 
-    if (lnav_data.ld_debug_log_name != DEFAULT_DEBUG_LOG) {
+    if (!lnav_data.ld_debug_log_name.empty()
+        && lnav_data.ld_debug_log_name != DEFAULT_DEBUG_LOG)
+    {
         lnav_log_level = lnav_log_level_t::TRACE;
     }
 

@@ -52,6 +52,8 @@ public:
 
     ~filter_sub_source() override = default;
 
+    bool empty() const override { return false; }
+
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
 
     void list_input_handle_scroll_out(listview_curses& lv) override;

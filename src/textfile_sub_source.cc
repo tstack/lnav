@@ -804,18 +804,21 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                     // Only invalidate the meta if the file is small, or we
                     // found some meta previously.
                     if ((st.st_mtime != iter->fvs_mtime
-                         || lf->get_index_size() != iter->fvs_file_size)
+                         || st.st_size != iter->fvs_file_size
+                         || lf->get_index_size() != iter->fvs_file_indexed_size)
                         && (st.st_size < 10 * 1024 || iter->fvs_file_size == 0
                             || !iter->fvs_metadata.m_sections_tree.empty()))
                     {
                         log_debug(
                             "text file has changed, invalidating metadata.  "
-                            "old: {mtime: %d size: %zu}, new: {mtime: %d "
-                            "size: %zu}",
+                            "old: {mtime: %d size: %zu isize: %zu}, new: "
+                            "{mtime: %d size: %zu isize: %zu}",
                             iter->fvs_mtime,
                             iter->fvs_file_size,
+                            iter->fvs_file_indexed_size,
                             st.st_mtime,
-                            st.st_size);
+                            st.st_size,
+                            lf->get_index_size());
                         iter->fvs_metadata = {};
                         iter->fvs_error.clear();
                     }
@@ -856,7 +859,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                             }
 
                             iter->fvs_mtime = st.st_mtime;
-                            iter->fvs_file_size = lf->get_index_size();
+                            iter->fvs_file_size = st.st_size;
+                            iter->fvs_file_indexed_size = lf->get_index_size();
                             iter->fvs_metadata
                                 = lnav::document::discover(content)
                                       .with_text_format(lf->get_text_format())
@@ -869,7 +873,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                             lf->get_path_for_key().c_str(),
                             errmsg.c_str());
                         iter->fvs_mtime = st.st_mtime;
-                        iter->fvs_file_size = lf->get_index_size();
+                        iter->fvs_file_size = st.st_size;
+                        iter->fvs_file_indexed_size = lf->get_index_size();
                         iter->fvs_error = errmsg;
                     }
                 }
@@ -1019,7 +1024,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             } else if (file_needs_reformatting(lf) && !new_data) {
                 if (iter->fvs_file_size == st.st_size
                     && iter->fvs_file_indexed_size == lf->get_index_size()
-                    && iter->fvs_mtime == st.st_mtime)
+                    && iter->fvs_mtime == st.st_mtime
+                    && (!iter->fvs_error.empty()
+                        || iter->fvs_text_source != nullptr))
                 {
                     ++iter;
                     continue;
@@ -1158,7 +1165,9 @@ textfile_sub_source::row_for_anchor(const std::string& id)
             if (scan_res && scan_res->range().empty()) {
                 path.emplace_back(scan_res->value());
             } else {
-                path.emplace_back(json_ptr::decode(comp_pair.first));
+                stack_buf allocator;
+                path.emplace_back(
+                    json_ptr::decode(comp_pair.first, allocator).to_string());
             }
             hier_sf = comp_pair.second;
         }
@@ -1502,13 +1511,15 @@ textfile_sub_source::anchor_for_row(vis_line_t vl)
             path_for_line.back().get<std::string>());
     }
 
-    auto comps = path_for_line | lnav::itertools::map([](const auto& elem) {
-                     return elem.match(
-                         [](const std::string& str) {
-                             return json_ptr::encode_str(str);
-                         },
-                         [](size_t index) { return fmt::to_string(index); });
-                 });
+    auto comps
+        = path_for_line | lnav::itertools::map([](const auto& elem) {
+              return elem.match(
+                  [](const std::string& str) {
+                      stack_buf allocator;
+                      return json_ptr::encode(str, allocator).to_string();
+                  },
+                  [](size_t index) { return fmt::to_string(index); });
+          });
 
     return fmt::format(FMT_STRING("#/{}"),
                        fmt::join(comps.begin(), comps.end(), "/"));
@@ -1575,12 +1586,15 @@ textfile_header_overlay::list_static_overlay(const listview_curses& lv,
                                              attr_line_t& value_out)
 {
     const std::vector<attr_line_t>* lines = nullptr;
-    if (this->tho_src->text_line_count() == 0) {
+    auto curr_file = this->tho_src->current_file();
+    if (curr_file == nullptr) {
         if (this->tho_log_src->text_line_count() == 0) {
             lines = lnav::messages::view::no_files();
         } else {
             lines = lnav::messages::view::only_log_files();
         }
+    } else if (curr_file->size() == 0) {
+        lines = lnav::messages::view::empty_file();
     }
 
     if (lines != nullptr && y < (ssize_t) lines->size()) {

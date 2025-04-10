@@ -420,7 +420,7 @@ yajl_val yajl_tree_parse (const char *input,
             /* number      = */ handle_number,
             /* string      = */ handle_string2,
             /* start map   = */ handle_start_map,
-            /* map key     = */ handle_string,
+            /* map key     = */ handle_string2,
             /* end map     = */ handle_end_map,
             /* start array = */ handle_start_array,
             /* end array   = */ handle_end_array

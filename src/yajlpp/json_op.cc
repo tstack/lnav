@@ -47,7 +47,10 @@ gen_handle_start_map(void* ctx)
 }
 
 static int
-gen_handle_map_key(void* ctx, const unsigned char* key, size_t len)
+gen_handle_map_key(void* ctx,
+                   const unsigned char* key,
+                   size_t len,
+                   yajl_string_props_t* props)
 {
     json_op* jo = (json_op*) ctx;
     yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
@@ -102,7 +105,10 @@ gen_handle_number(void* ctx, const char* numberVal, size_t numberLen)
 }
 
 static int
-gen_handle_string(void* ctx, const unsigned char* stringVal, size_t len, yajl_string_props_t*)
+gen_handle_string(void* ctx,
+                  const unsigned char* stringVal,
+                  size_t len,
+                  yajl_string_props_t*)
 {
     json_op* jo = (json_op*) ctx;
     yajl_gen gen = (yajl_gen) jo->jo_ptr_data;
@@ -219,8 +225,8 @@ json_op::handle_string(void* ctx,
 
     if (jo->check_index()) {
         if (jo->jo_ptr_callbacks.yajl_string != nullptr) {
-            retval
-                = jo->jo_ptr_callbacks.yajl_string(ctx, stringVal, stringLen, props);
+            retval = jo->jo_ptr_callbacks.yajl_string(
+                ctx, stringVal, stringLen, props);
         }
     }
 
@@ -247,14 +253,17 @@ json_op::handle_start_map(void* ctx)
 }
 
 int
-json_op::handle_map_key(void* ctx, const unsigned char* key, size_t len)
+json_op::handle_map_key(void* ctx,
+                        const unsigned char* key,
+                        size_t len,
+                        yajl_string_props_t* props)
 {
     json_op* jo = (json_op*) ctx;
     int retval = 1;
 
     if (jo->check_index(false)) {
         if (jo->jo_ptr_callbacks.yajl_map_key != nullptr) {
-            retval = jo->jo_ptr_callbacks.yajl_map_key(ctx, key, len);
+            retval = jo->jo_ptr_callbacks.yajl_map_key(ctx, key, len, props);
         }
     }
 

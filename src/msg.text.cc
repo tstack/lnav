@@ -85,4 +85,16 @@ only_log_files()
     return &retval;
 }
 
+const std::vector<attr_line_t>*
+empty_file()
+{
+    static const auto retval
+        = lnav::console::user_message::info(
+              "File is empty, content will be shown when added")
+              .to_attr_line()
+              .split_lines();
+
+    return &retval;
+}
+
 }  // namespace lnav::messages::view

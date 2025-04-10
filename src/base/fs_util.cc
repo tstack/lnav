@@ -42,6 +42,7 @@
 #include "lnav_log.hh"
 #include "opt_util.hh"
 #include "scn/scan.h"
+#include "short_alloc.h"
 
 #ifdef HAVE_LIBPROC_H
 #    include <libproc.h>
@@ -215,7 +216,8 @@ Result<std::pair<std::filesystem::path, auto_fd>, std::string>
 open_temp_file(const std::filesystem::path& pattern)
 {
     auto pattern_str = pattern.string();
-    char pattern_copy[pattern_str.size() + 1];
+    stack_buf allocator;
+    auto* pattern_copy = allocator.allocate(pattern_str.size() + 1);
     int fd;
 
     strcpy(pattern_copy, pattern_str.c_str());

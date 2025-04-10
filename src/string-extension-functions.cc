@@ -7,10 +7,6 @@
  * commercial or non-commercial, and by any means.
  */
 
-#ifdef __CYGWIN__
-#    include <alloca.h>
-#endif
-
 #include <unordered_map>
 
 #include <sqlite3.h>

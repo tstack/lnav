@@ -45,12 +45,14 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "base/auto_mem.hh"
 #include "base/file_range.hh"
 #include "base/intern_string.hh"
 #include "base/lnav.console.hh"
 #include "base/lnav.console.into.hh"
 #include "base/lnav_log.hh"
 #include "base/opt_util.hh"
+#include "base/short_alloc.h"
 #include "json_ptr.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "relative_time.hh"
@@ -162,20 +164,18 @@ struct yajlpp_provider_context {
     intern_string_t get_substr_i(T&& name) const
     {
         auto cap = (*this->ypc_extractor)[std::forward<T>(name)].value();
-        char path[cap.length() + 1];
-        size_t len = json_ptr::decode(path, cap.data(), cap.length());
-
-        return intern_string::lookup(path, len);
+        stack_buf allocator;
+        auto path = json_ptr::decode(cap, allocator);
+        return intern_string::lookup(path);
     }
 
     template<typename T>
     std::string get_substr(T&& name) const
     {
         auto cap = (*this->ypc_extractor)[std::forward<T>(name)].value();
-        char path[cap.length() + 1];
-        size_t len = json_ptr::decode(path, cap.data(), cap.length());
-
-        return {path, len};
+        stack_buf allocator;
+        auto path = json_ptr::decode(cap, allocator);
+        return path.to_string();
     }
 };
 
@@ -337,46 +337,20 @@ public:
     yajlpp_parse_context(intern_string_t source,
                          const struct json_path_container* handlers = nullptr);
 
-    const char* get_path_fragment(int offset,
-                                  char* frag_in,
-                                  size_t& len_out) const;
+    string_fragment get_path_fragment(int offset, stack_buf& allocator) const;
 
     intern_string_t get_path_fragment_i(int offset) const
     {
-        constexpr auto BUF_SIZE = 128;
-        std::unique_ptr<char[]> fragalloc;
-        char fragbuf[BUF_SIZE];
-        char* fragptr = nullptr;
-
-        if (this->ypc_path.size() >= BUF_SIZE) {
-            fragalloc = std::make_unique<char[]>(this->ypc_path.size());
-            fragptr = fragalloc.get();
-        } else {
-            fragptr = fragbuf;
-        }
-        size_t len;
-
-        const auto* frag = this->get_path_fragment(offset, fragptr, len);
-        return intern_string::lookup(frag, len);
+        stack_buf allocator;
+        const auto frag = this->get_path_fragment(offset, allocator);
+        return intern_string::lookup(frag);
     }
 
     std::string get_path_fragment(int offset) const
     {
-        constexpr auto BUF_SIZE = 128;
-        std::unique_ptr<char[]> fragalloc;
-        char fragbuf[BUF_SIZE];
-        char* fragptr = nullptr;
-
-        if (this->ypc_path.size() >= BUF_SIZE) {
-            fragalloc = std::make_unique<char[]>(this->ypc_path.size());
-            fragptr = fragalloc.get();
-        } else {
-            fragptr = fragbuf;
-        }
-        size_t len;
-
-        const auto* frag = this->get_path_fragment(offset, fragptr, len);
-        return std::string(frag, len);
+        stack_buf allocator;
+        const auto frag = this->get_path_fragment(offset, allocator);
+        return frag.to_string();
     }
 
     string_fragment get_path_as_string_fragment() const;
@@ -531,7 +505,7 @@ public:
     size_t ypc_total_consumed{0};
     yajl_callbacks ypc_callbacks;
     yajl_callbacks ypc_alt_callbacks;
-    std::vector<char> ypc_path;
+    auto_buffer ypc_path;
     std::vector<size_t> ypc_path_index_stack;
     std::vector<size_t> ypc_array_index;
     std::vector<const json_path_handler_base*> ypc_handler_stack;
@@ -552,7 +526,10 @@ private:
     static const yajl_callbacks DEFAULT_CALLBACKS;
 
     static int map_start(void* ctx);
-    static int map_key(void* ctx, const unsigned char* key, size_t len);
+    static int map_key(void* ctx,
+                       const unsigned char* key,
+                       size_t len,
+                       yajl_string_props_t* props);
     static int map_end(void* ctx);
     static int array_start(void* ctx);
     static int array_end(void* ctx);

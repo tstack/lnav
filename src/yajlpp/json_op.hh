@@ -50,7 +50,10 @@ class json_op {
                              size_t len,
                              yajl_string_props_t* props);
     static int handle_start_map(void* ctx);
-    static int handle_map_key(void* ctx, const unsigned char* key, size_t len);
+    static int handle_map_key(void* ctx,
+                              const unsigned char* key,
+                              size_t len,
+                              yajl_string_props_t* prop);
     static int handle_end_map(void* ctx);
     static int handle_start_array(void* ctx);
     static int handle_end_array(void* ctx);

@@ -33,13 +33,15 @@
 
 #include <string.h>
 
+#include "base/short_alloc.h"
 #include "config.h"
 
 bool
 ptime_b_slow(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     size_t zone_len = len - off_inout;
-    char zone[zone_len + 1];
+    stack_buf allocator;
+    auto* zone = allocator.allocate(zone_len + 1);
     const char* end_of_date;
 
     memcpy(zone, &str[off_inout], zone_len);
@@ -71,7 +73,8 @@ ptime_fmt(const char* fmt,
             switch (fmt[lpc + 1]) {
                 case 'B': {
                     size_t b_len = len - off;
-                    char full_month[b_len + 1];
+                    stack_buf allocator;
+                    auto* full_month = allocator.allocate(b_len + 1);
                     const char* end_of_date;
 
                     memcpy(full_month, &str[off], b_len);

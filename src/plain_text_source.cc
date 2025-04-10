@@ -418,7 +418,9 @@ plain_text_source::row_for_anchor(const std::string& id)
             if (scan_res && scan_res->range().empty()) {
                 path.emplace_back(scan_res->value());
             } else {
-                path.emplace_back(json_ptr::decode(comp_pair.first));
+                stack_buf allocator;
+                path.emplace_back(
+                    json_ptr::decode(comp_pair.first, allocator).to_string());
             }
             hier_sf = comp_pair.second;
         }
@@ -493,13 +495,15 @@ plain_text_source::anchor_for_row(vis_line_t vl)
         return to_anchor_string(path_for_line.back().get<std::string>());
     }
 
-    auto comps = path_for_line | lnav::itertools::map([](const auto& elem) {
-                     return elem.match(
-                         [](const std::string& str) {
-                             return json_ptr::encode_str(str);
-                         },
-                         [](size_t index) { return fmt::to_string(index); });
-                 });
+    auto comps
+        = path_for_line | lnav::itertools::map([](const auto& elem) {
+              return elem.match(
+                  [](const std::string& str) {
+                      stack_buf allocator;
+                      return json_ptr::encode(str, allocator).to_string();
+                  },
+                  [](size_t index) { return fmt::to_string(index); });
+          });
 
     return fmt::format(FMT_STRING("#/{}"),
                        fmt::join(comps.begin(), comps.end(), "/"));

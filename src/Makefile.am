@@ -157,6 +157,7 @@ AM_CPPFLAGS = \
 	-I$(srcdir)/third-party/notcurses/include \
 	-I$(srcdir)/third-party/prqlc-c \
 	-I$(srcdir)/third-party/rapidyaml \
+	-I$(srcdir)/third-party/hat-trie/include \
 	-I$(top_srcdir)/src/third-party/scnlib/include \
 	-Wall \
 	$(CODE_COVERAGE_CPPFLAGS) \

@@ -27,10 +27,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef __CYGWIN__
-#    include <alloca.h>
-#endif
-
 #include <fstream>
 #include <iostream>
 
@@ -137,7 +133,6 @@ main(int argc, char* argv[])
                 retval = EXIT_FAILURE;
             } else {
                 std::shared_ptr<log_format> format;
-                char* log_line;
                 bool found = false;
                 char cmd[2048];
                 std::string line;
@@ -148,8 +143,6 @@ main(int argc, char* argv[])
                     line = "             " + line;
                 }
 
-                log_line = (char*) alloca(line.length());
-                strcpy(log_line, &line[13]);
                 auto sub_line = line.substr(13);
                 struct line_range body(0, sub_line.length());
                 shared_buffer share_manager;

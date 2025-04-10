@@ -41,6 +41,8 @@ class files_sub_source
 public:
     files_sub_source();
 
+    bool empty() const override { return false; }
+
     bool list_input_handle_key(listview_curses& lv, const ncinput& ch) override;
 
     void list_input_handle_scroll_out(listview_curses& lv) override;

@@ -29,10 +29,8 @@
  * @file json_ptr.cc
  */
 
-#ifdef __CYGWIN__
-#    include <alloca.h>
-#endif
-
+#include "base/lnav_log.hh"
+#include "base/short_alloc.h"
 #include "config.h"
 #include "fmt/format.h"
 #include "yajl/api/yajl_gen.h"
@@ -113,27 +111,18 @@ handle_start_map(void* ctx)
 }
 
 static int
-handle_map_key(void* ctx, const unsigned char* key, size_t len)
+handle_map_key(void* ctx,
+               const unsigned char* key,
+               size_t len,
+               yajl_string_props_t* props)
 {
+    auto frag = string_fragment::from_bytes(key, len);
     auto jpw = (json_ptr_walk*) ctx;
-    char partially_encoded_key[len + 32];
-    size_t required_len;
+    stack_buf allocator;
 
     jpw->jpw_keys.pop_back();
-
-    required_len = json_ptr::encode(partially_encoded_key,
-                                    sizeof(partially_encoded_key),
-                                    (const char*) key,
-                                    len);
-    if (required_len < sizeof(partially_encoded_key)) {
-        jpw->jpw_keys.emplace_back(&partially_encoded_key[0], required_len);
-    } else {
-        auto fully_encoded_key = (char*) alloca(required_len);
-
-        json_ptr::encode(
-            fully_encoded_key, required_len, (const char*) key, len);
-        jpw->jpw_keys.emplace_back(&fully_encoded_key[0], required_len);
-    }
+    auto encoded_frag = json_ptr::encode(frag, allocator);
+    jpw->jpw_keys.emplace_back(encoded_frag.to_string());
 
     return 1;
 }
@@ -188,122 +177,65 @@ const yajl_callbacks json_ptr_walk::callbacks = {
     handle_end_array,
 };
 
-size_t
-json_ptr::encode(char* dst, size_t dst_len, const char* src, size_t src_len)
+string_fragment
+json_ptr::encode(string_fragment in, stack_buf& buf)
 {
-    size_t retval = 0;
+    auto outlen = in.length();
 
-    if (src_len == (size_t) -1) {
-        src_len = strlen(src);
-    }
-
-    for (size_t lpc = 0; lpc < src_len; lpc++) {
-        switch (src[lpc]) {
+    for (const auto ch : in) {
+        switch (ch) {
             case '/':
             case '~':
             case '#':
-                if (retval + 1 < dst_len) {
-                    dst[retval] = '~';
-                    retval += 1;
-                    if (src[lpc] == '~') {
-                        dst[retval] = '0';
-                    } else if (src[lpc] == '#') {
-                        dst[retval] = '2';
-                    } else {
-                        dst[retval] = '1';
-                    }
-                } else {
-                    retval += 1;
-                }
-                break;
-            default:
-                if (retval < dst_len) {
-                    dst[retval] = src[lpc];
-                }
+                outlen += 1;
                 break;
         }
-        retval += 1;
-    }
-    if (retval < dst_len) {
-        dst[retval] = '\0';
     }
 
-    return retval;
-}
+    auto* outbuf = buf.allocate(outlen);
+    auto out_index = std::size_t{0};
 
-std::string
-json_ptr::encode_str(const char* src, size_t src_len)
-{
-    if (src_len == (size_t) -1) {
-        src_len = strlen(src);
-    }
-
-    char retval[src_len * 2 + 1];
-    auto rc = encode(retval, sizeof(retval), src, src_len);
-
-    return std::string(retval, rc);
-}
-
-size_t
-json_ptr::decode(char* dst, const char* src, ssize_t src_len)
-{
-    size_t retval = 0;
-
-    if (src_len == -1) {
-        src_len = strlen(src);
-    }
-
-    for (int lpc = 0; lpc < src_len; lpc++) {
-        switch (src[lpc]) {
+    for (const auto ch : in) {
+        switch (ch) {
             case '~':
-                if ((lpc + 1) < src_len) {
-                    switch (src[lpc + 1]) {
-                        case '0':
-                            dst[retval++] = '~';
-                            lpc += 1;
-                            break;
-                        case '1':
-                            dst[retval++] = '/';
-                            lpc += 1;
-                            break;
-                        case '2':
-                            dst[retval++] = '#';
-                            lpc += 1;
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                outbuf[out_index++] = '~';
+                outbuf[out_index++] = '0';
+                break;
+            case '/':
+                outbuf[out_index++] = '~';
+                outbuf[out_index++] = '1';
+                break;
+            case '#':
+                outbuf[out_index++] = '~';
+                outbuf[out_index++] = '2';
                 break;
             default:
-                dst[retval++] = src[lpc];
+                outbuf[out_index++] = ch;
                 break;
         }
     }
 
-    dst[retval] = '\0';
-
-    return retval;
+    return string_fragment::from_bytes(outbuf, outlen);
 }
 
-std::string
-json_ptr::decode(const string_fragment& sf)
+string_fragment
+json_ptr::decode(string_fragment sf, stack_buf& allocator)
 {
-    std::string retval;
+    auto* outbuf = allocator.allocate(sf.length());
     auto in_escape = false;
+    auto out_index = std::size_t{0};
 
-    retval.reserve(sf.length());
     for (const auto ch : sf) {
         if (in_escape) {
             switch (ch) {
                 case '0':
-                    retval.push_back('~');
+                    outbuf[out_index++] = '~';
                     break;
                 case '1':
-                    retval.push_back('/');
+                    outbuf[out_index++] = '/';
                     break;
                 case '2':
-                    retval.push_back('#');
+                    outbuf[out_index++] = '#';
                     break;
                 default:
                     break;
@@ -312,11 +244,11 @@ json_ptr::decode(const string_fragment& sf)
         } else if (ch == '~') {
             in_escape = true;
         } else {
-            retval.push_back(ch);
+            outbuf[out_index++] = ch;
         }
     }
 
-    return retval;
+    return string_fragment::from_bytes(outbuf, out_index);
 }
 
 bool

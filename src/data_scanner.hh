@@ -110,9 +110,11 @@ enum data_token_t {
 
     DT_CODE_BLOCK,
 
-    DT_TERMINAL_MAX = DT_CODE_BLOCK + 1,
+    DT_ANCHOR,
 
-    DNT_KEY = 55,
+    DT_TERMINAL_MAX = DT_ANCHOR + 1,
+
+    DNT_KEY = 56,
     DNT_PAIR,
     DNT_VALUE,
     DNT_ROW,

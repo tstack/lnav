@@ -420,6 +420,8 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
        }
        <init, bol> IPV6ADDR/(": "|[^:a-zA-Z0-9]) { RET(DT_IPV6_ADDRESS); }
 
+       <init, bol> "#" ([a-zA-Z0-9_\-]+|("/"[a-zA-Z0-9_\-]+)+) { RET(DT_ANCHOR); }
+
        <init, bol> "<!"[a-zA-Z0-9_:\-]+SPACE*([a-zA-Z0-9_:\-]+(SPACE*'='SPACE*('"'(('\\'[^\x00]|[^\x00"\\])+)'"'|"'"(('\\'[^\x00]|[^\x00'\\])+)"'"|[^\x00>]+))?|SPACE*('"'(('\\'[^\x00]|[^\x00"\\])+)'"'|"'"(('\\'[^\x00]|[^\x00'\\])+)"'"))*SPACE*">" {
            RET(DT_XML_DECL_TAG);
        }

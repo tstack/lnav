@@ -35,6 +35,7 @@
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "base/lnav_log.hh"
+#include "base/short_alloc.h"
 #include "sql_util.hh"
 #include "vtab_module.hh"
 
@@ -49,7 +50,9 @@ bind_to_sqlite(sqlite3_stmt* stmt, int index, const struct timeval& tv)
 }
 
 inline int
-bind_to_sqlite(sqlite3_stmt* stmt, int index, const std::chrono::system_clock::time_point& tp)
+bind_to_sqlite(sqlite3_stmt* stmt,
+               int index,
+               const std::chrono::system_clock::time_point& tp)
 {
     auto epoch_ts = tp.time_since_epoch().count();
 
@@ -162,13 +165,15 @@ struct prepared_stmt {
 
         if (rc == SQLITE_ROW) {
             const auto argc = sqlite3_column_count(this->ps_stmt.in());
-            sqlite3_value* argv[argc];
+            stack_vector<sqlite3_value*>::allocator_type::arena_type arena;
+            stack_vector<sqlite3_value*> argv(arena);
+            argv.resize(argc);
 
             for (int lpc = 0; lpc < argc; lpc++) {
                 argv[lpc] = sqlite3_column_value(this->ps_stmt.in(), lpc);
             }
 
-            return from_sqlite<T>()(argc, argv, 0);
+            return from_sqlite<T>()(argc, argv.data(), 0);
         }
 
         return fetch_error{

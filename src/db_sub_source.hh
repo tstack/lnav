@@ -54,6 +54,8 @@ class db_label_source
 public:
     bool has_log_time_column() const { return !this->dls_time_column.empty(); }
 
+    bool empty() const override { return this->dls_headers.empty(); }
+
     size_t text_line_count() override { return this->dls_row_cursors.size(); }
 
     size_t text_size_for_line(textview_curses& tc,

@@ -52,7 +52,7 @@ class textfile_sub_source
 public:
     textfile_sub_source() { this->tss_supports_filtering = true; }
 
-    bool empty() const { return this->tss_files.empty(); }
+    bool empty() const override { return this->tss_files.empty(); }
 
     size_t size() const { return this->tss_files.size(); }
 
@@ -85,15 +85,6 @@ public:
         }
 
         return this->tss_files.front().fvs_file;
-    }
-
-    std::string text_source_name(const textview_curses& tv) override
-    {
-        if (this->tss_files.empty()) {
-            return "";
-        }
-
-        return this->tss_files.front().fvs_file->get_filename();
     }
 
     void to_front(const std::shared_ptr<logfile>& lf);

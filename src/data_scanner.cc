@@ -224,6 +224,9 @@ static struct {
     {
         "code",
     },
+    {
+        "anch",
+    },
 };
 
 const char* DNT_NAMES[DNT_MAX - DNT_KEY] = {

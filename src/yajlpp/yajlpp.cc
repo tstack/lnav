@@ -211,7 +211,8 @@ json_path_handler_base::gen(yajlpp_gen_context& ygc, yajl_gen handle) const
 
     if (this->jph_children) {
         for (const auto& lpath : local_paths) {
-            std::string full_path = json_ptr::encode_str(lpath);
+            stack_buf allocator;
+            auto full_path = json_ptr::encode(lpath, allocator);
             int start_depth = ygc.ygc_depth;
 
             yajl_gen_string(handle, lpath);
@@ -460,6 +461,7 @@ json_path_handler_base::walk(
         this->jph_path_provider(root, local_paths);
 
         for (const auto& lpath : local_paths) {
+            stack_buf allocator;
             const void* field = nullptr;
             if (this->jph_field_getter) {
                 field = this->jph_field_getter(root, lpath);
@@ -467,7 +469,7 @@ json_path_handler_base::walk(
             cb(*this,
                fmt::format(FMT_STRING("{}{}{}"),
                            base,
-                           json_ptr::encode_str(lpath),
+                           json_ptr::encode(lpath, allocator),
                            this->jph_children ? "/" : ""),
                field);
         }
@@ -502,7 +504,11 @@ json_path_handler_base::walk(
                 static const intern_string_t POSS_SRC
                     = intern_string::lookup("possibilities");
 
-                std::string full_path = base + json_ptr::encode_str(lpath);
+                stack_buf allocator;
+                auto full_path
+                    = fmt::format(FMT_STRING("{}{}"),
+                                  base,
+                                  json_ptr::encode(lpath, allocator));
                 if (this->jph_children) {
                     full_path += "/";
                 }
@@ -518,7 +524,9 @@ json_path_handler_base::walk(
                     thread_local auto md
                         = lnav::pcre2pp::match_data::unitialized();
 
-                    const auto short_path = json_ptr::encode_str(lpath) + "/";
+                    stack_buf allocator2;
+                    const auto short_path = fmt::format(
+                        FMT_STRING("{}/"), json_ptr::encode(lpath, allocator2));
 
                     if (!this->jph_regex->capture_from(short_path)
                              .into(md)
@@ -607,9 +615,9 @@ json_path_handler_base::get_types() const
 
 yajlpp_parse_context::yajlpp_parse_context(
     intern_string_t source, const struct json_path_container* handlers)
-    : ypc_source(source), ypc_handlers(handlers)
+    : ypc_source(source), ypc_handlers(handlers),
+      ypc_path(auto_buffer::alloc(4096))
 {
-    this->ypc_path.reserve(4096);
     this->ypc_path.push_back('/');
     this->ypc_path.push_back('\0');
     this->ypc_callbacks = DEFAULT_CALLBACKS;
@@ -640,9 +648,12 @@ yajlpp_parse_context::map_start(void* ctx)
 }
 
 int
-yajlpp_parse_context::map_key(void* ctx, const unsigned char* key, size_t len)
+yajlpp_parse_context::map_key(void* ctx,
+                              const unsigned char* key,
+                              size_t len,
+                              yajl_string_props_t* props)
 {
-    yajlpp_parse_context* ypc = (yajlpp_parse_context*) ctx;
+    auto* ypc = (yajlpp_parse_context*) ctx;
     int retval = 1;
 
     require(ypc->ypc_path.size() >= 2);
@@ -651,29 +662,35 @@ yajlpp_parse_context::map_key(void* ctx, const unsigned char* key, size_t len)
     if (ypc->ypc_path.back() != '/') {
         ypc->ypc_path.push_back('/');
     }
-    for (size_t lpc = 0; lpc < len; lpc++) {
-        switch (key[lpc]) {
-            case '~':
-                ypc->ypc_path.push_back('~');
-                ypc->ypc_path.push_back('0');
-                break;
-            case '/':
-                ypc->ypc_path.push_back('~');
-                ypc->ypc_path.push_back('1');
-                break;
-            case '#':
-                ypc->ypc_path.push_back('~');
-                ypc->ypc_path.push_back('2');
-                break;
-            default:
-                ypc->ypc_path.push_back(key[lpc]);
-                break;
+    auto path_start = ypc->ypc_path.size();
+    ypc->ypc_path.resize_by(len + props->ptr_escapes);
+    if (props->ptr_escapes > 0) {
+        for (size_t lpc = 0; lpc < len; lpc++) {
+            switch (key[lpc]) {
+                case '~':
+                    ypc->ypc_path[path_start++] = '~';
+                    ypc->ypc_path[path_start++] = '0';
+                    break;
+                case '/':
+                    ypc->ypc_path[path_start++] = '~';
+                    ypc->ypc_path[path_start++] = '1';
+                    break;
+                case '#':
+                    ypc->ypc_path[path_start++] = '~';
+                    ypc->ypc_path[path_start++] = '2';
+                    break;
+                default:
+                    ypc->ypc_path[path_start++] = key[lpc];
+                    break;
+            }
         }
+    } else {
+        memcpy(&ypc->ypc_path[path_start], key, len);
     }
     ypc->ypc_path.push_back('\0');
 
     if (ypc->ypc_alt_callbacks.yajl_map_key != nullptr) {
-        retval = ypc->ypc_alt_callbacks.yajl_map_key(ctx, key, len);
+        retval = ypc->ypc_alt_callbacks.yajl_map_key(ctx, key, len, props);
     }
 
     if (ypc->ypc_handlers != nullptr) {
@@ -1219,12 +1236,10 @@ yajlpp_parse_context::set_path(const std::string& path)
     return *this;
 }
 
-const char*
-yajlpp_parse_context::get_path_fragment(int offset,
-                                        char* frag_in,
-                                        size_t& len_out) const
+string_fragment
+yajlpp_parse_context::get_path_fragment(int offset, stack_buf& allocator) const
 {
-    const char* retval;
+    string_fragment retval;
     size_t start, end;
 
     if (offset < 0) {
@@ -1236,13 +1251,9 @@ yajlpp_parse_context::get_path_fragment(int offset,
     } else {
         end = this->ypc_path.size() - 1;
     }
+    retval = string_fragment::from_bytes(&this->ypc_path[start], end - start);
     if (this->ypc_handlers != nullptr) {
-        len_out
-            = json_ptr::decode(frag_in, &this->ypc_path[start], end - start);
-        retval = frag_in;
-    } else {
-        retval = &this->ypc_path[start];
-        len_out = end - start;
+        retval = json_ptr::decode(retval, allocator);
     }
 
     return retval;

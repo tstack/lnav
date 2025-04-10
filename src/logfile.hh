@@ -32,6 +32,7 @@
 #ifndef logfile_hh
 #define logfile_hh
 
+#include <chrono>
 #include <filesystem>
 #include <set>
 #include <string>
@@ -188,10 +189,6 @@ public:
 
     void set_text_format(text_format_t tf) { this->lf_text_format = tf; }
 
-    /**
-     * @return The last modified time of the file when the file was last
-     * indexed.
-     */
     std::chrono::microseconds get_modified_time() const
     {
         return this->lf_index_time;

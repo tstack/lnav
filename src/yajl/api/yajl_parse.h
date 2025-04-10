@@ -88,7 +88,8 @@ extern "C" {
 
         int (* yajl_start_map)(void * ctx);
         int (* yajl_map_key)(void * ctx, const unsigned char * key,
-                             size_t stringLen);
+                             size_t stringLen,
+                             yajl_string_props_t* props);
         int (* yajl_end_map)(void * ctx);
 
         int (* yajl_start_array)(void * ctx);

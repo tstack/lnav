@@ -29,16 +29,14 @@
  * @file shlex.cc
  */
 
-#ifdef __CYGWIN__
-#    include <alloca.h>
-#endif
+#include "shlex.hh"
 
 #include <pwd.h>
 
 #include "base/opt_util.hh"
+#include "base/short_alloc.h"
 #include "config.h"
 #include "pcrepp/pcre2pp.hh"
-#include "shlex.hh"
 
 using namespace lnav::roles::literals;
 
@@ -260,7 +258,8 @@ shlex::resolve_home_dir(std::string& result, string_fragment cap) const
     if (cap.length() == 1) {
         result.append(getenv_opt("HOME").value_or("~"));
     } else {
-        auto username = (char*) alloca(cap.length());
+        stack_buf allocator;
+        auto* username = allocator.allocate(cap.length());
 
         memcpy(username, &this->s_str[cap.sf_begin + 1], cap.length() - 1);
         username[cap.length() - 1] = '\0';
