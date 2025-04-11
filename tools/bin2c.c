@@ -245,6 +245,7 @@ main(int argc, char** argv)
     }
     fprintf(cfile, "};\n");
     fclose(cfile);
+    free(meta);
 
     return 0;
 }
