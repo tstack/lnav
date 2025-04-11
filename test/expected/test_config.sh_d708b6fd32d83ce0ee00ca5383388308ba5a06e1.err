@@ -1,6 +1,6 @@
 [1m[31m✘[0m [1m[31merror[0m: invalid value for property “[1m/ui/theme[0m”
  [1m[31mreason[0m: unknown theme -- “baddy”
-[1m[31m |      [0m [36m =[0m [36mhelp[0m: The available themes are: default, dracula, eldar, grayscale, monocai, night-owl, solarized-dark, solarized-light
+[1m[31m |      [0m [36m =[0m [36mhelp[0m: The available themes are: default, dracula, eldar, grayscale, modus-operandi, monocai, night-owl, solarized-dark, solarized-light
 [36m --> [0m[1mcommand-option[0m:1
 [36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
            [1m/ui/theme[0m [4mtheme_name[0m

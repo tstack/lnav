@@ -3479,6 +3479,859 @@
 
                 }
             },
+            "modus-operandi": {
+                "vars": {
+                    "bg_active": "#c4c4c4",
+                    "bg_cyan_intense": "#a4d5f9",
+                    "bg_dim": "#f2f2f2",
+                    "bg_inactive": "#e0e0e0",
+                    "bg_main": "#ffffff",
+                    "black": "#000",
+                    "blue": "#0031a9",
+                    "blue_cooler": "#0000b0",
+                    "blue_faint": "#003497",
+                    "blue_intense": "#0000ff",
+                    "blue_warmer": "#3548cf",
+                    "border": "#9f9f9f",
+                    "cyan": "#005e8b",
+                    "cyan_cooler": "#005f5f",
+                    "cyan_faint": "#005077",
+                    "cyan_intense": "#008899",
+                    "cyan_subtle": "#bfefff",
+                    "cyan_warmer": "#3f578f",
+                    "fg_alt": "#193668",
+                    "fg_dim": "#595959",
+                    "fg_main": "#000000",
+                    "green": "#006800",
+                    "green_cooler": "#00663f",
+                    "green_faint": "#2a5045",
+                    "green_intense": "#008900",
+                    "green_warmer": "#316500",
+                    "magenta": "#721045",
+                    "magenta_cooler": "#531ab6",
+                    "magenta_faint": "#7c318f",
+                    "magenta_intense": "#dd22dd",
+                    "magenta_warmer": "#8f0075",
+                    "orange": "#fc9867",
+                    "red": "#a60000",
+                    "red_cooler": "#a0132f",
+                    "red_faint": "#7f0000",
+                    "red_intense": "#d00000",
+                    "red_warmer": "#972500",
+                    "semantic_highlight_color": "semantic()",
+                    "white": "#a6a6a6",
+                    "yellow": "#6f5500",
+                    "yellow_cooler": "#7a4f2f",
+                    "yellow_faint": "#624416",
+                    "yellow_intense": "#808000",
+                    "yellow_warmer": "#884900"
+                },
+                "icons": {
+                    "hidden": {
+
+                    },
+                    "ok": {
+
+                    },
+                    "info": {
+
+                    },
+                    "warning": {
+
+                    },
+                    "error": {
+
+                    },
+                    "log-level-trace": {
+
+                    },
+                    "log-level-debug": {
+
+                    },
+                    "log-level-info": {
+
+                    },
+                    "log-level-stats": {
+
+                    },
+                    "log-level-notice": {
+
+                    },
+                    "log-level-warning": {
+
+                    },
+                    "log-level-error": {
+
+                    },
+                    "log-level-critical": {
+
+                    },
+                    "log-level-fatal": {
+
+                    },
+                    "play": {
+
+                    },
+                    "edit": {
+
+                    }
+                },
+                "styles": {
+                    "identifier": {
+                        "color": "semantic()",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "text": {
+                        "color": "$fg_main",
+                        "background-color": "$bg_main",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "selected-text": {
+                        "color": "$cyan",
+                        "background-color": "$cyan_subtle",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "fuzzy-match": {
+                        "color": "#573a30",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "alt-text": {
+                        "color": "",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "error": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "ok": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "info": {
+                        "color": "$magenta",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "warning": {
+                        "color": "$yellow_warmer",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "hidden": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "cursor-line": {
+                        "color": "",
+                        "background-color": "#dae5ec",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "disabled-cursor-line": {
+                        "color": "",
+                        "background-color": "#e6e6e6",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "adjusted-time": {
+                        "color": "$magenta",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "skewed-time": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "file-offset": {
+                        "color": "$fg_dim",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "offset-time": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "time-column": {
+                        "color": "",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "invalid-msg": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "popup": {
+                        "color": "$fg_alt",
+                        "background-color": "$bg_active",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "popup-border": {
+                        "color": "$border",
+                        "background-color": "$bg_active",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "focused": {
+                        "color": "$black",
+                        "background-color": "$white",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "disabled-focused": {
+                        "color": "$white",
+                        "background-color": "$bg_inactive",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "scrollbar": {
+                        "color": "$fg_dim",
+                        "background-color": "$bg_active",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "h1": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "h2": {
+                        "color": "$fg_main",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "h3": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "h4": {
+                        "color": "$fg_alt",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "h5": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": true,
+                        "strike": false
+                    },
+                    "h6": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": true,
+                        "strike": false
+                    },
+                    "hr": {
+                        "color": "$fg_dim",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "hyperlink": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "list-glyph": {
+                        "color": "#ff8f88",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "breadcrumb": {
+                        "color": "$magenta_intense",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "table-border": {
+                        "color": "$border",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "table-header": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "quote-border": {
+                        "color": "$border",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "quoted-text": {
+                        "color": "",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "footnote-border": {
+                        "color": "$border",
+                        "background-color": "$bg_cyan_intense",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "footnote-text": {
+                        "color": "$fg_main",
+                        "background-color": "$bg_cyan_intense",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "snippet-border": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "indent-guide": {
+                        "color": "$bg_dim",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    }
+                },
+                "syntax-styles": {
+                    "inline-code": {
+                        "color": "$cyan",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "quoted-code": {
+                        "color": "$fg_dim",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "code-border": {
+                        "color": "$border",
+                        "background-color": "$bg_dim",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "keyword": {
+                        "color": "$magenta_cooler",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "string": {
+                        "color": "$blue_warmer",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "comment": {
+                        "color": "$fg_dim",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "doc-directive": {
+                        "color": "$magenta_faint",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "variable": {
+                        "color": "$cyan",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "symbol": {
+                        "color": "$blue_cooler",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "null": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "ascii-control": {
+                        "color": "$green",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "non-ascii": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "number": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "type": {
+                        "color": "$cyan_cooler",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "function": {
+                        "color": "$magenta",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "separators-references-accessors": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "re-special": {
+                        "color": "$magenta",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "re-repeat": {
+                        "color": "$green_cooler",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "diff-delete": {
+                        "color": "#8f1313",
+                        "background-color": "#ffd8d5",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "diff-add": {
+                        "color": "#005000",
+                        "background-color": "#c1f2d1",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "diff-section": {
+                        "color": "",
+                        "background-color": "#f3f3f3",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "spectrogram-low": {
+                        "color": "",
+                        "background-color": "$green",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "spectrogram-medium": {
+                        "color": "",
+                        "background-color": "$yellow",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "spectrogram-high": {
+                        "color": "",
+                        "background-color": "$red",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "file": {
+                        "color": "$blue",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    }
+                },
+                "status-styles": {
+                    "text": {
+                        "color": "$black",
+                        "background-color": "#c8c8c8",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "warn": {
+                        "color": "$yellow",
+                        "background-color": "#c8c8c8",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "alert": {
+                        "color": "$red",
+                        "background-color": "#c8c8c8",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "active": {
+                        "color": "$green",
+                        "background-color": "#c8c8c8",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "inactive-alert": {
+                        "color": "$red",
+                        "background-color": "#e6e6e6",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "inactive": {
+                        "color": "$fg_dim",
+                        "background-color": "#e6e6e6",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "title-hotkey": {
+                        "color": "$fg_main",
+                        "background-color": "#5394ec",
+                        "underline": true,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "title": {
+                        "color": "#f6f6f6",
+                        "background-color": "#5394ec",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "disabled-title": {
+                        "color": "#5394ec",
+                        "background-color": "#e0e0e0",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "subtitle": {
+                        "color": "#555",
+                        "background-color": "#66d9ee",
+                        "underline": false,
+                        "bold": true,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "info": {
+                        "color": "$fg_dim",
+                        "background-color": "#c8c8c8",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "hotkey": {
+                        "color": "$fg_main",
+                        "background-color": "",
+                        "underline": true,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "suggestion": {
+                        "color": "#888",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    }
+                },
+                "log-level-styles": {
+                    "trace": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "debug5": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "debug4": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "debug3": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "debug2": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "debug": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "info": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "stats": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "notice": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "warning": {
+                        "color": "$yellow",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "error": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "critical": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "fatal": {
+                        "color": "$red",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    },
+                    "invalid": {
+                        "color": "",
+                        "background-color": "",
+                        "underline": false,
+                        "bold": false,
+                        "italic": false,
+                        "strike": false
+                    }
+                },
+                "highlights": {
+
+                }
+            },
             "monocai": {
                 "vars": {
                     "black": "Grey15",

@@ -4,6 +4,7 @@ THEME_FILES = \
     $(srcdir)/%reldir%/dracula.json \
     $(srcdir)/%reldir%/eldar.json \
     $(srcdir)/%reldir%/grayscale.json \
+    $(srcdir)/%reldir%/modus-operandi.json \
     $(srcdir)/%reldir%/monocai.json \
     $(srcdir)/%reldir%/night-owl.json \
     $(srcdir)/%reldir%/solarized-dark.json \

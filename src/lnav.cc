@@ -1636,7 +1636,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
     lnav_data.ld_status[LNS_TOP].set_title("top");
     lnav_data.ld_status[LNS_TOP].set_y(0);
-    lnav_data.ld_status[LNS_TOP].set_default_role(role_t::VCR_INACTIVE_STATUS);
+    lnav_data.ld_status[LNS_TOP].set_enabled(false);
     lnav_data.ld_status[LNS_TOP].set_data_source(top_source.get());
     lnav_data.ld_status[LNS_BOTTOM].set_title("bottom");
     lnav_data.ld_status[LNS_BOTTOM].set_y(-2);

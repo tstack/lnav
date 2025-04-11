@@ -358,6 +358,10 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             best_match;
         size_t scan_count = 0;
 
+        if (!this->lf_index.empty()) {
+            prescan_time = this->lf_index[prescan_size - 1]
+                               .get_time<std::chrono::microseconds>();
+        }
         if (this->lf_format != nullptr) {
             best_match = std::make_pair(
                 this->lf_format.get(),

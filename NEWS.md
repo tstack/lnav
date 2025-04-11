@@ -113,6 +113,7 @@ Features:
   focused log message.  An `UPDATE` of the mutable columns will
   update the corresponding row in the `all_logs` table.
 * Add timestamp format `%9` for nanoseconds from the epoch.
+* Added the "modus-operandi" light-colored theme.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.

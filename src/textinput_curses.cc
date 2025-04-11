@@ -502,6 +502,7 @@ textinput_curses::handle_mouse(mouse_event& me)
         } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_DRAGGED) {
             this->tc_drag_selection = selected_range::from_mouse(
                 this->tc_cursor_anchor, inner_point);
+            this->set_needs_update();
         } else if (me.me_state == mouse_button_state_t::BUTTON_STATE_RELEASED) {
             this->tc_drag_selection = std::nullopt;
             if (inner_press_point == inner_point) {
@@ -510,6 +511,7 @@ textinput_curses::handle_mouse(mouse_event& me)
                 this->tc_selection = selected_range::from_mouse(
                     this->tc_cursor_anchor, inner_point);
             }
+            this->set_needs_update();
         }
         this->ensure_cursor_visible();
     }
@@ -1803,6 +1805,7 @@ textinput_curses::move_cursor_by(movement move)
     if (move.hm_dir == direction_t::up || move.hm_dir == direction_t::down) {
         if (move.hm_amount > 1) {
             this->tc_top = this->tc_cursor.y - cursor_y_offset;
+            this->set_needs_update();
         }
         this->tc_cursor.x = this->tc_max_cursor_x;
     }
@@ -1826,8 +1829,14 @@ textinput_curses::move_cursor_by(movement move)
         }
     }
     this->clamp_point(this->tc_cursor);
-    this->tc_drag_selection = std::nullopt;
-    this->tc_selection = std::nullopt;
+    if (this->tc_drag_selection) {
+        this->tc_drag_selection = std::nullopt;
+        this->set_needs_update();
+    }
+    if (this->tc_selection) {
+        this->tc_selection = std::nullopt;
+        this->set_needs_update();
+    }
     this->ensure_cursor_visible();
 }
 
@@ -1835,8 +1844,14 @@ void
 textinput_curses::move_cursor_to(input_point ip)
 {
     this->tc_cursor = ip;
-    this->tc_drag_selection = std::nullopt;
-    this->tc_selection = std::nullopt;
+    if (this->tc_drag_selection) {
+        this->tc_drag_selection = std::nullopt;
+        this->set_needs_update();
+    }
+    if (this->tc_selection) {
+        this->tc_selection = std::nullopt;
+        this->set_needs_update();
+    }
     this->ensure_cursor_visible();
 }
 
