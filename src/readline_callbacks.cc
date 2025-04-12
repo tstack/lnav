@@ -1074,6 +1074,7 @@ rl_search_internal(textinput_curses& rc, ln_mode_t mode, bool complete = false)
                     result.unwrapErr().um_message.get_string());
             }
             lnav_data.ld_status[LNS_BOTTOM].set_needs_update();
+            lnav_data.ld_winched = true;
 
             lnav_data.ld_preview_view[0].reload_data();
 

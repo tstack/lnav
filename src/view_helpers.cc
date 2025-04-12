@@ -682,6 +682,7 @@ handle_winch(screen_curses* sc)
     lnav_data.ld_winched = false;
     for (auto& stat : lnav_data.ld_status) {
         stat.window_change();
+        stat.set_needs_update();
     }
     breadcrumb_view->set_needs_update();
     prompt.p_editor.set_needs_update();

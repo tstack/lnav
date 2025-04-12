@@ -180,7 +180,7 @@ private:
  */
 class view_colors {
 public:
-    static constexpr unsigned long HI_COLOR_COUNT = 6 * 3 * 3;
+    static constexpr size_t HI_COLOR_COUNT = 6 * 3 * 3;
 
     /** @return A reference to the singleton. */
     static view_colors& singleton();
@@ -251,6 +251,8 @@ public:
     block_elem_t wchar_for_icon(ui_icon_t ic) const;
 
     styling::color_unit match_color(styling::color_unit cu) const;
+
+    std::optional<lab_color> to_lab_color(const styling::color_unit& color);
 
     static bool initialized;
     static term_color_palette* vc_active_palette;

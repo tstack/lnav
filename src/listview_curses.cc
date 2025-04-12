@@ -260,7 +260,9 @@ listview_curses::handle_key(const ncinput& ch)
             break;
 
         case KEY_CTRL(']'):
-            if (this->lv_overlay_source != nullptr && !this->lv_overlay_focused)
+            if (this->get_selection() < this->get_inner_height()
+                && this->lv_overlay_source != nullptr
+                && !this->lv_overlay_focused)
             {
                 std::vector<attr_line_t> overlay_content;
                 this->lv_overlay_source->list_value_for_overlay(
@@ -303,7 +305,10 @@ listview_curses::handle_key(const ncinput& ch)
 
         case ' ':
         case NCKEY_PGDOWN: {
-            if (this->lv_overlay_source != nullptr) {
+            auto inner_height = this->get_inner_height();
+            if (this->lv_overlay_source != nullptr
+                && this->get_selection() < inner_height)
+            {
                 std::vector<attr_line_t> overlay_content;
                 this->lv_overlay_source->list_value_for_overlay(
                     *this, this->get_selection(), overlay_content);
@@ -313,7 +318,6 @@ listview_curses::handle_key(const ncinput& ch)
                 }
             }
 
-            auto inner_height = this->get_inner_height();
             if (this->lv_top + height * 2 > inner_height) {
                 // NB: getting the last row can read from the file, which can
                 // be expensive.  Use sparingly.

@@ -114,6 +114,8 @@ Features:
   update the corresponding row in the `all_logs` table.
 * Add timestamp format `%9` for nanoseconds from the epoch.
 * Added the "modus-operandi" light-colored theme.
+* The colors used for highlights and identifiers are now checked
+  for high contrast against the current theme's background color.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.

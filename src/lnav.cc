@@ -2364,6 +2364,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
         if (handle_winch(&sc)) {
             got_user_input = true;
+            next_status_update_time = ui_now;
             layout_views();
         }
 

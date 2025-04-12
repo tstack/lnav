@@ -93,6 +93,8 @@ struct lab_color {
 
     explicit lab_color(const rgb_color& rgb);
 
+    rgb_color to_rgb() const;
+
     double deltaE(const lab_color& other) const;
 
     bool sufficient_contrast(const lab_color& other) const;

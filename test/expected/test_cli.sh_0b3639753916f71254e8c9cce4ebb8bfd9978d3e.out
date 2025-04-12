@@ -3610,7 +3610,7 @@
                         "strike": false
                     },
                     "alt-text": {
-                        "color": "",
+                        "color": "$fg_main",
                         "background-color": "$bg_dim",
                         "underline": false,
                         "bold": false,
@@ -4077,7 +4077,7 @@
                     },
                     "spectrogram-low": {
                         "color": "",
-                        "background-color": "$green",
+                        "background-color": "#8adf80",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -4085,7 +4085,7 @@
                     },
                     "spectrogram-medium": {
                         "color": "",
-                        "background-color": "$yellow",
+                        "background-color": "#f3d000",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -4093,7 +4093,7 @@
                     },
                     "spectrogram-high": {
                         "color": "",
-                        "background-color": "$red",
+                        "background-color": "#ff8f88",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -6998,7 +6998,7 @@
                     },
                     "time-column": {
                         "color": "",
-                        "background-color": "",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,

@@ -73,6 +73,7 @@
             "background-color": "#e6e6e6"
           },
           "alt-text": {
+            "color": "$fg_main",
             "background-color": "$bg_dim"
           },
           "ok": {
@@ -246,13 +247,13 @@
             "background-color": "#f3f3f3"
           },
           "spectrogram-low": {
-            "background-color": "$green"
+            "background-color": "#8adf80"
           },
           "spectrogram-medium": {
-            "background-color": "$yellow"
+            "background-color": "#f3d000"
           },
           "spectrogram-high": {
-            "background-color": "$red"
+            "background-color": "#ff8f88"
           },
           "file": {
             "color": "$blue"
