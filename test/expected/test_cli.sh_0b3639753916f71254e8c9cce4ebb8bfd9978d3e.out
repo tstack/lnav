@@ -781,7 +781,7 @@
                     },
                     "inactive-alert": {
                         "color": "Maroon",
-                        "background-color": "Grey37",
+                        "background-color": "Grey53",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -789,7 +789,7 @@
                     },
                     "inactive": {
                         "color": "Silver",
-                        "background-color": "Grey37",
+                        "background-color": "Grey53",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -829,7 +829,7 @@
                     },
                     "info": {
                         "color": "Silver",
-                        "background-color": "Grey37",
+                        "background-color": "Grey53",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -1240,7 +1240,7 @@
                         "strike": false
                     },
                     "popup-border": {
-                        "color": "",
+                        "color": "$foreground",
                         "background-color": "$bgdarker",
                         "underline": false,
                         "bold": false,
@@ -6958,7 +6958,7 @@
                     },
                     "disabled-cursor-line": {
                         "color": "$cyan",
-                        "background-color": "$yellow",
+                        "background-color": "#DDD6C1",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7021,8 +7021,8 @@
                         "strike": false
                     },
                     "popup-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$magenta",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7125,7 +7125,7 @@
                         "strike": false
                     },
                     "breadcrumb": {
-                        "color": "#99a",
+                        "color": "$magenta",
                         "background-color": "",
                         "underline": false,
                         "bold": true,
@@ -7133,7 +7133,7 @@
                         "strike": false
                     },
                     "table-border": {
-                        "color": "#444",
+                        "color": "$base00",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -7149,8 +7149,8 @@
                         "strike": false
                     },
                     "quote-border": {
-                        "color": "#666",
-                        "background-color": "#444",
+                        "color": "$yellow",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7158,7 +7158,7 @@
                     },
                     "quoted-text": {
                         "color": "",
-                        "background-color": "#444",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7166,7 +7166,7 @@
                     },
                     "footnote-border": {
                         "color": "$blue",
-                        "background-color": "#444",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7174,7 +7174,7 @@
                     },
                     "footnote-text": {
                         "color": "#eee",
-                        "background-color": "#444",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7189,7 +7189,7 @@
                         "strike": false
                     },
                     "indent-guide": {
-                        "color": "$base1",
+                        "color": "$base2",
                         "background-color": "",
                         "underline": false,
                         "bold": false,
@@ -7199,24 +7199,24 @@
                 },
                 "syntax-styles": {
                     "inline-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$base02",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
                     },
                     "quoted-code": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$base02",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
                     },
                     "code-border": {
-                        "color": "",
-                        "background-color": "",
+                        "color": "$base01",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7368,7 +7368,7 @@
                     },
                     "spectrogram-low": {
                         "color": "",
-                        "background-color": "$green",
+                        "background-color": "#c7e600",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7376,7 +7376,7 @@
                     },
                     "spectrogram-medium": {
                         "color": "",
-                        "background-color": "$yellow",
+                        "background-color": "#f2b500",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7384,7 +7384,7 @@
                     },
                     "spectrogram-high": {
                         "color": "",
-                        "background-color": "$red",
+                        "background-color": "#fc3835",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7401,8 +7401,8 @@
                 },
                 "status-styles": {
                     "text": {
-                        "color": "$base2",
-                        "background-color": "$base03",
+                        "color": "$base0",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7410,7 +7410,7 @@
                     },
                     "warn": {
                         "color": "$yellow",
-                        "background-color": "$base03",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7418,7 +7418,7 @@
                     },
                     "alert": {
                         "color": "$red",
-                        "background-color": "$base03",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7426,7 +7426,7 @@
                     },
                     "active": {
                         "color": "$green",
-                        "background-color": "$base03",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7434,15 +7434,15 @@
                     },
                     "inactive-alert": {
                         "color": "$red",
-                        "background-color": "$base03",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,
                         "strike": false
                     },
                     "inactive": {
-                        "color": "$base1",
-                        "background-color": "$base03",
+                        "color": "$base01",
+                        "background-color": "#d9d9a0",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -7458,7 +7458,7 @@
                     },
                     "title": {
                         "color": "$base2",
-                        "background-color": "$base00",
+                        "background-color": "$cyan",
                         "underline": false,
                         "bold": true,
                         "italic": false,
@@ -7481,8 +7481,8 @@
                         "strike": false
                     },
                     "info": {
-                        "color": "$base1",
-                        "background-color": "$base03",
+                        "color": "$base0",
+                        "background-color": "$base2",
                         "underline": false,
                         "bold": false,
                         "italic": false,

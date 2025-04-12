@@ -31,6 +31,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <iterator>
 #include <string>
 
 #include "view_curses.hh"
@@ -720,6 +721,20 @@ view_colors::to_lab_color(const styling::color_unit& color)
     if (color.cu_value.is<palette_color>()) {
         auto pal_index = color.cu_value.get<palette_color>();
         if (pal_index < vc_active_palette->tc_palette.size()) {
+
+            if (this->vc_notcurses != nullptr && pal_index == COLOR_BLACK) {
+                // We use this as the default background, so try to get the
+                // real default from the terminal.
+                uint32_t chan = 0;
+                notcurses_default_background(this->vc_notcurses, &chan);
+
+                unsigned r = 0, g = 0, b = 0;
+
+                ncchannel_rgb8(chan, &r, &g, &b);
+                auto rgb = rgb_color{(short) r, (short) g, (short) b};
+                return lab_color{rgb};
+            }
+
             return vc_active_palette->tc_palette[pal_index].xc_lab_color;
         }
     } else if (color.cu_value.is<rgb_color>()) {

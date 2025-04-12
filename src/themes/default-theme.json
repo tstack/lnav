@@ -316,15 +316,15 @@
                     },
                     "info": {
                         "color": "Silver",
-                        "background-color": "Grey37"
+                        "background-color": "Grey53"
                     },
                     "inactive": {
                         "color": "Silver",
-                        "background-color": "Grey37"
+                        "background-color": "Grey53"
                     },
                     "inactive-alert": {
                         "color": "Maroon",
-                        "background-color": "Grey37"
+                        "background-color": "Grey53"
                     },
                     "title-hotkey": {
                         "color": "Teal",

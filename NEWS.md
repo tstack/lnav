@@ -133,6 +133,7 @@ Bug Fixes:
   cases.
 * The location of views should be restored from the session when filters
   are active.
+* Themes have been cleaned up a bit to fix issues with contrast.
 
 ## lnav v0.12.4
 

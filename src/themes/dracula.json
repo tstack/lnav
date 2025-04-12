@@ -104,6 +104,7 @@
                         "background-color": "$bgdarker"
                     },
                     "popup-border": {
+                        "color": "$foreground",
                         "background-color": "$bgdarker"
                     },
                     "scrollbar": {

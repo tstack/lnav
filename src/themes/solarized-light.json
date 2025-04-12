@@ -69,7 +69,7 @@
                     },
                     "disabled-cursor-line": {
                         "color": "$cyan",
-                        "background-color": "$yellow"
+                        "background-color": "#DDD6C1"
                     },
                     "adjusted-time": {
                         "color": "$magenta"
@@ -85,6 +85,10 @@
                     },
                     "popup": {
                         "color": "$base00",
+                        "background-color": "$base2"
+                    },
+                    "popup-border": {
+                        "color": "$magenta",
                         "background-color": "$base2"
                     },
                     "scrollbar": {
@@ -129,40 +133,52 @@
                         "color": "$yellow"
                     },
                     "breadcrumb": {
-                        "color": "#99a",
+                        "color": "$magenta",
                         "bold": true
                     },
                     "table-border": {
-                        "color": "#444"
+                        "color": "$base00"
                     },
                     "table-header": {
                         "bold": true
                     },
                     "quote-border": {
-                        "color": "#666",
-                        "background-color": "#444"
+                        "color": "$yellow",
+                        "background-color": "$base2"
                     },
                     "quoted-text": {
-                        "background-color": "#444"
+                        "background-color": "$base2"
                     },
                     "footnote-border": {
                         "color": "$blue",
-                        "background-color": "#444"
+                        "background-color": "$base2"
                     },
                     "footnote-text": {
                         "color": "#eee",
-                        "background-color": "#444"
+                        "background-color": "$base2"
                     },
                     "snippet-border": {
                         "color": "$cyan"
                     },
                     "indent-guide": {
-                        "color": "$base1"
+                        "color": "$base2"
                     }
                 },
                 "syntax-styles": {
+                    "quoted-code": {
+                        "color": "$base02",
+                        "background-color": "$base2"
+                    },
+                    "inline-code": {
+                        "color": "$base02",
+                        "background-color": "$base2"
+                    },
                     "keyword": {
                         "color": "$yellow"
+                    },
+                    "code-border": {
+                        "color": "$base01",
+                        "background-color": "$base2"
                     },
                     "string": {
                         "color": "$cyan",
@@ -196,13 +212,13 @@
                         "color": "$magenta"
                     },
                     "spectrogram-low": {
-                        "background-color": "$green"
+                        "background-color": "#c7e600"
                     },
                     "spectrogram-medium": {
-                        "background-color": "$yellow"
+                        "background-color": "#f2b500"
                     },
                     "spectrogram-high": {
-                        "background-color": "$red"
+                        "background-color": "#fc3835"
                     },
                     "file": {
                         "color": "$blue"
@@ -211,7 +227,7 @@
                 "status-styles": {
                     "title": {
                         "color": "$base2",
-                        "background-color": "$base00",
+                        "background-color": "$cyan",
                         "bold": true
                     },
                     "disabled-title": {
@@ -225,32 +241,32 @@
                         "bold": true
                     },
                     "text": {
-                        "color": "$base2",
-                        "background-color": "$base03"
+                        "color": "$base0",
+                        "background-color": "$base2"
                     },
                     "warn": {
                         "color": "$yellow",
-                        "background-color": "$base03"
+                        "background-color": "$base2"
                     },
                     "alert": {
                         "color": "$red",
-                        "background-color": "$base03"
+                        "background-color": "$base2"
                     },
                     "active": {
                         "color": "$green",
-                        "background-color": "$base03"
+                        "background-color": "$base2"
                     },
                     "info": {
-                        "color": "$base1",
-                        "background-color": "$base03"
+                        "color": "$base0",
+                        "background-color": "$base2"
                     },
                     "inactive": {
-                        "color": "$base1",
-                        "background-color": "$base03"
+                        "color": "$base01",
+                        "background-color": "#d9d9a0"
                     },
                     "inactive-alert": {
                         "color": "$red",
-                        "background-color": "$base03"
+                        "background-color": "$base2"
                     },
                     "suggestion": {
                         "color": "$base1"
