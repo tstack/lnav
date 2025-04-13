@@ -77,9 +77,6 @@ convert(const external_file_format& eff, const std::string& filename)
             lnav::paths::dotlnav() / "formats/default",
         });
         setenv("PATH", new_path.c_str(), 1);
-        log_info("invoking converter: %s (PATH=%s)",
-                 eff.eff_converter.c_str(),
-                 new_path.c_str());
         auto format_str = eff.eff_format_name;
 
         const char* args[] = {
