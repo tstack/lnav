@@ -1006,10 +1006,6 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
     }
 
-    if (this->lss_index.empty() && !time_left) {
-        return rebuild_result::rr_appended_lines;
-    }
-
     if (this->lss_index.reserve(total_lines + est_remaining_lines)) {
         // The index array was reallocated, just do a full sort/rebuild since
         // it's been cleared out.
@@ -1094,6 +1090,11 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     *this, ld->get_file_ptr(), line_iter);
             }
         }
+    }
+
+    if (this->lss_index.empty() && !time_left) {
+        log_info("ran out of time, skipping rebuild");
+        return rebuild_result::rr_appended_lines;
     }
 
     if (retval != rebuild_result::rr_no_change || force) {
