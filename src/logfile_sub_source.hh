@@ -753,6 +753,11 @@ public:
 
     void reload_config(error_reporter& reporter);
 
+    bool is_indexing_in_progress() const
+    {
+        return this->lss_indexing_in_progress;
+    }
+
 protected:
     void text_accel_display_changed() { this->clear_line_size_cache(); }
 
