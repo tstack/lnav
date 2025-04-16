@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <unordered_map>
+
 #include "lnav.indexing.hh"
 
 #include "bound_tags.hh"
@@ -448,7 +450,7 @@ update_active_files(file_collection& new_files)
         return true;
     }
 
-    bool was_below_open_file_limit
+    const auto was_below_open_file_limit
         = lnav_data.ld_active_files.is_below_open_file_limit();
 
     for (const auto& lf : new_files.fc_files) {

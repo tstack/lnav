@@ -196,7 +196,7 @@ public:
 
     int get_time_offset_line() const { return this->lf_time_offset_line; }
 
-    const struct timeval& get_time_offset() const
+    const timeval& get_time_offset() const
     {
         return this->lf_time_offset;
     }
@@ -207,7 +207,7 @@ public:
 
     void clear_time_offset()
     {
-        struct timeval tv = {0, 0};
+        timeval tv = {0, 0};
 
         this->adjust_content_time(-1, tv);
     }

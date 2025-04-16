@@ -460,6 +460,7 @@ files_sub_source::text_selection_changed(textview_curses& tc)
     auto sel = files_model::from_selection(tc.get_selection());
     std::vector<attr_line_t> details;
 
+    this->fss_details_mtime = std::chrono::microseconds::zero();
     sel.match(
         [](files_model::no_selection) {},
 
@@ -486,10 +487,11 @@ files_sub_source::text_selection_changed(textview_curses& tc)
                 }
             }
         },
-        [&details](const files_model::file_selection& fs) {
+        [&details, this](const files_model::file_selection& fs) {
             static constexpr auto NAME_WIDTH = 17;
 
             auto lf = *fs.sb_iter;
+            this->fss_details_mtime = lf->get_modified_time();
             auto path = lf->get_filename();
             auto actual_path = lf->get_actual_path();
             auto format = lf->get_format();

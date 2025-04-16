@@ -30,6 +30,10 @@
 #ifndef files_sub_source_hh
 #define files_sub_source_hh
 
+#include <chrono>
+#include <string>
+#include <vector>
+
 #include "file_collection.hh"
 #include "plain_text_source.hh"
 #include "textview_curses.hh"
@@ -72,10 +76,11 @@ public:
 
     size_t fss_last_line_len{0};
     attr_line_t fss_curr_line;
+    std::chrono::microseconds fss_details_mtime;
     plain_text_source* fss_details_source{nullptr};
 };
 
-struct files_overlay_source : public list_overlay_source {
+struct files_overlay_source : list_overlay_source {
     bool list_static_overlay(const listview_curses& lv,
                              int y,
                              int bottom,
@@ -102,17 +107,15 @@ struct selection_base {
 };
 
 struct error_selection
-    : public selection_base<error_selection,
-                            std::pair<std::string, std::string>> {};
+    : selection_base<error_selection, std::pair<std::string, std::string>> {};
 
 struct other_selection
-    : public selection_base<
-          other_selection,
-          std::map<std::string, other_file_descriptor>::iterator> {};
+    : selection_base<other_selection,
+                     std::map<std::string, other_file_descriptor>::iterator> {};
 
 struct file_selection
-    : public selection_base<file_selection,
-                            std::vector<std::shared_ptr<logfile>>::iterator> {};
+    : selection_base<file_selection,
+                     std::vector<std::shared_ptr<logfile>>::iterator> {};
 
 using files_list_selection = mapbox::util::
     variant<no_selection, error_selection, other_selection, file_selection>;
