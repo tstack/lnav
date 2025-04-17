@@ -499,8 +499,7 @@ struct subcmd_format_t {
                     retval.emplace_back(um);
                 }
             },
-            [&retval, &sample](
-                const log_format::scan_match& yep) mutable {
+            [&retval, &sample](const log_format::scan_match& yep) mutable {
                 auto al = attr_line_t("test file matched format");
                 if (!sample.s_matched_regexes.empty()) {
                     al.append(" pattern ")
@@ -511,6 +510,16 @@ struct subcmd_format_t {
                 auto um = lnav::console::user_message::ok(al).with_snippet(
                     lnav::console::snippet::from(sample.s_line.pp_location,
                                                  sample.s_line.pp_value));
+                if (sample.s_matched_regexes.empty()) {
+                    auto note_al = attr_line_t("quality value of ")
+                                       .append(lnav::roles::number(
+                                           fmt::to_string(yep.sm_quality)))
+                                       .append(" and ")
+                                       .append(lnav::roles::number(
+                                           fmt::to_string(yep.sm_strikes)))
+                                       .append(" strikes");
+                    um.with_note(note_al);
+                }
                 retval.emplace_back(um);
             },
             [&retval](const log_format::scan_incomplete& inc) {

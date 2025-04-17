@@ -33,7 +33,9 @@
 #define lnav_log_format_ext_hh
 
 #include <list>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "log_format.hh"
 #include "log_search_table_fwd.hh"
@@ -69,7 +71,7 @@ public:
         std::string vd_rewriter;
         std::string vd_description;
         intern_string_t vd_rewrite_src_name;
-        bool vd_used_in_line_format{false};
+        std::optional<size_t> vd_line_format_index;
         bool vd_is_desc_field{false};
     };
 
@@ -275,6 +277,7 @@ public:
         size_t vlcr_line_format_count{0};
         bool vlcr_has_ansi{false};
         bool vlcr_valid_utf{true};
+        std::optional<size_t> vlcr_line_format_index;
     };
 
     value_line_count_result value_line_count(const value_def* vd,

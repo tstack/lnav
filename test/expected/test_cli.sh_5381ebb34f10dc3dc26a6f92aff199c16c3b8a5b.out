@@ -1,3 +1,4 @@
 [1m[32m✔[0m test file matched format
 [36m --> [0m[1m{test_dir}/logfile_json.json[0m:1
 [36m | [0m{"ts": "2013-09-06T20:00:48.124817Z", "logger": "com.example.foo.bar.bazzer", "lvl": "TRACE", "msg": "trace test"}
+[36m =[0m [36mnote[0m: quality value of [1m4[0m and [1m0[0m strikes

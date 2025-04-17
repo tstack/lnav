@@ -461,12 +461,16 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         prev_index_size = this->lf_index.size();
                         found = best_match->second;
                     } else if (!best_match
-                               || sm.sm_quality > best_match->second.sm_quality)
+                               || (sm.sm_quality > best_match->second.sm_quality
+                                   && sm.sm_strikes
+                                       <= best_match->second.sm_strikes))
                     {
                         log_info(
-                            "  scan with format (%s) matched with quality (%d)",
+                            "  scan with format (%s) matched with quality of "
+                            "%d and %d strikes",
                             curr->get_name().c_str(),
-                            sm.sm_quality);
+                            sm.sm_quality,
+                            sm.sm_strikes);
 
                         auto match_um
                             = lnav::console::user_message::info(
@@ -479,7 +483,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                                   .with_note(
                                       attr_line_t("match quality is ")
                                           .append(lnav::roles::number(
-                                              fmt::to_string(sm.sm_quality))))
+                                              fmt::to_string(sm.sm_quality)))
+                                          .append(" with ")
+                                          .append(lnav::roles::number(
+                                              fmt::to_string(sm.sm_strikes)))
+                                          .append(" strikes"))
                                   .move();
                         this->lf_format_match_messages.emplace_back(match_um);
                         if (best_match) {
@@ -494,9 +502,13 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                     } else {
                         log_trace(
                             "  scan with format (%s) matched, but "
-                            "is low quality (%d)",
+                            "is lower quality (%d < %d) or more strikes (%d "
+                            "vs. %d)",
                             curr->get_name().c_str(),
-                            sm.sm_quality);
+                            sm.sm_quality,
+                            best_match->second.sm_quality,
+                            sm.sm_strikes,
+                            best_match->second.sm_strikes);
                         while (this->lf_index.size() > prev_index_size) {
                             this->lf_index.pop_back();
                         }

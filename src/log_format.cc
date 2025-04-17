@@ -52,6 +52,7 @@
 #include "ptimec.hh"
 #include "readline_highlighters.hh"
 #include "scn/scan.h"
+#include "spookyhash/SpookyV2.h"
 #include "sql_util.hh"
 #include "sqlite-extension-func.hh"
 #include "sqlitepp.hh"
@@ -518,7 +519,7 @@ logline_value::to_string_fragment(ArenaAlloc::Alloc<char>& alloc) const
                         auto unquote_func = this->lv_meta.lvm_kind
                                 == value_kind_t::VALUE_W3C_QUOTED
                             ? unquote_w3c
-                        : unquote;
+                            : unquote;
                         stack_buf allocator;
                         auto* unquoted_str
                             = allocator.allocate(this->lv_frag.length());
@@ -975,6 +976,9 @@ struct json_log_userdata {
         }
         this->jlu_sub_line_count += res.vlcr_count;
         this->jlu_quality += res.vlcr_line_format_count;
+        if (res.vlcr_line_format_index) {
+            this->jlu_format_hits[res.vlcr_line_format_index.value()] = true;
+        }
     }
 
     external_log_format* jlu_format{nullptr};
@@ -988,6 +992,8 @@ struct json_log_userdata {
     size_t jlu_line_size{0};
     size_t jlu_sub_start{0};
     uint32_t jlu_quality{0};
+    uint32_t jlu_strikes{0};
+    std::vector<bool> jlu_format_hits;
     shared_buffer_ref& jlu_shared_buffer;
     scan_batch_context* jlu_batch_context;
     std::optional<string_fragment> jlu_opid_frag;
@@ -1441,6 +1447,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
     jlu.jlu_line_value = sbr.get_data();
     jlu.jlu_line_size = sbr.length();
     jlu.jlu_handle = handle;
+    jlu.jlu_format_hits.resize(this->jlf_line_format.size());
     if (yajl_parse(handle, line_data, sbr.length()) == yajl_status_ok
         && yajl_complete_parse(handle) == yajl_status_ok)
     {
@@ -1509,6 +1516,19 @@ external_log_format::scan_json(std::vector<logline>& dst,
             ll.set_valid_utf(jlu.jlu_valid_utf);
             dst.emplace_back(ll);
         }
+
+        if (!this->lf_specialized) {
+            for (const auto& [index, jfe] : lnav::itertools::enumerate(this->jlf_line_format))
+            {
+                if (jfe.jfe_type != json_log_field::VARIABLE ||
+                    !jfe.jfe_default_value.empty()) {
+                    continue;
+                }
+                if (!jlu.jlu_format_hits[index]) {
+                    jlu.jlu_strikes += 1;
+                }
+            }
+        }
     } else {
         unsigned char* msg;
         int line_count = 2;
@@ -1539,7 +1559,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
     }
 
-    return scan_match{jlu.jlu_quality};
+    return scan_match{jlu.jlu_quality, jlu.jlu_strikes};
 }
 
 log_format::scan_result_t
@@ -2449,6 +2469,7 @@ external_log_format::get_subline(const logline& ll,
         jlu.jlu_line = &ll;
         jlu.jlu_handle = handle;
         jlu.jlu_line_value = sbr.get_data();
+        jlu.jlu_format_hits.resize(this->jlf_line_format.size());
 
         yajl_status parse_status = yajl_parse(
             handle, (const unsigned char*) sbr.get_data(), sbr.length());
@@ -4020,7 +4041,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
             = intern_string::lookup("__timestamp__");
         static const intern_string_t level_field
             = intern_string::lookup("__level__");
-        json_format_element& jfe = *iter;
+        auto& jfe = *iter;
 
         if (startswith(jfe.jfe_value.pp_value.get(), "/")) {
             jfe.jfe_value.pp_value
@@ -4065,7 +4086,7 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
                                     .append(" is not a defined value"))
                             .with_snippet(jfe.jfe_value.to_snippet()));
                 } else {
-                    vd_iter->second->vd_used_in_line_format = true;
+                    vd_iter->second->vd_line_format_index = format_index;
                     switch (vd_iter->second->vd_meta.lvm_kind) {
                         case value_kind_t::VALUE_INTEGER:
                         case value_kind_t::VALUE_FLOAT:
@@ -4440,14 +4461,13 @@ external_log_format::value_line_count(const value_def* vd,
         }
     }
 
-    if (vd->vd_meta.is_hidden()) {
-        retval.vlcr_count = 0;
-        return retval;
-    }
-
-    if (vd->vd_used_in_line_format) {
+    if (vd->vd_line_format_index) {
         retval.vlcr_line_format_count += 1;
         retval.vlcr_count -= 1;
+        retval.vlcr_line_format_index = vd->vd_line_format_index;
+    } else if (vd->vd_meta.is_hidden()) {
+        retval.vlcr_count = 0;
+        return retval;
     }
 
     return retval;

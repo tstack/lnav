@@ -448,7 +448,8 @@ public:
     }
 
     struct scan_match {
-        uint32_t sm_quality;
+        uint32_t sm_quality{0};
+        uint32_t sm_strikes{0};
     };
 
     struct scan_no_match {
