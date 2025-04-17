@@ -96,12 +96,6 @@
                         "color": "Olive",
                         "bold": true
                     },
-                    "cursor-line": {
-                        "color": "Cyan1",
-                        "background-color": "Maroon",
-                        "bold": true,
-                        "underline": true
-                    },
                     "disabled-cursor-line": {
                         "color": "Cyan1",
                         "background-color": "#5f005f"
@@ -219,8 +213,7 @@
                         "color": "Navy"
                     },
                     "string": {
-                        "color": "Green",
-                        "bold": true
+                        "color": "Green"
                     },
                     "comment": {
                         "color": "Green"

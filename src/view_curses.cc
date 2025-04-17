@@ -721,7 +721,6 @@ view_colors::to_lab_color(const styling::color_unit& color)
     if (color.cu_value.is<palette_color>()) {
         auto pal_index = color.cu_value.get<palette_color>();
         if (pal_index < vc_active_palette->tc_palette.size()) {
-
             if (this->vc_notcurses != nullptr && pal_index == COLOR_BLACK) {
                 // We use this as the default background, so try to get the
                 // real default from the terminal.
@@ -1126,6 +1125,19 @@ view_colors::init_roles(const lnav_theme& lt,
                     this->vc_highlight_colors[lpc]
                         = contrasting[lpc % contrasting.size()].second;
                 }
+            }
+            if (lt.lt_style_cursor_line.pp_value.sc_background_color.empty()) {
+                auto adjusted_cursor = bg_as_lab;
+                if (adjusted_cursor.lc_l < 50) {
+                    adjusted_cursor.lc_l += 15;
+                } else {
+                    adjusted_cursor.lc_l -= 15;
+                }
+                auto new_cursor_bg = this->match_color(
+                    styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
+                this->get_role_attrs(role_t::VCR_CURSOR_LINE)
+                    .ra_normal.ta_bg_color
+                    = new_cursor_bg;
             }
         }
     }
