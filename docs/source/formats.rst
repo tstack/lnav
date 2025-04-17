@@ -570,7 +570,9 @@ log file for the "Format order" message:
 For JSON-lines log files, the log message must have the timestamp property
 specified in the format in order to match.  If multiple formats match a
 message, the format that has the most matching :code:`line-format` elements
-will win.
+will win (referred to as "quality").  In the case of a tie, the format with
+the least number of required :code:`line-format` elements missing ("strikes")
+wins.
 
 .. [#] The maximum number of lines to check can be configured.  See the
        :ref:`tuning` section for more details.

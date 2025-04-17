@@ -462,8 +462,10 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         found = best_match->second;
                     } else if (!best_match
                                || (sm.sm_quality > best_match->second.sm_quality
-                                   && sm.sm_strikes
-                                       <= best_match->second.sm_strikes))
+                                   || (sm.sm_quality
+                                           == best_match->second.sm_quality
+                                       && sm.sm_strikes
+                                           < best_match->second.sm_strikes)))
                     {
                         log_info(
                             "  scan with format (%s) matched with quality of "
