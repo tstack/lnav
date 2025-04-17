@@ -1129,7 +1129,7 @@ view_colors::init_roles(const lnav_theme& lt,
             if (lt.lt_style_cursor_line.pp_value.sc_background_color.empty()) {
                 auto adjusted_cursor = bg_as_lab;
                 if (adjusted_cursor.lc_l < 50) {
-                    adjusted_cursor.lc_l += 15;
+                    adjusted_cursor.lc_l += 18;
                 } else {
                     adjusted_cursor.lc_l -= 15;
                 }
