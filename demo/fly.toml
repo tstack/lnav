@@ -32,4 +32,4 @@ processes = []
     timeout = "2s"
 
 [build]
-image = "lnav-demo"
+image = "tstack/lnav-demo:0.13.0"

@@ -15,6 +15,7 @@ RUN unzip lnav-0.13.0-rc2-linux-musl-x86_64.zip
 
 COPY docs/tutorials tutorials
 RUN gunzip /tutorials/playground/logs/*.gz
+RUN touch -t 202202010000 /tutorials/playground/logs/messages
 
 RUN useradd -rm -d /home/playground -s /bin/bash playground
 RUN echo 'playground:playground' | chpasswd
@@ -25,7 +26,7 @@ RUN echo 'tutorial1:tutorial1' | chpasswd
 RUN passwd -d tutorial1
 
 USER playground
-RUN /lnav-0.13.0-rc2/lnav -nN -c ":config /ui/theme monocai" -c ":config /ui/mouse/mode enabled"
+RUN /lnav-0.13.0-rc2/lnav -n -c ":config /ui/theme monocai" -c ":config /ui/mouse/mode enabled" -c ":set-file-timezone UTC /tutorials/playground/logs/*" /tutorials/playground/logs
 
 USER tutorial1
 RUN /lnav-0.13.0-rc2/lnav -nN -c ":config /ui/theme monocai" -c ":config /ui/mouse/mode enabled"
