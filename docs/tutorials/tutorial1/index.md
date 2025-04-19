@@ -3,7 +3,7 @@ name: tutorial1
 steps:
   - move-to-error:
       description: "Move to an error"
-      view_ptr: /top
+      view_ptr: /selection
       view_value: 6
       notification: |
         Press `e`/`Shift+E` to move through the
@@ -19,7 +19,7 @@ steps:
       notification: |
         Press `w`/`Shift+W` to move through the
         <span class="-lnav_log-level-styles_warning">warnings</span>
-      view_ptr: /top
+      view_ptr: /selection
       view_value: 3
       comment: |
         You found the warning! The scrollbar on the right is highlighted
@@ -35,7 +35,7 @@ steps:
     move-to-next-hit:
       description: "Move to the next hit"
       notification: "Press `n`/`Shift+N` to move through the search hits"
-      view_ptr: /top
+      view_ptr: /selection
       view_value: 53
       comment: |
         The matching text in a search is highlighted in
@@ -53,7 +53,7 @@ steps:
   - move-to-half-hour:
       description: "Move to the next half-hour"
       notification: "Press `3`/`Shift+3` to move through the half-hour marks"
-      view_ptr: /top
+      view_ptr: /selection
       view_value: 34
       comment: |
         This file is in the _glog_ format and timestamps consist of the
@@ -65,7 +65,7 @@ steps:
     move-to-timestamp:
       description: "Move to a given timestamp"
       notification: "Move to '**March 23**' using `:goto` or the breadcrumb bar"
-      view_ptr: /top
+      view_ptr: /selection
       view_value: 79
       comment: |
         Many different timestamp formats are recognized as well as

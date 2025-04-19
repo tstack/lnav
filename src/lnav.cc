@@ -1180,7 +1180,8 @@ looper()
               height = (SELECT height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
               inner_height = (SELECT inner_height FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
               top_time = (SELECT top_time FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
-              search = (SELECT search FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name)
+              search = (SELECT search FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name),
+              selection = (SELECT selection FROM lnav_views WHERE lnav_views.name = lnav_views_echo.name)
           WHERE EXISTS (SELECT * FROM lnav_views WHERE name = lnav_views_echo.name AND
                     (
                         lnav_views.top != lnav_views_echo.top OR
@@ -1188,7 +1189,8 @@ looper()
                         lnav_views.height != lnav_views_echo.height OR
                         lnav_views.inner_height != lnav_views_echo.inner_height OR
                         lnav_views.top_time != lnav_views_echo.top_time OR
-                        lnav_views.search != lnav_views_echo.search
+                        lnav_views.search != lnav_views_echo.search OR
+                        lnav_views.selection != lnav_views_echo.selection
                     ))
         )"
 #else
@@ -1199,7 +1201,8 @@ looper()
               height = orig.height,
               inner_height = orig.inner_height,
               top_time = orig.top_time,
-              search = orig.search
+              search = orig.search,
+              selection = orig.selection
           FROM (SELECT * FROM lnav_views) AS orig
           WHERE orig.name = lnav_views_echo.name AND
                 (
@@ -1208,7 +1211,8 @@ looper()
                     orig.height != lnav_views_echo.height OR
                     orig.inner_height != lnav_views_echo.inner_height OR
                     orig.top_time != lnav_views_echo.top_time OR
-                    orig.search != lnav_views_echo.search
+                    orig.search != lnav_views_echo.search OR
+                    orig.selection != lnav_views_echo.selection
                 )
         )"
 #endif

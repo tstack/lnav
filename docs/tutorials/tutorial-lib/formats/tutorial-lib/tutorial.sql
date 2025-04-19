@@ -76,10 +76,10 @@ CREATE TRIGGER IF NOT EXISTS tutorial_move_log_after_load
     ON lnav_events
     WHEN jget(new.content, '/$schema') = 'https://lnav.org/event-session-loaded-v1.schema.json'
 BEGIN
-    UPDATE lnav_views SET top = 0 WHERE name = 'log';
+    UPDATE lnav_views SET selection = 0 WHERE name = 'log';
 END;
 
-CREATE TRIGGER IF NOT EXISTS lnav_tutorial_view_listener UPDATE OF top
+CREATE TRIGGER IF NOT EXISTS lnav_tutorial_view_listener UPDATE OF selection
     ON lnav_views_echo
     WHEN new.name = 'log'
 BEGIN
@@ -90,7 +90,7 @@ BEGIN
         FROM lnav_tutorial_step,
              lnav_tutorial_lines
         WHERE lnav_tutorial_step.step = lnav_tutorial_lines.step
-          AND jget(json_object('top', new.top,
+          AND jget(json_object('selection', new.selection,
                                'left', new.left,
                                'search', new.search),
                    view_ptr) = view_value;
@@ -100,10 +100,10 @@ BEGIN
                                 lnav_tutorial_lines
                            WHERE lnav_tutorial_step.step = lnav_tutorial_lines.step
                              AND lnav_tutorial_lines.log_comment IS NOT NULL
-                             AND jget(json_object('top', new.top,
+                             AND jget(json_object('selection', new.selection,
                                                   'left', new.left,
                                                   'search', new.search), view_ptr) = view_value)
-        WHERE log_line = new.top
+        WHERE log_line = new.selection
           AND log_comment IS NULL;
 END;
 

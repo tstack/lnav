@@ -188,7 +188,7 @@ VALUES ('org.lnav.breadcrumb.focus', -1, DATETIME('now', '+2 minute'),
         'Press <span class="-lnav_status-styles_hotkey">${org.lnav.key.breadcrumb.focus}</span> to focus on the breadcrumb bar');
 
 CREATE TABLE lnav_views_echo AS
-SELECT name, top, "left", height, inner_height, top_time, search
+SELECT name, top, "left", height, inner_height, top_time, search, selection
 FROM lnav_views;
 
 CREATE UNIQUE INDEX lnav_views_echo_index ON lnav_views_echo (name);
