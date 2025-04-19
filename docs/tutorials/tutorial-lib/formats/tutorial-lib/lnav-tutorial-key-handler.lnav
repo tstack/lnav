@@ -23,7 +23,7 @@
 )
     WHERE name = 'text'
 :switch-to-view text
-;UPDATE lnav_views SET top = 0, left = 0
+;UPDATE lnav_views SET selection = 0, left = 0
     WHERE name = 'log'
 ;REPLACE INTO lnav_user_notifications (id, views, message)
     SELECT * FROM lnav_tutorial_log_notification;

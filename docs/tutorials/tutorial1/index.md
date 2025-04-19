@@ -117,7 +117,7 @@ To move to a particular time in the logs, you have a few options:
   marks within an hour.  For example, pressing `2` will move to the
   first message after the next twenty-minute mark, pressing `3`
   will move to the next half-hour mark, and so on.
-* Pressing `ENTER` to focus on the breadcrumb bar, then you
+* Pressing `` ` `` to focus on the breadcrumb bar, then you
   can press `TAB` (or right-arrow) to move to the time crumb.
   With the time crumb selected, you can then type in an absolute
   or relative time.  Or, you can use the up and down arrow keys
