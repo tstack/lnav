@@ -361,7 +361,7 @@
                     },
                     "popup": {
                         "color": "Silver",
-                        "background-color": "Grey",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -547,7 +547,7 @@
                 "syntax-styles": {
                     "inline-code": {
                         "color": "Maroon",
-                        "background-color": "#121212",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -555,7 +555,7 @@
                     },
                     "quoted-code": {
                         "color": "Silver",
-                        "background-color": "#121212",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,
@@ -563,7 +563,7 @@
                     },
                     "code-border": {
                         "color": "#444",
-                        "background-color": "#121212",
+                        "background-color": "",
                         "underline": false,
                         "bold": false,
                         "italic": false,

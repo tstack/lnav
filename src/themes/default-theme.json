@@ -119,8 +119,7 @@
                         "color": "Olive"
                     },
                     "popup": {
-                        "color": "Silver",
-                        "background-color": "Grey"
+                        "color": "Silver"
                     },
                     "popup-border": {
                         "color": "Purple"
@@ -198,16 +197,13 @@
                 },
                 "syntax-styles": {
                     "inline-code": {
-                        "color": "Maroon",
-                        "background-color": "#121212"
+                        "color": "Maroon"
                     },
                     "quoted-code": {
-                        "color": "Silver",
-                        "background-color": "#121212"
+                        "color": "Silver"
                     },
                     "code-border": {
-                        "color": "#444",
-                        "background-color": "#121212"
+                        "color": "#444"
                     },
                     "keyword": {
                         "color": "Navy"

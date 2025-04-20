@@ -1072,6 +1072,17 @@ view_colors::init_roles(const lnav_theme& lt,
         = this->to_attrs(lt, lt.lt_style_offset_time, reporter);
     this->get_role_attrs(role_t::VCR_TIME_COLUMN)
         = this->to_attrs(lt, lt.lt_style_time_column, reporter);
+    this->get_role_attrs(role_t::VCR_POPUP)
+        = this->to_attrs(lt, lt.lt_style_popup, reporter);
+    this->get_role_attrs(role_t::VCR_POPUP_BORDER)
+        = this->to_attrs(lt, lt.lt_style_popup_border, reporter);
+    this->get_role_attrs(role_t::VCR_INLINE_CODE)
+        = this->to_attrs(lt, lt.lt_style_inline_code, reporter);
+    this->get_role_attrs(role_t::VCR_QUOTED_CODE)
+        = this->to_attrs(lt, lt.lt_style_quoted_code, reporter);
+    this->get_role_attrs(role_t::VCR_CODE_BORDER)
+        = this->to_attrs(lt, lt.lt_style_code_border, reporter);
+
     {
         auto& time_to_text
             = this->get_role_attrs(role_t::VCR_TIME_COLUMN_TO_TEXT);
@@ -1136,6 +1147,47 @@ view_colors::init_roles(const lnav_theme& lt,
                 auto new_cursor_bg = this->match_color(
                     styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
                 this->get_role_attrs(role_t::VCR_CURSOR_LINE)
+                    .ra_normal.ta_bg_color
+                    = new_cursor_bg;
+            }
+            if (lt.lt_style_popup.pp_value.sc_background_color.empty()) {
+                auto adjusted_cursor = bg_as_lab;
+                if (adjusted_cursor.lc_l < 50) {
+                    adjusted_cursor.lc_l += 30;
+                } else {
+                    adjusted_cursor.lc_l -= 30;
+                }
+                auto new_cursor_bg = this->match_color(
+                    styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
+                this->get_role_attrs(role_t::VCR_POPUP).ra_normal.ta_bg_color
+                    = new_cursor_bg;
+            }
+            if (lt.lt_style_inline_code.pp_value.sc_background_color.empty()) {
+                auto adjusted_cursor = bg_as_lab;
+                if (adjusted_cursor.lc_l < 50) {
+                    adjusted_cursor.lc_l = 10;
+                } else {
+                    adjusted_cursor.lc_l -= 25;
+                }
+                auto new_cursor_bg = this->match_color(
+                    styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
+                this->get_role_attrs(role_t::VCR_INLINE_CODE)
+                    .ra_normal.ta_bg_color
+                    = new_cursor_bg;
+            }
+            if (lt.lt_style_quoted_code.pp_value.sc_background_color.empty()) {
+                auto adjusted_cursor = bg_as_lab;
+                if (adjusted_cursor.lc_l < 50) {
+                    adjusted_cursor.lc_l = 10;
+                } else {
+                    adjusted_cursor.lc_l -= 25;
+                }
+                auto new_cursor_bg = this->match_color(
+                    styling::color_unit::from_rgb(adjusted_cursor.to_rgb()));
+                this->get_role_attrs(role_t::VCR_QUOTED_CODE)
+                    .ra_normal.ta_bg_color
+                    = new_cursor_bg;
+                this->get_role_attrs(role_t::VCR_CODE_BORDER)
                     .ra_normal.ta_bg_color
                     = new_cursor_bg;
             }
@@ -1281,10 +1333,6 @@ view_colors::init_roles(const lnav_theme& lt,
     this->get_role_attrs(role_t::VCR_INACTIVE_ALERT_STATUS)
         = this->to_attrs(lt, lt.lt_style_inactive_alert_status, reporter);
 
-    this->get_role_attrs(role_t::VCR_POPUP)
-        = this->to_attrs(lt, lt.lt_style_popup, reporter);
-    this->get_role_attrs(role_t::VCR_POPUP_BORDER)
-        = this->to_attrs(lt, lt.lt_style_popup_border, reporter);
     this->get_role_attrs(role_t::VCR_FOCUSED)
         = this->to_attrs(lt, lt.lt_style_focused, reporter);
     this->get_role_attrs(role_t::VCR_DISABLED_FOCUSED)
@@ -1310,12 +1358,6 @@ view_colors::init_roles(const lnav_theme& lt,
             = this->to_attrs(lt, bar_sc, reporter);
     }
 
-    this->get_role_attrs(role_t::VCR_INLINE_CODE)
-        = this->to_attrs(lt, lt.lt_style_inline_code, reporter);
-    this->get_role_attrs(role_t::VCR_QUOTED_CODE)
-        = this->to_attrs(lt, lt.lt_style_quoted_code, reporter);
-    this->get_role_attrs(role_t::VCR_CODE_BORDER)
-        = this->to_attrs(lt, lt.lt_style_code_border, reporter);
     this->get_role_attrs(role_t::VCR_KEYWORD)
         = this->to_attrs(lt, lt.lt_style_keyword, reporter);
     this->get_role_attrs(role_t::VCR_STRING)
