@@ -1030,6 +1030,9 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lss_basename_width = 0;
         this->lss_filename_width = 0;
         vis_bm[&textview_curses::BM_USER_EXPR].clear();
+        if (this->lss_index_delegate) {
+            this->lss_index_delegate->index_start(*this);
+        }
     } else if (retval == rebuild_result::rr_partial_rebuild) {
         size_t remaining = 0;
 
