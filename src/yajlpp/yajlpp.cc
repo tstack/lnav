@@ -35,6 +35,7 @@
 
 #include "yajlpp.hh"
 
+#include "base/math_util.hh"
 #include "config.h"
 #include "fmt/format.h"
 #include "yajl/api/yajl_parse.h"
@@ -663,6 +664,8 @@ yajlpp_parse_context::map_key(void* ctx,
         ypc->ypc_path.push_back('/');
     }
     auto path_start = ypc->ypc_path.size();
+    ypc->ypc_path.expand_to(
+        roundup_size(ypc->ypc_path.size() + len + props->ptr_escapes, 4096));
     ypc->ypc_path.resize_by(len + props->ptr_escapes);
     if (props->ptr_escapes > 0) {
         for (size_t lpc = 0; lpc < len; lpc++) {
