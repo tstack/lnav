@@ -1,0 +1,62 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "pino_log": {
+        "title": "Pino log",
+        "url": "https://github.com/pinojs/pino",
+        "description": "Pino JSON logging library for node.js",
+        "file-type": "json",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "hostname"
+            },
+            "[",
+            {
+                "field": "pid"
+            },
+            "] ",
+            {
+                "field": "__level__",
+                "text-transform": "uppercase",
+                "auto-width": true
+            },
+            " ",
+            {
+                "field": "msg"
+            }
+        ],
+        "level-field": "level",
+        "level": {
+            "fatal": 60,
+            "error": 50,
+            "warning": 40,
+            "info": 30,
+            "debug": 20,
+            "trace": 10
+        },
+        "value": {
+            "pid": {
+                "kind": "integer",
+                "identifier": true
+            },
+            "hostname": {
+                "kind": "string",
+                "identifier": true
+            },
+            "level": {
+                "kind": "integer",
+                "identifier": true,
+                "foreign-key": true
+            },
+            "msg": {
+                "kind": "string"
+            }
+        },
+        "timestamp-field": "time",
+        "timestamp-divisor": 1000,
+        "body-field": "msg"
+    }
+}

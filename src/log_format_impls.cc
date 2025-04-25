@@ -1890,29 +1890,30 @@ struct logfmt_pair_handler {
     {
     }
 
-    bool process_value(const string_fragment& value_frag)
+    log_format::scan_result_t process_value(const string_fragment& value_frag)
     {
-        if (this->lph_key_frag.is_one_of("time", "ts")) {
+        if (this->lph_key_frag.is_one_of("timestamp", "time", "ts", "t")) {
             if (!this->lph_dt_scanner.scan(value_frag.data(),
                                            value_frag.length(),
                                            nullptr,
                                            &this->lph_time_tm,
                                            this->lph_tv))
             {
-                return false;
+                return log_format::scan_no_match{
+                    "timestamp value did not parse correctly"};
             }
             this->lph_found_time = true;
-        } else if (this->lph_key_frag == "level") {
+        } else if (this->lph_key_frag == "level"_frag) {
             this->lph_level
                 = string2level(value_frag.data(), value_frag.length());
         }
-        return true;
+        return log_format::scan_match{};
     }
 
     date_time_scanner& lph_dt_scanner;
     bool lph_found_time{false};
-    struct exttm lph_time_tm{};
-    struct timeval lph_tv{0, 0};
+    exttm lph_time_tm{};
+    timeval lph_tv{0, 0};
     log_level_t lph_level{log_level_t::LEVEL_INFO};
     string_fragment lph_key_frag{""};
 };
@@ -1973,24 +1974,30 @@ public:
         while (!done) {
             auto parse_result = p.step();
 
-            done = parse_result.match(
-                [](const logfmt::parser::end_of_input&) { return true; },
-                [&lph](const logfmt::parser::kvpair& kvp) {
+            auto value_res = parse_result.match(
+                [&done](const logfmt::parser::end_of_input&) -> scan_result_t {
+                    done = true;
+                    return scan_match{};
+                },
+                [&lph](const logfmt::parser::kvpair& kvp) -> scan_result_t {
                     lph.lph_key_frag = kvp.first;
 
                     return kvp.second.match(
-                        [](const logfmt::parser::bool_value& bv) {
-                            return false;
-                        },
-                        [&lph](const logfmt::parser::float_value& fv) {
+                        [](const logfmt::parser::bool_value& bv)
+                            -> scan_result_t { return scan_match{}; },
+                        [&lph](const logfmt::parser::float_value& fv)
+                            -> scan_result_t {
                             return lph.process_value(fv.fv_str_value);
                         },
-                        [&lph](const logfmt::parser::int_value& iv) {
+                        [&lph](const logfmt::parser::int_value& iv)
+                            -> scan_result_t {
                             return lph.process_value(iv.iv_str_value);
                         },
-                        [&lph](const logfmt::parser::quoted_value& qv) {
+                        [&lph](const logfmt::parser::quoted_value& qv)
+                            -> scan_result_t {
                             auto_mem<yajl_handle_t> handle(yajl_free);
                             yajl_callbacks cb;
+                            scan_result_t retval;
 
                             memset(&cb, 0, sizeof(cb));
                             handle = yajl_alloc(&cb, nullptr, &lph);
@@ -2001,7 +2008,8 @@ public:
                                 auto& lph = *((logfmt_pair_handler*) ctx);
                                 string_fragment value_frag{str, 0, (int) len};
 
-                                return lph.process_value(value_frag);
+                                auto value_res = lph.process_value(value_frag);
+                                return value_res.is<scan_match>();
                             };
 
                             if (yajl_parse(
@@ -2022,19 +2030,25 @@ public:
                                 return lph.process_value(unq_frag);
                             }
 
-                            return false;
+                            return scan_match{};
                         },
-                        [&lph](const logfmt::parser::unquoted_value& uv) {
+                        [&lph](const logfmt::parser::unquoted_value& uv)
+                            -> scan_result_t {
                             return lph.process_value(uv.uv_value);
                         });
                 },
-                [](const logfmt::parser::error& err) {
+                [](const logfmt::parser::error& err) -> scan_result_t {
                     // log_error("logfmt parse error: %s", err.e_msg.c_str());
-                    return true;
+                    return scan_no_match{};
                 });
+            if (value_res.is<scan_no_match>()) {
+                retval = value_res;
+                done = true;
+            }
         }
 
         if (lph.lph_found_time) {
+            this->lf_timestamp_flags = lph.lph_time_tm.et_flags;
             dst.emplace_back(
                 li.li_file_range.fr_offset, lph.lph_tv, lph.lph_level);
             retval = scan_match{2000};
@@ -2113,11 +2127,11 @@ public:
                     auto value_lr
                         = line_range{value_frag.sf_begin, value_frag.sf_end};
 
-                    if (kvp.first.is_one_of("time", "ts")) {
+                    if (kvp.first.is_one_of("timestamp", "time", "ts", "t")) {
                         sa.emplace_back(value_lr, L_TIMESTAMP.value());
-                    } else if (kvp.first == "level") {
+                    } else if (kvp.first == "level"_frag) {
                         sa.emplace_back(value_lr, L_LEVEL.value());
-                    } else if (kvp.first == "msg") {
+                    } else if (kvp.first == "msg"_frag) {
                         sa.emplace_back(value_lr, SA_BODY.value());
                     } else if (kvp.second.is<logfmt::parser::quoted_value>()
                                || kvp.second

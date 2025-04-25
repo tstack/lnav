@@ -1,0 +1,9 @@
+2025-04-24T22:09:20.854Z	info	Metrics	{"otelcol.component.id": "debug", "otelcol.component.kind": "Exporter", "otelcol.signal": "metrics", "resource metrics": 3, "metrics": 27, "data points": 60}
+2025-04-24T22:09:20.856Z	error	internal/queue_sender.go:128	Exporting failed. Dropping data.	{"otelcol.component.id": "otlphttp/prometheus", "otelcol.component.kind": "Exporter", "otelcol.signal": "metrics", "error": "not retryable error: Permanent error: rpc error: code = Unknown desc = error exporting items, request to http://prometheus:9090/api/v1/otlp/v1/metrics responded with HTTP Status Code 500", "dropped_items": 60}
+go.opentelemetry.io/collector/exporter/exporterhelper/internal.NewQueueSender.func3
+     go.opentelemetry.io/collector/exporter@v0.120.0/exporterhelper/internal/queue_sender.go:128
+go.opentelemetry.io/collector/exporter/exporterhelper/internal/batcher.(*disabledBatcher[...]).Consume
+     go.opentelemetry.io/collector/exporter@v0.120.0/exporterhelper/internal/batcher/disabled_batcher.go:23
+go.opentelemetry.io/collector/exporter/exporterqueue.(*asyncQueue[...]).Start.func1
+     go.opentelemetry.io/collector/exporter@v0.120.0/exporterqueue/async_queue.go:47
+2025-04-24T22:09:21.256Z	info	Metrics	{"otelcol.component.id": "debug", "otelcol.component.kind": "Exporter", "otelcol.signal": "metrics", "resource metrics": 1, "metrics": 30, "data points": 45}

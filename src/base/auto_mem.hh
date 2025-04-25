@@ -35,6 +35,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -281,6 +282,16 @@ public:
         this->ab_buffer[this->ab_size] = ch;
         this->ab_size += 1;
 
+        return *this;
+    }
+
+    auto_buffer& append(std::string_view sv)
+    {
+        if (this->ab_size + sv.length() < this->ab_capacity) {
+            this->expand_by(sv.length() + 1024);
+        }
+        memcpy(&this->ab_buffer[this->ab_size], sv.data(), sv.length());
+        this->ab_size += sv.length();
         return *this;
     }
 

@@ -351,6 +351,7 @@ dist_noinst_DATA = \
 	logfile_generic.3 \
 	logfile_generic_with_header.0 \
 	logfile_glog.0 \
+	logfile_grafana.0 \
 	logfile_haproxy.0 \
 	logfile_invalid_json.json \
 	logfile_invalid_json2.json \
@@ -372,6 +373,7 @@ dist_noinst_DATA = \
 	logfile_nextcloud.0 \
 	logfile_openam.0 \
 	logfile_partitions.0 \
+	logfile_pino.0 \
 	logfile_plain.0 \
 	logfile_pretty.0 \
 	logfile_procstate.0 \
@@ -410,6 +412,7 @@ dist_noinst_DATA = \
 	logfile_with_zones.0 \
 	logfile_xml_msg.0 \
 	logfile_yday.0 \
+	logfile_zap_console.0 \
 	man_echo.txt \
 	multiline.lnav \
 	mvwattrline_output.0 \

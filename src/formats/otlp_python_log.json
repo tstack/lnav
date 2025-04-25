@@ -1,0 +1,38 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "otlp_python_log": {
+        "description": "Format file generated from regex101 entry -- https://regex101.com/r/7keqXq/1",
+        "regex": {
+            "std": {
+                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}[,.]\\d{3,6})\\s(?<level>\\w+)\\s\\[(?<logger>[^\\]]+)\\]\\s\\[(?<src_file>[^:]+):(?<src_line>\\d+)\\](?:\\s\\[(?<context>[^]]+)\\])?\\s-\\s+(?<body>.*)"
+            }
+        },
+        "value": {
+            "context": {
+                "kind": "string"
+            },
+            "level": {
+                "kind": "string"
+            },
+            "logger": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src_file": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src_line": {
+                "kind": "string"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "2025-04-24 22:09:15,968 INFO [main] [recommendation_server.py:47] [trace_id=f63bcd6b2d5d4f23e5af1da51527c682 span_id=e7849fe8f2eabecd resource.service.name=recommendation trace_sampled=True] - Receive ListRecommendations for product ids:['6E92ZMYYFZ', 'L9ECAV7KIM', '2ZYFJ3GM2N', 'HQTGWGPNH4', 'OLJCESPC7Z']"
+            }
+        ]
+    }
+}

@@ -1,0 +1,38 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "zap_console_log": {
+        "title": "Zap Console Log",
+        "description": "The Uber Zap log format",
+        "url": "https://github.com/uber-go/zap",
+        "regex": {
+            "std": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[,.]\\d{3}(?:Z|[-+]\\d{2}:?\\d{2})?)\t(?<level>debug|DEBUG|info|INFO|warn|WARN|error|ERROR|dpanic|DPANIC|panic|fatal|FATAL)(?:\t(?<src_file>[^:]+):(?<src_line>\\d+))?\t(?<body>[^\t]+)(?:\t(?<context>\\{.*\\}))?(?:\n(?<stacktrace>.*))?"
+            }
+        },
+        "level-field": "level",
+        "value": {
+            "level": {
+                "kind": "string"
+            },
+            "src_file": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src_line": {
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "context": {
+                "kind": "json"
+            },
+            "stacktrace": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "2025-04-24T19:51:47.625Z\tinfo\tflag-sync/sync_service.go:87\tstarting flag sync service on port 8015\t{\"component\": \"FlagSyncService\"}"
+            }
+        ]
+    }
+}

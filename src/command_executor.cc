@@ -521,7 +521,6 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             retval = ec.ec_accumulator->get_string();
         } else {
             auto& dls = *(ec.ec_label_source_stack.back());
-            dls.dls_generation += 1;
             if (!dls.dls_row_cursors.empty()) {
                 lnav_data.ld_views[LNV_DB].reload_data();
                 lnav_data.ld_views[LNV_DB].set_top(0_vl);
@@ -1239,14 +1238,12 @@ Result<std::string, lnav::console::user_message>
 exec_context::execute(source_location loc, const std::string& cmdline)
 {
     static auto& prompt = lnav::prompt::get();
+    static const auto& dls = lnav_data.ld_db_row_source;
 
     lnav::textinput::history::op_guard hist_guard;
     auto sg = this->enter_source(loc, cmdline);
 
-    std::optional<uint32_t> before_dls_gen;
-    if (!this->ec_label_source_stack.empty()) {
-        before_dls_gen = this->ec_label_source_stack.back()->dls_generation;
-    }
+    auto before_dls_gen = dls.dls_generation;
     if (this->get_provenance<mouse_input>() && !prompt.p_editor.is_enabled()) {
         auto& hist = prompt.get_history_for(cmdline[0]);
         hist_guard = hist.start_operation(cmdline.substr(1));
@@ -1258,10 +1255,9 @@ exec_context::execute(source_location loc, const std::string& cmdline)
         if (!this->ec_msg_callback_stack.empty()) {
             this->ec_msg_callback_stack.back()(exec_res.unwrapErr());
         }
-    } else if (before_dls_gen) {
-        const auto& dls = this->ec_label_source_stack.back();
-        if (before_dls_gen.value() != dls->dls_generation
-            && dls->dls_row_cursors.size() > 1)
+    } else {
+        if (before_dls_gen != dls.dls_generation
+            && dls.dls_row_cursors.size() > 1)
         {
             ensure_view(LNV_DB);
         }

@@ -340,6 +340,8 @@ dist_noinst_DATA = \
     test_format_loader.sh_fca6c1fb9f3aaa69b3ffb2d1a8a86434b2f4a247.out \
     test_json_format.sh_001d1ecc2d007e47880a8850aa901748b2388652.err \
     test_json_format.sh_001d1ecc2d007e47880a8850aa901748b2388652.out \
+    test_json_format.sh_0c6c9368d1a1b525cf00bd3b9e3aa6f6669bc9dc.err \
+    test_json_format.sh_0c6c9368d1a1b525cf00bd3b9e3aa6f6669bc9dc.out \
     test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.err \
     test_json_format.sh_168cac40c27f547044c89d39eb0ff2ef81da4b21.out \
     test_json_format.sh_1bb0fd243e916546aea22029245ac590dae17a86.err \
@@ -454,6 +456,8 @@ dist_noinst_DATA = \
     test_logfile.sh_d14f6d8888652321206549df8a9535399f0fd372.out \
     test_logfile.sh_de8d59879fe6aa5a012b0748ff77ae26c07aea89.err \
     test_logfile.sh_de8d59879fe6aa5a012b0748ff77ae26c07aea89.out \
+    test_logfile.sh_e333be9b8e7322b0e5e09b1e49e11eca8c468dee.err \
+    test_logfile.sh_e333be9b8e7322b0e5e09b1e49e11eca8c468dee.out \
     test_logfile.sh_e840b674cd65936a72bd64b1dac1524d16fe44c3.err \
     test_logfile.sh_e840b674cd65936a72bd64b1dac1524d16fe44c3.out \
     test_logfile.sh_f171f265d8d45a2707e8b9f53e938f574c614d25.err \

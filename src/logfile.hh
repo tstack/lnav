@@ -46,6 +46,8 @@
 #include <sys/types.h>
 
 #include "ArenaAlloc/arenaalloc.h"
+#include "base/auto_fd.hh"
+#include "base/auto_mem.hh"
 #include "base/lnav_log.hh"
 #include "base/progress.hh"
 #include "base/result.h"
@@ -312,6 +314,7 @@ public:
 
     struct message_length_result {
         file_ssize_t mlr_length;
+        size_t mlr_line_count;
         file_range::metadata mlr_metadata;
     };
 
@@ -337,7 +340,8 @@ public:
     void read_full_message(const_iterator ll,
                            shared_buffer_ref& msg_out,
                            line_buffer::scan_direction dir
-                           = line_buffer::scan_direction::forward);
+                           = line_buffer::scan_direction::forward,
+                           read_format_t format = read_format_t::plain);
 
     Result<shared_buffer_ref, std::string> read_raw_message(const_iterator ll);
 
@@ -547,6 +551,8 @@ private:
     std::optional<std::pair<std::string, lnav::file_options>> lf_file_options;
     std::vector<lnav::console::user_message> lf_format_match_messages;
     invalid_line_info lf_invalid_lines;
+    auto_buffer lf_plain_msg_buffer = auto_buffer::alloc(256);
+    shared_buffer lf_plain_msg_shared;
 };
 
 class logline_observer {

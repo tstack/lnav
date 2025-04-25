@@ -633,6 +633,7 @@ db_label_source::push_column(const column_value_t& sv)
 void
 db_label_source::clear()
 {
+    this->dls_generation += 1;
     this->dls_query_start = std::nullopt;
     this->dls_query_end = std::nullopt;
     this->dls_headers.clear();

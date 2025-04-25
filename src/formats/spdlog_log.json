@@ -1,0 +1,46 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "spdlog_log": {
+        "description": "Format file generated from regex101 entry -- https://regex101.com/r/74VsjN/1",
+        "regex": {
+            "std": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[,.]\\d{3,6})\\]\\s\\[(?<logger>[^\\]]+)\\]\\s\\[(?<level>\\w+)\\]\\s+(?<body>.*)"
+            },
+            "envoy": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[,.]\\d{3,6})\\]\\[(?<thread_id>\\d+)\\]\\[(?<level>\\w+)\\]\\[(?<logger>[^\\]]+)\\]\\s+\\[(?<src_file>[^:]+):(?<src_line>\\d+)\\]\\s+(?<body>.*)"
+            }
+        },
+        "value": {
+            "level": {
+                "kind": "string"
+            },
+            "logger": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src_file": {
+                "kind": "string",
+                "identifier": true
+            },
+            "src_line": {
+                "kind": "integer",
+                "foreign-key": true
+            },
+            "thread_id": {
+                "kind": "string",
+                "identifier": true
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "[2025-04-24 19:51:59.688][8][info][config] [source/server/configuration_impl.cc:168] loading tracing configuration"
+            },
+            {
+                "line": "[2014-10-31 23:46:59.678] [my_loggername] [info] Some message"
+            }
+        ]
+    }
+}

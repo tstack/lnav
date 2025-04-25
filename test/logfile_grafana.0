@@ -1,0 +1,5 @@
+logger=settings t=2025-04-24T19:51:48.520963849Z level=info msg="Starting Grafana" version=11.5.2 commit=598e0338d5374d6bc404b02a58094132c5eeceb8 branch=HEAD compiled=2025-04-24T19:51:48Z
+logger=settings t=2025-04-24T19:51:48.521238594Z level=info msg="Config loaded from" file=/usr/share/grafana/conf/defaults.ini
+logger=settings t=2025-04-24T19:51:48.521245943Z level=info msg="Config loaded from" file=/etc/grafana/grafana.ini
+logger=settings t=2025-04-24T19:51:48.521249283Z level=info msg="Config overridden from command line" arg="default.paths.data=/var/lib/grafana"
+logger=settings t=2025-04-24T19:51:48.521251943Z level=info msg="Config overridden from command line" arg="default.paths.logs=/var/log/grafana"

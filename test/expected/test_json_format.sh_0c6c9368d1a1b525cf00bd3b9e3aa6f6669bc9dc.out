@@ -1,0 +1,6 @@
+2025-04-24T22:08:37.537Z 7d82d3f28bad[17] INFO     Charge request received.
+  trace_id: c759f29f5f1e2162be56f32dd1e77fce
+  span_id: 17c4a60ca4297cf1
+  trace_flags: 01
+  service.name: payment
+  request: {"amount":{"currencyCode":"USD","units":{"low":513,"high":0,"unsigned":false},"nanos":999999996},"creditCard":{"creditCardNumber":"4929-6495-8333-3657","creditCardCvv":159,"creditCardExpirationYear":2039,"creditCardExpirationMonth":8}}

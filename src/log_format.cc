@@ -1518,10 +1518,18 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
 
         if (!this->lf_specialized) {
-            for (const auto& [index, jfe] : lnav::itertools::enumerate(this->jlf_line_format))
+            static const intern_string_t ts_field
+                = intern_string::lookup("__timestamp__", -1);
+            static const intern_string_t level_field
+                = intern_string::lookup("__level__");
+            for (const auto& [index, jfe] :
+                 lnav::itertools::enumerate(this->jlf_line_format))
             {
-                if (jfe.jfe_type != json_log_field::VARIABLE ||
-                    !jfe.jfe_default_value.empty()) {
+                if (jfe.jfe_type != json_log_field::VARIABLE
+                    || jfe.jfe_value.pp_value == ts_field
+                    || jfe.jfe_value.pp_value == level_field
+                    || jfe.jfe_default_value != "-")
+                {
                     continue;
                 }
                 if (!jlu.jlu_format_hits[index]) {
@@ -1559,6 +1567,9 @@ external_log_format::scan_json(std::vector<logline>& dst,
         }
     }
 
+    if (jlu.jlu_quality > 0) {
+        jlu.jlu_quality += 3000;
+    }
     return scan_match{jlu.jlu_quality, jlu.jlu_strikes};
 }
 
@@ -4682,6 +4693,9 @@ log_format::tm_for_display(logfile::iterator ll, string_fragment sf)
     auto adjusted_time = ll->get_timeval();
     exttm retval;
 
+    retval.et_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::microseconds{adjusted_time.tv_usec})
+                         .count();
     if (this->lf_timestamp_flags & ETF_NANOS_SET) {
         timeval actual_tv;
         exttm tm;
@@ -4693,12 +4707,10 @@ log_format::tm_for_display(logfile::iterator ll, string_fragment sf)
                                     false))
         {
             adjusted_time.tv_usec = actual_tv.tv_usec;
+            retval.et_nsec = tm.et_nsec;
         }
     }
     gmtime_r(&adjusted_time.tv_sec, &retval.et_tm);
-    retval.et_nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                         std::chrono::microseconds{adjusted_time.tv_usec})
-                         .count();
     retval.et_flags = this->lf_timestamp_flags;
     if (this->lf_timestamp_flags & ETF_ZONE_SET
         && this->lf_date_time.dts_zoned_to_local)

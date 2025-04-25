@@ -140,6 +140,14 @@ struct shared_buffer_ref {
         };
     }
 
+    std::string_view to_string_view() const
+    {
+        return std::string_view{
+            this->sb_data,
+            this->sb_length,
+        };
+    }
+
     using narrow_result = std::pair<const char*, size_t>;
     narrow_result narrow(size_t new_data, size_t new_length);
 

@@ -1642,9 +1642,9 @@ com_pipe_to(exec_context& ec,
                 if (tc->get_inner_height() == 0) {
                     // Nothing to do
                 } else if (tc == &lnav_data.ld_views[LNV_LOG]) {
-                    logfile_sub_source& lss = lnav_data.ld_log_source;
-                    content_line_t cl = lss.at(tc->get_top());
-                    std::shared_ptr<logfile> lf = lss.find(cl);
+                    auto& lss = lnav_data.ld_log_source;
+                    auto cl = lss.at(tc->get_top());
+                    auto lf = lss.find(cl);
                     shared_buffer_ref sbr;
                     lf->read_full_message(lf->message_start(lf->begin() + cl),
                                           sbr);

@@ -116,6 +116,9 @@ Features:
 * Added the "modus-operandi" light-colored theme.
 * The colors used for highlights and identifiers are now checked
   for high contrast against the current theme's background color.
+* Added the "pino_log" format for the Pino Node.js logger.
+* Added the "zap_console_log" format for the Go Zap logger.
+* Added the "spdlog_log" format for the C++ spdlog logger.
 
 Bug Fixes:
 * Should start up in tmux and line drawing should show up now as well.

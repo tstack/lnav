@@ -30,14 +30,17 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/openam_log.json \
     $(srcdir)/%reldir%/openamdb_log.json \
     $(srcdir)/%reldir%/openstack_log.json \
+    $(srcdir)/%reldir%/otlp_python_log.json \
     $(srcdir)/%reldir%/page_log.json \
     $(srcdir)/%reldir%/pcap_log.json \
+    $(srcdir)/%reldir%/pino_log.json \
     $(srcdir)/%reldir%/procstate_log.json \
     $(srcdir)/%reldir%/proxifier_log.json \
     $(srcdir)/%reldir%/rails_log.json \
     $(srcdir)/%reldir%/redis_log.json \
     $(srcdir)/%reldir%/simple_rs_log.json \
     $(srcdir)/%reldir%/snaplogic_log.json \
+    $(srcdir)/%reldir%/spdlog_log.json \
     $(srcdir)/%reldir%/sssd_log.json \
     $(srcdir)/%reldir%/strace_log.json \
     $(srcdir)/%reldir%/sudo_log.json \
@@ -55,5 +58,6 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/vpostgres_log.json \
     $(srcdir)/%reldir%/web_robot_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
+    $(srcdir)/%reldir%/zap_console_log.json \
     $(srcdir)/%reldir%/zookeeper_log.json \
     $()

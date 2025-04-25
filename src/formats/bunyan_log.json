@@ -7,7 +7,7 @@
         "file-type": "json",
         "line-format": [
             {
-                "field": "time"
+                "field": "__timestamp__"
             },
             " ",
             {
