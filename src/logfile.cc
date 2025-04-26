@@ -456,7 +456,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                  &prev_index_size,
                  starting_index_size](const log_format::scan_match& sm) {
                     if (best_match && this->lf_format != nullptr
-                        && this->lf_format->lf_root_format == curr.get())
+                        && this->lf_format->lf_root_format == curr.get()
+                        && best_match->first == this->lf_format.get())
                     {
                         prev_index_size = this->lf_index.size();
                         found = best_match->second;

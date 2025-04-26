@@ -320,7 +320,7 @@ file_collection::watch_logfile(const std::string& filename,
     if (this->fc_closed_files.count(filename)
         || this->fc_closed_files.count(filename_key))
     {
-        log_trace("file is closed, ignore");
+        log_trace("%s: file is closed, ignore", filename.c_str());
         return std::nullopt;
     }
 

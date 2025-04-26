@@ -48,11 +48,11 @@
                     ]
                 },
                 {
-                    "display_value": "generic_log",
+                    "display_value": "java_log",
                     "search_placeholder": "",
                     "possibilities": [
                         {
-                            "display_value": "generic_log"
+                            "display_value": "java_log"
                         }
                     ]
                 },

@@ -51,13 +51,25 @@
                 "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}[,\\.]\\d{1,3}) \\^\\^\\^ \\d+ similar messages? omitted \\^\\^\\^$"
             },
             "spring1": {
-                "pattern": "(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+?)\\s*\\]\\s+(?:\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+)?(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|(?:-|\\+)\\d{2}:?\\d{2}))\\s+(?<level>ERROR|WARN|INFO|DEBUG|TRACE)\\s+(?<pid>\\d+)\\s+---\\s+\\[[^\\]]+\\]\\s+\\[\\s*(?<thread>[^\\]]+?)\\s*\\]\\s+(?:\\[\\s*(?<opid>[^\\]]+)\\s*\\]\\s+)?(?<class>[^: ]+)\\s*:\\s+(?<body>.*)"
             },
             "hdfs": {
-                "pattern": "(?<timestamp>\\d{6} \\d{6}) (?<thread>\\d+) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{6} \\d{6}) (?<thread>\\d+) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
             },
             "spark": {
-                "pattern": "(?<timestamp>\\d{2}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
+                "pattern": "^(?<timestamp>\\d{2}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^:]+): (?<body>.*)"
+            },
+            "kafka": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[,.]\\d{3,6})\\] (?<level>INFO|WARN|ERROR|DEBUG|TRACE)(?: \\[(?<thread>[^ \\]]+)(?: (?<context>[^\\]]+))?\\]:?)?\\s+(?<body>.*?)(?:$|\\s+\\((?<class>[^)]+)\\))"
+            },
+            "otel": {
+                "pattern": "^\\[otel\\.javaagent (?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[:,.]\\d{3} [+-]\\d{4})\\] \\[(?<thread>[^\\]]+)\\] (?<level>INFO|WARN|ERROR|DEBUG|TRACE) (?<class>[^ ]+) - (?<body>.*)"
+            },
+            "otel2": {
+                "pattern": "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) - (?<thread>[^ ]+) - (?<body>.*)"
+            },
+            "opensearch": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[,.:]\\d{3,6})\\]\\[(?<level>INFO|WARN|ERROR|DEBUG|TRACE|DEPRECATION)\\s*\\]\\[(?<class>[^ \\]]+)\\s*\\] \\[(?<hostname>[^\\]]+)\\]\\s+(?<body>.*)"
             }
         },
         "level-field": "level",
@@ -76,13 +88,17 @@
         },
         "level": {
             "error": "ERROR",
-            "warning": "WARN",
+            "warning": "WARN|DEPRECATION",
             "debug": "DEBUG",
             "info": "INFO",
             "trace": "TRACE"
         },
         "value": {
             "function": {
+                "kind": "string",
+                "identifier": true
+            },
+            "hostname": {
                 "kind": "string",
                 "identifier": true
             },
@@ -128,6 +144,9 @@
                 "identifier": true
             },
             "body": {
+                "kind": "string"
+            },
+            "context": {
                 "kind": "string"
             }
         },
@@ -219,6 +238,21 @@
             },
             {
                 "line": "2025-01-23T03:42:36.681-0800  INFO 125873 --- [myapp] [           main] o.s.b.d.f.logexample.MyApplication       : Starting MyApplication using Java 17.0.14 with PID 125873 (/opt/apps/myapp.jar started by myuser in /opt/apps/)"
+            },
+            {
+                "line": "[2025-04-24 19:51:57,226] INFO [SocketServer listenerType=CONTROLLER, nodeId=1] Enabling request processing. (kafka.network.SocketServer)"
+            },
+            {
+                "line": "[2025-04-24 19:51:57,234] INFO [controller-1-to-controller-registration-channel-manager]: Starting (kafka.server.NodeToControllerRequestThread)"
+            },
+            {
+                "line": "[otel.javaagent 2025-04-24 19:51:57:317 +0000] [jmx_bean_finder] INFO io.opentelemetry.javaagent.shaded.instrumentation.jmx.engine.MetricRegistrar - Created UpDownCounter for kafka.isr.operation.count"
+            },
+            {
+                "line": "2025-04-24 19:52:02 - fraud-detection - Consumed record with orderId: 96c9ae8a-2145-11f0-ad02-521e677bf5a6, and updated total count to: 1 trace_id=ce200e223867f9ce668306600aaf5835 span_id=9de55849c6d49770 trace_flags=01"
+            },
+            {
+                "line": "[2025-04-24T19:51:50,262][INFO ][o.o.j.JobSchedulerPlugin ] [demo-node] Loaded scheduler extension: checkBatchJobTaskStatus, index: .ml_commons_task_polling_job"
             }
         ]
     }

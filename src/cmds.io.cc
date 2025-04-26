@@ -1507,6 +1507,8 @@ com_close(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                 if (actual_path) {
                     lnav_data.ld_active_files.fc_file_names.erase(
                         actual_path.value().string());
+                    lnav_data.ld_active_files.fc_closed_files.insert(
+                        actual_path->string());
                 }
                 lnav_data.ld_active_files.fc_closed_files.insert(fn);
             }

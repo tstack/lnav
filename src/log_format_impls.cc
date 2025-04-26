@@ -1902,6 +1902,9 @@ struct logfmt_pair_handler {
                 return log_format::scan_no_match{
                     "timestamp value did not parse correctly"};
             }
+            char buf[1024];
+            this->lph_dt_scanner.ftime(
+                buf, sizeof(buf), nullptr, this->lph_time_tm);
             this->lph_found_time = true;
         } else if (this->lph_key_frag == "level"_frag) {
             this->lph_level
@@ -1912,7 +1915,7 @@ struct logfmt_pair_handler {
 
     date_time_scanner& lph_dt_scanner;
     bool lph_found_time{false};
-    exttm lph_time_tm{};
+    exttm lph_time_tm;
     timeval lph_tv{0, 0};
     log_level_t lph_level{log_level_t::LEVEL_INFO};
     string_fragment lph_key_frag{""};
