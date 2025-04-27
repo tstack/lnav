@@ -16,6 +16,10 @@
                 "pattern": "^(?<timestamp>\\d{2}:\\d{2}:\\d{2}\\.\\d{6}|\\d+\\.\\d{6}) \\+\\+\\+ .* \\+\\+\\+$"
             }
         },
+        "timestamp-format": [
+            "%s.%f",
+            "%H:%M:%S.%f"
+        ],
         "level-field": "errno",
         "level": {
             "error": ".+"

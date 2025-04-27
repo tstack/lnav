@@ -629,10 +629,11 @@ public:
             const auto& fd = this->blf_field_defs[iter.index()];
 
             if (TS == fd.fd_meta.lvm_name) {
-                string_fragment sf = *iter;
+                static const char* const TIME_FMT[] = {"%s.%f"};
+                const auto sf = *iter;
 
                 if (this->lf_date_time.scan(
-                        sf.data(), sf.length(), nullptr, &tm, tv))
+                        sf.data(), sf.length(), TIME_FMT, &tm, tv))
                 {
                     this->lf_timestamp_flags = tm.et_flags;
                     found_ts = true;

@@ -110,6 +110,21 @@ TEST_CASE("date_time_scanner")
     }
 
     {
+        const auto sf = string_fragment::from_const("2025-04-24T19:51:48.55604564Z");
+        timeval tv;
+        exttm tm;
+        date_time_scanner dts;
+        const auto* rc = dts.scan(sf.data(), sf.length(), nullptr, &tm, tv);
+        printf("fmt %s\n", PTIMEC_FORMAT_STR[dts.dts_fmt_lock]);
+        CHECK((tm.et_flags & ETF_NANOS_SET));
+
+        char ts[64];
+        dts.ftime(ts, sizeof(ts), nullptr, tm);
+
+        CHECK(std::string(ts) == std::string("2025-04-24T19:51:48.556045640Z"));
+    }
+
+    {
         const auto sf
             = string_fragment::from_const("2014-02-11 16:12:34.12345Z");
         timeval tv;

@@ -246,7 +246,7 @@ run_cap_test ${lnav_test} -n \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \
-    -c ':goto 17:00:01.' \
+    -c ':goto 17:00:01.N' \
     ${test_dir}/logfile_access_log.0
 
 run_cap_test ${lnav_test} -n \

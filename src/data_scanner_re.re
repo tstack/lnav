@@ -401,7 +401,7 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
        <init, bol> "${"("!"|"?"|"#"|[a-zA-Z0-9_]+)"}" { RET(DT_ID); }
        <init, bol> ("$"[a-zA-Z0-9_]+)?("/"|"./"|"../"|[A-Z]":\\"|"\\\\")("Program Files"(" (x86)")?)?[a-zA-Z0-9_\.\-\~/\\!@#$%^&*()]* { RET(DT_PATH); }
        <init, bol> (SPACE|NUM)NUM":"NUM{2}/[^:] { RET(DT_TIME); }
-       <init, bol> (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}("."NUM{3,6})?/[^:] { RET(DT_TIME); }
+       <init, bol> (SPACE|NUM)NUM?":"NUM{2}":"NUM{2}([.,:]NUM{3,9})?/[^:] { RET(DT_TIME); }
        <init, bol> [0-9a-fA-F][0-9a-fA-F]((":"|"-")[0-9a-fA-F][0-9a-fA-F])+ {
            if ((YYCURSOR.val - ((const unsigned char*) this->ds_input.sf_string + this->ds_next_offset)) == 17) {
                RET(DT_MAC_ADDRESS);
@@ -409,10 +409,10 @@ std::optional<data_scanner::tokenize_result> data_scanner::tokenize_int(text_for
                RET(DT_HEX_DUMP);
            }
        }
-       <init, bol> (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})("T"|" ")NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+       <init, bol> (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4})("T"|" ")NUM{2}":"NUM{2}(":"NUM{2}([.,:]NUM{3,9})?)? {
            RET(DT_DATE_TIME);
        }
-       <init, bol> ALPHA{3}("  "NUM|" "NUM{2})" "NUM{2}":"NUM{2}(":"NUM{2}("."NUM{3,6})?)? {
+       <init, bol> ALPHA{3}("  "NUM|" "NUM{2})" "NUM{2}":"NUM{2}(":"NUM{2}([.:,]NUM{3,9})?)? {
            RET(DT_DATE_TIME);
        }
        <init, bol> (NUM{4}"/"NUM{1,2}"/"NUM{1,2}|NUM{4}"-"NUM{1,2}"-"NUM{1,2}|NUM{2}"/"ALPHA{3}"/"NUM{4}) {

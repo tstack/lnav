@@ -1175,73 +1175,51 @@ ftime_Z(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
 }
 
 inline bool
-ptime_f(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
+ptime_f(exttm* dst, const char* str, off_t& off_inout, ssize_t len)
 {
     auto avail = len - off_inout;
+    auto index = size_t{0};
+    int32_t mult = 100'000'000;
+    int32_t nsec = 0;
 
-    if (avail >= 6 && isdigit(str[off_inout + 4])
-        && isdigit(str[off_inout + 5]))
-    {
-        PTIME_CONSUME(6, {
-            for (int lpc = 0; lpc < 6; lpc++) {
-                if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
-                    return false;
-                }
-            }
-            dst->et_flags |= ETF_MICROS_SET;
-            dst->et_nsec = ((str[off_inout + 0] - '0') * 100000
-                            + (str[off_inout + 1] - '0') * 10000
-                            + (str[off_inout + 2] - '0') * 1000
-                            + (str[off_inout + 3] - '0') * 100
-                            + (str[off_inout + 4] - '0') * 10
-                            + (str[off_inout + 5] - '0') * 1)
-                * 1000;
-        });
-    } else if (avail >= 5 && isdigit(str[off_inout + 4])) {
-        PTIME_CONSUME(5, {
-            for (int lpc = 0; lpc < 5; lpc++) {
-                if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
-                    return false;
-                }
-            }
-            dst->et_flags |= ETF_MICROS_SET;
-            dst->et_nsec = ((str[off_inout + 0] - '0') * 100000
-                            + (str[off_inout + 1] - '0') * 10000
-                            + (str[off_inout + 2] - '0') * 1000
-                            + (str[off_inout + 3] - '0') * 100
-                            + (str[off_inout + 4] - '0') * 10)
-                * 1000;
-        });
-    } else {
-        PTIME_CONSUME(4, {
-            for (int lpc = 0; lpc < 4; lpc++) {
-                if (str[off_inout + lpc] < '0' || str[off_inout + lpc] > '9') {
-                    return false;
-                }
-            }
-            dst->et_flags |= ETF_MICROS_SET;
-            dst->et_nsec = ((str[off_inout + 0] - '0') * 100000
-                            + (str[off_inout + 1] - '0') * 10000
-                            + (str[off_inout + 2] - '0') * 1000
-                            + (str[off_inout + 3] - '0') * 100)
-                * 1000;
-        });
+    for (; index < 10 && index < avail; index++) {
+        if (!isdigit(str[off_inout + index])) {
+            break;
+        }
+
+        nsec += (str[off_inout + index] - '0') * mult;
+        mult /= 10;
     }
+
+    if (index < 4) {
+        dst->et_flags |= ETF_MILLIS_SET;
+    } else if (index < 7) {
+        dst->et_flags |= ETF_MICROS_SET;
+    } else {
+        dst->et_flags |= ETF_NANOS_SET;
+    }
+    dst->et_nsec = nsec;
+    off_inout += index;
 
     return true;
 }
 
 inline void
-ftime_f(char* dst, off_t& off_inout, ssize_t len, const struct exttm& tm)
+ftime_f(char* dst, off_t& off_inout, ssize_t len, const exttm& tm)
 {
-    uint32_t micros = tm.et_nsec / 1000;
+    uint32_t divisor = 100'000'000;
+    const auto value = tm.et_nsec;
+    auto out_len = size_t{3};
 
-    PTIME_APPEND('0' + ((micros / 100000) % 10));
-    PTIME_APPEND('0' + ((micros / 10000) % 10));
-    PTIME_APPEND('0' + ((micros / 1000) % 10));
-    PTIME_APPEND('0' + ((micros / 100) % 10));
-    PTIME_APPEND('0' + ((micros / 10) % 10));
-    PTIME_APPEND('0' + ((micros / 1) % 10));
+    if (tm.et_flags & ETF_MICROS_SET) {
+        out_len = 6;
+    } else if (tm.et_flags & ETF_NANOS_SET) {
+        out_len = 9;
+    }
+    for (auto lpc = 0; lpc < out_len; lpc++) {
+        PTIME_APPEND('0' + ((value / divisor) % 10));
+        divisor /= 10;
+    }
 }
 
 inline bool

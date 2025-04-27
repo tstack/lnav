@@ -319,17 +319,9 @@ date_time_scanner::scan(const char* time_dest,
                     = std::chrono::duration_cast<std::chrono::microseconds>(
                           std::chrono::nanoseconds{tm_out->et_nsec})
                           .count();
-                this->dts_fmt_len += 7;
-                tm_out->et_flags |= ETF_MICROS_SET | ETF_SUB_NOT_IN_FORMAT;
-                retval += 7;
-            } else if (ptime_L(tm_out, time_dest, off, time_len)) {
-                tv_out.tv_usec
-                    = std::chrono::duration_cast<std::chrono::microseconds>(
-                          std::chrono::nanoseconds{tm_out->et_nsec})
-                          .count();
-                this->dts_fmt_len += 4;
-                tm_out->et_flags |= ETF_MILLIS_SET | ETF_SUB_NOT_IN_FORMAT;
-                retval += 4;
+                this->dts_fmt_len = off;
+                tm_out->et_flags |= ETF_SUB_NOT_IN_FORMAT;
+                retval = time_dest + this->dts_fmt_len;
             }
         }
     }
