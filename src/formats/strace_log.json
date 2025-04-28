@@ -18,6 +18,7 @@
         },
         "timestamp-format": [
             "%s.%f",
+            "%H:%M:%S",
             "%H:%M:%S.%f"
         ],
         "level-field": "errno",
