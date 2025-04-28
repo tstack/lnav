@@ -44,6 +44,7 @@ static struct {
     const char* expected_negate{nullptr};
 } TEST_DATA[] = {
     // { "10 minutes after the next hour", "next 0:10" },
+    {"next 10 minutes after the hour", "next 0:10", "last 0:10"},
     {"0s", "0s", "0s"},
     {"next day", "next day 0:00", "last day 0:00"},
     {"next month", "next month day 0 0:00", "last month day 0 0:00"},
@@ -51,7 +52,6 @@ static struct {
      "next year month 0 day 0 0:00",
      "last year month 0 day 0 0:00"},
     {"previous hour", "last 0:00", "next 0:00"},
-    {"next 10 minutes after the hour", "next 0:10", "last 0:10"},
     {"1h50m", "1h50m", "-1h-50m"},
     {"next hour", "next 0:00", "last 0:00"},
     {"a minute ago", "0:-1", "0:-1"},
@@ -91,6 +91,18 @@ static struct {
 
 TEST_CASE("reltime")
 {
+    {
+        auto tv = timeval{1690440588, 0};
+        auto parse_res = relative_time::from_str(
+            string_fragment::from_const("next 10 minutes after the hour"));
+        auto rt = parse_res.unwrap();
+        auto adj_tm = rt.adjust(tv);
+
+        CHECK(adj_tm.et_nsec == 0);
+        CHECK(adj_tm.et_tm.tm_sec == 0);
+        CHECK(adj_tm.et_tm.tm_min == 10);
+    }
+
     time_t base_time = 1317913200;
     struct exttm base_tm;
     base_tm.et_tm = *gmtime(&base_time);

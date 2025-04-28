@@ -798,6 +798,7 @@ com_goto(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
             vis_line_t vl = tc->get_selection(), new_vl;
             bool done = false;
             auto rt = parse_res.unwrap();
+            log_info("  goto relative time: %s", rt.to_string().c_str());
 
             if (rt.is_relative()) {
                 injector::get<relative_time&, last_relative_time_tag>() = rt;

@@ -886,15 +886,26 @@ relative_time::to_string() const
     return dst;
 }
 
-struct exttm
+exttm
 relative_time::adjust(const exttm& tm) const
 {
+    size_t high_set = RTF_MICROSECONDS;
     auto retval = tm;
+
+    for (auto lpc = 0; lpc < RTF__MAX; lpc++) {
+        if (this->rt_field[lpc].is_set
+            && this->is_absolute((rt_field_type) lpc))
+        {
+            high_set = lpc;
+        }
+    }
 
     if (this->rt_field[RTF_MICROSECONDS].is_set
         && this->is_absolute(RTF_MICROSECONDS))
     {
         retval.et_nsec = this->rt_field[RTF_MICROSECONDS].value * 1000;
+    } else if (RTF_MICROSECONDS < high_set) {
+        retval.et_nsec = 0;
     } else {
         retval.et_nsec += this->rt_field[RTF_MICROSECONDS].value * 1000;
     }
@@ -910,6 +921,8 @@ relative_time::adjust(const exttm& tm) const
             retval.et_tm.tm_min -= 1;
         }
         retval.et_tm.tm_sec = this->rt_field[RTF_SECONDS].value;
+    } else if (RTF_SECONDS < high_set) {
+        retval.et_tm.tm_sec = 0;
     } else {
         retval.et_tm.tm_sec += this->rt_field[RTF_SECONDS].value;
     }
