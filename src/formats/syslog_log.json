@@ -96,6 +96,9 @@
             },
             {
                 "line": "Jan  4 10:23:26 Tims-MacBook-Air Setup Assistant[1173]: Creating connection"
+            },
+            {
+                "line": "2025-04-15T17:36:24.135033+02:00 myhostname sshd[730594] Disconnected from authenticating user root 218.92.0.111 port 37632 [preauth]"
             }
         ]
     }
