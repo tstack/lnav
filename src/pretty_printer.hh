@@ -125,7 +125,6 @@ private:
     std::stack<int> pp_body_lines{};
     data_scanner* pp_scanner;
     string_attrs_t pp_attrs;
-    string_attrs_t pp_post_attrs;
     std::ostringstream pp_stream;
     std::deque<element> pp_values{};
     int pp_shift_accum{0};

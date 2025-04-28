@@ -30,8 +30,12 @@
 #include "config.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "base/ansi_scrubber.hh"
+#include "data_parser.hh"
+#include "data_scanner.hh"
 #include "doctest/doctest.h"
 #include "document.sections.hh"
+#include "pretty_printer.hh"
 
 TEST_CASE("lnav::document::sections::basics")
 {
@@ -299,4 +303,22 @@ TEST_CASE("lnav::document::sections::afl2")
     auto meta = lnav::document::discover(INPUT).perform();
 
     CHECK(meta.m_sections_root->hn_children.empty());
+}
+
+TEST_CASE("lnav::document::sections::afl3")
+{
+    attr_line_t INPUT = "0\x5b\n\n\x1b[70O[";
+
+    scrub_ansi_string(INPUT.al_string, &INPUT.al_attrs);
+
+    data_scanner ds(INPUT.al_string);
+    pretty_printer pp(&ds, INPUT.al_attrs);
+    attr_line_t pretty_al;
+
+    pp.append_to(pretty_al);
+    for (const auto& sa : pretty_al.al_attrs) {
+        require(sa.sa_range.lr_end == -1
+                || sa.sa_range.lr_start
+                    <= sa.sa_range.lr_end);
+    }
 }

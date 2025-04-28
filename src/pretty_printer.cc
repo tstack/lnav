@@ -141,11 +141,7 @@ pretty_printer::append_to(attr_line_t& al)
 
     attr_line_t combined;
     combined.get_string() = this->pp_stream.str();
-    auto& attrs = combined.get_attrs();
-    attrs = this->pp_attrs;
-    attrs.insert(
-        attrs.end(), this->pp_post_attrs.begin(), this->pp_post_attrs.end());
-    this->pp_post_attrs.clear();
+    combined.get_attrs() = this->pp_attrs;
 
     if (!al.empty()) {
         al.append("\n");
@@ -196,6 +192,9 @@ pretty_printer::write_element(const element& el)
             this->pp_line_length = 0;
             this->pp_stream << std::endl;
             this->pp_body_lines.top() += 1;
+        } else {
+            auto shift_cover = line_range::empty_at(start_size);
+            shift_string_attrs(this->pp_attrs, shift_cover, -1);
         }
         return;
     }
