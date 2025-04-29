@@ -31,6 +31,7 @@
 
 #include "base/itertools.hh"
 #include "config.h"
+#include "document.sections.hh"
 #include "scn/scan.h"
 
 static std::vector<plain_text_source::text_line>
@@ -301,6 +302,7 @@ plain_text_source::text_crumbs_for_line(int line,
 
     this->tds_doc_sections.m_sections_tree.visit_overlapping(
         tl.tl_offset,
+        tl.tl_offset + tl.tl_value.length(),
         [&crumbs, initial_size, meta = &this->tds_doc_sections, this](
             const auto& iv) {
             auto path = crumbs | lnav::itertools::skip(initial_size)

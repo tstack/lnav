@@ -178,4 +178,13 @@ ${lnav_test} -Nn -c ':config /tuning/textfile/max-unformatted-line-length 20'
 run_cap_test ${lnav_test} -n \
     ${test_dir}/textfile_ansi.0
 
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/textfile_json_one_line.0
+
+run_cap_test ${lnav_test} -n \
+    -c ":goto 3" \
+    -c ";SELECT * FROM lnav_top_view" \
+    -c ":write-json-to -" \
+    ${test_dir}/textfile_json_one_line.0
+
 #####

@@ -1,0 +1,61 @@
+[
+    {
+        "name": "text",
+        "top": 3,
+        "left": 0,
+        "height": 12,
+        "inner_height": 12,
+        "top_time": null,
+        "top_file": "{test_dir}/textfile_json_one_line.0",
+        "paused": 0,
+        "search": "",
+        "filtering": 1,
+        "movement": "top",
+        "top_meta": {
+            "file": "{test_dir}/textfile_json_one_line.0",
+            "anchor": "#/array/0",
+            "breadcrumbs": [
+                {
+                    "display_value": "textfile_json_one_line.0",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "textfile_json_one_line.0"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "array",
+                    "search_placeholder": "",
+                    "possibilities": [
+                        {
+                            "display_value": "array"
+                        },
+                        {
+                            "display_value": "foo bar"
+                        },
+                        {
+                            "display_value": "obj"
+                        }
+                    ]
+                },
+                {
+                    "display_value": "[0]",
+                    "search_placeholder": "",
+                    "possibilities": [
+
+                    ]
+                }
+            ]
+        },
+        "selection": 3,
+        "options": {
+            "row-details": "hide",
+            "row-time-offset": "hide",
+            "hidden-fields": "hide",
+            "word-wrap": "none"
+        },
+        "selected_text": null,
+        "row_details": null
+    }
+]

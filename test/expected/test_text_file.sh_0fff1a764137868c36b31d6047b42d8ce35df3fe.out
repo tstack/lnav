@@ -1,0 +1,13 @@
+[1m[4m[35mⓘ[0m[4m The following is a rendered view of the content.  Use [0m[4m[37m[40m:set-text-view-mode raw[0m[4m to view the raw version of this text[0m
+{
+    [35m"foo bar"[0m : [1m[36mnull[0m,
+    [35m"array"[0m : [
+        [1m1[0m,
+        [1m2[0m,
+        [1m3[0m
+    ],
+    [35m"obj"[0m : {
+        [35m"one"[0m : [1m1[0m,
+        [35m"two"[0m : [1m[36mtrue[0m 
+    } 
+}

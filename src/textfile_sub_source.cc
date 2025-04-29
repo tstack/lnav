@@ -591,12 +591,6 @@ textfile_sub_source::text_crumbs_for_line(
         return;
     }
 
-    if (this->tss_view_mode == view_mode::rendered
-        && curr_iter->fvs_text_source)
-    {
-        curr_iter->fvs_text_source->text_crumbs_for_line(line, crumbs);
-    }
-
     if (lf->has_line_metadata()) {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
@@ -615,7 +609,12 @@ textfile_sub_source::text_crumbs_for_line(
             []() -> std::vector<breadcrumb::possibility> { return {}; },
             [](const auto& key) {});
     }
-    if (curr_iter->fvs_metadata.m_sections_tree.empty()) {
+
+    if (this->tss_view_mode == view_mode::rendered
+        && curr_iter->fvs_text_source)
+    {
+        curr_iter->fvs_text_source->text_crumbs_for_line(line, crumbs);
+    } else if (curr_iter->fvs_metadata.m_sections_tree.empty()) {
     } else {
         auto* lfo
             = dynamic_cast<line_filter_observer*>(lf->get_logline_observer());
@@ -1055,7 +1054,8 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
                         iter->fvs_text_source->set_text_format(
                             lf->get_text_format());
                         iter->fvs_text_source->register_view(this->tss_view);
-                        iter->fvs_text_source->replace_with(pretty_al);
+                        iter->fvs_text_source->replace_with_mutable(
+                            pretty_al, lf->get_text_format());
                     } else {
                         log_error(
                             "unable to read file to pretty-print: %s -- file "
