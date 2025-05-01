@@ -520,6 +520,8 @@ public:
 
     struct main_content {
         vis_line_t mc_line;
+        size_t mc_wrapped_line;
+        line_range mc_line_range;
     };
     struct static_overlay_content {};
     struct overlay_menu {

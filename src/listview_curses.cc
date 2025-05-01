@@ -564,8 +564,10 @@ listview_curses::do_update()
                 }
 
                 mvwattrline_result write_res;
+                auto wrapped_line = size_t{0};
                 do {
-                    this->lv_display_lines.push_back(main_content{row});
+                    this->lv_display_lines.push_back(
+                        main_content{row, wrapped_line, lr});
                     if (this->lv_word_wrap) {
                         // XXX mvwhline(this->lv_window, y, this->vc_x, ' ',
                         // width);
@@ -574,6 +576,7 @@ listview_curses::do_update()
                         this->lv_window, y, x, al, lr, this->vc_default_role);
                     lr.lr_start = write_res.mr_chars_out;
                     lr.lr_end = write_res.mr_chars_out + width - 1;
+                    wrapped_line += 1;
                     ++y;
                 } while (this->lv_word_wrap && y < bottom
                          && write_res.mr_bytes_remaining > 0);

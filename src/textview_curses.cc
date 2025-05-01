@@ -482,6 +482,8 @@ textview_curses::handle_mouse(mouse_event& me)
             mouse_line.match(
                 [this, &me, sub_delegate, &mouse_line](const main_content& mc) {
                     this->tc_text_selection_active = true;
+                    this->tc_press_left = this->lv_left
+                        + mc.mc_line_range.lr_start + me.me_press_x;
                     if (this->vc_enabled) {
                         if (this->tc_supports_marks
                             && me.me_button == mouse_button_t::BUTTON_LEFT
@@ -528,8 +530,10 @@ textview_curses::handle_mouse(mouse_event& me)
                             auto line_sf
                                 = string_fragment::from_str(al.get_string());
                             auto cursor_sf = line_sf.sub_cell_range(
-                                this->lv_left + me.me_x,
-                                this->lv_left + me.me_x);
+                                this->lv_left + mc.mc_line_range.lr_start
+                                    + me.me_x,
+                                this->lv_left + mc.mc_line_range.lr_start
+                                    + me.me_x);
                             auto ds = data_scanner(line_sf);
                             auto tf = this->tc_sub_source->get_text_format();
                             while (true) {
@@ -598,10 +602,14 @@ textview_curses::handle_mouse(mouse_event& me)
                 if (mouse_line.is<main_content>()) {
                     auto& mc = mouse_line.get<main_content>();
                     attr_line_t al;
-                    auto low_x = std::min(this->tc_press_left,
-                                          (int) this->lv_left + me.me_x);
-                    auto high_x = std::max(this->tc_press_left,
-                                           (int) this->lv_left + me.me_x);
+                    auto low_x
+                        = std::min(this->tc_press_left,
+                                   (int) this->lv_left
+                                       + mc.mc_line_range.lr_start + me.me_x);
+                    auto high_x
+                        = std::max(this->tc_press_left,
+                                   (int) this->lv_left
+                                       + mc.mc_line_range.lr_start + me.me_x);
 
                     this->set_selection_without_context(mc.mc_line);
                     if (this->tc_supports_marks
@@ -695,10 +703,10 @@ textview_curses::handle_mouse(mouse_event& me)
                 this->tc_selection_start = std::nullopt;
             }
             if (mouse_line.is<main_content>()) {
-                const auto& [mc_line] = mouse_line.get<main_content>();
+                const auto mc = mouse_line.get<main_content>();
                 attr_line_t al;
 
-                this->textview_value_for_row(mc_line, al);
+                this->textview_value_for_row(mc.mc_line, al);
                 auto line_sf = string_fragment::from_str(al.get_string());
                 auto cursor_sf = line_sf.sub_cell_range(
                     this->lv_left + me.me_x, this->lv_left + me.me_x);
@@ -720,7 +728,7 @@ textview_curses::handle_mouse(mouse_event& me)
                     } else {
                         this->tc_selected_text = selected_text_info{
                             me.me_x,
-                            mc_line,
+                            mc.mc_line,
                             link_iter->sa_range,
                             al.get_attrs(),
                             al.to_string_fragment(link_iter).to_string(),
