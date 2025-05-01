@@ -126,6 +126,10 @@ pretty_printer::append_to(attr_line_t& al)
                     && this->pp_line_length == 0)
                 {
                     this->pp_leading_indent = el.e_capture.length();
+                    auto shift_cover
+                        = line_range::empty_at(this->pp_stream.tellp());
+                    shift_string_attrs(
+                        this->pp_attrs, shift_cover, -el.e_capture.length());
                     continue;
                 }
                 break;

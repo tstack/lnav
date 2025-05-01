@@ -439,17 +439,20 @@ logfile::process_prefix(shared_buffer_ref& sbr,
             curr->clear();
             this->set_format_base_time(curr.get(), li);
             log_format::scan_result_t scan_res{mapbox::util::no_init{}};
+            scan_batch_context sbc_tmp{this->lf_allocator};
             if (this->lf_format != nullptr
                 && this->lf_format->lf_root_format == curr.get())
             {
                 scan_res = this->lf_format->scan(
                     *this, this->lf_index, li, sbr, sbc);
             } else {
-                scan_res = curr->scan(*this, this->lf_index, li, sbr, sbc);
+                scan_res = curr->scan(*this, this->lf_index, li, sbr, sbc_tmp);
             }
 
             scan_res.match(
                 [this,
+                 &sbc,
+                 &sbc_tmp,
                  &found,
                  &curr,
                  &best_match,
@@ -475,6 +478,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             sm.sm_quality,
                             sm.sm_strikes);
 
+                        sbc.sbc_opids = sbc_tmp.sbc_opids;
                         auto match_um
                             = lnav::console::user_message::info(
                                   attr_line_t()

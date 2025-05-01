@@ -1609,10 +1609,14 @@ register_sqlite_funcs(sqlite3* db, sqlite_registration_func_t* reg_funcs)
 
         help_text("expr", "Check an expression against NULL")
             .sql_infix()
-            .with_parameter(
-                help_text("nullness")
-                    .with_enum_values({"ISNULL", "NOTNULL", "NOT NULL"})
-                    .optional())
+            .with_parameter(help_text("nullness")
+                                .with_enum_values({
+                                    "ISNULL",
+                                    "NOTNULL",
+                                    "NOT NULL",
+                                    "IS NOT NULL",
+                                })
+                                .optional())
             .with_example({
                 "To check if a value is not NULL",
                 "SELECT 'abc' NOT NULL",

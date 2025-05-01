@@ -318,7 +318,22 @@ TEST_CASE("lnav::document::sections::afl3")
     pp.append_to(pretty_al);
     for (const auto& sa : pretty_al.al_attrs) {
         require(sa.sa_range.lr_end == -1
-                || sa.sa_range.lr_start
-                    <= sa.sa_range.lr_end);
+                || sa.sa_range.lr_start <= sa.sa_range.lr_end);
+    }
+}
+
+TEST_CASE("lnav::document::sections::afl4")
+{
+    attr_line_t INPUT = "\t\t0000\t\t0000\x1b[67;0O0";
+
+    scrub_ansi_string(INPUT.al_string, &INPUT.al_attrs);
+
+    data_scanner ds(INPUT.al_string);
+    pretty_printer pp(&ds, INPUT.al_attrs);
+    attr_line_t pretty_al;
+
+    pp.append_to(pretty_al);
+    for (const auto& sa : pretty_al.al_attrs) {
+        CHECK(sa.sa_range.lr_start <= sa.sa_range.lr_end);
     }
 }

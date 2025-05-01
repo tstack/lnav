@@ -33,8 +33,6 @@
 
 #include "lnav.prompt.hh"
 
-#include <glob.h>
-
 #include "base/fs_util.hh"
 #include "base/humanize.network.hh"
 #include "base/itertools.hh"
