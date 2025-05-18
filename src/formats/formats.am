@@ -59,5 +59,6 @@ FORMAT_FILES = \
     $(srcdir)/%reldir%/web_robot_log.json \
     $(srcdir)/%reldir%/xmlrpc_log.json \
     $(srcdir)/%reldir%/zap_console_log.json \
+    $(srcdir)/%reldir%/zellij_log.json \
     $(srcdir)/%reldir%/zookeeper_log.json \
     $()

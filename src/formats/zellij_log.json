@@ -1,0 +1,55 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "zellijFmt": {
+        "title": "Zellij’s logs",
+        "description": "Zellij’s format file. Zellij is a terminal multiplexer",
+        "file-pattern": "^\/tmp\/zellij-\\d+\/zellij-log\/zellij.log$",
+        "regex": {
+            "zellijRgx": {
+                "pattern": "^(?<level>[A-Z]+) *\\|(?<module>\\S+) *\\| (?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3}) \\[(?<module2>\\S+) *\\] \\[(?<src_file>.+):(?<src_line>\\d+)\\]: (?<body>.*)(?:\\n\\nCaused by:\\n(?<cause_body>(?:\\s{4}+.*)+))*$"
+            }
+        },
+        "timestamp-format": [
+            "%Y-%m-%d %H:%M:%S.%L"
+        ],
+        "level": {
+            "error": "ERROR",
+            "warning": "WARN",
+            "info": "INFO",
+            "debug": "DEBUG"
+        },
+        "value": {
+            "cause_body": {
+                "kind": "string"
+            },
+            "level": {
+                "kind": "string"
+            },
+            "module": {
+                "kind": "string"
+            },
+            "module2": {
+                "kind": "string"
+            },
+            "src_file": {
+                "kind": "string"
+            },
+            "src_line": {
+                "kind": "integer"
+            },
+            "timestamp": {
+                "kind": "string"
+            }
+        },
+        "sample": [
+            {
+                "line": "INFO   |zellij_client            | 2025-05-16 19:31:19.601 [main      ] [/home/zykino/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zellij-client-0.42.2/src/lib.rs:179]: Starting Zellij client! ",
+                "level": "info"
+            },
+            {
+                "line": "ERROR  |???                      | 2025-05-16 19:32:04.614 [pty_writer] [/home/zykino/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/zellij-server-0.42.2/src/os_input_output.rs:567]: a non-fatal error occured\n\nCaused by:\n    0: failed to set terminal id 2 to size (0, 27)\n    1: failed to find terminal fd for id 2 ",
+                "level": "error"
+            }
+        ]
+    }
+}
