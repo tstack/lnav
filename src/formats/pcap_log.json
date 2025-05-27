@@ -8,6 +8,8 @@
         "converter": {
             "header": {
                 "expr": {
+                    "snoop": ":header REGEXP '^736e6f6f70000000.*'",
+                    "btsnoop": ":header REGEXP '^6274736e6f6f7000.*'",
                     "pcapng": ":header REGEXP '^0a0d0d0a.{8}(?:1a2b3c4d|4d3c2b1a).*'",
                     "pcap": ":header REGEXP '^(?:a1b2c3d4|d4c3b2a1|a1b23c4d|4d3cb2a1).*'"
                 },
